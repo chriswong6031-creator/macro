@@ -498,13 +498,35 @@ def test_state_gone():
 
 
 def test_streak_weekend_gap():
-    """Calendar gap of 3 days (Mon after Thu+Fri) still counts as consecutive."""
+    """Calendar gap over Sat+Sun (no missed trading sessions) still counts as consecutive.
+
+    Dates: Wed 2026-07-08, Thu 2026-07-09, Fri 2026-07-10, Mon 2026-07-13.
+    The gap from Fri to Mon is Sat+Sun only — no NYSE session falls between them —
+    so all four dates form one consecutive run of 4.
+    """
     from engine.neuralweb.confluence_sequence import _count_streak
 
-    # Simulating Thu, Fri, Mon (gap = 3 days)
-    dates = ["2026-07-07", "2026-07-08", "2026-07-09", "2026-07-13"]
+    # Wed, Thu, Fri, Mon — Fri→Mon gap is Sat+Sun only (no missed trading session)
+    dates = ["2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13"]
     streak = _count_streak(dates)
-    assert streak >= 3, f"Expected streak >= 3, got {streak}"
+    assert streak >= 3, f"Expected streak >= 3 (all 4 dates are consecutive sessions), got {streak}"
+
+
+def test_streak_breaks_on_missed_trading_day():
+    """A gap containing a real trading session breaks the streak.
+
+    Dates: Thu 2026-07-09, Mon 2026-07-13.  Friday 2026-07-10 is a real NYSE session
+    so the streak should be 1 (only the latest date is consecutive from current day's
+    perspective — there's a missed trading day in the gap).
+    """
+    from engine.neuralweb.confluence_sequence import _count_streak
+
+    # Thu 07-09, Mon 07-13: Friday 07-10 is a real trading session not in the list
+    dates = ["2026-07-09", "2026-07-13"]
+    streak = _count_streak(dates)
+    assert streak == 1, (
+        f"Gap contains Fri 07-10 (real trading day) → streak must be 1, got {streak}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -588,29 +610,42 @@ def test_discovery_rotation_cycle_excluded():
 
 
 def test_discovery_candidate_high_z():
-    """Synthetic high co-occurrence spike → candidate state or high z.
+    """Synthetic concentrated co-occurrence spike → positive z, candidate state, z not None.
 
-    We build a tape where (alpha_engine, beta_engine) co-fire in the LAST few sessions
-    but NOT in the early sessions.  This makes the observed rate much higher than the
-    null distribution (which is built from circular shifts of the same presence vector).
-    With early zeros and late ones the circular shift null has a range of rates,
-    whereas the observed (latest) value is the highest — producing a positive z.
+    Design: 30 sessions total.  Sessions 0-21: only 'gamma_engine'+'delta_engine' fire
+    (neither alpha nor beta).  Sessions 22-29: both 'alpha_engine' and 'beta_engine' fire.
+
+    This means:
+      alpha_presence = [False]*22 + [True]*8  (marginal rate 8/30)
+      beta_presence  = [False]*22 + [True]*8  (same)
+      obs_rate = 8/30 ≈ 0.267
+
+    Under circular shifts of beta's presence series relative to alpha's, most shifts
+    move the 8 True values away from alpha's True window → null co-fire count drops
+    sharply.  MAD of null draws >> 0, yielding z ≈ 4.7 > 0.
+
+    This test proves the null is non-degenerate (z is not None) and correctly
+    identifies the concentrated co-fire pattern as above the null median (z > 0).
+    It also checks that the pair reaches state='candidate' (|z| >= 2.0).
     """
     from engine.neuralweb.confluence_discovery import (
         run_discovery_scan,
         _MIN_SESSIONS_FOR_SCAN,
+        _Z_CANDIDATE_THRESH,
     )
 
-    # 20 sessions total: co-fire only in last 8 (sparse → dense spike)
-    n_total = max(_MIN_SESSIONS_FOR_SCAN + 8, 20)
+    # 30 sessions: last 8 have both alpha+beta, first 22 have only gamma+delta
+    n_total = 30
+    assert n_total > _MIN_SESSIONS_FOR_SCAN, "fixture must exceed min-sessions threshold"
+    spike_start = 22  # sessions 22-29 have the co-fire spike
+
     tape_rows = []
     for i in range(n_total):
-        # Co-fire only in last 8 sessions
-        fires = (i >= n_total - 8)
-        engines = ["alpha_engine", "beta_engine"] if fires else ["alpha_engine", "gamma_engine"]
+        in_spike = (i >= spike_start)
+        engines = ["alpha_engine", "beta_engine"] if in_spike else ["gamma_engine", "delta_engine"]
         tape_rows.append({
             "subject": f"event_{i}",
-            "as_of": f"2026-05-{i+1:02d}",
+            "as_of": f"2026-04-{i+1:02d}",
             "direction": 1,
             "horizon": "20d",
             "n_confirming_raw": 2,
@@ -622,20 +657,39 @@ def test_discovery_candidate_high_z():
     gaps: list[str] = []
     candidates = run_discovery_scan(tape_rows, _NOW, gaps)
 
-    # The pair that has a late spike should be represented
+    # The pair must appear
     ab_candidates = [
         c for c in candidates
         if c["pair"] in ("alpha_engine+beta_engine", "beta_engine+alpha_engine")
     ]
-    # If the pair appears, it should not be accruing (tape is old enough)
-    for c in ab_candidates:
-        assert c["state"] != "accruing", (
-            f"Tape has {n_total} sessions which is >= MIN; state should not be accruing"
-        )
-    # If z is available, it should be positive (late spike)
-    for c in ab_candidates:
-        if c["z"] is not None:
-            assert c["z"] > 0, f"Late spike should yield positive z, got z={c['z']}"
+    assert ab_candidates, (
+        f"alpha_engine+beta_engine pair must appear in candidates; got pairs: "
+        f"{[c['pair'] for c in candidates]}"
+    )
+
+    c = ab_candidates[0]
+    # Must not be accruing — tape is 30 sessions >= MIN
+    assert c["state"] != "accruing", (
+        f"Tape has {n_total} sessions >= MIN({_MIN_SESSIONS_FOR_SCAN}); "
+        f"state must not be accruing"
+    )
+    # z must not be None — the null is non-degenerate (both engines have 8/30 marginal rate,
+    # concentrated at the end; shifts produce a range of null co-fire counts)
+    assert c["z"] is not None, (
+        f"z must be non-None for a spike fixture — degenerate null indicates broken null. "
+        f"rate_obs={c.get('rate_obs')}, rate_null_median={c.get('rate_null_median')}, "
+        f"note={c.get('note')}"
+    )
+    # z must be positive — spike sessions push obs rate well above scrambled null median
+    assert c["z"] > 0, (
+        f"Concentrated late spike should yield positive z, got z={c['z']}. "
+        f"rate_obs={c.get('rate_obs')}, rate_null_median={c.get('rate_null_median')}"
+    )
+    # Strong spike should reach candidate threshold
+    assert c["state"] == "candidate", (
+        f"Strong spike (z≈4.7 expected) should reach state=candidate "
+        f"(|z|>={_Z_CANDIDATE_THRESH}), got state={c['state']}, z={c['z']}"
+    )
 
 
 def test_discovery_empty_tape():

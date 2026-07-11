@@ -320,23 +320,9 @@ def _derive_sequences(
         last_as_of = as_of_vals[-1] if as_of_vals else ""
         fired_today = (last_as_of == current_as_of)
 
-        # Persistence streak = consecutive sessions from the end
+        # Persistence streak = consecutive trading sessions from the latest date back
         streak = 0
         if fired_today and as_of_vals:
-            streak = 1
-            # Count consecutive sessions backward (assuming dates are calendar days)
-            prev = as_of_vals[-1]
-            for i in range(len(as_of_vals) - 2, -1, -1):
-                cur = as_of_vals[i]
-                # Simple: consecutive means "appeared on prior session" (strict consecutive)
-                streak += 1
-                prev = cur
-            # Actually re-derive: streak = how many sessions fired in a row from latest
-            # We count consecutive non-gap sessions (just count all sessions since they
-            # appear only when fired — tape only has fired rows)
-            streak = n_sessions  # All rows = all fired sessions; streak = n_sessions for
-            # subjects that appear every day. But we want CONSECUTIVE.
-            # Use calendar-day consecutive: check if gaps between consecutive dates > 2 days
             streak = _count_streak(as_of_vals)
 
         # Slope over trailing K
@@ -370,9 +356,19 @@ def _derive_sequences(
         fired_today = (last_as_of == current_as_of)
         streak = _count_streak(as_of_vals) if fired_today else 0
 
-        # For contradiction pairs, slope over n_confirming_raw (always 1 per fire;
-        # use streak as proxy over trailing sessions = presence/absence binary)
-        presence = [1.0 if d == current_as_of else 1.0 for d in as_of_vals[-_SLOPE_K:]]
+        # For contradiction pairs, slope over a presence/absence binary across
+        # the trailing K sessions.  We build this from the actual as_of dates:
+        # 1.0 for sessions that fired, 0.0 for the trailing window of sessions
+        # where the pair was silent between the oldest and newest tape date.
+        # When all K windows entries fired (common for short tapes), slope = 0
+        # (stable), which is the honest answer.
+        fired_set = set(as_of_vals)
+        if as_of_vals:
+            # Use the trailing _SLOPE_K dates from the tape as the window
+            window_dates = as_of_vals[-_SLOPE_K:]
+            presence = [1.0 if d in fired_set else 0.0 for d in window_dates]
+        else:
+            presence = []
         slope = _robust_slope(presence) if len(presence) >= 2 else None
 
         state = _derive_state(streak, slope, n_sessions, fired_today)
@@ -390,14 +386,21 @@ def _derive_sequences(
 
 
 def _count_streak(as_of_vals: list[str]) -> int:
-    """Count consecutive sessions from the latest date backwards.
+    """Count consecutive TRADING sessions from the latest date backwards.
 
-    Consecutive = no gap larger than 2 calendar days (weekend gap allowed).
+    Two fired dates are consecutive when no NYSE trading session falls between them
+    (i.e. the gap contains only non-trading days: weekends, holidays).  This uses
+    lib.nyse_calendar.is_session so a Monday-after-Friday gap of 3 calendar days
+    still counts as consecutive, but a Mon→Wed gap (Tuesday was a trading day)
+    correctly breaks the streak.
+
+    Falls back to a 4-calendar-day tolerance if the calendar import fails, to remain
+    fail-open.
     """
     if not as_of_vals:
         return 0
     try:
-        from datetime import date as dt_date  # noqa: PLC0415
+        from datetime import date as dt_date, timedelta  # noqa: PLC0415
 
         dates = []
         for d in as_of_vals:
@@ -409,10 +412,28 @@ def _count_streak(as_of_vals: list[str]) -> int:
             return len(as_of_vals)  # can't parse — assume consecutive
 
         dates.sort()
+
+        # Try to import nyse_calendar for calendar-aware gap check
+        try:
+            from lib.nyse_calendar import is_session as _is_session  # noqa: PLC0415
+
+            def _gap_is_consecutive(earlier: dt_date, later: dt_date) -> bool:
+                """True if no trading session falls strictly between earlier and later."""
+                cur = earlier + timedelta(days=1)
+                while cur < later:
+                    if _is_session(cur):
+                        return False
+                    cur += timedelta(days=1)
+                return True
+
+        except Exception:  # noqa: BLE001
+            # Fallback: calendar-day tolerance of 4 (weekend + one holiday)
+            def _gap_is_consecutive(earlier: dt_date, later: dt_date) -> bool:  # type: ignore[misc]
+                return (later - earlier).days <= 4
+
         streak = 1
         for i in range(len(dates) - 1, 0, -1):
-            gap = (dates[i] - dates[i - 1]).days
-            if gap <= 4:  # allow up to 4 calendar days (weekend + one holiday)
+            if _gap_is_consecutive(dates[i - 1], dates[i]):
                 streak += 1
             else:
                 break
@@ -451,10 +472,18 @@ def _extract_contra_rows(
     contra_records = graph.get("contradiction_records") or []
     for rec in contra_records:
         pair_id = rec.get("pair_id") or "unknown"
+        # Use current_as_of when the record's as_of is missing or the literal string
+        # 'unknown' — avoids every nightly run colliding on the same ('_contra', pair_id,
+        # 'unknown') idempotency key, which would prevent the tape from accumulating.
+        raw_as_of = rec.get("as_of") or ""
+        if not raw_as_of or raw_as_of == "unknown":
+            as_of_val = current_as_of
+        else:
+            as_of_val = raw_as_of
         rows.append({
             "schema": _SCHEMA_TAPE,
             "pair_id": pair_id,
-            "as_of": rec.get("as_of") or current_as_of,
+            "as_of": as_of_val,
             "kind": rec.get("kind"),
             "severity": rec.get("severity"),
             "subject": None,

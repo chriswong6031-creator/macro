@@ -208,54 +208,23 @@ def _build_cooccurrence_by_session(
 # ---------------------------------------------------------------------------
 
 
-def _circular_shift_null(
-    per_session_cooccur: list[dict[str, dict[str, int]]],
-    pair: tuple[str, str],
-    n_draws: int,
-) -> list[float]:
-    """Compute null co-occurrence rates via circular shifts.
-
-    per_session_cooccur: list of per-session dicts {engine_a: {engine_b: count}}
-    Returns list of null rates (float).
-    """
-    ea, eb = pair
-    n_sessions = len(per_session_cooccur)
-    if n_sessions < 2:
-        return []
-
-    null_rates: list[float] = []
-    for d in range(1, n_draws + 1):
-        shift = (d * 7) % n_sessions  # deterministic shift
-        shifted = per_session_cooccur[shift:] + per_session_cooccur[:shift]
-        count = sum(
-            1
-            for sess in shifted
-            if (ea in (sess.get(ea) or {}) and eb in (sess.get(ea) or {}))
-            or (eb in (sess.get(eb) or {}) and ea in (sess.get(eb) or {}))
-            # simpler: check co-occurrence in shifted ordering
-        )
-        null_rates.append(count / n_sessions if n_sessions > 0 else 0.0)
-
-    return null_rates
-
-
-def _build_per_session_presence(
+def _build_engine_session_presence(
     tape_rows: list[dict],
-    ea: str,
-    eb: str,
+    engine: str,
     sessions: list[str],
-) -> list[float]:
-    """Binary presence vector: 1.0 if (ea, eb) co-fired in a session, 0.0 otherwise."""
-    from collections import defaultdict  # noqa: PLC0415
+) -> list[bool]:
+    """Binary presence vector: True if ``engine`` fired in a session, False otherwise.
 
-    # Build session-level co-fire sets
-    co_fire_sessions: set[str] = set()
+    This is an INDIVIDUAL engine presence (not pair co-fire), used to build the
+    circular-shift null by shifting one engine's series relative to the other.
+    Shifting destroys the pairing while preserving each engine's marginal firing rate.
+    """
+    fired_sessions: set[str] = set()
     for row in tape_rows:
         engines = row.get("engines") or []
-        if ea in engines and eb in engines and row.get("as_of"):
-            co_fire_sessions.add(row["as_of"])
-
-    return [1.0 if s in co_fire_sessions else 0.0 for s in sessions]
+        if engine in engines and row.get("as_of"):
+            fired_sessions.add(row["as_of"])
+    return [s in fired_sessions for s in sessions]
 
 
 # ---------------------------------------------------------------------------
@@ -329,16 +298,23 @@ def run_discovery_scan(
             continue
 
         # ── Circular-shift null ──────────────────────────────────────────────
-        # Build presence vector for this pair
-        presence_vec = _build_per_session_presence(tape_rows, ea, eb, sessions)
+        # Build per-engine individual presence vectors (fired at all in a session,
+        # regardless of co-fire partner).  Shift ea's vector relative to eb's to
+        # destroy pairing while preserving each engine's marginal firing rate.
+        ea_presence = _build_engine_session_presence(tape_rows, ea, sessions)
+        eb_presence = _build_engine_session_presence(tape_rows, eb, sessions)
 
-        # Circular-shift null: shift the full presence vector
         null_rates: list[float] = []
         n_sessions_v = len(sessions)
         for d in range(1, _NULL_DRAWS + 1):
             shift = (d * 7) % n_sessions_v
-            shifted_vec = presence_vec[shift:] + presence_vec[:shift]
-            null_rates.append(sum(shifted_vec) / n_sessions_v if n_sessions_v > 0 else 0.0)
+            # Shift eb's presence relative to ea (destroys pairing, preserves marginals)
+            eb_shifted = eb_presence[shift:] + eb_presence[:shift]
+            count = sum(
+                1 for a_val, b_val in zip(ea_presence, eb_shifted)
+                if a_val and b_val
+            )
+            null_rates.append(count / n_sessions_v if n_sessions_v > 0 else 0.0)
 
         # Compute z using robust_z over [null_rates + [obs_rate]] (obs is latest)
         all_rates = null_rates + [obs_rate]
