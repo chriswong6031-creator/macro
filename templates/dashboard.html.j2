@@ -2117,27 +2117,9 @@ body.page-macro::before{
           <div class="mx-score-label">{{ t(MS.label_en, MS.label_zh) }}</div>
           <div class="mx-score-sub">{{ t('market state','市场状态') }}</div>
         </div>
-        {# KPI chips + legs grid #}
+        {# Legs grid (operator ruling 2026-07-10: no KPI chip strip in the hero) #}
         <div class="mx-kpi-area">
-          <div class="mx-kpi-strip">
-            {# Goldilocks / quad chip #}
-            <span class="mx-chip mx-c-q{{ _mxq_n }}">{{ td(latest.quad_name) }}</span>
-            {# Market state chip #}
-            <span class="mx-chip {{ 'mx-c-up' if MS.score >= 60 else ('mx-c-warn' if MS.score >= 42 else 'mx-c-down') }}">{{ t(MS.label_en, MS.label_zh) }}</span>
-            {# Transition state #}
-            {% if latest.transition_state %}<span class="mx-chip mx-c-muted">{{ td(latest.transition_state) }}</span>{% endif %}
-            {# Liquidity #}
-            {% if latest.liquidity_overlay %}<span class="mx-chip {{ 'mx-c-up' if latest.liquidity_overlay == 'expanding' else ('mx-c-down' if latest.liquidity_overlay == 'contracting' else 'mx-c-muted') }}">{{ t('Liq','流动性') }}: {{ td(latest.liquidity_overlay) }}</span>{% endif %}
-            {# Vol regime + VIX (vol_regime is a dict) #}
-            {% if latest.vol_regime and latest.vol_regime is mapping %}{% set _vr = latest.vol_regime %}<span class="mx-chip mx-c-muted">{{ t('Vol','波动') }}: {{ td(_vr.get('regime','—')) }}{% if _vr.get('vix') is not none %} · VIX <span class="num">{{ '%.1f'|format(_vr.vix) }}</span>{% endif %}</span>{% endif %}
-            {# Breadth — guard: breadth_pa50 may not exist in all builds #}
-            {% if latest.breadth_pa50 is defined and latest.breadth_pa50 is not none %}<span class="mx-chip mx-c-muted">{{ t('Breadth','广度') }} <span class="num">{{ '%.0f'|format(latest.breadth_pa50 * 100 if latest.breadth_pa50 <= 1 else latest.breadth_pa50) }}%</span></span>{% endif %}
-            {# Radar band — radar.state is a string like 'watch','caution','elevated','risk-off' #}
-            {% if MS.radar and MS.radar.state %}<span class="mx-chip {{ 'mx-c-down' if MS.radar.state in ['elevated','risk-off'] else ('mx-c-warn' if MS.radar.state == 'caution' else ('mx-c-info' if MS.radar.state == 'watch' else 'mx-c-muted')) }}">{{ t('Radar','雷达') }}: <span class="l-en">{{ MS.radar.state | upper }}</span><span class="l-zh">{{ MS.radar.state_zh if MS.radar.state_zh is defined and MS.radar.state_zh else MS.radar.state }}</span></span>{% endif %}
-            {# Policy lever state #}
-            {% if policy_lever is defined and policy_lever %}<span class="mx-chip {{ 'mx-c-down' if policy_lever.get('state') == 'ARMED' else ('mx-c-warn' if policy_lever.get('state') == 'ELEVATED' else 'mx-c-muted') }}">{{ t('Policy','政策') }}: <span class="l-en">{{ policy_lever.get('state', 'QUIET') }}</span><span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(policy_lever.get('state','QUIET'), policy_lever.get('state','QUIET')) }}</span></span>{% endif %}
-          </div>
-          {# Legs grid — compact factor summary below chips #}
+          {# Legs grid — compact factor summary #}
           <div class="mx-legs-grid">
             <div class="mx-leg">
               <div class="mx-leg-label">{{ t('US Regime','美国周期') }}</div>
