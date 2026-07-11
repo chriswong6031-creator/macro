@@ -4,6 +4,137 @@
       "date": "2026-07-02",
       "rows": 1941820,
       "bytes_approx": 322039092
+    },
+    {
+      "date": "2026-07-10",
+      "rows": 1374284,
+      "bytes_approx": 227898853
+    }
+  ],
+  "DIA": [
+    {
+      "date": "2026-07-10",
+      "rows": 9745,
+      "bytes_approx": 1614202
+    }
+  ],
+  "IWM": [
+    {
+      "date": "2026-07-10",
+      "rows": 184362,
+      "bytes_approx": 30554387
+    }
+  ],
+  "XLB": [
+    {
+      "date": "2026-07-10",
+      "rows": 514,
+      "bytes_approx": 85372
+    }
+  ],
+  "XLE": [
+    {
+      "date": "2026-07-10",
+      "rows": 8342,
+      "bytes_approx": 1381488
+    }
+  ],
+  "XLF": [
+    {
+      "date": "2026-07-10",
+      "rows": 8638,
+      "bytes_approx": 1429938
+    }
+  ],
+  "QQQ": [
+    {
+      "date": "2026-07-10",
+      "rows": 972743,
+      "bytes_approx": 161242278
+    }
+  ],
+  "XLI": [
+    {
+      "date": "2026-07-10",
+      "rows": 1379,
+      "bytes_approx": 228659
+    }
+  ],
+  "XLRE": [
+    {
+      "date": "2026-07-10",
+      "rows": 84,
+      "bytes_approx": 14276
+    }
+  ],
+  "XLU": [
+    {
+      "date": "2026-07-10",
+      "rows": 2026,
+      "bytes_approx": 335609
+    }
+  ],
+  "XLP": [
+    {
+      "date": "2026-07-10",
+      "rows": 3767,
+      "bytes_approx": 623271
+    }
+  ],
+  "XLK": [
+    {
+      "date": "2026-07-10",
+      "rows": 4625,
+      "bytes_approx": 765646
+    }
+  ],
+  "XLY": [
+    {
+      "date": "2026-07-10",
+      "rows": 855,
+      "bytes_approx": 141982
+    }
+  ],
+  "XLV": [
+    {
+      "date": "2026-07-10",
+      "rows": 2135,
+      "bytes_approx": 353975
+    }
+  ],
+  "XBI": [
+    {
+      "date": "2026-07-10",
+      "rows": 8689,
+      "bytes_approx": 1439652
+    }
+  ],
+  "SOXX": [
+    {
+      "date": "2026-07-10",
+      "rows": 8386,
+      "bytes_approx": 1398949
+    }
+  ],
+  "SMH": [
+    {
+      "date": "2026-07-10",
+      "rows": 28628,
+      "bytes_approx": 4742236
+    }
+  ],
+  "KRE": [
+    {
+      "date": "2026-07-10",
+      "rows": 2278,
+      "bytes_approx": 377540
+    }
+  ],
+  "XLC": [
+    {
+      "date": "2026-07-10",
+      "rows": 306,
+      "bytes_approx": 51002
     }
   ]
 }

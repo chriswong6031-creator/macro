@@ -183,6 +183,10 @@ jobs:
         #   round-robin cursor in state ensures remaining roots accrue on subsequent nights.
         # Non-fatal: terminal absent or any error logs a warning and does not fail the build.
         # run_status.json registration: sources["tape_flow_forward"] (P0.7 pattern).
+        env:
+          # 3s default connect timeout false-fails under concurrent bulk load
+          # (measured 2026-07-11: 352/375 false 'not reachable' at 3s; 20s → 375/375).
+          THETA_CONNECT_TIMEOUT: "20"
         run: |
           python -m scripts.build_tape_flow_daily --mode forward \
             || echo "::warning::T2a tape-flow forward accrual failed (non-fatal)"
@@ -197,6 +201,8 @@ jobs:
         # Outputs (data/tape_flow/daily/*.parquet + data/tape_flow/_state.json)
         # are covered by the "commit data" step's `git add data/` below.
         # Non-fatal: terminal absent or any error logs a warning and continues.
+        env:
+          THETA_CONNECT_TIMEOUT: "20"   # see forward step note
         run: |
           python -m scripts.build_tape_flow_daily --mode episodes --budget-minutes 30 \
             || echo "::warning::T2a tape-flow episodes backfill failed (non-fatal)"
@@ -207,6 +213,8 @@ jobs:
         # Budget: 20 min — see episodes comment above for the joint ceiling rationale.
         # Outputs covered by `git add data/` in the commit step below (same as above).
         # Non-fatal: terminal absent or any error logs a warning and continues.
+        env:
+          THETA_CONNECT_TIMEOUT: "20"   # see forward step note
         run: |
           python -m scripts.build_tape_flow_daily --mode etf-history --budget-minutes 20 \
             || echo "::warning::T2a tape-flow ETF-history backfill failed (non-fatal)"
