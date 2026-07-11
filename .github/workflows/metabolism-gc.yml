@@ -57,8 +57,12 @@ jobs:
           if [ "${DRY_RUN_INPUT:-false}" = "true" ]; then
             DRY_RUN_FLAG="--dry-run"
           fi
+          # GC is best-effort: a transient `git worktree remove` failure logs an
+          # error and metabolism_gc.main() returns 1, but that must NOT fail the
+          # job (which would fire a spurious operator alert). `|| true` keeps a
+          # partial GC from paging the operator; real errors are in the log.
           # shellcheck disable=SC2086
-          python -m scripts.metabolism_gc ${DRY_RUN_FLAG}
+          python -m scripts.metabolism_gc ${DRY_RUN_FLAG} || true
 
       - name: notify on failure
         if: failure()
