@@ -75,8 +75,9 @@ from engine.ignition_radar import _streak_from_us_log, _update_streak_cache, _co
 def test_streak_from_log_empty_file(tmp_path):
     log_path = tmp_path / "ignition_log" / "us_ignition.jsonl"
     # file does not exist
-    streak = _streak_from_us_log("mag7", log_path)
+    streak, latest_date = _streak_from_us_log("mag7", log_path)
     assert streak == 0
+    assert latest_date is None
 
 
 def test_streak_from_log_counts_consecutive_days(tmp_path):
@@ -90,8 +91,9 @@ def test_streak_from_log_counts_consecutive_days(tmp_path):
         _make_us_log_row("2026-07-09", "mag7", 0.68),
     ]
     _write_us_log(log_path, rows)
-    streak = _streak_from_us_log("mag7", log_path)
+    streak, latest_date = _streak_from_us_log("mag7", log_path)
     assert streak == 5
+    assert latest_date == "2026-07-09"
 
 
 def test_streak_from_log_resets_at_gap(tmp_path):
@@ -105,9 +107,10 @@ def test_streak_from_log_resets_at_gap(tmp_path):
         _make_us_log_row("2026-07-09", "mag7", 0.68),
     ]
     _write_us_log(log_path, rows)
-    streak = _streak_from_us_log("mag7", log_path)
+    streak, latest_date = _streak_from_us_log("mag7", log_path)
     # Only the last 2 days count (after the gap)
     assert streak == 2
+    assert latest_date == "2026-07-09"
 
 
 def test_streak_from_log_basket_not_in_top_breaks_streak(tmp_path):
@@ -124,9 +127,10 @@ def test_streak_from_log_basket_not_in_top_breaks_streak(tmp_path):
         _make_us_log_row("2026-07-08", "mag7", 0.68),
     ]
     _write_us_log(log_path, rows)
-    streak = _streak_from_us_log("mag7", log_path)
+    streak, latest_date = _streak_from_us_log("mag7", log_path)
     # Only last 2 days (07-07 and 07-08) have mag7 above threshold
     assert streak == 2
+    assert latest_date == "2026-07-08"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -206,8 +210,8 @@ def test_compute_narrow_top_returns_dict_with_required_fields(tmp_path):
 
 
 def test_compute_narrow_top_streak_accumulates(tmp_path):
-    """After 4 log days + today's cache day, streak should be >= 4."""
-    # Write 4 days of log history
+    """After 4 log days (all prior to today) + today via cache, streak should be 5."""
+    # Write 4 days of log history — all prior to today so +1 bridge is applied
     log_path = tmp_path / "ignition_log" / "us_ignition.jsonl"
     rows = [
         _make_us_log_row("2026-07-07", "mag7", 0.70),
@@ -221,8 +225,46 @@ def test_compute_narrow_top_streak_accumulates(tmp_path):
                "ignition_score": 0.70, "state": "igniting"}]
     result = _compute_narrow_top(items, tmp_path)
     assert result is not None
-    # 4 log days + 1 today via cache
+    # 4 log days (prior to today) + 1 today via cache
     assert result["streak_sessions"] >= 4
+
+
+def test_compute_narrow_top_same_day_rerender_no_double_count(tmp_path):
+    """Same-day re-render idempotency: when the log already contains today's row,
+    streak must not be inflated by +1 (the reviewer's must_fix finding)."""
+    from datetime import date as _date
+    today = str(_date.today())
+    log_path = tmp_path / "ignition_log" / "us_ignition.jsonl"
+    # Simulate: 4 prior days PLUS today already committed (post-nightly log_us_snapshot)
+    rows = [
+        _make_us_log_row("2026-07-07", "mag7", 0.70),
+        _make_us_log_row("2026-07-08", "mag7", 0.68),
+        _make_us_log_row("2026-07-09", "mag7", 0.72),
+        _make_us_log_row("2026-07-10", "mag7", 0.65),
+        _make_us_log_row(today, "mag7", 0.70),  # today already in log
+    ]
+    _write_us_log(log_path, rows)
+
+    items = [{"id": "mag7", "name": "Magnificent Seven", "name_zh": "七巨头",
+               "ignition_score": 0.70, "state": "igniting"}]
+    # First call (simulates engine-render re-run)
+    result1 = _compute_narrow_top(items, tmp_path)
+    assert result1 is not None
+    streak1 = result1["streak_sessions"]
+
+    # Second call — must return same count (truly idempotent)
+    result2 = _compute_narrow_top(items, tmp_path)
+    assert result2 is not None
+    streak2 = result2["streak_sessions"]
+
+    assert streak1 == streak2, (
+        f"Same-day re-render double-counted: first={streak1}, second={streak2}"
+    )
+    # The log has 5 rows (4 prior + today), all above threshold → streak must be exactly 5
+    assert streak1 == 5, (
+        f"Expected streak=5 (4 prior days + today from log), got {streak1}; "
+        "double-count bug would give 6"
+    )
 
 
 # ──────────────────────────────────────────────────────────────────────────────
