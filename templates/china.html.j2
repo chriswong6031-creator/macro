@@ -751,7 +751,95 @@
 
     {# ── Macro: row item helper ─────────────────────────────────────────── #}
     {%- macro _anrow(row, lane) -%}
-    <div class="anv2-row">
+    {# PR-4: resolve sector card for SECTOR rows (O(1) via sectors_by_ticker) #}
+    {%- set _sc = (sectors_by_ticker.get(row.id) if row.kind == 'SECTOR' and sectors_by_ticker is defined else none) -%}
+    {# PR-4: compute tag tone for hover card header #}
+    {%- set _rptag_cls = 'up' if row.reco in ('accumulate','buy','add') else ('dn' if row.reco in ('avoid','trim','reduce','exit') else 'warn') -%}
+    <div class="anv2-row" data-rpop>
+      {# PR-4: hover card payload — cloned by theme.js into a .row-pop overlay #}
+      <span class="rp-src" hidden>
+        <div class="row-pop-hd">
+          <span class="row-pop-name"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or row.name }}</span></span>
+          <span class="row-pop-kind">{{ row.kind }}</span>
+          {%- if row.reco_en -%}
+          <span class="row-pop-tag {{ _rptag_cls }}"><span class="l-en">{{ row.reco_en }}</span><span class="l-zh">{{ row.reco_zh or row.reco_en }}</span></span>
+          {%- elif row.tag -%}
+          <span class="row-pop-tag warn"><span class="l-en">{{ row.tag }}</span><span class="l-zh">{{ row.tag }}</span></span>
+          {%- elif row.phase -%}
+          <span class="row-pop-tag warn"><span class="l-en">{{ row.phase }}</span><span class="l-zh">{{ row.phase }}</span></span>
+          {%- endif -%}
+        </div>
+        <div class="row-pop-div"></div>
+        <div class="row-pop-grid">
+          {%- if row.score is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
+            <span class="row-pop-val">{{ row.score }}</span></div>
+          {%- endif -%}
+          {%- if row.rel20 is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="{{ 'up' if row.rel20 >= 0 else 'dn' }}">{{ '%+.1f'|format(row.rel20 * 100) }}%</span></span></div>
+          {%- endif -%}
+          {%- if row.rs_63d is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">63d RS · rank</span><span class="l-zh">63日相对强度 · 排名</span></span>
+            <span class="row-pop-val"><span class="{{ 'up' if row.rs_63d >= 0 else 'dn' }}">{{ '%+.1f'|format(row.rs_63d) }}%</span>{% if row.rs_rank is not none %} <span class="mut">· #{{ row.rs_rank }}</span>{% endif %}</span></div>
+          {%- endif -%}
+          {%- if row.phase is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle phase · position</span><span class="l-zh">周期阶段 · 位置</span></span>
+            <span class="row-pop-val">{{ row.phase }}{% if row.pos is not none %} <span class="mut">· {{ '%.0f'|format(row.pos) }}%</span>{% endif %}</span></div>
+          {%- endif -%}
+          {%- if row.osc_slope is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Turn oscillator</span><span class="l-zh">转向振荡器</span></span>
+            <span class="row-pop-val"><span class="{{ 'up' if row.osc_slope > 0 else 'dn' }}">{{ '↗' if row.osc_slope > 0 else '↘' }} {{ '%.1f'|format(row.osc_slope) }}</span></span></div>
+          {%- endif -%}
+          {%- if row.organ_state is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Tape organ</span><span class="l-zh">磁带器官</span></span>
+            <span class="row-pop-val">{{ row.organ_state }}</span></div>
+          {%- endif -%}
+          {# SECTOR rows: enrich from sector card via sectors_by_ticker #}
+          {%- if _sc is not none -%}
+          {%- if _sc.get('mom20') is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span>
+            <span class="row-pop-val"><span class="{{ 'up' if _sc.get('mom20') >= 0 else 'dn' }}">{{ '%+.1f'|format(_sc.get('mom20')) }}%</span></span></div>
+          {%- endif -%}
+          {%- if _sc.get('mom60') is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span>
+            <span class="row-pop-val"><span class="{{ 'up' if _sc.get('mom60') >= 0 else 'dn' }}">{{ '%+.1f'|format(_sc.get('mom60')) }}%</span></span></div>
+          {%- endif -%}
+          {%- if _sc.get('above200') is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span>
+            <span class="row-pop-val">{{ '%.0f'|format(_sc.get('above200') * 100) }}%</span></div>
+          {%- endif -%}
+          {%- if _sc.get('pctile') is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span>
+            <span class="row-pop-val">{{ '%.0f'|format(_sc.get('pctile') * 100) }}p</span></div>
+          {%- endif -%}
+          {%- if _sc.get('dc_day') is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span>
+            <span class="row-pop-val">{{ _sc.get('dc_day') }}{% if _sc.get('dc_band') is not none %} <span class="mut">· {{ _sc.get('dc_band') }}</span>{% endif %}</span></div>
+          {%- endif -%}
+          {%- set _sce = _sc.get('entry') or {} -%}
+          {%- if _sce.get('text') is not none or _sce.get('text_zh') is not none -%}
+          <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Entry signal</span><span class="l-zh">入场信号</span></span>
+            <span class="row-pop-val"><span class="l-en">{{ _sce.get('text') or '' }}</span><span class="l-zh">{{ _sce.get('text_zh') or _sce.get('text') or '' }}</span>{% if _sc.get('age_short') is not none %} <span class="mut">· <span class="l-en">{{ _sc.get('age_short') }}</span><span class="l-zh">{{ _sc.get('age_short_zh') or _sc.get('age_short') }}</span></span>{% endif %}</span></div>
+          {%- endif -%}
+          {%- if _sc.get('eq_badge') is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">EQ</span><span class="l-zh">EQ</span></span>
+            <span class="row-pop-val">{{ _sc.get('eq_badge') }}</span></div>
+          {%- endif -%}
+          {%- endif -%}{# /_sc enrichment #}
+        </div>
+        {%- if row.reasons -%}
+        <ul class="row-pop-why">
+          {%- for _r in row.reasons -%}<li>{{ _r }}</li>{%- endfor -%}
+        </ul>
+        {%- endif -%}
+        <div class="row-pop-ft">
+          {%- if lane == 'bot' -%}
+          <span><span class="l-en">early signs of a bottom — NOT a buy signal</span><span class="l-zh">初现筑底迹象 — 非买入信号</span></span>
+          {%- endif -%}
+          <span>{{ _anv2.as_of if _anv2.as_of else '' }}</span>
+        </div>
+      </span>
       <div class="anv2-row-top">
         <span class="anv2-name">{{ row.name_zh if row.name_zh and lang == 'zh' else row.name }}</span>
         {% if row.score is not none %}<span class="anv2-score{% if row.score >= 60 %} anv2-score-hi{% elif row.score >= 40 %} anv2-score-mid{% else %} anv2-score-lo{% endif %}">{{ row.score }}</span>{% endif %}

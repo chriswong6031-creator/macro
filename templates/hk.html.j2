@@ -1077,7 +1077,8 @@
       <div class="cp-wcard">
         <h4 style="color:var(--up)">▲ <span class="l-en">Bottom Watch</span><span class="l-zh">底部观察</span></h4>
         {% if _cpbw %}
-        <div data-showmore="4">
+        <div class="lst-wrap">
+        <div class="lst-collapse lst-cap4 is-collapsed">
           {% for r in _cpbw %}
           <div class="cp-wrow">
             <a class="tk" href="hk_lookup.html#{{ r.ticker }}" title="Open {{ r.ticker }} terminal">{{ r.ticker }}</a>
@@ -1087,13 +1088,16 @@
           </div>
           {% endfor %}
         </div>
+        {% if _cpbw|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
+        </div>
         <p class="note" style="margin:6px 0 0;font-size:10px"><span class="l-en">unconfirmed · high-risk · knife = falling-knife risk</span><span class="l-zh">未确认 · 高风险 · 刀锋 = 下跌中风险</span></p>
         {% else %}<p class="note" style="color:var(--muted)"><span class="l-en">No bottom-watch candidates.</span><span class="l-zh">无底部观察候选股。</span></p>{% endif %}
       </div>
       <div class="cp-wcard">
         <h4 style="color:var(--down)">▼ <span class="l-en">Chase Watch</span><span class="l-zh">追涨风险观察</span></h4>
         {% if _cpcw %}
-        <div data-showmore="4">
+        <div class="lst-wrap">
+        <div class="lst-collapse lst-cap4 is-collapsed">
           {% for r in _cpcw %}
           <div class="cp-wrow">
             <a class="tk" href="hk_lookup.html#{{ r.ticker }}" title="Open {{ r.ticker }} terminal">{{ r.ticker }}</a>
@@ -1101,6 +1105,8 @@
             <span class="chip c-down" style="font-size:10px"><span class="l-en">chase</span><span class="l-zh">追涨</span></span>
           </div>
           {% endfor %}
+        </div>
+        {% if _cpcw|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
         </div>
         <p class="note" style="margin:6px 0 0;font-size:10px"><span class="l-en">extended — do not chase</span><span class="l-zh">过热 — 勿追涨</span></p>
         {% else %}<p class="note" style="color:var(--muted)"><span class="l-en">No chase-risk names.</span><span class="l-zh">无追涨风险个股。</span></p>{% endif %}
@@ -1112,7 +1118,8 @@
     {% if _cpct %}
     <div class="cp-tape">
       <p class="cp-sec"><span class="l-en">Catalyst tape</span><span class="l-zh">催化剂追踪</span></p>
-      <div data-showmore="4">
+      <div class="lst-wrap">
+      <div class="lst-collapse lst-cap4 is-collapsed">
         {% for ev in _cpct %}
         <div class="row">
           <span class="dt">{{ ev.date if ev.date else '—' }}</span>
@@ -1122,6 +1129,8 @@
           <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="l-en">{{ ev.text_en if ev.text_en else '—' }}</span><span class="l-zh">{{ ev.text_zh if ev.text_zh else ev.text_en if ev.text_en else '—' }}</span></span>
         </div>
         {% endfor %}
+      </div>
+      {% if _cpct|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
       </div>
     </div>
     {% endif %}
@@ -1469,7 +1478,8 @@
         <span class="l-en">Recent filings (90d tape)</span>
         <span class="l-zh">近期公告（90天记录）</span>
       </div>
-      <div data-showmore="3">
+      <div class="lst-wrap">
+      <div class="lst-collapse lst-cap4 is-collapsed">
       {% for ev in _tape_all %}
       {% set _ev_cls = 'alert-high' if ev.dilution_flag else ('alert-info' if ev.buyback_flag else ('alert-info' if ev.category == 'results' else 'alert-warn' if ev.category in ('mandate','placement') else '')) %}
       <div class="alert {{ _ev_cls }}" style="padding:7px 11px;margin:5px 0;">
@@ -1493,6 +1503,8 @@
         </div>
       </div>
       {% endfor %}
+      </div>
+      {% if _tape_all|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
       </div>
     </div>
     {% else %}
@@ -1840,12 +1852,67 @@
       {% if items %}
       <div class="act-col {{ cls }}">
         <h3>{{ t(title_en, title_zh) }} · {{ items|length }}</h3>
-        <div data-showmore="4">
+        {# PR-4: lst-wrap for View-all modal; data-rpop payloads on each act-item #}
+        <div class="lst-wrap">
+        <div class="lst-collapse lst-cap4 is-collapsed">
         {% for it in items %}
-        <div class="act-item"><a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
+        {%- set _hk_sc = (sectors_by_ticker.get(it.ticker) if sectors_by_ticker is defined else none) -%}
+        <div class="act-item" data-rpop>
+          {# PR-4: hover payload — cloned by theme.js into a .row-pop overlay #}
+          <span class="rp-src" hidden>
+            <div class="row-pop-hd">
+              <span class="row-pop-name"><span class="l-en">{{ it.name }}</span><span class="l-zh">{{ it.name }}</span></span>
+              <span class="row-pop-kind">SECTOR</span>
+              {%- if it.label -%}
+              <span class="row-pop-tag {{ 'up' if it.dir == 'up' else ('dn' if it.dir == 'dn' else 'warn') }}"><span class="l-en">{{ it.label }}</span><span class="l-zh">{{ it.label }}</span></span>
+              {%- endif -%}
+            </div>
+            <div class="row-pop-div"></div>
+            <div class="row-pop-grid">
+              {%- if _hk_sc is not none -%}
+              {%- if _hk_sc.get('mom20') is not none -%}
+              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span>
+                <span class="row-pop-val"><span class="{{ 'up' if _hk_sc.get('mom20') >= 0 else 'dn' }}">{{ '%+.1f'|format(_hk_sc.get('mom20')) }}%</span></span></div>
+              {%- endif -%}
+              {%- if _hk_sc.get('mom60') is not none -%}
+              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span>
+                <span class="row-pop-val"><span class="{{ 'up' if _hk_sc.get('mom60') >= 0 else 'dn' }}">{{ '%+.1f'|format(_hk_sc.get('mom60')) }}%</span></span></div>
+              {%- endif -%}
+              {%- if _hk_sc.get('pctile') is not none -%}
+              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span>
+                <span class="row-pop-val">{{ '%.0f'|format(_hk_sc.get('pctile') * 100) }}p</span></div>
+              {%- endif -%}
+              {%- if _hk_sc.get('above200') is not none -%}
+              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span>
+                <span class="row-pop-val">{{ '%.0f'|format(_hk_sc.get('above200') * 100) }}%</span></div>
+              {%- endif -%}
+              {%- if _hk_sc.get('dc_day') is not none -%}
+              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span>
+                <span class="row-pop-val">{{ _hk_sc.get('dc_day') }}{% if _hk_sc.get('dc_band') is not none %} <span class="mut">· {{ _hk_sc.get('dc_band') }}</span>{% endif %}</span></div>
+              {%- endif -%}
+              {%- set _hksce = _hk_sc.get('entry') or {} -%}
+              {%- if _hksce.get('text') is not none -%}
+              <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Entry signal</span><span class="l-zh">入场信号</span></span>
+                <span class="row-pop-val"><span class="l-en">{{ _hksce.get('text') or '' }}</span><span class="l-zh">{{ _hksce.get('text_zh') or _hksce.get('text') or '' }}</span>{% if _hk_sc.get('age_short') is not none %} <span class="mut">· <span class="l-en">{{ _hk_sc.get('age_short') }}</span><span class="l-zh">{{ _hk_sc.get('age_short_zh') or _hk_sc.get('age_short') }}</span></span>{% endif %}</span></div>
+              {%- endif -%}
+              {%- if _hk_sc.get('eq_badge') is not none -%}
+              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">EQ</span><span class="l-zh">EQ</span></span>
+                <span class="row-pop-val">{{ _hk_sc.get('eq_badge') }}</span></div>
+              {%- endif -%}
+              {%- endif -%}{# /_hk_sc enrichment #}
+              {%- if it.days is not none -%}
+              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal days</span><span class="l-zh">信号天数</span></span>
+                <span class="row-pop-val">~{{ it.days }}{{ t('d', '天') }}</span></div>
+              {%- endif -%}
+            </div>
+            <div class="row-pop-ft"><span></span></div>
+          </span>
+          <a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
           <div class="at">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %}</div>
         </div>
         {% endfor %}
+        </div>
+        {% if items|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
         </div>
       </div>
       {% endif %}
