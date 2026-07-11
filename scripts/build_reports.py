@@ -56,22 +56,24 @@ REPORTS: list[dict] = [
         "slug": "report_haven_audition",
         "template": "report_haven_audition.html.j2",
         "date": "2026-07-11",
-        "read_min": 24,
+        "read_min": 26,
         "title_en": "The Haven Audition",
         "title_zh": "避险选角",
-        "dek_en": "Meta wants Google's October. Before the midterm-window correction it already "
-                  "expects, the market is casting the next institutional safe haven — and the "
-                  "comparison everyone reaches for conflates two different jobs. We measure what "
-                  "Google's Q4-2025 rerating actually required, test Meta against it line by "
-                  "line, and score the full cast: Meta, Nvidia, Apple, Tesla, and the dark "
-                  "horses. The split verdict: money hides in Apple, then redeploys into Meta at "
-                  "the October window — and Washington, genuinely long the AI trade down to "
-                  "literal equity stakes, is a tailwind, not a selector.",
-        "dek_zh": "Meta 想要谷歌的十月。在市场早已预期的中期选举窗口调整之前，一场「下一个机构避风港」"
-                  "的选角正在进行——而人人援引的那个类比，混淆了两份不同的工作。我们用本站数据度量谷歌 "
-                  "2025 年四季度重估真正的前提，逐条检验 Meta，并为全体候选人打分：Meta、Nvidia、"
-                  "Apple、Tesla 与几匹黑马。分裂的判决：资金先藏进 Apple，再于十月窗口重新部署进 "
-                  "Meta——而华盛顿虽真金白银做多 AI 交易（直至字面意义的持股），它是顺风，不是选角人。",
+        "dek_en": "Every correction has two havens: the consensus shelter the crowd already owns, "
+                  "and the asymmetric one that proof builds mid-storm — the role Google, then the "
+                  "most-hated megacap, played in Q4 2025 while the freshly-crowned defensive at "
+                  "its all-time high drew down double digits funding it. We measure the template "
+                  "from the price store, grade Meta's six-lever audition for the role — two "
+                  "levers already printing, a disclosure window that opens July 29 — and score "
+                  "the full cast: Meta, Nvidia, Apple, Tesla, and the dark horses. Plus the "
+                  "Washington question: an administration literally long the AI trade, down to "
+                  "equity stakes and a move against Chinese models — a tailwind, not a selector.",
+        "dek_zh": "每一轮调整都有两种避风港：人群早已持有的共识庇护所，与证据在风暴中途现造的不对称避风港"
+                  "——后者正是 2025 年四季度谷歌扮演的角色：当时它是最被憎恨的巨头，而刚加冕、正处历史"
+                  "高点的防御标的反而以两位数回撤为其供血。我们用本站价格库度量这一模板，为 Meta 的六杠"
+                  "杆试镜评级——两条杠杆已在打印收入、披露窗口 7月29日 开启——并为全体候选人打分：Meta、"
+                  "Nvidia、Apple、Tesla 与几匹黑马。外加华盛顿之问：一个真金白银做多 AI 交易的政府——"
+                  "直至持有股权、直至对中国模型出手——它是顺风，不是选角人。",
         "tags": [
             _tag("ai", "AI", "AI"),
             _tag("equities", "Equities", "股票"),
