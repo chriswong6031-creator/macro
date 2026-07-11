@@ -53,6 +53,11 @@ on:
       - "tests/test_trial_ledger.py"
       - "tests/test_trial_registration_lint.py"
       - "tests/test_no_literal_ntrials.py"
+      # membership-ledger tz guard: a tz-aware asof froze the PIT universe ledger for a
+      # month (2026-06-14 → 2026-07-10, TypeError on every collect run) — the upsert
+      # must keep accepting aware timestamps against the naive parquet columns.
+      - "engine/universe_history.py"
+      - "tests/test_universe_history.py"
       # W4 outcome spine: the shared signal-id→outcome contract + partial-pooling + badge passport.
       - "engine/spine.py"
       - "engine/pooling.py"
@@ -399,7 +404,7 @@ jobs:
       - name: reliability-contract guard (no gated field rendered directionally, audit #46)
         run: python3 scripts/check_reliability_contract.py
       - name: grading rebuild + trial ledger tests
-        run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py tests/test_no_literal_ntrials.py -q
+        run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py tests/test_no_literal_ntrials.py tests/test_universe_history.py -q
 
   outcome-spine:
     # W4 (audit #13/#19/#23/#41/#42): the outcome spine + partial-pooling closed loop. The
