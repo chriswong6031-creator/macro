@@ -43,3 +43,8 @@ BINDING DESIGN = `v2_final.html` in this directory (judged 43/50 over a hover-fi
 - The old Market State board layout is RETIRED; its content maps to: score panel (verdict+score+bar+tick), EVIDENCE tray (six factors), RISK tray (radar+sentiment), hero context (dominant driver). The "board is the hero" ruling of 2026-07-10 is superseded.
 - Heatmap lives inside the MARKETS tray (legible, labeled, as-of stamped).
 - Every tray carries as-of stamps; AI brief keeps the display-only-synthesis badge; drawdown ladder keeps its measurement caveat.
+
+## Heads-up chip mapping (v2)
+- fed_stance + turning_point → RISK tray chips (sx-risk-v2 top area, above scares ladder)
+- event_risk → EVENTS tray (sx-events-v2)
+- 2026-07-11 rebase adjudication: the Risk-Radar banner card + the new Ignition-Radar card (#2229) render at the TOP of the RISK tray (glance state stays on the summary row) — neither is dropped, neither returns to the front surface.

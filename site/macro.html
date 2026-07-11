@@ -14,6 +14,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -275,6 +276,9 @@
          border-color: color-mix(in srgb, var(--rvc) 45%, var(--line));
          background: color-mix(in srgb, var(--rvc) 10%, var(--panel)); }
   .rrx .rrx-rec-cats.none { font-size: 10.5px; color: var(--muted); font-style: italic; }
+  /* RRX2 WA: drivers line ("what faded / still warm") + muted "no signal" chip */
+  .rrx .rrx-rec-drv { font-size: 10px; color: var(--muted); line-height: 1.4; margin-top: -2px; }
+  .rrx .rrx-rec-chip.muted { color: var(--muted); font-style: italic; border-style: dashed; }
   .rrx .rrx-rec-do { font-size: 11px; color: var(--text); line-height: 1.4; }
   .rrx .rrx-rec-do-k { font-weight: 800; color: var(--rvc); text-transform: uppercase; letter-spacing: .06em;
          font-size: 9.5px; margin-right: 6px; }
@@ -332,6 +336,80 @@
     body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx > .rrx-main .rrx-ramp { align-items: flex-end; }
     body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx > .rrx-main .rrx-tk { height: 44px; flex: 0 0 44px; min-height: 44px; }
     body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx > .rrx-side { gap: 7px; padding-left: 20px; }
+  }
+  /* ============================================================================
+     IGNITION RADAR CARD (.igx) — risk-ON mirror of the Risk Radar (.rrx).
+     Green accent (--ok) when ignited, muted when off.
+     Class prefix: .igx  (no collision with .rrx).
+     Included by dashboard.html.j2 (both macro and us_stocks modes).
+     ============================================================================ */
+  .igx { --ic-col: var(--ok);
+         display: grid; gap: 12px; margin: 12px 0 2px; padding: 15px 18px;
+         border-radius: 12px; background: var(--panel); border: 1px solid var(--line);
+         border-left: 4px solid var(--ic-col); font-size: 12.5px; line-height: 1.4;
+         box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
+  .igx.igx-ignited { --ic-col: var(--ok);
+         background: color-mix(in srgb, var(--ok) 4%, var(--panel)); }
+  .igx.igx-warming  { --ic-col: var(--warn); }
+  .igx.igx-off      { --ic-col: var(--muted); }
+  /* header */
+  .igx .igx-hd { display: flex; align-items: flex-start; gap: 10px; }
+  .igx .igx-ic { font-size: 18px; line-height: 1.1; flex: none; }
+  .igx .igx-id { min-width: 0; flex: 1; }
+  .igx .igx-ttl { display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
+         font-weight: 700; font-size: 13px; color: var(--text); }
+  .igx .igx-badge { font-weight: 800; letter-spacing: .03em; color: var(--ic-col);
+         font-size: 11.5px; font-variant-numeric: tabular-nums; padding: 1px 7px;
+         border-radius: 5px;
+         background: color-mix(in srgb, var(--ic-col) 16%, transparent);
+         border: 1px solid color-mix(in srgb, var(--ic-col) 38%, transparent); }
+  .igx .igx-glance { font-size: 12px; color: var(--text); margin-top: 3px;
+         font-weight: 600; }
+  .igx .igx-fragile { color: var(--warn); font-size: 11px; margin-top: 2px; }
+  /* chip rows (8 broad chips) */
+  .igx .igx-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .igx .igx-chip { display: inline-flex; align-items: center; gap: 4px;
+         padding: 2px 8px; border-radius: 6px; font-size: 11px;
+         background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
+  .igx .igx-chip.lit { color: var(--ic-col); font-weight: 700;
+         border-color: color-mix(in srgb, var(--ic-col) 45%, var(--line));
+         background: color-mix(in srgb, var(--ic-col) 10%, var(--panel)); }
+  .igx .igx-chip.fresh { box-shadow: 0 0 0 1px color-mix(in srgb, var(--ic-col) 40%, transparent); }
+  .igx .igx-chip-dot { width: 6px; height: 6px; border-radius: 50%;
+         background: currentColor; flex: none; }
+  .igx .igx-k { font-size: 11px; color: var(--muted); font-weight: 700;
+         text-transform: uppercase; letter-spacing: .07em; }
+  /* narrow theme strip */
+  .igx .igx-narrow { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+  .igx .igx-narrow-k { font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+         letter-spacing: .07em; color: var(--muted); align-self: center; margin-right: 2px; }
+  .igx .igx-theme { display: inline-flex; align-items: center; gap: 4px;
+         padding: 2px 8px; border-radius: 6px; font-size: 10.5px;
+         background: var(--panel); border: 1px solid var(--line); color: var(--text); }
+  .igx .igx-theme.igniting { color: var(--ok); font-weight: 700;
+         border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+         background: color-mix(in srgb, var(--ok) 10%, var(--panel)); }
+  .igx .igx-theme.running { color: var(--info); font-weight: 600;
+         border-color: color-mix(in srgb, var(--info) 35%, var(--line)); }
+  .igx .igx-theme.fading { color: var(--muted); }
+  .igx .igx-theme-score { font-size: 9.5px; font-variant-numeric: tabular-nums;
+         color: var(--muted); margin-left: 1px; }
+  .igx .igx-theme-flags { font-size: 9px; color: var(--muted); margin-left: 2px; }
+  /* cross-ref chip */
+  .igx .igx-xref { font-size: 10.5px; color: var(--muted); }
+  .igx .igx-xref-k { font-weight: 700; color: var(--text); margin-right: 5px; }
+  /* do-line */
+  .igx .igx-do { font-size: 12px; color: var(--text); padding-top: 9px;
+         border-top: 1px solid color-mix(in srgb, var(--ic-col) 20%, var(--line)); }
+  .igx .igx-do-k { font-weight: 800; color: var(--ic-col); text-transform: uppercase;
+         letter-spacing: .06em; font-size: 10.5px; margin-right: 8px; }
+  /* self-audit */
+  .igx .igx-audit { font-size: 10.5px; color: var(--muted); }
+  .igx .igx-audit-k { font-weight: 700; color: var(--text); margin-right: 6px; }
+  /* responsive */
+  @media (max-width: 560px) {
+    .igx { padding: 14px 15px; gap: 10px; }
+    .igx .igx-narrow, .igx .igx-xref { display: none; }
   }
 
   .help { display: inline-flex; align-items: center; justify-content: center;
@@ -1713,31 +1791,42 @@
   .dtp-token.post .dtp-dot, .dtp-token.closed .dtp-dot { animation:none; opacity:.45; }
   @keyframes dtp-pulse { 0%,100%{opacity:1;} 50%{opacity:.35;} }
   .dtp-asof { font-size:10.5px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; flex:none; }
-  .dtp-sep { width:1px; height:1em; background:var(--line); align-self:center; flex:none; }
-  .dtp-ulbl { font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; flex:none; }
-  .dtp-ulbl.up { color:color-mix(in srgb,var(--up) 70%,transparent); }
-  .dtp-ulbl.dn { color:color-mix(in srgb,var(--down) 70%,transparent); }
-  .dtp-ulbl.cx { color:var(--link); }
-  .dtp-chips { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline; }
-  .dtp-chip { display:inline-flex; align-items:baseline; gap:5px; font-size:12.5px; text-decoration:none; color:inherit; opacity:1; transition:opacity .15s; }
-  .dtp-chip:hover { opacity:.75; }
-  #dash-tape-band:not(.live-mode) .dtp-chip { opacity:.92; }
-  .dtp-chip-name { color:var(--text); font-weight:500; white-space:normal; line-height:1.3; }
-  .dtp-chip-pct  { font-family:var(--font-mono,monospace); font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap; }
-  .dtp-chip-pct.up { color:var(--up); }
-  .dtp-chip-pct.dn { color:var(--down); }
-  .dtp-bar-wrap  { display:inline-flex; align-items:center; align-self:center; }
-  .dtp-bar { height:3px; border-radius:2px; display:inline-block; min-width:6px; }
-  .dtp-bar.up { background:color-mix(in srgb,var(--up) 65%,transparent); }
-  .dtp-bar.dn { background:color-mix(in srgb,var(--down) 65%,transparent); }
+  .dtp-body { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--line); }
+  .dtp-col { padding:8px 16px 9px; min-width:0; }
+  .dtp-col + .dtp-col { border-left:1px solid var(--line); }
+  .dtp-col-lbl { font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:5px; }
+  .dtp-col-lbl.up { color:color-mix(in srgb,var(--up) 70%,transparent); }
+  .dtp-col-lbl.dn { color:color-mix(in srgb,var(--down) 70%,transparent); }
+  .dtp-col-lbl.cx { color:var(--link); }
+  .dtp-mrow { display:flex; align-items:center; gap:7px; padding:2.5px 0; font-size:12.5px; text-decoration:none; color:inherit; }
+  .dtp-mrow:hover .dtp-mname { color:var(--link); }
+  #dash-tape-band:not(.live-mode) .dtp-mrow { opacity:.92; }
+  .dtp-rank { width:16px; flex:none; font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .dtp-mname { flex:1; min-width:0; color:var(--text); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dtp-mflow { flex:none; font-size:9.5px; color:var(--muted); white-space:nowrap; }
+  .dtp-mpct { flex:none; min-width:56px; text-align:right; font-family:var(--font-mono,monospace); font-variant-numeric:tabular-nums; font-weight:700; font-size:12px; }
+  .dtp-mpct.up { color:var(--up); }
+  .dtp-mpct.dn { color:var(--down); }
+  .dtp-mtrack { flex:none; width:56px; height:4px; display:flex; align-items:center; }
+  .dtp-mtrack.dn { justify-content:flex-end; }
+  .dtp-mbar { height:4px; border-radius:2px; min-width:4px; display:inline-block; }
+  .dtp-mbar.up { background:color-mix(in srgb,var(--up) 65%,transparent); }
+  .dtp-mbar.dn { background:color-mix(in srgb,var(--down) 65%,transparent); }
   .dtp-2d  { font-size:10px; color:var(--muted); font-family:var(--font-mono,monospace); white-space:nowrap; }
+  .dtp-empty { grid-column:1/-1; padding:10px 16px; font-size:11px; color:var(--muted); }
+  .dtp-full { display:grid; grid-template-columns:1fr 1fr; gap:0 22px; padding:6px 16px 9px; border-top:1px dashed var(--line); }
+  .dtp-more { display:block; width:100%; padding:5px 10px; font:inherit; font-size:11px; font-weight:600; color:var(--muted); text-align:center; background:transparent; border:none; border-top:1px solid var(--line); cursor:pointer; }
+  .dtp-more:hover { color:var(--text); background:color-mix(in srgb,var(--text) 4%,transparent); }
+  /* author display rules defeat the UA [hidden] default — re-assert it */
+  .dtp-full[hidden], .dtp-more[hidden] { display:none; }
   .dtp-fn  { padding:5px 16px 7px; font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); line-height:1.45; }
+  .ftr-t1-help { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; border:1px solid var(--line); color:var(--muted); font-size:9.5px; font-weight:700; cursor:help; line-height:1; vertical-align:middle; }
   @media(max-width:640px){
     .dtp-row { gap:5px 10px; padding:8px 12px 7px; }
-    .dtp-chip-name { font-size:12px; }
     .dtp-asof { width:100%; margin-left:0; }
-    /* separator becomes a row break — LAGGARDS group starts its own line */
-    .dtp-sep { flex-basis:100%; width:auto; height:0; background:transparent; }
+    .dtp-body, .dtp-full { grid-template-columns:1fr; }
+    .dtp-col + .dtp-col { border-left:none; border-top:1px solid var(--line); }
+    .dtp-mname { font-size:12px; }
   }
 /* page-scoped fold — V2 action board uses .actbody wrapper containing .actitem children */
 /* Buy/soon/run/aside lanes: cap 6 visible */
@@ -2765,7 +2854,7 @@ body.page-macro .sx-tray{
   overflow:hidden;max-height:0;opacity:0;
   transition:max-height 250ms cubic-bezier(.4,0,.2,1),opacity 250ms cubic-bezier(.4,0,.2,1);
 }
-body.page-macro .sx[data-open] .sx-tray{max-height:3200px;opacity:1}
+body.page-macro .sx[data-open] .sx-tray{max-height:6000px;opacity:1}
 body.page-macro .sx-tray-inner{padding:0 0 24px}
 
 /* ── v2 chip vocabulary (matches v2_final.html) ── */
@@ -2904,6 +2993,14 @@ body.page-macro #sector-heat.mx2-hidden,
 body.page-macro #heatmap-scorecard.mx2-hidden{display:none!important}
 /* Hide old index-health grid (moved into markets tray) */
 body.page-macro .idx-grid.mx2-hidden{display:none}
+/* Stage-B: hide standalone sentiment/news/link-out in macro (moved to v2 trays).
+   The markup is kept for CI test extraction by text-landmark; hidden from display.
+   NOTE: :has(.mx-linkout-strip) is REMOVED — the v2 panel also contains .mx-linkout-strip
+   inside sx-deep-context; use v2-retired-macro class instead (added to old link-out div). */
+body.page-macro details#sentiment-regime.panel{display:none!important}
+body.page-macro .panel#now-board.span6{display:none!important}
+body.page-macro .panel#now-board-legacy.span6{display:none!important}
+body.page-macro .v2-retired-macro{display:none!important}
 
 /* ── Responsive ── */
 @media(max-width:900px){
@@ -2928,6 +3025,66 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
   body.page-macro .mx2-mkt-tile{min-width:100%}
   body.page-macro .mx2-ev-row{grid-template-columns:16px 1fr 50px 28px;gap:6px}
 }
+
+/* ── RISK TRAY (Stage B) ── */
+body.page-macro .mx2-risk-glance{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+body.page-macro .mx2-risk-state{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+body.page-macro .mx2-risk-intensity{display:flex;align-items:center;gap:5px;flex:1;min-width:80px;max-width:140px}
+body.page-macro .mx2-risk-bar{height:5px;border-radius:3px;background:color-mix(in srgb,var(--muted) 15%,transparent);flex:1;position:relative;overflow:hidden}
+body.page-macro .mx2-risk-bar-fill{height:5px;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+body.page-macro .mx2-risk-tray{display:flex;flex-direction:column;gap:14px;padding-top:18px}
+body.page-macro .mx2-risk-section{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+body.page-macro .mx2-risk-section-hd{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+body.page-macro .mx2-scare-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)}
+body.page-macro .mx2-scare-row:last-child{border-bottom:none}
+body.page-macro .mx2-scare-name{font-size:11.5px;font-weight:600;flex:1;color:var(--text)}
+body.page-macro .mx2-scare-bar-wrap{flex:1;max-width:100px;height:4px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:2px;overflow:hidden}
+body.page-macro .mx2-scare-bar{height:4px;border-radius:2px;background:var(--down)}
+body.page-macro .mx2-scare-score{font-size:12px;font-weight:700;width:32px;text-align:right;font-variant-numeric:tabular-nums}
+body.page-macro .mx2-scare-band{font-size:9px;font-weight:700;letter-spacing:.04em;padding:2px 6px;border-radius:4px;white-space:nowrap;color:var(--muted);background:var(--panel);border:1px solid var(--line)}
+body.page-macro .mx2-scare-band.elevated{color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);border-color:color-mix(in srgb,var(--warn) 22%,transparent)}
+body.page-macro .mx2-scare-band.high{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 22%,transparent)}
+body.page-macro .mx2-dd-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+body.page-macro .mx2-dd-cell{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-align:center}
+body.page-macro .mx2-dd-label{font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+body.page-macro .mx2-dd-val{font-size:18px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+/* Sent band inside risk tray */
+body.page-macro .mx2-sent-inside{padding:0}
+body.page-macro .mx2-sent-inside .mx-sent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:700px){body.page-macro .mx2-sent-inside .mx-sent-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:420px){body.page-macro .mx2-sent-inside .mx-sent-grid{grid-template-columns:1fr}}
+@media(max-width:900px){body.page-macro .mx2-dd-grid{grid-template-columns:1fr 1fr 1fr}}
+
+/* ── POLICY TRAY (Stage B) ── */
+body.page-macro .mx2-policy-glance{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+body.page-macro .mx2-policy-tray{display:flex;flex-direction:column;gap:12px;padding-top:18px}
+
+/* ── AI BRIEF TRAY (Stage B) ── */
+body.page-macro .mx2-aibrief-glance{font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.page-macro .mx2-aibrief-tray{padding-top:18px;display:flex;flex-direction:column;gap:10px}
+
+/* ── NEWS TRAY (Stage B) ── */
+body.page-macro .mx2-news-glance{font-size:12px;color:var(--muted)}
+body.page-macro .mx2-news-tray{padding-top:18px}
+
+/* ── DEEP CONTEXT ROW (Stage B) ── */
+body.page-macro .mx2-deep-row{display:flex;align-items:center;gap:0;justify-content:space-between;width:100%;flex-wrap:wrap}
+body.page-macro .mx2-deep-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1}
+body.page-macro .mx2-deep-chip{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 14px;border-radius:999px;
+  background:var(--panel2);border:1px solid var(--line);
+  font-size:12px;font-weight:600;color:var(--text);
+  text-decoration:none;transition:border-color .14s,background .14s;
+}
+body.page-macro .mx2-deep-chip:hover{border-color:var(--info);background:color-mix(in srgb,var(--info) 6%,var(--panel2));text-decoration:none}
+body.page-macro .mx2-deep-chip-ic{font-size:14px}
+body.page-macro .mx2-deep-health{font-size:10.5px;color:var(--muted);padding:10px 0 0;border-top:1px solid var(--line);margin-top:12px;width:100%}
+@media(max-width:680px){body.page-macro .mx2-deep-chips{gap:6px}}
+@media(max-width:390px){body.page-macro .mx2-mkt-tile{width:100%;min-width:unset;flex:1 1 100%}}
+@media(max-width:390px){body.page-macro .mx2-topbar-brand{display:none}}
+/* Fix 12: v2 idiom for transplanted section headers inside trays */
+body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg>summary{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
 </style>
 
     
@@ -3082,6 +3239,18 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
   
   
   <div class="panel span12" style="padding:0 20px">
+
+  
+  <div class="mx2-topbar">
+    <span class="mx2-topbar-brand"><span class="l-en">Macro Ledger</span><span class="l-zh">宏观总览</span></span>
+    <div class="mx2-topbar-right">
+      <span class="mx2-topbar-date"><span class="l-en">as of 2026-07-10</span><span class="l-zh">2026-07-10</span></span>
+      <button id="mx2ExpandAllBtn" class="mx2-expand-btn" onclick="mx2ToggleAll()" type="button">
+        <span class="ea-ic">&#8964;</span>
+        <span class="ea-txt"><span class="l-en">Expand all</span><span class="l-zh">全部展开</span></span>
+      </button>
+    </div>
+  </div>
 
   
   
@@ -5114,7 +5283,7 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
         <div class="mx2-markets-tray">
           
           
-          <div class="mx2-mkt-grid">
+          <div class="mx2-mkt-grid" id="index-health">
             
             
             
@@ -5179,7 +5348,7 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
           
           
           
-          <div class="mx2-sh-cols">
+          <div class="mx2-sh-cols" id="sector-heat">
             <div class="mx2-sh-col">
               <div class="mx2-sh-col-head"><span class="l-en">Hot sectors</span><span class="l-zh">热门板块</span></div>
               
@@ -5246,8 +5415,36 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
 
           
           
-          
           <div class="mx2-asset-strip">
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="mx2-at">
+              <div class="mx2-at-lbl">VIX</div>
+              <div class="mx2-at-val" style="color:var(--up)">15.8</div>
+              <div class="mx2-at-ctx"><span class="l-en">calm</span><span class="l-zh">平静</span></div>
+            </div>
+            
+            
+            
+          </div>
+          
+          
+          
+          <div class="mx2-asset-strip" style="margin-top:8px">
             
             <div class="mx2-at">
               <div class="mx2-at-lbl"><span class="l-en">Cycle clock</span><span class="l-zh">周期时钟</span></div>
@@ -5336,230 +5533,573 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
     </div>
   </div>
 
+  
+  
+  
+  
+  
+  
+  
+  <div class="sx" id="sx-risk-v2">
+    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-risk-v2')">
+      <span class="sx-label"><span class="l-en">Risk</span><span class="l-zh">风险</span></span>
+      <div class="sx-glance mx2-risk-glance">
+        <span class="mx2-risk-state" style="color:var(--up)">
+          <span class="l-en">BUBBLE / BLOW-OFF UNWIND</span>
+          <span class="l-zh">观察</span>
+        </span>
+        
+        <div class="mx2-risk-intensity">
+          <div class="mx2-risk-bar"><div class="mx2-risk-bar-fill" style="width:62%;background:var(--up)"></div></div>
+          <span class="v2chip c-up" style="font-size:10px;padding:2px 7px">62</span>
+        </div>
+        
+        
+        <span class="v2chip c-muted" style="font-size:10px;padding:2px 7px">
+          <span class="l-en">h21 odds 13% (falling)</span>
+          <span class="l-zh">h21 概率 13%</span>
+        </span>
+        
+      </div>
+      <div class="sx-chev">&#8964;</div>
+    </div>
+    <div class="sx-tray">
+      <div class="sx-tray-inner">
+        
+        <div class="rrx rrx-watch" style="--rc:var(--info)">
+  
+  <div class="rrx-main">
+  <div class="rrx-hd">
+    <span class="rrx-ic">🌤️</span>
+    <div class="rrx-id">
+      <div class="rrx-ttl"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span>
+        <span class="rrx-badge"><span class="l-en">WATCH</span><span class="l-zh">观察</span> · 62/100</span>
+        <span class="help">?<span class="tip"><span class="l-en">Pullback-risk gauge. Use high readings to trim risk, not to pick stocks.</span><span class="l-zh">回撤风险仪表。高读数用于降风险，不用于选股。</span></span></span>
+      </div>
+      <div class="rrx-dom"><span class="l-en">Bubble / blow-off unwind</span><span class="l-zh">泡沫/见顶回吐</span></div>
+      
+    </div>
+    <div class="rrx-gross"><span class="gv">×0.94</span><span class="gn"><span class="l-en">gross</span><span class="l-zh">建议仓位</span></span></div>
   </div>
 
   
-  <script>
-  (function(){
-    var _mx2Ids = ['sx-evidence','sx-events-v2','sx-markets-v2'];
-    var _allOpen = false;
-
-    window.mx2Toggle = function(id){
-      var el = document.getElementById(id);
-      if(!el) return;
-      var isOpen = el.hasAttribute('data-open');
-      if(isOpen){
-        el.removeAttribute('data-open');
-        var s = el.querySelector('.sx-sum'); if(s) s.setAttribute('aria-expanded','false');
-      } else {
-        el.setAttribute('data-open','');
-        var s = el.querySelector('.sx-sum'); if(s) s.setAttribute('aria-expanded','true');
-      }
-      try{var st=JSON.parse(localStorage.getItem('mx2_state')||'{}');st[id]=!isOpen;localStorage.setItem('mx2_state',JSON.stringify(st));}catch(e){}
-      _updateExpandBtn();
-    };
-
-    window.mx2ToggleAll = function(){
-      _allOpen = !_allOpen;
-      _mx2Ids.forEach(function(id){
-        var el = document.getElementById(id); if(!el) return;
-        if(_allOpen){ el.setAttribute('data-open',''); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','true'); }
-        else { el.removeAttribute('data-open'); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','false'); }
-        try{var st=JSON.parse(localStorage.getItem('mx2_state')||'{}');st[id]=_allOpen;localStorage.setItem('mx2_state',JSON.stringify(st));}catch(e){}
-      });
-      _updateExpandBtn();
-    };
-
-    function _updateExpandBtn(){
-      var btn = document.getElementById('mx2ExpandAllBtn'); if(!btn) return;
-      var openCnt = _mx2Ids.filter(function(id){ var el=document.getElementById(id); return el&&el.hasAttribute('data-open'); }).length;
-      _allOpen = openCnt === _mx2Ids.length;
-      btn.classList.toggle('all-open', _allOpen);
-      var txt = btn.querySelector('.ea-txt');
-      if(txt){ txt.querySelector('.l-en').textContent = _allOpen ? 'Collapse all' : 'Expand all';
-               txt.querySelector('.l-zh').textContent = _allOpen ? '收起全部' : '展开全部'; }
-    }
-
-    /* Keyboard Enter/Space on sx-sum */
-    document.querySelectorAll('.sx-sum').forEach(function(el){
-      el.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } });
-    });
-
-    /* Escape closes all */
-    document.addEventListener('keydown',function(e){
-      if(e.key==='Escape'){
-        _mx2Ids.forEach(function(id){ var el=document.getElementById(id); if(el){ el.removeAttribute('data-open'); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','false'); } });
-        _allOpen=false; _updateExpandBtn();
-      }
-    });
-
-    /* Restore localStorage state */
-    try{
-      var saved = JSON.parse(localStorage.getItem('mx2_state')||'{}');
-      _mx2Ids.forEach(function(id){
-        if(saved[id]===true){ var el=document.getElementById(id); if(el){ el.setAttribute('data-open',''); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','true'); } }
-      });
-    }catch(e){}
-    _updateExpandBtn();
-  })();
-  </script>
-  
-
-
-
-  
-  
-  
-  
-  
-  
-  <div class="panel span12" id="policy-lever-card">
-    <div class="mx-eyebrow"><span class="l-en">Policy-Lever Conditions &amp; Repricing</span><span class="l-zh">政策杠杆条件与重新定价</span>
-      <span class="help">?<span class="tip"><span class="l-en">Conditions that make violent overnight reversals more likely — not a forecast, not a signal. ARMED = semis drawdown deep (≤−15%) AND an oil technical curl; ELEVATED = one of the two; QUIET = neither. Display-only context (Policy-Shock W2-F). Drawdown and arming are descriptive; no probabilities.</span><span class="l-zh">使剧烈隔夜反转更可能发生的条件 — 不是预测，不是信号。触发=半导体回撤深（≤−15%）且石油技术卷曲；警戒=两者之一；平静=均无。仅供展示（政策冲击 W2-F）。回撤和触发均为描述性指标，不含概率。</span></span></span>
+  <div class="rrx-odds">
+    <div class="rrx-odds-l">
+      <div class="rrx-cap"><span class="l-en">Pullback odds</span><span class="l-zh">回撤概率</span> <span class="rrx-cap-sub"><span class="l-en">≥5% drop · escalating</span><span class="l-zh">≥5% · 递增</span></span></div>
+      <div class="rrx-big">13<span class="pct">%</span><span class="rrx-hz"><span class="l-en">within 21 days</span><span class="l-zh">21 日内</span></span></div>
+      <div class="rrx-vsn"><b>0.73×</b> <span class="l-en">vs normal</span><span class="l-zh">对比常态</span> 18%</div>
     </div>
-    <div class="mx-policy-band">
-
-      
-      <div class="mx-pcol">
-        <div class="mx-pcol-label"><span class="l-en">Policy Lever</span><span class="l-zh">政策杠杆</span></div>
-        <div class="mx-pcol-state">
-          <span class="mx-chip mx-c-muted" style="font-size:13px;padding:4px 12px">
-            <span class="l-en">QUIET</span><span class="l-zh">平静</span>
-          </span>
+    <div class="rrx-ramp">
+      <div class="rrx-col">
+        <span class="rrx-v">2%</span>
+        <div class="rrx-tk">
+          <div class="rrx-norm" style="height:23%"></div>
+          <div class="rrx-fill" style="height:13%"></div>
         </div>
-        
-        
-        
-        
-        <div class="mx-pcol-row">
-          <span class="mx-pcol-key"><span class="l-en">Favored complex</span><span class="l-zh">偏好板块</span></span>
-          <span class="mx-delta-chip mx-delta-mu">
-            SMH/SOXX -10.2%
-          </span>
-        </div>
-        
-        
-        
-        
-        
-        
-        
-        <div class="mx-pcol-row">
-          <span class="mx-pcol-key"><span class="l-en">Jawboning 7d/30d</span><span class="l-zh">政策发声 7日/30日</span></span>
-          <span class="mx-delta-chip mx-delta-mu">0 / 4</span>
-        </div>
-        
-        
-        <div class="mx-pcol-sub"><span class="l-en">Trump's NEPA overhaul unlocks federal land & permits — tailwind for energy, construction, defense & data centers</span><span class="l-zh">特朗普NEPA改革放开联邦土地和许可——能源、建筑、国防和数据中心获提振</span></div>
-        
-        
-        
-        
-        
-        
-        <div class="mx-pcol-row">
-          <span class="mx-pcol-key" style="font-size:10.5px"><span class="l-en">US midterm elections: 115 days (2026-11-03). Policy cycle context only — no directional read.</span><span class="l-zh">美国中期选举：115天（2026年11月3日）。仅作政策周期背景参考，不作方向性判断。</span></span>
-        </div>
-        
-        
-        
-        <div class="mx-pcol-sub"><span class="l-en">Conditions under which violent reversals are more likely — not intent, not timing.</span><span class="l-zh">衡量剧烈反转更可能发生的条件——不是意图，也不是时点。</span></div>
-        
-        <div class="mx-pcol-sub"><span class="l-en">Display-only · W2-F · as of</span><span class="l-zh">仅供展示 · W2-F · 截至</span> 2026-07-09</div>
+        <span class="rrx-hl"><span class="l-en">5d</span><span class="l-zh">5日</span></span>
       </div>
-
+      <div class="rrx-col">
+        <span class="rrx-v">6%</span>
+        <div class="rrx-tk">
+          <div class="rrx-norm" style="height:54%"></div>
+          <div class="rrx-fill" style="height:38%"></div>
+        </div>
+        <span class="rrx-hl"><span class="l-en">10d</span><span class="l-zh">10日</span></span>
+      </div>
+      <div class="rrx-col is-hd">
+        <span class="rrx-v">13%</span>
+        <div class="rrx-tk">
+          <div class="rrx-norm" style="height:112%"></div>
+          <div class="rrx-fill" style="height:82%"></div>
+        </div>
+        <span class="rrx-hl"><span class="l-en">21d</span><span class="l-zh">21日</span></span>
+      </div>
       
-      <div class="mx-pcol">
-        <div class="mx-pcol-label"><span class="l-en">Lever Arming Status</span><span class="l-zh">杠杆触发状态</span></div>
+      <span class="rrx-leg"><span class="rrx-leg-n"></span><span class="l-en">normal</span><span class="l-zh">常态</span></span>
+    </div>
+  </div>
+  
+  </div>
+
+  <div class="rrx-side">
+  
+  <div class="rrx-rec is-turn" style="--rvc:var(--ok)">
+    <div class="rrx-rec-hd">
+      <span class="rrx-rec-ar">↘</span>
+      <span class="rrx-rec-ttl"><span class="l-en">Risk receding — liquidity turning supportive</span><span class="l-zh">风险回落 — 流动性转向支持</span></span>
+      <span class="rrx-rec-tag"><span class="l-en">TURN</span><span class="l-zh">转向</span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Illustrative context, not a buy trigger. It reads the radar's own intensity trajectory (leak-free) plus the display-only central-bank liquidity series; unlike the alert legs it is not forward-tested yet, and risk can re-accelerate. The de-risk → re-risk response is sizing, scaled in deliberately. BoJ enters only via the aggregate global central-bank tide (no isolated BoJ feed).</span><span class="l-zh">仅为示意性背景，并非买入信号。它读取雷达自身的强度轨迹（无未来函数）以及仅供展示的央行流动性序列；不同于警报腿，此读数尚未经前瞻检验，风险可能再度加速。降险→回补的应对是仓位管理、分批进行。日本央行仅通过全球央行总潮汐体现（无独立日本数据源）。</span></span></span>
+    </div>
+    <div class="rrx-rec-mid">
+      
+      <svg class="rrx-rec-spark" viewBox="0 0 96 26" preserveAspectRatio="none" aria-hidden="true">
+        <polyline points="3.0,21.1 6.9,21.6 10.8,20.3 14.7,16.6 18.7,17.1 22.6,16.9 26.5,12.5 30.4,16.8 34.3,23.0 38.2,18.3 42.1,20.0 46.0,13.8 50.0,8.4 53.9,6.0 57.8,3.0 61.7,5.0 65.6,6.9 69.5,10.6 73.4,6.4 77.3,9.9 81.3,16.0 85.2,11.0 89.1,18.8 93.0,17.1" fill="none" stroke="var(--rvc)" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle class="pk" cx="57.8" cy="3.0" r="1.6"/>
+        <circle class="lx" cx="93.0" cy="17.1" r="2.1"/>
+      </svg>
+      
+      <span class="rrx-rec-sub"><span class="l-en">Pullback odds 19% → 13% (peaked 9 days ago).</span><span class="l-zh">回撤概率 19% → 13%（9 日前见顶）。</span></span>
+    </div>
+    
+    <div class="rrx-rec-cats"><span class="rrx-rec-k"><span class="l-en">Central banks</span><span class="l-zh">央行</span></span>
+      <span class="rrx-rec-chip fresh">💵 <span class="l-en">Fed liquidity expanding</span><span class="l-zh">美联储流动性扩张</span><span class="help">?<span class="tip"><span class="l-en">Net liquidity (WALCL − RRP − TGA) rising — TGA drawdown / reserves added.</span><span class="l-zh">净流动性（WALCL − RRP − TGA）上升 — TGA 回落／准备金注入。</span></span></span></span>
+    </div>
+    
+    <div class="rrx-rec-cats">
+      <span class="rrx-rec-k"><span class="l-en">Internals</span><span class="l-zh">市场内部</span><span class="help">?<span class="tip"><span class="l-en">Market-internal confirmation chips (breadth thrusts, follow-through, capitulation-resolution, credit rollover). Accruing — every read is forward-graded before the channel is trusted; not an all-clear.</span><span class="l-zh">市场内部确认信号（广度推进、放量确认、恐慌解除、信用利差回落）。积累中 — 每次读取均做前瞻评分后方可信任；并非解除警报。</span></span></span></span>
+      <span class="rrx-rec-chip"><span class="l-en">no internal confirmation yet</span><span class="l-zh">尚无内部确认</span></span>
+      
+    </div>
+    <div class="rrx-rec-do"><span class="rrx-rec-do-k"><span class="l-en">Do</span><span class="l-zh">应对</span></span><span class="l-en">The risk-off may be nearing its end. Begin scaling exposure back in tranches — keep stops, let price confirm the low. Don't chase the first bounce.</span><span class="l-zh">避险或已接近尾声。可分批逐步回补敞口 — 保留止损，待价格确认低点，切勿追逐首次反弹。</span></div>
+  </div>
+  
+  
+  <div class="rrx-threats">
+    <span class="rrx-th dom" style="--sb:var(--info)">
+      <span class="rrx-th-n"><span class="l-en">Bubble / blow-off unwind</span><span class="l-zh">泡沫/见顶回吐</span></span>
+      <span class="rrx-meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>
+      <b class="rrx-th-s">62</b>
+    </span>
+    <span class="rrx-th dim" style="--sb:var(--info)">
+      <span class="rrx-th-n"><span class="l-en">Global breadth breakdown</span><span class="l-zh">全球广度破位</span></span>
+      <span class="rrx-meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>
+      <b class="rrx-th-s">56</b><span class="rrx-tag"><span class="l-en">display</span><span class="l-zh">仅展示</span></span>
+    </span>
+    <span class="rrx-th" style="--sb:var(--muted)">
+      <span class="rrx-th-n"><span class="l-en">Credit stress</span><span class="l-zh">信用压力</span></span>
+      <span class="rrx-meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>
+      <b class="rrx-th-s">47</b>
+    </span>
+    <span class="rrx-th" style="--sb:var(--muted)">
+      <span class="rrx-th-n"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span></span>
+      <span class="rrx-meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>
+      <b class="rrx-th-s">38</b>
+    </span>
+    <span class="rrx-th" style="--sb:var(--muted)">
+      <span class="rrx-th-n"><span class="l-en">Rates / inflation shock</span><span class="l-zh">利率/通胀冲击</span></span>
+      <span class="rrx-meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>
+      <b class="rrx-th-s">32</b>
+    </span>
+    <span class="rrx-th dim" style="--sb:var(--muted)">
+      <span class="rrx-th-n"><span class="l-en">Breadth internals deterioration</span><span class="l-zh">内部广度恶化</span></span>
+      <span class="rrx-meter"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>
+      <b class="rrx-th-s">28</b><span class="rrx-tag"><span class="l-en">display</span><span class="l-zh">仅展示</span></span>
+    </span>
+    <span class="rrx-th dim" style="--sb:var(--muted)">
+      <span class="rrx-th-n"><span class="l-en">Volatility event</span><span class="l-zh">波动率事件</span></span>
+      <span class="rrx-meter"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>
+      <b class="rrx-th-s">1</b><span class="rrx-tag"><span class="l-en">display</span><span class="l-zh">仅展示</span></span>
+    </span>
+    
+  </div>
+  
+  <div class="rrx-ev"><span class="rrx-ev-k"><span class="l-en">Leading</span><span class="l-zh">领先信号</span></span><span class="l-en">Narrow leadership (semis)</span><span class="l-zh">领涨过窄（半导体）</span> <span class="rrx-ev-p">92th ✓</span> · <span class="l-en">S&P stretched vs 200-day</span><span class="l-zh">标普超买（>200日线）</span> <span class="rrx-ev-p">57th</span></div>
+  
+  
+
+  
+
+  
+  
+  <div class="rrx-cyc">
+    <span class="rrx-cyc-k"><span class="l-en">Midterm year</span><span class="l-zh">中期选举年</span> · <span class="l-en">Apr–Oct window</span><span class="l-zh">4–10月窗口</span></span><span class="help">?<span class="tip"><span class="l-en">Midterm Apr–Oct drawdowns averaged −15% vs −10% otherwise (n=8, suggestive not significant, p≈0.09; the worst years on record are non-midterm). Edge is narrow: while the tape is still healthy (S&P above its 200-day), this window has flagged ≥5% pullbacks at ~1.25× the base rate — early warning, sized not triggered. Calendar context only — it modulates sizing/sensitivity, never originates an alert. The Dollar-Milkshake direction (firmer dollar in midterm H2) is actually reversed in history; trust the radar's measured dollar/rate/CNH legs, not the year.</span><span class="l-zh">中期选举年 4–10 月最大回撤平均约 −15%（其余年份约 −10%；n=8，仅具提示性、未达显著，p≈0.09；史上最深回撤多发生在非中期年）。 优势有限：当大盘仍健康（标普高于 200 日线）时，该窗口的 ≥5% 回撤概率约为常态的 1.25 倍——用于提前预警与降低仓位，而非触发买卖。 仅为日历背景——只调节仓位/灵敏度，绝不独立触发警报。历史上「美元里程碑」方向（中期下半年美元更强）实际相反；请相信雷达已验证的美元/利率/离岸人民币因子，而非年份本身。</span></span></span>
+    <span class="rrx-cyc-tag">▲ <span class="l-en">early-warning sensitivity raised</span><span class="l-zh">已提高预警灵敏度</span></span>
+    <div class="rrx-cyc-sub"><span class="l-en">historically bottoms ~Aug–Oct 2026</span><span class="l-zh">历史上约在 2026 年 8–10 月见底</span></div>
+    
+    <div class="rrx-cyc-sec"><span class="l-en">Favor</span><span class="l-zh">偏好</span> XLV · XLP · XLU · <span class="l-en">trim</span><span class="l-zh">减持</span> XLE · XLY</div>
+    
+  </div>
+  
+
+  
+  
+  <div class="rrx-audit"><span class="rrx-audit-k">🧾 <span class="l-en">Self-audit</span><span class="l-zh">自审</span></span><span class="l-en">accruing — grades begin once calls mature (~21 trading days)</span><span class="l-zh">积累中 — 约21个交易日后开始评分</span></div>
+  
+  </div>
+</div>
         
-        
-        
-        
-        <div class="mx-prog-row">
-          <div class="mx-prog-label-row">
-            <span class="muted"><span class="l-en">Iran / oil</span><span class="l-zh">伊朗/石油</span> <span style="font-size:9.5px">(CL=F)</span></span>
+        <div class="mx2-risk-tray">
+
+          
+          
+          
+          
+          <div class="heads-up" style="margin-bottom:10px">
             
-            <span class="mx-delta-chip mx-delta-mu">
-              <span class="l-en">quiet</span>
-              <span class="l-zh">平静</span>
+            
+            
+            
+            <span class="hu-chip" id="fed-stance" style="--hc:var(--warn)">
+              <span class="l-en">Fed: <b>Neutral</b></span>
+              <span class="l-zh">美联储：<b>中性</b></span>
             </span>
             
-          </div>
-          
-          <div class="mx-prog-track"><div class="mx-prog-fill" style="width:15%;background:var(--muted)"></div></div>
-          
-          <div style="font-size:10px;color:var(--muted);margin-top:2px">26d base · flat=0.18</div>
-          
-          
-          
-          
-          <div style="font-size:10px;color:var(--muted);margin-top:1px"><span class="l-en">Re-escalation risk restated by 2026-07-08 strike developments; oil is the transmission lever to rate-cut repricing. A rapid CL=F spike would widen breakevens and reprice fed-funds futures, reversing the conditions that have supported the semis recovery.</span><span class="l-zh">2026年7月8日打击事件重申了再升级风险；石油是向降息重定价传导的核心杠杆。CL=F快速飙升将扩大盈亏平衡通胀预期并重定价联邦基金期货，逆转支撑半导体复苏的现有条件。</span></div>
-          
-        </div>
-        
-        
-        
-        <div class="mx-prog-row">
-          <div class="mx-prog-label-row">
-            <span class="muted"><span class="l-en">China / tariffs</span><span class="l-zh">中国/关税</span></span>
-            
-            <span class="mx-delta-chip mx-delta-mu"><span class="l-en">n/a</span><span class="l-zh">不适用</span></span>
             
           </div>
           
-          
-          <div style="font-size:10px;color:var(--muted);margin-top:1px"><span class="l-en">Tariff truce fragility: any rollback of the 90-day pause or re-escalation in export controls would directly compress the semis supply chain margins that are priced into the current recovery.</span><span class="l-zh">关税休战的脆弱性：90天暂停期内任何回退或出口管制再升级，将直接压缩已计入当前复苏预期的半导体供应链利润率。</span></div>
-          
-        </div>
-        
-        
-      </div>
 
-      
-      <div class="mx-pcol">
-        <div class="mx-pcol-label"><span class="l-en">Flip Confirmation</span><span class="l-zh">翻转确认</span></div>
-        
-        
-        
-        
-        
-        
-        <div class="mx-pcol-row">
-          <span class="mx-pcol-key"><span class="l-en">Last flip</span><span class="l-zh">最近翻转</span></span>
-          <span class="mx-delta-chip mx-delta-mu num">2026-07-02</span>
-        </div>
-        <div class="mx-pcol-row">
-          <span class="mx-pcol-key"><span class="l-en">Direction</span><span class="l-zh">方向</span></span>
-          <span class="mx-delta-chip mx-delta-mu"><span class="l-en">defensive</span><span class="l-zh">防御</span></span>
-        </div>
-        <div class="mx-pcol-row">
-          <span class="mx-pcol-key"><span class="l-en">z-score</span><span class="l-zh">z 分数</span></span>
-          <span class="mx-delta-chip mx-delta-wn">3.0032</span>
-        </div>
-        <div class="mx-pcol-row">
-          <span class="mx-pcol-key"><span class="l-en">Verdict</span><span class="l-zh">结论</span></span>
-          <span class="mx-delta-chip mx-delta-dn"><span class="l-en">FADED</span><span class="l-zh">已消退</span></span>
-        </div>
-        
-        
-        <div class="mx-pcol-row">
-          <span class="mx-pcol-key"><span class="l-en">Fade rate</span><span class="l-zh">消退率</span> (n=26)</span>
-          <span class="mx-delta-chip mx-delta-dn">15/26 <span class="l-en">faded</span><span class="l-zh">消退</span></span>
-        </div>
-        
-        <div class="mx-pcol-sub"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-09 · <span class="l-en">Display-only (W2-F)</span><span class="l-zh">仅供展示 (W2-F)</span></div>
-        
-      </div>
+          
+          
+          <div class="mx2-risk-section">
+            <div class="mx2-risk-section-hd"><span class="l-en">Risk scare ladder</span><span class="l-zh">风险压力梯度</span></div>
+            
+            
+            <div class="mx2-scare-row">
+              <span class="mx2-scare-name"><span class="l-en">Bubble / blow-off unwind</span><span class="l-zh">泡沫/见顶回吐</span></span>
+              <div class="mx2-scare-bar-wrap"><div class="mx2-scare-bar" style="width:62.1%;background:var(--warn)"></div></div>
+              <span class="mx2-scare-score" style="color:var(--warn)">62.1</span>
+              <span class="mx2-scare-band elevated">watch</span>
+            </div>
+            
+            
+            <div class="mx2-scare-row">
+              <span class="mx2-scare-name"><span class="l-en">Global breadth breakdown</span><span class="l-zh">全球广度破位</span></span>
+              <div class="mx2-scare-bar-wrap"><div class="mx2-scare-bar" style="width:55.5%;background:var(--warn)"></div></div>
+              <span class="mx2-scare-score" style="color:var(--warn)">55.5</span>
+              <span class="mx2-scare-band elevated">watch</span>
+            </div>
+            
+            
+            <div class="mx2-scare-row">
+              <span class="mx2-scare-name"><span class="l-en">Credit stress</span><span class="l-zh">信用压力</span></span>
+              <div class="mx2-scare-bar-wrap"><div class="mx2-scare-bar" style="width:47.4%;background:var(--warn)"></div></div>
+              <span class="mx2-scare-score" style="color:var(--warn)">47.4</span>
+              <span class="mx2-scare-band elevated">calm</span>
+            </div>
+            
+            
+            <div class="mx2-scare-row">
+              <span class="mx2-scare-name"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span></span>
+              <div class="mx2-scare-bar-wrap"><div class="mx2-scare-bar" style="width:38.1%;background:var(--muted)"></div></div>
+              <span class="mx2-scare-score" style="color:var(--muted)">38.1</span>
+              <span class="mx2-scare-band ">calm</span>
+            </div>
+            
+            
+            <div class="mx2-scare-row">
+              <span class="mx2-scare-name"><span class="l-en">Rates / inflation shock</span><span class="l-zh">利率/通胀冲击</span></span>
+              <div class="mx2-scare-bar-wrap"><div class="mx2-scare-bar" style="width:32.1%;background:var(--muted)"></div></div>
+              <span class="mx2-scare-score" style="color:var(--muted)">32.1</span>
+              <span class="mx2-scare-band ">calm</span>
+            </div>
+            
+            
+            <div class="mx2-scare-row">
+              <span class="mx2-scare-name"><span class="l-en">Breadth internals deterioration</span><span class="l-zh">内部广度恶化</span></span>
+              <div class="mx2-scare-bar-wrap"><div class="mx2-scare-bar" style="width:27.6%;background:var(--muted)"></div></div>
+              <span class="mx2-scare-score" style="color:var(--muted)">27.6</span>
+              <span class="mx2-scare-band ">calm</span>
+            </div>
+            
+            
+            <div class="mx2-scare-row">
+              <span class="mx2-scare-name"><span class="l-en">Volatility event</span><span class="l-zh">波动率事件</span></span>
+              <div class="mx2-scare-bar-wrap"><div class="mx2-scare-bar" style="width:1.2%;background:var(--muted)"></div></div>
+              <span class="mx2-scare-score" style="color:var(--muted)">1.2</span>
+              <span class="mx2-scare-band ">calm</span>
+            </div>
+            
+          </div>
+          
 
+          
+          
+          <div class="mx2-risk-section">
+            <div class="mx2-risk-section-hd"><span class="l-en">Drawdown odds</span><span class="l-zh">回撤概率</span></div>
+            <div class="mx2-dd-grid">
+              
+              <div class="mx2-dd-cell">
+                <div class="mx2-dd-label">h5</div>
+                <div class="mx2-dd-val" style="color:var(--up)">2%</div>
+              </div>
+              
+              
+              <div class="mx2-dd-cell">
+                <div class="mx2-dd-label">h10</div>
+                <div class="mx2-dd-val" style="color:var(--up)">6%</div>
+              </div>
+              
+              
+              <div class="mx2-dd-cell">
+                <div class="mx2-dd-label">h21</div>
+                <div class="mx2-dd-val" style="color:var(--warn)">13%</div>
+              </div>
+              
+            </div>
+            <p class="muted" style="font-size:10px;margin:8px 0 0"><span class="l-en">Probability of a ≥10% drawdown over each horizon — a slow macro/credit composite. Leading near-term timing: see the Risk Radar at top.</span><span class="l-zh">各时间窗口发生≥10%回撤的概率 — 慢速宏观/信用综合。近端领先择时见顶部风险雷达。</span></p>
+          </div>
+          
+
+          
+          
+          
+          
+          
+          
+          
+          
+          <div class="mx2-risk-section mx2-sent-inside" id="sentiment-regime">
+            <div class="mx2-risk-section-hd"><span class="l-en">Fear ↔ Euphoria: regime synthesis</span><span class="l-zh">恐惧 ↔ 欣喜：周期综合</span>
+              <span class="help">?<span class="tip"><span class="l-en">Sentiment context lenses — Fear/Greed composite, froth/fragility gauge, and fear↔euphoria synthesis. None of these call direction or size trades.</span><span class="l-zh">情绪背景视角 — 恐惧/贪婪合成、狂热/脆弱指标及恐惧↔欣喜综合。均不判断方向或决定仓位。</span></span></span>
+            </div>
+            <div class="mx-sent-grid">
+
+              <!-- Fear / Greed composite (P1.2) -->
+              
+              
+              
+              
+              <section id="fear-greed" class="mx-sent-col">
+                <div class="mx-sent-label"><span class="l-en">Fear / Greed sentiment context</span><span class="l-zh">恐惧/贪婪情绪参考</span> <span class="help">?<span class="tip"><span class="l-en">Equal-weight z-mean of qualifying market indicators (legs), each oriented so a positive z-score points toward greed. Display-only context — not a signal, not a timed call, never scored.</span><span class="l-zh">合格市场指标（分量）的等权 z 均值，每项方向均以正 z 为贪婪。仅供展示参考 — 非信号，非择时判断，不计分。</span></span></span></div>
+                <div class="mx-sent-val" style="color:var(--muted)">55</div>
+                <div class="mx-sent-band-label"><span class="l-en">Neutral</span><span class="l-zh">中性</span> <span class="muted">/100</span></div>
+                <div class="mx-grad-track" style="position:relative">
+                  <span class="mx-grad-marker" style="left:calc(55% - 3px)"></span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:2px">
+                  <span><span class="l-en">Fear</span><span class="l-zh">恐惧</span></span><span><span class="l-en">Neutral</span><span class="l-zh">中性</span></span><span><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span>
+                </div>
+                <div class="muted sm" style="margin-top:8px">11 <span class="l-en">legs</span><span class="l-zh">分量</span> · <a href="macro_signals.html#fear-greed-detail" class="muted"><span class="l-en">full →</span><span class="l-zh">完整 →</span></a></div>
+                
+                <div class="mx-sent-young" style="margin-top:6px">
+                  <div class="mx-sent-label" style="margin-bottom:3px"><span class="l-en">Context tiles</span><span class="l-zh">背景指标</span></div>
+                  
+                  <div class="mx-sent-tile" style="font-size:10.5px;color:var(--muted)"><span class="l-en">CBOE put/call ratio</span><span class="l-zh">CBOE 看跌/看涨比率</span>: 1.076</div>
+                  
+                  <div class="mx-sent-tile" style="font-size:10.5px;color:var(--muted)"><span class="l-en">AAII sentiment (bullish %)</span><span class="l-zh">AAII 情绪（看多占比）</span>: 36.3</div>
+                  
+                </div>
+                
+              </section>
+              
+
+              <!-- Froth & Fragility -->
+              
+              
+              
+              
+              
+              <section id="froth-fragility" class="mx-sent-col">
+                <div class="mx-sent-label"><span class="l-en">Froth & Fragility</span><span class="l-zh">狂热与脆弱</span> <span class="help">?<span class="tip"><span class="l-en">A top-risk gauge for froth: retail euphoria plus hidden distribution. Only euphoric AND fragile together is a real top risk. Context only.</span><span class="l-zh">顶部风险计：零售狂热叠加隐性派发。唯有同时出现才是真正的顶部风险。仅供参考。</span></span></span></div>
+                
+                <div class="mx-sent-val" style="color:var(--up)">22</div>
+                <div class="mx-sent-band-label"><span class="l-en">Calm</span><span class="l-zh">平静</span> <span class="muted">/100</span></div>
+                
+                
+                <div style="margin-top:4px;font-weight:700;font-size:12.5px;color:var(--up)"><span class="l-en">Calm & broad</span><span class="l-zh">平静且广泛</span>
+                  <span class="badge sm" style="margin-left:6px"><span class="l-en">provisional</span><span class="l-zh">暂定</span></span>
+                  
+                </div>
+                
+                <div class="mx-froth-items" style="margin-top:10px">
+                  <div class="mx-froth-item">
+                    <span class="mx-froth-label"><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
+                    <div class="mx-froth-bar-wrap"><div class="mx-froth-bar" style="width:19.1%;background:var(--warn)"></div></div>
+                    <span class="mx-froth-val">19</span>
+                  </div>
+                  <div class="mx-froth-item">
+                    <span class="mx-froth-label"><span class="l-en">Fragility / distribution</span><span class="l-zh">脆弱／派发</span></span>
+                    <div class="mx-froth-bar-wrap"><div class="mx-froth-bar" style="width:24.9%;background:var(--down)"></div></div>
+                    <span class="mx-froth-val">25</span>
+                  </div>
+                </div>
+                <div class="muted sm" style="margin-top:6px"><span class="l-en">Forward record accruing.</span><span class="l-zh">前瞻记录积累中。</span> <span class="l-en">Display-only — the response is sizing, not selection.</span><span class="l-zh">仅供展示——应对是调整仓位，而非选股。</span></div>
+              </section>
+              
+
+              <!-- Fear ↔ Euphoria -->
+              
+              
+              
+              
+              <section class="mx-sent-col">
+                <div class="mx-sent-label"><span class="l-en">Fear ↔ Euphoria: regime synthesis</span><span class="l-zh">恐惧 ↔ 欣喜：周期综合</span> <span class="help">?<span class="tip"><span class="l-en">Where the market sits between fear and euphoria, built from cross-asset risk appetite, stress read and capitulation. Context only.</span><span class="l-zh">市场处于恐惧与欣喜之间的位置，由跨资产风险偏好、压力读数与投降指标合成。仅供参考。</span></span></span></div>
+                <div class="mx-sent-val" style="color:var(--up)">90</div>
+                <div class="mx-sent-band-label"><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span> <span class="muted">/100</span></div>
+                <div class="mx-grad-track" style="position:relative">
+                  <span class="mx-grad-marker" style="left:calc(90% - 3px)"></span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:2px">
+                  <span><span class="l-en">Panic</span><span class="l-zh">恐慌</span></span><span><span class="l-en">Fear</span><span class="l-zh">恐惧</span></span><span><span class="l-en">Neutral</span><span class="l-zh">中性</span></span><span><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span><span><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
+                </div>
+                <div class="muted sm" style="margin-top:8px">RORO +0.69 · <span class="l-en">risk-on</span><span class="l-zh">偏好风险</span></div>
+              </section>
+              
+
+            </div>
+            <a href="macro_signals.html" class="muted sm" style="display:inline-block;margin-top:12px"><span class="l-en">Full breakdown →</span><span class="l-zh">完整拆解 →</span></a>
+          </div>
+          
+          
+
+          
+
+        </div>
+      </div>
     </div>
   </div>
   
 
+  
+  
+  
+  
+  
+  
+  
+  <div class="sx" id="sx-policy-v2">
+    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-policy-v2')">
+      <span class="sx-label"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+      <div class="sx-glance mx2-policy-glance">
+        <span class="v2chip c-muted">
+          <span class="l-en">QUIET</span>
+          <span class="l-zh">平静</span>
+        </span>
+        
+        
+        <span class="v2chip c-muted num"><span class="l-en">last flip 2026-07-02</span><span class="l-zh">最近翻转 2026-07-02</span></span>
+        
+      </div>
+      <div class="sx-chev">&#8964;</div>
+    </div>
+    <div class="sx-tray">
+      <div class="sx-tray-inner">
+        <div class="mx2-policy-tray">
 
-  
-  
-  
-  
+          
+          <div class="mx2-risk-section" id="policy-lever-card">
+            <div class="mx-eyebrow"><span class="l-en">Policy-Lever Conditions &amp; Repricing</span><span class="l-zh">政策杠杆条件与重新定价</span>
+              <span class="help">?<span class="tip"><span class="l-en">Conditions that make violent overnight reversals more likely — not a forecast, not a signal. ARMED = semis drawdown deep (≤−15%) AND an oil technical curl; ELEVATED = one of the two; QUIET = neither. Display-only context (Policy-Shock W2-F). Drawdown and arming are descriptive; no probabilities.</span><span class="l-zh">使剧烈隔夜反转更可能发生的条件 — 不是预测，不是信号。触发=半导体回撤深（≤−15%）且石油技术卷曲；警戒=两者之一；平静=均无。仅供展示（政策冲击 W2-F）。回撤和触发均为描述性指标，不含概率。</span></span></span>
+            </div>
+            <div class="mx-policy-band">
+              
+              <div class="mx-pcol">
+                <div class="mx-pcol-label"><span class="l-en">Policy Lever</span><span class="l-zh">政策杠杆</span></div>
+                <div class="mx-pcol-state">
+                  <span class="mx-chip mx-c-muted" style="font-size:13px;padding:4px 12px">
+                    <span class="l-en">QUIET</span><span class="l-zh">平静</span>
+                  </span>
+                </div>
+                
+                
+                
+                <div class="mx-pcol-row">
+                  <span class="mx-pcol-key"><span class="l-en">Favored complex</span><span class="l-zh">偏好板块</span></span>
+                  <span class="mx-delta-chip mx-delta-mu">SMH/SOXX -10.2%</span>
+                </div>
+                
+                
+                
+                
+                
+                
+                <div class="mx-pcol-row">
+                  <span class="mx-pcol-key"><span class="l-en">Jawboning 7d/30d</span><span class="l-zh">政策发声 7日/30日</span></span>
+                  <span class="mx-delta-chip mx-delta-mu">0 / 4</span>
+                </div>
+                
+                
+                <div class="mx-pcol-sub"><span class="l-en">Trump's NEPA overhaul unlocks federal land & permits — tailwind for energy, construction, defense & data centers</span><span class="l-zh">特朗普NEPA改革放开联邦土地和许可——能源、建筑、国防和数据中心获提振</span></div>
+                
+                
+                
+                
+                
+                <div class="mx-pcol-row">
+                  <span class="mx-pcol-key" style="font-size:10.5px"><span class="l-en">US midterm elections: 115 days (2026-11-03). Policy cycle context only — no directional read.</span><span class="l-zh">美国中期选举：115天（2026年11月3日）。仅作政策周期背景参考，不作方向性判断。</span></span>
+                </div>
+                
+                
+                
+                <div class="mx-pcol-sub"><span class="l-en">Conditions under which violent reversals are more likely — not intent, not timing.</span><span class="l-zh">衡量剧烈反转更可能发生的条件——不是意图，也不是时点。</span></div>
+                
+                <div class="mx-pcol-sub"><span class="l-en">Display-only · W2-F · as of</span><span class="l-zh">仅供展示 · W2-F · 截至</span> 2026-07-09</div>
+              </div>
+              
+              <div class="mx-pcol">
+                <div class="mx-pcol-label"><span class="l-en">Lever Arming Status</span><span class="l-zh">杠杆触发状态</span></div>
+                
+                
+                
+                
+                <div class="mx-prog-row">
+                  <div class="mx-prog-label-row">
+                    <span class="muted"><span class="l-en">Iran / oil</span><span class="l-zh">伊朗/石油</span> <span style="font-size:9.5px">(CL=F)</span></span>
+                    
+                    <span class="mx-delta-chip mx-delta-mu">
+                      <span class="l-en">quiet</span><span class="l-zh">平静</span>
+                    </span>
+                    
+                  </div>
+                  
+                  <div class="mx-prog-track"><div class="mx-prog-fill" style="width:15%;background:var(--muted)"></div></div>
+                  
+                  <div style="font-size:10px;color:var(--muted);margin-top:2px">26d base · flat=0.18</div>
+                  
+                  
+                  
+                  
+                  <div style="font-size:10px;color:var(--muted);margin-top:1px"><span class="l-en">Re-escalation risk restated by 2026-07-08 strike developments; oil is the transmission lever to rate-cut repricing. A rapid CL=F spike would widen breakevens and reprice fed-funds futures, reversing the conditions that have supported the semis recovery.</span><span class="l-zh">2026年7月8日打击事件重申了再升级风险；石油是向降息重定价传导的核心杠杆。CL=F快速飙升将扩大盈亏平衡通胀预期并重定价联邦基金期货，逆转支撑半导体复苏的现有条件。</span></div>
+                  
+                </div>
+                
+                
+                
+                <div class="mx-prog-row">
+                  <div class="mx-prog-label-row">
+                    <span class="muted"><span class="l-en">China / tariffs</span><span class="l-zh">中国/关税</span></span>
+                    
+                    <span class="mx-delta-chip mx-delta-mu"><span class="l-en">n/a</span><span class="l-zh">不适用</span></span>
+                    
+                  </div>
+                  
+                  
+                  <div style="font-size:10px;color:var(--muted);margin-top:1px"><span class="l-en">Tariff truce fragility: any rollback of the 90-day pause or re-escalation in export controls would directly compress the semis supply chain margins that are priced into the current recovery.</span><span class="l-zh">关税休战的脆弱性：90天暂停期内任何回退或出口管制再升级，将直接压缩已计入当前复苏预期的半导体供应链利润率。</span></div>
+                  
+                </div>
+                
+                
+              </div>
+              
+              <div class="mx-pcol" id="flip-confirmation">
+                <div class="mx-pcol-label"><span class="l-en">Flip Confirmation</span><span class="l-zh">翻转确认</span></div>
+                
+                
+                
+                
+                
+                
+                <div class="mx-pcol-row">
+                  <span class="mx-pcol-key"><span class="l-en">Last flip</span><span class="l-zh">最近翻转</span></span>
+                  <span class="mx-delta-chip mx-delta-mu num">2026-07-02</span>
+                </div>
+                <div class="mx-pcol-row">
+                  <span class="mx-pcol-key"><span class="l-en">Direction</span><span class="l-zh">方向</span></span>
+                  <span class="mx-delta-chip mx-delta-mu"><span class="l-en">defensive</span><span class="l-zh">防御</span></span>
+                </div>
+                <div class="mx-pcol-row">
+                  <span class="mx-pcol-key"><span class="l-en">z-score</span><span class="l-zh">z 分数</span></span>
+                  <span class="mx-delta-chip mx-delta-wn">3.0032</span>
+                </div>
+                <div class="mx-pcol-row">
+                  <span class="mx-pcol-key"><span class="l-en">Verdict</span><span class="l-zh">结论</span></span>
+                  <span class="mx-delta-chip mx-delta-dn"><span class="l-en">FADED</span><span class="l-zh">已消退</span></span>
+                </div>
+                
+                
+                <div class="mx-pcol-row">
+                  <span class="mx-pcol-key"><span class="l-en">Fade rate</span><span class="l-zh">消退率</span> (n=26)</span>
+                  <span class="mx-delta-chip mx-delta-dn">15/26 <span class="l-en">faded</span><span class="l-zh">消退</span></span>
+                </div>
+                
+                <div class="mx-pcol-sub"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-09 · <span class="l-en">Display-only (W2-F)</span><span class="l-zh">仅供展示 (W2-F)</span></div>
+                
+              </div>
+            </div>
+          </div>
+
+          
+          
 
 
 <div class="panel span12 bfwd rr-combined" id="regime-read">
@@ -5617,6 +6157,399 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
 </div>
 
 
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+  
+  
+  <div class="sx" id="sx-aibrief-v2">
+    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-aibrief-v2')">
+      <span class="sx-label"><span class="l-en">AI Brief</span><span class="l-zh">AI简报</span></span>
+      <div class="sx-glance">
+        <span class="v2chip c-info" style="font-size:10px;padding:2px 7px"><span class="l-en">display-only synthesis</span><span class="l-zh">仅展示层综合</span></span>
+        
+        <span class="mx2-aibrief-glance">5 high-impact items; dominant channel rates; source mix stock_wire:6, official:5…</span>
+        
+      </div>
+      <div class="sx-chev">&#8964;</div>
+    </div>
+    <div class="sx-tray">
+      <div class="sx-tray-inner">
+        <div class="mx2-aibrief-tray">
+          <a class="panel span12 aibrief-card mx-aibrief" href="aibrief.html" style="margin:0;border-radius:10px">
+            <div class="mx-aibrief-hdr">
+              <div class="mx-aibrief-icon">AI</div>
+              <div>
+                <div class="mx-aibrief-title"><span class="l-en">AI Daily Brief · cross-asset synthesis</span><span class="l-zh">AI 每日简报 · 跨资产综合</span></div>
+                <div class="mx-aibrief-date num">2026-07-10</div>
+              </div>
+              <span class="mx-aibrief-badge"><span class="l-en">display-only synthesis of existing signals — not a signal source</span><span class="l-zh">仅展示层综合读数 — 非信号来源</span></span>
+            </div>
+            
+            <div class="mx-aibrief-body">
+              <span class="l-en">5 high-impact items; dominant channel rates; source mix stock_wire:6, official:5, tier1:4</span>
+              <span class="l-zh">5 high-impact items; dominant channel rates; source mix stock_wire:6, official:5, tier1:4</span>
+              
+               · <span class="l-en">Dominant: <strong>rates</strong></span><span class="l-zh">主导：<strong>rates</strong></span>
+              
+              
+               · <span class="l-en">Top tickers: XLF, XLK, KRE</span><span class="l-zh">主要标的：XLF、XLK、KRE</span>
+              
+            </div>
+            <div class="mx-aibrief-footer">
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                
+                <span class="mx-chip mx-c-warn">5 <span class="l-en">high-impact</span><span class="l-zh">高影响</span></span>
+                
+                
+                <span class="mx-chip mx-c-muted"><span class="l-en">rates</span><span class="l-zh">rates</span> 7</span>
+                
+                <span class="mx-chip mx-c-muted"><span class="l-en">credit</span><span class="l-zh">credit</span> 4</span>
+                
+                <span class="mx-chip mx-c-muted"><span class="l-en">earnings</span><span class="l-zh">earnings</span> 4</span>
+                
+              </div>
+              <span class="mx-aibrief-link"><span class="l-en">Full AI brief →</span><span class="l-zh">完整 AI 简报 →</span></span>
+            </div>
+            
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+  
+  
+  
+  <div class="sx" id="sx-news-v2">
+    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-news-v2')">
+      <span class="sx-label"><span class="l-en">News</span><span class="l-zh">新闻</span></span>
+      <div class="sx-glance mx2-news-glance">
+        
+        <span class="v2chip c-muted">18 <span class="l-en">items</span><span class="l-zh">条目</span></span>
+        
+        <span class="v2chip c-muted"><span class="l-en">press a headline to expand</span><span class="l-zh">点击标题展开</span></span>
+      </div>
+      <div class="sx-chev">&#8964;</div>
+    </div>
+    <div class="sx-tray">
+      <div class="sx-tray-inner">
+        <div class="mx2-news-tray" id="now-board">
+          <div class="mx-panel-hdr" style="margin-bottom:10px">
+            <span class="mx-panel-eyebrow"><span class="l-en">News & Catalysts</span><span class="l-zh">新闻与日程</span></span>
+            <a href="news.html" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--link)"><span class="l-en">Full feed →</span><span class="l-zh">完整新闻 →</span></a>
+          </div>
+
+          <div class="nb-strip">
+            <span class="nb-strip-h"><span class="l-en">Next 14d</span><span class="l-zh">未来14天</span></span>
+            <span class="nb-ev" title="CPI (consumer prices) · 08:30 ET"><b>CPI</b> Tue Jul 14</span>
+            <span class="nb-ev" title="PPI (producer prices) · 08:30 ET"><b>PPI</b> Wed Jul 15</span>
+            
+          </div>
+
+          
+
+          
+          <div class="nb-acc">
+            
+            
+            <details class="nb-item" open>
+              <summary class="nb-sum">
+                <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+                <span class="nb-htitle"><span class="l-en">As bank earnings approach, a market anomaly emerges</span><span class="l-zh">As bank earnings approach, a market anomaly emerges</span></span>
+                <span class="nb-meta"><span class="mx-ni-impact high"><span class="l-en">HIGH</span><span class="l-zh">高</span></span> CNBC - Investing · 74 <span class="nb-chev">▾</span></span>
+              </summary>
+              <div class="nb-body">
+                <p class="nb-sumtext">
+                  <span class="l-en">A <b>high</b>-impact <b>Earnings</b> headline in focus on XLF, touching credit, earnings. Flagged: stock-focused news source; tier-1 macro term. — CNBC - Investing</span>
+                  <span class="l-zh">一条<b>high</b>影响级的<b>业绩</b>新闻，聚焦 XLF，涉及 credit、earnings。 入选：stock-focused news source；tier-1 macro term。 — CNBC - Investing</span>
+                </p>
+                
+                <div class="nb-tags">
+                  <span class="nb-pill">credit</span><span class="nb-pill">earnings</span>
+                  <span class="nb-pill tk">XLF</span>
+                </div>
+                
+                <a class="nb-read" href="https://www.cnbc.com/2026/07/10/as-bank-earnings-approach-a-market-anomaly-emerges.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              </div>
+            </details>
+            
+            
+            <details class="nb-item">
+              <summary class="nb-sum">
+                <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+                <span class="nb-htitle"><span class="l-en">Chip rally, Fed task forces, Delta earnings and more in Morning Squawk</span><span class="l-zh">Chip rally, Fed task forces, Delta earnings and more in Morning Squawk</span></span>
+                <span class="nb-meta"><span class="mx-ni-impact high"><span class="l-en">HIGH</span><span class="l-zh">高</span></span> CNBC - Tech · 74 <span class="nb-chev">▾</span></span>
+              </summary>
+              <div class="nb-body">
+                <p class="nb-sumtext">
+                  <span class="l-en">A <b>high</b>-impact <b>Earnings</b> headline in focus on XLK, touching rates, earnings. Flagged: stock-focused news source; tier-1 macro term. — CNBC - Tech</span>
+                  <span class="l-zh">一条<b>high</b>影响级的<b>业绩</b>新闻，聚焦 XLK，涉及 rates、earnings。 入选：stock-focused news source；tier-1 macro term。 — CNBC - Tech</span>
+                </p>
+                
+                <div class="nb-tags">
+                  <span class="nb-pill">rates</span><span class="nb-pill">earnings</span>
+                  <span class="nb-pill tk">XLK</span>
+                </div>
+                
+                <a class="nb-read" href="https://www.cnbc.com/2026/07/10/5-things-to-know-before-the-stock-market-opens.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              </div>
+            </details>
+            
+            
+            <details class="nb-item">
+              <summary class="nb-sum">
+                <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+                <span class="nb-htitle"><span class="l-en">PepsiCo earnings miss estimates as U.S. consumers tighten their budgets</span><span class="l-zh">百事可乐财报不及预期，因美国消费者收紧预算</span></span>
+                <span class="nb-meta"><span class="mx-ni-impact high"><span class="l-en">HIGH</span><span class="l-zh">高</span></span> CNBC - Markets · 78 <span class="nb-chev">▾</span></span>
+              </summary>
+              <div class="nb-body">
+                <p class="nb-sumtext">
+                  <span class="l-en">A <b>high</b>-impact <b>Earnings</b> headline, touching fiscal trade, earnings. Flagged: tier-1 news source; tier-1 macro term. — CNBC - Markets</span>
+                  <span class="l-zh">一条<b>high</b>影响级的<b>业绩</b>新闻，涉及 fiscal trade、earnings。 入选：tier-1 news source；tier-1 macro term。 — CNBC - Markets</span>
+                </p>
+                
+                <div class="nb-tags">
+                  <span class="nb-pill">fiscal trade</span><span class="nb-pill">earnings</span>
+                  
+                </div>
+                
+                <a class="nb-read" href="https://www.cnbc.com/2026/07/09/pepsico-pep-q2-2026-earnings.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              </div>
+            </details>
+            
+            
+            <details class="nb-item">
+              <summary class="nb-sum">
+                <span class="nb-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
+                <span class="nb-htitle"><span class="l-en">Levi Strauss beats quarterly expectations, raises guidance and dividend</span><span class="l-zh">李维斯季度业绩超预期，上调指引并增加股息</span></span>
+                <span class="nb-meta"><span class="mx-ni-impact high"><span class="l-en">HIGH</span><span class="l-zh">高</span></span> CNBC - Markets · 78 <span class="nb-chev">▾</span></span>
+              </summary>
+              <div class="nb-body">
+                <p class="nb-sumtext">
+                  <span class="l-en">A <b>high</b>-impact <b>Guidance</b> headline, touching guidance, capital return. Flagged: tier-1 news source; tier-1 macro term. — CNBC - Markets</span>
+                  <span class="l-zh">一条<b>high</b>影响级的<b>指引</b>新闻，涉及 guidance、capital return。 入选：tier-1 news source；tier-1 macro term。 — CNBC - Markets</span>
+                </p>
+                
+                <div class="nb-tags">
+                  <span class="nb-pill">guidance</span><span class="nb-pill">capital return</span>
+                  
+                </div>
+                
+                <a class="nb-read" href="https://www.cnbc.com/2026/07/08/levi-strauss-levi-q2-2026-earnings.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              </div>
+            </details>
+            
+            
+            <details class="nb-item">
+              <summary class="nb-sum">
+                <span class="nb-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+                <span class="nb-htitle"><span class="l-en">Federal Reserve Board's annual bank stress test confirms that large banks are well positioned to weather a severe recession and able to continue to lend to households and businesses</span><span class="l-zh">Federal Reserve Board's annual bank stress test confirms that large banks are well positioned to weather a severe recession and able to continue to lend to households and businesses</span></span>
+                <span class="nb-meta"><span class="mx-ni-impact high"><span class="l-en">HIGH</span><span class="l-zh">高</span></span> Federal Reserve - All Press · 80 <span class="nb-chev">▾</span></span>
+              </summary>
+              <div class="nb-body">
+                <p class="nb-sumtext">
+                  <span class="l-en">A <b>high</b>-impact <b>Fed</b> headline in focus on KRE, XLF, touching growth, credit. Flagged: first-party macro release; tier-1 macro term. — Federal Reserve - All Press</span>
+                  <span class="l-zh">一条<b>high</b>影响级的<b>美联储</b>新闻，聚焦 KRE、XLF，涉及 growth、credit。 入选：first-party macro release；tier-1 macro term。 — Federal Reserve - All Press</span>
+                </p>
+                
+                <div class="nb-tags">
+                  <span class="nb-pill">growth</span><span class="nb-pill">credit</span>
+                  <span class="nb-pill tk">KRE</span><span class="nb-pill tk">XLF</span>
+                </div>
+                
+                <a class="nb-read" href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260624a.htm" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              </div>
+            </details>
+            
+            
+            <details class="nb-item">
+              <summary class="nb-sum">
+                <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+                <span class="nb-htitle"><span class="l-en">Metaplanet launches "Project NOVA" to build Bitcoin-backed digital credit products</span><span class="l-zh">Metaplanet launches "Project NOVA" to build Bitcoin-backed digital credit products</span></span>
+                <span class="nb-meta"><span class="mx-ni-impact med"><span class="l-en">MED</span><span class="l-zh">中</span></span> Seeking Alpha - Market Currents · 67 <span class="nb-chev">▾</span></span>
+              </summary>
+              <div class="nb-body">
+                <p class="nb-sumtext">
+                  <span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline in focus on META, touching credit. Flagged: stock-focused news source; market-sensitive term. — Seeking Alpha - Market Currents</span>
+                  <span class="l-zh">一条<b>medium</b>影响级的<b>个股</b>新闻，聚焦 META，涉及 credit。 入选：stock-focused news source；market-sensitive term。 — Seeking Alpha - Market Currents</span>
+                </p>
+                
+                <div class="nb-tags">
+                  <span class="nb-pill">credit</span>
+                  <span class="nb-pill tk">META</span>
+                </div>
+                
+                <a class="nb-read" href="https://seekingalpha.com/news/4613032-metaplanet-launches-project-nova-to-build-bitcoin-backed-digital-credit-products?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              </div>
+            </details>
+            
+          </div>
+          <div class="nb-foot">
+            <a href="news.html" style="color:var(--link);font-weight:700"><span class="l-en">Open the full news feed</span><span class="l-zh">打开完整新闻流</span> →</a>
+            <span>18 <span class="l-en">stories kept</span><span class="l-zh">保留条目</span> · 258 <span class="l-en">scanned</span><span class="l-zh">已扫描</span></span>
+            <span class="nb-cat" style="margin-left:auto"><span class="l-en">Next catalyst</span><span class="l-zh">下个催化</span>: <b>2026-07-14</b> CPI CPI (consumer prices)</span>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+  
+  
+  <div class="sx" id="sx-deep-context">
+    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-deep-context')">
+      <span class="sx-label"><span class="l-en">Deep Context</span><span class="l-zh">深度背景</span></span>
+      <div class="sx-glance mx2-deep-row">
+        <div class="mx2-deep-chips">
+          <a class="mx2-deep-chip" href="macro_context.html"><span class="mx2-deep-chip-ic">🌐</span><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></a>
+          <a class="mx2-deep-chip" href="aibrief.html"><span class="mx2-deep-chip-ic">🤖</span><span class="l-en">AI Brief</span><span class="l-zh">AI日报</span></a>
+          <a class="mx2-deep-chip" href="sector_central.html"><span class="mx2-deep-chip-ic">📊</span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
+          <a class="mx2-deep-chip" href="committee.html"><span class="mx2-deep-chip-ic">🧠</span><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
+          <a class="mx2-deep-chip" href="macro_signals.html"><span class="mx2-deep-chip-ic">⚡</span><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
+        </div>
+      </div>
+      <div class="sx-chev">&#8964;</div>
+    </div>
+    <div class="sx-tray">
+      <div class="sx-tray-inner">
+        <div style="padding-top:16px">
+          <div class="mx-linkout-strip" style="flex-wrap:wrap;gap:10px">
+            <a class="mx-linkout-card" href="macro_context.html">
+              <span class="mx-lc-icon">🌐</span>
+              <div><div class="mx-lc-title"><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></div><div class="mx-lc-sub"><span class="l-en">Regime &amp; transmission</span><span class="l-zh">周期与传导</span></div></div>
+            </a>
+            <a class="mx-linkout-card" href="aibrief.html">
+              <span class="mx-lc-icon">🤖</span>
+              <div><div class="mx-lc-title"><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></div><div class="mx-lc-sub"><span class="l-en">Synthesis read</span><span class="l-zh">综合解读</span></div></div>
+            </a>
+            <a class="mx-linkout-card" href="sector_central.html">
+              <span class="mx-lc-icon">📊</span>
+              <div><div class="mx-lc-title"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></div><div class="mx-lc-sub"><span class="l-en">Rotation &amp; flows</span><span class="l-zh">轮动与资金流</span></div></div>
+            </a>
+            <a class="mx-linkout-card" href="news.html">
+              <span class="mx-lc-icon">📰</span>
+              <div><div class="mx-lc-title"><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></div><div class="mx-lc-sub"><span class="l-en">Headlines &amp; catalysts</span><span class="l-zh">头条与催化剂</span></div></div>
+            </a>
+            <a class="mx-linkout-card" href="committee.html">
+              <span class="mx-lc-icon">🧠</span>
+              <div><div class="mx-lc-title"><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></div><div class="mx-lc-sub"><span class="l-en">Signals &amp; consensus</span><span class="l-zh">信号与共识</span></div></div>
+            </a>
+            <a class="mx-linkout-card" href="macro_signals.html">
+              <span class="mx-lc-icon">⚡</span>
+              <div><div class="mx-lc-title"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></div><div class="mx-lc-sub"><span class="l-en">All indicators</span><span class="l-zh">全部指标</span></div></div>
+            </a>
+          </div>
+          
+          
+          
+          <div class="mx2-deep-health" id="health-summary">
+            <span class="l-en">Data health: 7 sources need attention · 153 sources · <a href="#health" class="muted">details ↓</a></span>
+            <span class="l-zh">数据健康度：7 个来源需关注 · 153 个来源 · <a href="#health" class="muted">详情 ↓</a></span>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+  
+  
+  <div class="mx2-ledger-footer" style="font-size:11px;color:var(--muted);padding:10px 0 4px;text-align:center;border-top:1px solid var(--line);margin-top:4px">
+    <span class="l-en">&#x2318; click rows to expand &nbsp;·&nbsp; Data as of 2026-07-10 &nbsp;·&nbsp; nightly pipeline</span>
+    <span class="l-zh">&#x2318; 点击行展开 &nbsp;·&nbsp; 数据截至 2026-07-10 &nbsp;·&nbsp; 夜间管道</span>
+  </div>
+  
+
+  </div>
+
+  
+  <script>
+  (function(){
+    var _mx2Ids = ['sx-evidence','sx-events-v2','sx-markets-v2','sx-risk-v2','sx-policy-v2','sx-aibrief-v2','sx-news-v2','sx-deep-context'];
+    var _allOpen = false;
+
+    window.mx2Toggle = function(id){
+      var el = document.getElementById(id);
+      if(!el) return;
+      var isOpen = el.hasAttribute('data-open');
+      if(isOpen){
+        el.removeAttribute('data-open');
+        var s = el.querySelector('.sx-sum'); if(s) s.setAttribute('aria-expanded','false');
+      } else {
+        el.setAttribute('data-open','');
+        var s = el.querySelector('.sx-sum'); if(s) s.setAttribute('aria-expanded','true');
+        document.dispatchEvent(new CustomEvent('mx2-tray-open',{detail:{id:id}}));
+      }
+      try{var st=JSON.parse(localStorage.getItem('mx2_state')||'{}');st[id]=!isOpen;localStorage.setItem('mx2_state',JSON.stringify(st));}catch(e){}
+      _updateExpandBtn();
+    };
+
+    window.mx2ToggleAll = function(){
+      _allOpen = !_allOpen;
+      _mx2Ids.forEach(function(id){
+        var el = document.getElementById(id); if(!el) return;
+        if(_allOpen){ el.setAttribute('data-open',''); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','true'); }
+        else { el.removeAttribute('data-open'); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','false'); }
+        try{var st=JSON.parse(localStorage.getItem('mx2_state')||'{}');st[id]=_allOpen;localStorage.setItem('mx2_state',JSON.stringify(st));}catch(e){}
+      });
+      _updateExpandBtn();
+    };
+
+    function _updateExpandBtn(){
+      var btn = document.getElementById('mx2ExpandAllBtn'); if(!btn) return;
+      var openCnt = _mx2Ids.filter(function(id){ var el=document.getElementById(id); return el&&el.hasAttribute('data-open'); }).length;
+      _allOpen = openCnt === _mx2Ids.length;
+      btn.classList.toggle('all-open', _allOpen);
+      var txt = btn.querySelector('.ea-txt');
+      if(txt){ txt.querySelector('.l-en').textContent = _allOpen ? 'Collapse all' : 'Expand all';
+               txt.querySelector('.l-zh').textContent = _allOpen ? '收起全部' : '展开全部'; }
+    }
+
+    /* Keyboard Enter/Space on sx-sum */
+    document.querySelectorAll('.sx-sum').forEach(function(el){
+      el.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } });
+    });
+
+    /* Escape closes all */
+    document.addEventListener('keydown',function(e){
+      if(e.key==='Escape'){
+        _mx2Ids.forEach(function(id){ var el=document.getElementById(id); if(el){ el.removeAttribute('data-open'); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','false'); } });
+        _allOpen=false; _updateExpandBtn();
+      }
+    });
+
+    /* Restore localStorage state */
+    try{
+      var saved = JSON.parse(localStorage.getItem('mx2_state')||'{}');
+      _mx2Ids.forEach(function(id){
+        if(saved[id]===true){ var el=document.getElementById(id); if(el){ el.setAttribute('data-open',''); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','true'); } }
+      });
+    }catch(e){}
+    _updateExpandBtn();
+  })();
+  </script>
+  
+
+
+
+  
+  
+  
+
+
+  
+  
+  
+  
+
 
   
 
@@ -5630,7 +6563,7 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
 
   
   
-  <a class="panel span12 aibrief-card mx-aibrief" href="aibrief.html">
+  <a class="panel span12 aibrief-card mx-aibrief v2-retired-macro" href="aibrief.html">
     <div class="mx-aibrief-hdr">
       <div class="mx-aibrief-icon">AI</div>
       <div>
@@ -5680,172 +6613,10 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
   <!-- ===================== SENTIMENT REGIME — Froth & Fragility + Fear↔Euphoria + Fear/Greed composite (context-only lenses; collapsed by default) ===================== -->
   
   
-  
-  
-  
-  
-  <details class="panel span12 fold mx-sent-band" id="sentiment-regime">
-    <summary><span class="l-en">Sentiment &amp; Froth</span><span class="l-zh">情绪与狂热</span>
-      <span class="help">?<span class="tip"><span class="l-en">Sentiment context lenses — Fear/Greed composite, froth/fragility gauge, and fear↔euphoria synthesis. None of these call direction or size trades.</span><span class="l-zh">情绪背景视角 — 恐惧/贪婪合成、狂热/脆弱指标及恐惧↔欣喜综合。均不判断方向或决定仓位。</span></span></span>
-      <span class="fold-stat"><span class="l-en">Fear/Greed</span><span class="l-zh">恐惧/贪婪</span> <span class="l-en">Neutral</span><span class="l-zh">中性</span> 55/100 · <span class="l-en">Froth</span><span class="l-zh">狂热</span> <span class="l-en">Calm</span><span class="l-zh">平静</span> · <span class="l-en">Fear↔Euphoria</span><span class="l-zh">恐惧↔欣喜</span> <span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
-      <span class="fold-caret">▾</span>
-    </summary>
-    <div class="mx-sent-grid">
-
-      <!-- Fear / Greed composite (P1.2) — mx compact col -->
-      
-      
-      
-      
-      <section id="fear-greed" class="mx-sent-col">
-        <div class="mx-sent-label"><span class="l-en">Fear / Greed</span><span class="l-zh">恐惧/贪婪</span> <span class="help">?<span class="tip"><span class="l-en">Equal-weight z-mean of qualifying market indicators (legs), each oriented so a positive z-score points toward greed. Display-only context — not a signal, not a timed call, never scored.</span><span class="l-zh">合格市场指标（分量）的等权 z 均值，每项方向均以正 z 为贪婪。仅供展示参考 — 非信号，非择时判断，不计分。</span></span></span></div>
-        <div class="mx-sent-val" style="color:var(--muted)">55</div>
-        <div class="mx-sent-band-label"><span class="l-en">Neutral</span><span class="l-zh">中性</span> <span class="muted">/100</span></div>
-        <div class="mx-grad-track" style="position:relative">
-          <span class="mx-grad-marker" style="left:calc(55% - 3px)"></span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:2px">
-          <span><span class="l-en">Fear</span><span class="l-zh">恐惧</span></span><span><span class="l-en">Neutral</span><span class="l-zh">中性</span></span><span><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span>
-        </div>
-        <div class="muted sm" style="margin-top:8px">11 <span class="l-en">legs</span><span class="l-zh">分量</span> · <a href="macro_signals.html#fear-greed-detail" class="muted"><span class="l-en">full →</span><span class="l-zh">完整 →</span></a></div>
-      </section>
-      
-
-      <!-- Froth & Fragility — mx compact col -->
-      
-      
-      
-      
-      
-      <section id="froth-fragility" class="mx-sent-col">
-        <div class="mx-sent-label"><span class="l-en">Froth & Fragility</span><span class="l-zh">狂热与脆弱</span> <span class="help">?<span class="tip"><span class="l-en">A top-risk gauge for froth: retail euphoria plus hidden distribution. Only euphoric AND fragile together is a real top risk. Context only.</span><span class="l-zh">顶部风险计：零售狂热叠加隐性派发。唯有同时出现才是真正的顶部风险。仅供参考。</span></span></span></div>
-        
-        <div class="mx-sent-val" style="color:var(--up)">22</div>
-        <div class="mx-sent-band-label"><span class="l-en">Calm</span><span class="l-zh">平静</span> <span class="muted">/100</span></div>
-        
-        
-        <div style="margin-top:4px;font-weight:700;font-size:12.5px;color:var(--up)"><span class="l-en">Calm & broad</span><span class="l-zh">平静且广泛</span>
-          <span class="badge sm" style="margin-left:6px"><span class="l-en">provisional</span><span class="l-zh">暂定</span></span>
-          
-        </div>
-        
-        <div class="mx-froth-items" style="margin-top:10px">
-          <div class="mx-froth-item">
-            <span class="mx-froth-label"><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
-            <div class="mx-froth-bar-wrap"><div class="mx-froth-bar" style="width:19.1%;background:var(--warn)"></div></div>
-            <span class="mx-froth-val">19</span>
-          </div>
-          <div class="mx-froth-item">
-            <span class="mx-froth-label"><span class="l-en">Fragility / distribution</span><span class="l-zh">脆弱／派发</span></span>
-            <div class="mx-froth-bar-wrap"><div class="mx-froth-bar" style="width:24.9%;background:var(--down)"></div></div>
-            <span class="mx-froth-val">25</span>
-          </div>
-        </div>
-        <div class="muted sm" style="margin-top:6px"><span class="l-en">Forward record accruing.</span><span class="l-zh">前瞻记录积累中。</span> <span class="l-en">Display-only — the response is sizing, not selection.</span><span class="l-zh">仅供展示——应对是调整仓位，而非选股。</span></div>
-      </section>
-      
-
-      <!-- Fear ↔ Euphoria — mx compact col -->
-      
-      
-      
-      
-      <section class="mx-sent-col">
-        <div class="mx-sent-label"><span class="l-en">Fear ↔ Euphoria: regime synthesis</span><span class="l-zh">恐惧 ↔ 欣喜：周期综合</span> <span class="help">?<span class="tip"><span class="l-en">Where the market sits between fear and euphoria, built from cross-asset risk appetite, stress read and capitulation. Context only.</span><span class="l-zh">市场处于恐惧与欣喜之间的位置，由跨资产风险偏好、压力读数与投降指标合成。仅供参考。</span></span></span></div>
-        <div class="mx-sent-val" style="color:var(--up)">90</div>
-        <div class="mx-sent-band-label"><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span> <span class="muted">/100</span></div>
-        <div class="mx-grad-track" style="position:relative">
-          <span class="mx-grad-marker" style="left:calc(90% - 3px)"></span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:2px">
-          <span><span class="l-en">Panic</span><span class="l-zh">恐慌</span></span><span><span class="l-en">Fear</span><span class="l-zh">恐惧</span></span><span><span class="l-en">Neutral</span><span class="l-zh">中性</span></span><span><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span><span><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
-        </div>
-        <div class="muted sm" style="margin-top:8px">RORO +0.69 · <span class="l-en">risk-on</span><span class="l-zh">偏好风险</span></div>
-      </section>
-      
-
-    </div>
-    <a href="macro_signals.html" class="muted sm" style="display:inline-block;margin-top:12px"><span class="l-en">Full breakdown →</span><span class="l-zh">完整拆解 →</span></a>
-  </details>
-  
 
   <!-- ===================== CROSS-ASSET MACRO — Rates & inflation transmission + Bonds & FX cross-check (merged scorecard; context-only) ===================== -->
   
   
-  
-  <div class="panel span12" id="cross-asset-macro">
-    <div class="mx-panel-hdr">
-      <span class="mx-panel-eyebrow"><span class="l-en">Cross-Asset Check</span><span class="l-zh">跨资产校验</span></span>
-      <a href="transmission.html" style="margin-left:auto;font-size:12px;font-weight:600"><span class="l-en">Transmission →</span><span class="l-zh">传导 →</span></a>
-    </div>
-    <h2 style="margin-top:0"><span class="l-en">Rates, bonds &amp; FX — cross-asset check</span><span class="l-zh">利率、债券与外汇 — 跨资产校验</span>
-      <span class="help">?<span class="tip"><span class="l-en">Context only. Rates & inflation: who today's rates and inflation help or hurt (green = tailwind, red = headwind). Bonds & FX: bonds and the dollar move first, so do they confirm the stock read? Agree = support; diverge = a yellow flag. Full cause-and-effect on the Transmission page.</span><span class="l-zh">仅供参考。利率与通胀：当前利率与通胀利好或利空谁（绿＝顺风，红＝逆风）。债券与外汇：债券和美元先动，它们是否确认股市？一致＝有支撑；背离＝黄旗。完整因果见“传导”页面。</span></span></span>
-    </h2>
-    <div class="mx-asset-grid" style="grid-template-columns:1fr 1fr">
-
-      <!-- Rates & inflation — who it helps, who it hurts -->
-      
-      
-      <section class="mx-asset-tile" style="border-radius:10px;padding:14px 16px">
-        <h3 style="margin-top:0"><span class="l-en">Rates & inflation — who it helps, who it hurts</span><span class="l-zh">利率与通胀 — 利好谁、利空谁</span>
-          <span class="help">?<span class="tip"><span class="l-en">How today's interest rates and inflation help or hurt each asset class. Green = tailwind, red = headwind. It's a read on pressure, not a buy/sell call. The full cause-and-effect breakdown is on the Transmission page.</span><span class="l-zh">当前利率与通胀如何利好或利空各类资产。绿色＝顺风，红色＝逆风。这是对压力的判断，而非买卖信号。完整的因果分解见“传导”页面。</span></span></span>
-        </h3>
-        <div style="display:flex;flex-wrap:wrap;gap:8px 18px;margin:4px 0 12px;font-size:13px">
-          <span><span class="l-en">Rates</span><span class="l-zh">利率</span>: <b><span class="l-en">Real 10y 2.31% (restrictive, rising)</span><span class="l-zh">实际10年期 2.31%（偏紧）</span></b></span>
-          <span><span class="l-en">Inflation</span><span class="l-zh">通胀</span>: <b><span class="l-en">Core PCE 3.4% (above target, steady)</span><span class="l-zh">核心PCE 3.4%（高于目标）</span></b></span>
-          <span><span class="l-en">Expectations</span><span class="l-zh">预期</span>: <b><span class="l-en">5y5y breakeven 2.18% vs model 2.54% (drifting down)</span><span class="l-zh">5年5年盈亏平衡 2.18% vs 模型 2.54%（下行）</span></b></span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:13px">
-          <div><span class="tone-down" style="font-weight:700"><span class="l-en">Headwind</span><span class="l-zh">逆风</span></span>
-            <div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">Materials (inflation beneficiary)</span><span class="l-zh">材料（通胀受益）</span></span> <b class="wind head">-0.41</b></div><div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">Technology</span><span class="l-zh">科技</span></span> <b class="wind head">-0.40</b></div><div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">Nasdaq 100 (long-duration growth)</span><span class="l-zh">纳斯达克100（长久期成长）</span></span> <b class="wind head">-0.39</b></div>
-          </div>
-          <div><span class="tone-up" style="font-weight:700"><span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span>
-            <div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">Gold</span><span class="l-zh">黄金</span></span> <b class="wind tail">+0.23</b></div><div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">China large-cap (EM proxy)</span><span class="l-zh">中国大盘（新兴市场代理）</span></span> <b class="wind tail">+0.16</b></div>
-          </div>
-        </div>
-        <p class="muted sm" style="margin:10px 0 0"><span class="l-en">A read on risk, not return — context only.</span><span class="l-zh">仅作风险判断而非回报，仅供参考。</span></p>
-      </section>
-      
-
-      <!-- Bonds & FX cross-check — do they confirm stocks? -->
-      
-      
-      
-      <section class="mx-asset-tile" style="border-radius:10px;padding:14px 16px">
-        <h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0"><span class="l-en">Bonds & FX cross-check — do they confirm stocks?</span><span class="l-zh">债券与外汇交叉验证 — 是否确认股票？</span>
-          <span class="badge tone-flat"><span class="l-en">mixed</span><span class="l-zh">分歧</span> · 50%</span>
-          <span class="help">?<span class="tip"><span class="l-en">Bonds and the dollar move faster than stocks, so this checks whether they agree with the stock-market read. They AGREE = the move has support; they DIVERGE = a yellow flag worth watching. Context only, never a buy/sell signal.</span><span class="l-zh">债券与美元比股票反应更快，因此本面板检查它们是否认同股市读数。一致＝走势有支撑；背离＝值得留意的黄旗。仅供参考，绝非买卖信号。</span></span></span>
-        </h3>
-        <div style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--muted);border-radius:8px;padding:10px 12px;font-weight:600">
-          <span class="l-en">Bonds & FX broadly track the equity regime, with some cross-currents.</span><span class="l-zh">债券与外汇大体跟随股票周期，但存在一些交叉信号。</span>
-        </div>
-        
-        <div class="muted sm" style="margin-top:8px">
-          <span class="l-en">Cycle clock</span><span class="l-zh">周期时钟</span>: <span class="l-en">equities</span><span class="l-zh">股票</span> <b><span class="l-en">mid</span><span class="l-zh">中期</span></b>
-          · <span class="l-en">bonds</span><span class="l-zh">债券</span> <b><span class="l-en">late-cycle</span><span class="l-zh">周期晚段</span></b>
-           · <span class="l-en">dollar-smile</span><span class="l-zh">美元微笑</span> <b><span class="l-en">US growth premium</span><span class="l-zh">美国增长溢价</span></b>
-        </div>
-        
-        <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
-          
-          <div style="display:flex;gap:8px;align-items:flex-start">
-            <span class="sstack-dot tone-down" style="margin-top:5px;flex:0 0 auto"></span>
-            <div><b><span class="l-en">Cycle clock</span><span class="l-zh">周期时钟</span></b> — <span class="muted"><span class="l-en">bonds read late-cycle while equities read mid-cycle — the bond clock is further along / more adverse</span><span class="l-zh">债券读数为周期晚段，股票为周期中段 — 债券时钟更靠后 / 更不利</span></span></div>
-          </div>
-          
-          <div style="display:flex;gap:8px;align-items:flex-start">
-            <span class="sstack-dot tone-up" style="margin-top:5px;flex:0 0 auto"></span>
-            <div><b><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></b> — <span class="muted"><span class="l-en">bonds & FX confirm the risk-on equity read</span><span class="l-zh">债券与外汇确认了偏多的股票读数</span></span></div>
-          </div>
-          
-        </div>
-        
-        <p class="muted sm" style="margin:10px 0 0"><span class="l-en">Bonds & FX cross-check: does the fast-family complex (bonds + FX) agree with the equity/macro regime? DISPLAY-ONLY — never scored. Most legs are coincident confirmation / fragility gauges; only credit/EBP and the curve have a (noisy) leading horizon. Divergences are attention flags, not forecasts.</span><span class="l-zh">债券与外汇交叉验证：快端板块（债券+外汇）是否与股票/宏观周期一致？仅供展示 — 从不评分。多数为同步确认/脆弱性计量；仅信用/EBP与曲线具（嘈杂的）领先性。背离为关注信号，非预测。</span></p>
-      </section>
-      
-
-    </div>
-  </div>
   
 
   
@@ -5910,7 +6681,7 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
   body.page-macro #now-board .nb-cat b{color:var(--ink-2);font-family:var(--num);font-size:10.5px}
   html[data-lang="zh"] body.page-macro #now-board .nb-strip-h{letter-spacing:0}
   </style>
-  <div class="panel span6" id="now-board">
+  <div class="panel span6" id="now-board-legacy">
     <div class="mx-panel-hdr">
       <span class="mx-panel-eyebrow"><span class="l-en">News & Catalysts</span><span class="l-zh">新闻与日程</span></span>
       <a href="news.html" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--link)"><span class="l-en">Full feed →</span><span class="l-zh">完整新闻 →</span></a>
@@ -6086,7 +6857,8 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
 
   
   <!-- ======================= LINK-OUT STRIP (macro bottom) ======================= -->
-  <div class="panel span12">
+  
+  <div class="panel span12 v2-retired-macro">
     <div class="mx-panel-hdr" style="margin-bottom:12px">
       <span class="mx-panel-eyebrow"><span class="l-en">Quick Links</span><span class="l-zh">快速导航</span></span>
     </div>

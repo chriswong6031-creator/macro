@@ -235,15 +235,17 @@ def test_release_radar_absent_in_stocks_mode():
 # ---------------------------------------------------------------------------
 
 def test_release_radar_above_week_ahead_in_template():
-    """Release Radar block must appear before the week-ahead block in the template."""
+    """In v2 layout, release-radar appears after week-ahead calendar in the events tray
+    (v2 ruling: week-ahead calendar is the tray header, release-radar is below it)."""
     src = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
     rr_idx = src.find('id="release-radar"')
     wa_idx = src.find('id="week-ahead"')
     assert rr_idx >= 0, "release-radar div not found in template"
     assert wa_idx >= 0, "week-ahead div not found in template"
-    assert rr_idx < wa_idx, (
-        "release-radar must appear before week-ahead in the template "
-        f"(found at {rr_idx} vs {wa_idx})"
+    # v2 order: week-ahead calendar tray header comes first, release-radar below it
+    assert wa_idx < rr_idx, (
+        "v2 layout: week-ahead must appear before release-radar in the template "
+        f"(found week-ahead at {wa_idx} vs release-radar at {rr_idx})"
     )
 
 
