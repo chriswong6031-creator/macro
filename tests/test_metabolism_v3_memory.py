@@ -807,3 +807,48 @@ class TestLessonLobeField:
         assert "lobe_match" in reasons or "lobe_exact" in reasons, (
             f"Expected lobe scoring reason; got {top[0].get('_reasons')}"
         )
+
+
+# ── Regime triage staleness (learning-wire follow-up) ────────────────────────
+
+class TestRegimeAsofStaleness:
+    """_regime_asof_is_stale fails toward caution on missing/stale/garbled asof."""
+
+    def test_fresh_asof_not_stale(self):
+        from scripts.metabolism_verify import _regime_asof_is_stale
+        assert _regime_asof_is_stale("2026-07-11", today="2026-07-11") is False
+        assert _regime_asof_is_stale("2026-07-10", today="2026-07-11") is False
+
+    def test_lagging_asof_is_stale(self):
+        from scripts.metabolism_verify import _regime_asof_is_stale
+        assert _regime_asof_is_stale("2026-07-08", today="2026-07-11") is True
+
+    def test_missing_or_garbled_asof_is_stale(self):
+        from scripts.metabolism_verify import _regime_asof_is_stale
+        assert _regime_asof_is_stale("", today="2026-07-11") is True
+        assert _regime_asof_is_stale("not-a-date", today="2026-07-11") is True
+
+    def test_stale_regime_file_forces_suspected(self, tmp_path):
+        """A stale flipped=False file must route misses to caution (suspected=True)."""
+        import json
+        from scripts.metabolism_verify import _build_triage_context
+        reg = tmp_path / "data" / "regime"
+        reg.mkdir(parents=True)
+        (reg / "regime_one.json").write_text(json.dumps(
+            {"flip_attribution": {"flipped": False, "asof": "2026-06-01"}}))
+        ctx = _build_triage_context(tmp_path, today="2026-07-11")
+        assert ctx["regime_change_suspected"] is True
+
+    def test_fresh_clean_regime_not_suspected(self, tmp_path):
+        import json
+        from scripts.metabolism_verify import _build_triage_context
+        reg = tmp_path / "data" / "regime"
+        reg.mkdir(parents=True)
+        (reg / "regime_one.json").write_text(json.dumps(
+            {"flip_attribution": {"flipped": False, "asof": "2026-07-11"}}))
+        ctx = _build_triage_context(tmp_path, today="2026-07-11")
+        assert ctx["regime_change_suspected"] is False
+
+    def test_absent_file_empty_context(self, tmp_path):
+        from scripts.metabolism_verify import _build_triage_context
+        assert _build_triage_context(tmp_path, today="2026-07-11") == {}

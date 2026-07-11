@@ -1069,6 +1069,8 @@ jobs:
         run: python -m pytest tests/test_metabolism.py tests/test_metabolism_v2a.py tests/test_metabolism_v2b.py tests/test_metabolism_v2c.py tests/test_metabolism_v2d.py -q
       - name: metabolism v3 suite (memory + context + integration)
         run: python -m pytest tests/test_metabolism_v3_memory.py tests/test_metabolism_v3_context.py tests/test_metabolism_v3_integration.py -q
+      - name: metabolism propose/adjudicate suite (lobe threading + learning wire)
+        run: python -m pytest tests/test_metabolism_propose_adjudicate.py -q
       - name: metabolism v4 W3 suite (mission self-model + kill registry)
         run: python -m pytest tests/test_metabolism_v4_w3_mission.py -q
       - name: blocklist drift check (compiled registry must match DO_NOT_REBUILD.md)
