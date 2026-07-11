@@ -644,8 +644,13 @@ _EVENT_QUERY = ('(stock market OR "S&P 500" OR selloff OR "Federal Reserve" OR T
 
 
 def _fetch_event_headlines(today: date, cfg: dict) -> list[str]:
-    """GDELT macro/market headlines around `today` (free, keyless). [] on any error."""
+    """GDELT macro/market headlines around `today` (free, keyless). [] on any error.
+
+    Delegates HTTP, throttling, and retry handling to engine.gdelt_client so
+    all GDELT callers share a single cross-process pacing lock (GDELT 5s/IP rule;
+    nine callers without shared throttle caused a penalty-box incident 2026-06-20)."""
     from datetime import timedelta
+    from engine import gdelt_client as _gc
     win = int(cfg.get("event_window_days", 2))
     start = datetime(today.year, today.month, today.day) - timedelta(days=win)
     end = datetime(today.year, today.month, today.day, 23, 59, 59)
@@ -655,13 +660,10 @@ def _fetch_event_headlines(today: date, cfg: dict) -> list[str]:
               "startdatetime": start.strftime("%Y%m%d%H%M%S"),
               "enddatetime": end.strftime("%Y%m%d%H%M%S")}
     try:
-        import requests
-        r = requests.get(_GDELT_URL, params=params, timeout=30,
-                         headers={"User-Agent": "macro-dashboard/1.0 (research)"})
-        if r.status_code != 200 or "json" not in r.headers.get("Content-Type", "").lower():
+        arts, _ = _gc.get_articles(params, timeout=30)
+        if not arts:
             return []
-        arts = (r.json().get("articles") or [])[:n]
-        return [a.get("title", "").strip() for a in arts if a.get("title")]
+        return [a.get("title", "").strip() for a in arts[:n] if a.get("title")]
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("event headline fetch failed (%s)", e)
         return []

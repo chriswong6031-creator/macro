@@ -654,6 +654,27 @@ def _plain_english(display_name: str, period: str, actual: float,
 # --------------------------------------------------------------------------- #
 # Lookback window check
 # --------------------------------------------------------------------------- #
+
+# Tiered lookback by cadence.
+# Monthly series (CPI, PCE, payrolls, etc.) publish 4-6 weeks after their
+# reference date, so a 10-day flat window structurally misses them ~25 of 30
+# days.  Weekly series (ICSA) are available within a few days; quarterly GDP
+# only publishes once per quarter.
+_LOOKBACK_BY_CADENCE: dict[str, int] = {
+    "weekly":    10,
+    "monthly":   45,
+    "quarterly": 95,
+}
+_LOOKBACK_DEFAULT: int = 45
+
+
+def lookback_days_for(entry: dict) -> int:
+    """Return the appropriate lookback window (days) for a registry entry,
+    keyed on the 'cadence' field.  PURE."""
+    cadence = (entry.get("cadence") or "monthly").lower()
+    return _LOOKBACK_BY_CADENCE.get(cadence, _LOOKBACK_DEFAULT)
+
+
 def _within_lookback(latest_date: str, asof: datetime, lookback_days: int) -> bool:
     """True if the latest data point is within `lookback_days` of asof."""
     try:
@@ -671,6 +692,12 @@ def _within_lookback(latest_date: str, asof: datetime, lookback_days: int) -> bo
 def build_release_cards(asof: datetime | None = None,
                         lookback_days: int = 10) -> dict:
     """Build macro-surprise cards for recent releases.
+
+    The `lookback_days` parameter is now a FLOOR override only (kept for
+    backward-compat); per-series windows are determined by cadence via
+    ``lookback_days_for(entry)`` (weekly=10d, monthly=45d, quarterly=95d).
+    A June CPI print therefore remains visible into early-mid July rather
+    than disappearing after 10 days.
 
     Returns:
       {
@@ -730,19 +757,27 @@ def build_release_cards(asof: datetime | None = None,
         result["kill_criterion_triggered"] = True
         return result
 
-    # Build cards
+    # Build cards — use tiered per-series lookback (cadence-keyed)
     cards: list[dict] = []
     for entry, records in fetched_entries:
         try:
             surprise = _surprise_for_series(records, entry, asof)
             if surprise is None:
                 continue
-            if not _within_lookback(surprise["latest_date"], asof, lookback_days):
+            # Per-series window: weekly=10d, monthly=45d, quarterly=95d.
+            # The `lookback_days` param is honoured as a minimum floor so callers
+            # can pass a smaller value for testing; in production pass the default.
+            series_window = max(lookback_days, lookback_days_for(entry))
+            if not _within_lookback(surprise["latest_date"], asof, series_window):
                 continue
+            # Expose the effective window so the board can display it accurately.
+            surprise["lookback_days"] = series_window
             cards.append(surprise)
         except Exception as e:  # noqa: BLE001 — degrade, never raise
             log.warning("macro_surprise: card build failed for %s (%s)", entry["key"], e)
 
     result["cards"] = cards
     result["n_cards"] = len(cards)
+    # Top-level metadata: effective windows by cadence (display context, not copy)
+    result["lookback_by_cadence"] = dict(_LOOKBACK_BY_CADENCE)
     return result

@@ -1208,15 +1208,24 @@ def _gdelt_query(cfg: dict) -> str:
 def _fetch_wire_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict], str | None]:
     """Global reputable-source China macro wire via GDELT. This fills the gap between
     official releases and Eastmoney flashes: Reuters/FT/SCMP/Caixin-style market
-    interpretation. Best-effort, cached, never raises."""
+    interpretation. Best-effort, cached, never raises.
+
+    Delegates HTTP, throttling, and retry handling to engine.gdelt_client so
+    all GDELT callers share a single cross-process pacing lock (GDELT 5s/IP rule;
+    nine callers without shared throttle caused a penalty-box incident 2026-06-20)."""
+    from engine import gdelt_client as _gc
     today = today or date.today()
     cache = _wire_cache_path(cfg, today)
-    ttl = cfg.get("wire_cache_ttl_hours", cfg.get("cache_ttl_hours", 12)) * 3600
+    ttl = int(cfg.get("wire_cache_ttl_hours", cfg.get("cache_ttl_hours", 12))) * 3600
+
+    # cache read — china_news stores under key 'items', not 'articles'
     if cache.exists():
         try:
             if datetime.now(timezone.utc).timestamp() - cache.stat().st_mtime < ttl:
                 blob = json.loads(cache.read_text())
-                return blob.get("items", []), blob.get("degraded_reason")
+                cached = blob.get("items")
+                if cached is not None:
+                    return cached, blob.get("degraded_reason")
         except Exception:  # noqa: BLE001
             pass
 
@@ -1230,47 +1239,44 @@ def _fetch_wire_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict],
     items: list[dict] = []
     reason: str | None = None
     allow = [s.lower() for s in (cfg.get("wire_sources") or WIRE_SOURCES)]
+    timeout_s = max(5, int(cfg.get("wire_timeout_s", 12)))
     try:
-        import time
-
-        import requests
-        r = None
-        attempts = max(1, int(cfg.get("wire_attempts", 2)))
-        timeout_s = max(5, int(cfg.get("wire_timeout_s", 12)))
-        for attempt in range(attempts):
-            r = requests.get(GDELT_URL, params=params, timeout=timeout_s,
-                             headers={"User-Agent": "macro-dashboard/1.0 (research)"})
-            if r.status_code == 429 and attempt < attempts - 1:
-                time.sleep(max(6, cfg.get("min_request_interval_s", 6)) * (attempt + 1))
-                continue
-            break
-        if r is None or r.status_code != 200 or "json" not in r.headers.get("Content-Type", ""):
-            reason = "wire_rate_limited" if (r is not None and r.status_code == 429) else "wire_fetch_error"
+        raw_articles, gc_reason = _gc.get_articles(params, timeout=timeout_s)
+        if raw_articles is None:
+            raw_articles = []
+        # map gdelt_client reason tokens to china_news's own tokens
+        if gc_reason == "rate_limited":
+            reason = "wire_rate_limited"
+        elif gc_reason in ("fetch_error",):
+            reason = "wire_fetch_error"
         else:
-            for a in (r.json().get("articles", []) or []):
-                dom = (a.get("domain") or "").lower()
-                if allow and not any(s in dom for s in allow):
-                    continue
-                title = a.get("title", "")
-                sd = a.get("seendate", "")
-                try:
-                    when = datetime.strptime(sd, "%Y%m%dT%H%M%SZ").replace(
-                        tzinfo=timezone.utc).isoformat()
-                except (ValueError, TypeError):
-                    when = sd
-                items.append({"title": title, "summary": "", "url": a.get("url", ""),
-                              "time": when, "theme": classify_theme(title) or "macro",
-                              "source": "gdelt", "source_name": dom or "GDELT",
-                              "source_tier": "wire"})
-            if not items:
-                reason = "wire_no_headlines"
+            reason = gc_reason
+
+        for a in raw_articles:
+            dom = (a.get("domain") or "").lower()
+            if allow and not any(s in dom for s in allow):
+                continue
+            title = a.get("title", "")
+            items.append({"title": title, "summary": "", "url": a.get("url", ""),
+                          "time": a.get("seendate", ""),
+                          "theme": classify_theme(title) or "macro",
+                          "source": "gdelt", "source_name": dom or "GDELT",
+                          "source_tier": "wire"})
+        if raw_articles and not items:
+            reason = "wire_no_headlines"
+        elif not raw_articles and not items and reason is None:
+            reason = "wire_no_headlines"
     except Exception as e:  # noqa: BLE001
         log.warning("china_news gdelt wire fetch failed (%s)", e)
         reason = "wire_fetch_error"
-    try:
-        cache.write_text(json.dumps({"items": items, "degraded_reason": reason}, ensure_ascii=False))
-    except Exception:  # noqa: BLE001
-        pass
+
+    # Only cache successful responses (items present); failures must not be cached.
+    if items:
+        try:
+            cache.write_text(json.dumps({"items": items, "degraded_reason": reason},
+                                        ensure_ascii=False))
+        except Exception:  # noqa: BLE001
+            pass
     return items, reason
 
 
