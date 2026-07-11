@@ -992,6 +992,10 @@ jobs:
         run: python -m pytest tests/test_metabolism_v4_w1_dispatch.py tests/test_metabolism_buildlane.py -q
       - name: metabolism w2-pulse suite (verify scan mode + dream invocability)
         run: python -m pytest tests/test_metabolism_w2_pulse.py -q
+      - name: metabolism v4 w5 suite (steering memory + applier)
+        run: python -m pytest tests/test_metabolism_v4_w5.py -q
+      - name: metabolism phase-a suite (spine + inertness contracts)
+        run: python -m pytest tests/test_metabolism_phase_a.py -q
       - name: self-mod fence selftest
         run: python3 scripts/check_self_mod_fence.py --selftest
       - name: grader manifest (fitness graders + immutable configs unchanged)

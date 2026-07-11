@@ -290,10 +290,20 @@ def run_trajectory(
     organism_state: dict | None = None,
     cycle_id: str | None = None,
     root: Path | None = None,
+    lobe_id: str | None = None,
 ) -> dict[str, Any]:
     """Build and append a trajectory row.
 
     If organism_state is not provided, reads data/metabolism/organism_state.json.
+
+    Parameters
+    ----------
+    lobe_id : str | None
+        When provided, annotates the emitted row with a ``lobe_id`` field so
+        that per-lobe callers can tag their contribution to the organism-wide
+        trajectory.jsonl.  The strategic.build_trajectory_block consumer uses
+        this field to filter rows to a specific lobe when present.
+
     NEVER-RAISE.  Returns the row.
     """
     try:
@@ -303,6 +313,13 @@ def run_trajectory(
             organism_state = _read_json(os_path) or {}
 
         row = build_trajectory_row(organism_state=organism_state, cycle_id=cycle_id, root=repo)
+
+        # Annotate with lobe_id when provided (per-lobe capability).
+        # strategic.build_trajectory_block already filters trajectory.jsonl by
+        # a lobe field when present, so this annotation is consumed correctly.
+        if lobe_id is not None:
+            row["lobe_id"] = str(lobe_id)
+
         append_trajectory_row(row, root=repo)
         return row
     except Exception as exc:  # noqa: BLE001

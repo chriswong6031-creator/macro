@@ -458,6 +458,56 @@ def _build_orchestrator_system(
             log.warning("orchestrator_brain: trajectory/strategic-gap failed — %s", _exc)
             parts.append("## Trajectory & Strategic Gap\n\n(unavailable)")
 
+        # ── Part 5e: Preference prior (R-V4-3b) ────────────────────────────────
+        try:
+            from engine.metabolism import dream as _dream  # noqa: PLC0415
+            _prior = _dream.load_preference_prior(root=repo)
+            if _prior:
+                _prior_text = json.dumps(_prior, default=str)
+                _prior_text = _byte_cap(_prior_text, 1500)
+            else:
+                _prior_text = "(preference_prior absent — accruing)"
+            parts.append(f"## Preference Prior (advisory calibration)\n\n{_prior_text}")
+        except Exception as _exc:  # noqa: BLE001
+            log.warning("orchestrator_brain: preference prior load failed — %s", _exc)
+            parts.append("## Preference Prior\n\n(unavailable)")
+
+        # ── Part 5f: Open insight-bus rows (R-V4-3c) ───────────────────────────
+        try:
+            from engine.metabolism import insight_bus as _ibus  # noqa: PLC0415
+            _open_rows = _ibus.get_open_rows(root=repo)
+            _SEV_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+            _open_rows_sorted = sorted(
+                _open_rows,
+                key=lambda r: (_SEV_ORDER.get(r.get("severity", "low"), 3),),
+            )
+            _ibus_lines: list[str] = []
+            _used = 0
+            for _row in _open_rows_sorted[:20]:
+                _compact = {k: v for k, v in _row.items() if k not in ("authority",)}
+                _line = json.dumps(_compact, separators=(",", ":"), default=str)
+                _lb = len(_line.encode())
+                if _used + _lb + 1 > 1500 and _ibus_lines:
+                    break
+                _ibus_lines.append(_line)
+                _used += _lb + 1
+            _ibus_text = "\n".join(_ibus_lines) if _ibus_lines else "(no open rows)"
+            parts.append(f"## Insight Bus (open rows, severity-ordered)\n\n{_ibus_text}")
+        except Exception as _exc:  # noqa: BLE001
+            log.warning("orchestrator_brain: insight bus load failed — %s", _exc)
+            parts.append("## Insight Bus\n\n(unavailable)")
+
+        # ── Part 5g: Mission block + strategic memory tail (R-V4-3e) ───────────
+        try:
+            from engine.metabolism import mission as _mission  # noqa: PLC0415
+            _mission_text = _mission.build_mission_block(root=repo, byte_cap=1000)
+            _strat_mem = _mission.build_strategic_memory_block(lobe, byte_cap=1200, root=repo)
+            parts.append(f"## Mission\n\n{_mission_text}")
+            parts.append(f"## Strategic Memory (past VERIFY outcomes)\n\n{_strat_mem}")
+        except Exception as _exc:  # noqa: BLE001
+            log.warning("orchestrator_brain: mission/strategic memory failed — %s", _exc)
+            parts.append("## Mission\n\n(unavailable)")
+
         # ── ACTIVE_BUILD_MAP collision check ────────────────────────────────────
         abm_path = repo / "docs" / "ACTIVE_BUILD_MAP.md"
         if abm_path.exists():

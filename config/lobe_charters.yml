@@ -4,6 +4,42 @@ note: OPERATOR-CURATED (not immutable). tier field is CI-MIRRORED from synapse.y
   (R-V2-7) — edit synapse.yml to change a tier, not this file. lifecycle_state may
   be updated via lifecycle.py proposals.
 charters:
+  til:
+    lobe_id: til
+    tier: display
+    lifecycle_state: active
+    information_domain: thematic_intelligence
+    # fitness_sensors declares the four graded sensors for the TIL loop-manageable lobe.
+    # A lobe is loop-manageable (PROPOSE-eligible) only when fitness_sensors is declared.
+    # Lobes without fitness_sensors are SENSE-only — the PROPOSE stage will not fabricate
+    # fitness for them (R-V4-10 accrual-honesty law).
+    fitness_sensors:
+    - id: front_run_lead
+      store: data/metabolism/fitness/til.json
+      maturity_date: '2026-10-15'
+      accruing: true
+      description: Fraction of thematic moves TIL surfaces before consensus.
+    - id: placebo_hit_rate
+      store: data/metabolism/fitness/til.json
+      maturity_date: '2026-10-15'
+      accruing: true
+      description: TIL hit rate vs the shadow placebo tape.
+    - id: falsifier_honesty
+      store: data/metabolism/fitness/til.json
+      maturity_date: '2026-10-15'
+      accruing: true
+      description: Fraction of TIL theses with a registered falsifier that fired correctly.
+    - id: live_leg_quality
+      store: data/metabolism/fitness/til.json
+      maturity_date: '2026-10-15'
+      accruing: true
+      description: Quality score of live evidence legs (graded by evidence_clock).
+    owner_program: thematic-intelligence
+    notes: >-
+      TIL is the pilot loop-manageable lobe (V4 W5, R-V4-10). Its four fitness
+      sensors are the template for future loop-manageable lobes. Sensors are ACCRUING
+      until 2026-10-15 — proposals must carry check_by >= maturity_date for any sensor
+      tagged accruing:true (accrual-honesty gate). tier is read-mirrored from synapse.yml.
   attention-deterministic:
     lobe_id: attention-deterministic
     tier: display
