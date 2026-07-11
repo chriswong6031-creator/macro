@@ -494,9 +494,19 @@ def assign_ripening_zone(
     -------
     dict with keys:
         zone     : str — FALLING | READY | BASING
-        evidence : list[str] — EN-language evidence chips for this zone assignment
+        evidence : list[str] — machine evidence receipts (EN quant shorthand;
+                   ledger/hover tier — never rendered at rest, doctrine Law 2)
+        evidence_display : list[dict] — plain-word bilingual twins for the glance
+                   tier, parallel to `evidence`; each entry is
+                   {"en": str, "zh": str, "receipt": str} with receipt == the
+                   matching `evidence` string.
     """
     evidence: list[str] = []
+    display: list[dict] = []
+
+    def _emit(receipt: str, en: str, zh: str) -> None:
+        evidence.append(receipt)
+        display.append({"en": en, "zh": zh, "receipt": receipt})
 
     # ── Step 1: FALLING veto (evaluated FIRST — no cross evidence can override) ──────
     # Condition F1: catastrophic 5d drawdown
@@ -510,13 +520,19 @@ def assign_ripening_zone(
     )
     if _ret_falling or _macd_neg_falling:
         if _ret_falling:
-            evidence.append(f"5d return {ret_5d*100:.1f}% (below -8% veto)")
-        if _macd_neg_falling:
-            evidence.append(
-                f"D-MACD hist {macd_hist_d:+.3f} (negative & falling from "
-                f"{macd_hist_prev_d:+.3f})"
+            _emit(
+                f"5d return {ret_5d*100:.1f}% (below -8% veto)",
+                f"down {abs(ret_5d)*100:.1f}% in 5 days — falling too fast",
+                f"5日下跌{abs(ret_5d)*100:.1f}% — 跌势过急",
             )
-        return {"zone": ZONE_FALLING, "evidence": evidence}
+        if _macd_neg_falling:
+            _emit(
+                f"D-MACD hist {macd_hist_d:+.3f} (negative & falling from "
+                f"{macd_hist_prev_d:+.3f})",
+                "daily momentum negative and worsening",
+                "日线动能为负且继续走弱",
+            )
+        return {"zone": ZONE_FALLING, "evidence": evidence, "evidence_display": display}
 
     # ── Step 2: READY — directional evidence live, tape not collapsing ────────────────
     # Condition R1: fresh 1W washout cross AND daily MACD hist >= 0
@@ -544,28 +560,56 @@ def assign_ripening_zone(
 
     if _fresh_1w_cross or _macd_turned_pos or _macd_imminent:
         if _fresh_1w_cross:
-            evidence.append(
+            if w1_cross_bars_since == 0:
+                _when_en, _when_zh = "this week", "本周"
+            elif w1_cross_bars_since == 1:
+                _when_en, _when_zh = "1 wk ago", "1周前"
+            else:
+                _when_en, _when_zh = f"{w1_cross_bars_since} wks ago", f"{w1_cross_bars_since}周前"
+            _emit(
                 f"1W cross {w1_cross_bars_since} bar{'s' if w1_cross_bars_since != 1 else ''} ago"
                 f" (d-washout), D-MACD {'+' if macd_hist_d and macd_hist_d >= 0 else ''}"
-                f"{macd_hist_d:.3f}"
+                f"{macd_hist_d:.3f}",
+                f"weekly gauge turned up from washout {_when_en}",
+                f"周线{_when_zh}自超卖区转强",
             )
         if _macd_turned_pos and not _fresh_1w_cross:
-            evidence.append(
+            _emit(
                 f"D-MACD hist turned positive: {macd_hist_d:+.3f}"
-                + (f" (from {macd_hist_prev_d:+.3f})" if macd_hist_prev_d is not None else "")
+                + (f" (from {macd_hist_prev_d:+.3f})" if macd_hist_prev_d is not None else ""),
+                "daily momentum just turned positive",
+                "日线动能刚刚转正",
             )
         if _macd_imminent:
-            evidence.append(
-                f"2W MACD ~{macd_bars_to_cross_2w:.1f} bars to cross"
+            _emit(
+                f"2W MACD ~{macd_bars_to_cross_2w:.1f} bars to cross",
+                f"time to turn: ~{macd_bars_to_cross_2w:.1f} wk at this pace",
+                f"距转向约{macd_bars_to_cross_2w:.1f}周（按当前速度）",
             )
-        return {"zone": ZONE_READY, "evidence": evidence}
+        return {"zone": ZONE_READY, "evidence": evidence, "evidence_display": display}
 
     # ── Step 3: BASING — washout present but no directional trigger yet ───────────────
     if stoch_2w is not None:
-        evidence.append(f"2W stoch {stoch_2w:.1f} (washout)")
+        if stoch_2w <= 20:
+            _st_en, _st_zh = "deeply oversold", "深度超卖"
+        elif stoch_2w <= 35:
+            _st_en, _st_zh = "in the washout zone", "仍处超卖区"
+        else:
+            _st_en, _st_zh = "oversold gauge off the lows", "超卖量表已脱离低位"
+        _emit(f"2W stoch {stoch_2w:.1f} (washout)", _st_en, _st_zh)
     if macd_hist_d is not None:
-        _slope_tag = "rising" if (macd_hist_prev_d is not None and macd_hist_d > macd_hist_prev_d) else "flat/falling"
-        evidence.append(f"D-MACD {macd_hist_d:+.3f} ({_slope_tag})")
+        _rising = macd_hist_prev_d is not None and macd_hist_d > macd_hist_prev_d
+        _slope_tag = "rising" if _rising else "flat/falling"
+        _emit(
+            f"D-MACD {macd_hist_d:+.3f} ({_slope_tag})",
+            "daily momentum improving" if _rising else "daily momentum flat or fading",
+            "日线动能改善" if _rising else "日线动能持平或走弱",
+        )
     if w1_cross_bars_since is not None:
-        evidence.append(f"1W cross {w1_cross_bars_since} bars ago (stale)")
-    return {"zone": ZONE_BASING, "evidence": evidence}
+        if w1_cross_bars_since <= _READY_W1_CROSS_MAX_BARS:
+            _sc_en, _sc_zh = "weekly gauge turned up — not confirmed yet", "周线已转向 — 尚未确认"
+        else:
+            _sc_en = f"weekly turn {w1_cross_bars_since} wks ago — gone stale"
+            _sc_zh = f"周线转向已{w1_cross_bars_since}周 — 已失效"
+        _emit(f"1W cross {w1_cross_bars_since} bars ago (stale)", _sc_en, _sc_zh)
+    return {"zone": ZONE_BASING, "evidence": evidence, "evidence_display": display}

@@ -1044,8 +1044,62 @@
           {% if _ph.get('as_of') %}<span style="font-size:10.5px;color:var(--muted)">{{ t('as of', '截至') }} {{ _ph.as_of }}</span>{% endif %}
         </div>
         {% if _ph.get('evidence') %}
+        {# cycle-phase evidence keys → plain words (STANCE_ZH/BAND_ZH pattern, doctrine Law 2);
+           raw key + value demoted to hover receipt. Prettified fallback — never block render on a map miss. #}
+        {% set PHEV_EN = {
+          'limit_up_breadth_5d_extreme': 'limit-ups unusually widespread',
+          'limit_up_breadth_5d_elevated': 'limit-ups widespread',
+          'limit_up_breadth_5d_active': 'limit-ups picking up',
+          'limit_down_breadth_5d_panic': 'limit-downs at panic levels',
+          'limit_down_breadth_5d_stress': 'limit-downs piling up',
+          'lianban_5d_burst': 'hot-money chains running wild',
+          'lianban_5d_active': 'hot-money chains active',
+          'turnover_z20_hot': 'turnover running hot',
+          'turnover_z20_cold': 'turnover unusually quiet',
+          'turnover_z20_null': 'turnover data missing',
+          'margin_chg_5d_accelerating': 'leveraged money piling in',
+          'margin_chg_5d_stress': 'leveraged money unwinding',
+          'fin_pct_float_frothy': 'margin load looks frothy',
+          'qvix_z_elevated': 'options fear gauge running high',
+          'policy_impulse_easing': 'policy leaning supportive',
+          'policy_impulse_market_rescue': 'state rescue measures in play',
+          'sector_breadth_washout': 'most sectors washed out',
+          'sector_breadth_peak': 'most sectors stretched',
+          'participation_regime_institutional_accumulation': 'institutions quietly buying',
+          'participation_regime_retail_ignition': 'retail money igniting the tape',
+          'participation_regime_margin_acceleration': 'leveraged money driving the tape',
+          'participation_regime_broad_mania': 'speculation broad and hot',
+          'participation_regime_distribution': 'big money quietly selling',
+          'participation_regime_forced_deleveraging': 'forced selling by leveraged money',
+        } %}
+        {% set PHEV_ZH = {
+          'limit_up_breadth_5d_extreme': '涨停面极广',
+          'limit_up_breadth_5d_elevated': '涨停面偏广',
+          'limit_up_breadth_5d_active': '涨停面转活跃',
+          'limit_down_breadth_5d_panic': '跌停面达恐慌级',
+          'limit_down_breadth_5d_stress': '跌停面偏多',
+          'lianban_5d_burst': '连板热度爆发',
+          'lianban_5d_active': '连板热度活跃',
+          'turnover_z20_hot': '成交额明显放大',
+          'turnover_z20_cold': '成交额明显缩量',
+          'turnover_z20_null': '成交额数据缺失',
+          'margin_chg_5d_accelerating': '融资盘加速流入',
+          'margin_chg_5d_stress': '融资盘快速撤出',
+          'fin_pct_float_frothy': '融资占比过高（偏热）',
+          'qvix_z_elevated': '期权恐慌指标偏高',
+          'policy_impulse_easing': '政策偏宽松',
+          'policy_impulse_market_rescue': '救市措施进行中',
+          'sector_breadth_washout': '多数板块已超卖',
+          'sector_breadth_peak': '多数板块偏热',
+          'participation_regime_institutional_accumulation': '机构悄然吸筹',
+          'participation_regime_retail_ignition': '散户资金点火',
+          'participation_regime_margin_acceleration': '融资盘主导盘面',
+          'participation_regime_broad_mania': '投机情绪全面高涨',
+          'participation_regime_distribution': '大资金悄然派发',
+          'participation_regime_forced_deleveraging': '融资盘被迫去杠杆',
+        } %}
         <div style="margin-top:5px;font-size:11px;color:var(--muted);line-height:1.4">
-          {% for e in _ph.evidence[:3] %}<div>· {{ e }}</div>{% endfor %}
+          {% for e in _ph.evidence[:3] %}{% set _esl = (e or '').split(' (')[0] %}<div data-tip-en="Technical: {{ e }}" data-tip-zh="技术依据：{{ e }}">· {{ t(PHEV_EN.get(_esl, _esl.replace('_',' ')), PHEV_ZH.get(_esl, PHEV_EN.get(_esl, _esl.replace('_',' ')))) }}</div>{% endfor %}
           {% if _ph.evidence | length > 3 %}<div>… {{ _ph.evidence | length - 3 }} {{ t('more', '条') }}</div>{% endif %}
         </div>
         {% endif %}
@@ -2162,14 +2216,15 @@
                 <div class="rip-metric-val mut">{% if _r_imm is not none %}~{{ '%.1f'|format(_r_imm) }}{{ t('W','周') }}{% else %}—{% endif %}</div>
               </div>
             </div>
-            {# Evidence + context chips #}
+            {# Evidence + context chips — plain words at rest, engine receipt demoted to hover (doctrine Law 2) #}
             <div class="rip-chips">
-              {% set _evid = r.get('evidence') or [] %}
-              {% for ev in _evid %}
-                <span class="rip-chip cp-ready">{{ ev }}</span>
+              {% set _evd = r.get('evidence_display') or [] %}
+              {% for ev in _evd %}
+                <span class="rip-chip cp-ready" data-tip-en="Technical: {{ ev.get('receipt','') }}" data-tip-zh="技术依据：{{ ev.get('receipt','') }}"><span class="l-en">{{ ev.get('en','') }}</span><span class="l-zh">{{ ev.get('zh') or ev.get('en','') }}</span></span>
               {% endfor %}
-              {% if _r_bars is not none %}
-                <span class="rip-chip cp-cross"><span class="l-en">1W cross {{ _r_bars }}{{ 'W' if _r_bars != 1 else 'W' }} ago</span><span class="l-zh">周线穿越{{ _r_bars }}根K线前</span></span>
+              {# weekly-cross note — only when the evidence chips don't already say it #}
+              {% if _r_bars is not none and '1W cross' not in ((r.get('evidence') or []) | join(' ')) %}
+                <span class="rip-chip cp-cross"><span class="l-en">weekly gauge crossed up {% if _r_bars == 0 %}this week{% elif _r_bars == 1 %}1 wk ago{% else %}{{ _r_bars }} wks ago{% endif %}</span><span class="l-zh">周线{% if _r_bars == 0 %}本周{% else %}{{ _r_bars }}周前{% endif %}上穿</span></span>
               {% endif %}
               {% set _rr_narr = r.get('narrative') %}
               {% if _rr_narr and _rr_narr.get('theme') %}
@@ -2254,10 +2309,11 @@
                 <div class="rip-metric-val mut">{% if _r_imm is not none %}~{{ '%.1f'|format(_r_imm) }}{{ t('W','周') }}{% else %}—{% endif %}</div>
               </div>
             </div>
+            {# Evidence chips — plain words at rest, engine receipt demoted to hover (doctrine Law 2) #}
             <div class="rip-chips">
-              {% set _evid = r.get('evidence') or [] %}
-              {% for ev in _evid %}
-                <span class="rip-chip cp-neutral">{{ ev }}</span>
+              {% set _evd = r.get('evidence_display') or [] %}
+              {% for ev in _evd %}
+                <span class="rip-chip cp-neutral" data-tip-en="Technical: {{ ev.get('receipt','') }}" data-tip-zh="技术依据：{{ ev.get('receipt','') }}"><span class="l-en">{{ ev.get('en','') }}</span><span class="l-zh">{{ ev.get('zh') or ev.get('en','') }}</span></span>
               {% endfor %}
               {% set _rr_narr = r.get('narrative') %}
               {% if _rr_narr and _rr_narr.get('theme') %}

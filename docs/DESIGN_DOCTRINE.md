@@ -183,7 +183,7 @@ dedicated copy-tier PRs. Top verified offenders:
 | 5 | us_stocks/macro | "α-ranked names that have triggered the MACD-2D × StochRSI-3D confluence buy" subtitle; sector-setups h2 repeats it | dashboard.html.j2:6320,6525,6567 |
 | 6 | china_intel | Ranking formula exposed in always-visible prose ("opportunity = signal × edge-remaining × leading-gap"); bare scores with no scale | china_intel.html.j2:412,549 |
 | 7 | news | Calibration board: raw wilson_low_5d/wilson_high_5d thresholds + "earned-authority gate" architecture talk (inside a `<details>` — borderline) | news.html.j2:686 |
-| 8 | china | Ripening Shelf cards: "2W Stoch · MACD D hist (d=−0.8) · 2W MACD ETA" acronym column at rest | ~~china.html.j2:2035–2068~~ **FIXED #2228** (engine-supplied evidence-chip strings still raw — engine-side follow-up) |
+| 8 | china | Ripening Shelf cards: "2W Stoch · MACD D hist (d=−0.8) · 2W MACD ETA" acronym column at rest | ~~china.html.j2:2035–2068~~ **FIXED #2228**; engine-supplied evidence chips + A-Share Phase card evidence keys **FIXED** (setup_tier `evidence_display` en/zh twins + PHEV render dicts; machine receipts demoted to hovers) |
 | 9 | basket_detail | ~90-word always-visible disclaimer ("T1–T4 confluence… T3* provisional… cycle blocks"); tier badges show internal stage names | basket_detail.html.j2:582–590,664 |
 | 10 | allocation | "What is actually **validated**" / "The **validated** edge is…" in user copy — house-law word (CI checker `check_validated_claims.py`); verify allowlist status | allocation.html.j2:503,537 |
 | 11 | baskets | Vetoed rank-# tape idiom still shipping (`#1…#34` mr-rank) — standing-ruling violation, port to `.dtp` | ~~baskets.html.j2:572~~ **FIXED #2232** (.dtp strip; allocation movers + basket_detail strip too) |
