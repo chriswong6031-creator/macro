@@ -631,6 +631,38 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("risk-radar failed: %s", e)
         latest["risk_radar"] = None
+    # Ignition Radar (engine/ignition_radar.py, IGN WB): risk-ON mirror of the Risk
+    # Radar — broad K-of-8 thrust confluence + narrow per-basket theme ignition.
+    # DISPLAY-ONLY / NOT VALIDATED. Runs AFTER risk_radar so it can reuse the already-
+    # computed catalysts payload. In-process call; writes data/ignition_radar/latest.json.
+    # Additive, never fatal.
+    try:
+        from engine import ignition_radar as _igr
+        from engine import ignition_audit as _iga
+        _ig_snap = _igr.snapshot()
+        latest["ignition_radar"] = _ig_snap
+        # US arm forward log (engine/ignition_audit.py): log today's snapshot, grade
+        # matured past reads vs SPY, attach the scorecard. Additive, never fatal.
+        try:
+            if _ig_snap:
+                _spy_s = None
+                if latest.get("risk_radar") and yahoo_closes is not None:
+                    try:
+                        import pandas as _pd
+                        _spy_df = store.read("yahoo", "SPY")
+                        if _spy_df is not None and "close" in _spy_df.columns:
+                            _spy_s = _spy_df["close"].dropna().sort_index().astype(float)
+                            _spy_s.index = _pd.to_datetime(_spy_s.index)
+                    except Exception:  # noqa: BLE001
+                        pass
+                latest["ignition_radar"]["forward_log"] = _iga.us_snapshot_and_grade(
+                    _ig_snap, _spy_s
+                )
+        except Exception as _e:  # noqa: BLE001
+            log.warning("ignition-radar audit failed: %s", _e)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("ignition-radar failed: %s", e)
+        latest["ignition_radar"] = None
     # Vol-Shock Risk Predictor (engine/vol_shock_scorecard.py): ONE forward 0-100
     # caution gauge that FUSES the fast/LEADING precursors which flash before a vol
     # shock (cross-asset concentration, dealer short-gamma, VIX term inversion,

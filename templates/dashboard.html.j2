@@ -88,6 +88,7 @@
 {% import "_risk_radar_card.html.j2" as rrc %}
 {# rr_leg + risk_radar_card moved to the shared partial _risk_radar_card.html.j2
    (used by the US Macro/Stocks pages AND the China/HK/Canada Market-State boards). #}
+{% import "_ignition_radar_card.html.j2" as igc %}
 {# coloured, arrowed direction word for a nowcast metric (from nowcast_hist) #}
 {% macro trendword(nh) -%}
 {% if nh and nh.trend %}{% set _ar = {'rising':'▲','accelerating':'▲','falling':'▼','cooling':'▼','flat':'▶'} %}{% set _zh = {'rising':'上行','falling':'下行','accelerating':'加速','cooling':'降温','flat':'走平'} %}<span class="tw tw-{{ nh.dir }}">{{ _ar[nh.trend] }} <span class="l-en">{{ nh.trend }}</span><span class="l-zh">{{ _zh[nh.trend] }}</span></span>{% endif %}
@@ -211,6 +212,7 @@
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
 
 {% include "_risk_radar_card.css.j2" %}
+{% include "_ignition_radar_card.css.j2" %}
 
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
@@ -1730,6 +1732,9 @@
       &nbsp;·&nbsp;
       <a href="us_stocks_lab.html" style="color:var(--link);font-weight:600">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
   </div>
+  {# Ignition Radar — stocks mode placement (after the stocks header).
+     Renders only when the payload is present; guarded by truthiness. #}
+  {% if mode == 'stocks' and latest.ignition_radar %}{{ igc.ignition_radar_card(latest.ignition_radar) }}{% endif %}
   {% endif %}
 
   {% if mode != 'stocks' %}
@@ -2266,6 +2271,9 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
       {% if MS.radar and MS.radar.state %}
       {{ rrc.risk_radar_card(MS.radar, latest.risk_radar.scares if latest.risk_radar else none) }}
       {% endif %}
+      {# Ignition Radar — risk-ON mirror of the Risk Radar (engine/ignition_radar.py, IGN WB).
+         Renders only when the payload is present (first nightly populates it). #}
+      {% if latest.ignition_radar %}{{ igc.ignition_radar_card(latest.ignition_radar) }}{% endif %}
       <div class="ms-head">
         <span class="ms-eyebrow"><span class="ms-live" id="ms-live-pill"></span>{{ t('MARKET STATE','市场状态') }}</span>
         <span class="ms-date" id="ms-date">· {{ MS.asof }}</span>
