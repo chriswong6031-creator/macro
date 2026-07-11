@@ -1,85 +1,142 @@
 # Metabolism Arming Checklist
 
 Operator runbook for arming the autonomous metabolism loop.
-Written by: Fable (2026-07-11, wave W6).
-Ruling: R-V4-1 — shadow-first law.
+Written by: Fable (2026-07-11, wave W6). Revised by Fable (2026-07-11 v2):
+auto-chain crons, multi-key failover, admin-panel switch, and the ruleset
+form of Act 2 (the original classic-branch-protection command would have
+rejected the pipeline's direct pushes to main — do not use it).
+Ruling: R-V4-1 — shadow-first law; R-V5-1..10 (durability + self-repair).
 
 ---
 
 ## (a) What ships armed-gated today
 
-Six GitHub Actions workflows drive the metabolism loop. The gating is two-layer: the job-level condition `if: vars.AUTONOMY_PAUSED != 'true'` lets the job START even when the variable is unset (so paused no-op runs stay visible in the run history), and the in-script re-check — `AUTONOMY_PAUSED` must equal the exact string `false` — is what actually fails closed before any real action. Net behavior: unset/anything-but-`false` = paused; only Act 5's explicit `false` arms:
+Nine GitHub Actions workflows drive the metabolism loop. The gating is two-layer: the job-level condition `if: vars.AUTONOMY_PAUSED != 'true'` lets the job START even when the variable is unset (so paused no-op runs stay visible in the run history), and the in-script re-check — `AUTONOMY_PAUSED` must equal the exact string `false` — is what actually fails closed before any real action. Net behavior: unset/anything-but-`false` = paused; only Act 5's explicit `false` arms:
 
 | Workflow | Cron | Purpose |
 |---|---|---|
 | `metabolism-heartbeat.yml` | `45 * * * *` (hourly) | Freshness + health monitor; writes organism_state + insight_bus rows |
 | `metabolism-agenda.yml` | `15 9 * * *` (daily 09:15 UTC) | SENSE + AGENDA: builds TIL fitness card + organism_state + agenda artifact |
 | `metabolism-propose.yml` | `45 9 * * *` (daily 09:45 UTC) | PROPOSE: Opus lobe-brain emits docket + registers fitness contracts |
-| `metabolism-adjudicate.yml` | `15 10 * * *` (daily 10:15 UTC) | ADJUDICATE: orchestrator + adversary + two-key resolve |
+| `metabolism-adjudicate.yml` | `15 10 * * *` (daily 10:15 UTC) | ADJUDICATE: iterates ALL pending propose branches; orchestrator + adversary + two-key resolve |
+| `metabolism-build.yml` | `45 10 * * *` (daily 10:45 UTC) | BUILD: Sonnet draft-PR sessions on authorized proposals (also `workflow_dispatch` per-cycle) |
 | `metabolism-verify.yml` | `15 11 * * *` (daily 11:15 UTC) | VERIFY: grades realized fitness deltas on matured contracts |
+| `metabolism-merge.yml` | `15 12 * * *` (daily 12:15 UTC) | MERGE: serialized two-key + green-CI + fence-checked merges (also `workflow_dispatch`) |
 | `metabolism-dream.yml` | `0 6 * * 0` (Sunday 06:00 UTC) | DREAM: preference_prior + lessons anti-rot resummary |
+| `metabolism-gc.yml` | `20 7 * * *` (daily 07:20 UTC) | GC: reaps leaked build worktrees. Deliberately UNGATED — cleanup must run even while paused; it is read-and-remove only |
 
-Every workflow re-checks `AUTONOMY_PAUSED` in shell before any real action. BUILD (`metabolism-build.yml`) runs on `workflow_dispatch` (per-cycle, not cron) and is also armed-gated. The autonomy loop will never author code, merge a PR, or advance any forward ledger until Act 5 below is executed.
+Every armed workflow re-checks `AUTONOMY_PAUSED` in shell before any real action, and every workflow carries an `if: failure()` Telegram operator notify (silent skip when the Telegram secrets are absent). The autonomy loop will never author code, merge a PR, or advance any forward ledger until Act 5 below is executed.
 
 ---
 
-## (b) The Five Acts (exact commands)
+## (b) The Six Acts (exact commands)
 
 ### Act 1 — Set secrets
 
 ```bash
-# Primary OAuth key (required — without this, all LLM stages no-op)
+# Pool OAuth keys (each from `claude setup-token` on a separate Max account).
+# ANY SUBSET WORKS: the failover waterfall (engine/llm_auth.py, 2026-07-11)
+# tries pool keys non-cooling-first by 5h load, then the legacy
+# CLAUDE_CODE_OAUTH_TOKEN, then ANTHROPIC_API_KEY, then DeepSeek. A missing,
+# revoked (401/403), or rate-limited (429/529) key is cooled in the ledger
+# and skipped — it degrades the pool, never breaks a stage.
 gh secret set CLAUDE_CODE_OAUTH_TOKEN_1
+gh secret set CLAUDE_CODE_OAUTH_TOKEN_2   # optional
+gh secret set CLAUDE_CODE_OAUTH_TOKEN_3   # optional
 
-# Optional additional keys for load distribution across the 5-hour window
-gh secret set CLAUDE_CODE_OAUTH_TOKEN_2
-gh secret set CLAUDE_CODE_OAUTH_TOKEN_3
-
-# Fallback Anthropic API key (if OAuth pool is exhausted)
+# Fallback Anthropic API key (if the whole OAuth pool is exhausted)
 gh secret set ANTHROPIC_API_KEY
 
-# Telegram digest (optional — loop operates without it)
+# Telegram digest + failure notifies (optional — loop operates without it)
 gh secret set TELEGRAM_BOT_TOKEN
 gh secret set TELEGRAM_CHAT_ID
 ```
 
 All secrets are name-only references in `config/capability_manifest.yml` — no values are stored in the repo.
 
-### Act 2 — Branch protection with required status checks
+### Act 2 — Branch protection with required status checks (RULESET form — do NOT use classic protection)
 
-The three REQUIRED status checks gate every PR the loop opens:
+The three REQUIRED status checks gate every PR the loop opens. They are the job
+names of the always-on `.github/workflows/fences.yml` (which runs on EVERY PR —
+the path-gated copies in `ci.yml` alone would leave non-metabolism PRs stuck on
+"Expected — waiting for status" if made required).
 
-```bash
-# Add self-mod fence, capability redline, and grader manifest as required checks.
-# Replace OWNER/REPO with the actual GitHub repo slug.
-REPO="OWNER/REPO"
-
-gh api --method PUT "repos/$REPO/branches/main/protection" \
-  --field required_status_checks='{"strict":true,"contexts":["self-mod-fence","capability-broker","grader-manifest"]}' \
-  --field enforce_admins=true \
-  --field required_pull_request_reviews='{"required_approving_review_count":0,"dismiss_stale_reviews":false}' \
-  --field restrictions=null \
-  --field allow_force_pushes=false \
-  --field allow_deletions=false
-```
-
-Verify the protection is active:
+**Why a ruleset and not the classic branch-protection API:** this repo's
+pipeline pushes directly to `main` dozens of times a day (render lanes, live
+quotes, metabolism artifact commits) using the workflow `GITHUB_TOKEN`. Classic
+protection with required checks + `enforce_admins=true` rejects those pushes and
+freezes the nightly. The ruleset below gets the same PR gate while letting the
+`github-actions` app (and ONLY that app) bypass for direct pushes:
 
 ```bash
-gh api "repos/$REPO/branches/main/protection" | jq '.required_status_checks.contexts'
+REPO="chriswong6031-creator/macro"
+
+gh api --method POST "repos/$REPO/rulesets" --input - <<'JSON'
+{
+  "name": "main-metabolism-fences",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    { "type": "required_status_checks", "parameters": {
+        "strict_required_status_checks_policy": false,
+        "required_status_checks": [
+          { "context": "self-mod-fence",    "integration_id": 15368 },
+          { "context": "capability-broker", "integration_id": 15368 },
+          { "context": "grader-manifest",   "integration_id": 15368 }
+        ]
+    }}
+  ],
+  "bypass_actors": [
+    { "actor_id": 15368, "actor_type": "Integration", "bypass_mode": "always" }
+  ]
+}
+JSON
 ```
 
-Expected output includes `"self-mod fence selftest"`, `"capability broker + redline test suite"`, `"grader manifest (fitness graders + immutable configs unchanged)"`.
+Design notes (deliberate deviations from the original draft of this Act):
+- `15368` is the `github-actions` app id. Bypass covers the pipeline's direct
+  pushes. The loop's own merges use `METABOLISM_MERGE_PAT` (Act 3) — a PAT
+  carries the OPERATOR's identity, not the app's, so **loop merges remain fully
+  subject to the three required checks**. Do NOT add an admin/owner bypass:
+  that would let the PAT-driven merge lane skip the fences.
+- `strict_required_status_checks_policy: false` (the original said `strict:true`):
+  strict mode requires every PR branch to be up-to-date with `main` before
+  merging — with main advancing every ~15 minutes here, that makes every PR
+  permanently unmergeable.
+- `integration_id: 15368` pins each required context to checks produced by
+  GitHub Actions itself, so another app cannot spoof a green fence.
+
+Verify the ruleset is active:
+
+```bash
+gh api "repos/$REPO/rulesets" | jq '.[] | {name, enforcement}'
+gh api "repos/$REPO/rules/branches/main" | jq '[.[].type]'
+```
+
+Expected: `main-metabolism-fences` / `active`, and the rule types include
+`deletion`, `non_fast_forward`, `required_status_checks`.
 
 ### Act 3 — Merge PAT (WITHOUT workflows scope)
 
 The metabolism loop needs a PAT to merge its own draft PRs via the serialized merge lane. The PAT must NOT have `workflows` scope (preventing the loop from editing CI).
 
+Since 2026-07-11 this PAT is actually CONSUMED: `metabolism-merge.yml` (merge
+step) and `metabolism-build.yml` (draft-PR creation) use
+`${{ secrets.METABOLISM_MERGE_PAT || secrets.GITHUB_TOKEN }}`. The PAT matters
+for two reasons beyond least-privilege: (1) PRs created by `GITHUB_TOKEN` never
+trigger `pull_request` workflows (GitHub anti-recursion), so without the PAT the
+loop's draft PRs would sit with NO CI checks — permanently unmergeable once
+Act 2's required checks are enforced; (2) merges by the PAT are subject to the
+Act 2 ruleset (the PAT is not a bypass actor).
+
 ```bash
-# Mint a PAT with scopes: repo (read+write), pull_requests — NOT workflows.
-# The GitHub web UI: Settings > Developer settings > Personal access tokens > Fine-grained tokens.
-# Recommended scopes: Contents (read+write), Pull requests (read+write).
-# DO NOT add workflow permissions.
+# Mint at: Settings > Developer settings > Personal access tokens > Fine-grained tokens.
+#   Repository access: ONLY this repo.
+#   Permissions: Contents (read+write), Pull requests (read+write).
+#   DO NOT grant Workflows. DO NOT grant Administration.
 
 gh secret set METABOLISM_MERGE_PAT
 ```
@@ -108,16 +165,36 @@ How `_resolve_key_ref` falls back: `scripts/metabolism_build._resolve_key_ref()`
 ### Act 5 — Flip the arming variable (do this LAST)
 
 ```bash
-# Flip LAST — after all four acts above are confirmed.
+# Flip LAST — after all acts above are confirmed.
 gh variable set AUTONOMY_PAUSED --body false
 ```
 
-This is the single irreducible arming act. Every metabolism stage reads `AUTONOMY_PAUSED` as its first action; only the exact string `false` arms the loop. Any other value (unset, `true`, empty) keeps all stages inert.
+This is the single irreducible arming act. Every metabolism stage reads `AUTONOMY_PAUSED` as its first action; only the exact string `false` arms the loop. Any other value (unset, `true`, empty) keeps all stages inert. The variable was explicitly seeded to `true` on 2026-07-11 so the paused state is visible rather than implicit.
+
+Equivalent UI: the **Metabolism tab at https://admin.mastermind-x.com** carries an
+arm/pause switch that PATCHes this same variable (requires Act 6 below), plus the
+key-pool health board and recent metabolism runs.
 
 To re-pause immediately:
 
 ```bash
 gh variable set AUTONOMY_PAUSED --body true
+```
+
+### Act 6 — Admin-panel switch token (optional but recommended)
+
+The admin console's Metabolism switch needs a server-side GitHub token to read
+and write the `AUTONOMY_PAUSED` variable. Without it the tab degrades to a
+read-only UNKNOWN view (switch disabled).
+
+```bash
+# Mint a SECOND fine-grained PAT (separate from Act 3 — do not widen the merge PAT):
+#   Repository access: ONLY this repo.
+#   Permissions: Actions (read), Variables (read+write).
+gh secret set ADMIN_GH_TOKEN
+
+# Deliver it to the VPS (/etc/macro-admin.env as GH_TOKEN=...) + restart admin:
+gh workflow run deploy-api-secrets.yml
 ```
 
 ---
@@ -208,7 +285,9 @@ All artifacts are committed to branches named `metabolism/<stage>-<cycle_id>` an
 
 ### Break-glass
 
-To immediately halt all autonomous activity:
+To immediately halt all autonomous activity — either flip the switch on the
+**Metabolism tab at https://admin.mastermind-x.com** (one click, confirm
+dialog), or:
 
 ```bash
 gh variable set AUTONOMY_PAUSED --body true
@@ -228,5 +307,9 @@ gh workflow disable metabolism-merge.yml
 gh workflow disable metabolism-verify.yml
 gh workflow disable metabolism-dream.yml
 ```
+
+(`metabolism-gc.yml` may stay enabled — it is ungated by design and only reaps
+leaked worktrees; disable it too only if you want zero metabolism activity of
+any kind.)
 
 Re-enable with `gh workflow enable <name>` and then re-flip `AUTONOMY_PAUSED=false`.
