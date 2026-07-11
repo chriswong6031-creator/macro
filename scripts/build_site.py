@@ -1726,6 +1726,24 @@ def _froth_fragility_view(latest: dict) -> dict | None:
         return None
 
 
+def _mag7_regime_view() -> dict | None:
+    """Load the Mag 7 regime artifact (data/mag7_regime/latest.json) for the
+    us_stocks panel.  DISPLAY-ONLY; cap-weighted context read, not a scored signal.
+    Written by the engine lane (engine/mag7_regime.py); may be absent on first run.
+    Never raises — the panel fails open when the artifact is absent."""
+    try:
+        p = config.data_dir() / "mag7_regime" / "latest.json"
+        if not p.exists():
+            return None
+        d = json.loads(p.read_text(encoding="utf-8"))
+        if not d.get("trend_state"):
+            return None  # degraded artifact — don't show the panel
+        return d
+    except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
+        log.warning("mag7_regime_view failed (%s)", e)
+        return None
+
+
 def _dispersion_regime_view() -> dict | None:
     """Load the L3 dispersion regime artifact (data/dispersion/regime.json) for the
     macro page selection-regime chip.  DISPLAY-ONLY; gross_mult_live is always 1.0 per
@@ -3535,6 +3553,22 @@ def main() -> int:
             for _item in (_ab.get(_lane) or []):
                 if _item.get("kind") == "sector" and _item.get("ticker") in _two_reads_lookup:
                     _item["two_reads_chip"] = _two_reads_lookup[_item["ticker"]]
+
+    # Mag 7 regime panel (data/mag7_regime/latest.json — DISPLAY-ONLY context read).
+    # Injected into latest so the template accesses it as latest.mag7_regime.
+    # Also published to site/stockdata/mag7_regime.json for potential JS consumption.
+    # Fail-open: absent on first run; the panel simply doesn't render.
+    if not latest.get("mag7_regime"):
+        _m7 = _mag7_regime_view()
+        if _m7:
+            latest["mag7_regime"] = _m7
+            try:
+                _m7_site = site / "stockdata" / "mag7_regime.json"
+                _m7_site.parent.mkdir(parents=True, exist_ok=True)
+                _m7_site.write_text(json.dumps(_m7, separators=(",", ":"), default=str),
+                                    encoding="utf-8")
+            except Exception as _m7e:  # noqa: BLE001 — additive, never fatal
+                log.warning("mag7_regime site publish failed (%s)", _m7e)
 
     vm = dict(
         latest=latest,

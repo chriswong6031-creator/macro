@@ -1,0 +1,84 @@
+  /* ============================================================================
+     MAG 7 PANEL (.m7p) — cap-weighted Mag 7 context read.
+     Blue-info accent. Class prefix: .m7p (no collision with .igx/.rrx).
+     Included by dashboard.html.j2 (stocks mode only, adjacent to ignition radar).
+     ============================================================================ */
+  .m7p { --m7-col: var(--info);
+         display: grid; gap: 11px; margin: 12px 0 2px; padding: 15px 18px;
+         border-radius: 12px; background: var(--panel); border: 1px solid var(--line);
+         border-left: 4px solid var(--m7-col); font-size: 12.5px; line-height: 1.4;
+         box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
+  /* state-based accent overrides */
+  .m7p.m7p-running_broad   { --m7-col: var(--ok); }
+  .m7p.m7p-running_narrow  { --m7-col: var(--info); }
+  .m7p.m7p-turning_up      { --m7-col: var(--ok); }
+  .m7p.m7p-cooling         { --m7-col: var(--warn); }
+  .m7p.m7p-rolling_over    { --m7-col: var(--warn); }
+  .m7p.m7p-down            { --m7-col: var(--act); }
+
+  /* header */
+  .m7p .m7p-hd  { display: flex; align-items: flex-start; gap: 10px; }
+  .m7p .m7p-meta { flex: 1; min-width: 0; }
+  .m7p .m7p-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+  .m7p .m7p-h2  { margin: 0; font-weight: 700; font-size: 13px; color: var(--text); }
+  .m7p .m7p-badge { font-weight: 800; letter-spacing: .03em; color: var(--m7-col);
+         font-size: 11px; font-variant-numeric: tabular-nums; padding: 1px 7px;
+         border-radius: 5px;
+         background: color-mix(in srgb, var(--m7-col) 14%, transparent);
+         border: 1px solid color-mix(in srgb, var(--m7-col) 35%, transparent); }
+  .m7p .m7p-help { display: inline-flex; align-items: center; justify-content: center;
+         width: 14px; height: 14px; border-radius: 50%;
+         background: var(--panel2); border: 1px solid var(--line);
+         color: var(--muted); font-size: 9px; font-weight: 700; cursor: help; }
+  /* state + stance lines */
+  .m7p .m7p-state  { font-size: 12.5px; color: var(--text); font-weight: 600; margin-top: 3px; }
+  .m7p .m7p-stance { font-size: 12px; color: var(--m7-col); font-weight: 700; margin-top: 1px; }
+
+  /* 7-dot member bar */
+  .m7p .m7p-dots { display: flex; gap: 10px 12px; flex-wrap: wrap; align-items: flex-end; }
+  .m7p .m7p-dot-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px;
+         cursor: help; }
+  .m7p .m7p-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+  .m7p .m7p-dot.m7p-dot-green { background: var(--up); }
+  .m7p .m7p-dot.m7p-dot-amber { background: var(--warn); }
+  .m7p .m7p-dot.m7p-dot-grey  { background: color-mix(in srgb, var(--muted) 40%, var(--panel2)); }
+  .m7p .m7p-dot-lbl { font-size: 9px; font-weight: 700; color: var(--muted);
+         letter-spacing: .03em; font-variant-numeric: tabular-nums; }
+
+  /* generals */
+  .m7p .m7p-generals { font-size: 12px; color: var(--text); }
+  .m7p .m7p-generals b { color: var(--up); }
+  .m7p .m7p-joining { color: var(--warn); }
+
+  /* structure chip */
+  .m7p .m7p-structure { display: inline-flex; align-items: center; gap: 4px;
+         background: color-mix(in srgb, var(--warn) 10%, var(--panel2));
+         border: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+         border-radius: 6px; padding: 3px 9px; font-size: 11px; font-weight: 600;
+         color: var(--warn); }
+
+  /* tech-legs strip */
+  .m7p .m7p-legs { display: flex; flex-wrap: wrap; gap: 5px; }
+  .m7p .m7p-leg { display: inline-flex; align-items: center; gap: 5px;
+         padding: 3px 9px; border-radius: 6px; font-size: 11px; cursor: help;
+         background: var(--panel2); border: 1px solid var(--line); color: var(--text); }
+  .m7p .m7p-leg-name { font-weight: 600; }
+  .m7p .m7p-leg-word { color: var(--muted); }
+  .m7p .m7p-leg.up  .m7p-leg-word { color: var(--up); font-weight: 700; }
+  .m7p .m7p-leg.up2 .m7p-leg-word { color: var(--up); font-weight: 800; }
+  .m7p .m7p-leg.dn  .m7p-leg-word { color: var(--down); font-weight: 700; }
+  .m7p .m7p-leg.dn2 .m7p-leg-word { color: var(--down); font-weight: 800; }
+
+  /* footer + as-of */
+  .m7p .m7p-foot { font-size: 11px; color: var(--muted);
+         border-top: 1px solid color-mix(in srgb, var(--m7-col) 18%, var(--line));
+         padding-top: 9px; }
+  .m7p .m7p-asof { display: inline; font-size: 10.5px; color: var(--muted);
+         margin-left: 6px; font-variant-numeric: tabular-nums; }
+
+  /* responsive */
+  @media (max-width: 560px) {
+    .m7p { padding: 13px 14px; gap: 9px; }
+    .m7p .m7p-legs .m7p-leg-name.l-zh,
+    .m7p .m7p-legs .m7p-leg-name.l-en { font-size: 10.5px; }
+  }
