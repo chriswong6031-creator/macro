@@ -1,32 +1,32 @@
 {
-  "2757105dd36c": {
-    "name_en": "Cross-sector cluster \u00b7 Energy + Utilities",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Energy + Utilities",
-    "score": 67.5
+  "23b3e9169a1c": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Technology",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Technology",
+    "score": 56.5
   },
-  "4e5e5adce10c": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Cyclical + Communication Services",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Cyclical + Communication Services",
-    "score": 60.5
+  "523b16395cf7": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Technology",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Technology",
+    "score": 57.2
   },
   "590cd1326a0a": {
     "name_en": "Cross-sector cluster \u00b7 Basic Materials + Healthcare",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Basic Materials + Healthcare",
     "score": 64.9
   },
-  "5af12b064763": {
-    "name_en": "Cross-sector cluster \u00b7 Basic Materials + Consumer Cyclical",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Basic Materials + Consumer Cyclical",
-    "score": 59.1
+  "8fc0dcf3b9d7": {
+    "name_en": "Cross-sector cluster (5 names)",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4\uff085\u53ea\uff09",
+    "score": 75.4
   },
-  "71b0fe98b201": {
+  "9b580f3a6816": {
+    "name_en": "Cross-sector cluster \u00b7 Energy + Utilities",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Energy + Utilities",
+    "score": 64.2
+  },
+  "a49cb85b0e63": {
     "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Cyclical",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Cyclical",
-    "score": 74.5
-  },
-  "8fc0dcf3b9d7": {
-    "name_en": "Emerging Basic Materials cluster",
-    "name_zh": "\u65b0\u5174 Basic Materials \u96c6\u7fa4",
-    "score": 65.4
+    "score": 62.9
   }
 }

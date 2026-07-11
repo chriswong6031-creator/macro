@@ -1,42 +1,42 @@
 {
   "schema": "china_masterminds.latest.v2",
   "n": 3,
-  "built": "2026-07-07 15:05 UTC",
-  "asof": "2026-07-07",
+  "built": "2026-07-11 03:05 UTC",
+  "asof": "2026-07-10",
   "stale_after_min": 1440,
   "cards": [
     {
       "key": "cnmm_conservative",
       "name": "China Mastermind \u2014 Conservative",
-      "cagr": 6.93,
+      "cagr": 6.92,
       "sharpe": 1.34,
       "maxdd": -6.2,
-      "asof": "2026-07-07",
-      "gross_now": 0.52,
+      "asof": "2026-07-10",
+      "gross_now": 0.38,
       "alloc": [
         {
           "asset": "511010.SS",
           "label_en": "China 5y Govt Bond",
           "label_zh": "5\u5e74\u56fd\u503a",
-          "weight": 25.2
-        },
-        {
-          "asset": "510880.SS",
-          "label_en": "SSE Dividend",
-          "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
-          "weight": 19.9
+          "weight": 25.6
         },
         {
           "asset": "518880.SS",
           "label_en": "Gold (onshore)",
           "label_zh": "\u9ec4\u91d1",
-          "weight": 5.4
+          "weight": 5.6
+        },
+        {
+          "asset": "510880.SS",
+          "label_en": "SSE Dividend",
+          "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
+          "weight": 5.0
         },
         {
           "asset": "159915.SZ",
           "label_en": "ChiNext (growth)",
           "label_zh": "\u521b\u4e1a\u677f\uff08\u6210\u957f\uff09",
-          "weight": 1.1
+          "weight": 1.2
         },
         {
           "asset": "510300.SS",
@@ -49,35 +49,35 @@
     {
       "key": "cnmm_moderate",
       "name": "China Mastermind \u2014 Moderate",
-      "cagr": 9.99,
+      "cagr": 9.97,
       "sharpe": 1.15,
       "maxdd": -12.1,
-      "asof": "2026-07-07",
-      "gross_now": 0.97,
+      "asof": "2026-07-10",
+      "gross_now": 0.73,
       "alloc": [
         {
           "asset": "511010.SS",
           "label_en": "China 5y Govt Bond",
           "label_zh": "5\u5e74\u56fd\u503a",
-          "weight": 50.2
-        },
-        {
-          "asset": "510880.SS",
-          "label_en": "SSE Dividend",
-          "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
-          "weight": 34.6
+          "weight": 50.9
         },
         {
           "asset": "518880.SS",
           "label_en": "Gold (onshore)",
           "label_zh": "\u9ec4\u91d1",
-          "weight": 9.4
+          "weight": 9.8
+        },
+        {
+          "asset": "510880.SS",
+          "label_en": "SSE Dividend",
+          "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
+          "weight": 8.7
         },
         {
           "asset": "159915.SZ",
           "label_en": "ChiNext (growth)",
           "label_zh": "\u521b\u4e1a\u677f\uff08\u6210\u957f\uff09",
-          "weight": 2.0
+          "weight": 2.1
         },
         {
           "asset": "510300.SS",
@@ -90,41 +90,41 @@
     {
       "key": "cnmm_aggressive",
       "name": "China Mastermind \u2014 Aggressive",
-      "cagr": 14.07,
+      "cagr": 14.04,
       "sharpe": 1.08,
       "maxdd": -22.3,
-      "asof": "2026-07-07",
-      "gross_now": 1.75,
+      "asof": "2026-07-10",
+      "gross_now": 1.36,
       "alloc": [
         {
           "asset": "511010.SS",
           "label_en": "China 5y Govt Bond",
           "label_zh": "5\u5e74\u56fd\u503a",
-          "weight": 100.1
-        },
-        {
-          "asset": "510880.SS",
-          "label_en": "SSE Dividend",
-          "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
-          "weight": 55.3
+          "weight": 101.4
         },
         {
           "asset": "518880.SS",
           "label_en": "Gold (onshore)",
           "label_zh": "\u9ec4\u91d1",
-          "weight": 15.0
+          "weight": 15.6
+        },
+        {
+          "asset": "510880.SS",
+          "label_en": "SSE Dividend",
+          "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
+          "weight": 13.9
         },
         {
           "asset": "159915.SZ",
           "label_en": "ChiNext (growth)",
           "label_zh": "\u521b\u4e1a\u677f\uff08\u6210\u957f\uff09",
-          "weight": 3.2
+          "weight": 3.3
         },
         {
           "asset": "510300.SS",
           "label_en": "CSI 300",
           "label_zh": "\u6caa\u6df1300",
-          "weight": 1.9
+          "weight": 2.0
         }
       ]
     }
