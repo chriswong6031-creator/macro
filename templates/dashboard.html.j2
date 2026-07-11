@@ -1616,17 +1616,17 @@
   .dtp-mbar.dn { background:color-mix(in srgb,var(--down) 65%,transparent); }
   .dtp-2d  { font-size:10px; color:var(--muted); font-family:var(--font-mono,monospace); white-space:nowrap; }
   .dtp-empty { grid-column:1/-1; padding:10px 16px; font-size:11px; color:var(--muted); }
-  .dtp-full { display:grid; grid-template-columns:1fr 1fr; gap:0 22px; padding:6px 16px 9px; border-top:1px dashed var(--line); }
+  .dtp-colmore { border-top:1px dashed var(--line); margin-top:5px; padding-top:5px; }
   .dtp-more { display:block; width:100%; padding:5px 10px; font:inherit; font-size:11px; font-weight:600; color:var(--muted); text-align:center; background:transparent; border:none; border-top:1px solid var(--line); cursor:pointer; }
   .dtp-more:hover { color:var(--text); background:color-mix(in srgb,var(--text) 4%,transparent); }
   /* author display rules defeat the UA [hidden] default — re-assert it */
-  .dtp-full[hidden], .dtp-more[hidden] { display:none; }
+  .dtp-colmore[hidden], .dtp-more[hidden] { display:none; }
   .dtp-fn  { padding:5px 16px 7px; font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); line-height:1.45; }
   .ftr-t1-help { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; border:1px solid var(--line); color:var(--muted); font-size:9.5px; font-weight:700; cursor:help; line-height:1; vertical-align:middle; }
   @media(max-width:640px){
     .dtp-row { gap:5px 10px; padding:8px 12px 7px; }
     .dtp-asof { width:100%; margin-left:0; }
-    .dtp-body, .dtp-full { grid-template-columns:1fr; }
+    .dtp-body { grid-template-columns:1fr; }
     .dtp-col + .dtp-col { border-left:none; border-top:1px solid var(--line); }
     .dtp-mname { font-size:12px; }
   }
@@ -7011,7 +7011,6 @@ body.page-macro .isle-deep-health{font-size:10.5px;color:var(--muted);padding:10
         <span class="dtp-asof" id="dtp-asof"></span>
       </div>
       <div class="dtp-body" id="dtp-body"></div>
-      <div class="dtp-full" id="dtp-full" hidden></div>
       <button class="dtp-more" id="dtp-more" type="button" aria-expanded="false" hidden></button>
       <div class="dtp-fn" id="dtp-fn"></div>
     </div>
@@ -8795,7 +8794,6 @@ function renderTapeBand(pulse){
   var all=(pulse.baskets||[]).filter(function(b){return b.live_ew_chg_pct!=null&&b.tape_rank!=null;});
   var session=pulse.session||'closed';
   var bodyEl=document.getElementById('dtp-body');
-  var fullEl=document.getElementById('dtp-full');
   var moreBtn=document.getElementById('dtp-more');
   var fnEl=document.getElementById('dtp-fn');
   if(!bodyEl) return;
@@ -8806,7 +8804,6 @@ function renderTapeBand(pulse){
       +(loading?L('quotes loading…','报价加载中…')
                :L('No tape data for the last session.','上一交易时段暂无行情数据。'))
       +'</div>';
-    if(fullEl){fullEl.hidden=true;}
     if(moreBtn){moreBtn.hidden=true;moreBtn.setAttribute('aria-expanded','false');}
     if(fnEl){fnEl.innerHTML='';}
     return;
@@ -8886,12 +8883,29 @@ function renderTapeBand(pulse){
     lblDn=L('LAST SESSION LAGGARDS','上一交易日领跌');
   }
 
-  var colUp='<div class="dtp-col"><div class="dtp-col-lbl up">'+lblUp+'</div>';
-  top5.forEach(function(b,i){colUp+=rowHtml(b,i+1);});
+  var upRows='', dnRows='';
+  top5.forEach(function(b,i){upRows+=rowHtml(b,i+1);});
+  bot3.forEach(function(b,i){dnRows+=rowHtml(b,i+1);});
+  /* footnote flow provenance must reflect only the always-visible rows; the
+     fold rows below also run flowBits, so snapshot before building them */
+  var flowShownVisible=flowShown;
+
+  /* full tape behind the expander (UI truncation only, TS-R5) — each column
+     CONTINUES its own ranking past the preview cut: leaders extend 6..half,
+     laggards extend worst-first, the two meet at mid-tape. No row repeats. */
+  var half=Math.max(top5.length,Math.ceil(all.length/2));
+  var upCont=all.slice(top5.length,half);
+  var dnCont=all.slice(half,all.length-bot3.length).reverse();
+  var upMore='', dnMore='';
+  upCont.forEach(function(b,i){upMore+=rowHtml(b,top5.length+i+1);});
+  dnCont.forEach(function(b,i){dnMore+=rowHtml(b,bot3.length+i+1);});
+
+  var colUp='<div class="dtp-col"><div class="dtp-col-lbl up">'+lblUp+'</div>'+upRows;
+  if(upMore){colUp+='<div class="dtp-colmore" hidden>'+upMore+'</div>';}
   colUp+='</div>';
 
-  var colDn='<div class="dtp-col"><div class="dtp-col-lbl dn">'+lblDn+'</div>';
-  bot3.forEach(function(b,i){colDn+=rowHtml(b,i+1);});
+  var colDn='<div class="dtp-col"><div class="dtp-col-lbl dn">'+lblDn+'</div>'+dnRows;
+  if(dnMore){colDn+='<div class="dtp-colmore" hidden>'+dnMore+'</div>';}
   /* AI-Capex complex row (live mode only — chip suppression law unchanged, FT-R12) */
   if(!isChipSuppressed(pulse)){
     var cx=null;
@@ -8913,8 +8927,6 @@ function renderTapeBand(pulse){
 
   bodyEl.innerHTML=colUp+colDn;
 
-  /* footnote FIRST (flowShown must reflect only the visible columns; the full
-     tape below also runs flowBits but its rows sit behind the expander) */
   if(fnEl){
     /* FT-R3 fade note — plain words on Tier 1, 58% receipt demoted to the ? tip
        (doctrine Law 2/3; same form as baskets #2232/#2236) */
@@ -8923,7 +8935,7 @@ function renderTapeBand(pulse){
     var tipEn='Technical receipt: T+1 violent-flip base rate 58% fade (n=26) · flip-confirmation lens · descriptive only, not a directional signal · display tier.';
     var tipZh='技术说明：T+1剧烈反转基础概率58%消退（n=26）· 翻转确认透镜 · 仅描述、非方向信号 · 展示层。';
     var flowSeg='';
-    if(flowShown){
+    if(flowShownVisible){
       var aoEn=flowAsOf?' (as of '+esc(flowAsOf)+')':'';
       var aoZh=flowAsOf?'（截至 '+esc(flowAsOf)+'）':'';
       flowSeg=' · '+L('flow = nightly dollar-volume read'+aoEn+', descriptive only','资金流 = 每晚美元成交量读数'+aoZh+'，仅供描述');
@@ -8933,24 +8945,26 @@ function renderTapeBand(pulse){
       +flowSeg;
   }
 
-  /* full tape — every ranked basket behind the expander (UI truncation only, TS-R5) */
-  if(fullEl&&moreBtn){
-    var fh='';
-    all.forEach(function(b,i){fh+=rowHtml(b,i+1);});
-    fullEl.innerHTML=fh;
-    var n=all.length;
-    var moreLbl=function(open){
-      return open?L('Show less ▴','收起 ▴')
-                 :L('Show full tape ('+n+') ▾','显示完整行情（'+n+'）▾');
-    };
-    moreBtn.hidden=false;
-    moreBtn.innerHTML=moreLbl(!fullEl.hidden);
-    moreBtn.setAttribute('aria-expanded',fullEl.hidden?'false':'true');
-    moreBtn.onclick=function(){
-      fullEl.hidden=!fullEl.hidden;
-      moreBtn.setAttribute('aria-expanded',fullEl.hidden?'false':'true');
-      moreBtn.innerHTML=moreLbl(!fullEl.hidden);
-    };
+  if(moreBtn){
+    if(!upCont.length&&!dnCont.length){
+      moreBtn.hidden=true;
+      moreBtn.setAttribute('aria-expanded','false');
+    } else {
+      var n=all.length;
+      var moreLbl=function(open){
+        return open?L('Show less ▴','收起 ▴')
+                   :L('Show full tape ('+n+') ▾','显示完整行情（'+n+'）▾');
+      };
+      var setOpen=function(open){
+        bodyEl.querySelectorAll('.dtp-colmore').forEach(function(el){el.hidden=!open;});
+        moreBtn.setAttribute('aria-expanded',open?'true':'false');
+        moreBtn.innerHTML=moreLbl(open);
+      };
+      moreBtn.hidden=false;
+      /* live re-renders rebuild the columns — carry the open state across */
+      setOpen(moreBtn.getAttribute('aria-expanded')==='true');
+      moreBtn.onclick=function(){setOpen(moreBtn.getAttribute('aria-expanded')!=='true');};
+    }
   }
 }
 
