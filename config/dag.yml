@@ -320,6 +320,7 @@ lanes:
             - scripts.build_subsector_confluence --russell
             - scripts.build_cohort_metrics
             - scripts.build_news
+            - scripts.grade_news_events
             - scripts.build_methodology
             - scripts.build_nasdaq_internals
           cl_special:
