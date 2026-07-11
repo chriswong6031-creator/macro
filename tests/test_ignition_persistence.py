@@ -571,3 +571,29 @@ def test_template_no_validated_word_with_narrow_top():
         assert "validated" not in html.lower(), (
             f"'validated' found in rendered HTML for state={state}"
         )
+
+
+@pytest.mark.skipif(not _JINJA_AVAILABLE, reason="jinja2 not installed")
+def test_strip_persistence_headline_visible_when_off_and_streak_gte_3():
+    """Strip variant (operator revamp 2026-07-11, us_stocks placement) must carry the
+    same persistence honesty as the card — quiet broad state must not bury a running theme."""
+    env = _jinja_env()
+    macro_tmpl = env.from_string(
+        "{% import '_ignition_radar_card.html.j2' as igc %}{{ igc.ignition_radar_strip(ig) }}"
+    )
+    ig = _base_payload(state="off")
+    html = macro_tmpl.render(ig=ig)
+    assert "running · day 11" in html, f"Strip persistence headline missing; html={html[:400]}"
+    assert "持续运行 · 第11日" in html
+
+
+@pytest.mark.skipif(not _JINJA_AVAILABLE, reason="jinja2 not installed")
+def test_strip_persistence_headline_hidden_when_ignited():
+    """Strip: no persistence headline when broad state is ignited."""
+    env = _jinja_env()
+    macro_tmpl = env.from_string(
+        "{% import '_ignition_radar_card.html.j2' as igc %}{{ igc.ignition_radar_strip(ig) }}"
+    )
+    ig = _base_payload(state="ignited")
+    html = macro_tmpl.render(ig=ig)
+    assert "running · day" not in html
