@@ -2378,42 +2378,278 @@ body.page-macro .mx2-hero-ctx{
 body.page-macro .mx2-hero-ctx strong{color:var(--text)}
 body.page-macro .mx2-hero-ctx .mx2-alerts-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 
+/* ── Island system color tokens per section ── */
+body.page-macro{
+  --isle-evidence:#20c0a0;
+  --isle-events:#e0a030;
+  --isle-markets:#4d8ef5;
+  --isle-risk:#e05c5c;
+  --isle-policy:#a070e8;
+  --isle-brief:#38c472;
+  --isle-news:#7a8494;
+  --isle-deep:#4d8ef5;
+  /* tri-layer shadow stack */
+  --island-shadow-tight:0 2px 10px rgba(0,0,0,.6);
+  --island-shadow-mid:0 10px 40px -6px rgba(0,0,0,.55);
+  --island-shadow-ambient:0 36px 90px -18px rgba(0,0,0,.40);
+}
+[data-theme="light"] body.page-macro,[data-theme="light"].page-macro{
+  --island-shadow-tight:0 2px 8px rgba(20,30,50,.12);
+  --island-shadow-mid:0 10px 32px -6px rgba(20,30,50,.16);
+  --island-shadow-ambient:0 32px 72px -14px rgba(20,30,50,.14);
+}
+
 /* ── Row-ledger sections ── */
-body.page-macro .sx{margin-top:0;border-bottom:1px solid var(--line)}
+body.page-macro .sx{
+  position:relative;
+  margin-top:0;border-bottom:1px solid var(--line);
+  transition:opacity .35s ease,transform .35s ease,filter .35s ease;
+}
 body.page-macro .sx:last-of-type{border-bottom:none}
+body.page-macro .sx[data-open]{z-index:10}
+/* Sibling recession when any island is open */
+body.page-macro.has-open-island .sx:not([data-open]){
+  opacity:.45;
+  filter:saturate(.4) brightness(.85);
+  transform:scale(.998);
+}
+[data-theme="light"] body.page-macro.has-open-island .sx:not([data-open]){
+  opacity:.55;filter:saturate(.5) brightness(.93);
+}
+
 body.page-macro .sx-sum{
   display:flex;align-items:center;gap:14px;
   padding:18px 6px 18px 0;cursor:pointer;
   user-select:none;-webkit-tap-highlight-color:transparent;
   border-radius:6px;transition:background .12s;outline:none;
+  position:relative;z-index:2;
 }
 body.page-macro .sx-sum:hover{background:color-mix(in srgb,var(--muted) 5%,transparent)}
 body.page-macro .sx-sum:focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:6px}
 body.page-macro .sx-label{
   font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;
   color:var(--muted);min-width:90px;flex-shrink:0;
+  transition:color .3s;
 }
+body.page-macro .sx[data-open] .sx-label{color:var(--isle-color,var(--info))}
 body.page-macro .sx-glance{flex:1;min-width:0;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 body.page-macro .sx-chev{
   flex-shrink:0;width:22px;height:22px;border-radius:50%;
   border:1.5px solid var(--muted);
   display:flex;align-items:center;justify-content:center;
   font-size:10px;color:var(--muted);
-  transition:transform 250ms cubic-bezier(.4,0,.2,1),border-color .15s,background .15s,color .15s;
+  transition:transform .40s cubic-bezier(.34,1.08,.64,1),border-color .2s,background .2s,color .2s;
   background:color-mix(in srgb,var(--muted) 6%,transparent);
 }
 body.page-macro .sx[data-open] .sx-chev{
   transform:rotate(180deg);
-  border-color:var(--info);background:color-mix(in srgb,var(--info) 12%,transparent);color:var(--info);
+  border-color:var(--isle-color,var(--info));
+  background:color-mix(in srgb,var(--isle-color,var(--info)) 14%,transparent);
+  color:var(--isle-color,var(--info));
 }
-body.page-macro .sx-sum:hover .sx-chev{border-color:var(--info);color:var(--info)}
-/* Tray */
+body.page-macro .sx-sum:hover .sx-chev{border-color:var(--isle-color,var(--info));color:var(--isle-color,var(--info))}
+
+/* ── v3 ISLAND TRAY — grid-template-rows expand mechanism ── */
 body.page-macro .sx-tray{
-  overflow:hidden;max-height:0;opacity:0;
-  transition:max-height 250ms cubic-bezier(.4,0,.2,1),opacity 250ms cubic-bezier(.4,0,.2,1);
+  display:grid;
+  grid-template-rows:0fr;
+  opacity:0;
+  transition:
+    grid-template-rows .40s cubic-bezier(.34,1.08,.64,1),
+    opacity .28s ease;
 }
-body.page-macro .sx[data-open] .sx-tray{max-height:6000px;opacity:1}
+body.page-macro .sx-tray-inner-wrap{overflow:hidden}
+body.page-macro .sx[data-open] .sx-tray{
+  grid-template-rows:1fr;
+  opacity:1;
+}
+/* Legacy sx-tray-inner (still present in RISK/POLICY/AIBRIEF/NEWS/DEEP trays) */
 body.page-macro .sx-tray-inner{padding:0 0 24px}
+
+/* ── ISLAND CARD — the dimensional lift container ── */
+body.page-macro .sx-island{
+  position:relative;
+  margin:0 -6px 20px -6px;
+  padding:20px 22px 24px;
+  border-radius:18px;
+  border:1.5px solid var(--isle-color,var(--info));
+  transform-style:preserve-3d;
+  background:var(--panel);
+  background-image:linear-gradient(160deg,rgba(255,255,255,.025) 0%,transparent 60%);
+  border-top-color:color-mix(in srgb,var(--isle-color,var(--info)) 55%,rgba(255,255,255,.6));
+  box-shadow:none;
+  transition:
+    box-shadow .4s cubic-bezier(.34,1.08,.64,1),
+    transform .4s cubic-bezier(.34,1.08,.64,1),
+    border-color .3s ease;
+}
+body.page-macro .sx[data-open] .sx-island{
+  transform:translateY(-3px) rotateX(0.6deg) scale(1.012);
+  box-shadow:
+    var(--island-shadow-tight),
+    var(--island-shadow-mid),
+    var(--island-shadow-ambient),
+    0 0 60px -10px color-mix(in srgb,var(--isle-color,var(--info)) 30%,transparent),
+    inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  animation:isle-breathe 6s ease-in-out infinite;
+}
+body.page-macro .sx:not([data-open]) .sx-island{
+  transform:translateY(0) rotateX(0deg) scale(1);
+  box-shadow:none;animation:none;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+/* Light mode island */
+[data-theme="light"] body.page-macro .sx[data-open] .sx-island{
+  background:var(--panel);
+  border-width:2px;
+  border-color:color-mix(in srgb,var(--isle-color,var(--info)) 70%,transparent);
+  border-top-color:var(--isle-color,var(--info));
+  box-shadow:
+    var(--island-shadow-tight),
+    var(--island-shadow-mid),
+    var(--island-shadow-ambient),
+    0 0 30px -10px color-mix(in srgb,var(--isle-color,var(--info)) 22%,transparent),
+    inset 0 1px 0 rgba(255,255,255,.9);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+/* many-open: ≥3 islands open → halve glow mass */
+body.page-macro.many-open .sx[data-open] .sx-island{
+  box-shadow:
+    var(--island-shadow-tight),
+    var(--island-shadow-mid),
+    0 0 30px -12px color-mix(in srgb,var(--isle-color,var(--info)) 18%,transparent),
+    inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* Aurora edge drift ::before */
+body.page-macro .sx-island::before{
+  content:'';
+  position:absolute;inset:-1.5px;border-radius:inherit;z-index:-1;
+  background:conic-gradient(
+    from var(--isle-aurora-angle,0deg),
+    color-mix(in srgb,var(--isle-color,var(--info)) 50%,transparent) 0%,
+    transparent 22%,
+    color-mix(in srgb,var(--isle-color,var(--info)) 28%,transparent) 50%,
+    transparent 72%,
+    color-mix(in srgb,var(--isle-color,var(--info)) 50%,transparent) 100%
+  );
+  opacity:0;transition:opacity .5s ease;
+}
+body.page-macro .sx[data-open] .sx-island::before{
+  opacity:.38;animation:isle-aurora 14s linear infinite;
+}
+body.page-macro .sx:not([data-open]) .sx-island::before{opacity:0;animation:none}
+[data-theme="light"] body.page-macro .sx[data-open] .sx-island::before{opacity:.2}
+
+/* Under-glow floor ::after */
+body.page-macro .sx-island::after{
+  content:'';
+  position:absolute;left:10%;right:10%;bottom:-14px;height:30px;
+  border-radius:50%;
+  background:color-mix(in srgb,var(--isle-color,var(--info)) 38%,transparent);
+  filter:blur(14px);opacity:0;transition:opacity .4s ease;z-index:-2;
+}
+body.page-macro .sx[data-open] .sx-island::after{
+  opacity:.55;animation:isle-underglow 5s ease-in-out infinite;
+}
+body.page-macro .sx:not([data-open]) .sx-island::after{opacity:0;animation:none}
+body.page-macro.many-open .sx[data-open] .sx-island::after{opacity:.28}
+[data-theme="light"] body.page-macro .sx[data-open] .sx-island::after{
+  opacity:.25;background:color-mix(in srgb,var(--isle-color,var(--info)) 50%,transparent);
+}
+
+/* Island keyframes */
+@keyframes isle-breathe{
+  0%,100%{transform:translateY(-3px) rotateX(0.6deg) scale(1.012)}
+  50%{transform:translateY(-5px) rotateX(0.7deg) scale(1.013)}
+}
+@keyframes isle-aurora{
+  from{--isle-aurora-angle:0deg}to{--isle-aurora-angle:360deg}
+}
+@keyframes isle-underglow{
+  0%,100%{opacity:.50;filter:blur(14px)}
+  50%{opacity:.70;filter:blur(18px)}
+}
+
+/* Island header beacon */
+body.page-macro .isle-head{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:18px;padding-bottom:12px;
+  border-bottom:1px solid color-mix(in srgb,var(--isle-color,var(--info)) 20%,var(--line));
+}
+body.page-macro .isle-head-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--isle-color,var(--info));
+  box-shadow:0 0 10px 2px color-mix(in srgb,var(--isle-color,var(--info)) 55%,transparent);
+  flex-shrink:0;
+}
+body.page-macro .isle-head-label{
+  font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--isle-color,var(--info));
+}
+body.page-macro .isle-head-line{flex:1;height:1px;background:color-mix(in srgb,var(--isle-color,var(--info)) 18%,transparent)}
+
+/* Staggered content entrance */
+body.page-macro .isle-stagger{
+  opacity:0;transform:translateY(8px);
+  transition:opacity .3s ease,transform .32s cubic-bezier(.34,1.10,.64,1);
+}
+body.page-macro .sx[data-open] .isle-stagger{opacity:1;transform:none}
+body.page-macro .isle-s1{transition-delay:.06s}
+body.page-macro .isle-s2{transition-delay:.12s}
+body.page-macro .isle-s3{transition-delay:.18s}
+body.page-macro .isle-s4{transition-delay:.24s}
+body.page-macro .isle-s5{transition-delay:.30s}
+body.page-macro .isle-s6{transition-delay:.36s}
+body.page-macro .isle-s7{transition-delay:.42s}
+body.page-macro .isle-s8{transition-delay:.48s}
+
+/* per-child-type nth-child stagger for idx-cards */
+body.page-macro .idx-card{
+  opacity:0;transform:translateY(6px);
+  transition:opacity .28s ease,transform .30s cubic-bezier(.34,1.08,.64,1);
+}
+body.page-macro .sx[data-open] .idx-card{opacity:1;transform:none}
+body.page-macro .idx-card:nth-child(1){transition-delay:.04s}
+body.page-macro .idx-card:nth-child(2){transition-delay:.09s}
+body.page-macro .idx-card:nth-child(3){transition-delay:.14s}
+body.page-macro .idx-card:nth-child(4){transition-delay:.19s}
+/* asset tiles */
+body.page-macro .asset-tile-anim{
+  opacity:0;transform:translateY(4px);
+  transition:opacity .24s ease,transform .26s cubic-bezier(.34,1.06,.64,1);
+}
+body.page-macro .sx[data-open] .asset-tile-anim{opacity:1;transform:none}
+body.page-macro .asset-tile-anim:nth-child(1){transition-delay:.06s}
+body.page-macro .asset-tile-anim:nth-child(2){transition-delay:.09s}
+body.page-macro .asset-tile-anim:nth-child(3){transition-delay:.12s}
+body.page-macro .asset-tile-anim:nth-child(4){transition-delay:.15s}
+body.page-macro .asset-tile-anim:nth-child(5){transition-delay:.18s}
+body.page-macro .asset-tile-anim:nth-child(6){transition-delay:.21s}
+body.page-macro .asset-tile-anim:nth-child(7){transition-delay:.24s}
+body.page-macro .asset-tile-anim:nth-child(8){transition-delay:.27s}
+
+/* reduced-motion */
+@media(prefers-reduced-motion:reduce){
+  body.page-macro .sx[data-open] .sx-island{
+    animation:none!important;
+    transform:translateY(-2px) scale(1.005)!important;
+  }
+  body.page-macro .sx-island::before,body.page-macro .sx-island::after{animation:none!important}
+  body.page-macro .isle-stagger,body.page-macro .idx-card,body.page-macro .asset-tile-anim{
+    transition:none!important;opacity:1!important;transform:none!important;
+  }
+}
+
+/* @property for aurora conic-gradient animation (guarded by try/catch in JS) */
+@property --isle-aurora-angle{
+  syntax:'<angle>';inherits:false;initial-value:0deg;
+}
+
+/* tray as-of stamp */
+body.page-macro .isle-stamp{font-size:10px;color:var(--muted);padding:10px 0 2px;text-align:right;font-variant-numeric:tabular-nums}
 
 /* ── v2 chip vocabulary (matches v2_final.html) ── */
 body.page-macro .v2chip{
@@ -2436,22 +2672,60 @@ body.page-macro .v2-display-badge{
   border:1px solid var(--line);border-radius:5px;padding:2px 7px;
 }
 
-/* ── EVIDENCE TRAY ── */
+/* ── EVIDENCE TRAY (v3 island design) ── */
+body.page-macro .isle-ev-factors{display:flex;flex-direction:column;gap:6px}
+body.page-macro .isle-ev-row{
+  display:grid;grid-template-columns:24px 1fr 140px 38px;
+  align-items:center;gap:12px;
+  padding:12px 14px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:11px;
+  position:relative;overflow:hidden;
+}
+body.page-macro .isle-ev-row::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--factor-color,var(--muted));border-radius:3px 0 0 3px;opacity:.7;
+}
+body.page-macro .isle-ev-row.ev-weakest{
+  border-color:color-mix(in srgb,var(--warn) 35%,var(--line));
+  background:color-mix(in srgb,var(--warn) 4%,var(--panel2));
+}
+body.page-macro .isle-ev-row.ev-weakest::before{background:var(--warn)!important}
+body.page-macro .isle-ev-dir{font-size:15px;font-weight:900;text-align:center;line-height:1}
+body.page-macro .isle-ev-name{font-size:12px;font-weight:700;color:var(--ink,var(--text));display:block;margin-bottom:2px}
+body.page-macro .isle-ev-subtext{font-size:10px;color:var(--muted);line-height:1.45;display:block}
+body.page-macro .isle-ev-bar-area{}
+body.page-macro .isle-ev-bar-label-row{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:4px}
+body.page-macro .isle-ev-bar-track{height:5px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:3px;overflow:hidden}
+body.page-macro .isle-ev-bar-fill{height:5px;border-radius:3px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+body.page-macro .isle-ev-score{font-size:16px;font-weight:900;text-align:right;line-height:1}
+body.page-macro .isle-ev-weakest-callout{
+  background:color-mix(in srgb,var(--warn) 7%,var(--panel));
+  border:1px solid color-mix(in srgb,var(--warn) 22%,transparent);
+  border-radius:10px;padding:11px 15px;
+  font-size:11px;color:var(--muted);line-height:1.55;margin-top:2px;
+}
+body.page-macro .isle-ev-weakest-callout strong{color:var(--warn)}
+body.page-macro .isle-ev-tape-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px;margin-top:18px}
+body.page-macro .isle-ev-tape-table{width:100%;border-collapse:collapse}
+body.page-macro .isle-ev-tape-table th{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+body.page-macro .isle-ev-tape-table th:not(:first-child){text-align:center}
+body.page-macro .isle-ev-tape-table td{font-size:11px;font-weight:600;padding:6px 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+body.page-macro .isle-ev-tape-table td:not(:first-child){text-align:center}
+body.page-macro .isle-ev-tape-table tr:last-child td{border-bottom:none}
+body.page-macro .isle-ev-footnote{
+  font-size:10px;color:var(--muted);line-height:1.55;
+  padding:10px 14px;
+  background:color-mix(in srgb,var(--info) 4%,var(--panel));
+  border:1px solid color-mix(in srgb,var(--info) 14%,transparent);
+  border-radius:9px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:8px;
+}
+/* Legacy mx2-evidence classes (kept for smoothness; hidden in new island structure) */
 body.page-macro .mx2-evidence-tray{padding:18px 0 0;display:flex;flex-direction:column;gap:6px}
 body.page-macro .mx2-ev-row{
   display:grid;grid-template-columns:18px 1fr 120px 36px;
   align-items:center;gap:10px;padding:11px 14px;
   background:var(--panel2);border:1px solid var(--line);border-radius:10px;
-  opacity:0;transform:translateY(8px);
-  transition:opacity .3s,transform .3s;
 }
-body.page-macro .sx[data-open] .mx2-ev-row{opacity:1;transform:none}
-body.page-macro .mx2-ev-row:nth-child(1){transition-delay:.03s}
-body.page-macro .mx2-ev-row:nth-child(2){transition-delay:.06s}
-body.page-macro .mx2-ev-row:nth-child(3){transition-delay:.09s}
-body.page-macro .mx2-ev-row:nth-child(4){transition-delay:.12s}
-body.page-macro .mx2-ev-row:nth-child(5){transition-delay:.15s}
-body.page-macro .mx2-ev-row:nth-child(6){transition-delay:.18s}
 body.page-macro .mx2-ev-row.weakest{border-color:color-mix(in srgb,var(--warn) 30%,var(--line))}
 body.page-macro .mx2-ev-dir{font-size:14px;font-weight:800;text-align:center}
 body.page-macro .mx2-ev-name{font-size:12px;font-weight:700;color:var(--ink,var(--text));display:block}
@@ -2470,42 +2744,84 @@ body.page-macro .mx2-ev-footnote{
 body.page-macro .mx2-tape-wrap{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
 body.page-macro .mx2-tape-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 
-/* ── EVENTS TRAY ── */
+/* ── EVENTS TRAY (v3 island design) ── */
 body.page-macro .mx2-events-glance{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* Day-card grid */
+body.page-macro .isle-event-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+body.page-macro .isle-ev-cal-card{
+  background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:14px 16px;position:relative;overflow:hidden;
+}
+body.page-macro .isle-ev-cal-card.hot{
+  border-color:color-mix(in srgb,var(--warn) 38%,var(--line));
+  background:color-mix(in srgb,var(--warn) 4%,var(--panel2));
+}
+body.page-macro .isle-ev-cal-card.hot::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--warn);border-radius:3px 0 0 3px;
+}
+body.page-macro .isle-ev-cal-date{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+body.page-macro .isle-ev-cal-name-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+body.page-macro .isle-ev-cal-name{font-size:14px;font-weight:800;color:var(--ink,var(--text))}
+body.page-macro .isle-ev-cal-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:11px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+body.page-macro .isle-ev-cal-row:last-child{border-bottom:none}
+body.page-macro .isle-ev-cal-key{color:var(--muted)}
+body.page-macro .isle-ev-cal-val{font-weight:700;color:var(--text)}
+/* Fed pricing strip */
+body.page-macro .isle-fed-strip{
+  background:var(--panel2);border:1px solid var(--line);border-radius:11px;
+  padding:14px 16px;margin-top:10px;
+}
+body.page-macro .isle-fed-strip-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+body.page-macro .isle-fed-strip-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+body.page-macro .isle-fed-metric{display:flex;flex-direction:column;gap:2px}
+body.page-macro .isle-fed-val{font-size:16px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
+body.page-macro .isle-fed-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+body.page-macro .isle-fed-divider{width:1px;height:40px;background:var(--line);flex-shrink:0}
+/* Legacy events detail */
 body.page-macro .mx2-events-tray{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:18px}
 body.page-macro .mx2-ev-detail{
   background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px 14px;
-  opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s;
 }
-body.page-macro .sx[data-open] .mx2-ev-detail{opacity:1;transform:none}
 body.page-macro .mx2-ev-detail:nth-child(1){transition-delay:.02s}
 body.page-macro .mx2-ev-detail:nth-child(2){transition-delay:.05s}
 body.page-macro .mx2-ev-detail:nth-child(3){transition-delay:.08s}
 body.page-macro .mx2-ev-detail:nth-child(4){transition-delay:.11s}
 
 /* ── MARKETS TRAY ── */
-body.page-macro .mx2-mkt-glance{display:flex;gap:10px;flex-wrap:wrap}
+body.page-macro .mx2-mkt-glance{display:flex;gap:8px;flex-wrap:wrap}
+/* Collapsed mini-tiles — premium v3 style */
 body.page-macro .mx2-mkt-tile{
-  background:var(--panel);border:1px solid var(--line);border-radius:9px;
-  padding:11px 14px;min-width:120px;flex:1;
+  background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+  padding:9px 13px;min-width:115px;flex:1;
 }
 body.page-macro .mx2-mkt-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
-body.page-macro .mx2-mkt-name{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+body.page-macro .mx2-mkt-name{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
 body.page-macro .mx2-mkt-chg{font-size:11px;font-weight:700}
 body.page-macro .mx2-mkt-chg.up{color:var(--up)} body.page-macro .mx2-mkt-chg.dn{color:var(--down)}
-body.page-macro .mx2-mkt-px{font-size:20px;font-weight:800;color:var(--text);line-height:1.1;margin-top:3px;font-variant-numeric:tabular-nums}
-/* Markets tray inner */
+body.page-macro .mx2-mkt-px{font-size:18px;font-weight:800;color:var(--ink,var(--text));line-height:1.1;margin-top:2px;font-variant-numeric:tabular-nums}
+
+/* Tray inner — index health grid (v3 idx-card style) */
 body.page-macro .mx2-markets-tray{display:flex;flex-direction:column;gap:16px;padding-top:20px}
 body.page-macro .mx2-mkt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-body.page-macro .mx2-mkt-detail{
-  background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;
-  opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s;
+/* idx-card: stagger animation defined in island stagger block above */
+body.page-macro .idx-card{
+  background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px;
+  position:relative;overflow:hidden;
 }
-body.page-macro .sx[data-open] .mx2-mkt-detail{opacity:1;transform:none}
-body.page-macro .mx2-mkt-detail:nth-child(1){transition-delay:.03s}
-body.page-macro .mx2-mkt-detail:nth-child(2){transition-delay:.06s}
-body.page-macro .mx2-mkt-detail:nth-child(3){transition-delay:.09s}
-body.page-macro .mx2-mkt-detail:nth-child(4){transition-delay:.12s}
+body.page-macro .idx-ticker{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px}
+body.page-macro .idx-name{font-size:11px;color:var(--muted);margin-bottom:6px}
+body.page-macro .idx-px{font-size:22px;font-weight:900;color:var(--ink,var(--text));line-height:1;font-variant-numeric:tabular-nums}
+body.page-macro .idx-chg{font-size:12px;font-weight:700;margin-top:3px;margin-bottom:8px;font-variant-numeric:tabular-nums}
+body.page-macro .idx-chg.up{color:var(--up)} body.page-macro .idx-chg.dn{color:var(--down)}
+body.page-macro .idx-stats{display:flex;flex-wrap:wrap;gap:4px;padding-top:8px;border-top:1px solid var(--line)}
+body.page-macro .idx-stat{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px}
+body.page-macro .idx-stat.ok{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent)}
+body.page-macro .idx-stat.wn{color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
+body.page-macro .idx-stat.mt{color:var(--muted);background:color-mix(in srgb,var(--muted) 10%,transparent)}
+
+/* Legacy mkt-detail for backward compat */
+body.page-macro .mx2-mkt-detail{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px}
 body.page-macro .mx2-mkt-d-ticker{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
 body.page-macro .mx2-mkt-d-name{font-size:11px;font-weight:600;color:var(--text);margin:3px 0}
 body.page-macro .mx2-mkt-d-px{font-size:22px;font-weight:800;color:var(--text);line-height:1.1;font-variant-numeric:tabular-nums}
@@ -2516,7 +2832,18 @@ body.page-macro .mx2-stat{font-size:10px;padding:2px 6px;border-radius:4px;font-
 body.page-macro .mx2-stat.ok{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent)}
 body.page-macro .mx2-stat.wn{color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
 body.page-macro .mx2-stat.mt{color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent)}
-/* Sector heat columns inside markets tray */
+
+/* Sector heat columns inside markets tray (v3 design) */
+body.page-macro .isle-sector-block{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+body.page-macro .isle-sector-col{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px 16px}
+body.page-macro .isle-sector-col-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px}
+body.page-macro .isle-sh-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)}
+body.page-macro .isle-sh-row:last-child{border-bottom:none}
+body.page-macro .isle-sh-arrow{font-size:11px;width:14px;text-align:center;flex-shrink:0}
+body.page-macro .isle-sh-heat{color:var(--up)} body.page-macro .isle-sh-cool{color:var(--down)}
+body.page-macro .isle-sh-name{font-size:12px;font-weight:600;color:var(--text);flex:1}
+body.page-macro .isle-sh-rank{font-size:10px;font-weight:700;color:var(--muted);background:color-mix(in srgb,var(--muted) 12%,transparent);border-radius:4px;padding:1px 5px}
+/* Legacy sector */
 body.page-macro .mx2-sh-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 body.page-macro .mx2-sh-col{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
 body.page-macro .mx2-sh-col-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px}
@@ -2526,20 +2853,80 @@ body.page-macro .mx2-sh-arr{font-size:11px;width:12px;text-align:center;flex-shr
 body.page-macro .mx2-sh-arr.heat{color:var(--up)} body.page-macro .mx2-sh-arr.cool{color:var(--down)}
 body.page-macro .mx2-sh-name{font-size:12px;font-weight:600;color:var(--text);flex:1}
 body.page-macro .mx2-sh-rk{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
-/* Heatmap mount */
+
+/* Heatmap wrap (v3 chrome around the #heatmap-scorecard EMPTY mount) */
+body.page-macro .isle-heatmap-wrap{
+  background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  overflow:hidden;margin-top:14px;
+}
+body.page-macro .isle-heatmap-head{
+  padding:10px 14px;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;
+}
+body.page-macro .isle-heatmap-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+body.page-macro .isle-heatmap-stamp{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+body.page-macro .isle-heatmap-legend{display:flex;align-items:center;gap:6px;padding:6px 14px 8px;font-size:9px;color:var(--muted)}
+body.page-macro .isle-legend-bar{flex:1;height:5px;border-radius:3px;background:linear-gradient(90deg,#c0392b 0%,#8b93a1 50%,#3ec87a 100%)}
+/* Heatmap chrome wrapper (v3) */
+body.page-macro .isle-heatmap-wrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-height:120px;margin-top:14px}
+body.page-macro .isle-heatmap-chrome-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:10px 14px 0}
+/* Existing heatmap mount */
 body.page-macro .mx2-heatmap-mount{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-height:120px}
 body.page-macro .mx2-tray-stamp{font-size:10px;color:var(--muted);padding:8px 0 4px;text-align:right;font-variant-numeric:tabular-nums}
-/* Cross-asset strip inside markets tray */
+
+/* Section eyebrow label */
+body.page-macro .isle-section-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+
+/* Index card grid (v3) */
+body.page-macro .idx-card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+body.page-macro .idx-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 13px}
+body.page-macro .idx-card-top{display:flex;flex-direction:column;gap:1px;margin-bottom:6px}
+body.page-macro .idx-card-ticker{font-size:12px;font-weight:700;color:var(--ink,var(--text))}
+body.page-macro .idx-card-name{font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.page-macro .idx-card-px{font-size:18px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:2px}
+body.page-macro .idx-card-chg{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:8px}
+body.page-macro .idx-card-chg.up{color:var(--up)} body.page-macro .idx-card-chg.dn{color:var(--down)}
+body.page-macro .idx-card-chips{display:flex;flex-wrap:wrap;gap:3px}
+body.page-macro .idx-stat-lbl{font-size:9px;color:var(--muted)}
+
+/* Sector rows (v3) */
+body.page-macro .isle-sector-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 45%,transparent)}
+body.page-macro .isle-sector-row:last-child{border-bottom:none}
+body.page-macro .isle-sector-arr{font-size:12px}
+body.page-macro .isle-sector-arr.heat{color:var(--down)} body.page-macro .isle-sector-arr.cool{color:var(--up)}
+body.page-macro .isle-sector-name{flex:1;font-size:11.5px;font-weight:600}
+body.page-macro .isle-sector-rk{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Fed strip (v3 — inline item layout used in events tray) */
+body.page-macro .isle-fed-strip{border:1px solid color-mix(in srgb,var(--isle-color,var(--info)) 18%,transparent);border-radius:10px;padding:10px 14px;margin-top:12px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+body.page-macro .isle-fed-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);width:100%;margin-bottom:2px}
+body.page-macro .isle-fed-item{display:flex;gap:6px;align-items:baseline}
+body.page-macro .isle-fed-desc{font-size:11px;color:var(--muted)}
+body.page-macro .isle-fed-val{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+body.page-macro .isle-fed-src{font-size:9px;color:var(--muted);margin-left:auto}
+
+/* Asset tile inner labels (v3) */
+body.page-macro .isle-asset-tile-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px}
+body.page-macro .isle-asset-tile-val{font-size:17px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+body.page-macro .isle-asset-tile-ctx{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.3}
+
+/* Cal-card inner elements (v3) */
+body.page-macro .isle-ev-cal-title{font-size:12.5px;font-weight:700;color:var(--ink,var(--text));line-height:1.3;margin-bottom:5px}
+body.page-macro .isle-ev-cal-meta{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+/* Factor row name-wrap */
+body.page-macro .isle-ev-name-wrap{display:flex;flex-direction:column;gap:2px}
+
+/* Asset strip — v3 style (8 tiles, 4-col grid) */
+body.page-macro .isle-asset-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+body.page-macro .isle-asset-tile{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 13px}
+body.page-macro .isle-at-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px}
+body.page-macro .isle-at-val{font-size:18px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+body.page-macro .isle-at-chg{font-size:11px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+body.page-macro .isle-at-chg.up{color:var(--up)} body.page-macro .isle-at-chg.dn{color:var(--down)} body.page-macro .isle-at-chg.mt{color:var(--muted)}
+body.page-macro .isle-at-ctx{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.3}
+/* Legacy asset strip classes */
 body.page-macro .mx2-asset-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
-body.page-macro .mx2-at{
-  background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px 13px;
-  opacity:0;transform:translateY(4px);transition:opacity .22s,transform .22s;
-}
-body.page-macro .sx[data-open] .mx2-at{opacity:1;transform:none}
-body.page-macro .mx2-at:nth-child(1){transition-delay:.04s} body.page-macro .mx2-at:nth-child(2){transition-delay:.07s}
-body.page-macro .mx2-at:nth-child(3){transition-delay:.10s} body.page-macro .mx2-at:nth-child(4){transition-delay:.13s}
-body.page-macro .mx2-at:nth-child(5){transition-delay:.16s} body.page-macro .mx2-at:nth-child(6){transition-delay:.19s}
-body.page-macro .mx2-at:nth-child(7){transition-delay:.22s} body.page-macro .mx2-at:nth-child(8){transition-delay:.25s}
+body.page-macro .mx2-at{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px 13px}
 body.page-macro .mx2-at-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px}
 body.page-macro .mx2-at-val{font-size:18px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
 body.page-macro .mx2-at-chg{font-size:11px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
@@ -2563,10 +2950,15 @@ body.page-macro .v2-retired-macro{display:none!important}
 /* ── Responsive ── */
 @media(max-width:900px){
   body.page-macro .mx2-ev-row{grid-template-columns:18px 1fr 80px 32px}
+  body.page-macro .isle-ev-row{grid-template-columns:20px 1fr 100px 32px}
   body.page-macro .mx2-mkt-grid{grid-template-columns:1fr 1fr}
   body.page-macro .mx2-sh-cols{grid-template-columns:1fr}
+  body.page-macro .isle-sector-block{grid-template-columns:1fr}
   body.page-macro .mx2-asset-strip{grid-template-columns:1fr 1fr}
+  body.page-macro .isle-asset-strip{grid-template-columns:1fr 1fr}
   body.page-macro .mx2-events-tray{grid-template-columns:1fr}
+  body.page-macro .isle-event-grid{grid-template-columns:1fr}
+  body.page-macro .idx-card-grid{grid-template-columns:1fr 1fr}
   body.page-macro .mx2-hero-ctx{max-width:none}
 }
 @media(max-width:680px){
@@ -2575,14 +2967,18 @@ body.page-macro .v2-retired-macro{display:none!important}
   body.page-macro .mx2-mkt-glance{gap:6px}
   body.page-macro .mx2-hero-row{gap:12px}
   body.page-macro .mx2-score-block{padding:10px 14px;min-width:220px}
+  body.page-macro .mx2-mkt-tile{min-width:calc(50% - 4px)}
 }
 @media(max-width:390px){
   body.page-macro .mx2-mkt-grid{grid-template-columns:1fr}
   body.page-macro .mx2-asset-strip{grid-template-columns:1fr 1fr}
-  body.page-macro .mx2-mkt-glance{flex-direction:column}
-  body.page-macro .mx2-mkt-tile{min-width:100%}
+  body.page-macro .isle-asset-strip{grid-template-columns:1fr 1fr}
+  body.page-macro .mx2-mkt-glance{flex-wrap:wrap}
+  body.page-macro .mx2-mkt-tile{min-width:calc(50% - 4px)}
   body.page-macro .mx2-ev-row{grid-template-columns:16px 1fr 50px 28px;gap:6px}
+  body.page-macro .isle-ev-row{grid-template-columns:16px 1fr 60px 28px;gap:6px}
 }
+@media(max-width:390px){body.page-macro .mx2-mkt-tile{width:100%;min-width:unset;flex:1 1 100%}}
 
 /* ── RISK TRAY (Stage B) ── */
 body.page-macro .mx2-risk-glance{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -2803,7 +3199,7 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
 
   {# 1. EVIDENCE row + tray #}
   {% set _weakest = MS2.components | sort(attribute='score') | first if (MS2 and MS2.components) else none %}
-  <div class="sx" id="sx-evidence">
+  <div class="sx" id="sx-evidence" style="--isle-color:var(--isle-evidence)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-evidence')">
       <span class="sx-label"><span class="l-en">Evidence</span><span class="l-zh">依据</span></span>
       <div class="sx-glance">
@@ -2819,62 +3215,91 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       </div>
       <div class="sx-chev">&#8964;</div>
     </div>
-    <div class="sx-tray">
-      <div class="sx-tray-inner">
-        <div class="mx2-evidence-tray">
-          {% for c in (MS2.components if MS2 and MS2.components else []) %}
-          {% set _ec = 'var(--up)' if c.tone == 'good' else ('var(--down)' if c.tone == 'bad' else 'var(--warn)') %}
-          {% set _is_weakest = (_weakest and c.label_en == _weakest.label_en) %}
-          <div class="mx2-ev-row{{ ' weakest' if _is_weakest }}">
-            <span class="mx2-ev-dir" style="color:{{ _ec }}">{{ c.arrow }}</span>
-            <div>
-              <span class="mx2-ev-name" style="{{ 'color:var(--warn)' if _is_weakest }}">
-                {{ t(c.label_en, c.label_zh) }}
-                {% if _is_weakest %}<span class="v2chip c-warn" style="font-size:9px;padding:1px 5px;margin-left:4px"><span class="l-en">WEAKEST LEG</span><span class="l-zh">最弱分项</span></span>{% endif %}
-              </span>
-              <span class="mx2-ev-sub">{{ t(c.read_en, c.read_zh) if c.read_en else '' }}</span>
-            </div>
-            <div class="mx2-ev-bar-track"><div class="mx2-ev-bar-fill" style="width:{{ c.score }}%;background:{{ _ec }}"></div></div>
-            <span class="mx2-ev-score" style="color:{{ _ec }}">{{ c.score }}</span>
-          </div>
-          {% endfor %}
-          <div class="mx2-ev-footnote">
-            <span class="l-en">Blended 0–100 score. ≥60 = risk-on · 42–59 = mixed · &lt;42 = risk-off.{% if _weakest %} Flip trigger: Mixed if {{ _weakest.label_en }} rolls over (now {{ _weakest.score }}/100).{% endif %} Confirms what has already turned; does not forecast.</span>
-            <span class="l-zh">合成 0-100 分。≥60 偏好 · 42-59 混合 · &lt;42 避险。{% if _weakest %}翻转触发：若 {{ _weakest.label_zh or _weakest.label_en }} 回落则转为混合（现 {{ _weakest.score }}/100）。{% endif %}确认已转向信号，不预测未来。</span>
-            <span class="v2-display-badge" style="flex-shrink:0"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span>
-          </div>
-        </div>
-
-        {# Multi-timeframe tape at tray bottom #}
-        {% if MS2 and MS2.mtf and MS2.mtf.indices %}
-        <div class="mx2-tape-wrap">
-          <div class="mx2-tape-label">{{ t('Multi-timeframe tape · the broad US market','多周期趋势 · 美股大盘') }}</div>
-          <table class="ms-tapetbl" style="width:100%">
-            <thead><tr>
-              <th class="l">{{ t('Index','指数') }}</th>
-              <th>1D</th><th>3D</th><th>7D</th><th>30D</th>
-              <th class="r">{{ t('Confluence','合流') }}</th>
-            </tr></thead>
-            <tbody>
-            {% for r in MS2.mtf.indices %}
-              <tr>
-                <td class="l t-inst">{{ t(r.label_en, r.label_zh) }}</td>
-                {% for tf in ['D','3D','W','M'] %}{% set cell = r.cells[tf] %}
-                <td>{% if cell %}<span class="ms-cell2 {{ cell.tone }}"><span class="ar">{{ cell.arrow }}</span><span class="rsi">{{ cell.rsi|round|int if cell.rsi is not none else '·' }}</span></span>{% else %}<span class="ms-cell2 flat"><span class="ar">·</span></span>{% endif %}</td>
-                {% endfor %}
-                <td class="r"><span class="ms-conf {{ r.tone }}">{{ t(r.confluence_en, r.confluence_zh) }}</span></td>
-              </tr>
-            {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% endif %}
+    <div class="sx-tray"><div class="sx-tray-inner-wrap"><div class="sx-island">
+      {# Island header beacon #}
+      <div class="isle-head">
+        <div class="isle-head-dot"></div>
+        <span class="isle-head-label"><span class="l-en">Evidence — Six-Factor Breakdown</span><span class="l-zh">依据 — 六因子分析</span></span>
+        <div class="isle-head-line"></div>
+        <span class="v2-display-badge" style="margin-left:8px"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span>
       </div>
-    </div>
+
+      {# Factor rows #}
+      <div class="isle-ev-factors">
+        {% set _ev_stags = ['isle-s1','isle-s2','isle-s3','isle-s4','isle-s5','isle-s6'] %}
+        {% for c in (MS2.components if MS2 and MS2.components else []) %}
+        {% set _ec = 'var(--up)' if c.tone == 'good' else ('var(--down)' if c.tone == 'bad' else 'var(--warn)') %}
+        {% set _is_weakest = (_weakest and c.label_en == _weakest.label_en) %}
+        {% set _stag = _ev_stags[loop.index0] if loop.index0 < _ev_stags|length else 'isle-s6' %}
+        <div class="isle-ev-row isle-stagger {{ _stag }}{{ ' ev-weakest' if _is_weakest }}" style="--factor-color:{{ _ec }}">
+          <span class="isle-ev-dir" style="color:{{ _ec }}">{{ c.arrow }}</span>
+          <div class="isle-ev-name-wrap">
+            <span class="isle-ev-name" style="{{ 'color:var(--warn)' if _is_weakest }}">
+              {{ t(c.label_en, c.label_zh) }}
+              {% if _is_weakest %}<span class="v2chip c-warn" style="font-size:9px;padding:1px 5px;margin-left:4px"><span class="l-en">WEAKEST LEG</span><span class="l-zh">最弱分项</span></span>{% endif %}
+            </span>
+            <span class="isle-ev-subtext">{{ t(c.read_en, c.read_zh) if (c.read_en is defined and c.read_en) else '' }}</span>
+          </div>
+          <div class="isle-ev-bar-area">
+            <div class="isle-ev-bar-label-row"><span>0</span><span>50</span><span>100</span></div>
+            <div class="isle-ev-bar-track"><div class="isle-ev-bar-fill" style="width:{{ c.score }}%;background:{{ _ec }}"></div></div>
+          </div>
+          <span class="isle-ev-score" style="color:{{ _ec }}">{{ c.score }}</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      {# Weakest leg spotlight callout #}
+      {% if _weakest %}
+      <div class="isle-ev-weakest-callout isle-stagger isle-s7">
+        <span class="l-en"><strong>{{ t('Weakest leg spotlight','最弱分项') }}:</strong> {{ _weakest.label_en }} at {{ _weakest.score }}/100 is the closest flip-trigger. {{ t('Confirms what has already turned; does not forecast.','确认已转向信号，不预测未来。') }}</span>
+        <span class="l-zh"><strong>最弱分项:</strong> {{ _weakest.label_zh or _weakest.label_en }} 现 {{ _weakest.score }}/100，最接近翻转触发点。确认已转向信号，不预测未来。</span>
+      </div>
+      {% endif %}
+
+      {# Multi-timeframe tape #}
+      {% if MS2 and MS2.mtf and MS2.mtf.indices %}
+      <div class="isle-stagger isle-s7" style="margin-top:18px">
+        <div class="isle-ev-tape-head">{{ t('Multi-Timeframe Tape','多周期趋势') }}</div>
+        <table class="isle-ev-tape-table">
+          <thead><tr>
+            <th class="l">{{ t('Index','指数') }}</th>
+            <th>1D</th><th>3D</th><th>7D</th><th>30D</th>
+            <th style="text-align:right">{{ t('Confluence','合流') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for r in MS2.mtf.indices %}
+            <tr>
+              <td class="l t-inst" style="color:var(--muted)">{{ t(r.label_en, r.label_zh) }}</td>
+              {% for tf in ['D','3D','W','M'] %}{% set cell = r.cells[tf] %}
+              <td style="text-align:center">{% if cell %}<span class="ms-cell2 {{ cell.tone }}"><span class="ar">{{ cell.arrow }}</span><span class="rsi">{{ cell.rsi|round|int if cell.rsi is not none else '·' }}</span></span>{% else %}<span class="ms-cell2 flat"><span class="ar">·</span></span>{% endif %}</td>
+              {% endfor %}
+              <td style="text-align:right"><span class="ms-conf {{ r.tone }}">{{ t(r.confluence_en, r.confluence_zh) }}</span></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {# Footnote #}
+      <div class="isle-ev-footnote isle-stagger isle-s8">
+        <span>
+          <span class="l-en">Blended 0–100. ≥60 = risk-on · 42–59 = mixed · &lt;42 = risk-off.{% if _weakest %} Flip trigger: {{ _weakest.label_en }} (now {{ _weakest.score }}/100).{% endif %} Confirms what has already turned; does not forecast. Gauntlet applies at promotion only.</span>
+          <span class="l-zh">合成 0-100 分。≥60 偏好 · 42-59 混合 · &lt;42 避险。{% if _weakest %}翻转触发：{{ _weakest.label_zh or _weakest.label_en }}（现 {{ _weakest.score }}/100）。{% endif %}确认已转向信号，不预测未来。</span>
+        </span>
+        <span class="v2-display-badge" style="flex-shrink:0"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span>
+      </div>
+
+      <div class="isle-stamp">
+        <span class="l-en">as of {{ MS2.asof if MS2 and MS2.asof is defined else '' }}</span>
+        <span class="l-zh">{{ MS2.asof if MS2 and MS2.asof is defined else '' }}</span>
+      </div>
+    </div></div></div>
   </div>{# /sx-evidence #}
 
   {# 2. EVENTS row + tray (contains Release Radar + week-ahead band) #}
-  <div class="sx" id="sx-events-v2">
+  <div class="sx" id="sx-events-v2" style="--isle-color:var(--isle-events)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-events-v2')">
       <span class="sx-label"><span class="l-en">Events</span><span class="l-zh">事件</span></span>
       <div class="sx-glance mx2-events-glance">
@@ -2891,31 +3316,48 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       </div>
       <div class="sx-chev">&#8964;</div>
     </div>
-    <div class="sx-tray">
-      <div class="sx-tray-inner">
-        {# THIS WEEK catalyst strip (moved from week-ahead band) #}
-        {% if macro_catalysts or (prediction_markets and prediction_markets.events) or (event_risk and event_risk.show) %}
-        <div id="week-ahead" style="padding-top:12px;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:12px">
-          <div class="mx-eyebrow">{{ t('This Week','本周') }}</div>
-          <div class="mx-week-rail">
-            {% for c in macro_catalysts[:9] %}
-            <div class="mx-week-card {{ 'mx-week-high' if c.impact == 'high' else '' }}">
-              <div class="mx-week-date">{{ _mos2[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</div>
-              <div class="mx-week-title">{{ c.label }}</div>
-              <div class="mx-week-meta">{% if c.time_et %}{{ c.time_et }} ET{% endif %}{% if c.impact == 'high' %} <span class="mx-chip mx-c-warn" style="font-size:9px;padding:1px 5px">{{ t('HIGH','高') }}</span>{% elif c.impact == 'med' %} <span class="mx-chip mx-c-info" style="font-size:9px;padding:1px 5px">{{ t('MED','中') }}</span>{% endif %}</div>
+    <div class="sx-tray"><div class="sx-tray-inner-wrap"><div class="sx-island">
+      {# Island header beacon #}
+      <div class="isle-head">
+        <div class="isle-head-dot"></div>
+        <span class="isle-head-label"><span class="l-en">Events — Catalysts &amp; Release Radar</span><span class="l-zh">事件 — 催化剂与数据发布雷达</span></span>
+        <div class="isle-head-line"></div>
+      </div>
+
+      {# THIS WEEK catalyst day-cards #}
+      {% if macro_catalysts or (prediction_markets and prediction_markets.events) or (event_risk and event_risk.show) %}
+      <div id="week-ahead" class="isle-stagger isle-s1" style="margin-bottom:16px">
+        <div class="isle-section-eyebrow">{{ t('This Week','本周') }}</div>
+        <div class="isle-event-grid">
+          {% for c in macro_catalysts[:8] %}
+          <div class="isle-ev-cal-card{{ ' hot' if c.impact == 'high' else '' }} isle-stagger isle-s{{ loop.index if loop.index <= 4 else '4' }}">
+            <div class="isle-ev-cal-date">{{ _mos2[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</div>
+            <div class="isle-ev-cal-title">{{ c.label }}</div>
+            <div class="isle-ev-cal-meta">
+              {% if c.time_et %}<span style="color:var(--muted);font-size:10px">{{ c.time_et }} ET</span>{% endif %}
+              {% if c.impact == 'high' %}<span class="v2chip c-warn" style="font-size:9px;padding:1px 5px">{{ t('HIGH','高') }}</span>{% elif c.impact == 'med' %}<span class="v2chip c-info" style="font-size:9px;padding:1px 5px">{{ t('MED','中') }}</span>{% endif %}
             </div>
-            {% endfor %}
           </div>
-          {% if prediction_markets and prediction_markets.events %}
-          <div class="mx-pm-row" style="margin-top:8px">
-            <span class="mx-pm-src">{{ t('Priced · Polymarket','市场定价 · Polymarket') }}</span>
-            {% for e in prediction_markets.events[:2] %}{% set _top = (e.outcomes|sort(attribute='prob',reverse=true))|first %}
-            <span>{{ t(e.label_en, e.label_zh) }}: <b class="num">{{ _top.outcome }} {{ _top.prob }}%</b>{% if _top.chg_pp is not none and _top.chg_pp != 0 %} <span class="{{ 'pos' if _top.chg_pp > 0 else 'neg' }}" style="font-size:11px">{{ '%+.1f'|format(_top.chg_pp) }}pp</span>{% endif %}</span>
-            {% endfor %}
+          {% endfor %}
+        </div>
+
+        {# Fed strip from prediction markets #}
+        {% if prediction_markets and prediction_markets.events %}
+        <div class="isle-fed-strip isle-stagger isle-s4">
+          <span class="isle-fed-label">{{ t('Fed · Market Pricing','美联储 · 市场定价') }}</span>
+          {% for e in prediction_markets.events[:3] %}
+          {% set _top = (e.outcomes|sort(attribute='prob',reverse=true))|first %}
+          <div class="isle-fed-item">
+            <span class="isle-fed-desc">{{ t(e.label_en, e.label_zh) }}</span>
+            <b class="isle-fed-val num">{{ _top.outcome }} {{ _top.prob }}%</b>
+            {% if _top.chg_pp is not none and _top.chg_pp != 0 %}<span class="{{ 'pos' if _top.chg_pp > 0 else 'neg' }}" style="font-size:11px">{{ '%+.1f'|format(_top.chg_pp) }}pp</span>{% endif %}
           </div>
-          {% endif %}
+          {% endfor %}
+          <span class="isle-fed-src">Polymarket</span>
         </div>
         {% endif %}
+      </div>
+      {% endif %}
   {% if mode != 'stocks' %}
   <style id="rr-css">
   /* ---- Release Radar MRI-R39: minimalist card + 5-tab modal ---- */
@@ -4632,12 +5074,11 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
   })();
   </script>
   {% endif %}
-      </div>
-    </div>
+    </div></div></div>
   </div>{# /sx-events-v2 #}
 
   {# 3. MARKETS row + tray #}
-  <div class="sx" id="sx-markets-v2">
+  <div class="sx" id="sx-markets-v2" style="--isle-color:var(--isle-markets)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-markets-v2')">
       <span class="sx-label"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
       <div class="sx-glance mx2-mkt-glance">
@@ -4654,184 +5095,180 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       </div>
       <div class="sx-chev">&#8964;</div>
     </div>
-    <div class="sx-tray">
-      <div class="sx-tray-inner">
-        <div class="mx2-markets-tray">
-          {# Index health detail tiles #}
-          {% if index_health %}
-          <div class="mx2-mkt-grid" id="index-health">
-            {% set _ix_names = {'SPY': 'S&P 500', 'QQQ': 'Nasdaq 100', 'DJI': 'Dow Jones', '_DJI': 'Dow Jones', 'RUT': 'Russell 2000', '_RUT': 'Russell 2000'} %}
-            {% for ix in index_health %}
-            {% set _ixsym = ix.ticker | replace('_','') %}
-            <div class="mx2-mkt-detail">
-              <div class="mx2-mkt-d-ticker">{{ _ixsym }}</div>
-              <div class="mx2-mkt-d-name">{{ _ix_names.get(ix.ticker, ix.label if ix.label is defined else _ixsym) }}</div>
-              <div class="mx2-mkt-d-px nb-px" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%.2f'|format(ix.price) }}</div>
-              <div class="mx2-mkt-d-chg {{ 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</div>
-              <div class="mx2-mkt-d-meta">
-                <span class="mx2-stat {{ 'ok' if ix.dd >= -1 else ('wn' if ix.dd >= -10 else 'mt') }}">{{ '%+.1f'|format(ix.dd) }}% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-                <span class="mx2-stat mt">RSI {{ ix.rsi if ix.rsi is not none else '—' }}</span>
-                {% if ix.above200 %}<span class="mx2-stat ok">✓ 200d</span>{% else %}<span class="mx2-stat mt">✕ 200d</span>{% endif %}
-                {% if ix.above50 %}<span class="mx2-stat ok">✓ 50d</span>{% else %}<span class="mx2-stat mt">✕ 50d</span>{% endif %}
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-          {% endif %}
+    <div class="sx-tray"><div class="sx-tray-inner-wrap"><div class="sx-island">
+      {# Island header beacon #}
+      <div class="isle-head">
+        <div class="isle-head-dot"></div>
+        <span class="isle-head-label"><span class="l-en">Markets — Index Health &amp; Cross-Asset</span><span class="l-zh">市场 — 指数健康度与跨资产</span></span>
+        <div class="isle-head-line"></div>
+      </div>
 
-          {# Sector heat columns #}
-          {% if sector_heat %}
-          {% set _sh2 = sector_heat %}
-          <div class="mx2-sh-cols" id="sector-heat">
-            <div class="mx2-sh-col">
-              <div class="mx2-sh-col-head"><span class="l-en">Hot sectors</span><span class="l-zh">热门板块</span></div>
-              {% for _ht in (_sh2.get('heating') or [])[:4] %}
-              <div class="mx2-sh-row">
-                <span class="mx2-sh-arr heat">&#9650;</span>
-                <span class="mx2-sh-name"><span class="l-en">{{ _ht.get('name') }}</span><span class="l-zh">{{ _ht.get('name_zh') or _ht.get('name') }}</span></span>
-                <span class="mx2-sh-rk">#{{ _ht.get('rank') }}</span>
-              </div>
-              {% endfor %}
-            </div>
-            <div class="mx2-sh-col">
-              <div class="mx2-sh-col-head"><span class="l-en">Cold sectors</span><span class="l-zh">低迷板块</span></div>
-              {% for _ct in (_sh2.get('cooling') or [])[:4] %}
-              <div class="mx2-sh-row">
-                <span class="mx2-sh-arr cool">&#9661;</span>
-                <span class="mx2-sh-name"><span class="l-en">{{ _ct.get('name') }}</span><span class="l-zh">{{ _ct.get('name_zh') or _ct.get('name') }}</span></span>
-                <span class="mx2-sh-rk">#{{ _ct.get('rank') }}</span>
-              </div>
-              {% endfor %}
-            </div>
+      {# Index health cards grid #}
+      {% if index_health %}
+      {% set _ix_names = {'SPY': 'S&P 500', 'QQQ': 'Nasdaq 100', 'DJI': 'Dow Jones', '_DJI': 'Dow Jones', 'RUT': 'Russell 2000', '_RUT': 'Russell 2000'} %}
+      <div class="idx-card-grid isle-stagger isle-s1" id="index-health">
+        {% for ix in index_health %}
+        {% set _ixsym = ix.ticker | replace('_','') %}
+        <div class="idx-card isle-stagger isle-s{{ loop.index if loop.index <= 4 else '4' }}" data-sym="{{ _ixsym }}" data-mkt="us">
+          <div class="idx-card-top">
+            <span class="idx-card-ticker">{{ _ixsym }}</span>
+            <span class="idx-card-name">{{ _ix_names.get(ix.ticker, ix.label if ix.label is defined else _ixsym) }}</span>
           </div>
-          {% endif %}
+          <div class="idx-card-px nb-px" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%.2f'|format(ix.price) }}</div>
+          <div class="idx-card-chg {{ 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</div>
+          <div class="idx-card-chips">
+            <span class="idx-stat {{ 'ok' if ix.dd >= -1 else ('wn' if ix.dd >= -10 else 'mt') }}">{{ '%+.1f'|format(ix.dd) }}%</span>
+            <span class="idx-stat-lbl"><span class="l-en">off high</span><span class="l-zh">距高</span></span>
+            {% if ix.rsi is not none %}<span class="idx-stat mt">RSI {{ ix.rsi }}</span>{% endif %}
+            {% if ix.above200 %}<span class="idx-stat ok">200d ✓</span>{% else %}<span class="idx-stat mt">200d ✕</span>{% endif %}
+            {% if ix.above50 %}<span class="idx-stat ok">50d ✓</span>{% else %}<span class="idx-stat mt">50d ✕</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
 
-          {# Heatmap — #heatmap-scorecard EMPTY div mount (heatmap.js finds and populates) #}
-          <div class="mx2-heatmap-mount">
-            <div id="heatmap-scorecard" style="min-height:120px"></div>
+      {# Sector heat: hot/cold columns #}
+      {% if sector_heat %}
+      {% set _sh2 = sector_heat %}
+      <div class="isle-sector-block isle-stagger isle-s2" id="sector-heat">
+        <div class="isle-sector-col">
+          <div class="isle-sector-col-head"><span class="l-en">Hot sectors</span><span class="l-zh">热门板块</span></div>
+          {% for _ht in (_sh2.get('heating') or [])[:4] %}
+          <div class="isle-sector-row">
+            <span class="isle-sector-arr heat">&#9650;</span>
+            <span class="isle-sector-name"><span class="l-en">{{ _ht.get('name') }}</span><span class="l-zh">{{ _ht.get('name_zh') or _ht.get('name') }}</span></span>
+            <span class="isle-sector-rk">#{{ _ht.get('rank') }}</span>
           </div>
-
-          {# Markets numeric tile strip — 8 key rates/macro variables (fail-open per tile) #}
-          {% set _mca = latest.cross_asset if (latest.cross_asset is defined and latest.cross_asset) else {} %}
-          <div class="mx2-asset-strip">
-            {# 10Y Treasury #}
-            {% if _mca.get('us10y') is not none %}
-            <div class="mx2-at">
-              <div class="mx2-at-lbl"><span class="l-en">10Y</span><span class="l-zh">10年期</span></div>
-              <div class="mx2-at-val" style="color:var(--text)">{{ '%.2f'|format(_mca.get('us10y')) }}%</div>
-              <div class="mx2-at-ctx"><span class="l-en">Treasury</span><span class="l-zh">国债</span></div>
-            </div>
-            {% endif %}
-            {# 2Y Treasury #}
-            {% if _mca.get('us2y') is not none %}
-            <div class="mx2-at">
-              <div class="mx2-at-lbl"><span class="l-en">2Y</span><span class="l-zh">2年期</span></div>
-              <div class="mx2-at-val" style="color:var(--text)">{{ '%.2f'|format(_mca.get('us2y')) }}%</div>
-              <div class="mx2-at-ctx"><span class="l-en">Treasury</span><span class="l-zh">国债</span></div>
-            </div>
-            {% endif %}
-            {# Fed Funds #}
-            {% if _mca.get('fed_funds') is not none %}
-            <div class="mx2-at">
-              <div class="mx2-at-lbl"><span class="l-en">Fed</span><span class="l-zh">联邦基金</span></div>
-              <div class="mx2-at-val" style="color:var(--text)">{{ '%.2f'|format(_mca.get('fed_funds')) }}%</div>
-              <div class="mx2-at-ctx"><span class="l-en">Funds rate</span><span class="l-zh">利率</span></div>
-            </div>
-            {% endif %}
-            {# Real 10Y #}
-            {% if _mca.get('real10y') is not none %}
-            {% set _r10c = 'var(--down)' if _mca.get('real10y') > 2.0 else ('var(--warn)' if _mca.get('real10y') > 0.5 else 'var(--up)') %}
-            <div class="mx2-at">
-              <div class="mx2-at-lbl"><span class="l-en">Real 10Y</span><span class="l-zh">实际10Y</span></div>
-              <div class="mx2-at-val" style="color:{{ _r10c }}">{{ '%.2f'|format(_mca.get('real10y')) }}%</div>
-              <div class="mx2-at-ctx"><span class="l-en">TIPS</span><span class="l-zh">TIPS</span></div>
-            </div>
-            {% endif %}
-            {# 2s10s curve #}
-            {% if _mca.get('curve_2s10s') is not none %}
-            {% set _curc = 'var(--down)' if _mca.get('curve_2s10s') < 0 else 'var(--up)' %}
-            <div class="mx2-at">
-              <div class="mx2-at-lbl"><span class="l-en">2s10s</span><span class="l-zh">2-10曲线</span></div>
-              <div class="mx2-at-val" style="color:{{ _curc }}">{{ '%+.0f'|format(_mca.get('curve_2s10s') * 100) }}bp</div>
-              <div class="mx2-at-ctx"><span class="l-en">{{ 'inverted' if _mca.get('curve_2s10s') < 0 else 'normal' }}</span><span class="l-zh">{{ '倒挂' if _mca.get('curve_2s10s') < 0 else '正常' }}</span></div>
-            </div>
-            {% endif %}
-            {# DXY #}
-            {% if _mca.get('dxy') is not none %}
-            <div class="mx2-at">
-              <div class="mx2-at-lbl">DXY</div>
-              <div class="mx2-at-val" style="color:var(--text)">{{ '%.1f'|format(_mca.get('dxy')) }}</div>
-              <div class="mx2-at-ctx"><span class="l-en">Dollar</span><span class="l-zh">美元</span></div>
-            </div>
-            {% endif %}
-            {# VIX — vix is a dict with .last (from vix_monitor) #}
-            {% if vix is defined and vix is not none and vix.last is defined %}
-            {% set _vixlv = vix.last %}
-            {% set _vixc = 'var(--down)' if _vixlv > 25 else ('var(--warn)' if _vixlv > 18 else 'var(--up)') %}
-            <div class="mx2-at">
-              <div class="mx2-at-lbl">VIX</div>
-              <div class="mx2-at-val" style="color:{{ _vixc }}">{{ '%.1f'|format(_vixlv) }}</div>
-              <div class="mx2-at-ctx"><span class="l-en">{{ 'stress' if _vixlv > 25 else ('watch' if _vixlv > 18 else 'calm') }}</span><span class="l-zh">{{ '紧张' if _vixlv > 25 else ('警惕' if _vixlv > 18 else '平静') }}</span></div>
-            </div>
-            {% endif %}
-            {# HY OAS — from cross_asset #}
-            {% if _mca.get('hy_oas') is not none %}
-            {% set _hyc = 'var(--down)' if _mca.get('hy_oas') > 5.0 else ('var(--warn)' if _mca.get('hy_oas') > 3.5 else 'var(--up)') %}
-            <div class="mx2-at">
-              <div class="mx2-at-lbl"><span class="l-en">HY OAS</span><span class="l-zh">HY利差</span></div>
-              <div class="mx2-at-val" style="color:{{ _hyc }}">{{ '%.0f'|format(_mca.get('hy_oas') * 100) }}bp</div>
-              <div class="mx2-at-ctx"><span class="l-en">credit</span><span class="l-zh">信用</span></div>
-            </div>
-            {% endif %}
-          </div>
-          {# Cycle-clock / Risk-appetite prose — secondary row from cross_asset_confirm legs #}
-          {% set _cavm = latest.cross_asset_confirm if (latest.cross_asset_confirm is defined and latest.cross_asset_confirm and latest.cross_asset_confirm.verdict not in [none,'unknown']) else none %}
-          {% if _cavm and _cavm.legs %}
-          <div class="mx2-asset-strip" style="margin-top:8px">
-            {% for leg in _cavm.legs[:8] %}
-            <div class="mx2-at">
-              <div class="mx2-at-lbl">{{ t(leg.label_en, leg.label_zh) }}</div>
-              <div class="mx2-at-val" style="color:{{ 'var(--up)' if leg.tone == 'up' else ('var(--down)' if leg.tone == 'down' else 'var(--muted)') }}">{{ '—' }}</div>
-              <div class="mx2-at-ctx">{{ t(leg.detail_en, leg.detail_zh) }}</div>
-            </div>
-            {% endfor %}
-          </div>
-          {% endif %}
-
-          {# Plotly index-deep details — preserved with original IDs for chart resize #}
-          {% set _idx_deep = ((risk_model and risk_model.legs) or chart_risk_model or chart_curve or chart_vix_term) %}
-          {% if _idx_deep %}
-          <details class="jarg" id="idx-deep" style="margin-top:14px"><summary>{{ t('Risk-model breakdown + recession, yield-curve &amp; volatility charts','风险模型拆解 + 衰退、收益率曲线与波动率图表') }}</summary>
-          {% endif %}
-          {% if risk_model and risk_model.legs %}
-          <h3 style="margin-top:16px">{{ t('Index risk model — what is driving de-risk','指数风险模型 — 降险信号由什么驱动') }}</h3>
-          <div class="rm-bar">{% for lg in risk_model.legs %}{% if lg.active and lg.points %}<div style="width:{{ lg.points }}%;background:{{ lg.color }}" title="{{ lg.label }}: {{ lg.points }}"></div>{% endif %}{% endfor %}</div>
-          <table class="rm-tbl">
-            <tr><th class="l">{{ t('Risk leg','风险分项') }}</th><th>{{ t('Intensity','强度') }}</th><th>{{ t('Weight','权重') }}</th><th>{{ t('Pub lag','发布滞后') }}</th><th>{{ t('Points','贡献') }}</th></tr>
-            {% for lg in risk_model.legs %}
-            <tr><td class="l"><span class="rm-dot" style="background:{{ lg.color }}"></span>{{ t(lg.label, lg.label_zh) }}</td>
-            <td><b class="{{ 'pos' if lg.active else 'neg' }}">{{ lg.intensity }}</b></td>
-            <td>{{ lg.weight }}</td>
-            <td>{{ lg.pub_lag }}</td>
-            <td><b>{{ lg.points }}</b></td></tr>
-            {% endfor %}
-          </table>
-          {% endif %}
-          {% for _cid, _cv in [('chart_risk_model', chart_risk_model), ('chart_curve', chart_curve), ('chart_vix_term', chart_vix_term)] %}
-          {% if _cv %}
-          {% if _cv is string %}
-          <div id="{{ _cid }}" class="{{ 'chart-block' if mode != 'stocks' else '' }}" style="height:180px">{{ _cv | safe }}</div>
-          {% endif %}
-          {% endif %}
           {% endfor %}
-          {% if _idx_deep %}
-          </details>
-          {% endif %}
-
-          {% if MS2 and MS2.asof is defined %}<div class="mx2-tray-stamp"><span class="l-en">as of {{ MS2.asof }}</span><span class="l-zh">{{ MS2.asof }} 数据</span></div>{% endif %}
+        </div>
+        <div class="isle-sector-col">
+          <div class="isle-sector-col-head"><span class="l-en">Cold sectors</span><span class="l-zh">低迷板块</span></div>
+          {% for _ct in (_sh2.get('cooling') or [])[:4] %}
+          <div class="isle-sector-row">
+            <span class="isle-sector-arr cool">&#9661;</span>
+            <span class="isle-sector-name"><span class="l-en">{{ _ct.get('name') }}</span><span class="l-zh">{{ _ct.get('name_zh') or _ct.get('name') }}</span></span>
+            <span class="isle-sector-rk">#{{ _ct.get('rank') }}</span>
+          </div>
+          {% endfor %}
         </div>
       </div>
-    </div>
+      {% endif %}
+
+      {# Heatmap chrome — #heatmap-scorecard must remain EMPTY (heatmap.js mount) #}
+      <div class="isle-heatmap-wrap isle-stagger isle-s3">
+        <div class="isle-heatmap-chrome-head"><span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span></div>
+        <div id="heatmap-scorecard" style="min-height:120px"></div>
+      </div>
+
+      {# Asset tile strip — 8 key macro variables #}
+      {% set _mca = latest.cross_asset if (latest.cross_asset is defined and latest.cross_asset) else {} %}
+      <div class="isle-asset-strip isle-stagger isle-s4">
+        {# 10Y Treasury #}
+        {% if _mca.get('us10y') is not none %}
+        <div class="isle-asset-tile asset-tile-anim">
+          <div class="isle-asset-tile-lbl"><span class="l-en">10Y Treasury</span><span class="l-zh">10年期国债</span></div>
+          <div class="isle-asset-tile-val" style="color:var(--text)">{{ '%.2f'|format(_mca.get('us10y')) }}%</div>
+          <div class="isle-asset-tile-ctx"><span class="l-en">rate</span><span class="l-zh">利率</span></div>
+        </div>
+        {% endif %}
+        {# 2Y Treasury #}
+        {% if _mca.get('us2y') is not none %}
+        <div class="isle-asset-tile asset-tile-anim">
+          <div class="isle-asset-tile-lbl"><span class="l-en">2Y Treasury</span><span class="l-zh">2年期国债</span></div>
+          <div class="isle-asset-tile-val" style="color:var(--text)">{{ '%.2f'|format(_mca.get('us2y')) }}%</div>
+          <div class="isle-asset-tile-ctx"><span class="l-en">rate</span><span class="l-zh">利率</span></div>
+        </div>
+        {% endif %}
+        {# Fed Funds #}
+        {% if _mca.get('fed_funds') is not none %}
+        <div class="isle-asset-tile asset-tile-anim">
+          <div class="isle-asset-tile-lbl"><span class="l-en">Fed Funds</span><span class="l-zh">联邦基金</span></div>
+          <div class="isle-asset-tile-val" style="color:var(--text)">{{ '%.2f'|format(_mca.get('fed_funds')) }}%</div>
+          <div class="isle-asset-tile-ctx"><span class="l-en">target</span><span class="l-zh">目标利率</span></div>
+        </div>
+        {% endif %}
+        {# Real 10Y #}
+        {% if _mca.get('real10y') is not none %}
+        {% set _r10c = 'var(--down)' if _mca.get('real10y') > 2.0 else ('var(--warn)' if _mca.get('real10y') > 0.5 else 'var(--up)') %}
+        <div class="isle-asset-tile asset-tile-anim">
+          <div class="isle-asset-tile-lbl"><span class="l-en">Real 10Y</span><span class="l-zh">实际10Y</span></div>
+          <div class="isle-asset-tile-val" style="color:{{ _r10c }}">{{ '%.2f'|format(_mca.get('real10y')) }}%</div>
+          <div class="isle-asset-tile-ctx">TIPS</div>
+        </div>
+        {% endif %}
+        {# 2s10s curve #}
+        {% if _mca.get('curve_2s10s') is not none %}
+        {% set _curc = 'var(--down)' if _mca.get('curve_2s10s') < 0 else 'var(--up)' %}
+        <div class="isle-asset-tile asset-tile-anim">
+          <div class="isle-asset-tile-lbl">2s10s</div>
+          <div class="isle-asset-tile-val" style="color:{{ _curc }}">{{ '%+.0f'|format(_mca.get('curve_2s10s') * 100) }}bp</div>
+          <div class="isle-asset-tile-ctx"><span class="l-en">{{ 'inverted' if _mca.get('curve_2s10s') < 0 else 'normal' }}</span><span class="l-zh">{{ '倒挂' if _mca.get('curve_2s10s') < 0 else '正常' }}</span></div>
+        </div>
+        {% endif %}
+        {# DXY #}
+        {% if _mca.get('dxy') is not none %}
+        <div class="isle-asset-tile asset-tile-anim">
+          <div class="isle-asset-tile-lbl">DXY</div>
+          <div class="isle-asset-tile-val" style="color:var(--text)">{{ '%.1f'|format(_mca.get('dxy')) }}</div>
+          <div class="isle-asset-tile-ctx"><span class="l-en">Dollar</span><span class="l-zh">美元</span></div>
+        </div>
+        {% endif %}
+        {# VIX #}
+        {% if vix is defined and vix is not none and vix.last is defined %}
+        {% set _vixlv = vix.last %}
+        {% set _vixc = 'var(--down)' if _vixlv > 25 else ('var(--warn)' if _vixlv > 18 else 'var(--up)') %}
+        <div class="isle-asset-tile asset-tile-anim">
+          <div class="isle-asset-tile-lbl">VIX</div>
+          <div class="isle-asset-tile-val" style="color:{{ _vixc }}">{{ '%.1f'|format(_vixlv) }}</div>
+          <div class="isle-asset-tile-ctx"><span class="l-en">{{ 'stress' if _vixlv > 25 else ('watch' if _vixlv > 18 else 'calm') }}</span><span class="l-zh">{{ '紧张' if _vixlv > 25 else ('警惕' if _vixlv > 18 else '平静') }}</span></div>
+        </div>
+        {% endif %}
+        {# HY OAS #}
+        {% if _mca.get('hy_oas') is not none %}
+        {% set _hyc = 'var(--down)' if _mca.get('hy_oas') > 5.0 else ('var(--warn)' if _mca.get('hy_oas') > 3.5 else 'var(--up)') %}
+        <div class="isle-asset-tile asset-tile-anim">
+          <div class="isle-asset-tile-lbl"><span class="l-en">HY OAS</span><span class="l-zh">HY利差</span></div>
+          <div class="isle-asset-tile-val" style="color:{{ _hyc }}">{{ '%.0f'|format(_mca.get('hy_oas') * 100) }}bp</div>
+          <div class="isle-asset-tile-ctx"><span class="l-en">credit</span><span class="l-zh">信用</span></div>
+        </div>
+        {% endif %}
+      </div>
+
+      {# Plotly index-deep details — preserved with original IDs for chart resize #}
+      {% set _idx_deep = ((risk_model and risk_model.legs) or chart_risk_model or chart_curve or chart_vix_term) %}
+      {% if _idx_deep %}
+      <details class="jarg" id="idx-deep" style="margin-top:14px"><summary>{{ t('Risk-model breakdown + recession, yield-curve &amp; volatility charts','风险模型拆解 + 衰退、收益率曲线与波动率图表') }}</summary>
+      {% endif %}
+      {% if risk_model and risk_model.legs %}
+      <h3 style="margin-top:16px">{{ t('Index risk model — what is driving de-risk','指数风险模型 — 降险信号由什么驱动') }}</h3>
+      <div class="rm-bar">{% for lg in risk_model.legs %}{% if lg.active and lg.points %}<div style="width:{{ lg.points }}%;background:{{ lg.color }}" title="{{ lg.label }}: {{ lg.points }}"></div>{% endif %}{% endfor %}</div>
+      <table class="rm-tbl">
+        <tr><th class="l">{{ t('Risk leg','风险分项') }}</th><th>{{ t('Intensity','强度') }}</th><th>{{ t('Weight','权重') }}</th><th>{{ t('Pub lag','发布滞后') }}</th><th>{{ t('Points','贡献') }}</th></tr>
+        {% for lg in risk_model.legs %}
+        <tr><td class="l"><span class="rm-dot" style="background:{{ lg.color }}"></span>{{ t(lg.label, lg.label_zh) }}</td>
+        <td><b class="{{ 'pos' if lg.active else 'neg' }}">{{ lg.intensity }}</b></td>
+        <td>{{ lg.weight }}</td>
+        <td>{{ lg.pub_lag }}</td>
+        <td><b>{{ lg.points }}</b></td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+      {% for _cid, _cv in [('chart_risk_model', chart_risk_model), ('chart_curve', chart_curve), ('chart_vix_term', chart_vix_term)] %}
+      {% if _cv %}
+      {% if _cv is string %}
+      <div id="{{ _cid }}" class="{{ 'chart-block' if mode != 'stocks' else '' }}" style="height:180px">{{ _cv | safe }}</div>
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+      {% if _idx_deep %}
+      </details>
+      {% endif %}
+
+      <div class="isle-stamp">
+        {% if MS2 and MS2.asof is defined %}<span class="l-en">as of {{ MS2.asof }}</span><span class="l-zh">{{ MS2.asof }} 数据</span>{% endif %}
+      </div>
+    </div></div></div>
   </div>{# /sx-markets-v2 #}
 
   {# ── 4. RISK row + tray (Stage B) ── #}
@@ -5433,11 +5870,26 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
 
   </div>{# /panel span12 #}
 
-  {# Inline JS for v2 row-ledger tray toggle #}
+  {# Inline JS for v3 island tray toggle #}
   <script>
   (function(){
     var _mx2Ids = ['sx-evidence','sx-events-v2','sx-markets-v2','sx-risk-v2','sx-policy-v2','sx-aibrief-v2','sx-news-v2','sx-deep-context'];
     var _allOpen = false;
+
+    /* Aurora @property polyfill */
+    if(CSS && CSS.registerProperty){
+      try{ CSS.registerProperty({name:'--isle-aurora-angle',syntax:'<angle>',inherits:false,initialValue:'0deg'}); }catch(e){}
+    }
+
+    function _countOpen(){
+      return _mx2Ids.filter(function(id){ var e=document.getElementById(id); return e&&e.hasAttribute('data-open'); }).length;
+    }
+
+    function _updateBodyClass(){
+      var n = _countOpen();
+      document.body.classList.toggle('has-open-island', n > 0);
+      document.body.classList.toggle('many-open', n >= 3);
+    }
 
     window.mx2Toggle = function(id){
       var el = document.getElementById(id);
@@ -5450,30 +5902,50 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
         el.setAttribute('data-open','');
         var s = el.querySelector('.sx-sum'); if(s) s.setAttribute('aria-expanded','true');
         document.dispatchEvent(new CustomEvent('mx2-tray-open',{detail:{id:id}}));
+        setTimeout(function(){
+          var island = el.querySelector('.sx-island');
+          if(island){ var rect=island.getBoundingClientRect(); if(rect.top<60||rect.top>window.innerHeight*.7){ island.scrollIntoView({behavior:'smooth',block:'nearest'}); } }
+        }, 80);
       }
       try{var st=JSON.parse(localStorage.getItem('mx2_state')||'{}');st[id]=!isOpen;localStorage.setItem('mx2_state',JSON.stringify(st));}catch(e){}
+      _updateBodyClass();
       _updateExpandBtn();
     };
 
     window.mx2ToggleAll = function(){
       _allOpen = !_allOpen;
-      _mx2Ids.forEach(function(id){
-        var el = document.getElementById(id); if(!el) return;
-        if(_allOpen){ el.setAttribute('data-open',''); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','true'); }
-        else { el.removeAttribute('data-open'); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','false'); }
-        try{var st=JSON.parse(localStorage.getItem('mx2_state')||'{}');st[id]=_allOpen;localStorage.setItem('mx2_state',JSON.stringify(st));}catch(e){}
-      });
-      _updateExpandBtn();
+      if(_allOpen){
+        _mx2Ids.forEach(function(id, idx){
+          setTimeout(function(){
+            var el=document.getElementById(id); if(!el) return;
+            el.setAttribute('data-open','');
+            var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','true');
+            _updateBodyClass();
+          }, idx * 80);
+        });
+        setTimeout(function(){ _updateExpandBtn(); }, _mx2Ids.length * 80 + 50);
+      } else {
+        _mx2Ids.forEach(function(id){
+          var el=document.getElementById(id); if(!el) return;
+          el.removeAttribute('data-open');
+          var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','false');
+        });
+        _updateBodyClass(); _updateExpandBtn();
+      }
+      try{var st=JSON.parse(localStorage.getItem('mx2_state')||'{}');_mx2Ids.forEach(function(id){st[id]=_allOpen;});localStorage.setItem('mx2_state',JSON.stringify(st));}catch(e){}
     };
 
     function _updateExpandBtn(){
       var btn = document.getElementById('mx2ExpandAllBtn'); if(!btn) return;
-      var openCnt = _mx2Ids.filter(function(id){ var el=document.getElementById(id); return el&&el.hasAttribute('data-open'); }).length;
+      var openCnt = _countOpen();
       _allOpen = openCnt === _mx2Ids.length;
       btn.classList.toggle('all-open', _allOpen);
       var txt = btn.querySelector('.ea-txt');
-      if(txt){ txt.querySelector('.l-en').textContent = _allOpen ? 'Collapse all' : 'Expand all';
-               txt.querySelector('.l-zh').textContent = _allOpen ? '收起全部' : '展开全部'; }
+      if(txt){
+        var enEl=txt.querySelector('.l-en'),zhEl=txt.querySelector('.l-zh');
+        if(enEl) enEl.textContent = _allOpen ? 'Collapse all' : 'Expand all';
+        if(zhEl) zhEl.textContent = _allOpen ? '收起全部' : '展开全部';
+      }
     }
 
     /* Keyboard Enter/Space on sx-sum */
@@ -5485,7 +5957,7 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
     document.addEventListener('keydown',function(e){
       if(e.key==='Escape'){
         _mx2Ids.forEach(function(id){ var el=document.getElementById(id); if(el){ el.removeAttribute('data-open'); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','false'); } });
-        _allOpen=false; _updateExpandBtn();
+        _allOpen=false; _updateBodyClass(); _updateExpandBtn();
       }
     });
 
@@ -5496,6 +5968,7 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
         if(saved[id]===true){ var el=document.getElementById(id); if(el){ el.setAttribute('data-open',''); var s=el.querySelector('.sx-sum');if(s)s.setAttribute('aria-expanded','true'); } }
       });
     }catch(e){}
+    _updateBodyClass();
     _updateExpandBtn();
   })();
   </script>
