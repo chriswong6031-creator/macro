@@ -1151,6 +1151,8 @@
   /* major-index health (macro page hero) */
   .idx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
   @media (max-width: 900px) { .idx-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .idx-grid { grid-template-columns: 1fr; } }
+  .idx-grid > * { min-width: 0; }
   .idx-tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
   .idx-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
   .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }

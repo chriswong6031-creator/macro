@@ -1030,6 +1030,8 @@
   /* major-index health (macro page hero) */
   .idx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
   @media (max-width: 900px) { .idx-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .idx-grid { grid-template-columns: 1fr; } }
+  .idx-grid > * { min-width: 0; }
   .idx-tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
   .idx-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
   .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
@@ -2077,6 +2079,134 @@ body.page-macro::before{
   .mx-kpi-strip{gap:4px}
   .mx-chip{font-size:10px;padding:2px 8px}
 }
+
+/* ── POLICY BAND (mx restyle of the policy lever panel + flip confirmation) ── */
+body.page-macro .mx-policy-band{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:0}
+body.page-macro .mx-pcol{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+body.page-macro .mx-pcol-label{font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+body.page-macro .mx-pcol-state{font-size:16px;font-weight:800;line-height:1.2;margin-bottom:8px}
+body.page-macro .mx-pcol-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:11.5px}
+body.page-macro .mx-pcol-row:last-child{border-bottom:none}
+body.page-macro .mx-pcol-key{color:var(--muted)}
+body.page-macro .mx-delta-chip{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;font-variant-numeric:tabular-nums}
+body.page-macro .mx-delta-up{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 22%,transparent)}
+body.page-macro .mx-delta-dn{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 22%,transparent)}
+body.page-macro .mx-delta-wn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+body.page-macro .mx-delta-mu{background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 18%,transparent)}
+body.page-macro .mx-prog-row{display:flex;flex-direction:column;gap:2px;margin:5px 0}
+body.page-macro .mx-prog-label-row{display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:1px}
+body.page-macro .mx-prog-track{height:4px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:2px;overflow:hidden}
+body.page-macro .mx-prog-fill{height:4px;border-radius:2px}
+body.page-macro .mx-pcol-sub{font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+@media(max-width:900px){body.page-macro .mx-policy-band{grid-template-columns:1fr}}
+@media(max-width:600px){body.page-macro .mx-policy-band{grid-template-columns:1fr}}
+
+/* ── RELEASE RADAR rr-card chrome (macro-scoped additions) ── */
+body.page-macro .rr-card{background:color-mix(in srgb,var(--panel2) 90%,var(--panel));border-color:var(--line)}
+body.page-macro .rr-card:hover{border-color:color-mix(in srgb,var(--info) 45%,var(--line));box-shadow:0 2px 12px color-mix(in srgb,var(--info) 8%,transparent)}
+body.page-macro #release-radar{background:var(--panel)}
+/* projection fill-bars reuse mx-prog-track/fill */
+
+/* ── AI BRIEF CARD (macro upgrade) ── */
+body.page-macro .mx-aibrief{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;text-decoration:none;display:block;color:inherit}
+body.page-macro .mx-aibrief:hover{border-color:color-mix(in srgb,var(--info) 40%,var(--line));text-decoration:none}
+body.page-macro .mx-aibrief-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+body.page-macro .mx-aibrief-icon{width:32px;height:32px;border-radius:8px;flex-shrink:0;background:color-mix(in srgb,var(--info) 14%,var(--panel2));border:1px solid color-mix(in srgb,var(--info) 25%,transparent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--info)}
+body.page-macro .mx-aibrief-title{font-size:13px;font-weight:700;color:var(--text)}
+body.page-macro .mx-aibrief-date{font-size:11px;color:var(--muted)}
+body.page-macro .mx-aibrief-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;margin-left:auto}
+body.page-macro .mx-aibrief-body{font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:10px}
+body.page-macro .mx-aibrief-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+body.page-macro .mx-aibrief-link{font-size:12px;font-weight:700;color:var(--link)}
+
+/* ── SECTOR HEAT strip (mx restyle) ── */
+body.page-macro #sector-heat{padding:12px 16px}
+body.page-macro #sector-heat .sh-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+body.page-macro #sector-heat .sh-chips{display:flex;flex-wrap:wrap;gap:6px}
+body.page-macro #sector-heat .sh-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;border:1px solid;text-decoration:none;transition:opacity .15s}
+body.page-macro #sector-heat .sh-heat{background:color-mix(in srgb,var(--up) 12%,var(--panel2));color:var(--up);border-color:color-mix(in srgb,var(--up) 25%,transparent)}
+body.page-macro #sector-heat .sh-heat:hover{opacity:.8;text-decoration:none}
+body.page-macro #sector-heat .sh-cool{background:color-mix(in srgb,var(--down) 10%,var(--panel2));color:var(--down);border-color:color-mix(in srgb,var(--down) 20%,transparent)}
+body.page-macro #sector-heat .sh-cool:hover{opacity:.8;text-decoration:none}
+body.page-macro #sector-heat .sh-arr{font-size:10px;flex-shrink:0}
+body.page-macro #sector-heat .sh-rk{font-size:9.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+body.page-macro #sector-heat .sh-div{color:var(--muted);padding:0 2px}
+body.page-macro #sector-heat .sh-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+body.page-macro #sector-heat .sh-asof{font-size:10px;color:var(--muted);margin-left:auto}
+
+/* ── SENTIMENT band (macro compact) ── */
+body.page-macro #sentiment-regime.mx-sent-band{padding:14px 16px}
+body.page-macro .mx-sent-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+body.page-macro .mx-sent-col{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+body.page-macro .mx-sent-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+body.page-macro .mx-sent-val{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+body.page-macro .mx-sent-band-label{font-size:11px;color:var(--muted);margin-top:2px}
+body.page-macro .mx-grad-track{height:8px;border-radius:4px;overflow:hidden;position:relative;background:linear-gradient(90deg,var(--down) 0%,var(--warn) 50%,var(--up) 100%);margin:8px 0 4px;opacity:.55}
+body.page-macro .mx-grad-marker{position:absolute;top:-3px;width:6px;height:14px;background:var(--text);border-radius:3px;border:2px solid var(--bg)}
+body.page-macro .mx-froth-items{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+body.page-macro .mx-froth-item{display:flex;align-items:center;gap:8px}
+body.page-macro .mx-froth-label{font-size:10.5px;color:var(--muted);flex:1}
+body.page-macro .mx-froth-bar-wrap{flex:1.5;height:5px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:3px;overflow:hidden}
+body.page-macro .mx-froth-bar{height:5px;border-radius:3px;background:var(--warn)}
+body.page-macro .mx-froth-val{font-size:11px;font-weight:700;min-width:30px;text-align:right;font-variant-numeric:tabular-nums}
+@media(max-width:680px){body.page-macro .mx-sent-grid{grid-template-columns:1fr}}
+
+/* ── CROSS-ASSET tile strip (mx macro variant) ── */
+body.page-macro .mx-asset-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+body.page-macro .mx-asset-tile{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;transition:transform .15s;min-width:0;overflow-wrap:break-word}
+body.page-macro .mx-asset-tile h3{display:flex;flex-wrap:wrap;gap:4px 8px;min-width:0}
+@media(max-width:680px){body.page-macro .mx-asset-grid{grid-template-columns:1fr !important}}
+body.page-macro .mx-asset-tile:hover{transform:translateY(-1px)}
+body.page-macro .mx-at-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+body.page-macro .mx-at-val{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:3px}
+body.page-macro .mx-at-chg{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+body.page-macro .mx-at-chg.up{color:var(--up)}
+body.page-macro .mx-at-chg.dn{color:var(--down)}
+body.page-macro .mx-at-sub{font-size:10px;color:var(--muted);margin-top:2px}
+body.page-macro .mx-regime-strip{margin-top:10px;padding:9px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+@media(max-width:900px){body.page-macro .mx-asset-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:390px){body.page-macro .mx-asset-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ── INDEX HEALTH grid (mx macro variant) ── */
+body.page-macro .mx-idx-health-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+body.page-macro .mx-iht{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
+body.page-macro .mx-iht-ticker{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+body.page-macro .mx-iht-name{font-size:11px;font-weight:600;margin:3px 0}
+body.page-macro .mx-iht-price{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+body.page-macro .mx-iht-chg{font-size:12px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+body.page-macro .mx-iht-chg.up{color:var(--up)}
+body.page-macro .mx-iht-chg.dn{color:var(--down)}
+body.page-macro .mx-iht-meta{display:flex;justify-content:space-between;margin-top:7px;padding-top:7px;border-top:1px solid var(--line)}
+body.page-macro .mx-iht-meta-item{text-align:center}
+body.page-macro .mx-iht-meta-lbl{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block}
+body.page-macro .mx-iht-meta-val{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;display:block;margin-top:2px}
+@media(max-width:900px){body.page-macro .mx-idx-health-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:390px){body.page-macro .mx-idx-health-grid{grid-template-columns:1fr 1fr}}
+
+/* ── NEWS board chrome (mx additions) ── */
+body.page-macro #now-board .mx-ni-top{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}
+body.page-macro #now-board .mx-ni-tag{font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:4px;text-transform:uppercase}
+body.page-macro #now-board .mx-ni-tag.macro{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+body.page-macro #now-board .mx-ni-tag.earnings{background:color-mix(in srgb,var(--q2) 14%,transparent);color:var(--q2);border:1px solid color-mix(in srgb,var(--q2) 25%,transparent)}
+body.page-macro #now-board .mx-ni-tag.stocks{background:color-mix(in srgb,var(--info) 14%,transparent);color:var(--info);border:1px solid color-mix(in srgb,var(--info) 25%,transparent)}
+body.page-macro #now-board .mx-ni-date{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+body.page-macro #now-board .mx-ni-score{font-size:10px;font-weight:700;color:var(--muted);margin-left:auto}
+body.page-macro #now-board .mx-ni-impact{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px}
+body.page-macro #now-board .mx-ni-impact.high{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+body.page-macro #now-board .mx-ni-impact.med{background:color-mix(in srgb,var(--info) 12%,transparent);color:var(--info);border:1px solid color-mix(in srgb,var(--info) 20%,transparent)}
+
+/* ── LINK-OUT strip ── */
+body.page-macro .mx-linkout-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:9px;margin-top:0}
+body.page-macro .mx-linkout-card{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;transition:border-color .15s,transform .15s,box-shadow .15s}
+body.page-macro .mx-linkout-card:hover{border-color:var(--link);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.25);text-decoration:none}
+body.page-macro .mx-lc-icon{font-size:18px;flex-shrink:0}
+body.page-macro .mx-lc-title{font-size:12px;font-weight:700;color:var(--text)}
+body.page-macro .mx-lc-sub{font-size:10px;color:var(--muted);margin-top:2px}
+@media(max-width:390px){body.page-macro .mx-linkout-strip{grid-template-columns:1fr}}
+
+/* ── DISLOCATION + HEALTH light chrome ── */
+body.page-macro .mx-panel-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--muted)}
 </style>
 {% endif %}
     {% set _ol = {
@@ -2200,7 +2330,7 @@ body.page-macro::before{
       </div>
       {# THIS WEEK tier — remaining catalysts as muted calendar rail #}
       {% if macro_catalysts and macro_catalysts|length > 1 %}
-      <div class="mx-eyebrow">{{ t('This Week','本周') }}</div>
+      <div class="mx-eyebrow">{{ t('This Week','本周') }} {{ help('The scheduled US macro releases and Treasury auctions on the calendar over the next ~2 weeks, with typical market impact (red = high). Context only — the dates are known in advance, so they tell you WHEN volatility is likely, not which way.', '未来约两周日程上的美国宏观数据与国债拍卖，附典型市场影响（红=高影响）。仅供参考 — 日期为已知，提示波动“何时”可能出现，而非方向。') }}</div>
       <div class="mx-week-rail">
         {% for c in macro_catalysts[1:9] %}
         <div class="mx-week-card {{ 'mx-week-high' if c.impact == 'high' else '' }}">
@@ -2663,153 +2793,144 @@ body.page-macro::before{
   {% set PL = policy_lever %}
   {% set _pl_state = PL.get('state') or 'QUIET' %}
   {% set _pl_state_color = 'var(--down)' if _pl_state == 'ARMED' else ('var(--orange)' if _pl_state == 'ELEVATED' else 'var(--muted)') %}
-  <div class="panel span12" id="policy-lever-card" style="border-top:3px solid {{ _pl_state_color }};padding:16px 20px 18px">
-    <style>
-    #policy-lever-card{background:var(--panel)}
-    #policy-lever-card h2{margin:0 0 6px;font-size:15px;font-weight:700}
-    #policy-lever-card .pl-state-chip{display:inline-block;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:700;letter-spacing:.04em;background:{{ _pl_state_color }};color:#fff;margin-right:8px}
-    #policy-lever-card .pl-section{margin:10px 0 4px;font-size:13px}
-    #policy-lever-card .pl-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-right:6px}
-    #policy-lever-card .pl-framing{font-size:11.5px;color:var(--muted);margin:4px 0 10px;font-style:italic}
-    #policy-lever-card .pl-lever-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
-    #policy-lever-card .pl-lever-table th{font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600;padding:3px 8px 3px 0;text-align:left;border-bottom:1px solid var(--line)}
-    #policy-lever-card .pl-lever-table td{padding:5px 8px 5px 0;vertical-align:top;border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
-    #policy-lever-card .pl-arm-chip{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid}
-    #policy-lever-card .arm-true{background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--down);border-color:var(--down)}
-    #policy-lever-card .arm-false{background:var(--panel2);color:var(--muted);border-color:var(--line)}
-    #policy-lever-card .pl-sub{font-size:11px;color:var(--muted);margin-top:2px}
-    #policy-lever-card .pl-jaw-row{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px;font-size:12.5px}
-    #policy-lever-card .pl-jaw-item b{color:var(--text)}
-    #policy-lever-card .pl-cal-row{font-size:12.5px;margin-top:6px}
-    @media(max-width:600px){ #policy-lever-card .pl-lever-table th:nth-child(3), #policy-lever-card .pl-lever-table td:nth-child(3){display:none} }
-    </style>
-
-    <h2>
-      <span class="pl-state-chip"><span class="l-en">{{ _pl_state }}</span><span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_pl_state, _pl_state) }}</span></span>
-      <span class="l-en">Policy-Lever Conditions</span><span class="l-zh">政策杠杆条件监测</span>
+  {# MX POLICY BAND — 3-col layout: col1=Policy Lever state+rows, col2=lever details (repricing-style), col3=flip confirmation summary.
+     id="policy-lever-card" is preserved here for deep-link + CI test (tests/test_policy_lever.py checks string presence). #}
+  <div class="panel span12" id="policy-lever-card">
+    <div class="mx-eyebrow">{{ t('Policy-Lever Conditions &amp; Repricing','政策杠杆条件与重新定价') }}
       {{ help("Conditions that make violent overnight reversals more likely — not a forecast, not a signal. ARMED = semis drawdown deep (≤−15%) AND an oil technical curl; ELEVATED = one of the two; QUIET = neither. Display-only context (Policy-Shock W2-F). Drawdown and arming are descriptive; no probabilities.", "使剧烈隔夜反转更可能发生的条件 — 不是预测，不是信号。触发=半导体回撤深（≤−15%）且石油技术卷曲；警戒=两者之一；平静=均无。仅供展示（政策冲击 W2-F）。回撤和触发均为描述性指标，不含概率。") }}
-    </h2>
-    {% if PL.get('framing') %}
-    <div class="pl-framing"><span class="l-en">{{ PL.framing }}</span><span class="l-zh">{{ PL.get('framing_zh') or '' }}</span></div>
-    {% endif %}
+    </div>
+    <div class="mx-policy-band">
 
-    {# Favored complex drawdown #}
-    {% if PL.get('favored_complex') is defined %}
-    {% set FC = PL.get('favored_complex') or {} %}
-    <div class="pl-section">
-      <span class="pl-label"><span class="l-en">Favored complex</span><span class="l-zh">偏好板块</span></span>
-      {% if FC.get('drawdown_pct') is not none %}
-        <b>{{ FC.get('basket', [])|join('/') }}</b>
-        <span style="color:{{ 'var(--down)' if (FC.drawdown_pct is defined and FC.drawdown_pct <= -15) else 'var(--text)' }}">
-          {{ '%+.1f'|format(FC.drawdown_pct) }}%
-        </span>
-        {% if FC.get('drawdown_z') is not none %}
-          <span class="muted" style="font-size:11.5px">(z {{ '%+.1f'|format(FC.drawdown_z) }})</span>
+      {# COL 1 — Policy-Lever state chip + key rows #}
+      <div class="mx-pcol">
+        <div class="mx-pcol-label">{{ t('Policy Lever','政策杠杆') }}</div>
+        <div class="mx-pcol-state">
+          <span class="mx-chip {{ 'mx-c-down' if _pl_state == 'ARMED' else ('mx-c-warn' if _pl_state == 'ELEVATED' else 'mx-c-muted') }}" style="font-size:13px;padding:4px 12px">
+            <span class="l-en">{{ _pl_state }}</span><span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_pl_state, _pl_state) }}</span>
+          </span>
+        </div>
+        {# Favored complex drawdown as first labeled row #}
+        {% if PL.get('favored_complex') is defined %}
+        {% set _FC = PL.get('favored_complex') or {} %}
+        {% if _FC.get('drawdown_pct') is not none %}
+        <div class="mx-pcol-row">
+          <span class="mx-pcol-key">{{ t('Favored complex','偏好板块') }}</span>
+          <span class="mx-delta-chip {{ 'mx-delta-dn' if _FC.drawdown_pct <= -15 else 'mx-delta-mu' }}">
+            {{ _FC.get('basket', [])|join('/') }} {{ '%+.1f'|format(_FC.drawdown_pct) }}%
+          </span>
+        </div>
         {% endif %}
-        <span style="font-size:11px;color:var(--muted);margin-left:4px">{{ t('from 120d peak','距120日高点') }}</span>
-      {% else %}
-        <span class="muted">{{ t('unavailable','不可用') }}</span>
-      {% endif %}
-    </div>
-    {% if FC.get('note') %}
-    <div class="pl-sub"><span class="l-en">{{ FC.note }}</span><span class="l-zh">{{ FC.get('note_zh') or FC.note }}</span></div>
-    {% endif %}
-    {% if FC.get('basket_caveat') %}
-    <div class="pl-sub" style="color:var(--orange);margin-top:3px">
-      <span class="l-en">⚠ {{ FC.basket_caveat }}</span>
-      <span class="l-zh">⚠ {{ FC.get('basket_caveat_zh') or FC.basket_caveat }}</span>
-    </div>
-    {% endif %}
-    {% endif %}
+        {% if _FC.get('basket_caveat') %}
+        <div class="mx-pcol-sub" style="color:var(--warn)"><span class="l-en">{{ _FC.basket_caveat }}</span><span class="l-zh">{{ _FC.get('basket_caveat_zh') or _FC.basket_caveat }}</span></div>
+        {% endif %}
+        {% endif %}
+        {# Jawboning row #}
+        {% if PL.get('jawboning') is defined %}
+        {% set _JW = PL.get('jawboning') or {} %}
+        {% if _JW.get('n_7d') is not none %}
+        <div class="mx-pcol-row">
+          <span class="mx-pcol-key">{{ t('Jawboning 7d/30d','政策发声 7日/30日') }}</span>
+          <span class="mx-delta-chip mx-delta-mu">{{ _JW.n_7d }} / {{ _JW.n_30d }}</span>
+        </div>
+        {% endif %}
+        {% if _JW.get('last_alert_summary') %}
+        <div class="mx-pcol-sub"><span class="l-en">{{ _JW.get('last_alert_summary') or '' }}</span><span class="l-zh">{{ _JW.get('last_alert_summary_zh') or _JW.get('last_alert_summary') or '' }}</span></div>
+        {% endif %}
+        {% endif %}
+        {# Calendar note #}
+        {% if PL.get('calendar') is defined %}
+        {% set _CAL = PL.get('calendar') or {} %}
+        {% if _CAL.get('context_note') %}
+        <div class="mx-pcol-row">
+          <span class="mx-pcol-key" style="font-size:10.5px"><span class="l-en">{{ _CAL.get('context_note') or '' }}</span><span class="l-zh">{{ _CAL.get('context_note_zh') or _CAL.get('context_note') or '' }}</span></span>
+        </div>
+        {% endif %}
+        {% endif %}
+        {% if PL.get('framing') %}
+        <div class="mx-pcol-sub"><span class="l-en">{{ PL.framing }}</span><span class="l-zh">{{ PL.get('framing_zh') or '' }}</span></div>
+        {% endif %}
+        <div class="mx-pcol-sub">{{ t('Display-only · W2-F · as of','仅供展示 · W2-F · 截至') }} {{ PL.get('as_of') or '' }}</div>
+      </div>
 
-    {# Lever table #}
-    {% if PL.get('levers') %}
-    <table class="pl-lever-table">
-      <thead>
-        <tr>
-          <th><span class="l-en">Lever</span><span class="l-zh">杠杆</span></th>
-          <th><span class="l-en">Arming</span><span class="l-zh">触发状态</span></th>
-          <th><span class="l-en">Context</span><span class="l-zh">背景</span></th>
-        </tr>
-      </thead>
-      <tbody>
-      {% for lv in PL.levers %}
-      {% set _arm = lv.get('arming') %}
-      <tr>
-        <td style="font-weight:600;min-width:110px">
-          <span class="l-en">{{ lv.get('name') or '' }}</span><span class="l-zh">{{ lv.get('name_zh') or lv.get('name') or '' }}</span>
-          {% if lv.get('asset') %}<br><span class="muted" style="font-size:11px">{{ lv.asset }}</span>{% endif %}
-        </td>
-        <td style="min-width:120px">
-          {% if _arm is not none %}
-            {% set _is_armed = _arm.get('armed') %}
-            <span class="pl-arm-chip {{ 'arm-true' if _is_armed else 'arm-false' }}">
+      {# COL 2 — Levers: arming state as labeled rows with delta chips #}
+      <div class="mx-pcol">
+        <div class="mx-pcol-label">{{ t('Lever Arming Status','杠杆触发状态') }}</div>
+        {% if PL.get('levers') %}
+        {% for lv in PL.levers %}
+        {% set _arm = lv.get('arming') %}
+        {% set _is_armed = _arm.get('armed') if _arm is not none else false %}
+        <div class="mx-prog-row">
+          <div class="mx-prog-label-row">
+            <span class="muted"><span class="l-en">{{ lv.get('name') or '' }}</span><span class="l-zh">{{ lv.get('name_zh') or lv.get('name') or '' }}</span>{% if lv.get('asset') %} <span style="font-size:9.5px">({{ lv.asset }})</span>{% endif %}</span>
+            {% if _arm is not none %}
+            <span class="mx-delta-chip {{ 'mx-delta-dn' if _is_armed else 'mx-delta-mu' }}">
               <span class="l-en">{{ 'ARMED' if _is_armed else 'quiet' }}</span>
               <span class="l-zh">{{ '已触发' if _is_armed else '平静' }}</span>
             </span>
-            <div class="pl-sub" style="margin-top:3px">
-              {% if _arm.get('basing') %}<span style="color:var(--up)">● basing</span>{% endif %}
-              {% if _arm.get('stoch_curl') %}<span style="color:var(--up)">● stoch↑</span>{% endif %}
-              {% if _arm.get('macd_curl') %}<span style="color:var(--up)">● macd↑</span>{% endif %}
-              {% if _arm.get('days_in_base') is not none and _arm.days_in_base > 0 %}
-                <span>{{ _arm.days_in_base }}d</span>
-              {% endif %}
-              {% if _arm.get('flatness') is not none %}
-                <span title="flatness gate (v1.1)">flat={{ '%+.1f'|format(_arm.flatness * 100) }}%</span>
-              {% endif %}
-            </div>
-          {% else %}
-            <span class="pl-arm-chip arm-false"><span class="l-en">n/a</span><span class="l-zh">不适用</span></span>
+            {% else %}
+            <span class="mx-delta-chip mx-delta-mu"><span class="l-en">n/a</span><span class="l-zh">不适用</span></span>
+            {% endif %}
+          </div>
+          {% if _arm is not none %}
+          <div class="mx-prog-track"><div class="mx-prog-fill" style="width:{{ '100' if _is_armed else '15' }}%;background:{{ 'var(--down)' if _is_armed else 'var(--muted)' }}"></div></div>
+          {% if _arm.get('days_in_base') is not none or _arm.get('flatness') is not none %}
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">{% if _arm.get('days_in_base') is not none %}{{ _arm.days_in_base }}d base{% endif %}{% if _arm.get('flatness') is not none %} · flat={{ '%.2f'|format(_arm.flatness) }}{% endif %}</div>
           {% endif %}
-        </td>
-        <td>
-          <span class="l-en">{{ lv.get('watch') or '' }}</span>
-          <span class="l-zh">{{ lv.get('watch_zh') or lv.get('watch') or '' }}</span>
-        </td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    {% endif %}
-
-    {# Jawboning row #}
-    {% if PL.get('jawboning') is defined %}
-    {% set JW = PL.get('jawboning') or {} %}
-    <div class="pl-jaw-row">
-      <span class="pl-jaw-item">
-        <span class="pl-label"><span class="l-en">Jawboning</span><span class="l-zh">政策发声</span></span>
-        {% if JW.get('n_7d') is not none %}
-          <b>{{ JW.n_7d }}</b> <span class="muted">{{ t('alerts 7d','条警报（7日）') }}</span>
-          &nbsp;·&nbsp;
-          <b>{{ JW.n_30d }}</b> <span class="muted">{{ t('30d','30日') }}</span>
+          {% if _arm.get('basing') or _arm.get('stoch_curl') or _arm.get('macd_curl') %}
+          <div style="font-size:10px;color:var(--up);margin-top:2px">
+            {% if _arm.get('basing') %}basing {% endif %}{% if _arm.get('stoch_curl') %}stoch↑ {% endif %}{% if _arm.get('macd_curl') %}macd↑{% endif %}
+          </div>
+          {% endif %}
+          {% endif %}
+          {% if lv.get('watch') %}
+          <div style="font-size:10px;color:var(--muted);margin-top:1px"><span class="l-en">{{ lv.get('watch') or '' }}</span><span class="l-zh">{{ lv.get('watch_zh') or lv.get('watch') or '' }}</span></div>
+          {% endif %}
+        </div>
+        {% endfor %}
         {% else %}
-          <span class="muted">{{ t('unavailable','不可用') }}</span>
+        <div class="mx-pcol-sub">{{ t('No lever data','无杠杆数据') }}</div>
         {% endif %}
-      </span>
-      {% if JW.get('last_alert_summary') %}
-      <span class="pl-jaw-item" style="flex:1;min-width:200px">
-        <span class="pl-label">{{ t('Last','最近') }}</span>
-        <span class="l-en muted">{{ JW.last_alert_summary }}</span>
-        <span class="l-zh muted">{{ JW.get('last_alert_summary_zh') or JW.last_alert_summary }}</span>
-      </span>
-      {% endif %}
-    </div>
-    {% endif %}
+      </div>
 
-    {# Calendar row #}
-    {% if PL.get('calendar') is defined %}
-    {% set CAL = PL.get('calendar') or {} %}
-    <div class="pl-cal-row muted">
-      <span class="pl-label"><span class="l-en">Calendar</span><span class="l-zh">日历</span></span>
-      <span class="l-en">{{ CAL.get('context_note') or '' }}</span>
-      <span class="l-zh">{{ CAL.get('context_note_zh') or CAL.get('context_note') or '' }}</span>
-    </div>
-    {% endif %}
+      {# COL 3 — Flip Confirmation summary (full #flip-confirmation section remains in ms-front above) #}
+      <div class="mx-pcol">
+        <div class="mx-pcol-label">{{ t('Flip Confirmation','翻转确认') }}</div>
+        {% if flip_confirmation and flip_confirmation.last_event %}
+        {% set _FC3 = flip_confirmation %}
+        {% set _FEV3 = _FC3.last_event %}
+        {% set _fv3_en = _FEV3.verdict if _FEV3.verdict else 'Pending' %}
+        {% set _fv3_zh = {'CONFIRMED':'已确认','FADED':'已消退','MIXED':'混合','Pending':'待定'}.get(_fv3_en, _fv3_en) %}
+        {% set _fvc3 = 'mx-delta-up' if _FEV3.verdict == 'CONFIRMED' else ('mx-delta-dn' if _FEV3.verdict == 'FADED' else 'mx-delta-mu') %}
+        <div class="mx-pcol-row">
+          <span class="mx-pcol-key">{{ t('Last flip','最近翻转') }}</span>
+          <span class="mx-delta-chip mx-delta-mu num">{{ _FEV3.event_date }}</span>
+        </div>
+        <div class="mx-pcol-row">
+          <span class="mx-pcol-key">{{ t('Direction','方向') }}</span>
+          <span class="mx-delta-chip mx-delta-mu">{{ t('defensive','防御') if _FEV3.direction == 'defensive' else t('offense','进攻') }}</span>
+        </div>
+        <div class="mx-pcol-row">
+          <span class="mx-pcol-key">{{ t('z-score','z 分数') }}</span>
+          <span class="mx-delta-chip mx-delta-wn">{{ _FEV3.z }}</span>
+        </div>
+        <div class="mx-pcol-row">
+          <span class="mx-pcol-key">{{ t('Verdict','结论') }}</span>
+          <span class="mx-delta-chip {{ _fvc3 }}">{{ t(_fv3_en, _fv3_zh) }}</span>
+        </div>
+        {% if _FC3.base_rates %}
+        {% set _BR3 = _FC3.base_rates %}
+        <div class="mx-pcol-row">
+          <span class="mx-pcol-key">{{ t('Fade rate','消退率') }} (n={{ _BR3.n_events }})</span>
+          <span class="mx-delta-chip mx-delta-dn">{{ _BR3.faded }}/{{ _BR3.n_events }} {{ t('faded','消退') }}</span>
+        </div>
+        {% endif %}
+        <div class="mx-pcol-sub">{{ t('as of','截至') }} {{ _FC3.asof }} · {{ t('Display-only (W2-F)','仅供展示 (W2-F)') }}</div>
+        {% else %}
+        <div class="mx-pcol-sub">{{ t('No flip data yet','暂无翻转数据') }}</div>
+        {% endif %}
+      </div>
 
-    <div class="pl-sub" style="margin-top:8px">
-      <span class="l-en">Display-only conditions context — Policy-Shock program W2-F. As of {{ PL.get('as_of') or '' }}.</span>
-      <span class="l-zh">仅供展示的条件背景 — 政策冲击项目 W2-F。截至{{ PL.get('as_of') or '' }}。</span>
-    </div>
+    </div>{# /mx-policy-band #}
   </div>
   {% endif %}{# /policy_lever #}
 
@@ -4569,7 +4690,7 @@ body.page-macro::before{
   </style>
   <div class="panel span12" id="week-ahead">
     <h2 style="margin-bottom:10px">{{ t('Week ahead — scheduled catalysts', '未来一周 — 日程催化') }}
-      {{ help('The scheduled US macro releases and Treasury auctions on the calendar over the next ~2 weeks, with typical market impact (red = high). Context only — the dates are known in advance, so they tell you WHEN volatility is likely, not which way.', '未来约两周日程上的美国宏观数据与国债拍卖，附典型市场影响（红=高影响）。仅供参考 — 日期为已知，提示波动“何时”可能出现，而非方向。') }}
+    <summary>{{ t('Sentiment regime','情绪周期') }}
     </h2>
     {% if macro_catalysts %}
     {% set _mos = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
@@ -4601,16 +4722,59 @@ body.page-macro::before{
   <div class="panel span12" id="heatmap-scorecard"></div>
   {% endif %}
 
-  {# AI Daily Brief — the single in-page doorway to the cross-asset LLM synthesis
-     (aibrief.html). Replaces the old inline AI Master Brief panel. #}
+  {# AI Daily Brief — upgraded mx card with synthesis read from macro_news.synthesis.read (if present).
+     The `aibrief-card` a-link is superseded by mx-aibrief for macro mode; the class kept for CSS compat. #}
+  {% if mode != 'stocks' %}
+  <a class="panel span12 aibrief-card mx-aibrief" href="aibrief.html">
+    <div class="mx-aibrief-hdr">
+      <div class="mx-aibrief-icon">AI</div>
+      <div>
+        <div class="mx-aibrief-title">{{ t('AI Daily Brief · cross-asset synthesis', 'AI 每日简报 · 跨资产综合') }}</div>
+        <div class="mx-aibrief-date num">{{ latest.date if latest.date else generated_utc[:10] }}</div>
+      </div>
+      <span class="mx-aibrief-badge">{{ t('display-only synthesis of existing signals — not a signal source','仅展示层综合读数 — 非信号来源') }}</span>
+    </div>
+    {% if macro_news and macro_news.synthesis and macro_news.synthesis.get('read') %}
+    <div class="mx-aibrief-body">
+      <span class="l-en">{{ macro_news.synthesis.read }}</span>
+      <span class="l-zh">{{ macro_news.synthesis.read }}</span>
+      {% if macro_news.synthesis.get('dominant_channel') %}
+       · <span class="l-en">Dominant: <strong>{{ macro_news.synthesis.dominant_channel }}</strong></span><span class="l-zh">主导：<strong>{{ macro_news.synthesis.dominant_channel }}</strong></span>
+      {% endif %}
+      {% if macro_news.synthesis.get('top_tickers') %}
+       · <span class="l-en">Top tickers: {% for tk in macro_news.synthesis.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}, {% endif %}{% endfor %}</span><span class="l-zh">主要标的：{% for tk in macro_news.synthesis.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}、{% endif %}{% endfor %}</span>
+      {% endif %}
+    </div>
+    <div class="mx-aibrief-footer">
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        {% if macro_news.synthesis.get('high_impact_count') is not none %}
+        <span class="mx-chip mx-c-warn">{{ macro_news.synthesis.high_impact_count }} {{ t('high-impact','高影响') }}</span>
+        {% endif %}
+        {% for ch in (macro_news.synthesis.get('top_channels') or [])[:3] %}
+        <span class="mx-chip mx-c-muted"><span class="l-en">{{ ch.name }}</span><span class="l-zh">{{ ch.name }}</span> {{ ch.count }}</span>
+        {% endfor %}
+      </div>
+      <span class="mx-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span>
+    </div>
+    {% else %}
+    <div class="mx-aibrief-body">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假设与后续关注。仅供研究参考，绝非交易信号。') }}</div>
+    <div class="mx-aibrief-footer">
+      <span></span>
+      <span class="mx-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span>
+    </div>
+    {% endif %}
+  </a>
+  {% else %}
+  {# Stocks mode: keep original simple link card #}
   <a class="panel span12 aibrief-card" href="aibrief.html">
     <span class="abc-ic">🧠</span>
     <span class="abc-mid">
       <span class="abc-tit">{{ t('AI Daily Brief · cross-asset synthesis', 'AI 每日简报 · 跨资产综合') }}</span>
-      <span class="abc-sub muted sm">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假设与后续关注。仅供研究参考，绝非交易信号。') }}</span>
+      <span class="abc-sub muted sm">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假势与后续关注。仅供研究参考，绝非交易信号。') }}</span>
     </span>
     <span class="abc-go">→</span>
   </a>
+  {% endif %}
 
 
   {# ===================== SECTOR HEAT STRIP — compact one-row rotation read (macro only) =====================
@@ -4676,96 +4840,79 @@ body.page-macro::before{
   {% set FG = fear_greed %}
   {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
   {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
-  <details class="panel span12 fold" id="sentiment-regime">
-    <summary>{{ t('Sentiment regime','情绪周期') }}
+  <details class="panel span12 fold mx-sent-band" id="sentiment-regime">
+    <summary>{{ t('Sentiment &amp; Froth','情绪与狂热') }}
       {{ help("Sentiment context lenses — Fear/Greed composite, froth/fragility gauge, and fear↔euphoria synthesis. None of these call direction or size trades.","情绪背景视角 — 恐惧/贪婪合成、狂热/脆弱指标及恐惧↔欣喜综合。均不判断方向或决定仓位。") }}
       <span class="fold-stat">{% if FG %}{{ t('Fear/Greed','恐惧/贪婪') }} {{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }} {{ FG.dial }}/100{% endif %}{% if ff and ff.band %} · {{ t('Froth','狂热') }} {{ t(ff.band|capitalize, ff.band_zh) }}{% endif %}{% if FE %} · {{ t('Fear↔Euphoria','恐惧↔欣喜') }} {{ t(FE.band, _bandzh.get(FE.band, FE.band)) }}{% endif %}</span>
       <span class="fold-caret">▾</span>
     </summary>
-    <div style="display:flex;flex-wrap:wrap;gap:18px 22px">
+    <div class="mx-sent-grid">
 
-      <!-- Fear / Greed composite (P1.2) -->
+      <!-- Fear / Greed composite (P1.2) — mx compact col -->
       {% if fear_greed %}
       {% set FG = fear_greed %}
       {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
-      {% set _fgc = 'var(--down)' if FG.dial < 30 else ('var(--warn)' if FG.dial < 45 else ('var(--up)' if FG.dial > 70 else 'var(--up)' if FG.dial > 55 else 'var(--muted)')) %}
-      <section id="fear-greed" style="flex:1 1 320px;min-width:0;border-left:3px solid {{ _fgc }};padding-left:14px">
-        <h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0">{{ t('Fear / Greed sentiment context','恐惧/贪婪情绪参考') }}
-          <span style="margin-left:auto;color:{{ _fgc }};font-weight:800;font-size:16px">{{ FG.dial }}<small style="font-size:12px;font-weight:600;color:var(--muted)">/100 · {{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }}</small></span>
-          {{ help("Equal-weight z-mean of qualifying market indicators (legs), each oriented so a positive z-score points toward greed. Display-only context — not a signal, not a timed call, never scored. Young series (putcall, AAII) are shown separately.","合格市场指标（分量）的等权 z 均值，每项方向均以正 z 为贪婪。仅供展示参考 — 非信号，非择时判断，不计分。过短序列（看跌/看涨比、AAII）单独展示。") }}
-        </h3>
-        <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-          <div class="pgauge" style="width:100%"><i style="left:{{ FG.dial }}%"></i></div>
-          <div class="pends" style="margin-top:3px">
-            <span{% if FG.label_en == 'Extreme Fear' %} style="color:var(--down);font-weight:700"{% endif %}>{{ t('Extreme Fear','极度恐惧') }}</span>
-            <span{% if FG.label_en == 'Fear' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Fear','恐惧') }}</span>
-            <span{% if FG.label_en == 'Neutral' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Neutral','中性') }}</span>
-            <span{% if FG.label_en == 'Greed' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Greed','贪婪') }}</span>
-            <span{% if FG.label_en == 'Extreme Greed' %} style="color:var(--up);font-weight:700"{% endif %}>{{ t('Extreme Greed','极度贪婪') }}</span>
-          </div>
-          <div class="muted sm" style="margin-top:8px">{{ FG.n_legs_qualifying }} {{ t('legs in composite','分量入合成') }} · <a href="macro_signals.html#fear-greed-detail" class="muted">{{ t('full breakdown →','完整拆解 →') }}</a></div>
+      {% set _fgc = 'var(--down)' if FG.dial < 30 else ('var(--warn)' if FG.dial < 45 else ('var(--up)' if FG.dial > 55 else 'var(--muted)')) %}
+      <section id="fear-greed" class="mx-sent-col">
+        <div class="mx-sent-label">{{ t('Fear / Greed','恐惧/贪婪') }} {{ help('Equal-weight z-mean of qualifying market indicators (legs), each oriented so a positive z-score points toward greed. Display-only context — not a signal, not a timed call, never scored.','合格市场指标（分量）的等权 z 均值，每项方向均以正 z 为贪婪。仅供展示参考 — 非信号，非择时判断，不计分。') }}</div>
+        <div class="mx-sent-val" style="color:{{ _fgc }}">{{ FG.dial }}</div>
+        <div class="mx-sent-band-label">{{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }} <span class="muted">/100</span></div>
+        <div class="mx-grad-track" style="position:relative">
+          <span class="mx-grad-marker" style="left:calc({{ FG.dial }}% - 3px)"></span>
         </div>
-        {% if FG.young_tiles %}
-        <div class="muted sm" style="margin-top:8px">
-          <b>{{ t('Context tiles (too young to z-score)','背景小块（序列过短，无法计算 z 分数）') }}</b>
-          {% for yt in FG.young_tiles %}{% if yt.value is not none %}
-          <span style="margin-right:12px">{{ t(yt.name_en, yt.name_zh) }}: <b>{{ yt.value }}</b></span>
-          {% endif %}{% endfor %}
+        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:2px">
+          <span>{{ t('Fear','恐惧') }}</span><span>{{ t('Neutral','中性') }}</span><span>{{ t('Greed','贪婪') }}</span>
         </div>
-        {% endif %}
-        <p class="muted sm" style="margin:8px 0 0">{{ t(FG.disclaimer_en, FG.disclaimer_zh) }}</p>
+        <div class="muted sm" style="margin-top:8px">{{ FG.n_legs_qualifying }} {{ t('legs','分量') }} · <a href="macro_signals.html#fear-greed-detail" class="muted">{{ t('full →','完整 →') }}</a></div>
       </section>
       {% endif %}
 
-      <!-- Froth & Fragility -->
+      <!-- Froth & Fragility — mx compact col -->
       {% if froth_fragility %}
       {% set ff = froth_fragility %}
       {% set ffc = 'var(--up)' if ff.band == 'calm' else ('var(--warn)' if ff.band in ['watch','elevated'] else 'var(--down)') %}
       {% set ax = ff.face_a.score if ff.face_a.score is not none else 0 %}
       {% set bx = ff.face_b.score if ff.face_b.score is not none else 0 %}
-      <section id="froth-fragility" style="flex:1 1 320px;min-width:0;border-left:3px solid {{ ffc }};padding-left:14px">
-        <h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0">{{ t('Froth & Fragility', '狂热与脆弱') }}
-          {% if ff.headline is not none %}<span style="margin-left:auto;color:{{ ffc }};font-weight:800;font-size:16px">{{ ff.headline|round|int }}<small style="font-size:12px;font-weight:600;color:var(--muted)">/100 · {{ t(ff.band|capitalize, ff.band_zh) }}</small></span>{% endif %}
-          {{ help("A top-risk gauge for froth: retail euphoria (semis/AI going parabolic) plus hidden distribution (leaders quietly rolling over while the index still holds). Only euphoric AND fragile together is a real top risk. Context only — the response is to trim size, not to pick names.","顶部风险计：零售狂热（半导体/AI 抛物线）叠加隐性派发（龙头悄然见顶而指数仍被托住）。唯有“狂热且脆弱”同时出现才是真正的顶部风险。仅供参考 — 应对是减仓，而非选股。") }}
-        </h3>
-        {% if ff.face_a.score is not none or ff.face_b.score is not none %}
-        <div style="margin-top:2px;font-weight:700;color:{{ ffc }}">{{ t(ff.quadrant_en, ff.quadrant_zh) }}
-          {% if ff.provisional %}<span class="badge sm" style="margin-left:6px" title="forward record still accruing">{{ t('provisional', '暂定') }}</span>{% endif %}
-          {% if ff.unwind_risk %}<span class="badge sm" style="margin-left:6px;color:var(--down)" title="correlation snapping back">⚠ {{ t('unwind risk','解构风险') }}</span>{% endif %}
-        </div>
-        <div class="muted sm" style="margin-top:6px">{{ t('Euphoria','欣喜') }} <b style="color:var(--text)">{{ ax|round|int }}</b>/100 · {{ t('Fragility / distribution','脆弱／派发') }} <b style="color:var(--text)">{{ bx|round|int }}</b>/100</div>
+      <section id="froth-fragility" class="mx-sent-col">
+        <div class="mx-sent-label">{{ t('Froth & Fragility','狂热与脆弱') }} {{ help('A top-risk gauge for froth: retail euphoria plus hidden distribution. Only euphoric AND fragile together is a real top risk. Context only.','顶部风险计：零售狂热叠加隐性派发。唯有同时出现才是真正的顶部风险。仅供参考。') }}</div>
+        {% if ff.headline is not none %}
+        <div class="mx-sent-val" style="color:{{ ffc }}">{{ ff.headline|round|int }}</div>
+        <div class="mx-sent-band-label">{{ t(ff.band|capitalize, ff.band_zh) }} <span class="muted">/100</span></div>
         {% else %}
-        <p class="muted sm">{{ t('Not enough data to compute the gauge right now.','当前数据不足以计算该指标。') }}</p>
+        <div class="mx-sent-band-label muted">{{ t('—','—') }}</div>
         {% endif %}
-        <p class="muted sm" style="margin:8px 0 0">{% if ff.track_record and ff.track_record.n %}{{ t('Forward record','前瞻记录') }}: {{ ff.track_record.n }} {{ t('firings','次触发') }} · {{ (ff.track_record.hit_rate * 100)|round|int }}% {{ t('hit','命中') }}. {% else %}{{ t('Forward record accruing.','前瞻记录积累中。') }} {% endif %}{{ t('Display-only — the response is sizing, not selection.','仅供展示——应对是调整仓位，而非选股。') }}</p>
+        <div class="mx-froth-items" style="margin-top:10px">
+          <div class="mx-froth-item">
+            <span class="mx-froth-label">{{ t('Euphoria','欣喜') }}</span>
+            <div class="mx-froth-bar-wrap"><div class="mx-froth-bar" style="width:{{ [ax,100]|min }}%;background:var(--warn)"></div></div>
+            <span class="mx-froth-val">{{ ax|round|int }}</span>
+          </div>
+          <div class="mx-froth-item">
+            <span class="mx-froth-label">{{ t('Fragility','脆弱') }}</span>
+            <div class="mx-froth-bar-wrap"><div class="mx-froth-bar" style="width:{{ [bx,100]|min }}%;background:var(--down)"></div></div>
+            <span class="mx-froth-val">{{ bx|round|int }}</span>
+          </div>
+        </div>
+        {% if ff.provisional %}<div class="muted sm" style="margin-top:6px">{{ t('provisional','暂定') }}</div>{% endif %}
       </section>
       {% endif %}
 
-      <!-- Fear ↔ Euphoria -->
+      <!-- Fear ↔ Euphoria — mx compact col -->
       {% if fear_euphoria %}
       {% set FE = fear_euphoria %}
       {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
-      <section style="flex:1 1 320px;min-width:0">
-        <h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0">{{ t('Fear ↔ Euphoria: regime synthesis', '恐惧 ↔ 欣喜：周期综合') }}
-          {{ help("Where the market sits between fear and euphoria, built from cross-asset risk appetite, the stress read and capitulation. Context only — it doesn't call direction. Buying fear works only when the Fed has your back; without it, extreme fear can be a falling knife.","市场处于恐惧与欣喜之间的位置，由跨资产风险偏好、压力读数与投降指标合成。仅供参考 — 不判断方向。只有美联储托底时，抄底恐惧才有效；否则极端恐惧可能是接飞刀。") }}
-        </h3>
-        <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-          <div style="font-weight:700">{{ t('Fear ↔ Euphoria', '恐惧 ↔ 欣喜') }}
-            <span style="font-size:22px">{{ FE.fe_score }}</span><span class="muted" style="font-size:13px">/100</span>
-            <span class="badge" style="font-size:11px;vertical-align:middle;background:var(--panel)">{{ t(FE.band, _bandzh.get(FE.band, FE.band)) }}</span>
-            {% if FE.roro is not none %}<span class="muted sm" style="float:right">RORO {{ '%+.2f'|format(FE.roro) }}{% if FE.roro_state %} <span class="pill" style="background:var(--panel)">{{ td(FE.roro_state) }}</span>{% endif %}</span>{% endif %}
-          </div>
-          <div class="pgauge" style="width:100%"><i style="left: {{ FE.fe_score }}%"></i></div>
-          <div class="pends"><span>← {{ t('Fear', '恐惧') }}</span><span>{{ t('Euphoria', '欣喜') }} →</span></div>
-          <div class="pends" style="margin-top:3px">
-            <span{% if FE.band=='Panic' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Panic', '恐慌') }}</span>
-            <span{% if FE.band=='Fear' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Fear', '恐惧') }}</span>
-            <span{% if FE.band=='Neutral' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Neutral', '中性') }}</span>
-            <span{% if FE.band=='Greed' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Greed', '贪婪') }}</span>
-            <span{% if FE.band=='Euphoria' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Euphoria', '欣喜') }}</span>
-          </div>
-          <div class="muted sm" style="margin-top:8px">{{ t("Today's score is the rolling-5-year percentile of the RORO composite (valid after ~2.5y). 'Contrarian at extremes' is regime-dependent — see the dislocation read below.", '今日评分为 RORO 综合的滚动五年百分位（约 2.5 年后有效）。"极端时反向操作"取决于周期 — 见下方错位读数。') }}</div>
+      {% set _fec = 'var(--down)' if FE.fe_score < 30 else ('var(--warn)' if FE.fe_score < 50 else ('var(--up)' if FE.fe_score > 70 else 'var(--muted)')) %}
+      <section class="mx-sent-col">
+        <div class="mx-sent-label">{{ t('Fear ↔ Euphoria','恐惧 ↔ 欣喜') }} {{ help('Where the market sits between fear and euphoria, built from cross-asset risk appetite, stress read and capitulation. Context only.','市场处于恐惧与欣喜之间的位置，由跨资产风险偏好、压力读数与投降指标合成。仅供参考。') }}</div>
+        <div class="mx-sent-val" style="color:{{ _fec }}">{{ FE.fe_score }}</div>
+        <div class="mx-sent-band-label">{{ t(FE.band, _bandzh.get(FE.band, FE.band)) }} <span class="muted">/100</span></div>
+        <div class="mx-grad-track" style="position:relative">
+          <span class="mx-grad-marker" style="left:calc({{ FE.fe_score }}% - 3px)"></span>
         </div>
+        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:2px">
+          <span>{{ t('Fear','恐惧') }}</span><span>{{ t('Neutral','中性') }}</span><span>{{ t('Euphoria','欣喜') }}</span>
+        </div>
+        {% if FE.roro is not none %}<div class="muted sm" style="margin-top:8px">RORO {{ '%+.2f'|format(FE.roro) }}{% if FE.roro_state %} · {{ td(FE.roro_state) }}{% endif %}</div>{% endif %}
       </section>
       {% endif %}
 
@@ -4779,16 +4926,19 @@ body.page-macro::before{
   {% set _cac = latest.cross_asset_confirm if (latest.cross_asset_confirm and latest.cross_asset_confirm.verdict not in [none, 'unknown']) else None %}
   {% if _rit or _cac %}
   <div class="panel span12" id="cross-asset-macro">
-    <h2>{{ t('Rates, bonds &amp; FX — cross-asset check', '利率、债券与外汇 — 跨资产校验') }}
+    <div class="mx-panel-hdr">
+      <span class="mx-panel-eyebrow">{{ t('Cross-Asset Check','跨资产校验') }}</span>
+      <a href="transmission.html" style="margin-left:auto;font-size:12px;font-weight:600">{{ t('Transmission →', '传导 →') }}</a>
+    </div>
+    <h2 style="margin-top:0">{{ t('Rates, bonds &amp; FX — cross-asset check', '利率、债券与外汇 — 跨资产校验') }}
       {{ help("Context only. Rates & inflation: who today's rates and inflation help or hurt (green = tailwind, red = headwind). Bonds & FX: bonds and the dollar move first, so do they confirm the stock read? Agree = support; diverge = a yellow flag. Full cause-and-effect on the Transmission page.", "仅供参考。利率与通胀：当前利率与通胀利好或利空谁（绿＝顺风，红＝逆风）。债券与外汇：债券和美元先动，它们是否确认股市？一致＝有支撑；背离＝黄旗。完整因果见“传导”页面。") }}
-      <a href="transmission.html" style="margin-left:auto;font-size:12px;font-weight:600">{{ t('Transmission page →', '传导页面 →') }}</a>
     </h2>
-    <div style="display:flex;flex-wrap:wrap;gap:18px 22px">
+    <div class="mx-asset-grid" style="grid-template-columns:1fr 1fr">
 
       <!-- Rates & inflation — who it helps, who it hurts -->
       {% if _rit %}
       {% set rit = _rit %}
-      <section style="flex:1 1 320px;min-width:0">
+      <section class="mx-asset-tile" style="border-radius:10px;padding:14px 16px">
         <h3 style="margin-top:0">{{ t('Rates & inflation — who it helps, who it hurts', '利率与通胀 — 利好谁、利空谁') }}
           {{ help("How today's interest rates and inflation help or hurt each asset class. Green = tailwind, red = headwind. It's a read on pressure, not a buy/sell call. The full cause-and-effect breakdown is on the Transmission page.", "当前利率与通胀如何利好或利空各类资产。绿色＝顺风，红色＝逆风。这是对压力的判断，而非买卖信号。完整的因果分解见“传导”页面。") }}
         </h3>
@@ -4813,7 +4963,7 @@ body.page-macro::before{
       {% if _cac %}
       {% set cac = _cac %}
       {% set _cvtone = 'up' if cac.verdict == 'confirm' else ('down' if cac.verdict == 'diverge' else 'flat') %}
-      <section style="flex:1 1 320px;min-width:0">
+      <section class="mx-asset-tile" style="border-radius:10px;padding:14px 16px">
         <h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0">{{ t('Bonds & FX cross-check — do they confirm stocks?', '债券与外汇交叉验证 — 是否确认股票？') }}
           <span class="badge tone-{{ _cvtone }}">{{ t(cac.verdict, cac.verdict_zh) }}{% if cac.agree_pct is not none %} · {{ cac.agree_pct }}%{% endif %}</span>
           {{ help("Bonds and the dollar move faster than stocks, so this checks whether they agree with the stock-market read. They AGREE = the move has support; they DIVERGE = a yellow flag worth watching. Context only, never a buy/sell signal.", "债券与美元比股票反应更快，因此本面板检查它们是否认同股市读数。一致＝走势有支撑；背离＝值得留意的黄旗。仅供参考，绝非买卖信号。") }}
@@ -4854,7 +5004,10 @@ body.page-macro::before{
 
   <!-- ===================== MAJOR US INDEXES — HEALTH & RISK ===================== -->
   <div class="panel span12" id="index-health">
-    <h2>{{ t('Major US indexes — health & drawdown risk', '美国主要指数 — 健康度与回撤风险') }}
+    <div class="mx-panel-hdr">
+      <span class="mx-panel-eyebrow">{{ t('Index Health','指数健康度') }}</span>
+    </div>
+    <h2 style="margin-top:0">{{ t('Major US indexes — health & drawdown risk', '美国主要指数 — 健康度与回撤风险') }}
       {{ help("How the market itself is doing, before the economy. Price, % below the 52-week high (drawdown), trend vs the 50/200-day averages, and RSI(14) for the four major US indexes — alongside the validated macro de-risk read that drives the allocation strategy.", "在看经济之前，先看市场本身。四大美国指数的价格、距52周高点的回撤、相对50/200日均线的趋势、RSI(14) — 以及驱动仓位策略的经验证宏观降险读数。") }}
     </h2>
     <div class="idx-grid">
@@ -5035,7 +5188,10 @@ body.page-macro::before{
   {% set vcolor = 'var(--up)' if DL.verdict=='buyable_washout' else ('var(--down)' if DL.verdict=='stand_aside' else 'var(--muted)') %}
   {% if DL.dislocation_active %}{# only renders when a real dislocation is firing; CSS floats it to the very top #}
   <div class="panel span12 dislo-lit" id="dislocation" style="--lit:{{ vcolor }}">
-    <h2>{{ t('Dislocation Gate-1 · buyable washout vs falling knife', '错位一道闸 · 可买入错杀 对 接飞刀') }}
+    <div class="mx-panel-hdr">
+      <span class="mx-panel-eyebrow">{{ t('Dislocation','错位') }}</span>
+    </div>
+    <h2 style="margin-top:0">{{ t('Dislocation Gate-1 · buyable washout vs falling knife', '错位一道闸 · 可买入错杀 对 接飞刀') }}
       {{ help("A risk FILTER that sits in FRONT of the capitulation gauge: when a stress dislocation hits (VIX panic, a >10% drawdown, a variance-premium extreme or VIX backwardation), it asks ONE question — is the Fed put present? PUT-ABSENT = a recession is underway (real-time Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). The whole edge is in REFUSING the falling knife (2000/2008/2022), not in catching the bounce — measured on SPY 1997-2026, see research/DISLOCATION_VALIDATION.md.", "位于恐慌触底指标之前的风险过滤器：当压力错位出现（VIX 恐慌、>10% 回撤、方差溢价极端或 VIX 倒挂）时，它只问一个问题 — 美联储托底是否在位？托底缺失＝衰退进行中（实时 Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。全部优势在于拒绝接飞刀（2000／2008／2022），而非抄到反弹 — 基于标普 1997-2026 实测。") }}
     </h2>
     <p class="muted sm" style="margin:-4px 0 10px">{{ t('A risk filter, not a buy signal. The edge is in refusing the knife, not catching the bounce — judged on drawdown, not return.', '这是风险过滤器而非买入信号。优势在于拒绝接飞刀，而非抄到反弹 — 以回撤而非回报衡量。') }}</p>
@@ -5184,9 +5340,12 @@ body.page-macro::before{
   html[data-lang="zh"] body.page-macro #now-board .nb-strip-h{letter-spacing:0}
   </style>
   <div class="panel span6" id="now-board">
-    <h2>{{ t('Market news &amp; catalysts','市场新闻与日程') }}
+    <div class="mx-panel-hdr">
+      <span class="mx-panel-eyebrow">{{ t('News & Catalysts','新闻与日程') }}</span>
+      <a href="news.html" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--link)">{{ t('Full feed →','完整新闻 →') }}</a>
+    </div>
+    <h2 style="margin-top:0">{{ t('Market news &amp; catalysts','市场新闻与日程') }}
       {{ help("Reputable, macro-relevant headlines — filtered, theme-tagged and ranked by impact. Press a story to open a condensed read. Plus the US high-impact event window and any active relief-radar snap. All CONTEXT — never scored; the mechanical model never reads it.", "可靠、与宏观相关的头条 — 经筛选、标注主题并按影响排序。点按展开精简解读。另含美国高影响事件窗口与正在触发的反弹雷达。全部为背景 — 从不评分，机械模型从不读取。") }}
-      <a href="news.html" style="float:right;font-size:12px;font-weight:600;color:var(--link)">{{ t('Full feed →','完整新闻 →') }}</a>
     </h2>
 
     <div class="nb-strip">
@@ -5211,7 +5370,7 @@ body.page-macro::before{
         <summary class="nb-sum">
           <span class="nb-theme">{{ t(tl[0], tl[1]) }}</span>
           <span class="nb-htitle"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span>
-          <span class="nb-meta">{{ h.source_name or h.domain }}{% if h.importance_score %} · {{ h.importance_score }}{% endif %} <span class="nb-chev">▾</span></span>
+          <span class="nb-meta">{% if h.importance in ['high','critical'] %}<span class="mx-ni-impact high">{{ t('HIGH','高') }}</span>{% elif h.importance == 'medium' %}<span class="mx-ni-impact med">{{ t('MED','中') }}</span>{% endif %}{% if h.pub_date %}<span class="mx-ni-date">{{ h.pub_date[:10] }}</span>{% endif %} {{ h.source_name or h.domain }}{% if h.importance_score %} · {{ h.importance_score }}{% endif %} <span class="nb-chev">▾</span></span>
         </summary>
         <div class="nb-body">
           <p class="nb-sumtext">
@@ -6440,8 +6599,41 @@ body.page-macro::before{
   {% endif %}{# /mode != macro — accumulation + holdings/flows #}
 
   {% if mode != 'stocks' %}
+  <!-- ======================= LINK-OUT STRIP (macro bottom) ======================= -->
+  <div class="panel span12">
+    <div class="mx-panel-hdr" style="margin-bottom:12px">
+      <span class="mx-panel-eyebrow">{{ t('Quick Links','快速导航') }}</span>
+    </div>
+    <div class="mx-linkout-strip">
+      <a class="mx-linkout-card" href="macro_context.html">
+        <span class="mx-lc-icon">🌐</span>
+        <div><div class="mx-lc-title">{{ t('Macro Context','宏观背景') }}</div><div class="mx-lc-sub">{{ t('Regime &amp; transmission','周期与传导') }}</div></div>
+      </a>
+      <a class="mx-linkout-card" href="aibrief.html">
+        <span class="mx-lc-icon">🤖</span>
+        <div><div class="mx-lc-title">{{ t('AI Daily Brief','AI日报') }}</div><div class="mx-lc-sub">{{ t('Synthesis read','综合解读') }}</div></div>
+      </a>
+      <a class="mx-linkout-card" href="sector_central.html">
+        <span class="mx-lc-icon">📊</span>
+        <div><div class="mx-lc-title">{{ t('Sector Central','行业中枢') }}</div><div class="mx-lc-sub">{{ t('Rotation &amp; flows','轮动与资金流') }}</div></div>
+      </a>
+      <a class="mx-linkout-card" href="news.html">
+        <span class="mx-lc-icon">📰</span>
+        <div><div class="mx-lc-title">{{ t('News Feed','新闻流') }}</div><div class="mx-lc-sub">{{ t('Headlines &amp; catalysts','头条与催化剂') }}</div></div>
+      </a>
+      <a class="mx-linkout-card" href="committee.html">
+        <span class="mx-lc-icon">🧠</span>
+        <div><div class="mx-lc-title">{{ t('Neural Web','神经网络') }}</div><div class="mx-lc-sub">{{ t('Signals &amp; consensus','信号与共识') }}</div></div>
+      </a>
+      <a class="mx-linkout-card" href="macro_signals.html">
+        <span class="mx-lc-icon">⚡</span>
+        <div><div class="mx-lc-title">{{ t('Signal Lab','信号实验室') }}</div><div class="mx-lc-sub">{{ t('All indicators','全部指标') }}</div></div>
+      </a>
+    </div>
+  </div>
+
   <!-- ======================= HEALTH ======================= -->
-  <details class="panel span12 fold" id="health">
+  <details class="panel span12 fold" id="health" style="position:relative">
     <summary>{{ t('Data health', '数据健康度') }}
       {{ help("Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence reduced automatically). FAILED = today's fetch broke (yesterday's data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ runs and paused until it recovers.", "本仪表盘所依赖的每个数据源。OK = 新鲜。STALE = 近期无新数据（信号置信度已自动下调）。FAILED = 今日抓取失败（仍沿用昨日数据）。BLOCKED = 已知且有记录的限制 — 并非故障。DEAD = 连续 3 次以上失败，已暂停直至恢复。") }}
       {% set _bad = health|rejectattr('status','equalto','ok')|rejectattr('status','equalto','blocked')|list %}
