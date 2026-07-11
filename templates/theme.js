@@ -2158,9 +2158,20 @@
     if (window.__lstOvlBound) return;
     window.__lstOvlBound = true;
     var ovl = null, homeMark = null, movedList = null, lastTrigger = null;
+    var carried = [];   // [{node, mark}] — caveat siblings moved along with the list
+    // Siblings of the list that must travel into the modal so their caveat stays attached
+    // to the expanded view (e.g. the china bottoming lane's "NOT a buy signal" disclaimer,
+    // which ships on already-rendered pages — hence the literal class alongside the
+    // generic opt-in attribute).
+    var CARRY_SEL = ':scope > [data-ovl-carry], :scope > .anv2-bot-disc';
 
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+      });
+    }
     function bl(en, zh) {
-      return '<span class="l-en">' + en + '</span><span class="l-zh">' + zh + '</span>';
+      return '<span class="l-en">' + esc(en) + '</span><span class="l-zh">' + esc(zh) + '</span>';
     }
 
     // Title / subtitle / accent colour for the modal header. Templates can override via
@@ -2237,6 +2248,9 @@
       if (window.ResizeObserver) new ResizeObserver(queue).observe(body);
       thumb.addEventListener('pointerdown', function (e) {
         e.preventDefault();
+        if (thumb.setPointerCapture) {
+          try { thumb.setPointerCapture(e.pointerId); } catch (err) { /* stale id */ }
+        }
         thumb.classList.add('is-drag');
         var startY = e.clientY, startTop = body.scrollTop;
         function mv(ev) {
@@ -2271,7 +2285,15 @@
         bl('Esc or click outside to close', '按 Esc 或点击外部关闭');
       homeMark = document.createComment('lst-ovl-home');
       list.parentNode.insertBefore(homeMark, list);
-      ovl.querySelector('.lst-ovl-body').appendChild(list);
+      var body = ovl.querySelector('.lst-ovl-body');
+      carried = [];
+      Array.prototype.forEach.call(wrap.querySelectorAll(CARRY_SEL), function (node) {
+        var mark = document.createComment('lst-ovl-carry');
+        node.parentNode.insertBefore(mark, node);
+        body.appendChild(node);
+        carried.push({ node: node, mark: mark });
+      });
+      body.appendChild(list);
       list.classList.remove('is-collapsed');
       movedList = list; lastTrigger = trigger;
       document.body.classList.add('lst-ovl-lock');
@@ -2289,6 +2311,11 @@
       } else {
         movedList.remove();  // home was rebuilt under us (langchange re-render) — drop the node
       }
+      carried.forEach(function (c) {
+        if (c.mark.parentNode) c.mark.parentNode.replaceChild(c.node, c.mark);
+        else c.node.remove();
+      });
+      carried = [];
       movedList = null; homeMark = null;
       ovl.classList.remove('is-open');
       document.body.classList.remove('lst-ovl-lock');
@@ -2355,7 +2382,7 @@
     pop.setAttribute('role', 'tooltip');
     pop.hidden = true;
     document.body.appendChild(pop);
-    var cur = null, openT = 0, closeT = 0;
+    var cur = null, openT = 0, closeT = 0, lastScroll = 0;
 
     function place(row) {
       var r = row.getBoundingClientRect();
@@ -2375,7 +2402,10 @@
       if (!src) return;
       cur = row;
       pop.textContent = '';
-      pop.appendChild(src.cloneNode(true));   // clone keeps l-en/l-zh spans live for CSS
+      var clone = src.cloneNode(true);        // clone keeps l-en/l-zh spans live for CSS
+      clone.classList.remove('rp-src');       // …but must shed the payload's display:none class
+      clone.removeAttribute('hidden');        // …and its belt-and-braces hidden attribute
+      pop.appendChild(clone);
       pop.hidden = false;
       pop.style.visibility = 'hidden';
       place(row);                             // measured AFTER content is in-document
@@ -2397,12 +2427,20 @@
         return;
       }
       if (!pop.hidden && e.target.closest('.row-pop')) { clearTimeout(closeT); return; }
+      // a scroll shifts content under a stationary pointer, firing pointerover on whatever
+      // slid beneath it — that must not count as the user leaving the row
+      if (Date.now() - lastScroll < 250) return;
       if (cur || openT) { clearTimeout(openT); openT = 0; if (cur) scheduleClose(160); }
     });
     document.addEventListener('pointerout', function (e) {
       if (!e.relatedTarget && cur) scheduleClose(160);   // pointer left the window
     });
+    // wheel fires BEFORE the resulting scroll/hover updates — stamp it too, or the
+    // scroll-grace check below sees a stale timestamp on the first wheel tick
+    document.addEventListener('wheel', function () { lastScroll = Date.now(); },
+      { passive: true, capture: true });
     document.addEventListener('scroll', function () {
+      lastScroll = Date.now();
       if (pop.hidden || !cur) return;
       var r = cur.getBoundingClientRect();
       if (r.bottom < 0 || r.top > window.innerHeight || !cur.isConnected) { close(); return; }
