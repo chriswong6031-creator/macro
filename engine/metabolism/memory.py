@@ -25,7 +25,10 @@ log = logging.getLogger(__name__)
 SCHEMA_FITNESS_HISTORY = "metabolism.fitness_history.v1"
 SCHEMA_LESSONS = "metabolism.lessons.v1"
 
-FITNESS_HISTORY_PATH = ("data", "metabolism", "fitness_history.jsonl")
+# Per-lobe directory form (matches organism_state._load_fitness_history reader).
+# Rows lacking a lobe_id go to the quarantine file.
+FITNESS_HISTORY_DIR = ("data", "metabolism", "fitness_history")
+FITNESS_HISTORY_QUARANTINE = "data/metabolism/fitness_history/_unattributed.jsonl"
 LESSONS_PATH = ("data", "metabolism", "lessons.jsonl")
 AGENDA_ARCHIVE_DIR = ("data", "metabolism", "agenda_archive")
 
@@ -53,15 +56,23 @@ def append_fitness_history(
     sensors: dict[str, Any],
     root: Path | None = None,
 ) -> bool:
-    """Append a fitness snapshot to data/metabolism/fitness_history.jsonl.
+    """Append a fitness snapshot to the per-lobe fitness history file.
+
+    Writes to data/metabolism/fitness_history/<lobe_id>.jsonl (per-lobe
+    directory form, matching organism_state._load_fitness_history reader).
+
+    If lobe is None or empty the row goes to the quarantine file
+    data/metabolism/fitness_history/_unattributed.jsonl so the B5 fork is
+    always fail-closed: a missing lobe_id never silently discards data.
 
     Called by SENSE / organism_state stage per run.
     Returns True on success, False on any error.  NEVER raises.
     """
     try:
         repo = _repo_root(root)
-        p = repo.joinpath(*FITNESS_HISTORY_PATH)
-        p.parent.mkdir(parents=True, exist_ok=True)
+        hist_dir = repo.joinpath(*FITNESS_HISTORY_DIR)
+        hist_dir.mkdir(parents=True, exist_ok=True)
+
         row = {
             "schema": SCHEMA_FITNESS_HISTORY,
             "ts": _now_iso(),
@@ -69,7 +80,20 @@ def append_fitness_history(
             "lobe": lobe,
             "sensors": sensors or {},
         }
-        with p.open("a", encoding="utf-8") as fh:
+
+        # Choose target file: per-lobe or quarantine
+        lobe_slug = (lobe or "").strip()
+        if lobe_slug:
+            target = hist_dir / f"{lobe_slug}.jsonl"
+        else:
+            target = repo / FITNESS_HISTORY_QUARANTINE
+            target.parent.mkdir(parents=True, exist_ok=True)
+            log.warning(
+                "memory.append_fitness_history: lobe_id missing — routing to quarantine %s",
+                target,
+            )
+
+        with target.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(row, separators=(",", ":"), default=str) + "\n")
         return True
     except Exception as exc:  # noqa: BLE001
@@ -82,27 +106,60 @@ def load_fitness_history(
     lobe: str | None = None,
     tail_n: int | None = None,
 ) -> list[dict[str, Any]]:
-    """Load fitness_history.jsonl, optionally filtered by lobe + last N rows.
+    """Load per-lobe fitness history rows.
+
+    Reads data/metabolism/fitness_history/<lobe_id>.jsonl when a lobe is
+    specified (the canonical per-lobe form matched by the reader in
+    organism_state._load_fitness_history).
+
+    When lobe is None, iterates all *.jsonl files in the directory (excluding
+    the quarantine file) and returns all rows, sorted by 'ts' ascending.
 
     Returns a list of rows (may be empty).  NEVER raises.
     """
     try:
         repo = _repo_root(root)
-        p = repo.joinpath(*FITNESS_HISTORY_PATH)
-        if not p.exists():
+        hist_dir = repo.joinpath(*FITNESS_HISTORY_DIR)
+        if not hist_dir.exists():
             return []
+
         rows: list[dict[str, Any]] = []
-        for line in p.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                r = json.loads(line)
-                if lobe is not None and r.get("lobe") != lobe:
+
+        if lobe is not None:
+            # Per-lobe read: single file
+            lobe_slug = lobe.strip()
+            p = hist_dir / f"{lobe_slug}.jsonl"
+            if not p.exists():
+                return []
+            for line in p.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line:
                     continue
-                rows.append(r)
-            except Exception:  # noqa: BLE001
-                continue
+                try:
+                    rows.append(json.loads(line))
+                except Exception:  # noqa: BLE001
+                    continue
+        else:
+            # Whole-dir scan (skip quarantine file)
+            quarantine_name = "_unattributed.jsonl"
+            for fpath in sorted(hist_dir.glob("*.jsonl")):
+                if fpath.name == quarantine_name:
+                    continue
+                try:
+                    for line in fpath.read_text(encoding="utf-8").splitlines():
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            rows.append(json.loads(line))
+                        except Exception:  # noqa: BLE001
+                            continue
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("memory.load_fitness_history: cannot read %s — %s", fpath, exc)
+
+            # Sort by ts ascending for cross-lobe callers
+            rows.sort(key=lambda r: str(r.get("ts") or ""))
+
         if tail_n is not None:
             rows = rows[-tail_n:]
         return rows

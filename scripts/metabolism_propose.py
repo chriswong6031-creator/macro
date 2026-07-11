@@ -73,6 +73,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--today", default=None, help="Override today (YYYY-MM-DD)")
     parser.add_argument("--max-docket-size", type=int, default=None)
     parser.add_argument("--lane", default="metabolism-propose")
+    parser.add_argument("--lobe", default=None,
+                        help="Lobe to drive (default: til). Use a different lobe id to run "
+                             "the charter-driven prompt and accrual-honesty gate for that lobe.")
     parser.add_argument("--dry-run", action="store_true",
                         help="Build docket but do not register contracts or write")
     args = parser.parse_args(argv)
@@ -138,9 +141,33 @@ def main(argv: list[str] | None = None) -> int:
     # ── PROPOSE ─────────────────────────────────────────────────────────────
     try:
         from engine.metabolism.propose import propose  # type: ignore[import]
+
+        # Charter-proposal + lifecycle-docket applier (R-V4-9).
+        # Injects consumed items as proposals only when armed (not paused).
+        # The applier itself is NEVER-RAISE and emits plan records even in shadow.
+        applier_proposals: list | None = None
+        try:
+            from engine.metabolism.applier import consume_charter_proposals  # type: ignore[import]
+            _armed = not is_paused()  # armed when not paused
+            applier_proposals = consume_charter_proposals(
+                root=root,
+                dry_run=args.dry_run,
+                armed=_armed,
+            )
+            if applier_proposals:
+                log.info(
+                    "metabolism_propose: applier injected %d proposal(s)",
+                    len(applier_proposals),
+                )
+        except Exception as _ae:  # noqa: BLE001
+            log.warning("metabolism_propose: applier error (%s) — skipping injected proposals", _ae)
+            applier_proposals = None
+
         result = propose(
-            cycle_id, root=root, max_docket_size=max_docket_size,
+            cycle_id, lobe=args.lobe or _LOBE, root=root,
+            max_docket_size=max_docket_size,
             today=args.today, run_id=_run_id(), dry_run=args.dry_run,
+            injected_proposals=applier_proposals if applier_proposals else None,
         )
         meta = result.get("meta", {})
 

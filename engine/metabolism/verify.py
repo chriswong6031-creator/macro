@@ -244,6 +244,9 @@ def verify_proposal(
         # Append a lesson to lessons.jsonl so PROPOSE stops repeating dead constructions
         _append_lesson_from_verify(cycle_id, contract, triage, outcome, root)
 
+        # Append a strategic memory row so the steering loop remembers outcomes (R-V4-3e)
+        _append_strategic_memory_from_verify(cycle_id, contract, triage, outcome, root)
+
         # Archive-on-verify: save the contract + outcome to agenda_archive/ for dream cycle
         _archive_on_verify(cycle_id, contract, record, root)
 
@@ -397,6 +400,36 @@ def _append_lesson_from_verify(
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("metabolism_verify._append_lesson_from_verify: %s", exc)
+
+
+def _append_strategic_memory_from_verify(
+    cycle_id: str,
+    contract: dict,
+    triage: dict,
+    outcome: str,
+    root: Path,
+) -> None:
+    """Append a deterministic strategic memory row after VERIFY grading (NEVER-RAISE).
+
+    Verdict and measurement_lens_class are copied verbatim from the verify
+    outcome — no LLM text, no origination.  Called only from verify_proposal()
+    so it runs exactly once per closed contract.
+    """
+    try:
+        from engine.metabolism.mission import append_strategic_memory  # type: ignore[import]
+        classification = triage.get("classification", "unknown")
+        row: dict = {
+            "lobe": contract.get("lobe") or contract.get("lobe_id") or "",
+            "cycle_id": cycle_id,
+            "sensor": str(contract.get("sensor") or ""),
+            "verdict": outcome,                    # verbatim from verify
+            "measurement_lens_class": classification,  # verbatim from triage
+            "check_by": contract.get("check_by"),
+            "notes": f"triage_action={triage.get('action', '')}",
+        }
+        append_strategic_memory(row, root=root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_verify._append_strategic_memory_from_verify: %s", exc)
 
 
 def _append_governance_tap(

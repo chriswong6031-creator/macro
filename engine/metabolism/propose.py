@@ -206,13 +206,35 @@ def _fitness_card(root: Path) -> dict[str, Any]:
         return {"_absent": True, "note": f"til fitness card unparseable: {exc}"}
 
 
-def build_prompt_context(root: Path | None = None) -> dict[str, Any]:
+def _load_lobe_from_charter(root: Path, lobe: str) -> dict[str, Any]:
+    """Load the lobe charter entry for the given lobe.  Returns {} on any error."""
+    try:
+        import yaml  # noqa: PLC0415
+        charter_path = root / "config" / "lobe_charters.yml"
+        if not charter_path.exists():
+            return {}
+        raw = yaml.safe_load(charter_path.read_text(encoding="utf-8")) or {}
+        charters = raw.get("charters") or raw.get("lobes") or {}
+        return charters.get(lobe) or {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("propose: charter load failed for %s: %s", lobe, exc)
+        return {}
+
+
+def build_prompt_context(root: Path | None = None, lobe: str = LOBE) -> dict[str, Any]:
     """Assemble the read-only context the proposer prompt is grounded in.
+
+    Includes five W5 steering-memory blocks (R-V4-3):
+      (a) relevance-ranked recall via recall.recall_lessons (lobe-scoped, FAIL-floor)
+      (b) preference_prior via dream.load_preference_prior() — advisory calibration
+      (c) open insight-bus rows via insight_bus.get_open_rows() (byte-capped, severity-ordered)
+      (d) lobe trajectory + strategic gap via strategic.build_trajectory_block/gap
+      (e) mission block via mission.build_mission_block() + strategic memory tail
 
     Never raises; missing artifacts become honest 'absent' notes.
     """
     r = _repo_root(root)
-    return {
+    ctx: dict[str, Any] = {
         "fitness_card": _fitness_card(r),
         "masterplan_phase_a": _masterplan_phase_a(r),
         # Case law — the curated 11KB kill registry ships whole; the 58KB build
@@ -224,6 +246,86 @@ def build_prompt_context(root: Path | None = None) -> dict[str, Any]:
             "before proposing; do NOT re-propose a killed or in-flight topic)."
         ),
     }
+
+    # (a) Relevance-ranked recall (R-V4-3a) — lobe-scoped, FAIL-floor preserved
+    try:
+        from engine.metabolism import recall as _recall  # noqa: PLC0415
+        charter = _load_lobe_from_charter(r, lobe)
+        sensors = charter.get("fitness_sensors") or []
+        recall_text = _recall.recall_lessons(
+            lobe=lobe,
+            sensors=sensors if isinstance(sensors, list) else [],
+            byte_budget=2000,
+            root=r,
+        )
+        ctx["recall_lessons"] = recall_text
+    except Exception as exc:  # noqa: BLE001
+        log.warning("propose: recall_lessons failed: %s", exc)
+        ctx["recall_lessons"] = "(recall unavailable)"
+
+    # (b) Preference prior (R-V4-3b) — advisory calibration from dream cycle
+    try:
+        from engine.metabolism import dream as _dream  # noqa: PLC0415
+        prior = _dream.load_preference_prior(root=r)
+        if prior:
+            prior_text = json.dumps(prior, indent=2, default=str)[:2000]
+        else:
+            prior_text = "(preference_prior absent — accruing until first dream cycle closes)"
+        ctx["preference_prior"] = prior_text
+    except Exception as exc:  # noqa: BLE001
+        log.warning("propose: preference_prior load failed: %s", exc)
+        ctx["preference_prior"] = "(preference prior unavailable)"
+
+    # (c) Open insight-bus rows (R-V4-3c) — severity-ordered, byte-capped
+    try:
+        from engine.metabolism import insight_bus as _ibus  # noqa: PLC0415
+        open_rows = _ibus.get_open_rows(root=r)
+        _SEV_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+        open_rows_sorted = sorted(
+            open_rows,
+            key=lambda row: (_SEV_ORDER.get(row.get("severity", "low"), 3),),
+        )
+        # Byte-cap: keep top rows within 2000 bytes
+        ibus_lines: list[str] = []
+        used = 0
+        for row in open_rows_sorted[:20]:
+            compact = {k: v for k, v in row.items() if k not in ("authority",)}
+            line = json.dumps(compact, separators=(",", ":"), default=str)
+            lb = len(line.encode())
+            if used + lb + 1 > 2000 and ibus_lines:
+                break
+            ibus_lines.append(line)
+            used += lb + 1
+        ctx["insight_bus_open"] = "\n".join(ibus_lines) if ibus_lines else "(no open insight-bus rows)"
+    except Exception as exc:  # noqa: BLE001
+        log.warning("propose: insight_bus.get_open_rows failed: %s", exc)
+        ctx["insight_bus_open"] = "(insight bus unavailable)"
+
+    # (d) Trajectory + strategic gap (R-V4-3d)
+    try:
+        from engine.metabolism import strategic as _strategic  # noqa: PLC0415
+        traj_text = _strategic.build_trajectory_block(lobe, root=r, byte_cap=1200)
+        gap_text = _strategic.build_strategic_gap(root=r, byte_cap=1200)
+        ctx["trajectory_block"] = traj_text
+        ctx["strategic_gap"] = gap_text
+    except Exception as exc:  # noqa: BLE001
+        log.warning("propose: trajectory/strategic-gap failed: %s", exc)
+        ctx["trajectory_block"] = "(trajectory unavailable)"
+        ctx["strategic_gap"] = "(strategic gap unavailable)"
+
+    # (e) Mission block + strategic memory tail (R-V4-3e)
+    try:
+        from engine.metabolism import mission as _mission  # noqa: PLC0415
+        mission_text = _mission.build_mission_block(root=r, byte_cap=1000)
+        strategic_mem = _mission.build_strategic_memory_block(lobe, byte_cap=1500, root=r)
+        ctx["mission_block"] = mission_text
+        ctx["strategic_memory"] = strategic_mem
+    except Exception as exc:  # noqa: BLE001
+        log.warning("propose: mission/strategic-memory failed: %s", exc)
+        ctx["mission_block"] = "(mission block unavailable)"
+        ctx["strategic_memory"] = "(strategic memory unavailable)"
+
+    return ctx
 
 
 # ── Dedup corpus ──────────────────────────────────────────────────────────────
@@ -290,11 +392,10 @@ def _dedup_reason(title: str, sensor: str, kind: str, corpus: dict[str, Any]) ->
 
 # ── LLM invocation ────────────────────────────────────────────────────────────
 
-_SYSTEM_PROMPT = (
-    "You are the TIL lobe-brain of the Neural Web's autonomic metabolism. Your job "
-    "is to PROPOSE small, high-leverage engineering changes that would improve the "
-    "TIL (Thematic Intelligence Lobe) fitness sensors — front_run_lead, "
-    "placebo_hit_rate, falsifier_honesty, live_leg_quality.\n\n"
+_SYSTEM_PROMPT_TEMPLATE = (
+    "You are the {lobe_label} lobe-brain of the Neural Web's autonomic metabolism. "
+    "Your job is to PROPOSE small, high-leverage engineering changes that would improve "
+    "the {lobe_label} fitness sensors — {sensor_list}.\n\n"
     "HARD LAWS (violating any = the proposal is discarded):\n"
     "1. You author PROPOSALS FOR CODE, never a runtime trading signal, score, or "
     "escalation. Nothing you emit ranks, sizes, gates, or escalates anything.\n"
@@ -303,17 +404,95 @@ _SYSTEM_PROMPT = (
     "3. Every proposal MUST carry a falsifiable fitness_contract: which sensor it "
     "improves, the expected sign, a magnitude band, a check_by date, and the "
     "placebo/holdout it must beat. A proposal with no measurable contract is invalid.\n"
-    "4. Prefer T0 (docs/tests/display-tier context organs/bug-fixes/coverage) work. "
+    "4. ACCRUAL HONESTY: if a sensor is still accruing (maturity_date in the future), "
+    "any proposal targeting it MUST carry check_by >= that maturity_date. A proposal "
+    "with an earlier check_by on an accruing sensor is structurally invalid and will "
+    "be rejected.\n"
+    "5. Prefer T0 (docs/tests/display-tier context organs/bug-fixes/coverage) work. "
     "T1 (new engines/collectors/UI/algorithm changes) is allowed but must be small "
     "and testable. Never propose T2 (scored-path promotion, guard/CI/secret/spend "
     "changes) — those are operator-only.\n\n"
-    "Reply with ONLY a JSON array (no prose, no code fence) of at most {max_n} "
+    "Reply with ONLY a JSON array (no prose, no code fence) of at most {{max_n}} "
     "proposals. Each element:\n"
-    '{"title": str, "tier": "T0"|"T1", "kind": "test"|"doc"|"context_organ"|'
+    '{{"title": str, "tier": "T0"|"T1", "kind": "test"|"doc"|"context_organ"|'
     '"engine"|"collector"|"ui", "targets_sensor": str, "rationale": str, '
-    '"fitness_contract": {"sensor": str, "expected_sign": "+"|"-", "band": str, '
-    '"check_by": "YYYY-MM-DD", "placebo_to_beat": str}}'
+    '"fitness_contract": {{"sensor": str, "expected_sign": "+"|"-", "band": str, '
+    '"check_by": "YYYY-MM-DD", "placebo_to_beat": str}}}}'
 )
+
+# Fallback for lobes without charter sensors (kept for import compat)
+_SYSTEM_PROMPT = _SYSTEM_PROMPT_TEMPLATE.format(
+    lobe_label="TIL (Thematic Intelligence Lobe)",
+    sensor_list="front_run_lead, placebo_hit_rate, falsifier_honesty, live_leg_quality",
+)
+
+
+def _build_system_prompt(lobe: str, root: Path | None = None) -> str:
+    """Build the PROPOSE system prompt from the charter (R-V4-10).
+
+    A lobe is loop-manageable when its lobe_charters.yml entry declares
+    fitness_sensors.  The system prompt is assembled from those sensors.
+
+    Returns a formatted system prompt string.  NEVER raises.
+    """
+    try:
+        charter = _load_lobe_from_charter(_repo_root(root), lobe)
+        sensors_raw = charter.get("fitness_sensors") or []
+
+        if not sensors_raw:
+            # SENSE-only lobe: no declared sensors → PROPOSE must not fabricate fitness.
+            # Return a minimal inert prompt that blocks proposals.
+            return (
+                f"You are the {lobe} lobe-brain. This lobe has no declared fitness_sensors "
+                f"in lobe_charters.yml and is SENSE-only. You must NOT propose anything — "
+                f"emit an empty JSON array: []. NEVER fabricate fitness sensors."
+            )
+
+        # Build sensor list string for the prompt
+        sensor_ids: list[str] = []
+        for s in sensors_raw:
+            if isinstance(s, dict):
+                sid = str(s.get("id") or "").strip()
+            else:
+                sid = str(s).strip()
+            if sid:
+                sensor_ids.append(sid)
+
+        sensor_list = ", ".join(sensor_ids) if sensor_ids else lobe
+        lobe_label = f"{lobe.upper()} ({charter.get('information_domain', lobe)})"
+
+        return _SYSTEM_PROMPT_TEMPLATE.format(
+            lobe_label=lobe_label,
+            sensor_list=sensor_list,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("propose._build_system_prompt: %s", exc)
+        # Fall back to the hardcoded TIL prompt so a charter error never silences proposals
+        return _SYSTEM_PROMPT
+
+
+def _load_accruing_sensor_maturity(root: Path, lobe: str) -> dict[str, str]:
+    """Return {sensor_id: maturity_date} for sensors with accruing=true in the charter.
+
+    Used by the accrual-honesty check_by validation gate.
+    Returns {} on any error.  NEVER raises.
+    """
+    try:
+        charter = _load_lobe_from_charter(root, lobe)
+        sensors_raw = charter.get("fitness_sensors") or []
+        result: dict[str, str] = {}
+        for s in sensors_raw:
+            if not isinstance(s, dict):
+                continue
+            if s.get("accruing"):
+                sid = str(s.get("id") or "").strip()
+                mat_date = str(s.get("maturity_date") or "").strip()
+                if sid and mat_date and re.match(r"^\d{4}-\d{2}-\d{2}$", mat_date):
+                    result[sid] = mat_date
+        return result
+    except Exception as exc:  # noqa: BLE001
+        log.warning("propose._load_accruing_sensor_maturity: %s", exc)
+        return {}
 
 
 def _build_user_prompt(context: dict[str, Any], max_n: int) -> str:
@@ -333,12 +512,40 @@ def _build_user_prompt(context: dict[str, Any], max_n: int) -> str:
         "",
         context.get("ruling_graph_note", ""),
         "",
+        # ── W5 steering-memory blocks (R-V4-3) ─────────────────────────────
+        "RECENT LESSONS (relevance-ranked, FAIL-floor preserved — stop repeating dead constructions):",
+        context.get("recall_lessons", "(absent)"),
+        "",
+        "PREFERENCE PRIOR (advisory calibration from closed contracts — never gate-altering):",
+        context.get("preference_prior", "(absent)"),
+        "",
+        "INSIGHT BUS (open rows, severity-ordered — informational only):",
+        context.get("insight_bus_open", "(absent)"),
+        "",
+        "TRAJECTORY (lobe fitness slope):",
+        context.get("trajectory_block", "(absent)"),
+        "",
+        "STRATEGIC GAP (cross-lobe biggest gap):",
+        context.get("strategic_gap", "(absent)"),
+        "",
+        "MISSION:",
+        context.get("mission_block", "(absent)"),
+        "",
+        "STRATEGIC MEMORY (past verify outcomes for this lobe):",
+        context.get("strategic_memory", "(absent)"),
+        "",
         f"Propose at most {max_n} changes now, as a JSON array only.",
     ]
     return "\n".join(parts)
 
 
-def _invoke_llm(context: dict[str, Any], max_n: int, cfg: dict[str, Any] | None = None) -> tuple[str | None, str | None, str | None]:
+def _invoke_llm(
+    context: dict[str, Any],
+    max_n: int,
+    cfg: dict[str, Any] | None = None,
+    lobe: str = LOBE,
+    root: Path | None = None,
+) -> tuple[str | None, str | None, str | None]:
     """Call the Opus proposer via the shared llm_auth waterfall.
 
     Returns (reply_text, provider_used, degraded_reason).  NEVER raises.
@@ -354,7 +561,7 @@ def _invoke_llm(context: dict[str, Any], max_n: int, cfg: dict[str, Any] | None 
         if not providers:
             return None, None, "no_provider"
 
-        system = _SYSTEM_PROMPT.replace("{max_n}", str(max_n))
+        system = _build_system_prompt(lobe, root).replace("{max_n}", str(max_n))
         user = _build_user_prompt(context, max_n)
         max_tokens = int(conf.get("max_tokens", 4000))
 
@@ -453,8 +660,19 @@ def _mint_contract(prop: dict[str, Any], proposal_id: str, today: str) -> dict[s
     }
 
 
-def _validate_proposal(prop: dict[str, Any]) -> str | None:
-    """Return an error string if the proposal is structurally invalid, else None."""
+def _validate_proposal(
+    prop: dict[str, Any],
+    accruing_maturity: dict[str, str] | None = None,
+) -> str | None:
+    """Return an error string if the proposal is structurally invalid, else None.
+
+    Parameters
+    ----------
+    accruing_maturity : dict[str, str] | None
+        Optional map of {sensor_id: maturity_date} for sensors still accruing.
+        When provided, the accrual-honesty gate rejects proposals whose check_by
+        is earlier than the sensor's maturity_date (R-V4-10).
+    """
     if not isinstance(prop, dict):
         return "not an object"
     if not str(prop.get("title") or "").strip():
@@ -468,8 +686,22 @@ def _validate_proposal(prop: dict[str, Any]) -> str | None:
     fc = prop.get("fitness_contract")
     if not isinstance(fc, dict):
         return "missing fitness_contract"
-    if not str(fc.get("sensor") or prop.get("targets_sensor") or "").strip():
+    sensor = str(fc.get("sensor") or prop.get("targets_sensor") or "").strip()
+    if not sensor:
         return "fitness_contract has no sensor"
+
+    # Accrual-honesty gate (R-V4-10): check_by must be >= maturity_date for accruing sensors
+    if accruing_maturity:
+        mat_date = accruing_maturity.get(sensor)
+        if mat_date:
+            check_by = str(fc.get("check_by") or "").strip()
+            if check_by and re.match(r"^\d{4}-\d{2}-\d{2}$", check_by):
+                if check_by < mat_date:
+                    return (
+                        f"accrual-honesty violation: sensor '{sensor}' matures {mat_date} "
+                        f"but check_by={check_by!r} is earlier; set check_by >= {mat_date}"
+                    )
+
     return None
 
 
@@ -485,16 +717,24 @@ def build_docket(
     run_id: str | None = None,
     provider: str | None = None,
     degraded_reason: str | None = None,
+    lobe: str = LOBE,
 ) -> dict[str, Any]:
     """Validate, dedup, cap, and contract-stamp raw proposals into a docket dict.
 
     NEVER raises.  Invalid/dup/killed proposals are dropped into `rejected`
     (honest nulls), never silently vanished.
+
+    Accrual-honesty validation (R-V4-10): loads accruing sensor maturity dates
+    from the lobe charter and rejects proposals with check_by earlier than the
+    sensor's maturity_date.
     """
     r = _repo_root(root)
     day = _today(today)
     corpus = _load_dedup_corpus(r)
     seen_this_cycle: set[str] = set()
+
+    # Load accruing sensor maturity dates for this lobe (fail-open: {} = no gate)
+    accruing_maturity = _load_accruing_sensor_maturity(r, lobe)
 
     proposals: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
@@ -502,7 +742,7 @@ def build_docket(
     for prop in (raw_proposals or []):
         try:
             title = str((prop or {}).get("title") or "").strip()
-            err = _validate_proposal(prop)
+            err = _validate_proposal(prop, accruing_maturity=accruing_maturity)
             if err:
                 rejected.append({"title": title or "(untitled)", "reason": err})
                 continue
@@ -610,6 +850,7 @@ def write_docket(docket: dict[str, Any], root: Path | None = None) -> Path | Non
 def propose(
     cycle_id: str,
     *,
+    lobe: str = LOBE,
     root: Path | None = None,
     max_docket_size: int = 5,
     today: str | None = None,
@@ -622,6 +863,11 @@ def propose(
 
     Parameters
     ----------
+    lobe : str
+        Which lobe's charter to drive the prompt. Defaults to 'til' (the only
+        actively loop-managed lobe today).  Pass a different lobe id to route
+        the charter-driven system prompt, accrual-honesty gate, and trajectory
+        annotation to a different lobe.
     injected_proposals : list | None
         If provided, the LLM call is skipped and these raw proposals are used
         directly (hermetic-test seam).
@@ -638,8 +884,10 @@ def propose(
         if injected_proposals is not None:
             raw = injected_proposals
         else:
-            context = build_prompt_context(root)
-            text, provider, degraded = _invoke_llm(context, int(max_docket_size), cfg)
+            context = build_prompt_context(root, lobe=lobe)
+            text, provider, degraded = _invoke_llm(
+                context, int(max_docket_size), cfg, lobe=lobe, root=root,
+            )
             raw = _extract_json_array(text or "")
             if not raw and not degraded:
                 degraded = "empty_or_unparseable_reply"
@@ -647,6 +895,7 @@ def propose(
         docket = build_docket(
             cycle_id, raw, root=root, max_docket_size=int(max_docket_size),
             today=today, run_id=run_id, provider=provider, degraded_reason=degraded,
+            lobe=lobe,
         )
 
         registered = 0
@@ -655,6 +904,15 @@ def propose(
             registered = register_contracts(docket, root)
             p = write_docket(docket, root)
             artifact = str(p) if p else None
+
+            # Stamp a lobe-annotated trajectory row so strategic.build_trajectory_block
+            # can filter rows by lobe_id (Finding #2: run_trajectory was defined but
+            # never called from the propose path).
+            try:
+                from engine.metabolism.trajectory import run_trajectory  # noqa: PLC0415
+                run_trajectory(cycle_id=cycle_id, root=root, lobe_id=lobe)
+            except Exception as _te:  # noqa: BLE001
+                log.warning("propose: trajectory stamp failed — %s", _te)
 
         return {
             "docket": docket,
