@@ -172,7 +172,8 @@ def main() -> int:
         src = root / "templates" / asset
         if src.exists():
             shutil.copy2(src, site / asset)
-    for need in ("sector_cycles_data.js", "mm_charts.js", "cycle.css"):
+    for need in ("sector_cycles_data.js", "sector_cycles_narr_data.js",
+                 "sector_cycles_dna_data.js", "mm_charts.js", "cycle.css"):
         if not (site / need).exists():
             log.warning("sector_central: %s missing — embedded cycle chart needs "
                         "build_sector_cycles (+ build_cycle) to run first", need)
