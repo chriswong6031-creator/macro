@@ -62,7 +62,21 @@ jobs:
       - name: re-render desk from the enriched store
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        run: python -c "from scripts.build_special_situations import build; build(refresh=False)"
+        # hard_exit: this one-shot's last act reads parquet; pyarrow's ThreadPool
+        # static destructor can deadlock at exit on macOS (~1-in-3 observed for
+        # short parquet-reading one-shots) and stall the lane so the commit step
+        # below never runs. See lib/procutil.py for the full post-mortem.
+        run: |
+          python - <<'PY'
+          from lib.procutil import hard_exit
+          from scripts.build_special_situations import build
+          try:
+              build(refresh=False)
+          except BaseException:
+              import traceback; traceback.print_exc()
+              hard_exit(1)
+          hard_exit(0)
+          PY
       - name: commit
         run: |
           git config user.name "dashboard-bot"
