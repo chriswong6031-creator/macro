@@ -911,30 +911,23 @@ def _c9_naaim_regrossing() -> dict:
         pctile_window = min(156, len(s))
         pctile_156 = pct_rank_window(s, pctile_window)
 
-        # washout = ANY of the last 13 weekly obs had pctile <= 20th causal pctile,
-        # AND that washout obs was within the last 63 calendar days of today.
-        # "min over last 13 weekly obs" defines the search window; the 63d gate limits
-        # how far back a qualifying washout can be.
+        # washout = ANY of the last 13 weekly obs had pctile <= 20th causal pctile.
+        # The 13-weekly-obs window IS the recency bound (specced); no additional calendar gate.
         if len(s) < 13:
             return _absent_chip(key, label_en, label_zh, "fewer than 13 obs for washout window", channel)
 
-        today_ts = pd.Timestamp(date.today())
-        cutoff_63d = today_ts - pd.Timedelta(days=63)
-
-        # scan last 13 obs for a washout within 63d
+        # scan last 13 obs for a washout
         recent13 = s.iloc[-13:]
         washout_val = None
         washout_date = None
         washout_pctile_found = None
 
         for obs_date, obs_val in recent13.items():
-            if obs_date < cutoff_63d:
-                continue  # older than 63d — skip
             if obs_date not in pctile_156.index:
                 continue
             p_val = float(pctile_156.loc[obs_date])
             if p_val <= 0.20:
-                # take the lowest (worst washout) within 63d
+                # take the lowest (worst washout) in the window
                 if washout_val is None or obs_val < washout_val:
                     washout_val = float(obs_val)
                     washout_date = obs_date
@@ -1039,7 +1032,7 @@ def _c10_news_tone_recovering() -> dict:
         if not t_63.empty and not p_63.empty:
             p_63_aligned = p_63.reindex(t_63.index, method="nearest")
             min_pctile_idx = p_63_aligned.idxmin()
-            min_pctile_val = float(p_63_aligned.iloc[p_63_aligned.values.argmin()])
+            min_pctile_val = float(p_63_aligned.loc[min_pctile_idx])
             if min_pctile_val <= 0.10:
                 washout_condition = True
                 washout_val = float(t_63.loc[min_pctile_idx])
@@ -1066,13 +1059,11 @@ def _c10_news_tone_recovering() -> dict:
             }
 
         t_now = float(t.iloc[-1])
-        # recovery = t rising over last 10 obs AND t >= washout_val + 0.15 * std_t
+        # recovery = t rising over last 10 obs (endpoint slope) AND t >= washout_val + 0.15 * std_t
+        # specced rule: endpoint-10 slope — t_now strictly greater than value 10 obs ago
         rising_condition = False
         if len(t) >= 10:
-            last10 = t.iloc[-10:]
-            # "rising" = last value >= average of first 5 in the 10-obs window AND last >= second-to-last
-            first5_mean = float(last10.iloc[:5].mean())
-            rising_condition = (t_now >= first5_mean) and (t_now >= float(last10.iloc[-2]))
+            rising_condition = t_now > float(t.iloc[-10])
 
         recovery_threshold = washout_val + 0.15 * std_now
         level_recovery = t_now >= recovery_threshold
@@ -1163,18 +1154,16 @@ def _c11_cot_es_washout() -> dict:
                 "channel": channel,
             }
 
-        # latest change over last 2 reports > 0 (rising from washout)
+        # "rising over the last 2 reports": latest change positive AND prior change non-negative
+        # spec adjudicated: c1 > 0 AND c2 >= 0 (latest rising, prior not falling)
         rising_condition = False
-        fresh = False
         if len(s) >= 3:
             c1 = float(s.iloc[-1] - s.iloc[-2])   # latest to prior
             c2 = float(s.iloc[-2] - s.iloc[-3])   # prior to two-back
-            # "rise started <= 2 reports ago" = at least the current report is rising
-            rising_condition = c1 > 0
-            # fresh = both last 2 changes positive (strong recovery) or just the last one (nascent)
-            fresh = rising_condition and (c2 > 0 or True)  # fired within last 2 reports by definition
+            rising_condition = (c1 > 0) and (c2 >= 0)
 
         fired = rising_condition
+        fresh = fired  # weekly cadence already bounds freshness (fired = nascent by definition)
         since = _iso(s.index[-1]) if fired else None
 
         return {
@@ -1271,11 +1260,12 @@ def _c12_fast_reclaim() -> dict:
                 "channel": channel,
             }
 
-        # Trough = the deepest drawdown point
-        trough_idx_in_scan = int(dd.values.argmin())
-        trough_date = scan_close.index[trough_idx_in_scan]
-        trough_close_val = float(scan_close.iloc[trough_idx_in_scan])
-        peak_at_trough = float(scan_hi63.iloc[trough_idx_in_scan])
+        # Trough = the deepest drawdown point (NaN-safe via idxmin)
+        trough_idx = dd.idxmin()
+        trough_idx_in_scan = dd.index.get_loc(trough_idx)
+        trough_date = trough_idx
+        trough_close_val = float(scan_close.loc[trough_idx])
+        peak_at_trough = float(scan_hi63.loc[trough_idx])
         drawdown_pts = peak_at_trough - trough_close_val
         reclaim_threshold = trough_close_val + 0.60 * drawdown_pts
 

@@ -102,6 +102,8 @@ on:
       - "tests/test_price_basis_flip.py"
       - "tests/test_risk_lead_lag.py"
       - "tests/test_anticipation.py"
+      - "tests/test_risk_radar_market_catalysts.py"
+      - "tests/test_risk_radar_recovery.py"
       - "tests/test_canon.py"
       - "tests/test_whitehouse_w5.py"
       # IGN WB: Ignition Radar — risk-ON mirror of the Risk Radar.
@@ -505,6 +507,7 @@ jobs:
           tests/test_fear_euphoria.py tests/test_froth_fragility.py
           tests/test_missing_tape.py tests/test_price_basis_flip.py
           tests/test_risk_lead_lag.py tests/test_anticipation.py
+          tests/test_risk_radar_market_catalysts.py tests/test_risk_radar_recovery.py
           tests/test_canon.py tests/test_whitehouse_w5.py
           tests/test_board_ledger.py tests/test_grade_us_board.py
           tests/test_options_stamp.py tests/test_sector_pulse_wiring.py

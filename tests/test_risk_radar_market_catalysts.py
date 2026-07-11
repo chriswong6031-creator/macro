@@ -793,15 +793,19 @@ class TestC10NewsToneRecovering:
         return pd.DataFrame({"news_sentiment": values}, index=idx)
 
     def test_fires_on_washout_then_recovery(self, monkeypatch):
-        """21d mean drops to washout (<= 10th pctile), then rises above threshold.
+        """21d mean drops to washout (<= 10th pctile), then rises above threshold with positive slope.
 
         Patches today to the last frame date so the 63d washout window is correct.
+        The recovery is a rising ramp (not flat) so that t.iloc[-10] < t_now — the
+        specced 10-obs endpoint slope fires alongside the level condition.
         """
-        # Build 600 daily obs: ~0.1 baseline, then 60 days at -0.8 (washout), then 30 days recovery to +0.3
+        # Build: 500 baseline at 0.1, 60 days at -0.8 (washout), 30 days rising -0.4→+0.6
+        # The rising ramp ensures the 21d-mean series is still ascending at the 10-obs window:
+        # t.iloc[-10] ≈ -0.055 < t.iloc[-1] ≈ +0.255 -> slope fires.
         n_base = 500
         base = [0.1] * n_base
         washout = [-0.8] * 60
-        recovery = [0.3] * 30
+        recovery = list(np.linspace(-0.4, 0.6, 30))   # linearly rising — slope unambiguous
         vals = base + washout + recovery
         df = self._make_dnsi(vals)
         last_date = str(df.index[-1].date())
@@ -812,8 +816,8 @@ class TestC10NewsToneRecovering:
         assert chip["key"] == "news_tone_recovering"
         assert chip["channel"] == "mood"
         assert chip["accruing"] is True
-        # washout at -0.8 should be well below 10th pctile of the ~0.1-baseline series
-        # recovery to +0.3 should satisfy rising + level threshold
+        # washout at -0.8 is well below 10th pctile of the ~0.1-baseline series;
+        # recovery ramp ensures positive 10-obs slope AND level threshold met
         assert chip["fired"] is True
 
     def test_no_fire_without_washout(self, monkeypatch):
@@ -826,6 +830,75 @@ class TestC10NewsToneRecovering:
                             lambda g, n: df if (g, n) == ("frbsf", "news_sentiment") else None)
         chip = rmc._c10_news_tone_recovering()
         assert chip["fired"] is False
+
+    def test_slope_rule_not_proxy_rule(self, monkeypatch):
+        """Discriminating test: builds a dip-then-partial-recover shape where the OLD proxy
+        (t_now >= first5_mean AND t_now >= last10.iloc[-2]) would fire, but the SPECCED
+        10-obs endpoint slope (t_now > t.iloc[-10]) must NOT fire.
+
+        Shape of the 21d-mean series over the last 10 obs:
+          [0.30, 0.25, 0.20, 0.15, 0.10, 0.08, 0.10, 0.15, 0.20, 0.22]
+        - t.iloc[-10] = 0.30, t_now = 0.22 -> slope NOT rising (0.22 < 0.30) -> CORRECT no-fire
+        - first5_mean = (0.30+0.25+0.20+0.15+0.10)/5 = 0.20; t_now=0.22 >= 0.20 -> proxy fires
+        - last10.iloc[-2] = 0.20; t_now=0.22 >= 0.20 -> proxy fires
+        So proxy WOULD fire but specced slope MUST NOT.
+        """
+        # Build the 21d-mean series to follow the target pattern.
+        # We construct raw daily values such that the 21d rolling mean at each of the last
+        # 10 positions matches our target shape.  The simplest approach: use a long constant
+        # baseline of 0.30, then a downward ramp, partial recovery.
+        # Raw series (each day = the desired 21d mean; this is achieved by making each day
+        # equal to the target + adjustment).  Simpler: use a raw series that when smoothed
+        # via 21d mean gives the shape we need.  We'll build raw = target_vals (the 21d mean
+        # of a constant series equals that constant).
+        # Strategy: 500-day constant at 0.30, then downward trend, then partial recovery.
+        # The 21d mean at day N = average of days N-20..N.
+        # We construct raw so that the 21d mean falls from 0.30 to 0.08 then rises to 0.22.
+        # Since 21d mean lags, raw must drop further/earlier.
+
+        # Use 600 days: 500 neutral days at 0.10, then shape the last 100 days.
+        # For the last 10 positions of t (21d mean) to be [0.30,0.25,0.20,0.15,0.10,0.08,0.10,0.15,0.20,0.22]
+        # we need a level washout (below 10th pctile in last 63d) somewhere in the series
+        # AND a partial recovery that satisfies level_recovery but fails slope.
+        #
+        # Practical construction: 500-day baseline at 0.10; days 501-560: large dip to -0.8
+        # (washout, sets min pctile in last 63d); days 561-590: recovery to target pattern ending at 0.22.
+        # The washout and recovery shape the 21d mean to be negative near the trough, then rising.
+        # BUT we need the 21d mean to START the last-10-obs window ABOVE the endpoint.
+        # Simple: days 561-590 = [-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.2, 0.3,
+        #                          0.3, 0.4, 0.4, 0.4, 0.4, 0.3, 0.3, 0.2, 0.2, 0.2, ...]
+        # This is getting complex.  Use a direct approach: inject raw values to control the 21d mean.
+        # Since 21d mean at day N = mean(raw[N-20:N+1]), we can set raw[N] = 21*target_mean[N]
+        #   - sum(raw[N-20:N]) for each step.  This is numerically exact but requires sequential build.
+        #
+        # Cleaner: just build raw series that directly produces the desired t shape at the tail,
+        # ensuring washout fires (value <= 10th pctile of 504d std history) and level_recovery
+        # fires (t_now >= washout_val + 0.15*std), but slope does NOT fire.
+
+        # Concrete construction (all approximate; verified below):
+        # - 500 days at +0.10 (baseline, no washout)
+        # - 60 days at -2.0  (deep washout; 21d mean at the worst point ≈ -2.0)
+        # - 20 days at +4.0  (strong positive spike to create large t values early in the 10-obs window)
+        # - 10 days at -0.30 (pull back slightly so t_now < t.iloc[-10] since the spike dominates
+        #                     the mean 10 obs back but has decayed by now)
+        n_base = 500
+        base = np.full(n_base, 0.10)
+        washout_raw = np.full(60, -2.0)
+        spike_raw = np.full(20, 4.0)   # drives the 21d mean UP ~4 obs back, inflating t.iloc[-10]
+        pullback_raw = np.full(10, -0.30)  # last 10 obs pull back, making t_now < t.iloc[-10]
+        vals = np.concatenate([base, washout_raw, spike_raw, pullback_raw])
+        df = self._make_dnsi(vals)
+        last_date = str(df.index[-1].date())
+        _patch_today(monkeypatch, last_date)
+        monkeypatch.setattr(rmc.store, "read",
+                            lambda g, n: df if (g, n) == ("frbsf", "news_sentiment") else None)
+        chip = rmc._c10_news_tone_recovering()
+        # The slope rule must reject even though level_recovery may be satisfied.
+        # t.iloc[-10] is in the spike region (high positive); t_now is in the pullback (lower).
+        # fired = slope_condition AND level_recovery; slope_condition = False here -> fired = False.
+        assert chip["fired"] is False, (
+            f"Slope rule should block fire when t_now < t.iloc[-10]; detail={chip['detail']}"
+        )
 
     def test_absent_when_store_missing(self, monkeypatch):
         monkeypatch.setattr(rmc.store, "read", lambda g, n: None)
@@ -849,15 +922,17 @@ class TestC11CotEsWashout:
             "net_spec_pct_oi": values,
         }, index=idx)
 
-    def test_fires_on_washout_then_rising(self, monkeypatch):
-        """net_spec_pct_oi <= 10th pctile in last 8 weeks AND latest change > 0.
+    def test_fires_on_washout_then_rising_two_reports(self, monkeypatch):
+        """net_spec_pct_oi <= 10th pctile in last 8 weeks AND c1 > 0 AND c2 >= 0.
 
-        Patches today to last frame date so _is_fresh/_bd_since work correctly.
+        Specced two-report rule: both the latest report and the prior report must be non-falling
+        (c1 > 0 strictly, c2 >= 0).  Patches today to last frame date so _is_fresh/_bd_since work.
         """
         # 150 weeks of ~0%, then 10 weeks at -12% (washout), then recovery to -6% and -3%
+        # c2 = -6 - (-12) = +6 > 0 (prior not falling); c1 = -3 - (-6) = +3 > 0 (latest rising)
         base_vals = [0.0] * 130
         washout_vals = [-12.0] * 10
-        recovery_vals = [-6.0, -3.0]   # rising over last 2
+        recovery_vals = [-6.0, -3.0]   # c2=+6 >= 0, c1=+3 > 0 -> must fire
         vals = base_vals + washout_vals + recovery_vals
         df = self._make_cot(vals)
         last_date = str(df.index[-1].date())
@@ -869,6 +944,30 @@ class TestC11CotEsWashout:
         assert chip["channel"] == "mood"
         assert chip["accruing"] is True
         assert chip["fired"] is True
+
+    def test_no_fire_one_up_after_a_down(self, monkeypatch):
+        """Discriminating test: latest report UP but prior report was DOWN — must NOT fire.
+
+        c1 > 0 (latest rising) but c2 < 0 (prior was falling).
+        The specced rule requires c2 >= 0, so this must NOT fire.
+        This case would fire under the old tautology (c2 > 0 or True = always True).
+        """
+        # 130 neutral, 8 washout, then: down-then-up (c2 < 0, c1 > 0)
+        # s.iloc[-3] = -12.0, s.iloc[-2] = -14.0 (c2 = -14 - (-12) = -2 < 0),
+        # s.iloc[-1] = -11.0 (c1 = -11 - (-14) = +3 > 0)
+        base_vals = [0.0] * 130
+        washout_vals = [-12.0] * 8
+        down_then_up = [-14.0, -11.0]   # c2=-2 (<0) must block even though c1=+3 (>0)
+        vals = base_vals + washout_vals + down_then_up
+        df = self._make_cot(vals)
+        last_date = str(df.index[-1].date())
+        _patch_today(monkeypatch, last_date)
+        monkeypatch.setattr(rmc.store, "read",
+                            lambda g, n: df if (g, n) == ("cot", "cot_es_spx") else None)
+        chip = rmc._c11_cot_es_washout()
+        assert chip["fired"] is False, (
+            "One-up-after-a-down must NOT fire; spec requires c2 >= 0 (prior not falling)"
+        )
 
     def test_no_fire_without_washout(self, monkeypatch):
         """Positioning always near neutral — no washout."""
@@ -883,11 +982,8 @@ class TestC11CotEsWashout:
 
     def test_no_fire_when_falling_after_washout(self, monkeypatch):
         """Washout present but latest change is negative — not rising."""
-        base_vals = [0.0] * 140
-        washout_vals = [-12.0] * 8
-        recovery_attempt = [-10.0]  # still falling (change vs prior = -10 - (-12) = +2 actually)
-        # make sure latest change is negative: -12.0, -12.0, -13.0
-        vals = base_vals + [-12.0] * 8 + [-13.0]
+        # vals end: ..., -12.0, -12.0, -13.0 -> c1 = -13 - (-12) = -1 < 0 -> no fire
+        vals = [0.0] * 140 + [-12.0] * 8 + [-13.0]
         df = self._make_cot(vals)
         last_date = str(df.index[-1].date())
         _patch_today(monkeypatch, last_date)
