@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-11T09:07:26.340617+00:00",
+  "produced_at": "2026-07-11T20:28:09.743266+00:00",
   "as_of": "2026-07-09",
   "status": "degraded",
   "phase": "final",
@@ -11,205 +11,8 @@
     "context_stale": false,
     "summary": "cortex degraded — model_unavailable"
   },
-  "what_changed": [
-    {
-      "kind": "as_of_advanced",
-      "id": "system",
-      "summary": "as_of advanced from 2026-07-02 to 2026-07-09",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "site-us-standouts",
-      "summary": "lobe site-us-standouts status: fresh → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "site-china-cycle-phase",
-      "summary": "lobe site-china-cycle-phase status: fresh → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "site-china-market-state",
-      "summary": "lobe site-china-market-state status: fresh → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "confluence-graph",
-      "summary": "lobe confluence-graph status: fresh_partial → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "reflex-firings-regime-selfheal",
-      "summary": "lobe reflex-firings-regime-selfheal row count changed: 2 → 3 (50%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "nw-health-run-history",
-      "summary": "lobe nw-health-run-history status: missing → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "governance-ledger",
-      "summary": "lobe governance-ledger row count changed: 30 → 31 (3%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "cortex-probation",
-      "summary": "lobe cortex-probation status: fresh → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "bottom-sensors-json",
-      "summary": "lobe bottom-sensors-json status: fresh → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "neuralweb-mastermind-context",
-      "summary": "lobe neuralweb-mastermind-context status: fresh → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "site-neuralweb-mastermind-context",
-      "summary": "lobe site-neuralweb-mastermind-context status: fresh → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_new",
-      "id": "neuralweb-market-plane",
-      "summary": "lobe neuralweb-market-plane appeared in scope",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_new",
-      "id": "site-neuralweb-market-plane",
-      "summary": "lobe site-neuralweb-market-plane appeared in scope",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "factor-intelligence-state",
-      "summary": "lobe factor-intelligence-state status: fresh_partial → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "site-factor-intelligence-state",
-      "summary": "lobe site-factor-intelligence-state status: fresh_partial → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_new",
-      "id": "site-neuralweb-health-history",
-      "summary": "lobe site-neuralweb-health-history appeared in scope",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_new",
-      "id": "site-neuralweb-governance-recent",
-      "summary": "lobe site-neuralweb-governance-recent appeared in scope",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "attention-deterministic",
-      "summary": "lobe attention-deterministic status: fresh → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "site-attention-deterministic",
-      "summary": "lobe site-attention-deterministic status: fresh → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "mechanism-pathways-history",
-      "summary": "lobe mechanism-pathways-history row count changed: 4 → 5 (25%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "theme-thesis-ledger",
-      "summary": "lobe theme-thesis-ledger row count changed: 33 → 39 (18%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_new",
-      "id": "fred-wresbal",
-      "summary": "lobe fred-wresbal appeared in scope",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "liquidity-plumbing",
-      "summary": "lobe liquidity-plumbing status: fresh_partial → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "dt-contra-state",
-      "summary": "lobe dt-contra-state status: fresh → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "covariance-spine-history",
-      "summary": "lobe covariance-spine-history row count changed: 3 → 4 (33%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "evidence-clock",
-      "summary": "lobe evidence-clock status: fresh → stale",
-      "severity": "warn",
-      "evidence_path": "data/neuralweb/health.json"
-    }
-  ],
+  "what_changed": [],
   "what_contradicted": [
-    {
-      "id": "",
-      "summary": "contradiction ",
-      "severity": "watch",
-      "delta_vs_prior": "persisting",
-      "evidence_path": "site/neuralwebdata/confluence_graph.json"
-    },
     {
       "id": "",
       "summary": "contradiction ",
@@ -729,7 +532,7 @@
   },
   "china_market_state": {
     "available": true,
-    "as_of": "2026-07-10",
+    "as_of": "2026-07-11",
     "phase": "POLICY_PUT",
     "phase_confidence": 0.75,
     "who_controls": "mixed",
