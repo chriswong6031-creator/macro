@@ -89,6 +89,7 @@
 {# rr_leg + risk_radar_card moved to the shared partial _risk_radar_card.html.j2
    (used by the US Macro/Stocks pages AND the China/HK/Canada Market-State boards). #}
 {% import "_ignition_radar_card.html.j2" as igc %}
+{% from "_mag7_panel.html.j2" import mag7_panel %}
 {# coloured, arrowed direction word for a nowcast metric (from nowcast_hist) #}
 {% macro trendword(nh) -%}
 {% if nh and nh.trend %}{% set _ar = {'rising':'▲','accelerating':'▲','falling':'▼','cooling':'▼','flat':'▶'} %}{% set _zh = {'rising':'上行','falling':'下行','accelerating':'加速','cooling':'降温','flat':'走平'} %}<span class="tw tw-{{ nh.dir }}">{{ _ar[nh.trend] }} <span class="l-en">{{ nh.trend }}</span><span class="l-zh">{{ _zh[nh.trend] }}</span></span>{% endif %}
@@ -213,6 +214,7 @@
 
 {% include "_risk_radar_card.css.j2" %}
 {% include "_ignition_radar_card.css.j2" %}
+{% include "_mag7_panel.css.j2" %}
 
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
@@ -1739,6 +1741,9 @@
      rendered un-wrapped into the 12-col .grid and collapsed into one skinny
      column. Renders only when the payload is present; guarded by truthiness. #}
   {% if mode == 'stocks' and latest.ignition_radar %}{{ igc.ignition_radar_strip(latest.ignition_radar) }}{% endif %}
+  {# Mag 7 Panel — cap-weighted context read of the 7 largest US stocks.
+     Renders only when the payload is present (fail-open; engine lane may merge later). #}
+  {% if mode == 'stocks' and latest.mag7_regime %}{{ mag7_panel(latest.mag7_regime) }}{% endif %}
   {% endif %}
 
   {% if mode != 'stocks' %}

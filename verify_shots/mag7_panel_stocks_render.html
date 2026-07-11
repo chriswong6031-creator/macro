@@ -1,0 +1,212 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mag 7 Panel Render</title>
+<style>
+:root{--bg:#0f1115;--panel:#181b21;--panel2:#1e222a;--text:#d7dce3;
+  --muted:#8b93a1;--line:#2a2f3a;--warn:#e0a030;--act:#e05555;--ok:#3da564;
+  --up:#45b873;--down:#e06464;--orange:#e08b45;--info:#5b9bf0;--link:#7aa7e0;
+  --hair-strong:#363c4a;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:14px;line-height:1.5;padding:20px;max-width:900px;margin:0 auto;}
+.l-zh{display:none;}
+  /* ============================================================================
+     MAG 7 PANEL (.m7p) — cap-weighted Mag 7 context read.
+     Blue-info accent. Class prefix: .m7p (no collision with .igx/.rrx).
+     Included by dashboard.html.j2 (stocks mode only, adjacent to ignition radar).
+     ============================================================================ */
+  .m7p { --m7-col: var(--info);
+         display: grid; gap: 11px; margin: 12px 0 2px; padding: 15px 18px;
+         border-radius: 12px; background: var(--panel); border: 1px solid var(--line);
+         border-left: 4px solid var(--m7-col); font-size: 12.5px; line-height: 1.4;
+         box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
+  /* state-based accent overrides */
+  .m7p.m7p-running_broad   { --m7-col: var(--ok); }
+  .m7p.m7p-running_narrow  { --m7-col: var(--info); }
+  .m7p.m7p-turning_up      { --m7-col: var(--ok); }
+  .m7p.m7p-cooling         { --m7-col: var(--warn); }
+  .m7p.m7p-rolling_over    { --m7-col: var(--warn); }
+  .m7p.m7p-down            { --m7-col: var(--act); }
+
+  /* header */
+  .m7p .m7p-hd  { display: flex; align-items: flex-start; gap: 10px; }
+  .m7p .m7p-meta { flex: 1; min-width: 0; }
+  .m7p .m7p-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+  .m7p .m7p-h2  { margin: 0; font-weight: 700; font-size: 13px; color: var(--text); }
+  .m7p .m7p-badge { font-weight: 800; letter-spacing: .03em; color: var(--m7-col);
+         font-size: 11px; font-variant-numeric: tabular-nums; padding: 1px 7px;
+         border-radius: 5px;
+         background: color-mix(in srgb, var(--m7-col) 14%, transparent);
+         border: 1px solid color-mix(in srgb, var(--m7-col) 35%, transparent); }
+  .m7p .m7p-help { display: inline-flex; align-items: center; justify-content: center;
+         width: 14px; height: 14px; border-radius: 50%;
+         background: var(--panel2); border: 1px solid var(--line);
+         color: var(--muted); font-size: 9px; font-weight: 700; cursor: help; }
+  /* state + stance lines */
+  .m7p .m7p-state  { font-size: 12.5px; color: var(--text); font-weight: 600; margin-top: 3px; }
+  .m7p .m7p-stance { font-size: 12px; color: var(--m7-col); font-weight: 700; margin-top: 1px; }
+
+  /* 7-dot member bar */
+  .m7p .m7p-dots { display: flex; gap: 10px 12px; flex-wrap: wrap; align-items: flex-end; }
+  .m7p .m7p-dot-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px;
+         cursor: help; }
+  .m7p .m7p-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+  .m7p .m7p-dot.m7p-dot-green { background: var(--up); }
+  .m7p .m7p-dot.m7p-dot-amber { background: var(--warn); }
+  .m7p .m7p-dot.m7p-dot-grey  { background: color-mix(in srgb, var(--muted) 40%, var(--panel2)); }
+  .m7p .m7p-dot-lbl { font-size: 9px; font-weight: 700; color: var(--muted);
+         letter-spacing: .03em; font-variant-numeric: tabular-nums; }
+
+  /* generals */
+  .m7p .m7p-generals { font-size: 12px; color: var(--text); }
+  .m7p .m7p-generals b { color: var(--up); }
+  .m7p .m7p-joining { color: var(--warn); }
+
+  /* structure chip */
+  .m7p .m7p-structure { display: inline-flex; align-items: center; gap: 4px;
+         background: color-mix(in srgb, var(--warn) 10%, var(--panel2));
+         border: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+         border-radius: 6px; padding: 3px 9px; font-size: 11px; font-weight: 600;
+         color: var(--warn); }
+
+  /* tech-legs strip */
+  .m7p .m7p-legs { display: flex; flex-wrap: wrap; gap: 5px; }
+  .m7p .m7p-leg { display: inline-flex; align-items: center; gap: 5px;
+         padding: 3px 9px; border-radius: 6px; font-size: 11px; cursor: help;
+         background: var(--panel2); border: 1px solid var(--line); color: var(--text); }
+  .m7p .m7p-leg-name { font-weight: 600; }
+  .m7p .m7p-leg-word { color: var(--muted); }
+  .m7p .m7p-leg.up  .m7p-leg-word { color: var(--up); font-weight: 700; }
+  .m7p .m7p-leg.up2 .m7p-leg-word { color: var(--up); font-weight: 800; }
+  .m7p .m7p-leg.dn  .m7p-leg-word { color: var(--down); font-weight: 700; }
+  .m7p .m7p-leg.dn2 .m7p-leg-word { color: var(--down); font-weight: 800; }
+
+  /* footer + as-of */
+  .m7p .m7p-foot { font-size: 11px; color: var(--muted);
+         border-top: 1px solid color-mix(in srgb, var(--m7-col) 18%, var(--line));
+         padding-top: 9px; }
+  .m7p .m7p-asof { display: inline; font-size: 10.5px; color: var(--muted);
+         margin-left: 6px; font-variant-numeric: tabular-nums; }
+
+  /* responsive */
+  @media (max-width: 560px) {
+    .m7p { padding: 13px 14px; gap: 9px; }
+    .m7p .m7p-legs .m7p-leg-name.l-zh,
+    .m7p .m7p-legs .m7p-leg-name.l-en { font-size: 10.5px; }
+  }
+</style></head><body>
+<h3 style="color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase">Mag 7 — Full Jinja2 Render</h3>
+
+<div class="m7p m7p-running_narrow">
+
+  
+  <div class="m7p-hd">
+    <div class="m7p-meta">
+      <div class="m7p-title-row">
+        <h2 class="m7p-h2">
+          <span class="l-en">Mag 7</span><span class="l-zh">七巨头</span>
+        </h2>
+        <span class="m7p-badge">
+          <span class="l-en">Running — narrow</span>
+          <span class="l-zh">运行 — 集中</span>
+        </span>
+        <span class="m7p-help" data-tip-en="Cap-weighted view of the 7 largest US stocks. Weights: Polygon market-cap weights. MAGS ETF last priced 2026-07-02 (65.1) — 11 sessions in. Numbers are descriptive context reads — a heads-up, not a buy signal." data-tip-zh="七只最大美股的市值加权视图。权重：市值加权（Polygon）。MAGS ETF last priced 2026-07-02 (65.1) — 11 sessions in。以上数字均为描述性背景读数 — 仅供参考，非买入信号。">?</span>
+      </div>
+
+      
+      <div class="m7p-state">
+        <span class="l-en">Running — narrow · day 11 · +9% since Jun 26 vs S&P +2%
+        </span>
+        <span class="l-zh">运行 — 集中 · 第11日 · Jun 26 起 +9% vs 标普 +2%
+        </span>
+      </div>
+
+      
+      <div class="m7p-stance">
+        <span class="l-en">In favour — watch, don't chase</span>
+        <span class="l-zh">有利 — 观望，勿追</span>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="m7p-dots">
+    <div class="m7p-dot-wrap" data-tip-en="Apple · 20d +8.8% · vs market +6.1% · above 50-day MA · turning up" data-tip-zh="苹果 · 20日 +8.8% · 相对市场 +6.1% · 站上 50日均线 · turning up">
+      <span class="m7p-dot m7p-dot-green"></span>
+      <span class="m7p-dot-lbl">AAPL</span>
+    </div>
+    <div class="m7p-dot-wrap" data-tip-en="Microsoft · 20d -4.7% · vs market -6.3% · below 50-day MA · early turn signs" data-tip-zh="微软 · 20日 -4.7% · 相对市场 -6.3% · 低于 50日均线 · early turn signs">
+      <span class="m7p-dot m7p-dot-grey"></span>
+      <span class="m7p-dot-lbl">MSFT</span>
+    </div>
+    <div class="m7p-dot-wrap" data-tip-en="Nvidia · 20d -2.6% · vs market -4.2% · below 50-day MA · trending up" data-tip-zh="英伟达 · 20日 -2.6% · 相对市场 -4.2% · 低于 50日均线 · trending up">
+      <span class="m7p-dot m7p-dot-grey"></span>
+      <span class="m7p-dot-lbl">NVDA</span>
+    </div>
+    <div class="m7p-dot-wrap" data-tip-en="Amazon · 20d +4.7% · vs market +3.1% · below 50-day MA · trending up" data-tip-zh="亚马逊 · 20日 +4.7% · 相对市场 +3.1% · 低于 50日均线 · trending up">
+      <span class="m7p-dot m7p-dot-amber"></span>
+      <span class="m7p-dot-lbl">AMZN</span>
+    </div>
+    <div class="m7p-dot-wrap" data-tip-en="Alphabet · 20d -1.5% · vs market -3.1% · below 50-day MA · cooling off" data-tip-zh="谷歌 · 20日 -1.5% · 相对市场 -3.1% · 低于 50日均线 · cooling off">
+      <span class="m7p-dot m7p-dot-grey"></span>
+      <span class="m7p-dot-lbl">GOOGL</span>
+    </div>
+    <div class="m7p-dot-wrap" data-tip-en="Meta · 20d +8.1% · vs market +6.5% · above 50-day MA · turning up" data-tip-zh="Meta · 20日 +8.1% · 相对市场 +6.5% · 站上 50日均线 · turning up">
+      <span class="m7p-dot m7p-dot-green"></span>
+      <span class="m7p-dot-lbl">META</span>
+    </div>
+    <div class="m7p-dot-wrap" data-tip-en="Tesla · 20d -6.3% · vs market -7.9% · below 50-day MA · falling" data-tip-zh="特斯拉 · 20日 -6.3% · 相对市场 -7.9% · 低于 50日均线 · falling">
+      <span class="m7p-dot m7p-dot-grey"></span>
+      <span class="m7p-dot-lbl">TSLA</span>
+    </div>
+  </div>
+
+  
+  <div class="m7p-generals">
+    <span class="l-en">
+      <b>Led by Apple + Meta</b> — <span class="m7p-joining">Nvidia joining.</span>
+    </span>
+    <span class="l-zh">
+      <b>领涨：苹果 + Meta</b> — <span class="m7p-joining">英伟达正在加入。</span>
+    </span>
+  </div>
+
+  
+  <div>
+    <span class="m7p-structure">
+      <span class="l-en">Still 8% below the year high</span>
+      <span class="l-zh">仍低于年内高点 8%</span>
+    </span>
+  </div>
+
+  
+  <div class="m7p-legs">
+    <span class="m7p-leg up2" data-tip-en="10d vs market +6.1% · 20d vs market +1.6%" data-tip-zh="10日相对市场 +6.1% · 20日相对市场 +1.6%">
+      <span class="m7p-leg-name l-en">Mag 7</span>
+      <span class="m7p-leg-name l-zh">七巨头</span>
+      <span class="m7p-leg-word">▲▲ surging</span>
+    </span>
+    <span class="m7p-leg up" data-tip-en="10d vs market +2.1% · 20d vs market -1.2%" data-tip-zh="10日相对市场 +2.1% · 20日相对市场 -1.2%">
+      <span class="m7p-leg-name l-en">AI chips</span>
+      <span class="m7p-leg-name l-zh">AI芯片</span>
+      <span class="m7p-leg-word">▲ running</span>
+    </span>
+    <span class="m7p-leg dn2" data-tip-en="10d vs market -14.0% · 20d vs market +2.3%" data-tip-zh="10日相对市场 -14.0% · 20日相对市场 +2.3%">
+      <span class="m7p-leg-name l-en">Memory</span>
+      <span class="m7p-leg-name l-zh">存储</span>
+      <span class="m7p-leg-word">▼▼ falling hard</span>
+    </span>
+    <span class="m7p-leg " data-tip-en="10d vs market +0.8% · 20d vs market +0.7%" data-tip-zh="10日相对市场 +0.8% · 20日相对市场 +0.7%">
+      <span class="m7p-leg-name l-en">Software</span>
+      <span class="m7p-leg-name l-zh">软件</span>
+      <span class="m7p-leg-word">— flat</span>
+    </span>
+  </div>
+
+  
+  <div class="m7p-foot">
+    <span class="l-en">Cap-weighted view of the 7 largest US stocks — the Buy lanes below still decide entries.</span><span class="l-zh">七只最大美股的市值加权视图 — 以下买入通道仍决定入场时机。</span>
+    <span class="m7p-asof"><span class="l-en">As of 2026-07-10</span><span class="l-zh">截至 2026-07-10</span></span>
+  </div>
+
+</div>
+</body></html>

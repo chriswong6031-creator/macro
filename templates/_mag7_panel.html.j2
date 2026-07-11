@@ -1,0 +1,303 @@
+{# ============================================================================
+   MAG 7 PANEL (.m7p) — cap-weighted view of the 7 largest US stocks.
+   七巨头面板 — 七只最大美股的市值加权视图。
+
+   Import and call:
+       {% from "_mag7_panel.html.j2" import mag7_panel %}
+       {% if mode == 'stocks' and latest.mag7_regime %}{{ mag7_panel(latest.mag7_regime) }}{% endif %}
+
+   Renders NOTHING when the payload is absent (engine lane may merge after this).
+   Every access is guarded by truthiness — NEVER `is not none`.
+
+   Tier 1 copy: state + stance + plain-word numbers only.
+   Tier 2: data-tip-en/zh hover receipts.
+   Banned from Tier 1: UPTURN_CONFIRMED, running_narrow (raw slug), k-of-N, jargon.
+   ============================================================================ #}
+
+{# ── helpers ─────────────────────────────────────────────────────────────── #}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+
+{% macro tip(en, zh='') -%}
+ data-tip-en="{{ en | e }}" data-tip-zh="{{ (zh if zh else en) | e }}"
+{%- endmacro %}
+
+{# ── dot colour logic: green = above50 AND rs20>0; amber = one; grey = neither #}
+{% macro dot_cls(m) -%}
+{%- if m.above50 and (m.rs20 is defined and m.rs20 > 0) %}green
+{%- elif m.above50 or (m.rs20 is defined and m.rs20 > 0) %}amber
+{%- else %}grey{% endif %}
+{%- endmacro %}
+
+{# ── plain-word MTF translation (never expose raw UPTURN_CONFIRMED etc.) #}
+{% macro mtf_plain(raw) -%}
+{%- set _map = {
+  'UPTURN_CONFIRMED': 'turning up',
+  'UPTURN_EARLY': 'early turn signs',
+  'RUNNING': 'trending up',
+  'COOLING': 'cooling off',
+  'ROLLING_OVER': 'rolling over',
+  'DOWN': 'falling',
+  'NEUTRAL': 'no clear trend'
+} -%}
+{{- _map.get(raw, 'mixed signals') -}}
+{%- endmacro %}
+
+{# ── stance vocabulary by trend_state #}
+{% macro stance_en(state) -%}
+{%- if state == 'running_broad' %}In favour
+{%- elif state == 'running_narrow' %}In favour — watch, don't chase
+{%- elif state == 'turning_up' %}Get ready
+{%- elif state == 'cooling' %}Watch — no rush
+{%- elif state == 'rolling_over' %}Protect gains
+{%- elif state == 'down' %}Stand aside
+{%- else %}Watch — no rush
+{%- endif %}
+{%- endmacro %}
+
+{% macro stance_zh(state) -%}
+{%- if state == 'running_broad' %}有利
+{%- elif state == 'running_narrow' %}有利 — 观望，勿追
+{%- elif state == 'turning_up' %}准备就绪
+{%- elif state == 'cooling' %}观望，不急
+{%- elif state == 'rolling_over' %}保护收益
+{%- elif state == 'down' %}观望为主
+{%- else %}观望，不急
+{%- endif %}
+{%- endmacro %}
+
+{# ── plain state label #}
+{% macro state_label_en(state) -%}
+{%- if state == 'running_broad' %}Running — broad
+{%- elif state == 'running_narrow' %}Running — narrow
+{%- elif state == 'turning_up' %}Turning up
+{%- elif state == 'cooling' %}Cooling
+{%- elif state == 'rolling_over' %}Rolling over
+{%- elif state == 'down' %}Falling
+{%- else %}Mixed
+{%- endif %}
+{%- endmacro %}
+
+{% macro state_label_zh(state) -%}
+{%- if state == 'running_broad' %}运行 — 广泛
+{%- elif state == 'running_narrow' %}运行 — 集中
+{%- elif state == 'turning_up' %}拐头向上
+{%- elif state == 'cooling' %}降温
+{%- elif state == 'rolling_over' %}顶部回落
+{%- elif state == 'down' %}下跌
+{%- else %}震荡
+{%- endif %}
+{%- endmacro %}
+
+{# ── tech-legs word and arrows #}
+{% macro leg_word(r10_rel) -%}
+{%- if r10_rel is defined and r10_rel != none -%}
+  {%- if r10_rel >= 0.05 %}surging
+  {%- elif r10_rel >= 0.02 %}running
+  {%- elif r10_rel <= -0.05 %}falling hard
+  {%- elif r10_rel <= -0.02 %}falling
+  {%- else %}flat{% endif %}
+{%- else %}—{% endif %}
+{%- endmacro %}
+
+{% macro leg_arrow(r10_rel) -%}
+{%- if r10_rel is defined and r10_rel != none -%}
+  {%- if r10_rel >= 0.05 %}▲▲
+  {%- elif r10_rel >= 0.02 %}▲
+  {%- elif r10_rel <= -0.05 %}▼▼
+  {%- elif r10_rel <= -0.02 %}▼
+  {%- else %}—{% endif %}
+{%- else %}—{% endif %}
+{%- endmacro %}
+
+{% macro leg_cls(r10_rel) -%}
+{%- if r10_rel is defined and r10_rel != none -%}
+  {%- if r10_rel >= 0.05 %}up2
+  {%- elif r10_rel >= 0.02 %}up
+  {%- elif r10_rel <= -0.05 %}dn2
+  {%- elif r10_rel <= -0.02 %}dn
+  {%- else %}{% endif %}
+{%- endif %}
+{%- endmacro %}
+
+{# ── company short-names (Tier 1: no raw tickers as labels) #}
+{% macro short_name(sym) -%}
+{%- if sym == 'AAPL' %}Apple
+{%- elif sym == 'MSFT' %}Microsoft
+{%- elif sym == 'NVDA' %}Nvidia
+{%- elif sym == 'AMZN' %}Amazon
+{%- elif sym == 'GOOGL' or sym == 'GOOG' %}Alphabet
+{%- elif sym == 'META' %}Meta
+{%- elif sym == 'TSLA' %}Tesla
+{%- else %}{{ sym }}{% endif %}
+{%- endmacro %}
+
+{% macro short_name_zh(sym) -%}
+{%- if sym == 'AAPL' %}苹果
+{%- elif sym == 'MSFT' %}微软
+{%- elif sym == 'NVDA' %}英伟达
+{%- elif sym == 'AMZN' %}亚马逊
+{%- elif sym == 'GOOGL' or sym == 'GOOG' %}谷歌
+{%- elif sym == 'META' %}Meta
+{%- elif sym == 'TSLA' %}特斯拉
+{%- else %}{{ sym }}{% endif %}
+{%- endmacro %}
+
+{# ══════════════════════════════════════════════════════════════════════════════
+   MAIN MACRO
+   ══════════════════════════════════════════════════════════════════════════════ #}
+{% macro mag7_panel(d) -%}
+{%- if d %}
+{%- set state = d.trend_state if d.trend_state else 'cooling' -%}
+{%- set run = d.run if d.run else {} -%}
+{%- set cw = d.cw if d.cw else {} -%}
+{%- set k7 = d.k7 if d.k7 else {} -%}
+{%- set struct = d.structure if d.structure else {} -%}
+{%- set gens = d.generals if d.generals else {} -%}
+{%- set members = d.members if d.members else [] -%}
+{%- set tech_legs = d.tech_legs if d.tech_legs else [] -%}
+{%- set mags = d.mags if d.mags else {} -%}
+{%- set wb = d.weights_basis if d.weights_basis else 'polygon_mktcap' -%}
+
+{# build run descriptor: "day 11 · +9% since Jun 26 vs S&P +2%" #}
+{%- set run_days = run.sessions if run.sessions is defined else none -%}
+{%- set run_cw = (run.cw_ret * 100)|round|int if run.cw_ret is defined and run.cw_ret != none else none -%}
+{%- set run_spy = (run.spy_ret * 100)|round|int if run.spy_ret is defined and run.spy_ret != none else none -%}
+{%- set run_start = run.start if run.start else '' -%}
+{%- set _mon_abbr = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
+                     '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} -%}
+{%- set _rs_parts = run_start.split('-') -%}
+{%- set run_start_label = (_mon_abbr.get(_rs_parts[1], _rs_parts[1]) ~ ' ' ~ _rs_parts[2]) if _rs_parts | length >= 3 else run_start -%}
+
+{# help tip text (Tier 2) #}
+{%- set wb_label = 'Polygon market-cap weights' if wb == 'polygon_mktcap' else 'Equal weights (cap data unavailable)' -%}
+{%- set mags_note = 'MAGS ETF last priced ' ~ mags.asof ~ ' (' ~ ((mags.px)|string) ~ ') — ' ~ (run_days|string) ~ ' sessions in' if mags and mags.asof else 'MAGS ETF data unavailable' -%}
+{%- set help_en = 'Cap-weighted view of the 7 largest US stocks. Weights: ' ~ wb_label ~ '. ' ~ mags_note ~ '. Numbers are descriptive context reads — a heads-up, not a buy signal.' -%}
+{%- set help_zh = '七只最大美股的市值加权视图。权重：' ~ ('市值加权（Polygon）' if wb == 'polygon_mktcap' else '等权（市值数据不可用）') ~ '。' ~ mags_note ~ '。以上数字均为描述性背景读数 — 仅供参考，非买入信号。' -%}
+
+<div class="m7p m7p-{{ state }}">
+
+  {# ── HEADER ─────────────────────────────────────────────────────────────── #}
+  <div class="m7p-hd">
+    <div class="m7p-meta">
+      <div class="m7p-title-row">
+        <h2 class="m7p-h2">
+          {{ t('Mag 7', '七巨头') }}
+        </h2>
+        <span class="m7p-badge">
+          <span class="l-en">{{ state_label_en(state) }}</span>
+          <span class="l-zh">{{ state_label_zh(state) }}</span>
+        </span>
+        <span class="m7p-help" data-tip-en="{{ help_en | e }}" data-tip-zh="{{ help_zh | e }}">?</span>
+      </div>
+
+      {# State line ≤14 words #}
+      {%- if run_days is not none %}
+      <div class="m7p-state">
+        <span class="l-en">
+          {{- state_label_en(state) }} · day {{ run_days }}
+          {%- if run_cw is not none %} · {{ '+' if run_cw > 0 }}{{ run_cw }}% since {{ run_start_label }}{% if run_spy is not none %} vs S&P {{ '+' if run_spy > 0 }}{{ run_spy }}%{% endif %}{% endif %}
+        </span>
+        <span class="l-zh">
+          {{- state_label_zh(state) }} · 第{{ run_days }}日
+          {%- if run_cw is not none %} · {{ run_start_label }} 起 {{ '+' if run_cw > 0 }}{{ run_cw }}%{% if run_spy is not none %} vs 标普 {{ '+' if run_spy > 0 }}{{ run_spy }}%{% endif %}{% endif %}
+        </span>
+      </div>
+      {%- endif %}
+
+      {# Stance #}
+      <div class="m7p-stance">
+        <span class="l-en">{{ stance_en(state) }}</span>
+        <span class="l-zh">{{ stance_zh(state) }}</span>
+      </div>
+    </div>
+  </div>
+
+  {# ── 7-DOT MEMBER BAR ────────────────────────────────────────────────────── #}
+  {%- if members %}
+  <div class="m7p-dots">
+    {%- for m in members %}
+    {%- set dc = dot_cls(m) %}
+    {%- set r20_pct = (m.r20 * 100)|round(1) if m.r20 is defined and m.r20 != none else none %}
+    {%- set rs20_pct = (m.rs20 * 100)|round(1) if m.rs20 is defined and m.rs20 != none else none %}
+    {%- set mtf_word = mtf_plain(m.mtf) if m.mtf else 'no trend data' %}
+    {%- set tip_en %}{{ short_name(m.sym) }} · 20d {{ '+' if r20_pct and r20_pct > 0 }}{{ r20_pct if r20_pct is not none else '—' }}% · vs market {{ ('+' if rs20_pct and rs20_pct > 0) ~ rs20_pct ~ '%' if rs20_pct is not none else '—' }} · {{ 'above' if m.above50 else 'below' }} 50-day MA · {{ mtf_word }}{%- endset %}
+    {%- set tip_zh %}{{ short_name_zh(m.sym) }} · 20日 {{ '+' if r20_pct and r20_pct > 0 }}{{ r20_pct if r20_pct is not none else '—' }}% · 相对市场 {{ ('+' if rs20_pct and rs20_pct > 0) ~ rs20_pct ~ '%' if rs20_pct is not none else '—' }} · {{ '站上' if m.above50 else '低于' }} 50日均线 · {{ mtf_word }}{%- endset %}
+    <div class="m7p-dot-wrap" data-tip-en="{{ tip_en | e }}" data-tip-zh="{{ tip_zh | e }}">
+      <span class="m7p-dot m7p-dot-{{ dc }}"></span>
+      <span class="m7p-dot-lbl">{{ m.sym }}</span>
+    </div>
+    {%- endfor %}
+  </div>
+  {%- endif %}
+
+  {# ── GENERALS LINE ───────────────────────────────────────────────────────── #}
+  {%- set now_names = gens.now if gens.now else [] %}
+  {%- set join_names = gens.joining if gens.joining else [] %}
+  {%- if now_names %}
+  {%- set now_short = now_names | map('replace', 'AAPL', 'Apple') | map('replace', 'MSFT', 'Microsoft') | map('replace', 'NVDA', 'Nvidia') | map('replace', 'AMZN', 'Amazon') | map('replace', 'META', 'Meta') | map('replace', 'TSLA', 'Tesla') | map('replace', 'GOOGL', 'Alphabet') | map('replace', 'GOOG', 'Alphabet') | list %}
+  {%- set now_short_zh = now_names | map('replace', 'AAPL', '苹果') | map('replace', 'MSFT', '微软') | map('replace', 'NVDA', '英伟达') | map('replace', 'AMZN', '亚马逊') | map('replace', 'META', 'Meta') | map('replace', 'TSLA', '特斯拉') | map('replace', 'GOOGL', '谷歌') | map('replace', 'GOOG', '谷歌') | list %}
+  {%- set join_short = join_names | map('replace', 'AAPL', 'Apple') | map('replace', 'MSFT', 'Microsoft') | map('replace', 'NVDA', 'Nvidia') | map('replace', 'AMZN', 'Amazon') | map('replace', 'META', 'Meta') | map('replace', 'TSLA', 'Tesla') | map('replace', 'GOOGL', 'Alphabet') | map('replace', 'GOOG', 'Alphabet') | list %}
+  {%- set join_short_zh = join_names | map('replace', 'AAPL', '苹果') | map('replace', 'MSFT', '微软') | map('replace', 'NVDA', '英伟达') | map('replace', 'AMZN', '亚马逊') | map('replace', 'META', 'Meta') | map('replace', 'TSLA', '特斯拉') | map('replace', 'GOOGL', '谷歌') | map('replace', 'GOOG', '谷歌') | list %}
+  <div class="m7p-generals">
+    <span class="l-en">
+      <b>Led by {{ now_short | join(' + ') }}</b>
+      {%- if join_short %} — <span class="m7p-joining">{{ join_short | join(', ') }} joining.</span>{% endif %}
+    </span>
+    <span class="l-zh">
+      <b>领涨：{{ now_short_zh | join(' + ') }}</b>
+      {%- if join_short_zh %} — <span class="m7p-joining">{{ join_short_zh | join('、') }}正在加入。</span>{% endif %}
+    </span>
+  </div>
+  {%- endif %}
+
+  {# ── STRUCTURE CHIP (recovering / drawdown) ─────────────────────────────── #}
+  {%- set chip = struct.chip if struct.chip else '' %}
+  {%- set dd = struct.dd_from_252d_high if struct.dd_from_252d_high is defined else none %}
+  {%- if chip in ('recovering', 'drawdown') and dd is not none %}
+  {%- set dd_pct = ((dd | abs) * 100) | round | int %}
+  <div>
+    <span class="m7p-structure">
+      <span class="l-en">Still {{ dd_pct }}% below the year high</span>
+      <span class="l-zh">仍低于年内高点 {{ dd_pct }}%</span>
+    </span>
+  </div>
+  {%- endif %}
+
+  {# ── TECH-LEGS STRIP ─────────────────────────────────────────────────────── #}
+  {%- if tech_legs %}
+  <div class="m7p-legs">
+    {%- for leg in tech_legs %}
+    {%- set r10r = leg.r10_rel if leg.r10_rel is defined else none %}
+    {%- set r20r = leg.r20_rel if leg.r20_rel is defined else none %}
+    {%- set r10_pct = ((r10r * 100) | round(1)) if r10r is not none else none %}
+    {%- set r20_pct = ((r20r * 100) | round(1)) if r20r is not none else none %}
+    {%- set wrd = leg.word if leg.word else leg_word(r10r) %}
+    {%- set arr = leg_arrow(r10r) %}
+    {%- set cls = leg_cls(r10r) %}
+    {%- set ltip_en %}10d vs market {{ '+' if r10_pct and r10_pct > 0 }}{{ r10_pct if r10_pct is not none else '—' }}% · 20d vs market {{ '+' if r20_pct and r20_pct > 0 }}{{ r20_pct if r20_pct is not none else '—' }}%{%- endset %}
+    {%- set ltip_zh %}10日相对市场 {{ '+' if r10_pct and r10_pct > 0 }}{{ r10_pct if r10_pct is not none else '—' }}% · 20日相对市场 {{ '+' if r20_pct and r20_pct > 0 }}{{ r20_pct if r20_pct is not none else '—' }}%{%- endset %}
+    <span class="m7p-leg {{ cls }}" data-tip-en="{{ ltip_en | e }}" data-tip-zh="{{ ltip_zh | e }}">
+      <span class="m7p-leg-name l-en">{{ leg.en if leg.en else leg.id }}</span>
+      <span class="m7p-leg-name l-zh">{{ leg.zh if leg.zh else leg.en if leg.en else leg.id }}</span>
+      <span class="m7p-leg-word">{{ arr }} {{ wrd }}</span>
+    </span>
+    {%- endfor %}
+  </div>
+  {%- endif %}
+
+  {# ── FOOTER (ONE sentence, ONE as-of) ────────────────────────────────────── #}
+  <div class="m7p-foot">
+    {{ t(
+      'Cap-weighted view of the 7 largest US stocks — the Buy lanes below still decide entries.',
+      '七只最大美股的市值加权视图 — 以下买入通道仍决定入场时机。'
+    ) }}
+    {%- if d.as_of %}
+    <span class="m7p-asof">{{ t('As of ' ~ d.as_of, '截至 ' ~ d.as_of) }}</span>
+    {%- endif %}
+  </div>
+
+</div>
+{%- endif %}
+{%- endmacro %}

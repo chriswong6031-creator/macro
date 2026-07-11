@@ -115,6 +115,10 @@ on:
       - "engine/mag7_regime.py"
       - "tests/test_mag7_regime.py"
       - "tests/test_ignition_persistence.py"
+      # Mag 7 panel: template partial + build_site loader.
+      - "templates/_mag7_panel.html.j2"
+      - "templates/_mag7_panel.css.j2"
+      - "tests/test_mag7_panel.py"
       # CPI net-liquidity artifact (data infrastructure): builder + contract tests
       # must re-run together so a canon-formula or stale-guard regression fails RED.
       - "scripts/build_netliq_daily.py"
@@ -552,7 +556,8 @@ jobs:
           tests/test_ignition_radar.py
           tests/test_mag7_regime.py
           tests/test_theme_scoring_leadership_split.py
-          tests/test_ignition_persistence.py -q
+          tests/test_ignition_persistence.py
+          tests/test_mag7_panel.py -q
 
   collector-registry:
     # timeout: this job had none (6h GitHub default) — a wedged one-shot (e.g. the

@@ -111,6 +111,14 @@
   .tmore > summary::before { content:'▾'; display:inline-block; transition:transform .15s; }
   .tmore[open] > summary::before { transform:rotate(-180deg); }
   .tflagrow { margin:2px 0 4px; }
+  /* M7C-R12: split-tape chip on basket cards */
+  .m7-split-chip { display:flex; align-items:flex-start; gap:5px; margin:4px 0;
+    background:color-mix(in srgb,var(--warn) 10%,var(--panel2));
+    border:1px solid color-mix(in srgb,var(--warn) 28%,var(--line));
+    border-radius:6px; padding:4px 9px; font-size:11.5px; cursor:help; }
+  .m7-split-chip .m7-split-icon { flex:none; }
+  .m7-split-chip .l-en,.m7-split-chip .l-zh { color:var(--warn); font-weight:700; }
+  .m7-split-chip .l-en b,.m7-split-chip .l-zh b { font-weight:700; }
 
   /* ---- 5-day rotation ---- */
   .rotwrap { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
@@ -1480,6 +1488,20 @@ function themeCard(t){
     sigPills.push(`<span class="tpill ${wc}" title="whale accumulation (Chaikin money-flow %ile): ${esc(tape.whale.label_en||'')}">🐋 ${Math.round(w)}${tape.whale.trend_5d>0?'↑':tape.whale.trend_5d<0?'↓':''}</span>`);}
   if(tape&&tape.flow&&tape.flow.cmf!=null){const f=tape.flow.cmf, fc=f>0.05?'up':f<-0.05?'dn':'';
     sigPills.push(`<span class="tpill ${fc}" title="net money flow (CMF): ${esc(tape.flow.label_en||'')}">${f>0.05?'▸ '+L('inflow','流入'):f<-0.05?'▸ '+L('outflow','流出'):'▸ '+L('flat','均衡')}</span>`);}
+  // M7C-R12: split-tape chip — fail-open when leadership_split absent
+  const ls=t.leadership_split||null;
+  let splitChip='';
+  if(ls){
+    const lsList=(ls.leaders||[]).map(x=>`<b style="color:var(--up)">${esc(x.name||x.ticker||'')} ${x.ret!=null?fmtPct(x.ret):''}</b>`).join(', ');
+    const lsListZh=(ls.leaders||[]).map(x=>`<b style="color:var(--up)">${esc(x.name_zh||x.name||x.ticker||'')} ${x.ret!=null?fmtPct(x.ret):''}</b>`).join('、');
+    const lsNoteEn=esc(ls.note_en||ls.note||'Leaders narrowing the advance — narrow runs tire faster.');
+    const lsNoteZh=esc(ls.note_zh||ls.note||'领涨股集中，窄幅上涨容易疲劳。');
+    splitChip=`<div class="m7-split-chip" data-tip-en="${lsNoteEn}" data-tip-zh="${lsNoteZh}">
+      <span class="m7-split-icon">⚡</span>
+      <span class="l-en">${L('Split tape','Split tape')} — ${L('leaders running','leaders running')}: ${lsList||'—'}</span>
+      <span class="l-zh">分化走势 — 领涨：${lsListZh||'—'}</span>
+    </div>`;
+  }
   return `<div class="tcard" id="theme-${t.id}" style="--tc:${lc[2]}">
     <div class="top">
       ${labelChip}${heatDot(t)}
@@ -1492,6 +1514,7 @@ function themeCard(t){
       <span class="${cls(r20)}">${fmtPct(r20)} 20d</span>
       <span class="spark">${sparkSvg(spk,{w:84,h:24,color:lc[2]})}</span>
     </div>
+    ${splitChip}
     ${flagRow}
     <details class="tmore"><summary>${L('More','更多')}</summary>
       ${flipCaption(t)}

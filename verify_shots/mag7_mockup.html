@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mag 7 Panel — Mockup</title>
+<style>
+:root {
+  --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
+  --muted: #8b93a1; --line: #2a2f3a;
+  --warn: #e0a030; --act: #e05555; --ok: #3da564;
+  --up: #45b873; --down: #e06464; --orange: #e08b45;
+  --info: #5b9bf0; --link: #7aa7e0;
+  --num: 'Roboto Mono', monospace;
+  --hair-strong: #363c4a;
+}
+body { background: var(--bg); color: var(--text); font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size: 14px; line-height: 1.5; padding: 20px; max-width: 900px; margin: 0 auto; }
+h3 { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; margin: 24px 0 4px; }
+
+/* ===== MAG 7 PANEL (.m7p) ===== */
+.m7p {
+  margin: 12px 0;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--info);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4);
+  display: grid; gap: 11px;
+  font-size: 12.5px; line-height: 1.4;
+}
+.m7p-hd { display: flex; align-items: flex-start; gap: 10px; }
+.m7p-icon { font-size: 18px; line-height: 1.1; flex: none; }
+.m7p-meta { flex: 1; min-width: 0; }
+.m7p-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
+  font-weight: 700; font-size: 13px; }
+.m7p-title { color: var(--text); }
+.m7p-badge {
+  font-weight: 800; font-size: 11px; letter-spacing: .03em;
+  color: var(--info);
+  background: color-mix(in srgb, var(--info) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--info) 35%, transparent);
+  border-radius: 5px; padding: 1px 7px;
+  font-variant-numeric: tabular-nums;
+}
+.m7p-help { display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%; background: var(--panel2);
+  border: 1px solid var(--line); color: var(--muted); font-size: 10px;
+  cursor: help; font-weight: 700; position: relative; }
+.m7p-help:hover .m7p-tip { display: block; }
+.m7p-tip { display: none; position: absolute; top: 20px; left: 0; z-index: 99;
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 12px; font-size: 11px; font-weight: 400; color: var(--muted);
+  width: 280px; line-height: 1.5; white-space: normal; text-align: left; }
+/* state line */
+.m7p-state { font-size: 12.5px; color: var(--text); font-weight: 600; margin-top: 2px; }
+/* stance */
+.m7p-stance { font-size: 12px; color: var(--info); font-weight: 700; }
+.m7p-stance-zh { font-size: 12px; color: var(--info); font-weight: 700; }
+
+/* dot member bar */
+.m7p-dots { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-top: 2px; }
+.m7p-dot-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; position: relative; }
+.m7p-dot-wrap:hover .m7p-dot-tip { display: block; }
+.m7p-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+.m7p-dot.green { background: var(--up); }
+.m7p-dot.amber { background: var(--warn); }
+.m7p-dot.grey  { background: color-mix(in srgb, var(--muted) 50%, var(--panel2)); }
+.m7p-dot-lbl { font-size: 9px; font-weight: 700; color: var(--muted); letter-spacing: .03em; }
+.m7p-dot-tip { display: none; position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 7px;
+  padding: 8px 10px; font-size: 11px; color: var(--text); width: 200px; z-index: 99;
+  white-space: normal; line-height: 1.5; }
+
+/* generals line */
+.m7p-generals { font-size: 12px; color: var(--text); }
+.m7p-generals b { color: var(--up); }
+.m7p-generals .joining { color: var(--warn); }
+
+/* structure chip */
+.m7p-structure { display: inline-flex; align-items: center; gap: 5px;
+  background: color-mix(in srgb, var(--warn) 12%, var(--panel2));
+  border: 1px solid color-mix(in srgb, var(--warn) 30%, var(--line));
+  border-radius: 6px; padding: 3px 9px; font-size: 11.5px; color: var(--warn); font-weight: 600; }
+
+/* tech legs strip */
+.m7p-legs { display: flex; flex-wrap: wrap; gap: 6px; }
+.m7p-leg { position: relative; display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 6px; font-size: 11px; cursor: help;
+  background: var(--panel2); border: 1px solid var(--line); color: var(--text); }
+.m7p-leg .lname { font-weight: 600; }
+.m7p-leg .lword { color: var(--muted); }
+.m7p-leg.up .lword { color: var(--up); font-weight: 700; }
+.m7p-leg.up2 .lword { color: var(--up); font-weight: 800; }
+.m7p-leg.dn .lword { color: var(--down); }
+.m7p-leg.dn2 .lword { color: var(--down); font-weight: 800; }
+.m7p-leg:hover .m7p-leg-tip { display: block; }
+.m7p-leg-tip { display: none; position: absolute; bottom: 26px; left: 0; z-index: 99;
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 7px;
+  padding: 8px 10px; font-size: 11px; color: var(--muted); width: 220px; line-height: 1.5; }
+
+/* footer */
+.m7p-foot { font-size: 11px; color: var(--muted); border-top: 1px solid var(--line);
+  padding-top: 9px; }
+.m7p-asof { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+
+/* ZH hidden by default in mockup */
+.l-zh { display: none; }
+</style>
+</head>
+<body>
+
+<h3>Mag 7 Panel — Desktop mockup (fixture: running_narrow)</h3>
+
+<!-- MAG 7 PANEL -->
+<div class="m7p">
+
+  <!-- Header -->
+  <div class="m7p-hd">
+    <div class="m7p-icon">📊</div>
+    <div class="m7p-meta">
+      <div class="m7p-title-row">
+        <span class="m7p-title l-en">Mag 7</span>
+        <span class="m7p-title l-zh">七巨头</span>
+        <span class="m7p-badge l-en">Running — narrow</span>
+        <span class="m7p-badge l-zh">运行 — 集中</span>
+        <span class="m7p-help">?<span class="m7p-tip">Cap-weighted view of Apple, Microsoft, Nvidia, Amazon, Alphabet, Meta, Tesla — the 7 largest US stocks. Weights from Polygon market-cap as of 2026-07-10. Where a cap-weight diverges from equal-weight it is noted (Mag 7 ETF MAGS last priced 2026-07-02 — 9 sessions back). A context read, not a buy signal.</span></span>
+      </div>
+      <!-- State line: ≤14 words -->
+      <div class="m7p-state l-en">Running — narrow · day 11 · +9% since Jun 26 vs S&P +2%</div>
+      <div class="m7p-state l-zh">运行 — 集中 · 第11日 · 6月26日起 +9% vs 标普 +2%</div>
+      <!-- Stance -->
+      <div class="m7p-stance l-en">In favour — watch, don't chase</div>
+      <div class="m7p-stance l-zh">有利 — 观望，勿追</div>
+    </div>
+  </div>
+
+  <!-- 7-dot member bar (fixed order: AAPL MSFT NVDA AMZN GOOGL META TSLA) -->
+  <div class="m7p-dots">
+    <!-- AAPL: above50 true, rs20 +6.1 >0 → green -->
+    <div class="m7p-dot-wrap">
+      <div class="m7p-dot green"></div>
+      <span class="m7p-dot-lbl">AAPL</span>
+      <div class="m7p-dot-tip">Apple · 20d +8.8% · vs market +6.1% · above 50-day MA · turning up across timeframes</div>
+    </div>
+    <!-- MSFT: above50 false, rs20 -4.7 →0 → grey (neither) -->
+    <div class="m7p-dot-wrap">
+      <div class="m7p-dot grey"></div>
+      <span class="m7p-dot-lbl">MSFT</span>
+      <div class="m7p-dot-tip">Microsoft · 20d −4.7% · vs market below average · below 50-day MA · early signs of a turn</div>
+    </div>
+    <!-- NVDA: above50 false (r2 +4.4 recovering but not above50), rs20 -2.6 < 0 → grey -->
+    <div class="m7p-dot-wrap">
+      <div class="m7p-dot grey"></div>
+      <span class="m7p-dot-lbl">NVDA</span>
+      <div class="m7p-dot-tip">Nvidia · 20d −2.6% · vs market lagging · below 50-day MA · last 2 days +4.4% (recovering)</div>
+    </div>
+    <!-- AMZN: above50 false, rs20 +4.7 > 0 → amber (rs positive but not above50) -->
+    <div class="m7p-dot-wrap">
+      <div class="m7p-dot amber"></div>
+      <span class="m7p-dot-lbl">AMZN</span>
+      <div class="m7p-dot-tip">Amazon · 20d +4.7% · vs market running ahead · below 50-day MA · mixed picture</div>
+    </div>
+    <!-- GOOGL: above50 false (r20 -1.5), rs20 negative → grey -->
+    <div class="m7p-dot-wrap">
+      <div class="m7p-dot grey"></div>
+      <span class="m7p-dot-lbl">GOOGL</span>
+      <div class="m7p-dot-tip">Alphabet · 20d −1.5% · vs market slightly behind · below 50-day MA · watching for turn</div>
+    </div>
+    <!-- META: above50 true, rs20 implied +ve from r20 +8.1 → green -->
+    <div class="m7p-dot-wrap">
+      <div class="m7p-dot green"></div>
+      <span class="m7p-dot-lbl">META</span>
+      <div class="m7p-dot-tip">Meta · 20d +8.1% · vs market strongly ahead · above 50-day MA · trending up</div>
+    </div>
+    <!-- TSLA: above50 false, r20 -6.3, rs20 clearly neg → grey -->
+    <div class="m7p-dot-wrap">
+      <div class="m7p-dot grey"></div>
+      <span class="m7p-dot-lbl">TSLA</span>
+      <div class="m7p-dot-tip">Tesla · 20d −6.3% · vs market significantly behind · below 50-day MA · not participating</div>
+    </div>
+  </div>
+
+  <!-- Generals -->
+  <div class="m7p-generals">
+    <span class="l-en"><b>Led by Apple + Meta</b> — <span class="joining">Nvidia joining.</span></span>
+    <span class="l-zh"><b>领涨：苹果 + Meta</b> — <span class="joining">英伟达正在加入。</span></span>
+  </div>
+
+  <!-- Structure chip (recovering) -->
+  <div>
+    <span class="m7p-structure l-en">⚠ Still 8% below the May high</span>
+    <span class="m7p-structure l-zh">⚠ 仍低于五月高点 8%</span>
+  </div>
+
+  <!-- Tech-legs strip -->
+  <div class="m7p-legs">
+    <span class="m7p-leg up2">
+      <span class="lname l-en">Mag 7</span><span class="lname l-zh">七巨头</span>
+      <span class="lword">▲▲ surging</span>
+      <span class="m7p-leg-tip">10d vs market +6.1% · 20d vs market +1.6%<br>Cap-weighted group return. Context read.</span>
+    </span>
+    <span class="m7p-leg up">
+      <span class="lname l-en">AI chips</span><span class="lname l-zh">AI芯片</span>
+      <span class="lword">▲ running</span>
+      <span class="m7p-leg-tip">10d vs market +2.1% · 20d vs market −1.2%<br>Semiconductors focused on AI inference/training.</span>
+    </span>
+    <span class="m7p-leg dn2">
+      <span class="lname l-en">Memory</span><span class="lname l-zh">存储</span>
+      <span class="lword">▼▼ falling hard</span>
+      <span class="m7p-leg-tip">10d vs market −14% · 20d vs market +2.3%<br>Memory & storage chips. Sharp short-term underperformance.</span>
+    </span>
+    <span class="m7p-leg">
+      <span class="lname l-en">Software</span><span class="lname l-zh">软件</span>
+      <span class="lword">— flat</span>
+      <span class="m7p-leg-tip">10d vs market +0.8% · 20d vs market +0.7%<br>Enterprise software basket. Neither leading nor lagging.</span>
+    </span>
+  </div>
+
+  <!-- Footer -->
+  <div class="m7p-foot">
+    <span class="l-en">Cap-weighted view of the 7 largest US stocks — the Buy lanes below still decide entries.</span>
+    <span class="l-zh">七只最大美股的市值加权视图 — 以下买入通道仍决定入场时机。</span>
+  </div>
+  <div class="m7p-asof l-en">As of 2026-07-10 · MAGS ref 2026-07-02</div>
+  <div class="m7p-asof l-zh">截至 2026-07-10 · MAGS 参考 2026-07-02</div>
+
+</div>
+
+<h3 style="margin-top:32px">Baskets chip (split tape) — example on a basket card</h3>
+<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;max-width:320px;display:grid;gap:8px;">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-weight:700;font-size:13px">AI Infrastructure</span>
+    <span style="background:color-mix(in srgb,var(--info) 12%,var(--panel2));border:1px solid color-mix(in srgb,var(--info) 30%,var(--line));border-radius:5px;padding:1px 7px;font-size:11px;color:var(--info);font-weight:700">Running</span>
+  </div>
+  <!-- Split tape chip -->
+  <div class="m7p-split-chip" style="display:inline-flex;align-items:flex-start;gap:6px;
+    background:color-mix(in srgb,var(--warn) 10%,var(--panel2));
+    border:1px solid color-mix(in srgb,var(--warn) 28%,var(--line));
+    border-radius:6px;padding:5px 9px;font-size:11.5px;position:relative;cursor:help"
+    title="Split: leaders narrowing the advance to 2 names; breadth is thinning. Watch if others catch up or this pair stalls — narrow runs tire faster. (Hover = leadership_split_note)">
+    <span style="font-size:13px">⚡</span>
+    <div>
+      <span style="font-weight:700;color:var(--warn)" class="l-en">Split tape</span>
+      <span style="font-weight:700;color:var(--warn)" class="l-zh">分化走势</span>
+      <span style="color:var(--muted)"> — </span>
+      <span class="l-en">leaders running: <b style="color:var(--up)">AAPL +9%</b>, <b style="color:var(--up)">META +8%</b></span>
+      <span class="l-zh">领涨：<b style="color:var(--up)">苹果 +9%</b>，<b style="color:var(--up)">Meta +8%</b></span>
+    </div>
+  </div>
+</div>
+
+<p style="color:var(--muted);font-size:11px;margin-top:24px">Mockup only — not production data. Fixture: trend_state=running_narrow, recovering, day 11.</p>
+
+</body>
+</html>
