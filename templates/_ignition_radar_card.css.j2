@@ -1,0 +1,74 @@
+  /* ============================================================================
+     IGNITION RADAR CARD (.igx) — risk-ON mirror of the Risk Radar (.rrx).
+     Green accent (--ok) when ignited, muted when off.
+     Class prefix: .igx  (no collision with .rrx).
+     Included by dashboard.html.j2 (both macro and us_stocks modes).
+     ============================================================================ */
+  .igx { --ic-col: var(--ok);
+         display: grid; gap: 12px; margin: 12px 0 2px; padding: 15px 18px;
+         border-radius: 12px; background: var(--panel); border: 1px solid var(--line);
+         border-left: 4px solid var(--ic-col); font-size: 12.5px; line-height: 1.4;
+         box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
+  .igx.igx-ignited { --ic-col: var(--ok);
+         background: color-mix(in srgb, var(--ok) 4%, var(--panel)); }
+  .igx.igx-warming  { --ic-col: var(--warn); }
+  .igx.igx-off      { --ic-col: var(--muted); }
+  /* header */
+  .igx .igx-hd { display: flex; align-items: flex-start; gap: 10px; }
+  .igx .igx-ic { font-size: 18px; line-height: 1.1; flex: none; }
+  .igx .igx-id { min-width: 0; flex: 1; }
+  .igx .igx-ttl { display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
+         font-weight: 700; font-size: 13px; color: var(--text); }
+  .igx .igx-badge { font-weight: 800; letter-spacing: .03em; color: var(--ic-col);
+         font-size: 11.5px; font-variant-numeric: tabular-nums; padding: 1px 7px;
+         border-radius: 5px;
+         background: color-mix(in srgb, var(--ic-col) 16%, transparent);
+         border: 1px solid color-mix(in srgb, var(--ic-col) 38%, transparent); }
+  .igx .igx-glance { font-size: 12px; color: var(--text); margin-top: 3px;
+         font-weight: 600; }
+  .igx .igx-fragile { color: var(--warn); font-size: 11px; margin-top: 2px; }
+  /* chip rows (8 broad chips) */
+  .igx .igx-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .igx .igx-chip { display: inline-flex; align-items: center; gap: 4px;
+         padding: 2px 8px; border-radius: 6px; font-size: 11px;
+         background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
+  .igx .igx-chip.lit { color: var(--ic-col); font-weight: 700;
+         border-color: color-mix(in srgb, var(--ic-col) 45%, var(--line));
+         background: color-mix(in srgb, var(--ic-col) 10%, var(--panel)); }
+  .igx .igx-chip.fresh { box-shadow: 0 0 0 1px color-mix(in srgb, var(--ic-col) 40%, transparent); }
+  .igx .igx-chip-dot { width: 6px; height: 6px; border-radius: 50%;
+         background: currentColor; flex: none; }
+  .igx .igx-k { font-size: 11px; color: var(--muted); font-weight: 700;
+         text-transform: uppercase; letter-spacing: .07em; }
+  /* narrow theme strip */
+  .igx .igx-narrow { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+  .igx .igx-narrow-k { font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+         letter-spacing: .07em; color: var(--muted); align-self: center; margin-right: 2px; }
+  .igx .igx-theme { display: inline-flex; align-items: center; gap: 4px;
+         padding: 2px 8px; border-radius: 6px; font-size: 10.5px;
+         background: var(--panel); border: 1px solid var(--line); color: var(--text); }
+  .igx .igx-theme.igniting { color: var(--ok); font-weight: 700;
+         border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+         background: color-mix(in srgb, var(--ok) 10%, var(--panel)); }
+  .igx .igx-theme.running { color: var(--info); font-weight: 600;
+         border-color: color-mix(in srgb, var(--info) 35%, var(--line)); }
+  .igx .igx-theme.fading { color: var(--muted); }
+  .igx .igx-theme-score { font-size: 9.5px; font-variant-numeric: tabular-nums;
+         color: var(--muted); margin-left: 1px; }
+  .igx .igx-theme-flags { font-size: 9px; color: var(--muted); margin-left: 2px; }
+  /* cross-ref chip */
+  .igx .igx-xref { font-size: 10.5px; color: var(--muted); }
+  .igx .igx-xref-k { font-weight: 700; color: var(--text); margin-right: 5px; }
+  /* do-line */
+  .igx .igx-do { font-size: 12px; color: var(--text); padding-top: 9px;
+         border-top: 1px solid color-mix(in srgb, var(--ic-col) 20%, var(--line)); }
+  .igx .igx-do-k { font-weight: 800; color: var(--ic-col); text-transform: uppercase;
+         letter-spacing: .06em; font-size: 10.5px; margin-right: 8px; }
+  /* self-audit */
+  .igx .igx-audit { font-size: 10.5px; color: var(--muted); }
+  .igx .igx-audit-k { font-weight: 700; color: var(--text); margin-right: 6px; }
+  /* responsive */
+  @media (max-width: 560px) {
+    .igx { padding: 14px 15px; gap: 10px; }
+    .igx .igx-narrow, .igx .igx-xref { display: none; }
+  }

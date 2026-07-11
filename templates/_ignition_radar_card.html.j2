@@ -1,0 +1,113 @@
+{# ============================================================================
+   IGNITION RADAR CARD (.igx) — risk-ON mirror of the Risk Radar.
+   点火雷达 — 风险偏好正向证据仪表。
+
+   Import and call:
+       {% import "_ignition_radar_card.html.j2" as igc %}
+       {% if ignition_radar %}{{ igc.ignition_radar_card(ignition_radar) }}{% endif %}
+
+   The card renders NOTHING when the payload is absent (first nightly hasn't run).
+   Every access is guarded by truthiness — NEVER `is not none`.
+
+   Icon ladder: 🚀 ignited / 🔥 warming / ⚪ off
+   Fragile regime shows ⚠️ beside the theme name.
+   ============================================================================ #}
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+
+{% macro ignition_radar_card(ig) -%}
+{%- if ig %}
+{%- set state = ig.state if ig.state else 'off' -%}
+{%- set ic = '🚀' if state == 'ignited' else ('🔥' if state == 'warming' else '⚪') -%}
+{%- set regime = ig.regime if ig.regime else {} -%}
+{%- set fragile = regime.fragile if regime.fragile else false -%}
+<div class="igx igx-{{ state }}">
+  <div class="igx-hd">
+    <span class="igx-ic">{{ ic }}</span>
+    <div class="igx-id">
+      <div class="igx-ttl">
+        {{ t('Ignition Radar','点火雷达') }}
+        <span class="igx-badge">{{ t(state|upper, state|upper) }} · K={{ ig.k_count|default(0) }}/8</span>
+        {{ help('Risk-ON evidence gauge — the Risk Radar\'s mirror. Confluence of breadth-thrust events and participation. Display-only, forward-graded; not a buy signal.', '正向风险偏好证据仪表 — 风险雷达的镜像。广度推进事件与参与度的共振读数。仅展示，前瞻评分中；非买入信号。') }}
+      </div>
+      {%- if regime.label_en %}
+      <div class="igx-glance">{{ t(regime.label_en, regime.label_zh) }}</div>
+      {%- endif %}
+      {%- if fragile %}
+      <div class="igx-fragile">⚠️ {{ t('Fragile until participation broadens','需参与度扩散方可确认') }}</div>
+      {%- endif %}
+    </div>
+  </div>
+
+  {# broad chip rows #}
+  {%- if ig.chips %}
+  <div class="igx-chips">
+    <span class="igx-k">{{ t('Broad K','宽幅K') }}:</span>
+    {%- for c in ig.chips %}
+    <span class="igx-chip{{ ' lit' if c.lit }}{{ ' fresh' if c.fresh }}">
+      <span class="igx-chip-dot"></span>
+      {{ t(c.label_en, c.label_zh) }}
+    </span>
+    {%- endfor %}
+  </div>
+  {%- endif %}
+
+  {# narrow theme strip — top 3 items.
+     Note: ig.narrow is a dict with an "items" key. Access via ['items'] to avoid
+     confusing Jinja's .items dict-method with the payload field. #}
+  {%- set narrow = ig.narrow if ig.narrow else {} %}
+  {%- set narrow_items = narrow['items'] if narrow['items'] is defined else [] %}
+  {%- if narrow_items %}
+  <div class="igx-narrow">
+    <span class="igx-narrow-k">{{ t('Theme','主题') }}</span>
+    {%- for it in narrow_items[:3] %}
+    {%- set sc = it.ignition_score|default(0) %}
+    <span class="igx-theme {{ it.state if it.state else 'idle' }}">
+      {%- if it.state == 'igniting' and (ig.regime and ig.regime.fragile) %}⚠️ {% endif %}
+      {{ it.name if it.name else it.id }}
+      <span class="igx-theme-score">{{ (sc * 100)|round|int }}%</span>
+      <span class="igx-theme-flags">
+        {%- if it.rs_new_high %}🔺{%- endif %}
+        {%- if it.above_200d_rising %}↗{%- endif %}
+      </span>
+    </span>
+    {%- endfor %}
+  </div>
+  {%- endif %}
+
+  {# cross-ref chip #}
+  {%- set xref = ig.radar_xref if ig.radar_xref else {} %}
+  {%- if xref.state or xref.phase %}
+  <div class="igx-xref">
+    <span class="igx-xref-k">{{ t('Risk Radar','风险雷达') }}:</span>
+    {{ xref.state if xref.state else '—' }}
+    {%- if xref.phase %} · {{ xref.phase }}{%- endif %}
+  </div>
+  {%- endif %}
+
+  {# do-line #}
+  {%- if regime.do_en %}
+  <div class="igx-do">
+    <span class="igx-do-k">{{ t('Note','注意') }}</span>{{ t(regime.do_en, regime.do_zh) }}
+  </div>
+  {%- endif %}
+
+  {# self-audit accruing line #}
+  <div class="igx-audit">
+    <span class="igx-audit-k">🧾 {{ t('Self-audit','自审') }}</span>
+    {%- set fl = ig.forward_log if ig.forward_log else {} %}
+    {%- if fl.n_graded and fl.n_graded > 0 %}
+    {{ fl.n_graded }} {{ t('graded','已评分') }}
+    {%- if fl.broad_tp_rate is defined and fl.broad_tp_rate != none %} · {{ t('broad TP','宽幅真阳率') }} {{ (fl.broad_tp_rate * 100)|round|int }}%{%- endif %}
+    · {{ t('display-only','仅展示') }}
+    {%- else %}
+    {{ t('accruing — display-only until ≥30 grades + operator ruling','积累中 — 至少30次评分及运营员决定前仅展示') }}
+    {%- endif %}
+  </div>
+</div>
+{%- endif %}
+{%- endmacro %}
