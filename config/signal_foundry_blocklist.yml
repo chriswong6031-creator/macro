@@ -305,3 +305,595 @@ entries:
       The market_drivers surface already encodes regime-level shock classification;
       a parallel vector is tautological.
     source: "TI-R1, TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md"
+
+# --- BEGIN GENERATED FROM DO_NOT_REBUILD.md (compile_loop_blocklists.py) ---
+# Auto-compiled from research/DO_NOT_REBUILD.md sections 1-4.
+# Regenerate: python3 scripts/compile_loop_blocklists.py
+# Hand-curated entries above this block are not modified.
+
+  - id: BL-G001
+    match:
+      any_of:
+        - 'fused.{0,30}shield.{0,30}meta'
+    reason: >
+      FORBIDDEN
+    source: 'FR-1/R3; Codex buy-decision docket adjudication (#1781)'
+
+  - id: BL-G002
+    match:
+      any_of:
+        - 'kernel.{0,30}conditioning.{0,30}before'
+    reason: >
+      FORBIDDEN
+    source: 'Signal Commons rulings (2026-07-05)'
+
+  - id: BL-G003
+    match:
+      any_of:
+        - 'positioning.{0,30}fusion.{0,30}positioning'
+    reason: >
+      ILLEGAL
+    source: 'Signal Commons rulings (2026-07-05)'
+
+  - id: BL-G004
+    match:
+      any_of:
+        - 'originated.{0,30}signals.{0,30}scores'
+    reason: >
+      FORBIDDEN — LLMs may only de-escalate calibrated keys
+    source: 'House law (CLAUDE.md §Epistemics)'
+
+  - id: BL-G005
+    match:
+      any_of:
+        - 'human.{0,30}override.{0,30}gates'
+    reason: >
+      FORBIDDEN pattern
+    source: 'BTC vector override audit D1–D5'
+
+  - id: BL-G006
+    match:
+      any_of:
+        - 'rotation.{0,30}cycle.{0,30}position'
+    reason: >
+      DON'T-TEST
+    source: 'Rotation×cycle confluence ruling (cycle intelligence program)'
+
+  - id: BL-G007
+    match:
+      any_of:
+        - 'based.{0,30}member.{0,30}dispersion'
+    reason: >
+      DON'T-TEST — rs is zero-sum tautology (R-4)
+    source: 'Healthcare member-dispersion adjudication'
+
+  - id: BL-G008
+    match:
+      any_of:
+        - 'short.{0,30}side.{0,30}lobe'
+    reason: >
+      FORBIDDEN — L1 is AVOID-not-SHORT evidence only
+    source: 'NW rails+lobes program (2026-07-06)'
+
+  - id: BL-G009
+    match:
+      any_of:
+        - 'signal.{0,30}engine.{0,30}verdicts'
+    reason: >
+      FORBIDDEN — verdicts only at registered `horizon_role` ruler
+    source: 'Backtest-horizon ladder law'
+
+  - id: BL-G010
+    match:
+      any_of:
+        - 'parallel.{0,30}shock.{0,30}vector'
+    reason: >
+      REJECT-REDUNDANT — `snapshot()` is the canonical shock read;
+      crosswalk printed
+    source: 'TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
+
+  - id: BL-G011
+    match:
+      any_of:
+        - 'shock.{0,30}archetype.{0,30}beneficiary'
+    reason: >
+      KILLED — laundered directional escalation on nulled continuation
+      claims
+    source: 'TI-R5, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
+
+  - id: BL-G012
+    match:
+      any_of:
+        - 'classification.{0,30}narrative.{0,30}only'
+    reason: >
+      FORBIDDEN — no deterministic price basis; A7 ORIGINATE ban
+    source: 'TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
+
+  - id: BL-G013
+    match:
+      any_of:
+        - 'held.{0,30}position.{0,30}ledger'
+    reason: >
+      FORBIDDEN — build lives in Mastermind repo; restates
+      NWC-U4/NWP-U18/RUL-F3.2. Fused per-position risk score also
+      struck
+    source: 'PRD-R1/PRD-R2, `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md`'
+
+  - id: BL-G014
+    match:
+      any_of:
+        - 'causal.{0,30}alpha.{0,30}score'
+    reason: >
+      FORBIDDEN — CHF is proposal/audit tier only; Article 1/2
+    source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
+
+  - id: BL-G015
+    match:
+      any_of:
+        - 'administration.{0,30}timing.{0,30}predictor'
+    reason: >
+      FORBIDDEN — intent unfalsifiable; conditions-framing only
+    source: 'PS-R1/PS-R4, `POLICY_SHOCK_REGIME_MASTERPLAN_BY_FABLE.md`'
+
+  - id: BL-G016
+    match:
+      any_of:
+        - 'numeric.{0,30}confidence.{0,30}anywhere'
+    reason: >
+      FORBIDDEN — RF-16 extension
+    source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
+
+  - id: BL-G017
+    match:
+      any_of:
+        - 'runtime.{0,30}frame.{0,30}narrative'
+    reason: >
+      FORBIDDEN — TI-R1/CONST-ART1 restated; char-span receipts
+      validate the quote, not the classification; frame annotation is
+      display-only
+    source: 'NAR-R4, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md`'
+
+  - id: BL-G018
+    match:
+      any_of:
+        - 'chatter.{0,30}only.{0,30}promotion'
+    reason: >
+      FORBIDDEN — single credible flare earns salience, never
+      authority; veto unconditional
+    source: 'NAR-R2, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md`'
+
+  - id: BL-G019
+    match:
+      any_of:
+        - 'insider.{0,30}interaction'
+    reason: >
+      KILLED
+    source: 'Codex buy-decision docket adjudication (#1781)'
+
+  - id: BL-G020
+    match:
+      any_of:
+        - 'washout.{0,30}turn.{0,30}operator'
+    reason: >
+      KILLED — operator seed dies in test
+    source: 'Entry-stack Amendment-3 adjudication (#1747)'
+
+  - id: BL-G021
+    match:
+      any_of:
+        - 'signed.{0,30}charm.{0,30}charm'
+    reason: >
+      KILLED — vol/size confound, trail-RV IC .5–.6
+    source: 'OPEX vanna/charm adjudication (2026-07-06)'
+
+  - id: BL-G022
+    match:
+      any_of:
+        - 'options.{0,30}delta.{0,30}family'
+    reason: >
+      DEAD
+    source: 'Options→NW entry-intelligence W-E1 gauntlet'
+
+  - id: BL-G023
+    match:
+      any_of:
+        - 'skew.{0,30}deceleration'
+    reason: >
+      UNSUPPORTED
+    source: 'Options→NW entry-intelligence W-E1 gauntlet'
+
+  - id: BL-G024
+    match:
+      any_of:
+        - 'dannytrades.{0,30}directional.{0,30}chip'
+    reason: >
+      RETIRED — chip is descriptive only; H1 pooled effect was
+      pre-2010-only
+    source: 'DT-R15/DT-R16; DANNYTRADES adjudication + DT-W2 (#1751)'
+
+  - id: BL-G025
+    match:
+      any_of:
+        - 'entry.{0,30}time.{0,30}thesis'
+    reason: >
+      REFUTED 3-for-3 — T2 ceded to long-hold LT-3a
+    source: 'Nontech-bottom program (RUL-18..29)'
+
+  - id: BL-G026
+    match:
+      any_of:
+        - 'election.{0,30}midterm.{0,30}cycle'
+    reason: >
+      REFUTED — survives only as US-only Risk-Radar modulator
+    source: 'Election-cycle modulator study'
+
+  - id: BL-G027
+    match:
+      any_of:
+        - 'gating.{0,30}share.{0,30}reversal'
+    reason: >
+      FALSIFIED — hurts vs flat
+    source: 'China subsector-gate study (#791 era)'
+
+  - id: BL-G028
+    match:
+      any_of:
+        - 'label.{0,30}faltering'
+    reason: >
+      NO-GO
+    source: 'Phase-0 verdicts (#1031)'
+
+  - id: BL-G029
+    match:
+      any_of:
+        - 'avwap.{0,30}from.{0,30}base'
+    reason: >
+      FALSIFIED phase-0 — nulls + unfavorable dead-money read; retained
+      as display-tier confluence input
+    source: 'EI-PM0 run (2026-07-10, r4)'
+
+  - id: BL-G030
+    match:
+      any_of:
+        - 'unfilled.{0,30}overhead.{0,30}constructed'
+    reason: >
+      FALSIFIED phase-0 — DIRECTION-CONTRADICTED (clean-sky fires stop
+      MORE, BH 0.0031); inverse reading needs a new PREREG
+    source: 'EI-PM0 run (2026-07-10, r4)'
+
+  - id: BL-G031
+    match:
+      any_of:
+        - 'overhead.{0,30}supply.{0,30}fraction'
+    reason: >
+      REDUNDANT — \
+    source: 'ρ\'
+
+  - id: BL-G032
+    match:
+      any_of:
+        - 'codex.{0,30}rotation.{0,30}time'
+    reason: >
+      REJECT-REDUNDANT / INVALID — complex already screened dead
+    source: '`ORACLE_ROTATION_TM_CODEX_ADJUDICATION` (#1750)'
+
+  - id: BL-G033
+    match:
+      any_of:
+        - 'thesis.{0,30}lobe'
+    reason: >
+      KILL — duplicate of long-hold program
+    source: 'NW next-lobes adjudication (#1666/#1669/#1671)'
+
+  - id: BL-G034
+    match:
+      any_of:
+        - 'species'
+    reason: >
+      PARKED — sign-reversed in Phase-0b
+    source: 'Next3-upgrades program (#1710 era)'
+
+  - id: BL-G035
+    match:
+      any_of:
+        - 'econ'
+    reason: >
+      ALL-NULL — avoid lens ≠ board fires
+    source: 'Next3-upgrades program'
+
+  - id: BL-G036
+    match:
+      any_of:
+        - 'fresh.{0,30}edge.{0,30}board'
+    reason: >
+      REFUTED — worst state on the board; reduce-gate is the only board
+      edge
+    source: 'Act-Now board ruling (#1513)'
+
+  - id: BL-G037
+    match:
+      any_of:
+        - 'codex.{0,30}decay.{0,30}orthogonality'
+    reason: >
+      NOISE ARTIFACT — null law
+    source: 'RUL-ORTH-8, R-ORTH program (#1739)'
+
+  - id: BL-G038
+    match:
+      any_of:
+        - 'staleness.{0,30}alpha'
+    reason: >
+      HONEST NULL
+    source: 'NW quant synthesis (#1455–1465)'
+
+  - id: BL-G039
+    match:
+      any_of:
+        - 'measured.{0,30}signal.{0,30}half'
+    reason: >
+      ALL-NULL
+    source: 'Signal Commons W3/W5 (2026-07-05)'
+
+  - id: BL-G040
+    match:
+      any_of:
+        - 'construction.{0,30}divergence.{0,30}healthcare'
+    reason: >
+      LOCKED DESCRIPTIVE — null held
+    source: 'Healthcare member-dispersion adjudication'
+
+  - id: BL-G041
+    match:
+      any_of:
+        - 'cpi\-020'
+    reason: >
+      RETIRED — re-test FAIL
+    source: 'CPI lattice batch 2 (#1754)'
+
+  - id: BL-G042
+    match:
+      any_of:
+        - 'index.{0,30}transfer.{0,30}down'
+    reason: >
+      KILLED by sign-stability leg (0/4 PASS)
+    source: 'CPI IX-1 §17 (#1779)'
+
+  - id: BL-G043
+    match:
+      any_of:
+        - 'buyback.{0,30}floor.{0,30}washout'
+    reason: >
+      FALSIFIED
+    source: 'S11 phase-0 (#1782)'
+
+  - id: BL-G044
+    match:
+      any_of:
+        - 'fused.{0,30}point.{0,30}sponsorship'
+    reason: >
+      STRUCK — positioning-fusion illegal + Signal Commons R3; replaced
+      by per-axis AND-gate
+    source: 'WA-R1, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md`'
+
+  - id: BL-G045
+    match:
+      any_of:
+        - 'ownership.{0,30}positive.{0,30}breakaway'
+    reason: >
+      STRUCK — restates NEXTL-U13 (opposite sign to 3 filed verdicts);
+      survives as context/crowding-hazard only
+    source: 'WA-R2, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md`'
+
+  - id: BL-G046
+    match:
+      any_of:
+        - 'supply.{0,30}absorption.{0,30}family'
+    reason: >
+      CLOSED — Stage-0 falsifier dead in both 减持新规 regimes at the
+      frozen ruler (EW +1.1pp/21d, t_NW 1.91/1.77 < 2; overlap-lag
+      sensitivity confirms); construct kill (price-only absorption ≡
+      momentum) stands
+    source: 'D4-01b Stage 0, `reports/d4-cn-supply-absorption-d401b-stage0.md`; Day-4 adjudication §D4-01 reassessment'
+
+  - id: BL-G047
+    match:
+      any_of:
+        - 'hindenburg.{0,30}omen.{0,30}titanic'
+    reason: >
+      REJECT-DATA/STAT — needs uncollected NYSE full-universe NH/NL;
+      N~20–30 clusters/40y; ~40% 1y WR (≤ random)
+    source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
+
+  - id: BL-G048
+    match:
+      any_of:
+        - 'distribution.{0,30}count.{0,30}radar'
+    reason: >
+      REJECT-REDUNDANT — coincident down-day counter; froth_fragility
+      owns distribution physics
+    source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
+
+  - id: BL-G049
+    match:
+      any_of:
+        - 'mcclellan.{0,30}thrust.{0,30}oversold'
+    reason: >
+      REJECT-KILLED — coincident-by-construction (SIGNAL_AUDIT);
+      display homes (advanced_breadth, fear_greed) stand; rare
+      Summation low→high *upswing* adjudicated separately as recovery
+      chip
+    source: 'RRX-R4/R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
+
+  - id: BL-G050
+    match:
+      any_of:
+        - 'absolute.{0,30}spike.{0,30}fade'
+    reason: >
+      REJECT-STAT — non-stationary absolute anchors (R-SP21); <10
+      episodes in >50 bucket
+    source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
+
+  - id: BL-G051
+    match:
+      any_of:
+        - 'lumber.{0,30}gold.{0,30}ratio'
+    reason: >
+      REJECT-DATA — FRED monthly-only, LBS=F thin, supply-shock
+      contaminated; use copper/gold
+    source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
+
+  - id: BL-G052
+    match:
+      any_of:
+        - 'theory.{0,30}transports.{0,30}confirmation'
+    reason: >
+      REJECT — lagging (2007 signal fired post-peak), oil-confounded;
+      rotation physics covered by validated XLY/XLP + XLU legs
+    source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
+
+  - id: BL-G053
+    match:
+      any_of:
+        - 'ticker.{0,30}cluster.{0,30}bootstrap'
+    reason: >
+      FORBIDDEN estimator — anti-conservative, effective N = months
+    source: 'DT-R14; `TIME_CONFOUND_EXPOSURE_AUDIT` (#1755)'
+
+  - id: BL-G054
+    match:
+      any_of:
+        - 'factor.{0,30}apparatus.{0,30}applied'
+    reason: >
+      WRONG RULER — score as reversion-capture (~20–25d time-exit,
+      absolute)
+    source: 'Oracle reversion metric reframe (#1458)'
+
+  - id: BL-G055
+    match:
+      any_of:
+        - 'pooled.{0,30}inference.{0,30}across'
+    reason: >
+      FORBIDDEN without era split
+    source: 'DT-R16 era-split law (#1751)'
+
+  - id: BL-G056
+    match:
+      any_of:
+        - 'closing.{0,30}factor.{0,30}family'
+    reason: >
+      INCOMPLETE — diagnose mechanism + pre-registered pairlets first
+    source: 'Factor-kill interaction feedback law'
+
+  - id: BL-G057
+    match:
+      any_of:
+        - 'estimator.{0,30}shortcuts'
+    reason: >
+      Constrained per R1-M estimator law
+    source: 'Nontech-bottom program'
+
+  - id: BL-G058
+    match:
+      any_of:
+        - 'ontology.{0,30}acceptance'
+    reason: >
+      HOLD — peak gate IQR 48.8 > 25
+    source: 'Open PR #1639 (do not accidentally revive)'
+
+  - id: BL-G059
+    match:
+      any_of:
+        - 'theta.{0,30}tape'
+    reason: >
+      SUSPENDED
+    source: 'Final3-lobes program (2026-07-06)'
+
+  - id: BL-G060
+    match:
+      any_of:
+        - 'disp.{0,30}gate'
+    reason: >
+      DEFER ×2-replicated
+    source: 'Final3-lobes program (#1696)'
+
+  - id: BL-G061
+    match:
+      any_of:
+        - 'price.{0,30}memory.{0,30}trials'
+    reason: >
+      SUSPENDED `data_blocked` (pre-declared; coverage measured 55.3% <
+      60% floor at execution)
+    source: 'PM0 prereg (#1761) + EI-PM0 run (2026-07-10)'
+
+  - id: BL-G062
+    match:
+      any_of:
+        - 'g1'
+    reason: >
+      DEFERRED
+    source: 'Long-hold thesis program (#1507/#1588)'
+
+  - id: BL-G063
+    match:
+      any_of:
+        - 'options'
+    reason: >
+      PARKED until preconditions (1)+(2)
+    source: 'Options→NW masterplan'
+
+  - id: BL-G064
+    match:
+      any_of:
+        - 'codeowners.{0,30}branch.{0,30}protection'
+    reason: >
+      DEFERRED to RF codegen lane scope
+    source: 'ABM-R3; `RF_CODEGEN_LANE_FOR_FABLE.md`'
+
+  - id: BL-G065
+    match:
+      any_of:
+        - 'ticker.{0,30}multi.{0,30}label'
+    reason: >
+      DEFERRED — group-level taxonomy only; revive needs
+      revenue-geography ingestion + own adjudication
+    source: 'TI-R2, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
+
+  - id: BL-G066
+    match:
+      any_of:
+        - 'public.{0,30}breakaway.{0,30}desk'
+    reason: >
+      DEFERRED — W0 ships admin-panel surface only; public copy needs
+      its own wave
+    source: '`WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` §8'
+
+  - id: BL-G067
+    match:
+      any_of:
+        - 'winner.{0,30}autopsy.{0,30}short'
+    reason: >
+      DEFERRED with L10 — no PIT short-interest history (single FINRA
+      settlement date)
+    source: 'WA-R (docket adjudication), aligns NEXTL-U19'
+
+  - id: BL-G068
+    match:
+      any_of:
+        - 'full.{0,30}graph.{0,30}causal'
+    reason: >
+      KILLED for v1 / REJECTED (churn) — small-universe
+      NOTEARS-with-priors is a Phase-3 question behind the 2027-01-15
+      clock
+    source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
+
+  - id: BL-G069
+    match:
+      any_of:
+        - 'dedicated.{0,30}machine.{0,30}registration'
+    reason: >
+      DEFERRED — Phase-2 clock 2026-10-15, needs ≥8 matured
+      exit-(a)/(b) candidates + fresh ruling; cortex 3/week chokepoint
+      stands (QS-U2)
+    source: 'CHF-R2, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
+
+# --- END GENERATED FROM DO_NOT_REBUILD.md ---

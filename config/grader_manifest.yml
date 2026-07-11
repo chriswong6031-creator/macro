@@ -113,3 +113,15 @@ files:
       domain uncovered across >= K distinct cycles. IMMUTABLE — a loop PR that
       could add a domain could manufacture its own charter mandate (R-V2-8;
       originating an escalation is forbidden by R-AUT-1/R-V2-9). Operator-only.
+
+  # --- V4-W3 IMMUTABLE config (R-V4-4) ---
+
+  - path: config/nw_mission.yml
+    sha256: 427546fd03d4f958418b64493ed83a2d12a957732efdf4b736c1c8246918a5b7
+    role: mission_self_model
+    notes: >
+      V4-W3 machine-readable mission self-model (R-V4-4). Encodes the operator's
+      endgame, mission pillars, standing laws, strategic posture, and forward
+      clocks in YAML. Injected into every orchestrator-tier PROPOSE prompt.
+      IMMUTABLE — the loop may read it but never edit it; a loop PR that rewrites
+      this file rewrites the loop's own purpose (highest-privilege attack path).

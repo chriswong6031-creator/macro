@@ -1444,3 +1444,41 @@ checks:
       os.environ[ref_name] independently.  The broker is never in the secret-value
       handling path.  Audit tape records attribution (run_id, actor, sha) but
       no values.
+
+  - law_id: metabolism.blocklist_drift
+    summary: >
+      One kill-registry, compiled everywhere (R-V4-5).  research/DO_NOT_REBUILD.md
+      is the single source of standing kills; scripts/compile_loop_blocklists.py
+      deterministically compiles it to config/compiled_kill_registry.yml (and
+      generated additions for loop-native blocklists).  This check recompiles and
+      byte-diffs against the committed artifact — drift (editing DO_NOT_REBUILD.md
+      without regenerating, or hand-editing the compiled file) is a hard CI failure.
+    source_ref:
+      - scripts/check_blocklist_drift.py
+      - scripts/compile_loop_blocklists.py
+      - config/compiled_kill_registry.yml
+      - research/METABOLISM_V4_FIRST_BREATH_BY_FABLE.md
+    severity: hard
+    check_script: scripts/check_blocklist_drift.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: capability-broker
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      Pure recompile-and-byte-diff against a committed artifact — the discriminating
+      failure mode (tampered compiled output goes red) is covered by
+      tests/test_metabolism_v4_w3_mission.py in the metabolism v4 W3 CI suite.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - The compiler's topic→pattern heuristic (3 significant words) provides
+        baseline mechanical coverage of killed topics; hand-curated loop
+        blocklist entries remain authoritative for phrasings it cannot match.
+      - Byte-diff scope is the compiled registry artifact; consumers' own
+        hand-curated files are not regenerated and so are not drift-checked here.
+    owner_program: metabolism-v4
+    notes: >
+      Established by the v4 sweep finding F1: five propose-test-learn loops held
+      divergent blocklists with no cross-read — a construction killed in one loop
+      was invisible to the others.

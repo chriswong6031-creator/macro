@@ -80,6 +80,9 @@ IMMUTABLE_PATTERNS: list[str] = [
     # pre-send-gate receipt contract (R-V3-1, R-V3-5a).
     "config/metabolism_context_sla.yml",
     "docs/METABOLISM_REASONING_RECEIPT.md",
+    # V4-W3 addition (R-V4-4): the mission self-model.
+    # The loop must not rewrite its own purpose.
+    "config/nw_mission.yml",
 ]
 
 # ── Loop namespace markers ────────────────────────────────────────────────────
