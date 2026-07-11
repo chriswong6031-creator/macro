@@ -24,7 +24,7 @@
   "global_score": 0.192,
   "risk_state": "Neutral",
   "peg_state": "weak-side (outflow)",
-  "peg_distance": 0.893,
+  "peg_distance": 0.858,
   "global_snapshot": {
     "score": 0.192,
     "state": "Neutral",
@@ -32,31 +32,31 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 0.94,
+        "z": 1.11,
         "sign": -1,
         "risk": "off",
-        "level": 100.766
+        "level": 100.97
       },
       {
         "key": "vix",
         "label": "Volatility (VIX)",
-        "z": -1.06,
+        "z": -0.81,
         "sign": -1,
         "risk": "on",
-        "level": 15.84
+        "level": 15.03
       },
       {
         "key": "spy",
         "label": "S&P 500",
-        "z": 0.59,
+        "z": 1.14,
         "sign": 1.0,
         "risk": "on",
-        "level": 751.71
+        "level": 754.95
       },
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 0.33,
+        "z": 0.24,
         "sign": 1.0,
         "risk": "neutral",
         "level": 0.0015
@@ -87,8 +87,8 @@
       }
     ],
     "peg": {
-      "level": 7.8393,
-      "distance": 0.89,
+      "level": 7.8358,
+      "distance": 0.86,
       "state": "weak-side (outflow)"
     },
     "asof": "2026-07-10"
@@ -263,8 +263,8 @@
       "chg_20d_pct": -12.52
     },
     "usdhkd": {
-      "level": 7.8393,
-      "chg_20d_pct": 0.05
+      "level": 7.8358,
+      "chg_20d_pct": 0.0
     }
   },
   "property": {
@@ -282,63 +282,63 @@
     "window_d": 5,
     "verdict": "mixed",
     "verdict_zh": "\u6df7\u5408",
-    "primary": "china_spillover",
-    "primary_label": "China stimulus spillover",
-    "primary_label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
-    "direction": "China bid spilling into HK \u2014 H-shares & southbound lead up",
-    "direction_zh": "\u4e2d\u56fd\u4e70\u76d8\u5916\u6ea2\u81f3\u9999\u6e2f \u2014 H\u80a1\u4e0e\u5357\u5411\u9886\u6da8",
-    "dir_sign": 1,
+    "primary": "commodity_energy",
+    "primary_label": "Commodity / energy",
+    "primary_label_zh": "\u5927\u5b97/\u80fd\u6e90",
+    "direction": "upstream disinflation \u2014 energy/materials basket & copper lead down",
+    "direction_zh": "\u4e0a\u6e38\u901a\u7f29 \u2014 \u80fd\u6e90/\u6750\u6599\u7bee\u5b50\u4e0e\u94dc\u9886\u8dcc",
+    "dir_sign": -1,
     "confidence": "low",
     "confidence_zh": "\u4f4e",
-    "strength": 1.41,
-    "dominance_ratio": 1.02,
-    "agreement": 1.0,
-    "runner_up": "commodity_energy",
-    "runner_up_label": "Commodity / energy",
-    "runner_up_label_zh": "\u5927\u5b97/\u80fd\u6e90",
-    "headline": "Mixed \u2014 China stimulus spillover + Commodity / energy jointly leading (H-shares vs HSI +1.7\u03c3, HSCEI +1.9\u03c3, southbound flow +1.1\u03c3); no single dominant driver.",
+    "strength": 1.4,
+    "dominance_ratio": 1.0,
+    "agreement": 0.74,
+    "runner_up": "china_spillover",
+    "runner_up_label": "China stimulus spillover",
+    "runner_up_label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
+    "headline": "Mixed \u2014 Commodity / energy + China stimulus spillover jointly leading (inflation basket -2.6\u03c3, PPI YoY -0.9\u03c3, copper / gold +0.5\u03c3); no single dominant driver.",
     "evidence": [
-      "H-shares vs HSI +1.7\u03c3",
-      "HSCEI +1.9\u03c3",
-      "southbound flow +1.1\u03c3"
+      "inflation basket -2.6\u03c3",
+      "PPI YoY -0.9\u03c3",
+      "copper / gold +0.5\u03c3"
     ],
     "evidence_legs": [
       {
-        "en": "H-shares vs HSI",
-        "zh": "H\u80a1\u5bf9\u6052\u6307",
-        "z": 1.7
+        "en": "inflation basket",
+        "zh": "\u901a\u80c0\u7bee\u5b50",
+        "z": -2.6
       },
       {
-        "en": "HSCEI",
-        "zh": "\u56fd\u4f01\u6307\u6570",
-        "z": 1.9
+        "en": "PPI YoY",
+        "zh": "PPI\u540c\u6bd4",
+        "z": -0.9
       },
       {
-        "en": "southbound flow",
-        "zh": "\u5357\u5411\u8d44\u91d1",
-        "z": 1.1
+        "en": "copper / gold",
+        "zh": "\u94dc/\u91d1",
+        "z": 0.5
       }
     ],
-    "invalidation": "Fades if H-shares vs HSI reverses and the rest of the growth fingerprint stops confirming.",
-    "invalidation_zh": "\u82e5H\u80a1\u5bf9\u6052\u6307\u53cd\u8f6c\u3001\u4e14\u589e\u957f\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
+    "invalidation": "Fades if inflation basket reverses and the rest of the inflation fingerprint stops confirming.",
+    "invalidation_zh": "\u82e5\u901a\u80c0\u7bee\u5b50\u53cd\u8f6c\u3001\u4e14\u901a\u80c0\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
     "scores": [
-      {
-        "driver": "china_spillover",
-        "label": "China stimulus spillover",
-        "label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
-        "family": "growth",
-        "projection": 1.41,
-        "strength": 1.41,
-        "direction": "China bid spilling into HK \u2014 H-shares & southbound lead up"
-      },
       {
         "driver": "commodity_energy",
         "label": "Commodity / energy",
         "label_zh": "\u5927\u5b97/\u80fd\u6e90",
         "family": "inflation",
-        "projection": -1.39,
-        "strength": 1.39,
+        "projection": -1.4,
+        "strength": 1.4,
         "direction": "upstream disinflation \u2014 energy/materials basket & copper lead down"
+      },
+      {
+        "driver": "china_spillover",
+        "label": "China stimulus spillover",
+        "label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
+        "family": "growth",
+        "projection": 1.4,
+        "strength": 1.4,
+        "direction": "China bid spilling into HK \u2014 H-shares & southbound lead up"
       },
       {
         "driver": "tech_internet_leadership",
@@ -372,8 +372,8 @@
         "label": "Global risk-on / risk-off",
         "label_zh": "\u5168\u7403\u98ce\u9669\u504f\u597d",
         "family": "risk",
-        "projection": 0.33,
-        "strength": 0.33,
+        "projection": 0.43,
+        "strength": 0.43,
         "direction": "global risk-ON \u2014 S&P up, VIX & dollar down, EM/copper bid (HK's dominant force)"
       },
       {
@@ -381,8 +381,8 @@
         "label": "Peg / HIBOR funding stress",
         "label_zh": "\u8054\u6c47/HIBOR\u8d44\u91d1\u538b\u529b",
         "family": "funding",
-        "projection": -0.16,
-        "strength": 0.16,
+        "projection": -0.35,
+        "strength": 0.35,
         "direction": "funding easing \u2014 HKD toward 7.75 strong-side, HIBOR down, Aggregate Balance refilled"
       },
       {
@@ -390,57 +390,57 @@
         "label": "US-rate repricing (via the peg)",
         "label_zh": "\u7f8e\u606f\u91cd\u5b9a\u4ef7\uff08\u7ecf\u8054\u6c47\uff09",
         "family": "rates",
-        "projection": -0.09,
-        "strength": 0.09,
-        "direction": "US rates repricing lower \u2014 dollar & HIBOR down, the peg imports easing"
+        "projection": 0.01,
+        "strength": 0.01,
+        "direction": "US rates repricing higher \u2014 dollar & HIBOR up, the peg imports tightening"
       }
     ],
     "note": "Deterministic HK cross-asset attribution \u2014 a regime READ, not a signal; never gates a score or the quad."
   },
   "conditions": {
     "roro": {
-      "roro": -0.297,
-      "roro_raw": -0.307,
+      "roro": -0.274,
+      "roro_raw": -0.281,
       "roro_state": "neutral",
-      "hk_roro_copper_gold": 2.028,
-      "hk_roro_spy": 0.023,
-      "hk_roro_vix": 0.68,
-      "hk_roro_dxy": -0.562,
+      "hk_roro_copper_gold": 1.964,
+      "hk_roro_spy": 0.159,
+      "hk_roro_vix": 0.92,
+      "hk_roro_dxy": -0.715,
       "hk_roro_eem": -0.785,
       "hk_roro_usdcny": -1.419,
       "hk_roro_southbound": -1.048,
       "hk_roro_vhsi": -0.352,
       "hk_roro_breadth": -1.544,
-      "hk_roro_peg": -1.125,
-      "hk_roro_ah_premium": 0.723,
+      "hk_roro_peg": -0.994,
+      "hk_roro_ah_premium": 0.735,
       "hk_roro_hibor": -0.296,
       "legs": [
         {
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 2.028,
+          "value": 1.964,
           "lean": "risk-on"
         },
         {
           "key": "spy",
           "name_en": "S&P 500 (20d)",
           "name_zh": "\u6807\u666e500\uff0820\u65e5\uff09",
-          "value": 0.023,
+          "value": 0.159,
           "lean": "risk-on"
         },
         {
           "key": "vix",
           "name_en": "Volatility (VIX)",
           "name_zh": "\u6ce2\u52a8\u7387\uff08VIX\uff09",
-          "value": 0.68,
+          "value": 0.92,
           "lean": "risk-on"
         },
         {
           "key": "dxy",
           "name_en": "US Dollar (20d)",
           "name_zh": "\u7f8e\u5143\uff0820\u65e5\uff09",
-          "value": -0.562,
+          "value": -0.715,
           "lean": "risk-off"
         },
         {
@@ -482,14 +482,14 @@
           "key": "peg",
           "name_en": "HKD peg distance",
           "name_zh": "\u6e2f\u5143\u8054\u6c47\u8ddd\u79bb",
-          "value": -1.125,
+          "value": -0.994,
           "lean": "risk-off"
         },
         {
           "key": "ah_premium",
           "name_en": "AH premium",
           "name_zh": "AH \u6ea2\u4ef7",
-          "value": 0.723,
+          "value": 0.735,
           "lean": "risk-on"
         },
         {
@@ -502,7 +502,7 @@
       ]
     },
     "recession": {
-      "score": 43.8,
+      "score": 43.1,
       "label": "elevated",
       "legs": [
         {
@@ -547,8 +547,8 @@
           "label_zh": "\u8054\u6c47\u8d44\u91d1\u538b\u529b",
           "weight": 1.0,
           "active": true,
-          "value": 89.3,
-          "points": 17.9
+          "value": 85.8,
+          "points": 17.2
         },
         {
           "key": "gdp",
@@ -578,7 +578,7 @@
       "note_zh": "\u672a\u6821\u51c6\u7684\u5c55\u793a\u6027\u4eea\u8868 \u2014\u2014 \u9999\u6e2f\u5386\u53f2\u77ed\u4e14\u4e0e\u5168\u7403\u9ad8\u5ea6\u8026\u5408\uff0c\u4e0d\u58f0\u79f0\u4efb\u4f55\u524d\u77bb\u56de\u64a4\u4f18\u52bf\uff1b\u533a\u95f4\u4e3a\u8be5\u4eea\u8868\u81ea\u8eab\u7684\u5386\u53f2\u5206\u4f4d\u951a\u5b9a\u3002\u4ece\u4e0d\u8ba1\u5165\u8bc4\u5206\u3002"
     },
     "drawdown_risk": {
-      "score": 64.7,
+      "score": 61.7,
       "band": "elevated",
       "calibrated": false,
       "note": "history-anchored rank-percentile of HK stress legs \u2014 uncalibrated, display-only context, never scored",
@@ -2162,7 +2162,7 @@
           -0.364,
           -0.131,
           -0.207,
-          -0.297
+          -0.274
         ]
       },
       "recession": {
@@ -3742,7 +3742,7 @@
           45.4,
           44.4,
           43.5,
-          43.8
+          43.1
         ]
       },
       "drawdown": {
@@ -5322,7 +5322,7 @@
           71.6,
           70.0,
           65.0,
-          64.7
+          61.7
         ]
       },
       "fear_euphoria": {
@@ -6902,7 +6902,7 @@
           24.8,
           40.6,
           35.2,
-          29.3
+          31.1
         ]
       }
     },
@@ -6910,17 +6910,17 @@
     "note": "display-only conditioning lens \u2014 RORO + uncalibrated slowdown/drawdown gauges; never feeds hk_axes / hk_regime / hk_playbook"
   },
   "fear_euphoria": {
-    "fe_score": 29,
+    "fe_score": 31,
     "band": "Fear",
     "band_zh": "\u6050\u60e7",
-    "roro": -0.297,
+    "roro": -0.274,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 2.028,
+        "value": 1.964,
         "pct": 99,
         "lean": "risk-on"
       },
@@ -6928,24 +6928,24 @@
         "key": "spy",
         "name_en": "S&P 500 (20d)",
         "name_zh": "\u6807\u666e500\uff0820\u65e5\uff09",
-        "value": 0.023,
-        "pct": 48,
+        "value": 0.159,
+        "pct": 55,
         "lean": "risk-on"
       },
       {
         "key": "vix",
         "name_en": "Volatility (VIX)",
         "name_zh": "\u6ce2\u52a8\u7387\uff08VIX\uff09",
-        "value": 0.68,
-        "pct": 68,
+        "value": 0.92,
+        "pct": 77,
         "lean": "risk-on"
       },
       {
         "key": "dxy",
         "name_en": "US Dollar (20d)",
         "name_zh": "\u7f8e\u5143\uff0820\u65e5\uff09",
-        "value": -0.562,
-        "pct": 36,
+        "value": -0.715,
+        "pct": 30,
         "lean": "risk-off"
       },
       {
@@ -6992,16 +6992,16 @@
         "key": "peg",
         "name_en": "HKD peg distance",
         "name_zh": "\u6e2f\u5143\u8054\u6c47\u8ddd\u79bb",
-        "value": -1.125,
-        "pct": 24,
+        "value": -0.994,
+        "pct": 28,
         "lean": "risk-off"
       },
       {
         "key": "ah_premium",
         "name_en": "AH premium",
         "name_zh": "AH \u6ea2\u4ef7",
-        "value": 0.723,
-        "pct": 45,
+        "value": 0.735,
+        "pct": 46,
         "lean": "risk-on"
       },
       {
@@ -7090,6 +7090,21 @@
     "history_days": 10231
   },
   "alerts": [
+    {
+      "rule": "hk_circuit_breaker",
+      "severity": "high",
+      "message": "HK source 'hkma' marked dead after 3 consecutive failures \u2014 collector skipped until it recovers; affected signals degrade",
+      "message_zh": "\u9999\u6e2f\u6570\u636e\u6e90 'hkma' \u8fde\u7eed 3 \u6b21\u5931\u8d25\u540e\u88ab\u6807\u8bb0\u4e3a\u4e2d\u65ad \u2014 \u91c7\u96c6\u5668\u6682\u505c\u76f4\u81f3\u6062\u590d\uff1b\u76f8\u5173\u4fe1\u53f7\u7f6e\u4fe1\u5ea6\u4e0b\u964d",
+      "icon": "\ud83d\udd0c",
+      "plain_en": "An HK data source went dark",
+      "plain_zh": "\u67d0\u9999\u6e2f\u6570\u636e\u6e90\u4e2d\u65ad",
+      "what_en": "An HK feed this dashboard relies on failed several runs in a row, so it's paused until it recovers. Signals that depend on it lose confidence. A plumbing notice, not a market signal.",
+      "what_zh": "\u672c\u4eea\u8868\u76d8\u4f9d\u8d56\u7684\u67d0\u4e2a\u9999\u6e2f\u6570\u636e\u6e90\u8fde\u7eed\u591a\u6b21\u5931\u8d25\uff0c\u5df2\u6682\u505c\u76f4\u81f3\u6062\u590d\u3002\u4f9d\u8d56\u5b83\u7684\u4fe1\u53f7\u4f1a\u964d\u4f4e\u7f6e\u4fe1\u5ea6\u3002\u7cfb\u7edf\u7ba1\u7ebf\u63d0\u793a\uff0c\u5e76\u975e\u5e02\u573a\u4fe1\u53f7\u3002",
+      "anchor": "",
+      "tier": "context",
+      "edge_en": "Plumbing \u2014 data health, not a market signal.",
+      "edge_zh": "\u7ba1\u7ebf \u2014 \u6570\u636e\u5065\u5eb7\u5ea6\uff0c\u800c\u975e\u5e02\u573a\u4fe1\u53f7\u3002"
+    },
     {
       "rule": "hk_risk_on",
       "severity": "info",

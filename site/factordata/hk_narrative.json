@@ -2,21 +2,21 @@
   "display_only": true,
   "organ": "hk_narrative",
   "as_of": "2026-07-11",
-  "generated_utc": "2026-07-11T10:17:27+00:00",
-  "freshness": "stale",
+  "generated_utc": "2026-07-11T11:25:54+00:00",
+  "freshness": "degraded",
   "entities": [
     {
       "slug": "alibaba",
       "ticker": "9988.HK",
       "name_en": "Alibaba",
       "name_zh": "\u963f\u91cc\u5df4\u5df4",
-      "attention_shock_z": null,
+      "attention_shock_z": 1.908,
       "tone_pctile": null,
-      "narrative_state": null,
-      "young": true,
-      "n_obs": 0,
-      "as_of_date": null,
-      "no_data_reason": "young series: 0 < 20 obs"
+      "narrative_state": "quiet",
+      "young": false,
+      "n_obs": 86,
+      "as_of_date": "2026-07-11",
+      "no_data_reason": null
     },
     {
       "slug": "tencent",

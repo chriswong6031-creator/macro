@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
-  "as_of": "2026-07-10",
-  "generated_utc": "2026-07-11T05:13:26Z",
+  "as_of": "2026-07-11",
+  "generated_utc": "2026-07-11T11:30:17Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -87,7 +87,7 @@
     "names_ref": "site/chinastatedata/microstructure.json#name_packets"
   },
   "policy": {
-    "as_of": "2026-07-10",
+    "as_of": "2026-07-11",
     "policy_impulse": "targeted_support",
     "transmission_channel": [
       "fiscal_or_structural",
@@ -128,10 +128,10 @@
     ],
     "staleness": {
       "per_source_days": {
-        "lpr": 18,
-        "rrr": 429,
-        "fr007": 0,
-        "communiques": 73
+        "lpr": 19,
+        "rrr": 430,
+        "fr007": 1,
+        "communiques": 74
       }
     }
   },
@@ -229,10 +229,10 @@
     ],
     "conditions": {
       "roro": {
-        "roro": -0.092,
-        "roro_raw": -0.092,
+        "roro": -0.099,
+        "roro_raw": -0.1,
         "roro_state": "neutral",
-        "china_roro_copper_gold": 2.028,
+        "china_roro_copper_gold": 1.964,
         "china_roro_breadth": -0.945,
         "china_roro_southbound": -1.048,
         "china_roro_m1_m2": 0.016,
@@ -246,7 +246,7 @@
             "key": "copper_gold",
             "name_en": "Copper / Gold",
             "name_zh": "铜／金 比",
-            "value": 2.028,
+            "value": 1.964,
             "lean": "risk-on"
           },
           {
@@ -389,7 +389,7 @@
   "external": {
     "yield_curve": {
       "as_of": "2026-07-10",
-      "staleness_days": 0,
+      "staleness_days": 1,
       "cn_10y": 1.7398,
       "cn_2y": 1.2615,
       "cn_slope_10_2": 0.47829999999999995,
@@ -397,7 +397,7 @@
     },
     "cgb_curve": {
       "as_of": "2026-07-10",
-      "staleness_days": 0,
+      "staleness_days": 1,
       "m3": 1.08,
       "y1": 1.1097,
       "y5": 1.4436,
@@ -408,7 +408,7 @@
     "usdcnh": {
       "quote": 6.754,
       "chg_pct": -0.2,
-      "as_of": "Jul 10, 2026"
+      "as_of": "Jul 11, 2026"
     },
     "dxy": null
   },
