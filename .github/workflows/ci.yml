@@ -272,6 +272,11 @@ on:
       - "engine/trial_ledger.py"
       - "engine/validation.py"
       - "engine/llm_auth.py"
+      # M7C-R8 basket staleness warning: build_baskets.py is the producer; a change
+      # to it alone (without touching ci.yml or engine/**) must still retrigger the
+      # basket-staleness-warn test job — belt-and-suspenders, per reviewer nit.
+      - "scripts/build_baskets.py"
+      - "tests/test_basket_staleness_warn.py"
   workflow_dispatch:
 
 permissions:
