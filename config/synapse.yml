@@ -9829,7 +9829,7 @@ artifacts:
     producer: scripts/run_causal_brainstorm.py
     known_extra_writers: []
     owner_program: causal-hypothesis-factory
-    cadence: weekly
+    cadence: daily-engine
     storage: git
     asof_field: asof
     freshness_sla_hours: 200
@@ -9844,9 +9844,14 @@ artifacts:
     notes: >
       CHF W5 LLM lane status file. Written by run_causal_brainstorm.py; read by
       causal_frontier.py to wire the llm_lane block in causal_lab_state.json.
-      Statuses: degraded_pack_only | awaiting_phase_a | ok. Infrastructure tier;
-      never a signal. Absent until first brainstorm run (frontier falls back to
-      constant awaiting_phase_a when absent).
+      Statuses: degraded_pack_only | awaiting_phase_a | armed | ok. Tuesday
+      nightlies write the run outcome; every other night --status-only rewrites
+      the file from config truth (stale-lane fix 2026-07-11 — before that a
+      mid-week auto_loop flip was invisible here for days). SLA stays lenient
+      (200h) on purpose: a this-week ok/degraded outcome is preserved with its
+      Tuesday asof until the ISO week rolls over, so asof is weekly-anchored.
+      Infrastructure tier; never a signal. Absent until first brainstorm run
+      (frontier falls back to constant awaiting_phase_a when absent).
   causal-confluence-audit:
     path: data/neuralweb/causal_confluence_audit.json
     format: json
