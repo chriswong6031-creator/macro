@@ -1,169 +1,163 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-07-09",
-  "generated_at": "2026-07-10T09:06:02.426956+00:00",
+  "generated_at": "2026-07-11T08:50:36.671355+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-07-09-AES-1",
-      "ticker": "AES",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "No clear edge: mixed selection signals (positive SUE but negative revisions) and an accounting warning flag from quality axis neutralize the entry urgency signal. Given small track record, default to no directional lean.",
-      "evidence": [
-        "Selection axis: SUE z=1.08 (validated) offset by revision z=-0.24",
-        "Quality axis: accounting warn flag",
-        "Entry axis: urgency & off-high present but not enough to overcome neutral verdict",
-        "Regime mixed, no strong tailwind"
-      ],
-      "dissent": "If the positive earnings surprise (SUE) persists and insider buying follows through, momentum could inflect upward, but the engine's residual-alpha selection does not predict returns.",
-      "falsifier": {
-        "text": "AES breaks above its 40-day high with volume, invalidating the neutral stance and suggesting the entry signal was genuine.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-07-23",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-09-AN-2",
-      "ticker": "AN",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "Verdict neutral: selection axis shows mild positive SUE and flat revisions, but negative momentum and clean accounting. Entry urgency is mild (caution) and no tailwind. No clear directional edge.",
-      "evidence": [
-        "Selection axis: SUE z=0.63, revision z=0.12, momentum z=-0.36",
-        "Entry: off-high pct -15.3, urgency caution",
-        "Tailwind z=-0.32, no meaningful support",
-        "Quality clean, no flags"
-      ],
-      "dissent": "If AN's recent earnings surprise causes analysts to upgrade, momentum could turn positive and the stock might outperform; but current revision alpha is near zero.",
-      "falsifier": {
-        "text": "AN closes above its 50-day moving average on above-average volume, signaling momentum shift.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-07-23",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-09-ARES-3",
-      "ticker": "ARES",
+      "id": "2026-07-09-VTRS-1",
+      "ticker": "VTRS",
       "name": null,
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "Verdict 'Lagging \u2014 relative weakness': negative momentum (alpha z=-1.32) dominates despite high quality and entry signals. The stock is deeply off highs (-35.2%) in a mixed regime, suggesting continued underperformance vs S&P 500.",
+      "horizon_d": 30,
+      "thesis": "The deterministic screen's earnings/insider/revisions selection axis is positive, anchored by a validated SUE leg (z=1.8) and constructive momentum. However, the Health Care equal-weight basket is extended/crowded, per the profile's risk control, so upside relative to the S&P is likely modest and requires patience; the base-building pattern suggests waiting for a stronger entry.",
       "evidence": [
-        "Selection axis: alpha z=-1.32 (context momentum) heavily negative; no SUE present",
-        "Entry: urgency present but caution; off-high deep -35.2%",
-        "Quality z=0.81 clean, but not enough to offset trend",
-        "Regime mixed, no strong tailwind"
+        "SUE z=1.8 (validated leg)",
+        "Entry axis not blocked, off-high -5.3% building base",
+        "Risk control: Narrative basket cautions cap size, don't chase"
       ],
-      "dissent": "Strong quality and insider buying (if present) could support a mean-reversion bounce, but the prolonged weakness raises risk of further drawdown.",
+      "dissent": "The crowded healthcare basket could roll over sharply if sector rotation shifts, and accounting watch flags raise idiosyncratic risk; a mere earnings beat may already be priced. (clamped: engine flags this name extended/avoid/blocked)",
       "falsifier": {
-        "text": "ARES closes above its 30-day high and the 50-day moving average turns upward, indicating the downtrend has broken.",
+        "text": "If VTRS closes below $15.50 (decisive break of the base), the constructive lean is invalidated.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "ARES",
+          "subject_ticker": "VTRS",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 15
+          "horizon_d": 30
         }
       },
-      "check_by": "2026-07-30",
-      "engine_verdict": "Lagging \u2014 relative weakness"
-    },
-    {
-      "id": "2026-07-09-BA-4",
-      "ticker": "BA",
-      "name": null,
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "Despite neutral verdict, BA carries significant cautions: accounting warn and deteriorating Defense & Aerospace narrative basket (validated risk gate). With negative selection axis (SUE, revisions, momentum all negative), the risk of underperformance is elevated.",
-      "evidence": [
-        "Selection axis: SUE z=-0.30, revision z=-0.26, alpha z=-0.38",
-        "Cautions: accounting warn, narrative basket deteriorating",
-        "Quality z=-1.11 (33rd percentile) with accounting flag",
-        "Entry: turn signaled but urgency caution, off-high -11.5%"
-      ],
-      "dissent": "If the defense sector stabilizes and BA's accounting concerns are resolved, the deeply negative quality could be mean-reverting; but the near-term edge is absent.",
-      "falsifier": {
-        "text": "BA's narrative basket stops deteriorating and its accounting flag clears, accompanied by a weekly close above $240.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "BA",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 15
-        }
-      },
-      "check_by": "2026-07-30",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-09-CDNS-5",
-      "ticker": "CDNS",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Verdict is constructive: positive SUE (z=1.24) and revisions (z=0.48) support earnings edge, while entry axis shows urgency and off-high -7.3%. However, caution from the deteriorating Technology Equal-Weight basket caps conviction.",
-      "evidence": [
-        "Selection axis: SUE z=1.24 validated, revision z=0.48 literature",
-        "Entry: urgency present, off-high -7.3%",
-        "Quality clean (z=0.30)",
-        "Caution: Narrative basket (Technology Equal-Weight) deteriorating; risk gate trims size"
-      ],
-      "dissent": "If the Equal-Weight Technology basket continues to weaken, CDNS's relative strength may fade despite firm-specific earnings, as sector headwinds dominate.",
-      "falsifier": {
-        "text": "CDNS fails to hold above $370 on a weekly close, breaking the base-building pattern.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "CDNS",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-08-06",
+      "check_by": "2026-08-20",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
-      "id": "2026-07-09-CLH-6",
-      "ticker": "CLH",
+      "id": "2026-07-09-MS-2",
+      "ticker": "MS",
+      "name": null,
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 10,
+      "thesis": "The engine tags MS as a leader but notes weak fundamentals and an imminent binary earnings event (4 days). The profile's risk control explicitly advises sizing down; until the event passes, the stock is likely to be driven by earnings uncertainty, making it risky relative to the S&P over the immediate horizon.",
+      "evidence": [
+        "Earnings in 4d \u2014 binary event risk",
+        "Quality axis z=-1.07, accounting watch and weak fundamentals",
+        "Entry signals positive but overshadowed by event"
+      ],
+      "dissent": "If earnings beat and guidance is strong, the stock could gap up sharply, outperforming the S&P significantly; thus the cautious lean is vulnerable to a positive surprise.",
+      "falsifier": {
+        "text": "If MS closes above $230 within 5 days of earnings, the cautious lean is invalidated.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "MS",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 10
+        }
+      },
+      "check_by": "2026-07-23",
+      "engine_verdict": "Leader \u00b7 weak fundamentals \u2014 higher-risk"
+    },
+    {
+      "id": "2026-07-09-FHI-3",
+      "ticker": "FHI",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The deterministic screen finds no clear edge: selection axis is negative (z=-0.11) with SUE weak, despite a fresh buy entry on the board. No validated alpha signal; the neutral verdict is appropriate, and no risk controls sway the call.",
+      "evidence": [
+        "Selection z=-0.11, pct 48",
+        "SUE z=-0.27, revision z=-0.64",
+        "Entry axis positive but insufficient to overcome lack of alpha"
+      ],
+      "dissent": "Momentum leg (alpha z=0.97) could attract trend-followers, and the fresh buy state might catch a broad market bid, leading to outperformance.",
+      "falsifier": {
+        "text": "If FHI closes above $60.00 with above-average volume, that would indicate a breakout and invalidate the neutral lean (suggesting outperformance).",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-06",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-07-09-UTHR-4",
+      "ticker": "UTHR",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Despite a decent entry setup (pullback within a rally, entry z=0.54), the selection axis shows no incremental edge (z=-0.02) with negative SUE. The engine's neutral verdict reflects a lack of validated alpha, and no risk controls push for action.",
+      "evidence": [
+        "Selection z=-0.017, SUE z=-1.01",
+        "Entry axis positive but non-blocked",
+        "Neutral verdict unchanged"
+      ],
+      "dissent": "The stock is in a rally and may be consolidating; a large-cap biotech with quality fundamentals could outperform if defensive flows return.",
+      "falsifier": {
+        "text": "If UTHR closes above $600, breaking above the prior high and resuming trend, the neutral lean would be proven too conservative (outperforming).",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-06",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-07-09-IVZ-5",
+      "ticker": "IVZ",
       "name": null,
       "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Constructive verdict supported by positive revisions (z=0.63) and modest momentum, strong entry urgency (now, off-high -3.8%) and tailwind in a mixed regime. Building base with no accounting flags; clean insider/earnings edge.",
+      "horizon_d": 25,
+      "thesis": "The screen's earnings/insider/revisions selection axis is positive (SUE z=0.12, revisions z=0.44), and entry signals a base with a volatility squeeze. The risk control flags accounting watch, but no basket headwind; the constructive verdict is supported by residual-alpha ordering, though caution around hold-state urgency tempers conviction.",
       "evidence": [
-        "Selection axis: revision z=0.63 (lit), momentum z=0.16 (context)",
-        "Entry axis: urgency now, off-high -3.8%, rsi",
-        "Tailwind z=0.376 (spotlight)",
-        "Quality clean, no flags"
+        "Selection z=0.44, pct 57",
+        "Entry vol-squeeze, off-high -2.0%",
+        "Accounting watch flag \u2014 monitored, not a blocker"
       ],
-      "dissent": "SUE is slightly negative (z=-0.18), so near-term earnings surprise momentum is lacking; if revisions stall, the base could fail.",
+      "dissent": "Accounting quality concerns could surface suddenly and trigger a re-rating, and the low-quality factor backdrop (quality axis null) provides no cushion.",
       "falsifier": {
-        "text": "CLH closes below $290 on above-average volume, invalidating the turn signal and suggesting false urgency.",
+        "text": "If IVZ closes below $27.50 (break of the recent base and key support), the constructive lean fails.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "CLH",
+          "subject_ticker": "IVZ",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
+          "horizon_d": 25
+        }
+      },
+      "check_by": "2026-08-13",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-07-09-SBUX-6",
+      "ticker": "SBUX",
+      "name": null,
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The verdict text is constructive, but the deterministic band is neutral, and the profile issues a validated drawdown gate: the Consumer Discretionary equal-weight basket is below trend, and the AI-buildout tape is not rewarding this name. The risk reshape explicitly says 'size down', so relative to the S&P, SBUX is likely to underperform as long as that macro dynamic persists.",
+      "evidence": [
+        "Basket drawdown gate: Consumer Disc EW below trend",
+        "Risk control: size down, not this tape",
+        "Conviction band neutral, restricting confidence"
+      ],
+      "dissent": "If the market rotates from AI mega-caps back to consumer discretionary, SBUX could catch a sharp bid, given its base-building pattern and fresh buy urgency.",
+      "falsifier": {
+        "text": "If the Consumer Discretionary Equal-Weight ETF (RCD) closes above its 50-day moving average and SBUX closes above $108, the cautious lean is invalidated.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "SBUX",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
           "horizon_d": 20
         }
       },
