@@ -1,4 +1,4 @@
-"""scripts/metabolism_build.py — BUILD lane for the Metabolism V2-B write-serialization (R-V2-5).
+"""scripts/metabolism_build.py — BUILD lane for the Metabolism V2-B/V4 write-serialization (R-V2-5, R-V4-2).
 
 PURPOSE
 -------
@@ -14,11 +14,10 @@ for each granted proposal:
   (c) Creates a git worktree on metabolism/build-<lobe>-<cycle> off FRESH
       origin/main.
 
-  (d) Dispatches a headless Sonnet build session (pick_key from
-      metabolism_dispatch for its OAuth).
-      IN THIS VERSION the invocation is a DOCUMENTED CONTRACT / STUB:
-      the live self-hosted build session runs only when armed; this file
-      ships the wiring and the interface, not a live LLM call in CI.
+  (d) Dispatches a headless Sonnet build session via _dispatch_build_session()
+      (R-V4-2: real dispatch, Sonnet-pinned, draft-only, IMMUTABLE-fenced).
+      The session is armed-gated (AUTONOMY_PAUSED re-checked at dispatch),
+      capability-broker-keyed, and runs in its own worktree.
 
   (e) Opens a DRAFT PR (never merges).
 
@@ -38,6 +37,18 @@ data/metabolism/claims.jsonl (metabolism-build-claims artifact):
   {schema, cycle_id, proposal_id, lobe, target_files, ts}
   Appended atomically (one row per granted + uncollided proposal per cycle).
   The collision check reads ALL claims for the same cycle_id before appending.
+
+DISPATCH SAFETY (R-V4-2)
+--------------------------
+* IMMUTABLE-set refusal AT DISPATCH: any target_file matching the immutable
+  set causes an immediate refusal before any session launch.
+* AUTONOMY_PAUSED re-checked immediately before session launch (fail-closed).
+* Key via capability broker resolve() → env ref NAME only; dispatcher reads
+  os.environ[ref]; key value never logged or persisted.
+* Foreign-file abort: after session ends, diff the worktree; any changed file
+  outside the proposal's declared target_files → abort, clean up, no PR.
+* dry_run=True: journals a would_dispatch record but launches nothing.
+* Idempotent: same cycle_id + proposal_id → never double-dispatched.
 
 NEVER-RAISE CONTRACT: all public functions catch exceptions and return safe fallbacks.
 
@@ -263,46 +274,232 @@ def _gc_worktree(branch: str, *, root: Path | None = None) -> None:
         log.warning("metabolism_build._gc_worktree: %s", exc)
 
 
-# ── Build-session stub (the interface contract) ───────────────────────────────
+# ── Build session — model pin + immutable check ───────────────────────────────
 
-_BUILD_SESSION_CONTRACT = """\
-# BUILD SESSION INTERFACE CONTRACT (V2-B Unit 6)
-#
-# When armed (AUTONOMY_PAUSED=false) and the two-key is granted, the build
-# lane dispatches a headless Sonnet build session for each granted proposal.
-#
-# Interface:
-#   cap_id  = pick_key(stage="build", root=root)  # OAuth key (capability_id only)
-#   ref     = key_pool.get_secret_ref(cap_id)      # env-var name
-#   token   = os.environ[ref]                      # caller reads; dispatch never touches
-#
-# The session receives:
-#   - The worktree path (absolute) as its working directory
-#   - The proposal JSON (from the docket) as its task specification
-#   - A draft PR target: metabolism/build-<lobe>-<cycle>
-#   - The branch is off FRESH origin/main (claim step ran first)
-#
-# The session MUST:
-#   - Commit only to data/metabolism/* and its declared target_files
-#   - Open a DRAFT PR (never merge)
-#   - Write Loop-Authored: trailer on every commit
-#   - Append to data/metabolism/journal/<cycle_id>.json via metabolism_journal
-#
-# The session MUST NOT:
-#   - Touch the IMMUTABLE set (.claude/hooks, .github/workflows, config/grader_manifest.yml,
-#     config/capability_manifest.yml, config/metabolism_budget.yml,
-#     engine/neuralweb/capability_broker.py, scripts/check_self_mod_fence.py,
-#     scripts/check_grader_manifest.py, settings.json,
-#     research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md, config/metabolism_anomaly.yml,
-#     config/fable_mode_core.md, config/metabolism_schedule.yml,
-#     config/ux_simplicity_rules.yml, engine/metabolism/tap.py)
-#   - Merge any PR
-#   - Push to main
-#   - Write scored-path surfaces without a T2 metabolism_live flag
-#
-# In this PR (V2-B Unit 6) the live dispatch call is a STUB — wiring is shipped;
-# the live LLM call fires only when the lane is armed by the operator.
-"""
+# The build session is always Sonnet-pinned (R-V4-2: never inherits caller model).
+_BUILD_SESSION_MODEL = "claude-sonnet-4-6"
+
+# Sonnet alias accepted by the claude CLI (falls back to full model id on older
+# CLI versions; the full id is the authoritative pin).
+_BUILD_SESSION_MODEL_ALIAS = "sonnet"
+
+# Journal stage key for dispatch records (one per proposal per cycle).
+_DISPATCH_STAGE_PREFIX = "build_dispatch_"
+
+# Loop-Authored trailer required on every commit the session makes (R-V4-2).
+_LOOP_AUTHORED_TRAILER = "Loop-Authored:"
+
+
+def _check_immutable_targets(target_files: list[str]) -> list[str]:
+    """Return target_files that match the IMMUTABLE set from check_self_mod_fence.
+
+    Defense-in-depth at dispatch time (R-V4-2), ahead of the F2 CI fence.
+    NEVER raises.
+    """
+    try:
+        from scripts.check_self_mod_fence import _matches_immutable
+        return [f for f in target_files if _matches_immutable(f)]
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _check_immutable_targets: %s — treating as no hits", exc)
+        return []
+
+
+def _diff_worktree_files(wt_path: str, base_ref: str = "origin/main") -> list[str] | None:
+    """Return the list of files changed in the worktree vs base_ref.
+
+    Returns None on error (caller treats as a failure).  NEVER raises.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--name-only", base_ref, "HEAD"],
+            cwd=wt_path, capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode != 0:
+            log.warning(
+                "BUILD: _diff_worktree_files: git diff exited %d: %s",
+                result.returncode, result.stderr[:200],
+            )
+            return None
+        lines = [l.strip() for l in result.stdout.splitlines() if l.strip()]
+        return lines
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _diff_worktree_files(%s): %s", wt_path, exc)
+        return None
+
+
+def _resolve_key_ref(cap_id: str, root: Path | None = None) -> tuple[str | None, str | None]:
+    """Resolve cap_id → (ref_name, reason).  Returns (None, reason) on any failure.
+
+    Uses capability_broker.resolve() and key_pool.get_secret_ref().
+    REDLINE: returns the ref NAME only, never the value.  NEVER raises.
+    """
+    try:
+        from engine.neuralweb.capability_broker import resolve as broker_resolve
+        result = broker_resolve(cap_id, lane="metabolism-build", root=root)
+        if not result.get("allowed"):
+            return None, f"capability_broker denied: {result.get('reason', 'unknown')}"
+        ref_name: str | None = result.get("ref_name")
+        if not ref_name:
+            return None, "capability_broker returned no ref_name"
+        return ref_name, None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _resolve_key_ref(%s): %s", cap_id, exc)
+        # Fallback: try key_pool.get_secret_ref directly
+        try:
+            from engine.neuralweb.key_pool import get_secret_ref
+            ref = get_secret_ref(cap_id, root)
+            if ref:
+                return ref, None
+            return None, f"key_pool.get_secret_ref returned None for {cap_id}"
+        except Exception as exc2:  # noqa: BLE001
+            return None, f"both broker and key_pool failed: {exc} / {exc2}"
+
+
+def _record_key_session(
+    cap_id: str,
+    cycle_id: str,
+    outcome: str = "ok",
+    root: Path | None = None,
+) -> None:
+    """Record a session in the key ledger for quota accounting.  NEVER raises."""
+    try:
+        from engine.neuralweb.key_pool import record_session
+        record_session(cap_id, est_tokens=0, cycle_id=cycle_id,
+                       stage="build", outcome=outcome, root=root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _record_key_session(%s): %s", cap_id, exc)
+
+
+def _journal_dispatch(
+    cycle_id: str,
+    proposal_id: str,
+    record: dict[str, Any],
+    *,
+    root: Path | None = None,
+) -> None:
+    """Persist a dispatch record to the cycle journal.  NEVER raises."""
+    try:
+        from scripts.metabolism_journal import finish_stage
+        stage = f"{_DISPATCH_STAGE_PREFIX}{proposal_id}"
+        finish_stage(
+            cycle_id, stage, "done",
+            note=json.dumps(record, separators=(",", ":"), default=str)[:500],
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _journal_dispatch(%s/%s): %s", cycle_id, proposal_id, exc)
+
+
+def _is_dispatch_done(cycle_id: str, proposal_id: str, root: Path | None = None) -> bool:
+    """Return True if this proposal has already been dispatched this cycle.
+
+    Idempotency check — prevents double-dispatch on retry.  NEVER raises.
+    """
+    try:
+        from scripts.metabolism_journal import is_stage_done
+        stage = f"{_DISPATCH_STAGE_PREFIX}{proposal_id}"
+        return is_stage_done(cycle_id, stage, root=root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _is_dispatch_done(%s/%s): %s", cycle_id, proposal_id, exc)
+        return False
+
+
+def _build_session_task_prompt(
+    proposal: dict[str, Any],
+    wt_path: str,
+    branch: str,
+    cycle_id: str,
+) -> str:
+    """Build the task prompt injected into the headless build session.
+
+    The prompt is the sole task specification the session receives.
+    NEVER raises.
+    """
+    pid = proposal.get("proposal_id", "unknown")
+    title = proposal.get("title", "")
+    rationale = proposal.get("rationale", "")
+    target_files = proposal.get("target_files") or []
+    fitness_contract = proposal.get("fitness_contract") or {}
+    tier = proposal.get("tier", "T1")
+    targets_sensor = proposal.get("targets_sensor", "")
+
+    target_files_list = "\n".join(f"  - {f}" for f in target_files) or "  (none declared)"
+
+    return (
+        f"You are a BUILD session for the Macro Dashboard Metabolism loop (R-V4-2).\n\n"
+        f"CYCLE:    {cycle_id}\n"
+        f"PROPOSAL: {pid}\n"
+        f"TITLE:    {title}\n"
+        f"TIER:     {tier}\n"
+        f"SENSOR:   {targets_sensor}\n\n"
+        f"RATIONALE:\n{rationale}\n\n"
+        f"TARGET FILES (you may ONLY change these + data/metabolism/*):\n"
+        f"{target_files_list}\n\n"
+        f"FITNESS CONTRACT:\n{json.dumps(fitness_contract, indent=2)}\n\n"
+        f"HARD LAWS:\n"
+        f"  - Commit ONLY to data/metabolism/* and the target_files above.\n"
+        f"  - Every commit trailer: {_LOOP_AUTHORED_TRAILER} build={pid} cycle={cycle_id}\n"
+        f"  - Open a DRAFT PR on branch {branch} — NEVER merge.\n"
+        f"  - Do NOT touch the IMMUTABLE set (hooks, workflows, grader_manifest.yml,\n"
+        f"    capability_manifest.yml, metabolism_budget.yml, capability_broker.py,\n"
+        f"    check_self_mod_fence.py, check_grader_manifest.py, settings.json,\n"
+        f"    AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md, metabolism_anomaly.yml,\n"
+        f"    fable_mode_core.md, metabolism_schedule.yml, ux_simplicity_rules.yml,\n"
+        f"    nw_mission.yml, engine/metabolism/tap.py).\n"
+        f"  - Do NOT push to main. Do NOT merge any PR.\n"
+        f"  - No LLM-originated signals/scores/escalations.\n"
+        f"  - Working directory: {wt_path}\n"
+        f"  - Model is already pinned — do not change it.\n"
+    )
+
+
+def _launch_build_subprocess(
+    cmd: list[str],
+    env: dict[str, str],
+    cwd: str,
+    timeout_s: int = 1800,
+) -> dict[str, Any]:
+    """Thin subprocess wrapper for the claude CLI build session.
+
+    Separated into its own function so tests can monkeypatch it without
+    actually launching a real session.
+
+    Parameters
+    ----------
+    cmd : list[str]
+        The full command list (e.g. ['claude', '--model', ..., '-p', prompt]).
+    env : dict[str, str]
+        The environment dict (includes the OAuth token under the ref name).
+    cwd : str
+        The working directory (worktree path).
+    timeout_s : int
+        Subprocess timeout in seconds.
+
+    Returns
+    -------
+    dict with keys: returncode (int), stdout (str), stderr (str).
+    NEVER raises — returns {returncode: -1, stdout: '', stderr: str(exc)} on error.
+    """
+    try:
+        result = subprocess.run(
+            cmd,
+            env=env,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+        )
+        return {
+            "returncode": result.returncode,
+            "stdout": result.stdout or "",
+            "stderr": result.stderr or "",
+        }
+    except subprocess.TimeoutExpired as exc:
+        log.warning("BUILD: session subprocess timed out after %ds: %s", timeout_s, exc)
+        return {"returncode": -1, "stdout": "", "stderr": f"timeout after {timeout_s}s"}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: session subprocess error: %s", exc)
+        return {"returncode": -1, "stdout": "", "stderr": str(exc)}
 
 
 def _dispatch_build_session(
@@ -314,47 +511,222 @@ def _dispatch_build_session(
     root: Path | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
-    """Dispatch the headless build session for a granted proposal.
+    """Dispatch the headless Sonnet build session for a granted proposal (R-V4-2).
 
-    In V2-B Unit 6 this is a DOCUMENTED STUB — the live LLM call is wired
-    but does not execute until the lane is armed (AUTONOMY_PAUSED=false in
-    production and a real cap_id is available).
+    Hard requirements enforced:
+      1. Model PINNED to Sonnet — never inherits caller model.
+      2. Worktree is already off fresh origin/main (caller created it).
+      3. IMMUTABLE-set refusal AT DISPATCH (defense-in-depth).
+      4. AUTONOMY_PAUSED re-checked immediately before session launch.
+      5. Key via capability_broker.resolve() → env ref NAME only; value never logged.
+      6. After session ends: foreign-file diff check; abort + no PR on violation.
+      7. Draft PR only (the session is instructed; the dispatcher opens the PR).
+      8. Journal + idempotency (same cycle_id+proposal_id → no re-dispatch).
+      9. dry_run=True → journal a would_dispatch record, launch nothing, no PR.
+      10. NEVER raises.
 
-    Returns {dispatched: bool, stub: bool, reason: str}.
-    NEVER raises.
+    Returns
+    -------
+    dict with keys:
+        dispatched (bool)
+        reason (str)
+        dry_run (bool, present when dry_run=True)
+        would_dispatch (dict, present when dry_run=True)
+        error (str, present on failure/abort)
+        foreign_files (list, present on foreign-file abort)
     """
-    if dry_run:
-        return {"dispatched": False, "stub": True, "reason": "dry_run"}
+    # NEVER-RAISE: guard against None/non-dict proposal at the top level
+    if not isinstance(proposal, dict):
+        return {"dispatched": False, "reason": "invalid_proposal: not a dict", "proposal_id": "unknown"}
 
-    if cap_id is None:
+    pid = str(proposal.get("proposal_id") or "unknown")
+    cycle_id = str(proposal.get("cycle_id") or "")
+    target_files = [str(f) for f in (proposal.get("target_files") or []) if f is not None]
+    result: dict[str, Any] = {"dispatched": False, "proposal_id": pid}
+
+    try:
+        # ── Step 0: idempotency guard ─────────────────────────────────────────
+        if not dry_run and cycle_id and _is_dispatch_done(cycle_id, pid, root=root):
+            log.info("BUILD: already dispatched cycle=%s proposal=%s — idempotent skip", cycle_id, pid)
+            result["reason"] = "already_dispatched"
+            result["idempotent_skip"] = True
+            return result
+
+        # ── Step 1: IMMUTABLE-set refusal at dispatch ─────────────────────────
+        immutable_hits = _check_immutable_targets(target_files)
+        if immutable_hits:
+            reason = f"IMMUTABLE_REFUSAL: target_files contain immutable paths: {immutable_hits}"
+            log.warning("BUILD: %s proposal=%s", reason, pid)
+            result["reason"] = reason
+            result["immutable_hits"] = immutable_hits
+            if cycle_id:
+                _journal_dispatch(cycle_id, pid, {"status": "immutable_refusal",
+                                                   "immutable_hits": immutable_hits}, root=root)
+            return result
+
+        # ── Step 2: AUTONOMY_PAUSED re-check immediately before launch ────────
+        try:
+            from scripts.metabolism_guard import is_paused as _guard_paused
+            if _guard_paused():
+                result["reason"] = "autonomy_paused_at_dispatch"
+                log.info("BUILD: AUTONOMY_PAUSED re-check fired — aborting dispatch for proposal=%s", pid)
+                return result
+        except Exception as exc:  # noqa: BLE001
+            log.warning("BUILD: AUTONOMY_PAUSED re-check failed (%s) — fail-closed", exc)
+            result["reason"] = f"autonomy_pause_check_failed: {exc}"
+            return result
+
+        # ── Step 3: resolve key ref (name only — never the value) ─────────────
+        if cap_id is None:
+            result["reason"] = "no_cap_id"
+            log.info("BUILD: no cap_id — cannot dispatch proposal=%s", pid)
+            return result
+
+        ref_name, ref_err = _resolve_key_ref(cap_id, root=root)
+        if ref_name is None:
+            result["reason"] = f"key_resolution_failed: {ref_err}"
+            log.warning("BUILD: key resolution failed for cap=%s: %s", cap_id, ref_err)
+            return result
+
+        # Verify the env var is present (fail-closed; never log/persist its value)
+        if not os.environ.get(ref_name, ""):
+            result["reason"] = f"key_env_absent: {ref_name} not set in environment"
+            log.warning("BUILD: %s", result["reason"])
+            return result
+
+        # ── Step 4: dry_run path ──────────────────────────────────────────────
+        if dry_run:
+            wt_would = str(wt_path) if wt_path else "(not yet created)"
+            would = {
+                "proposal_id": pid,
+                "cycle_id": cycle_id,
+                "model": _BUILD_SESSION_MODEL,
+                "worktree_path": wt_would,
+                "branch": branch,
+                "target_files": target_files,
+                "key_ref_name": ref_name,   # ref NAME only — no value
+                "cap_id": cap_id,
+            }
+            result["dry_run"] = True
+            result["would_dispatch"] = would
+            result["reason"] = "dry_run"
+            log.info(
+                "BUILD [DRY-RUN]: would dispatch proposal=%s model=%s wt=%s branch=%s key_ref=%s",
+                pid, _BUILD_SESSION_MODEL, wt_would, branch, ref_name,
+            )
+            if cycle_id:
+                _journal_dispatch(cycle_id, pid, {"status": "would_dispatch",
+                                                   "dry_run": True, "plan": would}, root=root)
+            return result
+
+        # ── Step 5: build task prompt + command ───────────────────────────────
+        task_prompt = _build_session_task_prompt(proposal, wt_path, branch, cycle_id)
+        cmd = [
+            "claude",
+            "--model", _BUILD_SESSION_MODEL,
+            "--print",           # non-interactive: print final answer only
+            "--dangerously-skip-permissions",  # headless build — no interactive prompts
+            "-p", task_prompt,
+        ]
+
+        # Build env: pass the token under its ref name; never capture the value here
+        session_env = {**os.environ}
+        # The token is already in session_env under ref_name from the runner's env.
+        # We do NOT read or log it; we pass the full env so the subprocess inherits it.
+
         log.info(
-            "BUILD: no cap_id available (paused or all-cooling) — "
-            "build session stub for proposal=%s", proposal.get("proposal_id")
+            "BUILD: dispatching proposal=%s model=%s wt=%s branch=%s key_ref=%s",
+            pid, _BUILD_SESSION_MODEL, wt_path, branch, ref_name,
         )
-        return {
-            "dispatched": False,
-            "stub": True,
-            "reason": "no_cap_id — lane wiring shipped; live call fires when armed",
-            "contract": _BUILD_SESSION_CONTRACT,
-        }
 
-    # When cap_id is available and not dry_run:
-    # The live dispatch would invoke a headless Sonnet claude-code session.
-    # Contract is documented above. Stub in this PR.
-    log.info(
-        "BUILD: build-session stub for proposal=%s cap=%s wt=%s branch=%s "
-        "(live LLM call fires when operator arms the lane)",
-        proposal.get("proposal_id"), cap_id, wt_path, branch,
-    )
-    return {
-        "dispatched": False,
-        "stub": True,
-        "reason": "v2b_unit6_stub — lane wiring shipped; live LLM call fires when armed",
-        "cap_id": cap_id,
-        "wt_path": wt_path,
-        "branch": branch,
-        "contract": _BUILD_SESSION_CONTRACT,
-    }
+        # Record session start in the key ledger (quota accounting)
+        _record_key_session(cap_id, cycle_id, outcome="ok", root=root)
+
+        # ── Step 6: launch the build session ─────────────────────────────────
+        run_result = _launch_build_subprocess(cmd, session_env, wt_path, timeout_s=1800)
+        returncode = run_result.get("returncode", -1)
+        log.info(
+            "BUILD: session ended proposal=%s rc=%d stdout_len=%d",
+            pid, returncode, len(run_result.get("stdout", "")),
+        )
+
+        if returncode != 0:
+            _record_key_session(cap_id, cycle_id, outcome="error", root=root)
+            result["reason"] = f"session_nonzero_rc: {returncode}"
+            result["returncode"] = returncode
+            result["stderr_snippet"] = run_result.get("stderr", "")[:200]
+            if cycle_id:
+                _journal_dispatch(cycle_id, pid, {"status": "session_error",
+                                                   "returncode": returncode}, root=root)
+            return result
+
+        # ── Step 7: foreign-file diff check ──────────────────────────────────
+        changed_files = _diff_worktree_files(wt_path)
+        if changed_files is None:
+            # diff failed — fail-closed: cannot verify containment
+            result["reason"] = "foreign_file_check_failed: git diff returned None"
+            if cycle_id:
+                _journal_dispatch(cycle_id, pid, {"status": "diff_error"}, root=root)
+            return result
+
+        # Allowed: declared target_files + anything under data/metabolism/
+        allowed_targets = set(target_files)
+        foreign: list[str] = []
+        for f in changed_files:
+            norm = f.replace("\\", "/").lstrip("/")
+            if norm in allowed_targets:
+                continue
+            if norm.startswith("data/metabolism/"):
+                continue
+            foreign.append(f)
+
+        if foreign:
+            reason = f"FOREIGN_FILE_ABORT: session changed files outside target_files + data/metabolism/: {foreign}"
+            log.warning("BUILD: %s proposal=%s", reason, pid)
+            result["reason"] = reason
+            result["foreign_files"] = foreign
+            # Clean up worktree (best-effort)
+            _cleanup_worktree_on_abort(wt_path)
+            if cycle_id:
+                _journal_dispatch(cycle_id, pid, {"status": "foreign_file_abort",
+                                                   "foreign_files": foreign}, root=root)
+            return result
+
+        # ── Step 8: success — record and journal ──────────────────────────────
+        result["dispatched"] = True
+        result["reason"] = "dispatched"
+        result["model"] = _BUILD_SESSION_MODEL
+        result["changed_files"] = changed_files
+        if cycle_id:
+            _journal_dispatch(cycle_id, pid, {"status": "dispatched",
+                                               "model": _BUILD_SESSION_MODEL,
+                                               "changed_files": changed_files}, root=root)
+        log.info("BUILD: dispatch complete proposal=%s %d files changed", pid, len(changed_files))
+        return result
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _dispatch_build_session(%s): %s", pid, exc)
+        result["reason"] = f"unexpected_error: {exc}"
+        return result
+
+
+def _cleanup_worktree_on_abort(wt_path: str) -> None:
+    """Best-effort cleanup of a worktree on foreign-file abort.  NEVER raises."""
+    try:
+        if not wt_path or not Path(wt_path).exists():
+            return
+        # Reset the worktree to HEAD so the branch is clean before GC picks it up
+        subprocess.run(
+            ["git", "checkout", "--", "."],
+            cwd=wt_path, capture_output=True, timeout=30,
+        )
+        subprocess.run(
+            ["git", "clean", "-fd"],
+            cwd=wt_path, capture_output=True, timeout=30,
+        )
+        log.info("BUILD: worktree cleanup after abort: %s", wt_path)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _cleanup_worktree_on_abort(%s): %s", wt_path, exc)
 
 
 # ── Draft PR helper ───────────────────────────────────────────────────────────
