@@ -23,7 +23,14 @@ concurrency:
 jobs:
   collect:
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 100
+    # was 100 — the collectors step's real baseline has grown to ~60-67m (the old "~35m"
+    # budget), and on 2026-07-11 it spiked to 98.5m (EDGAR 8-K velocity ~18m, OpenFIGI
+    # ~10m, shadow-importance ~14m on a Friday close). The job was CANCELLED at exactly
+    # 100m while still ahead of "commit data", so the whole night's collections were
+    # thrown away and engine built the dashboards from the previous day's committed
+    # store (us_standouts stuck on 07-09). Same silent-timeout class as the asia-close
+    # freeze (#2193) and the engine job's own 70→120 bump below. 150m = spike ×1.5.
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - name: python 3.12 (Homebrew venv — self-hosted runner)
@@ -196,8 +203,9 @@ jobs:
         # Hard-stop at 30 min (budget_deadline): state is persisted after every
         # completed root-day; the next nightly run resumes from remaining work.
         # Budget: 30 min — sized so episodes(30) + etf-history(20) + forward(~13)
-        # + collectors + Finviz (~35) < 100-min job timeout, ensuring "commit data"
-        # is always reached before GitHub Actions cancels the collect job.
+        # + collectors (~60-67m observed 2026-07; was ~35m when first budgeted) + Finviz
+        # stay under the 150-min job timeout, ensuring "commit data" is always reached
+        # before GitHub Actions cancels the collect job.
         # Outputs (data/tape_flow/daily/*.parquet + data/tape_flow/_state.json)
         # are covered by the "commit data" step's `git add data/` below.
         # Non-fatal: terminal absent or any error logs a warning and continues.
