@@ -715,9 +715,21 @@ def main() -> int:
                     _basket_turn_cn = json.loads(_bt_cn_path.read_text())
             except Exception as _bte:  # noqa: BLE001
                 log.debug("basket_turn_cn load failed (%s) — rider omitted", _bte)
+            # Fix 3: load baskets_ths.json for organ-rider THS name enrichment
+            _ths_baskets: dict | None = None
+            try:
+                _ths_path = site_dir / "chinabasketdata" / "baskets_ths.json"
+                if _ths_path.exists():
+                    _ths_raw = json.loads(_ths_path.read_text())
+                    _ths_baskets = {b["id"]: b for b in (_ths_raw.get("baskets") or []) if b.get("id")}
+                else:
+                    log.debug("baskets_ths.json absent — THS organ-rider enrichment skipped")
+            except Exception as _thse:  # noqa: BLE001
+                log.debug("baskets_ths.json load failed (%s) — THS enrichment skipped", _thse)
             act_now_v2 = assemble_act_now(
                 sectors, theme_intel, cycle_rows,
                 basket_turn=_basket_turn_cn,
+                ths_baskets=_ths_baskets,
             )
         except Exception as _e:  # noqa: BLE001 — additive, never fatal
             log.error("china act_now_v2 build failed (%s); skipping", _e)

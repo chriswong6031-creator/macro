@@ -198,6 +198,7 @@ def assemble_act_now(
     theme_intel: dict | None,
     cycle_rows: list[dict] | None,
     basket_turn: dict | None = None,
+    ths_baskets: dict | None = None,
 ) -> dict[str, Any]:
     """Assemble the four-lane Act-Now v2 board.
 
@@ -213,6 +214,8 @@ def assemble_act_now(
                 whose state is TURNING or CONFIRMED. Also surfaces WASHED_OUT/
                 BASING baskets already in the lane with an organ-state chip.
                 The organ ADDS evidence — never removes forward_log-selected rows.
+    ths_baskets {id: basket_dict} from baskets_ths.json for organ-rider name
+                enrichment of ths_*/thsc* ids; None → skip THS lookup
 
     Returns
     -------
@@ -363,6 +366,8 @@ def assemble_act_now(
             _bw_id = _bw_row["id"]
             _existing_bw_ids.add(_bw_id)
             _canonical_id = _bw_id[2:] if _bw_id.startswith("b-") else _bw_id
+            # Register canonical so the organ-surfacing loop skips both b- and non-b- variants
+            _existing_bw_ids.add(_canonical_id)
             _organ_st = _organ_state_map.get(_bw_id) or _organ_state_map.get(_canonical_id)
             if _organ_st:
                 _bw_row["organ_state"] = _organ_st
@@ -381,17 +386,56 @@ def assemble_act_now(
                 continue
             if _org_id in _existing_bw_ids:
                 continue
-            # Avoid duplicates from the canonical/b- prefix both mapping
+            # Avoid duplicates from the canonical/b- prefix both mapping (Fix 2)
             _canonical_org = _org_id[2:] if _org_id.startswith("b-") else _org_id
             if _canonical_org in _existing_bw_ids:
                 continue
-            # Only include if the organ provides TURNING/CONFIRMED
-            _new_bw_row = _blank_row("BASKET", _org_id, _org_id)
+            # Fix 1: resolve display name + enrichment via fallback chain
+            _name = _org_id
+            _name_zh: str | None = None
+            _score: int | None = None
+            _reco: str | None = None
+            _reco_en: str | None = None
+            _reco_zh: str | None = None
+            _rel20: float | None = None
+            # 1a. themes_by_id covers cn_* ids (both _org_id and canonical)
+            _td = themes_by_id.get(_org_id) or themes_by_id.get(_canonical_org)
+            if _td:
+                _name = _td.get("name") or _org_id
+                _name_zh = _td.get("name_zh")
+                _score = _td.get("score")
+                _reco = _td.get("action") or _td.get("reco")
+                _reco_en = _td.get("action_en") or _td.get("reco_en")
+                _reco_zh = _td.get("action_zh") or _td.get("reco_zh")
+                _p20 = ((_td.get("perf") or {}).get("20d") or {})
+                _rel20 = _p20.get("rel")
+            elif ths_baskets:
+                # 1b. ths_baskets covers ths_*/thsc* ids from baskets_ths.json
+                _tb = ths_baskets.get(_org_id) or ths_baskets.get(_canonical_org)
+                if _tb:
+                    _name = _tb.get("name") or _org_id
+                    _name_zh = _tb.get("name_zh")
+                    _p20 = ((_tb.get("perf") or {}).get("20d") or {})
+                    _rel20 = _p20.get("rel")
+                else:
+                    log.warning("organ-rider: unknown basket id %r — using slug as name", _org_id)
+            else:
+                log.warning("organ-rider: no lookup available for id %r — using slug as name", _org_id)
+
+            _new_bw_row = _blank_row("BASKET", _org_id, _name, _name_zh)
+            _new_bw_row["score"] = _score
+            _new_bw_row["reco"] = _reco
+            _new_bw_row["reco_en"] = _reco_en
+            _new_bw_row["reco_zh"] = _reco_zh
+            _new_bw_row["rel20"] = _rel20
             _new_bw_row["organ_state"] = _org_st
             _new_bw_row["organ_chip_en"] = f"organ: {_org_st} (tape)"
             _new_bw_row["organ_chip_zh"] = f"器官：{_org_st}（纸带）"
             bottoming_watch.append(_new_bw_row)
+            # Fix 2: register both raw and canonical ids so b-/non-b- variants
+            # can't produce duplicate rows across nightly passes
             _existing_bw_ids.add(_org_id)
+            _existing_bw_ids.add(_canonical_org)
 
     return {
         "lanes": {

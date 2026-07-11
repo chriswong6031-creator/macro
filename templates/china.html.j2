@@ -666,6 +666,8 @@
     .st-filters { gap:4px; }
     .st-filter-sel { font-size:11px; min-width:70px; padding:3px 6px; }
   }
+  /* W8-R7 organ chip — inline to avoid collision with theme.css in-flight PRs */
+  .anv2-chip-organ { background:color-mix(in srgb,var(--info) 10%,var(--panel)); color:color-mix(in srgb,var(--info) 80%,var(--text)); border-color:color-mix(in srgb,var(--info) 26%,transparent); }
 </style>
 </head>
 <body class="{{ 'page-china-stocks' if mode == 'stocks' else 'page-china' }}">
@@ -770,6 +772,8 @@
         <span class="anv2-chip anv2-chip-trough" data-tip-en="At the low point of its cycle — the most beaten-down phase." data-tip-zh="处于周期低谷——最超跌的阶段。">{{ t('TROUGH','低谷') }}</span>
         <span class="anv2-chip anv2-chip-turn" data-tip-en="Momentum is turning up from the low — higher number = sharper turn. A first hint, not a buy signal." data-tip-zh="动能正从低位回升——数字越大转向越明显。仅是初步迹象，非买入信号。">↗ {{ '%.1f'|format(row.osc_slope) }}</span>
         {% endif %}
+        {# organ chip (W8-R7 rider) — TURNING/CONFIRMED state from basket_turn_cn #}
+        {% if row.organ_chip_en %}<span class="anv2-chip anv2-chip-organ">{{ t(row.organ_chip_en, row.organ_chip_zh or row.organ_chip_en) }}</span>{% endif %}
       </div>
       {# stat line: rel20 for themes, rs_63d+pos for bottoming #}
       {% if lane == 'bot' %}
