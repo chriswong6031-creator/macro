@@ -4884,6 +4884,13 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
         {% else %}
         <div class="mx-sent-band-label muted">{{ t('—','—') }}</div>
         {% endif %}
+        {% if ff.quadrant_en %}
+        <div style="margin-top:4px;font-weight:700;font-size:12.5px;color:{{ ffc }}">{{ t(ff.quadrant_en, ff.quadrant_zh) }}
+          {% if ff.provisional %}<span class="badge sm" style="margin-left:6px">{{ t('provisional','暂定') }}</span>{% endif %}
+          {% if ff.unwind_risk %}<span class="badge sm" style="margin-left:6px;color:var(--down)">⚠ {{ t('unwind risk','解构风险') }}</span>{% endif %}
+        </div>
+        {% elif ff.provisional %}<div class="muted sm" style="margin-top:4px">{{ t('provisional','暂定') }}</div>
+        {% endif %}
         <div class="mx-froth-items" style="margin-top:10px">
           <div class="mx-froth-item">
             <span class="mx-froth-label">{{ t('Euphoria','欣喜') }}</span>
@@ -4891,12 +4898,12 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
             <span class="mx-froth-val">{{ ax|round|int }}</span>
           </div>
           <div class="mx-froth-item">
-            <span class="mx-froth-label">{{ t('Fragility','脆弱') }}</span>
+            <span class="mx-froth-label">{{ t('Fragility / distribution','脆弱／派发') }}</span>
             <div class="mx-froth-bar-wrap"><div class="mx-froth-bar" style="width:{{ [bx,100]|min }}%;background:var(--down)"></div></div>
             <span class="mx-froth-val">{{ bx|round|int }}</span>
           </div>
         </div>
-        {% if ff.provisional %}<div class="muted sm" style="margin-top:6px">{{ t('provisional','暂定') }}</div>{% endif %}
+        <div class="muted sm" style="margin-top:6px">{% if ff.track_record and ff.track_record.n %}{{ t('Forward record','前瞻记录') }}: {{ ff.track_record.n }} {{ t('firings','次触发') }} · {{ (ff.track_record.hit_rate * 100)|round|int }}% {{ t('hit','命中') }}. {% else %}{{ t('Forward record accruing.','前瞻记录积累中。') }} {% endif %}{{ t('Display-only — the response is sizing, not selection.','仅供展示——应对是调整仓位，而非选股。') }}</div>
       </section>
       {% endif %}
 
@@ -4906,14 +4913,14 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
       {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
       {% set _fec = 'var(--down)' if FE.fe_score < 30 else ('var(--warn)' if FE.fe_score < 50 else ('var(--up)' if FE.fe_score > 70 else 'var(--muted)')) %}
       <section class="mx-sent-col">
-        <div class="mx-sent-label">{{ t('Fear ↔ Euphoria','恐惧 ↔ 欣喜') }} {{ help('Where the market sits between fear and euphoria, built from cross-asset risk appetite, stress read and capitulation. Context only.','市场处于恐惧与欣喜之间的位置，由跨资产风险偏好、压力读数与投降指标合成。仅供参考。') }}</div>
+        <div class="mx-sent-label">{{ t('Fear ↔ Euphoria: regime synthesis','恐惧 ↔ 欣喜：周期综合') }} {{ help('Where the market sits between fear and euphoria, built from cross-asset risk appetite, stress read and capitulation. Context only.','市场处于恐惧与欣喜之间的位置，由跨资产风险偏好、压力读数与投降指标合成。仅供参考。') }}</div>
         <div class="mx-sent-val" style="color:{{ _fec }}">{{ FE.fe_score }}</div>
         <div class="mx-sent-band-label">{{ t(FE.band, _bandzh.get(FE.band, FE.band)) }} <span class="muted">/100</span></div>
         <div class="mx-grad-track" style="position:relative">
           <span class="mx-grad-marker" style="left:calc({{ FE.fe_score }}% - 3px)"></span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:2px">
-          <span>{{ t('Fear','恐惧') }}</span><span>{{ t('Neutral','中性') }}</span><span>{{ t('Euphoria','欣喜') }}</span>
+          <span>{{ t('Panic','恐慌') }}</span><span>{{ t('Fear','恐惧') }}</span><span>{{ t('Neutral','中性') }}</span><span>{{ t('Greed','贪婪') }}</span><span>{{ t('Euphoria','欣喜') }}</span>
         </div>
         {% if FE.roro is not none %}<div class="muted sm" style="margin-top:8px">RORO {{ '%+.2f'|format(FE.roro) }}{% if FE.roro_state %} · {{ td(FE.roro_state) }}{% endif %}</div>{% endif %}
       </section>
