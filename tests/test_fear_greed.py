@@ -557,20 +557,29 @@ def _make_min_fg() -> dict:
 
 
 def _render_fg_dashboard(fear_greed):
-    """Extract and render just the #sentiment-regime section of dashboard.html.j2."""
+    """Render the v2 MX2 sentiment block (inside the RISK tray) of dashboard.html.j2.
+    Slices on {# MX2-SENTIMENT-START #} / {# MX2-SENTIMENT-END #} markers so the
+    test exercises the v2 tray region (Fix 6 — v2 transition)."""
     from jinja2 import Environment, FileSystemLoader
     from engine import i18n
     src = (TEMPLATES / "dashboard.html.j2").read_text()
     macros = src[: src.index("{# coloured")]
-    start = src.index("<!-- ===================== SENTIMENT REGIME")
-    end = src.index("<!-- ===================== CROSS-ASSET MACRO")
+    start = src.index("{# MX2-SENTIMENT-START #}")
+    end = src.index("{# MX2-SENTIMENT-END #}")
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)))
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
+    # market_state must be truthy to enter the RISK tray gate ({% if market_state %})
+    _min_ms = {"radar": {}, "components": [], "color": "green", "score": 55,
+               "label_en": "Risk-on", "label_zh": "偏好", "asof": "2026-07-11",
+               "headline_en": "Markets lean risk-on.", "headline_zh": "市场偏向风险偏好。",
+               "overrides": [], "flip_en": None, "flip_zh": None, "mtf": None}
     return env.from_string(macros + src[start:end]).render(
         fear_greed=fear_greed,
         fear_euphoria=None,
         froth_fragility=None,
         mode="macro",
+        market_state=_min_ms,
+        latest={"risk_radar": None, "fed_stance": None, "turning_point": None},
     )
 
 

@@ -33,3 +33,18 @@ Deep integration, not overhaul, SHIPPED on this basis:
 - The heatmap (`#heatmap-scorecard`) is retained untouched.
 - NO KPI chip strip in the hero (mx-kpi-strip removed). The mx hero = gradient headline + single dial + legs grid + flip-condition strip only.
 - Everything else (policy band, release-radar chrome, AI brief card + display-only badge, sector heat, sentiment band, cross-asset tiles, index health grid, news chips, link-out strip) uses the mx framework.
+
+## OPERATOR RULING — 2026-07-11 (v2 FULL TRANSITION — supersedes the deep-integration ruling above)
+Operator: the old dashboard "has too much data, is too crowded, is too wordy, and is a layout mess with many useless data points. Do a full transition to yours instead... front end should be simplistic... advanced technical data hidden away through hover options or pressing."
+BINDING DESIGN = `v2_final.html` in this directory (judged 43/50 over a hover-first variant; expand-first, touch-native):
+- ONE-screen collapsed row-ledger front: hero (gradient headline = thesis · score panel containing the big numeral + progress bar + tick · dominant-driver card) then one-line rows: EVIDENCE / EVENTS / MARKETS / RISK / POLICY / AI BRIEF / NEWS / DEEP CONTEXT.
+- ALL advanced data lives in press-to-expand trays (250ms choreography, staggered entrances, Expand-all pill w/ rotating chevron, localStorage state, Escape, keyboard Enter/Space, visible chevrons).
+- NO "Hover for…" copy anywhere (touch-honest); one affordance verb.
+- The old Market State board layout is RETIRED; its content maps to: score panel (verdict+score+bar+tick), EVIDENCE tray (six factors), RISK tray (radar+sentiment), hero context (dominant driver). The "board is the hero" ruling of 2026-07-10 is superseded.
+- Heatmap lives inside the MARKETS tray (legible, labeled, as-of stamped).
+- Every tray carries as-of stamps; AI brief keeps the display-only-synthesis badge; drawdown ladder keeps its measurement caveat.
+
+## Heads-up chip mapping (v2)
+- fed_stance + turning_point → RISK tray chips (sx-risk-v2 top area, above scares ladder)
+- event_risk → EVENTS tray (sx-events-v2)
+- 2026-07-11 rebase adjudication: the Risk-Radar banner card + the new Ignition-Radar card (#2229) render at the TOP of the RISK tray (glance state stays on the summary row) — neither is dropped, neither returns to the front surface.

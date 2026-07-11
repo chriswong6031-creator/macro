@@ -157,15 +157,23 @@ def test_synthesis_absent_from_scoring_sources():
 # "Sentiment regime" section on the dashboard, and the full breakdown (legs +
 # positioning chip) on macro_signals.html.
 def _render_fe(latest, fear_euphoria):
+    """Render the v2 MX2 sentiment block (inside the RISK tray) of dashboard.html.j2.
+    Slices on {# MX2-SENTIMENT-START #} / {# MX2-SENTIMENT-END #} markers (Fix 6)."""
     from jinja2 import Environment, FileSystemLoader
     src = (TEMPLATES / "dashboard.html.j2").read_text()
     macros = src[: src.index("{# coloured")]            # the help() + t() macros
-    start = src.index("<!-- ===================== SENTIMENT REGIME")
-    end = src.index("<!-- ===================== CROSS-ASSET MACRO")
+    start = src.index("{# MX2-SENTIMENT-START #}")
+    end = src.index("{# MX2-SENTIMENT-END #}")
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)))
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
+    # market_state must be truthy to enter the RISK tray gate ({% if market_state %})
+    _min_ms = {"radar": {}, "components": [], "color": "green", "score": 55,
+               "label_en": "Risk-on", "label_zh": "偏好", "asof": "2026-07-11",
+               "headline_en": "Markets lean risk-on.", "headline_zh": "市场偏向风险偏好。",
+               "overrides": [], "flip_en": None, "flip_zh": None, "mtf": None}
     return env.from_string(macros + src[start:end]).render(
-        latest=latest, fear_euphoria=fear_euphoria, froth_fragility=None, mode="macro")
+        latest=latest, fear_euphoria=fear_euphoria, froth_fragility=None, mode="macro",
+        market_state=_min_ms, fear_greed=None)
 
 
 def _render_fe_full(fear_euphoria):
