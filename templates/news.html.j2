@@ -140,13 +140,17 @@
               --c:var(--link); color:color-mix(in srgb,var(--c) 90%,var(--text));
               border:1px solid color-mix(in srgb,var(--c) 45%,var(--line));
               background:color-mix(in srgb,var(--c) 12%,var(--panel)); white-space:nowrap; }
-  .ev-guidance_cut{--c:#e04040} .ev-guidance_raise{--c:#3aaa6a} .ev-earnings_beat{--c:#3aaa6a}
-  .ev-earnings_miss{--c:#e04040} .ev-dividend_action{--c:#e0a030} .ev-buyback{--c:#7aa7e0}
-  .ev-deal_ma{--c:#d45f88} .ev-ipo_listing{--c:#a78bfa} .ev-rate_decision{--c:#7aa7e0}
-  .ev-policy_shift{--c:#e08b45} .ev-data_release{--c:#5ab6b0} .ev-credit_event{--c:#e04040}
-  .ev-upgrade{--c:#3aaa6a} .ev-downgrade{--c:#e04040} .ev-default_risk{--c:#e04040}
-  .ev-geopolitical{--c:#e08b45} .ev-central_bank{--c:#7aa7e0} .ev-inflation_print{--c:#e08b45}
-  .ev-labor_print{--c:#45b873} .ev-macro_release{--c:#5ab6b0}
+  /* event badge colours — keyed to engine/news_events.py _EVENT_CLASSES names */
+  .ev-guidance_cut{--c:#e04040} .ev-guidance_raise{--c:#3aaa6a} .ev-preannouncement{--c:#e08b45}
+  .ev-earnings_result{--c:#5ab6b0} .ev-analyst_estimate_revision{--c:#7aa7e0}
+  .ev-rating_change{--c:#7aa7e0} .ev-contract_award{--c:#3aaa6a}
+  .ev-customer_win{--c:#3aaa6a} .ev-customer_loss{--c:#e04040}
+  .ev-product_launch{--c:#9cbf5a} .ev-product_delay{--c:#e04040}
+  .ev-management_change{--c:#e0a030} .ev-regulatory_probe{--c:#e04040}
+  .ev-litigation{--c:#e04040} .ev-equity_offering{--c:#e08b45} .ev-buyback{--c:#7aa7e0}
+  .ev-dividend_change{--c:#e0a030} .ev-mna_confirmed{--c:#d45f88} .ev-mna_rumor{--c:#a78bfa}
+  .ev-activist_campaign{--c:#a78bfa} .ev-macro_release{--c:#5ab6b0}
+  .ev-policy_trade_control{--c:#e08b45} .ev-bankruptcy_restructuring{--c:#e04040}
   .nb-dir { font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px;
             border:1px solid var(--line); white-space:nowrap; }
   .nb-dir.bull { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line)); background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
@@ -376,7 +380,8 @@
               <div class="ev-badges">
                 {% if h.get('event') %}
                   {% set ev = h.event %}
-                  <span class="nb-event ev-{{ ev.get('name','') }}">{{ ev.get('name','?')|replace('_',' ')|title }}</span>
+                  {% set _ev_type = ev.get('event_type') or ev.get('name','') %}
+                  <span class="nb-event ev-{{ _ev_type }}">{{ _ev_type|replace('_',' ')|title }}</span>
                   {{ dir_badge(ev.get('direction','')) }}
                 {% endif %}
                 {% if h.get('theme') %}

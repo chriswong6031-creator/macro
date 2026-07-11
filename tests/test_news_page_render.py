@@ -58,7 +58,7 @@ def _headline(theme: str = "monetary", with_event: bool = True, title: str = "Fe
     }
     if with_event:
         base["event"] = {
-            "name": "rate_decision",
+            "event_type": "earnings_result",
             "direction": "bearish",
             "numbers": {
                 "pcts": [5.25, 5.5],
@@ -284,9 +284,14 @@ def test_full_vm_calibration_board_present():
 
 
 def test_full_vm_event_cards_render():
-    """Event-typed headlines appear in the delta board."""
+    """Event-typed headlines appear in the delta board with correct event_type class."""
     html = _render_full()
-    assert "rate_decision" in html.lower() or "Rate Decision" in html
+    # fixture uses event_type='earnings_result'; badge class must be ev-earnings_result
+    assert "ev-earnings_result" in html
+    # label text rendered from event_type key: "Earnings Result"
+    assert "Earnings Result" in html
+    # no empty ev- class (regression guard for the old ev.get('name','') bug)
+    assert 'ev-"' not in html and 'class="nb-event ev-"' not in html
 
 
 def test_full_vm_release_card_renders():
@@ -388,6 +393,53 @@ def test_empty_vm_no_jinja_undefined_error():
 
 
 # --------------------------------------------------------------------------- #
+# Tests — event badge key regression (event_type vs name)
+# --------------------------------------------------------------------------- #
+
+def test_event_badge_uses_event_type_key():
+    """ev.get('event_type') is the live engine key; ev.get('name') is dead.
+
+    Regression guard: if the template regresses to ev.get('name','') the badge
+    class becomes ev-\" (empty) and the label text becomes '?'.  Assert neither
+    happens when the fixture carries only the event_type key.
+    """
+    import jinja2
+
+    env = _env()
+    tmpl = env.get_template("news.html.j2")
+    # headline carrying ONLY the real engine key (event_type), no legacy 'name'
+    ev_only_event_type = {
+        "event_type": "rating_change",
+        "direction": "bullish",
+        "numbers": {},
+    }
+    headline = {
+        "title": "Analyst upgrades AAPL to Buy",
+        "theme": "analyst",
+        "source_tier": 1,
+        "source_name": "Goldman",
+        "seendate": "2026-07-04T10:00:00Z",
+        "novelty_z": 2.1,
+        "tickers": ["AAPL"],
+        "event": ev_only_event_type,
+    }
+    vm = dict(
+        _empty_vm(),
+        macro_news={
+            "headlines": [headline],
+            "synthesis": None,
+            "fetched_at": "2026-07-04T06:00:00Z",
+            "n_raw": 1, "n_kept": 1, "n_official": 0, "n_news_rss": 1, "n_gdelt": 0,
+        },
+    )
+    html = tmpl.render(**vm)
+    assert "ev-rating_change" in html, "badge class must be ev-rating_change"
+    assert "Rating Change" in html, "badge label must be 'Rating Change'"
+    # no empty ev- class — the old bug
+    assert 'class="nb-event ev-"' not in html, "empty ev- class means name key regression"
+
+
+# --------------------------------------------------------------------------- #
 # Tests — Delta Board sort (W3 fix: build_site.py ev_heads pre-sort)
 # --------------------------------------------------------------------------- #
 
@@ -396,7 +448,7 @@ def _make_ev_head(title: str, novelty_z, seendate: str) -> dict:
         "title": title,
         "seendate": seendate,
         "novelty_z": novelty_z,
-        "event": {"name": "rate_decision", "direction": "bearish"},
+        "event": {"event_type": "macro_release", "direction": "bearish"},
     }
 
 
