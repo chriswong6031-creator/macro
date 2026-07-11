@@ -9,7 +9,7 @@ import textwrap
 from datetime import date
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -365,19 +365,15 @@ class TestDedup:
 # ---------------------------------------------------------------------------
 
 class TestSeedRrrEvents:
-    def test_produces_events_from_df(self, monkeypatch):
-        from engine.china_policy_transmission import _seed_rrr_events
-        monkeypatch.setattr(
-            "engine.china_policy_transmission.store" if False else "lib.store",
-            MagicMock(), raising=False
-        )
-        # Patch via the import path the engine uses
-        with patch("engine.china_policy_transmission._seed_rrr_events",
-                   wraps=_seed_rrr_events) as _:
-            with patch("lib.store.read") as mock_read:
-                mock_read.return_value = _make_rrr_df()
-                from engine.china_policy_transmission import _seed_rrr_events as srre
-                events = srre()
+    def test_produces_events_from_df(self):
+        # Same pattern as the sibling seed tests: patch lib.store.read directly —
+        # the engine does `from lib import store` at call time. (The previous
+        # version also replaced the lib.store package attribute with a bare
+        # MagicMock, which shadowed the patched module whenever another test
+        # file had already imported lib.store → order-dependent 0-event fail.)
+        with patch("lib.store.read", return_value=_make_rrr_df()):
+            from engine.china_policy_transmission import _seed_rrr_events
+            events = _seed_rrr_events()
         # Should have exactly 2 non-zero change rows
         assert len(events) == 2
         assert all(e["kind"] == "rrr" for e in events)
