@@ -1155,6 +1155,315 @@ class TestResolveKeyRefFailClosed:
         assert "denied" in (err or "").lower() or "broker" in (err or "").lower()
 
 
+# ── 18. Production-shaped proposals: cycle_id threading ─────────────────────
+#
+# Production proposals emitted by engine/metabolism/propose.py carry NO
+# cycle_id / target_files keys inside the proposal row; those live at the
+# top-level docket.  run_build_lane passes them explicitly to
+# _dispatch_build_session.  The tests below use docket-shaped inputs
+# (proposal rows without those keys) and call _dispatch_build_session via the
+# explicit kwargs, matching the production path.
+
+def _production_shaped_proposal(pid: str = "p1") -> dict:
+    """Minimal proposal row as emitted by propose.py build_docket — NO cycle_id or target_files."""
+    return {
+        "proposal_id": pid,
+        "content_hash": pid,
+        "title": f"Production proposal {pid}",
+        "tier": "T1",
+        "kind": "sensor",
+        "targets_sensor": "test_sensor",
+        "rationale": "test rationale",
+        "fitness_contract": {"metric": "liveness", "threshold": 0.5},
+        # NOTE: deliberately NO 'cycle_id' or 'target_files' key
+    }
+
+
+class TestProductionShapedProposals:
+    """Proposals shaped like propose.py output (no cycle_id/target_files in row)."""
+
+    def test_idempotent_skip_with_threaded_cycle_id(self):
+        """Second dispatch of the same cycle+proposal is an idempotent skip.
+
+        Uses production-shaped proposal (no cycle_id in row); cycle_id passed
+        as explicit kwarg as run_build_lane does.
+        """
+        mb = _import_mb()
+        d = _tmp_root()
+        ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
+        pid = "prod-p1"
+        cycle_id = "cycle-prod-001"
+        prop = _production_shaped_proposal(pid)
+        launch_count = [0]
+
+        def fake_launch(cmd, env, cwd, timeout_s=1800):
+            launch_count[0] += 1
+            return {"returncode": 0, "stdout": "ok", "stderr": ""}
+
+        def fake_diff(wt_path, base_ref="origin/main"):
+            return ["engine/test_sensor.py"]
+
+        env = {**_armed_env(), ref_name: "fake_token"}
+        wt1 = _tmp_wt()
+
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
+                with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
+                    with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
+                        r1 = mb._dispatch_build_session(
+                            prop, wt1, "metabolism/build-test",
+                            "claude_code_oauth_1",
+                            cycle_id=cycle_id,
+                            target_files=["engine/test_sensor.py"],
+                            root=d,
+                        )
+                        r2 = mb._dispatch_build_session(
+                            prop, wt1, "metabolism/build-test",
+                            "claude_code_oauth_1",
+                            cycle_id=cycle_id,
+                            target_files=["engine/test_sensor.py"],
+                            root=d,
+                        )
+
+        assert r1["dispatched"] is True, f"First call should dispatch: {r1}"
+        assert r2.get("idempotent_skip") is True, (
+            f"Second call with same cycle_id+pid should be idempotent_skip: {r2}"
+        )
+        assert launch_count[0] == 1, (
+            f"subprocess should be called exactly once, got {launch_count[0]}"
+        )
+
+    def test_concurrent_running_marker_blocks_double_launch(self):
+        """Concurrent-style retry while a 'running' marker exists does not double-launch."""
+        mb = _import_mb()
+        d = _tmp_root()
+        pid = "prod-p2"
+        cycle_id = "cycle-prod-002"
+
+        # Write a 'running' stage (simulating in-flight dispatch)
+        from scripts.metabolism_journal import start_stage
+        start_stage(cycle_id, f"build_dispatch_{pid}", root=d)
+
+        prop = _production_shaped_proposal(pid)
+
+        with patch.dict(os.environ, _armed_env(), clear=False):
+            result = mb._dispatch_build_session(
+                prop, _tmp_wt(), "metabolism/build-test",
+                "claude_code_oauth_1",
+                cycle_id=cycle_id,
+                target_files=["engine/test_sensor.py"],
+                root=d,
+            )
+
+        assert result.get("idempotent_skip") is True, (
+            f"Running marker must block re-dispatch: {result}"
+        )
+        assert result["dispatched"] is False
+
+    def test_journal_records_written_with_threaded_cycle_id(self):
+        """Journal records are written using the threaded cycle_id (not proposal.get('cycle_id'))."""
+        mb = _import_mb()
+        d = _tmp_root()
+        ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
+        pid = "prod-p3"
+        cycle_id = "cycle-prod-003"
+        prop = _production_shaped_proposal(pid)
+
+        def fake_launch(cmd, env, cwd, timeout_s=1800):
+            return {"returncode": 0, "stdout": "ok", "stderr": ""}
+
+        def fake_diff(wt_path, base_ref="origin/main"):
+            return ["engine/test_sensor.py"]
+
+        env = {**_armed_env(), ref_name: "fake_token"}
+        wt = _tmp_wt()
+
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
+                with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
+                    with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
+                        result = mb._dispatch_build_session(
+                            prop, wt, "metabolism/build-test",
+                            "claude_code_oauth_1",
+                            cycle_id=cycle_id,
+                            target_files=["engine/test_sensor.py"],
+                            root=d,
+                        )
+
+        assert result["dispatched"] is True, f"Should dispatch: {result}"
+        journal_file = d / "data" / "metabolism" / "journal" / f"{cycle_id}.json"
+        assert journal_file.exists(), (
+            f"Journal file for cycle {cycle_id} must be written; files: "
+            f"{list((d / 'data' / 'metabolism' / 'journal').iterdir())}"
+        )
+        data = json.loads(journal_file.read_text())
+        stages = data.get("stages", {})
+        dispatch_keys = [k for k in stages if k.startswith("build_dispatch_")]
+        assert len(dispatch_keys) >= 1, (
+            f"Expected build_dispatch_ journal stage, got: {list(stages.keys())}"
+        )
+
+    def test_foreign_file_containment_uses_threaded_target_files(self):
+        """Foreign-file containment uses the threaded target_files, not proposal.get('target_files')."""
+        mb = _import_mb()
+        d = _tmp_root()
+        ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
+        pid = "prod-p4"
+        cycle_id = "cycle-prod-004"
+        # Production-shaped proposal: no target_files key
+        prop = _production_shaped_proposal(pid)
+        allowed_file = "engine/real_sensor.py"
+
+        def fake_launch(cmd, env, cwd, timeout_s=1800):
+            return {"returncode": 0, "stdout": "ok", "stderr": ""}
+
+        # Session changes exactly the allowed file — should NOT be foreign
+        def fake_diff(wt_path, base_ref="origin/main"):
+            return [allowed_file]
+
+        env = {**_armed_env(), ref_name: "fake_token"}
+        wt = _tmp_wt()
+
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
+                with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
+                    with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
+                        result = mb._dispatch_build_session(
+                            prop, wt, "metabolism/build-test",
+                            "claude_code_oauth_1",
+                            cycle_id=cycle_id,
+                            target_files=[allowed_file],   # threaded — not in proposal row
+                            root=d,
+                        )
+
+        assert result["dispatched"] is True, (
+            f"File in threaded target_files must not be foreign: {result}"
+        )
+
+    def test_foreign_file_blocked_when_not_in_threaded_target_files(self):
+        """A changed file absent from the threaded target_files triggers FOREIGN_FILE_ABORT."""
+        mb = _import_mb()
+        d = _tmp_root()
+        ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
+        pid = "prod-p4b"
+        cycle_id = "cycle-prod-004b"
+        prop = _production_shaped_proposal(pid)
+
+        def fake_launch(cmd, env, cwd, timeout_s=1800):
+            return {"returncode": 0, "stdout": "ok", "stderr": ""}
+
+        # Session changes a file NOT in target_files
+        def fake_diff(wt_path, base_ref="origin/main"):
+            return ["engine/real_sensor.py", "config/grader_manifest.yml"]
+
+        env = {**_armed_env(), ref_name: "fake_token"}
+        wt = _tmp_wt()
+
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
+                with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
+                    with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
+                        result = mb._dispatch_build_session(
+                            prop, wt, "metabolism/build-test",
+                            "claude_code_oauth_1",
+                            cycle_id=cycle_id,
+                            target_files=["engine/real_sensor.py"],
+                            root=d,
+                        )
+
+        assert result["dispatched"] is False
+        assert "FOREIGN_FILE_ABORT" in result.get("reason", ""), (
+            f"Expected FOREIGN_FILE_ABORT for config/grader_manifest.yml: {result}"
+        )
+        assert "config/grader_manifest.yml" in result.get("foreign_files", [])
+
+    def test_empty_cycle_id_fails_closed(self):
+        """Dispatch with empty/None cycle_id (malformed docket) must fail-closed — refuse to launch."""
+        mb = _import_mb()
+        d = _tmp_root()
+        launch_count = [0]
+
+        def fake_launch(cmd, env, cwd, timeout_s=1800):
+            launch_count[0] += 1
+            return {"returncode": 0, "stdout": "ok", "stderr": ""}
+
+        # Production-shaped proposal with no cycle_id anywhere
+        prop = _production_shaped_proposal("prod-p5")
+
+        with patch.dict(os.environ, _armed_env(), clear=False):
+            with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
+                # Pass cycle_id="" explicitly (malformed docket)
+                result_empty = mb._dispatch_build_session(
+                    prop, _tmp_wt(), "metabolism/build-test",
+                    "claude_code_oauth_1",
+                    cycle_id="",
+                    target_files=["engine/test_sensor.py"],
+                    root=d,
+                )
+                # Also test with cycle_id=None and no proposal key
+                result_none = mb._dispatch_build_session(
+                    prop, _tmp_wt(), "metabolism/build-test",
+                    "claude_code_oauth_1",
+                    cycle_id=None,
+                    target_files=["engine/test_sensor.py"],
+                    root=d,
+                )
+
+        assert result_empty["dispatched"] is False, (
+            f"Empty cycle_id must be refused (fail-closed): {result_empty}"
+        )
+        assert "no_cycle_id" in result_empty.get("reason", ""), (
+            f"Reason must mention no_cycle_id: {result_empty}"
+        )
+        assert result_none["dispatched"] is False, (
+            f"None cycle_id (no proposal key either) must be refused: {result_none}"
+        )
+        assert "no_cycle_id" in result_none.get("reason", ""), (
+            f"Reason must mention no_cycle_id: {result_none}"
+        )
+        assert launch_count[0] == 0, (
+            f"subprocess must NOT be launched when cycle_id is empty/None: count={launch_count[0]}"
+        )
+
+    def test_cycle_id_in_proposal_still_works_as_fallback(self):
+        """If cycle_id is in the proposal row (test-shaped), it still works as a fallback."""
+        mb = _import_mb()
+        d = _tmp_root()
+        ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
+        pid = "fallback-p1"
+        cycle_id = "cycle-fallback-001"
+        # Embed cycle_id inside proposal (old test-shaped style)
+        prop = {**_production_shaped_proposal(pid), "cycle_id": cycle_id,
+                "target_files": ["engine/test_sensor.py"]}
+        launch_count = [0]
+
+        def fake_launch(cmd, env, cwd, timeout_s=1800):
+            launch_count[0] += 1
+            return {"returncode": 0, "stdout": "ok", "stderr": ""}
+
+        def fake_diff(wt_path, base_ref="origin/main"):
+            return ["engine/test_sensor.py"]
+
+        env = {**_armed_env(), ref_name: "fake_token"}
+        wt = _tmp_wt()
+
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
+                with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
+                    with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
+                        # No explicit cycle_id kwarg — falls back to proposal key
+                        result = mb._dispatch_build_session(
+                            prop, wt, "metabolism/build-test",
+                            "claude_code_oauth_1",
+                            root=d,
+                        )
+
+        assert result["dispatched"] is True, (
+            f"Fallback to proposal cycle_id should work for test-shaped proposals: {result}"
+        )
+        assert launch_count[0] == 1
+
+
 # ── CI-enforced word ban check ───────────────────────────────────────────────
 
 _BANNED = "valid" + "ated"  # keep literal out of source so this file is clean

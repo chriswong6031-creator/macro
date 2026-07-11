@@ -573,6 +573,8 @@ def _dispatch_build_session(
     branch: str,
     cap_id: str | None,
     *,
+    cycle_id: str | None = None,
+    target_files: list[str] | None = None,
     root: Path | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
@@ -590,6 +592,19 @@ def _dispatch_build_session(
       9. dry_run=True → journal a would_dispatch record, launch nothing, no PR.
       10. NEVER raises.
 
+    Parameters
+    ----------
+    cycle_id : str | None
+        The cycle identifier.  Callers (e.g. run_build_lane) MUST pass this
+        explicitly because production proposals emitted by propose.py carry
+        cycle_id only at the top-level docket, NOT inside each proposal row.
+        Falls back to proposal.get('cycle_id') for callers that embed it.
+    target_files : list[str] | None
+        The resolved target files for this proposal.  Callers (e.g. run_build_lane)
+        MUST pass the resolved list because the placeholder computed at claim time
+        is never written back into the proposal row.  Falls back to
+        proposal.get('target_files') for callers that embed it.
+
     Returns
     -------
     dict with keys:
@@ -605,8 +620,30 @@ def _dispatch_build_session(
         return {"dispatched": False, "reason": "invalid_proposal: not a dict", "proposal_id": "unknown"}
 
     pid = str(proposal.get("proposal_id") or "unknown")
-    cycle_id = str(proposal.get("cycle_id") or "")
-    target_files = [str(f) for f in (proposal.get("target_files") or []) if f is not None]
+
+    # Thread cycle_id: prefer explicit kwarg (set by run_build_lane from docket top-level),
+    # fall back to proposal key (for callers that embed it, e.g. unit tests).
+    _cycle_id_resolved = cycle_id if cycle_id is not None else proposal.get("cycle_id")
+    resolved_cycle_id = str(_cycle_id_resolved or "")
+
+    # Thread target_files: prefer explicit kwarg (resolved at claim time in run_build_lane),
+    # fall back to proposal key.
+    if target_files is not None:
+        resolved_target_files = [str(f) for f in target_files if f is not None]
+    else:
+        resolved_target_files = [str(f) for f in (proposal.get("target_files") or []) if f is not None]
+
+    # Fail-closed: a dispatch with no cycle_id produces an unauditable session.
+    # Refuse rather than silently run unguarded (no idempotency, no journal).
+    if not resolved_cycle_id:
+        return {
+            "dispatched": False,
+            "reason": "no_cycle_id: cannot dispatch without a cycle_id (unauditable session refused)",
+            "proposal_id": pid,
+        }
+
+    cycle_id = resolved_cycle_id
+    target_files_resolved = resolved_target_files
     result: dict[str, Any] = {"dispatched": False, "proposal_id": pid}
 
     try:
@@ -618,7 +655,7 @@ def _dispatch_build_session(
             return result
 
         # ── Step 1: IMMUTABLE-set refusal at dispatch ─────────────────────────
-        immutable_hits = _check_immutable_targets(target_files)
+        immutable_hits = _check_immutable_targets(target_files_resolved)
         if immutable_hits:
             reason = f"IMMUTABLE_REFUSAL: target_files contain immutable paths: {immutable_hits}"
             log.warning("BUILD: %s proposal=%s", reason, pid)
@@ -668,7 +705,7 @@ def _dispatch_build_session(
                 "model": _BUILD_SESSION_MODEL,
                 "worktree_path": wt_would,
                 "branch": branch,
-                "target_files": target_files,
+                "target_files": target_files_resolved,
                 "key_ref_name": ref_name,   # ref NAME only — no value
                 "cap_id": cap_id,
             }
@@ -757,7 +794,7 @@ def _dispatch_build_session(
             return result
 
         # Allowed: declared target_files + anything under data/metabolism/
-        allowed_targets = set(target_files)
+        allowed_targets = set(target_files_resolved)
         foreign: list[str] = []
         for f in changed_files:
             norm = f.replace("\\", "/").lstrip("/")
@@ -955,13 +992,13 @@ def run_build_lane(
                 continue
 
             # Step 2: claim target_files
-            target_files = [str(f) for f in (prop.get("target_files") or [])]
-            if not target_files:
+            prop_target_files = [str(f) for f in (prop.get("target_files") or [])]
+            if not prop_target_files:
                 # Use a placeholder if no target_files declared (permissive)
-                target_files = [f"data/metabolism/build/{pid}"]
+                prop_target_files = [f"data/metabolism/build/{pid}"]
 
             claim = claim_proposal(
-                cycle_id, pid, lobe, target_files, root=root, dry_run=dry_run,
+                cycle_id, pid, lobe, prop_target_files, root=root, dry_run=dry_run,
             )
             per["claim"] = claim
             if not claim["claimed"]:
@@ -980,10 +1017,16 @@ def run_build_lane(
             per["worktree"] = wt_result
             wt_path = wt_result.get("wt_path") or ""
 
-            # Step 4: dispatch build session (stub in V2-B Unit 6)
+            # Step 4: dispatch build session.
+            # Thread cycle_id (from docket top-level, NOT in proposal rows) and
+            # prop_target_files (resolved above, NOT written back into prop) as
+            # explicit kwargs so _dispatch_build_session has them for idempotency,
+            # pre-launch running-marker, journal audit, and foreign-file containment.
             cap_id = _pick_build_key(root=root)
             session = _dispatch_build_session(
-                prop, wt_path, branch, cap_id, root=root, dry_run=dry_run,
+                prop, wt_path, branch, cap_id,
+                cycle_id=cycle_id, target_files=prop_target_files,
+                root=root, dry_run=dry_run,
             )
             per["session"] = session
 
