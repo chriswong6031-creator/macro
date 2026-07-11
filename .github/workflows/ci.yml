@@ -138,6 +138,9 @@ on:
       - "config/dag.yml"
       - "scripts/check_dag_conformance.py"
       - "tests/test_dag_conformance.py"
+      # workflow-yaml guard: every workflow file must stay loadable (metabolism-agenda
+      # col-0 incident #2135→#2260 — unparseable file = failed run on EVERY push).
+      - "scripts/check_workflow_yaml.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
       - "config/synapse.yml"
@@ -662,6 +665,26 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context)
         run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py -q
+
+  workflow-yaml:
+    # Every .github/workflows/* file must load as YAML and carry on: + jobs:.
+    # An unparseable workflow file makes GitHub stamp a FAILED zero-job run on
+    # every push to every branch carrying it (metabolism-agenda.yml col-0
+    # incident: ~325 failed runs 07-10→07-11, introduced #2135, repaired #2260).
+    # dag-conformance above only yaml-loads workflows declared as dag.yml lanes,
+    # so non-lane workflow files had no parse guard at all — this closes that gap.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pyyaml
+      - name: check_workflow_yaml selftest
+        run: python scripts/check_workflow_yaml.py --selftest
+      - name: "all workflow files must parse with on:/jobs: blocks"
+        run: python scripts/check_workflow_yaml.py .github/workflows
 
   causal-factory:
     # Causal Hypothesis Factory (CHF) + Signal Foundry brainstorm: all ten test files
