@@ -1,0 +1,100 @@
+# config/nw_mission.yml — Machine-readable mission self-model (R-V4-4)
+#
+# THE IMMUTABLE SELF-MODEL: the operator's endgame in machine-readable form.
+# This file joins the IMMUTABLE set — the loop may read it, never edit it.
+# Loop PRs that touch this file are blocked by the F2 self-modification fence.
+#
+# To update (human/operator only): edit, regen grader_manifest.yml (--regen),
+# ratify in the PR.
+#
+# Schema: nw_mission.v1
+
+schema: nw_mission.v1
+version: 1
+as_of: "2026-07-11"
+
+endgame: >
+  Amass deep, structured trader context and deterministic signal intelligence
+  until Neural Web reliably out-detects human judgement: earlier, higher-win-rate,
+  risk-aware entries and exits, short and long horizon, via patterns and
+  confluences humans cannot hold in mind at once.
+
+mission_pillars:
+  - >
+    Context accrual is the fundamental goal — build data and infrastructure first,
+    study second; a null never blocks accrual; a factor that is null as a standalone
+    signal is retained as a confluence input (it may confirm other signals when they
+    align); kills are construction-specific, not domain-closing.
+  - >
+    Self-improvement: the metabolism proposes, adjudicates two-key, builds, verifies
+    realized deltas, and learns — code authorship only, never signals; the signal
+    path stays deterministic; the gauntlet remains the sole promotion gate.
+  - >
+    Lobe stewardship: charter new lobes for uncovered domains, demote or retire
+    failing constructions — display-tier lobes are T1-autonomous; never promote
+    any lobe to confirmer/scored/authority tier without T2 + gauntlet + operator.
+  - >
+    Intelligence depth: independence-discounted confluence, temporal persistence,
+    regime awareness, asymmetry detection — deterministic constructs only; no
+    LLM-originated scores, signals, or escalations anywhere on any scoring path.
+  - >
+    Honesty: nulls printed, kills are construction-specific, verdicts only at
+    pre-declared horizons; "not found yet" does not equal "does not exist" — keep
+    searching for the ranker.
+
+standing_laws:
+  - id: NW-ART1
+    law: >
+      LLM-origination ban: LLMs may never originate runtime signals, scores, or
+      escalations. The signal path stays deterministic. LLMs may only de-escalate
+      calibrated keys — never originate.
+
+  - id: HOUSE-U4
+    law: >
+      Gauntlet equals promotion gate, not a build gate. Context/data/detection/
+      tagging infrastructure ships display-tier freely — a null never blocks building
+      or accrual. The gauntlet applies only when promoting to authority (rank/size/gate).
+
+  - id: R-AUT-2
+    law: >
+      The cage precedes the tiger. No autonomous merge executes until Phase 0 ships
+      and CI enforces the grader-immutability manifest (F1), self-modification fence
+      (F2), and capability-broker redline (F3). Until armed, the loop runs inert —
+      it may open draft PRs and write shadow artifacts, but AUTONOMY_PAUSED defaults
+      true and merge lanes are unarmed.
+
+  - id: R-AUT-3
+    law: >
+      Stateless-cattle law. No loop stage may depend on a persistent or long-lived
+      session. All state in git. Every stage must be idempotent and journal-resumable.
+      A stage that cannot be made idempotent does not ship.
+
+  - id: R-V2-3
+    law: >
+      Lobe lifecycle: prune freely, anoint never. Charter/revamp/demote/retire of
+      display-tier lobes is autonomous T1 two-key. Promotion to confirmer/scored/
+      authority tier is T2 + gauntlet + operator, unconditionally. The mind can
+      prune and charter, never anoint.
+
+  - id: R-V4-1
+    law: >
+      Shadow-first law. The loop must be exercisable end-to-end while AUTONOMY_PAUSED
+      stays true. A first-class shadow harness runs SENSE to DREAM against the real
+      repo state and writes only under data/metabolism/shadow/<cycle_id>/ — the real
+      stores stay virgin until arming. Shadow runs are the arming evidence, not a
+      simulation of it.
+
+strategic_posture:
+  - "Build the eye first: confluence strength, temporal tape, vocabulary discovery — display-tier deterministic organs that accrue intelligence independent of loop arming."
+  - "Memory steers authorship: recall, preference prior, insight bus, trajectory, and this mission block reach the PROPOSE prompt before any draft is written."
+  - "One kill-registry: DO_NOT_REBUILD.md is the single source compiled into every loop's blocklist surface — no silent forks."
+  - "Shadow before tiger: the shadow-cycle harness must run clean before any arming step is considered; arming evidence comes from observed shadow behavior, not from assertions."
+  - "Kernel regime-conditioning stays behind its clock (2026-10 FDR batch): nothing built before then flips kernel pooling."
+
+forward_clocks:
+  - date: "2026-07-25"
+    what: "Shadow-cycle re-run and review: are dockets sane, adversary vetoing, grounding clean?"
+  - date: "2026-10-15"
+    what: "TIL fitness maturity — first armed cycles become meaningful; first promotion read."
+  - date: "2026-10"
+    what: "Kernel-FDR batch — regime-conditioning follow-up may be proposed (R-V4-11)."
