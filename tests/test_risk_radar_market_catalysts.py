@@ -675,11 +675,22 @@ class TestCompute:
             assert "accruing" in chip
             assert chip["accruing"] is True
 
-    def test_seven_chips_returned(self, monkeypatch):
-        """Exactly 7 confirmation chips (C1-C7; C8 is veto)."""
+    def test_chip_count_and_channels(self, monkeypatch):
+        """11 chips: C1-C7 (internals), C9-C11 (mood), C12 (tape). C8 is veto, not a chip.
+        market_confirmed / n_fresh must ONLY count internals (C1–C7) — frozen semantics (RRX2-R1)."""
         monkeypatch.setattr(rmc.store, "read", lambda g, n: None)
         result = rmc.compute()
-        assert len(result["chips"]) == 7
+        assert len(result["chips"]) == 11
+        internals = [c for c in result["chips"] if c.get("channel") == "internals"]
+        mood = [c for c in result["chips"] if c.get("channel") == "mood"]
+        tape = [c for c in result["chips"] if c.get("channel") == "tape"]
+        assert len(internals) == 7, f"expected 7 internals, got {len(internals)}"
+        assert len(mood) == 3, f"expected 3 mood chips, got {len(mood)}"
+        assert len(tape) == 1, f"expected 1 tape chip, got {len(tape)}"
+        # frozen semantics: n_fresh and market_confirmed count ONLY internals, not mood/tape
+        # (with all stores None all chips fire=False so n_fresh=0; semantic test: if any mood chip
+        # was somehow fresh, market_confirmed must NOT change). Check the field exists.
+        assert "morphology" in result
 
     def test_market_confirmed_false_when_veto_active(self, monkeypatch):
         """Even if a chip is fresh, veto suppresses market_confirmed."""
@@ -704,3 +715,375 @@ class TestCompute:
         monkeypatch.setattr(rmc.store, "read", lambda g, n: None)
         result = rmc.compute()
         assert result["market_confirmed_raw"] == (result["n_fresh"] >= 1)
+
+
+# ---------------------------------------------------------------------------
+# C9 — NAAIM re-grossing
+# ---------------------------------------------------------------------------
+
+class TestC9NAAIMRegrossing:
+
+    def _make_naaim(self, values) -> pd.DataFrame:
+        """Build NAAIM weekly series."""
+        idx = pd.bdate_range("2018-01-05", periods=len(values), freq="W-FRI")
+        return pd.DataFrame({"naaim_exposure": values}, index=idx)
+
+    def test_fires_on_washout_then_recovery(self, monkeypatch):
+        """Washout <= 20th pctile then +15 pts with 2 rising weeks fires the chip.
+
+        Patches today to the last frame date so the washout_date (first washout obs,
+        ~10 weekly obs before end) falls within the 63-calendar-day window.
+        """
+        # Build: 100 weeks of ~60 exposure, then 10 weeks of washout ~10, then 3 weeks of recovery
+        n_base = 100
+        base_vals = [60.0] * n_base
+        washout_vals = [10.0] * 10   # very low, well below 20th pctile
+        recovery_vals = [30.0, 35.0, 42.0]  # +20 from washout low; consecutive rises
+        vals = base_vals + washout_vals + recovery_vals
+        df = self._make_naaim(vals)
+        # Patch today to last frame date so washout_date (min of last 13 obs = first washout obs)
+        # is within 63 calendar days of "today"
+        last_date = str(df.index[-1].date())
+        _patch_today(monkeypatch, last_date)
+        monkeypatch.setattr(rmc.store, "read", lambda g, n: df if (g, n) == ("sentiment", "naaim") else None)
+        chip = rmc._c9_naaim_regrossing()
+        assert chip["key"] == "naaim_regrossing"
+        assert chip["channel"] == "mood"
+        assert chip["accruing"] is True
+        # washout at 10 is far below 20th pctile of 60-dominated series
+        # recovery at 42 = 10 + 32 > 15 threshold; 35→42 and 30→35 = both rising
+        assert chip["fired"] is True
+
+    def test_no_fire_without_washout(self, monkeypatch):
+        """Exposure always >= 50 — no washout condition."""
+        vals = [65.0] * 150
+        df = self._make_naaim(vals)
+        last_date = str(df.index[-1].date())
+        _patch_today(monkeypatch, last_date)
+        monkeypatch.setattr(rmc.store, "read", lambda g, n: df if (g, n) == ("sentiment", "naaim") else None)
+        chip = rmc._c9_naaim_regrossing()
+        assert chip["fired"] is False
+
+    def test_no_fire_without_recovery(self, monkeypatch):
+        """Washout present but exposure still stuck at washout level — no recovery."""
+        vals = [60.0] * 100 + [8.0] * 13  # stays in washout, never recovers
+        df = self._make_naaim(vals)
+        last_date = str(df.index[-1].date())
+        _patch_today(monkeypatch, last_date)
+        monkeypatch.setattr(rmc.store, "read", lambda g, n: df if (g, n) == ("sentiment", "naaim") else None)
+        chip = rmc._c9_naaim_regrossing()
+        assert chip["fired"] is False
+
+    def test_absent_when_store_missing(self, monkeypatch):
+        monkeypatch.setattr(rmc.store, "read", lambda g, n: None)
+        chip = rmc._c9_naaim_regrossing()
+        assert chip["fired"] is False
+        assert chip["channel"] == "mood"
+
+
+# ---------------------------------------------------------------------------
+# C10 — News tone recovering (SF-Fed DNSI)
+# ---------------------------------------------------------------------------
+
+class TestC10NewsToneRecovering:
+
+    def _make_dnsi(self, values, freq="D") -> pd.DataFrame:
+        """Build SF-Fed DNSI daily series."""
+        idx = pd.date_range("2020-01-02", periods=len(values), freq=freq)
+        return pd.DataFrame({"news_sentiment": values}, index=idx)
+
+    def test_fires_on_washout_then_recovery(self, monkeypatch):
+        """21d mean drops to washout (<= 10th pctile), then rises above threshold.
+
+        Patches today to the last frame date so the 63d washout window is correct.
+        """
+        # Build 600 daily obs: ~0.1 baseline, then 60 days at -0.8 (washout), then 30 days recovery to +0.3
+        n_base = 500
+        base = [0.1] * n_base
+        washout = [-0.8] * 60
+        recovery = [0.3] * 30
+        vals = base + washout + recovery
+        df = self._make_dnsi(vals)
+        last_date = str(df.index[-1].date())
+        _patch_today(monkeypatch, last_date)
+        monkeypatch.setattr(rmc.store, "read",
+                            lambda g, n: df if (g, n) == ("frbsf", "news_sentiment") else None)
+        chip = rmc._c10_news_tone_recovering()
+        assert chip["key"] == "news_tone_recovering"
+        assert chip["channel"] == "mood"
+        assert chip["accruing"] is True
+        # washout at -0.8 should be well below 10th pctile of the ~0.1-baseline series
+        # recovery to +0.3 should satisfy rising + level threshold
+        assert chip["fired"] is True
+
+    def test_no_fire_without_washout(self, monkeypatch):
+        """Flat positive sentiment — no washout."""
+        vals = [0.15] * 600
+        df = self._make_dnsi(vals)
+        last_date = str(df.index[-1].date())
+        _patch_today(monkeypatch, last_date)
+        monkeypatch.setattr(rmc.store, "read",
+                            lambda g, n: df if (g, n) == ("frbsf", "news_sentiment") else None)
+        chip = rmc._c10_news_tone_recovering()
+        assert chip["fired"] is False
+
+    def test_absent_when_store_missing(self, monkeypatch):
+        monkeypatch.setattr(rmc.store, "read", lambda g, n: None)
+        chip = rmc._c10_news_tone_recovering()
+        assert chip["fired"] is False
+        assert chip["channel"] == "mood"
+
+
+# ---------------------------------------------------------------------------
+# C11 — COT ES washout
+# ---------------------------------------------------------------------------
+
+class TestC11CotEsWashout:
+
+    def _make_cot(self, values) -> pd.DataFrame:
+        """Build COT weekly series."""
+        idx = pd.bdate_range("2018-01-05", periods=len(values), freq="W-FRI")
+        return pd.DataFrame({
+            "net_spec": [v * 100000 for v in values],
+            "open_interest": [2000000] * len(values),
+            "net_spec_pct_oi": values,
+        }, index=idx)
+
+    def test_fires_on_washout_then_rising(self, monkeypatch):
+        """net_spec_pct_oi <= 10th pctile in last 8 weeks AND latest change > 0.
+
+        Patches today to last frame date so _is_fresh/_bd_since work correctly.
+        """
+        # 150 weeks of ~0%, then 10 weeks at -12% (washout), then recovery to -6% and -3%
+        base_vals = [0.0] * 130
+        washout_vals = [-12.0] * 10
+        recovery_vals = [-6.0, -3.0]   # rising over last 2
+        vals = base_vals + washout_vals + recovery_vals
+        df = self._make_cot(vals)
+        last_date = str(df.index[-1].date())
+        _patch_today(monkeypatch, last_date)
+        monkeypatch.setattr(rmc.store, "read",
+                            lambda g, n: df if (g, n) == ("cot", "cot_es_spx") else None)
+        chip = rmc._c11_cot_es_washout()
+        assert chip["key"] == "cot_es_washout"
+        assert chip["channel"] == "mood"
+        assert chip["accruing"] is True
+        assert chip["fired"] is True
+
+    def test_no_fire_without_washout(self, monkeypatch):
+        """Positioning always near neutral — no washout."""
+        vals = [-2.0] * 160
+        df = self._make_cot(vals)
+        last_date = str(df.index[-1].date())
+        _patch_today(monkeypatch, last_date)
+        monkeypatch.setattr(rmc.store, "read",
+                            lambda g, n: df if (g, n) == ("cot", "cot_es_spx") else None)
+        chip = rmc._c11_cot_es_washout()
+        assert chip["fired"] is False
+
+    def test_no_fire_when_falling_after_washout(self, monkeypatch):
+        """Washout present but latest change is negative — not rising."""
+        base_vals = [0.0] * 140
+        washout_vals = [-12.0] * 8
+        recovery_attempt = [-10.0]  # still falling (change vs prior = -10 - (-12) = +2 actually)
+        # make sure latest change is negative: -12.0, -12.0, -13.0
+        vals = base_vals + [-12.0] * 8 + [-13.0]
+        df = self._make_cot(vals)
+        last_date = str(df.index[-1].date())
+        _patch_today(monkeypatch, last_date)
+        monkeypatch.setattr(rmc.store, "read",
+                            lambda g, n: df if (g, n) == ("cot", "cot_es_spx") else None)
+        chip = rmc._c11_cot_es_washout()
+        assert chip["fired"] is False
+
+    def test_absent_when_store_missing(self, monkeypatch):
+        monkeypatch.setattr(rmc.store, "read", lambda g, n: None)
+        chip = rmc._c11_cot_es_washout()
+        assert chip["fired"] is False
+        assert chip["channel"] == "mood"
+
+
+# ---------------------------------------------------------------------------
+# C12 — Fast reclaim (V-recovery)
+# ---------------------------------------------------------------------------
+
+class TestC12FastReclaim:
+
+    def _make_spy_with_v_recovery(self, monkeypatch, trough_depth: float = 0.045):
+        """Build SPY with a clear V-recovery: drop >= 3%, fast reclaim >= 60%, 3 consec above 20dma.
+        Returns the spy_df and the trough date index position.
+        """
+        n = 120
+        # Start at 750, build 63d high context first
+        closes = [750.0] * n
+        # Drawdown: bar 40..55 drops to 750*(1-trough_depth)
+        trough_val = 750.0 * (1.0 - trough_depth)
+        for i in range(40, 56):
+            closes[i] = 750.0 - (750.0 - trough_val) * (i - 39) / 16
+        trough_bar = 55
+        closes[trough_bar] = trough_val
+        # Recovery: bars 56..70 linearly recover back above 750
+        for i in range(56, 80):
+            closes[i] = trough_val + (750.0 - trough_val) * (i - 55) / 25
+        # Bar 80+: hold above 750 (well above rising 20dma)
+        for i in range(80, n):
+            closes[i] = 752.0 + (i - 80) * 0.5
+
+        idx = pd.bdate_range("2025-01-02", periods=n)
+        spy_df = pd.DataFrame({"close": closes, "volume": [1e6] * n}, index=idx)
+        return spy_df, trough_bar, idx
+
+    def test_fires_on_v_recovery(self, monkeypatch):
+        """>=3% drawdown with fast reclaim (60% within 15 sessions) + 3 consec above 20dma."""
+        spy_df, trough_bar, idx = self._make_spy_with_v_recovery(monkeypatch, trough_depth=0.045)
+
+        # Patch today to the last frame date so the recovery is within _FRESH_BD
+        last_date = str(idx[-1].date())
+        _patch_today(monkeypatch, last_date)
+
+        monkeypatch.setattr(rmc.store, "read",
+                            lambda g, n: spy_df if (g, n) == ("yahoo", "SPY") else None)
+        chip = rmc._c12_fast_reclaim()
+        assert chip["key"] == "fast_reclaim"
+        assert chip["channel"] == "tape"
+        assert chip["accruing"] is True
+        assert chip["fired"] is True, (
+            f"C12 should fire. detail={chip['detail']}"
+        )
+        assert chip["detail"]["max_drawdown_63d"] <= -0.03
+
+    def test_no_fire_when_drawdown_too_small(self, monkeypatch):
+        """Drawdown < 3% from 63d high — no episode."""
+        closes = [750.0 + i * 0.1 for i in range(120)]  # mild uptrend, negligible dd
+        idx = pd.bdate_range("2025-01-02", periods=120)
+        spy_df = pd.DataFrame({"close": closes, "volume": [1e6] * 120}, index=idx)
+        monkeypatch.setattr(rmc.store, "read",
+                            lambda g, n: spy_df if (g, n) == ("yahoo", "SPY") else None)
+        chip = rmc._c12_fast_reclaim()
+        assert chip["fired"] is False
+
+    def test_no_fire_when_reclaim_too_slow(self, monkeypatch):
+        """Drawdown >= 3% but price takes >15 sessions to reclaim 60% — not a V-recovery."""
+        n = 120
+        closes = [750.0] * n
+        # Drop 5% at bar 40
+        for i in range(40, 45):
+            closes[i] = 750.0 - (750.0 * 0.05) * (i - 39) / 5
+        closes[44] = 750.0 * 0.95
+        # Very slow recovery: takes 30 sessions
+        target = 750.0 * 0.95 + 0.60 * (750.0 - 750.0 * 0.95)
+        for i in range(45, 80):
+            closes[i] = 750.0 * 0.95 + (target - 750.0 * 0.95) * (i - 44) / 36
+        for i in range(80, n):
+            closes[i] = 750.0
+
+        idx = pd.bdate_range("2025-01-02", periods=n)
+        spy_df = pd.DataFrame({"close": closes, "volume": [1e6] * n}, index=idx)
+        monkeypatch.setattr(rmc.store, "read",
+                            lambda g, n: spy_df if (g, n) == ("yahoo", "SPY") else None)
+        chip = rmc._c12_fast_reclaim()
+        # Reclaim happens after session 15+ so should not fire
+        assert chip["fired"] is False
+
+    def test_absent_when_spy_missing(self, monkeypatch):
+        monkeypatch.setattr(rmc.store, "read", lambda g, n: None)
+        chip = rmc._c12_fast_reclaim()
+        assert chip["fired"] is False
+        assert chip["channel"] == "tape"
+
+
+# ---------------------------------------------------------------------------
+# Morphology classification
+# ---------------------------------------------------------------------------
+
+class TestMorphology:
+
+    def _chip(self, key, fired):
+        return {"key": key, "fired": fired}
+
+    def test_v_shape_when_c12_fired(self):
+        chips = [self._chip("fast_reclaim", True), self._chip("retest_divergence", False)]
+        m = rmc._morphology(chips)
+        assert m["shape"] == "v_shape"
+
+    def test_retest_when_c5_fired_not_c12(self):
+        chips = [self._chip("fast_reclaim", False), self._chip("retest_divergence", True)]
+        m = rmc._morphology(chips)
+        assert m["shape"] == "retest"
+
+    def test_grinding_when_neither(self):
+        chips = [self._chip("fast_reclaim", False), self._chip("retest_divergence", False)]
+        m = rmc._morphology(chips)
+        assert m["shape"] == "grinding"
+
+    def test_v_shape_wins_over_retest(self):
+        """If both C12 and C5 fire, v_shape takes precedence."""
+        chips = [self._chip("fast_reclaim", True), self._chip("retest_divergence", True)]
+        m = rmc._morphology(chips)
+        assert m["shape"] == "v_shape"
+
+
+# ---------------------------------------------------------------------------
+# Frozen semantics: mood/tape chips NEVER flip market_confirmed
+# ---------------------------------------------------------------------------
+
+class TestFrozenSemantics:
+
+    def test_mood_chip_fresh_does_not_set_market_confirmed(self, monkeypatch):
+        """Even if a mood chip (C9–C11) is fresh, market_confirmed must stay False
+        when no internals (C1–C7) chip is fresh (RRX2-R1 frozen semantics)."""
+        # All stores return None except NAAIM — build a NAAIM series that would fire C9
+        n = 200
+        naaim_vals = [60.0] * (n - 13) + [8.0] * 10 + [30.0, 35.0, 42.0]
+        idx = pd.bdate_range("2018-01-05", periods=n, freq="W-FRI")
+        naaim_df = pd.DataFrame({"naaim_exposure": naaim_vals}, index=idx)
+
+        # Patch today to the last frame date so C9 can fire (washout within 63d of "today")
+        last_date = str(idx[-1].date())
+        _patch_today(monkeypatch, last_date)
+
+        def _read(g, nm):
+            if (g, nm) == ("sentiment", "naaim"):
+                return naaim_df
+            return None
+
+        monkeypatch.setattr(rmc.store, "read", _read)
+        result = rmc.compute()
+
+        # market_confirmed and n_fresh are ONLY from C1–C7 internals
+        # With all internals stores None, n_fresh=0 and market_confirmed=False regardless of C9
+        assert result["n_fresh"] == 0
+        assert result["market_confirmed"] is False
+        assert result["market_confirmed_raw"] is False
+
+    def test_tape_chip_fresh_does_not_set_market_confirmed(self, monkeypatch):
+        """C12 (tape) fired and fresh must NOT affect market_confirmed."""
+        # Build a strong V-recovery SPY but no internals
+        n = 120
+        closes = [750.0] * n
+        trough_val = 750.0 * 0.955
+        for i in range(40, 56):
+            closes[i] = 750.0 - (750.0 - trough_val) * (i - 39) / 16
+        closes[55] = trough_val
+        for i in range(56, 80):
+            closes[i] = trough_val + (750.0 - trough_val) * (i - 55) / 25
+        for i in range(80, n):
+            closes[i] = 752.0 + (i - 80) * 0.5
+        idx = pd.bdate_range("2025-01-02", periods=n)
+        spy_df = pd.DataFrame({"close": closes, "volume": [1e6] * n}, index=idx)
+
+        last_date = str(idx[-1].date())
+        _patch_today(monkeypatch, last_date)
+
+        def _read(g, nm):
+            if (g, nm) == ("yahoo", "SPY"):
+                return spy_df
+            return None
+
+        monkeypatch.setattr(rmc.store, "read", _read)
+        result = rmc.compute()
+
+        # market_confirmed ONLY counts internals — tape (C12) must not contribute
+        assert result["n_fresh"] == 0       # no internals fired
+        assert result["market_confirmed"] is False
+        assert result["market_confirmed_raw"] is False

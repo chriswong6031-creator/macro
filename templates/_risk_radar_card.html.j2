@@ -50,7 +50,10 @@
    compact threat meters + plain-English evidence, and the action line. #}
 {% macro risk_radar_card(rd, scares) -%}
 {%- set rc = 'var(--act)' if rd.state=='risk-off' else ('var(--orange)' if rd.state=='elevated' else ('var(--warn)' if rd.state=='caution' else ('var(--info)' if rd.state=='watch' else 'var(--ok)'))) -%}
-{%- set ic = '🛑' if rd.state=='risk-off' else ('🚨' if rd.state=='elevated' else ('⚠️' if rd.state=='caution' else ('👀' if rd.state=='watch' else '✅'))) -%}
+{#- icon ladder (RRX2 WA-1): 👀 retired; watch shows 🌤️ when recovery panel is receding else 📡.
+   Truthiness-only on rd.recovery.receding — never `is not none` (crashes on missing keys, Jinja codebase law). -#}
+{%- set _rec_receding = rd.recovery and rd.recovery.present and rd.recovery.receding -%}
+{%- set ic = '🛑' if rd.state=='risk-off' else ('🚨' if rd.state=='elevated' else ('⚠️' if rd.state=='caution' else ('🌤️' if (rd.state=='watch' and _rec_receding) else ('📡' if rd.state=='watch' else '✅')))) -%}
 {%- set base = rd.dd_base if (rd.dd_base and rd.dd_base.h21 is not none) else {'h5':0.036,'h10':0.086,'h21':0.178} -%}
 {%- set hmax = (rd.dd21 / 0.82) if (rd.dd21 is not none and rd.dd21 > 0) else 0.25 -%}
 <div class="rrx rrx-{{ rd.state }}{{ ' rrx-loud' if rd.is_loud }}" style="--rc:{{ rc }}">
@@ -123,7 +126,8 @@
     </div>
     {% if rv.catalysts %}
     <div class="rrx-rec-cats">
-      <span class="rrx-rec-k">{{ t('Liquidity','流动性') }}</span>
+      {#- RRX2 WA-2: row names WHO (Central banks); chips name WHAT — kills "Liquidity: Fed liquidity expanding" redundancy -#}
+      <span class="rrx-rec-k">{{ t('Central banks','央行') }}</span>
       {% for c in rv.catalysts %}<span class="rrx-rec-chip{{ ' fresh' if c.fresh }}">{{ c.icon }} {{ t(c.label_en, c.label_zh) }}{{ help(c.detail_en, c.detail_zh) }}</span>{% endfor %}
     </div>
     {% else %}
@@ -134,15 +138,63 @@
        payloads carry market=None by scoping). ACCRUING: forward-graded on the rebound ruler
        (risk_radar_recovery_audit) before it is ever trusted; the fired chips are context, not
        an all-clear. Old artifacts lack rv.market entirely -> this block renders NOTHING (the
-       whitespace-control below keeps the no-market output byte-identical to the prior card). -#}
+       whitespace-control below keeps the no-market output byte-identical to the prior card).
+       RRX2 WA: channel field added to chips — filter to channel=='internals' (C1–C7) so new
+       mood/tape chips never appear in this row. Old artifacts without channel fall through
+       selectattr gracefully (undefined channel = not equal to 'internals' = excluded from filter,
+       so old artifacts render no internals chips here; new artifacts filter correctly). -#}
     {%- if rv.market and rv.market.chips %}
-    {%- set fired_chips = rv.market.chips | selectattr('fired') | list %}
+    {%- set internals_chips = rv.market.chips | selectattr('channel', 'defined') | selectattr('channel', 'equalto', 'internals') | list %}
+    {#- Legacy fallback: old artifacts have no 'channel' key; treat ALL chips as internals in that case -#}
+    {%- set legacy_chips = rv.market.chips | rejectattr('channel', 'defined') | list %}
+    {%- set fired_internals = (internals_chips if internals_chips else legacy_chips) | selectattr('fired') | list %}
     <div class="rrx-rec-cats">
       <span class="rrx-rec-k">{{ t('Internals','市场内部') }}{{ help('Market-internal confirmation chips (breadth thrusts, follow-through, capitulation-resolution, credit rollover). Accruing — every read is forward-graded before the channel is trusted; not an all-clear.','市场内部确认信号（广度推进、放量确认、恐慌解除、信用利差回落）。积累中 — 每次读取均做前瞻评分后方可信任；并非解除警报。') }}</span>
-      {% if fired_chips %}{% for c in fired_chips %}<span class="rrx-rec-chip{{ ' fresh' if c.fresh }}">{{ t(c.label_en, c.label_zh) }}</span>{% endfor %}
+      {% if fired_internals %}{% for c in fired_internals %}<span class="rrx-rec-chip{{ ' fresh' if c.fresh }}">{{ t(c.label_en, c.label_zh) }}</span>{% endfor %}
       {% else %}<span class="rrx-rec-chip">{{ t('no internal confirmation yet','尚无内部确认') }}</span>{% endif %}
       {% if rv.market.veto and rv.market.veto.active %}<span class="rrx-rec-chip">⚠ {{ t('vol still unstable — turn not trusted','波动仍未稳定 — 转向暂不可信') }}</span>{% endif %}
     </div>
+    {#- RRX2 WA-3: drivers line ("what faded / still warm") — from rv.drivers injected by trajectory.
+       Absent on old artifacts (no drivers key) → render nothing. -#}
+    {%- if rv.drivers %}
+    {%- set faded = rv.drivers.faded if rv.drivers.faded else [] %}
+    {%- set warm = rv.drivers.warm if rv.drivers.warm else [] %}
+    {%- if faded or warm %}
+    <div class="rrx-rec-drv">
+      {%- if faded %}<span class="l-en">What faded: {% for d in faded %}{% if not loop.first %} · {% endif %}{{ d.label_en }} {{ d.peak|round|int }}→{{ d.now|round|int }}{% endfor %}</span><span class="l-zh">已消退：{% for d in faded %}{% if not loop.first %} · {% endif %}{{ d.label_zh }} {{ d.peak|round|int }}→{{ d.now|round|int }}{% endfor %}</span>{% endif %}
+      {%- if warm %}<span class="l-en">{{ ' — still warm: ' if faded else 'Still warm: ' }}{% for d in warm %}{% if not loop.first %} · {% endif %}{{ d.label_en }} {{ d.now|round|int }}{% endfor %}</span><span class="l-zh">{{ ' — 仍处高温：' if faded else '仍处高温：' }}{% for d in warm %}{% if not loop.first %} · {% endif %}{{ d.label_zh }} {{ d.now|round|int }}{% endfor %}</span>{% endif %}
+    </div>
+    {%- endif %}
+    {%- endif %}
+    {#- RRX2 WA-4: Mood channel (C9–C11: NAAIM, FRBSF DNSI, COT ES). US radar only (rv.market).
+       Intl payloads: rv.market is None → this block is never reached.
+       Old artifacts without channel field: internals_chips and legacy_chips logic above handles
+       them; mood_chips below will be empty (no chip has channel='mood') → row suppressed. -#}
+    {%- set mood_chips = rv.market.chips | selectattr('channel', 'defined') | selectattr('channel', 'equalto', 'mood') | list %}
+    {%- if mood_chips %}
+    {%- set fired_mood = mood_chips | selectattr('fired') | list %}
+    <div class="rrx-rec-cats">
+      <span class="rrx-rec-k">{{ t('Mood','情绪') }}{{ help('Accruing — forward-graded on the rebound ruler before the channel is trusted; not an all-clear.','积累中 — 在信任该渠道前均做前瞻评分；并非解除警报。') }}</span>
+      {% if fired_mood %}{% for c in fired_mood %}<span class="rrx-rec-chip{{ ' fresh' if c.fresh }}">{{ t(c.label_en, c.label_zh) }}</span>{% endfor %}
+      {% else %}<span class="rrx-rec-chip muted">{{ t('no signal yet','尚无信号') }}</span>{% endif %}
+    </div>
+    {%- endif %}
+    {#- RRX2 WA-4: Tape channel (C12: fast reclaim / V-recovery) + morphology label. -#}
+    {%- set tape_chips = rv.market.chips | selectattr('channel', 'defined') | selectattr('channel', 'equalto', 'tape') | list %}
+    {%- if tape_chips %}
+    {%- set fired_tape = tape_chips | selectattr('fired') | list %}
+    <div class="rrx-rec-cats">
+      <span class="rrx-rec-k">{{ t('Tape','盘面') }}{{ help('Accruing — forward-graded on the rebound ruler before the channel is trusted; not an all-clear.','积累中 — 在信任该渠道前均做前瞻评分；并非解除警报。') }}</span>
+      {% if fired_tape %}{% for c in fired_tape %}<span class="rrx-rec-chip{{ ' fresh' if c.fresh }}">{{ t(c.label_en, c.label_zh) }}</span>{% endfor %}
+      {% else %}<span class="rrx-rec-chip muted">{{ t('no signal yet','尚无信号') }}</span>{% endif %}
+    </div>
+    {#- Morphology label: one line explaining the recovery shape, from rv.market.morphology.
+       Absent on old artifacts (no morphology key) → render nothing. -#}
+    {%- if rv.market.morphology %}
+    {%- set mph = rv.market.morphology %}
+    <div class="rrx-rec-drv">{{ t(mph.detail_en, mph.detail_zh) }}</div>
+    {%- endif %}
+    {%- endif %}
     {%- endif %}
     {% if rv.do_en %}<div class="rrx-rec-do"><span class="rrx-rec-do-k">{{ t('Do','应对') }}</span>{{ t(rv.do_en, rv.do_zh) }}</div>{% endif %}
   </div>

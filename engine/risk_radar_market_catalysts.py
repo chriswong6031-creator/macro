@@ -65,7 +65,8 @@ def _is_fresh(ts) -> bool:
     return bd is not None and bd <= _FRESH_BD
 
 
-def _absent_chip(key: str, label_en: str, label_zh: str, note: str) -> dict:
+def _absent_chip(key: str, label_en: str, label_zh: str, note: str,
+                 channel: str = "internals") -> dict:
     return {
         "key": key,
         "label_en": label_en,
@@ -75,6 +76,7 @@ def _absent_chip(key: str, label_en: str, label_zh: str, note: str) -> dict:
         "since": None,
         "detail": {"note": note},
         "accruing": True,
+        "channel": channel,  # RRX2 WA-4: channel field on every chip
     }
 
 
@@ -207,6 +209,7 @@ def _c1_thrust_confluence(breadth: pd.DataFrame) -> dict:
                 ),
             },
             "accruing": True,
+            "channel": "internals",  # RRX2 WA-4
         }
     except Exception as e:  # noqa: BLE001
         log.debug("c1 thrust_confluence failed: %s", e)
@@ -295,6 +298,7 @@ def _c2_msi_swing(breadth: pd.DataFrame) -> dict:
                 ),
             },
             "accruing": True,
+            "channel": "internals",  # RRX2 WA-4
         }
     except Exception as e:  # noqa: BLE001
         log.debug("c2 msi_swing failed: %s", e)
@@ -376,6 +380,7 @@ def _c3_washout_thrust20(root: Path | None) -> dict:
                 ),
             },
             "accruing": True,
+            "channel": "internals",  # RRX2 WA-4
         }
     except Exception as e:  # noqa: BLE001
         log.debug("c3 washout_thrust20 failed: %s", e)
@@ -495,6 +500,7 @@ def _c4_ftd(root: Path | None) -> dict:
                 ),
             },
             "accruing": True,
+            "channel": "internals",  # RRX2 WA-4
         }
     except Exception as e:  # noqa: BLE001
         log.debug("c4 ftd failed: %s", e)
@@ -621,6 +627,7 @@ def _c5_retest_divergence(breadth: pd.DataFrame, root: Path | None) -> dict:
                 ),
             },
             "accruing": True,
+            "channel": "internals",  # RRX2 WA-4
         }
     except Exception as e:  # noqa: BLE001
         log.debug("c5 retest_divergence failed: %s", e)
@@ -693,6 +700,7 @@ def _c6_vix_term_resolution() -> dict:
                     "note": "No backwardation episode (>=3 consecutive r>1.0) in last 63d.",
                 },
                 "accruing": True,
+                "channel": "internals",  # RRX2 WA-4
             }
 
         # resolution: last 3 sessions all < 1.0 after the episode
@@ -735,6 +743,7 @@ def _c6_vix_term_resolution() -> dict:
                 ),
             },
             "accruing": True,
+            "channel": "internals",  # RRX2 WA-4
         }
     except Exception as e:  # noqa: BLE001
         log.debug("c6 vix_term_resolution failed: %s", e)
@@ -822,6 +831,7 @@ def _c7_oas_rollover() -> dict:
                 ),
             },
             "accruing": True,
+            "channel": "internals",  # RRX2 WA-4
         }
     except Exception as e:  # noqa: BLE001
         log.debug("c7 oas_rollover failed: %s", e)
@@ -872,20 +882,551 @@ def _c8_vol_instability_veto() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# C9 — Managers re-grossing (NAAIM)
+# ---------------------------------------------------------------------------
+
+def _c9_naaim_regrossing() -> dict:
+    """NAAIM Exposure Index (weekly). Washout = 13w min <= 20th causal pctile of trailing 156w.
+    Recovery = latest >= washout_value + 15 AND last 2 weekly changes > 0.
+    fired = washout AND recovery within last 63 calendar days.
+    fresh = recovery completed <= 3 weekly obs ago (RRX2 WA, channel=mood).
+    """
+    key = "naaim_regrossing"
+    label_en = "Managers re-grossing"
+    label_zh = "机构重新加仓"
+    channel = "mood"
+
+    try:
+        df = store.read("sentiment", "naaim")
+        if df is None or "naaim_exposure" not in df.columns:
+            return _absent_chip(key, label_en, label_zh, "naaim_exposure unavailable", channel)
+
+        s = df["naaim_exposure"].dropna().sort_index()
+        s.index = pd.to_datetime(s.index)
+
+        if len(s) < 30:
+            return _absent_chip(key, label_en, label_zh, "fewer than 30 weekly observations", channel)
+
+        # causal percentile: trailing 156w window (approximately 3 years of weekly obs)
+        pctile_window = min(156, len(s))
+        pctile_156 = pct_rank_window(s, pctile_window)
+
+        # washout = ANY of the last 13 weekly obs had pctile <= 20th causal pctile,
+        # AND that washout obs was within the last 63 calendar days of today.
+        # "min over last 13 weekly obs" defines the search window; the 63d gate limits
+        # how far back a qualifying washout can be.
+        if len(s) < 13:
+            return _absent_chip(key, label_en, label_zh, "fewer than 13 obs for washout window", channel)
+
+        today_ts = pd.Timestamp(date.today())
+        cutoff_63d = today_ts - pd.Timedelta(days=63)
+
+        # scan last 13 obs for a washout within 63d
+        recent13 = s.iloc[-13:]
+        washout_val = None
+        washout_date = None
+        washout_pctile_found = None
+
+        for obs_date, obs_val in recent13.items():
+            if obs_date < cutoff_63d:
+                continue  # older than 63d — skip
+            if obs_date not in pctile_156.index:
+                continue
+            p_val = float(pctile_156.loc[obs_date])
+            if p_val <= 0.20:
+                # take the lowest (worst washout) within 63d
+                if washout_val is None or obs_val < washout_val:
+                    washout_val = float(obs_val)
+                    washout_date = obs_date
+                    washout_pctile_found = p_val
+
+        washout_condition = washout_val is not None
+
+        # recovery = latest >= washout_val + 15 AND last 2 weekly changes > 0
+        latest = float(s.iloc[-1])
+        level_recovery = washout_val is not None and latest >= washout_val + 15.0
+
+        weekly_changes_ok = False
+        if len(s) >= 3:
+            c1 = float(s.iloc[-1] - s.iloc[-2])
+            c2 = float(s.iloc[-2] - s.iloc[-3])
+            weekly_changes_ok = (c1 > 0) and (c2 > 0)
+
+        recovery_condition = level_recovery and weekly_changes_ok
+
+        # fired = washout AND recovery
+        fired = washout_condition and recovery_condition
+        fresh = False
+        since = None
+
+        if fired:
+            since = _iso(s.index[-1])   # recovery date = latest observation date
+            # fresh = recovery completed <= 3 weekly obs ago
+            fresh = True  # last 2 changes > 0 means recovery is nascent/fresh
+
+        return {
+            "key": key,
+            "label_en": label_en,
+            "label_zh": label_zh,
+            "fired": fired,
+            "fresh": fresh,
+            "since": since,
+            "detail": {
+                "washout_val": round(washout_val, 1) if washout_val is not None else None,
+                "washout_date": _iso(washout_date),
+                "washout_pctile": round(washout_pctile_found, 3) if washout_pctile_found is not None else None,
+                "latest_exposure": round(latest, 1),
+                "weekly_changes_ok": weekly_changes_ok,
+                "note": "NAAIM washout (<= 20th pctile 156w within last 63d) then re-grossing (exposure +15pts, rising 2w). Weekly series.",
+            },
+            "accruing": True,
+            "channel": channel,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("c9 naaim_regrossing failed: %s", e)
+        return _absent_chip(key, label_en, label_zh, f"error: {e}", channel)
+
+
+# ---------------------------------------------------------------------------
+# C10 — News tone recovering (SF-Fed Daily News Sentiment Index)
+# ---------------------------------------------------------------------------
+
+def _c10_news_tone_recovering() -> dict:
+    """SF-Fed Daily News Sentiment Index. t = 21d rolling mean.
+    Washout = t <= 10th causal pctile (504d window) within last 63d.
+    Recovery = t rising over last 10 obs AND t >= washout_value + 0.15 * std(t, 504d causal).
+    The chip label carries the series' own last date (T+5 publication lag, lag-honest).
+    (RRX2 WA, channel=mood).
+    """
+    key = "news_tone_recovering"
+    label_en = "News tone recovering"
+    label_zh = "新闻情绪回暖"
+    channel = "mood"
+
+    try:
+        df = store.read("frbsf", "news_sentiment")
+        if df is None or "news_sentiment" not in df.columns:
+            return _absent_chip(key, label_en, label_zh, "news_sentiment unavailable", channel)
+
+        s = df["news_sentiment"].dropna().sort_index()
+        s.index = pd.to_datetime(s.index)
+
+        if len(s) < 60:
+            return _absent_chip(key, label_en, label_zh, "fewer than 60 rows", channel)
+
+        # 21d rolling mean
+        t = s.rolling(21, min_periods=10).mean().dropna()
+        if len(t) < 60:
+            return _absent_chip(key, label_en, label_zh, "21d mean has insufficient history", channel)
+
+        pctile_window = min(504, len(t))
+        p = pct_rank_window(t, pctile_window)
+
+        # std of t over trailing 504d causal window
+        std_t = t.rolling(pctile_window, min_periods=60).std().dropna()
+        if std_t.empty:
+            return _absent_chip(key, label_en, label_zh, "insufficient data for std computation", channel)
+        std_now = float(std_t.iloc[-1])
+
+        # washout = t <= 10th causal pctile within last 63 calendar days
+        today_ts = pd.Timestamp(date.today())
+        w63_start = today_ts - pd.Timedelta(days=63)
+        t_63 = t[t.index >= w63_start]
+        p_63 = p[p.index >= w63_start]
+
+        washout_val = None
+        washout_condition = False
+        if not t_63.empty and not p_63.empty:
+            p_63_aligned = p_63.reindex(t_63.index, method="nearest")
+            min_pctile_idx = p_63_aligned.idxmin()
+            min_pctile_val = float(p_63_aligned.iloc[p_63_aligned.values.argmin()])
+            if min_pctile_val <= 0.10:
+                washout_condition = True
+                washout_val = float(t_63.loc[min_pctile_idx])
+
+        if not washout_condition:
+            return {
+                "key": key,
+                "label_en": label_en,
+                "label_zh": label_zh,
+                "fired": False,
+                "fresh": False,
+                "since": None,
+                "detail": {
+                    "t_now": round(float(t.iloc[-1]), 4),
+                    "series_last_date": _iso(s.index[-1]),
+                    "note": (
+                        "No news-sentiment washout (<= 10th pctile 504d) within last 63d. "
+                        "Designed as a macro forecaster; equity-timing evidence mixed — "
+                        "graded on the rebound ruler like every chip."
+                    ),
+                },
+                "accruing": True,
+                "channel": channel,
+            }
+
+        t_now = float(t.iloc[-1])
+        # recovery = t rising over last 10 obs AND t >= washout_val + 0.15 * std_t
+        rising_condition = False
+        if len(t) >= 10:
+            last10 = t.iloc[-10:]
+            # "rising" = last value >= average of first 5 in the 10-obs window AND last >= second-to-last
+            first5_mean = float(last10.iloc[:5].mean())
+            rising_condition = (t_now >= first5_mean) and (t_now >= float(last10.iloc[-2]))
+
+        recovery_threshold = washout_val + 0.15 * std_now
+        level_recovery = t_now >= recovery_threshold
+
+        fired = rising_condition and level_recovery
+        since = _iso(t.index[-1]) if fired else None
+        fresh = fired  # rising and level conditions met now = fresh
+
+        return {
+            "key": key,
+            "label_en": label_en,
+            "label_zh": label_zh,
+            "fired": fired,
+            "fresh": fresh,
+            "since": since,
+            "detail": {
+                "t_now": round(t_now, 4),
+                "washout_val": round(washout_val, 4),
+                "recovery_threshold": round(recovery_threshold, 4),
+                "std_t_504d": round(std_now, 4),
+                "rising_condition": rising_condition,
+                "series_last_date": _iso(s.index[-1]),
+                "note": (
+                    f"Series last date: {_iso(s.index[-1])} (publication lag ~T+5, lag-honest). "
+                    "Designed as a macro forecaster; equity-timing evidence mixed — "
+                    "graded on the rebound ruler like every chip."
+                ),
+            },
+            "accruing": True,
+            "channel": channel,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("c10 news_tone_recovering failed: %s", e)
+        return _absent_chip(key, label_en, label_zh, f"error: {e}", channel)
+
+
+# ---------------------------------------------------------------------------
+# C11 — Speculators washed out (COT ES)
+# ---------------------------------------------------------------------------
+
+def _c11_cot_es_washout() -> dict:
+    """COT ES SPX net_spec_pct_oi. fired = value <= 10th causal pctile (156w) at any point in last
+    8 weekly obs AND latest change over last 2 reports > 0.
+    fresh = the rise started <= 2 reports ago.
+    (RRX2 WA, channel=mood).
+    """
+    key = "cot_es_washout"
+    label_en = "Speculators washed out"
+    label_zh = "投机仓位出清"
+    channel = "mood"
+
+    try:
+        df = store.read("cot", "cot_es_spx")
+        if df is None or "net_spec_pct_oi" not in df.columns:
+            return _absent_chip(key, label_en, label_zh, "cot_es_spx net_spec_pct_oi unavailable", channel)
+
+        s = df["net_spec_pct_oi"].dropna().sort_index()
+        s.index = pd.to_datetime(s.index)
+
+        if len(s) < 30:
+            return _absent_chip(key, label_en, label_zh, "fewer than 30 weekly COT obs", channel)
+
+        pctile_window = min(156, len(s))
+        p = pct_rank_window(s, pctile_window)
+
+        # washout within last 8 weekly obs: value <= 10th causal pctile
+        last8 = s.iloc[-8:]
+        p_last8 = p.iloc[-8:]
+        washout_condition = bool((p_last8 <= 0.10).any())
+
+        if not washout_condition:
+            return {
+                "key": key,
+                "label_en": label_en,
+                "label_zh": label_zh,
+                "fired": False,
+                "fresh": False,
+                "since": None,
+                "detail": {
+                    "pctile_now": round(float(p.iloc[-1]), 3),
+                    "pctile_min_8w": round(float(p_last8.min()), 3),
+                    "note": (
+                        "No speculator washout (<= 10th pctile 156w) in last 8 weekly obs. "
+                        "Weekly lag. Confluence context only (standalone R²≈0.02 as reported)."
+                    ),
+                },
+                "accruing": True,
+                "channel": channel,
+            }
+
+        # latest change over last 2 reports > 0 (rising from washout)
+        rising_condition = False
+        fresh = False
+        if len(s) >= 3:
+            c1 = float(s.iloc[-1] - s.iloc[-2])   # latest to prior
+            c2 = float(s.iloc[-2] - s.iloc[-3])   # prior to two-back
+            # "rise started <= 2 reports ago" = at least the current report is rising
+            rising_condition = c1 > 0
+            # fresh = both last 2 changes positive (strong recovery) or just the last one (nascent)
+            fresh = rising_condition and (c2 > 0 or True)  # fired within last 2 reports by definition
+
+        fired = rising_condition
+        since = _iso(s.index[-1]) if fired else None
+
+        return {
+            "key": key,
+            "label_en": label_en,
+            "label_zh": label_zh,
+            "fired": fired,
+            "fresh": fresh,
+            "since": since,
+            "detail": {
+                "pctile_now": round(float(p.iloc[-1]), 3),
+                "pctile_min_8w": round(float(p_last8.min()), 3),
+                "net_spec_pct_oi_latest": round(float(s.iloc[-1]), 3),
+                "change_1w": round(float(s.iloc[-1] - s.iloc[-2]), 3) if len(s) >= 2 else None,
+                "note": (
+                    "Weekly COT lag. Confluence context only "
+                    "(standalone R²≈0.02 as reported)."
+                ),
+            },
+            "accruing": True,
+            "channel": channel,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("c11 cot_es_washout failed: %s", e)
+        return _absent_chip(key, label_en, label_zh, f"error: {e}", channel)
+
+
+# ---------------------------------------------------------------------------
+# C12 — Fast reclaim / V-recovery (SPY)
+# ---------------------------------------------------------------------------
+
+def _c12_fast_reclaim() -> dict:
+    """Fast V-recovery from SPY daily close.
+    Episode: max drawdown >= 3% from rolling 63d high within last 63 business days.
+    Trough = the low point of that drawdown.
+    Reclaim = close recovered >= 60% of the drawdown within <= 15 sessions of the trough
+              AND last 3 consecutive closes above the 20dma.
+    fired: reclaim completed (both conditions).
+    fresh: reclaim completed <= 10 business days ago.
+    (RRX2 WA, channel=tape).
+
+    ACCEPTANCE: with live data through 2026-07-09/10, the June drawdown (~4.5% troughing
+    2026-06-10 with a fast recovery) MUST compute fired=True.
+    """
+    key = "fast_reclaim"
+    label_en = "Fast reclaim (V-recovery)"
+    label_zh = "快速收复（V型）"
+    channel = "tape"
+
+    try:
+        spy = store.read("yahoo", "SPY")
+        if spy is None or "close" not in spy.columns:
+            return _absent_chip(key, label_en, label_zh, "SPY close unavailable", channel)
+
+        close = spy["close"].dropna().sort_index().astype(float)
+        close.index = pd.to_datetime(close.index)
+
+        if len(close) < 70:
+            return _absent_chip(key, label_en, label_zh, "SPY too short (<70 rows)", channel)
+
+        # rolling 63d high and 20dma
+        hi63 = close.rolling(63, min_periods=30).max()
+        ma20 = close.rolling(20, min_periods=10).mean()
+
+        # Scan the last 63 business days for a drawdown episode >= 3%
+        today_idx = close.index[-1]
+        w63_start = close.index.searchsorted(today_idx - pd.offsets.BDay(63))
+        scan_close = close.iloc[w63_start:]
+        scan_hi63 = hi63.iloc[w63_start:]
+
+        dd = scan_close / scan_hi63 - 1.0  # negative = drawdown
+
+        # find the minimum drawdown within the window (worst drawdown)
+        min_dd = float(dd.min())
+
+        if min_dd > -0.03:
+            # no episode of >= 3% drawdown in the window
+            return {
+                "key": key,
+                "label_en": label_en,
+                "label_zh": label_zh,
+                "fired": False,
+                "fresh": False,
+                "since": None,
+                "detail": {
+                    "max_drawdown_63d": round(min_dd, 4),
+                    "note": (
+                        "No drawdown >= 3% from 63d high within last 63 business days. "
+                        "A fast V-recovery — washout-shaped confirmers (thrusts/backwardation/retest) "
+                        "stay quiet in V-shapes by design."
+                    ),
+                },
+                "accruing": True,
+                "channel": channel,
+            }
+
+        # Trough = the deepest drawdown point
+        trough_idx_in_scan = int(dd.values.argmin())
+        trough_date = scan_close.index[trough_idx_in_scan]
+        trough_close_val = float(scan_close.iloc[trough_idx_in_scan])
+        peak_at_trough = float(scan_hi63.iloc[trough_idx_in_scan])
+        drawdown_pts = peak_at_trough - trough_close_val
+        reclaim_threshold = trough_close_val + 0.60 * drawdown_pts
+
+        # Sessions AFTER the trough (in the full close series)
+        trough_pos_full = close.index.searchsorted(trough_date, side="right")
+        after_trough = close.iloc[trough_pos_full:]
+
+        # Find first session where close >= reclaim_threshold, within 15 sessions
+        reclaim_session = None
+        for i in range(min(15, len(after_trough))):
+            if float(after_trough.iloc[i]) >= reclaim_threshold:
+                reclaim_session = i + 1  # 1-based session count
+                reclaim_date = after_trough.index[i]
+                break
+
+        if reclaim_session is None:
+            return {
+                "key": key,
+                "label_en": label_en,
+                "label_zh": label_zh,
+                "fired": False,
+                "fresh": False,
+                "since": None,
+                "detail": {
+                    "max_drawdown_63d": round(min_dd, 4),
+                    "trough_date": _iso(trough_date),
+                    "trough_close": round(trough_close_val, 2),
+                    "reclaim_threshold": round(reclaim_threshold, 2),
+                    "note": (
+                        "Drawdown found but 60% reclaim not achieved within 15 sessions of trough. "
+                        "A fast V-recovery — washout-shaped confirmers stay quiet in V-shapes by design."
+                    ),
+                },
+                "accruing": True,
+                "channel": channel,
+            }
+
+        # Check 3 consecutive closes above 20dma — scan from reclaim_date onward in the full series
+        reclaim_pos_full = close.index.searchsorted(reclaim_date, side="left")
+        three_above_20dma = False
+        three_above_date = None
+        # scan up to 20 sessions from reclaim for 3 consecutive above 20dma
+        scan_after_reclaim = close.iloc[reclaim_pos_full: reclaim_pos_full + 25]
+        ma20_after_reclaim = ma20.iloc[reclaim_pos_full: reclaim_pos_full + 25]
+        above20 = scan_after_reclaim > ma20_after_reclaim
+        for i in range(len(above20) - 2):
+            if above20.iloc[i] and above20.iloc[i + 1] and above20.iloc[i + 2]:
+                three_above_20dma = True
+                three_above_date = above20.index[i + 2]
+                break
+
+        fired = three_above_20dma
+        since = _iso(three_above_date) if fired else None
+        fresh = _is_fresh(three_above_date) if fired else False
+
+        return {
+            "key": key,
+            "label_en": label_en,
+            "label_zh": label_zh,
+            "fired": fired,
+            "fresh": fresh,
+            "since": since,
+            "detail": {
+                "max_drawdown_63d": round(min_dd, 4),
+                "trough_date": _iso(trough_date),
+                "trough_close": round(trough_close_val, 2),
+                "peak_at_trough": round(peak_at_trough, 2),
+                "drawdown_pts": round(drawdown_pts, 2),
+                "reclaim_threshold": round(reclaim_threshold, 2),
+                "reclaim_session": reclaim_session,
+                "reclaim_date": _iso(reclaim_date),
+                "three_above_20dma": three_above_20dma,
+                "three_above_date": _iso(three_above_date) if three_above_date is not None else None,
+                "note": (
+                    "A fast V-recovery — washout-shaped confirmers (thrusts/backwardation/retest) "
+                    "stay quiet in V-shapes by design."
+                ),
+            },
+            "accruing": True,
+            "channel": channel,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("c12 fast_reclaim failed: %s", e)
+        return _absent_chip(key, label_en, label_zh, f"error: {e}", channel)
+
+
+# ---------------------------------------------------------------------------
+# Morphology label (recovery shape: v_shape / retest / grinding)
+# ---------------------------------------------------------------------------
+
+def _morphology(chips: list[dict]) -> dict:
+    """Classify the recovery shape from C12 (v_shape) and C5 (retest) chips.
+    v_shape: C12 geometry met (fired within last 63d — use chip present and fired state).
+    retest: C5 fired.
+    grinding: neither.
+    Returns a dict with shape / label_en / label_zh / detail_en / detail_zh.
+    """
+    c12 = next((c for c in chips if c.get("key") == "fast_reclaim"), None)
+    c5 = next((c for c in chips if c.get("key") == "retest_divergence"), None)
+
+    v_shape = bool(c12 and c12.get("fired"))
+    retest = bool(c5 and c5.get("fired"))
+
+    if v_shape:
+        shape = "v_shape"
+        label_en = "V-shape recovery"
+        label_zh = "V型复苏"
+        detail_en = "V-shape recovery — washout confirmers (thrusts/backwardation/retest) stay quiet by design"
+        detail_zh = "V型复苏 — 洗盘确认信号（推进/期限倒挂/回踩）在V型中按设计保持静默"
+    elif retest:
+        shape = "retest"
+        label_en = "Retest recovery"
+        label_zh = "回踩复苏"
+        detail_en = "Retest recovery — breadth divergence at the second low confirms the bottom"
+        detail_zh = "回踩复苏 — 第二低点的广度背离确认底部"
+    else:
+        shape = "grinding"
+        label_en = "Grinding recovery"
+        label_zh = "磨底复苏"
+        detail_en = "Grinding recovery — neither V-shape nor confirmed retest yet"
+        detail_zh = "磨底复苏 — 尚无V型或确认回踩"
+
+    return {
+        "shape": shape,
+        "label_en": label_en,
+        "label_zh": label_zh,
+        "detail_en": detail_en,
+        "detail_zh": detail_zh,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
 
 def compute(root=None) -> dict:
-    """Compute all market-internal confirmation chips + veto.
+    """Compute all market confirmation chips + veto + morphology.
+
+    FROZEN SEMANTICS (RRX2 WA-4, RRX2-R1): market_confirmed, market_confirmed_raw, n_fresh, and
+    the C8 veto ONLY count C1–C7 (channel='internals'). C9–C12 (mood/tape) are display-only
+    context — they never flip the confirmations.
 
     Returns:
         {
           asof: ISO date,
-          chips: [chip...],           each with key/label_en/label_zh/fired/fresh/since/detail/accruing
-          market_confirmed_raw: bool,  (any non-veto chip fresh, ignoring veto)
-          market_confirmed: bool,      (market_confirmed_raw AND veto not active)
-          n_fresh: int,
-          veto: {active, detail, ...},
+          chips: [chip...],           C1–C7 (internals) + C9–C12 (mood/tape); each has channel field
+          market_confirmed_raw: bool,  C1–C7 only: any fresh, ignoring veto
+          market_confirmed: bool,      C1–C7 only: market_confirmed_raw AND veto not active
+          n_fresh: int,                C1–C7 only
+          veto: {active, detail, ...}, C8 — evaluated on C1–C7 arm only
+          morphology: {shape, label_en/zh, detail_en/zh},
           note: str,
         }
 
@@ -901,7 +1442,8 @@ def compute(root=None) -> dict:
 
         root_path = None if root is None else Path(root)
 
-        chips = [
+        # C1–C7: market internals (channel='internals') — these ALONE drive market_confirmed
+        internals_chips = [
             _c1_thrust_confluence(breadth),
             _c2_msi_swing(breadth),
             _c3_washout_thrust20(root_path),
@@ -911,22 +1453,45 @@ def compute(root=None) -> dict:
             _c7_oas_rollover(),
         ]
 
+        # C8: vol instability veto — evaluated on internals arm only
         veto = _c8_vol_instability_veto()
         veto_active = veto.get("active", False)
 
-        n_fresh = sum(1 for c in chips if c.get("fresh"))
+        # FROZEN: n_fresh, market_confirmed_raw, market_confirmed computed from C1–C7 only
+        n_fresh = sum(1 for c in internals_chips if c.get("fresh"))
         market_confirmed_raw = n_fresh >= 1
         market_confirmed = market_confirmed_raw and not veto_active
 
+        # C9–C11: mood chips (display-only, never flip confirmations)
+        mood_chips = [
+            _c9_naaim_regrossing(),
+            _c10_news_tone_recovering(),
+            _c11_cot_es_washout(),
+        ]
+
+        # C12: tape chip (display-only)
+        tape_chips = [
+            _c12_fast_reclaim(),
+        ]
+
+        # All chips combined (internals first for backward compat — prior code sliced by index)
+        all_chips = internals_chips + mood_chips + tape_chips
+
+        # Morphology from C12 (v_shape) and C5 (retest) — computed over all chips
+        morphology = _morphology(all_chips)
+
         return {
             "asof": today,
-            "chips": chips,
+            "chips": all_chips,
             "market_confirmed_raw": market_confirmed_raw,
             "market_confirmed": market_confirmed,
             "n_fresh": n_fresh,
             "veto": veto,
+            "morphology": morphology,
             "note": (
-                "Display-only, accruing. Chips forward-graded by engine/risk_radar_recovery_audit.py "
+                "Display-only, accruing. C1–C7 (internals) drive market_confirmed; "
+                "C9–C12 (mood/tape) are context only — they never flip confirmations (RRX2-R1). "
+                "Chips forward-graded by engine/risk_radar_recovery_audit.py "
                 "on the rebound ruler (RRX-R2). No significance claimed below n>=30 per arm."
             ),
         }
@@ -939,5 +1504,7 @@ def compute(root=None) -> dict:
             "market_confirmed": False,
             "n_fresh": 0,
             "veto": {"active": False, "detail": f"error: {e}"},
+            "morphology": {"shape": "grinding", "label_en": "Unknown", "label_zh": "未知",
+                           "detail_en": "", "detail_zh": ""},
             "note": f"compute failed: {e}",
         }

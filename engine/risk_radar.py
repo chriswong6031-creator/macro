@@ -901,7 +901,36 @@ def trajectory(subs: pd.DataFrame | None = None, calib: dict | None = None,
                 index=win.index)
         except Exception:  # noqa: BLE001 — odds series is best-effort
             states = odds = None
-        return _trajectory_from_series(win, states, odds, bands["caution"])
+        result = _trajectory_from_series(win, states, odds, bands["caution"])
+        # RRX2 WA-3: drivers line — "which scares faded, what is still warm?"
+        # Uses the same causal scare sub-score window (leak-free). peak=max of scare in window,
+        # now=today's sub-score. Faded = peak>=50 AND (peak-now)>=10, sorted by drop desc, cap 3.
+        # Warm = now >= watch band (55), cap 2. Reuses _SCARE_LABEL so labels stay in sync.
+        try:
+            watch_band = float(bands.get("watch", 55.0))
+            drivers_faded = []
+            drivers_warm = []
+            for scare in subs.columns:
+                sw = subs[scare].dropna().tail(window)
+                if len(sw) < 3:
+                    continue
+                peak_val = float(sw.max())
+                now_val = float(sw.iloc[-1])
+                lbl = _SCARE_LABEL.get(scare, (scare, scare))
+                entry = {"key": scare, "label_en": lbl[0], "label_zh": lbl[1],
+                         "peak": round(peak_val, 1), "now": round(now_val, 1)}
+                if peak_val >= 50 and (peak_val - now_val) >= 10:
+                    drivers_faded.append(entry)
+                if now_val >= watch_band:
+                    drivers_warm.append(entry)
+            drivers_faded.sort(key=lambda d: d["peak"] - d["now"], reverse=True)
+            result["drivers"] = {
+                "faded": drivers_faded[:3],
+                "warm": drivers_warm[:2],
+            }
+        except Exception:  # noqa: BLE001 — drivers is display-only context, never fatal
+            result["drivers"] = {"faded": [], "warm": []}
+        return result
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("risk_radar trajectory failed: %s", e)
         return None
