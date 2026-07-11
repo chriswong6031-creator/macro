@@ -270,42 +270,44 @@
   .anwhy { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ansc { font-variant-numeric:tabular-nums; font-weight:700; }
 
-  /* ── FTR W3: Tape Band ────────────────────────────────────────────────── */
+  /* ── FTR W3: Tape strip (.dtp chip idiom, ported from #2208 us_stocks band) ── */
   .ftr-tape-band { background:var(--panel2); border-bottom:2px solid var(--line); display:none; }
   .ftr-tape-band.visible { display:block; }
-  .ftr-tape-hd { display:flex; align-items:center; gap:10px; padding:9px 16px 7px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
-  .ftr-session-pill { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:3px 9px; border-radius:16px; }
-  .ftr-session-pill.live { background:rgba(35,192,138,.14); border:1px solid rgba(35,192,138,.38); color:var(--up); }
-  .ftr-session-pill.pre  { background:rgba(79,140,255,.12); border:1px solid rgba(79,140,255,.32); color:var(--link); }
-  .ftr-session-pill.post { background:rgba(139,147,167,.10); border:1px solid var(--line); color:var(--muted); }
-  .ftr-session-pill.closed { background:rgba(139,147,167,.08); border:1px solid var(--line); color:var(--muted); }
-  .ftr-session-pill .ftr-dot { width:6px; height:6px; border-radius:50%; background:currentColor; animation:ftr-pulse 1.4s ease-in-out infinite; }
-  .ftr-session-pill.closed .ftr-dot, .ftr-session-pill.post .ftr-dot { animation:none; opacity:.5; }
-  @keyframes ftr-pulse { 0%,100%{opacity:1;} 50%{opacity:.45;} }
-  .ftr-tape-lbl { font-size:13px; font-weight:700; color:var(--text); }
-  .ftr-tape-delay { font-size:11px; color:var(--muted); }
-  .ftr-tape-asof { font-size:11px; color:var(--muted); margin-left:auto; }
-  /* AI-capex complex badge */
-  .ftr-cx-badge { display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:8px; background:rgba(35,192,138,.10); border:1px solid rgba(35,192,138,.28); }
-  .ftr-cx-badge .cx-name { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; }
-  .ftr-cx-badge .cx-val  { font-size:14px; font-weight:800; font-variant-numeric:tabular-nums; }
-  .ftr-cx-badge .cx-note { font-size:10.5px; opacity:.8; }
-  /* mover rows */
-  .ftr-tape-body { display:grid; grid-template-columns:1fr 1fr; }
-  @media(max-width:640px){ .ftr-tape-body{ grid-template-columns:1fr; } }
-  .ftr-tape-t1 { padding:5px 16px 6px; font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); }
-  .ftr-tape-half { padding:7px 16px 9px; }
-  .ftr-tape-half:first-child { border-right:1px solid var(--line); }
-  .ftr-tape-half-lbl { font-size:10px; text-transform:uppercase; letter-spacing:.07em; font-weight:700; margin-bottom:5px; }
-  .ftr-tape-half-lbl.top { color:var(--up); }
-  .ftr-tape-half-lbl.bot { color:var(--down); }
-  .ftr-mrow { display:flex; align-items:center; gap:0; padding:2px 0; font-size:12px; }
-  .ftr-mrow .mr-rank { width:24px; font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; flex:none; }
-  .ftr-mrow .mr-name { flex:1; color:var(--text); font-weight:500; }
-  .ftr-mrow .mr-chg  { font-weight:700; font-variant-numeric:tabular-nums; min-width:52px; text-align:right; }
-  .ftr-mrow .mr-bar  { width:44px; height:4px; border-radius:2px; margin-left:7px; flex:none; }
-  .ftr-mrow .mr-bar.up { background:var(--up); }
-  .ftr-mrow .mr-bar.dn { background:var(--down); }
+  .dtp-row { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; padding:9px 16px 8px; }
+  .dtp-token { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); flex:none; }
+  .dtp-token.live  { color:var(--up); }
+  .dtp-token.pre   { color:var(--link); }
+  .dtp-token.warn  { color:var(--warn); }
+  .dtp-dot { width:6px; height:6px; border-radius:50%; background:currentColor; animation:dtp-pulse 1.4s ease-in-out infinite; flex:none; }
+  .dtp-token.post .dtp-dot, .dtp-token.closed .dtp-dot { animation:none; opacity:.45; }
+  @keyframes dtp-pulse { 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  .dtp-asof { font-size:10.5px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; flex:none; }
+  .dtp-sep { width:1px; height:1em; background:var(--line); align-self:center; flex:none; }
+  .dtp-ulbl { font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; flex:none; }
+  .dtp-ulbl.up { color:color-mix(in srgb,var(--up) 70%,transparent); }
+  .dtp-ulbl.dn { color:color-mix(in srgb,var(--down) 70%,transparent); }
+  .dtp-ulbl.cx { color:var(--link); }
+  .dtp-chips { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline; }
+  .dtp-chip { display:inline-flex; align-items:baseline; gap:5px; font-size:12.5px; text-decoration:none; color:inherit; opacity:1; transition:opacity .15s; }
+  .dtp-chip:hover { opacity:.75; }
+  #ftr-tape-band:not(.live-mode) .dtp-chip { opacity:.92; }
+  .dtp-chip-name { color:var(--text); font-weight:500; white-space:normal; line-height:1.3; }
+  .dtp-chip-pct  { font-family:var(--font-mono,monospace); font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap; }
+  .dtp-chip-pct.up { color:var(--up); }
+  .dtp-chip-pct.dn { color:var(--down); }
+  .dtp-bar-wrap  { display:inline-flex; align-items:center; align-self:center; }
+  .dtp-bar { height:3px; border-radius:2px; display:inline-block; min-width:6px; }
+  .dtp-bar.up { background:color-mix(in srgb,var(--up) 65%,transparent); }
+  .dtp-bar.dn { background:color-mix(in srgb,var(--down) 65%,transparent); }
+  .dtp-2d  { font-size:10px; color:var(--muted); font-family:var(--font-mono,monospace); white-space:nowrap; }
+  .dtp-fn  { padding:5px 16px 7px; font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); line-height:1.45; }
+  .ftr-t1-help { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; border:1px solid var(--line); color:var(--muted); font-size:9.5px; font-weight:700; cursor:help; line-height:1; vertical-align:middle; }
+  @media(max-width:640px){
+    .dtp-row { gap:5px 10px; padding:8px 12px 7px; }
+    .dtp-chip-name { font-size:12px; }
+    .dtp-asof { width:100%; margin-left:0; }
+    .dtp-sep { flex-basis:100%; width:auto; height:0; background:transparent; }
+  }
   /* ── FTR W3: per-card chip strip additions ──────────────────────────────── */
   .ftr-disagree-chip { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; padding:2px 7px; border-radius:5px; background:rgba(251,146,60,.10); border:1px solid rgba(251,146,60,.38); color:var(--amber,#fb923c); white-space:nowrap; }
   .ftr-stale-chip    { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; padding:2px 7px; border-radius:5px; background:rgba(255,92,108,.07); border:1px solid rgba(255,92,108,.28); color:var(--down); white-space:nowrap; }
@@ -391,8 +393,8 @@
       var el=document.getElementById('ftr-shock-banner');
       if(!el)return;
       var msg=isZh()?
-        ('⚠ 冲击状态 — 评分与叙事依据冲击前数据计算，有效期至 '+esc(d.expires)+'，届前请酌情折扣。剧烈反转在 T+1 有 58% 的概率消退（n=26）。'):
-        ('⚠ SHOCK regime: scores &amp; narrative computed on pre-shock data — discount until '+esc(d.expires)+'. Violent flips fade 58% at T+1 (n=26).');
+        ('⚠ 冲击状态 — 评分与叙事依据冲击前数据计算，有效期至 '+esc(d.expires)+'，届前请酌情折扣。冲击期的剧烈反转多难持续：历史26次中约六成在一天内消退。'):
+        ('⚠ SHOCK regime: scores &amp; narrative computed on pre-shock data — discount until '+esc(d.expires)+'. Sharp reversals during shocks usually don&#39;t hold: in 26 past cases about 6 in 10 faded within a day.');
       el.innerHTML='<div class="shock-deesc-banner" style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--warn);border-radius:9px;padding:9px 14px;margin:8px 0;font-size:13px">'+msg+'</div>';
     }).catch(function(){/* absent file → no banner */});
   // Policy-lever chip
@@ -418,165 +420,216 @@
 
 
   <!-- ══════════════════════════════════════════════════════════════════════
-       FTR W3+W5: Live Basket Tape Band (Variant B, operator-ratified)
+       FTR W3+W5: Basket tape strip — .dtp chip idiom (ported from the #2208
+       us_stocks dash-tape-band per docs/DESIGN_DOCTRINE.md §3): the state
+       token IS the label, ONE as-of, full display names, honest shared-scale
+       bars, no rank numbers; flow demoted to data-tips; one merged footnote.
        Fetched from live/basket_pulse.json + basketdata/turn_watch.json.
        De-escalation / display tier only (FT-R1, FT-R2).
        Stale-gating: disagreement chips SUPPRESSED (never inverted) when stale
-       or session==closed (FT-R12). Band shown greyed with CLOSED pill when closed.
-       T+1 fade base rate shown inline per FT-R3.
+       or session==closed (FT-R12). T+1 fade note in the footnote (FT-R3) in
+       plain words; the technical receipt lives in the ? tip (Tier 2).
        ══════════════════════════════════════════════════════════════════════ -->
-  <div id="ftr-tape-band" class="ftr-tape-band" aria-label="{{ t('Live basket tape','实时篮子行情') }}">
-    <!-- header row: session pill, label, delay note, AI-capex complex chip, as-of -->
-    <div class="ftr-tape-hd">
-      <span id="ftr-session-pill" class="ftr-session-pill closed">
-        <span class="ftr-dot"></span>
-        <span id="ftr-session-label">—</span>
-      </span>
-      <span class="ftr-tape-lbl">{{ t('Live Basket Tape','实时篮子行情') }}</span>
-      <span class="ftr-tape-delay">{{ t('15-min delayed','15分钟延迟') }}</span>
-      <span id="ftr-cx-badge"></span>
-      <span class="ftr-tape-asof" id="ftr-tape-asof"></span>
+  <div id="ftr-tape-band" class="ftr-tape-band" aria-label="Basket tape">
+    <div class="dtp-row">
+      <span class="dtp-token closed" id="ftr-dtp-token"><span class="dtp-dot"></span><span id="ftr-dtp-token-lbl">—</span></span>
+      <span class="dtp-asof" id="ftr-tape-asof"></span>
     </div>
-    <!-- mover grid: top-3 / bottom-3 -->
-    <div class="ftr-tape-body">
-      <div class="ftr-tape-half">
-        <div class="ftr-tape-half-lbl top">{{ t('Top 3 live leaders','前3领涨') }}</div>
-        <div id="ftr-top-movers"></div>
-      </div>
-      <div class="ftr-tape-half">
-        <div class="ftr-tape-half-lbl bot">{{ t('Bottom 3 live laggards','后3领跌') }}</div>
-        <div id="ftr-bot-movers"></div>
-      </div>
-    </div>
-  <!-- T+1 fade base-rate footer (FT-R3: always visible beside tape reads) -->
-  <div class="ftr-tape-t1">{{ t(
-    'T+1 violent-flip base rate: <strong>58% fade</strong> (n=26) · flip-confirmation lens · not a directional signal',
-    'T+1剧烈反转基础概率：<strong>58%消退</strong>（n=26）· 翻转确认透镜 · 非方向信号'
-  ) }}</div>
+    <div class="dtp-row dtp-chips" id="ftr-dtp-chips" style="padding-top:0"></div>
+    <!-- T+1 fade note (FT-R3): plain words at a glance; receipt demoted to the ? tip -->
+    <div class="dtp-fn ftr-tape-t1"><span class="l-en">Not a buy signal: sharp one-day flips usually don&#39;t hold &mdash; in 26 past cases about 6 in 10 faded within a day.</span><span class="l-zh">非买入信号：剧烈的单日反转多难持续 — 历史26次中约六成在一天内消退。</span> <span class="ftr-t1-help" data-tip-en="Technical receipt: T+1 violent-flip base rate 58% fade (n=26) · flip-confirmation lens · descriptive only, not a directional signal · display tier." data-tip-zh="技术说明：T+1剧烈反转基础概率58%消退（n=26）· 翻转确认透镜 · 仅描述、非方向信号 · 展示层。">?</span><span id="ftr-dtp-fn-flow"></span></div>
   </div>
 
   <script>
-  /* FTR W3+W5+W4: tape band + turn-watch card JS (display/de-escalation only)
-     FT-R1: never mutates slow state; FT-R2: tier=display; FT-R3: T+1 fade note;
-     FT-R12: stale-gate suppresses chips; FT-R8: graceful absent-file. */
+  /* FTR W3+W5+W4: tape strip (.dtp idiom) + turn-watch card JS (display/de-escalation only)
+     FT-R1: never mutates slow state; FT-R2: tier=display; FT-R3: T+1 fade note
+     (plain words in the footnote; technical receipt in the ? tip); FT-R12:
+     stale-gate suppresses chips; FT-R8: graceful absent-file.
+     Idiom per docs/DESIGN_DOCTRINE.md §3 (#2208): display names (never slugs),
+     ONE as-of, honest shared-scale bars, no rank numbers, flow in data-tips. */
   (function(){
   'use strict';
-  var LIVE_STALE_MIN = 20;  // minutes — mirror build_basket_pulse.LIVE_STALE_MIN
   function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
-  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});}
   function L(en,zh){return'<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>';}
   function fmtPct(v){if(v==null)return'—';return(v>=0?'+':'')+v.toFixed(2)+'%';}
-  function clsPct(v){return v==null?'muted':v>=0?'up':'dn';}
   // Disagreement-chip gate (FT-R12): chips only when mode=live (TS-R1).
-  // Values (movers) are rendered in all modes when a stamped read exists.
+  // Values (mover chips) are rendered in all modes when a stamped read exists.
   function isChipSuppressed(pulse){
     if(!pulse) return true;
     return (pulse.mode||'live') !== 'live';
   }
-  // Mode pill label + as-of stamp for non-live reads (TS-R1 honest-delay law)
-  function modePillHtml(pulse){
-    var mode = pulse.mode||'live';
-    var delay = pulse.delay_min_median;
-    var asof = pulse.as_of_quotes || pulse.as_of_utc;
-    if(mode==='live') return '';
-    var asofStr='';
-    if(asof){
+
+  // ── Display names (Law 2: never raw slugs; prettified fallback never blocks render)
+  function _slugName(id){return String(id||'').replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});}
+  function _theme(id){
+    var arr=(window.BASKETS&&window.BASKETS.baskets)||[];
+    for(var i=0;i<arr.length;i++){ if(arr[i].id===id) return arr[i]; }
+    return null;
+  }
+  function nameEn(id){var b=_theme(id);return (b&&b.name)||_slugName(id);}
+  function nameZh(id){var b=_theme(id);return (b&&(b.name_zh||b.name))||_slugName(id);}
+
+  // ── Single display-state token (the token IS the label; TS-R1 honest-delay law)
+  function _dtpState(pulse){
+    var mode    = pulse.mode||'live';
+    var session = pulse.session||'closed';
+    var ts      = pulse.as_of_quotes||pulse.as_of_utc;
+    var asofStr = '';
+    if(ts){
       try{
-        var d=new Date(asof);
-        // If it's a date string without time (EOD bar date) show just the date
-        asofStr = asof.length<=10 ? asof : d.toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
-      }catch(e){asofStr=asof;}
+        if(ts.length<=10){ asofStr=ts; }
+        else if(mode==='last_rth'&&pulse.settled_close){
+          asofStr=new Date(ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
+        } else {
+          asofStr=new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
+        }
+      }catch(e){asofStr=ts;}
     }
-    var pills={
-      delayed:{en:'DELAYED',zh:'延迟数据',cls:'pre'},
-      last_rth:{en:'LAST SESSION',zh:'上一交易时段',cls:'post'},
-      eod:{en:'EOD CLOSE',zh:'收盘价',cls:'closed'}
-    };
-    var p=pills[mode]||{en:mode.toUpperCase(),zh:mode,cls:'closed'};
-    var delayNote='';
-    if(mode==='delayed'&&delay!=null){
-      var h=Math.round(delay/60);
-      delayNote=' · '+L('~'+h+'h delay','约'+h+'小时延迟');
+    /* >12h staleness guard (weekend/holiday frozen file) — a stale file describes
+       a finished session; never label it live or post-market */
+    var builtMs=Date.parse(pulse.as_of_utc||'');
+    var stale=isFinite(builtMs)&&(Date.now()-builtMs)>12*3600e3;
+    if(stale){
+      if(mode==='live'||mode==='delayed'){ pulse.mode='last_rth'; }
+      return {cls:'closed', en:'LAST SESSION · SETTLED', zh:'上一交易时段 · 已收盘', asofStr:asofStr, live:false};
     }
-    var asofNote=asofStr?(' · '+L('as of '+esc(asofStr),'截至 '+esc(asofStr))):'';
-    return '<span class="ftr-session-pill '+p.cls+'" style="margin-left:6px;font-size:10px">'
-      +L(esc(p.en),esc(p.zh))+delayNote+asofNote+'</span>';
+    if(mode==='live'){
+      if(session==='pre')
+        return {cls:'pre', en:'PREMARKET · 15-MIN DELAYED', zh:'盘前 · 15分钟延迟', asofStr:asofStr, live:true};
+      return {cls:'live', en:'LIVE · 15-MIN DELAYED', zh:'实盘 · 15分钟延迟', asofStr:asofStr, live:true};
+    }
+    if(mode==='last_rth'){
+      if(pulse.settled_close)
+        return {cls:'post', en:'POST-MARKET · SETTLED CLOSE', zh:'盘后 · 当日收盘', asofStr:asofStr, live:false};
+      return {cls:'post', en:'LAST SESSION', zh:'上一交易时段', asofStr:asofStr, live:false};
+    }
+    if(mode==='eod')
+      return {cls:'closed', en:'LAST SESSION', zh:'上一交易时段', asofStr:asofStr, live:false};
+    if(mode==='delayed'){
+      var h=pulse.delay_min_median!=null?Math.round(pulse.delay_min_median/60):0;
+      return {cls:'warn', en:'DELAYED · ~'+h+'h', zh:'延迟 · 约'+h+'小时', asofStr:asofStr, live:false};
+    }
+    return {cls:'closed', en:'LAST SESSION', zh:'上一交易时段', asofStr:asofStr, live:false};
   }
 
-  // ── Session pill rendering ────────────────────────────────────────────────
-  var SESSION_LABELS = {
-    pre:  {cls:'pre',  en:'PREMARKET',   zh:'盘前'},
-    rth:  {cls:'live', en:'LIVE · RTH', zh:'实盘 · 正常时段'},
-    post: {cls:'post', en:'POST-MARKET', zh:'盘后'},
-    closed:{cls:'closed',en:'CLOSED',   zh:'休市'}
-  };
-  function renderSessionPill(session){
-    var info = SESSION_LABELS[session] || SESSION_LABELS.closed;
-    var pill = document.getElementById('ftr-session-pill');
-    var lbl  = document.getElementById('ftr-session-label');
-    if(!pill||!lbl) return;
-    pill.className = 'ftr-session-pill ' + info.cls;
-    lbl.innerHTML = L(esc(info.en), esc(info.zh));
-  }
+  // ── Tape strip: LEADERS/LAGGARDS chips + complex chip + flow footnote ─────
+  function renderTapeStrip(pulse){
+    var band=document.getElementById('ftr-tape-band');
+    if(!band) return;
 
-  // ── AI-capex complex badge ────────────────────────────────────────────────
-  function renderCxBadge(complexes, stale){
-    var el = document.getElementById('ftr-cx-badge');
-    if(!el) return;
-    if(stale || !complexes || !complexes.length){ el.innerHTML=''; return; }
-    var cx = null;
-    for(var i=0;i<complexes.length;i++){
-      if(complexes[i].complex_id==='ai_capex'){ cx=complexes[i]; break; }
-    }
-    if(!cx || cx.live_ew_chg_pct==null){ el.innerHTML=''; return; }
-    var chg = cx.live_ew_chg_pct;
-    var isGreen = chg >= 0;
-    var onlyGreen = cx.only_green_complex;
-    var noteEn = onlyGreen ? 'only green complex' : '';
-    var noteZh = onlyGreen ? '唯一上涨复合板块' : '';
-    var col = isGreen ? 'rgba(35,192,138,.10)' : 'rgba(255,92,108,.07)';
-    var bdr = isGreen ? 'rgba(35,192,138,.28)' : 'rgba(255,92,108,.25)';
-    var valCol = isGreen ? 'var(--up)' : 'var(--down)';
-    el.innerHTML = '<div class="ftr-cx-badge" style="background:'+col+';border-color:'+bdr+'">'
-      +'<div><div class="cx-name">'+L('AI-Capex Complex','AI资本开支复合板块')+'</div>'
-      +(noteEn?'<div class="cx-note" style="color:'+valCol+'">'+L(esc(noteEn),esc(noteZh))+'</div>':'')+'</div>'
-      +'<div class="cx-val" style="color:'+valCol+'">'+fmtPct(chg)+'</div></div>';
-  }
+    var st=_dtpState(pulse);
+    var tokEl=document.getElementById('ftr-dtp-token');
+    var tokLbl=document.getElementById('ftr-dtp-token-lbl');
+    if(tokEl){ tokEl.className='dtp-token '+st.cls; }
+    if(tokLbl){ tokLbl.innerHTML=L(esc(st.en),esc(st.zh)); }
+    var asofEl=document.getElementById('ftr-tape-asof');
+    if(asofEl){ asofEl.innerHTML=st.asofStr?L('as of '+esc(st.asofStr),'截至 '+esc(st.asofStr)):''; }
+    if(st.live){ band.classList.add('live-mode'); } else { band.classList.remove('live-mode'); }
 
-  // ── Mover rows ────────────────────────────────────────────────────────────
-  function renderMovers(baskets, byId, pulse){
-    var topEl = document.getElementById('ftr-top-movers');
-    var botEl = document.getElementById('ftr-bot-movers');
-    if(!topEl||!botEl) return;
-    if(!baskets || !baskets.length){
-      var msg='<span class="muted" style="font-size:11px">'+L('data absent','数据缺失')+'</span>';
-      topEl.innerHTML=msg; botEl.innerHTML=msg; return;
+    var chipsEl=document.getElementById('ftr-dtp-chips');
+    if(!chipsEl) return;
+    var all=(pulse.baskets||[]).filter(function(b){return b.live_ew_chg_pct!=null&&b.tape_rank!=null;});
+    var session=pulse.session||'closed';
+    if(!all.length){
+      var loading=(session==='pre'||session==='rth');
+      chipsEl.innerHTML='<span style="font-size:11px;color:var(--muted)">'
+        +(loading?L('quotes loading…','报价加载中…')
+                 :L('No tape data for the last session.','上一交易时段暂无行情数据。'))
+        +'</span>';
+      return;
     }
-    // sort live baskets by rank — works for live, delayed, last_rth, eod
-    var live = baskets.filter(function(b){return b.live_ew_chg_pct!=null && b.tape_rank!=null;});
-    if(!live.length){
-      var msg2='<span class="muted" style="font-size:11px">'+L('quotes loading…','报价加载中…')+'</span>';
-      topEl.innerHTML=msg2; botEl.innerHTML=msg2; return;
+
+    // sort by tape rank — works for live, delayed, last_rth, eod
+    all.sort(function(a,b){return b.tape_rank-a.tape_rank;});
+    /* laggards only from rows NOT already shown as leaders (sparse days: n<=5 → no laggard group) */
+    var top5=all.slice(0,5);
+    var bot3=all.length>5?all.slice(Math.max(5,all.length-3)).reverse():[];
+
+    /* honest bars: shared px scale across the shown movers */
+    var shown=top5.concat(bot3);
+    var maxAbs=0;
+    shown.forEach(function(b){var a=Math.abs(b.live_ew_chg_pct);if(a>maxAbs)maxAbs=a;});
+    if(!maxAbs)maxAbs=1;
+
+    var flowShown=false, flowAsOf=pulse.day_flow_as_of||null;
+
+    function chipHtml(b){
+      var chg=b.live_ew_chg_pct, isUp=chg>=0;
+      var barW=Math.max(6,Math.round(Math.abs(chg)/maxAbs*56));
+      /* flow demoted to a data-tip, only when notable: |cmf|>0.05 OR vol_surge>=1.5 */
+      var tipEn='', tipZh='';
+      var f=b.day_flow;
+      var hasFlow=f&&((f.cmf!=null&&Math.abs(f.cmf)>0.05)||(f.dollar_vol_surge!=null&&f.dollar_vol_surge>=1.5));
+      if(hasFlow){
+        flowShown=true;
+        var aoStr=f.as_of||flowAsOf||'';
+        var volStr=f.dollar_vol_surge!=null?('×'+Number(f.dollar_vol_surge).toFixed(1)+' vol'):'';
+        var dirEn=f.cmf>0.05?'net inflow':(f.cmf<-0.05?'net outflow':'balanced flow');
+        var dirZh=f.cmf>0.05?'净流入':(f.cmf<-0.05?'净流出':'资金流均衡');
+        tipEn=(volStr?volStr+' · ':'')+dirEn+(aoStr?' (nightly, as of '+aoStr+')':'');
+        tipZh=(volStr?volStr+' · ':'')+dirZh+(aoStr?'（每晚，截至 '+aoStr+'）':'');
+      }
+      /* 2d suffix: only when the session move flips the 2-day direction (neutral wording — no spin words) */
+      var d2Html='';
+      if(b.cum_2d_pct!=null&&Math.abs(b.cum_2d_pct)>=1.0){
+        var flipSign=(chg>=0&&b.cum_2d_pct<0)||(chg<0&&b.cum_2d_pct>=0);
+        if(flipSign){
+          var d2pct=(b.cum_2d_pct>=0?'+':'')+b.cum_2d_pct.toFixed(1)+'%';
+          var d2TipEn=fmtPct(chg)+' today after a '+d2pct+' two-day run — the session move flips the 2-day direction. Descriptive only.';
+          var d2TipZh=fmtPct(chg)+' 今日，近两日累计 '+d2pct+' — 当日走势翻转两日方向。仅供参考。';
+          d2Html='<span class="dtp-2d" data-tip-en="'+esc(d2TipEn)+'" data-tip-zh="'+esc(d2TipZh)+'">2d '+d2pct+'</span>';
+        }
+      }
+      var tipAttr=tipEn?(' data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'"'):'';
+      return '<a class="dtp-chip" href="basket/'+esc(b.id)+'.html"'+tipAttr+'>'
+        +'<span class="dtp-chip-name"><span class="l-en">'+esc(nameEn(b.id))+'</span><span class="l-zh">'+esc(nameZh(b.id))+'</span></span>'
+        +'<span class="dtp-chip-pct '+(isUp?'up':'dn')+'">'+fmtPct(chg)+'</span>'
+        +'<span class="dtp-bar-wrap"><span class="dtp-bar '+(isUp?'up':'dn')+'" style="width:'+barW+'px"></span></span>'
+        +d2Html
+        +'</a>';
     }
-    live.sort(function(a,b){return b.tape_rank - a.tape_rank;});
-    var n = live.length;
-    var top3 = live.slice(0,3);
-    var bot3 = live.slice(-3).reverse();
-    function moverRow(b, rank){
-      var name = (byId[b.id]||{}).name||b.id;
-      var nameZh = (byId[b.id]||{}).name_zh||name;
-      var chg = b.live_ew_chg_pct;
-      var isUp = chg >= 0;
-      var barW = Math.min(50, Math.abs(chg) * 10);
-      return '<div class="ftr-mrow">'
-        +'<span class="mr-rank">#'+rank+'</span>'
-        +'<span class="mr-name">'+L(esc(name),esc(nameZh))+'</span>'
-        +'<span class="mr-chg '+(isUp?'up':'dn')+'">'+fmtPct(chg)+'</span>'
-        +'<div class="mr-bar '+(isUp?'up':'dn')+'" style="width:'+barW.toFixed(0)+'px"></div>'
-        +'</div>';
+
+    var html='';
+    html+='<span class="dtp-ulbl up">'+L('LEADERS','领涨')+'</span>';
+    top5.forEach(function(b){html+=chipHtml(b);});
+    if(bot3.length){
+      html+='<span class="dtp-sep"></span>';
+      html+='<span class="dtp-ulbl dn">'+L('LAGGARDS','领跌')+'</span>';
+      bot3.forEach(function(b){html+=chipHtml(b);});
     }
-    topEl.innerHTML = top3.map(function(b){return moverRow(b, b.tape_rank);}).join('');
-    botEl.innerHTML = bot3.map(function(b){return moverRow(b, b.tape_rank);}).join('');
+
+    /* AI-Capex complex chip (live mode only, FT-R12) */
+    if(!isChipSuppressed(pulse)){
+      var cx=null;
+      (pulse.complexes||[]).forEach(function(c){if(c.complex_id==='ai_capex')cx=c;});
+      if(cx&&cx.live_ew_chg_pct!=null){
+        var isG=cx.live_ew_chg_pct>=0;
+        var cxTipEn='AI-Capex Complex composite basket.'+(cx.only_green_complex?' Only complex in positive territory this session.':'')+' Context only.';
+        var cxTipZh='AI资本开支复合板块。'+(cx.only_green_complex?'本交易时段唯一上涨复合板块。':'')+'仅供参考。';
+        html+='<span class="dtp-sep"></span>';
+        html+='<span class="dtp-ulbl cx">'+L('COMPLEX','复合')+'</span>';
+        html+='<a class="dtp-chip" href="basket/ai_capex.html" data-tip-en="'+esc(cxTipEn)+'" data-tip-zh="'+esc(cxTipZh)+'">'
+          +'<span class="dtp-chip-name"><span class="l-en">AI-Capex Complex</span><span class="l-zh">AI资本开支复合板块</span></span>'
+          +'<span class="dtp-chip-pct '+(isG?'up':'dn')+'">'+fmtPct(cx.live_ew_chg_pct)+'</span>'
+          +'<span class="dtp-bar-wrap"><span class="dtp-bar '+(isG?'up':'dn')+'" style="width:'+Math.max(6,Math.round(Math.abs(cx.live_ew_chg_pct)/maxAbs*56))+'px"></span></span>'
+          +'</a>';
+      }
+    }
+
+    chipsEl.innerHTML=html;
+
+    /* flow provenance appended to the single static footnote (merge, never stack) */
+    var flowEl=document.getElementById('ftr-dtp-fn-flow');
+    if(flowEl){
+      if(flowShown){
+        var aoEn=flowAsOf?' (as of '+esc(flowAsOf)+')':'';
+        var aoZh=flowAsOf?'（截至 '+esc(flowAsOf)+'）':'';
+        flowEl.innerHTML=' · '+L('flow in tooltips = nightly dollar-volume read'+aoEn+', descriptive only','提示框中资金流 = 每晚美元成交量读数'+aoZh+'，仅供描述');
+      } else {
+        flowEl.innerHTML='';
+      }
+    }
   }
 
   // ── Per-card tape chip injection (disagreement + heat + stale) ───────────
@@ -617,7 +670,9 @@
         chips.push('<span class="ftr-stale-chip">'+L('STALE','数据陈旧')+'</span>');
       }
 
-      // Disagreement chip: suppressed when stale (FT-R12)
+      // Disagreement chip: suppressed when stale (FT-R12). User-first copy
+      // (docs/DESIGN_DOCTRINE.md): plain words at a glance; the tape-rank /
+      // reco / base-rate receipt lives in the data-tip (Tier 2).
       if(!stale && pb && !pb.stale && pb.live_ew_chg_pct!=null && pb.tape_rank!=null){
         // Find this basket's slow reco from BASKETS global
         var theme = (window.BASKETS&&window.BASKETS.baskets||[]).find(function(t){return t.id===bid;});
@@ -625,21 +680,25 @@
         var slowAsOf = theme ? (theme.as_of||'') : '';
         var tapeRankNum = pb.tape_rank;
         var totalBaskets = (pulse&&pulse.baskets||[]).filter(function(b){return b.tape_rank!=null;}).length;
-        // Disagreement = tape rank in top half while slow reco is hold/reduce, or bottom while accumulate
+        // Disagreement = tape rank in top third while slow reco is weak, or bottom third while strong
         var isHighRank = tapeRankNum > totalBaskets * 0.67;
         var isLowRank  = tapeRankNum < totalBaskets * 0.33;
         var slowIsWeak = slowReco==='hold'||slowReco==='reduce'||slowReco==='trim'||slowReco==='avoid';
         var slowIsStrong = slowReco==='accumulate'||slowReco==='enter';
         if((isHighRank && slowIsWeak) || (isLowRank && slowIsStrong)){
           var chgStr = (pb.live_ew_chg_pct>=0?'+':'')+pb.live_ew_chg_pct.toFixed(1)+'%';
-          var rankStr = (isHighRank?'&#8593;':'&#8595;')+tapeRankNum;
-          var recoDisp = slowReco.toUpperCase();
+          var RECO_EN={hold:'Hold',reduce:'Reduce',trim:'Trim',avoid:'Avoid',accumulate:'Accumulate',enter:'Buy'};
+          var RECO_ZH={hold:'持有',reduce:'减持',trim:'减仓',avoid:'回避',accumulate:'加仓',enter:'买入'};
+          var recoEn=RECO_EN[slowReco]||(theme&&theme.reco_en)||slowReco;
+          var recoZh=RECO_ZH[slowReco]||(theme&&theme.reco_zh)||recoEn;
+          var dirEn = isHighRank?'strong today':'weak today';
+          var dirZh = isHighRank?'今日强势':'今日走弱';
           var dateStr = slowAsOf ? slowAsOf.slice(5) : ''; // MM-DD
-          chips.push('<span class="ftr-disagree-chip">'
-            +'<span>'+L('tape '+rankStr+' · slow '+recoDisp+(dateStr?' as-of '+dateStr:''),
-                        '行情'+rankStr+' · 慢信号 '+recoDisp+(dateStr?' 截至'+dateStr:''))
-            +'</span>'
-            +'<span style="font-size:9.5px;opacity:.75">'+L('T+1 58% fade','T+1 58%概率消退')+'</span>'
+          var tipEn='Receipt: tape rank '+tapeRankNum+' of '+totalBaskets+' this session ('+chgStr+') vs slow rating '+slowReco.toUpperCase()+(dateStr?' (as-of '+dateStr+')':'')+' · T+1 fade base rate 58% (n=26) · display tier, never reorders ratings.';
+          var tipZh='技术说明：本时段行情排名 '+tapeRankNum+'/'+totalBaskets+'（'+chgStr+'），慢速评级 '+slowReco.toUpperCase()+(dateStr?'（截至'+dateStr+'）':'')+' · T+1消退基础概率58%（n=26）· 仅展示层，不改变评级。';
+          chips.push('<span class="ftr-disagree-chip" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">'
+            +'<span>'+L(dirEn+' — still rated '+esc(recoEn), dirZh+' — 主评级仍为「'+esc(recoZh)+'」')+'</span>'
+            +'<span style="font-size:9.5px;opacity:.75">'+L('~6 in 10 fade in a day','约六成一天内消退')+'</span>'
             +'</span>');
         }
       }
@@ -657,8 +716,8 @@
           var rdClass = rd5>0?'pos':'neg';
           var rdArrow = rd5>0?'&#8593;':'&#8595;';
           chips.push('<span class="chip" style="font-size:10px">'
-            +L('rank &#916;5d: <span class="'+rdClass+'">'+rdArrow+Math.abs(rd5)+'</span>',
-               '5日排名变化: <span class="'+rdClass+'">'+rdArrow+Math.abs(rd5)+'</span>')
+            +L('moved <span class="'+rdClass+'">'+rdArrow+Math.abs(rd5)+'</span> spots this week',
+               '本周排名<span class="'+rdClass+'">'+rdArrow+Math.abs(rd5)+'</span>位')
             +'</span>');
         }
       }
@@ -671,40 +730,53 @@
         card.appendChild(stripEl);
       }
 
-      // Turn-watch card (W4) — always shown for WATCH/IGNITION regardless of stale
+      // Turn-watch card (W4) — always shown for WATCH/IGNITION regardless of stale.
+      // User-first copy per docs/DESIGN_DOCTRINE.md + #2221 vocabulary:
+      // STRONG SIGN / EARLY SIGN badges, plain-word legs (technical construction
+      // in per-leg data-tips), plain footer; the Oracle-P8 receipt lives in the
+      // footer's ? tip (Tier 2). Gate logic and states unchanged.
       if(tw && (tw.state==='WATCH'||tw.state==='IGNITION')){
         var isIgnition = tw.state==='IGNITION';
         var legs = tw.legs||{};
         var k = tw.k||0;
         var LEG_LABELS = {
-          impulse_day:       [L('Impulse day','脉冲日'),      L('&#8531; members +3%+','&#8531;成分+3%+')],
-          rs_z:              [L('RS-Z','相对强度Z'),            L('cross-sec z','横截面z值')],
-          breadth_surge:     [L('Breadth surge','广度突破'),   L('&#916;pct50 z','&#916;pct50 z')],
-          volume_confirm:    [L('Volume confirm','成交量确认'), L('EW vol &#215;1.5','EW量&#215;1.5')],
-          complex_confirm:   [L('Complex confirm','复合确认'), L('sibling rs_z+','兄弟rs_z+')],
-          shock_relative_bid:[L('Shock flag','冲击标志'),      L('oil/geo driver','油价/地缘')]
+          impulse_day:       [L('Big up day','单日大涨'),            L('&#8531; of stocks +3%+','&#8531;成分股涨3%+'),
+                              'Impulse day: at least one-third of members up 3%+ today.','脉冲日：至少三分之一成分股当日上涨3%以上。'],
+          rs_z:              [L('Strong vs market','跑赢大盘'),       L('vs other groups','对比其他板块'),
+                              'Relative strength: cross-sectional z-score of returns vs the basket universe.','相对强度：对比全部篮子的横截面收益z值。'],
+          breadth_surge:     [L('Breadth jump','广度跃升'),          L('more stocks rising','更多成分上涨'),
+                              'Breadth surge: z-score jump in % of members above their 50-day average.','广度突破：成分股站上50日均线比例的z值跃升。'],
+          volume_confirm:    [L('Volume backs it','放量配合'),        L('&#215;1.5 usual volume','约1.5倍常量'),
+                              'Volume confirm: equal-weight dollar volume at least 1.5× its recent average.','成交量确认：等权美元成交量达近期均值1.5倍以上。'],
+          complex_confirm:   [L('Related groups agree','相关板块同步'),L('siblings improving','兄弟板块转强'),
+                              'Complex confirm: sibling baskets in the same complex also show positive relative strength.','复合确认：同一复合板块的兄弟篮子相对强度同步转正。'],
+          shock_relative_bid:[L('Event-driven','事件驱动'),          L('oil / geopolitics','油价/地缘'),
+                              'Shock flag: the move coincides with an oil/geopolitical shock driver.','冲击标志：走势与油价/地缘冲击驱动同时出现。']
         };
+        var twTipEn='Technical receipt: fast turn meter, state '+tw.state+' ('+k+' of 6 legs). Backtested basket-level washout→turn edge = null (Oracle P8); T+1 fade base rate 58% (n=26). Slow ratings unchanged; display tier only.';
+        var twTipZh='技术说明：快速拐点计量，状态 '+tw.state+'（6条腿中'+k+'条触发）。篮子级洗盘→拐点回测优势为空值（Oracle P8）；T+1消退基础概率58%（n=26）。慢速评级未变；仅展示层。';
         var twHtml = '<div class="ftr-tw-card'+(isIgnition?'':' watch')+'">'
           +'<div class="ftr-tw-hd">'
-          +'<span class="ftr-tw-badge'+(isIgnition?'':' watch')+'">'+L(isIgnition?'&#9889; IGNITION':'&#9889; WATCH', isIgnition?'&#9889; 点火':'&#9889; 观察')+'</span>'
-          +'<span class="ftr-tw-k">'+L(k+' of 6 legs',k+' / 6 条腿')+'</span>'
-          +'<span class="ftr-tw-asof">'+L('nightly','每晚')+(tw.as_of?' · '+esc(tw.as_of):'')+'</span>'
+          +'<span class="ftr-tw-badge'+(isIgnition?'':' watch')+'">'+L(isIgnition?'&#9889; STRONG SIGN':'&#9889; EARLY SIGN', isIgnition?'&#9889; 较强迹象':'&#9889; 初步迹象')+'</span>'
+          +'<span class="ftr-tw-k">'+L(k+' of 6 signs',k+' / 6 项迹象')+'</span>'
+          +'<span class="ftr-tw-asof">'+L('updated nightly','每晚更新')+(tw.as_of?' · '+esc(tw.as_of):'')+'</span>'
           +'</div>'
           +'<div class="ftr-tw-legs">';
         var legOrder = ['impulse_day','rs_z','breadth_surge','volume_confirm','complex_confirm','shock_relative_bid'];
         legOrder.forEach(function(lk){
           var fired = !!legs[lk];
-          var ll = LEG_LABELS[lk]||[lk,lk];
-          twHtml += '<div class="ftr-tw-leg'+(fired?' fired':'')+'">'
+          var ll = LEG_LABELS[lk]||[lk,lk,'',''];
+          var legTip=ll[2]?' data-tip-en="'+esc(ll[2])+'" data-tip-zh="'+esc(ll[3])+'"':'';
+          twHtml += '<div class="ftr-tw-leg'+(fired?' fired':'')+'"'+legTip+'>'
             +'<div class="ftr-tw-leg-nm">'+ll[0]+'</div>'
             +'<div class="ftr-tw-leg-val">'+(fired?'&#10003; ':L('— ','— '))+ll[1]+'</div>'
             +'</div>';
         });
         twHtml += '</div>'
           +'<div class="ftr-tw-disc">'+L(
-            'Expected-null forward meter (sector-level washout&#8594;turn printed NULL, Oracle P8). Display only.',
-            '预期空值前瞻计量（板块级别洗盘→拐点为NULL，Oracle P8）。仅展示。'
-          )+'</div></div>';
+            'Not a buy signal: in 26 past cases about 6 in 10 of these early signs faded within a day. If the turn is real, this theme&#39;s rating upgrades on its own.',
+            '非买入信号：历史26次中约六成的早期迹象在一天内消退。若拐点为真，主题评级会自行升级。'
+          )+' <span class="ftr-t1-help" data-tip-en="'+esc(twTipEn)+'" data-tip-zh="'+esc(twTipZh)+'">?</span></div></div>';
         var twEl = document.createElement('div');
         twEl.innerHTML = twHtml;
         // Insert before chip strip if present, else at end
@@ -722,40 +794,11 @@
     if(!pulse){ band.classList.remove('visible'); return; }
 
     band.classList.add('visible');
-
-    var session = pulse.session||'closed';
-    var mode = pulse.mode||'live';
-    var chipsSuppressed = isChipSuppressed(pulse);
-    renderSessionPill(session);
-
-    // as-of label + mode pill (TS-R1: show mode whenever not live)
-    var asofEl = document.getElementById('ftr-tape-asof');
-    if(asofEl){
-      var ts = pulse.as_of_quotes || pulse.as_of_utc;
-      var tsStr='';
-      if(ts){
-        try{
-          tsStr = ts.length<=10 ? ts : new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
-        }catch(e){tsStr=ts;}
-      }
-      asofEl.innerHTML = (tsStr ? L('as of '+esc(tsStr),'截至 '+esc(tsStr)) : '')
-        + modePillHtml(pulse);
-    }
-
-    // Grey out only when no data at all (mode=eod with all-null)
-    var hasAnyValue = (pulse.baskets||[]).some(function(b){return b.live_ew_chg_pct!=null;});
-    band.style.opacity = (mode==='live') ? '' : (hasAnyValue ? '0.85' : '0.65');
-
-    // Build byId name index from BASKETS global
-    var byId = {};
-    (window.BASKETS&&window.BASKETS.baskets||[]).forEach(function(b){ byId[b.id]=b; });
-
-    // AI-capex badge: only in live mode (FT-R12: chip suppressed when not live)
-    renderCxBadge(pulse.complexes, chipsSuppressed);
-    // Movers: shown in all modes when values exist (TS-R1)
-    renderMovers(pulse.baskets, byId, pulse);
+    // Strip: state token + ONE as-of + LEADERS/LAGGARDS chips (all modes, TS-R1)
+    renderTapeStrip(pulse);
 
     // Inject per-card chips (called after a small delay to let theme desk render first)
+    var chipsSuppressed = isChipSuppressed(pulse);
     setTimeout(function(){
       injectCardChips(pulse, turnWatch, sectorPulse, chipsSuppressed);
     }, 120);
