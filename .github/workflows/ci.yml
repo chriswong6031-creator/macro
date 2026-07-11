@@ -1005,3 +1005,18 @@ jobs:
         run: python -m scripts.check_hub_a11y site
       - name: hub a11y guard unit tests (violating + passing fixtures per check)
         run: python -m pytest tests/test_check_hub_a11y.py -q
+
+  ratio-lens:
+    # Ratio Lens W1 (RL-R1..R16): AUTHORITY block, forbidden-key walk,
+    # ledger gate, idempotency, builder exit-0, state-signature isolation,
+    # anchor honesty. Display-tier oracle organ; no gauntlet.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy scipy pyyaml pyarrow
+      - name: ratio lens test suite
+        run: python -m pytest tests/test_oracle_ratio_lens.py -q

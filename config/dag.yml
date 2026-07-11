@@ -727,6 +727,52 @@ lanes:
           data/stocks/ parquets (committed, ~219 tickers). Non-fatal: exits 0
           on script error, commits only if artifacts changed.
 
+  # ── daily.yml / oracle_offrender ────────────────────────────────────────
+  # Oracle off-render job: panel rebuild + episodes + Time Machine + Ratio Lens.
+  # Declared here to satisfy DAG conformance; non-fatal throughout.
+  - workflow: .github/workflows/daily.yml
+    job: oracle_offrender
+    steps:
+      - id: fetch_r2_oracle
+        module: scripts.fetch_r2
+        note: >
+          Pre-fetch massive_stock_day store from R2 (heavy oracle input not
+          committed). Non-fatal; panel build degrades on stale/partial store.
+      - id: build_oracle_panel
+        module: scripts.build_oracle_panel
+        note: >
+          Oracle panel rebuild (Tier-S + Tier-M). Runs before episodes +
+          Time Machine. Non-fatal (::warning:: on rc!=0).
+      - id: build_oracle_episodes
+        module: scripts.build_oracle_episodes
+        note: >
+          Oracle episode overlay rebuild. Reads panel_s/panel_m parquets.
+          Non-fatal (::warning:: on rc!=0).
+      - id: build_oracle_timemachine
+        module: scripts.build_oracle_timemachine
+        note: >
+          Oracle Time Machine feed export (site/oracledata/ chunks + manifest).
+          Non-fatal but ::error:: logged if export fails.
+      - id: build_oracle_ratio_lens
+        module: scripts.build_oracle_ratio_lens
+        note: >
+          RL-R13 — rebuild Oracle Ratio Lens pairwise ratio feed
+          (site/oracledata/ratio_lens.json + data/oracle/ratio_lens_ledger.jsonl)
+          off the render path. Display-only, authority all-false. Reads
+          data/yahoo/*.parquet (ETF legs) + data/baskets/ohlcv/*.parquet (basket
+          legs) + data/oracle/ratio_pairs.json (frozen registry). Non-fatal:
+          exits 0 on error (::warning:: printed). COLLECT_LANE=nightly gates
+          ledger writes. Arrow one-shot: hard_exit(0) at end (#2196).
+          inputs: [data/oracle/ratio_pairs.json, data/yahoo/*.parquet,
+                   data/baskets/ohlcv/*.parquet, data/baskets/membership.json]
+          outputs: [site/oracledata/ratio_lens.json,
+                    data/oracle/ratio_lens_ledger.jsonl]
+      - id: publish_oracle_panels
+        module: scripts.publish_oracle_panels
+        note: >
+          Publish oracle panels to R2 (refreshes render-path sponsorship inputs).
+          Non-fatal (::warning:: on failure).
+
   # ── daily.yml / cortex ───────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
     job: cortex

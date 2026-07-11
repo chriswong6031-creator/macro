@@ -52,7 +52,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | nw-rails | 7 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
-| oracle | 27 |
+| oracle | 29 |
 | pick-lab | 3 |
 | policy-shock | 5 |
 | qualitative-intelligence | 23 |
@@ -77,7 +77,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 223 |
+| display | 225 |
 | infrastructure | 88 |
 | scored | 4 |
 | shadow | 63 |
@@ -86,7 +86,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 362 |
+| git | 364 |
 | gitignored-local | 10 |
 | r2 | 6 |
 
@@ -595,6 +595,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-basketdata-radar-news | `site/basketdata/radar_news.json` | json | daily-engine | display | 1 | 0 |
 | site-member-context | `site/basketdata/member_context.json` | json | daily-engine | display | 1 | 0 |
 | site-narrative-brain | `site/basketdata/narrative_brain.json` | json | daily-engine | display | 1 | 0 |
+| oracle-ratio-lens-feed | `site/oracledata/ratio_lens.json` | json | daily-engine | display | 0 | 0 |
+| oracle-ratio-lens-ledger | `data/oracle/ratio_lens_ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
 ### pick-lab
 
