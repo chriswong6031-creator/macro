@@ -1121,6 +1121,28 @@ jobs:
           cat "$RUNNER_TEMP/confluence_graph.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_confluence_graph::rc=$rc (non-fatal)"; fi
           exit 0
+      - name: Confluence Strength + Sequence + Discovery (Neural Web W4 "the eye" — R-V4-6/7/8)
+        # Runs three deterministic display-only steps after build_confluence_graph:
+        # 1. confluence_strength  → data/neuralweb/confluence_strength.json (R-V4-6)
+        #    Per-(subject,as_of,direction,horizon) confirming engine count with redundancy
+        #    discount from covariance_spine dominant_overlap_cluster (partial credit).
+        #    regime_bucket stamped from world_state for context; assert_no_authority checked.
+        # 2. confluence_sequence  → data/neuralweb/confluence_tape.jsonl (PIT tape)
+        #                         + data/neuralweb/confluence_sequence.json (R-V4-7)
+        #    Nightly-sole-advancer tape append; idempotent per as_of.
+        #    Per-subject: persistence_streak, strength_slope (Theil-Sen), state machine.
+        # 3. confluence_discovery → data/neuralweb/confluence_candidates.jsonl (R-V4-8)
+        #    Robust-stats z-scan (median/MAD, 100-draw circular-shift null).
+        #    Honest-null: young tape rows carry state=accruing, z=null (never fabricated).
+        # HARD LAW: all outputs display_only=True; no LLM; never gates/ranks/raises.
+        # rotation-state x cycle-position pairing is DON'T-TEST (DO_NOT_REBUILD).
+        # Budget target: < 30s on synthetic data. Fail-open: exceptions log warning + skip.
+        run: |
+          set +e
+          python -m scripts.build_confluence_strength > "$RUNNER_TEMP/confluence_strength.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/confluence_strength.log"
+          if [ "$rc" -ne 0 ]; then echo "::warning title=build_confluence_strength::rc=$rc (non-fatal)"; fi
+          exit 0
       - name: Alt-Data Brain (Claude-Opus convergence analyst; actionable + falsifiable)
         # Reads the deterministic weighted-convergence substrate + influence graph (written by
         # build_alt_data above) as an evidence pack and writes an ACTIONABLE scored read
