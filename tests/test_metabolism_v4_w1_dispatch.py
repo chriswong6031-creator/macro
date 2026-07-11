@@ -1485,3 +1485,172 @@ class TestBannedWordNotInNewCode:
         assert lower.count(_BANNED) <= 1, (
             f"Banned word literal found in test file beyond the assembly line (CI-enforced ban)"
         )
+
+
+# ── Key failover (V4 follow-up: revert to a working key) ─────────────────────
+
+class TestKeyFailover:
+    """A 401/429 session failure cools the key and retries with the next one;
+    non-key failures never burn a second key; dirty worktrees block retry."""
+
+    _AUTH_STDERR = "API Error: 401 authentication_error: Invalid bearer token"
+
+    def _run(self, mb, launches, *, clean=True, next_key="claude_code_oauth_2"):
+        proposal = _minimal_proposal(target_files=["engine/test_sensor.py"])
+        d = _tmp_root()
+        wt = _tmp_wt()
+        cooled = []
+
+        def fake_resolve(cap_id, root=None):
+            return (f"CLAUDE_CODE_OAUTH_TOKEN_{cap_id[-1]}", None)
+
+        def fake_pick(root=None, exclude=None):
+            fake_pick.calls.append(set(exclude or ()))
+            return next_key
+        fake_pick.calls = []
+
+        env = {
+            **_armed_env(),
+            "CLAUDE_CODE_OAUTH_TOKEN_1": "fake_token_value_not_logged",
+            "CLAUDE_CODE_OAUTH_TOKEN_2": "fake_token_value_not_logged_2",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mb, "_launch_build_subprocess", side_effect=launches):
+                with patch.object(mb, "_diff_worktree_files",
+                                  return_value=["engine/test_sensor.py"]):
+                    with patch.object(mb, "_resolve_key_ref", side_effect=fake_resolve):
+                        with patch.object(mb, "_pick_build_key", side_effect=fake_pick):
+                            with patch.object(mb, "_cool_failed_key",
+                                              side_effect=lambda c, k, root=None:
+                                              cooled.append((c, k))):
+                                with patch.object(mb, "_worktree_is_clean",
+                                                  return_value=clean):
+                                    result = mb._dispatch_build_session(
+                                        proposal, wt, "metabolism/build-test",
+                                        "claude_code_oauth_1", root=d,
+                                    )
+        return result, cooled, fake_pick.calls
+
+    def test_auth_failure_retries_with_next_key(self):
+        mb = _import_mb()
+        seen_refs = []
+
+        def launches(cmd, env, cwd, timeout_s=1800):
+            seen_refs.append(env.get(mb._KEY_REF_ENV))
+            if len(seen_refs) == 1:
+                return {"returncode": 1, "stdout": "", "stderr": self._AUTH_STDERR}
+            return {"returncode": 0, "stdout": "done", "stderr": ""}
+
+        result, cooled, pick_calls = self._run(mb, launches)
+        assert result["dispatched"] is True
+        assert seen_refs == ["CLAUDE_CODE_OAUTH_TOKEN_1", "CLAUDE_CODE_OAUTH_TOKEN_2"]
+        assert cooled == [("claude_code_oauth_1", "auth")]
+        assert pick_calls == [{"claude_code_oauth_1"}]
+
+    def test_rate_limit_failure_cools_window(self):
+        mb = _import_mb()
+        n = {"i": 0}
+
+        def launches(cmd, env, cwd, timeout_s=1800):
+            n["i"] += 1
+            if n["i"] == 1:
+                return {"returncode": 1, "stdout": "",
+                        "stderr": "429 rate limit exceeded — usage limit reached"}
+            return {"returncode": 0, "stdout": "done", "stderr": ""}
+
+        result, cooled, _ = self._run(mb, launches)
+        assert result["dispatched"] is True
+        assert cooled == [("claude_code_oauth_1", "window")]
+
+    def test_non_key_failure_never_retries(self):
+        mb = _import_mb()
+        calls = []
+
+        def launches(cmd, env, cwd, timeout_s=1800):
+            calls.append(1)
+            return {"returncode": 1, "stdout": "",
+                    "stderr": "Traceback: SyntaxError in build script"}
+
+        result, cooled, pick_calls = self._run(mb, launches)
+        assert result["dispatched"] is False
+        assert len(calls) == 1, "a broken build must not burn a second key"
+        assert cooled == []
+        assert pick_calls == []
+        assert "session_nonzero_rc" in result["reason"]
+
+    def test_dirty_worktree_blocks_retry(self):
+        mb = _import_mb()
+        calls = []
+
+        def launches(cmd, env, cwd, timeout_s=1800):
+            calls.append(1)
+            return {"returncode": 1, "stdout": "", "stderr": self._AUTH_STDERR}
+
+        result, cooled, pick_calls = self._run(mb, launches, clean=False)
+        assert result["dispatched"] is False
+        assert len(calls) == 1
+        assert cooled == [("claude_code_oauth_1", "auth")]
+        assert pick_calls == [], "dirty worktree must never be retried into"
+        assert result.get("key_failure") == "auth"
+
+    def test_no_alternate_key_reports_failure(self):
+        mb = _import_mb()
+
+        def launches(cmd, env, cwd, timeout_s=1800):
+            return {"returncode": 1, "stdout": "", "stderr": self._AUTH_STDERR}
+
+        result, cooled, _ = self._run(mb, launches, next_key=None)
+        assert result["dispatched"] is False
+        assert result.get("key_failure") == "auth"
+        assert result.get("keys_tried") == ["claude_code_oauth_1"]
+
+
+class TestKeyFailoverHelpers:
+    def test_classify_key_failure(self):
+        mb = _import_mb()
+        assert mb._classify_key_failure(
+            {"stderr": "401 authentication_error", "stdout": ""}) == "auth"
+        assert mb._classify_key_failure(
+            {"stderr": "", "stdout": "OAuth token has expired."}) == "auth"
+        assert mb._classify_key_failure(
+            {"stderr": "429 rate limit", "stdout": ""}) == "window"
+        assert mb._classify_key_failure(
+            {"stderr": "overloaded_error", "stdout": ""}) == "window"
+        assert mb._classify_key_failure(
+            {"stderr": "SyntaxError: bad code", "stdout": ""}) is None
+        assert mb._classify_key_failure({}) is None
+
+    def test_build_session_cmd_shape(self):
+        mb = _import_mb()
+        cmd = mb._build_session_cmd("do the thing")
+        assert cmd[0] == "bash" and cmd[1] == "-c"
+        assert "${!METABOLISM_KEY_REF}" in cmd[2]
+        assert "claude" in cmd
+        assert cmd[-1] == "do the thing", "prompt must stay a plain argv element"
+
+    def test_bash_wrapper_maps_key_ref(self):
+        """The real wrapper string maps $METABOLISM_KEY_REF's TARGET env var
+        onto CLAUDE_CODE_OAUTH_TOKEN for the child process."""
+        import subprocess
+        mb = _import_mb()
+        wrapper = mb._build_session_cmd("x")[:4]  # bash -c '<script>' argv0
+        probe = wrapper + ["bash", "-c", 'printf %s "$CLAUDE_CODE_OAUTH_TOKEN"']
+        out = subprocess.run(
+            probe,
+            env={"PATH": os.environ.get("PATH", ""),
+                 "METABOLISM_KEY_REF": "POOL_KEY_X",
+                 "POOL_KEY_X": "sentinel-value",
+                 "CLAUDE_CODE_OAUTH_TOKEN": "legacy-should-be-overridden"},
+            capture_output=True, text=True, timeout=30,
+        )
+        assert out.returncode == 0
+        assert out.stdout == "sentinel-value"
+
+    def test_worktree_is_clean(self, tmp_path):
+        import subprocess
+        mb = _import_mb()
+        subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+        assert mb._worktree_is_clean(str(tmp_path)) is True
+        (tmp_path / "f.txt").write_text("dirty")
+        assert mb._worktree_is_clean(str(tmp_path)) is False
+        assert mb._worktree_is_clean("/nonexistent/path/xyz") is False

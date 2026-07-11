@@ -322,9 +322,13 @@ def mark_cooling(
         The capability_id of the key to cool.
     reset_hint : str | None
         ISO-8601 UTC timestamp when the key is expected to recover.
-        If None, defaults to next 5h window boundary (window) or next week (weekly).
+        If None, defaults to next 5h window boundary (window), next week
+        (weekly), or +24h (auth).
     cool_kind : str
-        "window" (5h-quota 429) or "weekly" (weekly-quota 429).
+        "window" (5h-quota 429), "weekly" (weekly-quota 429), or "auth"
+        (401/403 — revoked/expired token; 24h cooling gives an automatic
+        re-probe after the operator rotates the secret, while a successful
+        session on the key clears the cooling immediately).
 
     Returns
     -------
@@ -336,6 +340,8 @@ def mark_cooling(
         if reset_hint is None:
             if cool_kind == "weekly":
                 reset_dt = now + timedelta(seconds=_WEEK_SECONDS)
+            elif cool_kind == "auth":
+                reset_dt = now + timedelta(hours=24)
             else:
                 reset_dt = now + timedelta(seconds=_WINDOW_SECONDS)
             reset_hint = reset_dt.isoformat(timespec="seconds")
@@ -347,7 +353,7 @@ def mark_cooling(
             "cycle_id": "",
             "stage": "cooling",
             "est_tokens": 0,
-            "outcome": "rate_limited",
+            "outcome": "auth_failed" if cool_kind == "auth" else "rate_limited",
             "cool_kind": cool_kind,
             "reset_hint": reset_hint,
         }
@@ -372,10 +378,12 @@ def is_cooling(key_id: str, root: Path | None = None) -> bool:
     """
     try:
         rows = _read_ledger(root)
-        # Find the most recent cooling row for this key
+        # Find the most recent cooling row for this key ("rate_limited" =
+        # window/weekly 429; "auth_failed" = 401/403 revoked-token cooling)
         cooling_rows = [
             r for r in rows
-            if r.get("key_id") == key_id and r.get("outcome") == "rate_limited"
+            if r.get("key_id") == key_id
+            and r.get("outcome") in ("rate_limited", "auth_failed")
             and r.get("reset_hint")
         ]
         if not cooling_rows:
@@ -438,7 +446,8 @@ def all_cooling_freeze_info(
         for k in present_keys:
             cooling_rows = [
                 r for r in rows
-                if r.get("key_id") == k and r.get("outcome") == "rate_limited"
+                if r.get("key_id") == k
+                and r.get("outcome") in ("rate_limited", "auth_failed")
                 and r.get("reset_hint")
             ]
             if cooling_rows:

@@ -107,13 +107,13 @@ def _dead_key(provider: str, env_var: str) -> str:
     return f"{provider}:{env_var}"
 
 
-def mark_dead(provider: str, env_var: str) -> None:
+def mark_dead(provider: str, env_var: str, reason: str = "401") -> None:
     """Mark a provider+env_var combo as dead for this process lifetime."""
     key = _dead_key(provider, env_var)
     with _dead_lock:
         _dead_providers.add(key)
-    log.warning("llm_auth: provider '%s' (env=%s) marked dead (401) for this process",
-                provider, env_var)
+    log.warning("llm_auth: provider '%s' (env=%s) marked dead (%s) for this process",
+                provider, env_var, reason)
 
 
 def is_dead(provider: str, env_var: str) -> bool:
@@ -155,8 +155,106 @@ def _is_auth_error(exc: BaseException) -> bool:
         pass
     # Method 2: message-based fallback
     msg = str(exc).lower()
-    return "401" in msg and ("authentication" in msg or "invalid bearer" in msg
-                              or "auth_token" in msg or "unauthorized" in msg)
+    if "401" in msg and ("authentication" in msg or "invalid bearer" in msg
+                         or "auth_token" in msg or "unauthorized" in msg):
+        return True
+    # 403 — revoked/disabled credential (PermissionDeniedError). A key that is
+    # forbidden is as dead as one that fails 401: skip it and try the next.
+    try:
+        import anthropic
+        if isinstance(exc, anthropic.PermissionDeniedError):
+            return True
+    except (ImportError, AttributeError):
+        pass
+    return "403" in msg and ("forbidden" in msg or "permission" in msg)
+
+
+def _is_rate_limit_error(exc: BaseException) -> bool:
+    """Return True when the exception represents a 429 rate-limit / quota
+    exhaustion or a 529 overloaded error — conditions where the CREDENTIAL is
+    fine but this key/endpoint cannot serve right now, so the waterfall should
+    try the next provider instead of failing the stage."""
+    try:
+        import anthropic
+        if isinstance(exc, anthropic.RateLimitError):
+            return True
+    except (ImportError, AttributeError):
+        pass
+    msg = str(exc).lower()
+    return ("429" in msg or "rate_limit" in msg or "rate limit" in msg
+            or "usage limit" in msg or "quota" in msg
+            or "529" in msg or "overloaded" in msg)
+
+
+# --------------------------------------------------------------------------- #
+# OAuth key pool bridge (CLAUDE_CODE_OAUTH_TOKEN_1/2/3 failover)
+# --------------------------------------------------------------------------- #
+# When a brain config carries "oauth_pool_lane": "<lane>", the single "oauth"
+# waterfall entry expands into one provider per POOL key that is (a) present in
+# the environment, (b) authorized for that lane by the capability broker, and
+# (c) ordered so non-cooling keys come first (lowest 5h-window load first) and
+# cooling keys last (a rate-limited key is still a better last resort than a
+# hard stage failure).  The legacy single CLAUDE_CODE_OAUTH_TOKEN follows the
+# pool, then anthropic/deepseek as before.  Net effect: an offline / revoked /
+# rate-limited key never strands a stage while any working key remains.
+
+
+def _oauth_pool_candidates(lane: str) -> list[tuple[str, str]]:
+    """Return [(cap_id, env_var_name)] for pool keys usable for `lane`.
+
+    Ordering: non-cooling keys by ascending 5h-window load, then cooling keys
+    by ascending load (emergency fallback).  NEVER raises — any pool/broker
+    error degrades to an empty list (legacy single-key behavior).
+    REDLINE: returns capability ids and env-var NAMES only, never values.
+    """
+    try:
+        from engine.neuralweb.capability_broker import resolve as _resolve
+        from engine.neuralweb.key_pool import (
+            discover_present_keys, is_cooling, window_load,
+        )
+
+        allowed: list[tuple[str, str]] = []
+        for cap_id in discover_present_keys():
+            try:
+                res = _resolve(cap_id, lane=lane)
+                if res.get("allowed") and res.get("ref_name"):
+                    allowed.append((cap_id, res["ref_name"]))
+            except Exception as exc:  # noqa: BLE001
+                log.warning("llm_auth: broker resolve(%s, lane=%s) failed: %s",
+                            cap_id, lane, exc)
+        cool = {cap_id: bool(is_cooling(cap_id)) for cap_id, _ in allowed}
+        load = {cap_id: int(window_load(cap_id)) for cap_id, _ in allowed}
+        return sorted(allowed, key=lambda c: (cool[c[0]], load[c[0]]))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("llm_auth: _oauth_pool_candidates(lane=%s) failed: %s", lane, exc)
+        return []
+
+
+def _note_pool_success(p: dict, context: str) -> None:
+    """Record a successful session for a pool-backed provider (resolves any
+    stale cooling row).  No-op for non-pool providers.  NEVER raises."""
+    cap_id = p.get("cap_id")
+    if not cap_id:
+        return
+    try:
+        from engine.neuralweb.key_pool import record_session
+        record_session(cap_id, est_tokens=0, stage=context or "llm", outcome="ok")
+    except Exception as exc:  # noqa: BLE001
+        log.debug("llm_auth: record_session(%s) failed: %s", cap_id, exc)
+
+
+def _cool_pool_key(p: dict, kind: str) -> None:
+    """Persist a cooling row for a pool-backed provider so OTHER processes skip
+    the key too ("window" = 5h 429, "auth" = 24h re-probe for a revoked/expired
+    token).  No-op for non-pool providers.  NEVER raises."""
+    cap_id = p.get("cap_id")
+    if not cap_id:
+        return
+    try:
+        from engine.neuralweb.key_pool import mark_cooling
+        mark_cooling(cap_id, cool_kind=kind)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("llm_auth: mark_cooling(%s, %s) failed: %s", cap_id, kind, exc)
 
 
 # --------------------------------------------------------------------------- #
@@ -168,6 +266,8 @@ def _is_auth_error(exc: BaseException) -> bool:
 #   cred      (str)  — the actual credential value (NOT logged)
 #   client    (Any)  — a pre-built anthropic.Anthropic client for this provider
 #   model     (str)  — model id to use for this provider
+#   cap_id    (str)  — OPTIONAL: key-pool capability id when this provider is a
+#                      pool key (enables ledger cooling/accounting)
 
 
 def make_call(
@@ -198,6 +298,8 @@ def make_call(
                          or None when no provider could serve.
     """
     last_auth_reason: str | None = None
+    saw_rate_limit = False
+    last_exc: BaseException | None = None
     any_tried = False
 
     for p in providers:
@@ -211,33 +313,59 @@ def make_call(
             continue  # provider not configured / no key
 
         if is_dead(name, env_var):
-            log.debug("llm_auth[%s]: skipping dead provider '%s'", context, name)
+            log.debug("llm_auth[%s]: skipping dead provider '%s' (env=%s)",
+                      context, name, env_var)
             continue
 
         any_tried = True
         try:
             text, reason = call_fn(client, model)
             # Success path
-            if last_auth_reason:
-                # We fell back from at least one dead provider; surface that in reason
-                log.info("llm_auth[%s]: provider '%s' served after fallback from dead provider(s)",
-                         context, name)
+            if last_auth_reason or saw_rate_limit or last_exc is not None:
+                # We fell back from at least one failed provider; surface that
+                log.info("llm_auth[%s]: provider '%s' (env=%s) served after fallback",
+                         context, name, env_var)
+            _note_pool_success(p, context)
             return text, reason, name
         except Exception as exc:  # noqa: BLE001
             if _is_auth_error(exc):
-                mark_dead(name, env_var)
+                mark_dead(name, env_var, reason="auth")
+                _cool_pool_key(p, "auth")
                 last_auth_reason = f"auth_invalid:{name}"
                 log.warning(
-                    "llm_auth[%s]: provider '%s' returned 401 (env=%s); "
+                    "llm_auth[%s]: provider '%s' returned 401/403 (env=%s); "
                     "marking dead and trying next provider. "
                     "Check that the secret has not expired.",
                     context, name, env_var,
                 )
                 continue
-            # Non-auth exception: let the brain's own except handle it
-            raise
+            if _is_rate_limit_error(exc):
+                mark_dead(name, env_var, reason="rate_limited")
+                _cool_pool_key(p, "window")
+                saw_rate_limit = True
+                log.warning(
+                    "llm_auth[%s]: provider '%s' rate-limited/overloaded (env=%s); "
+                    "cooling and trying next provider.",
+                    context, name, env_var,
+                )
+                continue
+            # Unexpected (connection / 5xx / SDK) error: remember it, but keep
+            # walking the waterfall — a different key or endpoint may still
+            # serve.  If nothing serves, the LAST such error is re-raised so
+            # single-provider callers see exactly the legacy behavior.
+            last_exc = exc
+            log.warning(
+                "llm_auth[%s]: provider '%s' (env=%s) failed (%s: %s); "
+                "trying next provider.",
+                context, name, env_var, type(exc).__name__, exc,
+            )
+            continue
 
     # All providers exhausted
+    if last_exc is not None:
+        raise last_exc
+    if saw_rate_limit:
+        return None, "rate_limited_all", None
     if not any_tried:
         return None, "no_provider", None
     if last_auth_reason:
@@ -291,27 +419,51 @@ def build_providers(
     ds_model = deepseek_model or cfg.get("deepseek_model", "deepseek-v4-pro")
     ds_base = cfg.get("deepseek_base_url", DEEPSEEK_DEFAULT_BASE)
 
+    def _mk_oauth_provider(env: str, cap_id: str | None = None) -> dict | None:
+        """Build one oauth provider descriptor from an env-var NAME, or None."""
+        tok = _config.secret(env)
+        if not tok:
+            return None
+        tok = _sanitize_token(tok, env)
+        if tok is None:
+            return None
+        try:
+            import anthropic
+            hdrs = {"anthropic-beta": OAUTH_BETA}
+            if extra_headers:
+                hdrs.update(extra_headers)
+            client = anthropic.Anthropic(api_key=None, auth_token=tok,
+                                         default_headers=hdrs)
+            prov = {"name": "oauth", "env_var": env, "cred": tok,
+                    "client": client, "model": opus}
+            if cap_id:
+                prov["cap_id"] = cap_id
+            return prov
+        except Exception as e:  # noqa: BLE001
+            log.warning("llm_auth: oauth client init failed for env=%s (%s)", env, e)
+            return None
+
     out: list[dict] = []
     for p in order:
         if p == "oauth":
+            # Pool expansion (CLAUDE_CODE_OAUTH_TOKEN_1/2/3): opt-in via
+            # cfg["oauth_pool_lane"].  Pool keys authorized for that lane come
+            # first (best-available ordering); the legacy single token follows
+            # as a further fallback.  Without the cfg key, behavior is exactly
+            # the legacy single-env path.
+            pool_envs: set[str] = set()
+            lane = cfg.get("oauth_pool_lane") or ""
+            if lane:
+                for cap_id, ref_env in _oauth_pool_candidates(lane):
+                    prov = _mk_oauth_provider(ref_env, cap_id=cap_id)
+                    if prov is not None:
+                        pool_envs.add(ref_env)
+                        out.append(prov)
             env = cfg.get("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN")
-            tok = _config.secret(env)
-            if not tok:
-                continue
-            tok = _sanitize_token(tok, env)
-            if tok is None:
-                continue
-            try:
-                import anthropic
-                hdrs = {"anthropic-beta": OAUTH_BETA}
-                if extra_headers:
-                    hdrs.update(extra_headers)
-                client = anthropic.Anthropic(api_key=None, auth_token=tok,
-                                             default_headers=hdrs)
-                out.append({"name": "oauth", "env_var": env, "cred": tok,
-                             "client": client, "model": opus})
-            except Exception as e:  # noqa: BLE001
-                log.warning("llm_auth: oauth client init failed (%s)", e)
+            if env and env not in pool_envs:
+                prov = _mk_oauth_provider(env)
+                if prov is not None:
+                    out.append(prov)
 
         elif p == "anthropic":
             env = cfg.get("api_key_env", "ANTHROPIC_API_KEY")

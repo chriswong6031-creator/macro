@@ -277,6 +277,11 @@ on:
       - "engine/trial_ledger.py"
       - "engine/validation.py"
       - "engine/llm_auth.py"
+      # Multi-key OAuth failover surface: the auth waterfall, the key pool,
+      # the dispatcher, and the build lane must re-prove failover on change.
+      - "tests/test_llm_auth.py"
+      - "scripts/metabolism_build.py"
+      - "scripts/metabolism_dispatch.py"
       # M7C-R8 basket staleness warning: build_baskets.py is the producer; a change
       # to it alone (without touching ci.yml or engine/**) must still retrigger the
       # basket-staleness-warn test job — belt-and-suspenders, per reviewer nit.
@@ -1075,6 +1080,8 @@ jobs:
         run: python3 scripts/check_blocklist_drift.py
       - name: metabolism v4 w1 suite (real BUILD dispatch — R-V4-2)
         run: python -m pytest tests/test_metabolism_v4_w1_dispatch.py tests/test_metabolism_buildlane.py -q
+      - name: llm auth waterfall + multi-key failover suite
+        run: python -m pytest tests/test_llm_auth.py -q
       - name: metabolism w2-pulse suite (verify scan mode + dream invocability)
         run: python -m pytest tests/test_metabolism_w2_pulse.py -q
       - name: metabolism v4 w5 suite (steering memory + applier)

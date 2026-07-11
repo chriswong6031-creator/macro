@@ -102,6 +102,7 @@ def _request_llm_summary(raw_lessons: str, root: Path) -> str | None:
         cfg: dict[str, Any] = {
             "provider_order": ["oauth", "anthropic"],
             "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
+            "oauth_pool_lane": "metabolism-dream",
             "api_key_env": "ANTHROPIC_API_KEY",
             "opus_model": "claude-opus-4-8",
             "max_tokens": 800,

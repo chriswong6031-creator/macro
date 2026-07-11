@@ -101,6 +101,7 @@ def pick_key(
     stage: str = "",
     root: Path | None = None,
     notify_on_freeze: bool = True,
+    exclude: set[str] | None = None,
 ) -> str | None:
     """Pick the best available key for the given stage.
 
@@ -114,6 +115,10 @@ def pick_key(
         Repo root for test isolation.
     notify_on_freeze : bool
         If True and all keys are cooling, sends one operator notify.
+    exclude : set[str] | None
+        Capability ids to skip (keys already tried and failed in THIS
+        invocation — enables retry-with-next-key without re-picking a key
+        whose failure has not yet landed in the ledger).
 
     Returns
     -------
@@ -144,6 +149,8 @@ def pick_key(
         )
 
         present = discover_present_keys(root)
+        if exclude:
+            present = [k for k in present if k not in exclude]
         if not present:
             log.info("metabolism_dispatch: no present keys — no-op")
             return None
