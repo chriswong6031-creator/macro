@@ -3583,6 +3583,104 @@ artifacts:
       Absent Oracle graph files (gitignored/Mac-local) → stable/leads edges empty + gap
       noted; graph always produced. zero behavior-changing consumers today.
 
+  # --- Neural Web W4 "the eye": confluence strength + sequence + discovery ---
+
+  confluence-strength:
+    path: data/neuralweb/confluence_strength.json
+    format: json
+    producer: engine/neuralweb/confluence_strength.py
+    known_extra_writers:
+      - "scripts/build_confluence_strength.py — thin CLI wrapper"
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: neuralweb.confluence_strength.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      DISPLAY-ONLY. R-V4-6: per-(subject, as_of, direction, horizon) confirming engine
+      count with redundancy discount from covariance_spine dominant_overlap_cluster.
+      n_independent_confirming is a float giving partial credit to cluster engines.
+      regime_bucket stamped from world_state.regime.quad (context only; no conditioning).
+      rotation-state x cycle-position pair DON'T-TEST (DO_NOT_REBUILD); both families
+      counted but no dedicated pairing field emitted. assert_no_authority self-check embedded.
+
+  confluence-tape:
+    path: data/neuralweb/confluence_tape.jsonl
+    format: jsonl
+    producer: engine/neuralweb/confluence_sequence.py
+    known_extra_writers:
+      - "scripts/build_confluence_strength.py — invokes confluence_sequence.append_tape_and_build_sequence"
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.confluence_tape.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/confluence_sequence.py
+      - engine/neuralweb/confluence_discovery.py
+    notes: >
+      DISPLAY-ONLY PIT TAPE. R-V4-7: nightly-sole-advancer append of confluence strength
+      rows + contradiction pair firings. Idempotent per as_of (re-run same night replaces
+      not duplicates). Never gates, never ranks, never raises a priority.
+
+  confluence-sequence:
+    path: data/neuralweb/confluence_sequence.json
+    format: json
+    producer: engine/neuralweb/confluence_sequence.py
+    known_extra_writers:
+      - "scripts/build_confluence_strength.py — thin CLI wrapper"
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: neuralweb.confluence_sequence.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      DISPLAY-ONLY. R-V4-7: per-subject persistence_streak, strength_slope (Theil-Sen
+      robust slope over trailing K sessions), and state machine
+      {new, strengthening, stable, decaying, gone}. Derived from confluence_tape.jsonl.
+      Contradiction pair streak/slope also tracked. assert_no_authority self-check embedded.
+
+  confluence-candidates:
+    path: data/neuralweb/confluence_candidates.jsonl
+    format: jsonl
+    producer: engine/neuralweb/confluence_discovery.py
+    known_extra_writers:
+      - "scripts/build_confluence_strength.py — thin CLI wrapper"
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: neuralweb.confluence_candidates.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      DISPLAY-ONLY. R-V4-8: deterministic robust-stats discovery z-scan (median/MAD z,
+      100-draw circular-shift null) over engine-pair co-occurrence rates in
+      confluence_tape.jsonl. Honest-null: young tape rows carry state=accruing and z=null
+      (never fabricated). rotation-state x cycle-position pairing is DON'T-TEST
+      (skipped silently). No LLM anywhere; all computation deterministic.
+
   # Neural Web W6a: reflex firings ledgers (two mirroring + patterned stub)
   # -----------------------------------------------------------------------
   # Pattern entry covering all future data/reflexes/<NAME>/firings.jsonl paths.

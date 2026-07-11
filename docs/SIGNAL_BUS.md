@@ -46,7 +46,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | momoedge | 8 |
 | narrative-ignition | 5 |
 | nasdaq-internals | 1 |
-| neural-web | 51 |
+| neural-web | 55 |
 | next3 | 3 |
 | nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 5 |
@@ -78,7 +78,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 226 |
+| display | 230 |
 | infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
@@ -87,7 +87,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 368 |
+| git | 372 |
 | gitignored-local | 10 |
 | r2 | 6 |
 
@@ -479,6 +479,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | rule-experiment-registry | `data/rule_experiments/registry.jsonl` | jsonl | on-demand | infrastructure | 3 | 0 |
 | site-artifact-manifest | `site/factordata/contracts/artifact_manifest.json` | json | daily-engine | infrastructure | 1 | 2 |
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
+| confluence-tape | `data/neuralweb/confluence_tape.jsonl` | jsonl | daily-engine | display | 2 | 0 |
 | evidence-clock-reviews | `data/neuralweb/evidence_clock_reviews.jsonl` | jsonl | on-demand | display | 2 | 0 |
 | kernel-decisions | `data/neuralweb/kernel_decisions.json` | json | on-demand | infrastructure | 1 | 1 |
 | nw-health-run-history | `data/neuralweb/nw_health_run_history.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
@@ -507,6 +508,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-neuralweb-governance-recent | `site/neuralwebdata/governance_recent.json` | json | daily-engine | display | 1 | 0 |
 | site-neuralweb-health-history | `site/neuralwebdata/health_history.json` | json | daily-engine | display | 1 | 0 |
 | causal-feature-inventory | `data/neuralweb/causal_feature_inventory.json` | json | daily-engine | infrastructure | 0 | 0 |
+| confluence-candidates | `data/neuralweb/confluence_candidates.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| confluence-sequence | `data/neuralweb/confluence_sequence.json` | json | daily-engine | display | 0 | 0 |
+| confluence-strength | `data/neuralweb/confluence_strength.json` | json | daily-engine | display | 0 | 0 |
 | entity-thesis-mechanism-registry | `data/neuralweb/entity_thesis_mechanism_registry.json` | json | daily-engine | infrastructure | 0 | 0 |
 | hypothesis-inbox | `data/neuralweb/cortex/hypothesis_inbox.jsonl` | jsonl | nightly-cortex | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
@@ -1053,12 +1057,40 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - scripts/build_china_pick_lab.py — writes enriched snapshot back via write_snapshot (CNPL-R6)
 
+### confluence-candidates
+
+- **path:** `data/neuralweb/confluence_candidates.jsonl`
+- **declared producer:** `engine/neuralweb/confluence_discovery.py`
+- **extra writers:**
+  - scripts/build_confluence_strength.py — thin CLI wrapper
+
 ### confluence-graph
 
 - **path:** `data/neuralweb/confluence_graph.json`
 - **declared producer:** `engine/neuralweb/confluence.py`
 - **extra writers:**
   - scripts/build_confluence_graph.py — thin CLI wrapper; calls build_and_write() defined in the producer; no independent write logic
+
+### confluence-sequence
+
+- **path:** `data/neuralweb/confluence_sequence.json`
+- **declared producer:** `engine/neuralweb/confluence_sequence.py`
+- **extra writers:**
+  - scripts/build_confluence_strength.py — thin CLI wrapper
+
+### confluence-strength
+
+- **path:** `data/neuralweb/confluence_strength.json`
+- **declared producer:** `engine/neuralweb/confluence_strength.py`
+- **extra writers:**
+  - scripts/build_confluence_strength.py — thin CLI wrapper
+
+### confluence-tape
+
+- **path:** `data/neuralweb/confluence_tape.jsonl`
+- **declared producer:** `engine/neuralweb/confluence_sequence.py`
+- **extra writers:**
+  - scripts/build_confluence_strength.py — invokes confluence_sequence.append_tape_and_build_sequence
 
 ### event-windows
 
