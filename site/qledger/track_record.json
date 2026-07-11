@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-11T02:05:13.834480+00:00",
+  "generated_at": "2026-07-11T04:23:14.404636+00:00",
   "grade_horizons": [
     5,
     21,
@@ -203,7 +203,7 @@
     }
   },
   "counts": {
-    "n_claims": 12661,
+    "n_claims": 12726,
     "n_grades": 6716,
     "n_placebo": 342,
     "n_rejected": 0,
@@ -359,6 +359,35 @@
         "pinned_reason": ""
       }
     },
+    "intel_hub": {
+      "5": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      },
+      "21": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      },
+      "63": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      }
+    },
     "policy": {
       "5": {
         "eligible": false,
@@ -476,7 +505,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-07-11T02:05:16.808237+00:00",
+  "ladder_states_at": "2026-07-11T04:23:17.982618+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -1301,5 +1330,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-07-11T02:05:23.650101+00:00"
+  "promotion_readiness_at": "2026-07-11T04:23:25.666961+00:00"
 }
