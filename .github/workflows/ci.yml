@@ -502,6 +502,9 @@ jobs:
           tests/test_build_netliq_daily.py -q
 
   collector-registry:
+    # timeout: this job had none (6h GitHub default) — a wedged one-shot (e.g. the
+    # pyarrow exit deadlock documented in lib/procutil.py) would block PRs for hours.
+    timeout-minutes: 15
     # 2026-07-03 (#1052 post-mortem): PR #1052's squash-merge shipped scripts/collect.py as
     # a 0-BYTE file. An empty module imports fine and exits 0, so every scheduled collect
     # run (daily / asia-close / weekly / backfill / intl_etf all invoke `python -m
