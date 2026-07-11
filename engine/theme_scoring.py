@@ -631,6 +631,46 @@ def _signal_strength(label: str, cal: dict) -> dict | None:
     return None
 
 
+# --------------------------------------------------------- leadership-split disclosure
+def _leadership_split_fields(n_members: int, lead: dict, label: str) -> dict:
+    """Pure additive display fields — no gate, no score change.
+
+    leadership_split is True when a small basket (<=12 members) has its top-2 leaders
+    running strongly (mean ret_20d >= +5%) while the label is deteriorating / fading /
+    neutral.  This surfaces the split tape that is otherwise invisible: the index-level
+    label reads weak because equal-weight breadth is poor, but the top names are actually
+    running.  Display-only — never changes label, reco, or score.
+
+    Returns a dict with:
+      leadership_split (bool)
+      leaders          list[{symbol, ret_20d}] — top 3 when split is True, else []
+      leadership_split_note_en / _zh — plain-word one-liner
+    """
+    top = lead.get("top") or []
+    # guard: need the top-2 ret_20d values
+    top2_rets = [t.get("ret_20d") for t in top[:2] if t.get("ret_20d") is not None]
+    split = (
+        n_members <= 12
+        and len(top2_rets) >= 2
+        and sum(top2_rets) / len(top2_rets) >= 0.05
+        and label in ("deteriorating", "fading", "neutral")
+    )
+    if split:
+        leaders = [{"symbol": t["ticker"], "ret_20d": _r(t.get("ret_20d"), 3)}
+                   for t in top[:3] if t.get("ret_20d") is not None]
+        note_en = ("Index leaders are running while most members lag — split tape.")
+        note_zh = ("指数龙头在涨、多数成分股落后 — 分化行情。")
+    else:
+        leaders = []
+        note_en = note_zh = None
+    return {
+        "leadership_split": split,
+        "leaders": leaders,
+        "leadership_split_note_en": note_en,
+        "leadership_split_note_zh": note_zh,
+    }
+
+
 # ------------------------------------------------------------------- main compute
 def compute_theme_intel(region: str = "us") -> dict | None:
     """Score / label / recommend every basket + 5-day rotation + impulse scorecards.
@@ -840,6 +880,9 @@ def compute_theme_intel(region: str = "us") -> dict | None:
                 tk_meta[t] = {"name": nmt[0], "name_zh": nmt[1], "theme": b.get("name", bid),
                               "theme_zh": b.get("name_zh", b.get("name", bid)), "theme_id": bid}
 
+        # additive display fields: leadership split (ruling M7C-R4 — disclosure only, no gate)
+        lsplit = _leadership_split_fields(breadth_d["n"], lead, label)
+
         themes.append({
             "id": bid, "name": b.get("name", bid), "name_zh": b.get("name_zh", b.get("name", bid)),
             "category": b.get("category", "Other"),
@@ -869,6 +912,10 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "breadth": breadth_d,
             "impulse": impulse_d,
             "leadership": {"breadth": lead.get("breadth"), "top": (lead.get("top") or [])[:3]},
+            "leadership_split": lsplit["leadership_split"],
+            "leaders": lsplit["leaders"],
+            "leadership_split_note_en": lsplit["leadership_split_note_en"],
+            "leadership_split_note_zh": lsplit["leadership_split_note_zh"],
             "n_members": breadth_d["n"],
             "textures": textures,
             "adv": adv_i, "dec": dec_i, "net_ad": adv_i - dec_i,
