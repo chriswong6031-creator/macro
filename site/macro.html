@@ -6031,7 +6031,7 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
   
   
   
-  <div class="sx" id="sx-risk-v2">
+  <div class="sx" id="sx-risk-v2" style="--isle-color:var(--isle-risk)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-risk-v2')">
       <span class="sx-label"><span class="l-en">Risk</span><span class="l-zh">风险</span></span>
       <div class="sx-glance mx2-risk-glance">
@@ -6055,7 +6055,12 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       <div class="sx-chev">&#8964;</div>
     </div>
     <div class="sx-tray">
-      <div class="sx-tray-inner">
+      <div class="sx-tray-inner-wrap"><div class="sx-island">
+        <div class="isle-head isle-stagger isle-s1">
+          <div class="isle-head-dot"></div>
+          <span class="isle-head-label"><span class="l-en">Risk — Scare Ladder &amp; Sentiment</span><span class="l-zh">风险 — 压力梯度与情绪</span></span>
+          <div class="isle-head-line"></div>
+        </div>
         
         <div class="rrx rrx-watch" style="--rc:var(--info)">
   
@@ -6209,7 +6214,7 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
   </div>
 </div>
         
-        <div class="mx2-risk-tray">
+        <div class="mx2-risk-tray isle-stagger isle-s2">
 
           
           
@@ -6426,7 +6431,10 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
           
 
         </div>
-      </div>
+        <div class="isle-stamp">
+          <span class="l-en">as of 2026-07-10</span><span class="l-zh">2026-07-10 数据</span>
+        </div>
+      </div></div>
     </div>
   </div>
   
@@ -6438,7 +6446,7 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
   
   
   
-  <div class="sx" id="sx-policy-v2">
+  <div class="sx" id="sx-policy-v2" style="--isle-color:var(--isle-policy)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-policy-v2')">
       <span class="sx-label"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
       <div class="sx-glance mx2-policy-glance">
@@ -6454,8 +6462,13 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       <div class="sx-chev">&#8964;</div>
     </div>
     <div class="sx-tray">
-      <div class="sx-tray-inner">
-        <div class="mx2-policy-tray">
+      <div class="sx-tray-inner-wrap"><div class="sx-island">
+        <div class="isle-head isle-stagger isle-s1">
+          <div class="isle-head-dot"></div>
+          <span class="isle-head-label"><span class="l-en">Policy — Lever State &amp; Repricing</span><span class="l-zh">政策 — 杠杆状态与重定价</span></span>
+          <div class="isle-head-line"></div>
+        </div>
+        <div class="mx2-policy-tray isle-stagger isle-s2">
 
           
           <div class="mx2-risk-section" id="policy-lever-card">
@@ -6649,14 +6662,17 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
 
 
         </div>
-      </div>
+        <div class="isle-stamp">
+          <span class="l-en">as of 2026-07-09</span><span class="l-zh">2026-07-09 数据</span>
+        </div>
+      </div></div>
     </div>
   </div>
   
 
   
   
-  <div class="sx" id="sx-aibrief-v2">
+  <div class="sx" id="sx-aibrief-v2" style="--isle-color:var(--isle-brief)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-aibrief-v2')">
       <span class="sx-label"><span class="l-en">AI Brief</span><span class="l-zh">AI简报</span></span>
       <div class="sx-glance">
@@ -6668,19 +6684,25 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       <div class="sx-chev">&#8964;</div>
     </div>
     <div class="sx-tray">
-      <div class="sx-tray-inner">
-        <div class="mx2-aibrief-tray">
-          <a class="panel span12 aibrief-card mx-aibrief" href="aibrief.html" style="margin:0;border-radius:10px">
-            <div class="mx-aibrief-hdr">
-              <div class="mx-aibrief-icon">AI</div>
+      <div class="sx-tray-inner-wrap"><div class="sx-island">
+        <div class="isle-head isle-stagger isle-s1">
+          <div class="isle-head-dot"></div>
+          <span class="isle-head-label"><span class="l-en">AI Brief — Synthesis</span><span class="l-zh">AI简报 — 综合</span></span>
+          <div class="isle-head-line"></div>
+          <span class="isle-head-badge"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span>
+        </div>
+        <div class="mx2-aibrief-tray isle-stagger isle-s2">
+          <a class="isle-aibrief-card aibrief-card" href="aibrief.html">
+            <div class="isle-aibrief-hdr">
+              <div class="isle-aibrief-icon">AI</div>
               <div>
-                <div class="mx-aibrief-title"><span class="l-en">AI Daily Brief · cross-asset synthesis</span><span class="l-zh">AI 每日简报 · 跨资产综合</span></div>
-                <div class="mx-aibrief-date num">2026-07-10</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text)"><span class="l-en">AI Daily Brief · cross-asset synthesis</span><span class="l-zh">AI 每日简报 · 跨资产综合</span></div>
+                <div class="num" style="font-size:11px;color:var(--muted)">2026-07-10</div>
               </div>
-              <span class="mx-aibrief-badge"><span class="l-en">display-only synthesis of existing signals — not a signal source</span><span class="l-zh">仅展示层综合读数 — 非信号来源</span></span>
+              <span class="isle-aibrief-badge"><span class="l-en">display-only synthesis of existing signals — not a signal source</span><span class="l-zh">仅展示层综合读数 — 非信号来源</span></span>
             </div>
             
-            <div class="mx-aibrief-body">
+            <div class="isle-aibrief-body">
               <span class="l-en">5 high-impact items; dominant channel rates; source mix stock_wire:6, official:5, tier1:4</span>
               <span class="l-zh">5 high-impact items; dominant channel rates; source mix stock_wire:6, official:5, tier1:4</span>
               
@@ -6690,8 +6712,8 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
                · <span class="l-en">Top tickers: XLF, XLK, KRE</span><span class="l-zh">主要标的：XLF、XLK、KRE</span>
               
             </div>
-            <div class="mx-aibrief-footer">
-              <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <div class="isle-aibrief-footer">
+              <div class="isle-aibrief-chips">
                 
                 <span class="mx-chip mx-c-warn">5 <span class="l-en">high-impact</span><span class="l-zh">高影响</span></span>
                 
@@ -6703,12 +6725,15 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
                 <span class="mx-chip mx-c-muted"><span class="l-en">earnings</span><span class="l-zh">earnings</span> 4</span>
                 
               </div>
-              <span class="mx-aibrief-link"><span class="l-en">Full AI brief →</span><span class="l-zh">完整 AI 简报 →</span></span>
+              <span class="isle-aibrief-link"><span class="l-en">Full AI brief →</span><span class="l-zh">完整 AI 简报 →</span></span>
             </div>
             
           </a>
         </div>
-      </div>
+        <div class="isle-stamp">
+          <span class="l-en">as of 2026-07-10</span><span class="l-zh">2026-07-10 数据</span>
+        </div>
+      </div></div>
     </div>
   </div>
   
@@ -6716,7 +6741,7 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
   
   
   
-  <div class="sx" id="sx-news-v2">
+  <div class="sx" id="sx-news-v2" style="--isle-color:var(--isle-news)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-news-v2')">
       <span class="sx-label"><span class="l-en">News</span><span class="l-zh">新闻</span></span>
       <div class="sx-glance mx2-news-glance">
@@ -6728,8 +6753,13 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       <div class="sx-chev">&#8964;</div>
     </div>
     <div class="sx-tray">
-      <div class="sx-tray-inner">
-        <div class="mx2-news-tray" id="now-board">
+      <div class="sx-tray-inner-wrap"><div class="sx-island">
+        <div class="isle-head isle-stagger isle-s1">
+          <div class="isle-head-dot"></div>
+          <span class="isle-head-label"><span class="l-en">News — Market Intelligence</span><span class="l-zh">新闻 — 市场情报</span></span>
+          <div class="isle-head-line"></div>
+        </div>
+        <div class="mx2-news-tray isle-stagger isle-s2" id="now-board">
           <div class="mx-panel-hdr" style="margin-bottom:10px">
             <span class="mx-panel-eyebrow"><span class="l-en">News & Catalysts</span><span class="l-zh">新闻与日程</span></span>
             <a href="news.html" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--link)"><span class="l-en">Full feed →</span><span class="l-zh">完整新闻 →</span></a>
@@ -6887,14 +6917,17 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
           </div>
           
         </div>
-      </div>
+        <div class="isle-stamp">
+          <span class="l-en">as of 2026-07-10</span><span class="l-zh">2026-07-10 数据</span>
+        </div>
+      </div></div>
     </div>
   </div>
   
 
   
   
-  <div class="sx" id="sx-deep-context">
+  <div class="sx" id="sx-deep-context" style="--isle-color:var(--isle-deep)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-deep-context')">
       <span class="sx-label"><span class="l-en">Deep Context</span><span class="l-zh">深度背景</span></span>
       <div class="sx-glance mx2-deep-row">
@@ -6909,44 +6942,34 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       <div class="sx-chev">&#8964;</div>
     </div>
     <div class="sx-tray">
-      <div class="sx-tray-inner">
-        <div style="padding-top:16px">
-          <div class="mx-linkout-strip" style="flex-wrap:wrap;gap:10px">
-            <a class="mx-linkout-card" href="macro_context.html">
-              <span class="mx-lc-icon">🌐</span>
-              <div><div class="mx-lc-title"><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></div><div class="mx-lc-sub"><span class="l-en">Regime &amp; transmission</span><span class="l-zh">周期与传导</span></div></div>
-            </a>
-            <a class="mx-linkout-card" href="aibrief.html">
-              <span class="mx-lc-icon">🤖</span>
-              <div><div class="mx-lc-title"><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></div><div class="mx-lc-sub"><span class="l-en">Synthesis read</span><span class="l-zh">综合解读</span></div></div>
-            </a>
-            <a class="mx-linkout-card" href="sector_central.html">
-              <span class="mx-lc-icon">📊</span>
-              <div><div class="mx-lc-title"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></div><div class="mx-lc-sub"><span class="l-en">Rotation &amp; flows</span><span class="l-zh">轮动与资金流</span></div></div>
-            </a>
-            <a class="mx-linkout-card" href="news.html">
-              <span class="mx-lc-icon">📰</span>
-              <div><div class="mx-lc-title"><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></div><div class="mx-lc-sub"><span class="l-en">Headlines &amp; catalysts</span><span class="l-zh">头条与催化剂</span></div></div>
-            </a>
-            <a class="mx-linkout-card" href="committee.html">
-              <span class="mx-lc-icon">🧠</span>
-              <div><div class="mx-lc-title"><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></div><div class="mx-lc-sub"><span class="l-en">Signals &amp; consensus</span><span class="l-zh">信号与共识</span></div></div>
-            </a>
-            <a class="mx-linkout-card" href="macro_signals.html">
-              <span class="mx-lc-icon">⚡</span>
-              <div><div class="mx-lc-title"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></div><div class="mx-lc-sub"><span class="l-en">All indicators</span><span class="l-zh">全部指标</span></div></div>
-            </a>
-          </div>
-          
-          
-          
-          <div class="mx2-deep-health" id="health-summary">
-            <span class="l-en">Data health: 7 sources need attention · 153 sources · <a href="#health" class="muted">details ↓</a></span>
-            <span class="l-zh">数据健康度：7 个来源需关注 · 153 个来源 · <a href="#health" class="muted">详情 ↓</a></span>
-          </div>
-          
+      <div class="sx-tray-inner-wrap"><div class="sx-island">
+        <div class="isle-head isle-stagger isle-s1">
+          <div class="isle-head-dot"></div>
+          <span class="isle-head-label"><span class="l-en">Deep Context — Linked Surfaces</span><span class="l-zh">深度背景 — 关联页面</span></span>
+          <div class="isle-head-line"></div>
         </div>
-      </div>
+        <div class="isle-linkouts isle-stagger isle-s2">
+          <a class="isle-lout" href="macro_context.html"><span class="isle-lout-icon">🌐</span><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></a>
+          <a class="isle-lout" href="aibrief.html"><span class="isle-lout-icon">🤖</span><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></a>
+          <a class="isle-lout" href="sector_central.html"><span class="isle-lout-icon">📊</span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
+          <a class="isle-lout" href="news.html"><span class="isle-lout-icon">📰</span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></a>
+          <a class="isle-lout" href="committee.html"><span class="isle-lout-icon">🧠</span><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
+          <a class="isle-lout" href="macro_signals.html"><span class="isle-lout-icon">⚡</span><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
+          <a class="isle-lout" href="china_intel.html"><span class="isle-lout-icon">🇨🇳</span><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
+          <a class="isle-lout" href="oracle.html"><span class="isle-lout-icon">🔮</span><span class="l-en">Oracle Rotation</span><span class="l-zh">先知轮动</span></a>
+        </div>
+        
+        
+        
+        <div class="isle-deep-health isle-stagger isle-s3" id="health-summary">
+          <span class="l-en">Data health: 7 sources need attention · 153 sources · <a href="#health" class="muted">details ↓</a></span>
+          <span class="l-zh">数据健康度：7 个来源需关注 · 153 个来源 · <a href="#health" class="muted">详情 ↓</a></span>
+        </div>
+        
+        <div class="isle-stamp">
+          <span class="l-en">as of 2026-07-10</span><span class="l-zh">2026-07-10 数据</span>
+        </div>
+      </div></div>
     </div>
   </div>
   

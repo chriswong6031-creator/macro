@@ -5278,7 +5278,7 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
   {% set _rdr_state = _rdr.state if _rdr else 'unknown' %}
   {% set _rdr_score = _rdr.top_score if _rdr else none %}
   {% set _rdr_col = 'var(--down)' if _rdr_state == 'risk-off' else ('var(--orange,var(--warn))' if _rdr_state in ('elevated','caution') else 'var(--up)') %}
-  <div class="sx" id="sx-risk-v2">
+  <div class="sx" id="sx-risk-v2" style="--isle-color:var(--isle-risk)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-risk-v2')">
       <span class="sx-label"><span class="l-en">Risk</span><span class="l-zh">风险</span></span>
       <div class="sx-glance mx2-risk-glance">
@@ -5302,13 +5302,16 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       <div class="sx-chev">&#8964;</div>
     </div>
     <div class="sx-tray">
-      <div class="sx-tray-inner">
-        {# Radar banner cards — v2 home per 2026-07-11 adjudication: the loud/state cards
-           live at the top of the RISK tray (glance state is on the summary row above).
-           Ignition Radar is the risk-ON mirror shipped upstream in #2229. #}
+      <div class="sx-tray-inner-wrap"><div class="sx-island">
+        <div class="isle-head isle-stagger isle-s1">
+          <div class="isle-head-dot"></div>
+          <span class="isle-head-label"><span class="l-en">Risk — Scare Ladder &amp; Sentiment</span><span class="l-zh">风险 — 压力梯度与情绪</span></span>
+          <div class="isle-head-line"></div>
+        </div>
+        {# Radar banner cards — v2 home: the loud/state cards live at the top of the RISK tray. #}
         {% if MS.radar and MS.radar.state %}{{ rrc.risk_radar_card(MS.radar, latest.risk_radar.scares if latest.risk_radar else none) }}{% endif %}
         {% if latest.ignition_radar %}{{ igc.ignition_radar_card(latest.ignition_radar) }}{% endif %}
-        <div class="mx2-risk-tray">
+        <div class="mx2-risk-tray isle-stagger isle-s2">
 
           {# Heads-up chips: fed_stance + turning_point (relocated from old heads-up block) #}
           {% set _fed_st = (latest.fed_stance.stance if (latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.stance is defined and latest.fed_stance.stance != 'unknown') else none) %}
@@ -5495,7 +5498,10 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
           {# (d) risk_radar_card: rendered via rrc partial — KEPT in hero above (rrx); no duplicate here #}
 
         </div>{# /mx2-risk-tray #}
-      </div>
+        <div class="isle-stamp">
+          {% if _rdr.as_of is defined and _rdr.as_of %}<span class="l-en">as of {{ _rdr.as_of }}</span><span class="l-zh">{{ _rdr.as_of }} 数据</span>{% elif latest and latest.date %}<span class="l-en">as of {{ latest.date }}</span><span class="l-zh">{{ latest.date }} 数据</span>{% endif %}
+        </div>
+      </div></div>{# /sx-island + sx-tray-inner-wrap #}
     </div>
   </div>{# /sx-risk-v2 #}
   {% endif %}{# /market_state #}
@@ -5507,7 +5513,7 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
   {% set _plc = 'c-down' if _pl_state == 'ARMED' else ('c-warn' if _pl_state == 'ELEVATED' else 'c-muted') %}
   {% set _plrepr = PL.get('repricing_components') %}
   {% set _plrepr_count = _plrepr|length if _plrepr else 0 %}
-  <div class="sx" id="sx-policy-v2">
+  <div class="sx" id="sx-policy-v2" style="--isle-color:var(--isle-policy)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-policy-v2')">
       <span class="sx-label"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
       <div class="sx-glance mx2-policy-glance">
@@ -5525,8 +5531,13 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       <div class="sx-chev">&#8964;</div>
     </div>
     <div class="sx-tray">
-      <div class="sx-tray-inner">
-        <div class="mx2-policy-tray">
+      <div class="sx-tray-inner-wrap"><div class="sx-island">
+        <div class="isle-head isle-stagger isle-s1">
+          <div class="isle-head-dot"></div>
+          <span class="isle-head-label"><span class="l-en">Policy — Lever State &amp; Repricing</span><span class="l-zh">政策 — 杠杆状态与重定价</span></span>
+          <div class="isle-head-line"></div>
+        </div>
+        <div class="mx2-policy-tray isle-stagger isle-s2">
 
           {# id="policy-lever-card" on this subsection — CI test (tests/test_policy_lever.py) checks string presence in macro, absence in stocks #}
           <div class="mx2-risk-section" id="policy-lever-card">
@@ -5659,14 +5670,17 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
           {% include "_regime_read_panel.html.j2" %}
 
         </div>{# /mx2-policy-tray #}
-      </div>
+        <div class="isle-stamp">
+          {% if PL.get('as_of') %}<span class="l-en">as of {{ PL.get('as_of') }}</span><span class="l-zh">{{ PL.get('as_of') }} 数据</span>{% endif %}
+        </div>
+      </div></div>{# /sx-island + sx-tray-inner-wrap #}
     </div>
   </div>{# /sx-policy-v2 #}
   {% endif %}{# /policy_lever #}
 
   {# ── 6. AI BRIEF row + tray (Stage B) ── #}
   {% if mode != 'stocks' %}
-  <div class="sx" id="sx-aibrief-v2">
+  <div class="sx" id="sx-aibrief-v2" style="--isle-color:var(--isle-brief)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-aibrief-v2')">
       <span class="sx-label"><span class="l-en">AI Brief</span><span class="l-zh">AI简报</span></span>
       <div class="sx-glance">
@@ -5678,19 +5692,25 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       <div class="sx-chev">&#8964;</div>
     </div>
     <div class="sx-tray">
-      <div class="sx-tray-inner">
-        <div class="mx2-aibrief-tray">
-          <a class="panel span12 aibrief-card mx-aibrief" href="aibrief.html" style="margin:0;border-radius:10px">
-            <div class="mx-aibrief-hdr">
-              <div class="mx-aibrief-icon">AI</div>
+      <div class="sx-tray-inner-wrap"><div class="sx-island">
+        <div class="isle-head isle-stagger isle-s1">
+          <div class="isle-head-dot"></div>
+          <span class="isle-head-label"><span class="l-en">AI Brief — Synthesis</span><span class="l-zh">AI简报 — 综合</span></span>
+          <div class="isle-head-line"></div>
+          <span class="isle-head-badge"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span>
+        </div>
+        <div class="mx2-aibrief-tray isle-stagger isle-s2">
+          <a class="isle-aibrief-card aibrief-card" href="aibrief.html">
+            <div class="isle-aibrief-hdr">
+              <div class="isle-aibrief-icon">AI</div>
               <div>
-                <div class="mx-aibrief-title">{{ t('AI Daily Brief · cross-asset synthesis', 'AI 每日简报 · 跨资产综合') }}</div>
-                <div class="mx-aibrief-date num">{{ latest.date if latest.date else generated_utc[:10] }}</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text)">{{ t('AI Daily Brief · cross-asset synthesis', 'AI 每日简报 · 跨资产综合') }}</div>
+                <div class="num" style="font-size:11px;color:var(--muted)">{{ latest.date if latest.date else generated_utc[:10] }}</div>
               </div>
-              <span class="mx-aibrief-badge">{{ t('display-only synthesis of existing signals — not a signal source','仅展示层综合读数 — 非信号来源') }}</span>
+              <span class="isle-aibrief-badge">{{ t('display-only synthesis of existing signals — not a signal source','仅展示层综合读数 — 非信号来源') }}</span>
             </div>
             {% if macro_news and macro_news.synthesis and macro_news.synthesis.get('read') %}
-            <div class="mx-aibrief-body">
+            <div class="isle-aibrief-body">
               <span class="l-en">{{ macro_news.synthesis.read }}</span>
               <span class="l-zh">{{ macro_news.synthesis.read }}</span>
               {% if macro_news.synthesis.get('dominant_channel') %}
@@ -5700,8 +5720,8 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
                · <span class="l-en">Top tickers: {% for tk in macro_news.synthesis.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}, {% endif %}{% endfor %}</span><span class="l-zh">主要标的：{% for tk in macro_news.synthesis.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}、{% endif %}{% endfor %}</span>
               {% endif %}
             </div>
-            <div class="mx-aibrief-footer">
-              <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <div class="isle-aibrief-footer">
+              <div class="isle-aibrief-chips">
                 {% if macro_news.synthesis.get('high_impact_count') is not none %}
                 <span class="mx-chip mx-c-warn">{{ macro_news.synthesis.high_impact_count }} {{ t('high-impact','高影响') }}</span>
                 {% endif %}
@@ -5709,18 +5729,21 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
                 <span class="mx-chip mx-c-muted"><span class="l-en">{{ ch.name }}</span><span class="l-zh">{{ ch.name }}</span> {{ ch.count }}</span>
                 {% endfor %}
               </div>
-              <span class="mx-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span>
+              <span class="isle-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span>
             </div>
             {% else %}
-            <div class="mx-aibrief-body">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假设与后续关注。仅供研究参考，绝非交易信号。') }}</div>
-            <div class="mx-aibrief-footer">
+            <div class="isle-aibrief-body">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假设与后续关注。仅供研究参考，绝非交易信号。') }}</div>
+            <div class="isle-aibrief-footer">
               <span></span>
-              <span class="mx-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span>
+              <span class="isle-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span>
             </div>
             {% endif %}
           </a>
         </div>
-      </div>
+        <div class="isle-stamp">
+          {% if latest and latest.date %}<span class="l-en">as of {{ latest.date }}</span><span class="l-zh">{{ latest.date }} 数据</span>{% endif %}
+        </div>
+      </div></div>{# /sx-island + sx-tray-inner-wrap #}
     </div>
   </div>{# /sx-aibrief-v2 #}
   {% endif %}{# /mode != stocks #}
@@ -5728,7 +5751,7 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
   {# ── 7. NEWS row + tray (Stage B) ── #}
   {% if mode != 'stocks' %}
   {% set TL_nb = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
-  <div class="sx" id="sx-news-v2">
+  <div class="sx" id="sx-news-v2" style="--isle-color:var(--isle-news)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-news-v2')">
       <span class="sx-label"><span class="l-en">News</span><span class="l-zh">新闻</span></span>
       <div class="sx-glance mx2-news-glance">
@@ -5740,8 +5763,13 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       <div class="sx-chev">&#8964;</div>
     </div>
     <div class="sx-tray">
-      <div class="sx-tray-inner">
-        <div class="mx2-news-tray" id="now-board">
+      <div class="sx-tray-inner-wrap"><div class="sx-island">
+        <div class="isle-head isle-stagger isle-s1">
+          <div class="isle-head-dot"></div>
+          <span class="isle-head-label"><span class="l-en">News — Market Intelligence</span><span class="l-zh">新闻 — 市场情报</span></span>
+          <div class="isle-head-line"></div>
+        </div>
+        <div class="mx2-news-tray isle-stagger isle-s2" id="now-board">
           <div class="mx-panel-hdr" style="margin-bottom:10px">
             <span class="mx-panel-eyebrow">{{ t('News & Catalysts','新闻与日程') }}</span>
             <a href="news.html" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--link)">{{ t('Full feed →','完整新闻 →') }}</a>
@@ -5796,14 +5824,17 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
           <p class="muted sm">{{ t('No macro headlines right now — the fetch is off or the tape is quiet. Catalysts above remain live.','暂无宏观头条 — 抓取关闭或行情平静。上方日程仍保持更新。') }}</p>
           {% endif %}
         </div>{# /now-board #}
-      </div>
+        <div class="isle-stamp">
+          {% if macro_news and macro_news.generated_at %}<span class="l-en">as of {{ macro_news.generated_at[:10] }}</span><span class="l-zh">{{ macro_news.generated_at[:10] }} 数据</span>{% elif latest and latest.date %}<span class="l-en">as of {{ latest.date }}</span><span class="l-zh">{{ latest.date }} 数据</span>{% endif %}
+        </div>
+      </div></div>{# /sx-island + sx-tray-inner-wrap #}
     </div>
   </div>{# /sx-news-v2 #}
   {% endif %}{# /mode != stocks #}
 
   {# ── 8. DEEP CONTEXT row (Stage B — link-out chips + health footer) ── #}
   {% if mode != 'stocks' %}
-  <div class="sx" id="sx-deep-context">
+  <div class="sx" id="sx-deep-context" style="--isle-color:var(--isle-deep)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-deep-context')">
       <span class="sx-label"><span class="l-en">Deep Context</span><span class="l-zh">深度背景</span></span>
       <div class="sx-glance mx2-deep-row">
@@ -5818,44 +5849,34 @@ body.page-macro .sx-tray #release-radar h2,body.page-macro .sx-tray details.jarg
       <div class="sx-chev">&#8964;</div>
     </div>
     <div class="sx-tray">
-      <div class="sx-tray-inner">
-        <div style="padding-top:16px">
-          <div class="mx-linkout-strip" style="flex-wrap:wrap;gap:10px">
-            <a class="mx-linkout-card" href="macro_context.html">
-              <span class="mx-lc-icon">🌐</span>
-              <div><div class="mx-lc-title">{{ t('Macro Context','宏观背景') }}</div><div class="mx-lc-sub">{{ t('Regime &amp; transmission','周期与传导') }}</div></div>
-            </a>
-            <a class="mx-linkout-card" href="aibrief.html">
-              <span class="mx-lc-icon">🤖</span>
-              <div><div class="mx-lc-title">{{ t('AI Daily Brief','AI日报') }}</div><div class="mx-lc-sub">{{ t('Synthesis read','综合解读') }}</div></div>
-            </a>
-            <a class="mx-linkout-card" href="sector_central.html">
-              <span class="mx-lc-icon">📊</span>
-              <div><div class="mx-lc-title">{{ t('Sector Central','行业中枢') }}</div><div class="mx-lc-sub">{{ t('Rotation &amp; flows','轮动与资金流') }}</div></div>
-            </a>
-            <a class="mx-linkout-card" href="news.html">
-              <span class="mx-lc-icon">📰</span>
-              <div><div class="mx-lc-title">{{ t('News Feed','新闻流') }}</div><div class="mx-lc-sub">{{ t('Headlines &amp; catalysts','头条与催化剂') }}</div></div>
-            </a>
-            <a class="mx-linkout-card" href="committee.html">
-              <span class="mx-lc-icon">🧠</span>
-              <div><div class="mx-lc-title">{{ t('Neural Web','神经网络') }}</div><div class="mx-lc-sub">{{ t('Signals &amp; consensus','信号与共识') }}</div></div>
-            </a>
-            <a class="mx-linkout-card" href="macro_signals.html">
-              <span class="mx-lc-icon">⚡</span>
-              <div><div class="mx-lc-title">{{ t('Signal Lab','信号实验室') }}</div><div class="mx-lc-sub">{{ t('All indicators','全部指标') }}</div></div>
-            </a>
-          </div>
-          {# Data health anchor — #health id is on the standalone health panel below for deep-link; tiny summary here #}
-          {% if health %}
-          {% set _bad_h = health|rejectattr('status','equalto','ok')|rejectattr('status','equalto','blocked')|list %}
-          <div class="mx2-deep-health" id="health-summary">
-            <span class="l-en">Data health: {% if _bad_h %}{{ _bad_h|length }} sources need attention{% else %}all sources OK{% endif %} · {{ health|length }} sources · <a href="#health" class="muted">details ↓</a></span>
-            <span class="l-zh">数据健康度：{% if _bad_h %}{{ _bad_h|length }} 个来源需关注{% else %}全部正常{% endif %} · {{ health|length }} 个来源 · <a href="#health" class="muted">详情 ↓</a></span>
-          </div>
-          {% endif %}
+      <div class="sx-tray-inner-wrap"><div class="sx-island">
+        <div class="isle-head isle-stagger isle-s1">
+          <div class="isle-head-dot"></div>
+          <span class="isle-head-label"><span class="l-en">Deep Context — Linked Surfaces</span><span class="l-zh">深度背景 — 关联页面</span></span>
+          <div class="isle-head-line"></div>
         </div>
-      </div>
+        <div class="isle-linkouts isle-stagger isle-s2">
+          <a class="isle-lout" href="macro_context.html"><span class="isle-lout-icon">🌐</span><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></a>
+          <a class="isle-lout" href="aibrief.html"><span class="isle-lout-icon">🤖</span><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></a>
+          <a class="isle-lout" href="sector_central.html"><span class="isle-lout-icon">📊</span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
+          <a class="isle-lout" href="news.html"><span class="isle-lout-icon">📰</span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></a>
+          <a class="isle-lout" href="committee.html"><span class="isle-lout-icon">🧠</span><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
+          <a class="isle-lout" href="macro_signals.html"><span class="isle-lout-icon">⚡</span><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
+          <a class="isle-lout" href="china_intel.html"><span class="isle-lout-icon">🇨🇳</span><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
+          <a class="isle-lout" href="oracle.html"><span class="isle-lout-icon">🔮</span><span class="l-en">Oracle Rotation</span><span class="l-zh">先知轮动</span></a>
+        </div>
+        {# Data health anchor — #health id is on the standalone health panel below for deep-link #}
+        {% if health %}
+        {% set _bad_h = health|rejectattr('status','equalto','ok')|rejectattr('status','equalto','blocked')|list %}
+        <div class="isle-deep-health isle-stagger isle-s3" id="health-summary">
+          <span class="l-en">Data health: {% if _bad_h %}{{ _bad_h|length }} sources need attention{% else %}all sources OK{% endif %} · {{ health|length }} sources · <a href="#health" class="muted">details ↓</a></span>
+          <span class="l-zh">数据健康度：{% if _bad_h %}{{ _bad_h|length }} 个来源需关注{% else %}全部正常{% endif %} · {{ health|length }} 个来源 · <a href="#health" class="muted">详情 ↓</a></span>
+        </div>
+        {% endif %}
+        <div class="isle-stamp">
+          {% if latest and latest.date %}<span class="l-en">as of {{ latest.date }}</span><span class="l-zh">{{ latest.date }} 数据</span>{% endif %}
+        </div>
+      </div></div>{# /sx-island + sx-tray-inner-wrap #}
     </div>
   </div>{# /sx-deep-context #}
   {% endif %}{# /mode != stocks #}
