@@ -78,7 +78,7 @@ _EVENT_LOG_COLS = [
     "seendate",         # str ISO-8601 — publisher date from headline dict
     "title",            # str
     "domain",           # str
-    "source_tier",      # int 0-3
+    "source_tier",      # str — honest label from news engine (e.g. 'stock_wire', 'tier1', 'quality', 'official'); never int-cast (would raise on string values)
     "event_type",       # str — from classify_event
     "direction",        # str — bullish|bearish|mixed|informational
     "centrality",       # str|None — primary|secondary|incidental
@@ -165,7 +165,7 @@ def _persist_kept_events_inner(
             "seendate": str(h.get("seendate") or h.get("pubdate") or ""),
             "title": str(h.get("title") or ""),
             "domain": str(h.get("domain") or ""),
-            "source_tier": int(h.get("source_tier") or h.get("tier") or 0),
+            "source_tier": str(h.get("source_tier") or h.get("tier") or ""),
             "event_type": str(event_type),
             "direction": str(direction),
             "centrality": h.get("centrality") or None,

@@ -702,6 +702,8 @@ jobs:
             # W0.4 Setup-Species: cohort-context metrics (display-only; reads committed subsector_confluence.json)
             brun cohort_metrics "W0.4 cohort metrics — peer washout/reclaim/MACD-turn + Rubber-Band Score (build_cohort_metrics)" scripts.build_cohort_metrics
             brun news        "news suite (build_news)"                 scripts.build_news
+            # output: data/news/event_log.parquet + site/news/calibration.json — both covered by the git add data/ site/ commit step
+            brun news_calib  "news event calibration (grade_news_events)" scripts.grade_news_events
             brun methodology "methodology page (build_methodology)"    scripts.build_methodology
             brun nasdaq_internals "nasdaq-100 archetype-group internals (build_nasdaq_internals)" scripts.build_nasdaq_internals
           }
