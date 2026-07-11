@@ -1656,6 +1656,7 @@
   .dash-tw-hdr { display:flex; align-items:center; gap:8px; margin-bottom:7px; flex-wrap:wrap; }
   .dash-tw-title { font-size:12px; font-weight:700; color:var(--warn); text-transform:uppercase; letter-spacing:.05em; }
   .dash-tw-asof { font-size:10px; color:var(--muted); margin-left:auto; }
+  .dash-tw-sub { font-size:11.5px; color:var(--text); opacity:.8; margin:-3px 0 7px; }
   .dash-tw-rows { display:flex; flex-direction:column; gap:5px; }
   .dash-tw-row { display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; font-size:12px; }
   .dash-tw-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
@@ -5401,18 +5402,19 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
       <div class="dtp-row dtp-chips" id="dtp-chips" style="padding-top:0"></div>
       <div class="dtp-fn" id="dtp-fn"></div>
     </div>
-    {# TS-U3: Turn Watch disagreement strip (mode=stocks only; client-side).
+    {# TS-U3: Turn Watch strip → "Early turn signs" (user-first copy per docs/DESIGN_DOCTRINE.md;
+       mode=stocks only; client-side).
        Shown ONLY when data exists: baskets with WATCH/IGNITION or ≥2 UPTURN_CONFIRMED members
        while slow reco is hold/avoid. Does NOT reorder lanes or change recos. #}
     <div id="dash-tw-strip" class="dash-tw-strip">
       <div class="dash-tw-hdr">
-        <span class="dash-tw-title">{{ t('&#9889; Turn Watch — multi-timeframe divergence','&#9889; 拐点观察 — 多时间框架背离') }}</span>
+        <span class="dash-tw-title">{{ t('&#9889; Early turn signs','&#9889; 早期拐点迹象') }}</span>
         <span class="dash-tw-asof" id="dash-tw-asof"></span>
       </div>
+      <div class="dash-tw-sub">{{ t("Bounce attempts in groups we still rate Hold / Avoid. Watch — don't chase.","仍评级为「持有／回避」的板块出现反弹尝试。观察为主 — 勿追高。") }}</div>
       <div class="dash-tw-rows" id="dash-tw-rows"></div>
       <div class="dash-tw-disc">
-        <span class="l-en">Expected-null forward meter (basket-level turn fired NULL in backtest, Oracle P8). Slow reco labels unchanged. T+1 flip base rate: <strong>58% fade</strong> (n=26). Display context only.</span>
-        <span class="l-zh">预期空值前瞻计量（板块级别拐点回测为NULL，Oracle P8）。慢速评级标签未变。T+1翻转基础概率：<strong>58%消退</strong>（n=26）。仅作展示参考。</span>
+        <span class="l-en">Not a buy signal: in 26 past cases, about 6 in 10 of these early signs faded within a day. If the turn is real, the lanes below upgrade on their own.</span><span class="l-zh">非买入信号：历史26次中约六成的早期迹象在一天内消退。若拐点为真，下方泳道会自行升级。</span> <span class="help">?<span class="tip"><span class="l-en">Technical receipt: basket-level multi-timeframe turn meter; backtested edge at basket level = null (Oracle P8; T+1 fade base rate 58%, n=26). Slow reco labels unchanged; display tier only. Sources: turn_watch (basket K-of-N) + mtf_upturn (per-stock confluence).</span><span class="l-zh">技术说明：篮子级多时间框架拐点计量；篮子级回测优势为空值（Oracle P8；T+1消退基础概率58%，n=26）。慢速评级标签未变；仅展示层。数据源：turn_watch（篮子K-of-N）+ mtf_upturn（个股共振）。</span></span></span>
       </div>
     </div>
     {% endif %}
@@ -6627,11 +6629,11 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
      Schema: mtf_upturn.v1. Fail-open: absent until tonight's nightly. #}
   {% if mode == 'stocks' %}
   <div class="panel span12 dash-mtf-section" id="dash-mtf-section">
-    <h2>{{ t('Turn Setups — multi-timeframe momentum', '拐点形态 — 多时间框架动量') }}
+    <h2>{{ t('Turn Setups — early bottoming signs by stock', '拐点形态 — 个股早期筑底迹象') }}
       <span class="help">?<span class="tip tip-wide">
         <span class="l-en">
-          Forward-graded meter (expected-null; prior sector-level turn in backtest printed NULL — Oracle P8 / DO_NOT_REBUILD §2).
-          Display context only — not a directional signal or a return forecast. Tier = display.
+          A per-stock checklist of early bottoming signs — more filled boxes = more timeframes agreeing.
+          Not a buy list and not a return forecast: the backtested basket-level edge = null (Oracle P8 / DO_NOT_REBUILD §2); tier = display.
           <b>Legs:</b> D = daily MACD bull cross; 3D = house 3-day confluence (MACD+StochRSI, the primary setup engine);
           W = weekly MACD (filled = confirmed cross, hollow circle = approaching); 2W = biweekly MACD cross.
           <b>States:</b> UPTURN_CONFIRMED (K≥3 incl. ≥1 weekly/2W leg) · UPTURN_WATCH (K≥2) · NONE.
@@ -6639,8 +6641,8 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
           Mag7 always shown. Data lands after nightly (~02:00 UTC). Accruing from ship date.
         </span>
         <span class="l-zh">
-          前瞻计量（预期空值；回测中板块级别拐点为NULL — Oracle P8 / DO_NOT_REBUILD §2）。
-          仅展示参考，非方向信号或收益预测。层级=展示。
+          个股早期筑底迹象检查表 — 实心格越多，代表越多时间框架同向。
+          非买入清单、非收益预测：篮子级回测优势为空值（Oracle P8 / DO_NOT_REBUILD §2）；层级=展示。
           <b>信号腿：</b>D=日线MACD金叉；3D=本系统3日共振（MACD+StochRSI，主要形态引擎）；
           W=周线MACD（实心=确认交叉，空心=接近交叉）；2W=双周MACD交叉。
           <b>状态：</b>UPTURN_CONFIRMED（K≥3含≥1周/双周腿）· UPTURN_WATCH（K≥2）· NONE。
@@ -7292,28 +7294,30 @@ function renderTurnWatch(turnWatch, mtfUpturn){
 
   if(!candidates.length){stripEl.classList.remove('visible');return;}
   stripEl.classList.add('visible');
-  if(asofEl&&twAsOf){asofEl.innerHTML=L('nightly · '+esc(twAsOf),'每晚 · '+esc(twAsOf));}
+  if(asofEl&&twAsOf){asofEl.innerHTML=L('updated nightly · '+esc(twAsOf),'每晚更新 · '+esc(twAsOf));}
 
-  // Render rows
+  // Render rows — user-first copy (docs/DESIGN_DOCTRINE.md): plain badges, plain
+  // rating text; the constant fade stat lives in the footer ONCE; the internal
+  // receipt (state names, reco as-of, base rate) moves to a data-tip on the row.
   var html='';
   candidates.forEach(function(c){
     var badgeCls='member', badgeTxt='';
-    if(c.tw_state==='IGNITION'){ badgeCls='ignition'; badgeTxt=L('&#9889; IGNITION','&#9889; 点火'); }
-    else if(c.tw_state==='WATCH'){ badgeCls='watch'; badgeTxt=L('&#9889; WATCH','&#9889; 观察'); }
-    else { badgeTxt=L(c.member_confirmed+' members confirmed',c.member_confirmed+'个成分确认'); }
+    if(c.tw_state==='IGNITION'){ badgeCls='ignition'; badgeTxt=L('&#9889; STRONG SIGN','&#9889; 较强迹象'); }
+    else if(c.tw_state==='WATCH'){ badgeCls='watch'; badgeTxt=L('&#9889; EARLY SIGN','&#9889; 初步迹象'); }
+    else { badgeTxt=L(c.member_confirmed+' stocks turning up',c.member_confirmed+'只成分股转强'); }
     var slowPart='';
-    if(c.reco){
-      var dateStr=c.reco_as_of?c.reco_as_of.slice(5):'';
-      var recoEn='slow reco: '+esc(c.reco.toUpperCase())+(dateStr?' (as-of '+esc(dateStr)+')':'');
-      var recoZh='慢速评级: '+esc(c.reco.toUpperCase())+(dateStr?' (截至'+esc(dateStr)+'）':'');
-      slowPart='<span class="dash-tw-slow">'+L(recoEn,recoZh)+'</span>';
+    var reco=(c.reco||'').toLowerCase();
+    if(reco){
+      var recoEn=reco==='hold'?'still rated Hold':reco==='avoid'?'still rated Avoid':'still rated '+esc(c.reco);
+      var recoZh=reco==='hold'?'主评级仍为「持有」':reco==='avoid'?'主评级仍为「回避」':'主评级仍为 '+esc(c.reco);
+      slowPart='<span class="dash-tw-slow">· '+L(recoEn,recoZh)+'</span>';
     }
-    var fadeStr=L(' · T+1 58% fade',' · T+1 58%消退');
-    html+='<div class="dash-tw-row">'
+    var tipEn='Receipt: fast state '+(c.tw_state||'none')+' · '+c.member_confirmed+' member(s) multi-timeframe confirmed'+(c.reco?' · slow reco '+c.reco.toUpperCase()+(c.reco_as_of?' as-of '+c.reco_as_of:''):'')+' · T+1 fade base rate 58% (n=26; basket-level turn = null edge in backtest, Oracle P8)';
+    var tipZh='技术说明：快速状态 '+(c.tw_state||'none')+' · '+c.member_confirmed+'只成分多时间框架确认'+(c.reco?' · 慢速评级 '+c.reco.toUpperCase()+(c.reco_as_of?'（截至'+c.reco_as_of+'）':''):'')+' · T+1消退基础概率58%（n=26；篮子级拐点回测为空值，Oracle P8）';
+    html+='<div class="dash-tw-row" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">'
       +'<span class="dash-tw-badge '+badgeCls+'">'+badgeTxt+'</span>'
       +'<span class="dash-tw-name">'+esc(c.name)+'</span>'
       +slowPart
-      +'<span class="dash-tw-slow">'+fadeStr+'</span>'
       +'</div>';
   });
   rowsEl.innerHTML=html;
@@ -7330,7 +7334,7 @@ function renderTurnWatch(turnWatch, mtfUpturn){
       if(!wrapper.querySelector('.dash-turn-chip')){
         var chip=document.createElement('span');
         chip.className='dash-turn-chip';
-        chip.innerHTML='&#9889; '+L('TURN WATCH','拐点观察');
+        chip.innerHTML='&#9889; '+L('EARLY TURN','早期拐点');
         wrapper.appendChild(chip);
       }
       // Check if this item is currently hidden (would be after n+7 sibling)
@@ -7432,8 +7436,8 @@ function renderMtfTable(mtfUpturn){
   }
 
   var html='<p class="muted" style="font-size:11px;margin:0 0 5px">'
-    +L('as of '+esc(asOf)+' · Mag7 always shown · forward-graded meter (expected null) · display only',
-       '截至 '+esc(asOf)+' · Mag7始终显示 · 前瞻计量（预期空值）· 仅展示')+'</p>';
+    +L('as of '+esc(asOf)+' · Mag7 always shown · an early-warning checklist, not a buy list',
+       '截至 '+esc(asOf)+' · Mag7始终显示 · 早期预警检查表，非买入清单')+'</p>';
   html+='<div class="tbl-scroll"><table class="dash-mtf-tbl"><thead><tr>'
     +'<th>'+L('ticker','代码')+'</th>'
     +'<th>'+L('state','状态')+'</th>'
@@ -7453,8 +7457,11 @@ function renderMtfTable(mtfUpturn){
     var legs=t.legs||{};
     var trend=t.trend||{};
     var stateCls=t.state==='UPTURN_CONFIRMED'?'confirmed':t.state==='UPTURN_WATCH'?'watch':'none';
-    var stateLbl=t.state==='UPTURN_CONFIRMED'?L('CONFIRMED','已确认'):t.state==='UPTURN_WATCH'?L('WATCH','观察'):L('—','—');
-    var basketStr=(t.basket_ids||[]).slice(0,3).join(', ')+(t.basket_ids&&t.basket_ids.length>3?'…':'');
+    var stateLbl=t.state==='UPTURN_CONFIRMED'?L('TURNING UP','转强确认'):t.state==='UPTURN_WATCH'?L('EARLY SIGN','初步迹象'):L('—','—');
+    var _bids=(t.basket_ids||[]).slice(0,3);
+    var _bMore=(t.basket_ids&&t.basket_ids.length>3)?'…':'';
+    var basketEn=_bids.map(_dtpNameEn).join(', ')+_bMore;
+    var basketZh=_bids.map(_dtpNameZh).join('、')+_bMore;
     html+='<tr>'
       +'<td><b>'+esc(sym)+'</b></td>'
       +'<td><span class="dash-mtf-badge '+stateCls+'">'+stateLbl+'</span></td>'
@@ -7467,7 +7474,7 @@ function renderMtfTable(mtfUpturn){
       +'</div></td>'
       +'<td class="dash-mtf-phase">'+esc(t.monthly_phase||'—')+'</td>'
       +'<td class="dash-mtf-since">'+esc(t.since||'—')+'</td>'
-      +'<td class="dash-mtf-baskets">'+esc(basketStr||'—')+'</td>'
+      +'<td class="dash-mtf-baskets">'+(_bids.length?L(esc(basketEn),esc(basketZh)):'—')+'</td>'
       +'</tr>';
   });
   html+='</tbody></table></div>';
