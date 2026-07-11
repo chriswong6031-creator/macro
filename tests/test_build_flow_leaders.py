@@ -358,6 +358,31 @@ class TestBuild:
         if len(non_null) >= 2:
             assert non_null == sorted(non_null, reverse=True)
 
+    def test_board_a_capped_at_25(self, tmp_path):
+        """Board A must have at most 25 rows regardless of universe size."""
+        # Build 30 tickers
+        tickers = [f"T{i:02d}" for i in range(30)]
+        for t in tickers:
+            _make_summary_parquet(tmp_path, t, n_sessions=3)
+        site_root = _make_site_dir(tmp_path)
+        data_root = tmp_path / "data"
+        tpl_root = _make_tpl_dir(self._repo)
+        result = build(data_root=data_root, site_root=site_root, tpl_root=tpl_root)
+        assert len(result.get("board_a", [])) <= 25
+        # board_a_total must reflect universe count (30 in this case)
+        assert result.get("board_a_total", 0) == 30
+
+    def test_board_b_capped_at_25(self, tmp_path):
+        """Board B must have at most 25 rows regardless of universe size."""
+        tickers = [f"T{i:02d}" for i in range(30)]
+        for t in tickers:
+            _make_summary_parquet(tmp_path, t, n_sessions=3)
+        site_root = _make_site_dir(tmp_path)
+        data_root = tmp_path / "data"
+        tpl_root = _make_tpl_dir(self._repo)
+        result = build(data_root=data_root, site_root=site_root, tpl_root=tpl_root)
+        assert len(result.get("board_b", [])) <= 25
+
     def test_json_serializeable(self, tmp_path):
         """leaders.json must be valid JSON with no NaN/inf values."""
         _make_summary_parquet(tmp_path, "AAPL", n_sessions=3)
@@ -448,6 +473,165 @@ class TestPickLabCandidates:
         result = run_book(book, snap)
         assert isinstance(result, list)
         assert result == []
+
+
+# ─────────────────────────────────── MAJOR-4: consumption-path (fire flags) ──
+
+class TestFlowBookFireFlagDispatch:
+    """End-to-end test that _book_flow_leader / _book_flow_washout consume fire_a/fire_b
+    from leaders.json correctly, without calling the leg-computation engine functions."""
+
+    def _make_snap(self, tickers: list[str]) -> pd.DataFrame:
+        """Build a minimal non-empty snapshot that passes _apply_liquidity for each ticker."""
+        df = pd.DataFrame(
+            {
+                "close": [20.0] * len(tickers),
+                "dollar_adv_20d": [50e6] * len(tickers),
+            },
+            index=pd.Index(tickers, name="ticker"),
+        )
+        df.attrs["asof"] = "2024-06-14"
+        return df
+
+    def _leaders_fixture(self) -> list[dict]:
+        """Three rows: fire_a=True, fire_a=False, fire_a=None (analogous for fire_b)."""
+        return [
+            {
+                "ticker": "FIRE_A",
+                "fire_a": True,
+                "fire_b": False,
+                "recurrence_count": 3,
+                "net_prem_norm_abs": 0.8,
+                "flow_z": 2.5,
+                "K_a": 5,
+                "n_avail_a": 8,
+                "signing_source": "minute_tick",
+                "days_since_inflection": None,
+                "K_b": 2,
+                "n_avail_b": 8,
+            },
+            {
+                "ticker": "NO_FIRE",
+                "fire_a": False,
+                "fire_b": False,
+                "recurrence_count": 1,
+                "net_prem_norm_abs": 0.2,
+                "flow_z": 0.5,
+                "K_a": 1,
+                "n_avail_a": 8,
+                "signing_source": "minute_tick",
+                "days_since_inflection": None,
+                "K_b": 1,
+                "n_avail_b": 8,
+            },
+            {
+                "ticker": "NULL_FIRE",
+                "fire_a": None,
+                "fire_b": None,
+                "recurrence_count": None,
+                "net_prem_norm_abs": None,
+                "flow_z": None,
+                "K_a": 0,
+                "n_avail_a": 0,
+                "signing_source": "minute_tick",
+                "days_since_inflection": None,
+                "K_b": 0,
+                "n_avail_b": 0,
+            },
+            {
+                "ticker": "FIRE_B",
+                "fire_a": False,
+                "fire_b": True,
+                "recurrence_count": 0,
+                "net_prem_norm_abs": 0.1,
+                "flow_z": None,
+                "K_a": 0,
+                "n_avail_a": 8,
+                "signing_source": "minute_tick",
+                "days_since_inflection": 2,
+                "K_b": 5,
+                "n_avail_b": 8,
+            },
+        ]
+
+    def test_book_flow_leader_fires_exactly_fire_a_true(self, monkeypatch):
+        """_book_flow_leader returns exactly the ticker with fire_a=True."""
+        import engine.pick_lab.candidates as cand
+
+        fixture = self._leaders_fixture()
+        monkeypatch.setattr(cand, "_load_leaders_json", lambda: fixture)
+
+        # Guard: board_a_legs must not be called during book dispatch
+        import engine.flow_leaders as fl_engine
+        def _raise(*args, **kwargs):
+            raise AssertionError("board_a_legs called during book dispatch — FL-R8 violation")
+        monkeypatch.setattr(fl_engine, "board_a_legs", _raise)
+
+        from engine.pick_lab.candidates import run_book
+        from engine.pick_lab.registry import BY_ID
+
+        snap = self._make_snap(["FIRE_A", "NO_FIRE", "NULL_FIRE", "FIRE_B"])
+        result = run_book(BY_ID["plab_flow_leader"], snap)
+
+        fired_tickers = [p["ticker"] for p in result]
+        assert "FIRE_A" in fired_tickers, "fire_a=True ticker must be in picks"
+        assert "NO_FIRE" not in fired_tickers, "fire_a=False ticker must not be in picks"
+        assert "NULL_FIRE" not in fired_tickers, "fire_a=None ticker must not be in picks"
+
+    def test_book_flow_washout_fires_exactly_fire_b_true(self, monkeypatch):
+        """_book_flow_washout returns exactly the ticker with fire_b=True."""
+        import engine.pick_lab.candidates as cand
+
+        fixture = self._leaders_fixture()
+        monkeypatch.setattr(cand, "_load_leaders_json", lambda: fixture)
+
+        # Guard: board_b_legs must not be called during book dispatch
+        import engine.flow_leaders as fl_engine
+        def _raise(*args, **kwargs):
+            raise AssertionError("board_b_legs called during book dispatch — FL-R8 violation")
+        monkeypatch.setattr(fl_engine, "board_b_legs", _raise)
+
+        from engine.pick_lab.candidates import run_book
+        from engine.pick_lab.registry import BY_ID
+
+        snap = self._make_snap(["FIRE_A", "NO_FIRE", "NULL_FIRE", "FIRE_B"])
+        result = run_book(BY_ID["plab_flow_washout"], snap)
+
+        fired_tickers = [p["ticker"] for p in result]
+        assert "FIRE_B" in fired_tickers, "fire_b=True ticker must be in picks"
+        assert "NO_FIRE" not in fired_tickers, "fire_b=False ticker must not be in picks"
+        assert "NULL_FIRE" not in fired_tickers, "fire_b=None ticker must not be in picks"
+        assert "FIRE_A" not in fired_tickers, "fire_b=False ticker must not be in picks"
+
+    def test_book_flow_leader_skip_illiquid(self, monkeypatch):
+        """Tickers below close minimum are excluded even when fire_a=True."""
+        import engine.pick_lab.candidates as cand
+
+        fixture = [
+            {
+                "ticker": "CHEAP",
+                "fire_a": True,
+                "recurrence_count": 5,
+                "net_prem_norm_abs": 1.0,
+                "flow_z": 3.0,
+                "K_a": 6, "n_avail_a": 8,
+                "signing_source": "minute_tick",
+            }
+        ]
+        monkeypatch.setattr(cand, "_load_leaders_json", lambda: fixture)
+
+        from engine.pick_lab.candidates import run_book
+        from engine.pick_lab.registry import BY_ID
+
+        # Snapshot with close below _LIQ_CLOSE_MIN (5.0)
+        snap = pd.DataFrame(
+            {"close": [2.0], "dollar_adv_20d": [50e6]},
+            index=pd.Index(["CHEAP"], name="ticker"),
+        )
+        snap.attrs["asof"] = "2024-06-14"
+        result = run_book(BY_ID["plab_flow_leader"], snap)
+        # CHEAP has close=2.0 < 5.0 → filtered out by _apply_liquidity → result empty
+        assert result == [], "illiquid ticker should be excluded"
 
 
 # ──────────────────────────────────────────────────── _build_membership_df ──

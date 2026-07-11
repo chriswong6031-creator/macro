@@ -5982,7 +5982,7 @@ intraday_flow:
 # Thresholds live in engine/flow_leaders.py (not duplicated here).
 # --------------------------------------------------------------------------- #
 flow_leaders:
-  enabled: true                    # kill-switch: false → noindex stub, no nav entry
+  enabled: true                    # kill-switch: false → noindex stub (nav link renders regardless)
 
 # --------------------------------------------------------------------------- #
 # flow_desk — Market Tide / Group Flow dashboard page (P3.1).

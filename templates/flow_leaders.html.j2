@@ -1,5 +1,5 @@
 {% macro t(en, zh='') -%}
-<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
 {% set fl = flow_leaders if flow_leaders else {} %}
 {% set board_a = fl.board_a if fl.board_a is defined and fl.board_a is not none else [] %}
@@ -7,6 +7,8 @@
 {% set etf_strip = fl.etf_strip if fl.etf_strip is defined and fl.etf_strip is not none else [] %}
 {% set cov = fl.coverage if fl.coverage is defined and fl.coverage is not none else {} %}
 {% set cs = fl.cold_start_detail if fl.cold_start_detail is defined and fl.cold_start_detail is not none else {} %}
+{% set board_a_total = fl.board_a_total if fl.board_a_total is defined and fl.board_a_total is not none else (board_a | length) %}
+{% set board_b_total = fl.board_b_total if fl.board_b_total is defined and fl.board_b_total is not none else (board_b | length) %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -86,7 +88,12 @@
 
 {% if fl.cold_start is defined and fl.cold_start %}
 <div class="banner banner-cold">
-  {{ t('Recurrence accruing', '出现频率累积中') }} — {{ cs.n_sessions if cs.n_sessions is defined else '?' }}/{{ cs.required_for_recurrence if cs.required_for_recurrence is defined else 5 }} {{ t('sessions. Legs dependent on history show null (not false) until the window matures.', '场次。依赖历史数据的腿位显示为空（非否），直至窗口成熟。') }}
+  {% if cs.message is defined and cs.message is not none %}
+    {{ cs.message }}
+  {% else %}
+    {{ t('Recurrence accruing', '出现频率累积中') }} — {{ cs.n_sessions if cs.n_sessions is defined else '?' }}/{{ cs.required_for_recurrence if cs.required_for_recurrence is defined else 5 }} {{ t('sessions', '场次') }}
+  {% endif %}
+  — {{ t('Legs dependent on history show null (not false) until the window matures.', '依赖历史数据的腿位显示为空（非否），直至窗口成熟。') }}
 </div>
 {% endif %}
 
@@ -100,6 +107,9 @@
 <div class="sm muted" style="margin-bottom:10px;">
   {{ t('Names with recurring top-20 normalized net-impact within trailing 10 sessions and price confirmation. Sorted by recurrence count (ties: normalized net premium).', '在过去10个场次中反复出现在归一化净额排名前20且有价格确认的标的。按出现频率排序（平局：按归一化净额）。') }}
 </div>
+{% if board_a_total > (board_a | length) %}
+<div class="muted xs" style="margin-bottom:8px;">{{ t('Showing top', '显示前') }} {{ board_a | length }} {{ t('of', '共') }} {{ board_a_total }} {{ t('names', '个标的') }}</div>
+{% endif %}
 
 {% if board_a %}
 <div class="tbl-wrap">
@@ -178,6 +188,9 @@
 <div class="sm muted" style="margin-bottom:10px;">
   {{ t('Names where flow has inflected positive after a negative run, with washout context and oscillator support. Sorted by days since inflection (ascending).', '资金流在负面运行后转正，同时具备洗盘背景和振荡器支持的标的。按转折后天数升序排列。') }}
 </div>
+{% if board_b_total > (board_b | length) %}
+<div class="muted xs" style="margin-bottom:8px;">{{ t('Showing top', '显示前') }} {{ board_b | length }} {{ t('of', '共') }} {{ board_b_total }} {{ t('names', '个标的') }}</div>
+{% endif %}
 
 {% if board_b %}
 <div class="tbl-wrap">

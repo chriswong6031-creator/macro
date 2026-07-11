@@ -17,7 +17,7 @@ Outputs:
 
 Kill-switch: config flow_leaders.enabled: false → noindex stub, skip JSON.
 Freshness SLA (FL-R15): flow store latest lag > 2 NYSE sessions → stale=true.
-Data writes: COLLECT_LANE=nightly gate only.
+Data writes: builder makes zero data/ writes by design (display-tier artifact only).
 Fail-soft: per-ticker exceptions are logged and skipped; always exits 0.
 """
 from __future__ import annotations
@@ -25,7 +25,6 @@ from __future__ import annotations
 import glob
 import json
 import logging
-import os
 import sys
 import tempfile
 from datetime import date, datetime, timezone
@@ -48,13 +47,6 @@ _ETF_SET = frozenset({
     "XLK", "XLF", "XLE", "XLI", "XLU", "XLV", "XLY", "XLP", "XLB", "XLC", "XLRE",
     "SMH", "SOXX", "KRE", "XBI", "ARKK",
 })
-
-# ── COLLECT_LANE gate ─────────────────────────────────────────────────────────
-
-def _nightly_lane() -> bool:
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
-
 
 # ── Kill-switch stub ──────────────────────────────────────────────────────────
 
@@ -621,7 +613,12 @@ def _build_ticker_record(
     if not stale and not ticker_membership.empty:
         try:
             rc_series = recurrence_count(ticker_membership)
-            recur_count = rc_series.get(ticker)
+            rc_raw = rc_series.get(ticker)
+            # Convert pd.NA / NaN to None so Jinja `is not none` works correctly
+            try:
+                recur_count = None if (rc_raw is None or pd.isna(rc_raw)) else float(rc_raw)
+            except (TypeError, ValueError):
+                recur_count = None
             rl_series = flow_recur_leg(ticker_membership)
             raw_rl = rl_series.get(ticker)
             recur_leg = None if pd.isna(raw_rl) else bool(raw_rl)
@@ -989,6 +986,20 @@ def build(
 
     board_b_rows.sort(key=_board_b_sort_key)
 
+    # ── Top-25 cap (FL-R2) ────────────────────────────────────────────────────
+    # Board A cold-start fallback: when all recurrence_count are null (cold-start),
+    # the primary sort key is already net_prem_norm_abs desc (because null recurrence
+    # maps to 1.0 sentinel, so sort is effectively by -np_float). The existing sort
+    # already achieves this ordering, so the cap is a simple slice.
+    # Board B cold-start fallback: days_since_inflection=None maps to 9999 → rows
+    # with a computed inflection appear first; if all null, the existing order is
+    # deterministic by ticker name (sorted board_names above). Slice suffices.
+    _BOARD_CAP = 25
+    board_a_total = len(board_a_rows)
+    board_b_total = len(board_b_rows)
+    board_a_rows = board_a_rows[:_BOARD_CAP]
+    board_b_rows = board_b_rows[:_BOARD_CAP]
+
     # Cold-start state
     from engine.flow_leaders import RECUR_MIN_HISTORY
     n_flow_sessions = len(sorted({
@@ -1025,7 +1036,9 @@ def build(
             "n_etfs": len(etf_strip),
         },
         "board_a": board_a_rows,
+        "board_a_total": board_a_total,
         "board_b": board_b_rows,
+        "board_b_total": board_b_total,
         "etf_strip": etf_strip,
         "cold_start_detail": {
             "n_sessions": n_flow_sessions,
