@@ -32,7 +32,7 @@ from lib import config, store
 
 log = logging.getLogger(__name__)
 
-HORIZONS = {"1d": 1, "5d": 5, "20d": 20, "60d": 60}    # fixed-window horizons (MTD/YTD computed separately)
+HORIZONS = {"1d": 1, "5d": 5, "10d": 10, "20d": 20, "60d": 60}    # fixed-window horizons (MTD/YTD computed separately)
 PARTIAL_GAP_DAYS = 180   # a member whose history starts > ~6 months after the series start is flagged short-history
 
 
