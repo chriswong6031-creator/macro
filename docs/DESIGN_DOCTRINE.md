@@ -186,7 +186,7 @@ dedicated copy-tier PRs. Top verified offenders:
 | 8 | china | Ripening Shelf cards: "2W Stoch · MACD D hist (d=−0.8) · 2W MACD ETA" acronym column at rest | ~~china.html.j2:2035–2068~~ **FIXED #2228** (engine-supplied evidence-chip strings still raw — engine-side follow-up) |
 | 9 | basket_detail | ~90-word always-visible disclaimer ("T1–T4 confluence… T3* provisional… cycle blocks"); tier badges show internal stage names | basket_detail.html.j2:582–590,664 |
 | 10 | allocation | "What is actually **validated**" / "The **validated** edge is…" in user copy — house-law word (CI checker `check_validated_claims.py`); verify allowlist status | allocation.html.j2:503,537 |
-| 11 | baskets | Vetoed rank-# tape idiom still shipping (`#1…#34` mr-rank) — standing-ruling violation, port to `.dtp` | ~~baskets.html.j2:572~~ **FIXED #2232** (.dtp strip; allocation movers + basket_detail strip too) |
+| 11 | baskets | Vetoed rank-# tape idiom still shipping (`#1…#34` mr-rank) — standing-ruling violation, port to `.dtp` | ~~baskets.html.j2:572~~ **FIXED #2232**, band re-ported same day to tape band v3 (#2227 idiom); allocation movers + basket_detail strip too |
 | 12 | us_stocks | "⚡ Coiled·FIRE" chip — machine-state enum + vol-squeeze jargon at rest | dashboard.html.j2:5879 |
 
 Census-distilled good patterns beyond §3 (canonize): question-as-subheading framing

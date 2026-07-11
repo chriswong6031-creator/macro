@@ -1,8 +1,9 @@
 """Render/parse assertions for FTR W3+W8-UI tape-surface template additions.
 
 Guards (all three templates: baskets.html.j2, allocation.html.j2, basket_detail.html.j2):
-- ftr-tape-band with the .dtp chip-strip idiom (#2208 port) in baskets:
-  dtp-token state label, ONE as-of, LEADERS/LAGGARDS chips, ai_capex complex chip
+- ftr-tape-band with the tape band v3 idiom (#2227 port) in baskets:
+  dtp-token state label, ONE as-of, ranked leader/laggard columns with ordinals,
+  full-tape expander, ai_capex complex row
 - user-first copy (docs/DESIGN_DOCTRINE.md): no rank numbers, no raw
   IGNITION/WATCH display labels, plain-word fade footer with the technical
   receipt (Oracle P8 / 58% / n=26) demoted to data-tips / ? help tips
@@ -88,19 +89,28 @@ class TestBasketsW3Markers:
         assert "ai_capex" in src
         assert "AI-Capex Complex" in src
 
-    def test_dtp_chips_slot(self):
-        """LEADERS/LAGGARDS chip groups replace the old top/bottom mover halves."""
+    def test_v3_ranked_columns(self):
+        """Tape band v3 (#2227): ranked two-column body + state-adaptive column labels
+        + full-tape expander replace the old top/bottom mover halves."""
         src = _src("baskets.html.j2")
-        assert "ftr-dtp-chips" in src
-        assert "'LEADERS'" in src
-        assert "'LAGGARDS'" in src
+        assert "ftr-dtp-body" in src
+        assert "LIVE LEADERS" in src
+        assert "SESSION LEADERS — AT THE CLOSE" in src
+        assert "ftr-dtp-full" in src
+        assert "ftr-dtp-more" in src
+        assert "Show full tape" in src
+        # expander law (#2206 double-toggle lesson): own class + [hidden] re-assert
+        assert ".dtp-full[hidden], .dtp-more[hidden] { display:none; }" in src
+        assert ".lst-more" not in src
 
-    def test_no_rank_numbers(self):
-        """Operator-vetoed rank-# idiom (#2208 ruling) must not render on mover chips."""
+    def test_no_raw_rank_idiom(self):
+        """The vetoed '#'-prefixed raw tape_rank idiom must not render (v3 per-column
+        ordinals in .dtp-rank are the sanctioned form)."""
         src = _src("baskets.html.j2")
         assert "mr-rank" not in src
         assert "'#'+rank" not in src
         assert "tape rank #" not in src
+        assert "dtp-rank" in src
 
     def test_no_raw_state_display_labels(self):
         """IGNITION/WATCH stay as JSON states but must not be user-facing labels
@@ -330,9 +340,9 @@ class TestFtrW3BasketsRender:
         html = _render_baskets(["SPY"])
         assert "dtp-token" in html
 
-    def test_dtp_chips_slot_in_render(self):
+    def test_dtp_body_slot_in_render(self):
         html = _render_baskets(["SPY"])
-        assert "ftr-dtp-chips" in html
+        assert "ftr-dtp-body" in html
 
     def test_disagree_chip_in_render(self):
         html = _render_baskets(["SPY"])
