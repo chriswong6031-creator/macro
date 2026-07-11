@@ -468,10 +468,53 @@ _LH = [
     ),
 ]
 
+# ------------------------------------------------------------------ Family G — Flow Leaders (FL-R8) ---
+_G = [
+    _entry(
+        engine_id="plab_flow_leader",
+        name_en="Flow Leader (Board A — recurrence)",
+        name_zh="资金领头 (A板 — 出现频率)",
+        family="G",
+        ruler="21d_spy_excess",
+        max_picks=12,
+        refire_lockout_sessions=21,
+        config={
+            # Entry rule: A1 AND A8 AND (A2 OR A3) — per board_a_fire() (FL-R8)
+            # Candidates sourced from site/flowleaders/leaders.json (fire_a==true rows)
+            "source_artifact": "site/flowleaders/leaders.json",
+            "fire_field": "fire_a",
+            "rank_by": "recurrence_count",
+        },
+        kill_adjacency="",
+    ),
+    _entry(
+        engine_id="plab_flow_washout",
+        name_en="Flow Washout Turn (Board B — inflection)",
+        name_zh="资金洗盘转机 (B板 — 转折)",
+        family="G",
+        ruler="21d_abs_reversion_capture_mfe_mae",
+        max_picks=12,
+        refire_lockout_sessions=21,
+        config={
+            # Entry rule: B1 AND B5 AND B8 — per board_b_fire() (FL-R8)
+            # Distinct from KILLED washout×2W-turn (#1747 ESXA3-FV-C): no 2W legs qualify fires
+            # Candidates sourced from site/flowleaders/leaders.json (fire_b==true rows)
+            "source_artifact": "site/flowleaders/leaders.json",
+            "fire_field": "fire_b",
+            "rank_by": "days_since_inflection",
+        },
+        kill_adjacency=(
+            "Adjacency FLW-3 ⇢ ESXA3-FV-C (#1747) registered (FL-R9): "
+            "washout×flow-inflection differs from killed washout×2W-turn; "
+            "no 2W legs qualify fires (FL-R8)."
+        ),
+    ),
+]
+
 # ------------------------------------------------------------------ Exports ---
-REGISTRY: list[dict] = _A + _B + _C + _D + _E + _F + _LH
+REGISTRY: list[dict] = _A + _B + _C + _D + _E + _F + _LH + _G
 BY_ID: dict[str, dict] = {b["engine_id"]: b for b in REGISTRY}
 
-# Sanity check at module load: 23 books, all config_hashes unique
-assert len(REGISTRY) == 23, f"Expected 23 books, got {len(REGISTRY)}"
-assert len({b["config_hash"] for b in REGISTRY}) == 23, "Duplicate config_hash detected"
+# Sanity check at module load: 25 books, all config_hashes unique
+assert len(REGISTRY) == 25, f"Expected 25 books, got {len(REGISTRY)}"
+assert len({b["config_hash"] for b in REGISTRY}) == 25, "Duplicate config_hash detected"

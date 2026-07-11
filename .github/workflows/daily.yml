@@ -526,9 +526,14 @@ jobs:
           # (us_stocks_v2.html) + the shadow JSON — nothing live consumes it. main() swallows all
           # failures and returns 0, so this can NEVER break the render.
           run_py "buy board 2.0 shadow (build_stock_board_v2)" scripts.build_stock_board_v2
+          # Flow Leaders Desk — BEFORE pick-lab (plab_flow_leader/plab_flow_washout consume
+          # leaders.json artifact). Reads flow_store/tape_flow/chains/options-entry stores;
+          # writes site/flowleaders/leaders.json + renders site/flow_leaders.html.
+          # Display-only; exit 0 always; never breaks the render.
+          run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders
           # Pick Lab nightly runner — AFTER build_stock_board_v2 (producer-core snapshot already
           # written by build_stock_library, which runs inside build_site above). Enriches the
-          # snapshot from tonight's regime/latest.json, fires all 23 books with refire lockout,
+          # snapshot from tonight's regime/latest.json, fires all 25 books with refire lockout,
           # grades matured picks from the breadth close caches, computes scoreboards, and writes
           # site/labdata/pick_lab.json + pick_lab_longhold.json + renders site/us_stocks_lab.html.
           # Outputs are covered by the existing `git add data/ site/` commit step.
@@ -802,6 +807,7 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
           python -m scripts.mirror_flow_idx || echo "::warning::flow_idx R2 mirror failed (non-fatal)"
+          python -m scripts.mirror_flow_idx --leaders || echo "::warning::flow leaders R2 mirror failed (non-fatal)"
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes

@@ -692,6 +692,139 @@ def _book_lh_washout_survivor(df: pd.DataFrame, book: dict) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------- #
+# Family G — Flow Leaders books (FL-R8)
+# These books read from site/flowleaders/leaders.json (already built by
+# build_flow_leaders before build_pick_lab runs) rather than the snapshot.
+# Fire eligibility is pre-computed in leaders.json (fire_a / fire_b flags);
+# build_pick_lab consumes the artifact, does NOT recompute legs (FL-R8 law).
+# ---------------------------------------------------------------------------- #
+
+def _load_leaders_json() -> list[dict]:
+    """Load site/flowleaders/leaders.json; return board rows list."""
+    try:
+        from lib import config as _cfg  # noqa: PLC0415
+        root = _cfg.ROOT
+        p = root / _cfg.load()["storage"]["site_dir"] / "flowleaders" / "leaders.json"
+        if not p.exists():
+            return []
+        import json  # noqa: PLC0415
+        d = json.loads(p.read_text())
+        # Combine board_a (for fire_a) and board_b (for fire_b) — deduplicated by caller
+        return d.get("board_a", []) + d.get("board_b", [])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("pick_lab flow_leader: leaders.json load failed: %s", exc)
+        return []
+
+
+def _book_flow_leader(df: pd.DataFrame, book: dict) -> list[dict]:
+    """plab_flow_leader — Board A fire candidates from leaders.json.
+
+    Reads fire_a=True rows from site/flowleaders/leaders.json.
+    Ranks by recurrence_count desc (max 12 picks per max_picks).
+    PIT law: fire_date = leaders.json as_of (set in build_pick_lab caller).
+    """
+    rows = _load_leaders_json()
+    if not rows:
+        return []
+
+    fired = [r for r in rows if r.get("fire_a") is True]
+    if not fired:
+        return []
+
+    # Sort by recurrence_count desc (ties: net_prem_norm_abs desc)
+    fired.sort(key=lambda r: (
+        -(r.get("recurrence_count") or 0) if r.get("recurrence_count") is not None else 1,
+        -(r.get("net_prem_norm_abs") or 0),
+    ))
+    fired = fired[:book["max_picks"]]
+
+    # Apply liquidity filter from snapshot if ticker is present
+    picks = []
+    for rank, r in enumerate(fired, 1):
+        ticker = r.get("ticker")
+        if not ticker:
+            continue
+        close = None
+        if ticker in df.index:
+            try:
+                close = _col(df, "close", ticker)
+                if close is not None and float(close) < _LIQ_CLOSE_MIN:
+                    continue  # skip illiquid
+            except Exception:  # noqa: BLE001
+                pass
+        picks.append({
+            "ticker": ticker,
+            "rank": rank,
+            "close": close,
+            "sector": _col(df, "sector", ticker) if ticker in df.index else None,
+            "liq_unknown": ticker not in df.index,
+            "why": ["flow_recur", "fire_a"],
+            "features": {
+                "recurrence_count": r.get("recurrence_count"),
+                "flow_z": r.get("flow_z"),
+                "K_a": r.get("K_a"),
+                "n_avail_a": r.get("n_avail_a"),
+                "signing_source": r.get("signing_source"),
+            },
+            "authority": "display_only",
+        })
+    return picks
+
+
+def _book_flow_washout(df: pd.DataFrame, book: dict) -> list[dict]:
+    """plab_flow_washout — Board B fire candidates from leaders.json.
+
+    Reads fire_b=True rows from site/flowleaders/leaders.json.
+    Ranks by days_since_inflection asc (most recent first, max 12 picks).
+    Ruler: 21d_abs_reversion_capture_mfe_mae (FL-R8).
+    Distinct from KILLED washout×2W-turn (#1747 ESXA3-FV-C): no 2W legs here.
+    """
+    rows = _load_leaders_json()
+    if not rows:
+        return []
+
+    fired = [r for r in rows if r.get("fire_b") is True]
+    if not fired:
+        return []
+
+    # Sort by days_since_inflection asc (None last)
+    fired.sort(key=lambda r: (
+        r.get("days_since_inflection") if r.get("days_since_inflection") is not None else 9999,
+    ))
+    fired = fired[:book["max_picks"]]
+
+    picks = []
+    for rank, r in enumerate(fired, 1):
+        ticker = r.get("ticker")
+        if not ticker:
+            continue
+        close = None
+        if ticker in df.index:
+            try:
+                close = _col(df, "close", ticker)
+                if close is not None and float(close) < _LIQ_CLOSE_MIN:
+                    continue
+            except Exception:  # noqa: BLE001
+                pass
+        picks.append({
+            "ticker": ticker,
+            "rank": rank,
+            "close": close,
+            "sector": _col(df, "sector", ticker) if ticker in df.index else None,
+            "liq_unknown": ticker not in df.index,
+            "why": ["flow_inflect", "washout", "fire_b"],
+            "features": {
+                "days_since_inflection": r.get("days_since_inflection"),
+                "K_b": r.get("K_b"),
+                "n_avail_b": r.get("n_avail_b"),
+                "signing_source": r.get("signing_source"),
+            },
+            "authority": "display_only",
+        })
+    return picks
+
+
+# ---------------------------------------------------------------------------- #
 # Dispatch table
 # ---------------------------------------------------------------------------- #
 
@@ -719,6 +852,9 @@ _BOOK_FUNCS: dict[str, object] = {
     "plab_lh_compounder":        _book_lh_compounder,
     "plab_lh_edge_durability":   _book_lh_edge_durability,
     "plab_lh_washout_survivor":  _book_lh_washout_survivor,
+    # Family G — Flow Leaders (FL-R8): artifact-sourced books (bypass snap-based filter)
+    "plab_flow_leader":          _book_flow_leader,
+    "plab_flow_washout":         _book_flow_washout,
 }
 
 

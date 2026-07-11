@@ -25,6 +25,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | entry-stack-expansion | 2 |
 | factor-intelligence | 5 |
 | fast-turn | 4 |
+| flow-leaders-desk | 2 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | institutional-sector-intelligence | 2 |
@@ -75,7 +76,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 219 |
+| display | 221 |
 | infrastructure | 88 |
 | scored | 4 |
 | shadow | 63 |
@@ -84,7 +85,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 358 |
+| git | 360 |
 | gitignored-local | 10 |
 | r2 | 6 |
 
@@ -246,6 +247,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | basket-turn-cohort-claims-log | `data/basket_turn/cohort_claims_log.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | basket-turn-cohort-grades | `data/basket_turn/cohort_grades.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | tape-disagreement-ledger | `data/basket_turn/disagreement_ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+
+### flow-leaders-desk
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-flow-leaders | `site/flowleaders/leaders.json` | json | daily-engine | display | 2 | 0 |
+| site-flow-leaders-page | `site/flow_leaders.html` | html | daily-engine | display | 0 | 0 |
 
 ### hk-canada
 
