@@ -1,11 +1,11 @@
 {
   "schema": "claim_accountability.v1",
-  "generated_at": "2026-07-11T04:23:26.129922+00:00",
+  "generated_at": "2026-07-11T10:38:32.786737+00:00",
   "global": {
-    "n_claims": 12726,
+    "n_claims": 12786,
     "n_grades": 6716,
     "n_with_falsifier": 146,
-    "falsifier_coverage": 0.011473,
+    "falsifier_coverage": 0.011419,
     "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure"
   },
   "by_desk": {
@@ -155,11 +155,11 @@
       }
     },
     "intel_hub": {
-      "n_claims": 60,
+      "n_claims": 120,
       "falsifier_coverage": 0.0,
       "n_with_falsifier": 0,
-      "hit_gradeable_share": 1.0,
-      "n_hit_gradeable": 60,
+      "hit_gradeable_share": 0.983333,
+      "n_hit_gradeable": 118,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
         "graded_5d_count": 0,
@@ -476,11 +476,11 @@
       }
     },
     "intel_hub": {
-      "n_claims": 60,
+      "n_claims": 120,
       "falsifier_coverage": 0.0,
       "n_with_falsifier": 0,
-      "hit_gradeable_share": 1.0,
-      "n_hit_gradeable": 60,
+      "hit_gradeable_share": 0.983333,
+      "n_hit_gradeable": 118,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
         "graded_5d_count": 0,
@@ -651,7 +651,7 @@
     }
   },
   "track_record_ref": {
-    "generated_at": "2026-07-11T04:23:14.404636+00:00",
+    "generated_at": "2026-07-11T10:38:21.219635+00:00",
     "grade_horizons": [
       5,
       21,

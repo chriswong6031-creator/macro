@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-11T04:23:26.181072+00:00",
+  "generated_at": "2026-07-11T10:38:32.837092+00:00",
   "as_of": "2026-07-11",
   "absent_stores": [],
   "feature_coverage": {
@@ -57,9 +57,9 @@
       },
       {
         "feature": "doi_pc",
-        "n_nonnull": 329,
+        "n_nonnull": 319,
         "n_total": 403,
-        "share_nonnull": 0.8164
+        "share_nonnull": 0.7916
       },
       {
         "feature": "fresh_contracts",
@@ -69,9 +69,9 @@
       },
       {
         "feature": "fresh_premium_mn",
-        "n_nonnull": 319,
+        "n_nonnull": 318,
         "n_total": 403,
-        "share_nonnull": 0.7916
+        "share_nonnull": 0.7891
       },
       {
         "feature": "zerodte_share",
@@ -167,8 +167,8 @@
     "ticker_coverage": {
       "n_tickers": 403,
       "n_rows": 403,
-      "n_tickers_ge75pct_features": 364,
-      "n_tickers_50to74pct_features": 26,
+      "n_tickers_ge75pct_features": 366,
+      "n_tickers_50to74pct_features": 24,
       "n_tickers_lt50pct_features": 13
     }
   },
@@ -383,8 +383,8 @@
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-07-10 08:52 UTC",
-          "age_days_from_today": 1,
+          "latest_as_of": "2026-07-11 08:35 UTC",
+          "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
@@ -397,7 +397,7 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-11T04:23:26.144629+00:00",
+      "generated_at": "2026-07-11T10:38:32.801456+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -407,7 +407,7 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-11T04:23:26.181065+00:00",
+    "generated_at_utc": "2026-07-11T10:38:32.837085+00:00",
     "as_of": "2026-07-11",
     "absent_stores": []
   }
