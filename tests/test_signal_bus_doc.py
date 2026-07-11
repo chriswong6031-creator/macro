@@ -73,9 +73,10 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 376, (
-        f"Expected 376 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 378, (
+        f"Expected 378 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (IGN WB added ignition-radar-latest, ignition-log-us = 376->378;"
         " (FL W2 added site-flow-leaders, site-flow-leaders-page = 374->376;"
         " NW read layer added neuralweb-market-plane, site-neuralweb-market-plane,"
         " site-neuralweb-health-history, site-neuralweb-governance-recent,"
