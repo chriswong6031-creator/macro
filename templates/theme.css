@@ -944,6 +944,113 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   .lst-wrap:has(.lst-collapse.lst-cap4 > :nth-child(5)) > .lst-more { display:block; }
 }
 
+/* ---- List overlay (theme.js initListOverlay) -------------------------------------
+   Replaces the in-flow "Show more" expansion on every .lst-wrap list: theme.js restyles
+   the .lst-more button into a quiet "View all N" pill (.lst-viewall) and a click MOVES
+   the live .lst-collapse node into a centered modal instead of unfolding it in place
+   (a 40-row lane expanded in-flow made the column ~4 pages tall). The list node itself
+   is relocated — bilingual l-en/l-zh spans, delegated handlers and row popovers keep
+   working inside the modal — and is returned to its placeholder on close. The native
+   scrollbar is hidden and replaced by a JS-driven thumb (.lst-ovl-sb) because macOS
+   overlay scrollbars auto-hide and ignore ::-webkit-scrollbar styling entirely. */
+.lst-more.lst-viewall { width:fit-content; padding:4px 12px; margin:8px auto 2px;
+  font-size:11px; border-radius:999px; background:transparent; }
+.lst-more.lst-viewall .lst-va-arr { opacity:.6; margin-left:2px; }
+.lst-more.lst-viewall:hover .lst-va-arr { opacity:1; }
+.lst-ovl { position:fixed; inset:0; z-index:10500; display:flex; align-items:center;
+  justify-content:center; padding:20px;
+  background:color-mix(in srgb, var(--bg) 60%, transparent);
+  backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+  opacity:0; pointer-events:none; transition:opacity .16s ease; }
+.lst-ovl.is-open { opacity:1; pointer-events:auto; }
+.lst-ovl-modal { width:min(660px, 94vw); max-height:78vh; display:flex; flex-direction:column;
+  background:var(--panel); border:1px solid var(--line); border-radius:14px;
+  box-shadow:0 28px 90px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.3);
+  transform:translateY(10px) scale(.985); transition:transform .18s cubic-bezier(.2,.7,.3,1);
+  overflow:hidden; outline:none; }
+.lst-ovl.is-open .lst-ovl-modal { transform:none; }
+@media (prefers-reduced-motion:reduce) { .lst-ovl, .lst-ovl-modal { transition:none; } }
+.lst-ovl-hd { --lane:var(--muted); position:relative; display:flex; align-items:flex-start;
+  gap:10px; padding:14px 16px 11px; border-bottom:1px solid var(--line); }
+.lst-ovl-hd::before { content:""; position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg, var(--lane), transparent 70%); }
+.lst-ovl-title { font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--lane); line-height:1.3; }
+.lst-ovl-count { margin-left:6px; font-size:11px; font-weight:600; color:var(--muted);
+  background:var(--panel2); border:1px solid var(--line); border-radius:999px;
+  padding:1px 8px; vertical-align:1px; }
+.lst-ovl-sub { display:block; margin-top:2px; font-size:11px; font-weight:400; letter-spacing:0;
+  text-transform:none; color:var(--muted); }
+.lst-ovl-x { margin-left:auto; flex:none; width:28px; height:28px; border-radius:8px;
+  border:1px solid transparent; background:transparent; color:var(--muted);
+  font:inherit; font-size:15px; line-height:1; cursor:pointer; }
+.lst-ovl-x:hover { background:var(--panel2); color:var(--text); border-color:var(--line); }
+.lst-ovl-bodywrap { position:relative; flex:1; min-height:0; display:flex; }
+.lst-ovl-body { flex:1; overflow-y:auto; overscroll-behavior:contain;
+  padding:6px 18px 12px 16px; scrollbar-width:none; -ms-overflow-style:none; }
+.lst-ovl-body::-webkit-scrollbar { display:none; }
+.lst-ovl-sb { position:absolute; top:8px; right:5px; bottom:8px; width:5px; border-radius:3px;
+  background:color-mix(in srgb, var(--muted) 12%, transparent); }
+.lst-ovl-sb-thumb { position:absolute; left:0; width:100%; border-radius:3px;
+  background:color-mix(in srgb, var(--muted) 55%, transparent); cursor:grab; }
+.lst-ovl-sb-thumb:hover, .lst-ovl-sb-thumb.is-drag {
+  background:color-mix(in srgb, var(--muted) 80%, transparent); }
+.lst-ovl-ft { padding:9px 16px; font-size:10.5px; color:var(--muted);
+  border-top:1px solid var(--line); display:flex; gap:12px; justify-content:space-between; }
+body.lst-ovl-lock { overflow:hidden; }
+/* transitional: the US action board's page-local .act-pop (z 9999) must clear the
+   overlay until the follow-up PR replaces it with the shared .row-pop engine */
+body.lst-ovl-lock .act-pop { z-index:12000; }
+/* rows breathe a little more inside the modal than in a packed column */
+.lst-ovl-body > .lst-collapse > * { border-bottom:1px solid
+  color-mix(in srgb, var(--line) 60%, transparent); padding-top:8px; padding-bottom:9px; }
+.lst-ovl-body > .lst-collapse > :last-child { border-bottom:0; }
+
+/* ---- Row conditions popover (theme.js initRowPop) --------------------------------
+   Shared hover/focus card for board rows: any element with [data-rpop] and a hidden
+   .rp-src child gets a body-appended fixed popover built from a CLONE of that child
+   (dual-span l-en/l-zh content — the [data-lang] CSS picks the language, so it
+   live-updates on toggle). Unlike the retired page-local .act-pop engine, the card
+   itself is hoverable (grace timers bridge the gap), scrolling REPOSITIONS instead of
+   dismissing, and keyboard focus opens it. z-index sits above the list overlay so
+   cards work on rows inside the modal. */
+.row-pop { position:fixed; z-index:12000; width:360px; max-width:min(92vw, 400px);
+  background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  box-shadow:0 18px 60px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.25);
+  font-size:12px; color:var(--text); }
+.row-pop-hd { display:flex; align-items:center; gap:8px; padding:11px 13px 9px; flex-wrap:wrap; }
+.row-pop-name { font-weight:700; font-size:13px; color:var(--text); }
+.row-pop-kind { font-size:9.5px; font-weight:600; letter-spacing:.08em; padding:2px 7px;
+  border-radius:999px; color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+.row-pop-tag { margin-left:auto; font-size:10px; font-weight:700; letter-spacing:.05em;
+  padding:2px 8px; border-radius:6px; color:var(--muted); background:var(--panel2);
+  border:1px solid var(--line); }
+.row-pop-tag.up   { color:var(--up);   background:color-mix(in srgb, var(--up) 12%, transparent);
+  border-color:color-mix(in srgb, var(--up) 35%, transparent); }
+.row-pop-tag.dn   { color:var(--down); background:color-mix(in srgb, var(--down) 10%, transparent);
+  border-color:color-mix(in srgb, var(--down) 32%, transparent); }
+.row-pop-tag.warn { color:var(--warn); background:color-mix(in srgb, var(--warn) 10%, transparent);
+  border-color:color-mix(in srgb, var(--warn) 32%, transparent); }
+.row-pop-div { height:1px; background:var(--line); margin:0 13px; }
+.row-pop-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px 14px; padding:10px 13px; }
+.row-pop-cell { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.row-pop-cell.wide { grid-column:1 / -1; }
+.row-pop-lbl { font-size:9.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.row-pop-val { font-size:12px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
+.row-pop-val .up  { color:var(--up); }
+.row-pop-val .dn  { color:var(--down); }
+.row-pop-val .mut { color:var(--muted); font-weight:400; }
+.row-pop-bar { height:3px; border-radius:2px; background:var(--panel2); margin-top:3px;
+  position:relative; overflow:hidden; }
+.row-pop-bar i { position:absolute; top:0; bottom:0; left:0; border-radius:2px; background:currentColor; }
+.row-pop-why { margin:0; padding:2px 13px 10px; }
+.row-pop-why li { list-style:none; position:relative; padding-left:12px; margin:3px 0;
+  font-size:11px; color:var(--muted); line-height:1.45; }
+.row-pop-why li::before { content:"·"; position:absolute; left:2px; }
+.row-pop-ft { padding:7px 13px 9px; border-top:1px solid var(--line); font-size:9.5px;
+  color:var(--muted); display:flex; justify-content:space-between; gap:10px; }
+.rp-src { display:none !important; }
+
 /* ==== Act-Now v2 four-lane board (W8-R3, china_stocks.html) ================
    anv2-board: stocks-mode only; macro-panel keeps legacy actcol.
    Lane accent: buy=green, pull=blue, bot=amber, red=red.
@@ -1068,7 +1175,9 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
    active language ever shows. Body-level + fixed → no card overflow clipping. */
 [data-tip-en] { cursor: help; }
 .i18n-tip-pop {
-  display: none; position: fixed; z-index: 9000;
+  /* above .row-pop (12000): a chip tip opened from inside a row must not vanish
+     behind that row's own conditions card */
+  display: none; position: fixed; z-index: 12500;
   max-width: min(320px, calc(100vw - 24px));
   padding: 7px 10px; border-radius: 8px;
   background: var(--panel); border: 1px solid var(--line);

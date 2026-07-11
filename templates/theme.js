@@ -2145,6 +2145,278 @@
     });
   }
 
+  /* ---- list overlay (.lst-wrap → "View all N" pill → modal) ------------------------
+     Supersedes the in-flow expansion above for every .lst-wrap list: the .lst-more
+     button is restyled into a quiet "View all N" pill and a click MOVES the live
+     .lst-collapse node into a centered modal (custom JS scrollbar) instead of
+     unfolding 30+ rows in place. Capture-phase handler outruns the legacy
+     initListCollapse toggle, which stays untouched as the no-JS / failure fallback.
+     The list node is returned to a placeholder on close, so page JS that owns those
+     nodes (renderActNow re-renders, langchange rebuilds) keeps working; langchange
+     force-closes the overlay first because some pages rebuild the source DOM. */
+  function initListOverlay() {
+    if (window.__lstOvlBound) return;
+    window.__lstOvlBound = true;
+    var ovl = null, homeMark = null, movedList = null, lastTrigger = null;
+
+    function bl(en, zh) {
+      return '<span class="l-en">' + en + '</span><span class="l-zh">' + zh + '</span>';
+    }
+
+    // Title / subtitle / accent colour for the modal header. Templates can override via
+    // data-ovl-title-en/-zh + data-ovl-accent on any ancestor; otherwise the nearest
+    // heading is mined (dual-span aware) and its colour becomes the accent strip.
+    function laneMeta(wrap) {
+      var scope = wrap.closest('[data-ovl-title-en]');
+      if (scope) {
+        return { en: scope.getAttribute('data-ovl-title-en'),
+                 zh: scope.getAttribute('data-ovl-title-zh') || scope.getAttribute('data-ovl-title-en'),
+                 accent: scope.getAttribute('data-ovl-accent') || '', subEn: '', subZh: '' };
+      }
+      var lane = wrap.closest('.anv2-lane') || wrap.closest('.actcol') || wrap.closest('.panel') || wrap;
+      var h = lane.querySelector('.anv2-lane-title, .acth-name, h2, h3, h4');
+      var strip = function (s) { return (s || '').replace(/[（(]\d+[）)]/g, '').trim(); };
+      var en = '', zh = '';
+      if (h) {
+        var eEn = h.querySelector('.l-en'), eZh = h.querySelector('.l-zh');
+        en = strip(eEn ? eEn.textContent : h.textContent);
+        zh = strip(eZh ? eZh.textContent : en);
+      }
+      var sub = lane.querySelector('.anv2-lane-sub, .acth-sub');
+      var sEn = sub && sub.querySelector('.l-en'), sZh = sub && sub.querySelector('.l-zh');
+      return { en: en || 'All items', zh: zh || '全部条目',
+               accent: h ? window.getComputedStyle(h).color : '',
+               subEn: sEn ? sEn.textContent.trim() : '', subZh: sZh ? sZh.textContent.trim() : '' };
+    }
+
+    function buildOverlay() {
+      if (ovl) return ovl;
+      ovl = document.createElement('div');
+      ovl.className = 'lst-ovl';
+      ovl.innerHTML =
+        '<div class="lst-ovl-modal" role="dialog" aria-modal="true" tabindex="-1">'
+        + '<div class="lst-ovl-hd"><div class="lst-ovl-title"><span class="lst-ovl-t"></span>'
+        + '<span class="lst-ovl-count"></span><span class="lst-ovl-sub"></span></div>'
+        + '<button type="button" class="lst-ovl-x" aria-label="Close">✕</button></div>'
+        + '<div class="lst-ovl-bodywrap"><div class="lst-ovl-body"></div>'
+        + '<div class="lst-ovl-sb" aria-hidden="true"><div class="lst-ovl-sb-thumb"></div></div></div>'
+        + '<div class="lst-ovl-ft"><span class="lst-ovl-hint"></span><span class="lst-ovl-asof"></span></div>'
+        + '</div>';
+      document.body.appendChild(ovl);
+      ovl.addEventListener('click', function (e) {
+        if (e.target === ovl || (e.target.closest && e.target.closest('.lst-ovl-x'))) closeOverlay();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && ovl.classList.contains('is-open')) closeOverlay();
+      });
+      // pages that rebuild their DOM on language toggle would strand the moved node
+      document.addEventListener('langchange', function () {
+        if (ovl.classList.contains('is-open')) closeOverlay();
+      });
+      wireScrollbar();
+      return ovl;
+    }
+
+    function wireScrollbar() {
+      var body = ovl.querySelector('.lst-ovl-body');
+      var track = ovl.querySelector('.lst-ovl-sb');
+      var thumb = ovl.querySelector('.lst-ovl-sb-thumb');
+      var raf = 0;
+      function sync() {
+        raf = 0;
+        var sh = body.scrollHeight, ch = body.clientHeight;
+        if (sh <= ch + 1) { track.style.display = 'none'; return; }
+        track.style.display = '';
+        var h = Math.max(28, ch * ch / sh);
+        thumb.style.height = h + 'px';
+        thumb.style.transform =
+          'translateY(' + (body.scrollTop / (sh - ch) * (track.clientHeight - h)) + 'px)';
+      }
+      function queue() { if (!raf) raf = requestAnimationFrame(sync); }
+      body.addEventListener('scroll', queue, { passive: true });
+      if (window.ResizeObserver) new ResizeObserver(queue).observe(body);
+      thumb.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        thumb.classList.add('is-drag');
+        var startY = e.clientY, startTop = body.scrollTop;
+        function mv(ev) {
+          var span = track.clientHeight - thumb.clientHeight;
+          if (span > 0) {
+            body.scrollTop = startTop
+              + (ev.clientY - startY) / span * (body.scrollHeight - body.clientHeight);
+          }
+        }
+        function up() {
+          thumb.classList.remove('is-drag');
+          document.removeEventListener('pointermove', mv);
+          document.removeEventListener('pointerup', up);
+        }
+        document.addEventListener('pointermove', mv);
+        document.addEventListener('pointerup', up);
+      });
+      ovl.__syncSb = queue;
+    }
+
+    function openOverlay(wrap, list, trigger) {
+      buildOverlay();
+      if (movedList) closeOverlay();               // only one open at a time
+      var meta = laneMeta(wrap);
+      var n = list.children.length;
+      ovl.querySelector('.lst-ovl-t').innerHTML = bl(meta.en, meta.zh);
+      ovl.querySelector('.lst-ovl-count').textContent = n;
+      ovl.querySelector('.lst-ovl-sub').innerHTML = bl(meta.subEn, meta.subZh);
+      if (meta.accent) ovl.querySelector('.lst-ovl-hd').style.setProperty('--lane', meta.accent);
+      else ovl.querySelector('.lst-ovl-hd').style.removeProperty('--lane');
+      ovl.querySelector('.lst-ovl-hint').innerHTML =
+        bl('Esc or click outside to close', '按 Esc 或点击外部关闭');
+      homeMark = document.createComment('lst-ovl-home');
+      list.parentNode.insertBefore(homeMark, list);
+      ovl.querySelector('.lst-ovl-body').appendChild(list);
+      list.classList.remove('is-collapsed');
+      movedList = list; lastTrigger = trigger;
+      document.body.classList.add('lst-ovl-lock');
+      ovl.classList.add('is-open');
+      ovl.querySelector('.lst-ovl-body').scrollTop = 0;
+      ovl.__syncSb();
+      ovl.querySelector('.lst-ovl-modal').focus({ preventScroll: true });
+    }
+
+    function closeOverlay() {
+      if (!ovl || !movedList) return;
+      movedList.classList.add('is-collapsed');
+      if (homeMark && homeMark.parentNode) {
+        homeMark.parentNode.replaceChild(movedList, homeMark);
+      } else {
+        movedList.remove();  // home was rebuilt under us (langchange re-render) — drop the node
+      }
+      movedList = null; homeMark = null;
+      ovl.classList.remove('is-open');
+      document.body.classList.remove('lst-ovl-lock');
+      if (lastTrigger && lastTrigger.isConnected) {
+        try { lastTrigger.focus({ preventScroll: true }); } catch (err) { /* detached */ }
+      }
+      lastTrigger = null;
+    }
+
+    // Restyle every .lst-more into the pill; recount on every pass so lists injected or
+    // re-rendered after boot (renderActNow, langchange rebuilds) update their label.
+    function upgrade() {
+      document.querySelectorAll('.lst-wrap').forEach(function (wrap) {
+        var btn = null, list = null, i;
+        for (i = 0; i < wrap.children.length; i++) {
+          if (wrap.children[i].classList.contains('lst-more')) btn = wrap.children[i];
+        }
+        list = wrap.querySelector('.lst-collapse');
+        if (!btn || !list) return;
+        var n = list.children.length;
+        if (btn.dataset.ovlN === String(n)) return;   // idempotent per count
+        btn.dataset.ovlN = String(n);
+        btn.classList.add('lst-viewall');
+        btn.setAttribute('aria-haspopup', 'dialog');
+        btn.innerHTML = bl('View all ' + n, '查看全部 ' + n)
+          + ' <span class="lst-va-arr" aria-hidden="true">↗</span>';
+      });
+    }
+
+    // Capture-phase click: open the overlay INSTEAD of the legacy in-flow expansion.
+    document.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('.lst-more') : null;
+      if (!btn) return;
+      var wrap = btn.closest('.lst-wrap');
+      var list = wrap && wrap.querySelector('.lst-collapse');
+      if (!list) return;                            // malformed instance → legacy handler's problem
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      openOverlay(wrap, list, btn);
+    }, true);
+
+    upgrade();
+    var mo = new MutationObserver(function () {
+      if (mo.__raf) return;
+      mo.__raf = requestAnimationFrame(function () { mo.__raf = 0; upgrade(); });
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener('langchange', upgrade);
+  }
+
+  /* ---- row conditions popover ([data-rpop] rows / hidden .rp-src payload) ----------
+     Shared engine for the board-row hover cards (replaces the page-local .act-pop
+     IIFE that shipped with the US action board). Fixes the four verified defects of
+     that engine: the card is now itself hoverable (grace timers bridge the row→card
+     gap), scrolling REPOSITIONS the card instead of dismissing it, height is measured
+     from the in-document clone (dual-span content sized by the [data-lang] CSS, so
+     the flip threshold is honest), and keyboard focus opens it. Touch is left alone:
+     rows are links and the first tap must keep navigating. */
+  function initRowPop() {
+    if (window.__rowPopBound) return;
+    window.__rowPopBound = true;
+    var pop = document.createElement('div');
+    pop.className = 'row-pop';
+    pop.setAttribute('role', 'tooltip');
+    pop.hidden = true;
+    document.body.appendChild(pop);
+    var cur = null, openT = 0, closeT = 0;
+
+    function place(row) {
+      var r = row.getBoundingClientRect();
+      var pw = pop.offsetWidth, ph = pop.offsetHeight;
+      var vw = window.innerWidth, vh = window.innerHeight, m = 10, gap = 12;
+      var x, y = r.top;
+      if (r.right + gap + pw <= vw - m) x = r.right + gap;            // prefer right of row
+      else if (r.left - gap - pw >= m) x = r.left - gap - pw;         // flip left
+      else { x = Math.max(m, Math.min(r.left, vw - pw - m)); y = r.bottom + 8; }  // stack below
+      if (y + ph > vh - m) y = Math.max(m, vh - ph - m);              // clamp vertically
+      pop.style.left = x + 'px';
+      pop.style.top = y + 'px';
+    }
+
+    function open(row) {
+      var src = row.querySelector('.rp-src');
+      if (!src) return;
+      cur = row;
+      pop.textContent = '';
+      pop.appendChild(src.cloneNode(true));   // clone keeps l-en/l-zh spans live for CSS
+      pop.hidden = false;
+      pop.style.visibility = 'hidden';
+      place(row);                             // measured AFTER content is in-document
+      pop.style.visibility = '';
+    }
+
+    function close() { pop.hidden = true; cur = null; }
+    function scheduleClose(ms) {
+      clearTimeout(closeT);
+      closeT = setTimeout(close, ms);
+    }
+
+    document.addEventListener('pointerover', function (e) {
+      if (!e.target || !e.target.closest) return;
+      var row = e.target.closest('[data-rpop]');
+      if (row) {
+        clearTimeout(closeT); clearTimeout(openT);
+        if (row !== cur) openT = setTimeout(function () { open(row); }, 70);
+        return;
+      }
+      if (!pop.hidden && e.target.closest('.row-pop')) { clearTimeout(closeT); return; }
+      if (cur || openT) { clearTimeout(openT); openT = 0; if (cur) scheduleClose(160); }
+    });
+    document.addEventListener('pointerout', function (e) {
+      if (!e.relatedTarget && cur) scheduleClose(160);   // pointer left the window
+    });
+    document.addEventListener('scroll', function () {
+      if (pop.hidden || !cur) return;
+      var r = cur.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight || !cur.isConnected) { close(); return; }
+      place(cur);                                        // follow the row, don't dismiss
+    }, { passive: true, capture: true });
+    window.addEventListener('resize', function () { if (cur) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    document.addEventListener('focusin', function (e) {
+      var row = e.target && e.target.closest && e.target.closest('[data-rpop]');
+      if (row) { clearTimeout(closeT); open(row); }
+      else if (cur && !(e.target.closest && e.target.closest('.row-pop'))) scheduleClose(0);
+    });
+  }
+
   /* ---- progressive "show more" for card grids ------------------------------
      Two collapse modes on any grid, chosen by attribute:
        • [data-showmore="N"]      — show N cards, reveal N more per click (fixed count).
@@ -2371,6 +2643,8 @@
     initShowMore();
     pinBoardTrackToggle();
     initListCollapse();
+    initListOverlay();
+    initRowPop();
     themeCharts();
   });
   // charts may finish drawing after DOMContentLoaded; re-theme once more on load
