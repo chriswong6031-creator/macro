@@ -10833,7 +10833,7 @@ artifacts:
 
   site-flow-leaders-page:
     path: site/flow_leaders.html
-    format: html
+    format: other
     producer: scripts/build_flow_leaders.py
     known_extra_writers: []
     owner_program: flow-leaders-desk

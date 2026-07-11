@@ -253,7 +253,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | site-flow-leaders | `site/flowleaders/leaders.json` | json | daily-engine | display | 2 | 0 |
-| site-flow-leaders-page | `site/flow_leaders.html` | html | daily-engine | display | 0 | 0 |
+| site-flow-leaders-page | `site/flow_leaders.html` | other | daily-engine | display | 0 | 0 |
 
 ### hk-canada
 
