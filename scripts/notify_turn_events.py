@@ -42,7 +42,9 @@ or dark-mode ticks.  The fastpath git add uses '|| true' to tolerate absence.
 
 COPY CONTRACT (FT-R13)
 -----------------------
-- State name, evidence legs, as-of, T+1 fade base rate inline.
+- State name, evidence legs, as-of, T+1 fade base rate inline — the fade rate
+  in plain words per docs/DESIGN_DOCTRINE.md Laws 2/3 (glance tier: no bare
+  percentages / n= / "display-tier" vocabulary; Tier-2 site tips hold the receipt).
 - No direction words: buy, sell, long, short, add, chase.
 - No alert may originate a signal, score, or escalation (A7 ORIGINATE ban).
 - Notification of already-computed display states ONLY.
@@ -96,8 +98,16 @@ _MTF_UPTURN_PATH = ROOT / "site" / "stockdata" / "mtf_upturn.json"
 # Copy constants (FT-R13 compliant)
 # ---------------------------------------------------------------------------
 
-# T+1 fade base rate from flip_confirmation lens (26 events, masterplan §0).
-_FADE_COPY = "violent flips fade 58% at T+1 (n=26)"
+# T+1 fade base rate from flip_confirmation lens (26 events, masterplan §0),
+# translated to plain words per docs/DESIGN_DOCTRINE.md Laws 2/3 — a push
+# notification is pure glance tier: no bare percentages, no n=, no internal
+# vocabulary ("display-tier", "expected-null", "forward meter"). The precise
+# receipt (58% fade at T+1, n=26) lives on Tier-2 site tips, not here.
+_FADE_COPY = "in 26 past cases about 6 in 10 sharp flips faded within a day"
+
+# Plain-word null disclosure (doctrine Law 5). Says "entry" not "buy": the
+# FT-R13 guard below word-boundary-matches "buy" even inside "not a buy signal".
+_HEADS_UP_COPY = "a heads-up, not an entry signal"
 
 # Forbidden words that must never appear in emitted copy.
 FORBIDDEN_WORDS = frozenset(["buy", "sell", "long", "short", "add", "chase"])
@@ -192,7 +202,7 @@ def _ignition_message(basket_id: str, legs: dict, as_of: str) -> str:
     """Build FT-R13-compliant IGNITION alert message.
 
     Format: "TURN-WATCH IGNITION — {basket} (K={k}: {leg names}) · as-of {date}
-             · display-tier, expected-null meter · {fade_copy}"
+             · {heads-up copy} — {fade copy}"
     No direction words (buy/sell/long/short/add/chase).
     """
     active_legs = [name for name, fired in legs.items() if fired]
@@ -202,8 +212,7 @@ def _ignition_message(basket_id: str, legs: dict, as_of: str) -> str:
         f"TURN-WATCH IGNITION — {basket_id} "
         f"(K={k}: {leg_str}) "
         f"· as-of {as_of} "
-        f"· display-tier, expected-null meter "
-        f"· {_FADE_COPY}"
+        f"· {_HEADS_UP_COPY} — {_FADE_COPY}"
     )
     _assert_no_forbidden_words(msg)
     return msg
@@ -215,7 +224,7 @@ def _shock_activation_message(score: Any, as_of: str, reason: str | None) -> str
     msg = (
         f"SHOCK ACTIVATION{reason_part} — repricing coherence score {score} "
         f"· as-of {as_of} "
-        f"· display-tier de-escalation: scores computed on pre-shock data "
+        f"· {_HEADS_UP_COPY}; scores shown were computed on pre-shock data "
         f"· {_FADE_COPY}"
     )
     _assert_no_forbidden_words(msg)
@@ -238,8 +247,7 @@ def _tape_disagreement_message(
         f"live tape {chg_str} "
         f"while slow state not in {{enter, accumulate}} "
         f"· as-of {tape_as_of} "
-        f"· display-tier, expected-null meter "
-        f"· {_FADE_COPY}"
+        f"· {_HEADS_UP_COPY} — {_FADE_COPY}"
     )
     _assert_no_forbidden_words(msg)
     return msg
@@ -266,7 +274,7 @@ def _mtf_upturn_cohort_message(
         f"MTF UPTURN CONFIRMED — {n} names ({preview_str})"
         f" | legs: D-MACD/3D-confluence/W-MACD/2W-MACD K-of-N"
         f" | as-of {as_of}"
-        f" | display-tier forward meter; {_FADE_COPY}"
+        f" | {_HEADS_UP_COPY}; {_FADE_COPY}"
     ]
 
     # Per-symbol detail lines (up to 10)
@@ -316,7 +324,7 @@ def _mtf_upturn_mag7_message(sym: str, k: int | str, legs: dict, as_of: str) -> 
         f"MTF UPTURN CONFIRMED — Mag7 member {sym} entered state"
         f" | K={k} [{glyphs_str}]"
         f" | as-of {as_of}"
-        f" | display-tier forward meter; {_FADE_COPY}"
+        f" | {_HEADS_UP_COPY}; {_FADE_COPY}"
     )
     _assert_no_forbidden_words(msg)
     return msg
