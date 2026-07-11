@@ -1,0 +1,136 @@
+name: metabolism-dream
+# Metabolism Phase V2-D (§3) — Weekly dream cycle.  INERT by default.
+#
+# Reads closed trial_ledger contracts + realized verify outcomes and writes
+# data/metabolism/preference_prior.json (advisory only, never gate-altering).
+#
+# Also triggers anti-rot resummary of lessons.jsonl when the file exceeds the
+# byte cap (LLM-assisted resummary — DISPLAY-TIER ONLY, never alters gates).
+#
+# INERTNESS: writes artifacts only (preference_prior.json + optional
+# lessons.jsonl resummary); dispatches nothing; no scored-surface writes.
+#
+# KILL SWITCH (R-AUT-2):
+#   gh variable set AUTONOMY_PAUSED --body true    # pause (default-safe)
+#   gh variable set AUTONOMY_PAUSED --body false   # arm (operator-only)
+# Absent OR anything other than the exact string 'false' → clean no-op.
+#
+# Double-gated: if: vars.AUTONOMY_PAUSED != 'true' in the job condition
+# AND metabolism_dream.py calls metabolism_guard.is_paused() as its first action.
+
+on:
+  schedule:
+    # Weekly Sunday 06:00 UTC — off nightly pipeline peak, off business hours.
+    - cron: "0 6 * * 0"
+  workflow_dispatch:
+    inputs:
+      today:
+        description: "Override today's date (YYYY-MM-DD)"
+        type: string
+        default: ""
+      dry_run:
+        description: "Print preference_prior instead of writing to disk"
+        type: boolean
+        default: false
+      force_run:
+        description: "Force even when AUTONOMY_PAUSED=true (ops verification only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # commit preference_prior.json + optional lessons resummary
+
+concurrency:
+  group: metabolism-dream
+  cancel-in-progress: false
+
+jobs:
+  dream:
+    # KILL SWITCH — absent variable → treated as paused (default-safe).
+    if: vars.AUTONOMY_PAUSED != 'true'
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - name: install deps
+        run: pip install --quiet pyyaml anthropic
+
+      - name: DREAM (preference_prior + anti-rot resummary)
+        env:
+          AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          FORCE_RUN: ${{ github.event.inputs.force_run }}
+          TODAY_INPUT: ${{ github.event.inputs.today }}
+          DRY_RUN_INPUT: ${{ github.event.inputs.dry_run }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+
+          # Runner-side pause re-check (double-gate: defends against race with var flip).
+          AP="$(printf '%s' "${AUTONOMY_PAUSED:-}" | tr '[:upper:]' '[:lower:]')"
+          FR="$(printf '%s' "${FORCE_RUN:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "$AP" != "false" ] && [ "$FR" != "true" ]; then
+            echo "AUTONOMY_PAUSED not 'false' (=${AUTONOMY_PAUSED:-<unset>}) — clean no-op."
+            exit 0
+          fi
+
+          DRY_RUN_FLAG=""
+          if [ "${DRY_RUN_INPUT:-false}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+
+          TODAY_FLAG=""
+          if [ -n "${TODAY_INPUT:-}" ]; then
+            TODAY_FLAG="--today ${TODAY_INPUT}"
+          fi
+
+          echo "dream cycle starting"
+          # shellcheck disable=SC2086
+          python -m scripts.metabolism_dream \
+            ${TODAY_FLAG} \
+            ${DRY_RUN_FLAG}
+
+      - name: commit + push dream artifacts (only on change)
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # Guard: only add files that exist (dry-run / paused no-op never writes them).
+          if [ -f data/metabolism/preference_prior.json ]; then
+            git add data/metabolism/preference_prior.json
+          fi
+          if [ -f data/metabolism/lessons.jsonl ]; then
+            git add data/metabolism/lessons.jsonl
+          fi
+          if git diff --cached --quiet; then
+            echo "no dream artifact changes — nothing to commit."
+            exit 0
+          fi
+          git commit -m "metabolism: DREAM cycle $(date -u +%FT%H:%MZ) [Phase V2-D]" \
+                     -m "Loop-Authored: dream run=${GITHUB_RUN_ID:-local}"
+          # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
+          # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
+          # refuses ("untracked working tree files would be overwritten") and --autostash can't
+          # clear it (it parks tracked modifications only), so every retry dies identically.
+          # Everything this step publishes is already committed above, so a path untracked HERE
+          # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
+          # Gitignored files and untracked paths origin/main doesn't track never enter the
+          # intersection (runner-local stores and caches are untouched).
+          git fetch origin main || true
+          comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                   <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+            | while IFS= read -r f; do rm -f -- "$f" || true; done
+          git pull --rebase --autostash -X theirs origin main && git push
