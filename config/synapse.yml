@@ -11008,3 +11008,53 @@ artifacts:
       for the leader_lifecycle hysteresis state machine. Single writer (build_leader_radar).
       Infrastructure store; drives hysteresis entry/exit counting and days_in_state anchoring.
       Not a signal authority surface. authority.may_rank/gate/size/escalate=false.
+
+  rs-series-store:
+    path: data/rs_series/
+    format: parquet
+    producer: scripts/build_leader_radar.py
+    known_extra_writers: []
+    owner_program: leader-radar
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: null
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_leader_radar.py
+    external_consumers: []
+    notes: >
+      LR W2a fix-round. Per-ticker RS-ratio series (close/SPY) stored as individual
+      parquet files under data/rs_series/<TICKER>.parquet. Full-history backfill on
+      first nightly run; append-only thereafter. Infrastructure store; drives rs_line_nh
+      chip inside leader_lifecycle. git-tracked to avoid untracked-store false-null
+      hazard across checkouts (~8.3MB initial). Single writer (build_leader_radar).
+      authority.may_rank/gate/size/escalate=false.
+
+  leader-radar-revisions-history:
+    path: data/leader_radar/revisions_history.parquet
+    format: parquet
+    producer: scripts/build_leader_radar.py
+    known_extra_writers: []
+    owner_program: leader-radar
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: null
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_leader_radar.py
+    external_consumers: []
+    notes: >
+      LR W2a fix-round. Dedup-append of data/revisions/latest.parquet rows keyed
+      (asof, ticker). Provides historical revisions context for rerating watch and
+      revision_positive chip. git-tracked to avoid untracked-store false-null hazard.
+      Single writer (build_leader_radar). authority.may_rank/gate/size/escalate=false.

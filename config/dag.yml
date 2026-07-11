@@ -284,7 +284,7 @@ lanes:
           Runs AFTER build_flow_leaders, BEFORE build_pick_lab (plab_leader_precipice /
           plab_leader_onset books consume radar.json). Absent stores → honest nulls;
           always exits 0 (never breaks the render).
-          outputs: [site/leaderradar/radar.json, data/leader_radar/state_history.parquet]
+          outputs: [site/leaderradar/radar.json, data/leader_radar/state_history.parquet, data/leader_radar/fire_log.parquet, data/leader_radar/revisions_history.parquet, data/rs_series/]
       - id: build_pick_lab
         module: scripts.build_pick_lab
         note: Pick Lab nightly runner — enriches snapshot, fires 27 books, grades, writes site/labdata/pick_lab.json + pick_lab_longhold.json + renders us_stocks_lab.html (never-break contract)

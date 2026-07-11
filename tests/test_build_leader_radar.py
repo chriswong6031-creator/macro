@@ -164,6 +164,7 @@ class TestRsSeriesDepth:
     """LR-R3: full-history backfill on first run — depth == ohlcv overlap depth."""
 
     def test_rs_depth_equals_ohlcv_on_first_run(self, tmp_path):
+        import os
         tickers = ["NVDA"]
         root = _build_fixture_root(tmp_path, tickers)
 
@@ -171,14 +172,16 @@ class TestRsSeriesDepth:
         rs_dir = root / "data" / "rs_series"
         assert not (rs_dir / "NVDA.parquet").exists()
 
-        # Run builder
+        # Run builder with COLLECT_LANE=nightly so data/ writes are enabled (HOUSE-U5)
         from scripts.build_leader_radar import build
+        env = {**os.environ, "COLLECT_LANE": "nightly"}
         with patch("lib.config.ROOT", root), \
              patch("lib.config.data_dir", lambda: root / "data"), \
              patch("lib.config.load", lambda: {
                  "storage": {"data_dir": "data", "site_dir": "site"},
                  "leader_radar": {"enabled": True, "basket_keys": ["mag7"], "dow30": []},
-             }):
+             }), \
+             patch.dict(os.environ, {"COLLECT_LANE": "nightly"}):
             build(data_root=root / "data", site_root=root / "site")
 
         assert (rs_dir / "NVDA.parquet").exists(), "rs_series not written"
@@ -199,6 +202,7 @@ class TestStateHistory:
     """state_history.parquet: both columns persisted + hysteresis across 3 nights."""
 
     def _run(self, root: Path, tickers: list[str]) -> dict:
+        import os
         from scripts.build_leader_radar import build
         from unittest.mock import patch
         with patch("lib.config.ROOT", root), \
@@ -206,7 +210,8 @@ class TestStateHistory:
              patch("lib.config.load", lambda: {
                  "storage": {"data_dir": "data", "site_dir": "site"},
                  "leader_radar": {"enabled": True, "basket_keys": ["mag7"], "dow30": []},
-             }):
+             }), \
+             patch.dict(os.environ, {"COLLECT_LANE": "nightly"}):
             return build(data_root=root / "data", site_root=root / "site")
 
     def test_state_history_written_on_first_run(self, tmp_path):
@@ -238,6 +243,55 @@ class TestStateHistory:
         df = pd.read_parquet(root / "data" / "leader_radar" / "state_history.parquet")
         # All 3 runs may write the same date (today), so dedup by date; at least 1 row
         assert len(df) >= 1
+
+
+class TestHouseU5Gate:
+    """m1 — HOUSE-U5: with COLLECT_LANE unset, site/ artifact is written but data/ stores are not."""
+
+    def _run_no_lane(self, root: Path, tickers: list[str]) -> dict:
+        """Run the builder without COLLECT_LANE (simulates intraday / dev run)."""
+        import os
+        from scripts.build_leader_radar import build
+        from unittest.mock import patch
+        # Ensure COLLECT_LANE and US_LANE are absent
+        env_patch = {k: "" for k in ("COLLECT_LANE", "US_LANE")}
+        with patch("lib.config.ROOT", root), \
+             patch("lib.config.data_dir", lambda: root / "data"), \
+             patch("lib.config.load", lambda: {
+                 "storage": {"data_dir": "data", "site_dir": "site"},
+                 "leader_radar": {"enabled": True, "basket_keys": ["mag7"], "dow30": []},
+             }), \
+             patch.dict(os.environ, env_patch, clear=False):
+            # Remove the vars entirely if they exist to simulate unset
+            saved = {}
+            for k in ("COLLECT_LANE", "US_LANE"):
+                if k in os.environ:
+                    saved[k] = os.environ.pop(k)
+            try:
+                return build(data_root=root / "data", site_root=root / "site")
+            finally:
+                os.environ.update(saved)
+
+    def test_site_artifact_written_without_lane(self, tmp_path):
+        """radar.json is always written (site/ ungated)."""
+        tickers = ["AAPL"]
+        root = _build_fixture_root(tmp_path, tickers)
+        self._run_no_lane(root, tickers)
+        artifact = root / "site" / "leaderradar" / "radar.json"
+        assert artifact.exists(), "radar.json should be written even without COLLECT_LANE"
+
+    def test_no_data_stores_written_without_lane(self, tmp_path):
+        """data/leader_radar/state_history, fire_log, and data/rs_series are NOT written without nightly lane."""
+        tickers = ["AAPL"]
+        root = _build_fixture_root(tmp_path, tickers)
+        self._run_no_lane(root, tickers)
+        # None of the data/ stores should exist
+        state_hist = root / "data" / "leader_radar" / "state_history.parquet"
+        fire_log = root / "data" / "leader_radar" / "fire_log.parquet"
+        rs_file = root / "data" / "rs_series" / "AAPL.parquet"
+        assert not state_hist.exists(), "state_history.parquet must not be written without nightly lane"
+        assert not fire_log.exists(), "fire_log.parquet must not be written without nightly lane"
+        assert not rs_file.exists(), "rs_series/AAPL.parquet must not be written without nightly lane"
 
 
 class TestFireRules:
@@ -542,3 +596,110 @@ class TestRegistryBookCount:
         for eid in ("plab_leader_precipice", "plab_leader_onset"):
             b = BY_ID[eid]
             assert b["ruler"] == "21d_spy_excess"
+
+
+class TestFireEntryEvents:
+    """m3 — Fire events are ENTRY events, not membership events.
+
+    Session 1 (seed): no prior history → fire_onset=False regardless of state.
+    Session 2: prior state=QUIET_ACCUMULATION, today=BREAKAWAY → fire_onset=True.
+    Session 3: prior state=BREAKAWAY, today=BREAKAWAY → fire_onset=False (held).
+    Refire lockout: re-fire blocked while held even past 21 sessions without de-escalation.
+    """
+
+    def _make_onset_assessment(self, state: str):
+        """Return a minimal LifecycleAssessment with given state."""
+        from engine.leader_lifecycle import LifecycleAssessment
+        return LifecycleAssessment(state=state, evidence={}, n_avail=0)
+
+    def _run_compute_fires(
+        self,
+        confirmed_state: str,
+        confirmed_history: list,
+        fire_dates: dict,
+    ) -> tuple[bool, bool]:
+        """Call _compute_fires via the builder module."""
+        from scripts.build_leader_radar import _compute_fires
+        from engine.leader_lifecycle import LifecycleAssessment, STATE_BREAKAWAY, STATE_CATALYST_WINDOW
+
+        assessment = LifecycleAssessment(
+            state=confirmed_state,
+            evidence={"revision_positive": True, "rs_line_nh": True},
+            n_avail=2,
+        )
+
+        if confirmed_history:
+            from engine.leader_lifecycle import LifecycleAssessment as _LA
+            prior_state = confirmed_history[-1][1]
+            proxy = [_LA(state=prior_state, evidence={}, n_avail=0)]
+        else:
+            proxy = []
+
+        return _compute_fires(
+            ticker="TEST",
+            assessment=assessment,
+            confirmed_state=confirmed_state,
+            confirmed_history=confirmed_history,
+            assessment_history=proxy,
+            fire_dates=fire_dates,
+            stale=False,
+        )
+
+    def test_seed_run_no_fire(self):
+        """Session 1: no prior history → fire_onset=False (entry unverifiable)."""
+        from engine.leader_lifecycle import STATE_BREAKAWAY
+        fire_p, fire_o = self._run_compute_fires(
+            confirmed_state=STATE_BREAKAWAY,
+            confirmed_history=[],  # seed run: no history
+            fire_dates={},
+        )
+        assert fire_o is False, "Seed run must never fire (no prior history)"
+        assert fire_p is False, "Seed run must never fire precipice (no prior history)"
+
+    def test_entry_fires_on_session2(self):
+        """Session 2: prior state != BREAKAWAY, today=BREAKAWAY → fire_onset=True."""
+        from engine.leader_lifecycle import STATE_BREAKAWAY, STATE_QUIET_ACCUMULATION
+        from datetime import date, timedelta
+        prior_date = date.today() - timedelta(days=1)
+        history = [(prior_date, STATE_QUIET_ACCUMULATION)]
+
+        fire_p, fire_o = self._run_compute_fires(
+            confirmed_state=STATE_BREAKAWAY,
+            confirmed_history=history,
+            fire_dates={},
+        )
+        assert fire_o is True, "Entry from non-BREAKAWAY to BREAKAWAY on session 2 must fire"
+
+    def test_held_no_refire_on_session3(self):
+        """Session 3: prior state=BREAKAWAY, today=BREAKAWAY → no refire (held in state)."""
+        from engine.leader_lifecycle import STATE_BREAKAWAY
+        from datetime import date, timedelta
+        d0 = date.today() - timedelta(days=2)
+        d1 = date.today() - timedelta(days=1)
+        history = [(d0, STATE_BREAKAWAY), (d1, STATE_BREAKAWAY)]
+
+        fire_p, fire_o = self._run_compute_fires(
+            confirmed_state=STATE_BREAKAWAY,
+            confirmed_history=history,
+            fire_dates={"TEST": d0},  # fired on day 0
+        )
+        assert fire_o is False, "Held BREAKAWAY must not refire on session 3"
+
+    def test_refire_blocked_past_21_sessions_without_deescalation(self):
+        """Refire lockout: 25 sessions in BREAKAWAY since last fire → still blocked (no de-escalation)."""
+        from engine.leader_lifecycle import STATE_BREAKAWAY
+        from datetime import date, timedelta
+        fire_date = date.today() - timedelta(days=30)
+        # 25 sessions all BREAKAWAY (no de-escalation to NONE/FAILED)
+        history = [
+            (date.today() - timedelta(days=30 - i), STATE_BREAKAWAY)
+            for i in range(25)
+        ]
+        fire_p, fire_o = self._run_compute_fires(
+            confirmed_state=STATE_BREAKAWAY,
+            confirmed_history=history,
+            fire_dates={"TEST": fire_date},
+        )
+        assert fire_o is False, (
+            "Refire must be blocked even past 21 sessions if no de-escalation to NONE/FAILED"
+        )

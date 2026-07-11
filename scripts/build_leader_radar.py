@@ -10,9 +10,10 @@ Universe (LR-R12):
   ∩ has-ohlcv (data/baskets/ohlcv/), ETFs excluded.
 
 Stores written (COLLECT_LANE=nightly gate on all data/ writes):
-  data/rs_series/<T>.parquet          — full-history RS ratio on first run; nightly append
-  data/leader_radar/state_history.parquet — (date, ticker, raw_state, confirmed_state)
-  data/leader_radar/revisions_history.parquet — dedup append of revisions/latest.parquet
+  data/rs_series/<T>.parquet                    — full-history RS ratio on first run; nightly append
+  data/leader_radar/state_history.parquet       — (date, ticker, raw_state, confirmed_state)
+  data/leader_radar/revisions_history.parquet   — dedup append of revisions/latest.parquet
+  data/leader_radar/fire_log.parquet            — (date, ticker, book, fire_type) fire events
 
 Output artifact:
   site/leaderradar/radar.json         — schema leader_radar.v1
@@ -402,6 +403,18 @@ def _ticker_state_history(
     return raw, conf
 
 
+# ── Nightly lane gate (HOUSE-U5) ─────────────────────────────────────────────
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly lane.
+
+    Mirrors build_intraday_flow._ledger_advance_enabled — gate: COLLECT_LANE=nightly
+    (or US_LANE=nightly for the US shard variant).
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
+
+
 # ── Revisions history store ───────────────────────────────────────────────────
 
 _REVISIONS_HISTORY_PATH = "leader_radar/revisions_history.parquet"
@@ -444,6 +457,47 @@ def _append_revisions_history(data_root: Path) -> None:
             log.info("build_leader_radar: revisions_history: initialized with %d rows", len(new_df))
     except Exception as e:  # noqa: BLE001
         log.warning("build_leader_radar: revisions_history append failed: %s", e)
+
+
+# ── Fire log store ────────────────────────────────────────────────────────────
+
+_FIRE_LOG_PATH = "leader_radar/fire_log.parquet"
+# Columns: date (date), ticker (str), fire_type ('precipice'|'onset')
+
+
+def _load_fire_log(data_root: Path) -> pd.DataFrame:
+    """Load data/leader_radar/fire_log.parquet.
+
+    Returns empty DataFrame with (date, ticker, fire_type) schema on miss.
+    """
+    p = data_root / _FIRE_LOG_PATH
+    if not p.exists():
+        return pd.DataFrame(columns=["date", "ticker", "fire_type"])
+    try:
+        return pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_leader_radar: fire_log.parquet unreadable: %s", e)
+        return pd.DataFrame(columns=["date", "ticker", "fire_type"])
+
+
+def _write_fire_log(df: pd.DataFrame, data_root: Path) -> None:
+    p = data_root / _FIRE_LOG_PATH
+    p.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(p, index=False)
+
+
+def _last_fire_dates(fire_log: pd.DataFrame) -> dict[str, date | None]:
+    """Return {ticker: last_fire_date} from the fire log (any fire type)."""
+    if fire_log.empty or "ticker" not in fire_log.columns:
+        return {}
+    result: dict[str, date | None] = {}
+    for ticker, grp in fire_log.groupby("ticker"):
+        dates = grp["date"].dropna()
+        if len(dates) == 0:
+            continue
+        last = max(dates)
+        result[str(ticker)] = last.date() if isinstance(last, pd.Timestamp) else last
+    return result
 
 
 # ── Stockdata context loader ──────────────────────────────────────────────────
@@ -531,10 +585,11 @@ def _compute_top5_share(
     universe: list[str],
     ohlcv_map: dict[str, pd.DataFrame],
     mktcap_map: dict[str, float | None],
-) -> tuple[float | None, int]:
+) -> tuple[float | None, int, str]:
     """Compute top-5 names' share of total 21d universe return (weighted by mktcap).
 
-    Returns (top5_share, n_covered).
+    Returns (top5_share, n_covered, weighting) where weighting is 'mktcap' when all
+    names have valid cap weights, else 'equal_fallback' (mixed or pure equal-weight).
     """
     returns_21d: dict[str, float] = {}
     for ticker in universe:
@@ -549,11 +604,12 @@ def _compute_top5_share(
             returns_21d[ticker] = ret
 
     if not returns_21d:
-        return None, 0
+        return None, 0, "equal_fallback"
 
-    # Cap-weight if possible
+    # Cap-weight if possible; track whether any name fell back to equal weight
     cap_weighted: dict[str, float] = {}
     n_covered = 0
+    n_fallback = 0
     for t, r in returns_21d.items():
         cap = mktcap_map.get(t)
         if cap is not None and np.isfinite(cap) and cap > 0:
@@ -561,18 +617,21 @@ def _compute_top5_share(
             n_covered += 1
         else:
             cap_weighted[t] = r  # equal-weight fallback for uncovered names
+            n_fallback += 1
 
     if not cap_weighted:
-        return None, 0
+        return None, 0, "equal_fallback"
+
+    weighting = "mktcap" if n_fallback == 0 else "equal_fallback"
 
     total_weighted = sum(abs(v) for v in cap_weighted.values())
     if total_weighted == 0:
-        return None, n_covered
+        return None, n_covered, weighting
 
     # Sort by abs contribution, take top 5
     sorted_contribs = sorted(cap_weighted.items(), key=lambda x: abs(x[1]), reverse=True)
     top5_contrib = sum(abs(v) for _, v in sorted_contribs[:5])
-    return float(top5_contrib / total_weighted), n_covered
+    return float(top5_contrib / total_weighted), n_covered, weighting
 
 
 def _zweig_flag(breadth_df: pd.DataFrame) -> bool | None:
@@ -745,6 +804,11 @@ def _compute_fires(
     """Return (fire_precipice, fire_onset) for today.
 
     Applies 21-session lockout + de-escalation check via eligible_for_refire.
+
+    Seed-run rule (B1): if assessment_history is empty (no prior confirmed history
+    row), fires are suppressed — entry is unverifiable without a prior state.
+    The engine entry guards (precipice_fire / onset_fire) require a prior state to
+    detect the transition; an empty history would fire spuriously on every run.
     """
     from engine.leader_lifecycle import (
         precipice_fire as _precipice_fire,
@@ -755,6 +819,10 @@ def _compute_fires(
     )
 
     if stale:
+        return False, False
+
+    # Seed-run gate: no prior history row → entry unverifiable → no fire
+    if not assessment_history:
         return False, False
 
     # Build a post-hysteresis assessment with the confirmed state
@@ -885,7 +953,7 @@ def _build_regime(
                 pct_above_200 = float(last.iloc[-1])
         zweig = _zweig_flag(breadth_df)
 
-    top5_share, n_covered = _compute_top5_share(universe, ohlcv_map, mktcap_map)
+    top5_share, n_covered, top5_weighting = _compute_top5_share(universe, ohlcv_map, mktcap_map)
 
     regime = leadership_regime(
         dispersion_pctile=dispersion_pctile,
@@ -895,6 +963,8 @@ def _build_regime(
         zweig_flag=zweig,
     )
     regime["mktcap_n_covered"] = n_covered
+    # m4: expose weighting method so equal-weight fallback is visible in the artifact
+    regime["top5_weighting"] = top5_weighting
     return regime
 
 
@@ -1025,18 +1095,22 @@ def build(
     regime_raw = _load_regime_inputs(data_root)
     regime = _build_regime(regime_raw, breadth_df, universe, ohlcv_map, mktcap_map)
 
-    # ── RS series: full-history backfill on first run, then append ────────────
+    # ── RS series: full-history backfill on first run (nightly), read-only otherwise ──
+    nightly_lane = _ledger_advance_enabled()
     rs_map: dict[str, pd.Series] = {}
     if not spy.empty:
-        nightly_lane = os.environ.get("COLLECT_LANE") == "nightly" or True
-        # Always build rs_series (it's builder-owned infra, not intraday lane)
         for ticker in universe:
             ohlcv = ohlcv_map.get(ticker)
             if ohlcv is None:
                 continue
             try:
-                existing = _load_rs_series(ticker, data_root)
-                rs = _build_rs_series(ticker, ohlcv, spy, existing, data_root)
+                if nightly_lane:
+                    # Nightly: build + write (backfill on first run, append thereafter)
+                    existing = _load_rs_series(ticker, data_root)
+                    rs = _build_rs_series(ticker, ohlcv, spy, existing, data_root)
+                else:
+                    # Non-nightly: read-only; skip data/ write (HOUSE-U5)
+                    rs = _load_rs_series(ticker, data_root)
                 rs_map[ticker] = rs
             except Exception as e:  # noqa: BLE001
                 log.debug("build_leader_radar: rs_series/%s failed: %s", ticker, e)
@@ -1045,14 +1119,14 @@ def build(
     today = date.today()
     assessments_map: dict[str, Any] = {}
     new_state_rows: list[dict] = []
+    new_fire_rows: list[dict] = []
     fire_precipice_set: set[str] = set()
     fire_onset_set: set[str] = set()
     rows: list[dict] = []
 
-    # Load prior fire dates from state_history (rough: first fire_precipice/onset)
-    fire_dates: dict[str, date | None] = {}
-    # Not tracking fire_dates in state_history (not stored there); will default to None
-    # (which means eligible_for_refire returns True for all — conservative on first run)
+    # Load prior fire dates from fire_log (real per-ticker last fire date)
+    fire_log_df = _load_fire_log(data_root)
+    fire_dates: dict[str, date | None] = _last_fire_dates(fire_log_df)
 
     for ticker in universe:
         ohlcv = ohlcv_map.get(ticker)
@@ -1083,21 +1157,44 @@ def build(
             assessments_map[ticker] = assessment
             assessments_map[ticker].state = confirmed_state  # expose confirmed state
 
-            # Fire rules
-            assessment_history: list[Any] = []  # simplified: use confirmed_history as proxy
+            # Fire rules — B1 fix: build real prior-assessment proxy from confirmed_history.
+            # confirmed_history is a list of (date, state) tuples, newest last.
+            # precipice_fire / onset_fire check assessment_history[-1].state to detect entry.
+            # Seed run (no prior history): no fire — entry is unverifiable without history.
+            from engine.leader_lifecycle import LifecycleAssessment as _LA
+            if confirmed_history:
+                # Construct a minimal prior LifecycleAssessment from the last persisted state.
+                # Duck-type: precipice_fire/onset_fire only read .state on history[-1].
+                prior_state = confirmed_history[-1][1]
+                _prior = _LA(state=prior_state, evidence={}, n_avail=0)
+                assessment_history_proxy: list[Any] = [_prior]
+            else:
+                # Seed run: no prior history row — suppress all fires (entry unverifiable).
+                assessment_history_proxy = []
+
             fire_p, fire_o = _compute_fires(
                 ticker=ticker,
                 assessment=assessment,
                 confirmed_state=confirmed_state,
                 confirmed_history=confirmed_history,
-                assessment_history=assessment_history,
+                assessment_history=assessment_history_proxy,
                 fire_dates=fire_dates,
                 stale=stale,
             )
             if fire_p:
                 fire_precipice_set.add(ticker)
+                new_fire_rows.append({
+                    "date": today,
+                    "ticker": ticker,
+                    "fire_type": "precipice",
+                })
             if fire_o:
                 fire_onset_set.add(ticker)
+                new_fire_rows.append({
+                    "date": today,
+                    "ticker": ticker,
+                    "fire_type": "onset",
+                })
 
             # 2D oscillator
             close_series = ohlcv["close"].dropna().sort_index()
@@ -1157,28 +1254,51 @@ def build(
             log.warning("build_leader_radar: ticker %s failed (skipped): %s", ticker, e)
             continue
 
-    # ── Persist state_history (nightly lane only) ─────────────────────────────
-    if new_state_rows and (os.environ.get("COLLECT_LANE") == "nightly" or True):
-        try:
-            new_df = pd.DataFrame(new_state_rows)
-            # Dedup: remove today's existing rows for these tickers, then append
-            if not state_df.empty and "date" in state_df.columns:
-                state_df["date"] = pd.to_datetime(state_df["date"])
-                today_ts = pd.Timestamp(today)
-                existing_not_today = state_df[state_df["date"] != today_ts]
-                updated = pd.concat([existing_not_today, new_df], ignore_index=True)
-            else:
-                updated = new_df
-            _write_state_history(updated, data_root)
-            log.info("build_leader_radar: state_history: %d total rows", len(updated))
-        except Exception as e:  # noqa: BLE001
-            log.warning("build_leader_radar: state_history write failed: %s", e)
+    # ── Persist data/ stores (nightly lane only — HOUSE-U5) ───────────────────
+    if nightly_lane:
+        # state_history
+        if new_state_rows:
+            try:
+                new_df = pd.DataFrame(new_state_rows)
+                # Dedup: remove today's existing rows for these tickers, then append
+                if not state_df.empty and "date" in state_df.columns:
+                    state_df["date"] = pd.to_datetime(state_df["date"])
+                    today_ts = pd.Timestamp(today)
+                    existing_not_today = state_df[state_df["date"] != today_ts]
+                    updated = pd.concat([existing_not_today, new_df], ignore_index=True)
+                else:
+                    updated = new_df
+                _write_state_history(updated, data_root)
+                log.info("build_leader_radar: state_history: %d total rows", len(updated))
+            except Exception as e:  # noqa: BLE001
+                log.warning("build_leader_radar: state_history write failed: %s", e)
 
-    # ── Append revisions history ──────────────────────────────────────────────
-    try:
-        _append_revisions_history(data_root)
-    except Exception as e:  # noqa: BLE001
-        log.warning("build_leader_radar: revisions_history append error: %s", e)
+        # fire_log
+        if new_fire_rows:
+            try:
+                new_fire_df = pd.DataFrame(new_fire_rows)
+                # Dedup: remove today's existing fire rows, then append
+                if not fire_log_df.empty and "date" in fire_log_df.columns:
+                    fire_log_df["date"] = pd.to_datetime(fire_log_df["date"])
+                    today_ts = pd.Timestamp(today)
+                    existing_fire_not_today = fire_log_df[fire_log_df["date"] != today_ts]
+                    updated_fire = pd.concat([existing_fire_not_today, new_fire_df], ignore_index=True)
+                else:
+                    updated_fire = new_fire_df
+                _write_fire_log(updated_fire, data_root)
+                log.info("build_leader_radar: fire_log: %d total rows", len(updated_fire))
+            except Exception as e:  # noqa: BLE001
+                log.warning("build_leader_radar: fire_log write failed: %s", e)
+
+        # revisions_history
+        try:
+            _append_revisions_history(data_root)
+        except Exception as e:  # noqa: BLE001
+            log.warning("build_leader_radar: revisions_history append error: %s", e)
+    else:
+        log.debug(
+            "build_leader_radar: COLLECT_LANE!=nightly — skipping data/ writes (HOUSE-U5)",
+        )
 
     # ── Handoff watch ─────────────────────────────────────────────────────────
     extended_baskets: dict[str, bool | None] = {}

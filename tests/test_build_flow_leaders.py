@@ -7,7 +7,7 @@ Covers:
   - leaders.json schema keys (schema, as_of, stale, cold_start, board_a, board_b, etf_strip)
   - fire flags match engine function signatures (board_a_fire, board_b_fire)
   - JSON serialiser handles numpy types + None without crash
-  - pick_lab registry: 25 books, unique hashes, families present
+  - pick_lab registry: 27 books, unique hashes, families present
   - pick_lab candidates: _load_leaders_json handles missing file gracefully
 
 Run:
@@ -405,7 +405,7 @@ class TestBuild:
 class TestPickLabRegistry:
     def test_25_books(self):
         from engine.pick_lab.registry import REGISTRY
-        assert len(REGISTRY) == 25, f"Expected 25 books, got {len(REGISTRY)}"
+        assert len(REGISTRY) == 27, f"Expected 27 books, got {len(REGISTRY)}"  # LR W2a added plab_leader_precipice, plab_leader_onset (25->27)
 
     def test_unique_hashes(self):
         from engine.pick_lab.registry import REGISTRY, _config_hash
