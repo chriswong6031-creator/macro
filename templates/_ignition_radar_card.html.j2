@@ -141,6 +141,12 @@
       {%- elif state == 'warming' %}{{ t('Warming up','升温中') }}
       {%- else %}{{ t('Quiet','静默') }}{% endif -%}
     </span>
+    {#- narrow-persistence honesty (M7C-R7): a theme running for days must not be
+        buried by a quiet broad state — same gate as the card variant above. -#}
+    {%- set nt = ig.narrow_top if ig.narrow_top else {} -%}
+    {%- if nt and nt.score and nt.score >= 0.55 and nt.streak_sessions and nt.streak_sessions >= 3 and state in ('off', 'warming') %}
+    <span class="igs-glance"><span class="l-en">{{ nt.name }} running · day {{ nt.streak_sessions }}</span><span class="l-zh">{{ nt.name_zh if nt.name_zh else nt.name }} 持续运行 · 第{{ nt.streak_sessions }}日</span></span>
+    {%- endif %}
     {{ help('Risk-ON evidence gauge — the Risk Radar\'s mirror. Counts eight broad-market signals (breadth thrusts + participation confirms — hover each dot for what it watches) and theme-level turn evidence across the narrative baskets and sector ETFs. Self-graded nightly against what actually happened next; stays display-only until 30+ graded calls and an operator ruling. Evidence, not a buy signal.', '正向风险偏好证据仪表 — 风险雷达的镜像。统计八个大盘信号（广度推进 + 参与度确认 — 悬停各圆点查看含义）及叙事篮子与行业ETF的主题级转折证据。每晚以后续实际走势自评；累计30次评分并经运营员裁定前仅供展示。仅为证据，非买入信号。') }}
     {%- if regime.label_en %}
     <span class="igs-glance">{% if fragile %}<span class="igs-frag">⚠</span> {% endif %}{{ t(regime.label_en, regime.label_zh) }}</span>
