@@ -91,20 +91,20 @@ jobs:
           python -m scripts.build_organism_state || echo "organism_state build degraded (continuing)"
 
           # Step 2: Run all insight_bus emitters
-          python -c "
-            import sys; sys.path.insert(0, '.')
-            from engine.metabolism.insight_bus import run_all_emitters
-            rows = run_all_emitters(cycle_id='${CYCLE_ID}')
-            print(f'Emitted {len(rows)} new insight_bus rows')
-          " || echo "insight_bus emitters degraded (continuing)"
+          python - <<PY || echo "insight_bus emitters degraded (continuing)"
+          import sys; sys.path.insert(0, '.')
+          from engine.metabolism.insight_bus import run_all_emitters
+          rows = run_all_emitters(cycle_id='${CYCLE_ID}')
+          print(f'Emitted {len(rows)} new insight_bus rows')
+          PY
 
           # Step 3: Run anomaly monitor
-          python -c "
-            import sys; sys.path.insert(0, '.')
-            from engine.metabolism.anomaly_monitor import run_anomaly_monitor
-            rows = run_anomaly_monitor(cycle_id='${CYCLE_ID}')
-            print(f'Anomaly monitor: {len(rows)} new rows')
-          " || echo "anomaly_monitor degraded (continuing)"
+          python - <<PY || echo "anomaly_monitor degraded (continuing)"
+          import sys; sys.path.insert(0, '.')
+          from engine.metabolism.anomaly_monitor import run_anomaly_monitor
+          rows = run_anomaly_monitor(cycle_id='${CYCLE_ID}')
+          print(f'Anomaly monitor: {len(rows)} new rows')
+          PY
 
           # Step 4: Build agenda (INERT — writes artifact only)
           AGENDA="$(python -m scripts.metabolism_agenda --cycle-id "$CYCLE_ID" | tail -n 1 || true)"

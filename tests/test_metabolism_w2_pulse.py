@@ -224,6 +224,30 @@ def test_dream_scan_mode_no_crash_when_paused():
     assert rc == 0
 
 
+# ── Test: corrupt-artifact NEVER-RAISE (non-JSON docket) ─────────────────────
+
+def test_scan_corrupt_docket_is_skipped_never_raises():
+    """--scan: a docket file containing non-JSON is skipped; exit 0 (NEVER-RAISE)."""
+    root = _tmp_root()
+    # Write a corrupt (non-JSON) docket file
+    corrupt_path = root / "data" / "metabolism" / "dockets" / "cycle-corrupt.json"
+    corrupt_path.write_text("not valid json }{", encoding="utf-8")
+    # Write a valid docket alongside to confirm the scan continues past the bad file
+    _write_docket(root, "cycle-good", "2026-07-01")
+
+    called = []
+
+    with patch("scripts.metabolism_guard.is_paused", return_value=False):
+        with patch("scripts.metabolism_verify._run_single", side_effect=lambda *a, **kw: called.append(a)):
+            from scripts.metabolism_verify import main
+            rc = main(["--scan", "--root", str(root), "--today", "2026-07-11"])
+
+    assert rc == 0, "corrupt docket must not cause non-zero exit"
+    # Only the valid docket should trigger _run_single; the corrupt one is skipped
+    assert len(called) == 1, f"expected 1 _run_single call (valid docket), got {len(called)}"
+    assert called[0][0] == "cycle-good"
+
+
 # ── Test: "validated" absent from verify script ──────────────────────────────
 
 def test_validated_absent_from_verify_script():
