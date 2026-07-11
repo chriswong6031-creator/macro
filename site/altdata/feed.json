@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-10T23:09:14.155826+00:00",
-  "as_of": "2026-07-10",
+  "generated_utc": "2026-07-11T01:04:21.370560+00:00",
+  "as_of": "2026-07-11",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6477,7 +6477,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 19,
+        "count": 18,
         "items": "8.01"
       },
       {
@@ -6494,11 +6494,6 @@
         "ticker": "BLD",
         "count": 4,
         "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "FOX",
-        "count": 4,
-        "items": "1.01, 2.03, 5.02, 7.01"
       },
       {
         "ticker": "PSKY",
@@ -6521,11 +6516,6 @@
         "items": "5.02, 7.01"
       },
       {
-        "ticker": "AVGO",
-        "count": 3,
-        "items": "8.01"
-      },
-      {
         "ticker": "AXP",
         "count": 3,
         "items": "7.01, 8.01"
@@ -6544,6 +6534,11 @@
         "ticker": "ECHO",
         "count": 3,
         "items": "5.02, 8.01"
+      },
+      {
+        "ticker": "FOX",
+        "count": 3,
+        "items": "1.01, 2.03, 7.01"
       },
       {
         "ticker": "HOOD",
@@ -6571,24 +6566,9 @@
         "items": "1.01, 2.01, 5.02, 7.01, 8.01"
       },
       {
-        "ticker": "MRVL",
-        "count": 3,
-        "items": "5.02, 7.01, 8.01"
-      },
-      {
         "ticker": "O",
         "count": 3,
         "items": "8.01"
-      },
-      {
-        "ticker": "PLD",
-        "count": 3,
-        "items": "2.03, 5.02, 8.01"
-      },
-      {
-        "ticker": "PM",
-        "count": 3,
-        "items": "5.02, 7.01, 8.01"
       },
       {
         "ticker": "PSA",
@@ -6599,6 +6579,26 @@
         "ticker": "QBTS",
         "count": 3,
         "items": "7.01"
+      },
+      {
+        "ticker": "VTRS",
+        "count": 3,
+        "items": "1.01, 2.03, 8.01"
+      },
+      {
+        "ticker": "AEE",
+        "count": 2,
+        "items": "8.01"
+      },
+      {
+        "ticker": "ALGN",
+        "count": 2,
+        "items": "5.02, 7.01"
+      },
+      {
+        "ticker": "ALGT",
+        "count": 2,
+        "items": "1.01, 2.03, 8.01"
       }
     ],
     "special_situations": [
@@ -44009,13 +44009,6 @@
         "top_issue": "Health Issues"
       },
       {
-        "ticker": "TAL",
-        "spend_usd": 171000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": null
-      },
-      {
         "ticker": "VRSN",
         "spend_usd": 90000.0,
         "filings": 1,
@@ -44035,6 +44028,13 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Taxation/Internal Revenue Code"
+      },
+      {
+        "ticker": "MPT",
+        "spend_usd": 60000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Banking"
       },
       {
         "ticker": "TKR",
@@ -44086,6 +44086,13 @@
         "top_issue": "Defense"
       },
       {
+        "ticker": "PEGA",
+        "spend_usd": 40000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Government Issues"
+      },
+      {
         "ticker": "OSS",
         "spend_usd": 34000.0,
         "filings": 1,
@@ -44098,13 +44105,6 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Energy/Nuclear"
-      },
-      {
-        "ticker": "GNSS",
-        "spend_usd": 30000.0,
-        "filings": 2,
-        "spike_x": null,
-        "top_issue": "Environment/Superfund"
       }
     ],
     "offexchange": [
@@ -47619,17 +47619,6 @@
         "why": "insider_cluster: 11 insiders, $24,661,920 net \u00b7 special_situation: Divestitures"
       },
       {
-        "ticker": "AVGO",
-        "score": 3,
-        "weighted_score": 1.35,
-        "channel_list": [
-          "13f_add",
-          "material_8k",
-          "special_situation"
-        ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$187,592,199 \u00b7 material_8k: 3 material 8-Ks (items 8.01) \u00b7 special_situation: Issuer Tenders"
-      },
-      {
         "ticker": "LUMN",
         "score": 2,
         "weighted_score": 1.3,
@@ -47660,6 +47649,16 @@
           "trump"
         ],
         "why": "cnbc_pick: Joe Terranova \u00b7 special_situation: Other Situations \u00b7 trump: Costco Whsl Corp New"
+      },
+      {
+        "ticker": "ALGN",
+        "score": 2,
+        "weighted_score": 1.1,
+        "channel_list": [
+          "activist_13d",
+          "material_8k"
+        ],
+        "why": "activist_13d: 13D activist campaign \u00b7 material_8k: 2 material 8-Ks (items 5.02, 7.01)"
       },
       {
         "ticker": "IBM",
