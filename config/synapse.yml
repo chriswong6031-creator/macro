@@ -663,7 +663,8 @@ artifacts:
     path: site/stockdata/mag7_regime.json
     format: json
     producer: engine/mag7_regime.py
-    known_extra_writers: []
+    known_extra_writers:
+      - "scripts/build_site.py — re-publishes the site copy from latest.mag7_regime when absent (M7C-R6 panel surface, #2279; declared post-hoc by #2284)"
     owner_program: mag7-regime
     cadence: daily-engine
     storage: git

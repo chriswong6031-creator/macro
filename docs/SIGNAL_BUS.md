@@ -1231,6 +1231,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - engine/stock_fundamentals.py — _compute_thesis_funnel_block() called inside panels(); result keyed as 'thesis_funnel'
 
+### mag7-regime-site
+
+- **path:** `site/stockdata/mag7_regime.json`
+- **declared producer:** `engine/mag7_regime.py`
+- **extra writers:**
+  - scripts/build_site.py — re-publishes the site copy from latest.mag7_regime when absent (M7C-R6 panel surface, #2279; declared post-hoc by #2284)
+
 ### market-state-latest
 
 - **path:** `data/market_state/latest.json`
