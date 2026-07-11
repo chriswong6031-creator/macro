@@ -274,6 +274,8 @@ jobs:
             cl_baskets() {
               brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
               brun news        "news suite (build_news)"                 scripts.build_news
+              # output: data/news/event_log.parquet + site/news/calibration.json — both covered by the git add data/ site/ commit step
+              brun news_calib  "news event calibration (grade_news_events)" scripts.grade_news_events
               brun methodology "methodology page (build_methodology)"    scripts.build_methodology
             }
             cl_misc() {

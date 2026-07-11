@@ -110,6 +110,76 @@ class TestKeepFirst:
 
 
 # --------------------------------------------------------------------------- #
+# 1b. source_tier string regression — was crashing int('stock_wire')
+# --------------------------------------------------------------------------- #
+class TestSourceTierString:
+    """Regression: persist_kept_events must not crash when source_tier is a string
+    label (e.g. 'stock_wire', 'tier1', 'quality', 'official').  Before the fix,
+    `int('stock_wire')` raised ValueError inside the degrade wrapper and the
+    event_log parquet was NEVER written.
+    """
+
+    def test_stock_wire_persists_rows(self, tmp_path):
+        """A headline with source_tier='stock_wire' must persist and create the parquet."""
+        from engine.news_event_ledger import persist_kept_events, load_event_log
+
+        # Realistic headline shape matching what the news engines emit
+        h = {
+            "title": "Apple reports record iPhone sales in Q4",
+            "domain": "reuters.com",
+            "seendate": "2026-07-10T09:00:00+00:00",
+            "source_tier": "stock_wire",   # string label — the historic crash vector
+            "theme": "Technology",
+            "novelty_z": 0.8,
+            "tickers": ["AAPL"],
+            "event": {
+                "event_type": "earnings_release",
+                "direction": "bullish",
+            },
+        }
+        n = persist_kept_events([h], asof_utc="2026-07-10T12:00:00+00:00", root=tmp_path)
+        assert n == 1, f"Expected 1 row persisted, got {n}"
+
+        parquet_path = tmp_path / "data" / "news" / "event_log.parquet"
+        assert parquet_path.exists(), "event_log.parquet must be created"
+
+        df = load_event_log(tmp_path)
+        assert df is not None and len(df) == 1
+        assert str(df.iloc[0]["source_tier"]) == "stock_wire"
+
+    def test_other_string_tier_labels(self, tmp_path):
+        """All string tier labels ('tier1', 'quality', 'official') must persist cleanly."""
+        from engine.news_event_ledger import persist_kept_events, load_event_log
+
+        tiers = ["tier1", "quality", "official"]
+        headlines = [
+            {
+                "title": f"Headline for tier {tier}",
+                "domain": f"{tier}.com",
+                "seendate": f"2026-07-10T0{i+9}:00:00+00:00",
+                "source_tier": tier,
+                "event": {"event_type": "macro_release", "direction": "informational"},
+            }
+            for i, tier in enumerate(tiers)
+        ]
+        n = persist_kept_events(headlines, asof_utc="2026-07-10T12:00:00+00:00", root=tmp_path)
+        assert n == 3, f"Expected 3 rows persisted, got {n}"
+        df = load_event_log(tmp_path)
+        assert df is not None and len(df) == 3
+
+    def test_missing_source_tier_falls_back_to_empty_string(self, tmp_path):
+        """Headlines with no source_tier at all should persist with source_tier=''."""
+        from engine.news_event_ledger import persist_kept_events, load_event_log
+
+        h = _make_headline(tickers=["MSFT"])
+        h.pop("source_tier", None)   # ensure it's absent
+        n = persist_kept_events([h], asof_utc="2026-07-10T12:00:00+00:00", root=tmp_path)
+        assert n == 1
+        df = load_event_log(tmp_path)
+        assert str(df.iloc[0]["source_tier"]) == ""
+
+
+# --------------------------------------------------------------------------- #
 # 2. grading math vs hand-computed fixture prices
 # --------------------------------------------------------------------------- #
 class TestGradingMath:
