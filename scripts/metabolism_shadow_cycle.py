@@ -70,14 +70,20 @@ SCHEMA = "metabolism.shadow_cycle.v1"
 
 _STUB_INJECTED_PROPOSALS: list[dict[str, Any]] = [
     {
-        "title": "Shadow stub: add test coverage for TIL earliness grader null-handling",
+        # Vocabulary is deliberately ALIEN (>=4-char nonsense tokens; screen
+        # tokens shorter than 4 chars are ignored): the deterministic screens
+        # match token quorums vs DO_NOT_REBUILD (whole registry) and the
+        # ACTIVE_BUILD_MAP open-lane section, and common engineering words
+        # ('honest', 'null', 'check', 'artifact', 'deterministic'...) appear in
+        # the kill registry, so an English stub self-vetoes.  Empirically
+        # screened clean against both corpora on 2026-07-11.
+        "title": "zzqx qqzy wqzt vvqk probe row",
         "tier": "T0",
         "kind": "test",
         "targets_sensor": "front_run_lead",
         "rationale": (
-            "Shadow-cycle synthetic proposal exercising the full contract shape. "
-            "Tests that earliness_grades.json with no graded legs returns "
-            "honest null maturity='accruing' rather than a fabricated number."
+            "zzqx qqzy wqzt vvqk probe row: traversal exercise so the whole "
+            "cycle touches one concrete item."
         ),
         "fitness_contract": {
             "sensor": "front_run_lead",
@@ -497,7 +503,7 @@ def _run_build(
         ]
 
         # Write a would_dispatch journal under shadow root
-        wdj_path = shadow_root / "data" / "metabolism" / "shadow" / cycle_id / "would_dispatch.json"
+        wdj_path = shadow_root / "data" / "metabolism" / "build" / "would_dispatch.json"
         wdj_path.parent.mkdir(parents=True, exist_ok=True)
         wdj_path.write_text(
             json.dumps({"cycle_id": cycle_id, "would_dispatch": would_dispatch_records},
@@ -840,10 +846,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--now", default=None,
                         help="Timestamp for cycle_id (YYYY-MM-DDTHH:MM); default: real UTC now")
     parser.add_argument("--root", default=None, help="Repo root override")
-    parser.add_argument("--no-llm", action="store_true", default=True,
-                        help="Use deterministic stub seams (default; no LLM calls)")
     parser.add_argument("--use-llm", action="store_true", default=False,
-                        help="Use real LLM calls (post-arming; overrides --no-llm)")
+                        help="Use real LLM calls (post-arming). Default: deterministic "
+                             "stub seams, no LLM calls.")
     parser.add_argument("--cycle-id", default=None,
                         help="Override cycle_id (must match shadow-YYYYMMDD-HHMM format)")
     parser.add_argument("--out-dir", default=None, help="Override output directory")

@@ -77,8 +77,19 @@ def _make_minimal_repo(tmp_path: Path) -> Path:
     (root / "docs").mkdir()
     (root / "docs" / "ACTIVE_BUILD_MAP.md").write_text("# empty\n", encoding="utf-8")
 
-    # Fresh empty data/
+    # data/ — NOT empty: seed a degraded-lobe health.json so the insight-bus
+    # health emitter has something to fire on.  This is what gives the
+    # isolation test discriminating power against the leak class caught during
+    # W6 build (emitters called with real_root instead of shadow_root READ this
+    # file and APPEND to the real insight_bus.jsonl — creating a file outside
+    # shadow/ that the snapshot assertions catch).  With an empty data/ the
+    # emitters fire zero rows and a real_root leak is invisible.
     (root / "data").mkdir()
+    (root / "data" / "neuralweb").mkdir()
+    (root / "data" / "neuralweb" / "health.json").write_text(
+        json.dumps({"lobes": {"seed_lobe": {"status": "degraded"}}}),
+        encoding="utf-8",
+    )
 
     return root
 
@@ -291,14 +302,12 @@ class TestIdempotentPerCycleId:
         rc1 = main([
             "--cycle-id", cycle_id,
             "--root", str(repo_root),
-            "--no-llm",
         ])
         assert rc1 == 0
 
         rc2 = main([
             "--cycle-id", cycle_id,
             "--root", str(repo_root),
-            "--no-llm",
         ])
         assert rc2 == 0
 

@@ -330,6 +330,28 @@ def build_prompt_context(root: Path | None = None, lobe: str = LOBE) -> dict[str
 
 # ── Dedup corpus ──────────────────────────────────────────────────────────────
 
+def _open_lanes_only(abm_text: str) -> str:
+    """Extract the '## Open PRs' section (+ file collisions) from ACTIVE_BUILD_MAP.
+
+    The in-flight collision screen must match OPEN lanes only.  Matching the
+    whole file — which embeds the last 14 days of merged-PR titles (~500) —
+    makes a majority-token quorum trivially satisfiable by common engineering
+    words, rejecting essentially every proposal (observed on the first shadow
+    cycles, 2026-07-11).  Merged work is not an in-flight collision; killed
+    topics are DO_NOT_REBUILD's job.
+
+    Fail-CLOSED: if the expected heading is absent, return the full text
+    (over-rejection is the safe direction for a fence).
+    """
+    if not abm_text:
+        return abm_text
+    start = abm_text.find("## Open PRs")
+    if start < 0:
+        return abm_text
+    stop = abm_text.find("## Recently Merged", start)
+    return abm_text[start:stop] if stop > start else abm_text[start:]
+
+
 def _load_dedup_corpus(root: Path) -> dict[str, Any]:
     """Collect normalized terms/hashes to dedup proposals against.
 
@@ -342,7 +364,7 @@ def _load_dedup_corpus(root: Path) -> dict[str, Any]:
     """
     r = _repo_root(root)
     killed = _normalize(_read_text(r / "research" / "DO_NOT_REBUILD.md"))
-    active = _normalize(_read_text(r / "docs" / "ACTIVE_BUILD_MAP.md"))
+    active = _normalize(_open_lanes_only(_read_text(r / "docs" / "ACTIVE_BUILD_MAP.md")))
 
     prior_hashes: set[str] = set()
     try:

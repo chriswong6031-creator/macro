@@ -1,6 +1,6 @@
 {
   "schema": "metabolism.verify.v1",
-  "cycle_id": "shadow-20260711-1030-verify-seed",
+  "cycle_id": "shadow-20260711-first-breath-verify-seed",
   "proposal_id": "shadow-seed-verify-001",
   "check_by": "2026-07-11",
   "contract": {
@@ -46,5 +46,5 @@
       "auto_revert_without_operator"
     ]
   },
-  "ts": "2026-07-11T15:08:11+00:00"
+  "ts": "2026-07-11T15:22:51+00:00"
 }

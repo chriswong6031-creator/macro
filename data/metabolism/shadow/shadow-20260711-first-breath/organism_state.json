@@ -1,7 +1,7 @@
 {
   "schema": "metabolism.organism_state.v1",
   "as_of": "2026-07-11",
-  "produced_at": "2026-07-11T15:09:00.733774+00:00",
+  "produced_at": "2026-07-11T15:22:49.922723+00:00",
   "lobes": {
     "attention-deterministic": {
       "lobe_id": "attention-deterministic",

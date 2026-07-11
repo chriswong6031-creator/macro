@@ -8,7 +8,7 @@ Ruling: R-V4-1 — shadow-first law.
 
 ## (a) What ships armed-gated today
 
-Six GitHub Actions workflows drive the metabolism loop, all gated on `AUTONOMY_PAUSED != 'false'` (fail-closed — the variable must be set to the exact string `false` to arm):
+Six GitHub Actions workflows drive the metabolism loop. The gating is two-layer: the job-level condition `if: vars.AUTONOMY_PAUSED != 'true'` lets the job START even when the variable is unset (so paused no-op runs stay visible in the run history), and the in-script re-check — `AUTONOMY_PAUSED` must equal the exact string `false` — is what actually fails closed before any real action. Net behavior: unset/anything-but-`false` = paused; only Act 5's explicit `false` arms:
 
 | Workflow | Cron | Purpose |
 |---|---|---|
@@ -55,7 +55,7 @@ The three REQUIRED status checks gate every PR the loop opens:
 REPO="OWNER/REPO"
 
 gh api --method PUT "repos/$REPO/branches/main/protection" \
-  --field required_status_checks='{"strict":true,"contexts":["self-mod fence selftest","capability broker + redline test suite","grader manifest (fitness graders + immutable configs unchanged)"]}' \
+  --field required_status_checks='{"strict":true,"contexts":["self-mod-fence","capability-broker","grader-manifest"]}' \
   --field enforce_admins=true \
   --field required_pull_request_reviews='{"required_approving_review_count":0,"dismiss_stale_reviews":false}' \
   --field restrictions=null \
@@ -150,7 +150,7 @@ This runs the full SENSE → AGENDA → PROPOSE → ADJUDICATE → BUILD(dry_run
     "adjudicate":            { "status": "ok",   "artifact": null,  "note": "orch=1 adversary=1 resolve: 1/1 authorized" },
     "build":                 { "status": "ok",   "artifact": "...", "note": "dry_run BUILD: 1 proposals processed" },
     "verify":                { "status": "ok",   "artifact": "...", "note": "verify: outcome=UNVERIFIABLE ... honest_null=True" },
-    "dream":                 { "status": "ok",   "artifact": "...", "note": "dream: status=insufficient_data" },
+    "dream":                 { "status": "ok",   "artifact": "...", "note": "dream: status=paused" },
     "artifact_collection":   { "status": "ok",   "artifact": "...", "note": "N artifacts collected" }
   },
   "stubbed_stages": ["agenda", "propose", "adjudicate"],
@@ -162,7 +162,7 @@ This runs the full SENSE → AGENDA → PROPOSE → ADJUDICATE → BUILD(dry_run
 Key things to check:
 - `real_stores_untouched: true` — the real data stores were not modified
 - `verify.note` contains `honest_null=True` — UNVERIFIABLE is correct (seeded contract has no graded data yet)
-- `dream.note` contains `insufficient_data` — correct (no closed contracts yet)
+- `dream.note` contains `status=paused` — correct in a shadow run (the dream engine gates itself on `AUTONOMY_PAUSED`); after arming, expect `insufficient_data` until ≥10 contracts close (~2026-10-15)
 - `stubbed_stages` lists agenda/propose/adjudicate when run with `--no-llm` (the default)
 
 ### Three v3 first-armed-cycle retro-checks
@@ -190,7 +190,7 @@ After flipping `AUTONOMY_PAUSED=false`, monitor GitHub Actions for the first ful
 | 09:45 | metabolism-propose | Docket committed; proposals > 0; `registered` contracts > 0 in trial_ledger.jsonl |
 | 10:15 | metabolism-adjudicate | Governance rows written; `two_key` resolve row shows authorized count |
 | 11:15 | metabolism-verify | Verify record written; `outcome=UNVERIFIABLE` is correct (no mature contracts yet) |
-| Sunday 06:00 | metabolism-dream | preference_prior.json written; `status=insufficient_data` correct until 2026-10-15 |
+| Sunday 06:00 | metabolism-dream | preference_prior.json written; armed runs show `status=insufficient_data` until ≥10 closed contracts (~2026-10-15) |
 
 ### Where artifacts land
 
@@ -219,10 +219,12 @@ Every in-flight stage will no-op on its next invocation. Running stages cannot b
 For a deeper pause that also prevents the variable from being reset accidentally, disable the workflows directly:
 
 ```bash
+gh workflow disable metabolism-heartbeat.yml
 gh workflow disable metabolism-agenda.yml
 gh workflow disable metabolism-propose.yml
 gh workflow disable metabolism-adjudicate.yml
 gh workflow disable metabolism-build.yml
+gh workflow disable metabolism-merge.yml
 gh workflow disable metabolism-verify.yml
 gh workflow disable metabolism-dream.yml
 ```

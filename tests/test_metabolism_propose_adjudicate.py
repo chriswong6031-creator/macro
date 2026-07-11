@@ -520,3 +520,80 @@ class TestRunIdDistinctness:
         r = self._plant_and_resolve(tmp_path, same_run=False)
         assert r["authorized"] is True, "distinct run_ids + grant + non-veto must AUTHORIZE"
         assert r["keys"].get("distinct_runs") is True
+
+
+class TestOpenLanesScoping:
+    """The in-flight collision screen matches OPEN lanes only (2026-07-11 shadow
+    finding): matching the whole ACTIVE_BUILD_MAP — which embeds ~500 merged-PR
+    titles — let common engineering words satisfy the majority-token quorum and
+    rejected essentially every proposal, which would paralyze armed PROPOSE."""
+
+    _ABM = (
+        "# Active Build Map\n\n"
+        "## Open PRs\n\n"
+        "| PR | Title |\n|----|-------|\n"
+        "| #1 | feat(flow-leaders): unique openlane widget assembly |\n\n"
+        "## Recently Merged (last 14 days)\n\n"
+        "| PR | Title |\n|----|-------|\n"
+        "| #2 | probe alpha plumbing check panel board signal tests fixes |\n"
+    )
+
+    def test_open_lanes_only_slices_open_section(self):
+        from engine.metabolism.propose import _open_lanes_only
+        sliced = _open_lanes_only(self._ABM)
+        assert "openlane widget assembly" in sliced
+        assert "Recently Merged" not in sliced
+        assert "probe alpha plumbing" not in sliced
+
+    def test_open_lanes_only_fail_closed_without_heading(self):
+        from engine.metabolism.propose import _open_lanes_only
+        text = "no headings here probe alpha plumbing check"
+        assert _open_lanes_only(text) == text  # full text retained (over-rejects)
+
+    def test_merged_title_tokens_do_not_reject(self, tmp_path):
+        from engine.metabolism.propose import build_docket
+        root = tmp_path
+        (root / "docs").mkdir(parents=True, exist_ok=True)
+        (root / "docs" / "ACTIVE_BUILD_MAP.md").write_text(self._ABM, encoding="utf-8")
+        prop = {
+            "title": "probe alpha plumbing check",
+            "tier": "T0", "kind": "test", "targets_sensor": "front_run_lead",
+            "rationale": "tokens exist ONLY in the merged section",
+            "fitness_contract": {"sensor": "front_run_lead", "expected_sign": "+",
+                                 "band": "accruing", "check_by": "2026-10-15",
+                                 "placebo_to_beat": "shadow placebo tape"},
+        }
+        d = build_docket("cycle-openlane-a", [prop], root=root, max_docket_size=5)
+        assert len(d["proposals"]) == 1, f"merged-only tokens must not reject: {d['rejected']}"
+
+    def test_open_lane_title_tokens_still_reject(self, tmp_path):
+        from engine.metabolism.propose import build_docket
+        root = tmp_path
+        (root / "docs").mkdir(parents=True, exist_ok=True)
+        (root / "docs" / "ACTIVE_BUILD_MAP.md").write_text(self._ABM, encoding="utf-8")
+        prop = {
+            "title": "unique openlane widget assembly",
+            "tier": "T0", "kind": "test", "targets_sensor": "front_run_lead",
+            "rationale": "collides with the open-PR lane",
+            "fitness_contract": {"sensor": "front_run_lead", "expected_sign": "+",
+                                 "band": "accruing", "check_by": "2026-10-15",
+                                 "placebo_to_beat": "shadow placebo tape"},
+        }
+        d = build_docket("cycle-openlane-b", [prop], root=root, max_docket_size=5)
+        assert len(d["proposals"]) == 0
+        assert "ACTIVE_BUILD_MAP" in d["rejected"][0]["reason"]
+
+    def test_adjudicate_screen_scopes_abm_to_open_lanes(self, tmp_path):
+        """adjudicate._load_case_law must carry the same open-lanes scoping as
+        propose (both copies of the screen had the whole-file defect)."""
+        from engine.metabolism import adjudicate as adj
+        (tmp_path / "docs").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "research").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "research" / "DO_NOT_REBUILD.md").write_text("# empty\n")
+        (tmp_path / "docs" / "ACTIVE_BUILD_MAP.md").write_text(
+            "# Active Build Map\n\n## Open PRs\n\n| #1 | unique openlane widget assembly |\n\n"
+            "## Recently Merged (last 14 days)\n\n| #2 | probe alpha plumbing check |\n"
+        )
+        cl = adj._load_case_law(tmp_path)
+        assert "openlane" in cl["active"]
+        assert "plumbing" not in cl["active"], "merged-PR titles must not enter the screen corpus"
