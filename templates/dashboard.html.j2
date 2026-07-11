@@ -1030,8 +1030,12 @@
   /* major-index health (macro page hero) */
   .idx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
   @media (max-width: 900px) { .idx-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 480px) { .idx-grid { grid-template-columns: 1fr; } }
-  .idx-grid > * { min-width: 0; }
+  @media (max-width: 480px) { body.page-macro .idx-grid { grid-template-columns: 1fr; } }
+  body.page-macro .idx-grid > * { min-width: 0; }
+  @media (max-width: 560px) {
+    body.page-macro #now-board .nb-sum { grid-template-columns: auto 1fr; }
+    body.page-macro #now-board .nb-meta { grid-column: 1 / -1; white-space: normal; }
+  }
   .idx-tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
   .idx-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
   .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
@@ -1981,7 +1985,6 @@ body.page-macro::before{
 
 /* ── KPI area right of dial ───────────────────────── */
 .mx-kpi-area{flex:1;min-width:0}
-.mx-kpi-strip{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
 
 /* ── KPI chips ─────────────────────────────────────── */
 .mx-chip{
@@ -2076,7 +2079,6 @@ body.page-macro::before{
 }
 @media(max-width:390px){
   .mx-legs-grid{grid-template-columns:1fr}
-  .mx-kpi-strip{gap:4px}
   .mx-chip{font-size:10px;padding:2px 8px}
 }
 
@@ -2280,12 +2282,13 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
           </div>
         </div>
       </div>
-      {# Reader contract strip — the thesis / flip content restyled as contract strip.
+      {# Reader contract strip — flip condition ONLY (the thesis sentence already IS the
+         hero headline above; review panel: repeating it here reads as a duplicate-render bug).
          The ORIGINAL p.v-thesis inside ms-verdict below is kept for CI. #}
-      {% if MS.headline_en %}
+      {% if MS.flip_en %}
       <div class="mx-contract">
-        <strong>{{ t('Reader contract:','阅读约定：') }}</strong>
-        {{ t(MS.headline_en, MS.headline_zh if MS.headline_zh else MS.headline_en) }}{% if MS.flip_en %} · <em>{{ t(MS.flip_en, MS.flip_zh if MS.flip_zh is defined and MS.flip_zh else MS.flip_en) }}</em>{% endif %}
+        <strong>{{ t('Flips when:','翻转条件：') }}</strong>
+        <em>{{ t(MS.flip_en, MS.flip_zh if MS.flip_zh is defined and MS.flip_zh else MS.flip_en) }}</em>
       </div>
       {% endif %}
     </div>

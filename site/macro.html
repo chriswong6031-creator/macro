@@ -1152,8 +1152,12 @@
   /* major-index health (macro page hero) */
   .idx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
   @media (max-width: 900px) { .idx-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 480px) { .idx-grid { grid-template-columns: 1fr; } }
-  .idx-grid > * { min-width: 0; }
+  @media (max-width: 480px) { body.page-macro .idx-grid { grid-template-columns: 1fr; } }
+  body.page-macro .idx-grid > * { min-width: 0; }
+  @media (max-width: 560px) {
+    body.page-macro #now-board .nb-sum { grid-template-columns: auto 1fr; }
+    body.page-macro #now-board .nb-meta { grid-column: 1 / -1; white-space: normal; }
+  }
   .idx-tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
   .idx-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
   .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
@@ -2349,7 +2353,6 @@ body.page-macro::before{
 
 /* ── KPI area right of dial ───────────────────────── */
 .mx-kpi-area{flex:1;min-width:0}
-.mx-kpi-strip{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
 
 /* ── KPI chips ─────────────────────────────────────── */
 .mx-chip{
@@ -2444,7 +2447,6 @@ body.page-macro::before{
 }
 @media(max-width:390px){
   .mx-legs-grid{grid-template-columns:1fr}
-  .mx-kpi-strip{gap:4px}
   .mx-chip{font-size:10px;padding:2px 8px}
 }
 
@@ -2636,8 +2638,8 @@ body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:
       
       
       <div class="mx-contract">
-        <strong><span class="l-en">Reader contract:</span><span class="l-zh">阅读约定：</span></strong>
-        <span class="l-en">Risk-on — the tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported.</span><span class="l-zh">风险偏好 — 价格、广度与跨资产信号一致。顺势交易与逢强加仓得到支持。</span> · <em><span class="l-en">→ Mixed if breadth & participation rolls over (now 59/100, the weakest leg).</span><span class="l-zh">→ 若广度与参与转弱（现 59/100，最弱项）则转为「混合」。</span></em>
+        <strong><span class="l-en">Flips when:</span><span class="l-zh">翻转条件：</span></strong>
+        <em><span class="l-en">→ Mixed if breadth & participation rolls over (now 59/100, the weakest leg).</span><span class="l-zh">→ 若广度与参与转弱（现 59/100，最弱项）则转为「混合」。</span></em>
       </div>
       
     </div>

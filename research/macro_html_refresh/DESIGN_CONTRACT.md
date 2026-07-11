@@ -26,3 +26,10 @@ Rebuild `site/macro.html` (produced by `scripts/build_site.py`, mode "macro") on
 - Page hosts live overlays (`live.js`/`live_config.js`), the release-radar modal + tab strip, and alert popovers — all must survive the reskin.
 - Bilingual EN/ZH throughout; no CJK/t() in `title=`; `check_nav_gap` requires ≥14px top gap (body padding-top).
 - macro.html is also hit by the `-X theirs` render-resurrection failure mode — hand-transplant deltas, never regen intraday from stale data (see memory `render-resurrects-stale-site-text`).
+
+## OPERATOR RULING — 2026-07-10 (supersedes parts of the hybrid contract above)
+Deep integration, not overhaul, SHIPPED on this basis:
+- The ORIGINAL Market State board — verdict hero with score progress bar, six-factor Evidence rows, multi-timeframe tape, Macro Backdrop/Goldilocks card — is RETAINED in original form. Do not re-propose compacting/demoting it.
+- The heatmap (`#heatmap-scorecard`) is retained untouched.
+- NO KPI chip strip in the hero (mx-kpi-strip removed). The mx hero = gradient headline + single dial + legs grid + flip-condition strip only.
+- Everything else (policy band, release-radar chrome, AI brief card + display-only badge, sector heat, sentiment band, cross-asset tiles, index health grid, news chips, link-out strip) uses the mx framework.
