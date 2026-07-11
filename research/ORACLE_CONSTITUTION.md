@@ -40,3 +40,4 @@
 
 ## VII. Amendment log
 - 2026-07-04 — v1 authored (Fable), consolidating P1–P8 + backbone rulings at program close.
+- 2026-07-11 — Ratio Lens grammar registered ([RATIO_LENS_MASTERPLAN_BY_FABLE.md](RATIO_LENS_MASTERPLAN_BY_FABLE.md), RL-R1..R16): pairwise log-ratio series over a frozen curated pair registry as a new display-tier organ family; ratio-fed oscillator outputs watermarked "not characterized on ratio inputs"; decomposition-in-absolute-returns law; no dispersion gates, no tensor extension, no episode/routing fields; forward ledger `ratio_lens.v1` expected-null.
