@@ -96,6 +96,7 @@
   .igs .igs-k { font-size: 10px; color: var(--muted); font-weight: 700;
          text-transform: uppercase; letter-spacing: .07em; white-space: nowrap; }
   .igs .igs-dots { display: inline-flex; align-items: center; gap: 5px; }
+  .igs .igs-dotsep { width: 7px; flex: none; }   /* thrust | participation family gap */
   .igs .igs-dot { width: 10px; height: 10px; border-radius: 50%; cursor: help;
          background: var(--panel2); border: 1px solid var(--line); }
   .igs .igs-dot.lit { background: var(--ok);
@@ -116,9 +117,15 @@
   .igs .igs-theme.fading { color: var(--muted); }
   .igs .igs-xref { font-size: 10.5px; color: var(--muted); cursor: help; white-space: nowrap;
          padding: 2px 8px; border-radius: 99px; border: 1px dashed var(--line); margin-left: auto; }
-  /* one merged footer */
+  /* one merged footer: stance token · engine do-line + track record · as-of right */
   .igs .igs-ft { margin-top: 9px; padding-top: 8px; font-size: 11px; color: var(--muted);
-         border-top: 1px solid color-mix(in srgb, var(--ic-col) 18%, var(--line)); }
+         border-top: 1px solid color-mix(in srgb, var(--ic-col) 18%, var(--line));
+         display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
+  .igs .igs-stance { font-weight: 800; color: var(--text); text-transform: uppercase;
+         letter-spacing: .04em; font-size: 10.5px; white-space: nowrap; flex: none; }
+  .igs .igs-ft-body { flex: 1 1 320px; min-width: 0; }
+  .igs .igs-asof { flex: none; margin-left: auto; font-size: 10px; opacity: .75;
+         font-variant-numeric: tabular-nums; white-space: nowrap; }
   @media (max-width: 560px) {
     .igs .igs-glance { flex-basis: 100%; }
     .igs .igs-xref { margin-left: 0; }

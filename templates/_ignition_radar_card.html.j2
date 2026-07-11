@@ -155,11 +155,17 @@
   <div class="igs-ev">
     {%- if ig.chips %}
     <span class="igs-k">{{ t('Broad market','大盘') }}</span>
+    {#- 4 thrust events + 4 participation confirms (compute_broad concatenation
+        order) — a small gap separates the two families; each dot's family rides
+        its hover tip. -#}
     <span class="igs-dots">
       {%- for c in ig.chips %}
+      {%- if loop.index0 == 4 %}<span class="igs-dotsep"></span>{% endif %}
+      {%- set fam_en = 'Thrust event' if loop.index0 < 4 else 'Participation confirm' %}
+      {%- set fam_zh = '推进事件' if loop.index0 < 4 else '参与度确认' %}
       <span class="igs-dot{{ ' lit' if c.lit }}{{ ' fresh' if c.fresh }}"
-        data-tip-en="{{ c.label_en }}{% if c.detail_en %} — {{ c.detail_en }}{% endif %}"
-        data-tip-zh="{{ c.label_zh }}{% if c.detail_zh %} — {{ c.detail_zh }}{% endif %}"></span>
+        data-tip-en="{{ fam_en }} · {{ c.label_en }}{% if c.detail_en %} — {{ c.detail_en }}{% endif %}"
+        data-tip-zh="{{ fam_zh }} · {{ c.label_zh }}{% if c.detail_zh %} — {{ c.detail_zh }}{% endif %}"></span>
       {%- endfor %}
     </span>
     <span class="igs-kcount">{{ ig.k_count|default(0) }} {{ t('of 8 lit','/ 8 亮起') }}</span>
@@ -185,7 +191,16 @@
     {%- endif %}
   </div>
   {%- if regime.do_en %}
+  {#- Stance token (Law 1): deterministic display mapping from engine state —
+      never escalates beyond the engine's own do-line. -#}
+  {%- set _any_igniting = narrow_items and (narrow_items | selectattr('state', 'equalto', 'igniting') | list | length > 0) %}
   <div class="igs-ft">
+    <span class="igs-stance">
+      {%- if state == 'ignited' %}{{ t('Get ready','做好准备') }}
+      {%- elif state == 'warming' or fragile or _any_igniting %}{{ t("Watch — don't chase",'观望 — 勿追高') }}
+      {%- else %}{{ t('Nothing to act on yet','暂无可操作信号') }}{% endif -%}
+    </span>
+    <span class="igs-ft-body">
     {{ t(regime.do_en, regime.do_zh) }}
     {%- set fl = ig.forward_log if ig.forward_log else {} %}
     {%- if fl.n_graded and fl.n_graded > 0 %}
@@ -193,6 +208,8 @@
     {%- else %}
     · {{ t('still building its self-graded track record','自评记录积累中') }}
     {%- endif %}
+    </span>
+    {%- if ig.as_of %}<span class="igs-asof">{{ t('as of','截至') }} {{ ig.as_of }}</span>{% endif %}
   </div>
   {%- endif %}
 </div>
