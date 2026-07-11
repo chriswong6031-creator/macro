@@ -1,0 +1,73 @@
+name: metabolism-gc
+# Metabolism GC — daily orphan-worktree cleanup (FIX-6 / MAJOR-8).
+#
+# Runs scripts/metabolism_gc.py to reap orphan wf_* worktrees left by
+# crashed build sessions.  Commits nothing; read-and-clean only.
+#
+# WHY THIS IS UNGATED: leaked worktrees rot and fill disk regardless of
+# whether the autonomy loop is paused.  GC must run even when AUTONOMY_PAUSED
+# is 'true' — a paused loop can still accumulate orphan worktrees from prior
+# runs.  Tying GC to AUTONOMY_PAUSED would let disk pressure build silently
+# during a pause.
+
+on:
+  schedule:
+    - cron: "20 7 * * *"   # daily 07:20 UTC — before the morning pipeline peak
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print what would be reaped without removing"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read   # GC only inspects + removes worktrees; never commits
+
+concurrency:
+  group: metabolism-gc
+  cancel-in-progress: false
+
+jobs:
+  gc:
+    # Ungated: GC runs unconditionally (see WHY comment in header above).
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - name: install deps
+        run: pip install --quiet pyyaml
+
+      - name: GC orphan worktrees
+        env:
+          DRY_RUN_INPUT: ${{ github.event.inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          DRY_RUN_FLAG=""
+          if [ "${DRY_RUN_INPUT:-false}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+          # shellcheck disable=SC2086
+          python -m scripts.metabolism_gc ${DRY_RUN_FLAG}
+
+      - name: notify on failure
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$TOKEN" ] || exit 0
+          curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            -d chat_id="$CHAT_ID" \
+            -d text="[Metabolism] metabolism-gc run failed: ${RUN_URL}" || true

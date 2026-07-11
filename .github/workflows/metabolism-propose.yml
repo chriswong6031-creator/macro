@@ -118,6 +118,7 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git checkout -b "$BRANCH"
           # Only metabolism artifacts + the (non-immutable) trial ledger travel here.
+          # FIX-4: `data/metabolism` glob covers key_ledger.jsonl (key pool durability).
           git add data/metabolism data/trial_ledger.jsonl 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "no docket changes staged — nothing to propose."
@@ -133,3 +134,15 @@ jobs:
             --body "Autonomous PROPOSE docket for cycle \`$CYCLE_ID\` (INERT — draft only; the two-key ADJUDICATE + operator arming gate any merge). See \`data/metabolism/dockets/$CYCLE_ID.json\`." \
             || echo "draft PR create skipped (may already exist)"
           echo "PROPOSE draft PR opened for $CYCLE_ID"
+
+      - name: notify on failure
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$TOKEN" ] || exit 0
+          curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            -d chat_id="$CHAT_ID" \
+            -d text="[Metabolism] metabolism-propose run failed: ${RUN_URL}" || true

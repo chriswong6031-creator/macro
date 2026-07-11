@@ -91,64 +91,84 @@ jobs:
             exit 0
           fi
 
-          # When running on schedule (no cycle_id supplied), discover the most-recent
-          # open metabolism/propose-* branch.  If none exists, clean no-op.
-          if [ -z "${CYCLE_ID:-}" ]; then
-            CYCLE_ID="$(git ls-remote --heads origin 'refs/heads/metabolism/propose-*' \
-              | awk '{print $2}' | sed 's|refs/heads/metabolism/propose-||' \
-              | sort | tail -n 1)"
-            if [ -z "$CYCLE_ID" ]; then
-              echo "no open propose branch found — clean no-op (schedule)."
-              exit 0
-            fi
-            echo "schedule: discovered cycle_id=$CYCLE_ID"
-          fi
-
-          BRANCH="${BRANCH_INPUT:-metabolism/propose-$CYCLE_ID}"
-          echo "cycle_id=$CYCLE_ID branch=$BRANCH"
-
-          # Check out the branch carrying the docket, if it differs from the default ref.
-          git fetch origin "$BRANCH" || echo "branch $BRANCH not on origin — using current ref"
-          git checkout "$BRANCH" 2>/dev/null || git checkout -B "$BRANCH" "origin/$BRANCH" 2>/dev/null || echo "staying on current ref"
-
-          DOCKET="data/metabolism/dockets/$CYCLE_ID.json"
-          if [ ! -f "$DOCKET" ]; then
-            echo "docket $DOCKET not found on this ref — clean no-op."
-            exit 0
-          fi
-
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
 
-          # Three DISTINCT-run_id passes (R-AUT-6 row-pair + two-key resolution).
-          python -m scripts.metabolism_adjudicate --cycle-id "$CYCLE_ID" --role orchestrator \
-            --docket-file "$DOCKET" --run-id "${GITHUB_RUN_ID}-orchestrator"
-          python -m scripts.metabolism_adjudicate --cycle-id "$CYCLE_ID" --role adversary \
-            --docket-file "$DOCKET" --run-id "${GITHUB_RUN_ID}-adversary"
-          python -m scripts.metabolism_adjudicate --cycle-id "$CYCLE_ID" --role resolve \
-            --docket-file "$DOCKET"
-
-          git add data/neuralweb/governance.jsonl data/metabolism 2>/dev/null || true
-          if git diff --cached --quiet; then
-            echo "no governance changes (already adjudicated — resume no-op)."
-            exit 0
+          # FIX-2 (MINOR-10): When running on schedule (no cycle_id), iterate ALL pending
+          # metabolism/propose-* branches, not just the most-recent one.  Per-branch failures
+          # are independent (|| continue) so one bad branch never strands the rest.
+          # workflow_dispatch with an explicit cycle_id retains the single-cycle fast path.
+          if [ -n "${CYCLE_ID:-}" ]; then
+            # Single-cycle mode (workflow_dispatch).
+            PENDING_CYCLES="$CYCLE_ID"
+          else
+            PENDING_CYCLES="$(git ls-remote --heads origin 'refs/heads/metabolism/propose-*' \
+              | awk '{print $2}' | sed 's|refs/heads/metabolism/propose-||' \
+              | sort)"
+            if [ -z "$PENDING_CYCLES" ]; then
+              echo "no open propose branch found — clean no-op (schedule)."
+              exit 0
+            fi
+            echo "schedule: discovered cycles: $(echo "$PENDING_CYCLES" | tr '\n' ' ')"
           fi
-          git commit -m "metabolism: ADJUDICATE row-pair $CYCLE_ID [Phase A]" \
-                     -m "Loop-Authored: til run=${GITHUB_RUN_ID:-local}"
-          # Rebase-autostash before push so a branch that advanced remotely between
-          # checkout and push can't brick the publish (house convention).
-          # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/$BRANCH can
-          # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
-          # refuses ("untracked working tree files would be overwritten") and --autostash can't
-          # clear it (it parks tracked modifications only), so every retry dies identically.
-          # Everything this step publishes is already committed above, so a path untracked HERE
-          # but tracked on origin/$BRANCH is a throwaway local write — origin/$BRANCH is authoritative.
-          # Gitignored files and untracked paths origin/$BRANCH doesn't track never enter the
-          # intersection (runner-local stores and caches are untouched).
-          git fetch origin "$BRANCH" || true
-          comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
-                   <(git ls-tree -r --name-only "origin/$BRANCH" 2>/dev/null | LC_ALL=C sort) \
-            | while IFS= read -r f; do rm -f -- "$f" || true; done
-          git pull --rebase --autostash origin "$BRANCH" 2>/dev/null || true
-          git push origin HEAD:"$BRANCH"
-          echo "ADJUDICATE row-pair written for $CYCLE_ID"
+
+          _adjudicate_ok=0
+          for _CID in $PENDING_CYCLES; do
+            _BRANCH="${BRANCH_INPUT:-metabolism/propose-$_CID}"
+            echo "--- adjudicating cycle_id=$_CID branch=$_BRANCH ---"
+
+            # Check out the branch carrying the docket.
+            git fetch origin "$_BRANCH" || { echo "branch $_BRANCH not on origin — skip"; continue; }
+            git checkout "$_BRANCH" 2>/dev/null || git checkout -B "$_BRANCH" "origin/$_BRANCH" 2>/dev/null || { echo "checkout failed $_BRANCH — skip"; continue; }
+
+            _DOCKET="data/metabolism/dockets/$_CID.json"
+            if [ ! -f "$_DOCKET" ]; then
+              echo "docket $_DOCKET not found on this ref — skip."
+              continue
+            fi
+
+            # Three DISTINCT-run_id passes (R-AUT-6 row-pair + two-key resolution).
+            python -m scripts.metabolism_adjudicate --cycle-id "$_CID" --role orchestrator \
+              --docket-file "$_DOCKET" --run-id "${GITHUB_RUN_ID}-orchestrator" \
+              || { echo "orchestrator pass failed $_CID — skip"; continue; }
+            python -m scripts.metabolism_adjudicate --cycle-id "$_CID" --role adversary \
+              --docket-file "$_DOCKET" --run-id "${GITHUB_RUN_ID}-adversary" \
+              || { echo "adversary pass failed $_CID — skip"; continue; }
+            python -m scripts.metabolism_adjudicate --cycle-id "$_CID" --role resolve \
+              --docket-file "$_DOCKET" \
+              || { echo "resolve pass failed $_CID — skip"; continue; }
+
+            # FIX-4: `data/metabolism` glob covers key_ledger.jsonl (key pool durability).
+            git add data/neuralweb/governance.jsonl data/metabolism 2>/dev/null || true
+            if git diff --cached --quiet; then
+              echo "no governance changes for $_CID (already adjudicated — resume no-op)."
+            else
+              git commit -m "metabolism: ADJUDICATE row-pair $_CID [Phase A]" \
+                         -m "Loop-Authored: til run=${GITHUB_RUN_ID:-local}"
+              # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/$_BRANCH can
+              # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
+              # refuses ("untracked working tree files would be overwritten") and --autostash can't
+              # clear it.  Everything this step publishes is already committed above.
+              git fetch origin "$_BRANCH" || true
+              comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                       <(git ls-tree -r --name-only "origin/$_BRANCH" 2>/dev/null | LC_ALL=C sort) \
+                | while IFS= read -r f; do rm -f -- "$f" || true; done
+              git pull --rebase --autostash origin "$_BRANCH" 2>/dev/null || true
+              git push origin HEAD:"$_BRANCH" || { echo "push failed $_CID — continuing"; continue; }
+              echo "ADJUDICATE row-pair written for $_CID"
+            fi
+            _adjudicate_ok=$((_adjudicate_ok + 1))
+          done
+          echo "adjudicate sweep complete: $_adjudicate_ok cycle(s) processed."
+
+      - name: notify on failure
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$TOKEN" ] || exit 0
+          curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            -d chat_id="$CHAT_ID" \
+            -d text="[Metabolism] metabolism-adjudicate run failed: ${RUN_URL}" || true

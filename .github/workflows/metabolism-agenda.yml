@@ -115,7 +115,8 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          # Only metabolism artifacts travel here (never main, never scored paths)
+          # Only metabolism artifacts travel here (never main, never scored paths).
+          # FIX-4: `data/metabolism` glob covers key_ledger.jsonl (key pool durability).
           git add data/metabolism 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "no metabolism artifact changes — nothing to commit."
@@ -126,3 +127,15 @@ jobs:
                      -m "Loop-Authored: agenda run=${GITHUB_RUN_ID:-local}"
           git push -u origin "$BRANCH"
           echo "AGENDA committed to $BRANCH"
+
+      - name: notify on failure
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$TOKEN" ] || exit 0
+          curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            -d chat_id="$CHAT_ID" \
+            -d text="[Metabolism] metabolism-agenda run failed: ${RUN_URL}" || true

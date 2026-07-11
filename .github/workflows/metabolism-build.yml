@@ -23,12 +23,20 @@ name: metabolism-build
 #   - NO autonomous merge (that lives exclusively in metabolism-merge.yml).
 
 on:
+  # FIX-1 (BLOCKER-1): auto-chain BUILD after adjudicate (10:15).  45 10 * * * = 10:45 UTC.
+  # When running on schedule, cycle_id input is empty; the discovery step below derives
+  # the most-recently-adjudicated propose branch exactly as adjudicate.yml does.
+  # metabolism_build.py is idempotent via journal claims, so re-running on an already-built
+  # cycle is a safe no-op.
+  schedule:
+    - cron: "45 10 * * *"
   workflow_dispatch:
     inputs:
       cycle_id:
-        description: "Cycle id whose docket to build"
+        description: "Cycle id whose docket to build (leave blank on schedule — auto-discovered)"
         type: string
-        required: true
+        required: false
+        default: ""
       docket_branch:
         description: "Branch carrying the docket (default: metabolism/propose-<cycle_id>)"
         type: string
@@ -43,7 +51,9 @@ permissions:
   pull-requests: write   # open DRAFT PRs
 
 concurrency:
-  group: metabolism-build-${{ github.event.inputs.cycle_id }}
+  # Schedule runs land in the same group as each other (single active slot); dispatch
+  # is per-cycle so manual re-runs never queue-cancel an in-flight scheduled run.
+  group: metabolism-build-${{ github.event_name == 'schedule' && 'scheduled' || github.event.inputs.cycle_id }}
   cancel-in-progress: false
 
 jobs:
@@ -82,7 +92,13 @@ jobs:
           # Fallback single-key (V2-A compat)
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # FIX-5 (MINOR-11): prefer METABOLISM_MERGE_PAT for draft PR creation so the
+          # resulting PR triggers pull_request CI workflows.  GITHUB_TOKEN-created PRs are
+          # exempt from the anti-recursion rule ONLY for the creator, not for CI checks —
+          # so GITHUB_TOKEN PRs never get required status checks, which is fatal once
+          # required checks are enforced on main.  A PAT with no-workflows scope fixes
+          # this while keeping the loop unable to edit CI files.
+          GH_TOKEN: ${{ secrets.METABOLISM_MERGE_PAT || secrets.GITHUB_TOKEN }}
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_WORKFLOW: ${{ github.workflow }}
           GITHUB_SHA: ${{ github.sha }}
@@ -96,6 +112,20 @@ jobs:
           if [ "$AP" != "false" ] && [ "$FR" != "true" ]; then
             echo "AUTONOMY_PAUSED not 'false' (=${AUTONOMY_PAUSED:-<unset>}) — clean no-op."
             exit 0
+          fi
+
+          # FIX-1: When running on schedule (cycle_id input is empty), discover the most-recent
+          # adjudicated propose branch.  The build script is idempotent via journal claims, so
+          # re-running on an already-built cycle is a safe no-op.
+          if [ -z "${CYCLE_ID:-}" ]; then
+            CYCLE_ID="$(git ls-remote --heads origin 'refs/heads/metabolism/propose-*' \
+              | awk '{print $2}' | sed 's|refs/heads/metabolism/propose-||' \
+              | sort | tail -n 1)"
+            if [ -z "$CYCLE_ID" ]; then
+              echo "no open propose branch found — clean no-op (schedule)."
+              exit 0
+            fi
+            echo "schedule: discovered cycle_id=$CYCLE_ID"
           fi
 
           BRANCH="${DOCKET_BRANCH_INPUT:-metabolism/propose-$CYCLE_ID}"
@@ -119,8 +149,9 @@ jobs:
             --cycle-id "$CYCLE_ID" \
             --docket-file "$DOCKET"
 
-          # Commit any new claims.jsonl rows + ACTIVE_BUILD_MAP updates
-          git add data/metabolism/claims.jsonl docs/ACTIVE_BUILD_MAP.md 2>/dev/null || true
+          # Commit any new claims.jsonl rows + ACTIVE_BUILD_MAP updates.
+          # FIX-4: key_ledger.jsonl included — key pool durability (no prior workflow committed it).
+          git add data/metabolism/claims.jsonl data/metabolism/key_ledger.jsonl docs/ACTIVE_BUILD_MAP.md 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "metabolism: BUILD claims + ACTIVE_BUILD_MAP $CYCLE_ID [Phase V2-B]" \
                        -m "Loop-Authored: build run=${GITHUB_RUN_ID:-local}"
@@ -146,3 +177,15 @@ jobs:
         if: always()
         run: |
           python -m scripts.metabolism_gc || echo "GC completed (any errors above are non-fatal)"
+
+      - name: notify on failure
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$TOKEN" ] || exit 0
+          curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            -d chat_id="$CHAT_ID" \
+            -d text="[Metabolism] metabolism-build run failed: ${RUN_URL}" || true

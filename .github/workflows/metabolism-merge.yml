@@ -34,12 +34,19 @@ name: metabolism-merge
 #     so registries (synapse, ruling_graph, dag, ACTIVE_BUILD_MAP) never race.
 
 on:
+  # FIX-1 (BLOCKER-1): auto-chain MERGE after build (10:45).  15 12 * * * = 12:15 UTC
+  # (~90 min after build fires; allows build + CI to complete).
+  # metabolism_merge scans governance rows itself — no per-cycle input needed; the
+  # script self-discovers eligible build PRs from governance.jsonl + GH API.
+  schedule:
+    - cron: "15 12 * * *"
   workflow_dispatch:
     inputs:
       cycle_id:
         description: "Cycle id whose build PRs to merge"
         type: string
-        required: true
+        required: false
+        default: ""
       docket_branch:
         description: "Branch carrying the docket (default: metabolism/propose-<cycle_id>)"
         type: string
@@ -89,7 +96,14 @@ jobs:
           FORCE_RUN: ${{ github.event.inputs.force_run }}
           CYCLE_ID: ${{ github.event.inputs.cycle_id }}
           DOCKET_BRANCH_INPUT: ${{ github.event.inputs.docket_branch }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # FIX-5 (MINOR-11): prefer METABOLISM_MERGE_PAT over GITHUB_TOKEN.
+          # GITHUB_TOKEN pushes and PR merges do NOT trigger pull_request workflows
+          # (GitHub anti-recursion) — loop PRs would never get required CI checks,
+          # which is fatal once required status checks are enforced on main.
+          # A PAT with no-workflows scope gets CI checks while keeping the loop
+          # unable to edit CI files.  Falls back to GITHUB_TOKEN when PAT absent
+          # (pre-production / ops-verification mode).
+          GH_TOKEN: ${{ secrets.METABOLISM_MERGE_PAT || secrets.GITHUB_TOKEN }}
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_WORKFLOW: ${{ github.workflow }}
           GITHUB_SHA: ${{ github.sha }}
@@ -105,23 +119,55 @@ jobs:
             exit 0
           fi
 
-          BRANCH="${DOCKET_BRANCH_INPUT:-metabolism/propose-$CYCLE_ID}"
-          echo "cycle_id=$CYCLE_ID docket_branch=$BRANCH"
-
-          # Check out the docket branch to read the adjudication
-          git fetch origin "$BRANCH" || echo "branch not on origin — using current ref"
-          git checkout "$BRANCH" 2>/dev/null || git checkout -B "$BRANCH" "origin/$BRANCH" 2>/dev/null || true
-
-          DOCKET="data/metabolism/dockets/$CYCLE_ID.json"
-          if [ ! -f "$DOCKET" ]; then
-            echo "docket $DOCKET not found — clean no-op."
-            exit 0
-          fi
-
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
 
-          # Run MERGE lane — single-threaded by the concurrency group above
-          python -m scripts.metabolism_merge \
-            --cycle-id "$CYCLE_ID" \
-            --docket-file "$DOCKET"
+          # FIX-1: On schedule (CYCLE_ID empty), discover all pending propose branches and
+          # invoke the merge script per-cycle, same discovery idiom as adjudicate.yml.
+          # The merge script is already gated on governance authorization + CI status, so
+          # iterating all cycles is safe — ineligible cycles are no-ops inside the script.
+          if [ -n "${CYCLE_ID:-}" ]; then
+            PENDING_CYCLES="$CYCLE_ID"
+          else
+            PENDING_CYCLES="$(git ls-remote --heads origin 'refs/heads/metabolism/propose-*' \
+              | awk '{print $2}' | sed 's|refs/heads/metabolism/propose-||' \
+              | sort)"
+            if [ -z "$PENDING_CYCLES" ]; then
+              echo "no open propose branch found — clean no-op (schedule)."
+              exit 0
+            fi
+            echo "schedule: discovered cycles: $(echo "$PENDING_CYCLES" | tr '\n' ' ')"
+          fi
+
+          for _CID in $PENDING_CYCLES; do
+            _BRANCH="${DOCKET_BRANCH_INPUT:-metabolism/propose-$_CID}"
+            echo "--- merge cycle_id=$_CID branch=$_BRANCH ---"
+
+            git fetch origin "$_BRANCH" || { echo "branch $_BRANCH not on origin — skip"; continue; }
+            git checkout "$_BRANCH" 2>/dev/null || git checkout -B "$_BRANCH" "origin/$_BRANCH" 2>/dev/null || { echo "checkout failed $_BRANCH — skip"; continue; }
+
+            _DOCKET="data/metabolism/dockets/$_CID.json"
+            if [ ! -f "$_DOCKET" ]; then
+              echo "docket $_DOCKET not found — skip."
+              continue
+            fi
+
+            # Run MERGE lane — single-threaded by the concurrency group above
+            python -m scripts.metabolism_merge \
+              --cycle-id "$_CID" \
+              --docket-file "$_DOCKET" \
+              || { echo "merge script failed for $_CID — continuing"; continue; }
+          done
+          echo "merge sweep complete."
+
+      - name: notify on failure
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$TOKEN" ] || exit 0
+          curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            -d chat_id="$CHAT_ID" \
+            -d text="[Metabolism] metabolism-merge run failed: ${RUN_URL}" || true
