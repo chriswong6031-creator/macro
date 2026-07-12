@@ -389,38 +389,44 @@ def is_cooling(key_id: str, root: Path | None = None) -> bool:
         if not cooling_rows:
             return False
 
-        # Sort by ts ascending, take the last
         def _ts_key(r: dict) -> datetime:
             t = _parse_ts(r.get("ts", ""))
             return t if t is not None else datetime.min.replace(tzinfo=timezone.utc)
 
-        last_cooling = sorted(cooling_rows, key=_ts_key)[-1]
-        reset_hint = last_cooling.get("reset_hint", "")
-        reset_dt = _parse_ts(reset_hint)
-        if reset_dt is None:
-            return False  # unparseable hint → treat as resolved
-
         now = datetime.now(timezone.utc)
 
-        # A subsequent "ok" row clears cooling ONLY for window/auth kinds.
-        # A "weekly" cooling clears ONLY when reset_hint passes (i.e. now >= reset_dt).
-        # An "ok" row recorded before the session completes (former pick-time recording)
-        # must NOT clear weekly cooling — that would let a weekly-exhausted key be
-        # re-picked on the very next cycle (R-V5-3).
-        cool_kind = last_cooling.get("cool_kind", "window")
-        if cool_kind in ("window", "auth"):
-            # window and auth coolings are cleared by a later "ok" row
-            cooling_ts = _ts_key(last_cooling)
-            for r in rows:
-                if r.get("key_id") != key_id:
-                    continue
-                if r.get("outcome") == "ok":
-                    row_ts = _ts_key(r)
-                    if row_ts >= cooling_ts:
-                        return False  # key was used successfully at or after the cooling row
-        # weekly cooling: cleared ONLY by time (reset_hint passage), not by ok rows
+        # Evaluate EVERY horizon independently (not just the most recent row):
+        # a short window cooling stacked after a weekly cooling must not mask
+        # the weekly horizon once the window expires (#2295 review F4).
+        # Per horizon, take the LATEST cooling row of that kind and apply the
+        # kind's clear rule:
+        #   window/auth — cleared by a later "ok" row (a confirmed successful
+        #     use proves the key works / operator rotated the secret), else by
+        #     reset_hint passage. Note "launched" rows never clear (R-V5-3 —
+        #     recorded at launch, before success is known).
+        #   weekly — cleared ONLY by reset_hint passage; an intra-week ok does
+        #     NOT restore a weekly-exhausted quota.
+        ok_ts = [
+            _ts_key(r) for r in rows
+            if r.get("key_id") == key_id and r.get("outcome") == "ok"
+        ]
+        latest_by_kind: dict[str, dict] = {}
+        for r in sorted(cooling_rows, key=_ts_key):
+            latest_by_kind[r.get("cool_kind", "window")] = r
 
-        return now < reset_dt
+        for kind, cool_row in latest_by_kind.items():
+            reset_dt = _parse_ts(cool_row.get("reset_hint", ""))
+            if reset_dt is None:
+                continue  # unparseable hint → treat this horizon as resolved
+            if now >= reset_dt:
+                continue  # horizon expired by time
+            if kind != "weekly":
+                cooling_ts = _ts_key(cool_row)
+                if any(t >= cooling_ts for t in ok_ts):
+                    continue  # window/auth horizon cleared by a later ok row
+            return True  # at least one horizon still active
+
+        return False
     except Exception as exc:  # noqa: BLE001
         log.warning("key_pool.is_cooling(%s): %s", key_id, exc)
         return False

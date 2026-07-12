@@ -125,13 +125,20 @@ def _read_claims(root: Path | None = None) -> list[dict[str, Any]]:
         return []
 
 
-def _cycle_claimed_files(cycle_id: str, root: Path | None = None) -> set[str]:
-    """Return the set of target_files already claimed this cycle. NEVER raises."""
+def _cycle_claimed_files(cycle_id: str, root: Path | None = None,
+                         exclude_proposal: str | None = None) -> set[str]:
+    """Return the set of target_files already claimed this cycle.
+
+    exclude_proposal: skip rows claimed by this proposal_id (its OWN prior
+    claim is not a collision — enables bounded re-attempts, #2295 F3).
+    NEVER raises."""
     try:
         rows = _read_claims(root)
         claimed: set[str] = set()
         for row in rows:
             if row.get("cycle_id") != cycle_id:
+                continue
+            if exclude_proposal and row.get("proposal_id") == exclude_proposal:
                 continue
             for f in row.get("target_files") or []:
                 claimed.add(str(f))
@@ -159,7 +166,11 @@ def claim_proposal(
     """
     result: dict[str, Any] = {"claimed": False, "collision_files": [], "ts": ""}
     try:
-        already = _cycle_claimed_files(cycle_id, root)
+        # Self-claims are NOT collisions (#2295 review F3): claim_proposal runs
+        # BEFORE dispatch and claims.jsonl is committed, so on a re-attempt of a
+        # failed proposal its own prior claim row must not block it — only a
+        # claim by a DIFFERENT proposal is a real collision.
+        already = _cycle_claimed_files(cycle_id, root, exclude_proposal=proposal_id)
         collisions = [f for f in target_files if f in already]
         if collisions:
             result["collision_files"] = collisions
@@ -557,6 +568,19 @@ def _journal_dispatch(
                 pass
             note_record = {**record, "_failed_attempts": prior_count + 1}
 
+            # Emit the parked insight exactly ONCE, at the threshold CROSSING
+            # (write path) — emitting from the _is_dispatch_done read path
+            # would append a duplicate row on every subsequent scan (#2295 F5).
+            try:
+                budget = _load_budget_config(root)
+                max_attempts = int(budget.get("max_build_attempts", 2))
+                threshold = 1 if record_status == "foreign_file_abort" else max_attempts
+                new_count = prior_count + 1
+                if new_count >= threshold and prior_count < threshold:
+                    _emit_parked_insight(cycle_id, proposal_id, new_count, root=root)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("BUILD: parked-insight emit failed (%s) — continuing", exc)
+
         finish_stage(
             cycle_id, stage, terminal_status,
             note=json.dumps(note_record, separators=(",", ":"), default=str)[:600],
@@ -592,7 +616,7 @@ def _emit_parked_insight(
     try:
         from engine.metabolism.insight_bus import append_row, build_row
         row = build_row(
-            emitter="metabolism_build._is_dispatch_done",
+            emitter="metabolism_build._journal_dispatch",
             kind="dispatched_build_parked",
             severity="high",
             entities=[proposal_id, cycle_id],
@@ -695,7 +719,8 @@ def _is_dispatch_done(cycle_id: str, proposal_id: str, root: Path | None = None)
                     "(threshold=%d, is_foreign_abort=%s)",
                     cycle_id, proposal_id, failed_count, park_threshold, is_foreign_abort,
                 )
-                _emit_parked_insight(cycle_id, proposal_id, failed_count, root=root)
+                # (insight row already emitted at the write-time threshold
+                #  crossing in _journal_dispatch — no emission on reads, #2295 F5)
                 return True  # permanently parked
 
             # Under the threshold — re-attemptable
@@ -1263,6 +1288,18 @@ def run_build_lane(
     if _is_paused():
         log.info("BUILD: AUTONOMY_PAUSED — no-op")
         return [{"status": "noop_paused", "cycle_id": cycle_id}]
+
+    # R-V5-2: reap stale 'running' markers BEFORE scanning dispatch state, so a
+    # crashed prior session's marker is honestly 'failed' and re-attemptable.
+    # Runs here (not in the cron GC lane) because THIS lane checks out the
+    # branch the journals live on and commits them afterward (#2295 review F2).
+    try:
+        from scripts.metabolism_gc import sweep_stale_running_markers
+        _sweep = sweep_stale_running_markers(root or _ROOT, dry_run=dry_run)
+        if _sweep.get("swept"):
+            log.info("BUILD: stale-running sweep reaped %d marker(s)", _sweep["swept"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: stale-running sweep failed (%s) — continuing", exc)
 
     results: list[dict[str, Any]] = []
     try:

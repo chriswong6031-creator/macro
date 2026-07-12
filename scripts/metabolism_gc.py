@@ -364,6 +364,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Metabolism orphan-worktree GC helper (A1)")
     parser.add_argument("--dry-run", action="store_true", help="Print what would be reaped without removing")
     parser.add_argument("--root", default=None, help="Repo root (default: auto-detect)")
+    parser.add_argument("--sweep-stale-running", action="store_true",
+                        help="Also rewrite stale 'running' journal markers to 'failed'. "
+                             "OFF by default: the cron GC lane runs on a main checkout "
+                             "with contents:read where journals don't exist and writes "
+                             "can't be committed (#2295 review F2) — the sweep runs "
+                             "in-process in the BUILD lane instead, where its rewrites "
+                             "ride the lane's own journal commit.")
     args = parser.parse_args(argv)
 
     if args.root:
@@ -374,13 +381,14 @@ def main(argv: list[str] | None = None) -> int:
 
     log.info("GC: repo_root=%s dry_run=%s", repo_root, args.dry_run)
 
-    # Stale running marker sweep (R-V5-2): runs first, before worktree reaping
-    sweep_result = sweep_stale_running_markers(repo_root, dry_run=args.dry_run)
-    log.info(
-        "GC stale-running sweep: swept=%d errors=%d",
-        sweep_result["swept"],
-        len(sweep_result["errors"]),
-    )
+    # Stale running marker sweep (R-V5-2): opt-in only (see --sweep-stale-running help)
+    if args.sweep_stale_running:
+        sweep_result = sweep_stale_running_markers(repo_root, dry_run=args.dry_run)
+        log.info(
+            "GC stale-running sweep: swept=%d errors=%d",
+            sweep_result["swept"],
+            len(sweep_result["errors"]),
+        )
 
     result = gc(repo_root, dry_run=args.dry_run)
 

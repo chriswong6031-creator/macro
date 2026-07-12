@@ -151,7 +151,11 @@ jobs:
 
           # Commit any new claims.jsonl rows + ACTIVE_BUILD_MAP updates.
           # FIX-4: key_ledger.jsonl included — key pool durability (no prior workflow committed it).
-          git add data/metabolism/claims.jsonl data/metabolism/key_ledger.jsonl docs/ACTIVE_BUILD_MAP.md 2>/dev/null || true
+          # R-V5-1/2 durability (#2295 review F1): the journal carries the
+          # _failed_attempts retry counter + running/failed markers — without
+          # committing it, every fresh checkout resets the counter and the
+          # park/re-attempt mechanism is dead code.
+          git add data/metabolism/claims.jsonl data/metabolism/key_ledger.jsonl data/metabolism/journal docs/ACTIVE_BUILD_MAP.md 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "metabolism: BUILD claims + ACTIVE_BUILD_MAP $CYCLE_ID [Phase V2-B]" \
                        -m "Loop-Authored: build run=${GITHUB_RUN_ID:-local}"

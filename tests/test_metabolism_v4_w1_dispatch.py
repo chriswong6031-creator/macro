@@ -1963,3 +1963,140 @@ class TestCoolingHorizonInBuildLane:
         assert "ok" not in recorded_outcomes, (
             f"'ok' must NOT be recorded on session failure; got {recorded_outcomes}"
         )
+
+
+# ── #2295 review fixes: durability wiring, self-claims, emit-once, horizons ──
+
+class TestReviewFixDurability:
+    """F1/F2: the mechanisms only work if their state survives the run."""
+
+    def test_build_workflow_commits_journal(self):
+        """R-V5-1 durability: the BUILD workflow must git-add the journal dir —
+        without it the _failed_attempts counter resets on every fresh checkout
+        and the park mechanism is dead code (review F1)."""
+        wf = (_ROOT / ".github" / "workflows" / "metabolism-build.yml").read_text()
+        add_lines = [ln for ln in wf.splitlines() if "git add" in ln]
+        assert any("data/metabolism/journal" in ln for ln in add_lines), \
+            "metabolism-build.yml must commit data/metabolism/journal"
+
+    def test_build_lane_runs_stale_sweep_in_process(self):
+        """R-V5-2 placement: the sweep must run in the BUILD lane (whose commit
+        step persists the rewrites), not only in the cron GC lane which runs on
+        a main checkout with contents:read (review F2)."""
+        mb = _import_mb()
+        called = []
+
+        with patch.dict(os.environ, _armed_env(), clear=False):
+            with patch.object(mb, "_is_paused", return_value=False):
+                import scripts.metabolism_gc as mg
+                with patch.object(mg, "sweep_stale_running_markers",
+                                  side_effect=lambda *a, **kw: called.append(1) or {"swept": 0, "errors": []}):
+                    mb.run_build_lane("cycle-sweep-test", "/nonexistent/docket.json",
+                                      root=_tmp_root())
+        assert called, "run_build_lane must invoke the stale-running sweep"
+
+    def test_gc_cli_sweep_is_opt_in(self):
+        """The cron GC lane must NOT sweep by default (its checkout has no
+        journals and cannot commit) — flag-gated only."""
+        import scripts.metabolism_gc as mg
+        with patch.object(mg, "sweep_stale_running_markers") as sweep:
+            with patch.object(mg, "gc", return_value={"inspected": 0, "reaped": [],
+                                                      "skipped_alive": [], "skipped_safety": [],
+                                                      "errors": []}):
+                mg.main(["--dry-run", "--root", str(_tmp_root())])
+        assert not sweep.called, "GC CLI must not sweep without --sweep-stale-running"
+
+
+class TestReviewFixSelfClaim:
+    """F3: a proposal's own committed claim must not block its re-attempt."""
+
+    def test_self_claim_is_not_a_collision(self):
+        mb = _import_mb()
+        d = _tmp_root()
+        r1 = mb.claim_proposal("cyc-1", "prop-A", "til", ["engine/x.py"], root=d)
+        assert r1["claimed"] is True
+        # Re-claim by the SAME proposal (re-attempt path) → allowed
+        r2 = mb.claim_proposal("cyc-1", "prop-A", "til", ["engine/x.py"], root=d)
+        assert r2["claimed"] is True, "self-claim must not collide"
+
+    def test_foreign_claim_still_collides(self):
+        mb = _import_mb()
+        d = _tmp_root()
+        assert mb.claim_proposal("cyc-1", "prop-A", "til", ["engine/x.py"], root=d)["claimed"]
+        r = mb.claim_proposal("cyc-1", "prop-B", "til", ["engine/x.py"], root=d)
+        assert r["claimed"] is False, "a DIFFERENT proposal's claim must still collide"
+        assert r["collision_files"] == ["engine/x.py"]
+
+
+class TestReviewFixEmitOnce:
+    """F5: the parked insight fires exactly once, at the write-time crossing."""
+
+    def _fail_record(self):
+        return {"status": "session_error", "returncode": 1}
+
+    def test_park_insight_emitted_once_at_threshold(self):
+        mb = _import_mb()
+        d = _tmp_root()
+        emitted = []
+        with patch.object(mb, "_emit_parked_insight",
+                          side_effect=lambda *a, **kw: emitted.append(a)):
+            # max_build_attempts defaults to 2: first failure → no emit;
+            # second failure crosses the threshold → exactly one emit.
+            mb._journal_dispatch("cyc-e", "prop-E", self._fail_record(), root=d)
+            assert emitted == []
+            mb._journal_dispatch("cyc-e", "prop-E", self._fail_record(), root=d)
+            assert len(emitted) == 1
+            # Further failures / reads never re-emit
+            mb._journal_dispatch("cyc-e", "prop-E", self._fail_record(), root=d)
+            assert len(emitted) == 1
+            assert mb._is_dispatch_done("cyc-e", "prop-E", root=d) is True
+            assert len(emitted) == 1, "read path must not emit"
+
+    def test_foreign_abort_emits_on_first_failure(self):
+        mb = _import_mb()
+        d = _tmp_root()
+        emitted = []
+        with patch.object(mb, "_emit_parked_insight",
+                          side_effect=lambda *a, **kw: emitted.append(a)):
+            mb._journal_dispatch("cyc-f", "prop-F",
+                                 {"status": "foreign_file_abort"}, root=d)
+        assert len(emitted) == 1
+
+
+class TestReviewFixCoolingHorizons:
+    """F4: a later short-horizon cooling must not mask an active weekly one."""
+
+    def test_window_after_weekly_does_not_mask_weekly(self, tmp_path):
+        from datetime import datetime, timedelta, timezone
+        from engine.neuralweb import key_pool
+        kid = "claude_code_oauth_1"
+        now = datetime.now(timezone.utc)
+        # Weekly cooling resetting far in the future
+        key_pool.mark_cooling(kid, cool_kind="weekly",
+                              reset_hint=(now + timedelta(days=5)).isoformat(timespec="seconds"),
+                              root=tmp_path)
+        # LATER window cooling that has ALREADY expired
+        key_pool.mark_cooling(kid, cool_kind="window",
+                              reset_hint=(now - timedelta(minutes=1)).isoformat(timespec="seconds"),
+                              root=tmp_path)
+        assert key_pool.is_cooling(kid, root=tmp_path) is True, \
+            "expired window row must not mask the active weekly horizon"
+        # An ok row clears nothing weekly
+        key_pool.record_session(kid, outcome="ok", root=tmp_path)
+        assert key_pool.is_cooling(kid, root=tmp_path) is True
+
+    def test_window_and_auth_clear_by_ok_weekly_by_time(self, tmp_path):
+        from datetime import datetime, timedelta, timezone
+        from engine.neuralweb import key_pool
+        kid = "claude_code_oauth_2"
+        now = datetime.now(timezone.utc)
+        key_pool.mark_cooling(kid, cool_kind="window", root=tmp_path)
+        key_pool.mark_cooling(kid, cool_kind="auth", root=tmp_path)
+        assert key_pool.is_cooling(kid, root=tmp_path) is True
+        key_pool.record_session(kid, outcome="ok", root=tmp_path)
+        assert key_pool.is_cooling(kid, root=tmp_path) is False
+        # Weekly already expired by time → not cooling
+        key_pool.mark_cooling(kid, cool_kind="weekly",
+                              reset_hint=(now - timedelta(seconds=5)).isoformat(timespec="seconds"),
+                              root=tmp_path)
+        assert key_pool.is_cooling(kid, root=tmp_path) is False
