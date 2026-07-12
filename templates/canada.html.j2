@@ -162,15 +162,15 @@
                    background:color-mix(in srgb,var(--up) 10%,var(--panel)); }
   .nb-size.sz-dn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 42%,var(--line));
                    background:color-mix(in srgb,var(--warn) 10%,var(--panel)); }
-  .nb-entry { margin:5px 0 1px; padding:5px 7px; border-radius:8px; border-left:3px solid var(--muted);
+  .nb-entry { margin:5px 0 1px; padding:5px 7px; border-radius:8px; border-top:2px solid var(--muted);
               background:color-mix(in srgb,var(--text) 4%,var(--panel)); }
-  .nbe-buy_now, .nbe-partial { border-left-color:var(--up);
+  .nbe-buy_now, .nbe-partial { border-top-color:var(--up);
               background:color-mix(in srgb,var(--up) 7%,var(--panel)); }
-  .nbe-buy_soon, .nbe-watch { border-left-color:var(--g-cold); }
-  .nbe-wait_pullback, .nbe-hold { border-left-color:var(--warn); }
-  .nbe-extended, .nbe-topping { border-left-color:var(--warn);
+  .nbe-buy_soon, .nbe-watch { border-top-color:var(--g-cold); }
+  .nbe-wait_pullback, .nbe-hold { border-top-color:var(--warn); }
+  .nbe-extended, .nbe-topping { border-top-color:var(--warn);
               background:color-mix(in srgb,var(--warn) 7%,var(--panel)); }
-  .nbe-exit, .nbe-avoid, .nbe-blocked { border-left-color:var(--down);
+  .nbe-exit, .nbe-avoid, .nbe-blocked { border-top-color:var(--down);
               background:color-mix(in srgb,var(--down) 7%,var(--panel)); }
   .nbe-head { display:flex; align-items:center; gap:5px; }
   .nbe-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex:none; }
@@ -260,10 +260,13 @@
   /* CA2 pullback-zone row inside the entry gauge (cool, a don't-chase reset range). */
   .nbe-zone.nbe-pull { color:var(--g-cold); }
   .nbe-zone.nbe-pull .nbe-px { color:var(--g-cold); }
-  /* entry-window state drives the card accent (open-now warm / pullback cool / wait muted). */
-  .card.ent-open { border-left:3px solid var(--up); }
-  .card.ent-pullback { border-left:3px solid var(--g-cold); }
-  .card.ent-wait { border-left:3px solid var(--muted); }
+  /* entry-window state as a TOP gradient stripe (RIPENING-shelf idiom) — not a left border */
+  .card.ent-open, .card.ent-pullback, .card.ent-wait { position:relative; overflow:hidden; }
+  .card.ent-open::before, .card.ent-pullback::before, .card.ent-wait::before {
+      content:""; position:absolute; top:0; left:0; right:0; height:3px; pointer-events:none; }
+  .card.ent-open::before { background:linear-gradient(90deg,var(--up),color-mix(in srgb,var(--up) 30%,transparent)); }
+  .card.ent-pullback::before { background:linear-gradient(90deg,var(--g-cold),color-mix(in srgb,var(--g-cold) 30%,transparent)); }
+  .card.ent-wait::before { background:linear-gradient(90deg,var(--muted),transparent); opacity:.6; }
 {% include "_cmd_hero.css.j2" %}
 {% include "_market_state.css.j2" %}
   body.page-canada { padding-top: 24px; }

@@ -146,7 +146,7 @@
     .nbgrid[data-showmore-rows] .nb-rip-nm{ font-size:9.5px; }
   }
   a.nbcard { background:var(--panel2,var(--panel)); border:1px solid var(--line); border-radius:10px;
-             padding:0; border-left:3px solid var(--muted); display:flex;
+             padding:0; display:flex;
              flex-direction:column; gap:0; min-width:0; overflow:hidden;
              transition:transform .12s, box-shadow .12s, border-color .12s; }
   /* every flex child may shrink below its content width AND never exceed the card —
@@ -154,8 +154,14 @@
      the whole auto-fill grid) hundreds of px wide. The single most important rule here. */
   a.nbcard > * { min-width:0; max-width:100%; }
   a.nbcard:hover { transform:translateY(-2px); box-shadow:0 5px 18px rgba(0,0,0,.22); border-color:var(--link); }
-  .nbcard.nb-up { border-left-color:var(--up); } .nbcard.nb-down { border-left-color:var(--down); }
-  .nbcard.nb-caution { border-left-color:var(--warn); }
+  /* state accent as a TOP gradient stripe (RIPENING-shelf idiom) — not a left border.
+     class-scoped (not a.nbcard) so div.nbcard scorecards (coiled/washout grid) get
+     their state stripe too — an in-flow block child, safe on non-flex divs. */
+  .nbcard::before { content:""; display:block; flex:none; height:3px;
+                     background:linear-gradient(90deg,var(--muted),transparent); opacity:.6; }
+  .nbcard.nb-up::before      { background:linear-gradient(90deg,var(--up),color-mix(in srgb,var(--up) 30%,transparent)); opacity:1; }
+  .nbcard.nb-down::before    { background:linear-gradient(90deg,var(--down),color-mix(in srgb,var(--down) 30%,transparent)); opacity:1; }
+  .nbcard.nb-caution::before { background:linear-gradient(90deg,var(--warn),color-mix(in srgb,var(--warn) 30%,transparent)); opacity:1; }
 
   /* ── IDENTITY ZONE ─────────────────────────────────────────────────────── */
   .nb-id { padding:8px 11px 7px; background:color-mix(in srgb,var(--muted) 7%,transparent);
@@ -200,12 +206,12 @@
 
   /* Entry gauge fused inside conv block */
   .nb-conv .nb-entry { margin:0; border:none; border-radius:0; background:transparent;
-                       padding:5px 8px 6px; border-left:3px solid var(--muted); }
-  .nb-conv .nbe-buy_now, .nb-conv .nbe-partial { border-left-color:var(--up); background:color-mix(in srgb,var(--up) 5%,transparent); }
-  .nb-conv .nbe-buy_soon, .nb-conv .nbe-watch { border-left-color:var(--g-cold,var(--link)); }
-  .nb-conv .nbe-wait_pullback, .nb-conv .nbe-hold { border-left-color:var(--warn); }
-  .nb-conv .nbe-extended, .nb-conv .nbe-topping { border-left-color:var(--warn); }
-  .nb-conv .nbe-exit, .nb-conv .nbe-avoid, .nb-conv .nbe-blocked { border-left-color:var(--down); background:color-mix(in srgb,var(--down) 5%,transparent); }
+                       padding:6px 8px 6px; border-top:2px solid var(--muted); }
+  .nb-conv .nbe-buy_now, .nb-conv .nbe-partial { border-top-color:var(--up); background:color-mix(in srgb,var(--up) 5%,transparent); }
+  .nb-conv .nbe-buy_soon, .nb-conv .nbe-watch { border-top-color:var(--g-cold,var(--link)); }
+  .nb-conv .nbe-wait_pullback, .nb-conv .nbe-hold { border-top-color:var(--warn); }
+  .nb-conv .nbe-extended, .nb-conv .nbe-topping { border-top-color:var(--warn); }
+  .nb-conv .nbe-exit, .nb-conv .nbe-avoid, .nb-conv .nbe-blocked { border-top-color:var(--down); background:color-mix(in srgb,var(--down) 5%,transparent); }
 
   /* ── CONTEXT STRIP ──────────────────────────────────────────────────────── */
   .nb-ctx { padding:4px 11px 6px; display:flex; align-items:center; gap:4px 5px; flex-wrap:wrap;
@@ -238,14 +244,14 @@
   /* ---- Entry-timing gauge (inside nb-conv fused block) ---- */
   /* standalone nb-entry (outside nb-conv) still possible on non-zoned cards — keep base rules */
   .nb-entry { margin:5px 0 1px; padding:5px 7px; border-radius:8px;
-              background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--muted); }
-  .nbe-buy_now, .nbe-partial { border-left-color:var(--up);
+              background:var(--panel); border:1px solid var(--line); border-top:2px solid var(--muted); }
+  .nbe-buy_now, .nbe-partial { border-top-color:var(--up);
               background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
-  .nbe-buy_soon, .nbe-watch { border-left-color:var(--g-cold); }
-  .nbe-wait_pullback, .nbe-hold { border-left-color:var(--warn); }
-  .nbe-extended, .nbe-topping { border-left-color:var(--warn);
+  .nbe-buy_soon, .nbe-watch { border-top-color:var(--g-cold); }
+  .nbe-wait_pullback, .nbe-hold { border-top-color:var(--warn); }
+  .nbe-extended, .nbe-topping { border-top-color:var(--warn);
               background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
-  .nbe-exit, .nbe-avoid, .nbe-blocked { border-left-color:var(--down);
+  .nbe-exit, .nbe-avoid, .nbe-blocked { border-top-color:var(--down);
               background:color-mix(in srgb,var(--down) 8%,var(--panel)); }
   .nbe-head { display:flex; align-items:center; gap:5px; }
   .nbe-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex:none; }
