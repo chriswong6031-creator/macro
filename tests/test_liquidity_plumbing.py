@@ -1611,3 +1611,63 @@ class TestPhaseStatusDynamic:
         assert ps["p3_reserve_balances"] == "integrated", (
             f"Expected 'integrated' with WRESBAL loaded, got {ps['p3_reserve_balances']!r}"
         )
+
+
+# ---------------------------------------------------------------------------
+# 33. WALCL staleness raw-cadence semantics (RLT-R13) — regime.liquidity_quality
+# ---------------------------------------------------------------------------
+
+class TestWalclStalenessRawCadence:
+    """RLT-R13: walcl_stale_days measures the RAW store series (data staleness),
+    not the 3-bd-lagged classifier view. A weekly H.4.1 series is flat 0-4
+    business days by cadence, so no on-schedule day may exceed the committee
+    chip threshold (>5); a missed weekly print must exceed it."""
+
+    def _weekly_frame(self, *, miss_last_print: bool = False) -> pd.DataFrame:
+        # 60 sessions Mon 2026-03-02 → Fri 2026-05-22 (no holidays in
+        # bdate_range); WALCL steps every Wednesday (H.4.1 weekly cadence).
+        idx = pd.bdate_range("2026-03-02", periods=60)
+        last_wed = max(d for d in idx if d.weekday() == 2)
+        vals: list[float] = []
+        step = 0
+        for d in idx:
+            if d.weekday() == 2 and not (miss_last_print and d == last_wed):
+                step += 1
+            vals.append(6700.0 + step)
+        f = pd.DataFrame(
+            {"walcl_bn": vals, "rrp_bn": 500.0, "tga_bn": 700.0}, index=idx
+        )
+        f["net_liquidity_bn"] = f["walcl_bn"] - f["rrp_bn"] - f["tga_bn"]
+        return f
+
+    def test_on_schedule_friday_is_two_days_stale(self):
+        from engine.regime import liquidity_quality
+
+        f = self._weekly_frame()
+        q = liquidity_quality(f, overlay=None, asof=f.index[-1])
+        assert q is not None
+        # Frame ends Friday; last H.4.1 step was Wednesday → raw data age = 2.
+        # The old lag-3 semantics reported 4 here — this pin fails if the
+        # counter reverts to the lagged view.
+        assert q["walcl_stale_days"] == 2
+
+    def test_on_schedule_week_never_exceeds_chip_threshold(self):
+        from engine.regime import liquidity_quality
+
+        f = self._weekly_frame()
+        for asof in f.index[-5:]:
+            q = liquidity_quality(f, overlay=None, asof=asof)
+            assert q is not None
+            assert q["walcl_stale_days"] <= 4, (
+                f"on-schedule cadence must stay <=4, got "
+                f"{q['walcl_stale_days']} at {asof.date()}"
+            )
+
+    def test_missed_print_exceeds_chip_threshold(self):
+        from engine.regime import liquidity_quality
+
+        f = self._weekly_frame(miss_last_print=True)
+        q = liquidity_quality(f, overlay=None, asof=f.index[-1])
+        assert q is not None
+        # Last step was the second-to-last Wednesday → 7 flat sessions.
+        assert q["walcl_stale_days"] > 5
