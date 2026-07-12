@@ -4334,6 +4334,8 @@ artifacts:
       - engine/experiments_registry.py
       - scripts/evaluate_cortex_hypotheses.py
       - engine/neuralweb/evidence_clock.py
+      - engine/master_brain.py
+      - engine/forward_calendar_context.py
     external_consumers: []
     notes: >
       W7b PR2: Append-only machine-registration ledger for cortex-proposed
@@ -7898,6 +7900,8 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - cortex-read
+      - engine/master_brain.py
+      - engine/forward_calendar_context.py
     external_consumers: []
     notes: >
       CPI P6 wave 1 (UI-HZ-1). Promotion, not invention (RUL-P5 pattern):
@@ -9117,7 +9121,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/master_brain.py
+      - engine/forward_calendar_context.py
     external_consumers:
       - mastermind:context
     notes: >
