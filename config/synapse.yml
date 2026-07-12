@@ -5968,7 +5968,7 @@ artifacts:
     cadence: on-demand
     storage: git
     asof_field: as_of
-    freshness_sla_hours: 168
+    freshness_sla_hours: 9999
     schema: research_queue.v1
     tier: infrastructure
     horizon_role: context
@@ -5985,6 +5985,14 @@ artifacts:
       budget chokepoint; the ranker has zero write or gating authority over the cortex.
       NOT on the render path; run manually or via future nightly opt-in.
       is_display_only=true — no board rank, no alerts, no sizing.
+      DORMANT-UNWIRED (2026-07-12): the producer exists but is NOT wired into any
+      .github/workflows/ file (grep confirms zero references) and has never run on a
+      schedule — cadence is on-demand and the artifact has never been produced, so it
+      cannot be fresh by design.  A 168h SLA on a never-scheduled artifact is premature.
+      freshness_sla_hours is parked at 9999 (the declared-dormant idiom: still printed
+      'missing' in health.json — nulls printed — but not degraded-driving).  RESTORE
+      the real operational SLA (168h) when the producer goes on a schedule (nightly
+      opt-in or manual cadence with a keeper).
 
   # --- OTA W6: Rotation Turn Desk ---
   oracle-turn-desk:
