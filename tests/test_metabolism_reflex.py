@@ -1972,6 +1972,10 @@ class TestRevertAlreadyAppliedRealGit:
 
         # Create a revert branch off main (simulates what the lane does)
         git("checkout", "-b", "metabolism/revert-test")
+        # Point origin/main at the base so `git log origin/main..HEAD` resolves
+        # and exercises the EMPTY-RANGE path (not the returncode!=0 fallback —
+        # #2442 review: without this ref the test passed for the wrong reason).
+        git("update-ref", "refs/remotes/origin/main", merge_sha)
         # Branch is identical to main — origin/main..HEAD is EMPTY
 
         # _revert_already_applied must return False (fresh path → revert RUNS)
