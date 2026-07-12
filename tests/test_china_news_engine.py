@@ -126,6 +126,37 @@ def test_china_synthesis_top_channels_carry_bilingual_labels() -> None:
     assert cn._slug_label("some_new_channel") == ("some new channel", "some new channel")
 
 
+def test_china_synthesis_read_is_bilingual_and_deslugged() -> None:
+    """read/read_zh are plain-word bilingual twins — no raw channel/tier slugs
+    (doctrine Law 2: no untranslated slugs on user-facing surfaces)."""
+    heads = cn.filter_flashes([{
+        "title": "Chinese stocks rally as PBOC liquidity and yuan support lift CSI 300",
+        "summary": "",
+        "time": "2026-06-20T12:00:00+00:00",
+        "url": "https://example.com",
+        "source": "gdelt",
+        "source_name": "reuters.com",
+        "source_tier": "wire",
+    }], {"max_show": 5})
+    syn = cn._synthesis(heads)
+    assert syn["read"] and "_" not in syn["read"]
+    assert syn["read_zh"] and "_" not in syn["read_zh"]
+    assert any("一" <= c <= "鿿" for c in syn["read_zh"])
+    # source tiers render as plain words, not slug:count pairs
+    assert ":" not in syn["read"]
+    # structured fields keep raw slugs for machine consumers — unchanged contract
+    assert syn["dominant_channel"] in cn.CHANNEL_LABEL
+    # theme slugs (channel back-fill path) resolve through THEME_LABEL to real ZH
+    assert cn._slug_label("monetary") == cn.THEME_LABEL["monetary"]
+    # tier slugs de-slug too, mapped and unmapped alike
+    assert cn._tier_label("china_native") == cn.TIER_LABEL["china_native"]
+    assert cn._tier_label("brand_new_tier") == ("brand new tier", "brand new tier")
+    # empty tape is bilingual too
+    empty = cn._synthesis([])
+    assert empty["read"] and empty["read_zh"]
+    assert any("一" <= c <= "鿿" for c in empty["read_zh"])
+
+
 def test_chinese_native_story_carries_zh_title_and_priority() -> None:
     items = [{
         "title": "上市公司密集启动增持回购 A股市场情绪回暖",
