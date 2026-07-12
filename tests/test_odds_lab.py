@@ -25,10 +25,12 @@ import pytest
 from engine import odds_lab
 from engine.odds_lab import (
     ASSET_FACTORS,
+    EXTRA_COLS,
     MARKET_FACTORS,
     OUTCOME_COLS,
     RANGE_DAYS,
     SCHEMA_MATRIX,
+    VOL_SMA,
     bucket_dist_52w,
     bucket_gap,
     bucket_magnitude,
@@ -315,6 +317,21 @@ def test_no_lookahead_rel_vol_prior_20_only():
     volumes = [1000.0] * (n - 1) + [2600.0]
     f = compute_asset_factors(_ohlcv(closes, volumes=volumes))
     assert f["rel_vol"].iloc[-1] == 3
+    # vol_rel (v1.1) shares the SAME t-1 denominator: 2600/1000 -> 260,
+    # not 2600/1080 -> ~241 (which an include-t SMA would give)
+    assert f["vol_rel"].iloc[-1] == pytest.approx(260.0, abs=1e-9)
+
+
+def test_vol_rel_window_null_and_cap():
+    """vol_rel: null while the SMA20-thru-t-1 window is incomplete (first 20
+    bars), exact ratio x100 once seeded, capped at 999."""
+    n = 30
+    closes = [100.0] * n
+    volumes = [1000.0] * (n - 1) + [50000.0]      # ratio 50 -> 5000, capped
+    f = compute_asset_factors(_ohlcv(closes, volumes=volumes))
+    assert f["vol_rel"].iloc[:VOL_SMA].isna().all()
+    assert (f["vol_rel"].iloc[VOL_SMA:-1] == 100.0).all()   # flat volume
+    assert f["vol_rel"].iloc[-1] == 999.0
 
 
 # ---------------------------------------------------------------------------
@@ -431,11 +448,12 @@ def test_factor_match_spy_row_cross_check():
 def test_matrix_json_round_trip():
     m = json.loads(json.dumps(_synthetic_matrix()))
     assert set(m.keys()) == {"schema", "ticker", "asof", "dates", "close", "cols"}
-    assert m["schema"] == SCHEMA_MATRIX
+    assert m["schema"] == SCHEMA_MATRIX == "odds_matrix.v1.1"
     assert m["ticker"] == "TST"
     n = len(m["dates"])
     assert len(m["close"]) == n
-    expected_cols = set(MARKET_FACTORS) | set(ASSET_FACTORS) | set(OUTCOME_COLS)
+    expected_cols = (set(MARKET_FACTORS) | set(ASSET_FACTORS)
+                     | set(OUTCOME_COLS) | set(EXTRA_COLS))
     assert set(m["cols"].keys()) == expected_cols
     for k, vals in m["cols"].items():
         assert len(vals) == n, f"{k} length mismatch"
@@ -452,3 +470,10 @@ def test_matrix_json_round_trip():
     assert quads and set(quads) == {2}                      # regime was all Q2
     months = [v for v in m["cols"]["month"] if v is not None]
     assert months and all(1 <= v <= 12 for v in months)
+    # vol_rel (v1.1): int-or-null (checked above), null while window incomplete,
+    # then present and inside [0, 999]
+    vr = m["cols"]["vol_rel"]
+    assert len(vr) == n
+    assert all(v is None for v in vr[:VOL_SMA])
+    tail = [v for v in vr[VOL_SMA:] if v is not None]
+    assert tail and all(0 <= v <= 999 for v in tail)

@@ -3,7 +3,9 @@
    ----------------------------------------------------------------------------
    Data plane (all display-only, computed nightly by scripts/build_odds.py):
      oddsdata/catalog.json                    — odds_catalog.v1 (git/Pages)
-     (window.DATA_BASE||'') + oddsmatrix/<T>.json — odds_matrix.v1 (R2, columnar)
+     (window.DATA_BASE||'') + oddsmatrix/<T>.json — odds_matrix.v1 / v1.1
+       (R2, columnar; v1.1 adds the display-only vol_rel column that feeds the
+       volume substrip — both schemas are tolerated)
      oddsdata/factor_match.json               — odds_factor_match.v1 (git/Pages)
 
    Matching semantics (mirrors the tested Python engine):
@@ -49,6 +51,17 @@
     return (v && v.trim()) || fb;
   }
   function isZh() { return document.documentElement.getAttribute("data-lang") === "zh"; }
+  /* ?lang=zh|en — shareable language deep link (theme.js persists lang in
+     localStorage only; this mirrors its attribute contract, guarded to the two
+     known values, and runs before first render so no re-paint is needed). */
+  try {
+    var qlang = new URLSearchParams(location.search).get("lang");
+    if (qlang === "zh" || qlang === "en") {
+      document.documentElement.setAttribute("data-lang", qlang);
+      document.documentElement.lang = qlang === "zh" ? "zh-CN" : "en";
+      try { localStorage.setItem("lang", qlang); } catch (e) {}
+    }
+  } catch (e) {}
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function sv(tag, attrs, parent) {
     var e = document.createElementNS(SVGNS, tag);
@@ -60,6 +73,11 @@
     var t = null;
     return function () { if (t) clearTimeout(t); t = setTimeout(fn, ms); };
   }
+  function reduceMotion() {
+    try { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
+    catch (e) { return false; }
+  }
+  function fmtSigned(v, dp) { return (v > 0 ? "+" : "") + v.toFixed(dp == null ? 1 : dp); }
   /* dates: matrices carry epoch DAYS (ascending) */
   var DAY = 86400000;
   function edDate(ed) { return new Date(ed * DAY); }
@@ -116,6 +134,8 @@
     fmTpl: null, fmMinN: 10, fmSector: "", fmSort: { key: "1d:win", dir: -1 }
   };
   var priceChart = null;   // MMChart instance
+  var prevRate = null;     // last shown win rate (hero count-up start value)
+  var _lastMatchN = null;  // last match count (rail pulse trigger)
 
   /* ---------------- catalog access ---------------- */
   function fLabel(fid) {
@@ -264,16 +284,20 @@
       var na = todayBucket(fid) == null;
       var on = !!S.active[fid] && !na;
       var lab = fLabel(fid);
+      var info = (f && (f.desc_en || f.desc_zh))
+        ? '<button class="od-info" type="button" data-f="' + esc(fid) + '" aria-label="' + esc(lab[0]) + '" tabindex="0">i</button>'
+        : "";
       html.push(
         '<div class="od-cond' + (on ? " on" : "") + (na ? " off-na" : "") + '" data-f="' + esc(fid) + '" role="switch" aria-checked="' + on + '">' +
-          '<div class="od-cond-main"><div class="od-cond-name">' + bi(lab[0], lab[1]) + "</div>" +
+          '<div class="od-cond-main"><div class="od-cond-name">' + bi(lab[0], lab[1]) + info + "</div>" +
           '<div class="od-cond-val">' + condValLine(fid) + "</div></div>" +
           '<button class="od-switch" type="button" aria-label="' + esc(lab[0]) + '"' + (na ? " disabled" : "") + "></button>" +
         "</div>");
     });
     body.innerHTML = html.join("");
     body.querySelectorAll(".od-cond").forEach(function (row) {
-      row.addEventListener("click", function () {
+      row.addEventListener("click", function (ev) {
+        if (ev.target && ev.target.closest && ev.target.closest(".od-info")) return;
         var fid = row.getAttribute("data-f");
         if (todayBucket(fid) == null) return;
         S.active[fid] = !S.active[fid];
@@ -287,12 +311,21 @@
   function renderRailCounts() {
     var ac = $("#od-active-count"), mc = $("#od-match-count");
     var k = activeIds().length;
-    if (ac) ac.innerHTML = biRaw("<b>" + k + "</b> active", "<b>" + k + "</b> 项启用");
+    if (ac) ac.innerHTML = biRaw(k + " active", k + " 项启用");
     if (mc) {
       if (!S.matrix) mc.innerHTML = bi("no history loaded", "未加载历史数据");
-      else mc.innerHTML = biRaw(
-        "<b>" + S.matches.length + "</b> matching days · " + S.total + " in range",
-        "<b>" + S.matches.length + "</b> 个匹配交易日 · 范围内共 " + S.total + " 日");
+      else {
+        mc.innerHTML = biRaw(
+          "<b>" + S.matches.length + "</b> matching days · " + S.total + " in range",
+          "<b>" + S.matches.length + "</b> 个匹配交易日 · 范围内共 " + S.total + " 日");
+        /* live match-count pulse on change (motion-gated) */
+        if (_lastMatchN != null && _lastMatchN !== S.matches.length && !reduceMotion()) {
+          mc.classList.remove("pulse");
+          void mc.offsetWidth;               // restart the animation
+          mc.classList.add("pulse");
+        }
+      }
+      _lastMatchN = S.matrix ? S.matches.length : null;
     }
   }
 
@@ -309,8 +342,9 @@
     var v = $("#od-verdict");
     if (!v) return;
     if (!S.matrix) {
+      prevRate = null;
       v.className = "od-verdict";
-      v.innerHTML = '<div class="od-v-sent">' + bi(
+      v.innerHTML = '<div class="od-v-sent" style="border-top:0;padding-top:0;margin-top:0">' + bi(
         "No odds history for " + (S.ticker || "this name") + " yet — it may sit outside the v1 universe, or its nightly fetch failed. Pick another ticker above.",
         (S.ticker || "该标的") + " 暂无胜率历史——可能不在 v1 标的池内，或夜间数据抓取失败。请在上方选择其他标的。") + "</div>";
       return;
@@ -322,52 +356,111 @@
     var hz = HORIZON_TXT[S.horizon], rg = RANGE_TXT[S.range];
     var dateEn = DOW_EN[D.getUTCDay()] + " " + MON_EN[D.getUTCMonth()] + " " + D.getUTCDate();
     var dateZh = D.getUTCFullYear() + "年" + (D.getUTCMonth() + 1) + "月" + D.getUTCDate() + "日（" + DOW_ZH[D.getUTCDay()] + "）";
-    var moveEn = ret == null ? "" : (ret > 0 ? " rose " : ret < 0 ? " fell " : " closed flat at ") + (ret === 0 ? "" : Math.abs(ret / 100).toFixed(2) + "%");
-    var moveZh = ret == null ? "" : (ret > 0 ? "上涨 " : ret < 0 ? "下跌 " : "持平 ") + (ret === 0 ? "" : Math.abs(ret / 100).toFixed(2) + "%");
 
+    /* n<5 → big muted em-dash, no color, no verdict (house honesty rule) */
     if (!st || st.n < 5) {
       var n0 = st ? st.n : 0;
+      prevRate = null;
       v.className = "od-verdict";
       v.innerHTML =
-        '<div class="od-v-top"><span class="od-v-rate">—</span>' +
-        '<span class="od-v-what">' + bi("insufficient sample", "样本不足") + "</span>" +
-        '<div class="od-v-stats"><div class="od-v-stat"><span class="k">n</span><span class="v">' + n0 + "</span></div></div></div>" +
+        '<div class="od-v-head"><span class="od-eyebrow">' + bi("Historical pattern · insufficient sample", "历史形态 · 样本不足") + "</span></div>" +
+        '<div class="od-v-grid"><div class="od-v-main">' +
+          '<div class="od-v-rate mut">—</div>' +
+          '<div class="od-v-what">' + biRaw("insufficient sample · n=" + n0, "样本不足 · n=" + n0) + "</div>" +
+        "</div><div></div></div>" +
         '<p class="od-v-sent">' + bi(
-          "Only " + n0 + " similar day(s) in " + rg[0] + " under the current conditions — too few to say anything honest. Loosen a condition, widen the tolerance, or extend the range.",
-          "当前条件下，" + rg[1] + "内仅有 " + n0 + " 个相似交易日——样本太少，无法得出诚实结论。请放宽条件、增大容差或扩大数据范围。") + "</p>";
+          "Only " + n0 + " similar day(s) in " + rg[0] + " under the current conditions — too few to say anything honest. Loosen a condition, widen the match tolerance, or extend the range.",
+          "当前条件下，" + rg[1] + "内仅有 " + n0 + " 个相似交易日——样本太少，无法得出诚实结论。请放宽条件、增大匹配容差或扩大数据范围。") + "</p>";
       return;
     }
+
+    /* honest coloring: edge vs the unconditional base, never the raw rate */
     var edge = base ? (st.rate - base.rate) * 100 : 0;
-    v.className = "od-verdict" + (st.n < 5 ? "" : edge >= 5 ? " v-up" : edge <= -5 ? " v-down" : "");
-    var chips = [];
-    if (st.ci) chips.push('<span class="od-vchip">' + bi("95% CI " + fmtRate(st.ci[0]) + "–" + fmtRate(st.ci[1]), "95%置信区间 " + fmtRate(st.ci[0]) + "–" + fmtRate(st.ci[1])) + "</span>");
-    if (base) {
-      var ecls = edge >= 5 ? "edge-up" : edge <= -5 ? "edge-down" : "";
-      chips.push('<span class="od-vchip ' + ecls + '">' + bi(
-        (edge > 0 ? "+" : "") + edge.toFixed(1) + " pts vs base " + fmtRate(base.rate),
-        "较基础概率 " + fmtRate(base.rate) + " " + (edge > 0 ? "+" : "") + edge.toFixed(1) + " 个百分点") + "</span>");
+    var tone = edge >= 5 ? "tone-up" : edge <= -5 ? "tone-down" : "";
+    v.className = "od-verdict";
+
+    /* head: eyebrow + low-sample chip + share button */
+    var head = '<div class="od-v-head"><span class="od-eyebrow">' +
+      bi("Historical pattern · " + st.n + " matching days", "历史形态 · " + st.n + " 个匹配交易日") + "</span>" +
+      (st.n < 20 ? '<span class="od-vchip warn">' + bi("low sample · n < 20", "小样本 · n < 20") + "</span>" : "") +
+      '<button id="od-share" class="od-share" type="button">⤓ ' + bi("Share card", "分享卡片") + "</button></div>";
+
+    /* left: giant rate + what */
+    var main = '<div class="od-v-main">' +
+      '<div class="od-v-rate ' + tone + '" id="od-v-num">' + fmtRate(st.rate) + "</div>" +
+      '<div class="od-v-what">' + biRaw("closed higher <b>" + esc(hz[0]) + "</b>", "<b>" + esc(hz[1]) + "</b>收高") + "</div>" +
+    "</div>";
+
+    /* right: Wilson CI band visual + metric chips */
+    var side = "";
+    if (st.ci) {
+      var ciLo = st.ci[0] * 100, ciHi = st.ci[1] * 100, pt = st.rate * 100;
+      var cl = function (p) { return clamp(p, 2, 98).toFixed(2); };
+      side +=
+        '<div class="od-ci">' +
+          '<div class="od-ci-cap"><span class="od-eyebrow">' + bi("95% confidence (Wilson)", "95% 置信区间（Wilson）") + "</span>" +
+          '<span class="od-eyebrow">' + (base ? bi("base rate " + fmtRate(base.rate), "基础概率 " + fmtRate(base.rate)) : "") + "</span></div>" +
+          '<div class="od-ci-track">' +
+            '<span class="od-ci-coin" style="left:50%">' + bi("50% · coin flip", "50% · 抛硬币") + "</span>" +
+            '<span class="od-ci-seg ' + tone + '" style="left:' + ciLo.toFixed(2) + "%;width:" + (ciHi - ciLo).toFixed(2) + '%"></span>' +
+            '<span class="od-ci-tick" style="left:50%"></span>' +
+            '<span class="od-ci-mark ' + tone + '" style="left:' + pt.toFixed(2) + '%"></span>' +
+          "</div>" +
+          '<div class="od-ci-labs">' +
+            '<span style="left:' + cl(ciLo) + '%">' + fmtRate(st.ci[0]) + "</span>" +
+            '<span style="left:' + cl(ciHi) + '%">' + fmtRate(st.ci[1]) + "</span>" +
+          "</div>" +
+        "</div>";
     }
-    if (st.n < 20) chips.push('<span class="od-vchip warn">' + bi("low sample · n < 20", "小样本 · n < 20") + "</span>");
-    v.innerHTML =
-      '<div class="od-v-top">' +
-        '<span class="od-v-rate">' + fmtRate(st.rate) + "</span>" +
-        '<span class="od-v-what">' + bi("closed higher " + hz[0], hz[1] + "收高") + "</span>" +
-        '<div class="od-v-stats">' +
-          '<div class="od-v-stat"><span class="k">' + bi("median", "中位数") + '</span><span class="v">' + fmtBpPct(st.med) + "</span></div>" +
-          '<div class="od-v-stat"><span class="k">' + bi("mean", "均值") + '</span><span class="v">' + fmtBpPct(st.mean) + "</span></div>" +
-          '<div class="od-v-stat"><span class="k">p25 / p75</span><span class="v">' + fmtBpPct(st.p25) + " / " + fmtBpPct(st.p75) + "</span></div>" +
-          '<div class="od-v-stat"><span class="k">' + bi("sample", "样本") + '</span><span class="v">n=' + st.n + "</span></div>" +
-        "</div></div>" +
-      '<div class="od-v-chips">' + chips.join("") + "</div>" +
-      '<p class="od-v-sent">' + bi(
-        "On " + dateEn + ", " + t + moveEn + ". Conditions: " + conds[0] + ". Across " + st.n +
-          " similar days in " + rg[0] + ", price closed higher " + fmtRate(st.rate) + " of the time " +
-          hz[0].replace("the ", "over the ") + " (median " + fmtBpPct(st.med) + ", base rate " + fmtRate(base ? base.rate : 0) + ").",
-        dateZh + "，" + t + " " + moveZh + "。条件：" + conds[1] + "。在" + rg[1] + "的 " + st.n +
-          " 个相似交易日中，" + hz[1] + "收高概率为 " + fmtRate(st.rate) + "（中位数 " + fmtBpPct(st.med) +
-          "，基础概率 " + fmtRate(base ? base.rate : 0) + "）。") + "</p>" +
+    side +=
+      '<div class="od-v-stats">' +
+        '<div class="od-v-stat"><span class="k">' + bi("median", "中位数") + '</span><span class="v">' + fmtBpPct(st.med) + "</span></div>" +
+        '<div class="od-v-stat"><span class="k">' + bi("closed lower", "收低占比") + '</span><span class="v">' + fmtRate(1 - st.rate) + "</span></div>" +
+        '<div class="od-v-stat"><span class="k">' + bi("mean", "均值") + '</span><span class="v">' + fmtBpPct(st.mean) + "</span></div>" +
+        '<div class="od-v-stat"><span class="k">' + bi("edge vs base", "相对基础概率") + '</span><span class="v ' + tone + '">' +
+          biRaw(esc(fmtSigned(edge)) + " pts", esc(fmtSigned(edge)) + " 点") + "</span></div>" +
+      "</div>";
+
+    /* plain-English verdict sentence with inline colored values */
+    var toneB = tone === "tone-up" ? "pos" : tone === "tone-down" ? "neg" : "";
+    var mvE = "", mvZ = "";
+    if (ret != null) {
+      var av = Math.abs(ret / 100).toFixed(2) + "%";
+      if (ret > 0) { mvE = " rose <b class=\"pos\">" + av + "</b>"; mvZ = "上涨 <b class=\"pos\">" + av + "</b>"; }
+      else if (ret < 0) { mvE = " fell <b class=\"neg\">" + av + "</b>"; mvZ = "下跌 <b class=\"neg\">" + av + "</b>"; }
+      else { mvE = " closed flat"; mvZ = "持平"; }
+    }
+    var sentEn = "On " + esc(dateEn) + ", " + esc(t) + mvE + ". Conditions: " + esc(conds[0]) + ". Across <b>" + st.n +
+      "</b> similar days in " + esc(rg[0]) + ", price closed higher <b class=\"" + toneB + "\">" + esc(fmtRate(st.rate)) +
+      "</b> of the time " + esc(hz[0].replace("the ", "over the ")) + " (median <b>" + esc(fmtBpPct(st.med)) +
+      "</b>, base rate " + esc(fmtRate(base ? base.rate : 0)) + ").";
+    var sentZh = esc(dateZh) + "，" + esc(t) + " " + mvZ + "。条件：" + esc(conds[1]) + "。在" + esc(rg[1]) + "的 <b>" + st.n +
+      "</b> 个相似交易日中，" + esc(hz[1]) + "收高概率为 <b class=\"" + toneB + "\">" + esc(fmtRate(st.rate)) +
+      "</b>（中位数 <b>" + esc(fmtBpPct(st.med)) + "</b>，基础概率 " + esc(fmtRate(base ? base.rate : 0)) + "）。";
+
+    v.innerHTML = head +
+      '<div class="od-v-grid">' + main + '<div class="od-v-side">' + side + "</div></div>" +
+      '<p class="od-v-sent">' + biRaw(sentEn, sentZh) + "</p>" +
       '<p class="od-v-foot">' + bi("Returns open-to-close (next open → horizon close). Descriptive statistics — not investment advice.",
                                     "收益按开盘至收盘计（次日开盘 → 期末收盘）。仅为描述性统计，不构成投资建议。") + "</p>";
+    bindShare();
+    animateRate($("#od-v-num"), prevRate, st.rate);
+    prevRate = st.rate;
+  }
+
+  /* hero count-up: ~400ms ease-out from the previous value (motion-gated) */
+  function animateRate(el, from, to) {
+    if (!el || from == null || from === to) return;
+    if (reduceMotion() || !window.requestAnimationFrame) return;
+    var t0 = null, dur = 400;
+    function frame(ts) {
+      if (t0 == null) t0 = ts;
+      var k = Math.min(1, (ts - t0) / dur);
+      var e2 = 1 - Math.pow(1 - k, 3);
+      el.textContent = fmtRate(from + (to - from) * e2);
+      if (k < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
   }
 
   /* ---------------- price chart (mm_charts) ---------------- */
@@ -386,12 +479,14 @@
       if (!m || !window.MMChart) {
         if (priceChart) { priceChart.destroy(); priceChart = null; }
         el.innerHTML = '<div class="od-chart-empty">' + bi("No chart data.", "暂无图表数据。") + "</div>";
+        renderVolStrip(null, null);
         return;
       }
       var i0 = rangeStartIdx(), t = todayIdx();
       if (t - i0 < 2) {
         if (priceChart) { priceChart.destroy(); priceChart = null; }
         el.innerHTML = '<div class="od-chart-empty">' + bi("Not enough bars in range.", "范围内数据不足。") + "</div>";
+        renderVolStrip(null, null);
         return;
       }
       var pts = [], yfs = [], lo = Infinity, hi = -Infinity, i;
@@ -408,31 +503,48 @@
       for (i = 0; i < list.length; i += step) {
         var d = list[i], cc = m.close[d];
         if (cc == null) continue;
-        var mk = { x: edYF(m.dates[d]), y: cc, kind: (fwd[d] > 0 ? "peak" : "trough") };
+        var mk = { x: edYF(m.dates[d]), y: cc, kind: "dot" };
         (fwd[d] > 0 ? winMk : lossMk).push(mk);
       }
       var pad = (hi - lo) * 0.05 || 1;
+      var cUp = cssVar("--od-up", cssVar("--up", "#45b873"));
+      var cDn = cssVar("--od-down", cssVar("--down", "#e06464"));
       var spec = {
         xDomain: [pts[0].x, pts[pts.length - 1].x],
         yDomain: [lo - pad, hi + pad],
         series: [
-          { id: "px", color: cssVar("--link", "#7aa7e0"), label: S.ticker, hist: pts, width: 1.8 },
-          { id: "win", color: cssVar("--up", "#45b873"), hist: [], markers: winMk },
-          { id: "loss", color: cssVar("--down", "#e06464"), hist: [], markers: lossMk }
+          { id: "px", color: cssVar("--od-chart-line", "#3E4C63"), fill: cssVar("--od-chart-fill", "#131A24"),
+            label: S.ticker, hist: pts, width: 1.8 },
+          { id: "win", color: cUp, hist: [], markers: winMk },
+          { id: "loss", color: cDn, hist: [], markers: lossMk }
         ],
         yTicks: ticksIn(lo - pad, hi + pad, 5).map(function (v) { return { v: v, label: fmtPx(v) }; }),
         padding: { t: 14, r: 14, b: 26, l: 54 },
-        animate: !!first,
+        animate: !!first && !reduceMotion(),
         tip: function (dS, pt, xVal) {
           var idx = nearestBar(yfs, pts, xVal);
           if (idx == null) return "";
           var bi_ = pts[idx].i;
           var html = '<div class="mmc-tip-h">' + esc(edISO(m.dates[bi_])) + "</div>" +
             '<div class="mmc-tip-z">' + bi("Close", "收盘") + " " + fmtPx(m.close[bi_]) + "</div>";
-          if (S.matchedSet && S.matchedSet.has(bi_)) {
-            var f = fwd[bi_];
-            html += '<div class="mmc-tip-z" style="color:' + (f > 0 ? cssVar("--up", "#45b873") : cssVar("--down", "#e06464")) + '">' +
-              bi("matched · fwd " + fmtBpPct(f), "匹配日 · 前瞻 " + fmtBpPct(f)) + "</div>";
+          var f = fwd[bi_];
+          if (f != null) {
+            var isM = S.matchedSet && S.matchedSet.has(bi_);
+            html += '<div class="mmc-tip-z" style="color:' + (f > 0 ? cUp : cDn) + '">' +
+              bi((isM ? "matched · " : "") + "fwd " + HZN_SHORT[S.horizon][0] + " " + fmtBpPct(f),
+                 (isM ? "匹配日 · " : "") + "前瞻 " + HZN_SHORT[S.horizon][1] + " " + fmtBpPct(f)) + "</div>";
+          }
+          var vr = m.cols.vol_rel ? m.cols.vol_rel[bi_] : null;   // v1.1 only
+          if (vr != null) html += '<div class="mmc-tip-ph">' +
+            bi("rel volume " + (vr / 100).toFixed(2) + "× 20d avg", "相对成交量 " + (vr / 100).toFixed(2) + "×（20日均量）") + "</div>";
+          var act = activeIds();
+          if (act.length) {
+            var bhtml = "";
+            for (var a = 0; a < act.length && a < 4; a++) {
+              var bl = bktLabel(act[a], (m.cols[act[a]] || [])[bi_]);
+              bhtml += '<span class="mmc-tip-bkt">' + bi(bl[0], bl[1]) + "</span>";
+            }
+            html += "<div>" + bhtml + "</div>";
           }
           return html;
         }
@@ -440,18 +552,71 @@
       el.innerHTML = "";
       if (priceChart) { priceChart.destroy(); priceChart = null; }
       priceChart = window.MMChart.create(el, spec);
+      renderVolStrip(i0, t);
       var note = $("#od-days-note");
       if (note) {
         var thinned = step > 1 ? bi(" · dots thinned for rendering (1 in " + step + ")", " · 为渲染性能抽样显示（每 " + step + " 个取 1）") : "";
+        var dUp = '<span style="color:var(--od-up)">●</span> ', dDn = '<span style="color:var(--od-down)">●</span> ';
         note.innerHTML = biRaw(
-          "▲ " + esc(String(countWins())) + " closed higher · ▼ " + esc(String(S.matches.length - countWins())) + " closed lower " +
+          dUp + esc(String(countWins())) + " closed higher · " + dDn + esc(String(S.matches.length - countWins())) + " closed lower " +
             esc(HZN_SHORT[S.horizon][0]) + " forward",
-          "▲ " + esc(String(countWins())) + " 随后收高 · ▼ " + esc(String(S.matches.length - countWins())) + " 随后收低（前瞻 " +
+          dUp + esc(String(countWins())) + " 随后收高 · " + dDn + esc(String(S.matches.length - countWins())) + " 随后收低（前瞻 " +
             esc(HZN_SHORT[S.horizon][1]) + "）") + thinned;
       }
     } catch (e) {
-      try { el.innerHTML = '<div class="od-chart-empty">' + bi("Chart unavailable.", "图表暂不可用。") + "</div>"; } catch (e2) {}
+      try {
+        el.innerHTML = '<div class="od-chart-empty">' + bi("Chart unavailable.", "图表暂不可用。") + "</div>";
+        renderVolStrip(null, null);
+      } catch (e2) {}
     }
+  }
+
+  /* volume substrip: thin rel-vol bars under the price chart, aligned to the
+     same x-domain/padding. Reads the v1.1 vol_rel column (vol ÷ SMA20 thru t−1
+     × 100); on a v1 matrix the strip simply stays hidden. */
+  function renderVolStrip(i0, t) {
+    var el = $("#od-vol-strip");
+    if (!el) return;
+    try {
+      el.innerHTML = "";
+      var m = S.matrix, vr = m && m.cols ? m.cols.vol_rel : null;
+      if (i0 == null || t == null || !vr) { el.hidden = true; return; }
+      // Un-hide BEFORE measuring: the template + renderSkeletons ship the strip
+      // [hidden] → display:none → clientWidth 0 → 640px viewBox stretched onto a
+      // ~1200px container (first-paint x-offset bug). Fallback: the sibling price
+      // chart shares this panel's inner width.
+      el.hidden = false;
+      var pc = $("#od-price-chart");
+      var W = el.clientWidth || (pc ? pc.clientWidth : 0) || 640, H = 46;
+      var x0 = 54, x1 = W - 14, yTop = 5, yBot = H - 12;
+      var X0 = edYF(m.dates[i0]), X1 = edYF(m.dates[t]);
+      if (!(X1 > X0)) { el.hidden = true; return; }
+      var CAP = 300;   // display cap at 3× the 20d average; tails clamp
+      var colV = {}, any = false;
+      for (var i = i0; i <= t; i++) {
+        var v = vr[i];
+        if (v == null) continue;
+        var px = Math.round(x0 + (edYF(m.dates[i]) - X0) / (X1 - X0) * (x1 - x0));
+        if (px < x0 || px > x1) continue;
+        if (colV[px] == null || v > colV[px]) colV[px] = v;   // max per pixel column
+        any = true;
+      }
+      if (!any) { el.hidden = true; return; }
+      var svg2 = sv("svg", { viewBox: "0 0 " + W + " " + H }, el);
+      var cBar = cssVar("--od-chart-line", "#3E4C63"), cMut = cssVar("--od-mut", "#5C6474");
+      var y100 = yBot - 100 / CAP * (yBot - yTop);
+      sv("line", { x1: x0, y1: y100, x2: x1, y2: y100, stroke: cMut, "stroke-width": 1, "stroke-dasharray": "2 4", opacity: 0.45 }, svg2);
+      for (var k in colV) {
+        var vv = Math.min(colV[k], CAP);
+        var hgt = Math.max(1, vv / CAP * (yBot - yTop));
+        var op = 0.26 + 0.52 * Math.min(1, colV[k] / 250);
+        sv("rect", { x: +k, y: yBot - hgt, width: 1, height: hgt, fill: cBar, opacity: op.toFixed(2) }, svg2);
+      }
+      var lb = sv("text", { x: x0 - 7, y: y100 + 3, "text-anchor": "end", fill: cMut, "font-size": 9 }, svg2);
+      lb.textContent = "1×";
+      var cap = sv("text", { x: x1, y: H - 2, "text-anchor": "end", fill: cMut, "font-size": 9 }, svg2);
+      cap.textContent = isZh() ? "成交量 ÷ 20日均量" : "volume ÷ 20d avg";
+    } catch (e) { try { el.hidden = true; } catch (e2) {} }
   }
   function countWins() { return S.stats ? S.stats.wins : 0; }
   function nearestBar(yfs, pts, xVal) {
@@ -503,7 +668,7 @@
         return '<span class="od-bkt">' + bi(bl[0], bl[1]) + "</span>";
       }).join("");
       var f = fwd[d];
-      html.push("<tr><td class='num mut'>" + esc(edISO(m.dates[d])) + "</td><td>" + (chips || "<span class='mut'>—</span>") + "</td>" +
+      html.push("<tr><td class='dt mut'>" + esc(edISO(m.dates[d])) + "</td><td>" + (chips || "<span class='mut'>—</span>") + "</td>" +
         "<td class='num'>" + fmtPx(m.close[d]) + "</td>" +
         '<td class="num"><span class="od-fwd ' + (f > 0 ? "pos" : "neg") + '">' + fmtBpPct(f) + "</span></td></tr>");
     });
@@ -615,8 +780,8 @@
       var sx = function (k2) { return x0 + k2 / K * (x1 - x0); };
       var sy = function (v) { return y1b - (v - lo) / (hi - lo) * (y1b - y0t); };
       var svg = sv("svg", { viewBox: "0 0 " + W + " " + H }, el);
-      var cLine = cssVar("--line", "#2a2f3a"), cMut = cssVar("--muted", "#8b93a1");
-      var cLink = cssVar("--link", "#7aa7e0"), cText = cssVar("--text", "#d7dce3");
+      var cLine = cssVar("--od-div", "#161C27"), cMut = cssVar("--od-mut", "#5C6474");
+      var cLink = cssVar("--link", "#7aa7e0"), cText = cssVar("--od-text", "#E7EBF2");
       ticksIn(lo, hi, 5).forEach(function (v) {
         var yy = sy(v);
         sv("line", { x1: x0, y1: yy, x2: x1, y2: yy, stroke: cLine, "stroke-width": 1, opacity: 0.5 }, svg);
@@ -645,7 +810,7 @@
       /* hover */
       var tip = document.createElement("div"); tip.className = "od-ctip"; el.appendChild(tip);
       var guide = sv("line", { x1: 0, y1: y0t, x2: 0, y2: y1b, stroke: cText, "stroke-width": 1, opacity: 0 }, svg);
-      var dot = sv("circle", { r: 3.6, fill: cLink, stroke: cssVar("--panel", "#181b21"), "stroke-width": 1.5, opacity: 0 }, svg);
+      var dot = sv("circle", { r: 3.6, fill: cLink, stroke: cssVar("--od-panel", "#0E1219"), "stroke-width": 1.5, opacity: 0 }, svg);
       var cap = sv("rect", { x: x0, y: y0t, width: x1 - x0, height: y1b - y0t, fill: "transparent", style: "cursor:crosshair" }, svg);
       cap.addEventListener("mousemove", function (ev) {
         var r = svg.getBoundingClientRect();
@@ -699,8 +864,8 @@
       var sx = function (v) { return x0 + (v - b0) / (nb * step) * (x1 - x0); };
       var syC = function (c) { return y1b - c / maxC * (y1b - y0t - 8); };
       var svg = sv("svg", { viewBox: "0 0 " + W + " " + H }, el);
-      var cLine = cssVar("--line", "#2a2f3a"), cMut = cssVar("--muted", "#8b93a1");
-      var cUp = cssVar("--up", "#45b873"), cDn = cssVar("--down", "#e06464"), cText = cssVar("--text", "#d7dce3");
+      var cLine = cssVar("--od-div", "#161C27"), cMut = cssVar("--od-mut", "#5C6474");
+      var cUp = cssVar("--od-up", cssVar("--up", "#45b873")), cDn = cssVar("--od-down", cssVar("--down", "#e06464")), cText = cssVar("--od-text", "#E7EBF2");
       ticksIn(0, maxC, 4).forEach(function (c) {
         if (c === 0 || c !== Math.round(c)) return;
         var yy = syC(c);
@@ -880,13 +1045,20 @@
             var n = fmMetric(r, h, 0), w = fmWin(r, h), md = fmMetric(r, h, 2);
             if (n == null) { cells.push('<td class="num lown hsep">—</td><td class="num lown">—</td><td class="num lown">—</td>'); return; }
             var below = n < S.fmMinN;
-            var tint = "";
-            if (!below && w != null) {
-              var dlt = w - 0.5, mag = Math.min(20, Math.abs(dlt) * 160).toFixed(0);
-              tint = ' style="background:color-mix(in srgb, var(' + (dlt >= 0 ? "--up" : "--down") + ") " + mag + '%, transparent)"';
+            /* heat pill: tint scales with |edge vs 50|; neutral inset pill when
+               |edge| < 2 pts or below the sample floor (honest coloring) */
+            var pill = "—";
+            if (w != null) {
+              var edgePts = (w - 0.5) * 100, attr = "";
+              if (!below && Math.abs(edgePts) >= 2) {
+                var vn = edgePts > 0 ? "--od-up" : "--od-down";
+                var mag = Math.min(30, 6 + Math.abs(edgePts) * 1.1).toFixed(0);
+                attr = ' style="background:color-mix(in srgb, var(' + vn + ") " + mag + '%, var(--od-inset));color:var(' + vn + ')"';
+              }
+              pill = '<span class="od-heat"' + attr + ">" + (w * 100).toFixed(0) + "%</span>";
             }
             cells.push('<td class="num hsep' + (below ? " lown" : "") + '">' + n + "</td>");
-            cells.push('<td class="num' + (below ? " lown" : "") + '"' + tint + ">" + (w == null ? "—" : (w * 100).toFixed(0) + "%") + "</td>");
+            cells.push('<td class="num' + (below ? " lown" : "") + '">' + pill + "</td>");
             cells.push('<td class="num' + (below ? " lown" : "") + '">' + (md == null ? "—" : fmtBpPct(md)) + "</td>");
           });
           cells.push("</tr>");
@@ -993,6 +1165,7 @@
   /* ---------------- ticker load ---------------- */
   function updateTopChrome() {
     var logo = $("#od-logo"), chip = $("#od-move-chip");
+    var tkEl = $("#od-ident-tk"), nmEl = $("#od-ident-name"), subEl = $("#od-ident-sub");
     if (logo) {
       if (S.ticker) {
         logo.onerror = function () { logo.hidden = true; };
@@ -1000,26 +1173,74 @@
         logo.src = LOGO_CDN + S.ticker + ".png";
       } else logo.hidden = true;
     }
+    if (tkEl) tkEl.textContent = S.ticker || "—";
+    if (nmEl) {
+      var u = ((S.cat && S.cat.universe) || []).filter(function (x) { return x && x.t === S.ticker; })[0];
+      nmEl.textContent = (u && u.name) ? u.name : "";
+    }
     if (chip) {
       var r = S.matrix && S.matrix.cols.ret_bp ? S.matrix.cols.ret_bp[todayIdx()] : null;
       if (r == null) { chip.hidden = true; }
       else {
         chip.hidden = false;
         chip.className = "od-move " + (r > 0 ? "pos" : r < 0 ? "neg" : "");
-        chip.innerHTML = biRaw(esc(fmtBpPct(r)) + " " + "today", "今日 " + esc(fmtBpPct(r)));
+        chip.textContent = fmtBpPct(r);
       }
     }
+    if (subEl) {
+      if (!S.matrix) subEl.innerHTML = "";
+      else {
+        var D = edDate(S.matrix.dates[todayIdx()]);
+        var dEn = DOW_EN[D.getUTCDay()] + ", " + MON_EN[D.getUTCMonth()] + " " + D.getUTCDate() + " " + D.getUTCFullYear();
+        var dZh = D.getUTCFullYear() + "年" + (D.getUTCMonth() + 1) + "月" + D.getUTCDate() + "日（" + DOW_ZH[D.getUTCDay()] + "）";
+        var tb = todayBucket("mkt_trend");
+        var rgm = tb == null ? null : bktLabel("mkt_trend", tb);
+        subEl.innerHTML = biRaw(
+          esc(dEn + " · close" + (rgm ? " · " + rgm[0] + " regime" : "")),
+          esc(dZh + " · 收盘" + (rgm ? " · " + rgm[1] : "")));
+      }
+    }
+  }
+  /* skeleton loading blocks while a matrix fetches (pulse is motion-gated in CSS) */
+  function renderSkeletons() {
+    var v = $("#od-verdict");
+    if (v) v.innerHTML =
+      '<div class="od-v-head"><div class="od-skel-block" style="width:210px;height:12px"></div></div>' +
+      '<div class="od-v-grid"><div class="od-v-main">' +
+        '<div class="od-skel-block" style="width:190px;height:56px"></div>' +
+        '<div class="od-skel-block" style="width:150px;height:12px;margin-top:12px"></div></div>' +
+      '<div class="od-v-side"><div class="od-skel-block" style="height:8px;border-radius:99px;margin-top:14px"></div>' +
+        '<div class="od-skel-row" style="margin-top:22px">' +
+          '<div class="od-skel-block" style="width:62px;height:28px"></div>' +
+          '<div class="od-skel-block" style="width:62px;height:28px"></div>' +
+          '<div class="od-skel-block" style="width:62px;height:28px"></div>' +
+          '<div class="od-skel-block" style="width:62px;height:28px"></div>' +
+        "</div></div></div>" +
+      '<div class="od-skel-block" style="height:12px;margin-top:18px"></div>';
+    var pc = $("#od-price-chart");
+    if (pc) {
+      if (priceChart) { try { priceChart.destroy(); } catch (e) {} priceChart = null; }
+      pc.innerHTML = '<div class="od-skel-block" style="position:absolute;left:0;right:0;top:6px;bottom:6px"></div>';
+    }
+    var vs = $("#od-vol-strip"); if (vs) vs.hidden = true;
+    var tbl = $("#od-days-table");
+    if (tbl) tbl.innerHTML = '<tbody><tr><td style="border-bottom:none">' +
+      '<div class="od-skel-block" style="height:14px;margin:4px 0"></div>' +
+      '<div class="od-skel-block" style="height:14px;margin:10px 0"></div>' +
+      '<div class="od-skel-block" style="height:14px;margin:10px 0 4px"></div></td></tr></tbody>';
   }
   function loadTicker(t) {
     if (!t) return;
     S.ticker = t;
     var seq = ++S.loadSeq;
     var inp = $("#od-tk-input"); if (inp) inp.value = t;
+    renderSkeletons();
     var base = (window.DATA_BASE || "");
     if (base && base.slice(-1) !== "/") base += "/";
     fetchJSON(base + "oddsmatrix/" + encodeURIComponent(t) + ".json").then(function (m) {
       if (seq !== S.loadSeq) return;   // a newer pick superseded this load
-      var okShape = m && m.schema === "odds_matrix.v1" && Array.isArray(m.dates) && m.dates.length > 1 &&
+      var okShape = m && (m.schema === "odds_matrix.v1" || m.schema === "odds_matrix.v1.1") &&
+        Array.isArray(m.dates) && m.dates.length > 1 &&
         Array.isArray(m.close) && m.close.length === m.dates.length && m.cols;
       S.matrix = okShape ? m : null;
       if (S.matrix) {
@@ -1052,6 +1273,14 @@
 
   /* ---------------- tabs + deep links ---------------- */
   var TABS = ["days", "path", "returns", "fm"];
+  function syncTabInk() {
+    var ink = $("#od-tab-ink");
+    if (!ink) return;
+    var on = document.querySelector("#od-tabs .tabbtn.on");
+    if (!on) { ink.style.width = "0"; return; }
+    ink.style.left = on.offsetLeft + "px";
+    ink.style.width = on.offsetWidth + "px";
+  }
   function setTab(tab, silent) {
     if (TABS.indexOf(tab) < 0) tab = "days";
     S.tab = tab;
@@ -1064,6 +1293,9 @@
       var pane = $("#od-pane-" + tb);
       if (pane) pane.hidden = tb !== tab;
     });
+    var csv = $("#od-csv");
+    if (csv) csv.hidden = tab !== "days";   // CSV exports the matching-days set
+    syncTabInk();
     if (!silent) { try { history.replaceState(null, "", "#" + tab); } catch (e) { location.hash = tab; } }
     renderActivePane();
   }
@@ -1075,32 +1307,53 @@
       var h = (location.hash || "").replace("#", "");
       if (TABS.indexOf(h) >= 0 && h !== S.tab) setTab(h, true);
     });
+    window.addEventListener("resize", debounce(syncTabInk, 120));
     var h0 = (location.hash || "").replace("#", "");
     setTab(TABS.indexOf(h0) >= 0 ? h0 : "days", true);
+    setTimeout(syncTabInk, 350);   // re-measure once webfonts settle
   }
 
-  /* ---------------- controls ---------------- */
-  function initSeg(id, get, set) {
-    var box = $(id);
-    if (!box) return;
-    var btns = box.querySelectorAll(".segbtn");
+  /* ---------------- controls: labelled chip + dropdown menu ---------------- */
+  var _odMenus = [];
+  function closeMenus() { _odMenus.forEach(function (fn) { fn(); }); }
+  function initChipMenu(rootSel, get, set) {
+    var root = $(rootSel);
+    if (!root) return;
+    var btn = root.querySelector(".od-chipbtn"), menu = root.querySelector(".od-menu"), val = root.querySelector(".od-ctrl-v");
+    if (!btn || !menu) return;
     function paint() {
-      btns.forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-v") === String(get())); });
+      var cur = String(get());
+      menu.querySelectorAll(".od-opt").forEach(function (o) {
+        var on = o.getAttribute("data-v") === cur;
+        o.classList.toggle("on", on);
+        if (on && val) val.innerHTML = o.innerHTML;   // paired l-en/l-zh spans ride along
+      });
     }
-    btns.forEach(function (b) {
-      b.addEventListener("click", function () {
-        if (b.disabled) return;
-        set(b.getAttribute("data-v"));
+    function close() { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); }
+    btn.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      var wasHidden = menu.hidden;
+      closeMenus();
+      if (wasHidden) { menu.hidden = false; btn.setAttribute("aria-expanded", "true"); }
+    });
+    menu.querySelectorAll(".od-opt").forEach(function (o) {
+      o.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        set(o.getAttribute("data-v"));
         paint();
+        close();
         recompute();
       });
     });
     paint();
+    _odMenus.push(close);
   }
   function initControls() {
-    initSeg("#od-seg-horizon", function () { return S.horizon; }, function (v) { S.horizon = v; });
-    initSeg("#od-seg-range", function () { return S.range; }, function (v) { S.range = v; });
-    initSeg("#od-seg-tol", function () { return String(S.tol); }, function (v) { S.tol = parseInt(v, 10) || 0; });
+    initChipMenu("#od-ctl-horizon", function () { return S.horizon; }, function (v) { S.horizon = v; });
+    initChipMenu("#od-ctl-range", function () { return S.range; }, function (v) { S.range = v; });
+    initChipMenu("#od-ctl-tol", function () { return String(S.tol); }, function (v) { S.tol = parseInt(v, 10) || 0; });
+    document.addEventListener("click", closeMenus);
+    document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") closeMenus(); });
     var csv = $("#od-csv");
     if (csv) csv.addEventListener("click", downloadCSV);
     var mn = $("#od-fm-minn");
@@ -1123,19 +1376,229 @@
     });
   }
   function initReactivity() {
-    var re = debounce(function () { renderActivePane(); }, 70);
+    var re = debounce(function () { renderActivePane(); syncTabInk(); }, 70);
     document.addEventListener("themechange", re);
     document.addEventListener("langchange", function () { syncPlaceholders(); re(); });
     if (window.ResizeObserver) {
       var ro = new ResizeObserver(debounce(function () {
-        if (S.tab === "path") renderPathChart();
+        if (S.tab === "days") renderPriceChart();
+        else if (S.tab === "path") renderPathChart();
         else if (S.tab === "returns") renderReturns();
       }, 90));
-      ["#od-path-chart", "#od-hist-chart"].forEach(function (id) {
+      ["#od-price-chart", "#od-path-chart", "#od-hist-chart"].forEach(function (id) {
         var el = $(id); if (el) ro.observe(el);
       });
     }
     syncPlaceholders();
+  }
+
+  /* ---------------- onboarding (first visit, dismissible) ---------------- */
+  var OB_KEY = "odds_onboarded_v1";
+  function initOnboard() {
+    var el = $("#od-onboard");
+    if (!el) return;
+    var seen = null;
+    try { seen = localStorage.getItem(OB_KEY); } catch (e) {}
+    if (seen) return;
+    el.hidden = false;
+    function dismiss() {
+      el.hidden = true;
+      try { localStorage.setItem(OB_KEY, "1"); } catch (e) {}
+    }
+    var x = $("#od-onboard-x"), ok = $("#od-onboard-ok");
+    if (x) x.addEventListener("click", dismiss);
+    if (ok) ok.addEventListener("click", dismiss);
+  }
+
+  /* ---------------- per-condition ⓘ tooltips (catalog desc_en/desc_zh) ------- */
+  function initInfoTips() {
+    var tip = document.createElement("div");
+    tip.className = "od-tipbox";
+    document.body.appendChild(tip);
+    var curBtn = null;
+    function show(btn) {
+      var fid = btn.getAttribute("data-f");
+      var f = S.F[fid];
+      if (!f || !(f.desc_en || f.desc_zh)) return;
+      var lab = fLabel(fid);
+      tip.innerHTML = "<b>" + bi(lab[0], lab[1]) + "</b><br>" + bi(f.desc_en || "", f.desc_zh || f.desc_en || "");
+      var r = btn.getBoundingClientRect();
+      var maxL = (document.documentElement.clientWidth || 1200) - 262;
+      tip.style.left = Math.max(6, Math.min(window.scrollX + r.left - 8, window.scrollX + maxL)) + "px";
+      tip.style.top = (window.scrollY + r.bottom + 7) + "px";
+      tip.classList.add("show");
+      curBtn = btn;
+    }
+    function hide() { tip.classList.remove("show"); curBtn = null; }
+    document.addEventListener("mouseover", function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest(".od-info") : null;
+      if (b) show(b);
+      else if (curBtn) hide();
+    });
+    document.addEventListener("click", function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest(".od-info") : null;
+      if (b) { ev.stopPropagation(); ev.preventDefault(); if (curBtn === b) hide(); else show(b); }
+    }, true);   // capture: an ⓘ tap must never toggle the condition underneath
+    document.addEventListener("focusin", function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest(".od-info") : null;
+      if (b) show(b);
+      else if (curBtn) hide();
+    });
+  }
+
+  /* ---------------- share card (1200×630 canvas → PNG, no libs) ------------- */
+  function bindShare() {
+    var btn = $("#od-share");
+    if (!btn) return;
+    btn.addEventListener("click", function () { buildShareCard(btn); });
+  }
+  function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function wrapText(ctx, text, x, y, maxW, lh, maxLines, zh) {
+    var parts = zh ? text.split("") : text.split(" ");
+    var joiner = zh ? "" : " ";
+    var line = "", lines = 0;
+    for (var i = 0; i < parts.length; i++) {
+      var test = line ? line + joiner + parts[i] : parts[i];
+      if (ctx.measureText(test).width > maxW && line) {
+        if (lines >= maxLines - 1) {
+          var rest = parts.slice(i).join(joiner);
+          while (rest.length && ctx.measureText(line + joiner + "…").width > maxW) line = line.slice(0, -1);
+          ctx.fillText(line + "…", x, y);
+          return y;
+        }
+        ctx.fillText(line, x, y);
+        y += lh; lines++;
+        line = parts[i];
+      } else line = test;
+    }
+    if (line) ctx.fillText(line, x, y);
+    return y;
+  }
+  function buildShareCard(btn) {
+    try {
+      var st = S.stats, base = S.base, m = S.matrix;
+      if (!st || !m || st.n < 5) return;
+      var zh = isZh();
+      var W = 1200, H = 630;
+      var cv = document.createElement("canvas");
+      cv.width = W; cv.height = H;
+      var ctx = cv.getContext("2d");
+      if (!ctx) { btn.disabled = true; return; }
+      var edge = base ? (st.rate - base.rate) * 100 : 0;
+      /* --od-up/--od-down resolve the zh red=up swap automatically */
+      var cUp = cssVar("--od-up", "#34D399"), cDn = cssVar("--od-down", "#F87171");
+      var tone = edge >= 5 ? cUp : edge <= -5 ? cDn : "#E7EBF2";
+      var FF = ", Inter, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif";
+      var hz = HORIZON_TXT[S.horizon], rg = RANGE_TXT[S.range];
+      var conds = condSummary();
+      var D = edDate(m.dates[todayIdx()]);
+      var dateStr = zh
+        ? D.getUTCFullYear() + "年" + (D.getUTCMonth() + 1) + "月" + D.getUTCDate() + "日"
+        : DOW_EN[D.getUTCDay()] + ", " + MON_EN[D.getUTCMonth()] + " " + D.getUTCDate() + " " + D.getUTCFullYear();
+
+      function finish(logoEl) {
+        /* card chrome — always the dark brand card */
+        ctx.fillStyle = "#0B0E14"; ctx.fillRect(0, 0, W, H);
+        rrect(ctx, 36, 36, W - 72, H - 72, 24);
+        ctx.fillStyle = "#0E1219"; ctx.fill();
+        ctx.strokeStyle = "#1D2330"; ctx.lineWidth = 2; ctx.stroke();
+        /* header: logo circle + ticker · name + date right */
+        var hx = 76;
+        ctx.beginPath(); ctx.arc(hx + 26, 104, 26, 0, Math.PI * 2);
+        ctx.fillStyle = "#151A23"; ctx.fill();
+        ctx.strokeStyle = "#1D2330"; ctx.lineWidth = 1.5; ctx.stroke();
+        if (logoEl) {
+          try {
+            ctx.save();
+            ctx.beginPath(); ctx.arc(hx + 26, 104, 17, 0, Math.PI * 2); ctx.clip();
+            ctx.drawImage(logoEl, hx + 9, 87, 34, 34);
+            ctx.restore();
+          } catch (e) { try { ctx.restore(); } catch (e2) {} }
+        }
+        ctx.fillStyle = "#E7EBF2"; ctx.font = "700 30px" + FF; ctx.textBaseline = "middle";
+        ctx.fillText(S.ticker, hx + 68, 96);
+        ctx.fillStyle = "#8B93A3"; ctx.font = "400 17px" + FF;
+        var u = ((S.cat && S.cat.universe) || []).filter(function (x) { return x && x.t === S.ticker; })[0];
+        ctx.fillText((u && u.name ? String(u.name).slice(0, 40) : ""), hx + 68, 124);
+        ctx.textAlign = "right"; ctx.fillStyle = "#5C6474"; ctx.font = "400 16px" + FF;
+        ctx.fillText(dateStr + " · " + (zh ? "开盘→收盘" : "open-to-close"), W - 76, 104);
+        ctx.textAlign = "left";
+        /* eyebrow */
+        ctx.fillStyle = "#5C6474"; ctx.font = "700 15px" + FF;
+        ctx.fillText((zh ? "历史形态 · " + st.n + " 个匹配交易日" : ("HISTORICAL PATTERN · " + st.n + " MATCHING DAYS")), hx, 182);
+        /* giant rate + what */
+        ctx.fillStyle = tone; ctx.font = "600 124px" + FF; ctx.textBaseline = "alphabetic";
+        ctx.fillText(fmtRate(st.rate), hx - 4, 322);
+        ctx.fillStyle = "#8B93A3"; ctx.font = "500 24px" + FF;
+        ctx.fillText(zh ? hz[1] + "收高" : "closed higher " + hz[0], hx, 366);
+        /* CI band (right half) */
+        if (st.ci) {
+          var bx0 = 640, bx1 = W - 96, by = 262;
+          var px = function (p) { return bx0 + p * (bx1 - bx0); };
+          ctx.fillStyle = "#5C6474"; ctx.font = "700 13px" + FF;
+          ctx.fillText(zh ? "95% 置信区间（WILSON）" : "95% CONFIDENCE (WILSON)", bx0, by - 44);
+          rrect(ctx, bx0, by - 4, bx1 - bx0, 8, 4); ctx.fillStyle = "#161C27"; ctx.fill();
+          rrect(ctx, px(st.ci[0]), by - 4, Math.max(4, px(st.ci[1]) - px(st.ci[0])), 8, 4);
+          ctx.fillStyle = edge >= 5 ? "rgba(52,211,153,.38)" : edge <= -5 ? "rgba(248,113,113,.38)" : "rgba(139,147,163,.35)";
+          ctx.fill();
+          ctx.fillStyle = "#5C6474"; ctx.fillRect(px(0.5), by - 10, 1, 20);
+          ctx.fillStyle = tone; ctx.fillRect(px(st.rate) - 1.5, by - 8, 3, 16);
+          ctx.fillStyle = "#5C6474"; ctx.font = "400 14px" + FF; ctx.textAlign = "center";
+          ctx.fillText(zh ? "50% · 抛硬币" : "50% · coin flip", px(0.5), by - 22);
+          ctx.fillText(fmtRate(st.ci[0]), Math.max(bx0 + 24, px(st.ci[0])), by + 28);
+          ctx.fillText(fmtRate(st.ci[1]), Math.min(bx1 - 24, px(st.ci[1])), by + 28);
+          ctx.textAlign = "left";
+          /* metric chips line */
+          ctx.fillStyle = "#8B93A3"; ctx.font = "500 18px" + FF;
+          var chips = zh
+            ? "中位数 " + fmtBpPct(st.med) + "　均值 " + fmtBpPct(st.mean) + "　相对基础 " + fmtSigned(edge) + " 点　n=" + st.n
+            : "median " + fmtBpPct(st.med) + "   mean " + fmtBpPct(st.mean) + "   edge vs base " + fmtSigned(edge) + " pts   n=" + st.n;
+          ctx.fillText(chips, bx0, by + 74);
+        }
+        /* verdict sentence */
+        ctx.fillStyle = "#8B93A3"; ctx.font = "400 20px" + FF;
+        var sent = zh
+          ? "条件：" + conds[1] + "。在" + rg[1] + "的 " + st.n + " 个相似交易日中，" + hz[1] + "收高概率为 " +
+            fmtRate(st.rate) + "（中位数 " + fmtBpPct(st.med) + "，基础概率 " + fmtRate(base ? base.rate : 0) + "）。"
+          : "Conditions: " + conds[0] + ". Across " + st.n + " similar days in " + rg[0] + ", price closed higher " +
+            fmtRate(st.rate) + " of the time (median " + fmtBpPct(st.med) + ", base rate " + fmtRate(base ? base.rate : 0) + ").";
+        wrapText(ctx, sent, hx, 448, W - 152 - hx + 76, 30, 3, zh);
+        /* footer */
+        ctx.strokeStyle = "#161C27"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(76, 548); ctx.lineTo(W - 76, 548); ctx.stroke();
+        ctx.fillStyle = "#5C6474"; ctx.font = "700 15px" + FF;
+        ctx.fillText("MASTERMIND-X · MACRO DASHBOARD — ODDS DESK", 76, 576);
+        ctx.textAlign = "right"; ctx.font = "400 14px" + FF;
+        ctx.fillText(zh ? "描述性统计 · 不构成投资建议" : "descriptive statistics · not investment advice", W - 76, 576);
+        ctx.textAlign = "left";
+        /* download */
+        try {
+          var a = document.createElement("a");
+          a.href = cv.toDataURL("image/png");
+          a.download = "odds_" + S.ticker + "_" + S.horizon + "_" + (m.asof || "latest") + ".png";
+          document.body.appendChild(a); a.click();
+          setTimeout(function () { a.remove(); }, 300);
+        } catch (e) {   // tainted canvas or blocked download — degrade to disabled
+          btn.disabled = true;
+        }
+      }
+      /* logo: CORS attempt; on failure the card ships without it */
+      var done = false;
+      var img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = function () { if (!done) { done = true; finish(img); } };
+      img.onerror = function () { if (!done) { done = true; finish(null); } };
+      setTimeout(function () { if (!done) { done = true; finish(null); } }, 1500);
+      img.src = LOGO_CDN + S.ticker + ".png";
+    } catch (e) { try { btn.disabled = true; } catch (e2) {} }
   }
 
   /* ---------------- boot ---------------- */
@@ -1168,6 +1631,8 @@
         initTypeahead();
         initTabs();
         initReactivity();
+        initOnboard();
+        initInfoTips();
         renderRail();
         /* ?t=NVDA deep link — checked against the universe, else default SPY */
         var qt = "";

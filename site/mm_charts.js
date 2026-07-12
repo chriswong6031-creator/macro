@@ -269,6 +269,14 @@
         g.appendChild(cone);
       }
 
+      // area fill under the historical line (additive; e.g. the Odds Desk price
+      // chart). d.fill = paint under hist down to the plot floor; never stroked.
+      if (d.fill && d.hist && d.hist.length > 1) {
+        var fEnd = SX(d.hist[d.hist.length - 1].x).toFixed(2), fStart = SX(d.hist[0].x).toFixed(2);
+        g.appendChild(svg("path", { d: path(d.hist) + "L" + fEnd + "," + y1 + "L" + fStart + "," + y1 + "Z",
+          class: "mmc-area", fill: d.fill, stroke: "none", opacity: d.fillOpacity != null ? d.fillOpacity : 1 }));
+      }
+
       // historical line (solid)
       if (d.hist && d.hist.length) {
         var hp = svg("path", { d: path(d.hist), class: "mmc-hist", fill: "none", stroke: d.color || cInk, "stroke-width": w, "stroke-linecap": "round", "stroke-linejoin": "round" });
@@ -301,6 +309,8 @@
           mg.appendChild(svg("path", { d: "M" + mx + "," + (my - 4.5) + "L" + (mx + 4) + "," + (my + 3.5) + "L" + (mx - 4) + "," + (my + 3.5) + "Z", fill: d.color || cInk, stroke: cssVar("--panel", "#181b21"), "stroke-width": 0.8 }));
         } else if (m.kind === "trough") {
           mg.appendChild(svg("path", { d: "M" + mx + "," + (my + 4.5) + "L" + (mx + 4) + "," + (my - 3.5) + "L" + (mx - 4) + "," + (my - 3.5) + "Z", fill: d.color || cInk, stroke: cssVar("--panel", "#181b21"), "stroke-width": 0.8 }));
+        } else if (m.kind === "dot") {
+          mg.appendChild(svg("circle", { cx: mx, cy: my, r: m.r || 3.5, fill: d.color || cInk, stroke: cssVar("--panel", "#181b21"), "stroke-width": 1 }));
         }
         // only inline-animate the "now" dot; peak/trough visibility is CSS-driven
         // (shown for the focused series) so the 15-line overlay stays clean.
