@@ -148,6 +148,10 @@ on:
       - "tests/test_china_news.py"
       # LHB-W2b 8-K item expansion: test-only edits must still trigger the job
       - "tests/test_edgar_8k_items.py"
+      # china_news engine contract (theme gate, flash filter, bilingual synthesis
+      # labels — doctrine Law 2): engine + test re-run together.
+      - "engine/china_news.py"
+      - "tests/test_china_news_engine.py"
       # sector_pulse wiring tripwire (#1193 post-mortem): PR #1170 injected sector_pulse
       # into build_stock_library.py; an unrelated refactor 90 min later silently deleted
       # the block and merged green because nothing here covered the builder. The wiring
@@ -695,7 +699,8 @@ jobs:
           tests/test_t0_indicator.py
           tests/test_intraday_flow.py
           tests/test_intraday_flow_stance.py
-          tests/test_altdata_hygiene.py -q
+          tests/test_altdata_hygiene.py
+          tests/test_china_news_engine.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)

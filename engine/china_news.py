@@ -173,8 +173,26 @@ CHANNEL_LABEL: dict[str, tuple[str, str]] = {
 
 
 def _slug_label(slug: str) -> tuple[str, str]:
-    """(EN, ZH) display pair for a channel slug; unmapped slugs de-underscore."""
-    return CHANNEL_LABEL.get(slug) or (slug.replace("_", " "), slug.replace("_", " "))
+    """(EN, ZH) display pair for a channel/theme slug; unmapped slugs de-underscore.
+    THEME_LABEL fallback because channels back-fill from the theme when no channel
+    keyword fires, so theme slugs reach the same user-facing surfaces."""
+    return CHANNEL_LABEL.get(slug) or THEME_LABEL.get(slug) or (slug.replace("_", " "), slug.replace("_", " "))
+
+
+# source_tier slug -> (EN plain words, ZH) for the synthesis `read` line.
+TIER_LABEL: dict[str, tuple[str, str]] = {
+    "official": ("official releases", "官方发布"),
+    "wire": ("global wire", "国际通讯社"),
+    "global_wire": ("global wire", "国际通讯社"),
+    "domestic_wire": ("domestic wire", "国内财经快讯"),
+    "china_native": ("Chinese financial press", "中国财经媒体"),
+    "unknown": ("other", "其他"),
+}
+
+
+def _tier_label(slug: str) -> tuple[str, str]:
+    """(EN, ZH) display pair for a source_tier slug; unmapped slugs de-underscore."""
+    return TIER_LABEL.get(slug) or (slug.replace("_", " "), slug.replace("_", " "))
 
 
 TICKER_RULES: list[tuple[str, list[str]]] = [
@@ -764,6 +782,7 @@ def _synthesis(headlines: list[dict]) -> dict:
             "high_impact_count": 0, "top_channels": [], "top_tickers": [],
             "top_themes": [], "source_mix": [], "dominant_channel": "",
             "read": "No high-signal China macro tape passed the current filter.",
+            "read_zh": "当前过滤条件下无高信号中国宏观信息。",
         }
     channels = Counter(c for h in headlines for c in (h.get("channels") or []))
     tickers = Counter(t for h in headlines for t in (h.get("tickers") or []))
@@ -772,8 +791,13 @@ def _synthesis(headlines: list[dict]) -> dict:
     high = sum(1 for h in headlines if h.get("importance") == "high")
     dom_channel = channels.most_common(1)[0][0] if channels else ""
     dom_theme = themes.most_common(1)[0][0] if themes else "macro"
-    read = f"{high} high-impact China items; dominant channel {dom_channel or dom_theme}; source mix " \
-           + ", ".join(f"{k}:{v}" for k, v in sources.most_common(3))
+    # bilingual plain-word read line (no raw slugs — doctrine Law 2)
+    ch_en, ch_zh = _slug_label(dom_channel or dom_theme)
+    mix = [(_tier_label(k), v) for k, v in sources.most_common(3)]
+    read = (f"{high} high-impact China items; dominant channel {ch_en}; sources "
+            + ", ".join(f"{t[0]} {v}" for t, v in mix))
+    read_zh = (f"{high} 条中国高影响信息；主导渠道：{ch_zh}；来源："
+               + "、".join(f"{t[1]} {v}" for t, v in mix))
     # channel chips carry bilingual labels; `name` stays the raw slug for
     # machine consumers (additive — templates fall back to name on old artifacts)
     top_channels = []
@@ -790,6 +814,7 @@ def _synthesis(headlines: list[dict]) -> dict:
         "dominant_channel": dom_channel,
         "dominant_theme": dom_theme,
         "read": read,
+        "read_zh": read_zh,
     }
 
 
