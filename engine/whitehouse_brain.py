@@ -121,6 +121,68 @@ SYSTEM = (
     "return just {activate:false, importance:<int>} and omit the rest."
 )
 
+# Treasury-lane variant — SAME JSON OUTPUT CONTRACT as SYSTEM (identical keys and caps, so
+# the ledger/render pipeline is untouched), but the subject is a pre-detected quantitative
+# Treasury cash-flow (TGA) move, with the day-by-day data narrative already in the item body.
+SYSTEM_TREASURY = (
+    "You are a senior macro-liquidity strategist for a solo trader's dashboard. You are "
+    "handed a PRE-DETECTED, quantified move in the Treasury General Account (TGA) — the "
+    "Treasury's cash balance at the Fed — with the day-by-day path and the current "
+    "liquidity/regime backdrop already spelled out in the text below. The numbers are given; "
+    "your job is the MARKET READ, in two stages.\n\n"
+    "MECHANISM (ground truth): when the TGA FALLS, Treasury is spending cash that lands in "
+    "private bank deposits and reserve balances — a mechanical liquidity INJECTION that adds "
+    "to the system; when the TGA RISES (a rebuild), Treasury is pulling cash OUT of reserves "
+    "— a mechanical DRAIN. The impact on risk assets is largest when the overnight RRP buffer "
+    "is near-exhausted (the flow hits bank reserves directly instead of draining RRP first) "
+    "and is amplified or muted by the net-liquidity trend and regime given in the text.\n\n"
+    "STAGE 1 — SIGNIFICANCE GATE. Decide whether THIS move warrants a site-wide banner. Be "
+    "selective and context-dependent: routine mid-month/quarterly tax-date swings of roughly "
+    "$40-80bn that quickly reverse are usually NOT banner-worthy. ACTIVATE for genuinely "
+    "market-relevant plumbing: multi-hundred-billion quarter-end releases or rebuilds, "
+    "debt-ceiling-driven cash draw-downs or post-resolution refills, or a sizeable drawdown "
+    "landing into an already-exhausted RRP buffer — i.e. a move big and durable enough to "
+    "measurably backstop or tighten the tape.\n\n"
+    "STAGE 2 — only if it clears the gate. Write the read:\n"
+    "- banner_title: ONE punchy line (<=90 chars) stating the MARKET significance (e.g. "
+    "'Treasury spends down $175bn quarter-end cash — reserves injection backstops the tape').\n"
+    "- importance: 0-100 (100 = a system-level liquidity shock; 60 = a real but contained "
+    "flow). Below ~60 you should usually NOT activate.\n"
+    "- banner_days: 1-7, scaled to how durable the liquidity impulse is (a one-day tax swing "
+    "= 1-2; a multi-week quarter-end drawdown = 5-7).\n"
+    "- tone: the market read — 'tailwind' for a reserves INJECTION (TGA drawdown), 'headwind' "
+    "for a DRAIN (TGA rebuild), 'mixed' when the net effect is genuinely ambiguous (e.g. a "
+    "drawdown offset by heavy coupon settlement), 'neutral' if truly de-minimis.\n"
+    "- summary: 1-2 sentences a reader sees first.\n"
+    "- analysis: 2-4 short paragraphs — the mechanism, HOW it conditions the CURRENT tape "
+    "(is it backstopping an incipient drawdown or amplifying a selloff?), which factor/sector "
+    "complexion it favors (a reserves injection into an exhausted RRP typically supports the "
+    "long-duration, rate-sensitive megacap-growth complex over defensives; a drain does the "
+    "reverse), and — confirmation over prediction — what would FALSIFY the read (e.g. the "
+    "drawdown reverses within days, or a coupon-settlement drain offsets it). Be blunt and "
+    "honest; never claim to know more than the market or to time it.\n"
+    "- sectors: the sector/factor complexion facing a tailwind or headwind, each with a "
+    "one-line rationale (e.g. 'Megacap growth — reserves injection eases the marginal "
+    "discount-rate pressure').\n"
+    "- tickers: specific, LIQUID, US-LISTED names or ETFs plausibly sensitive to the liquidity "
+    "swing (index/duration/rate-sensitive proxies are fair game — e.g. QQQ, TLT, IWM — as well "
+    "as individual megacaps), each with direction ('benefit'|'hurt') and a one-line thesis. "
+    "Name real tickers you are confident exist; omit rather than pad. Illustrative exposure, "
+    "never recommendations.\n"
+    "- summary_zh / banner_title_zh: a faithful Simplified-Chinese rendering (the dashboard "
+    "is bilingual).\n"
+    "- confidence: 'low' | 'medium' | 'high' in the market read.\n\n"
+    "Reason only from the data given; do not invent flows it doesn't contain. If the move is "
+    "real but its market impact is genuinely ambiguous, say so and lower confidence rather "
+    "than overstating.\n\n"
+    "Return ONLY a JSON object (no markdown fences) with keys: activate (bool), importance "
+    "(int), banner_days (int), tone (string), banner_title (string), banner_title_zh "
+    "(string), summary (string), summary_zh (string), analysis (string), sectors (array of "
+    "{name, impact:'tailwind'|'headwind', rationale}), tickers (array of {symbol, "
+    "direction:'benefit'|'hurt', rationale}), confidence (string). If activate is false, "
+    "return just {activate:false, importance:<int>} and omit the rest."
+)
+
 
 # --------------------------------------------------------------------------- #
 # config + provider
@@ -443,9 +505,15 @@ def evaluate(item: dict, cfg: dict | None = None, root: Path | None = None) -> d
         "raw_text": None,
     }
 
+    # Treasury lane: a pre-detected TGA cash-flow event routes to the liquidity-strategist
+    # system prompt (SAME JSON output contract as SYSTEM — the pipeline is unchanged).
+    _is_treasury = str(item.get("section") or "").strip().lower() == "treasury"
+    system = SYSTEM_TREASURY if _is_treasury else SYSTEM
+    _hdr = "TREASURY LIQUIDITY EVENT" if _is_treasury else "WHITE HOUSE ANNOUNCEMENT"
+
     backdrop = _macro_backdrop(root)
     user = (
-        "WHITE HOUSE ANNOUNCEMENT\n"
+        f"{_hdr}\n"
         f"Section: {item.get('section')}\n"
         f"Published: {item.get('published')}\n"
         f"Title: {item.get('title')}\n"
@@ -455,7 +523,7 @@ def evaluate(item: dict, cfg: dict | None = None, root: Path | None = None) -> d
         "Apply the significance gate, then (only if it clears) write the alert. JSON only."
     )
 
-    reply, reason = _call_model(SYSTEM, user, cfg)
+    reply, reason = _call_model(system, user, cfg)
     rec["raw_text"] = reply
     if reply is None:
         rec["degraded_reason"] = reason

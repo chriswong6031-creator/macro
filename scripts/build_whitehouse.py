@@ -144,6 +144,98 @@ def _write_if_changed(path: Path, text: str) -> bool:
 
 
 # --------------------------------------------------------------------------- #
+# Treasury Watch lane — same-day TGA refresh + the treasury_watch.v1 panel artifact
+# --------------------------------------------------------------------------- #
+def _refresh_tga(root: Path) -> None:
+    """Best-effort same-day TGA refresh so the hourly sentinel isn't a day behind the DTS.
+    Mirrors the daily collect (keyless fiscaldata.treasury.gov); append-only upsert can only
+    add rows, never corrupt history. A failure (e.g. no network in CI) leaves the committed
+    parquet standing — non-fatal by design."""
+    try:
+        from collectors.treasury import TreasuryAdapter
+        from lib import store as _store
+        frames = TreasuryAdapter().fetch()
+        for name, df in (frames or {}).items():
+            try:
+                if df is not None and not df.empty:
+                    _store.upsert("treasury", name, df)
+            except Exception as e:  # noqa: BLE001
+                log.warning("treasury refresh upsert %s failed (%s)", name, e)
+    except Exception as e:  # noqa: BLE001
+        log.warning("treasury refresh failed (%s) — committed parquet stands", e)
+
+
+def _load_treasury_watch(site: Path) -> dict | None:
+    """Read the committed site/whdata/treasury_watch.json (the panel/bot contract). None on
+    absence/parse error — the panel is simply omitted."""
+    try:
+        p = site / "whdata" / "treasury_watch.json"
+        if not p.exists():
+            return None
+        d = json.loads(p.read_text())
+        return d if isinstance(d, dict) else None
+    except Exception as e:  # noqa: BLE001
+        log.warning("treasury_watch.json read failed (%s)", e)
+        return None
+
+
+def _write_treasury_watch(root: Path, site: Path, now: datetime) -> None:
+    """Assemble + write site/whdata/treasury_watch.json (schema treasury_watch.v1). SENTINEL
+    LANE ONLY (never page-only — page-only stays a pure read-only re-render). snapshot() is a
+    pure read (parquet + committed JSON, no writes/network); events[] are the treasury rows
+    from the committed ledger. Monotonic in as_of (never regress to older data) + idempotent
+    (write-if-changed, no wall-clock fields), so a quiet hour is a no-op / no commit."""
+    try:
+        from engine import treasury_watch as _tw
+        snap = _tw.snapshot(root)
+    except Exception as e:  # noqa: BLE001 — degrade-never-raise
+        log.warning("treasury snapshot failed (%s) — panel artifact skipped", e)
+        return
+    # events: the treasury rows from the ledger (id 'tw-…' or section 'treasury'), newest first
+    try:
+        tre: list[dict] = []
+        for r in _load_ledger(root):
+            rid = str(r.get("id") or "")
+            if not (rid.startswith("tw-") or str(r.get("section") or "") == "treasury"):
+                continue
+            exp = _expires_at(r)
+            kind = ("tga_release" if rid.endswith("tga-release")
+                    else "tga_build" if rid.endswith("tga-build") else None)
+            tre.append({
+                "id": rid,
+                "published": r.get("published"),
+                "kind": kind,
+                "banner_title": r.get("banner_title") or r.get("source_title"),
+                "banner_title_zh": r.get("banner_title_zh"),
+                "tone": r.get("tone", "neutral"),
+                "importance": r.get("importance"),
+                "live": bool(exp and now < exp),
+            })
+        tre.sort(key=lambda a: (a.get("published") or ""), reverse=True)
+        snap["events"] = tre[:8]
+    except Exception as e:  # noqa: BLE001
+        log.warning("treasury events assembly failed (%s)", e)
+        snap.setdefault("events", [])
+    # monotonic guard: an in-process refresh that fails mustn't revert a committed fresher day
+    try:
+        existing = _load_treasury_watch(site)
+        if (existing and existing.get("as_of") and snap.get("as_of")
+                and str(existing["as_of"]) > str(snap["as_of"])):
+            log.info("treasury_watch: committed as_of %s newer than %s — keeping committed",
+                     existing["as_of"], snap["as_of"])
+            return
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        if _write_if_changed(site / "whdata" / "treasury_watch.json",
+                             json.dumps(snap, separators=(",", ":"), default=str)):
+            log.info("treasury_watch.json: as_of=%s events=%d",
+                     snap.get("as_of"), len(snap.get("events") or []))
+    except Exception as e:  # noqa: BLE001
+        log.warning("treasury_watch.json write failed (%s)", e)
+
+
+# --------------------------------------------------------------------------- #
 # artifact builders
 # --------------------------------------------------------------------------- #
 def _banner_payload(rows: list[dict], now: datetime, max_alerts: int = 6) -> dict:
@@ -198,7 +290,7 @@ def _alert_view(r: dict) -> dict:
     return v
 
 
-def _render_page(root: Path, rows: list[dict]) -> str:
+def _render_page(root: Path, rows: list[dict], treasury: dict | None = None) -> str:
     env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=True)
     views = []
     for r in rows:
@@ -207,7 +299,7 @@ def _render_page(root: Path, rows: list[dict]) -> str:
         except Exception as e:  # noqa: BLE001 — one bad row must not blank the page
             log.warning("alert view skipped (%s): %s", r.get("id"), e)
     html = env.get_template("whitehouse.html.j2").render(
-        alerts=views, disclaimer=wb.DISCLAIMER,
+        alerts=views, treasury=treasury, disclaimer=wb.DISCLAIMER,
         provider=wb.provider_label(), active_section="research", active_page="whitehouse")
     # self-include the alert banner (whitehouse.html is at site root → prefix "") so the
     # page is stable across renders and the daily inject pass skips it (marker present).
@@ -268,6 +360,19 @@ def build(reeval: bool = False, page_only: bool = False) -> int:
 
     items = wf.collect()
     log.info("whitehouse feed: %d recent items", len(items))
+    # —— Treasury Watch lane: refresh TGA in-process, then inject the current TGA episode as
+    # a feed-item so it flows through the IDENTICAL dedupe→brain→ledger→banner pipeline. The
+    # episode id is anchored to the trailing-window extremum (quarter-end preferred), so the
+    # processed.json guid dedupe fires the brain once per episode. All best-effort/non-fatal.
+    _refresh_tga(root)
+    try:
+        from engine import treasury_watch as _tw
+        _tre_items = _tw.detect_events(root)
+        if _tre_items:
+            items = list(items) + _tre_items
+            log.info("treasury watch: +%d TGA event(s) injected", len(_tre_items))
+    except Exception as e:  # noqa: BLE001
+        log.warning("treasury watch detect failed (%s)", e)
     state = wf.load_processed(root)
     todo = items if reeval else wf.new_items(items, state)
     cap = int(cfg.get("max_new_per_run", 6))
@@ -324,6 +429,9 @@ def build(reeval: bool = False, page_only: bool = False) -> int:
         )
     except Exception as e:  # noqa: BLE001
         log.warning("health.json write failed (%s)", e)
+
+    # Treasury Watch panel artifact (sentinel lane only — page-only stays read-only).
+    _write_treasury_watch(root, site, now)
 
     return _rebuild_artifacts(root, site, cfg, now, n_new_active)
 
@@ -449,8 +557,9 @@ def _rebuild_artifacts(root: Path, site: Path, cfg: dict, now: datetime,
                          json.dumps(banner, separators=(",", ":"), default=str)):
         changed = True
         log.info("wh_banner.json: %d live banner(s)", len(banner["alerts"]))
+    treasury = _load_treasury_watch(site)   # committed contract (both sentinel + page-only)
     try:
-        if _write_if_changed(site / "whitehouse.html", _render_page(root, rows)):
+        if _write_if_changed(site / "whitehouse.html", _render_page(root, rows, treasury)):
             changed = True
     except Exception as e:  # noqa: BLE001 — page render must never crash the pipeline
         log.error("whitehouse.html render failed (%s)", e)

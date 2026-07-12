@@ -7909,6 +7909,41 @@ artifacts:
       nudge (engine/cycles.py untouched); this lobe exposes its context
       and quality, not a new one.
 
+  # --- Treasury Watch: TGA cash-flow detector → White House desk lane + bot context ---
+  treasury-watch:
+    path: site/whdata/treasury_watch.json
+    format: json
+    producer: scripts/build_whitehouse.py
+    known_extra_writers: []
+    owner_program: whitehouse-desk
+    cadence: intraday
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: treasury_watch.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:context
+    notes: >
+      DISPLAY/CONTEXT ONLY — feeds no score or allocation. The market-critical TGA
+      (Treasury General Account) cash-flow detector. engine/treasury_watch.py computes
+      the current release/rebuild episode — a quarter-end-preferred anchor keeps the id
+      stable across the hourly sentinel's runs — plus the treasury_watch.v1 snapshot;
+      scripts/build_whitehouse.py injects the episode into the White House pipeline
+      (dedupe → Opus brain → ledger → banner) and writes this artifact after the eval
+      loop, idempotently (write-if-changed, no wall-clock fields, monotonic in as_of), so
+      a quiet hour is a no-op. Inputs: data/treasury/tga.parquet (level, $mn→$bn),
+      data/neuralweb/liquidity_plumbing.json + data/regime/latest.json (context) — each
+      missing input yields nulls + a gaps[] entry, never an exception. Rendered on the
+      Treasury Watch panel of site/whitehouse.html. Consumed by the Mastermind bot's
+      brain/treasury_context.py (fail-soft reader; MASTERMIND_TREASURY_CONTEXT, dark-shipped
+      default OFF) as a Neural Web context layer; vendored via the site tree. cadence
+      intraday: written by the whitehouse-sentinel workflow (hourly best-effort).
+
   # --- RLT-R2: Rebalance Pulse (display/context, append-only ledger) ---
   rebalance-pulse-events:
     path: data/rebalance_pulse/events.jsonl

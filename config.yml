@@ -440,6 +440,17 @@ treasury:
   page_size: 10000
   retries: 3
 
+# Treasury Watch (engine/treasury_watch.py) — the market-critical TGA cash-flow detector
+# that feeds the White House desk's Treasury lane + the treasury_watch.v1 panel/bot contract.
+# A TGA drawdown injects reserves into the banking system; a rebuild drains them. Episode
+# thresholds ($bn); the anchor is the trailing-window TGA extremum (id stays stable as the
+# episode extends). DISPLAY-ONLY — nothing here feeds a score or an allocation.
+treasury_watch:
+  min_episode_bn: 100.0        # trailing-window peak→latest (release) / trough→latest (build) magnitude that fires an alert
+  min_1d_bn: 60.0              # single-day |ΔTGA| that fires an alert on its own
+  lookback_extremum_bd: 15     # trailing business-day window for the episode extremum (DTS is business-day-dense → last N obs)
+  spark_days: 60               # TGA sparkline length on the panel
+
 cboe:
   # put/call is COMPUTED from delayed chains (official stats CSVs moved behind
   # an SPA in 2025/26); chain_url's _SPX is templated per underlying
