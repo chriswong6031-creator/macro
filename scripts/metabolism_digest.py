@@ -181,6 +181,198 @@ def _autonomy_state() -> str:
         return f"AUTONOMY_PAUSED={val!r}"
 
 
+def _load_budget_config(root: Path) -> dict:
+    """Read metabolism_budget.yml; return {} on any error.  NEVER raises."""
+    try:
+        import yaml  # noqa: PLC0415
+        p = root / "config" / "metabolism_budget.yml"
+        if not p.exists():
+            return {}
+        return yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_digest._load_budget_config: %s", exc)
+        return {}
+
+
+def _escalate_held_taps(root: Path, now: datetime, *, dry_run: bool = False) -> list[dict]:
+    """R-V8-8: Re-ping taps held > tap_reping_days; park taps held > tap_park_days.
+
+    Rules:
+    - A tap is "held" from its ``ts`` field.
+    - Held > tap_reping_days (default 7): emit a Telegram re-ping + insight_bus row
+      (once per tap per digest run — idempotent via a dedup marker in the tap card).
+    - Held > tap_park_days (default 21): append an operator_tap_expired insight and
+      write an expiry marker onto the tap card file so downstream readers know it is
+      expired.  The held plan is NEVER executed.  The tap.py safe-default table is
+      UNTOUCHED (IMMUTABLE).
+
+    Returns a list of action dicts for testing / logging.  NEVER raises.
+    """
+    actions: list[dict] = []
+    try:
+        cfg = _load_budget_config(root)
+        reping_days: int = int(cfg.get("tap_reping_days", 7))
+        park_days: int = int(cfg.get("tap_park_days", 21))
+
+        tap_dir = root / "data" / "metabolism" / "tap"
+        if not tap_dir.exists():
+            return actions
+
+        for tf in sorted(tap_dir.glob("*.json")):
+            try:
+                tc = json.loads(tf.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001
+                continue
+
+            ts_raw = tc.get("ts") or ""
+            if not ts_raw:
+                continue
+            try:
+                tap_ts = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
+                if tap_ts.tzinfo is None:
+                    # Make tz-aware (assume UTC)
+                    from datetime import timezone as _tz  # noqa: PLC0415
+                    tap_ts = tap_ts.replace(tzinfo=_tz.utc)
+            except Exception:  # noqa: BLE001
+                continue
+
+            held_days = (now - tap_ts).days
+            tap_kind = str(tc.get("tap_kind") or "_default")
+            headline = str(tc.get("headline") or "")
+            proposal_id = str((tc.get("context") or {}).get("proposal_id") or "")
+            tap_file_name = tf.name
+
+            action_rec: dict = {
+                "tap_file": tap_file_name,
+                "held_days": held_days,
+                "action": "none",
+            }
+
+            if held_days > park_days:
+                # Park the tap: emit expired insight + annotate the file
+                already_parked = tc.get("_expired_parked", False)
+                if not already_parked:
+                    try:
+                        from engine.metabolism.insight_bus import build_row, append_row  # noqa: PLC0415
+                        insight = build_row(
+                            emitter="metabolism_digest.escalate_held_taps",
+                            kind="tap_expired",
+                            severity="medium",
+                            entities=[tap_file_name, proposal_id] if proposal_id else [tap_file_name],
+                            summary=(
+                                f"Tap '{headline}' expired after {held_days}d held "
+                                f"(tap_park_days={park_days}). "
+                                f"Plan NOT executed; tap parked for operator review."
+                            ),
+                            cycle_id=None,
+                        )
+                        if not dry_run:
+                            append_row(insight, root=root)
+                    except Exception as exc:  # noqa: BLE001
+                        log.warning("metabolism_digest._escalate_held_taps park insight: %s", exc)
+
+                    # Annotate the tap card file with an expiry marker (display only)
+                    if not dry_run:
+                        try:
+                            tc["_expired_parked"] = True
+                            tc["_expired_ts"] = now.isoformat(timespec="seconds")
+                            tc["_expired_insight"] = (
+                                f"operator_tap_expired after {held_days}d "
+                                f"(threshold={park_days}d). Plan held, not executed."
+                            )
+                            tmp = tf.with_suffix(".tmp")
+                            tmp.write_text(
+                                json.dumps(tc, indent=2, default=str),
+                                encoding="utf-8",
+                            )
+                            tmp.replace(tf)
+                        except Exception as exc:  # noqa: BLE001
+                            log.warning(
+                                "metabolism_digest._escalate_held_taps park file: %s", exc,
+                            )
+
+                    # Telegram notification
+                    if not dry_run:
+                        try:
+                            from scripts.notify import send_telegram  # type: ignore[import]
+                            msg = (
+                                f"[operator_tap_expired] Tap held {held_days}d "
+                                f"(limit {park_days}d): '{headline}'. "
+                                f"Plan held, not executed. Please review."
+                            )
+                            send_telegram(msg)
+                        except Exception as exc:  # noqa: BLE001
+                            log.warning("metabolism_digest._escalate_held_taps park tg: %s", exc)
+
+                    action_rec["action"] = "parked"
+                    action_rec["insight"] = "tap_expired"
+                else:
+                    action_rec["action"] = "already_parked"
+
+            elif held_days > reping_days:
+                # Re-ping: once per tap per digest run (idempotent via _repinged_digest_run)
+                last_reping_run = tc.get("_repinged_digest_run", "")
+                this_run = now.strftime("%Y-%m-%d")
+                if last_reping_run == this_run:
+                    action_rec["action"] = "reping_already_sent_today"
+                else:
+                    try:
+                        from engine.metabolism.insight_bus import build_row, append_row  # noqa: PLC0415
+                        insight = build_row(
+                            emitter="metabolism_digest.escalate_held_taps",
+                            kind="tap_repinged",
+                            severity="low",
+                            entities=[tap_file_name, proposal_id] if proposal_id else [tap_file_name],
+                            summary=(
+                                f"Tap '{headline}' held {held_days}d "
+                                f"(re-ping threshold={reping_days}d). "
+                                f"Awaiting operator action."
+                            ),
+                            cycle_id=None,
+                        )
+                        if not dry_run:
+                            append_row(insight, root=root)
+                    except Exception as exc:  # noqa: BLE001
+                        log.warning("metabolism_digest._escalate_held_taps reping insight: %s", exc)
+
+                    if not dry_run:
+                        try:
+                            from scripts.notify import send_telegram  # type: ignore[import]
+                            msg = (
+                                f"[tap_repinged] Tap held {held_days}d "
+                                f"(re-ping threshold={reping_days}d): '{headline}'. "
+                                f"Still waiting for your action."
+                            )
+                            send_telegram(msg)
+                        except Exception as exc:  # noqa: BLE001
+                            log.warning("metabolism_digest._escalate_held_taps reping tg: %s", exc)
+
+                    # Annotate tap file with last-reping date
+                    if not dry_run:
+                        try:
+                            tc["_repinged_digest_run"] = this_run
+                            tmp = tf.with_suffix(".tmp")
+                            tmp.write_text(
+                                json.dumps(tc, indent=2, default=str),
+                                encoding="utf-8",
+                            )
+                            tmp.replace(tf)
+                        except Exception as exc:  # noqa: BLE001
+                            log.warning(
+                                "metabolism_digest._escalate_held_taps reping file: %s", exc,
+                            )
+
+                    action_rec["action"] = "repinged"
+                    action_rec["insight"] = "tap_repinged"
+
+            actions.append(action_rec)
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_digest._escalate_held_taps: %s", exc)
+
+    return actions
+
+
 def build_operator_onepager(root: Path, now: datetime) -> str:
     """Build the V2-D operator one-pager: FIXED FOUR-HEADING plain-English contract.
 
@@ -448,7 +640,25 @@ def main(argv: list[str] | None = None) -> int:
         print(onepager)
         print("=== ADMIN DIGEST ===")
         print(content)
+        # R-V8-8: dry-run tap escalation (log only, no writes)
+        tap_actions = _escalate_held_taps(root, now, dry_run=True)
+        if tap_actions:
+            log.info("metabolism_digest [dry-run] tap escalation: %s", tap_actions)
         return 0
+
+    # R-V8-8: Run tap escalation before writing the digest so the digest
+    # can reflect any newly-parked taps.  NEVER-RAISE: failures are logged.
+    try:
+        tap_actions = _escalate_held_taps(root, now, dry_run=False)
+        repinged = sum(1 for a in tap_actions if a.get("action") == "repinged")
+        parked = sum(1 for a in tap_actions if a.get("action") == "parked")
+        if repinged or parked:
+            log.info(
+                "metabolism_digest: tap escalation — repinged=%d parked=%d",
+                repinged, parked,
+            )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_digest: tap escalation failed: %s", exc)
 
     # Write admin digest (ADMIN-tier, not pushed to phone)
     out_path = _write_digest(content, root, week)

@@ -81,6 +81,16 @@ _KINDS = frozenset({
     "ci_red_unknown",
     # R-V8-4: lane-health sensors (dead cron, queue saturation, runner offline, key degradation)
     "lane_health_alert",
+    # R-V8-8: tap held > tap_reping_days — re-pinging operator
+    "tap_repinged",
+    # R-V8-8: tap held > tap_park_days — parked with operator_tap_expired
+    "tap_expired",
+    # R-V8-9: clean-overfit FALSIFIER_TRIPPED — construction parked via claims file
+    "parked_construction",
+    # R-V8-6: revert plan actioned (draft PR opened for an un-actioned revert_plan)
+    "revert_plan_actioned",
+    # R-V8-6: revert plan conflict — git revert conflicted, PR not opened
+    "revert_plan_conflict",
 })
 
 

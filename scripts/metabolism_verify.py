@@ -313,6 +313,13 @@ def _run_single(
                  cycle_id, action,
                  record.get("triage", {}).get("classification", ""))
 
+        # ── R-V8 FIX-1/FIX-2: Execute side-effect intents from verify_proposal
+        # ONLY after write_verify_record (so the verify file exists first), and ONLY
+        # when NOT dry-run.  Idempotency guard via _reflex_already_executed() prevents
+        # double-fire when the lane re-runs on a cycle that was partially executed.
+        if not dry_run:
+            _execute_reflex_intents(cycle_id, record, root)
+
         artifact = str(root / "data" / "metabolism" / "verify" / f"{cycle_id}.json")
         finish_stage(cycle_id, "verify", status="done",
                      artifacts=[artifact] if not dry_run else [],
@@ -321,6 +328,110 @@ def _run_single(
     except Exception as exc:  # noqa: BLE001
         log.error("metabolism_verify: unexpected error: %s", exc)
         finish_stage(cycle_id, "verify", status="failed", note=str(exc), root=root)
+
+
+def _execute_reflex_intents(
+    cycle_id: str,
+    record: dict,
+    root: "Path",
+) -> None:
+    """Execute breach+park side-effect intents from a verify record.
+
+    Called by _run_single AFTER write_verify_record, ONLY when NOT dry-run.
+    Idempotency: per-effect flags in the reflex marker let this function
+    complete only the effects that have NOT yet run, without re-firing those
+    that already completed.  Writes/updates the marker after each execution.
+    NEVER raises.
+
+    FIX-1: side-effects moved out of verify_proposal compute path.
+    FIX-2: idempotency via _reflex_marker_path keyed by cycle_id.
+    FIX-B1: breach and park tracked INDEPENDENTLY — a completed breach is
+    never re-fired even if park keeps failing on subsequent runs.
+    """
+    try:
+        from engine.metabolism.verify import (  # type: ignore[import]
+            _feed_breach_from_falsifier,
+            _park_construction_from_falsifier,
+            _reflex_already_executed,
+            _reflex_effect_done,
+            _write_reflex_marker,
+        )
+
+        intents = record.get("_side_effect_intents") or {}
+        breach_intent = bool(intents.get("breach_intent"))
+        park_intent = bool(intents.get("park_intent"))
+
+        if not breach_intent and not park_intent:
+            return  # nothing to do
+
+        # Fast path: both already done → full no-op
+        if _reflex_already_executed(cycle_id, root):
+            log.info(
+                "metabolism_verify: reflex intents for cycle=%s already executed — skip",
+                cycle_id,
+            )
+            return
+
+        contract = record.get("contract") or {}
+        triage = record.get("triage") or {}
+
+        # FIX-B1: read current per-effect state from the marker, so a partial
+        # run on a previous attempt doesn't re-fire effects that already succeeded.
+        breach_already = _reflex_effect_done(cycle_id, root, "breach_executed")
+        park_already = _reflex_effect_done(cycle_id, root, "park_executed")
+
+        breach_ok = breach_already  # carry forward prior success
+        park_ok = park_already
+
+        if breach_intent and not breach_already:
+            try:
+                _feed_breach_from_falsifier(cycle_id, contract, triage, root)
+                breach_ok = True
+            except Exception as exc:  # noqa: BLE001
+                log.warning(
+                    "metabolism_verify._execute_reflex_intents: breach feed failed "
+                    "for cycle=%s: %s",
+                    cycle_id, exc,
+                )
+        elif breach_already:
+            log.info(
+                "metabolism_verify: breach already executed for cycle=%s — skip",
+                cycle_id,
+            )
+
+        if park_intent and not park_already:
+            try:
+                _park_construction_from_falsifier(cycle_id, contract, root)
+                park_ok = True
+            except Exception as exc:  # noqa: BLE001
+                log.warning(
+                    "metabolism_verify._execute_reflex_intents: park failed "
+                    "for cycle=%s: %s",
+                    cycle_id, exc,
+                )
+        elif park_already:
+            log.info(
+                "metabolism_verify: park already executed for cycle=%s — skip",
+                cycle_id,
+            )
+
+        # Write marker (even partial success — tracks what ran for idempotency)
+        _write_reflex_marker(
+            cycle_id, root,
+            breach_executed=breach_ok,
+            park_executed=park_ok,
+        )
+
+        log.info(
+            "metabolism_verify: reflex intents executed for cycle=%s "
+            "breach=%s park=%s",
+            cycle_id, breach_ok, park_ok,
+        )
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning(
+            "metabolism_verify._execute_reflex_intents(%s): %s", cycle_id, exc,
+        )
 
 
 if __name__ == "__main__":
