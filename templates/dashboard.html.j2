@@ -3986,6 +3986,262 @@ body.mx5-dlg-open{ overflow:hidden; }
   }
 }
 
+/* ── S2: Dialog interior components ─────────────────────────────── */
+
+/* Section eyebrow inside dialogs */
+.mx5-dlg-eyebrow{
+  font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));margin:0 0 14px;
+}
+[data-theme="light"] .mx5-dlg-eyebrow{color:rgba(0,0,0,.38);}
+
+/* Section divider (thin separator between content blocks) */
+.mx5-dlg-sep{
+  height:1px;background:rgba(255,255,255,.07);margin:22px 0;
+}
+[data-theme="light"] .mx5-dlg-sep{background:rgba(0,0,0,.07);}
+
+/* Dominant driver callout (RISK dialog top) */
+.mx5-dlg-driver-hd{
+  display:flex;align-items:center;gap:14px;margin-bottom:20px;
+  padding:16px 18px;
+  background:rgba(255,255,255,.04);border-radius:14px;
+  border:1px solid rgba(255,255,255,.09);
+}
+[data-theme="light"] .mx5-dlg-driver-hd{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+.mx5-dlg-driver-icon{
+  width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:18px;
+  background:rgba(239,68,68,.13);
+}
+.mx5-dlg-driver-label{font-size:13px;font-weight:700;margin-bottom:3px;}
+.mx5-dlg-driver-sub{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
+[data-theme="light"] .mx5-dlg-driver-sub{color:rgba(0,0,0,.45);}
+
+/* Heads-up chips row (fed stance, turning point) */
+.mx5-dlg-chips-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+.mx5-dlg-chip{
+  display:inline-flex;align-items:center;padding:4px 12px;
+  border-radius:20px;font-size:11px;font-weight:600;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  color:var(--ink-2,rgba(255,255,255,.6));
+}
+[data-theme="light"] .mx5-dlg-chip{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.1);color:rgba(0,0,0,.6);}
+
+/* Drawdown box row inside dialogs */
+.mx5-dlg-dd-row{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0;
+}
+@media(max-width:700px){.mx5-dlg-dd-row{grid-template-columns:repeat(2,1fr);}}
+.mx5-dlg-dd-box{
+  padding:14px 12px;text-align:center;
+  background:rgba(255,255,255,.03);border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+}
+[data-theme="light"] .mx5-dlg-dd-box{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06);}
+.mx5-dlg-dd-horizon{
+  font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:6px;
+}
+[data-theme="light"] .mx5-dlg-dd-horizon{color:rgba(0,0,0,.38);}
+.mx5-dlg-dd-val{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:4px;}
+.mx5-dlg-dd-sub{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));}
+[data-theme="light"] .mx5-dlg-dd-sub{color:rgba(0,0,0,.38);}
+
+/* Six-factor deep rows (SIGNALS dialog) */
+.mx5-dlg-factor-row{
+  display:grid;grid-template-columns:minmax(120px,1.4fr) 1fr 52px;
+  align-items:center;gap:14px;
+  padding:12px 14px;
+  background:rgba(255,255,255,.03);border-radius:12px;
+  border:1px solid rgba(255,255,255,.06);
+  margin-bottom:8px;
+}
+[data-theme="light"] .mx5-dlg-factor-row{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.06);}
+.mx5-dlg-factor-row.weakest{border-color:rgba(245,158,11,.25);}
+.mx5-dlg-factor-name{font-size:12px;font-weight:700;}
+.mx5-dlg-factor-read{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;line-height:1.4;}
+[data-theme="light"] .mx5-dlg-factor-read{color:rgba(0,0,0,.42);}
+.mx5-dlg-factor-bar{position:relative;height:7px;border-radius:4px;background:rgba(255,255,255,.08);}
+[data-theme="light"] .mx5-dlg-factor-bar{background:rgba(0,0,0,.09);}
+.mx5-dlg-factor-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;opacity:.85;}
+.mx5-dlg-factor-score{font-size:16px;font-weight:900;text-align:right;font-variant-numeric:tabular-nums;}
+/* Bar tick labels (0 / 50 / 100) */
+.mx5-dlg-bar-ticks{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--ink-3,rgba(255,255,255,.36));}
+@media(max-width:700px){.mx5-dlg-bar-ticks{display:none;}}
+
+/* Weakest-leg callout (SIGNALS dialog) */
+.mx5-dlg-weakest-callout{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:14px 16px;
+  background:rgba(245,158,11,.07);border-radius:12px;
+  border:1px solid rgba(245,158,11,.2);
+  margin:4px 0 16px;
+}
+.mx5-dlg-weakest-icon{
+  width:32px;height:32px;border-radius:8px;flex-shrink:0;
+  background:rgba(245,158,11,.14);display:flex;align-items:center;justify-content:center;
+}
+.mx5-dlg-weakest-label{font-size:13px;font-weight:700;color:var(--mx5-warn,#f59e0b);margin-bottom:3px;}
+.mx5-dlg-weakest-sub{font-size:11px;color:var(--ink-2,rgba(255,255,255,.6));}
+[data-theme="light"] .mx5-dlg-weakest-sub{color:rgba(0,0,0,.55);}
+
+/* MTF tape table (inside SIGNALS dialog) */
+.mx5-dlg-mtf-tbl{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:10px;}
+.mx5-dlg-mtf-tbl th{
+  text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));padding:0 0 8px;
+}
+[data-theme="light"] .mx5-dlg-mtf-tbl th{color:rgba(0,0,0,.38);}
+.mx5-dlg-mtf-tbl th:not(:first-child){text-align:center;}
+.mx5-dlg-mtf-tbl td{padding:6px 0;}
+.mx5-dlg-mtf-tbl td:not(:first-child){text-align:center;}
+.mx5-dlg-mtf-tbl tbody tr+tr td{border-top:1px solid rgba(255,255,255,.05);}
+[data-theme="light"] .mx5-dlg-mtf-tbl tbody tr+tr td{border-top-color:rgba(0,0,0,.05);}
+.mx5-dlg-mtf-conf.good{color:var(--up,#22d97a);}
+.mx5-dlg-mtf-conf.bad{color:var(--down,#ef4444);}
+.mx5-dlg-mtf-conf.flat{color:var(--ink-3,rgba(255,255,255,.36));}
+
+/* Index deep cards (MARKETS dialog) */
+.mx5-dlg-idx-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;
+}
+@media(max-width:700px){.mx5-dlg-idx-grid{grid-template-columns:repeat(2,1fr);}}
+.mx5-dlg-idx-card{
+  padding:14px 14px 12px;
+  background:rgba(255,255,255,.04);border-radius:14px;
+  border:1px solid rgba(255,255,255,.08);
+}
+[data-theme="light"] .mx5-dlg-idx-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+.mx5-dlg-idx-ticker{font-size:12px;font-weight:700;margin-bottom:1px;}
+.mx5-dlg-idx-name{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+[data-theme="light"] .mx5-dlg-idx-name{color:rgba(0,0,0,.42);}
+.mx5-dlg-idx-px{font-size:20px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:3px;}
+.mx5-dlg-idx-chg{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:10px;}
+.mx5-dlg-idx-chg.up{color:var(--up,#22d97a);}
+.mx5-dlg-idx-chg.dn{color:var(--down,#ef4444);}
+.mx5-dlg-idx-chips{display:flex;flex-wrap:wrap;gap:4px;}
+.mx5-dlg-idx-chip{
+  display:inline-flex;align-items:center;padding:2px 7px;
+  border-radius:5px;font-size:9.5px;font-weight:600;
+}
+.mx5-dlg-idx-chip.ok{color:var(--up,#22d97a);background:rgba(62,200,122,.1);border:1px solid rgba(62,200,122,.2);}
+.mx5-dlg-idx-chip.wn{color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);}
+.mx5-dlg-idx-chip.mt{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
+[data-theme="light"] .mx5-dlg-idx-chip.mt{color:rgba(0,0,0,.38);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
+
+/* Sector columns (MARKETS dialog) */
+.mx5-dlg-sector-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.mx5-dlg-sector-col-head{
+  font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px;
+}
+[data-theme="light"] .mx5-dlg-sector-col-head{color:rgba(0,0,0,.38);}
+.mx5-dlg-sector-row{
+  display:flex;align-items:center;gap:8px;padding:9px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;
+}
+[data-theme="light"] .mx5-dlg-sector-row{border-bottom-color:rgba(0,0,0,.05);}
+.mx5-dlg-sector-arr{font-size:11px;flex-shrink:0;}
+.mx5-dlg-sector-arr.heat{color:var(--down,#ef4444);}
+.mx5-dlg-sector-arr.cool{color:var(--up,#22d97a);}
+.mx5-dlg-sector-name{flex:1;font-weight:500;}
+.mx5-dlg-sector-rk{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));font-variant-numeric:tabular-nums;}
+[data-theme="light"] .mx5-dlg-sector-rk{color:rgba(0,0,0,.38);}
+
+/* Asset tiles (MARKETS dialog) */
+.mx5-dlg-asset-row{
+  display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;
+}
+.mx5-dlg-asset-tile{
+  flex:1 1 100px;min-width:90px;
+  padding:12px 12px 10px;
+  background:rgba(255,255,255,.03);border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+  text-align:center;
+}
+[data-theme="light"] .mx5-dlg-asset-tile{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);}
+.mx5-dlg-asset-lbl{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:6px;}
+[data-theme="light"] .mx5-dlg-asset-lbl{color:rgba(0,0,0,.38);}
+.mx5-dlg-asset-val{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:3px;}
+.mx5-dlg-asset-ctx{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));}
+[data-theme="light"] .mx5-dlg-asset-ctx{color:rgba(0,0,0,.38);}
+
+/* Events calendar cards (EVENTS dialog) */
+.mx5-dlg-cal-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px;
+}
+.mx5-dlg-cal-card{
+  padding:14px 14px 12px;
+  background:rgba(255,255,255,.04);border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+  position:relative;
+}
+.mx5-dlg-cal-card.hot{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.04);}
+[data-theme="light"] .mx5-dlg-cal-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+[data-theme="light"] .mx5-dlg-cal-card.hot{background:rgba(245,158,11,.04);}
+.mx5-dlg-cal-date{font-size:11px;font-weight:700;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:5px;}
+[data-theme="light"] .mx5-dlg-cal-date{color:rgba(0,0,0,.42);}
+.mx5-dlg-cal-title{font-size:13px;font-weight:700;margin-bottom:6px;line-height:1.3;}
+.mx5-dlg-cal-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.mx5-dlg-cal-time{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));}
+[data-theme="light"] .mx5-dlg-cal-time{color:rgba(0,0,0,.4);}
+.mx5-dlg-cal-badge{
+  display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;
+  font-size:9.5px;font-weight:700;
+}
+.mx5-dlg-cal-badge.high{color:var(--down,#ef4444);background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);}
+.mx5-dlg-cal-badge.med{color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.18);}
+.mx5-dlg-cal-badge.low{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}
+[data-theme="light"] .mx5-dlg-cal-badge.low{color:rgba(0,0,0,.38);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
+
+/* Fed strip inside dialogs (EVENTS dialog) */
+.mx5-dlg-fed-strip{
+  display:flex;flex-direction:column;gap:6px;
+  padding:14px 16px;
+  background:rgba(255,255,255,.03);border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+  margin-bottom:20px;
+}
+[data-theme="light"] .mx5-dlg-fed-strip{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);}
+.mx5-dlg-fed-item{display:flex;align-items:center;justify-content:space-between;padding:5px 0;}
+.mx5-dlg-fed-item+.mx5-dlg-fed-item{border-top:1px solid rgba(255,255,255,.05);}
+[data-theme="light"] .mx5-dlg-fed-item+.mx5-dlg-fed-item{border-top-color:rgba(0,0,0,.05);}
+.mx5-dlg-fed-desc{font-size:12px;flex:1;padding-right:12px;color:var(--ink-2,rgba(255,255,255,.6));}
+[data-theme="light"] .mx5-dlg-fed-desc{color:rgba(0,0,0,.55);}
+.mx5-dlg-fed-val{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--link,#22d97a);white-space:nowrap;}
+.mx5-dlg-fed-chg{font-size:11px;font-variant-numeric:tabular-nums;margin-left:6px;}
+.mx5-dlg-fed-chg.pos{color:var(--up,#22d97a);}.mx5-dlg-fed-chg.neg{color:var(--down,#ef4444);}
+.mx5-dlg-fed-src{font-size:9px;color:var(--ink-3,rgba(255,255,255,.36));text-align:right;padding-top:6px;}
+[data-theme="light"] .mx5-dlg-fed-src{color:rgba(0,0,0,.35);}
+
+/* RR link chip (EVENTS dialog — open release-radar from inside dialog) */
+.mx5-dlg-rr-link{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:12px 16px;
+  background:rgba(255,255,255,.04);border-radius:12px;
+  border:1px solid rgba(255,255,255,.09);
+  cursor:pointer;color:var(--ink-2,rgba(255,255,255,.6));
+  font-size:12px;font-weight:600;font-family:inherit;
+  transition:border-color .15s,color .15s;
+  text-decoration:none;
+}
+.mx5-dlg-rr-link:hover{border-color:var(--link,#22d97a);color:var(--text);}
+[data-theme="light"] .mx5-dlg-rr-link{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.09);color:rgba(0,0,0,.55);}
+
+/* Heatmap wrap inside dialog (same IDs as island, just cloned — heatmap.js mounts on first instance) */
+.mx5-dlg-heatmap-wrap{
+  background:rgba(255,255,255,.03);border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+  overflow:hidden;margin-bottom:20px;min-height:120px;
+}
+[data-theme="light"] .mx5-dlg-heatmap-wrap{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);}
+.mx5-dlg-heatmap-head{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--ink-3,rgba(255,255,255,.36));padding:10px 14px 0;
+}
+[data-theme="light"] .mx5-dlg-heatmap-head{color:rgba(0,0,0,.38);}
+
 /* ── Gauge SVG glow (JS patchable via data attrs) ───────────────── */
 /* Arc and needle updated by risk_state_live.js; see §3.1 */
 body.page-macro.mx4-grid #mx5-gauge-arc-fill{
@@ -8343,146 +8599,515 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
      Content = the old island interiors rendered inline (S2/S3 will redesign).
      Dialogs rendered outside the rack grid to avoid stacking-context issues. #}
 
-  {# dlg-evidence: Evidence six-factor breakdown #}
-  <div class="mx5-dlg" id="dlg-evidence" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  {# dlg-evidence: Evidence six-factor breakdown — S2 redesign #}
+  <div class="mx5-dlg" id="dlg-evidence" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
-        <span class="mx5-dlg-title"><span class="l-en">Evidence — Six-Factor Breakdown</span><span class="l-zh">依据 — 六因子分析</span></span>
+        <span class="mx5-dlg-title"><span class="l-en">Signals — Evidence Breakdown</span><span class="l-zh">信号 — 依据分析</span></span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Six-Factor Breakdown</span><span class="l-zh">六因子分析</span></span><div class="isle-head-line"></div><span class="v2-display-badge" style="margin-left:8px"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span></div>
-        {% if MS2 and MS2.components %}
-        <div class="isle-ev-factors">
-          {% for c in MS2.components %}
-          {% set _ec = 'var(--up)' if c.tone == 'good' else ('var(--down)' if c.tone == 'bad' else 'var(--warn)') %}
-          <div style="margin-bottom:14px">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-              <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">{{ c.label_en }}</span><span class="l-zh">{{ c.label_zh or c.label_en }}</span></span>
-              <span style="font-size:16px;font-weight:700;color:{{ _ec }}">{{ c.score }}</span>
-            </div>
-            <div style="height:7px;border-radius:4px;background:rgba(255,255,255,.07)">
-              <div style="height:100%;width:{{ [c.score,100]|min }}%;border-radius:4px;background:{{ _ec }};opacity:.8"></div>
-            </div>
-            {% if c.read_en %}<div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:5px"><span class="l-en">{{ c.read_en }}</span><span class="l-zh">{{ c.read_zh or c.read_en }}</span></div>{% endif %}
-          </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <p style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">No signal data available.</span><span class="l-zh">暂无信号数据。</span></p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
 
-  {# dlg-events: Events catalysts + release radar #}
-  <div class="mx5-dlg" id="dlg-events" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
-    <div class="mx5-dlg-panel">
-      <div class="mx5-dlg-header">
-        <span class="mx5-dlg-title"><span class="l-en">Events — Catalysts &amp; Release Radar</span><span class="l-zh">事件 — 催化剂与数据发布雷达</span></span>
-        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
-      </div>
-      <div class="mx5-dlg-body">
-        {# Week-ahead catalysts #}
-        {% if macro_catalysts %}
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Upcoming Catalysts</span><span class="l-zh">近期催化剂</span></span><div class="isle-head-line"></div></div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
-          {% for c in macro_catalysts %}
-          {% set _imp = 'var(--down)' if c.impact == 'high' else ('var(--warn)' if c.impact == 'med' else 'var(--muted)') %}
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
-            <span style="font-size:13px;font-weight:500"><span class="l-en">{{ c.label }}</span><span class="l-zh">{{ c.get('label_zh') or c.label }}</span></span>
-            <span style="font-size:12px;color:{{ _imp }};font-weight:700">{{ c.date }}</span>
+        {# — Composite read — #}
+        {% if MS2 %}
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Composite Score</span><span class="l-zh">综合评分</span></div>
+        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:20px">
+          {% set _dlge_col = 'var(--up)' if MS2.score >= 60 else ('var(--warn)' if MS2.score >= 42 else 'var(--down)') %}
+          <span style="font-size:40px;font-weight:900;font-variant-numeric:tabular-nums;color:{{ _dlge_col }};line-height:1">{{ MS2.score }}</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:{{ _dlge_col }}">
+              <span class="l-en">{{ 'Risk-On' if MS2.score >= 60 else ('Mixed' if MS2.score >= 42 else 'Risk-Off') }}</span>
+              <span class="l-zh">{{ '偏多' if MS2.score >= 60 else ('混合' if MS2.score >= 42 else '避险') }}</span>
+            </div>
+            <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px">
+              <span class="l-en">Blended 0–100 · ≥60 risk-on · 42–59 mixed · &lt;42 risk-off</span>
+              <span class="l-zh">合成 0-100 · ≥60 偏多 · 42-59 混合 · &lt;42 避险</span>
+            </div>
           </div>
-          {% endfor %}
         </div>
         {% endif %}
-        {# Fed prediction market odds #}
-        {% if prediction_markets and prediction_markets.events %}
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Market Odds</span><span class="l-zh">市场隐含概率</span></span><div class="isle-head-line"></div></div>
-        {% for ev in prediction_markets.events[:3] %}
-        <div style="margin-bottom:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));margin-bottom:8px">{{ ev.name }}</div>
-          {% for o in (ev.outcomes | sort(attribute='prob', reverse=true))[:4] %}
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">{{ o.outcome }}</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">{{ o.prob }}%</span>
+
+        {# — Six factor rows — #}
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Six Factors</span><span class="l-zh">六大因子</span></div>
+        {% if MS2 and MS2.components %}
+        {% set _dlge_weakest = (MS2.components | sort(attribute='score') | first) if MS2.components else none %}
+        {% for c in MS2.components %}
+        {% set _ec = 'var(--up)' if c.tone == 'good' else ('var(--down)' if c.tone == 'bad' else 'var(--warn)') %}
+        {% set _is_wk = (_dlge_weakest and c.label_en == _dlge_weakest.label_en) %}
+        <div class="mx5-dlg-factor-row{{ ' weakest' if _is_wk }}">
+          <div>
+            <div class="mx5-dlg-factor-name">
+              <span class="l-en">{{ c.label_en }}</span><span class="l-zh">{{ c.label_zh or c.label_en }}</span>
+              {% if _is_wk %}<span class="v2chip c-warn" style="font-size:9px;padding:1px 5px;margin-left:6px;vertical-align:middle"><span class="l-en">WEAKEST</span><span class="l-zh">最弱</span></span>{% endif %}
+            </div>
+            {% if c.read_en is defined and c.read_en %}
+            <div class="mx5-dlg-factor-read"><span class="l-en">{{ c.read_en }}</span><span class="l-zh">{{ c.read_zh or c.read_en }}</span></div>
+            {% endif %}
           </div>
-          {% endfor %}
+          <div>
+            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:{{ [c.score,100]|min }}%;background:{{ _ec }}"></div></div>
+            <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
+          </div>
+          <div class="mx5-dlg-factor-score" style="color:{{ _ec }}">{{ c.score }}</div>
         </div>
         {% endfor %}
+
+        {# — Weakest leg callout — #}
+        {% if _dlge_weakest %}
+        <div class="mx5-dlg-weakest-callout">
+          <div class="mx5-dlg-weakest-icon">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+          <div>
+            <div class="mx5-dlg-weakest-label"><span class="l-en">Watch: {{ _dlge_weakest.label_en }}</span><span class="l-zh">关注：{{ _dlge_weakest.label_zh or _dlge_weakest.label_en }}</span></div>
+            <div class="mx5-dlg-weakest-sub">
+              <span class="l-en">Weakest leg at {{ _dlge_weakest.score }}/100 — the closest flip-trigger. Confirms what has already turned; does not forecast.</span>
+              <span class="l-zh">最弱分项 {{ _dlge_weakest.score }}/100，最接近翻转触发点。确认已转向信号，不预测未来。</span>
+            </div>
+          </div>
+        </div>
         {% endif %}
-        {% if not macro_catalysts and not (prediction_markets and prediction_markets.events) %}
-        <p style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">No events data available.</span><span class="l-zh">暂无事件数据。</span></p>
+
+        {# — Multi-timeframe tape — #}
+        {% if MS2 and MS2.mtf and MS2.mtf.indices %}
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Multi-Timeframe Tape · Broad US Market</span><span class="l-zh">多周期趋势 · 美股大盘</span></div>
+        <table class="mx5-dlg-mtf-tbl">
+          <thead><tr>
+            <th><span class="l-en">Index</span><span class="l-zh">指数</span></th>
+            <th>1D</th><th>3D</th><th>7D</th><th>30D</th>
+            <th style="text-align:right"><span class="l-en">Confluence</span><span class="l-zh">合流</span></th>
+          </tr></thead>
+          <tbody>
+          {% for r in MS2.mtf.indices %}
+          <tr>
+            <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">{{ r.label_en }}</span><span class="l-zh">{{ r.label_zh or r.label_en }}</span></td>
+            {% for tf in ['D','3D','W','M'] %}{% set cell = r.cells[tf] %}
+            <td>{% if cell %}<span class="ms-cell2 {{ cell.tone }}"><span class="ar">{{ cell.arrow }}</span><span class="rsi">{{ cell.rsi|round|int if cell.rsi is not none else '·' }}</span></span>{% else %}<span class="ms-cell2 flat"><span class="ar">·</span></span>{% endif %}</td>
+            {% endfor %}
+            <td style="text-align:right"><span class="mx5-dlg-mtf-conf {{ r.tone }}"><span class="l-en">{{ r.confluence_en }}</span><span class="l-zh">{{ r.confluence_zh or r.confluence_en }}</span></span></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
         {% endif %}
+
+        {# — Footnote — #}
+        <div class="mx5-dlg-sep"></div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5">
+          <span class="v2-display-badge" style="flex-shrink:0;margin-top:1px"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span>
+          <span>
+            <span class="l-en">Confirms what has already turned — does not forecast. Gauntlet applies at promotion only. {{ 'as of ' ~ MS2.asof if (MS2 and MS2.asof is defined and MS2.asof) else '' }}</span>
+            <span class="l-zh">确认已转向信号，不预测未来。{{ MS2.asof ~ ' 数据' if (MS2 and MS2.asof is defined and MS2.asof) else '' }}</span>
+          </span>
+        </div>
+
+        {% else %}
+        <p style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));margin-top:16px"><span class="l-en">No signal data available.</span><span class="l-zh">暂无信号数据。</span></p>
+        {% endif %}
+
       </div>
     </div>
   </div>
 
-  {# dlg-markets: Index health + cross-asset #}
-  <div class="mx5-dlg" id="dlg-markets" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  {# dlg-events: Events catalysts + fed market pricing + release-radar link — S2 redesign #}
+  <div class="mx5-dlg" id="dlg-events" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Events — Week Ahead &amp; Market Pricing</span><span class="l-zh">事件 — 本周日历与市场定价</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+
+        {# — Week-ahead calendar cards — #}
+        {% if macro_catalysts %}
+        <div class="mx5-dlg-eyebrow"><span class="l-en">This Week</span><span class="l-zh">本周</span></div>
+        <div class="mx5-dlg-cal-grid">
+          {% for c in macro_catalysts[:8] %}
+          {% set _bdg = 'high' if c.impact == 'high' else ('med' if c.impact == 'med' else 'low') %}
+          {% set _lbl_zh = c.get('label_zh') or c.label %}
+          <div class="mx5-dlg-cal-card{{ ' hot' if c.impact == 'high' }}">
+            <div class="mx5-dlg-cal-date">{{ _mos2[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</div>
+            <div class="mx5-dlg-cal-title">
+              <span class="l-en">{{ c.label }}</span>
+              <span class="l-zh">{{ _lbl_zh }}</span>
+            </div>
+            <div class="mx5-dlg-cal-meta">
+              {% if c.time_et %}<span class="mx5-dlg-cal-time">{{ c.time_et }} ET</span>{% endif %}
+              <span class="mx5-dlg-cal-badge {{ _bdg }}">
+                <span class="l-en">{{ c.impact | upper }}</span>
+                <span class="l-zh">{{ {'high':'高','med':'中','low':'低'}.get(c.impact, c.impact) }}</span>
+              </span>
+            </div>
+            {# Typical move plain line — if engine provides typical_move or move_context #}
+            {% if c.get('typical_move') or c.get('move_context') %}
+            <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:7px;line-height:1.4">
+              <span class="l-en">{{ c.get('typical_move') or c.get('move_context') }}</span>
+              <span class="l-zh">{{ c.get('typical_move_zh') or c.get('move_context_zh') or c.get('typical_move') or c.get('move_context') }}</span>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {# — Fed prediction market pricing — #}
+        {% if prediction_markets and prediction_markets.events %}
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Fed · Market Pricing</span><span class="l-zh">美联储 · 市场定价</span></div>
+        <div class="mx5-dlg-fed-strip">
+          {% for e in prediction_markets.events[:4] %}
+          {% set _top = (e.outcomes | sort(attribute='prob', reverse=true)) | first %}
+          <div class="mx5-dlg-fed-item">
+            <span class="mx5-dlg-fed-desc"><span class="l-en">{{ e.label_en if e.label_en is defined else e.name }}</span><span class="l-zh">{{ e.label_zh if e.label_zh is defined else (e.label_en if e.label_en is defined else e.name) }}</span></span>
+            <span class="mx5-dlg-fed-val"><span class="num">{{ _top.outcome }} {{ _top.prob }}%</span></span>
+            {% if _top.chg_pp is not none and _top.chg_pp != 0 %}<span class="mx5-dlg-fed-chg {{ 'pos' if _top.chg_pp > 0 else 'neg' }}">{{ '%+.1f'|format(_top.chg_pp) }}pp</span>{% endif %}
+          </div>
+          {% endfor %}
+          <div class="mx5-dlg-fed-src">Polymarket</div>
+        </div>
+        {% endif %}
+
+        {# — Release Radar link — #}
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Data Release Radar</span><span class="l-zh">数据发布雷达</span></div>
+        <div style="margin-bottom:16px;font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5">
+          <span class="l-en">For consensus vs trend skew, revision expectations, and historical reaction patterns — open the Release Radar below.</span>
+          <span class="l-zh">如需查看共识预期偏差、修订预期和历史反应规律，请在下方打开数据发布雷达。</span>
+        </div>
+        <button class="mx5-dlg-rr-link" type="button" onclick="
+          mx5CloseDlg();
+          var rrSec = document.getElementById('release-radar');
+          if(rrSec){ rrSec.scrollIntoView({behavior:'smooth',block:'start'}); }
+        " aria-label="Open Release Radar">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span class="l-en">Open Release Radar</span>
+          <span class="l-zh">打开数据发布雷达</span>
+        </button>
+
+        {% if not macro_catalysts and not (prediction_markets and prediction_markets.events) %}
+        <p style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));margin-top:16px"><span class="l-en">No events data available.</span><span class="l-zh">暂无事件数据。</span></p>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  {# dlg-markets: Index health + sector heat + heatmap + cross-asset — S2 redesign #}
+  <div class="mx5-dlg" id="dlg-markets" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">Markets — Index Health &amp; Cross-Asset</span><span class="l-zh">市场 — 指数健康度与跨资产</span></span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
+
+        {# — Index deep cards — #}
         {% if index_health %}
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Index Health</span><span class="l-zh">指数健康度</span></span><div class="isle-head-line"></div></div>
-        {% set _ix_nm = {'SPY': 'S&P 500', 'QQQ': 'Nasdaq 100', 'DJI': 'Dow Jones', '_DJI': 'Dow Jones', 'RUT': 'Russell 2000', '_RUT': 'Russell 2000'} %}
-        <div class="idx-card-grid" id="dlg-index-health">
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Index Health</span><span class="l-zh">指数健康度</span></div>
+        {% set _dlgm_ix_nm = {'SPY': 'S&P 500', 'QQQ': 'Nasdaq 100', 'DJI': 'Dow Jones', '_DJI': 'Dow Jones', 'RUT': 'Russell 2000', '_RUT': 'Russell 2000'} %}
+        <div class="mx5-dlg-idx-grid">
           {% for ix in index_health %}
-          {% set _ixsym = ix.ticker | replace('_','') %}
-          <div class="idx-card" data-sym="{{ _ixsym }}" data-mkt="us">
-            <div class="idx-card-top"><span class="idx-card-ticker">{{ _ixsym }}</span><span class="idx-card-name">{{ _ix_nm.get(ix.ticker, _ixsym) }}</span></div>
-            <div class="idx-card-px nb-px" data-sym="{{ _ixsym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
-            <div class="idx-card-chg {{ 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</div>
-            <div class="idx-card-chips">
-              <span class="idx-stat {{ 'ok' if ix.dd >= -1 else ('wn' if ix.dd >= -10 else 'mt') }}">{{ '%+.1f'|format(ix.dd) }}%</span>
-              <span class="idx-stat-lbl"><span class="l-en">off high</span><span class="l-zh">距高</span></span>
-              {% if ix.rsi is not none %}<span class="idx-stat mt">RSI {{ ix.rsi }}</span>{% endif %}
+          {% set _dlgm_sym = ix.ticker | replace('_','') %}
+          {% set _dlgm_dir = 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') %}
+          {% set _dlgm_col = 'var(--up)' if ix.chg > 0 else ('var(--down)' if ix.chg < 0 else 'var(--text)') %}
+          <div class="mx5-dlg-idx-card">
+            <div class="mx5-dlg-idx-ticker">{{ _dlgm_sym }}</div>
+            <div class="mx5-dlg-idx-name">{{ _dlgm_ix_nm.get(ix.ticker, ix.label if ix.label is defined else _dlgm_sym) }}</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="{{ _dlgm_sym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
+            <div class="mx5-dlg-idx-chg {{ _dlgm_dir }} nb-chg" data-sym="{{ _dlgm_sym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</div>
+            <div class="mx5-dlg-idx-chips">
+              {# Distance from high — plain words #}
+              <span class="mx5-dlg-idx-chip {{ 'ok' if ix.dd >= -1 else ('wn' if ix.dd >= -10 else 'mt') }}" title="Distance from 52-week high">{{ '%+.1f'|format(ix.dd) }}% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              {# Trend vs 50d MA #}
+              {% if ix.above50 is defined %}
+              <span class="mx5-dlg-idx-chip {{ 'ok' if ix.above50 else 'mt' }}" title="vs 50-day moving average">50d {{ '✓' if ix.above50 else '✕' }}</span>
+              {% endif %}
+              {# Trend vs 200d MA #}
+              {% if ix.above200 is defined %}
+              <span class="mx5-dlg-idx-chip {{ 'ok' if ix.above200 else 'mt' }}" title="vs 200-day moving average">200d {{ '✓' if ix.above200 else '✕' }}</span>
+              {% endif %}
+              {# RSI — plain-word read, not raw number #}
+              {% if ix.rsi is not none %}
+              {% set _dlgm_rsi_word = 'Overbought' if ix.rsi >= 70 else ('Oversold' if ix.rsi <= 30 else 'Neutral') %}
+              {% set _dlgm_rsi_zh = '超买' if ix.rsi >= 70 else ('超卖' if ix.rsi <= 30 else '中性') %}
+              <span class="mx5-dlg-idx-chip {{ 'wn' if ix.rsi >= 70 or ix.rsi <= 30 else 'mt' }}" title="RSI(14) = {{ ix.rsi }}"><span class="l-en">{{ _dlgm_rsi_word }}</span><span class="l-zh">{{ _dlgm_rsi_zh }}</span></span>
+              {% endif %}
             </div>
           </div>
           {% endfor %}
         </div>
-        {% else %}
-        <p style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">No market data available.</span><span class="l-zh">暂无市场数据。</span></p>
         {% endif %}
+
+        {# — Sector hot / cold columns — #}
+        {% if sector_heat %}
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Sector Temperature</span><span class="l-zh">板块温度</span></div>
+        <div class="mx5-dlg-sector-cols">
+          <div>
+            <div class="mx5-dlg-sector-col-head"><span class="l-en">Leading sectors</span><span class="l-zh">领涨板块</span></div>
+            {% for _ht in (sector_heat.get('heating') or [])[:5] %}
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr heat">&#9650;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">{{ _ht.get('name') }}</span><span class="l-zh">{{ _ht.get('name_zh') or _ht.get('name') }}</span></span>
+              <span class="mx5-dlg-sector-rk">#{{ _ht.get('rank') }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          <div>
+            <div class="mx5-dlg-sector-col-head"><span class="l-en">Lagging sectors</span><span class="l-zh">滞涨板块</span></div>
+            {% for _ct in (sector_heat.get('cooling') or [])[:5] %}
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">{{ _ct.get('name') }}</span><span class="l-zh">{{ _ct.get('name_zh') or _ct.get('name') }}</span></span>
+              <span class="mx5-dlg-sector-rk">#{{ _ct.get('rank') }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# — S&P Heatmap — heatmap.js mounts on first #heatmap-scorecard instance in DOM;
+           the island's #heatmap-scorecard is the canonical mount point.
+           Here we show the same container only when the dialog is open so the JS can re-use it.
+           The slot below stays empty (heatmap.js mounts on the island's id first); this is a
+           fallback visual placeholder that explains where the chart lives. #}
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">S&amp;P 500 Sector Heatmap</span><span class="l-zh">标普500板块热力图</span></div>
+        <div class="mx5-dlg-heatmap-wrap">
+          <div class="mx5-dlg-heatmap-head"><span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span></div>
+          {# Point to the canonical heatmap-scorecard in the island; dialog delegates to it #}
+          <div id="dlg-heatmap-scorecard" style="min-height:120px"></div>
+        </div>
+
+        {# — Cross-asset tiles — 8 key macro variables — #}
+        {% set _dlgm_ca = latest.cross_asset if (latest.cross_asset is defined and latest.cross_asset) else {} %}
+        {% if _dlgm_ca or (vix is defined and vix) %}
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Key Rates &amp; Volatility</span><span class="l-zh">关键利率与波动率</span></div>
+        <div class="mx5-dlg-asset-row">
+          {% if _dlgm_ca.get('us10y') is not none %}
+          <div class="mx5-dlg-asset-tile">
+            <div class="mx5-dlg-asset-lbl"><span class="l-en">10Y Treasury</span><span class="l-zh">10年期国债</span></div>
+            <div class="mx5-dlg-asset-val" style="color:var(--text)">{{ '%.2f'|format(_dlgm_ca.get('us10y')) }}%</div>
+            <div class="mx5-dlg-asset-ctx"><span class="l-en">rate</span><span class="l-zh">利率</span></div>
+          </div>
+          {% endif %}
+          {% if _dlgm_ca.get('us2y') is not none %}
+          <div class="mx5-dlg-asset-tile">
+            <div class="mx5-dlg-asset-lbl"><span class="l-en">2Y Treasury</span><span class="l-zh">2年期国债</span></div>
+            <div class="mx5-dlg-asset-val" style="color:var(--text)">{{ '%.2f'|format(_dlgm_ca.get('us2y')) }}%</div>
+            <div class="mx5-dlg-asset-ctx"><span class="l-en">rate</span><span class="l-zh">利率</span></div>
+          </div>
+          {% endif %}
+          {% if _dlgm_ca.get('fed_funds') is not none %}
+          <div class="mx5-dlg-asset-tile">
+            <div class="mx5-dlg-asset-lbl"><span class="l-en">Fed Funds</span><span class="l-zh">联邦基金</span></div>
+            <div class="mx5-dlg-asset-val" style="color:var(--text)">{{ '%.2f'|format(_dlgm_ca.get('fed_funds')) }}%</div>
+            <div class="mx5-dlg-asset-ctx"><span class="l-en">target</span><span class="l-zh">目标利率</span></div>
+          </div>
+          {% endif %}
+          {% if _dlgm_ca.get('real10y') is not none %}
+          {% set _dlgm_r10c = 'var(--down)' if _dlgm_ca.get('real10y') > 2.0 else ('var(--warn)' if _dlgm_ca.get('real10y') > 0.5 else 'var(--up)') %}
+          <div class="mx5-dlg-asset-tile">
+            <div class="mx5-dlg-asset-lbl"><span class="l-en">Real 10Y</span><span class="l-zh">实际10年期</span></div>
+            <div class="mx5-dlg-asset-val" style="color:{{ _dlgm_r10c }}">{{ '%.2f'|format(_dlgm_ca.get('real10y')) }}%</div>
+            <div class="mx5-dlg-asset-ctx">TIPS</div>
+          </div>
+          {% endif %}
+          {% if _dlgm_ca.get('curve_2s10s') is not none %}
+          {% set _dlgm_curc = 'var(--down)' if _dlgm_ca.get('curve_2s10s') < 0 else 'var(--up)' %}
+          <div class="mx5-dlg-asset-tile">
+            <div class="mx5-dlg-asset-lbl">2s10s <span class="l-en">Curve</span><span class="l-zh">曲线</span></div>
+            <div class="mx5-dlg-asset-val" style="color:{{ _dlgm_curc }}">{{ '%+.0f'|format(_dlgm_ca.get('curve_2s10s') * 100) }}bp</div>
+            <div class="mx5-dlg-asset-ctx"><span class="l-en">{{ 'inverted' if _dlgm_ca.get('curve_2s10s') < 0 else 'normal' }}</span><span class="l-zh">{{ '倒挂' if _dlgm_ca.get('curve_2s10s') < 0 else '正常' }}</span></div>
+          </div>
+          {% endif %}
+          {% if _dlgm_ca.get('dxy') is not none %}
+          <div class="mx5-dlg-asset-tile">
+            <div class="mx5-dlg-asset-lbl">DXY <span class="l-en">Dollar</span><span class="l-zh">美元</span></div>
+            <div class="mx5-dlg-asset-val" style="color:var(--text)">{{ '%.1f'|format(_dlgm_ca.get('dxy')) }}</div>
+            <div class="mx5-dlg-asset-ctx"><span class="l-en">index</span><span class="l-zh">指数</span></div>
+          </div>
+          {% endif %}
+          {% if vix is defined and vix is not none and vix.last is defined %}
+          {% set _dlgm_vixlv = vix.last %}
+          {% set _dlgm_vixc = 'var(--down)' if _dlgm_vixlv > 25 else ('var(--warn)' if _dlgm_vixlv > 18 else 'var(--up)') %}
+          <div class="mx5-dlg-asset-tile">
+            <div class="mx5-dlg-asset-lbl">VIX</div>
+            <div class="mx5-dlg-asset-val" style="color:{{ _dlgm_vixc }}">{{ '%.1f'|format(_dlgm_vixlv) }}</div>
+            <div class="mx5-dlg-asset-ctx"><span class="l-en">{{ 'stress' if _dlgm_vixlv > 25 else ('watch' if _dlgm_vixlv > 18 else 'calm') }}</span><span class="l-zh">{{ '紧张' if _dlgm_vixlv > 25 else ('警惕' if _dlgm_vixlv > 18 else '平静') }}</span></div>
+          </div>
+          {% endif %}
+          {% if _dlgm_ca.get('hy_oas') is not none %}
+          {% set _dlgm_hyc = 'var(--down)' if _dlgm_ca.get('hy_oas') > 5.0 else ('var(--warn)' if _dlgm_ca.get('hy_oas') > 3.5 else 'var(--up)') %}
+          <div class="mx5-dlg-asset-tile">
+            <div class="mx5-dlg-asset-lbl"><span class="l-en">HY Spread</span><span class="l-zh">高收益利差</span></div>
+            <div class="mx5-dlg-asset-val" style="color:{{ _dlgm_hyc }}">{{ '%.0f'|format(_dlgm_ca.get('hy_oas') * 100) }}bp</div>
+            <div class="mx5-dlg-asset-ctx"><span class="l-en">credit</span><span class="l-zh">信用</span></div>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if not index_health and not sector_heat %}
+        <p style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));margin-top:16px"><span class="l-en">No market data available.</span><span class="l-zh">暂无市场数据。</span></p>
+        {% endif %}
+
       </div>
     </div>
   </div>
 
-  {# dlg-risk: Risk scare ladder + sentiment (includes MX2-SENTIMENT byte-verbatim) #}
+  {# dlg-risk: Risk scare ladder + drawdown boxes + sentiment — S2 redesign #}
   {% if market_state %}
-  <div class="mx5-dlg" id="dlg-risk" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-risk" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">Risk — Scare Ladder &amp; Sentiment</span><span class="l-zh">风险 — 压力梯度与情绪</span></span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
-        {# Radar banner cards in dialog #}
+
+        {# — Dominant driver header — #}
+        {% set _dlgr_rdr = market_state.radar if market_state.radar is defined else {} %}
+        {% set _dlgr_state = _dlgr_rdr.state if _dlgr_rdr else 'unknown' %}
+        {% set _dlgr_col = 'var(--down)' if _dlgr_state in ('risk-off','high') else ('var(--warn)' if _dlgr_state in ('elevated','caution') else 'var(--up)') %}
+        <div class="mx5-dlg-driver-hd">
+          <div class="mx5-dlg-driver-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ _dlgr_col }}" stroke-width="2" stroke-linecap="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div>
+            <div class="mx5-dlg-driver-label" style="color:{{ _dlgr_col }}">
+              <span class="l-en">{{ (_dlgr_rdr.label_en if _dlgr_rdr.label_en is defined else _dlgr_state) | title }}</span>
+              <span class="l-zh">{{ _dlgr_rdr.label_zh if (_dlgr_rdr.label_zh is defined and _dlgr_rdr.label_zh) else (_dlgr_rdr.label_en if _dlgr_rdr.label_en is defined else _dlgr_state) }}</span>
+            </div>
+            {% if _dlgr_rdr.do_en is defined and _dlgr_rdr.do_en %}
+            <div class="mx5-dlg-driver-sub">
+              <span class="l-en">{{ _dlgr_rdr.do_en }}</span>
+              <span class="l-zh">{{ _dlgr_rdr.do_zh if (_dlgr_rdr.do_zh is defined and _dlgr_rdr.do_zh) else _dlgr_rdr.do_en }}</span>
+            </div>
+            {% endif %}
+            {% if _dlgr_rdr.top_score is defined and _dlgr_rdr.top_score is not none %}
+            <div class="mx5-dlg-driver-sub" style="margin-top:3px">
+              <span class="l-en">Intensity {{ _dlgr_rdr.top_score }}/100</span>
+              <span class="l-zh">强度 {{ _dlgr_rdr.top_score }}/100</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        {# — Heads-up chips: fed stance + turning point — #}
+        {% set _dlgr_fed_st = (latest.fed_stance.stance if (latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.stance is defined and latest.fed_stance.stance != 'unknown') else none) %}
+        {% set _dlgr_tp = (latest.turning_point if (latest.turning_point is defined and latest.turning_point and latest.turning_point.present is defined and latest.turning_point.present) else none) %}
+        {% if _dlgr_fed_st or _dlgr_tp %}
+        <div class="mx5-dlg-chips-row">
+          {% if _dlgr_fed_st %}
+          {% set _dlgr_fsc = 'var(--down)' if _dlgr_fed_st in ('hawkish','very-hawkish') else ('var(--up)' if _dlgr_fed_st in ('dovish','very-dovish') else 'var(--warn)') %}
+          {% set _dlgr_fsl = {'hawkish':'Hawkish','very-hawkish':'Very Hawkish','dovish':'Dovish','very-dovish':'Very Dovish','neutral':'Neutral'} %}
+          {% set _dlgr_fszh = {'hawkish':'鹰派','very-hawkish':'强鹰派','dovish':'鸽派','very-dovish':'强鸽派','neutral':'中性'} %}
+          <span class="mx5-dlg-chip" style="border-color:{{ _dlgr_fsc }};color:{{ _dlgr_fsc }}">
+            <span class="l-en">Fed: {{ _dlgr_fsl.get(_dlgr_fed_st, _dlgr_fed_st) }}</span>
+            <span class="l-zh">美联储：{{ _dlgr_fszh.get(_dlgr_fed_st, _dlgr_fed_st) }}</span>
+          </span>
+          {% endif %}
+          {% if _dlgr_tp %}
+          <span class="mx5-dlg-chip" style="border-color:var(--warn);color:var(--warn)">
+            <span class="l-en">Turning point watch</span>
+            <span class="l-zh">拐点观察中</span>
+          </span>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {# — Radar + ignition banner cards — #}
         {% if MS.radar and MS.radar.state %}{{ rrc.risk_radar_card(MS.radar, latest.risk_radar.scares if latest.risk_radar else none) }}{% endif %}
         {% if latest.ignition_radar %}{{ igc.ignition_radar_card(latest.ignition_radar) }}{% endif %}
-        {# Scares ladder #}
+
+        {# — Scare ladder — #}
         {% if latest.risk_radar and latest.risk_radar.scares %}
-        <div class="isle-head" style="margin-top:16px"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Risk Ladder</span><span class="l-zh">风险梯度</span></span><div class="isle-head-line"></div></div>
-        <div class="scare-ladder">
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Risk Ladder — What to Watch</span><span class="l-zh">风险梯度 — 需关注的因素</span></div>
+        <div class="scare-ladder" style="margin-bottom:0">
           {% for sc in latest.risk_radar.scares %}
           {% set _scc = ('sc-band-high' if sc.score >= 70 else ('sc-band-watch' if sc.score >= 50 else ('sc-band-elev' if sc.score >= 35 else 'sc-band-calm'))) %}
           {% set _scband = (sc.band if sc.band is defined and sc.band else ('WATCH' if sc.score >= 50 else ('ELEVATED' if sc.score >= 35 else 'CALM'))) %}
+          {% set _scband_zh = {'WATCH':'警惕','ELEVATED':'走高','CALM':'平静','HIGH':'高危'}.get(_scband, _scband) %}
           <div class="scare-row">
-            <span class="sc-name"><span class="l-en">{{ sc.label_en if sc.label_en is defined else (sc.name_en if sc.name_en is defined else sc.name) }}</span><span class="l-zh">{{ sc.label_zh if sc.label_zh is defined else (sc.name_zh if sc.name_zh is defined else sc.name) }}</span></span>
+            <span class="sc-name">
+              <span class="l-en">{{ sc.label_en if sc.label_en is defined else (sc.name_en if sc.name_en is defined else sc.name) }}</span>
+              <span class="l-zh">{{ sc.label_zh if sc.label_zh is defined else (sc.name_zh if sc.name_zh is defined else sc.name) }}</span>
+              {# Plain-word description — one sentence per scare; engine may provide desc_en/desc_zh #}
+              {% if sc.desc_en is defined and sc.desc_en %}
+              <div style="font-size:10px;font-weight:400;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;line-height:1.4">
+                <span class="l-en">{{ sc.desc_en }}</span>
+                <span class="l-zh">{{ sc.desc_zh if (sc.desc_zh is defined and sc.desc_zh) else sc.desc_en }}</span>
+              </div>
+              {% endif %}
+            </span>
             <div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ [sc.score,100]|min }}%;background:{{ 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 35 else 'var(--muted)') }}"></div></div>
             <span class="sc-score" style="color:{{ 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 35 else 'var(--muted)') }}">{{ sc.score }}</span>
-            <span class="sc-band {{ _scc }}">{{ _scband }}</span>
+            <span class="sc-band {{ _scc }}">
+              <span class="l-en">{{ _scband }}</span>
+              <span class="l-zh">{{ _scband_zh }}</span>
+            </span>
           </div>
           {% endfor %}
         </div>
         {% endif %}
+
+        {# — Drawdown probability boxes — #}
+        {% set _dlgr_rdr_data = latest.risk_radar if (latest.risk_radar is defined and latest.risk_radar) else none %}
+        {% set _dlgr_rdr_r = market_state.radar if (market_state and market_state.radar is defined) else {} %}
+        {% if _dlgr_rdr_r and (_dlgr_rdr_r.dd5 is defined or _dlgr_rdr_r.dd10 is defined or _dlgr_rdr_r.dd21 is defined) %}
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Drawdown Probability — Model Estimates</span><span class="l-zh">回撤概率 — 模型估计</span></div>
+        <div class="mx5-dlg-dd-row">
+          {% if _dlgr_rdr_r.dd5 is defined and _dlgr_rdr_r.dd5 is not none %}
+          <div class="mx5-dlg-dd-box">
+            <div class="mx5-dlg-dd-horizon"><span class="l-en">5-day</span><span class="l-zh">5日</span></div>
+            <div class="mx5-dlg-dd-val" style="color:{{ 'var(--down)' if _dlgr_rdr_r.dd5 > 0.15 else ('var(--warn)' if _dlgr_rdr_r.dd5 > 0.06 else 'var(--up)') }}">{{ (_dlgr_rdr_r.dd5 * 100)|round|int }}%</div>
+            <div class="mx5-dlg-dd-sub"><span class="l-en">≥5% drop odds</span><span class="l-zh">≥5%下跌概率</span></div>
+          </div>
+          {% endif %}
+          {% if _dlgr_rdr_r.dd10 is defined and _dlgr_rdr_r.dd10 is not none %}
+          <div class="mx5-dlg-dd-box">
+            <div class="mx5-dlg-dd-horizon"><span class="l-en">10-day</span><span class="l-zh">10日</span></div>
+            <div class="mx5-dlg-dd-val" style="color:{{ 'var(--down)' if _dlgr_rdr_r.dd10 > 0.20 else ('var(--warn)' if _dlgr_rdr_r.dd10 > 0.10 else 'var(--up)') }}">{{ (_dlgr_rdr_r.dd10 * 100)|round|int }}%</div>
+            <div class="mx5-dlg-dd-sub"><span class="l-en">≥5% drop odds</span><span class="l-zh">≥5%下跌概率</span></div>
+          </div>
+          {% endif %}
+          {% if _dlgr_rdr_r.dd21 is defined and _dlgr_rdr_r.dd21 is not none %}
+          {% set _dlgr_dd21_base = (_dlgr_rdr_r.drawdown_prob.base * 100)|round(1) if (_dlgr_rdr_r.drawdown_prob is defined and _dlgr_rdr_r.drawdown_prob and _dlgr_rdr_r.drawdown_prob.base is not none) else none %}
+          <div class="mx5-dlg-dd-box" style="{{ 'border-color:rgba(245,158,11,.25)' if _dlgr_rdr_r.dd21 > 0.12 else '' }}">
+            <div class="mx5-dlg-dd-horizon"><span class="l-en">21-day</span><span class="l-zh">21日</span></div>
+            <div class="mx5-dlg-dd-val" style="color:{{ 'var(--down)' if _dlgr_rdr_r.dd21 > 0.25 else ('var(--warn)' if _dlgr_rdr_r.dd21 > 0.12 else 'var(--up)') }}">{{ (_dlgr_rdr_r.dd21 * 100)|round|int }}%</div>
+            <div class="mx5-dlg-dd-sub">{% if _dlgr_dd21_base is not none %}<span class="l-en">base {{ _dlgr_dd21_base }}%</span><span class="l-zh">基准 {{ _dlgr_dd21_base }}%</span>{% else %}<span class="l-en">≥10% drop odds</span><span class="l-zh">≥10%下跌概率</span>{% endif %}</div>
+          </div>
+          {% endif %}
+          {% set _dlgr_pk = _dlgr_rdr_r.drawdown_prob.peak if (_dlgr_rdr_r.drawdown_prob is defined and _dlgr_rdr_r.drawdown_prob) else none %}
+          {% set _dlgr_pk_ago = _dlgr_rdr_r.drawdown_prob.peak_days_ago if (_dlgr_rdr_r.drawdown_prob is defined and _dlgr_rdr_r.drawdown_prob) else none %}
+          {% if _dlgr_pk is not none %}
+          <div class="mx5-dlg-dd-box">
+            <div class="mx5-dlg-dd-horizon"><span class="l-en">Peak</span><span class="l-zh">峰值</span></div>
+            <div class="mx5-dlg-dd-val">{{ (_dlgr_pk * 100)|round|int }}%</div>
+            <div class="mx5-dlg-dd-sub">{% if _dlgr_pk_ago is not none %}<span class="l-en">{{ _dlgr_pk_ago }}d ago</span><span class="l-zh">{{ _dlgr_pk_ago }}天前</span>{% endif %}</div>
+          </div>
+          {% endif %}
+        </div>
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5;margin-bottom:8px">
+          <span class="l-en">Model estimates vs historical base rates (SPY proxy). Display-only — not forecasts.</span>
+          <span class="l-zh">模型估计，依历史基准率校准（SPY代理）。仅供展示，非预测。</span>
+        </div>
+        {% endif %}
+
         {# MX2-SENTIMENT block — RELOCATED from risk tray; content byte-verbatim #}
         {% set _rdr2 = market_state.radar if market_state.radar is defined else {} %}
         {% set _rdr_state2 = _rdr2.state if _rdr2 else 'unknown' %}
@@ -8544,6 +9169,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
         {# MX2-SENTIMENT-END #}
         </div>
+
       </div>
     </div>
   </div>
@@ -8551,8 +9177,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
   {# dlg-policy: Policy lever + repricing #}
   {% if policy_lever is defined and policy_lever %}
-  <div class="mx5-dlg" id="dlg-policy" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-policy" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">Policy — Lever State &amp; Repricing</span><span class="l-zh">政策 — 杠杆状态与重定价</span></span>
@@ -8589,8 +9215,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
   {# dlg-aibrief: AI Brief synthesis #}
   {% if mode != 'stocks' %}
-  <div class="mx5-dlg" id="dlg-aibrief" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-aibrief" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">AI Brief — Synthesis</span><span class="l-zh">AI简报 — 综合</span></span>
@@ -8624,8 +9250,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   </div>
 
   {# dlg-news: Alerts + market intelligence #}
-  <div class="mx5-dlg" id="dlg-news" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-news" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">News — Market Intelligence</span><span class="l-zh">新闻 — 市场情报</span></span>
@@ -8677,8 +9303,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   </div>
 
   {# dlg-deep-context: Deep context link-out chips #}
-  <div class="mx5-dlg" id="dlg-deep-context" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-deep-context" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">Deep Context — Linked Surfaces</span><span class="l-zh">深度背景 — 关联页面</span></span>

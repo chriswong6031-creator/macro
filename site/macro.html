@@ -4573,6 +4573,262 @@ body.mx5-dlg-open{ overflow:hidden; }
   }
 }
 
+/* ── S2: Dialog interior components ─────────────────────────────── */
+
+/* Section eyebrow inside dialogs */
+.mx5-dlg-eyebrow{
+  font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));margin:0 0 14px;
+}
+[data-theme="light"] .mx5-dlg-eyebrow{color:rgba(0,0,0,.38);}
+
+/* Section divider (thin separator between content blocks) */
+.mx5-dlg-sep{
+  height:1px;background:rgba(255,255,255,.07);margin:22px 0;
+}
+[data-theme="light"] .mx5-dlg-sep{background:rgba(0,0,0,.07);}
+
+/* Dominant driver callout (RISK dialog top) */
+.mx5-dlg-driver-hd{
+  display:flex;align-items:center;gap:14px;margin-bottom:20px;
+  padding:16px 18px;
+  background:rgba(255,255,255,.04);border-radius:14px;
+  border:1px solid rgba(255,255,255,.09);
+}
+[data-theme="light"] .mx5-dlg-driver-hd{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+.mx5-dlg-driver-icon{
+  width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:18px;
+  background:rgba(239,68,68,.13);
+}
+.mx5-dlg-driver-label{font-size:13px;font-weight:700;margin-bottom:3px;}
+.mx5-dlg-driver-sub{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
+[data-theme="light"] .mx5-dlg-driver-sub{color:rgba(0,0,0,.45);}
+
+/* Heads-up chips row (fed stance, turning point) */
+.mx5-dlg-chips-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+.mx5-dlg-chip{
+  display:inline-flex;align-items:center;padding:4px 12px;
+  border-radius:20px;font-size:11px;font-weight:600;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  color:var(--ink-2,rgba(255,255,255,.6));
+}
+[data-theme="light"] .mx5-dlg-chip{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.1);color:rgba(0,0,0,.6);}
+
+/* Drawdown box row inside dialogs */
+.mx5-dlg-dd-row{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0;
+}
+@media(max-width:700px){.mx5-dlg-dd-row{grid-template-columns:repeat(2,1fr);}}
+.mx5-dlg-dd-box{
+  padding:14px 12px;text-align:center;
+  background:rgba(255,255,255,.03);border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+}
+[data-theme="light"] .mx5-dlg-dd-box{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06);}
+.mx5-dlg-dd-horizon{
+  font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:6px;
+}
+[data-theme="light"] .mx5-dlg-dd-horizon{color:rgba(0,0,0,.38);}
+.mx5-dlg-dd-val{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:4px;}
+.mx5-dlg-dd-sub{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));}
+[data-theme="light"] .mx5-dlg-dd-sub{color:rgba(0,0,0,.38);}
+
+/* Six-factor deep rows (SIGNALS dialog) */
+.mx5-dlg-factor-row{
+  display:grid;grid-template-columns:minmax(120px,1.4fr) 1fr 52px;
+  align-items:center;gap:14px;
+  padding:12px 14px;
+  background:rgba(255,255,255,.03);border-radius:12px;
+  border:1px solid rgba(255,255,255,.06);
+  margin-bottom:8px;
+}
+[data-theme="light"] .mx5-dlg-factor-row{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.06);}
+.mx5-dlg-factor-row.weakest{border-color:rgba(245,158,11,.25);}
+.mx5-dlg-factor-name{font-size:12px;font-weight:700;}
+.mx5-dlg-factor-read{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;line-height:1.4;}
+[data-theme="light"] .mx5-dlg-factor-read{color:rgba(0,0,0,.42);}
+.mx5-dlg-factor-bar{position:relative;height:7px;border-radius:4px;background:rgba(255,255,255,.08);}
+[data-theme="light"] .mx5-dlg-factor-bar{background:rgba(0,0,0,.09);}
+.mx5-dlg-factor-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;opacity:.85;}
+.mx5-dlg-factor-score{font-size:16px;font-weight:900;text-align:right;font-variant-numeric:tabular-nums;}
+/* Bar tick labels (0 / 50 / 100) */
+.mx5-dlg-bar-ticks{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--ink-3,rgba(255,255,255,.36));}
+@media(max-width:700px){.mx5-dlg-bar-ticks{display:none;}}
+
+/* Weakest-leg callout (SIGNALS dialog) */
+.mx5-dlg-weakest-callout{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:14px 16px;
+  background:rgba(245,158,11,.07);border-radius:12px;
+  border:1px solid rgba(245,158,11,.2);
+  margin:4px 0 16px;
+}
+.mx5-dlg-weakest-icon{
+  width:32px;height:32px;border-radius:8px;flex-shrink:0;
+  background:rgba(245,158,11,.14);display:flex;align-items:center;justify-content:center;
+}
+.mx5-dlg-weakest-label{font-size:13px;font-weight:700;color:var(--mx5-warn,#f59e0b);margin-bottom:3px;}
+.mx5-dlg-weakest-sub{font-size:11px;color:var(--ink-2,rgba(255,255,255,.6));}
+[data-theme="light"] .mx5-dlg-weakest-sub{color:rgba(0,0,0,.55);}
+
+/* MTF tape table (inside SIGNALS dialog) */
+.mx5-dlg-mtf-tbl{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:10px;}
+.mx5-dlg-mtf-tbl th{
+  text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));padding:0 0 8px;
+}
+[data-theme="light"] .mx5-dlg-mtf-tbl th{color:rgba(0,0,0,.38);}
+.mx5-dlg-mtf-tbl th:not(:first-child){text-align:center;}
+.mx5-dlg-mtf-tbl td{padding:6px 0;}
+.mx5-dlg-mtf-tbl td:not(:first-child){text-align:center;}
+.mx5-dlg-mtf-tbl tbody tr+tr td{border-top:1px solid rgba(255,255,255,.05);}
+[data-theme="light"] .mx5-dlg-mtf-tbl tbody tr+tr td{border-top-color:rgba(0,0,0,.05);}
+.mx5-dlg-mtf-conf.good{color:var(--up,#22d97a);}
+.mx5-dlg-mtf-conf.bad{color:var(--down,#ef4444);}
+.mx5-dlg-mtf-conf.flat{color:var(--ink-3,rgba(255,255,255,.36));}
+
+/* Index deep cards (MARKETS dialog) */
+.mx5-dlg-idx-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;
+}
+@media(max-width:700px){.mx5-dlg-idx-grid{grid-template-columns:repeat(2,1fr);}}
+.mx5-dlg-idx-card{
+  padding:14px 14px 12px;
+  background:rgba(255,255,255,.04);border-radius:14px;
+  border:1px solid rgba(255,255,255,.08);
+}
+[data-theme="light"] .mx5-dlg-idx-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+.mx5-dlg-idx-ticker{font-size:12px;font-weight:700;margin-bottom:1px;}
+.mx5-dlg-idx-name{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+[data-theme="light"] .mx5-dlg-idx-name{color:rgba(0,0,0,.42);}
+.mx5-dlg-idx-px{font-size:20px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:3px;}
+.mx5-dlg-idx-chg{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:10px;}
+.mx5-dlg-idx-chg.up{color:var(--up,#22d97a);}
+.mx5-dlg-idx-chg.dn{color:var(--down,#ef4444);}
+.mx5-dlg-idx-chips{display:flex;flex-wrap:wrap;gap:4px;}
+.mx5-dlg-idx-chip{
+  display:inline-flex;align-items:center;padding:2px 7px;
+  border-radius:5px;font-size:9.5px;font-weight:600;
+}
+.mx5-dlg-idx-chip.ok{color:var(--up,#22d97a);background:rgba(62,200,122,.1);border:1px solid rgba(62,200,122,.2);}
+.mx5-dlg-idx-chip.wn{color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);}
+.mx5-dlg-idx-chip.mt{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
+[data-theme="light"] .mx5-dlg-idx-chip.mt{color:rgba(0,0,0,.38);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
+
+/* Sector columns (MARKETS dialog) */
+.mx5-dlg-sector-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.mx5-dlg-sector-col-head{
+  font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px;
+}
+[data-theme="light"] .mx5-dlg-sector-col-head{color:rgba(0,0,0,.38);}
+.mx5-dlg-sector-row{
+  display:flex;align-items:center;gap:8px;padding:9px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;
+}
+[data-theme="light"] .mx5-dlg-sector-row{border-bottom-color:rgba(0,0,0,.05);}
+.mx5-dlg-sector-arr{font-size:11px;flex-shrink:0;}
+.mx5-dlg-sector-arr.heat{color:var(--down,#ef4444);}
+.mx5-dlg-sector-arr.cool{color:var(--up,#22d97a);}
+.mx5-dlg-sector-name{flex:1;font-weight:500;}
+.mx5-dlg-sector-rk{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));font-variant-numeric:tabular-nums;}
+[data-theme="light"] .mx5-dlg-sector-rk{color:rgba(0,0,0,.38);}
+
+/* Asset tiles (MARKETS dialog) */
+.mx5-dlg-asset-row{
+  display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;
+}
+.mx5-dlg-asset-tile{
+  flex:1 1 100px;min-width:90px;
+  padding:12px 12px 10px;
+  background:rgba(255,255,255,.03);border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+  text-align:center;
+}
+[data-theme="light"] .mx5-dlg-asset-tile{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);}
+.mx5-dlg-asset-lbl{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:6px;}
+[data-theme="light"] .mx5-dlg-asset-lbl{color:rgba(0,0,0,.38);}
+.mx5-dlg-asset-val{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:3px;}
+.mx5-dlg-asset-ctx{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));}
+[data-theme="light"] .mx5-dlg-asset-ctx{color:rgba(0,0,0,.38);}
+
+/* Events calendar cards (EVENTS dialog) */
+.mx5-dlg-cal-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px;
+}
+.mx5-dlg-cal-card{
+  padding:14px 14px 12px;
+  background:rgba(255,255,255,.04);border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+  position:relative;
+}
+.mx5-dlg-cal-card.hot{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.04);}
+[data-theme="light"] .mx5-dlg-cal-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+[data-theme="light"] .mx5-dlg-cal-card.hot{background:rgba(245,158,11,.04);}
+.mx5-dlg-cal-date{font-size:11px;font-weight:700;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:5px;}
+[data-theme="light"] .mx5-dlg-cal-date{color:rgba(0,0,0,.42);}
+.mx5-dlg-cal-title{font-size:13px;font-weight:700;margin-bottom:6px;line-height:1.3;}
+.mx5-dlg-cal-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.mx5-dlg-cal-time{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));}
+[data-theme="light"] .mx5-dlg-cal-time{color:rgba(0,0,0,.4);}
+.mx5-dlg-cal-badge{
+  display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;
+  font-size:9.5px;font-weight:700;
+}
+.mx5-dlg-cal-badge.high{color:var(--down,#ef4444);background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);}
+.mx5-dlg-cal-badge.med{color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.18);}
+.mx5-dlg-cal-badge.low{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}
+[data-theme="light"] .mx5-dlg-cal-badge.low{color:rgba(0,0,0,.38);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
+
+/* Fed strip inside dialogs (EVENTS dialog) */
+.mx5-dlg-fed-strip{
+  display:flex;flex-direction:column;gap:6px;
+  padding:14px 16px;
+  background:rgba(255,255,255,.03);border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+  margin-bottom:20px;
+}
+[data-theme="light"] .mx5-dlg-fed-strip{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);}
+.mx5-dlg-fed-item{display:flex;align-items:center;justify-content:space-between;padding:5px 0;}
+.mx5-dlg-fed-item+.mx5-dlg-fed-item{border-top:1px solid rgba(255,255,255,.05);}
+[data-theme="light"] .mx5-dlg-fed-item+.mx5-dlg-fed-item{border-top-color:rgba(0,0,0,.05);}
+.mx5-dlg-fed-desc{font-size:12px;flex:1;padding-right:12px;color:var(--ink-2,rgba(255,255,255,.6));}
+[data-theme="light"] .mx5-dlg-fed-desc{color:rgba(0,0,0,.55);}
+.mx5-dlg-fed-val{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--link,#22d97a);white-space:nowrap;}
+.mx5-dlg-fed-chg{font-size:11px;font-variant-numeric:tabular-nums;margin-left:6px;}
+.mx5-dlg-fed-chg.pos{color:var(--up,#22d97a);}.mx5-dlg-fed-chg.neg{color:var(--down,#ef4444);}
+.mx5-dlg-fed-src{font-size:9px;color:var(--ink-3,rgba(255,255,255,.36));text-align:right;padding-top:6px;}
+[data-theme="light"] .mx5-dlg-fed-src{color:rgba(0,0,0,.35);}
+
+/* RR link chip (EVENTS dialog — open release-radar from inside dialog) */
+.mx5-dlg-rr-link{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:12px 16px;
+  background:rgba(255,255,255,.04);border-radius:12px;
+  border:1px solid rgba(255,255,255,.09);
+  cursor:pointer;color:var(--ink-2,rgba(255,255,255,.6));
+  font-size:12px;font-weight:600;font-family:inherit;
+  transition:border-color .15s,color .15s;
+  text-decoration:none;
+}
+.mx5-dlg-rr-link:hover{border-color:var(--link,#22d97a);color:var(--text);}
+[data-theme="light"] .mx5-dlg-rr-link{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.09);color:rgba(0,0,0,.55);}
+
+/* Heatmap wrap inside dialog (same IDs as island, just cloned — heatmap.js mounts on first instance) */
+.mx5-dlg-heatmap-wrap{
+  background:rgba(255,255,255,.03);border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+  overflow:hidden;margin-bottom:20px;min-height:120px;
+}
+[data-theme="light"] .mx5-dlg-heatmap-wrap{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);}
+.mx5-dlg-heatmap-head{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--ink-3,rgba(255,255,255,.36));padding:10px 14px 0;
+}
+[data-theme="light"] .mx5-dlg-heatmap-head{color:rgba(0,0,0,.38);}
+
 /* ── Gauge SVG glow (JS patchable via data attrs) ───────────────── */
 /* Arc and needle updated by risk_state_live.js; see §3.1 */
 body.page-macro.mx4-grid #mx5-gauge-arc-fill{
@@ -10199,317 +10455,745 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   
 
   
-  <div class="mx5-dlg" id="dlg-evidence" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-evidence" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
-        <span class="mx5-dlg-title"><span class="l-en">Evidence — Six-Factor Breakdown</span><span class="l-zh">依据 — 六因子分析</span></span>
+        <span class="mx5-dlg-title"><span class="l-en">Signals — Evidence Breakdown</span><span class="l-zh">信号 — 依据分析</span></span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Six-Factor Breakdown</span><span class="l-zh">六因子分析</span></span><div class="isle-head-line"></div><span class="v2-display-badge" style="margin-left:8px"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span></div>
+
         
-        <div class="isle-ev-factors">
+        
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Composite Score</span><span class="l-zh">综合评分</span></div>
+        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:20px">
           
-          
-          <div style="margin-bottom:14px">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-              <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Trend & technicals</span><span class="l-zh">趋势与技术</span></span>
-              <span style="font-size:16px;font-weight:700;color:var(--up)">90</span>
+          <span style="font-size:40px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--up);line-height:1">79</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--up)">
+              <span class="l-en">Risk-On</span>
+              <span class="l-zh">偏多</span>
             </div>
-            <div style="height:7px;border-radius:4px;background:rgba(255,255,255,.07)">
-              <div style="height:100%;width:90%;border-radius:4px;background:var(--up);opacity:.8"></div>
+            <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px">
+              <span class="l-en">Blended 0–100 · ≥60 risk-on · 42–59 mixed · &lt;42 risk-off</span>
+              <span class="l-zh">合成 0-100 · ≥60 偏多 · 42-59 混合 · &lt;42 避险</span>
             </div>
-            <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:5px"><span class="l-en">3/3 US indices in an uptrend across timeframes (uptrend, uptrend, uptrend).</span><span class="l-zh">3/3 个美股指数多周期呈上升趋势。</span></div>
           </div>
-          
-          
-          <div style="margin-bottom:14px">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-              <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span>
-              <span style="font-size:16px;font-weight:700;color:var(--up)">70</span>
-            </div>
-            <div style="height:7px;border-radius:4px;background:rgba(255,255,255,.07)">
-              <div style="height:100%;width:70%;border-radius:4px;background:var(--up);opacity:.8"></div>
-            </div>
-            <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:5px"><span class="l-en">Cross-asset RORO risk-on; bonds/FX mixed</span><span class="l-zh">跨资产 RORO 风险偏好；债/汇 分歧</span></div>
-          </div>
-          
-          
-          <div style="margin-bottom:14px">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-              <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Volatility regime</span><span class="l-zh">波动率环境</span></span>
-              <span style="font-size:16px;font-weight:700;color:var(--up)">86</span>
-            </div>
-            <div style="height:7px;border-radius:4px;background:rgba(255,255,255,.07)">
-              <div style="height:100%;width:86%;border-radius:4px;background:var(--up);opacity:.8"></div>
-            </div>
-            <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:5px"><span class="l-en">VIX term contango (calm); vol 12%ile</span><span class="l-zh">VIX 期限正向（平静）；波动 12 百分位</span></div>
-          </div>
-          
-          
-          <div style="margin-bottom:14px">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-              <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Breadth & participation</span><span class="l-zh">广度与参与</span></span>
-              <span style="font-size:16px;font-weight:700;color:var(--warn)">59</span>
-            </div>
-            <div style="height:7px;border-radius:4px;background:rgba(255,255,255,.07)">
-              <div style="height:100%;width:59%;border-radius:4px;background:var(--warn);opacity:.8"></div>
-            </div>
-            <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:5px"><span class="l-en">Breadth 59%ile of 5y; confirming price</span><span class="l-zh">广度处于五年 59 百分位；确认价格</span></div>
-          </div>
-          
-          
-          <div style="margin-bottom:14px">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-              <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Liquidity & credit</span><span class="l-zh">流动性与信用</span></span>
-              <span style="font-size:16px;font-weight:700;color:var(--up)">77</span>
-            </div>
-            <div style="height:7px;border-radius:4px;background:rgba(255,255,255,.07)">
-              <div style="height:100%;width:77%;border-radius:4px;background:var(--up);opacity:.8"></div>
-            </div>
-            <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:5px"><span class="l-en">Fed liquidity expanding; HY credit tightening</span><span class="l-zh">联储流动性扩张；高收益信用收窄</span></div>
-          </div>
-          
-          
-          <div style="margin-bottom:14px">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-              <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Downturn-risk guard</span><span class="l-zh">下行风险护栏</span></span>
-              <span style="font-size:16px;font-weight:700;color:var(--up)">87</span>
-            </div>
-            <div style="height:7px;border-radius:4px;background:rgba(255,255,255,.07)">
-              <div style="height:100%;width:87%;border-radius:4px;background:var(--up);opacity:.8"></div>
-            </div>
-            <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:5px"><span class="l-en">Downturn risk low; drawdown band low</span><span class="l-zh">下行风险低；回撤区间低</span></div>
-          </div>
-          
         </div>
         
+
+        
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Six Factors</span><span class="l-zh">六大因子</span></div>
+        
+        
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name">
+              <span class="l-en">Trend & technicals</span><span class="l-zh">趋势与技术</span>
+              
+            </div>
+            
+            <div class="mx5-dlg-factor-read"><span class="l-en">3/3 US indices in an uptrend across timeframes (uptrend, uptrend, uptrend).</span><span class="l-zh">3/3 个美股指数多周期呈上升趋势。</span></div>
+            
+          </div>
+          <div>
+            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:90%;background:var(--up)"></div></div>
+            <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
+          </div>
+          <div class="mx5-dlg-factor-score" style="color:var(--up)">90</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name">
+              <span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span>
+              
+            </div>
+            
+            <div class="mx5-dlg-factor-read"><span class="l-en">Cross-asset RORO risk-on; bonds/FX mixed</span><span class="l-zh">跨资产 RORO 风险偏好；债/汇 分歧</span></div>
+            
+          </div>
+          <div>
+            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:70%;background:var(--up)"></div></div>
+            <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
+          </div>
+          <div class="mx5-dlg-factor-score" style="color:var(--up)">70</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name">
+              <span class="l-en">Volatility regime</span><span class="l-zh">波动率环境</span>
+              
+            </div>
+            
+            <div class="mx5-dlg-factor-read"><span class="l-en">VIX term contango (calm); vol 12%ile</span><span class="l-zh">VIX 期限正向（平静）；波动 12 百分位</span></div>
+            
+          </div>
+          <div>
+            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:86%;background:var(--up)"></div></div>
+            <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
+          </div>
+          <div class="mx5-dlg-factor-score" style="color:var(--up)">86</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row weakest">
+          <div>
+            <div class="mx5-dlg-factor-name">
+              <span class="l-en">Breadth & participation</span><span class="l-zh">广度与参与</span>
+              <span class="v2chip c-warn" style="font-size:9px;padding:1px 5px;margin-left:6px;vertical-align:middle"><span class="l-en">WEAKEST</span><span class="l-zh">最弱</span></span>
+            </div>
+            
+            <div class="mx5-dlg-factor-read"><span class="l-en">Breadth 59%ile of 5y; confirming price</span><span class="l-zh">广度处于五年 59 百分位；确认价格</span></div>
+            
+          </div>
+          <div>
+            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:59%;background:var(--warn)"></div></div>
+            <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
+          </div>
+          <div class="mx5-dlg-factor-score" style="color:var(--warn)">59</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name">
+              <span class="l-en">Liquidity & credit</span><span class="l-zh">流动性与信用</span>
+              
+            </div>
+            
+            <div class="mx5-dlg-factor-read"><span class="l-en">Fed liquidity expanding; HY credit tightening</span><span class="l-zh">联储流动性扩张；高收益信用收窄</span></div>
+            
+          </div>
+          <div>
+            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:77%;background:var(--up)"></div></div>
+            <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
+          </div>
+          <div class="mx5-dlg-factor-score" style="color:var(--up)">77</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name">
+              <span class="l-en">Downturn-risk guard</span><span class="l-zh">下行风险护栏</span>
+              
+            </div>
+            
+            <div class="mx5-dlg-factor-read"><span class="l-en">Downturn risk low; drawdown band low</span><span class="l-zh">下行风险低；回撤区间低</span></div>
+            
+          </div>
+          <div>
+            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:87%;background:var(--up)"></div></div>
+            <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
+          </div>
+          <div class="mx5-dlg-factor-score" style="color:var(--up)">87</div>
+        </div>
+        
+
+        
+        
+        <div class="mx5-dlg-weakest-callout">
+          <div class="mx5-dlg-weakest-icon">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+          <div>
+            <div class="mx5-dlg-weakest-label"><span class="l-en">Watch: Breadth & participation</span><span class="l-zh">关注：广度与参与</span></div>
+            <div class="mx5-dlg-weakest-sub">
+              <span class="l-en">Weakest leg at 59/100 — the closest flip-trigger. Confirms what has already turned; does not forecast.</span>
+              <span class="l-zh">最弱分项 59/100，最接近翻转触发点。确认已转向信号，不预测未来。</span>
+            </div>
+          </div>
+        </div>
+        
+
+        
+        
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Multi-Timeframe Tape · Broad US Market</span><span class="l-zh">多周期趋势 · 美股大盘</span></div>
+        <table class="mx5-dlg-mtf-tbl">
+          <thead><tr>
+            <th><span class="l-en">Index</span><span class="l-zh">指数</span></th>
+            <th>1D</th><th>3D</th><th>7D</th><th>30D</th>
+            <th style="text-align:right"><span class="l-en">Confluence</span><span class="l-zh">合流</span></th>
+          </tr></thead>
+          <tbody>
+          
+          <tr>
+            <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">S&P 500</span><span class="l-zh">标普500</span></td>
+            
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">58</span></span></td>
+            
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">63</span></span></td>
+            
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">65</span></span></td>
+            
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">75</span></span></td>
+            
+            <td style="text-align:right"><span class="mx5-dlg-mtf-conf good"><span class="l-en">Uptrend</span><span class="l-zh">上升趋势</span></span></td>
+          </tr>
+          
+          <tr>
+            <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Nasdaq 100</span><span class="l-zh">纳指100</span></td>
+            
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">52</span></span></td>
+            
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">59</span></span></td>
+            
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">64</span></span></td>
+            
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">75</span></span></td>
+            
+            <td style="text-align:right"><span class="mx5-dlg-mtf-conf good"><span class="l-en">Uptrend</span><span class="l-zh">上升趋势</span></span></td>
+          </tr>
+          
+          <tr>
+            <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Russell 2000</span><span class="l-zh">罗素2000</span></td>
+            
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">56</span></span></td>
+            
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">68</span></span></td>
+            
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">68</span></span></td>
+            
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">72</span></span></td>
+            
+            <td style="text-align:right"><span class="mx5-dlg-mtf-conf good"><span class="l-en">Uptrend</span><span class="l-zh">上升趋势</span></span></td>
+          </tr>
+          
+          </tbody>
+        </table>
+        
+
+        
+        <div class="mx5-dlg-sep"></div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5">
+          <span class="v2-display-badge" style="flex-shrink:0;margin-top:1px"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span>
+          <span>
+            <span class="l-en">Confirms what has already turned — does not forecast. Gauntlet applies at promotion only. as of 2026-07-10</span>
+            <span class="l-zh">确认已转向信号，不预测未来。2026-07-10 数据</span>
+          </span>
+        </div>
+
+        
+
       </div>
     </div>
   </div>
 
   
-  <div class="mx5-dlg" id="dlg-events" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-events" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
-        <span class="mx5-dlg-title"><span class="l-en">Events — Catalysts &amp; Release Radar</span><span class="l-zh">事件 — 催化剂与数据发布雷达</span></span>
+        <span class="mx5-dlg-title"><span class="l-en">Events — Week Ahead &amp; Market Pricing</span><span class="l-zh">事件 — 本周日历与市场定价</span></span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
+
         
         
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Upcoming Catalysts</span><span class="l-zh">近期催化剂</span></span><div class="isle-head-line"></div></div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+        <div class="mx5-dlg-eyebrow"><span class="l-en">This Week</span><span class="l-zh">本周</span></div>
+        <div class="mx5-dlg-cal-grid">
           
           
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
-            <span style="font-size:13px;font-weight:500"><span class="l-en">CPI (consumer prices)</span><span class="l-zh">CPI (consumer prices)</span></span>
-            <span style="font-size:12px;color:var(--down);font-weight:700">2026-07-14</span>
+          
+          <div class="mx5-dlg-cal-card hot">
+            <div class="mx5-dlg-cal-date">Jul 14</div>
+            <div class="mx5-dlg-cal-title">
+              <span class="l-en">CPI (consumer prices)</span>
+              <span class="l-zh">CPI (consumer prices)</span>
+            </div>
+            <div class="mx5-dlg-cal-meta">
+              <span class="mx5-dlg-cal-time">08:30 ET</span>
+              <span class="mx5-dlg-cal-badge high">
+                <span class="l-en">HIGH</span>
+                <span class="l-zh">高</span>
+              </span>
+            </div>
+            
+            
           </div>
           
           
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
-            <span style="font-size:13px;font-weight:500"><span class="l-en">PPI (producer prices)</span><span class="l-zh">PPI (producer prices)</span></span>
-            <span style="font-size:12px;color:var(--down);font-weight:700">2026-07-15</span>
+          
+          <div class="mx5-dlg-cal-card hot">
+            <div class="mx5-dlg-cal-date">Jul 15</div>
+            <div class="mx5-dlg-cal-title">
+              <span class="l-en">PPI (producer prices)</span>
+              <span class="l-zh">PPI (producer prices)</span>
+            </div>
+            <div class="mx5-dlg-cal-meta">
+              <span class="mx5-dlg-cal-time">08:30 ET</span>
+              <span class="mx5-dlg-cal-badge high">
+                <span class="l-en">HIGH</span>
+                <span class="l-zh">高</span>
+              </span>
+            </div>
+            
+            
           </div>
           
           
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
-            <span style="font-size:13px;font-weight:500"><span class="l-en">Initial jobless claims</span><span class="l-zh">Initial jobless claims</span></span>
-            <span style="font-size:12px;color:var(--warn);font-weight:700">2026-07-16</span>
+          
+          <div class="mx5-dlg-cal-card">
+            <div class="mx5-dlg-cal-date">Jul 16</div>
+            <div class="mx5-dlg-cal-title">
+              <span class="l-en">Initial jobless claims</span>
+              <span class="l-zh">Initial jobless claims</span>
+            </div>
+            <div class="mx5-dlg-cal-meta">
+              <span class="mx5-dlg-cal-time">08:30 ET</span>
+              <span class="mx5-dlg-cal-badge med">
+                <span class="l-en">MED</span>
+                <span class="l-zh">中</span>
+              </span>
+            </div>
+            
+            
           </div>
           
           
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
-            <span style="font-size:13px;font-weight:500"><span class="l-en">Options expiration</span><span class="l-zh">Options expiration</span></span>
-            <span style="font-size:12px;color:var(--warn);font-weight:700">2026-07-17</span>
+          
+          <div class="mx5-dlg-cal-card">
+            <div class="mx5-dlg-cal-date">Jul 17</div>
+            <div class="mx5-dlg-cal-title">
+              <span class="l-en">Options expiration</span>
+              <span class="l-zh">Options expiration</span>
+            </div>
+            <div class="mx5-dlg-cal-meta">
+              <span class="mx5-dlg-cal-time">16:00 ET</span>
+              <span class="mx5-dlg-cal-badge med">
+                <span class="l-en">MED</span>
+                <span class="l-zh">中</span>
+              </span>
+            </div>
+            
+            
           </div>
           
           
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
-            <span style="font-size:13px;font-weight:500"><span class="l-en">20-Year Bond auction (reopening)</span><span class="l-zh">20-Year Bond auction (reopening)</span></span>
-            <span style="font-size:12px;color:var(--warn);font-weight:700">2026-07-22</span>
+          
+          <div class="mx5-dlg-cal-card">
+            <div class="mx5-dlg-cal-date">Jul 22</div>
+            <div class="mx5-dlg-cal-title">
+              <span class="l-en">20-Year Bond auction (reopening)</span>
+              <span class="l-zh">20-Year Bond auction (reopening)</span>
+            </div>
+            <div class="mx5-dlg-cal-meta">
+              <span class="mx5-dlg-cal-time">13:00 ET</span>
+              <span class="mx5-dlg-cal-badge med">
+                <span class="l-en">MED</span>
+                <span class="l-zh">中</span>
+              </span>
+            </div>
+            
+            
           </div>
           
           
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
-            <span style="font-size:13px;font-weight:500"><span class="l-en">Initial jobless claims</span><span class="l-zh">Initial jobless claims</span></span>
-            <span style="font-size:12px;color:var(--warn);font-weight:700">2026-07-23</span>
+          
+          <div class="mx5-dlg-cal-card">
+            <div class="mx5-dlg-cal-date">Jul 23</div>
+            <div class="mx5-dlg-cal-title">
+              <span class="l-en">Initial jobless claims</span>
+              <span class="l-zh">Initial jobless claims</span>
+            </div>
+            <div class="mx5-dlg-cal-meta">
+              <span class="mx5-dlg-cal-time">08:30 ET</span>
+              <span class="mx5-dlg-cal-badge med">
+                <span class="l-en">MED</span>
+                <span class="l-zh">中</span>
+              </span>
+            </div>
+            
+            
           </div>
           
           
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
-            <span style="font-size:13px;font-weight:500"><span class="l-en">10-Year Note auction</span><span class="l-zh">10-Year Note auction</span></span>
-            <span style="font-size:12px;color:var(--warn);font-weight:700">2026-07-23</span>
+          
+          <div class="mx5-dlg-cal-card">
+            <div class="mx5-dlg-cal-date">Jul 23</div>
+            <div class="mx5-dlg-cal-title">
+              <span class="l-en">10-Year Note auction</span>
+              <span class="l-zh">10-Year Note auction</span>
+            </div>
+            <div class="mx5-dlg-cal-meta">
+              <span class="mx5-dlg-cal-time">13:00 ET</span>
+              <span class="mx5-dlg-cal-badge med">
+                <span class="l-en">MED</span>
+                <span class="l-zh">中</span>
+              </span>
+            </div>
+            
+            
           </div>
           
         </div>
         
+
         
         
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Market Odds</span><span class="l-zh">市场隐含概率</span></span><div class="isle-head-line"></div></div>
-        
-        <div style="margin-bottom:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));margin-bottom:8px"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Fed · Market Pricing</span><span class="l-zh">美联储 · 市场定价</span></div>
+        <div class="mx5-dlg-fed-strip">
           
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">No change</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">84.5%</span>
+          
+          <div class="mx5-dlg-fed-item">
+            <span class="mx5-dlg-fed-desc"><span class="l-en">Next Fed decision</span><span class="l-zh">下次美联储决议</span></span>
+            <span class="mx5-dlg-fed-val"><span class="num">No change 84.5%</span></span>
+            <span class="mx5-dlg-fed-chg pos">+7.0pp</span>
           </div>
           
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">25 bps increase</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">14.6%</span>
+          
+          <div class="mx5-dlg-fed-item">
+            <span class="mx5-dlg-fed-desc"><span class="l-en">Fed cuts this year</span><span class="l-zh">今年降息次数</span></span>
+            <span class="mx5-dlg-fed-val"><span class="num">0 (0 bps) 77.5%</span></span>
+            <span class="mx5-dlg-fed-chg neg">-1.4pp</span>
           </div>
           
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">25 bps decrease</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">0.5%</span>
+          
+          <div class="mx5-dlg-fed-item">
+            <span class="mx5-dlg-fed-desc"><span class="l-en">CPI outcome market</span><span class="l-zh">CPI市场预期</span></span>
+            <span class="mx5-dlg-fed-val"><span class="num">2.8% 53.5%</span></span>
+            
           </div>
           
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">50+ bps increase</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">0.2%</span>
-          </div>
-          
+          <div class="mx5-dlg-fed-src">Polymarket</div>
         </div>
         
-        <div style="margin-bottom:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));margin-bottom:8px"></div>
-          
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">0 (0 bps)</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">77.5%</span>
-          </div>
-          
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">1 (25 bps)</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">14.5%</span>
-          </div>
-          
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">2 (50 bps)</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">3.8%</span>
-          </div>
-          
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">3 (75 bps)</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">1.9%</span>
-          </div>
-          
+
+        
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Data Release Radar</span><span class="l-zh">数据发布雷达</span></div>
+        <div style="margin-bottom:16px;font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5">
+          <span class="l-en">For consensus vs trend skew, revision expectations, and historical reaction patterns — open the Release Radar below.</span>
+          <span class="l-zh">如需查看共识预期偏差、修订预期和历史反应规律，请在下方打开数据发布雷达。</span>
         </div>
+        <button class="mx5-dlg-rr-link" type="button" onclick="
+          mx5CloseDlg();
+          var rrSec = document.getElementById('release-radar');
+          if(rrSec){ rrSec.scrollIntoView({behavior:'smooth',block:'start'}); }
+        " aria-label="Open Release Radar">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span class="l-en">Open Release Radar</span>
+          <span class="l-zh">打开数据发布雷达</span>
+        </button>
+
         
-        <div style="margin-bottom:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));margin-bottom:8px"></div>
-          
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">2.8%</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">53.5%</span>
-          </div>
-          
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">2.9%</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">34.0%</span>
-          </div>
-          
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">2.7%</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">12.0%</span>
-          </div>
-          
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:12px">3.0%</span>
-            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">1.8%</span>
-          </div>
-          
-        </div>
-        
-        
-        
+
       </div>
     </div>
   </div>
 
   
-  <div class="mx5-dlg" id="dlg-markets" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-markets" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">Markets — Index Health &amp; Cross-Asset</span><span class="l-zh">市场 — 指数健康度与跨资产</span></span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
+
         
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Index Health</span><span class="l-zh">指数健康度</span></span><div class="isle-head-line"></div></div>
         
-        <div class="idx-card-grid" id="dlg-index-health">
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Index Health</span><span class="l-zh">指数健康度</span></div>
+        
+        <div class="mx5-dlg-idx-grid">
           
           
-          <div class="idx-card" data-sym="SPY" data-mkt="us">
-            <div class="idx-card-top"><span class="idx-card-ticker">SPY</span><span class="idx-card-name">S&P 500</span></div>
-            <div class="idx-card-px nb-px" data-sym="SPY" data-mkt="us" data-bare>751.71</div>
-            <div class="idx-card-chg up nb-chg" data-sym="SPY" data-mkt="us">+0.85%</div>
-            <div class="idx-card-chips">
-              <span class="idx-stat ok">-0.8%</span>
-              <span class="idx-stat-lbl"><span class="l-en">off high</span><span class="l-zh">距高</span></span>
-              <span class="idx-stat mt">RSI 57</span>
+          
+          
+          <div class="mx5-dlg-idx-card">
+            <div class="mx5-dlg-idx-ticker">SPY</div>
+            <div class="mx5-dlg-idx-name">S&P 500</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="SPY" data-mkt="us" data-bare>751.71</div>
+            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="SPY" data-mkt="us">+0.85%</div>
+            <div class="mx5-dlg-idx-chips">
+              
+              <span class="mx5-dlg-idx-chip ok" title="Distance from 52-week high">-0.8% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              
+              
+              <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average">50d ✓</span>
+              
+              
+              
+              <span class="mx5-dlg-idx-chip ok" title="vs 200-day moving average">200d ✓</span>
+              
+              
+              
+              
+              
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 57"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              
             </div>
           </div>
           
           
-          <div class="idx-card" data-sym="QQQ" data-mkt="us">
-            <div class="idx-card-top"><span class="idx-card-ticker">QQQ</span><span class="idx-card-name">Nasdaq 100</span></div>
-            <div class="idx-card-px nb-px" data-sym="QQQ" data-mkt="us" data-bare>723.28</div>
-            <div class="idx-card-chg up nb-chg" data-sym="QQQ" data-mkt="us">+1.66%</div>
-            <div class="idx-card-chips">
-              <span class="idx-stat wn">-3.0%</span>
-              <span class="idx-stat-lbl"><span class="l-en">off high</span><span class="l-zh">距高</span></span>
-              <span class="idx-stat mt">RSI 52</span>
+          
+          
+          <div class="mx5-dlg-idx-card">
+            <div class="mx5-dlg-idx-ticker">QQQ</div>
+            <div class="mx5-dlg-idx-name">Nasdaq 100</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="QQQ" data-mkt="us" data-bare>723.28</div>
+            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="QQQ" data-mkt="us">+1.66%</div>
+            <div class="mx5-dlg-idx-chips">
+              
+              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-3.0% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              
+              
+              <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average">50d ✓</span>
+              
+              
+              
+              <span class="mx5-dlg-idx-chip ok" title="vs 200-day moving average">200d ✓</span>
+              
+              
+              
+              
+              
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 52"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              
             </div>
           </div>
           
           
-          <div class="idx-card" data-sym="DJI" data-mkt="us">
-            <div class="idx-card-top"><span class="idx-card-ticker">DJI</span><span class="idx-card-name">Dow Jones</span></div>
-            <div class="idx-card-px nb-px" data-sym="DJI" data-mkt="us" data-bare>52,487.41</div>
-            <div class="idx-card-chg up nb-chg" data-sym="DJI" data-mkt="us">+0.27%</div>
-            <div class="idx-card-chips">
-              <span class="idx-stat wn">-1.1%</span>
-              <span class="idx-stat-lbl"><span class="l-en">off high</span><span class="l-zh">距高</span></span>
-              <span class="idx-stat mt">RSI 61</span>
+          
+          
+          <div class="mx5-dlg-idx-card">
+            <div class="mx5-dlg-idx-ticker">DJI</div>
+            <div class="mx5-dlg-idx-name">Dow Jones</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="DJI" data-mkt="us" data-bare>52,487.41</div>
+            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="DJI" data-mkt="us">+0.27%</div>
+            <div class="mx5-dlg-idx-chips">
+              
+              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-1.1% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              
+              
+              <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average">50d ✓</span>
+              
+              
+              
+              <span class="mx5-dlg-idx-chip ok" title="vs 200-day moving average">200d ✓</span>
+              
+              
+              
+              
+              
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 61"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              
             </div>
           </div>
           
           
-          <div class="idx-card" data-sym="RUT" data-mkt="us">
-            <div class="idx-card-top"><span class="idx-card-ticker">RUT</span><span class="idx-card-name">Russell 2000</span></div>
-            <div class="idx-card-px nb-px" data-sym="RUT" data-mkt="us" data-bare>2,992.54</div>
-            <div class="idx-card-chg up nb-chg" data-sym="RUT" data-mkt="us">+1.22%</div>
-            <div class="idx-card-chips">
-              <span class="idx-stat wn">-1.1%</span>
-              <span class="idx-stat-lbl"><span class="l-en">off high</span><span class="l-zh">距高</span></span>
-              <span class="idx-stat mt">RSI 56</span>
+          
+          
+          <div class="mx5-dlg-idx-card">
+            <div class="mx5-dlg-idx-ticker">RUT</div>
+            <div class="mx5-dlg-idx-name">Russell 2000</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="RUT" data-mkt="us" data-bare>2,992.54</div>
+            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="RUT" data-mkt="us">+1.22%</div>
+            <div class="mx5-dlg-idx-chips">
+              
+              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-1.1% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              
+              
+              <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average">50d ✓</span>
+              
+              
+              
+              <span class="mx5-dlg-idx-chip ok" title="vs 200-day moving average">200d ✓</span>
+              
+              
+              
+              
+              
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 56"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              
             </div>
           </div>
           
         </div>
         
+
+        
+        
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Sector Temperature</span><span class="l-zh">板块温度</span></div>
+        <div class="mx5-dlg-sector-cols">
+          <div>
+            <div class="mx5-dlg-sector-col-head"><span class="l-en">Leading sectors</span><span class="l-zh">领涨板块</span></div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr heat">&#9650;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span>
+              <span class="mx5-dlg-sector-rk">#1</span>
+            </div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr heat">&#9650;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span></span>
+              <span class="mx5-dlg-sector-rk">#2</span>
+            </div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr heat">&#9650;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">GLP-1 & Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span>
+              <span class="mx5-dlg-sector-rk">#3</span>
+            </div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr heat">&#9650;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span>
+              <span class="mx5-dlg-sector-rk">#4</span>
+            </div>
+            
+          </div>
+          <div>
+            <div class="mx5-dlg-sector-col-head"><span class="l-en">Lagging sectors</span><span class="l-zh">滞涨板块</span></div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Memory, HBM & Storage</span><span class="l-zh">内存、HBM 与存储</span></span>
+              <span class="mx5-dlg-sector-rk">#10</span>
+            </div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span>
+              <span class="mx5-dlg-sector-rk">#11</span>
+            </div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Managed Care & Insurers</span><span class="l-zh">管理式医疗与保险</span></span>
+              <span class="mx5-dlg-sector-rk">#14</span>
+            </div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span>
+              <span class="mx5-dlg-sector-rk">#16</span>
+            </div>
+            
+          </div>
+        </div>
+        
+
+        
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">S&amp;P 500 Sector Heatmap</span><span class="l-zh">标普500板块热力图</span></div>
+        <div class="mx5-dlg-heatmap-wrap">
+          <div class="mx5-dlg-heatmap-head"><span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span></div>
+          
+          <div id="dlg-heatmap-scorecard" style="min-height:120px"></div>
+        </div>
+
+        
+        
+        
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Key Rates &amp; Volatility</span><span class="l-zh">关键利率与波动率</span></div>
+        <div class="mx5-dlg-asset-row">
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          <div class="mx5-dlg-asset-tile">
+            <div class="mx5-dlg-asset-lbl">VIX</div>
+            <div class="mx5-dlg-asset-val" style="color:var(--up)">15.8</div>
+            <div class="mx5-dlg-asset-ctx"><span class="l-en">calm</span><span class="l-zh">平静</span></div>
+          </div>
+          
+          
+        </div>
+        
+
+        
+
       </div>
     </div>
   </div>
 
   
   
-  <div class="mx5-dlg" id="dlg-risk" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-risk" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">Risk — Scare Ladder &amp; Sentiment</span><span class="l-zh">风险 — 压力梯度与情绪</span></span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
+
+        
+        
+        
+        
+        <div class="mx5-dlg-driver-hd">
+          <div class="mx5-dlg-driver-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--up)" stroke-width="2" stroke-linecap="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div>
+            <div class="mx5-dlg-driver-label" style="color:var(--up)">
+              <span class="l-en">Bubble / Blow-Off Unwind</span>
+              <span class="l-zh">泡沫/见顶回吐</span>
+            </div>
+            
+            <div class="mx5-dlg-driver-sub">
+              <span class="l-en">A risk is building — stay normal, just watch it.</span>
+              <span class="l-zh">风险在积累 — 保持正常，留意即可。</span>
+            </div>
+            
+            
+            <div class="mx5-dlg-driver-sub" style="margin-top:3px">
+              <span class="l-en">Intensity 62/100</span>
+              <span class="l-zh">强度 62/100</span>
+            </div>
+            
+          </div>
+        </div>
+
+        
+        
+        
+        
+        <div class="mx5-dlg-chips-row">
+          
+          
+          
+          
+          <span class="mx5-dlg-chip" style="border-color:var(--warn);color:var(--warn)">
+            <span class="l-en">Fed: Neutral</span>
+            <span class="l-zh">美联储：中性</span>
+          </span>
+          
+          
+        </div>
+        
+
         
         <div class="rrx rrx-watch" style="--rc:var(--info)">
   
@@ -10666,76 +11350,181 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   </div>
 </div>
         
+
         
         
-        <div class="isle-head" style="margin-top:16px"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Risk Ladder</span><span class="l-zh">风险梯度</span></span><div class="isle-head-line"></div></div>
-        <div class="scare-ladder">
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Risk Ladder — What to Watch</span><span class="l-zh">风险梯度 — 需关注的因素</span></div>
+        <div class="scare-ladder" style="margin-bottom:0">
+          
           
           
           
           <div class="scare-row">
-            <span class="sc-name"><span class="l-en">Bubble / blow-off unwind</span><span class="l-zh">泡沫/见顶回吐</span></span>
+            <span class="sc-name">
+              <span class="l-en">Bubble / blow-off unwind</span>
+              <span class="l-zh">泡沫/见顶回吐</span>
+              
+              
+            </span>
             <div class="sc-bar-track"><div class="sc-bar-fill" style="width:62.1%;background:var(--warn)"></div></div>
             <span class="sc-score" style="color:var(--warn)">62.1</span>
-            <span class="sc-band sc-band-watch">watch</span>
+            <span class="sc-band sc-band-watch">
+              <span class="l-en">watch</span>
+              <span class="l-zh">watch</span>
+            </span>
           </div>
           
           
           
+          
           <div class="scare-row">
-            <span class="sc-name"><span class="l-en">Global breadth breakdown</span><span class="l-zh">全球广度破位</span></span>
+            <span class="sc-name">
+              <span class="l-en">Global breadth breakdown</span>
+              <span class="l-zh">全球广度破位</span>
+              
+              
+            </span>
             <div class="sc-bar-track"><div class="sc-bar-fill" style="width:55.5%;background:var(--warn)"></div></div>
             <span class="sc-score" style="color:var(--warn)">55.5</span>
-            <span class="sc-band sc-band-watch">watch</span>
+            <span class="sc-band sc-band-watch">
+              <span class="l-en">watch</span>
+              <span class="l-zh">watch</span>
+            </span>
           </div>
           
           
           
+          
           <div class="scare-row">
-            <span class="sc-name"><span class="l-en">Credit stress</span><span class="l-zh">信用压力</span></span>
+            <span class="sc-name">
+              <span class="l-en">Credit stress</span>
+              <span class="l-zh">信用压力</span>
+              
+              
+            </span>
             <div class="sc-bar-track"><div class="sc-bar-fill" style="width:47.4%;background:var(--warn)"></div></div>
             <span class="sc-score" style="color:var(--warn)">47.4</span>
-            <span class="sc-band sc-band-elev">calm</span>
+            <span class="sc-band sc-band-elev">
+              <span class="l-en">calm</span>
+              <span class="l-zh">calm</span>
+            </span>
           </div>
           
           
           
+          
           <div class="scare-row">
-            <span class="sc-name"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span></span>
+            <span class="sc-name">
+              <span class="l-en">Growth scare / defensive rotation</span>
+              <span class="l-zh">增长恐慌/防御轮动</span>
+              
+              
+            </span>
             <div class="sc-bar-track"><div class="sc-bar-fill" style="width:38.1%;background:var(--warn)"></div></div>
             <span class="sc-score" style="color:var(--warn)">38.1</span>
-            <span class="sc-band sc-band-elev">calm</span>
+            <span class="sc-band sc-band-elev">
+              <span class="l-en">calm</span>
+              <span class="l-zh">calm</span>
+            </span>
           </div>
           
           
           
+          
           <div class="scare-row">
-            <span class="sc-name"><span class="l-en">Rates / inflation shock</span><span class="l-zh">利率/通胀冲击</span></span>
+            <span class="sc-name">
+              <span class="l-en">Rates / inflation shock</span>
+              <span class="l-zh">利率/通胀冲击</span>
+              
+              
+            </span>
             <div class="sc-bar-track"><div class="sc-bar-fill" style="width:32.1%;background:var(--muted)"></div></div>
             <span class="sc-score" style="color:var(--muted)">32.1</span>
-            <span class="sc-band sc-band-calm">calm</span>
+            <span class="sc-band sc-band-calm">
+              <span class="l-en">calm</span>
+              <span class="l-zh">calm</span>
+            </span>
           </div>
           
           
           
+          
           <div class="scare-row">
-            <span class="sc-name"><span class="l-en">Breadth internals deterioration</span><span class="l-zh">内部广度恶化</span></span>
+            <span class="sc-name">
+              <span class="l-en">Breadth internals deterioration</span>
+              <span class="l-zh">内部广度恶化</span>
+              
+              
+            </span>
             <div class="sc-bar-track"><div class="sc-bar-fill" style="width:27.6%;background:var(--muted)"></div></div>
             <span class="sc-score" style="color:var(--muted)">27.6</span>
-            <span class="sc-band sc-band-calm">calm</span>
+            <span class="sc-band sc-band-calm">
+              <span class="l-en">calm</span>
+              <span class="l-zh">calm</span>
+            </span>
           </div>
           
           
           
+          
           <div class="scare-row">
-            <span class="sc-name"><span class="l-en">Volatility event</span><span class="l-zh">波动率事件</span></span>
+            <span class="sc-name">
+              <span class="l-en">Volatility event</span>
+              <span class="l-zh">波动率事件</span>
+              
+              
+            </span>
             <div class="sc-bar-track"><div class="sc-bar-fill" style="width:1.2%;background:var(--muted)"></div></div>
             <span class="sc-score" style="color:var(--muted)">1.2</span>
-            <span class="sc-band sc-band-calm">calm</span>
+            <span class="sc-band sc-band-calm">
+              <span class="l-en">calm</span>
+              <span class="l-zh">calm</span>
+            </span>
           </div>
           
         </div>
         
+
+        
+        
+        
+        
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Drawdown Probability — Model Estimates</span><span class="l-zh">回撤概率 — 模型估计</span></div>
+        <div class="mx5-dlg-dd-row">
+          
+          <div class="mx5-dlg-dd-box">
+            <div class="mx5-dlg-dd-horizon"><span class="l-en">5-day</span><span class="l-zh">5日</span></div>
+            <div class="mx5-dlg-dd-val" style="color:var(--up)">2%</div>
+            <div class="mx5-dlg-dd-sub"><span class="l-en">≥5% drop odds</span><span class="l-zh">≥5%下跌概率</span></div>
+          </div>
+          
+          
+          <div class="mx5-dlg-dd-box">
+            <div class="mx5-dlg-dd-horizon"><span class="l-en">10-day</span><span class="l-zh">10日</span></div>
+            <div class="mx5-dlg-dd-val" style="color:var(--up)">6%</div>
+            <div class="mx5-dlg-dd-sub"><span class="l-en">≥5% drop odds</span><span class="l-zh">≥5%下跌概率</span></div>
+          </div>
+          
+          
+          
+          <div class="mx5-dlg-dd-box" style="border-color:rgba(245,158,11,.25)">
+            <div class="mx5-dlg-dd-horizon"><span class="l-en">21-day</span><span class="l-zh">21日</span></div>
+            <div class="mx5-dlg-dd-val" style="color:var(--warn)">13%</div>
+            <div class="mx5-dlg-dd-sub"><span class="l-en">≥10% drop odds</span><span class="l-zh">≥10%下跌概率</span></div>
+          </div>
+          
+          
+          
+          
+        </div>
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5;margin-bottom:8px">
+          <span class="l-en">Model estimates vs historical base rates (SPY proxy). Display-only — not forecasts.</span>
+          <span class="l-zh">模型估计，依历史基准率校准（SPY代理）。仅供展示，非预测。</span>
+        </div>
+        
+
         
         
         
@@ -10779,6 +11568,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
         
         </div>
+
       </div>
     </div>
   </div>
@@ -10786,8 +11576,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
   
   
-  <div class="mx5-dlg" id="dlg-policy" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-policy" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">Policy — Lever State &amp; Repricing</span><span class="l-zh">政策 — 杠杆状态与重定价</span></span>
@@ -10814,8 +11604,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
   
   
-  <div class="mx5-dlg" id="dlg-aibrief" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-aibrief" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">AI Brief — Synthesis</span><span class="l-zh">AI简报 — 综合</span></span>
@@ -10847,8 +11637,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   </div>
 
   
-  <div class="mx5-dlg" id="dlg-news" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-news" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">News — Market Intelligence</span><span class="l-zh">新闻 — 市场情报</span></span>
@@ -11035,8 +11825,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   </div>
 
   
-  <div class="mx5-dlg" id="dlg-deep-context" role="dialog" tabindex="-1">
-    <div class="mx5-dlg-backdrop"></div>
+  <div class="mx5-dlg" id="dlg-deep-context" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">Deep Context — Linked Surfaces</span><span class="l-zh">深度背景 — 关联页面</span></span>
