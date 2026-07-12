@@ -12,6 +12,12 @@ Hang Seng Index (HSI). Re-runnable: `python -m scripts.seed_hk_baskets`.
 
 HONEST BY CONSTRUCTION: membership is curated today with knowledge of the period, so the
 ~5y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest, not a buy list.
+
+WARNING (2026-07-12): data/baskets_hk/membership.json carries LIVE hand/bot edits this script
+does not know about (the copy-simplification lane rewrote name/thesis fields on 2026-07-05,
+commit 9a31b78ad0f). Re-running this script CLOBBERS that copy. For additive curation, splice
+new baskets into the live file instead of regenerating it wholesale (see PR adding
+SPLIT_BASKETS for the pattern), or first reconcile the dicts below with the live file.
 """
 from __future__ import annotations
 
@@ -357,6 +363,66 @@ NEW_BASKETS: dict[str, dict] = {
     },
 }
 
+CURATED2 = "2026-07-12"   # factor-split pass — sub-basket lenses (see SPLIT_BASKETS)
+
+# ── 2026-07-12 factor-split lenses. The 2026-07 turn showed hk_china_tech blending two
+# factors that decorrelate hard (10d spread +11.5% platforms vs −3.9% hardware; the split
+# survives HSI-residualization [gap 0.16/120d] and split-half stability), and hk_materials
+# blending diversified miners (within-corr 0.69) with steel/coal/solar names (0.26).
+# These SUB-BASKETS are ADDITIVE lenses: the umbrellas stay unchanged for series/ledger
+# continuity; sub-baskets share the umbrella's category so the allocation book's
+# MAX_PER_PARENT de-overlap can never hold both an umbrella and its split.
+SPLIT_BASKETS: dict[str, dict] = {
+    "hk_platform_tech": {
+        "name": "China Platform Megacaps", "name_zh": "中资平台科技龙头",
+        "category": "Tech & Internet", "category_zh": "科技与互联网",
+        "etf_proxy": "3033.HK", "etf_proxy_note": "HS TECH ETF — closest proxy; the index also carries hardware names",
+        "thesis": "The consumer-internet platform megacaps split out of the China Tech umbrella — the names that share one re-rating factor (domestic consumption, AI application, southbound flow) and lead HK turns. Xiaomi rides here by behavior: it trades with the platform factor, not the hardware one.",
+        "thesis_zh": "从中资科技伞篮拆出的消费互联网平台龙头 — 共享同一重估因子（内需、AI 应用、南向资金）并引领港股拐点的成员。小米按行为归入此篮：其走势跟随平台因子而非硬件因子。",
+        "members": [
+            ("0700.HK", "Tencent — gaming + WeChat super-app + cloud"),
+            ("9988.HK", "Alibaba — e-commerce + cloud + AI"),
+            ("3690.HK", "Meituan — local-services / food-delivery leader"),
+            ("9618.HK", "JD.com — self-operated e-commerce + logistics"),
+            ("9888.HK", "Baidu — search + AI / autonomous driving"),
+            ("1024.HK", "Kuaishou — short-video + live commerce"),
+            ("9999.HK", "NetEase — gaming + music; the #2 China game publisher"),
+            ("9626.HK", "Bilibili — Gen-Z video community + games"),
+            ("1810.HK", "Xiaomi — devices + EV; trades with the platform-megacap factor"),
+        ],
+    },
+    "hk_tech_hardware": {
+        "name": "Tech Hardware & Semis", "name_zh": "科技硬件与半导体",
+        "category": "Tech & Internet", "category_zh": "科技与互联网",
+        "etf_proxy": None, "etf_proxy_note": "",
+        "thesis": "The hardware half of the China Tech umbrella — foundries, telecom equipment and device supply chain. Driven by semiconductor capex, device demand and export controls, a distinctly different clock from the platform re-rating cycle.",
+        "thesis_zh": "中资科技伞篮的硬件一侧 — 代工、通信设备与终端供应链。受半导体资本开支、终端需求与出口管制驱动，与平台重估周期明显不同步。",
+        "members": [
+            ("0981.HK", "SMIC — the mainland foundry champion"),
+            ("1347.HK", "Hua Hong Semiconductor — mature-node foundry"),
+            ("0763.HK", "ZTE — telecom equipment + 5G/networking"),
+            ("0992.HK", "Lenovo — global PC + AI servers"),
+            ("2382.HK", "Sunny Optical — smartphone + auto optics leader"),
+            ("0285.HK", "BYD Electronic — handset/EV electronics assembly"),
+        ],
+    },
+    "hk_miners": {
+        "name": "Diversified Miners", "name_zh": "多元化矿业龙头",
+        "category": "Energy & Resources", "category_zh": "能源与资源",
+        "etf_proxy": None, "etf_proxy_note": "",
+        "thesis": "The large diversified miners split out of Materials & Metals — copper, gold, aluminium and molybdenum majors that move on one global-metals factor (within-corr 0.69 vs 0.26 for the umbrella's steel/coal/solar tail).",
+        "thesis_zh": "从有色金属伞篮拆出的大型多元化矿业 — 铜、金、铝与钼龙头，跟随单一全球金属因子（组内相关 0.69，而伞篮的钢铁/煤炭/光伏尾部仅 0.26）。",
+        "members": [
+            ("2600.HK", "Aluminum Corp of China (Chalco) — aluminium (H)"),
+            ("0358.HK", "Jiangxi Copper — copper smelting + mining (H)"),
+            ("1378.HK", "China Hongqiao — aluminium smelting leader"),
+            ("3993.HK", "CMOC Group — molybdenum + copper/cobalt (H)"),
+            ("2899.HK", "Zijin Mining — global gold + copper major (H)"),
+            ("1208.HK", "MMG — copper / zinc (Las Bambas)"),
+        ],
+    },
+}
+
 CONSTRUCTION = ("Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated "
                 "membership changes take effect same-day. Benchmark = Hang Seng Index (HSI).")
 HISTORY_NOTE = ("Series before a basket's creation date are a backtest of the membership as of "
@@ -372,7 +438,7 @@ def main() -> int:
     cols = set(closes.columns)
 
     # fold the 2026-06-18 expansion into the base definitions before materialising
-    baskets = {**BASKETS, **NEW_BASKETS}
+    baskets = {**BASKETS, **NEW_BASKETS, **SPLIT_BASKETS}
     for bid, adds in EXPANSION.items():
         baskets[bid]["members"] = list(baskets[bid]["members"]) + list(adds)
 
@@ -390,7 +456,12 @@ def main() -> int:
                 continue
             members.append({"ticker": ticker, "added": SEED, "removed": None,
                             "name": en_name(ticker), "rationale": rationale})
-        if bid in NEW_BASKETS:
+        if bid in SPLIT_BASKETS:
+            src = "hk_china_tech" if b["category"] == "Tech & Internet" else "hk_materials"
+            cl = [{"date": CURATED2, "action": "create",
+                   "note": (f"Created {b['name']} — {len(members)} members split out of {src} as a "
+                            "factor lens (correlation-audited 2026-07-12); umbrella retained unchanged.")}]
+        elif bid in NEW_BASKETS:
             cl = [{"date": CURATED, "action": "create",
                    "note": f"Created {b['name']} — {len(members)} equal-weight HK members."}]
         else:
@@ -412,8 +483,16 @@ def main() -> int:
         log.error("TICKERS NOT IN hk_search cache (fix before shipping): %s", ", ".join(missing))
         return 1
 
+    # cross-reference the split lenses on the umbrellas they were carved from
+    for bid, sub_note in [("hk_china_tech", "hk_platform_tech / hk_tech_hardware"),
+                          ("hk_materials", "hk_miners")]:
+        out_baskets[bid]["changelog"].append(
+            {"date": CURATED2, "action": "note",
+             "note": f"Factor-split lenses created from this umbrella ({sub_note}); "
+                     "umbrella membership unchanged for series continuity."})
+
     payload = {
-        "version": CURATED, "seed_date": SEED, "curated": CURATED,
+        "version": CURATED2, "seed_date": SEED, "curated": CURATED2,
         "benchmark": "_HSI", "benchmark_label": "HSI", "benchmark_label_zh": "恒生指数",
         "construction": CONSTRUCTION, "history_note": HISTORY_NOTE, "note": NOTE,
         "baskets": out_baskets,
