@@ -2,11 +2,21 @@
 
 Populates data/qledger/claims.jsonl from three source ledgers:
 
-  ALTDATA  — data/altdata/theses.jsonl  (133 theses; PIT entry_levels present,
+  ALTDATA  — data/altdata/theses.jsonl  (169 theses; PIT entry_levels present,
               falsifier.check.kind == rel_return vs SPY; desk="altdata").
-             All theses have lean="overweight" → direction=+1.  The claim's
-             horizon_d comes from the thesis horizon_d; grader's 5/21d passes
-             give shadow grades immediately.
+             ALTDATA_REBOOT W2 (2026-07-12): each thesis is routed to a
+             per-channel claim_family based on its highest-weight channel:
+               altdata_event  — special_situation, material_8k, gov_contract*,
+                                gov_grant*, fda_*, clinical_*, activist_13d
+               altdata_flow   — darkpool_accum, unusual_options
+               altdata_mid    — insider_cluster, insider_buy, app_demand, analyst*
+               altdata_slow   — congress*, trump, lobbying*, smart_money_13f,
+                                13f_add, patent_cluster, affiliation
+               altdata_attention — retail_buzz (REVERSION: direction=-1, 5d)
+             Legacy theses (pre-2026-07-12) carry claim_family=None or "altdata"
+             and are registered unchanged (no retro-tagging; ledger is PIT).
+             For each real claim, 2 matched placebo claims are emitted
+             (is_placebo=True, placebo_path='altdata_matched').
 
   RADAR    — data/radar/edge_snapshots.jsonl  (~2,489 rows, 12 snapshot dates;
              horizon_d absent on legacy rows → treated as horizon_d=63 so they
@@ -44,6 +54,7 @@ snapshot or thesis is picked up on the first overnight run after W1 ships.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import sys
@@ -57,8 +68,14 @@ from engine.qledger import (
     TIMESTAMP_QUALITY,
     make_claim,
     register,
+    register_batch,
 )
 from engine.ai_desk import _close_series
+from engine.altdata_ledger import (
+    FAMILY_DIRECTION_OVERRIDE,
+    FAMILY_HORIZON_D,
+    assign_claim_family,
+)
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -84,6 +101,94 @@ _TQ_RADAR   = "SNAPSHOT_DATE"     # edge_snapshots are point-in-time display sna
                                    # Override: use CRAWL_BOUNDED so they grade.
 _TQ_RADAR   = "CRAWL_BOUNDED"     # corrected: snapshot accrual = crawl-bounded nightly
 _TQ_POLICY  = "DISCLOSURE_DATE"   # policy theses are analyst-stamped; +1bd entry anchor
+
+
+# ---------------------------------------------------------------------------
+# Placebo helpers (ALTDATA_REBOOT W2 — research/ALTDATA_REBOOT.md §2.2)
+# ---------------------------------------------------------------------------
+
+# ACTIVATION date: new theses from 2026-07-12 get per-family routing + placebos.
+# Legacy theses (pre-activation) are registered with claim_family=None→desk=altdata
+# and receive NO placebos (the legacy family has no matched placebo tape).
+_ACTIVATION_DATE = "2026-07-12"
+
+# Liquid US universe for placebo ticker draws.  The real universe is data/universe.
+# For the placebo draw we use a deterministic seed derived from (asof, real_ticker,
+# family, i) so the same thesis always draws the same placebo tickers.
+# The universe is loaded lazily once per backfill run.
+_PLACEBO_UNIVERSE: list[str] | None = None
+
+_PLACEBO_UNIVERSE_FALLBACK = [
+    "AAPL", "MSFT", "AMZN", "NVDA", "GOOGL", "META", "TSLA", "BRK.B", "JPM", "UNH",
+    "XOM", "JNJ", "V", "PG", "MA", "HD", "CVX", "MRK", "PEP", "ABBV",
+    "LLY", "AVGO", "KO", "COST", "MCD", "TMO", "WMT", "CSCO", "ACN", "BAC",
+    "NKE", "ABT", "CRM", "NEE", "ORCL", "ADBE", "TXN", "BMY", "PM", "RTX",
+    "HON", "IBM", "CAT", "DE", "UPS", "SPGI", "MMM", "ELV", "GS", "AXP",
+]
+
+
+def _load_placebo_universe(root: Path) -> list[str]:
+    """Load the liquid US ticker universe for placebo draws.
+    Falls back to a hardcoded S&P 50 list when the universe file is absent.
+    """
+    global _PLACEBO_UNIVERSE
+    if _PLACEBO_UNIVERSE is not None:
+        return _PLACEBO_UNIVERSE
+    # Try the membership file (data/universe/membership.parquet or members.jsonl)
+    for cand in [
+        root / "data" / "universe" / "members.jsonl",
+        root / "data" / "universe" / "membership.jsonl",
+    ]:
+        if cand.exists():
+            try:
+                tickers = []
+                for line in cand.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    obj = json.loads(line)
+                    t = obj.get("ticker") or obj.get("symbol") or ""
+                    if t:
+                        tickers.append(t)
+                if tickers:
+                    _PLACEBO_UNIVERSE = tickers
+                    log.debug("placebo universe: %d tickers from %s", len(tickers), cand)
+                    return _PLACEBO_UNIVERSE
+            except Exception:  # noqa: BLE001
+                pass
+    _PLACEBO_UNIVERSE = _PLACEBO_UNIVERSE_FALLBACK
+    log.debug("placebo universe: fallback (%d tickers)", len(_PLACEBO_UNIVERSE))
+    return _PLACEBO_UNIVERSE
+
+
+def _placebo_tickers(
+    asof: str, real_ticker: str, family: str, converging_tickers: set[str],
+    universe: list[str], n: int = 2,
+) -> list[str]:
+    """Draw n distinct placebo tickers deterministically using hashlib.
+
+    Tickers are drawn from `universe` excluding `converging_tickers` (the set of
+    names that converged on this date, so the placebo is a genuine non-signal draw).
+    The seed is derived from (asof, real_ticker, family) — reproducible across runs.
+    """
+    exclude = set(converging_tickers)
+    candidates = [t for t in universe if t not in exclude and t != real_ticker]
+    if not candidates:
+        candidates = [t for t in universe if t != real_ticker]
+
+    result: list[str] = []
+    seen: set[str] = set()
+    i = 0
+    while len(result) < n and i < len(candidates) * 2 + n * 10:
+        raw = f"{asof}|{real_ticker}|{family}|{i}"
+        h = int(hashlib.sha256(raw.encode()).hexdigest(), 16)
+        idx = h % len(candidates)
+        t = candidates[idx]
+        if t not in seen:
+            result.append(t)
+            seen.add(t)
+        i += 1
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -144,35 +249,69 @@ def _altdata_entry_levels(thesis: dict) -> tuple[float | None, float | None]:
 
 
 def backfill_altdata(root: Path, *, dry_run: bool = False) -> int:
-    """Register all open altdata theses as qledger claims. Returns count registered."""
+    """Register all open altdata theses as qledger claims. Returns count registered.
+
+    ALTDATA_REBOOT W2 (active 2026-07-12):
+    - Theses on/after _ACTIVATION_DATE are routed to per-channel claim families
+      (altdata_event / altdata_flow / altdata_mid / altdata_slow / altdata_attention).
+    - Legacy theses (pre-activation or no claim_family in source) are registered
+      with claim_family derived from thesis.claim_family (or desk=altdata fallback).
+      No retro-tagging; ledger is append-only PIT.
+    - For each new-family real claim, 2 matched placebo claims are emitted
+      (is_placebo=True, placebo_path='altdata_matched').
+    """
     src = root / "data" / "altdata" / "theses.jsonl"
     theses = _load_jsonl(src)
     if not theses:
         log.warning("backfill_altdata: %s empty or missing", src)
         return 0
 
-    registered = 0
+    universe = _load_placebo_universe(root)
+    # Build the set of converging tickers per asof date (for placebo exclusion).
+    converging_by_date: dict[str, set[str]] = {}
     for thesis in theses:
-        status = thesis.get("status", "open")
-        if status not in ("open",):
-            # closed/scored theses are historical; we still register them to
-            # preserve the dark-fraction audit but they won't generate new grades.
-            pass
+        asof = str(thesis.get("state_asof") or "").strip()
+        tk = thesis.get("ticker", "").strip()
+        if asof and tk:
+            converging_by_date.setdefault(asof, set()).add(tk)
 
+    all_claims: list[dict] = []
+    registered = 0
+
+    for thesis in theses:
         ticker = thesis.get("ticker", "").strip()
         asof = str(thesis.get("state_asof") or "").strip()
         if not ticker or not asof:
             log.debug("altdata skip: missing ticker/asof in %s", thesis.get("id"))
             continue
 
-        horizon_d = int(thesis.get("horizon_d") or 63)
-        direction = _altdata_direction(thesis)
+        # Family routing: use claim_family from thesis if present (W2+), else
+        # derive it from channels (for theses that already have the field from
+        # build_theses). Legacy theses without claim_family stay as "altdata".
+        chans = thesis.get("channels") or []
+        thesis_family = thesis.get("claim_family")
+        if thesis_family:
+            family = thesis_family
+        elif asof >= _ACTIVATION_DATE:
+            # New-era thesis without claim_family stamped: derive from channels.
+            family = assign_claim_family(chans)
+        else:
+            # Legacy pre-activation thesis: use the legacy family.
+            family = "altdata"
+
+        is_new_family = family not in ("altdata", None)
+
+        # For attention family, direction overrides to -1 (fade the buzz).
+        direction_override = FAMILY_DIRECTION_OVERRIDE.get(family)
+        if direction_override is not None:
+            direction = direction_override
+        else:
+            direction = _altdata_direction(thesis)
+
+        horizon_d = FAMILY_HORIZON_D.get(family, int(thesis.get("horizon_d") or 63))
         subj_level, bench_level = _altdata_entry_levels(thesis)
         check_by = thesis.get("check_by")
         falsifier = thesis.get("falsifier")
-
-        # Stable claim_id from source id (the thesis id already encodes
-        # date+ticker+desk so it is a perfect salt for idempotency).
         source_id = str(thesis.get("id") or "")
 
         claim = make_claim(
@@ -188,23 +327,51 @@ def backfill_altdata(root: Path, *, dry_run: bool = False) -> int:
             bench="SPY",
             falsifier=falsifier,
             check_by=check_by,
+            claim_family=family,
             extra={
                 "source_id": source_id,
-                "channels": thesis.get("channels"),
+                "channels": chans,
                 "convergence_score": thesis.get("convergence_score"),
-                "original_status": status,
+                "original_status": thesis.get("status", "open"),
             },
         )
         # Use source_id as salt so claim_id is stable across re-runs
         claim["salt"] = source_id
-
-        if not dry_run:
-            stored = register(claim, root)
-            log.debug("altdata: %s → claim_id=%s status=%s",
-                      source_id, stored.get("claim_id"), stored.get("status"))
+        all_claims.append(claim)
         registered += 1
 
-    log.info("backfill_altdata: processed %d theses", registered)
+        # Emit 2 matched placebo claims for new-family real claims (W2 placebo tape).
+        if is_new_family:
+            converging = converging_by_date.get(asof, set())
+            placebo_tks = _placebo_tickers(asof, ticker, family, converging, universe, n=2)
+            for i, ptk in enumerate(placebo_tks):
+                pclaim = make_claim(
+                    desk="altdata",
+                    asof=asof,
+                    scope_type="entity",
+                    scope_key=ptk,
+                    direction=direction,
+                    horizon_d=horizon_d,
+                    timestamp_quality=_TQ_ALTDATA,
+                    bench="SPY",
+                    claim_family=family,
+                    is_placebo=True,
+                    extra={
+                        "placebo_path": "altdata_matched",
+                        "placebo_real_ticker": ticker,
+                        "placebo_real_source_id": source_id,
+                    },
+                )
+                pclaim["salt"] = f"{source_id}|placebo|{i}"
+                all_claims.append(pclaim)
+
+    if not dry_run:
+        register_batch(all_claims, root)
+        log.info("backfill_altdata: processed %d theses → %d claims (incl. placebos)",
+                 registered, len(all_claims))
+    else:
+        log.info("backfill_altdata: dry_run — %d theses → %d claims (not written)",
+                 registered, len(all_claims))
     return registered
 
 

@@ -17,6 +17,10 @@ Until then it stays display/context-only (conviction starts 'low', never sized).
 
 Only SCORABLE names are logged: the ticker AND SPY must have a price series. Thin /
 private vehicles (ABTC, WLFI, …) are recorded in by_ticker but never scored.
+
+Per-channel claim families (ALTDATA_REBOOT W2, active 2026-07-12):
+  Each thesis is tagged with a claim_family based on the HIGHEST-WEIGHT channel present.
+  This routes to pre-registered horizon rulers in the qledger. See research/ALTDATA_REBOOT.md.
 """
 from __future__ import annotations
 
@@ -38,6 +42,99 @@ MIN_SCORE = 2
 BENCH = "SPY"
 SCHEMA = "altdata_track_record.v1"
 
+# ---------------------------------------------------------------------------
+# Per-channel family routing (ALTDATA_REBOOT W2 — research/ALTDATA_REBOOT.md)
+# Assignment: highest-weight channel present on the thesis → family.
+# Horizon rulers are PRE-REGISTERED; see masterplan for the promotion gate.
+# ---------------------------------------------------------------------------
+
+# Lazy import to avoid circular imports at module load.
+def _channel_weights() -> dict[str, float]:
+    from engine.altdata_models import CHANNEL_WEIGHTS
+    return CHANNEL_WEIGHTS
+
+
+# Family → set of channels that trigger it (when that channel has the highest weight).
+_FAMILY_CHANNELS: list[tuple[str, set]] = [
+    # ordered by descending max-weight in the family (so the highest-priority
+    # family is tested first in the rare tie-breaking edge cases).
+    ("altdata_event", {
+        "special_situation", "material_8k", "gov_contract", "gov_contract_accel",
+        "gov_grant", "gov_grant_accel", "fda_approval", "fda_label_expansion",
+        "clinical_phase3_start", "activist_13d",
+    }),
+    ("altdata_flow", {
+        "darkpool_accum", "unusual_options",
+    }),
+    ("altdata_mid", {
+        "insider_cluster", "insider_buy", "app_demand",
+        "analyst_upgrade_cluster", "insider_mspr",
+    }),
+    ("altdata_slow", {
+        "congress_cluster", "congress_buy", "trump", "lobbying", "lobbying_spike",
+        "smart_money_13f", "13f_add", "patent_cluster", "affiliation",
+    }),
+    ("altdata_attention", {
+        "retail_buzz",
+    }),
+]
+
+# Per-family horizon_d (pre-registered; must match masterplan §1).
+FAMILY_HORIZON_D: dict[str, int] = {
+    "altdata_event": 21,
+    "altdata_flow": 21,
+    "altdata_mid": 63,
+    "altdata_slow": 63,
+    "altdata_attention": 5,
+}
+
+# Per-family direction override (attention reverses — fade the buzz).
+# +1 means "use the thesis lean"; ATTENTION overrides to -1 regardless of lean.
+FAMILY_DIRECTION_OVERRIDE: dict[str, int | None] = {
+    "altdata_event": None,
+    "altdata_flow": None,
+    "altdata_mid": None,
+    "altdata_slow": None,
+    "altdata_attention": -1,  # pre-registered fade construction
+}
+
+# Per-family cooldown in business days after check_by before same ticker re-opens.
+FAMILY_COOLDOWN_BD: dict[str, int] = {
+    "altdata_event": 21,
+    "altdata_flow": 21,
+    "altdata_mid": 63,
+    "altdata_slow": 63,
+    "altdata_attention": 5,
+}
+
+# Channel lookup: channel → family name (built once at module load time).
+def _build_channel_to_family() -> dict[str, str]:
+    out: dict[str, str] = {}
+    for family, channels in _FAMILY_CHANNELS:
+        for ch in channels:
+            out[ch] = family
+    return out
+
+
+_CHANNEL_TO_FAMILY: dict[str, str] = _build_channel_to_family()
+
+
+def assign_claim_family(channels: list[str]) -> str:
+    """Return the claim_family for a thesis based on its highest-weight channel.
+
+    Deterministic: ties broken by family order in _FAMILY_CHANNELS (highest-weight
+    family wins). Unmapped channels map to 'altdata_event' (safe fallback).
+    """
+    if not channels:
+        return "altdata_event"
+    weights = _channel_weights()
+    best_ch = max(channels, key=lambda c: weights.get(c, 0.2))
+    family = _CHANNEL_TO_FAMILY.get(best_ch)
+    if family is None:
+        log.warning("altdata_ledger: unmapped channel %r → altdata_event", best_ch)
+        return "altdata_event"
+    return family
+
 _LEDGER = ("data", "altdata", "theses.jsonl")
 _SCORED = ("data", "altdata", "scored.jsonl")
 _TRACK = ("data", "altdata", "track_record.json")
@@ -54,14 +151,66 @@ def _active_subjects(ledger_rows: list, asof: str) -> set:
             if r.get("ticker") and str(r.get("check_by", "")) >= asof}
 
 
+def _cooldown_blocked(ledger_rows: list, asof: str) -> set[tuple[str, str]]:
+    """(ticker, family) pairs blocked by the episode cooldown window.
+
+    After a thesis's check_by date passes, the same (ticker, family) is blocked for
+    FAMILY_COOLDOWN_BD business days. Returns the set of (ticker, family) pairs
+    that should NOT receive a new thesis on asof.
+    """
+    import pandas as pd
+    blocked: set[tuple[str, str]] = set()
+    try:
+        asof_ts = pd.Timestamp(asof)
+    except Exception:  # noqa: BLE001
+        return blocked
+
+    for r in ledger_rows:
+        tk = r.get("ticker")
+        fam = r.get("claim_family") or "altdata"
+        check_by_str = r.get("check_by")
+        if not tk or not check_by_str:
+            continue
+        try:
+            check_by_ts = pd.Timestamp(check_by_str)
+        except Exception:  # noqa: BLE001
+            continue
+        # Window still open → covered by _active_subjects; skip here
+        if check_by_ts >= asof_ts:
+            continue
+        # Cooldown period after expiry
+        cooldown_bd = FAMILY_COOLDOWN_BD.get(fam, 63)
+        try:
+            cutoff = (check_by_ts + pd.offsets.BusinessDay(cooldown_bd)).normalize()
+        except Exception:  # noqa: BLE001
+            continue
+        if asof_ts < cutoff:
+            blocked.add((tk, fam))
+    return blocked
+
+
+def _thesis_check_by(family: str, today: date) -> str:
+    """Compute check_by date for a thesis given its family (determines horizon_d)."""
+    import pandas as pd
+    horizon_d = FAMILY_HORIZON_D.get(family, HORIZON_D)
+    # calendar-day approximation: horizon_d business days ≈ horizon_d * 7/5 calendar days
+    cal_days = int(horizon_d * 7 / 5) + 1
+    # Use pandas for accuracy
+    try:
+        check_by = (pd.Timestamp(str(today)) + pd.offsets.BusinessDay(horizon_d)).date().isoformat()
+    except Exception:  # noqa: BLE001
+        check_by = (today + timedelta(days=cal_days)).isoformat()
+    return check_by
+
+
 def build_theses(by_ticker: dict, root=None, today=None) -> list:
     root = Path(root) if root else config.ROOT
     today = today or date.today()
     asof = str(today)
     existing = _scorer._load_jsonl(_p(root, _LEDGER))
     active = _active_subjects(existing, asof)
+    cooldown_blocked = _cooldown_blocked(existing, asof)
     existing_ids = {r.get("id") for r in existing}
-    check_by = (today + timedelta(days=_CAL_DAYS)).isoformat()
 
     new = []
     for tk, rec in (by_ticker.get("tickers") or {}).items():
@@ -72,23 +221,41 @@ def build_theses(by_ticker: dict, root=None, today=None) -> list:
         b0 = _desk._level_asof(BENCH, root, asof)
         if e0 is None or b0 is None:        # not SCORABLE (thin / private) -> skip, never score
             continue
+        chans = rec.get("channels", [])
+
+        # ALTDATA_REBOOT W2: assign per-channel family and horizon
+        family = assign_claim_family(chans)
+        if (tk, family) in cooldown_blocked:
+            log.debug("altdata ledger: %s/%s in cooldown — skipping", tk, family)
+            continue
+
+        horizon_d = FAMILY_HORIZON_D.get(family, HORIZON_D)
+        check_by = _thesis_check_by(family, today)
+
         rid = f"{asof}-{tk}-altconv"
         if rid in existing_ids:
             continue
-        chans = rec.get("channels", [])
+
+        # Direction: most theses are overweight; attention family reverses
+        direction_override = FAMILY_DIRECTION_OVERRIDE.get(family)
+        lean = "overweight" if direction_override is None else (
+            "underweight" if direction_override == -1 else "overweight"
+        )
+
         new.append({
             "id": rid, "ticker": tk, "logged_at": datetime.now(timezone.utc).isoformat(),
             "state_asof": asof,
             "subject": f"{tk} alt-data convergence",
-            "lean": "overweight", "conviction": "low", "horizon_d": HORIZON_D,
+            "lean": lean, "conviction": "low", "horizon_d": horizon_d,
+            "claim_family": family,
             "convergence_score": score, "channels": chans,
             "trump_linked": bool(rec.get("trump_linked")),
             "falsifier": {
                 "text": f"{tk} fails to beat {BENCH} (underperforms by >{abs(THRESHOLD) * 100:.0f}%) "
-                        f"over ~{HORIZON_D} trading days despite {score}-channel convergence "
+                        f"over ~{horizon_d} trading days despite {score}-channel convergence "
                         f"({', '.join(chans)}).",
                 "check": {"kind": "rel_return", "subject_ticker": tk, "vs": BENCH,
-                          "op": "<", "threshold": THRESHOLD, "horizon_d": HORIZON_D},
+                          "op": "<", "threshold": THRESHOLD, "horizon_d": horizon_d},
             },
             "check_by": check_by,
             "entry_levels": {tk: e0, BENCH: b0},
