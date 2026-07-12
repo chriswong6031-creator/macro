@@ -18,7 +18,7 @@ NVDA AMZN GOOGL META TSLA) with:
 Inputs:
   data/baskets/ohlcv/<SYM>.parquet   member closes (column: close, Date index)
   store.read("yahoo", "SPY")         SPY closes for relative returns + CW index
-  data/sp500_heatmap/reference.parquet  shares outstanding for mktcap weights
+  data/polygon_universe/reference.parquet  market_cap_usd for mktcap weights (legacy fallback: data/sp500_heatmap/reference.parquet shares)
   site/stockdata/mtf_upturn.json     per-member MTF state (fail-open → null)
   data/massive_stock_day/MAGS.parquet  MAGS ETF reference (display-only)
 
@@ -126,20 +126,36 @@ def _load_spy(*, root: Path | None = None) -> pd.Series | None:  # noqa: ARG001
 
 
 def _load_mktcaps(closes_last: dict[str, float], *, root: Path | None = None) -> dict[str, float]:
-    """Load mktcap weights from data/sp500_heatmap/reference.parquet.
+    """Load mktcap weights from data/polygon_universe/reference.parquet
+    (market_cap_usd — the weekly-committed Polygon reference the heatmap uses, #2097).
 
-    Returns dict[sym, cap_float] for symbols with valid shares data.
-    Falls back to {} if the file is missing or all shares are None.
+    data/sp500_heatmap/reference.parquet (shares × close) is retained as a legacy
+    fallback only: that file has never existed in the repo (post-merge audit
+    2026-07-11), so the original path silently collapsed every production run to
+    equal_fallback — defeating the cap-weighted construction (M7C-R2).
     """
     try:
         base = root or config.data_dir()
+        p = base / "polygon_universe" / "reference.parquet"
+        if p.exists():
+            ref = pd.read_parquet(p)
+            if "market_cap_usd" in ref.columns:
+                caps: dict[str, float] = {}
+                for sym, row in ref.iterrows():
+                    cap = row.get("market_cap_usd")
+                    if cap is None or pd.isna(cap) or float(cap) <= 0:
+                        continue
+                    caps[str(sym)] = float(cap)
+                if caps:
+                    return caps
+        # legacy fallback: shares × last close
         p = base / "sp500_heatmap" / "reference.parquet"
         if not p.exists():
             return {}
         ref = pd.read_parquet(p)
         if "shares" not in ref.columns:
             return {}
-        caps: dict[str, float] = {}
+        caps = {}
         for sym, row in ref.iterrows():
             shares = row.get("shares")
             if shares is None or pd.isna(shares):
@@ -147,7 +163,7 @@ def _load_mktcaps(closes_last: dict[str, float], *, root: Path | None = None) ->
             px = closes_last.get(sym)
             if px is None or pd.isna(px):
                 continue
-            caps[sym] = float(shares) * float(px)
+            caps[str(sym)] = float(shares) * float(px)
         return caps
     except Exception as e:  # noqa: BLE001
         log.warning("mag7_regime: reference.parquet load failed: %s", e)
