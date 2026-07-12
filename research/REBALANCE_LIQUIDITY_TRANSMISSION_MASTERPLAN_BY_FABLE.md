@@ -19,6 +19,32 @@ volume day (traded June 26, effective June 27); the TGA drawdown after quarter-e
 policy (State Council AI meeting Jun-29/30, PBOC half-year smoothing, Jul-7
 PBOC/HKMA/SFC HK package) was confluent. The system failed to use any of it.
 
+**Canonical event reconstruction (intake 2026-07-12):**
+`research/RISK_ON_REGIME_SHIFT_POSTMORTEM_2026-06-29_TO_2026-07-08.md` — an
+externally-prepared, source-linked forensic memo, committed alongside this
+amendment. Where this §0 and that memo overlap, the memo is the event narrative
+of record; this doc remains the system-failure analysis and program charter.
+Facts it establishes that RLT design must respect:
+- The June 26 closing auction traded a **record ~$553.9B** (Russell
+  reconstitution effective at the June 29 open) — external receipt for the
+  RLT-R2 field guide.
+- The cleanest *common* trigger for the floor was the **June 28 US–Iran/Hormuz
+  stand-down** (owned by the Policy-Shock program's Iran/oil lever, not RLT);
+  quarter-end/reconstitution supply exhaustion and the TGA release were the
+  amplifier and the continuation fuel respectively — consistent with RLT-R2's
+  "never a bottom-caller" fence.
+- Bottoms were **staggered** (AAPL Jun-25, META Jun-25, BABA Jun-26, NVDA
+  Jun-29; SOXX/SMH fell through Jul-7) and Jul-8 breadth was 111 adv / 390 dec —
+  the episode was a narrow liquidity-and-catalyst reprice, not one synchronized
+  risk-on switch. Pulse classification and any future promotion study must treat
+  per-cohort outcomes, not "the market bottomed".
+- Fed assets *fell* ~$11B into Jul-1 and RRP round-tripped — the lobe's
+  `stress_liquidity_expansion` (mechanical, not QE) read is externally
+  corroborated.
+- **Forward invalidation:** Treasury projected a TGA rebuild toward ~$1T ±$50B
+  in late July — the tailwind is temporary and reverses on the rebuild. See
+  RLT-R4b.
+
 What the census (6-lane, 2026-07-12) actually found, with receipts:
 
 **Captured and classified correctly (the complaint "did not transmit to Neural Web"
@@ -143,6 +169,17 @@ quality. Schema bump within display tier; de-escalation-only authority unchanged
 `p3_reserve_balances="fail_open_until_wresbal_collected"` phase label to reflect
 actual load state.
 
+**RLT-R4b — TGA rebuild watch (W2).** `treasury.expected_tga_pressure` is today a
+stub (`"unknown_until_financing_estimates_parser"`). Build the Treasury
+financing-estimates parser: quarterly refunding "marketable borrowing estimates"
+publish an assumed end-of-quarter TGA cash balance (late-July 2026 projection
+~$1T ±$50B). When current TGA sits materially below the projected target,
+`expected_tga_pressure='rebuild_ahead'` with `{target_bn, gap_bn, deadline}` and
+the impulse summary MUST carry the reversal caveat in plain words ("temporary —
+Treasury plans to rebuild its cash account, which pulls this liquidity back
+out"). Display/context only; this is the standing answer to "the tailwind that
+saved June will drain in late July".
+
 **RLT-R5 — Liquidity salience law (glance tier).** When
 `entry_effect.direction=tailwind` AND radar trajectory ∈ {peaking, receding}, the
 macro surface MUST carry a glance-tier plain-word line (existing chip/evidence-row
@@ -240,10 +277,11 @@ mockup ratification).
 - PR-C: RLT-R3 broad ETF flow proxy extension.
 - PR-D: RLT-R6 standout sector-stance/disagreement chips.
 
-**W2 (next):** RLT-R7 prereg doc + execution on historical PIT data; RLT-R8 RC
-contribution (replay inputs + S1/S2 prereg drafts); RLT-R9 China registry +
-OMO-volume collector investigation; RLT-R10 ignition ledger mirror + back-audit;
-first live quarter-end dry-run review (2026-09-30 window).
+**W2 (next):** RLT-R7 prereg doc + execution on historical PIT data; RLT-R4b
+Treasury financing-estimates parser (TGA rebuild watch); RLT-R8 RC contribution
+(replay inputs + S1/S2 prereg drafts); RLT-R9 China registry + OMO-volume
+collector investigation; RLT-R10 ignition ledger mirror + back-audit; first live
+quarter-end dry-run review (2026-09-30 window).
 
 **W3:** promotion adjudications on RLT-R7 result and pulse-ledger accrual;
 RC-R12 alignment; kill/retain rows appended to DO_NOT_REBUILD as earned.
