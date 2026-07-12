@@ -20,8 +20,9 @@ DETERMINISTIC DE-RANK (R-V8-11, amended):
     De-rank key is (lobe, sensor) ONLY — NOT proposal kind (kind is the LLM's
     agenda bucket, never a proposal kind; kind-based de-rank is structurally
     dead per the masterplan amendment 2026-07-12).
-    Construction-specific (R-V8-12): the bad sensor name must appear in the
-    item's title or rationale (conservative: no false demotes).
+    Construction-specific (R-V8-12): the bad sensor name must appear as a whole
+    word (word-boundary regex) in the item's title or rationale — prevents short
+    sensor names like 'ic' from matching inside unrelated words like 'logic'.
     Demoted items are NEVER dropped — they stay visible with prior_demoted:true
     and prior_bucket set.  The prior NEVER promotes items (de-escalation only,
     mirror of R-AUT-1).
@@ -265,9 +266,10 @@ def _demote_prior_buckets(
         a proposal kind; kind-based de-rank is structurally dead and removed.
       - A (lobe, sensor) bucket fires when n >= demote_min_n AND hit_rate < demote_hit_rate.
       - Construction-specific match (R-V8-12): the specific bad sensor NAME must appear
-        as a case-insensitive substring of the item's title OR rationale.  A bad record
-        on sensor X must NOT demote an item naming sensor Y or naming no sensor at all
-        (conservative: no false demote).
+        as a whole word (word-boundary regex) in the item's title OR rationale.  A bad
+        record on sensor X must NOT demote an item naming sensor Y or naming no sensor
+        at all (conservative: no false demote).  Short names like 'ic' must NOT match
+        inside unrelated words like 'logic'.
       - Matching items are moved to the BOTTOM of the agenda (stable order among
         demoted items is preserved — original relative order kept).
       - NEVER drops an item; NEVER promotes an item.
@@ -298,7 +300,7 @@ def _demote_prior_buckets(
             # (case-insensitive substring).  A bad record on sensor X must NOT demote
             # an item naming sensor Y or naming no sensor at all.
             if lobe:
-                # Build a combined text for substring matching (lower-cased once)
+                # Build a combined text for word-boundary matching (lower-cased once)
                 item_text = (
                     str(item.get("title") or "").lower()
                     + " "
@@ -314,8 +316,11 @@ def _demote_prior_buckets(
                         continue  # no specific sensor to match against
                     if not _bucket_fires(stats):
                         continue
-                    # Construction-specific check: sensor name must appear in item text
-                    if sensor_name.lower() in item_text:
+                    # Construction-specific check: sensor name must appear as a whole
+                    # word in item text (word-boundary regex prevents short names like
+                    # 'ic' from matching inside unrelated words like 'logic').
+                    pattern = r"\b" + re.escape(sensor_name.lower()) + r"\b"
+                    if re.search(pattern, item_text):
                         fired_bucket = f"lobe_sensor:{key}"
                         break
 

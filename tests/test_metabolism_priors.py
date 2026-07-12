@@ -981,3 +981,63 @@ def test_p18_demoted_items_survive_docket_cap():
     # Demoted item must have prior_demoted=True
     demoted = [it for it in items if it.get("prior_demoted")]
     assert len(demoted) == 1, "Exactly the ic_sharpe item should be demoted"
+
+
+# ── P19: FIX-C1 word-boundary sensor matching — substring over-match prevention ──
+
+def test_p19_word_boundary_no_overmatch():
+    """FIX-C1: sensor 'ic' must NOT match the word 'logic' (substring over-match).
+
+    Brief spec: item 'Rework til lobe scoring logic' with calibration {'til:ic':{n:8,hr:0.125}}
+    must NOT be demoted.
+    """
+    from engine.metabolism.agenda import _demote_prior_buckets
+
+    calibration = {
+        "by_kind": {},
+        "by_lobe_sensor": {
+            # sensor 'ic' has bad hit rate — short name, high over-match risk
+            "til:ic": {"total": 8, "confirmed": 1, "hit_rate": 0.125},
+        },
+    }
+    items = [
+        # 'logic' contains 'ic' but is NOT the sensor name → must NOT demote
+        {
+            "title": "Rework til lobe scoring logic",
+            "bucket": "NOVEL_BUILD",
+            "target_lobe": "til",
+            "rationale": "the current logic needs improvement",
+        },
+    ]
+    result = _demote_prior_buckets(items, calibration, demote_min_n=5, demote_hit_rate=0.25)
+
+    assert not result[0].get("prior_demoted"), (
+        "sensor 'ic' must NOT match inside the word 'logic' — word-boundary guard required"
+    )
+
+
+def test_p19b_word_boundary_matches_exact_sensor():
+    """FIX-C1: sensor 'ic' DOES match when 'ic' appears as a standalone word."""
+    from engine.metabolism.agenda import _demote_prior_buckets
+
+    calibration = {
+        "by_kind": {},
+        "by_lobe_sensor": {
+            "til:ic": {"total": 8, "confirmed": 1, "hit_rate": 0.125},
+        },
+    }
+    items = [
+        # 'ic' appears as a standalone word in both title and rationale → MUST demote
+        {
+            "title": "improve til ic signal",
+            "bucket": "NOVEL_BUILD",
+            "target_lobe": "til",
+            "rationale": "the ic factor has weak predictive power",
+        },
+    ]
+    result = _demote_prior_buckets(items, calibration, demote_min_n=5, demote_hit_rate=0.25)
+
+    assert result[0].get("prior_demoted") is True, (
+        "sensor 'ic' as a standalone word in item text must trigger demotion"
+    )
+    assert result[0].get("prior_bucket") == "lobe_sensor:til:ic"
