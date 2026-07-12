@@ -451,10 +451,128 @@
   })();
   </script>
 
+  <!-- ── Rotation Events rail (Rotation Command W1 — RC-R1/R3/R6) ─────────── -->
+  <!-- Fetched from marketdata/rotation_events.json + sector_fragmentation.json.  -->
+  <!-- Absent files = graceful quiet note. DISPLAY-ONLY.                          -->
+  <section id="rc-events" aria-label="Rotation events">
+<style>
+  #rc-events { margin:0 2px 22px; }
+  #rc-events h2 { font-size:17px; font-weight:800; letter-spacing:-.015em; margin:0 0 4px; }
+  .rc-sub { color:var(--muted); font-size:12px; margin:0 0 10px; max-width:84ch; line-height:1.5; }
+  .rc-grid { display:flex; flex-wrap:wrap; gap:10px; }
+  .rc-card { flex:1 1 300px; min-width:260px; border-radius:12px; border:1px solid var(--line);
+    background:var(--panel); padding:12px 14px; }
+  .rc-card.rc-major { border-left:4px solid var(--warn); }
+  .rc-hd { display:flex; align-items:baseline; gap:7px; margin-bottom:5px; flex-wrap:wrap; }
+  .rc-title { font-weight:800; font-size:13.5px; }
+  .rc-sev { font-size:9.5px; font-weight:700; text-transform:uppercase; padding:2px 7px; border-radius:6px;
+    background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); letter-spacing:.04em; }
+  .rc-sev.major { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }
+  .rc-sev.notable { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  .rc-day { font-size:11px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; }
+  .rc-copy { font-size:12.5px; line-height:1.55; }
+  .rc-receipts { margin-top:6px; font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .rc-stale { font-style:italic; }
+  .rc-quiet { color:var(--muted); font-size:12.5px; padding:8px 0; }
+  .rc-frag { margin-top:12px; }
+  .rc-frag-hd { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.07em;
+    color:var(--muted); margin:0 0 7px; }
+  .rc-frag-chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .rc-frag-chip { font-size:11px; padding:4px 10px; border-radius:8px; border:1px solid var(--line);
+    background:color-mix(in srgb,var(--warn) 9%,var(--panel2)); line-height:1.45; }
+  .rc-frag-chip b { font-weight:800; }
+  .rc-caveat { margin-top:10px; font-size:10.5px; color:var(--muted); line-height:1.55; }
+</style>
+    <h2>⟲ <span class="l-en">Rotation Events</span><span class="l-zh">轮动事件</span></h2>
+    <p class="rc-sub"><span class="l-en">First-class leadership handoffs (Rotation Command W1): a blowoff-crash on one sector leg + a fresh-low turn on a peer leg + the pair ratio confirming. Born from the 2026-06-25 semis→Mag-7 miss. Display-tier context with receipts — ledgered, expected-NULL, never a buy list.</span><span class="l-zh">一等公民的领导权交接事件（Rotation Command W1）：某板块分支冲顶崩落 + 同板块另一分支自新低回升 + 两者比值确认。源自2026-06-25存储→七巨头轮动的漏报复盘。展示层上下文（含依据）——已入账、预期无效应声明，绝非买入清单。</span></p>
+    <div id="rc-events-content"><p class="rc-quiet">
+      <span class="l-en">Loading…</span><span class="l-zh">加载中…</span></p></div>
+<script>
+(function(){
+'use strict';
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+function t(en,zh){return isZh()&&zh?zh:en;}
+function pc(v,dp){return v==null?'—':((v>0?'+':'')+(v*100).toFixed(dp==null?1:dp)+'%');}
+
+function render(ev, frag){
+  var el=document.getElementById('rc-events-content');
+  if(!el) return;
+  var html='';
+  var active=(ev&&ev.active)||[];
+  if(!active.length){
+    html+='<p class="rc-quiet">'+t('No active rotation events — quiet state is a valid state.',
+      '当前无活跃轮动事件——安静状态是有效状态。')+'</p>';
+  }else{
+    html+='<div class="rc-grid">';
+    active.forEach(function(e){
+      var sev=e.severity||'standard';
+      var title=isZh()
+        ? esc(e.from_leg.name_zh)+' → '+esc(e.to_leg.name_zh)+'（'+esc(e.sector_name_zh)+'）'
+        : esc(e.from_leg.name_en)+' → '+esc(e.to_leg.name_en)+' ('+esc(e.sector_name_en)+')';
+      var r=e.receipts||{};
+      var rec='';
+      if(r.blowoff&&r.turn&&r.ratio){
+        rec=t('blowoff ','冲顶回落 ')+'−'+(r.blowoff.drawdown_pct*100).toFixed(0)+'%'
+          +' · '+t('off low ','低点回升 ')+pc(r.turn.off_low_pct)
+          +' · '+t('ratio ','比值 ')+pc(r.ratio.ratio_chg_10s)+'/10s';
+        if(!e.confirmed_tonight){
+          rec+=' <span class="rc-stale">'+t('(as of last confirmation)','（截至最近一次确认）')+'</span>';
+        }
+      }
+      html+='<div class="rc-card rc-'+esc(sev)+'">'
+        +'<div class="rc-hd"><span class="rc-sev '+esc(sev)+'">'+esc(sev)+'</span>'
+        +'<span class="rc-title">'+title+'</span>'
+        +'<span class="rc-day">'+t('day ','第')+esc(e.day_n)+t('',' 天')+' · '+esc(e.started)+'</span></div>'
+        +'<div class="rc-copy">'+esc(isZh()?e.copy_zh:e.copy_en)+'</div>'
+        +(rec?'<div class="rc-receipts">'+rec+'</div>':'')
+        +'</div>';
+    });
+    html+='</div>';
+  }
+  var rows=(frag&&frag.sectors)||[];
+  var flagged=rows.filter(function(r){return r.fragmented;});
+  if(flagged.length){
+    html+='<div class="rc-frag"><div class="rc-frag-hd">'
+      +t('Fragmented sectors — aggregate reads not representative',
+         '内部分化板块——聚合读数或失真')+'</div><div class="rc-frag-chips">';
+    flagged.forEach(function(r){
+      html+='<span class="rc-frag-chip"><b>'+esc(isZh()?r.name_zh:r.name_en)+' ('+esc(r.etf)+')</b> — '
+        +esc(isZh()?r.copy_zh:r.copy_en)+'</span>';
+    });
+    html+='</div></div>';
+  }
+  html+='<div class="rc-caveat">'
+    +t('Display/context tier — no rank, gate, or size anywhere. Events + outcomes accrue to an append-only ledger (expected-NULL until the RC-R9 pre-registered studies mature). as-of: ',
+       '仅展示/上下文层——不排名、不设门控、不调仓位。事件与结果计入只增账本（在RC-R9预注册研究成熟前为预期无效应声明）。截至：')
+    +esc((ev&&ev.as_of)||'—')+'</div>';
+  el.innerHTML=html;
+}
+
+function load(){
+  Promise.all([
+    fetch('marketdata/rotation_events.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetch('marketdata/sector_fragmentation.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+  ]).then(function(res){
+    if(!res[0]&&!res[1]){
+      var el=document.getElementById('rc-events-content');
+      if(el) el.innerHTML='<p class="rc-quiet"><span class="l-en">Rotation-event data unavailable.</span><span class="l-zh">轮动事件数据暂不可用。</span></p>';
+      return;
+    }
+    render(res[0],res[1]);
+  });
+}
+load();
+var _rcObs=new MutationObserver(load);
+_rcObs.observe(document.documentElement,{attributes:true,attributeFilter:['data-lang','data-theme']});
+})();
+</script>
+  </section>
+
   <div id="rotation-app"></div>
 
   <div class="sr-foot">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> 
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-12 06:01 UTC
   </div>
 </div>
 
@@ -1729,6 +1847,5 @@ _themeObs.observe(document.documentElement, {attributes:true, attributeFilter:['
 
 })();
 </script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

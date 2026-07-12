@@ -316,6 +316,37 @@ def step_pairs(sectors: dict, state: dict, p: dict = PARAMS) -> tuple[dict, list
     return new_state, events_active, created, closed
 
 
+def to_alerts(payload: dict) -> list[dict]:
+    """RC-R5: one alert per event CREATED tonight, in the rotation-alerts schema
+    (engine.subsector_rotation_alerts / engine.alert_triage pick it up with zero new
+    plumbing). Rotation events get their own type + honest severity mapping instead of
+    drowning among per-node minor flow alerts (the 06-30 Social-Media alert was correct
+    and invisible). Active-but-not-new events do NOT re-alert."""
+    out = []
+    created = set(payload.get("created_tonight") or [])
+    ts = payload.get("generated_utc") or payload.get("as_of") or ""
+    for ev in payload.get("active", []):
+        if ev["id"] not in created:
+            continue
+        sev = "high" if ev["severity"] == "major" else "minor"
+        bucket = (ev.get("asof") or payload.get("as_of") or "")[:10]
+        hl = (f"⟲ Rotation event — {ev['from_leg']['name_en']} → {ev['to_leg']['name_en']} "
+              f"({ev['sector_name_en']})")
+        hl_zh = (f"⟲ 轮动事件 — {ev['from_leg']['name_zh']} → {ev['to_leg']['name_zh']}"
+                 f"（{ev['sector_name_zh']}）")
+        det = ev["copy_en"] + " Display-tier context (Rotation Command W1) — ledgered, expected-NULL; not a buy list."
+        det_zh = ev["copy_zh"] + " 展示层上下文（Rotation Command W1）——已入账、预期无效应声明；非买入清单。"
+        out.append({"id": f"rotation:us:rotation_event:{ev['id']}:{bucket}",
+                    "ts": ts, "source": "rotation", "asset": ev["id"],
+                    "type": "rotation_event", "severity": sev,
+                    "headline": hl, "detail": det,
+                    "headline_zh": hl_zh, "detail_zh": det_zh,
+                    "context": {"severity": ev["severity"], "day_n": ev["day_n"],
+                                "started": ev["started"], "receipts": ev.get("receipts")},
+                    "anchor": "#rc-events"})
+    return out
+
+
 # ------------------------------------------------------------------ nightly I/O ----
 
 def _truncate_sectors(sectors: dict, cut: pd.Timestamp) -> dict:
@@ -398,7 +429,11 @@ def run_nightly(sectors: dict, data_dir, p: dict = PARAMS,
         "n_pairs_scanned": sum(max(0, len(s["legs"]) * (len(s["legs"]) - 1))
                                for s in sectors.values()),
         "active": active,
-        "created_tonight": created,
+        # cold-start replay creations count as tonight's (they were never announced) —
+        # still-active ones only, so the alert layer never announces already-closed events
+        "created_tonight": list(dict.fromkeys(
+            created + [r["id"] for r in replay_created
+                       if r["id"] in new_state["active"]])),
         "closed_tonight": closed,
         "coldstart": bool(replay_created or replay_closed),
     }
