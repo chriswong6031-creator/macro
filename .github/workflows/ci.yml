@@ -978,7 +978,8 @@ jobs:
     # Engine (test_leader_lifecycle.py): state machine, hysteresis, tri-state Kleene,
     # rs_line_gap_pct, count_k_true_n_avail, display chip fence.
     # Builder (test_build_leader_radar.py): RS rank history, insider cluster,
-    # options skew, basket corr, early_entry sort, artifact schema additive.
+    # options skew, basket corr, early_entry sort, artifact schema additive,
+    # analyst buy-share loader + chip wiring + banner render (LRV-R1e; jinja2 needed).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -986,7 +987,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: leader lifecycle engine tests
         run: python -m pytest tests/test_leader_lifecycle.py -q
       - name: leader radar builder tests
