@@ -268,10 +268,13 @@ jobs:
             || echo "::warning::theme_clinical rollup failed (non-fatal)"
       - name: TIL W11 — options-tape crowding witness (non-fatal)
         # ThetaData EOD store is host-local (theta-ops-wt) and NOT visible on the
-        # runner — this is the designed fast no-op path (measured 0.5s): an honest
-        # null artifact (store_present:false printed in coverage_stats) keeps the
-        # lobe's as_of current. Real legs land only when the theta-ops launchd
-        # lane (ops/launchd/com.macro.theme-options-witness.plist) is installed.
+        # runner — this is the designed fast no-op path (measured 0.5s). Two-writer
+        # coexistence (engine keep-last-real law): while the committed artifact
+        # holds real legs newer than 6d (pushed by the theta-ops launchd lane,
+        # ops/launchd/com.macro.theme-options-witness.plist), this store-less run
+        # SKIPS its write; otherwise it refreshes the honest null artifact
+        # (store_present:false printed in coverage_stats) to keep the lobe's
+        # as_of current — and to disclose a dead launchd lane after 6d.
         run: |
           python -m engine.theme_options_witness \
             || echo "::warning::theme_options_witness failed (non-fatal)"

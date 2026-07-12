@@ -151,10 +151,13 @@ lanes:
           TIL W11 (PR-W11) per-theme options-tape crowding-hazard witness.
           Reads from ThetaData EOD store (THETADATA_STORE env;
           /Users/chriswong/theta-ops-wt/data/thetadata_eod default; runner-local).
-          STORE ABSENT → honest null artifact emitted, exit 0. This step is
-          dispatched from the launchd ops-wt lane with THETADATA_STORE set
-          (same pattern as com.mastermind.optionshub); on the render-path runner
-          (no store) it is a fast no-op that writes the honest null artifact.
+          STORE ABSENT → keep-last-real: committed real legs newer than 6d are
+          kept (write skipped); otherwise honest null artifact emitted. Exit 0
+          either way. This step is dispatched from the launchd ops-wt lane with
+          THETADATA_STORE set (same pattern as com.mastermind.optionshub, plus
+          a commit+push tail in run_theme_options_witness.sh); on the
+          render-path runner (no store) it is a fast no-op that keeps or
+          null-refreshes the artifact per the keep-last-real law.
           Three legs (no composite — R-TIL-3 / WA-R1):
             Leg A: call-OI HHI concentration per basket (median HHI across members)
             Leg B: put/call OI ratio (PCR) per basket — EXIT-CROWD L3 accrual

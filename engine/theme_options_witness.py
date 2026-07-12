@@ -48,7 +48,11 @@ OI TIMING LAW (engine/thetadata_store.py docstring):
 STORE ACCESS:
   Reads from THETADATA_STORE env → /Users/chriswong/theta-ops-wt/data/thetadata_eod.
   YOUR WORKTREE WILL NOT HAVE THE STORE (untracked-store false-null trap).
-  When store absent → honest null artifact + exit 0.
+  When store absent → keep-last-real: if the committed artifact holds real
+  legs (store_present true) newer than _KEEP_REAL_DAYS, the write is SKIPPED
+  so a store-less run (GH runner nightly, dev worktree) never clobbers the
+  launchd lane's real data with a null. Otherwise honest null artifact.
+  Either way exit 0.
 
 RENDER BUDGET:
   Off the render path. Only theme-basket member roots; only the current year and
@@ -129,6 +133,18 @@ _RV_WINDOW = 20                 # sessions for realized-vol computation
 _MIN_COVERAGE_FRAC = 0.40      # suppress basket leg if < 40% members covered
 _MIN_SERIES_FOR_Z = 63         # min observations to compute a z-score
 _MIN_HHI_CONTRACTS = 5         # min distinct strikes with OI > 0 to compute HHI
+
+# Two-writer coexistence (keep-last-real):
+# The daily.yml collect lane runs this module on a GH runner WITHOUT the
+# ThetaData store; the launchd theta-ops lane runs it on the Mac Studio WITH
+# the store and commits real legs. A store-absent run must not clobber
+# committed real data with the honest null — it keeps the last real artifact
+# unless it is older than _KEEP_REAL_DAYS. The launchd lane writes weekdays
+# 17:15 ET; the worst healthy gap is ~5.3d (stacked mid-week market closures
+# around a weekend), so 6d never false-fires on a live lane, while a dead
+# lane is disclosed by null overwrite before the artifact breaches the 168h
+# synapse SLA.
+_KEEP_REAL_DAYS = 6
 
 
 # ---------------------------------------------------------------------------
@@ -1062,12 +1078,75 @@ def _write_atomic(path: Path, data: dict) -> None:
 # Main entry point
 # ---------------------------------------------------------------------------
 
+def _real_artifact_meta() -> Optional[tuple[float, str]]:
+    """(age_days, generated_at) of the committed artifacts IF they hold real legs.
+
+    Real = coverage_stats.store_present true, i.e. written by a store-bearing
+    run (the launchd theta-ops lane). Both artifacts must agree (same
+    generated_at, both real) — a drifted pair is NOT kept, so a one-time
+    partial write heals on the next null refresh instead of freezing.
+    Returns None for null artifacts, missing files, or unparseable metadata —
+    callers treat None as "nothing to keep".
+    """
+    try:
+        with open(_NW_OUT, encoding="utf-8") as fh:
+            prev = json.load(fh)
+        if not prev.get("coverage_stats", {}).get("store_present"):
+            return None
+        gen = str(prev.get("generated_at") or "")
+        with open(_SITE_OUT, encoding="utf-8") as fh:
+            prev_site = json.load(fh)
+        if not prev_site.get("coverage_stats", {}).get("store_present"):
+            return None
+        if str(prev_site.get("generated_at") or "") != gen:
+            return None
+        gen_dt = datetime.fromisoformat(gen)
+        if gen_dt.tzinfo is None:
+            gen_dt = gen_dt.replace(tzinfo=timezone.utc)
+        age_days = (datetime.now(tz=timezone.utc) - gen_dt).total_seconds() / 86400.0
+        return age_days, gen
+    except Exception as exc:  # noqa: BLE001
+        log.debug("theme_options_witness: no reusable real artifact: %s", exc)
+        return None
+
+
 def build(as_of: Optional[str] = None) -> None:
     """Build and write both output artifacts. Always exits 0."""
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
     try:
+        replaced_real: Optional[tuple[float, str]] = None
+        if _theta_store() is None:
+            prev = _real_artifact_meta()
+            if prev is not None:
+                age_days, prev_gen = prev
+                if age_days <= _KEEP_REAL_DAYS:
+                    log.info(
+                        "theme_options_witness: keep-last-real — store absent but the "
+                        "committed artifact holds real legs (generated_at=%s, %.1fd old "
+                        "<= %dd); skipping null overwrite",
+                        prev_gen, age_days, _KEEP_REAL_DAYS,
+                    )
+                    return
+                replaced_real = prev
+
         result = compute_theme_options_witness(as_of=as_of)
+
+        if replaced_real is not None:
+            age_days, prev_gen = replaced_real
+            result["coverage_stats"]["replaced_stale_real"] = {
+                "previous_generated_at": prev_gen,
+                "age_days": round(age_days, 1),
+                "note": (
+                    "real-data lane silent past the keep-last-real window "
+                    f"({_KEEP_REAL_DAYS}d) — null overwrite discloses the outage"
+                ),
+            }
+            log.warning(
+                "theme_options_witness: real artifact stale (%.1fd > %dd) — "
+                "overwriting with honest null (real-data lane appears dead)",
+                age_days, _KEEP_REAL_DAYS,
+            )
 
         _write_atomic(_NW_OUT, result)
         log.info("theme_options_witness: wrote %s", _NW_OUT)
@@ -1091,10 +1170,12 @@ def build(as_of: Optional[str] = None) -> None:
 if __name__ == "__main__":
     import argparse
 
+    from lib.procutil import hard_exit
+
     parser = argparse.ArgumentParser(description="TIL W11: theme options-tape witness builder")
     parser.add_argument("--date", help="Trade date YYYY-MM-DD (default: today)")
     args = parser.parse_args()
     build(as_of=args.date)
-
-    from lib.procutil import hard_exit  # noqa: PLC0415
+    # hard_exit required: parquet reads via _load_oi/_load_greeks make this a
+    # parquet-touching one-shot (Arrow ThreadPool shutdown hang class)
     hard_exit(0)

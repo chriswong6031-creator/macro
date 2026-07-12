@@ -3,6 +3,8 @@
 Coverage:
   - synthetic-store fixtures matching real thetadata_eod schema (OI + greeks tiers)
   - store-absent → honest null path (exit 0 contract)
+  - keep-last-real law (two-writer coexistence: store-less run keeps committed
+    real legs newer than 5d; null-overwrites past that with disclosure)
   - Leg A: call-OI HHI computation, HHI math, insufficient-contracts null
   - Leg B: PCR computation, oi[t-1] timing law, pcr_z252, pcr_5d_chg,
            pcr_collapse_into_strength flag, basket-level PCR formula
@@ -499,6 +501,153 @@ class TestStoreAbsent:
             mod.build(as_of="2025-07-01")
         assert (tmp_path / "nw_out.json").exists()
         assert (tmp_path / "site_out.json").exists()
+
+
+# ---------------------------------------------------------------------------
+# Keep-last-real law (two-writer coexistence)
+# ---------------------------------------------------------------------------
+
+def _write_real_artifact(nw_path, site_path, age_days: float) -> tuple[dict, dict]:
+    """Write a fake REAL artifact pair (store_present true) aged age_days."""
+    from datetime import datetime, timedelta, timezone
+
+    gen = (datetime.now(tz=timezone.utc) - timedelta(days=age_days)).isoformat()
+    nw = {
+        "schema": "theme_options_witness.v1",
+        "as_of": "2025-06-30",
+        "generated_at": gen,
+        "coverage_stats": {"store_present": True, "n_themes": 18},
+        "themes": {"ai_hardware": {"marker": "real-legs"}},
+    }
+    site = {
+        "schema": "theme_options_witness.v1",
+        "generated_at": gen,
+        "coverage_stats": {"store_present": True},
+        "marker": "real-site",
+    }
+    nw_path.write_text(json.dumps(nw), encoding="utf-8")
+    site_path.write_text(json.dumps(site), encoding="utf-8")
+    return nw, site
+
+
+class TestKeepLastReal:
+
+    def _patched_mod(self, tmp_path, monkeypatch):
+        from engine import theme_options_witness as mod
+
+        monkeypatch.setattr(mod, "_NW_OUT", tmp_path / "nw_out.json")
+        monkeypatch.setattr(mod, "_SITE_OUT", tmp_path / "site_out.json")
+        mod.clear_cache()
+        return mod
+
+    def test_fresh_real_artifact_kept(self, tmp_path, monkeypatch):
+        """Store-less run must SKIP its write while committed real legs are fresh."""
+        mod = self._patched_mod(tmp_path, monkeypatch)
+        nw, site = _write_real_artifact(mod._NW_OUT, mod._SITE_OUT, age_days=1.0)
+
+        with mock.patch.object(mod, "_theta_store", return_value=None):
+            mod.build(as_of="2025-07-01")
+
+        assert json.loads(mod._NW_OUT.read_text(encoding="utf-8")) == nw, \
+            "fresh real NW artifact was clobbered by a store-less run"
+        assert json.loads(mod._SITE_OUT.read_text(encoding="utf-8")) == site, \
+            "fresh real site artifact was clobbered by a store-less run"
+
+    def test_weekend_age_real_artifact_kept(self, tmp_path, monkeypatch):
+        """Fri-evening real write must survive the Mon store-less run (~3d old)."""
+        mod = self._patched_mod(tmp_path, monkeypatch)
+        nw, _ = _write_real_artifact(mod._NW_OUT, mod._SITE_OUT, age_days=3.2)
+
+        with mock.patch.object(mod, "_theta_store", return_value=None):
+            mod.build(as_of="2025-07-01")
+
+        assert json.loads(mod._NW_OUT.read_text(encoding="utf-8")) == nw
+
+    def test_stale_real_artifact_null_overwritten_with_disclosure(
+        self, tmp_path, monkeypatch
+    ):
+        """Real legs older than _KEEP_REAL_DAYS → honest null + outage disclosure."""
+        mod = self._patched_mod(tmp_path, monkeypatch)
+        stale, _ = _write_real_artifact(
+            mod._NW_OUT, mod._SITE_OUT, age_days=mod._KEEP_REAL_DAYS + 3
+        )
+
+        with mock.patch.object(mod, "_theta_store", return_value=None):
+            mod.build(as_of="2025-07-01")
+
+        out = json.loads(mod._NW_OUT.read_text(encoding="utf-8"))
+        assert out["coverage_stats"]["store_present"] is False
+        disclosure = out["coverage_stats"]["replaced_stale_real"]
+        assert disclosure["previous_generated_at"] == stale["generated_at"]
+        assert disclosure["age_days"] > mod._KEEP_REAL_DAYS
+
+    def test_null_artifact_still_refreshed(self, tmp_path, monkeypatch):
+        """An existing NULL artifact is refreshed, not kept (as_of must advance)."""
+        mod = self._patched_mod(tmp_path, monkeypatch)
+        old_null = {
+            "schema": "theme_options_witness.v1",
+            "as_of": "2025-06-01",
+            "generated_at": "2025-06-01T00:00:00+00:00",
+            "coverage_stats": {"store_present": False},
+            "themes": {},
+        }
+        mod._NW_OUT.write_text(json.dumps(old_null), encoding="utf-8")
+
+        with mock.patch.object(mod, "_theta_store", return_value=None):
+            mod.build(as_of="2025-07-01")
+
+        out = json.loads(mod._NW_OUT.read_text(encoding="utf-8"))
+        assert out["as_of"] == "2025-07-01"
+        assert out["generated_at"] != old_null["generated_at"]
+        assert "replaced_stale_real" not in out["coverage_stats"]
+
+    def test_drifted_pair_not_kept(self, tmp_path, monkeypatch):
+        """NW real+fresh but site artifact null → pair is NOT kept (drift heals)."""
+        mod = self._patched_mod(tmp_path, monkeypatch)
+        _write_real_artifact(mod._NW_OUT, mod._SITE_OUT, age_days=1.0)
+        mod._SITE_OUT.write_text(
+            json.dumps({
+                "schema": "theme_options_witness.v1",
+                "generated_at": "2025-06-01T00:00:00+00:00",
+                "coverage_stats": {"store_present": False},
+            }),
+            encoding="utf-8",
+        )
+
+        with mock.patch.object(mod, "_theta_store", return_value=None):
+            mod.build(as_of="2025-07-01")
+
+        nw_out = json.loads(mod._NW_OUT.read_text(encoding="utf-8"))
+        site_out = json.loads(mod._SITE_OUT.read_text(encoding="utf-8"))
+        assert nw_out["coverage_stats"]["store_present"] is False
+        assert site_out["generated_at"] == nw_out["generated_at"]
+
+    def test_corrupt_artifact_treated_as_absent(self, tmp_path, monkeypatch):
+        """Unparseable committed artifact → null write proceeds (no crash)."""
+        mod = self._patched_mod(tmp_path, monkeypatch)
+        mod._NW_OUT.write_text("{not json", encoding="utf-8")
+
+        with mock.patch.object(mod, "_theta_store", return_value=None):
+            mod.build(as_of="2025-07-01")
+
+        out = json.loads(mod._NW_OUT.read_text(encoding="utf-8"))
+        assert out["coverage_stats"]["store_present"] is False
+
+    def test_store_present_always_writes(self, tmp_path, monkeypatch):
+        """A store-bearing run writes real output even over a fresh real artifact."""
+        mod = self._patched_mod(tmp_path, monkeypatch)
+        _write_real_artifact(mod._NW_OUT, mod._SITE_OUT, age_days=0.1)
+
+        # Empty-but-present store dir: store resolves, legs come out null-ish,
+        # but the write MUST happen (store_present true in the fresh output).
+        store = tmp_path / "thetadata_eod"
+        store.mkdir()
+        with mock.patch.object(mod, "_theta_store", return_value=store):
+            mod.build(as_of="2025-07-01")
+
+        out = json.loads(mod._NW_OUT.read_text(encoding="utf-8"))
+        assert out["coverage_stats"]["store_present"] is True
+        assert out["as_of"] == "2025-07-01"
 
 
 # ---------------------------------------------------------------------------
