@@ -17,6 +17,14 @@ engine.baskets_intl.compute_intl_baskets() consumes.
 Benchmark = a cap-weighted composite of the universe ("Intl ex-US composite", ticker _INTLC),
 built by engine.baskets_intl.
 
+BOOTSTRAP-ONLY: once data/baskets_intl/membership.json exists, the LIVE file is the ledger of
+record — it accrues history this seeder cannot reproduce (dated changelog rows such as the
+2026-07-01 MONC.MI prune, now applied automatically by scripts/reconcile_membership.py at the
+end-of-collect gate), and rank-by-weight selection over a refreshed universe reshuffles the
+picks anyway. Re-running therefore REFUSES to overwrite an existing membership.json unless
+--force is passed; ongoing membership changes belong on the live file as dated edits (nightly
+is the sole advancer of forward ledgers).
+
 HONEST BY CONSTRUCTION: membership is curated today with knowledge of the period, so the ~5y
 series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest, not a buy list.
 """
@@ -235,6 +243,14 @@ def _select(rule: dict, m: pd.DataFrame, cols: set) -> list[str]:
 
 def main() -> int:
     dry = "--dry" in sys.argv
+    force = "--force" in sys.argv
+    out_path = config.data_dir() / "baskets_intl" / "membership.json"
+    if out_path.exists() and not dry and not force:
+        log.error("refusing to overwrite %s — the live file is the ledger of record (dated "
+                  "changelog/member history this seeder cannot reproduce, and a re-run "
+                  "reshuffles the rank-by-weight selection). Make dated edits to the live "
+                  "file instead, or pass --force to re-bootstrap from scratch.", out_path)
+        return 1
     m = pd.read_parquet(config.data_dir() / "intl_search" / "members.parquet")
     closes = pd.read_parquet(config.data_dir() / "intl_search" / "closes.parquet")
     cols = set(closes.columns)
