@@ -156,6 +156,8 @@ def all_adapters() -> dict:
         ("finnhub_altdata", "collectors.finnhub_altdata", "FinnhubAltdataAdapter"),  # analyst trends + insider MSPR + earnings surprises (existing FINNHUB key) -> 3 convergence channels
         ("finra_short_volume", "collectors.finra_short_volume", "FinraShortVolumeAdapter"),  # keyless daily consolidated short-VOLUME (fresher than bi-monthly short interest) -> stock-page short_flow confirmer
         ("finra_ats_transparency", "collectors.finra_ats_transparency", "FinraAtsTransparencyAdapter"),  # keyless FINRA OTC Transparency weekly per-ATS venue breakdown (T2e; 2-4wk lag; partition-aware POST fetch, 2026-07 repair) -> darkpool.html venue table
+        ("finnhub_transcripts", "collectors.finnhub_transcripts", "FinnhubTranscriptsAdapter"),  # Finnhub transcript LIST metadata (same-day latency; body fetch deferred; GATED: plan-gated 403 -> no-op) -> data/finnhub/transcripts.parquet
+        ("stocktwits", "collectors.stocktwits", "StockTwitsAdapter"),  # StockTwits public stream bullish/bearish ratios + watchlist_count (keyless, ~200/hr) -> data/stocktwits/sentiment.parquet
         ("polygon_news", "collectors.polygon_news", "PolygonNewsAdapter"),  # Polygon news-sentiment roll-up (existing POLYGON key) -> news_sentiment channel
         ("github_repos", "collectors.github_repos", "GithubReposAdapter"),  # GitHub star velocity (optional GITHUB_TOKEN) -> github_momentum channel
         ("sam_gov", "collectors.sam_gov", "SamGovAdapter"),               # SAM.gov pre-award solicitations by NAICS (theme_event radar leg); GATED on SAM_API_KEY -> 'blocked' without it
@@ -311,6 +313,8 @@ _SLOW = set(_QUIVER_KEYS) | {
     "edgar_dilution",  # nwqs-c: S-3/424B daily-index sweep; nightly-only
     "cot",
     "openfda", "huggingface", "grants_gov", "clinicaltrials", "finnhub_altdata",
+    "finnhub_transcripts",   # altdata-W1: transcript metadata catalog (same-day; plan-gated no-op on free tier)
+    "stocktwits",            # altdata-W1: public bullish/bearish ratios + watchlist_count (keyless)
     "polygon_news", "github_repos", "sam_gov", "usaspending", "prediction_markets",
     "lbnl_queue", "federal_register",
 }
