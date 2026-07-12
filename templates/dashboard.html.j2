@@ -606,7 +606,7 @@
     .nbgrid[data-showmore-rows] .nb-edge-pct{ font-size:8.5px; }
   }
   .nbcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
-            padding: 9px 11px 10px; border-left: 3px solid var(--muted);
+            padding: 9px 11px 10px; position: relative;
             display: flex; flex-direction: column; gap: 3px; min-width: 0; overflow: hidden;
             transition: transform .12s, box-shadow .12s, border-color .12s;
             color: var(--text); cursor: pointer; }
@@ -658,9 +658,12 @@
                border: none; border-radius: 7px; background: var(--panel); color: var(--muted);
                font-size: 18px; line-height: 1; cursor: pointer; }
   .nb-more-x:hover { color: var(--text); background: color-mix(in srgb, var(--line) 55%, transparent); }
-  .nbcard.nb-up { border-left-color: var(--up); }
-  .nbcard.nb-down { border-left-color: var(--down); }
-  .nbcard.nb-caution { border-left-color: var(--warn); }
+  /* state accent as a TOP gradient stripe (RIPENING-shelf idiom) — not a left border */
+  .nbcard::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; pointer-events: none;
+                    background: linear-gradient(90deg, var(--muted), transparent); opacity: .6; }
+  .nbcard.nb-up::before { background: linear-gradient(90deg, var(--up), color-mix(in srgb, var(--up) 30%, transparent)); opacity: 1; }
+  .nbcard.nb-down::before { background: linear-gradient(90deg, var(--down), color-mix(in srgb, var(--down) 30%, transparent)); opacity: 1; }
+  .nbcard.nb-caution::before { background: linear-gradient(90deg, var(--warn), color-mix(in srgb, var(--warn) 30%, transparent)); opacity: 1; }
   .nb-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; row-gap: 3px; }
   .nb-tk { font-weight: 800; font-size: 14px; color: var(--text); letter-spacing: .01em; flex: none; }
   .nb-nm { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis;
@@ -875,14 +878,14 @@
   /* ---- Entry-timing gauge (the SECOND gauge: "buy now / wait / extended") ---- */
   .nb-entry { margin: 3px 0 1px; padding: 4px 7px; border-radius: 8px;
               background: var(--panel); border: 1px solid var(--line);
-              border-left: 3px solid var(--muted); }
-  .nbe-buy_now, .nbe-partial { border-left-color: var(--up);
+              border-top: 2px solid var(--muted); }
+  .nbe-buy_now, .nbe-partial { border-top-color: var(--up);
               background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
-  .nbe-buy_soon, .nbe-watch, .nbe-await_confluence { border-left-color: var(--g-cold); }
-  .nbe-wait_pullback, .nbe-hold { border-left-color: var(--warn); }
-  .nbe-extended, .nbe-topping { border-left-color: var(--warn);
+  .nbe-buy_soon, .nbe-watch, .nbe-await_confluence { border-top-color: var(--g-cold); }
+  .nbe-wait_pullback, .nbe-hold { border-top-color: var(--warn); }
+  .nbe-extended, .nbe-topping { border-top-color: var(--warn);
               background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
-  .nbe-exit, .nbe-avoid, .nbe-blocked { border-left-color: var(--down);
+  .nbe-exit, .nbe-avoid, .nbe-blocked { border-top-color: var(--down);
               background: color-mix(in srgb, var(--down) 8%, var(--panel)); }
   .nbe-head { display: flex; align-items: center; gap: 5px; }
   .nbe-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
