@@ -108,15 +108,37 @@ def _enrich_fire(fire: dict) -> dict:
     return f
 
 
+def _build_t0_vm(t0_dict: dict | None) -> dict:
+    """Normalize a t0_indicator.v1 artifact into a vm sub-dict.
+
+    Always returns a dict with at least {"present": bool}.
+    Template can rely on vm["t0"] always existing.
+    """
+    if not t0_dict:
+        return {"present": False, "as_of": None, "matches": [], "total": 0,
+                "disclosure_en": "", "disclosure_zh": ""}
+    matches_all = t0_dict.get("matches") or []
+    return {
+        "present": True,
+        "as_of": t0_dict.get("as_of"),
+        "matches": matches_all[:30],
+        "total": len(matches_all),
+        "disclosure_en": t0_dict.get("disclosure_en", ""),
+        "disclosure_zh": t0_dict.get("disclosure_zh", ""),
+    }
+
+
 def build_vm(
     pick_lab_dict: dict | None,
     longhold_dict: dict | None,
+    t0_dict: dict | None = None,
 ) -> dict:
     """Build the Jinja2 view-model for us_stocks_lab.html.
 
     Both dicts can be None (empty state) or fully populated per the spec §4
     schema. Returns a vm dict safe to pass directly to the template.
 
+    t0_dict: optional t0_indicator.v1 artifact (site/factordata/t0_indicator.json).
     Authority: display_only throughout.
     """
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -235,6 +257,7 @@ def build_vm(
         "lh_as_of": lh_as_of,
         "first_maturation_eta": first_maturation_eta or "~2027-01",
         "method_note": method_note,
+        "t0": _build_t0_vm(t0_dict),
         # Display-only invariant — never drives selection / scoring
         "authority": "display_only",
     }
@@ -287,7 +310,17 @@ def build_and_render(site: Path | None = None) -> None:
     pick_lab_dict = _load("pick_lab.json")
     longhold_dict = _load("pick_lab_longhold.json")
 
-    vm = build_vm(pick_lab_dict, longhold_dict)
+    # Load T0 beta-screen artifact (separate path: site/factordata/)
+    t0_dict: dict | None = None
+    t0_path = site / "factordata" / "t0_indicator.json"
+    if t0_path.exists():
+        try:
+            import json as _json
+            t0_dict = _json.loads(t0_path.read_text())
+        except Exception as exc:  # noqa: BLE001
+            log.warning("pick_lab render: could not load t0_indicator.json (%s)", exc)
+
+    vm = build_vm(pick_lab_dict, longhold_dict, t0_dict=t0_dict)
     try:
         render_page(vm, site)
     except Exception as exc:  # noqa: BLE001

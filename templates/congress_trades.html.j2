@@ -60,6 +60,7 @@
   html[data-theme="dark"] .cg-flag.gate-t1 { color:#fbbf24; }
   html[data-theme="dark"] .cg-flag.gate-t2 { color:#60a5fa; }
   html[data-theme="dark"] .cg-flag.gate-t3 { color:#34d399; }
+  .cg-flag.t0 { background:#0ea5e922; color:#0284c7; font-weight:800; } html[data-theme="dark"] .cg-flag.t0 { color:#38bdf8; }
   .cg-mem { display:inline-block; font-size:10.5px; color:var(--muted); padding:0 5px; border:1px solid var(--line); border-radius:5px; margin:1px 2px 1px 0; white-space:nowrap; }
   .cg-mem.D { border-color:#5b8def88; } .cg-mem.R { border-color:#d23f3f88; }
   .side-chip { display:inline-block; padding:1px 7px; border-radius:5px; font-size:10.5px; font-weight:700; }
@@ -121,6 +122,7 @@
       <td>
         <span class="tk"><a href="stock.html#{{ it.ticker }}">{{ it.ticker }}</a></span>
         {% if it.gate_tier %}<span class="cg-flag gate-{{ it.gate_tier|lower }}" data-tip-en="⚡ Prime entry — signal gate {{ it.gate_tier }}" data-tip-zh="⚡ 优质入场 — 信号门 {{ it.gate_tier }}">⚡ {{ it.gate_tier }}</span>{% endif %}
+        {% if it.t0 %}<span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI {{ it.t0_d3k }}) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>{% endif %}
         {% if it.name %}<div class="mut2" style="font-size:10.5px">{{ it.name[:26] }}</div>{% endif %}
       </td>
       <td>{{ bar(it.composite) }}</td>
@@ -216,6 +218,40 @@
 {# ── UNIFIED FORWARD DESK GRADER (5/10/20/30/60/90d, level+velocity, leave-tracking) ── #}
 {{ dg.styles() }}
 {{ dg.panel(desk_grader) }}
+
+{# ---------------- T0 beta turn flags ---------------- #}
+<div class="cg-card">
+  <h2>{{ t('Early Turn Flags', '早期拐点提示') }} <span class="cg-flag t0">BETA</span>
+    {% if t0_meta.present and t0_meta.as_of %}<span class="h-note" style="margin-left:auto">{{ t('As of','截至') }} {{ t0_meta.as_of }}</span>{% endif %}
+  </h2>
+  <p class="mut2" style="font-size:12.5px;margin:0 0 8px">{{ t("Watchlist names washed out and just ticking up. Watch — don't chase.", '观察名单中超跌后刚现回升迹象的股票。观察为主，勿追高。') }}</p>
+  {% if t0_meta.present %}
+    {% if t0_rows %}
+    <table class="ad"><thead><tr>
+      <th>{{ t('Ticker','标的') }}</th>
+      <th>{{ t('Read','解读') }}</th>
+      <th class="num">{{ t('Close','收盘') }}</th>
+      <th class="num">{{ t('Liquidity','流动性') }}</th>
+    </tr></thead><tbody>
+    {% for m in t0_rows %}
+    <tr>
+      <td><span class="tk"><a href="stock.html#{{ m.ticker }}">{{ m.ticker }}</a></span>
+        {% if m.sector %}<div class="mut2" style="font-size:10.5px">{{ m.sector }}</div>{% endif %}
+      </td>
+      <td class="mut2" style="font-size:12px">{{ t('washed out · first daily up-tick', '深度超跌 · 首日回升') }}</td>
+      <td class="num">{% if m.close is not none %}${{ '%.2f'|format(m.close) }}{% else %}<span class="mut2">—</span>{% endif %}</td>
+      <td class="num">{% if m.dollar_adv_20d is not none %}{%- set adv = m.dollar_adv_20d -%}{%- if adv >= 1e9 -%}${{ "%.1f"|format(adv / 1e9) }}B{%- elif adv >= 1e6 -%}${{ "%.0f"|format(adv / 1e6) }}M{%- elif adv >= 1e3 -%}${{ "%.0f"|format(adv / 1e3) }}K{%- else -%}${{ "%.0f"|format(adv) }}{%- endif -%}{% else %}<span class="mut2">—</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody></table>
+    {% else %}
+    <p class="mut2" style="font-size:12.5px">{{ t('No watchlist names are flagging right now — most days none do.', '当前观察名单中无触发股票 — 大多数日子都是如此。') }}</p>
+    {% endif %}
+  {% else %}
+  <p class="mut2" style="font-size:12.5px">{{ t('No data yet — this beta screen populates after the next nightly build.', '暂无数据 — 此测试版筛选将在下次夜间构建后填充。') }}</p>
+  {% endif %}
+  <p class="mut2" style="font-size:10.5px;margin-top:9px;border-top:1px solid var(--line);padding-top:7px">{{ t('T0 = 3-day-frame StochRSI under 30 with a same-day daily StochRSI up-cross (RSI14/Stoch14/3/3). Beta — an early, unproven flag; not a buy signal.', 'T0 = 3日框架StochRSI低于30且当日日线StochRSI上穿（RSI14/Stoch14/3/3）。测试版 — 早期且未经验证的提示，并非买入信号。') }}</p>
+</div>
 
 {# ---------------- the raw disclosure feed ---------------- #}
 <div class="cg-card">

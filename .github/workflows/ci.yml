@@ -337,6 +337,9 @@ on:
       - "engine/etf_flows.py"
       - "collectors/sponsors.py"
       - "tests/test_broad_etf_flows.py"
+      # T0 beta turn indicator (display-only): engine module + build wiring + test suite.
+      - "engine/t0_indicator.py"
+      - "tests/test_t0_indicator.py"
   workflow_dispatch:
 
 permissions:
@@ -617,7 +620,8 @@ jobs:
           tests/test_cohort_flow_chips.py
           tests/test_statement_tape.py
           tests/test_backfill_options_flow.py
-          tests/test_rlt_sector_stance_enrich.py -q
+          tests/test_rlt_sector_stance_enrich.py
+          tests/test_t0_indicator.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)

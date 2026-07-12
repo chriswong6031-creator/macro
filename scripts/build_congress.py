@@ -558,6 +558,16 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001
             log.warning("signal_gate load failed (%s) — no entry badges", e)
 
+        # --- T0 beta screen ---
+        t0_art: dict = {}
+        t0_map: dict = {}
+        try:
+            t0_art = json.loads((site / "factordata" / "t0_indicator.json").read_text())
+            t0_map = {m.get("ticker"): m for m in (t0_art.get("matches") or [])}
+            log.info("t0_indicator: %d matches loaded", len(t0_map))
+        except Exception as e:  # noqa: BLE001
+            log.warning("t0_indicator load failed (%s) — no T0 section", e)
+
         # scoring substrates (regime sector RS + theme allocation ranks), guarded
         sector_rs: dict = {}
         try:
@@ -583,6 +593,11 @@ def main() -> int:
             gate_v = gate_verdicts.get(tk)
             row = _score(agg, eng, gate_verdict=gate_v)
             row["name"] = sd.get("name")
+            # T0 beta flag
+            t0_match = t0_map.get(tk)
+            if t0_match is not None:
+                row["t0"] = True
+                row["t0_d3k"] = round(t0_match["d3_k"]) if t0_match.get("d3_k") is not None else None
             items.append(row)
         # Covered rows always rank above unconfirmed (uncovered) rows; within each bucket sort by
         # composite descending.  The template receives a single list and is unchanged.
@@ -627,6 +642,16 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001
             log.warning("desk_grader (congress) step failed: %s", e)
 
+        # Build T0 card data: rows from the artifact that are on the watchlist, preserving artifact order
+        watchlist_tickers = {it["ticker"] for it in items[:WATCH_TABLE_CAP]}
+        t0_rows = [m for m in (t0_art.get("matches") or []) if m.get("ticker") in watchlist_tickers]
+        t0_meta = {
+            "present": bool(t0_art),
+            "as_of": t0_art.get("as_of"),
+            "disclosure_en": t0_art.get("disclosure_en"),
+            "disclosure_zh": t0_art.get("disclosure_zh"),
+        }
+
         built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
         try:
@@ -635,6 +660,7 @@ def main() -> int:
                 feed=feed[:FEED_CAP], window_days=ROLLOFF_DAYS, generated_utc=built,
                 weights={"cluster": W_CLUSTER, "technical": W_TECHNICAL, "zone": W_ZONE},
                 member_leaderboard=member_leaderboard, desk_grader=grader,
+                t0_rows=t0_rows, t0_meta=t0_meta,
                 active_section="research", active_page="congress_trades",
             )
         except Exception as e:  # noqa: BLE001
