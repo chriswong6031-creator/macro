@@ -4475,14 +4475,18 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     {% set _mx5_ts = latest.transition_state if (latest.transition_state is defined and latest.transition_state) else '' %}
     {% set _mx5_ts_en = {'TRANSITIONING':'Shifting','STABLE':'Stable','WEAKENING':'Weakening','NEW_REGIME':'New Regime'}.get(_mx5_ts, _mx5_ts | title) %}
     {% set _mx5_ts_zh = {'TRANSITIONING':'转换中','STABLE':'稳定','WEAKENING':'走弱','NEW_REGIME':'新周期'}.get(_mx5_ts, _mx5_ts) %}
-    {# Risk button: show warn style when radar state is elevated/caution/risk-off #}
+    {# Risk button: warn style whenever the radar is NOT quiet (engine states include
+       'watch' — the current bubble/blow-off state — which IS "there is risk" per the
+       operator ruling) or the top scare scores >=50 #}
     {% set _mx5_rdr = market_state.radar if market_state.radar is defined else {} %}
     {% set _mx5_rdr_state = _mx5_rdr.state if _mx5_rdr else 'unknown' %}
-    {% set _mx5_risk_elevated = _mx5_rdr_state in ('elevated','caution','risk-off') %}
-    {# Dominant risk for the popover header #}
-    {% set _mx5_radar_top = (_mx5_rdr.top if (_mx5_rdr and _mx5_rdr.top is defined) else 0) | int %}
+    {# Dominant-risk score: engine field is top_score (not .top) #}
+    {% set _mx5_radar_top = (_mx5_rdr.get('top_score') or _mx5_rdr.get('top') or 0) | int if _mx5_rdr else 0 %}
+    {% set _mx5_risk_elevated = (_mx5_rdr_state not in ('quiet','dormant','none','unknown','')) or (_mx5_radar_top >= 50) %}
     {# Factor rows for factor popover #}
-    {% set _mx5_comps = MS2.components if (MS2 and MS2.components is defined and MS2.components) else [] %}
+    {# MS (hero scope), NOT MS2 — MS2 is set later in the ledger section and is
+       undefined here, which rendered "0 signals aligned" + an empty factor popover #}
+    {% set _mx5_comps = MS.components if (MS and MS.components is defined and MS.components) else [] %}
     {% set _mx5_n_good = (_mx5_comps | selectattr('tone','equalto','good') | list | length) %}
     {# Weakest leg #}
     {% set _mx5_weakest = _mx5_comps | sort(attribute='score') | first if _mx5_comps else none %}
@@ -4904,8 +4908,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     {# v5 face — WHAT TO DO (grid view; sx-evidence face is now the WTD card)
        Keeps v4 derivation rows verbatim (MS2.components + radar + events) — reskinned to v5 icon tiles.
        Clicking opens the full Evidence island. #}
-    {% set _ev_n_good = (MS2.components | selectattr('tone','equalto','good') | list | length) if (MS2 and MS2.components) else 0 %}
-    {% set _ev_total = (MS2.components | length) if (MS2 and MS2.components) else 0 %}
+    {# MS, not MS2 — MS2 is defined later in the ledger flow (same bug class as the
+       scorecard button count) #}
+    {% set _ev_n_good = (MS.components | selectattr('tone','equalto','good') | list | length) if (market_state and MS.components) else 0 %}
+    {% set _ev_total = (MS.components | length) if (market_state and MS.components) else 0 %}
     <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-evidence')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-evidence');}">
       <div class="mx5-card-title"><span class="l-en">What To Do</span><span class="l-zh">操作建议</span></div>
       <div class="mx5-action-list">
@@ -4930,25 +4936,16 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             </svg>
           </div>
           <div class="mx5-action-text">
-            {% if MS.radar and MS.radar.state %}
-            <div class="mx5-action-label">
-              <span class="l-en">{{ MS.radar.label_en }} &mdash; {{ MS.radar.do_en }}</span>
-              <span class="l-zh">{{ MS.radar.label_zh or MS.radar.label_en }} &mdash; {{ MS.radar.do_zh or MS.radar.do_en }}</span>
-            </div>
-            <div class="mx5-action-sub">
-              <span class="l-en">Composite {{ MS.score }}/100 &middot; {{ {'green':'risk-on','yellow':'mixed','red':'risk-off'}.get(MS.color,'') }}</span>
-              <span class="l-zh">综合评分 {{ MS.score }}/100 &middot; {{ {'green':'偏多','yellow':'混合','red':'避险'}.get(MS.color,'') }}</span>
-            </div>
-            {% else %}
+            {# Row 1 is ALWAYS the ratified action vocab keyed to the verdict color
+               (the radar driver note is row 4 — it must not usurp the action line) #}
             <div class="mx5-action-label">
               <span class="l-en">{{ MS.label_en }} &mdash; {{ {'green':'Trend-follow, add on strength.','yellow':'Trade with caution. Size small.','red':'Defend capital first. Reduce risk.'}.get(MS.color,'') }}</span>
               <span class="l-zh">{{ MS.label_zh or MS.label_en }} &mdash; {{ {'green':'顺势而为，强势中加仓。','yellow':'谨慎操作，仓位缩小。','red':'优先保住本金，降低风险。'}.get(MS.color,'') }}</span>
             </div>
             <div class="mx5-action-sub">
-              <span class="l-en">Composite {{ MS.score }}/100 &middot; all pillars read</span>
-              <span class="l-zh">综合评分 {{ MS.score }}/100 &middot; 全因子已读</span>
+              <span class="l-en">Composite {{ MS.score }}/100{% if _ev_total %} &middot; {{ _ev_n_good }} of {{ _ev_total }} signals aligned{% endif %}</span>
+              <span class="l-zh">综合评分 {{ MS.score }}/100{% if _ev_total %} &middot; {{ _ev_n_good }}/{{ _ev_total }} 项信号一致{% endif %}</span>
             </div>
-            {% endif %}
           </div>
         </div>
         {% endif %}
@@ -5002,7 +4999,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
         {# Row 4: risk radar (from MS.radar — v4 derivation: risk level) #}
         {% if market_state and MS.radar and MS.radar.state %}
-        {% set _wtd_rdr_elevated = _mx5_rdr_state in ('elevated','caution','risk-off') %}
+        {% set _wtd_rdr_elevated = _mx5_risk_elevated %}
         <div class="mx5-action-item">
           <div class="mx5-action-icon {{ 'mx5-ai-yellow' if _wtd_rdr_elevated else 'mx5-ai-gray' }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="{{ '#f59e0b' if _wtd_rdr_elevated else 'rgba(255,255,255,.38)' }}" stroke-width="2" stroke-linecap="round">
@@ -5013,7 +5010,11 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              {% if _wtd_rdr_elevated %}
+              {% if _wtd_rdr_elevated and MS.radar.do_en %}
+              {# engine guidance verbatim (no free-authored advice) #}
+              <span class="l-en">{{ MS.radar.do_en }}</span>
+              <span class="l-zh">{{ MS.radar.do_zh or MS.radar.do_en }}</span>
+              {% elif _wtd_rdr_elevated %}
               <span class="l-en">A risk is building &mdash; stay normal, just watch it.</span>
               <span class="l-zh">风险正在积聚 &mdash; 维持正常仓位，密切关注。</span>
               {% else %}
@@ -5022,8 +5023,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               {% endif %}
             </div>
             <div class="mx5-action-sub">
-              <span class="l-en">{{ MS.radar.label_en }} at {{ _mx5_radar_top }}</span>
-              <span class="l-zh">{{ MS.radar.label_zh or MS.radar.label_en }} {{ _mx5_radar_top }}</span>
+              <span class="l-en">{{ MS.radar.label_en }}{% if _mx5_radar_top %} at {{ _mx5_radar_top }}{% endif %}</span>
+              <span class="l-zh">{{ MS.radar.label_zh or MS.radar.label_en }}{% if _mx5_radar_top %} {{ _mx5_radar_top }}{% endif %}</span>
             </div>
           </div>
         </div>

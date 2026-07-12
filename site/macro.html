@@ -5070,6 +5070,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     
     
     
+    
 
     <div class="mx5-sc-left">
 
@@ -5162,9 +5163,9 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <div class="mx5-flip">
         <span class="mx5-flip-arrow">&#8594;</span>
         <span class="l-en">→ Mixed if breadth & participation rolls over (now 59/100, the weakest leg).</span>
-        
+        <span class="l-en" style="color:rgba(255,255,255,.65);font-weight:600;"> (Breadth & participation 59/100)</span>
         <span class="l-zh">→ 若广度与参与转弱（现 59/100，最弱项）则转为「混合」。</span>
-        
+        <span class="l-zh" style="color:rgba(255,255,255,.65);font-weight:600;">（广度与参与 59/100）</span>
       </div>
       
 
@@ -5178,22 +5179,24 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
-          <span class="l-en">0 signals aligned</span>
-          <span class="l-zh">0 项信号一致</span>
+          <span class="l-en">5 signals aligned</span>
+          <span class="l-zh">5 项信号一致</span>
           <svg width="9" height="9" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l4 4 4-4"/></svg>
         </button>
 
         
-        <button class="mx5-sc-btn" id="mx5BtnRisk"
+        <button class="mx5-sc-btn mx5-sc-btn-warn" id="mx5BtnRisk"
                 onclick="mx5TogglePop('mx5PopRisk','mx5BtnRisk')"
                 aria-expanded="false" aria-controls="mx5PopRisk"
                 type="button">
           
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <svg width="12" height="11" viewBox="0 0 24 21" fill="none">
+            <path d="M12 2L1.5 20h21L12 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="17" r="1" fill="currentColor"/>
           </svg>
-          <span class="l-en">Risk Detail</span>
-          <span class="l-zh">风险详情</span>
+          <span class="l-en">Elevated Risk &middot; 62</span>
+          <span class="l-zh">风险偏高 &middot; 62</span>
           
           <svg width="9" height="9" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l4 4 4-4"/></svg>
         </button>
@@ -5208,8 +5211,94 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <button class="mx5-pop-close-btn" type="button"
                     onclick="mx5CloseAllPopovers()" aria-label="Close">&#xd7;</button>
           </div>
-          <div class="mx5-popover-title"><span class="l-en">Factor Breakdown &mdash; 0 Signals</span><span class="l-zh">因子分析 &mdash; 0 项</span></div>
+          <div class="mx5-popover-title"><span class="l-en">Factor Breakdown &mdash; 6 Signals</span><span class="l-zh">因子分析 &mdash; 6 项</span></div>
           <div class="mx5-factors-inner">
+            
+            
+            <div class="mx5-factor-row">
+              <div class="mx5-factor-header">
+                <span class="mx5-factor-name">
+                  <span class="l-en">Trend & technicals</span><span class="l-zh">趋势与技术</span>
+                </span>
+                <span class="mx5-factor-score">90</span>
+              </div>
+              <div class="mx5-factor-bar-track">
+                <div class="mx5-factor-bar-fill" style="width:90%"></div>
+              </div>
+              
+            </div>
+            
+            
+            <div class="mx5-factor-row">
+              <div class="mx5-factor-header">
+                <span class="mx5-factor-name">
+                  <span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span>
+                </span>
+                <span class="mx5-factor-score">70</span>
+              </div>
+              <div class="mx5-factor-bar-track">
+                <div class="mx5-factor-bar-fill" style="width:70%"></div>
+              </div>
+              
+            </div>
+            
+            
+            <div class="mx5-factor-row">
+              <div class="mx5-factor-header">
+                <span class="mx5-factor-name">
+                  <span class="l-en">Volatility regime</span><span class="l-zh">波动率环境</span>
+                </span>
+                <span class="mx5-factor-score">86</span>
+              </div>
+              <div class="mx5-factor-bar-track">
+                <div class="mx5-factor-bar-fill" style="width:86%"></div>
+              </div>
+              
+            </div>
+            
+            
+            <div class="mx5-factor-row">
+              <div class="mx5-factor-header">
+                <span class="mx5-factor-name" style="color:var(--mx5-warn)">
+                  <span class="l-en">Breadth & participation</span><span class="l-zh">广度与参与</span>
+                </span>
+                <span class="mx5-factor-score weak">59</span>
+              </div>
+              <div class="mx5-factor-bar-track">
+                <div class="mx5-factor-bar-fill weak" style="width:59%"></div>
+              </div>
+              
+              <div class="mx5-factor-weak-tag"><span class="l-en">WEAKEST LEG &mdash; MONITOR</span><span class="l-zh">最弱分项 &mdash; 持续关注</span></div>
+              
+            </div>
+            
+            
+            <div class="mx5-factor-row">
+              <div class="mx5-factor-header">
+                <span class="mx5-factor-name">
+                  <span class="l-en">Liquidity & credit</span><span class="l-zh">流动性与信用</span>
+                </span>
+                <span class="mx5-factor-score">77</span>
+              </div>
+              <div class="mx5-factor-bar-track">
+                <div class="mx5-factor-bar-fill" style="width:77%"></div>
+              </div>
+              
+            </div>
+            
+            
+            <div class="mx5-factor-row">
+              <div class="mx5-factor-header">
+                <span class="mx5-factor-name">
+                  <span class="l-en">Downturn-risk guard</span><span class="l-zh">下行风险护栏</span>
+                </span>
+                <span class="mx5-factor-score">87</span>
+              </div>
+              <div class="mx5-factor-bar-track">
+                <div class="mx5-factor-bar-fill" style="width:87%"></div>
+              </div>
+              
+            </div>
             
           </div>
           <div class="mx5-pop-footer">
@@ -5519,6 +5608,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     
     
     
+    
     <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-evidence')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-evidence');}">
       <div class="mx5-card-title"><span class="l-en">What To Do</span><span class="l-zh">操作建议</span></div>
       <div class="mx5-action-list">
@@ -5538,14 +5628,13 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <div class="mx5-action-text">
             
             <div class="mx5-action-label">
-              <span class="l-en">Bubble / blow-off unwind &mdash; A risk is building — stay normal, just watch it.</span>
-              <span class="l-zh">泡沫/见顶回吐 &mdash; 风险在积累 — 保持正常，留意即可。</span>
+              <span class="l-en">Risk-on &mdash; Trend-follow, add on strength.</span>
+              <span class="l-zh">风险偏好 &mdash; 顺势而为，强势中加仓。</span>
             </div>
             <div class="mx5-action-sub">
-              <span class="l-en">Composite 79/100 &middot; risk-on</span>
-              <span class="l-zh">综合评分 79/100 &middot; 偏多</span>
+              <span class="l-en">Composite 79/100 &middot; 5 of 6 signals aligned</span>
+              <span class="l-zh">综合评分 79/100 &middot; 5/6 项信号一致</span>
             </div>
-            
           </div>
         </div>
         
@@ -5601,8 +5690,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <div class="mx5-action-item">
-          <div class="mx5-action-icon mx5-ai-gray">
-            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.38)" stroke-width="2" stroke-linecap="round">
+          <div class="mx5-action-icon mx5-ai-yellow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
               <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
               <line x1="12" y1="9" x2="12" y2="13"/>
               <line x1="12" y1="17" x2="12.01" y2="17"/>
@@ -5611,13 +5700,14 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <div class="mx5-action-text">
             <div class="mx5-action-label">
               
-              <span class="l-en">Risk radar is quiet &mdash; nothing structural to act on.</span>
-              <span class="l-zh">风险雷达平静 &mdash; 无结构性行动需要。</span>
+              
+              <span class="l-en">A risk is building — stay normal, just watch it.</span>
+              <span class="l-zh">风险在积累 — 保持正常，留意即可。</span>
               
             </div>
             <div class="mx5-action-sub">
-              <span class="l-en">Bubble / blow-off unwind at 0</span>
-              <span class="l-zh">泡沫/见顶回吐 0</span>
+              <span class="l-en">Bubble / blow-off unwind at 62</span>
+              <span class="l-zh">泡沫/见顶回吐 62</span>
             </div>
           </div>
         </div>
