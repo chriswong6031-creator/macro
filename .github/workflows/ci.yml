@@ -731,7 +731,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pyyaml
+        # pandas+numpy required by tests/test_delivery_waterfall.py (added #2413), which
+        # imports engine.delivery_waterfall's numeric stack — without them the pytest
+        # step below fails at collection and blocks every PR (main-carried red).
+        run: pip install pytest pyyaml pandas numpy
       - name: synapse registry integrity (hard gate)
         run: python3 scripts/check_synapse_registry.py
       - name: synapse read-gate — warn tier + Article-2 hard fail
