@@ -321,6 +321,20 @@ def verify_proposal(
         # Archive-on-verify: save the contract + outcome to agenda_archive/ for dream cycle
         _archive_on_verify(cycle_id, contract, record, root)
 
+        # R-V8-7: Falsifier→ladder bridge.
+        # On a clean-overfit FALSIFIER_TRIPPED, feed journal_breach() so that
+        # grade_demotion_ladder() has automatic counts to work with.
+        # Health-miss exclusion preserved: journal_breach() with breach_type="logic_breach"
+        # is only "counted" when health_status is NOT in _HEALTH_EXCLUDED_STATUSES.
+        # One outcome = one counted row; idempotent per cycle_id (write_verify_record
+        # commits the verify file atomically, so this call happens exactly once per
+        # verified cycle — re-running verify on an already-verified cycle is blocked
+        # upstream by _scan_pending_cycles which skips existing verify records).
+        if outcome == _TRIPPED and triage.get("action") == "revert_plan":
+            _feed_breach_from_falsifier(cycle_id, contract, triage, root)
+            # R-V8-9: park the construction so the build lane won't re-build it.
+            _park_construction_from_falsifier(cycle_id, contract, root)
+
         return record
 
     except Exception as exc:  # noqa: BLE001
@@ -537,6 +551,167 @@ def _append_governance_tap(
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("metabolism_verify._append_governance_tap: %s", exc)
+
+
+# ── R-V8-7: Falsifier→ladder bridge ──────────────────────────────────────────
+
+def _feed_breach_from_falsifier(
+    cycle_id: str,
+    contract: dict,
+    triage: dict,
+    root: Path,
+) -> None:
+    """Feed journal_breach() so grade_demotion_ladder() counts a clean-overfit miss.
+
+    Called exactly once per clean-overfit FALSIFIER_TRIPPED outcome (upstream
+    write_verify_record commits the verify file atomically, so this runs once per
+    cycle — idempotent).
+
+    Health-miss exclusion preserved: health_status is not available in the verify
+    path (we have no live health.py result here), so we pass health_status=None,
+    which means the row IS counted (excluded only if health_status IN
+    _HEALTH_EXCLUDED_STATUSES).  This is the correct behaviour: the falsifier
+    fired on a real outcome, not a data-quality miss.
+
+    NEVER raises.
+    """
+    try:
+        lobe_id = str(contract.get("lobe") or contract.get("lobe_id") or "")
+        if not lobe_id:
+            log.info(
+                "verify._feed_breach_from_falsifier: no lobe_id in contract for cycle=%s "
+                "— skipping ladder feed",
+                cycle_id,
+            )
+            return
+
+        sensor = str(contract.get("sensor") or "")
+        proposal_id = str(contract.get("proposal_id") or contract.get("dedup_hash") or "")
+        reason = (
+            f"R-V8-7 falsifier→ladder bridge: FALSIFIER_TRIPPED clean-overfit "
+            f"(cycle={cycle_id} sensor={sensor} proposal={proposal_id} "
+            f"triage={triage.get('classification', '')})"
+        )
+        journal_breach(
+            lobe_id,
+            breach_type="logic_breach",
+            health_status=None,      # real outcome, not a data-quality miss
+            reason=reason,
+            regime_paused=False,     # only clean-overfit reaches here (not regime flag)
+            all_inputs_absent=False,
+            root=root,
+        )
+        log.info(
+            "verify._feed_breach_from_falsifier: journaled breach for lobe=%s cycle=%s",
+            lobe_id, cycle_id,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("verify._feed_breach_from_falsifier(%s): %s", cycle_id, exc)
+
+
+def _park_construction_from_falsifier(
+    cycle_id: str,
+    contract: dict,
+    root: Path,
+) -> None:
+    """Append a parked_construction row to claims.jsonl (R-V8-9).
+
+    Called on clean-overfit FALSIFIER_TRIPPED so the build lane skips the same
+    lobe+kind+sensor combination until an ADJUDICATE release grant unparks it.
+    NEVER raises.
+    """
+    try:
+        lobe = str(contract.get("lobe") or contract.get("lobe_id") or "")
+        kind = str(contract.get("kind") or "")
+        proposal_id = str(contract.get("proposal_id") or contract.get("dedup_hash") or "")
+        sensor_raw = contract.get("sensor")
+        sensors = [str(sensor_raw)] if sensor_raw else []
+
+        if not lobe:
+            log.info(
+                "verify._park_construction_from_falsifier: no lobe in contract for "
+                "cycle=%s — skipping park",
+                cycle_id,
+            )
+            return
+
+        append_parked_construction(
+            proposal_id=proposal_id,
+            lobe=lobe,
+            sensors=sensors,
+            kind=kind,
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("verify._park_construction_from_falsifier(%s): %s", cycle_id, exc)
+
+
+# ── R-V8-9: Construction parking ─────────────────────────────────────────────
+
+def append_parked_construction(
+    proposal_id: str,
+    lobe: str,
+    sensors: list[str],
+    kind: str,
+    *,
+    root: Path | None = None,
+    claims_path: Path | None = None,
+    release_grant_id: str | None = None,
+) -> dict[str, Any]:
+    """Append a parked_construction row to the build-lane claims file.
+
+    On a clean-overfit FALSIFIER_TRIPPED, the verify lane calls this so the
+    build lane skips matching proposals until an ADJUDICATE release grant unparks
+    the construction.
+
+    Parameters
+    ----------
+    proposal_id : str
+    lobe : str
+    sensors : list[str]
+    kind : str
+    root : Path | None
+    claims_path : Path | None — override path (for testing)
+    release_grant_id : str | None — if set, this row UNPARKS the construction
+
+    Returns
+    -------
+    dict — the row appended (or error dict).  NEVER raises.
+    """
+    try:
+        r = Path(root) if root is not None else Path(__file__).resolve().parent.parent.parent
+        ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+        row: dict[str, Any] = {
+            "schema": "metabolism.parked_construction.v1",
+            "ts": ts,
+            "proposal_id": proposal_id,
+            "parked_construction": {
+                "lobe": lobe,
+                "sensors": list(sensors),
+                "kind": kind,
+            },
+            "release_grant_id": release_grant_id,
+        }
+
+        p = claims_path or (r / "data" / "metabolism" / "claims.jsonl")
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with p.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row, separators=(",", ":"), ensure_ascii=False) + "\n")
+
+        log.info(
+            "verify.append_parked_construction: parked lobe=%s sensors=%s kind=%s "
+            "proposal=%s release_grant_id=%s",
+            lobe, sensors, kind, proposal_id, release_grant_id,
+        )
+        return row
+    except Exception as exc:  # noqa: BLE001
+        log.warning("verify.append_parked_construction: %s", exc)
+        return {
+            "schema": "metabolism.parked_construction.v1",
+            "proposal_id": proposal_id,
+            "error": str(exc),
+        }
 
 
 # ── File writer ────────────────────────────────────────────────────────────────

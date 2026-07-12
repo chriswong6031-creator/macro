@@ -138,3 +138,19 @@ prior_demote_min_n: 5
 #   Demoted items remain visible with prior_demoted:true.
 #   IMMUTABLE: loop PRs may NOT modify this value.
 prior_demote_hit_rate: 0.25
+# ── Reflex-arc config (R-V8-6..R-V8-9) ──────────────────────────────────────
+#
+# max_open_revert_prs: maximum simultaneously open DRAFT revert PRs that
+# metabolism_revert.py may maintain.  Prevents runaway revert queues.
+# IMMUTABLE: loop PRs may NOT modify this value.
+max_open_revert_prs: 2          # R-V8-6
+
+# tap_reping_days: taps held longer than this many days receive a re-ping
+# (Telegram + insight).  Default 7 = one week of silence is unusual enough
+# to re-surface.
+tap_reping_days: 7              # R-V8-8
+
+# tap_park_days: taps held longer than this many days are parked with an
+# operator_tap_expired insight so the docket is never silently infinite.
+# Parking is NOT execution — the held plan stays held.
+tap_park_days: 21               # R-V8-8

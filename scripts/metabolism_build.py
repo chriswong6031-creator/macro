@@ -148,6 +148,80 @@ def _cycle_claimed_files(cycle_id: str, root: Path | None = None,
         return set()
 
 
+def _is_construction_parked(
+    proposal: dict,
+    *,
+    root: Path | None = None,
+) -> bool:
+    """Return True when the proposal's lobe+kind+sensor overlaps a parked construction.
+
+    A parked_construction row in claims.jsonl blocks re-builds of the same
+    construction (R-V8-9).  A row with release_grant_id set (written by
+    ADJUDICATE) unparks — if any release row exists for a parked proposal,
+    the construction is NOT blocked.
+
+    Match logic: lobe == lobe AND kind == kind AND sensors have non-empty
+    intersection.
+
+    NEVER raises.
+    """
+    try:
+        rows = _read_claims(root)
+        prop_lobe = str(proposal.get("lobe") or "").strip()
+        prop_kind = str(proposal.get("kind") or "").strip()
+        sensor_raw = proposal.get("targets_sensor") or proposal.get("sensor") or ""
+        prop_sensors: set[str] = (
+            set(sensor_raw) if isinstance(sensor_raw, list)
+            else {str(sensor_raw)} if sensor_raw
+            else set()
+        )
+
+        if not prop_lobe:
+            return False  # no lobe = cannot match a parked construction
+
+        # Collect all parked proposal_ids + any released proposal_ids
+        parked_pids: set[str] = set()
+        released_pids: set[str] = set()
+
+        for row in rows:
+            if row.get("schema") != "metabolism.parked_construction.v1":
+                continue
+            pc = row.get("parked_construction") or {}
+            row_lobe = str(pc.get("lobe") or "").strip()
+            row_kind = str(pc.get("kind") or "").strip()
+            row_sensors: set[str] = set(pc.get("sensors") or [])
+            row_pid = str(row.get("proposal_id") or "")
+
+            # Lobe must match
+            if row_lobe != prop_lobe:
+                continue
+            # Kind must match (if both non-empty)
+            if prop_kind and row_kind and prop_kind != row_kind:
+                continue
+            # Sensor overlap required (if both have sensors)
+            if prop_sensors and row_sensors and not prop_sensors.intersection(row_sensors):
+                continue
+
+            if row.get("release_grant_id"):
+                released_pids.add(row_pid)
+            else:
+                parked_pids.add(row_pid)
+
+        # A proposal is blocked only if it has a parked row AND no release row
+        blocked_pids = parked_pids - released_pids
+        if blocked_pids:
+            log.info(
+                "BUILD: _is_construction_parked: lobe=%s kind=%s sensors=%s matched "
+                "parked pids=%s (released=%s)",
+                prop_lobe, prop_kind, prop_sensors, blocked_pids, released_pids,
+            )
+            return True
+        return False
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_build._is_construction_parked: %s", exc)
+        return False  # fail-open: don't block builds on check error
+
+
 def claim_proposal(
     cycle_id: str,
     proposal_id: str,
@@ -1565,7 +1639,23 @@ def run_build_lane(
                 results.append(per)
                 continue
 
-            # Step 1b: Audit-reject remediation check (R-V7-7).
+            # Step 1b: Parked-construction check (R-V8-9).
+            # If the proposal's lobe+kind+sensor combination is parked (a prior
+            # FALSIFIER_TRIPPED clean-overfit appended a parked_construction row),
+            # skip this proposal unless a release_grant_id unparks it.
+            if _is_construction_parked(prop, root=root):
+                per["status"] = "parked_construction"
+                per["reason"] = (
+                    "construction parked by a prior FALSIFIER_TRIPPED clean-overfit "
+                    "(R-V8-9); release requires an ADJUDICATE grant"
+                )
+                log.info(
+                    "BUILD: proposal=%s skipped — construction parked (R-V8-9)", pid,
+                )
+                results.append(per)
+                continue
+
+            # Step 1c: Audit-reject remediation check (R-V7-7).
             # Before the normal build path, check if the proposal has an open
             # unremediated audit reject.  If so, this cycle should fix it, not
             # re-run from scratch.
