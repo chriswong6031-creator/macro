@@ -995,6 +995,22 @@ jobs:
       - name: broad ETF flow proxy unit tests
         run: python -m pytest tests/test_broad_etf_flows.py -q
 
+  qledger-cluster-honest-ci:
+    # altdata-diagnosis PR-A: cluster-honest Wilson CI fix.
+    # Proves that _aggregate and promotion_check compute wilson_ci_low on n_dates
+    # (independent date clusters), not on the correlated n_obs, per the
+    # ticker-cluster time-confound law and the altdata_brain.py article3 convention.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: qledger cluster-honest Wilson CI unit tests
+        run: python -m pytest tests/test_qledger_cluster_honest_ci.py -q
+
   house-law-registry:
     # Meta-guard: verifies config/house_law_checks.yml is complete and honest.
     # Three checks in sequence:
