@@ -487,7 +487,7 @@ fetch('../policy_lever.json',{cache:'no-cache'})
 
 <footer>
   <span class="l-en">Read-only analytics, not investment advice. Theme scores organize what to study; they are descriptive, not a validated buy list. Member ratings reuse the stock dashboard Conviction Profile and trust tier. Treat them as a focus list, never an order.</span><span class="l-zh">只读分析，非投资建议。主题评分用于整理研究重点；它是描述性读数，不是已验证买入清单。成分股评分复用股票看板的信念档案与信任层级。请把它当作关注清单，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-12 00:28 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-12 01:37 UTC</span>.
 </footer>
 
 <script>
@@ -1130,8 +1130,20 @@ function liveStripHtml(pb, tw, totalBaskets, pulseMode){
     // User-first copy (#2221 vocabulary): STRONG SIGN / EARLY SIGN; the state-enum
     // receipt (Oracle P8, base rate) lives in the data-tip (Tier 2). States unchanged.
     var isIgn=tw.state==='IGNITION';
-    var twTipEn='Technical receipt: fast turn meter, state '+tw.state+' ('+(tw.k||0)+' of 6 legs). Backtested basket-level washout→turn edge = null (Oracle P8); T+1 fade base rate 58% (n=26). Slow ratings unchanged; display tier only.';
-    var twTipZh='技术说明：快速拐点计量，状态 '+tw.state+'（6条腿中'+(tw.k||0)+'条触发）。篮子级洗盘→拐点回测优势为空值（Oracle P8）；T+1消退基础概率58%（n=26）。慢速评级未变；仅展示层。';
+    // FC-R5 / FL-D: append cohort_flow tilt context to hover receipt (display-only;
+    // NOT a leg; NOT in K count; buy-vs-sell direction is approximate).
+    var cfTip='';
+    var cfTipZh='';
+    if(tw.cohort_flow&&tw.cohort_flow.pc_word){
+      var cfWord=tw.cohort_flow.pc_word;
+      var cfWordEn=cfWord==='call_tilted'?'call-tilted':cfWord==='put_tilted'?'put-tilted':'balanced';
+      var cfWordZh=cfWord==='call_tilted'?'看涨偏重':cfWord==='put_tilted'?'看跌偏重':'多空均衡';
+      var cfPc=tw.cohort_flow.pc_ratio!=null?' (P/C '+tw.cohort_flow.pc_ratio+')':'';
+      cfTip=' Options tape: '+cfWordEn+cfPc+' — size and call/put mix are solid reads; direction approx.';
+      cfTipZh=' 期权带：'+cfWordZh+cfPc+' — 规模与看涨/看跌比例更可靠；方向仅供参考。';
+    }
+    var twTipEn='Technical receipt: fast turn meter, state '+tw.state+' ('+(tw.k||0)+' of 6 legs). Backtested basket-level washout→turn edge = null (Oracle P8); T+1 fade base rate 58% (n=26). Slow ratings unchanged; display tier only.'+cfTip;
+    var twTipZh='技术说明：快速拐点计量，状态 '+tw.state+'（6条腿中'+(tw.k||0)+'条触发）。篮子级洗盘→拐点回测优势为空值（Oracle P8）；T+1消退基础概率58%（n=26）。慢速评级未变；仅展示层。'+cfTipZh;
     html+='<span data-tip-en="'+esc(twTipEn)+'" data-tip-zh="'+esc(twTipZh)+'" style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;'
       +(isIgn?'background:rgba(249,115,22,.16);border:1px solid rgba(249,115,22,.36);color:var(--orange,#f97316)':'background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.30);color:var(--warn)')+'">&#9889;'+L(isIgn?'STRONG SIGN':'EARLY SIGN',isIgn?'较强迹象':'初步迹象')+'</span>'
       +'<span style="font-size:11px;color:var(--muted)">'+(tw.k||0)+L(' of 6 signs',' / 6 项迹象')+'</span>';

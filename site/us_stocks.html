@@ -435,6 +435,7 @@
   .igs .igs-k { font-size: 10px; color: var(--muted); font-weight: 700;
          text-transform: uppercase; letter-spacing: .07em; white-space: nowrap; }
   .igs .igs-dots { display: inline-flex; align-items: center; gap: 5px; }
+  .igs .igs-dotsep { width: 7px; flex: none; }   /* thrust | participation family gap */
   .igs .igs-dot { width: 10px; height: 10px; border-radius: 50%; cursor: help;
          background: var(--panel2); border: 1px solid var(--line); }
   .igs .igs-dot.lit { background: var(--ok);
@@ -455,9 +456,15 @@
   .igs .igs-theme.fading { color: var(--muted); }
   .igs .igs-xref { font-size: 10.5px; color: var(--muted); cursor: help; white-space: nowrap;
          padding: 2px 8px; border-radius: 99px; border: 1px dashed var(--line); margin-left: auto; }
-  /* one merged footer */
+  /* one merged footer: stance token · engine do-line + track record · as-of right */
   .igs .igs-ft { margin-top: 9px; padding-top: 8px; font-size: 11px; color: var(--muted);
-         border-top: 1px solid color-mix(in srgb, var(--ic-col) 18%, var(--line)); }
+         border-top: 1px solid color-mix(in srgb, var(--ic-col) 18%, var(--line));
+         display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
+  .igs .igs-stance { font-weight: 800; color: var(--text); text-transform: uppercase;
+         letter-spacing: .04em; font-size: 10.5px; white-space: nowrap; flex: none; }
+  .igs .igs-ft-body { flex: 1 1 320px; min-width: 0; }
+  .igs .igs-asof { flex: none; margin-left: auto; font-size: 10px; opacity: .75;
+         font-variant-numeric: tabular-nums; white-space: nowrap; }
   @media (max-width: 560px) {
     .igs .igs-glance { flex-basis: 100%; }
     .igs .igs-xref { margin-left: 0; }
@@ -674,9 +681,12 @@
   .act-score-hi  { color: var(--up); }
   .act-score-mid { color: var(--warn); }
   .act-score-lo  { color: var(--down); }
-  /* V2 stat line — muted grey, no color tokens; last line of the row; hidden on mobile */
+  /* V2 stat line — last line of the row; muted label, china-anv2-style colored value
+     (var(--up)/var(--down) so the zh red/green flip rides along); hidden on mobile */
   .act-row-stat { display: block; font-size: 10.5px; color: var(--muted); line-height: 1.35; margin-top: 3px;
                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .act-row-stat .up { color: var(--up); font-weight: 600; }
+  .act-row-stat .dn { color: var(--down); font-weight: 600; }
   @media (max-width: 560px) { .act-row-stat { display: none; } }
   .act-row-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 4px; }
   /* V2 action chip — anv2-chip idiom (uppercase 10px, 4px radius) */
@@ -2335,119 +2345,7 @@
   
   
   
-  <div class="m7p m7p-turning_up">
-
   
-  <div class="m7p-hd">
-    <div class="m7p-meta">
-      <div class="m7p-title-row">
-        <h2 class="m7p-h2">
-          <span class="l-en">Mag 7</span><span class="l-zh">七巨头</span>
-        </h2>
-        <span class="m7p-badge">
-          <span class="l-en">Turning up</span>
-          <span class="l-zh">拐头向上</span>
-        </span>
-        <span class="m7p-help" data-tip-en="Cap-weighted view of the 7 largest US stocks. Weights: Equal weights (cap data unavailable). MAGS ETF data unavailable. Numbers are descriptive context reads — a heads-up, not a buy signal." data-tip-zh="七只最大美股的市值加权视图。权重：等权（市值数据不可用）。MAGS ETF data unavailable。以上数字均为描述性背景读数 — 仅供参考，非买入信号。">?</span>
-      </div>
-
-      
-      <div class="m7p-state">
-        <span class="l-en">Turning up · day 7 · +3% since Jul 01 vs S&P +1%
-        </span>
-        <span class="l-zh">拐头向上 · 第7日 · Jul 01 起 +3% vs 标普 +1%
-        </span>
-      </div>
-
-      
-      <div class="m7p-stance">
-        <span class="l-en">Get ready</span>
-        <span class="l-zh">准备就绪</span>
-      </div>
-    </div>
-  </div>
-
-  
-  <div class="m7p-dots">
-    <div class="m7p-dot-wrap" data-tip-en="Apple · 20d +8.1% · vs market +3.8% · above 50-day MA · no trend data" data-tip-zh="苹果 · 20日 +8.1% · 相对市场 +3.8% · 站上 50日均线 · no trend data">
-      <span class="m7p-dot m7p-dot-green"></span>
-      <span class="m7p-dot-lbl">AAPL</span>
-    </div>
-    <div class="m7p-dot-wrap" data-tip-en="Microsoft · 20d -3.1% · vs market -7.4% · below 50-day MA · no trend data" data-tip-zh="微软 · 20日 -3.1% · 相对市场 -7.4% · 低于 50日均线 · no trend data">
-      <span class="m7p-dot m7p-dot-grey"></span>
-      <span class="m7p-dot-lbl">MSFT</span>
-    </div>
-    <div class="m7p-dot-wrap" data-tip-en="Nvidia · 20d +5.3% · vs market +0.9% · above 50-day MA · no trend data" data-tip-zh="英伟达 · 20日 +5.3% · 相对市场 +0.9% · 站上 50日均线 · no trend data">
-      <span class="m7p-dot m7p-dot-green"></span>
-      <span class="m7p-dot-lbl">NVDA</span>
-    </div>
-    <div class="m7p-dot-wrap" data-tip-en="Amazon · 20d +3.1% · vs market -1.3% · below 50-day MA · no trend data" data-tip-zh="亚马逊 · 20日 +3.1% · 相对市场 -1.3% · 低于 50日均线 · no trend data">
-      <span class="m7p-dot m7p-dot-grey"></span>
-      <span class="m7p-dot-lbl">AMZN</span>
-    </div>
-    <div class="m7p-dot-wrap" data-tip-en="Alphabet · 20d +0.2% · vs market -4.1% · below 50-day MA · no trend data" data-tip-zh="谷歌 · 20日 +0.2% · 相对市场 -4.1% · 低于 50日均线 · no trend data">
-      <span class="m7p-dot m7p-dot-grey"></span>
-      <span class="m7p-dot-lbl">GOOGL</span>
-    </div>
-    <div class="m7p-dot-wrap" data-tip-en="Meta · 20d +17.3% · vs market +13.0% · above 50-day MA · no trend data" data-tip-zh="Meta · 20日 +17.3% · 相对市场 +13.0% · 站上 50日均线 · no trend data">
-      <span class="m7p-dot m7p-dot-green"></span>
-      <span class="m7p-dot-lbl">META</span>
-    </div>
-    <div class="m7p-dot-wrap" data-tip-en="Tesla · 20d +6.9% · vs market +2.5% · below 50-day MA · no trend data" data-tip-zh="特斯拉 · 20日 +6.9% · 相对市场 +2.5% · 低于 50日均线 · no trend data">
-      <span class="m7p-dot m7p-dot-amber"></span>
-      <span class="m7p-dot-lbl">TSLA</span>
-    </div>
-  </div>
-
-  
-  <div class="m7p-generals">
-    <span class="l-en">
-      <b>Led by Meta + Apple + Microsoft</b> — <span class="m7p-joining">Nvidia, Tesla joining.</span>
-    </span>
-    <span class="l-zh">
-      <b>领涨：Meta + 苹果 + 微软</b> — <span class="m7p-joining">英伟达、特斯拉正在加入。</span>
-    </span>
-  </div>
-
-  
-  <div>
-    <span class="m7p-structure">
-      <span class="l-en">Still 4% below the year high</span>
-      <span class="l-zh">仍低于年内高点 4%</span>
-    </span>
-  </div>
-
-  
-  <div class="m7p-legs">
-    <span class="m7p-leg up2" data-tip-en="10d vs market +8.0% · 20d vs market +1.1%" data-tip-zh="10日相对市场 +8.0% · 20日相对市场 +1.1%">
-      <span class="m7p-leg-name l-en">Mag 7</span>
-      <span class="m7p-leg-name l-zh">七巨头</span>
-      <span class="m7p-leg-word">▲▲ surging</span>
-    </span>
-    <span class="m7p-leg dn" data-tip-en="10d vs market -4.0% · 20d vs market +1.4%" data-tip-zh="10日相对市场 -4.0% · 20日相对市场 +1.4%">
-      <span class="m7p-leg-name l-en">AI chips</span>
-      <span class="m7p-leg-name l-zh">AI芯片</span>
-      <span class="m7p-leg-word">▼ falling</span>
-    </span>
-    <span class="m7p-leg dn2" data-tip-en="10d vs market -17.6% · 20d vs market +9.1%" data-tip-zh="10日相对市场 -17.6% · 20日相对市场 +9.1%">
-      <span class="m7p-leg-name l-en">Memory</span>
-      <span class="m7p-leg-name l-zh">存储</span>
-      <span class="m7p-leg-word">▼▼ falling hard</span>
-    </span>
-    <span class="m7p-leg up" data-tip-en="10d vs market +2.1% · 20d vs market -12.8%" data-tip-zh="10日相对市场 +2.1% · 20日相对市场 -12.8%">
-      <span class="m7p-leg-name l-en">Software</span>
-      <span class="m7p-leg-name l-zh">软件</span>
-      <span class="m7p-leg-word">▲ running</span>
-    </span>
-  </div>
-
-  
-  <div class="m7p-foot">
-    <span class="l-en">Cap-weighted view of the 7 largest US stocks — the Buy lanes below still decide entries.</span><span class="l-zh">七只最大美股的市值加权视图 — 以下买入通道仍决定入场时机。</span>
-    <span class="m7p-asof"><span class="l-en">As of 2026-07-10</span><span class="l-zh">截至 2026-07-10</span></span>
-  </div>
-
-</div>
   
 
   
@@ -2505,10 +2403,9 @@
             <a class="actitem ai-theme" data-rpop href="basket/insurance.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></span><span class="act-row-score act-score-hi">70</span>
+        <span class="act-row-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">70</span>
       </span>
-      <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+8.3%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></span>
@@ -2540,10 +2437,9 @@
             <a class="actitem ai-theme" data-rpop href="basket/big_pharma.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span><span class="act-row-score act-score-hi">64</span>
+        <span class="act-row-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">64</span>
       </span>
-      <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+2.9%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span>
@@ -2575,10 +2471,9 @@
             <a class="actitem ai-theme" data-rpop href="basket/ai_software.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span><span class="act-row-score act-score-hi">62</span>
+        <span class="act-row-name"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">62</span>
       </span>
-      <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+0.7%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span>
@@ -2726,10 +2621,9 @@
             <a class="actitem ai-theme" data-rpop href="basket/managed_care.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></span><span class="act-row-score act-score-mid">59</span>
+        <span class="act-row-name"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></span><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-mid">59</span>
       </span>
-      <span class="act-row-chips"><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+4.8%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></span>
@@ -2765,10 +2659,9 @@
             <a class="actitem ai-theme" data-rpop href="basket/regional_banks.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span><span class="act-row-score act-score-hi">61</span>
+        <span class="act-row-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-hi">61</span>
       </span>
-      <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+3.2%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span>
@@ -2802,10 +2695,9 @@
             <a class="actitem ai-theme" data-rpop href="basket/memory_storage.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Memory, HBM &amp; Storage</span><span class="l-zh">内存、HBM 与存储</span></span><span class="act-row-score act-score-hi">62</span>
+        <span class="act-row-name"><span class="l-en">Memory, HBM &amp; Storage</span><span class="l-zh">内存、HBM 与存储</span></span><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-hi">62</span>
       </span>
-      <span class="act-row-chips"><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+2.3%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Memory, HBM &amp; Storage</span><span class="l-zh">内存、HBM 与存储</span></span>
@@ -2891,10 +2783,9 @@
           <div data-theme-id="cybersecurity"><a class="actitem ai-theme" data-rpop href="basket/cybersecurity.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span><span class="act-row-score act-score-hi">74</span>
+        <span class="act-row-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">74</span>
       </span>
-      <span class="act-row-chips"><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">&#9733;25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+25.2%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span>
@@ -2927,10 +2818,9 @@
           <div data-theme-id="obesity_glp1"><a class="actitem ai-theme" data-rpop href="basket/obesity_glp1.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span><span class="act-row-score act-score-hi">66</span>
+        <span class="act-row-name"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">66</span>
       </span>
-      <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+10.4%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span>
@@ -2961,10 +2851,9 @@
           <div data-theme-id="payments_fintech"><a class="actitem ai-theme" data-rpop href="basket/payments_fintech.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></span><span class="act-row-score act-score-hi">62</span>
+        <span class="act-row-name"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">62</span>
       </span>
-      <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+9.5%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></span>
@@ -2995,10 +2884,9 @@
           <div data-theme-id="travel"><a class="actitem ai-theme" data-rpop href="basket/travel.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></span><span class="act-row-score act-score-hi">60</span>
+        <span class="act-row-name"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-hi">60</span>
       </span>
-      <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+3.4%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></span>
@@ -3029,10 +2917,9 @@
           <div data-theme-id="ai_infra"><a class="actitem ai-theme" data-rpop href="basket/ai_infra.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></span><span class="act-row-score act-score-mid">59</span>
+        <span class="act-row-name"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-mid">59</span>
       </span>
-      <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+0.1%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></span>
@@ -3063,10 +2950,9 @@
           <div data-theme-id="non_ai_software"><a class="actitem ai-theme" data-rpop href="basket/non_ai_software.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Non-AI Software</span><span class="l-zh">非AI软件</span></span><span class="act-row-score act-score-mid">58</span>
+        <span class="act-row-name"><span class="l-en">Non-AI Software</span><span class="l-zh">非AI软件</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-mid">58</span>
       </span>
-      <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+1.2%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Non-AI Software</span><span class="l-zh">非AI软件</span></span>
@@ -3097,10 +2983,9 @@
           <div data-theme-id="semicap_equipment"><a class="actitem ai-theme" data-rpop href="basket/semicap_equipment.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span><span class="act-row-score act-score-mid">57</span>
+        <span class="act-row-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-mid">57</span>
       </span>
-      <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+2.8%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span>
@@ -3131,10 +3016,9 @@
           <div data-theme-id="ai_agents"><a class="actitem ai-theme" data-rpop href="basket/ai_agents.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">AI Agents &amp; Applications</span><span class="l-zh">AI 智能体与应用</span></span><span class="act-row-score act-score-mid">54</span>
+        <span class="act-row-name"><span class="l-en">AI Agents &amp; Applications</span><span class="l-zh">AI 智能体与应用</span></span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span><span class="act-row-score act-score-mid">54</span>
       </span>
-      <span class="act-row-chips"><span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>
-      </span>
+      <span class="act-row-stat"><span class="up">+2.1%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">AI Agents &amp; Applications</span><span class="l-zh">AI 智能体与应用</span></span>
@@ -3167,10 +3051,9 @@
             <div data-theme-id="space_economy"><a class="actitem ai-theme" data-rpop href="basket/space_economy.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Space Economy</span><span class="l-zh">太空经济</span></span><span class="act-row-score act-score-lo">31</span>
+        <span class="act-row-name"><span class="l-en">Space Economy</span><span class="l-zh">太空经济</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-lo">31</span>
       </span>
-      <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
-      </span>
+      <span class="act-row-stat"><span class="dn">-16.3%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Space Economy</span><span class="l-zh">太空经济</span></span>
@@ -3204,10 +3087,9 @@
             <div data-theme-id="uranium_miners"><a class="actitem ai-theme" data-rpop href="basket/uranium_miners.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></span><span class="act-row-score act-score-lo">33</span>
+        <span class="act-row-name"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-lo">33</span>
       </span>
-      <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
-      </span>
+      <span class="act-row-stat"><span class="dn">-6.6%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></span>
@@ -3241,10 +3123,9 @@
             <div data-theme-id="defense"><a class="actitem ai-theme" data-rpop href="basket/defense.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></span><span class="act-row-score act-score-lo">34</span>
+        <span class="act-row-name"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-lo">34</span>
       </span>
-      <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
-      </span>
+      <span class="act-row-stat"><span class="dn">-4.6%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">国防与航空航天</span></span>
@@ -3278,10 +3159,9 @@
             <div data-theme-id="critical_minerals"><a class="actitem ai-theme" data-rpop href="basket/critical_minerals.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Critical Minerals &amp; Rare Earths</span><span class="l-zh">关键矿产与稀土</span></span><span class="act-row-score act-score-lo">34</span>
+        <span class="act-row-name"><span class="l-en">Critical Minerals &amp; Rare Earths</span><span class="l-zh">关键矿产与稀土</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-lo">34</span>
       </span>
-      <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
-      </span>
+      <span class="act-row-stat"><span class="dn">-12.5%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Critical Minerals &amp; Rare Earths</span><span class="l-zh">关键矿产与稀土</span></span>
@@ -3315,10 +3195,9 @@
             <div data-theme-id="retail"><a class="actitem ai-theme" data-rpop href="basket/retail.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Retail</span><span class="l-zh">零售</span></span><span class="act-row-score act-score-lo">36</span>
+        <span class="act-row-name"><span class="l-en">Retail</span><span class="l-zh">零售</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-lo">36</span>
       </span>
-      <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
-      </span>
+      <span class="act-row-stat"><span class="dn">-3.8%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Retail</span><span class="l-zh">零售</span></span>
@@ -3352,10 +3231,9 @@
             <div data-theme-id="crypto"><a class="actitem ai-theme" data-rpop href="basket/crypto.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></span><span class="act-row-score act-score-lo">37</span>
+        <span class="act-row-name"><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-lo">37</span>
       </span>
-      <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
-      </span>
+      <span class="act-row-stat"><span class="dn">-10.6%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></span>
@@ -3389,10 +3267,9 @@
             <div data-theme-id="quantum_computing"><a class="actitem ai-theme" data-rpop href="basket/quantum_computing.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Quantum Computing</span><span class="l-zh">量子计算</span></span><span class="act-row-score act-score-mid">41</span>
+        <span class="act-row-name"><span class="l-en">Quantum Computing</span><span class="l-zh">量子计算</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-mid">41</span>
       </span>
-      <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
-      </span>
+      <span class="act-row-stat"><span class="dn">-4.9%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Quantum Computing</span><span class="l-zh">量子计算</span></span>
@@ -3426,10 +3303,9 @@
             <div data-theme-id="housing"><a class="actitem ai-theme" data-rpop href="basket/housing.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
-        <span class="act-row-name"><span class="l-en">Housing Chain</span><span class="l-zh">住房产业链</span></span><span class="act-row-score act-score-mid">45</span>
+        <span class="act-row-name"><span class="l-en">Housing Chain</span><span class="l-zh">住房产业链</span></span><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span><span class="act-row-score act-score-mid">45</span>
       </span>
-      <span class="act-row-chips"><span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>
-      </span>
+      <span class="act-row-stat"><span class="dn">-0.1%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Housing Chain</span><span class="l-zh">住房产业链</span></span>
@@ -11639,6 +11515,23 @@ window.__CHART_SWAP__ = {
     var h = e.target.closest && e.target.closest('.help');
     if (h) place(h);
   }, true);
+
+  /* MOB-03: tap-to-toggle on touch devices; close on outside tap */
+  var _tipOpen = null;
+  document.addEventListener('click', function(e){
+    var h = e.target.closest && e.target.closest('.help');
+    if(h){
+      e.stopPropagation();
+      if(_tipOpen && _tipOpen !== h){ _tipOpen.classList.remove('tip-open'); _tipOpen=null; }
+      var wasOpen = h.classList.contains('tip-open');
+      h.classList.toggle('tip-open', !wasOpen);
+      _tipOpen = wasOpen ? null : h;
+      if(!wasOpen) place(h);
+      return;
+    }
+    /* outside tap closes open tip */
+    if(_tipOpen){ _tipOpen.classList.remove('tip-open'); _tipOpen=null; }
+  });
 })();
 </script>
 <script>
