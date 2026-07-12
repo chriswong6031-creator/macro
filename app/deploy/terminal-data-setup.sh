@@ -27,7 +27,12 @@ EOF
 chmod +x /usr/local/bin/terminal-data
 
 log "[3/3] cron: daily 21:30 UTC (after US close; crypto refreshes on weekends too)"
+# Low-priority scope: the nightly marathon (~2-4h of gen_slices_all over ~8.7k symbols)
+# pegged the droplet's single vCPU at ~99% user, starving Caddy/quote-hub/macro-api of
+# scheduling (DO graphs 2026-07-05..12). CPUWeight=10 (vs 100 default) lets live services
+# preempt it; MemoryHigh throttles instead of OOM-killing on a memory regression.
+# Applied to the live crontab by hand 2026-07-12 — keep this line in sync with it.
 { crontab -l 2>/dev/null | grep -v "terminal-data" || true ; \
-  echo "30 21 * * * /usr/local/bin/terminal-data >> /var/log/terminal-data.log 2>&1" ; } | crontab -
+  echo "30 21 * * * /usr/bin/systemd-run --scope --quiet -p CPUWeight=10 -p MemoryHigh=1G -p IOWeight=20 /usr/local/bin/terminal-data >> /var/log/terminal-data.log 2>&1" ; } | crontab -
 
 log "DONE — Terminal data refreshes daily; crontab:"; crontab -l | grep terminal-data
