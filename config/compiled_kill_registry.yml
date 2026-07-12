@@ -270,6 +270,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Margin-inflection reclaim (S10 v1.0, strict-sign single-quarter turn as-constructed)'
+    verdict: 'FALSIFIED phase-0 — construction-scoped kill (predicate anti-persistent, EDGAR Q4-gap row-adjacency, episode MDE ≈6–8pp vs 5pp floor); margin-direction retained as confluence input; revival needs a NEW species version + fresh prereg (durability-gated, calendar-adjacent, prefix-matched comparator)'
+    source: 'S10 phase-0 adjudication (#2396), research/species/W5_S10_REPORT.md §12'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Fused 100-point "sponsorship breakaway" score (Codex Moderna docket §5.2)'
     verdict: 'STRUCK — positioning-fusion illegal + Signal Commons R3; replaced by per-axis AND-gate'
     source: 'WA-R1, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md`'
