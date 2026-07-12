@@ -511,6 +511,495 @@ FAVORED = {
     "Neutral": [],
 }
 
+# --------------------------------------------------------------------------- #
+# Bilingual label dicts — NEVER emit raw slugs to the page
+# --------------------------------------------------------------------------- #
+MEMBER_LABELS: dict[str, tuple[str, str]] = {
+    "gold":        ("Gold", "黄金"),
+    "silver":      ("Silver", "白银"),
+    "platinum":    ("Platinum", "铂金"),
+    "palladium":   ("Palladium", "钯金"),
+    "copper":      ("Copper", "铜"),
+    "oil":         ("Oil · WTI", "原油 · WTI"),
+    "natgas":      ("Natural Gas", "天然气"),
+    "gasoline":    ("Gasoline", "汽油"),
+    "heating_oil": ("Heating Oil", "取暖油"),
+    "corn":        ("Corn", "玉米"),
+    "wheat":       ("Wheat", "小麦"),
+    "soybeans":    ("Soybeans", "大豆"),
+    "live_cattle": ("Live Cattle", "活牛"),
+    "coffee":      ("Coffee", "咖啡"),
+    "sugar":       ("Sugar", "白糖"),
+    "cocoa":       ("Cocoa", "可可"),
+    "cotton":      ("Cotton", "棉花"),
+}
+
+MOMENTUM_STATE_LABELS: dict[str, tuple[str, str]] = {
+    "bull":    ("Momentum up", "短期动量向上"),
+    "bear":    ("Momentum down", "短期动量转弱"),
+    "neutral": ("Mixed", "中性"),
+}
+
+SHOCK_STATE_LABELS: dict[str, tuple[str, str]] = {
+    "exogenous_bid":      ("Unexplained bid", "异常买盘"),
+    "exogenous_pressure": ("Unexplained selling", "异常抛压"),
+    "washout":            ("Washing out", "洗盘"),
+    "blowoff":            ("Blow-off", "喷发"),
+    "normal":             ("—", "—"),
+}
+
+CYCLE_PHASE_LABELS: dict[str, tuple[str, str]] = {
+    "Trough":    ("Cycle low", "周期底部"),
+    "Downturn":  ("Rolling over", "见顶回落"),
+    "Recovery":  ("Recovering", "复苏中"),
+    "Expansion": ("Advancing", "上行"),
+    "Peak":      ("Cycle high", "周期顶部"),
+}
+
+# Confluence state → plain action phrase (en, zh)
+_CONF_STATE_ACTION: dict[str, tuple[str, str]] = {
+    "Washout bottom forming":     ("Watch for the turn", "关注底部转势"),
+    "Washing out — high risk":    ("Don't catch the knife", "勿接下落飞刀"),
+    "Basing — early bottom signs":("Watch — too early to act", "观望，尚早"),
+    "Extended — late cycle":      ("Don't chase — watch for a turn", "勿追高，等待拐点"),
+    "Blowing off — extended":     ("Take profits, don't add", "减仓，勿追加"),
+    "Euphoric top — rolling over":("Take profits — reduce exposure", "获利了结，降低风险"),
+    "Neutral":                    ("Watch — not enough signal yet", "观望——信号不足"),
+}
+
+# Grid groupings: class → (en_label, zh_label)
+_GRID_GROUPS: list[tuple[str, str, str, list[str]]] = [
+    ("energy",   "Energy",       "能源",      ["oil", "natgas", "gasoline", "heating_oil"]),
+    ("metals",   "Metals",       "金属",      ["gold", "silver", "platinum", "palladium", "copper"]),
+    ("grains",   "Grains & Softs","谷物与软商品",
+     ["corn", "wheat", "soybeans", "live_cattle", "coffee", "sugar", "cocoa", "cotton"]),
+]
+
+
+def _plain_mom_state(s: str | None) -> tuple[str, str]:
+    if not s:
+        return ("—", "—")
+    return MOMENTUM_STATE_LABELS.get(s, (s, s))
+
+
+def _plain_shock(s: str | None) -> tuple[str, str]:
+    if not s:
+        return ("—", "—")
+    return SHOCK_STATE_LABELS.get(s, (s, s))
+
+
+def _plain_cycle(s: str | None) -> tuple[str, str]:
+    if not s:
+        return ("—", "—")
+    return CYCLE_PHASE_LABELS.get(s, (s, s))
+
+
+def _conf_action(state: str | None) -> tuple[str, str]:
+    if not state:
+        return ("Watch — not enough signal yet", "观望——信号不足")
+    return _CONF_STATE_ACTION.get(state, ("Watch — not enough signal yet", "观望——信号不足"))
+
+
+def _mtf_grade_plain(grade: str | None) -> tuple[str, str]:
+    """Convert MTF grade slug to plain bilingual pair."""
+    _map: dict[str, tuple[str, str]] = {
+        "TREND-FOLLOW": ("Go with the trend", "顺势而为"),
+        "BUY-THE-DIP":  ("Dip is buyable", "回调可买"),
+        "CAUTION":      ("Wait — signals mixed", "等待——信号混乱"),
+        "AVOID":        ("Stand aside", "按兵不动"),
+        "WAIT":         ("Watch — wait", "观望等待"),
+    }
+    if not grade:
+        return ("Mixed — wait", "混合——等待")
+    return _map.get(grade.upper(), (grade, grade))
+
+
+# --------------------------------------------------------------------------- #
+# sector_stance helper
+# --------------------------------------------------------------------------- #
+def sector_stance(conf: dict, breadth: dict) -> dict:
+    """Return the plain-word sector stance for the hero section.
+
+    tone ∈ {act, getready, watch, protect, standaside}
+    Rules (in priority order):
+      1. Many members Euphoric/Extended → protect
+      2. Many Washout bottom-forming     → getready
+      3. 12-mo broad but short-term thin (n_bull_momentum/n_members < 0.4) → watch
+      4. Broad + strong momentum         → act
+      else                               → standaside
+    """
+    _null = {
+        "word_en": "Stand aside", "word_zh": "按兵不动",
+        "sub_en":  "Not enough signal to read the complex right now.",
+        "sub_zh":  "目前信号不足，无法判断大宗商品整体走势。",
+        "tone":    "standaside",
+    }
+    try:
+        members_conf = (conf.get("members") or []) if isinstance(conf, dict) else []
+        n_members = max(1, breadth.get("n_members") or 1)
+        n_bull = breadth.get("n_bull_momentum") or 0
+        n_up = breadth.get("n_up_trend") or 0
+
+        top_states = {"Blowing off — extended", "Extended — late cycle",
+                      "Euphoric top — rolling over"}
+        bottom_states = {"Washout bottom forming", "Basing — early bottom signs"}
+
+        n_top = sum(1 for m in members_conf if (m.get("state") or "") in top_states)
+        n_bot = sum(1 for m in members_conf if (m.get("state") or "") in bottom_states)
+
+        frac_top = n_top / n_members
+        frac_bot = n_bot / n_members
+        frac_up  = n_up  / n_members
+        frac_mom = n_bull / n_members
+
+        if frac_top >= 0.25:
+            return {
+                "word_en": "Protect gains",  "word_zh": "保护利润",
+                "sub_en":  f"{n_top} of {int(n_members)} commodities are stretched or euphoric — trim, don't add.",
+                "sub_zh":  f"{int(n_members)}个品种中有{n_top}个处于超买或亢奋状态——减仓，勿追加。",
+                "tone":    "protect",
+            }
+        if frac_bot >= 0.20:
+            return {
+                "word_en": "Get ready",  "word_zh": "准备就绪",
+                "sub_en":  f"{n_bot} of {int(n_members)} commodities are washing out or basing — watch for early turns.",
+                "sub_zh":  f"{int(n_members)}个品种中有{n_bot}个正在洗盘或筑底——关注早期转势信号。",
+                "tone":    "getready",
+            }
+        if frac_up >= 0.6 and frac_mom < 0.4:
+            return {
+                "word_en": "Watch — don't chase",  "word_zh": "观望，勿追高",
+                "sub_en":  (f"Long-term trends are broad ({int(n_up)}/{int(n_members)} trending up), "
+                            f"but short-term momentum is thin ({int(n_bull)}/{int(n_members)}). "
+                            "Not a fresh breakout — late-move divergence."),
+                "sub_zh":  (f"长期趋势广泛（{int(n_members)}个中有{int(n_up)}个向上），"
+                            f"但短期动量偏弱（{int(n_bull)}/{int(n_members)}）。"
+                            "并非新突破——后期走势背离。"),
+                "tone":    "watch",
+            }
+        if frac_up >= 0.5 and frac_mom >= 0.4:
+            return {
+                "word_en": "Act",  "word_zh": "行动",
+                "sub_en":  (f"Broad trend ({int(n_up)}/{int(n_members)} up) with solid momentum "
+                            f"({int(n_bull)}/{int(n_members)}) — the complex is in sync."),
+                "sub_zh":  (f"趋势广泛（{int(n_up)}/{int(n_members)}向上），"
+                            f"动量稳健（{int(n_bull)}/{int(n_members)}）——整体共振。"),
+                "tone":    "act",
+            }
+        return _null
+    except Exception:  # noqa: BLE001 — always returns a safe dict
+        return _null
+
+
+# --------------------------------------------------------------------------- #
+# build_sector_vm  — the new P4 view model
+# --------------------------------------------------------------------------- #
+def build_sector_vm(
+    index_snap: dict,
+    conf: dict,
+    _cycle_positions: dict,
+    member_results: dict,
+    assets: list[dict],
+    cfg_com: dict,
+) -> dict:
+    """Build the full P4 sector view model passed to the template as `vm`.
+
+    Returns a JSON/None-safe dict; never raises.
+    """
+    try:
+        return _build_sector_vm_inner(
+            index_snap, conf, _cycle_positions, member_results, assets, cfg_com
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_sector_vm failed (%s)", e)
+        return {}
+
+
+def _build_sector_vm_inner(
+    index_snap: dict,
+    conf: dict,
+    _cycle_positions: dict,
+    member_results: dict,
+    assets: list[dict],
+    cfg_com: dict,
+) -> dict:
+    breadth_snap = index_snap.get("breadth") or {}
+    idx_snap     = index_snap.get("index") or {}
+    members_conf = (conf.get("members") or []) if isinstance(conf, dict) else []
+
+    # --- stance ---------------------------------------------------------------
+    stance = sector_stance(conf, breadth_snap)
+
+    # --- breadth block --------------------------------------------------------
+    n_members = breadth_snap.get("n_members") or 0
+    breadth_vm = {
+        "n_up_trend":      breadth_snap.get("n_up_trend") or 0,
+        "n_members":       n_members,
+        "n_bull_momentum": breadth_snap.get("n_bull_momentum") or 0,
+        "n_low_risk":      breadth_snap.get("n_low_risk") or 0,
+        "trend_diversity": _r(breadth_snap.get("trend_diversity"), 2),
+    }
+
+    # --- index block ----------------------------------------------------------
+    grade  = idx_snap.get("mtf", {}).get("grade")
+    mtf_plain_en, mtf_plain_zh = _mtf_grade_plain(grade)
+    shock_en, shock_zh = _plain_shock(idx_snap.get("shock_state"))
+    vel = idx_snap.get("velocity") or {}
+    index_vm = {
+        "ew":          idx_snap.get("ew"),
+        "chg_1m_pct":  idx_snap.get("chg_1m_pct"),
+        "ts_trend":    idx_snap.get("ts_trend"),
+        "mtf_en":      mtf_plain_en,
+        "mtf_zh":      mtf_plain_zh,
+        "velocity_20": vel.get("r20"),
+        "shock_state": idx_snap.get("shock_state"),
+        "shock_en":    shock_en,
+        "shock_zh":    shock_zh,
+        "benchmarks":  idx_snap.get("benchmarks") or {},
+    }
+
+    # --- cycle summary --------------------------------------------------------
+    phases: dict[str, list[str]] = {}
+    for name, pos_data in _cycle_positions.items():
+        if not isinstance(pos_data, dict):
+            continue
+        phase = pos_data.get("phase")
+        if phase:
+            phases.setdefault(phase, []).append(name)
+
+    cycle_summary: list[dict] = []
+    for phase, names in sorted(phases.items()):
+        phase_en, phase_zh = _plain_cycle(phase)
+        cycle_summary.append({
+            "phase": phase, "phase_en": phase_en, "phase_zh": phase_zh,
+            "names_en": [MEMBER_LABELS.get(n, (n.replace("_"," ").title(), n))[0] for n in names],
+            "names_zh": [MEMBER_LABELS.get(n, (n.replace("_"," ").title(), n))[1] for n in names],
+        })
+
+    # --- board (tops + bottoms) -----------------------------------------------
+    top_states   = {"Blowing off — extended", "Extended — late cycle", "Euphoric top — rolling over"}
+    bottom_states = {"Washout bottom forming", "Basing — early bottom signs",
+                     "Washing out — high risk"}
+
+    def _board_entry(m: dict) -> dict:
+        name = m.get("name", "")
+        en, zh = MEMBER_LABELS.get(name, (name.replace("_", " ").title(), name))
+        state = m.get("state") or "Neutral"
+        action_en, action_zh = _conf_action(state)
+        # pick the dominant score side
+        bot_score = m.get("bottom_score") or 0
+        top_score = m.get("top_score") or 0
+        score = top_score if state in top_states else bot_score
+        # fired receipt — de-slug labels already embedded in commodity_confluence._LABELS
+        bottom_fired = m.get("bottom_fired") or []
+        top_fired    = m.get("top_fired") or []
+        receipt = top_fired if state in top_states else bottom_fired
+        return {
+            "name":        name,
+            "label_en":    en,
+            "label_zh":    zh,
+            "state":       state,
+            "action_en":   action_en,
+            "action_zh":   action_zh,
+            "score":       _r(score, 0),
+            "receipt":     receipt,  # each is {code, label_en, label_zh}
+        }
+
+    tops    = sorted(
+        [_board_entry(m) for m in members_conf if (m.get("state") or "") in top_states],
+        key=lambda x: -(x["score"] or 0)
+    )
+    bottoms = sorted(
+        [_board_entry(m) for m in members_conf if (m.get("state") or "") in bottom_states],
+        key=lambda x: -(x["score"] or 0)
+    )
+    board = {"tops": tops, "bottoms": bottoms}
+
+    # --- heat grid ------------------------------------------------------------
+    # Build lookup: name → member_results last-row fields
+    mem_lookup: dict[str, dict] = {}
+    for name, df in member_results.items():
+        if not isinstance(df, pd.DataFrame) or df.empty:
+            continue
+        last = df.iloc[-1]
+        cl = df["close"].dropna()
+        chg = _r(100 * (cl.iloc[-1] / cl.iloc[-23] - 1), 1) if len(cl) >= 23 else None
+        mom_state = str(last.get("momentum_state", "") or "")
+        shock_st  = str(last.get("shock_state", "") or "")
+        cycle_ph  = (_cycle_positions.get(name) or {}).get("phase")
+        # tone class for the cell left-border
+        if mom_state == "bull":
+            tone = "c-up"
+        elif shock_st in ("washout", "blowoff"):
+            tone = "c-wash"
+        elif mom_state == "bear":
+            tone = "c-dn"
+        else:
+            tone = "c-flat"
+
+        mom_en, mom_zh = _plain_mom_state(mom_state if mom_state else None)
+        cyc_en, cyc_zh = _plain_cycle(cycle_ph)
+        chg_sign = "up" if (chg or 0) >= 0 else "dn"
+
+        mem_lookup[name] = {
+            "chg_1m_pct": chg,
+            "chg_sign":   chg_sign,
+            "tone":       tone,
+            "state_short_en": mom_en,
+            "state_short_zh": mom_zh,
+            "cycle_phase_en": cyc_en,
+            "cycle_phase_zh": cyc_zh,
+        }
+
+    grid: list[dict] = []
+    for grp_key, grp_en, grp_zh, grp_members in _GRID_GROUPS:
+        cells: list[dict] = []
+        for name in grp_members:
+            en, zh = MEMBER_LABELS.get(name, (name.replace("_", " ").title(), name))
+            info = mem_lookup.get(name, {})
+            cells.append({
+                "name":         name,
+                "label_en":     en,
+                "label_zh":     zh,
+                "chg_1m_pct":   info.get("chg_1m_pct"),
+                "chg_sign":     info.get("chg_sign", "up"),
+                "tone":         info.get("tone", "c-flat"),
+                "state_short_en": info.get("state_short_en", "—"),
+                "state_short_zh": info.get("state_short_zh", "—"),
+                "cycle_phase_en": info.get("cycle_phase_en", "—"),
+                "cycle_phase_zh": info.get("cycle_phase_zh", "—"),
+            })
+        grid.append({
+            "group":    grp_key,
+            "group_en": grp_en,
+            "group_zh": grp_zh,
+            "members":  cells,
+        })
+
+    # --- detail panels --------------------------------------------------------
+    # Build a conf_by_name lookup
+    conf_by_name = {m.get("name", ""): m for m in members_conf}
+    core4 = {"gold", "silver", "copper", "oil"}
+    assets_by_key = {a["key"]: a for a in assets}
+
+    # --- MTF ladder for all 17 members -----------------------------------------
+    import time as _time
+    from engine import commodity_mtf as _cmtf
+    _TF = (("D", "Daily", "日线"), ("3D", "3-Day", "3日"), ("W", "Weekly", "周线"),
+           ("2W", "Biweekly", "双周"), ("ME", "Monthly", "月线"))
+    _member_mtf: dict[str, dict] = {}
+    _t_mtf0 = _time.time()
+    for _mname, _mdf in member_results.items():
+        if not isinstance(_mdf, pd.DataFrame) or _mdf.empty or "close" not in _mdf.columns:
+            continue
+        try:
+            _close = _mdf["close"].dropna()
+            if len(_close) < 20:
+                continue
+            _mtf_a = _cmtf.mtf_ladder(_close)
+            _mtf_rows: list[dict] = []
+            for _key, _lbl, _lbl_zh in _TF:
+                _s = (_mtf_a.get("mtf") or {}).get(_key) or {}
+                if not _s:
+                    continue
+                _macd = ("up" if _s.get("macd_cross_up") or _s.get("macd_curl_up") else
+                         "down" if _s.get("macd_cross_dn") or _s.get("macd_curl_dn") else
+                         "pos" if _s.get("macd_pos") else "neg")
+                _mtf_rows.append({
+                    "key": _key, "label": _lbl, "label_zh": _lbl_zh,
+                    "rsi14": _s.get("rsi14"), "rsi5": _s.get("rsi5"),
+                    "stoch": _s.get("stoch"), "macd": _macd,
+                    "trend": ((_mtf_a.get("ladder") or {}).get("per_tf") or {}).get(_key, "flat"),
+                })
+            _member_mtf[_mname] = {"mtf_rows": _mtf_rows, "verdict": _cmtf.confluence_verdict(_mtf_a, _mname)}
+        except Exception:  # noqa: BLE001 — per-member, never fatal
+            pass
+    log.info("[timing] member MTF ladder (%d members) in %.1fs",
+             len(_member_mtf), _time.time() - _t_mtf0)
+
+    detail: list[dict] = []
+    # Iterate over all 17 members in a stable display order
+    all_names = [n for _, _, _, ns in _GRID_GROUPS for n in ns]
+    for name in all_names:
+        en, zh = MEMBER_LABELS.get(name, (name.replace("_", " ").title(), name))
+        df = member_results.get(name)
+        if df is None or not isinstance(df, pd.DataFrame) or df.empty:
+            detail.append({"name": name, "label_en": en, "label_zh": zh, "available": False})
+            continue
+        last = df.iloc[-1]
+        cl = df["close"].dropna()
+        chg = _r(100 * (cl.iloc[-1] / cl.iloc[-23] - 1), 1) if len(cl) >= 23 else None
+
+        # confluence call
+        mconf = conf_by_name.get(name, {})
+        state = mconf.get("state") or "Neutral"
+        action_en, action_zh = _conf_action(state)
+        bot_score = mconf.get("bottom_score")
+        top_score = mconf.get("top_score")
+        bottom_fired = mconf.get("bottom_fired") or []
+        top_fired    = mconf.get("top_fired") or []
+
+        # cycle clock
+        pos_data = _cycle_positions.get(name) or {}
+        cycle_phase = pos_data.get("phase")
+        cyc_en, cyc_zh = _plain_cycle(cycle_phase)
+        cycle_hazard = bool(pos_data.get("hazard_3m"))
+
+        # shock/driver
+        shock_st  = str(last.get("shock_state", "") or "")
+        shock_en, shock_zh = _plain_shock(shock_st if shock_st else None)
+
+        # MTF rows: use the pre-computed ladder for all members; fall back to
+        # the fully-calibrated asset_vm for core-4 (carries confluence_verdict).
+        a_vm = assets_by_key.get(name)
+        if a_vm and (a_vm.get("mtf_rows") or []):
+            mtf_rows = a_vm.get("mtf_rows", [])
+            verdict  = a_vm.get("verdict", {})
+        else:
+            _mem_mtf_entry = _member_mtf.get(name, {})
+            mtf_rows = _mem_mtf_entry.get("mtf_rows", [])
+            verdict  = _mem_mtf_entry.get("verdict", {})
+        conviction = (a_vm or {}).get("conviction")
+
+        entry: dict = {
+            "name":       name,
+            "label_en":   en,
+            "label_zh":   zh,
+            "available":  True,
+            "price":      _r(cl.iloc[-1], 2) if len(cl) > 0 else None,
+            "chg_1m_pct": chg,
+            "action_en":  action_en,
+            "action_zh":  action_zh,
+            "state":      state,
+            "bot_score":  _r(bot_score, 0),
+            "top_score":  _r(top_score, 0),
+            "bottom_fired": bottom_fired,
+            "top_fired":    top_fired,
+            "cycle_phase":  cycle_phase,
+            "cycle_phase_en": cyc_en,
+            "cycle_phase_zh": cyc_zh,
+            "cycle_hazard": cycle_hazard,
+            "shock_state":  shock_st,
+            "shock_en":     shock_en,
+            "shock_zh":     shock_zh,
+            "mtf_rows":     mtf_rows,
+            "verdict":      verdict,
+            "is_core4":     name in core4,
+        }
+        if name in core4 and a_vm:
+            entry["conviction"] = conviction
+        detail.append(entry)
+
+    return {
+        "stance":        stance,
+        "breadth":       breadth_vm,
+        "index":         index_vm,
+        "cycle_summary": cycle_summary,
+        "board":         board,
+        "grid":          grid,
+        "detail":        detail,
+    }
+
 
 def complex_vm(results: dict, calib: dict) -> dict:
     cx = results["_complex"]
@@ -612,6 +1101,7 @@ def main() -> int:
     # engine/commodity_confluence.py — deterministic, no scored authority.
     # Emitted to both complex_latest.json and latest.json for hub consumption.
     conf: dict = {}
+    _idx_ew_series = None
     try:
         import time as _time
         from engine import commodity_confluence
@@ -627,6 +1117,19 @@ def main() -> int:
                  len(member_results), _time.time() - _tc0)
     except Exception as _ce:  # noqa: BLE001 — display-tier, never break the page
         log.warning("commodity confluence build failed (%s)", _ce)
+
+    # Serialize downsampled tail of idx_ew for the sparkline (last ~120 points,
+    # rebased to 100). Falls back to None; template drops the spark if absent.
+    idx_ew_spark: list[float] | None = None
+    try:
+        if _idx_ew_series is not None and len(_idx_ew_series.dropna()) >= 10:
+            _spark_s = _idx_ew_series.dropna().tail(120)
+            _base = float(_spark_s.iloc[0])
+            if _base and _base != 0:
+                _rebased = (100.0 * _spark_s / _base).round(2)
+                idx_ew_spark = [None if pd.isna(v) else float(v) for v in _rebased]
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
 
     recent_events = commodity_alerts.recent(all_events, acfg["timeline_days"])
     timeline = _group_timeline(recent_events)
@@ -656,16 +1159,29 @@ def main() -> int:
     span = calib.get("meta", {}).get("split", "")
     cal_span = (f"{results['gold'].index.min().date()}..{results['gold'].index.max().date()}")
 
+    # --- P4 sector view model (new 5-section UI) ------------------------------
+    try:
+        cfg_com = config.load()["commodities"]
+        vm = build_sector_vm(index_snap, conf, _cycle_positions, member_results, assets, cfg_com)
+    except Exception as _ve:  # noqa: BLE001 — additive, never break the page
+        log.warning("build_sector_vm failed (%s)", _ve)
+        vm = {}
+
     # i18n + jinja
     from engine.i18n import tr, td
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
     env.filters["money"] = lambda v: ("—" if v is None else f"${v:,.2f}")
-    html = env.get_template("commodities.html.j2").render(
-        C=C, as_of=as_of, built=built, cal_span=cal_span, complex=cx,
-        assets=assets, order=ORDER, timeline=timeline,
-        timeline_days=acfg["timeline_days"], n_alerts=len(recent_events),
-        catalysts=catalysts, news_disclaimer=news_disclaimer)
+    try:
+        html = env.get_template("commodities.html.j2").render(
+            C=C, as_of=as_of, built=built, cal_span=cal_span, complex=cx,
+            assets=assets, order=ORDER, timeline=timeline,
+            timeline_days=acfg["timeline_days"], n_alerts=len(recent_events),
+            catalysts=catalysts, news_disclaimer=news_disclaimer,
+            vm=vm, idx_ew_spark=idx_ew_spark)
+    except Exception as _re:  # noqa: BLE001 — never crash the whole site build
+        log.error("commodities template render failed (%s); skipping page write", _re)
+        return 0
     site = config.ROOT / config.load()["storage"]["site_dir"]
     write_page(site / "commodities.html", html)
     log.info("wrote %s/commodities.html (%d KB)", site, len(html) // 1024)
