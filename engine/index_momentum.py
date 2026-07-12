@@ -42,7 +42,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from lib import config, store
+from lib import config
 from engine.canon import (
     crossover,
     crossunder,
