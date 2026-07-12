@@ -12,9 +12,34 @@ EVIDENCE PACK and asks Claude Opus the judgement a transparent score cannot make
 EXTRACTOR + JUDGE, NOT ORACLE. Reason only from the evidence pack; cite the channel/actor
 behind each call. Output is FALSIFIABLE and logged to a ledger (data/altdata/
 brain_theses.jsonl), graded vs SPY by the EXACT engine.ai_desk_scorer evaluators, and the
-track record is fed back into the next prompt to calibrate conviction. A hard CODE clamp
-(_reconcile) prevents the model from telling you to ACCUMULATE a name already extended /
-running ahead of the tape — the LLM can only ever DE-escalate to WATCH/AVOID.
+track record is fed back into the next prompt to calibrate conviction.
+
+DE-ESCALATION-ONLY LAW (_reconcile): the LLM output is CLAMPED so it can only move DOWN
+the action/conviction/lean ladders, never up. A DETERMINISTIC BASELINE is computed from
+the cluster's own deterministic fields (weighted_score, extended, rs_vs_spy_60d, channels)
+— NEVER from any LLM-proposed field (t.*):
+  - Directional witness (deterministic):
+      (a) If rs_vs_spy_60d is present: rs >= 0 → deterministic overweight; rs < 0 →
+          deterministic underweight (price trend is the witness).
+      (b) If rs_vs_spy_60d is None: look for a bullish channel witness in the cluster's
+          channels list (_BULLISH_WITNESS_CHANNELS). If at least one is present →
+          deterministic overweight.
+      (c) If rs_vs_spy_60d is None AND no bullish channel witness → ceiling = WATCH,
+          conviction ceiling = "low"; the LLM's lean is preserved as a display lean but
+          ACTION and CONVICTION cannot exceed that ceiling.
+  - Action ceiling: ACCUMULATE only when deterministic lean == "overweight" AND
+    weighted_score >= min_weighted AND NOT extended; otherwise WATCH (overweight) or
+    AVOID (non-overweight).
+  - Conviction ceiling: "medium" when deterministic lean == "overweight" AND
+    weighted_score >= min_weighted; "low" otherwise.
+
+  INVARIANT: the ACTION and CONVICTION ceilings are a function of deterministic fields
+  ONLY (rs_vs_spy_60d, channels, weighted_score, extended) — NEVER of any LLM-proposed
+  field (t.lean, t.action, t.conviction).
+
+The LLM may de-escalate further (e.g. lower conviction to "low", demote to WATCH) but
+may NEVER raise above the deterministic ceiling. The existing hard blocks (ACCUMULATE on
+extended → WATCH; ACCUMULATE on bearish lean → AVOID) remain as additional guardrails.
 
 This desk EMITS an actionable scored axis (per the desk's mandate) that the Mastermind bot
 consumes — but the bot still applies its own risk framework on top; the ledger keeps the
@@ -51,6 +76,22 @@ _LEANS = {"overweight", "underweight", "avoid"}
 _ACTIONS = {"ACCUMULATE", "WATCH", "AVOID"}
 _CONV = {"low", "medium", "high"}
 _EXTENDED_PP = 35.0          # rs_vs_spy_60d above this = already extended → never ACCUMULATE
+
+# Channels that are unambiguously directionally BULLISH (buying / positive-flow).
+# These serve as directional witnesses when rs_vs_spy_60d is unavailable (price series
+# absent — routine for split-affected names).  Direction-agnostic channels (material_8k,
+# unusual_options, darkpool_accum, trump, activist_13d, affiliation, special_situation,
+# patent_cluster, app_demand, etc.) are deliberately EXCLUDED: they document activity
+# without asserting direction.
+_BULLISH_WITNESS_CHANNELS = frozenset({
+    "insider_cluster",    # >=3 open-market insider buyers — highest-weight tell
+    "insider_buy",        # single open-market insider buy
+    "congress_cluster",   # >=3 congressional members net-buying
+    "congress_buy",       # single congressional member net-buying
+    "smart_money_13f",    # marquee 13F fund initiated / added
+    "gov_contract_accel", # federal contract $ accelerating >=2x off a real base
+    "gov_grant_accel",    # federal grant/loan $ accelerating >=2x off a real base
+})
 
 _DEFAULTS = {
     "enabled": False,
@@ -266,16 +307,136 @@ def _derive_check(ticker: str, lean: str, horizon: int, rel_thr: float) -> dict:
             "op": op, "threshold": thr, "horizon_d": horizon}
 
 
-def _reconcile(t: dict) -> dict:
-    """Hard CODE clamp — the LLM can never tell you to ACCUMULATE an extended name, nor
-    ACCUMULATE on an underweight/avoid lean. It can only DE-escalate."""
-    action = t.get("action")
-    if t.get("extended") and action == "ACCUMULATE":
+_ACTION_RANK = {"AVOID": 0, "WATCH": 1, "ACCUMULATE": 2}
+_CONV_RANK = {"low": 0, "medium": 1, "high": 2}
+# Lean is also a ceiling axis: overweight > underweight > avoid.
+# The LLM may de-escalate (e.g. say "underweight" when ceiling is "overweight") but may
+# not escalate above the deterministic ceiling lean.
+_LEAN_RANK = {"avoid": 0, "underweight": 1, "overweight": 2}
+
+
+def _det_baseline(t: dict, min_weighted: float = 0.9) -> tuple[str, str, str]:
+    """Derive the DETERMINISTIC ceiling for (action, conviction, lean) from cluster fields.
+
+    INVARIANT: every rule in this function reads ONLY deterministic cluster fields
+    (rs_vs_spy_60d, channels, weighted_score, extended).  It NEVER reads any LLM-proposed
+    field (lean, action, conviction).  This is the enforcement point of the de-escalation-
+    only law: action and conviction ceilings must be a function of deterministic evidence,
+    never of what the LLM proposed.
+
+    Directional witness determination:
+      (a) rs_vs_spy_60d present and >= 0  → deterministic lean = "overweight"
+      (b) rs_vs_spy_60d present and <  0  → deterministic lean = "underweight"
+      (c) rs_vs_spy_60d is None           → look for a bullish channel witness in
+          _BULLISH_WITNESS_CHANNELS.  At least one present → deterministic lean =
+          "overweight".  None present → deterministic lean = "watch_only" (no direction;
+          action ceiling = WATCH, conviction ceiling = "low").
+
+    Action ceiling:
+      ACCUMULATE  ← det_lean == "overweight" AND weighted_score >= min_weighted AND NOT extended
+      WATCH       ← det_lean == "overweight" but evidence too weak or extended,
+                    OR det_lean == "watch_only" (no directional witness)
+      AVOID       ← det_lean == "underweight"
+
+    Conviction ceiling:
+      "medium"    ← det_lean == "overweight" AND weighted_score >= min_weighted
+      "low"       ← otherwise (underweight, watch_only, or weak-evidence overweight)
+
+    The returned det_lean is mapped back to a canonical lean for the audit trail:
+      "watch_only" → "underweight" (no directional support; display lean is neutral-to-negative)
+    """
+    ws = float(t.get("weighted_score") or 0.0)
+    extended = bool(t.get("extended"))
+    rs = t.get("rs_vs_spy_60d")  # None when price series unavailable (e.g. split-affected names)
+    channels = set(t.get("channels") or [])
+
+    # --- deterministic directional witness ---
+    if rs is not None:
+        # (a)/(b): price series available — RS sign is the sole directional witness.
+        det_lean = "overweight" if rs >= 0 else "underweight"
+    elif channels & _BULLISH_WITNESS_CHANNELS:
+        # (c-i): no price series but at least one unambiguously bullish channel present.
+        det_lean = "overweight"
+    else:
+        # (c-ii): no price series AND no bullish channel witness → no directional support.
+        det_lean = "watch_only"
+
+    # --- action ceiling ---
+    if det_lean == "overweight" and ws >= min_weighted and not extended:
+        det_action = "ACCUMULATE"
+    elif det_lean == "overweight":
+        det_action = "WATCH"
+    elif det_lean == "watch_only":
+        det_action = "WATCH"
+    else:  # underweight
+        det_action = "AVOID"
+
+    # --- conviction ceiling ---
+    if det_lean == "overweight" and ws >= min_weighted:
+        det_conv = "medium"
+    else:
+        det_conv = "low"
+
+    # Map "watch_only" to "underweight" for the returned lean (canonical display value).
+    ret_lean = "underweight" if det_lean == "watch_only" else det_lean
+    return det_action, det_conv, ret_lean
+
+
+def _reconcile(t: dict, min_weighted: float = 0.9) -> dict:
+    """DE-ESCALATION-ONLY clamp (house law: LLMs may not originate signals/escalations).
+
+    Step 1 — derive the DETERMINISTIC baseline (ceiling) from cluster evidence fields.
+    Step 2 — clamp each axis: LLM output may only stay AT or BELOW the ceiling rank;
+             any escalation above it is forced back down to the ceiling.
+    Step 3 — apply the original hard blocks as additional guardrails:
+             ACCUMULATE on an extended name → WATCH
+             ACCUMULATE on a bearish lean   → AVOID
+
+    The LLM may de-escalate further (e.g. propose WATCH when the ceiling is ACCUMULATE,
+    or lower conviction to "low") — de-escalation is always respected.
+
+    Fields `clamped` and `det_baseline` are added for audit trail when any axis is
+    overridden; they are NOT present when no clamping occurs.
+    """
+    det_action, det_conv, det_lean = _det_baseline(t, min_weighted)
+
+    llm_action = str(t.get("action") or "WATCH").strip().upper()
+    llm_action = llm_action if llm_action in _ACTIONS else "WATCH"
+    llm_conv = str(t.get("conviction") or "low").strip().lower()
+    llm_conv = llm_conv if llm_conv in _CONV else "low"
+    llm_lean = str(t.get("lean") or "avoid").strip().lower()
+
+    clamp_notes: list[str] = []
+
+    # --- lean clamp (de-escalation only: only clamp when LLM lean rank exceeds ceiling) ---
+    if _LEAN_RANK.get(llm_lean, 1) > _LEAN_RANK.get(det_lean, 1):
+        clamp_notes.append(f"lean {llm_lean!r} → {det_lean!r} (deterministic witness)")
+        t["lean"] = det_lean
+
+    # --- conviction clamp (LLM rank must not exceed deterministic ceiling) ---
+    if _CONV_RANK.get(llm_conv, 0) > _CONV_RANK[det_conv]:
+        clamp_notes.append(f"conviction {llm_conv!r} → {det_conv!r} (deterministic ceiling)")
+        t["conviction"] = det_conv
+
+    # --- action clamp (LLM rank must not exceed deterministic ceiling) ---
+    # det_action already reflects the post-lean-clamp lean (det_lean), so use it directly.
+    if _ACTION_RANK.get(llm_action, 0) > _ACTION_RANK[det_action]:
+        clamp_notes.append(f"action {llm_action!r} → {det_action!r} (deterministic ceiling)")
+        t["action"] = det_action
+        llm_action = det_action   # update for hard-block check below
+
+    # --- hard blocks (additional guardrails, unchanged from original) ---
+    action_now = t.get("action", llm_action)
+    if t.get("extended") and action_now == "ACCUMULATE":
         t["action"] = "WATCH"
-        t["clamped"] = "extended → WATCH (entry already gone)"
-    if t.get("lean") in ("underweight", "avoid") and action == "ACCUMULATE":
+        clamp_notes.append("extended → WATCH (entry already gone)")
+    if t.get("lean") in ("underweight", "avoid") and t.get("action") == "ACCUMULATE":
         t["action"] = "AVOID"
-        t["clamped"] = "bearish lean cannot ACCUMULATE"
+        clamp_notes.append("bearish lean cannot ACCUMULATE")
+
+    if clamp_notes:
+        t["clamped"] = "; ".join(clamp_notes)
+        t["det_baseline"] = {"action": det_action, "conviction": det_conv, "lean": det_lean}
     return t
 
 
@@ -312,7 +473,8 @@ def _build_thesis(t: dict, cluster_index: dict, asof: str, cfg: dict) -> dict | 
                       "check": _derive_check(tk, lean, horizon, float(cfg.get("rel_threshold", 0.05)))},
         "check_by": _check_by(asof, horizon),
     }
-    return _reconcile(out)
+    min_w = float(cfg.get("min_weighted", _DEFAULTS["min_weighted"]))
+    return _reconcile(out, min_weighted=min_w)
 
 
 def _check_by(asof, horizon: int) -> str | None:
@@ -333,8 +495,10 @@ def _check_by(asof, horizon: int) -> str | None:
 # outperformed SPY over h days (binary outcome). The base rate for a random direction call
 # is 0.5 (sign-test). Using qledger hit_rate as the realized precision and n_dates as the
 # sample size maps cleanly onto grant_authority's {hits, n, base_rate, evidence_asof}.
-# n_dates (not n_obs) is the correct sample-size unit: qledger de-duplicates raw rows into
-# independent date clusters before computing Wilson CI lower bounds.
+# n_dates is the correct sample-size unit: this function does NOT read the stored
+# track_record wilson_ci_low — it reconstructs cluster-honest evidence itself as
+# hits=round(hit_rate*n_dates), n=n_dates (independent date clusters per qledger's
+# by_family output).  No de-duplication is performed here; n_dates is taken as-is.
 # Floors (min_n=25 dates = qledger GRADED_MIN_DATES; min_events=8 = Article-3 min-events
 # floor matching the can_force precedent).
 
@@ -353,10 +517,12 @@ def article3_actionable_verdict(root=None) -> GrantResult:
       base_rate   = 0.5                        (sign-test floor for direction calls)
       evidence_asof = track_record generated_at date
 
-    n_dates (not n_obs) is the correct sample-size unit: qledger de-duplicates raw rows
-    into independent date clusters before computing Wilson CI lower bounds.  Using n_obs
-    would over-count correlated within-day observations.  The min_n floor of 25 matches
-    qledger's GRADED_MIN_DATES constant (the same 25-cluster floor the promotion gate uses).
+    n_dates is the correct sample-size unit: this function does NOT read the stored
+    track_record wilson_ci_low — it reconstructs cluster-honest evidence itself as
+    hits=round(hit_rate*n_dates), n=n_dates (independent date clusters per qledger's
+    by_family output).  No de-duplication is performed here; n_dates is taken as-is
+    from the stored by_family cell.  The min_n floor of 25 matches qledger's
+    GRADED_MIN_DATES constant (the same 25-cluster floor the promotion gate uses).
 
     Returns a GrantResult.  Never raises — returns refused with
     reason='track_record_unavailable' when the data file is missing.

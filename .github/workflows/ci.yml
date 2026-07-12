@@ -362,6 +362,11 @@ on:
       - "scripts/build_intraday_flow.py"
       - "tests/test_intraday_flow.py"
       - "tests/test_intraday_flow_stance.py"
+      # altdata-brain de-escalation law + false Wilson de-dup comment fix (PR-B):
+      # any change to the brain module or either test file must re-prove the law holds.
+      - "engine/altdata_brain.py"
+      - "tests/test_w7a_tenants.py"
+      - "tests/test_altdata_brain_reconcile.py"
   workflow_dispatch:
 
 permissions:
@@ -1488,3 +1493,23 @@ jobs:
         run: pip install pytest pandas numpy pyyaml pyarrow requests
       - name: IRD-W1 substrate test suite
         run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py -q
+
+  altdata-brain-govern:
+    # altdata-brain PR-B: de-escalation-only law enforcement + false Wilson de-dup
+    # comment fix.  Two suites:
+    #   test_w7a_tenants.py          — Article-3 verdict, actionable flag, governance
+    #                                  transitions, feed shape, mastermind propagation
+    #   test_altdata_brain_reconcile.py — _reconcile clamp matrix: LLM escalation
+    #                                  clamped to deterministic baseline; de-escalation
+    #                                  respected; hard blocks (extended/bearish) still fire
+    # Zero network calls; LLM client is never instantiated.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyyaml pyarrow
+      - name: altdata-brain governance + de-escalation law tests
+        run: python -m pytest tests/test_w7a_tenants.py tests/test_altdata_brain_reconcile.py -q
