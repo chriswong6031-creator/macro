@@ -293,17 +293,17 @@ def _compute_fast_reclaim(
         cur_vel3 = hist_vel3.iloc[-1]
         if not np.isfinite(cur_vel3):
             return None
-        # Find the 10th pctile threshold at the current bar
-        cur_dp = depth_pctile.iloc[-1]
-        if not np.isfinite(cur_dp):
-            return None
-        # Reconstruct p10 threshold using the same trailing window
+        # p10 gate via the SAME strictly-less-than rank estimator as depth_pctile —
+        # one percentile definition across the organ, so fast_reclaim can never
+        # disagree with a displayed depth_pctile <= 10
         window = macd_s.iloc[-_DEPTH_PCTILE_BARS:].dropna()
         if len(window) < 20:
             return None
-        p10_threshold = float(np.percentile(window, 10))
         min_depth_10bars = float(last10_macd.min())
-        return bool(min_depth_10bars <= p10_threshold and cur_vel3 >= _FAST_RECLAIM_VEL_MIN)
+        if not np.isfinite(min_depth_10bars):
+            return None
+        rank = float(np.sum(window.values < min_depth_10bars)) / len(window) * 100.0
+        return bool(rank <= 10.0 and cur_vel3 >= _FAST_RECLAIM_VEL_MIN)
     except Exception as e:  # noqa: BLE001
         log.warning("index_momentum: fast_reclaim compute failed: %s", e)
         return None
@@ -542,16 +542,19 @@ def _current_values(grid_data: dict) -> dict:
     }
 
 
-def _recent_events_for_index(events: list[dict], index_id: str, grid: str, days: int = 30) -> list[dict]:
-    """Filter events to the recent window for the snapshot."""
-    cutoff = date.today().replace(day=1)  # rough cutoff; events are sorted by date
+def _recent_events_for_index(
+    events: list[dict], index_id: str, grid: str,
+    as_of_d: date, days: int = 30,
+) -> list[dict]:
+    """Filter events to the recent window, keyed to the DATA as_of (never wall clock —
+    a later-day re-run on unchanged data must produce the identical snapshot)."""
     result = [
         e for e in events
         if e["index"] == index_id and e["grid"] == grid
     ]
-    # Sort descending by date, keep last N days
+    # Sort descending by date, keep last N days before the data as_of
     result.sort(key=lambda x: x["date"], reverse=True)
-    cutoff_d = pd.Timestamp.now().date() - pd.Timedelta(days=days)
+    cutoff_d = (pd.Timestamp(as_of_d) - pd.Timedelta(days=days)).date()
     result = [e for e in result if e["date"] >= cutoff_d]
     return result[:10]  # cap at 10 per (index, grid)
 
@@ -599,6 +602,11 @@ def _upsert_events_parquet(new_events: list[dict], root: Path | None = None) -> 
 # ---------------------------------------------------------------------------
 # Main snapshot()
 # ---------------------------------------------------------------------------
+
+# IHM-R5 authority fence — display-tier, all-false. Any promotion goes through
+# the IHM-R12 preregs; nothing else may flip these.
+AUTHORITY_V1 = {"rank": False, "size": False, "gate": False, "escalate": False}
+
 
 def snapshot(root: str | Path | None = None) -> dict:
     """Build the index_momentum.v1 snapshot.
@@ -660,13 +668,19 @@ def snapshot(root: str | Path | None = None) -> dict:
     # --- turn_breadth for 1D grid (IHM-R4c) ---
     breadth = _turn_breadth(all_grid1d)
 
+    # PIT data stamp: last completed 1D bar across the roster (the build-date
+    # `as_of` below is the SLA heartbeat, per the ignition_radar convention)
+    _dd = [gd["dates"][-1] for gd in all_grid1d.values()
+           if gd is not None and len(gd["dates"]) > 0]
+    data_as_of = max(_dd).date() if _dd else date.today()
+
     # --- recent events per (index, grid) for snapshot ---
     for idx_id in index_snapshots:
         idx_snap = index_snapshots[idx_id]
         for gl in (g[0] for g in _GRIDS):
             if idx_snap["grids"].get(gl) is None:
                 continue
-            recent = _recent_events_for_index(all_events, idx_id, gl)
+            recent = _recent_events_for_index(all_events, idx_id, gl, as_of_d=data_as_of)
             # Serialize dates
             for ev in recent:
                 ev["date"] = str(ev["date"])
@@ -681,11 +695,15 @@ def snapshot(root: str | Path | None = None) -> dict:
     elapsed = time.time() - t0
     log.info("[timing] index_momentum.snapshot: %.2fs", elapsed)
 
+    # as_of = build-date SLA heartbeat (house convention shared with ignition_radar);
+    # data_as_of = PIT stamp of the newest completed daily bar — freshness readers
+    # that care about DATA staleness must use data_as_of, not as_of.
     as_of = str(date.today())
     payload = {
         "organ":       "index_momentum.v1",
         "as_of":       as_of,
-        "authority":   {"rank": False, "size": False, "gate": False, "escalate": False},
+        "data_as_of":  str(data_as_of),
+        "authority":   dict(AUTHORITY_V1),
         "accruing":    (
             "DISPLAY-ONLY / NOT VALIDATED. Forward ledger accruing. "
             "Each washout_turn / global_washout_turn event graded on fwd20/fwd60 "

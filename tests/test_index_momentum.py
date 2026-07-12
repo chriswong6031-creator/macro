@@ -385,19 +385,16 @@ def test_no_templates_import():
 # 15. Authority all False
 # ---------------------------------------------------------------------------
 
-def test_authority_all_false(tmp_path):
-    """snapshot() authority fields must all be False (display-tier, IHM-R5)."""
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent))
+def test_authority_all_false():
+    """IHM-R5: the authority payload is all-False and snapshot() uses the constant."""
+    import inspect
 
-    # We can't run full snapshot (needs real data) — test the payload shape
-    from engine.index_momentum import ROSTER
-    # The authority dict is hardcoded — verify it in the module source
-    from engine.index_momentum import snapshot as _snap_fn
-    source = Path(_snap_fn.__globals__["__file__"]).read_text()
-    assert '"rank": False' in source or '"rank": False' in source
-    assert "authority" in source
-    assert "all-false" in source or "authority" in source
+    from engine.index_momentum import AUTHORITY_V1, snapshot as _snap_fn
+
+    assert set(AUTHORITY_V1) == {"rank", "size", "gate", "escalate"}
+    assert all(v is False for v in AUTHORITY_V1.values())
+    # The payload must reference the constant, not a drifting inline literal
+    assert "AUTHORITY_V1" in inspect.getsource(_snap_fn)
 
 
 # ---------------------------------------------------------------------------
