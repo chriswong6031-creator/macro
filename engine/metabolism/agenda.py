@@ -13,10 +13,15 @@ DETERMINISTIC SEVERITY FLOOR (enforced after every LLM call):
     it may never DROP a high-severity finding.  This floor is enforced in
     code — the LLM output is post-processed before writing.
 
-DETERMINISTIC DE-RANK (R-V8-11):
+DETERMINISTIC DE-RANK (R-V8-11, amended):
     After the LLM pass and severity-floor, a deterministic post-pass demotes
-    items whose (kind) or (lobe, sensor) bucket has n >= prior_demote_min_n
-    AND hit_rate < prior_demote_hit_rate to the bottom of the agenda.
+    items whose (lobe, sensor) bucket has n >= prior_demote_min_n AND
+    hit_rate < prior_demote_hit_rate to the bottom of the agenda.
+    De-rank key is (lobe, sensor) ONLY — NOT proposal kind (kind is the LLM's
+    agenda bucket, never a proposal kind; kind-based de-rank is structurally
+    dead per the masterplan amendment 2026-07-12).
+    Construction-specific (R-V8-12): the bad sensor name must appear in the
+    item's title or rationale (conservative: no false demotes).
     Demoted items are NEVER dropped — they stay visible with prior_demoted:true
     and prior_bucket set.  The prior NEVER promotes items (de-escalation only,
     mirror of R-AUT-1).
@@ -252,11 +257,17 @@ def _demote_prior_buckets(
     demote_min_n: int = 5,
     demote_hit_rate: float = 0.25,
 ) -> list[dict]:
-    """Post-LLM deterministic de-rank: demote items whose prior bucket is weak.
+    """Post-LLM deterministic de-rank: demote items whose (lobe, sensor) prior is weak.
 
-    Rules (R-V8-11):
-      - A bucket fires when n >= demote_min_n AND hit_rate < demote_hit_rate.
-      - Two bucket types checked independently: (kind) and (lobe, sensor-family).
+    Rules (R-V8-11 / R-V8-12, amended):
+      - De-rank key is (lobe, sensor) ONLY — NOT proposal kind.
+        kind (URGENT_FIX/NOVEL_BUILD/DEEP_RESEARCH) is the LLM's agenda bucket, never
+        a proposal kind; kind-based de-rank is structurally dead and removed.
+      - A (lobe, sensor) bucket fires when n >= demote_min_n AND hit_rate < demote_hit_rate.
+      - Construction-specific match (R-V8-12): the specific bad sensor NAME must appear
+        as a case-insensitive substring of the item's title OR rationale.  A bad record
+        on sensor X must NOT demote an item naming sensor Y or naming no sensor at all
+        (conservative: no false demote).
       - Matching items are moved to the BOTTOM of the agenda (stable order among
         demoted items is preserved — original relative order kept).
       - NEVER drops an item; NEVER promotes an item.
@@ -265,7 +276,6 @@ def _demote_prior_buckets(
     Returns a new list (original list is not mutated).  NEVER raises.
     """
     try:
-        by_kind = (calibration.get("by_kind") or {}) if calibration else {}
         by_lobe_sensor = (calibration.get("by_lobe_sensor") or {}) if calibration else {}
 
         def _bucket_fires(stats: dict) -> bool:
@@ -280,26 +290,34 @@ def _demote_prior_buckets(
 
         for item in items:
             item = dict(item)  # shallow copy — don't mutate caller's dict
-            kind = str(item.get("bucket") or item.get("kind") or "")
             lobe = str(item.get("target_lobe") or "")
-            # sensor family: use the item's rationale or title to extract a sensor hint
-            # We check all lobe:sensor combinations from the calibration
             fired_bucket: str | None = None
 
-            # Check kind bucket
-            kind_stats = by_kind.get(kind) or {}
-            if kind_stats and _bucket_fires(kind_stats):
-                fired_bucket = f"kind:{kind}"
-
-            # Check (lobe, sensor) buckets if kind didn't already fire
-            if fired_bucket is None and lobe:
+            # Check (lobe, sensor) buckets — construction-specific sensor-name match.
+            # The specific bad sensor NAME must appear in the item's title or rationale
+            # (case-insensitive substring).  A bad record on sensor X must NOT demote
+            # an item naming sensor Y or naming no sensor at all.
+            if lobe:
+                # Build a combined text for substring matching (lower-cased once)
+                item_text = (
+                    str(item.get("title") or "").lower()
+                    + " "
+                    + str(item.get("rationale") or "").lower()
+                )
                 for key, stats in by_lobe_sensor.items():
                     # key is "{lobe}:{sensor}"
                     parts = key.split(":", 1)
-                    if len(parts) == 2 and parts[0] == lobe:
-                        if _bucket_fires(stats):
-                            fired_bucket = f"lobe_sensor:{key}"
-                            break
+                    if len(parts) != 2 or parts[0] != lobe:
+                        continue
+                    sensor_name = parts[1]
+                    if not sensor_name or sensor_name == "_no_sensor":
+                        continue  # no specific sensor to match against
+                    if not _bucket_fires(stats):
+                        continue
+                    # Construction-specific check: sensor name must appear in item text
+                    if sensor_name.lower() in item_text:
+                        fired_bucket = f"lobe_sensor:{key}"
+                        break
 
             if fired_bucket is not None:
                 item["prior_demoted"] = True
@@ -519,6 +537,7 @@ def _build_agenda_inner(
     )
 
     # R-V8-12: recall parity with propose.py — thread top-scored lessons into agenda prompt
+    # FIX-6: use the explicit LESSONS_ABSENT_SENTINEL constant (not fragile startswith check).
     try:
         from engine.metabolism import recall as _recall  # noqa: PLC0415
         recall_text = _recall.recall_lessons(
@@ -528,7 +547,7 @@ def _build_agenda_inner(
             byte_budget=2000,
             root=repo,
         )
-        if recall_text and not recall_text.startswith("("):
+        if recall_text and recall_text != _recall.LESSONS_ABSENT_SENTINEL:
             user_prompt += (
                 f"\n\n## Relevant Lessons (FAIL-floor lessons inform ranking)\n"
                 f"{recall_text}"
@@ -594,13 +613,20 @@ def _build_agenda_inner(
     except Exception as exc:  # noqa: BLE001
         log.warning("agenda: prior de-rank failed (non-fatal) — %s", exc)
 
-    # 10. Cap at max_docket_size (floor items count first)
+    # 10. Cap at max_docket_size (floor items count first, then demoted items, trim regular last).
+    # FIX-5 (R-V8-11): demoted-with-flag items are protected from silent trim — they carry
+    # visibility signal and must not be the silent casualty of the cap.  Trim order:
+    #   1. forced-floor items (always kept, count first)
+    #   2. prior-demoted items (kept unless forced-floor alone exceeds the cap)
+    #   3. regular items (trimmed from the tail first)
     if len(items) > max_docket_size:
-        # Preserve forced-floor items; trim from the end
         forced_items = [i for i in items if i.get("forced_floor")]
-        regular_items = [i for i in items if not i.get("forced_floor")]
-        n_regular = max(0, max_docket_size - len(forced_items))
-        items = forced_items + regular_items[:n_regular]
+        demoted_items = [i for i in items if not i.get("forced_floor") and i.get("prior_demoted")]
+        regular_items = [i for i in items if not i.get("forced_floor") and not i.get("prior_demoted")]
+        remaining = max(0, max_docket_size - len(forced_items))
+        # Fit as many regular items as possible, then append all demoted (visibility law).
+        n_regular = max(0, remaining - len(demoted_items))
+        items = forced_items + regular_items[:n_regular] + demoted_items
 
     # 11. Grounding check (R-V3-5b) — informational annotation; NEVER blocks items
     grounding: dict[str, Any] = {"unverified": True}

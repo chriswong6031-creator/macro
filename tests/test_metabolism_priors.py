@@ -6,13 +6,17 @@ COVERAGE:
   P3  backfill once: existing verify records land in ledger; second call adds zero
   P4  prior survives trial_ledger rotation: after clearing trial_ledger, prior is
       computed from outcome_priors.jsonl (not trial_ledger)
-  P5  demote fires at n>=5 AND hit_rate<0.25 (by_kind bucket)
+  P5  demote fires at n>=5 AND hit_rate<0.25 (lobe,sensor bucket ONLY — FIX-2)
   P6  demote does NOT fire when n<5 (even if hit_rate is terrible)
   P7  demote does NOT fire when hit_rate>=0.25 (even if n is large)
   P8  demoted items at bottom BUT present with prior_demoted:true + prior_bucket
-  P9  never-promote: a high-hit bucket (hit_rate=1.0, n=10) does NOT move items up
-  P10 (lobe,sensor) bucket fires independently of kind bucket
+  P9  never-promote: a high-hit (lobe,sensor) bucket does NOT move items up
+  P10 (lobe,sensor) bucket fires — sensor name must appear in item text (FIX-3)
   P11 recall parity wire: agenda._build_agenda_inner calls recall.recall_lessons
+  P15 FIX-3 construction-scoped: item naming sensor Y not demoted by bad record on X
+  P16 FIX-4 UNVERIFIABLE excluded from calibration denominator
+  P17 FIX-4 confirmed requires triage=='confirmed' conjunction
+  P18 FIX-5 demoted items survive docket-cap trim
 
 All tests are HERMETIC (tmp dirs, no network, no real LLM calls).
 """
@@ -286,30 +290,44 @@ def test_p4_prior_survives_trial_ledger_rotation():
     assert result2.get("calibration") is not None
 
 
-# ── P5: demote fires at n>=5 AND hit_rate<0.25 ────────────────────────────────
+# ── P5: demote fires at n>=5 AND hit_rate<0.25 (lobe,sensor) ─────────────────
 
 def test_p5_demote_fires_at_threshold():
-    """_demote_prior_buckets fires for kind with n=5, hit_rate=0.0."""
+    """_demote_prior_buckets fires for (lobe,sensor) with n=5, hit_rate=0.0.
+
+    FIX-2: kind-based de-rank is removed; only (lobe,sensor) buckets fire.
+    FIX-3: item title must contain the sensor name for the demote to fire.
+    """
     from engine.metabolism.agenda import _demote_prior_buckets
 
     calibration = {
         "by_kind": {
-            "test": {"total": 5, "confirmed": 0, "hit_rate": 0.0},
+            # kind bucket is present but must NOT trigger demote (FIX-2)
+            "NOVEL_BUILD": {"total": 5, "confirmed": 0, "hit_rate": 0.0},
         },
-        "by_lobe_sensor": {},
+        "by_lobe_sensor": {
+            "til:weak_signal": {"total": 5, "confirmed": 0, "hit_rate": 0.0},
+        },
     }
     items = [
-        {"title": "A", "bucket": "test", "target_lobe": None},
-        {"title": "B", "bucket": "NOVEL_BUILD", "target_lobe": None},
+        # item names the bad sensor → should be demoted
+        {
+            "title": "Improve weak_signal for til lobe",
+            "bucket": "NOVEL_BUILD",
+            "target_lobe": "til",
+            "rationale": "",
+        },
+        # item has same bucket but different lobe/no sensor match → should NOT be demoted
+        {"title": "B", "bucket": "NOVEL_BUILD", "target_lobe": None, "rationale": ""},
     ]
     result = _demote_prior_buckets(items, calibration, demote_min_n=5, demote_hit_rate=0.25)
 
-    # "A" (bucket=test) should be demoted to bottom
-    assert result[-1]["title"] == "A"
+    # "Improve weak_signal..." (lobe=til, names weak_signal) should be demoted to bottom
+    assert result[-1]["title"].startswith("Improve weak_signal")
     assert result[-1]["prior_demoted"] is True
-    assert "kind:test" in result[-1]["prior_bucket"]
+    assert "lobe_sensor:til:weak_signal" in result[-1]["prior_bucket"]
 
-    # "B" should NOT be demoted
+    # "B" should NOT be demoted (no lobe, no sensor name match)
     assert result[0]["title"] == "B"
     assert not result[0].get("prior_demoted")
 
@@ -317,18 +335,23 @@ def test_p5_demote_fires_at_threshold():
 # ── P6: demote does NOT fire when n<5 ────────────────────────────────────────
 
 def test_p6_demote_no_fire_small_n():
-    """_demote_prior_buckets does NOT fire when n=4 even if hit_rate=0.0."""
+    """_demote_prior_buckets does NOT fire for (lobe,sensor) when n=4 even if hit_rate=0.0."""
     from engine.metabolism.agenda import _demote_prior_buckets
 
     calibration = {
-        "by_kind": {
-            "test": {"total": 4, "confirmed": 0, "hit_rate": 0.0},
+        "by_kind": {},
+        "by_lobe_sensor": {
+            "til:weak_signal": {"total": 4, "confirmed": 0, "hit_rate": 0.0},
         },
-        "by_lobe_sensor": {},
     }
     items = [
-        {"title": "A", "bucket": "test", "target_lobe": None},
-        {"title": "B", "bucket": "NOVEL_BUILD", "target_lobe": None},
+        {
+            "title": "Improve weak_signal in til",
+            "bucket": "NOVEL_BUILD",
+            "target_lobe": "til",
+            "rationale": "",
+        },
+        {"title": "B", "bucket": "NOVEL_BUILD", "target_lobe": None, "rationale": ""},
     ]
     result = _demote_prior_buckets(items, calibration, demote_min_n=5, demote_hit_rate=0.25)
 
@@ -340,34 +363,44 @@ def test_p6_demote_no_fire_small_n():
 # ── P7: demote does NOT fire when hit_rate>=0.25 ─────────────────────────────
 
 def test_p7_demote_no_fire_good_hit_rate():
-    """_demote_prior_buckets does NOT fire when hit_rate=0.25 (exactly at threshold)."""
+    """_demote_prior_buckets does NOT fire for (lobe,sensor) when hit_rate=0.25 (exactly)."""
     from engine.metabolism.agenda import _demote_prior_buckets
 
     calibration = {
-        "by_kind": {
-            "test": {"total": 8, "confirmed": 2, "hit_rate": 0.25},
+        "by_kind": {},
+        "by_lobe_sensor": {
+            "til:weak_signal": {"total": 8, "confirmed": 2, "hit_rate": 0.25},
         },
-        "by_lobe_sensor": {},
     }
     items = [
-        {"title": "A", "bucket": "test", "target_lobe": None},
+        {
+            "title": "Improve weak_signal in til",
+            "bucket": "NOVEL_BUILD",
+            "target_lobe": "til",
+            "rationale": "",
+        },
     ]
     result = _demote_prior_buckets(items, calibration, demote_min_n=5, demote_hit_rate=0.25)
     assert not result[0].get("prior_demoted"), "hit_rate=0.25 is NOT below threshold (strict <)"
 
 
 def test_p7b_demote_fires_just_below_threshold():
-    """_demote_prior_buckets fires when hit_rate=0.249 (strictly below 0.25)."""
+    """_demote_prior_buckets fires for (lobe,sensor) when hit_rate=0.124 (strictly below 0.25)."""
     from engine.metabolism.agenda import _demote_prior_buckets
 
     calibration = {
-        "by_kind": {
-            "test": {"total": 8, "confirmed": 1, "hit_rate": 0.124},
+        "by_kind": {},
+        "by_lobe_sensor": {
+            "til:weak_signal": {"total": 8, "confirmed": 1, "hit_rate": 0.124},
         },
-        "by_lobe_sensor": {},
     }
     items = [
-        {"title": "A", "bucket": "test", "target_lobe": None},
+        {
+            "title": "Improve weak_signal in til",
+            "bucket": "NOVEL_BUILD",
+            "target_lobe": "til",
+            "rationale": "",
+        },
     ]
     result = _demote_prior_buckets(items, calibration, demote_min_n=5, demote_hit_rate=0.25)
     assert result[0].get("prior_demoted") is True
@@ -376,20 +409,25 @@ def test_p7b_demote_fires_just_below_threshold():
 # ── P8: demoted items at bottom but present with flag ────────────────────────
 
 def test_p8_demoted_items_present_at_bottom():
-    """Demoted items appear at the bottom with prior_demoted:true — never dropped."""
+    """Demoted items appear at the bottom with prior_demoted:true — never dropped.
+
+    FIX-2: uses (lobe,sensor) bucket only; item titles contain sensor name (FIX-3).
+    """
     from engine.metabolism.agenda import _demote_prior_buckets
 
     calibration = {
-        "by_kind": {
-            "bad_kind": {"total": 10, "confirmed": 1, "hit_rate": 0.1},
+        "by_kind": {},
+        "by_lobe_sensor": {
+            "nw:bad_sensor": {"total": 10, "confirmed": 1, "hit_rate": 0.1},
         },
-        "by_lobe_sensor": {},
     }
     items = [
-        {"title": "Good A", "bucket": "NOVEL_BUILD", "target_lobe": None},
-        {"title": "Bad B", "bucket": "bad_kind", "target_lobe": None},
-        {"title": "Good C", "bucket": "URGENT_FIX", "target_lobe": None},
-        {"title": "Bad D", "bucket": "bad_kind", "target_lobe": None},
+        {"title": "Good A", "bucket": "NOVEL_BUILD", "target_lobe": None, "rationale": ""},
+        # names bad_sensor → demoted
+        {"title": "Improve bad_sensor in nw", "bucket": "NOVEL_BUILD", "target_lobe": "nw", "rationale": ""},
+        {"title": "Good C", "bucket": "URGENT_FIX", "target_lobe": None, "rationale": ""},
+        # names bad_sensor → demoted
+        {"title": "Re-test bad_sensor for nw lobe", "bucket": "NOVEL_BUILD", "target_lobe": "nw", "rationale": ""},
     ]
     result = _demote_prior_buckets(items, calibration, demote_min_n=5, demote_hit_rate=0.25)
 
@@ -412,33 +450,39 @@ def test_p8_demoted_items_present_at_bottom():
     assert "Good A" in non_dem_titles
     assert "Good C" in non_dem_titles
 
-    # Order among demoted is stable (Bad B before Bad D)
+    # Order among demoted is stable
     dem_titles = [it["title"] for it in result if it.get("prior_demoted")]
-    assert dem_titles == ["Bad B", "Bad D"]
+    assert dem_titles[0].startswith("Improve bad_sensor")
+    assert dem_titles[1].startswith("Re-test bad_sensor")
 
 
 # ── P9: never-promote ────────────────────────────────────────────────────────
 
 def test_p9_never_promote():
-    """A high-hit bucket (hit_rate=1.0) does NOT move items up in the agenda."""
+    """A high-hit (lobe,sensor) bucket does NOT move items up in the agenda.
+
+    FIX-2: kind bucket removed; test uses (lobe,sensor) with high hit rate.
+    """
     from engine.metabolism.agenda import _demote_prior_buckets
 
     calibration = {
-        "by_kind": {
-            "great_kind": {"total": 10, "confirmed": 10, "hit_rate": 1.0},
+        "by_kind": {},
+        "by_lobe_sensor": {
+            # great_sensor has excellent hit rate → should NOT cause any demotion
+            "nw:great_sensor": {"total": 10, "confirmed": 10, "hit_rate": 1.0},
         },
-        "by_lobe_sensor": {},
     }
-    # Items ordered with great_kind at position 2 (not first)
+    # Items ordered with great_sensor item at position 2 (not first)
     items = [
-        {"title": "A", "bucket": "NOVEL_BUILD", "target_lobe": None},
-        {"title": "B", "bucket": "URGENT_FIX", "target_lobe": None},
-        {"title": "C", "bucket": "great_kind", "target_lobe": None},
+        {"title": "A", "bucket": "NOVEL_BUILD", "target_lobe": None, "rationale": ""},
+        {"title": "B", "bucket": "URGENT_FIX", "target_lobe": None, "rationale": ""},
+        # names great_sensor but hit rate is good → should NOT be demoted
+        {"title": "Improve great_sensor for nw", "bucket": "NOVEL_BUILD", "target_lobe": "nw", "rationale": ""},
     ]
     result = _demote_prior_buckets(items, calibration, demote_min_n=5, demote_hit_rate=0.25)
 
-    # Order must be unchanged (no promotion)
-    assert [it["title"] for it in result] == ["A", "B", "C"]
+    # Order must be unchanged (no promotion, no demotion)
+    assert [it["title"] for it in result] == ["A", "B", "Improve great_sensor for nw"]
     # C not demoted (good hit rate)
     assert not result[2].get("prior_demoted")
 
@@ -446,7 +490,10 @@ def test_p9_never_promote():
 # ── P10: (lobe, sensor) bucket independent of kind ───────────────────────────
 
 def test_p10_lobe_sensor_bucket_independent():
-    """(lobe, sensor) bucket can fire even if kind bucket is healthy."""
+    """(lobe, sensor) bucket can fire even if kind bucket is healthy.
+
+    R-V8-12 / FIX-3: sensor name must appear in item title or rationale.
+    """
     from engine.metabolism.agenda import _demote_prior_buckets
 
     calibration = {
@@ -460,13 +507,20 @@ def test_p10_lobe_sensor_bucket_independent():
         },
     }
     items = [
-        {"title": "Good", "bucket": "engine", "target_lobe": "other_lobe"},
-        {"title": "Weak sensor", "bucket": "engine", "target_lobe": "til"},
+        # item names a different sensor → should NOT be demoted (FIX-3: no false demote)
+        {"title": "Good", "bucket": "engine", "target_lobe": "other_lobe", "rationale": ""},
+        # item title contains the bad sensor name → should be demoted
+        {
+            "title": "improve ic_sharpe scoring in til lobe",
+            "bucket": "engine",
+            "target_lobe": "til",
+            "rationale": "",
+        },
     ]
     result = _demote_prior_buckets(items, calibration, demote_min_n=5, demote_hit_rate=0.25)
 
-    # "Weak sensor" item (lobe=til) should be demoted by lobe_sensor bucket
-    til_item = next(it for it in result if it["title"] == "Weak sensor")
+    # "improve ic_sharpe ..." item (lobe=til, names ic_sharpe) should be demoted
+    til_item = next(it for it in result if "ic_sharpe" in it["title"])
     assert til_item.get("prior_demoted") is True
     assert "lobe_sensor:til:ic_sharpe" in til_item.get("prior_bucket", "")
 
@@ -619,14 +673,14 @@ def test_p14_demote_flag_in_agenda():
 
     root = _tmp_root()
 
-    # Write 5 prior rows all FALSIFIER_TRIPPED for kind "NOVEL_BUILD"
+    # Write 5 prior rows all FALSIFIER_TRIPPED for lobe=til sensor=ic_sharpe
     for i in range(5):
         _append_outcome_prior_row(root, {
             "proposal_id": f"demote-{i}",
             "kind": "NOVEL_BUILD",
             "tier": "T1",
             "lobe": "til",
-            "sensors": [],
+            "sensors": ["ic_sharpe"],
             "outcome": "FALSIFIER_TRIPPED",
             "triage": "overfit",
             "ts": "2026-01-01T00:00:00+00:00",
@@ -644,14 +698,14 @@ def test_p14_demote_flag_in_agenda():
     )
     (root / "config" / "metabolism_budget.yml").write_text(budget_yml, encoding="utf-8")
 
-    # Fabricate one LLM-returned item with bucket=NOVEL_BUILD
+    # Fabricate one LLM-returned item naming the bad sensor ic_sharpe in its title (FIX-3)
     raw_items = [
         {
-            "title": "Build a weak sensor",
+            "title": "Improve ic_sharpe scoring in til lobe",
             "bucket": "NOVEL_BUILD",
             "severity": "low",
             "target_lobe": "til",
-            "rationale": "test",
+            "rationale": "ic_sharpe has weak signal",
         }
     ]
 
@@ -675,6 +729,255 @@ def test_p14_demote_flag_in_agenda():
     assert len(items) == 1
     item = items[0]
     assert item.get("prior_demoted") is True, (
-        "NOVEL_BUILD bucket with 0/5 hit rate should be demoted"
+        "til:ic_sharpe bucket with 0/5 hit rate should demote item naming ic_sharpe"
     )
     assert item.get("prior_bucket") is not None
+    assert "lobe_sensor:til:ic_sharpe" in item.get("prior_bucket", "")
+
+
+# ── P15: FIX-3 construction-scoped sensor matching ───────────────────────────
+
+def test_p15_construction_scoped_sensor_match():
+    """R-V8-12 / FIX-3: bad record on sensor X must NOT demote item naming sensor Y.
+
+    Spec from brief: by_lobe_sensor={'til:weak':{n:6,hr:0}, 'til:strong':{n:10,hr:1}}
+      - item titled 'improve til strong' → NOT demoted (strong has good hit rate)
+      - item titled 'improve til weak' → demoted with prior_bucket='lobe_sensor:til:weak'
+    """
+    from engine.metabolism.agenda import _demote_prior_buckets
+
+    calibration = {
+        "by_kind": {},
+        "by_lobe_sensor": {
+            "til:weak": {"total": 6, "confirmed": 0, "hit_rate": 0.0},
+            "til:strong": {"total": 10, "confirmed": 10, "hit_rate": 1.0},
+        },
+    }
+    items = [
+        # names 'strong' which has a GOOD hit rate → NOT demoted
+        {
+            "title": "improve til strong sensor scoring",
+            "bucket": "NOVEL_BUILD",
+            "target_lobe": "til",
+            "rationale": "",
+        },
+        # names 'weak' which has a BAD hit rate → demoted
+        {
+            "title": "improve til weak sensor scoring",
+            "bucket": "NOVEL_BUILD",
+            "target_lobe": "til",
+            "rationale": "",
+        },
+    ]
+    result = _demote_prior_buckets(items, calibration, demote_min_n=5, demote_hit_rate=0.25)
+
+    strong_item = next(it for it in result if "strong" in it["title"])
+    weak_item = next(it for it in result if "weak" in it["title"])
+
+    # 'strong' item must NOT be demoted (good hit rate)
+    assert not strong_item.get("prior_demoted"), (
+        "item naming sensor 'strong' (good hit rate) must NOT be demoted"
+    )
+
+    # 'weak' item must be demoted
+    assert weak_item.get("prior_demoted") is True, (
+        "item naming sensor 'weak' (bad hit rate) must be demoted"
+    )
+    assert weak_item.get("prior_bucket") == "lobe_sensor:til:weak"
+
+
+def test_p15b_no_sensor_in_text_no_demote():
+    """FIX-3: item naming no sensor at all is NOT demoted even if lobe has bad buckets."""
+    from engine.metabolism.agenda import _demote_prior_buckets
+
+    calibration = {
+        "by_kind": {},
+        "by_lobe_sensor": {
+            "til:bad_sensor": {"total": 6, "confirmed": 0, "hit_rate": 0.0},
+        },
+    }
+    items = [
+        # lobe matches but item text does not mention bad_sensor → must NOT demote
+        {
+            "title": "Refactor til lobe datastore",
+            "bucket": "NOVEL_BUILD",
+            "target_lobe": "til",
+            "rationale": "improve til performance generally",
+        },
+    ]
+    result = _demote_prior_buckets(items, calibration, demote_min_n=5, demote_hit_rate=0.25)
+    assert not result[0].get("prior_demoted"), (
+        "item naming no specific sensor must NOT be demoted (conservative: no false demote)"
+    )
+
+
+# ── P16: FIX-4 UNVERIFIABLE excluded from calibration denominator ─────────────
+
+def test_p16_unverifiable_excluded_from_calibration():
+    """_build_calibration_from_priors excludes UNVERIFIABLE from both num and denom."""
+    from engine.metabolism.dream import _build_calibration_from_priors
+
+    rows = [
+        # CONFIRMED + confirmed-triage → count as 1 hit, 1 total
+        {
+            "proposal_id": "a",
+            "kind": "engine",
+            "lobe": "til",
+            "sensors": ["ic"],
+            "outcome": "CONFIRMED",
+            "triage": "confirmed",
+        },
+        # FALSIFIER_TRIPPED → 0 hit, 1 total
+        {
+            "proposal_id": "b",
+            "kind": "engine",
+            "lobe": "til",
+            "sensors": ["ic"],
+            "outcome": "FALSIFIER_TRIPPED",
+            "triage": "overfit",
+        },
+        # UNVERIFIABLE → excluded from BOTH num and denom
+        {
+            "proposal_id": "c",
+            "kind": "engine",
+            "lobe": "til",
+            "sensors": ["ic"],
+            "outcome": "UNVERIFIABLE",
+            "triage": "unverifiable",
+        },
+    ]
+    cal = _build_calibration_from_priors(rows)
+
+    # Only 2 rows should be in denominator (UNVERIFIABLE excluded)
+    kind_stats = cal["by_kind"]["engine"]
+    assert kind_stats["total"] == 2, (
+        f"UNVERIFIABLE must be excluded from denominator, got total={kind_stats['total']}"
+    )
+    assert kind_stats["confirmed"] == 1
+    assert kind_stats["hit_rate"] == 0.5
+
+    # Lobe-sensor bucket for til:ic also should have total=2
+    ls_stats = cal["by_lobe_sensor"]["til:ic"]
+    assert ls_stats["total"] == 2, (
+        f"UNVERIFIABLE must be excluded from lobe_sensor denom, got total={ls_stats['total']}"
+    )
+    assert ls_stats["confirmed"] == 1
+
+
+# ── P17: FIX-4 confirmed requires triage=='confirmed' conjunction ─────────────
+
+def test_p17_confirmed_requires_triage_conjunction():
+    """_build_calibration_from_priors: CONFIRMED outcome with non-confirmed triage is NOT a hit."""
+    from engine.metabolism.dream import _build_calibration_from_priors
+
+    rows = [
+        # CONFIRMED outcome + confirmed triage → hit
+        {
+            "proposal_id": "x",
+            "kind": "engine",
+            "lobe": "til",
+            "sensors": [],
+            "outcome": "CONFIRMED",
+            "triage": "confirmed",
+        },
+        # CONFIRMED outcome + NON-confirmed triage → NOT a hit
+        {
+            "proposal_id": "y",
+            "kind": "engine",
+            "lobe": "til",
+            "sensors": [],
+            "outcome": "CONFIRMED",
+            "triage": "regime_ambiguity",
+        },
+    ]
+    cal = _build_calibration_from_priors(rows)
+
+    kind_stats = cal["by_kind"]["engine"]
+    assert kind_stats["total"] == 2
+    assert kind_stats["confirmed"] == 1, (
+        "CONFIRMED outcome with non-confirmed triage must NOT count as a hit"
+    )
+    assert kind_stats["hit_rate"] == 0.5
+
+
+# ── P18: FIX-5 demoted items survive docket-cap trim ─────────────────────────
+
+def test_p18_demoted_items_survive_docket_cap():
+    """Demoted items are not the silent casualty of max_docket_size trim (FIX-5).
+
+    When regular items + demoted items exceed the cap, regular items are trimmed first.
+    Demoted items must always appear in the final list (visibility law).
+    """
+    import engine.metabolism.agenda as agenda_mod
+    from engine.metabolism.dream import _append_outcome_prior_row
+
+    root = _tmp_root()
+
+    # Write 5 prior rows FALSIFIER_TRIPPED for til:ic_sharpe → bad bucket
+    for i in range(5):
+        _append_outcome_prior_row(root, {
+            "proposal_id": f"cap-{i}",
+            "kind": "NOVEL_BUILD",
+            "tier": "T1",
+            "lobe": "til",
+            "sensors": ["ic_sharpe"],
+            "outcome": "FALSIFIER_TRIPPED",
+            "triage": "overfit",
+            "ts": "2026-01-01T00:00:00+00:00",
+        })
+
+    # Budget: cap at 3 items
+    budget_yml = (
+        "schema: metabolism_budget.v1\n"
+        "per_cycle_usd_cap: 25\n"
+        "per_cycle_token_cap: 25000000\n"
+        "max_docket_size: 3\n"
+        "circuit_breaker_trip: 3\n"
+        "prior_demote_min_n: 5\n"
+        "prior_demote_hit_rate: 0.25\n"
+    )
+    (root / "config" / "metabolism_budget.yml").write_text(budget_yml, encoding="utf-8")
+
+    # 4 LLM items: 3 regular + 1 demoted-candidate (names ic_sharpe, lobe=til)
+    raw_items = [
+        {"title": "Regular item alpha", "bucket": "NOVEL_BUILD", "severity": "low",
+         "target_lobe": None, "rationale": ""},
+        {"title": "Regular item beta", "bucket": "NOVEL_BUILD", "severity": "low",
+         "target_lobe": None, "rationale": ""},
+        {"title": "Regular item gamma", "bucket": "NOVEL_BUILD", "severity": "low",
+         "target_lobe": None, "rationale": ""},
+        # names ic_sharpe → will be demoted; must survive despite cap=3
+        {"title": "Investigate ic_sharpe regression in til", "bucket": "NOVEL_BUILD",
+         "severity": "low", "target_lobe": "til", "rationale": "ic_sharpe has weak signal"},
+    ]
+
+    with (
+        patch.object(agenda_mod, "_build_orchestrator_system", return_value="sys"),
+        patch.object(agenda_mod, "get_open_rows", return_value=[]),
+        patch.object(agenda_mod, "build_organism_state", return_value={}),
+        patch.object(agenda_mod, "_call_llm", return_value=(
+            json.dumps({"items": raw_items}), None, "test-provider"
+        )),
+        patch("engine.metabolism.recall.recall_lessons", return_value="(none)"),
+    ):
+        result = agenda_mod.build_agenda(
+            cycle_id="cap-test",
+            root=root,
+            providers=[{"model": "test"}],
+            model=None,
+        )
+
+    items = result.get("items") or []
+    titles = [it["title"] for it in items]
+
+    # The demoted item MUST be present (visibility law)
+    assert any("ic_sharpe" in t for t in titles), (
+        "Demoted item must survive docket-cap trim (FIX-5 visibility law)"
+    )
+
+    # Total must not exceed cap
+    assert len(items) <= 3, f"Expected <=3 items, got {len(items)}: {titles}"
+
+    # Demoted item must have prior_demoted=True
+    demoted = [it for it in items if it.get("prior_demoted")]
+    assert len(demoted) == 1, "Exactly the ic_sharpe item should be demoted"

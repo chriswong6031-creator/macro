@@ -409,7 +409,17 @@ def _build_calibration_from_priors(
 
     for row in prior_rows:
         outcome = str(row.get("outcome") or "").upper()
-        is_confirmed = outcome == "CONFIRMED"
+        triage = str(row.get("triage") or "").lower()
+
+        # R-V8-11 / FIX-4: UNVERIFIABLE outcomes are excluded from BOTH numerator
+        # and denominator — an un-evaluable outcome is not evidence the construction
+        # is bad.  Only CONFIRMED and FALSIFIER_TRIPPED count.
+        if outcome == "UNVERIFIABLE":
+            continue
+
+        # A hit requires outcome=='CONFIRMED' AND triage=='confirmed' (conjunction).
+        is_confirmed = outcome == "CONFIRMED" and triage == "confirmed"
+
         kind = str(row.get("kind") or "unknown")
         lobe = str(row.get("lobe") or "")
         sensors = row.get("sensors") or []
