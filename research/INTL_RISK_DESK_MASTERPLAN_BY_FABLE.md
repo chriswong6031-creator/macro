@@ -250,3 +250,4 @@ printed.
 
 ### Status log
 - 2026-07-12 — Masterplan authored (Fable) from 11-agent census+research fan-out; W1 dispatch next.
+- 2026-07-12 — W3 surface shipped (intl.html risk desk, variant-A board adjudicated from 2 mockups; doctrine §5 checklist pass) + W4 weather-station intl_risk domain card; program W0–W4 complete. First nightly with full data 2026-07-13; clocks stand (08-15, 10-15).

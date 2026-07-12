@@ -367,3 +367,89 @@ def test_compose_intl_risk_reads_swap_lines_bn_top_level():
     assert result["swap_lines_bn"] == 450.7, (
         f"swap_lines_bn should be read from top-level key; got {result['swap_lines_bn']}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Test 9: _build_intl_risk_card — W4 weather-station card builder (IRD-W4)
+# ---------------------------------------------------------------------------
+
+def test_build_intl_risk_card_null_lobe():
+    """_build_intl_risk_card with absent world_state renders null_state=True, never crashes."""
+    from scripts.build_macro_context import _build_intl_risk_card
+
+    card = _build_intl_risk_card(world_state=None, today="2026-07-12")
+
+    assert card["domain"] == "intl_risk"
+    assert card["card_type"] == "intl_risk"
+    assert card["null_state"] is True
+    assert card["detail_href"] == "intl.html"
+    # State/stance strings must be present (no KeyError)
+    assert isinstance(card["state_en"], str)
+    assert isinstance(card["stance_en"], str)
+
+
+def test_build_intl_risk_card_contained():
+    """With two_tier_state='contained', card carries correct state text and chip class."""
+    from scripts.build_macro_context import _build_intl_risk_card
+
+    ws = {
+        "intl_risk": {
+            "two_tier_state": "contained",
+            "em_stress_state": "strained",
+            "dollar_regime": "rates-driven",
+            "swap_lines_bn": 0.2,
+            "total_connectedness": 81.9,
+            "top_transmitters": [],
+            "display_only": True,
+        }
+    }
+    card = _build_intl_risk_card(world_state=ws, today="2026-07-12")
+
+    assert card["null_state"] is False
+    assert "not reaching US" in card["state_en"]
+    assert card["state_cls"] == "c-warn"  # contained → warn
+    assert "strain" in card["em_text_en"].lower()
+    assert "rates" in card["dollar_text_en"].lower()
+
+
+def test_build_intl_risk_card_transmitting():
+    """With two_tier_state='transmitting', stance urges reducing EM exposure."""
+    from scripts.build_macro_context import _build_intl_risk_card
+
+    ws = {
+        "intl_risk": {
+            "two_tier_state": "transmitting",
+            "em_stress_state": "stressed",
+            "dollar_regime": "risk-off",
+            "display_only": True,
+        }
+    }
+    card = _build_intl_risk_card(world_state=ws, today="2026-07-12")
+
+    assert card["state_cls"] == "c-down"
+    assert "Reduce" in card["stance_en"] or "contagion" in card["stance_en"]
+
+
+def test_build_intl_risk_card_in_weather_board():
+    """_build_intl_risk_card is injected into weather_board at intl_risk DOMAIN_ORDER position."""
+    from scripts.build_macro_context import _build_weather_board, DOMAIN_ORDER
+
+    assert "intl_risk" in DOMAIN_ORDER, "intl_risk must be in DOMAIN_ORDER"
+
+    # Minimal snapshot with no intl_risk labels (they come from world_state)
+    snapshot = {"labels": {"us": {"us_quad": "Q1"}}, "sources": {}, "asof": "2026-07-12"}
+    ws = {
+        "intl_risk": {
+            "two_tier_state": "quiet",
+            "em_stress_state": "calm",
+            "dollar_regime": None,
+            "display_only": True,
+        }
+    }
+
+    board = _build_weather_board(snapshot, "2026-07-12", {}, [], world_state=ws)
+
+    ird_cards = [c for c in board if c.get("card_type") == "intl_risk"]
+    assert len(ird_cards) == 1, f"Expected exactly 1 intl_risk card; got {len(ird_cards)}"
+    assert ird_cards[0]["domain"] == "intl_risk"
+    assert ird_cards[0]["detail_href"] == "intl.html"
