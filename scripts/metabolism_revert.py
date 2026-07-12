@@ -97,16 +97,83 @@ def _load_max_open_revert_prs(root: Path) -> int:
         return 2
 
 
+_REVERT_BRANCH_PREFIX = "claude/metabolism-revert-"
+_REVERT_BRANCH_PREFIX_SHORT = "metabolism/revert-"
+
+
+def _count_open_revert_prs(root: Path) -> int:
+    """Count currently-open revert PRs opened by this lane.
+
+    Queries 'gh pr list --state open' and counts PRs whose head branch starts
+    with the revert prefix.  Returns 0 on any gh failure so a gh outage does
+    not permanently block new reverts.  NEVER raises.
+
+    FIX-3: bound is on SIMULTANEOUSLY-OPEN PRs, not per-run count.
+    """
+    try:
+        result = subprocess.run(
+            [
+                "gh", "pr", "list",
+                "--state", "open",
+                "--json", "number,headRefName",
+                "--limit", "100",
+            ],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode != 0:
+            log.warning(
+                "metabolism_revert._count_open_revert_prs: gh pr list exited %d: %s",
+                result.returncode, result.stderr[:200],
+            )
+            return 0  # fail-open: gh outage → don't block
+        prs = json.loads(result.stdout or "[]")
+        count = sum(
+            1 for pr in prs
+            if str(pr.get("headRefName") or "").startswith(_REVERT_BRANCH_PREFIX)
+            or str(pr.get("headRefName") or "").startswith(_REVERT_BRANCH_PREFIX_SHORT)
+        )
+        log.info("metabolism_revert._count_open_revert_prs: found %d open revert PR(s)", count)
+        return count
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_revert._count_open_revert_prs: %s — returning 0", exc)
+        return 0  # fail-open
+
+
 # ── Actioned-marker helpers ───────────────────────────────────────────────────
 
 def _actioned_path(proposal_id: str, root: Path) -> Path:
     return root / _REVERT_DIR / f"{proposal_id}.json"
 
 
+_RETRYABLE_STATUSES = frozenset({"revert_pr_open_failed"})
+
+
 def _is_actioned(proposal_id: str, root: Path) -> bool:
-    """True if a durable actioned-marker exists for this proposal_id.  NEVER raises."""
+    """True if a durable actioned-marker exists AND is NOT a retryable status.
+
+    FIX-4: 'revert_pr_open_failed' markers allow retry — they are NOT treated
+    as permanently actioned.  NEVER raises.
+    """
     try:
-        return _actioned_path(proposal_id, root).exists()
+        p = _actioned_path(proposal_id, root)
+        if not p.exists():
+            return False
+        # If the marker carries a retryable status, the plan is NOT actioned
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+            if data.get("status") in _RETRYABLE_STATUSES:
+                log.info(
+                    "metabolism_revert._is_actioned: proposal=%s has retryable "
+                    "status=%s — treating as unactioned for retry",
+                    proposal_id, data.get("status"),
+                )
+                return False
+        except Exception:  # noqa: BLE001
+            pass  # unreadable marker → treat as actioned (fail-closed)
+        return True
     except Exception:  # noqa: BLE001
         return False
 
@@ -586,37 +653,74 @@ def _process_one_plan(
             pr_result = _open_draft_revert_pr(branch, plan_record, root=root, dry_run=dry_run)
             result["pr"] = pr_result
 
-            # ─�� Write durable actioned marker ───────────────────────────────
+            # FIX-4: write actioned marker ONLY when the PR was actually opened
+            # (opened==True).  On gh failure (opened==False), mark with
+            # 'revert_pr_open_failed' so the next run retries rather than silently
+            # dropping the intent.
             revert_pr_number = pr_result.get("pr_number")
-            marker = _write_actioned_marker(
-                proposal_id, "revert_pr_opened",
-                pr_number=revert_pr_number,
-                root=root,
-                extra={
-                    "merge_sha": merge_sha,
-                    "source_pr_number": pr_number,
-                    "branch": branch,
-                    "pr_url": pr_result.get("pr_url"),
-                },
-                dry_run=dry_run,
-            )
-            result["actioned_marker"] = marker
-            result["status"] = "revert_pr_opened"
+            if pr_result.get("opened"):
+                marker = _write_actioned_marker(
+                    proposal_id, "revert_pr_opened",
+                    pr_number=revert_pr_number,
+                    root=root,
+                    extra={
+                        "merge_sha": merge_sha,
+                        "source_pr_number": pr_number,
+                        "branch": branch,
+                        "pr_url": pr_result.get("pr_url"),
+                    },
+                    dry_run=dry_run,
+                )
+                result["actioned_marker"] = marker
+                result["status"] = "revert_pr_opened"
 
-            _emit_insight(
-                "revert_plan_actioned",
-                proposal_id,
-                (
-                    f"Draft revert PR opened for proposal={proposal_id} "
-                    f"sha={merge_sha} (PR #{revert_pr_number})"
-                ),
-                root,
-                dry_run=dry_run,
-            )
-            log.info(
-                "metabolism_revert: DONE proposal=%s sha=%s revert_pr=%s",
-                proposal_id, merge_sha, revert_pr_number,
-            )
+                _emit_insight(
+                    "revert_plan_actioned",
+                    proposal_id,
+                    (
+                        f"Draft revert PR opened for proposal={proposal_id} "
+                        f"sha={merge_sha} (PR #{revert_pr_number})"
+                    ),
+                    root,
+                    dry_run=dry_run,
+                )
+                log.info(
+                    "metabolism_revert: DONE proposal=%s sha=%s revert_pr=%s",
+                    proposal_id, merge_sha, revert_pr_number,
+                )
+            else:
+                # gh pr create failed after push — mark with failed status so
+                # the next run retries (plan NOT permanently actioned).
+                pr_error = pr_result.get("error") or "gh pr create returned opened=False"
+                log.warning(
+                    "metabolism_revert: gh pr create failed for proposal=%s: %s — "
+                    "marking revert_pr_open_failed for retry",
+                    proposal_id, pr_error,
+                )
+                marker = _write_actioned_marker(
+                    proposal_id, "revert_pr_open_failed",
+                    pr_number=None,
+                    root=root,
+                    extra={
+                        "merge_sha": merge_sha,
+                        "source_pr_number": pr_number,
+                        "branch": branch,
+                        "error": pr_error,
+                    },
+                    dry_run=dry_run,
+                )
+                result["actioned_marker"] = marker
+                result["status"] = "revert_pr_open_failed"
+                _emit_insight(
+                    "revert_plan_conflict",
+                    proposal_id,
+                    (
+                        f"gh pr create failed after push for proposal={proposal_id} "
+                        f"sha={merge_sha}; marked for retry: {pr_error}"
+                    ),
+                    root,
+                    dry_run=dry_run,
+                )
 
         finally:
             # Always clean up the temp worktree (except dry-run uses a real tmpdir
@@ -664,14 +768,25 @@ def main(argv: list[str] | None = None) -> int:
 
     log.info("metabolism_revert: found %d un-actioned revert plan(s)", len(plans))
 
-    # ── Bound by max_open_revert_prs ──────────────────────────────────────
+    # ── Bound by max_open_revert_prs (SIMULTANEOUSLY OPEN, not per-run) ─────
+    # FIX-3: query gh pr list for already-open revert PRs so the cap applies
+    # to the global count of open PRs, not just PRs opened in this run.
     max_prs = _load_max_open_revert_prs(root)
-    to_process = plans[:max_prs]
+    already_open = _count_open_revert_prs(root)
+    slots_available = max(0, max_prs - already_open)
+    to_process = plans[:slots_available]
     skipped = len(plans) - len(to_process)
+    if already_open:
+        log.info(
+            "metabolism_revert: %d revert PR(s) already open; "
+            "max=%d → %d slot(s) available",
+            already_open, max_prs, slots_available,
+        )
     if skipped:
         log.info(
-            "metabolism_revert: %d plan(s) deferred (max_open_revert_prs=%d)",
-            skipped, max_prs,
+            "metabolism_revert: %d plan(s) deferred (max_open_revert_prs=%d, "
+            "already_open=%d)",
+            skipped, max_prs, already_open,
         )
 
     # ── Process each plan ─────────────────────────────────────────────────

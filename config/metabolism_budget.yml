@@ -154,3 +154,13 @@ tap_reping_days: 7              # R-V8-8
 # operator_tap_expired insight so the docket is never silently infinite.
 # Parking is NOT execution — the held plan stays held.
 tap_park_days: 21               # R-V8-8
+
+# ── Construction park expiry (R-V8-9 FIX-5) ──────────────────────────────────
+#
+# park_expiry_days: a parked_construction row auto-releases after this many days
+# unless a fresh FALSIFIER_TRIPPED for the same cycle re-parks it.  This mirrors
+# the R-V8-8 tap-expiry pattern so a dead-unpark does not become a permanent
+# one-way block.  The release_grant_id path (future ADJUDICATE wire) takes
+# priority over expiry and is checked first.
+# IMMUTABLE: loop PRs may NOT modify this value.
+park_expiry_days: 30           # R-V8-9 FIX-5

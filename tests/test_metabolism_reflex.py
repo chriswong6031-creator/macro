@@ -846,10 +846,18 @@ class TestParkedConstructionAppendedByVerify:
     """On clean-overfit FALSIFIER_TRIPPED, verify appends parked_construction row."""
 
     def test_park_row_appended_on_clean_overfit(self):
+        """FIX-1: verify_proposal RETURNS park_intent=True; the lane caller
+        (_execute_reflex_intents) fires _park_construction_from_falsifier, not
+        verify_proposal itself.  We test the intent is present in the result
+        and that _execute_reflex_intents calls the park function."""
         from engine.metabolism import verify as v
         importlib.reload(v)
+        import scripts.metabolism_verify as mv
+        importlib.reload(mv)
 
         d = _tmp_root()
+        (d / "data" / "metabolism" / "reflex").mkdir(parents=True, exist_ok=True)
+        (d / "data" / "metabolism" / "lifecycle").mkdir(parents=True, exist_ok=True)
 
         contract = {
             "lobe": "til_park",
@@ -860,38 +868,45 @@ class TestParkedConstructionAppendedByVerify:
             "falsifier_spec": {},
         }
 
+        with patch.object(v, "_evaluate_contract",
+                          return_value=("FALSIFIER_TRIPPED", "test")):
+            with patch.object(v, "_measurement_lens_triage",
+                              return_value={
+                                  "classification": "overfit",
+                                  "action": "revert_plan",
+                                  "revert_plan": {"action": "git_revert", "target": "test"},
+                                  "operator_tap_reason": None,
+                              }):
+                with patch.object(v, "_append_governance_tap"):
+                    with patch.object(v, "_append_lesson_from_verify"):
+                        with patch.object(v, "_append_strategic_memory_from_verify"):
+                            with patch.object(v, "_archive_on_verify"):
+                                record = v.verify_proposal(
+                                    cycle_id="cycle-park-verify",
+                                    contract=contract,
+                                    root=d,
+                                    today="2026-07-12",
+                                )
+
+        # verify_proposal must return park_intent=True (not call it directly)
+        intents = record.get("_side_effect_intents") or {}
+        assert intents.get("park_intent") is True, (
+            "verify_proposal must set park_intent=True in result for clean-overfit"
+        )
+
+        # Now verify the lane caller fires the park function
         park_calls: list[str] = []
 
         def fake_park(cycle_id, contract_arg, root_arg):
             park_calls.append(cycle_id)
-            # Do NOT recurse into v._park_construction_from_falsifier — just record.
 
-        with patch.object(v, "_feed_breach_from_falsifier"):
-            with patch.object(v, "_evaluate_contract",
-                               return_value=("FALSIFIER_TRIPPED", "test")):
-                with patch.object(v, "_measurement_lens_triage",
-                                   return_value={
-                                       "classification": "overfit",
-                                       "action": "revert_plan",
-                                       "revert_plan": {"action": "git_revert", "target": "test"},
-                                       "operator_tap_reason": None,
-                                   }):
-                    with patch.object(v, "_append_governance_tap"):
-                        with patch.object(v, "_append_lesson_from_verify"):
-                            with patch.object(v, "_append_strategic_memory_from_verify"):
-                                with patch.object(v, "_archive_on_verify"):
-                                    with patch.object(v, "_park_construction_from_falsifier",
-                                                       side_effect=fake_park):
-                                        v.verify_proposal(
-                                            cycle_id="cycle-park-verify",
-                                            contract=contract,
-                                            root=d,
-                                            today="2026-07-12",
-                                        )
+        with patch.object(v, "_park_construction_from_falsifier", side_effect=fake_park):
+            with patch.object(v, "_feed_breach_from_falsifier"):
+                mv._execute_reflex_intents("cycle-park-verify", record, d)
 
         assert len(park_calls) == 1, (
-            f"_park_construction_from_falsifier must be called exactly once, "
-            f"got {len(park_calls)}"
+            f"_execute_reflex_intents must call _park_construction_from_falsifier "
+            f"exactly once, got {len(park_calls)}"
         )
 
     def test_park_row_content(self):
@@ -934,3 +949,369 @@ class TestInsightBusKindsRegistered:
         for kind in ("tap_repinged", "tap_expired", "parked_construction",
                      "revert_plan_actioned", "revert_plan_conflict"):
             assert kind in _KINDS, f"{kind!r} missing from insight_bus._KINDS"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX-1: dry-run writes NOTHING durable
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestDryRunNoDurableWrites:
+    """FIX-1: dry-run on a tripped-falsifier cycle writes zero durable rows."""
+
+    def test_dry_run_no_breach_no_park(self):
+        """verify_proposal + dry-run lane must produce zero durable side-effect writes."""
+        from engine.metabolism import verify as v
+        importlib.reload(v)
+        import scripts.metabolism_verify as mv
+        importlib.reload(mv)
+
+        d = _tmp_root()
+        (d / "data" / "metabolism" / "reflex").mkdir(parents=True, exist_ok=True)
+        (d / "data" / "metabolism" / "lifecycle").mkdir(parents=True, exist_ok=True)
+        claims_path = d / "data" / "metabolism" / "claims.jsonl"
+
+        contract = {
+            "lobe": "til_dry",
+            "sensor": "momentum",
+            "kind": "til",
+            "proposal_id": "p_dry_001",
+            "check_by": "2000-01-01",
+            "falsifier_spec": {},
+        }
+
+        with patch.object(v, "_evaluate_contract",
+                          return_value=("FALSIFIER_TRIPPED", "test")):
+            with patch.object(v, "_measurement_lens_triage",
+                              return_value={
+                                  "classification": "overfit",
+                                  "action": "revert_plan",
+                                  "revert_plan": {"action": "git_revert", "target": "test"},
+                                  "operator_tap_reason": None,
+                              }):
+                with patch.object(v, "_append_governance_tap"):
+                    with patch.object(v, "_append_lesson_from_verify"):
+                        with patch.object(v, "_append_strategic_memory_from_verify"):
+                            with patch.object(v, "_archive_on_verify"):
+                                record = v.verify_proposal(
+                                    cycle_id="cycle-dry-001",
+                                    contract=contract,
+                                    root=d,
+                                    today="2026-07-12",
+                                )
+
+        # The record carries intents but verify_proposal must NOT have fired them
+        intents = record.get("_side_effect_intents") or {}
+        assert intents.get("breach_intent") is True
+        assert intents.get("park_intent") is True
+
+        # No lifecycle journal rows (breach not fired)
+        lifecycle_dir = d / "data" / "metabolism" / "lifecycle"
+        assert not list(lifecycle_dir.glob("*.jsonl")), (
+            "No lifecycle journal should exist: breach must not fire in verify_proposal"
+        )
+
+        # No claims rows (park not fired)
+        assert not claims_path.exists() or claims_path.read_text().strip() == "", (
+            "No claims row should exist: park must not fire in verify_proposal"
+        )
+
+        # Simulate _run_single with dry_run=True: _execute_reflex_intents must NOT be called
+        execute_calls: list[str] = []
+
+        def fake_execute(cycle_id, rec, root):
+            execute_calls.append(cycle_id)
+
+        with patch.object(mv, "_execute_reflex_intents", side_effect=fake_execute):
+            # dry_run=True → _execute_reflex_intents should NOT be called
+            mv._run_single(
+                "cycle-dry-001",
+                contract,
+                d,
+                "2026-07-12",
+                dry_run=True,
+            )
+
+        assert len(execute_calls) == 0, (
+            "With dry_run=True, _execute_reflex_intents must NOT be called"
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX-2: breach + park idempotency
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestReflexIdempotency:
+    """FIX-2: running the bridge twice on the same cycle_id → exactly one
+    breach row + one park row."""
+
+    def test_double_run_single_breach_single_park(self):
+        """Simulate _execute_reflex_intents twice on the same cycle_id.
+
+        The second call must be a no-op (idempotency marker already written).
+        Result: exactly 1 lifecycle row + 1 claims row.
+        """
+        import scripts.metabolism_verify as mv
+        importlib.reload(mv)
+        from engine.metabolism.verify import (
+            _reflex_already_executed,
+            _write_reflex_marker,
+        )
+
+        d = _tmp_root()
+        (d / "data" / "metabolism" / "reflex").mkdir(parents=True, exist_ok=True)
+        (d / "data" / "metabolism" / "lifecycle").mkdir(parents=True, exist_ok=True)
+
+        contract = {
+            "lobe": "til_idem",
+            "sensor": "momentum",
+            "kind": "til",
+            "proposal_id": "p_idem_fix2",
+        }
+        record = {
+            "cycle_id": "cycle-idem-fix2",
+            "contract": contract,
+            "triage": {"classification": "overfit", "action": "revert_plan"},
+            "_side_effect_intents": {"breach_intent": True, "park_intent": True},
+        }
+
+        # First call — should execute and write marker
+        mv._execute_reflex_intents("cycle-idem-fix2", record, d)
+
+        lj = d / "data" / "metabolism" / "lifecycle" / "til_idem.jsonl"
+        claims = d / "data" / "metabolism" / "claims.jsonl"
+        assert lj.exists(), "Lifecycle journal must be written on first call"
+        assert claims.exists(), "Claims.jsonl must be written on first call"
+
+        rows_after_first = [
+            json.loads(l) for l in lj.read_text().splitlines() if l.strip()
+        ]
+        claims_after_first = [
+            json.loads(l) for l in claims.read_text().splitlines() if l.strip()
+        ]
+        assert len(rows_after_first) == 1, "Exactly 1 breach row after first call"
+        assert len(claims_after_first) == 1, "Exactly 1 park row after first call"
+
+        # Second call — idempotency marker exists; must be a no-op
+        mv._execute_reflex_intents("cycle-idem-fix2", record, d)
+
+        rows_after_second = [
+            json.loads(l) for l in lj.read_text().splitlines() if l.strip()
+        ]
+        claims_after_second = [
+            json.loads(l) for l in claims.read_text().splitlines() if l.strip()
+        ]
+        assert len(rows_after_second) == 1, (
+            f"Second call must be idempotent: still 1 breach row, got {len(rows_after_second)}"
+        )
+        assert len(claims_after_second) == 1, (
+            f"Second call must be idempotent: still 1 park row, got {len(claims_after_second)}"
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX-3: simultaneously-open revert PR bound
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestOpenRevertPrBound:
+    """FIX-3: gh pr list returning N open → opens at most max-N."""
+
+    def test_bound_respects_existing_open_prs(self):
+        """If gh pr list returns 1 open revert PR and max=2, only 1 plan is processed."""
+        mr = _import_revert()
+        d = _tmp_root()
+        (d / "config" / "metabolism_budget.yml").write_text(
+            "schema: metabolism_budget.v1\nmax_open_revert_prs: 2\n"
+        )
+
+        _write_verify_record(d, "cycle-aa", "revert_plan", "pid_aa")
+        _write_verify_record(d, "cycle-bb", "revert_plan", "pid_bb")
+
+        # Simulate gh pr list returning 1 open revert PR
+        fake_gh_output = json.dumps([
+            {"number": 200, "headRefName": "claude/metabolism-revert-some-old-plan"},
+        ])
+        fake_gh_result = MagicMock()
+        fake_gh_result.returncode = 0
+        fake_gh_result.stdout = fake_gh_output
+        fake_gh_result.stderr = ""
+
+        process_calls: list[str] = []
+
+        def fake_process(plan, root, *, dry_run=False):
+            process_calls.append(plan.get("proposal_id"))
+            return {"status": "revert_pr_opened"}
+
+        env = _armed_env()
+        with patch.dict(os.environ, env, clear=False):
+            with patch("subprocess.run", return_value=fake_gh_result):
+                with patch.object(mr, "_process_one_plan", side_effect=fake_process):
+                    mr.main(["--root", str(d)])
+
+        # max=2, already_open=1 → slots=1 → exactly 1 plan processed
+        assert len(process_calls) == 1, (
+            f"With max=2 and 1 already open, should process 1 plan, got {len(process_calls)}"
+        )
+
+    def test_zero_slots_when_at_cap(self):
+        """If gh pr list returns max open revert PRs, no new plans are processed."""
+        mr = _import_revert()
+        d = _tmp_root()
+        (d / "config" / "metabolism_budget.yml").write_text(
+            "schema: metabolism_budget.v1\nmax_open_revert_prs: 1\n"
+        )
+
+        _write_verify_record(d, "cycle-cc", "revert_plan", "pid_cc")
+
+        # gh pr list returns 1 open revert PR and max=1 → no slots
+        fake_gh_output = json.dumps([
+            {"number": 201, "headRefName": "claude/metabolism-revert-existing"},
+        ])
+        fake_gh_result = MagicMock()
+        fake_gh_result.returncode = 0
+        fake_gh_result.stdout = fake_gh_output
+        fake_gh_result.stderr = ""
+
+        process_calls: list[str] = []
+
+        def fake_process(plan, root, *, dry_run=False):
+            process_calls.append(plan.get("proposal_id"))
+            return {"status": "revert_pr_opened"}
+
+        env = _armed_env()
+        with patch.dict(os.environ, env, clear=False):
+            with patch("subprocess.run", return_value=fake_gh_result):
+                with patch.object(mr, "_process_one_plan", side_effect=fake_process):
+                    mr.main(["--root", str(d)])
+
+        assert len(process_calls) == 0, (
+            f"At cap (max=1, open=1), no new plans should be processed, "
+            f"got {len(process_calls)}"
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX-4: revert intent not lost on gh failure
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestRevertIntentRetryOnGhFailure:
+    """FIX-4: gh pr create fails after push → plan NOT permanently actioned (retried)."""
+
+    def test_gh_failure_marks_retryable_status(self):
+        """When gh pr create fails (opened=False), marker status = revert_pr_open_failed,
+        and the plan is NOT permanently actioned."""
+        mr = _import_revert()
+        d = _tmp_root()
+        pid = "p_gh_fail"
+
+        # gh pr create fails
+        def fake_open_pr_fail(*args, **kwargs):
+            return {
+                "pr_number": None, "pr_url": None, "opened": False,
+                "error": "gh: Not Found",
+            }
+
+        env = _armed_env()
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mr, "_resolve_pr_number", return_value=42):
+                with patch.object(mr, "_resolve_merge_sha", return_value="sha_fail"):
+                    with patch.object(mr, "_create_revert_worktree",
+                                      return_value={"wt_path": tempfile.mkdtemp(), "error": None}):
+                        with patch.object(mr, "_remove_revert_worktree"):
+                            with patch.object(mr, "_open_draft_revert_pr",
+                                              side_effect=fake_open_pr_fail):
+                                with patch.object(mr, "_push_revert_branch",
+                                                  return_value=True):
+                                    with patch("subprocess.run", return_value=MagicMock(
+                                        returncode=0, stdout="", stderr=""
+                                    )):
+                                        result = mr._process_one_plan(
+                                            {
+                                                "proposal_id": pid,
+                                                "cycle_id": "cycle-ghfail",
+                                                "verify_path": "/fake",
+                                                "revert_plan": {"action": "git_revert",
+                                                                "target": "test"},
+                                                "do_not_rebuild_row": {},
+                                            },
+                                            d,
+                                            dry_run=False,
+                                        )
+
+        # Status must be revert_pr_open_failed
+        assert result.get("status") == "revert_pr_open_failed", (
+            f"Expected revert_pr_open_failed, got {result.get('status')!r}"
+        )
+
+        # Marker must be written with the retryable status
+        marker_path = d / "data" / "metabolism" / "revert" / f"{pid}.json"
+        assert marker_path.exists(), "Actioned marker must be written"
+        marker = json.loads(marker_path.read_text())
+        assert marker.get("status") == "revert_pr_open_failed", (
+            f"Marker status must be revert_pr_open_failed, got {marker.get('status')!r}"
+        )
+
+        # The plan is NOT permanently actioned: _is_actioned must return False
+        assert not mr._is_actioned(pid, d), (
+            "revert_pr_open_failed must be retryable: _is_actioned must return False"
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX-5: park expiry
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestParkExpiry:
+    """FIX-5: park older than expiry → not blocked; fresh park → blocked."""
+
+    def test_fresh_park_blocks(self):
+        """A park written just now (within expiry window) blocks a matching proposal."""
+        mb = _import_build()
+        d = _tmp_root()
+        # Config with 30-day expiry
+        (d / "config" / "metabolism_budget.yml").write_text(
+            "schema: metabolism_budget.v1\npark_expiry_days: 30\n"
+        )
+
+        claims_path = d / "data" / "metabolism" / "claims.jsonl"
+        now_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        park_row = {
+            "schema": "metabolism.parked_construction.v1",
+            "ts": now_ts,
+            "proposal_id": "p_fresh",
+            "parked_construction": {"lobe": "til", "sensors": ["mom"], "kind": "til"},
+            "release_grant_id": None,
+        }
+        claims_path.parent.mkdir(parents=True, exist_ok=True)
+        claims_path.write_text(json.dumps(park_row) + "\n")
+
+        proposal = {"proposal_id": "p_new", "lobe": "til", "kind": "til",
+                    "targets_sensor": "mom"}
+        blocked = mb._is_construction_parked(proposal, root=d)
+        assert blocked is True, "Fresh park must block matching proposal"
+
+    def test_expired_park_does_not_block(self):
+        """A park written 31 days ago (older than 30-day expiry) does NOT block."""
+        mb = _import_build()
+        d = _tmp_root()
+        (d / "config" / "metabolism_budget.yml").write_text(
+            "schema: metabolism_budget.v1\npark_expiry_days: 30\n"
+        )
+
+        claims_path = d / "data" / "metabolism" / "claims.jsonl"
+        old_ts = (datetime.now(timezone.utc) - timedelta(days=31)).isoformat(timespec="seconds")
+        park_row = {
+            "schema": "metabolism.parked_construction.v1",
+            "ts": old_ts,
+            "proposal_id": "p_old",
+            "parked_construction": {"lobe": "til", "sensors": ["mom"], "kind": "til"},
+            "release_grant_id": None,
+        }
+        claims_path.parent.mkdir(parents=True, exist_ok=True)
+        claims_path.write_text(json.dumps(park_row) + "\n")
+
+        proposal = {"proposal_id": "p_new", "lobe": "til", "kind": "til",
+                    "targets_sensor": "mom"}
+        blocked = mb._is_construction_parked(proposal, root=d)
+        assert blocked is False, (
+            "Park older than park_expiry_days must auto-release (not block)"
+        )

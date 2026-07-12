@@ -148,17 +148,61 @@ def _cycle_claimed_files(cycle_id: str, root: Path | None = None,
         return set()
 
 
+def _load_park_expiry_days(root: Path | None = None) -> int:
+    """Read park_expiry_days from metabolism_budget.yml.  Default=30.  NEVER raises.
+
+    FIX-5: park_expiry_days configures how long a parked construction blocks
+    new builds before it auto-releases (mirrors the R-V8-8 tap-expiry pattern).
+    """
+    try:
+        import yaml  # noqa: PLC0415
+        r = root or _ROOT
+        p = r / "config" / "metabolism_budget.yml"
+        if not p.exists():
+            return 30
+        cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+        v = cfg.get("park_expiry_days", 30)
+        return max(1, int(v))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_build._load_park_expiry_days: %s — default 30", exc)
+        return 30
+
+
+def _park_row_is_expired(row: dict, expiry_days: int) -> bool:
+    """Return True if a parked_construction row is older than expiry_days.
+
+    A row without a parseable 'ts' is treated as NOT expired (fail-closed: if
+    we cannot read when the park was written, we keep the block active).
+    NEVER raises.
+    """
+    try:
+        from datetime import datetime, timezone  # noqa: PLC0415
+        ts_raw = str(row.get("ts") or "")
+        if not ts_raw:
+            return False
+        row_dt = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
+        age_days = (datetime.now(timezone.utc) - row_dt).days
+        return age_days >= expiry_days
+    except Exception:  # noqa: BLE001
+        return False  # fail-closed: unreadable ts → treat as not expired
+
+
 def _is_construction_parked(
     proposal: dict,
     *,
     root: Path | None = None,
 ) -> bool:
-    """Return True when the proposal's lobe+kind+sensor overlaps a parked construction.
+    """Return True when the proposal's lobe+kind+sensor overlaps an active parked construction.
 
     A parked_construction row in claims.jsonl blocks re-builds of the same
     construction (R-V8-9).  A row with release_grant_id set (written by
     ADJUDICATE) unparks — if any release row exists for a parked proposal,
     the construction is NOT blocked.
+
+    FIX-5: a parked row older than park_expiry_days (from metabolism_budget.yml,
+    default 30) is treated as auto-released UNLESS a fresh park row also matches
+    (re-parked by a new FALSIFIER_TRIPPED).  The release_grant_id path is always
+    checked first; expiry is a safety net for dead-unpark situations.
 
     Match logic: lobe == lobe AND kind == kind AND sensors have non-empty
     intersection.
@@ -179,9 +223,12 @@ def _is_construction_parked(
         if not prop_lobe:
             return False  # no lobe = cannot match a parked construction
 
-        # Collect all parked proposal_ids + any released proposal_ids
+        expiry_days = _load_park_expiry_days(root)
+
+        # Collect parked/released/expired per proposal_id
         parked_pids: set[str] = set()
         released_pids: set[str] = set()
+        expired_pids: set[str] = set()
 
         for row in rows:
             if row.get("schema") != "metabolism.parked_construction.v1":
@@ -203,17 +250,29 @@ def _is_construction_parked(
                 continue
 
             if row.get("release_grant_id"):
+                # Explicit ADJUDICATE release — highest-priority unpark
                 released_pids.add(row_pid)
+            elif _park_row_is_expired(row, expiry_days):
+                # Auto-expiry: park older than park_expiry_days → treated as released
+                expired_pids.add(row_pid)
+                log.info(
+                    "BUILD: _is_construction_parked: park row for pid=%s lobe=%s is "
+                    "older than park_expiry_days=%d — treating as auto-released",
+                    row_pid, row_lobe, expiry_days,
+                )
             else:
                 parked_pids.add(row_pid)
 
-        # A proposal is blocked only if it has a parked row AND no release row
-        blocked_pids = parked_pids - released_pids
+        # A proposal is blocked only if it has an active parked row AND no release row
+        # (expired rows count as released for this check)
+        effective_released = released_pids | expired_pids
+        blocked_pids = parked_pids - effective_released
         if blocked_pids:
             log.info(
                 "BUILD: _is_construction_parked: lobe=%s kind=%s sensors=%s matched "
-                "parked pids=%s (released=%s)",
-                prop_lobe, prop_kind, prop_sensors, blocked_pids, released_pids,
+                "parked pids=%s (released=%s expired=%s)",
+                prop_lobe, prop_kind, prop_sensors, blocked_pids,
+                released_pids, expired_pids,
             )
             return True
         return False

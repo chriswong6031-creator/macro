@@ -321,19 +321,21 @@ def verify_proposal(
         # Archive-on-verify: save the contract + outcome to agenda_archive/ for dream cycle
         _archive_on_verify(cycle_id, contract, record, root)
 
-        # R-V8-7: Falsifier→ladder bridge.
-        # On a clean-overfit FALSIFIER_TRIPPED, feed journal_breach() so that
-        # grade_demotion_ladder() has automatic counts to work with.
-        # Health-miss exclusion preserved: journal_breach() with breach_type="logic_breach"
-        # is only "counted" when health_status is NOT in _HEALTH_EXCLUDED_STATUSES.
-        # One outcome = one counted row; idempotent per cycle_id (write_verify_record
-        # commits the verify file atomically, so this call happens exactly once per
-        # verified cycle — re-running verify on an already-verified cycle is blocked
-        # upstream by _scan_pending_cycles which skips existing verify records).
+        # R-V8-7 / R-V8-9: Side-effect INTENTS are returned to the LANE CALLER
+        # (scripts/metabolism_verify.py) so that --dry-run produces zero durable
+        # writes and so that each side-effect can be idempotency-guarded once in
+        # one place.  DO NOT call _feed_breach_from_falsifier or
+        # _park_construction_from_falsifier here.
         if outcome == _TRIPPED and triage.get("action") == "revert_plan":
-            _feed_breach_from_falsifier(cycle_id, contract, triage, root)
-            # R-V8-9: park the construction so the build lane won't re-build it.
-            _park_construction_from_falsifier(cycle_id, contract, root)
+            record["_side_effect_intents"] = {
+                "breach_intent": True,
+                "park_intent": True,
+            }
+        else:
+            record["_side_effect_intents"] = {
+                "breach_intent": False,
+                "park_intent": False,
+            }
 
         return record
 
@@ -1041,3 +1043,65 @@ def grade_demotion_ladder(
         result["error"] = str(exc)
 
     return result
+
+
+# ── R-V8 FIX-2: Idempotency marker for breach+park side-effects ──────────────
+#
+# A durable marker file at data/metabolism/reflex/<cycle_id>.json records which
+# side-effects have already been executed for a given cycle.  The LANE CALLER
+# (scripts/metabolism_verify.py) must check this before executing and update it
+# after.  This prevents double-firing when the lane is re-run on the same cycle.
+#
+# _reflex_marker_path() — returns the path for a cycle's reflex marker.
+# _reflex_already_executed() — True if both breach+park were already fired.
+# _write_reflex_marker() — atomically record which side-effects ran.
+
+_REFLEX_DIR = ("data", "metabolism", "reflex")
+_REFLEX_MARKER_SCHEMA = "metabolism.reflex_marker.v1"
+
+
+def _reflex_marker_path(cycle_id: str, root: Path) -> Path:
+    """Return the path for a cycle's reflex side-effect marker.  NEVER raises."""
+    return root.joinpath(*_REFLEX_DIR) / f"{cycle_id}.json"
+
+
+def _reflex_already_executed(cycle_id: str, root: Path) -> bool:
+    """True if the breach+park side-effects were already executed for this cycle.
+
+    NEVER raises.
+    """
+    try:
+        p = _reflex_marker_path(cycle_id, root)
+        if not p.exists():
+            return False
+        data = json.loads(p.read_text(encoding="utf-8"))
+        return bool(data.get("breach_executed") and data.get("park_executed"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("verify._reflex_already_executed(%s): %s", cycle_id, exc)
+        return False  # fail-open: retry is safe (breach/park are idempotent per cycle)
+
+
+def _write_reflex_marker(
+    cycle_id: str,
+    root: Path,
+    *,
+    breach_executed: bool = False,
+    park_executed: bool = False,
+) -> None:
+    """Atomically write a reflex side-effect marker for a cycle.  NEVER raises."""
+    try:
+        p = _reflex_marker_path(cycle_id, root)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        marker: dict[str, Any] = {
+            "schema": _REFLEX_MARKER_SCHEMA,
+            "cycle_id": cycle_id,
+            "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "breach_executed": breach_executed,
+            "park_executed": park_executed,
+        }
+        tmp = p.with_suffix(".tmp")
+        tmp.write_text(json.dumps(marker, separators=(",", ":"), ensure_ascii=False),
+                       encoding="utf-8")
+        tmp.replace(p)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("verify._write_reflex_marker(%s): %s", cycle_id, exc)
