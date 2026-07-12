@@ -32,9 +32,11 @@ concurrency:
 jobs:
   snapshot:
     runs-on: ubuntu-latest
-    # Cap raised 800 → 2200 (2026-07-09): full ~1942-symbol universe resolves in
-    # ~53 s on Yahoo path (measured). 2 × 53 s = 106 s << 480 s (8 min). File
-    # size at full universe: ~275 KB (< 500 KB browser budget). Timeout unchanged.
+    # Cap raised 800 → 2200 (2026-07-09) → 3000 (2026-07-12, HK basket pulse:
+    # the membership leg joins every US+HK basket member; production universe
+    # ~2130). Measured Yahoo rate ~37 symbols/s → ~58 s at today's universe,
+    # still ~12 % of the 8-min timeout. File size ~300 KB (< 500 KB browser
+    # budget). Timeout unchanged.
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4

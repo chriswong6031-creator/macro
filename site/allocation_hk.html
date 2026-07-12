@@ -484,7 +484,11 @@ fetch('policy_lever.json',{cache:'no-cache'})
      FTR W3: Tape Panel (allocation page) — live complex read + movers + disagreement
      Composes with W1 shock banner above. Display/de-escalation only (FT-R1, FT-R2).
      FT-R12: suppressed when stale; FT-R3: T+1 fade note inline.
+     Regions: us + hk only (each has a live pulse artifact: basket_pulse.json /
+     basket_pulse_hk.json). china/canada have no pulse — rendering the US tape
+     there was misleading (GAP-3), so the block is gated off.
      ══════════════════════════════════════════════════════════════════════ -->
+
 <div id="ftr-alloc-tape-panel" style="display:none;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin:10px 0">
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
     <span id="ftr-alloc-session-pill" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:16px"></span>
@@ -495,8 +499,12 @@ fetch('policy_lever.json',{cache:'no-cache'})
   </div>
   <div id="ftr-alloc-movers" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px"></div>
   <div id="ftr-alloc-disagree" style="margin-top:8px;font-size:12px;color:var(--muted)"></div>
-  <!-- T+1 fade note (FT-R3): plain words at a glance; technical receipt in the ? tip (docs/DESIGN_DOCTRINE.md) -->
-  <div style="margin-top:6px;font-size:10.5px;color:var(--muted);font-style:italic"><span class="l-en">Not a buy signal: sharp one-day flips usually don&#39;t hold &mdash; in 26 past cases about 6 in 10 faded within a day.</span><span class="l-zh">非买入信号：剧烈的单日反转多难持续 — 历史26次中约六成在一天内消退。</span> <span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--line);color:var(--muted);font-size:9.5px;font-weight:700;cursor:help;line-height:1;vertical-align:middle;font-style:normal" data-tip-en="Technical receipt: T+1 violent-flip base rate 58% fade (n=26) · not a directional signal · display tier only." data-tip-zh="技术说明：T+1剧烈反转基础概率58%消退（n=26）· 非方向信号 · 仅展示层。">?</span></div>
+  <!-- T+1 fade note (FT-R3): plain words at a glance; technical receipt in the ? tip (docs/DESIGN_DOCTRINE.md).
+       The n=26 fade base rate was measured on US baskets — never claim it for another market
+       (epistemics law), so HK gets the plain no-stat framing. -->
+  
+  <div style="margin-top:6px;font-size:10.5px;color:var(--muted);font-style:italic"><span class="l-en">Not a buy signal: a one-session move is tape, not trend &mdash; the strategic view above updates on the daily close.</span><span class="l-zh">非买入信号：单一交易时段的波动只是行情，并非趋势 — 上方战略视图按日收盘更新。</span></div>
+  
 </div>
 <script>
 (function(){
@@ -522,7 +530,7 @@ var NAMEMAP={};
 function _slugName(id){return String(id||'').replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});}
 function nameEnOf(id){return (NAMEMAP[id]&&NAMEMAP[id].en)||_slugName(id);}
 function nameZhOf(id){return (NAMEMAP[id]&&NAMEMAP[id].zh)||_slugName(id);}
-fetch('basketdata/baskets.json',{cache:'no-cache'})
+fetch('hkbasketdata/baskets.json',{cache:'no-cache'})
   .then(function(r){if(!r.ok)throw 0;return r.json();})
   .then(function(d){
     ((d&&d.baskets)||[]).forEach(function(b){
@@ -530,7 +538,7 @@ fetch('basketdata/baskets.json',{cache:'no-cache'})
     });
   })
   .catch(function(){/* absent names file → prettified-slug fallback */})
-  .then(function(){ return fetch('live/basket_pulse.json',{cache:'no-cache'}); })
+  .then(function(){ return fetch('live/basket_pulse_hk.json',{cache:'no-cache'}); })
   .then(function(r){if(!r.ok)throw 0;return r.json();})
   .then(function(pulse){
     var panel=document.getElementById('ftr-alloc-tape-panel');
@@ -596,8 +604,11 @@ fetch('basketdata/baskets.json',{cache:'no-cache'})
       function mrow(b){
         var isUp=b.live_ew_chg_pct>=0;
         var barW=Math.max(6,Math.round(Math.abs(b.live_ew_chg_pct)/maxAbs*44));
+        // Region-aware theme link (mirrors the lifecycle-board rule): US has
+        // per-basket detail pages; HK deep-links into baskets_hk.html anchors.
+        var href='baskets_hk.html#b-'+esc(b.id);
         return '<div style="display:flex;align-items:center;gap:6px;padding:2px 0">'
-        +'<a href="basket/'+esc(b.id)+'.html" style="flex:1;font-weight:500;color:inherit;text-decoration:none;min-width:0">'+L(esc(nameEnOf(b.id)),esc(nameZhOf(b.id)))+'</a>'
+        +'<a href="'+href+'" style="flex:1;font-weight:500;color:inherit;text-decoration:none;min-width:0">'+L(esc(nameEnOf(b.id)),esc(nameZhOf(b.id)))+'</a>'
         +'<span style="font-weight:700;font-variant-numeric:tabular-nums;color:'+(isUp?'var(--up)':'var(--down)')+'">'+fmtPct(b.live_ew_chg_pct)+'</span>'
         +'<span style="width:44px;flex:none"><span style="display:inline-block;height:3px;border-radius:2px;min-width:6px;width:'+barW+'px;background:'+(isUp?'var(--up)':'var(--down)')+';opacity:.65"></span></span>'
         +'</div>';}
@@ -628,6 +639,7 @@ fetch('basketdata/baskets.json',{cache:'no-cache'})
   }).catch(function(){/* absent file → panel stays hidden */});
 })();
 </script>
+
 
 
 

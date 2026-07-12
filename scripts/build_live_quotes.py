@@ -19,7 +19,9 @@ deployed it takes precedence (real-time US via Polygon) and this snapshot become
 the off-worker fallback — both are wired in ``templates/live.js``.
 
 Universe = every ``data-sym`` the built site emits (so whatever the pages render
-goes live) UNION a CORE of US + international index symbols and US index futures.
+goes live) UNION a CORE of US + international index symbols and US index futures
+UNION every tracked basket member (US + HK membership files — the basket-pulse
+builders compute from this snapshot, see basket_member_symbols()).
 Quotes-only: NO scipy, no overlay math — installs fast, runs in seconds.
 
 Graceful: any feed down -> the symbol is simply absent and live.js keeps the baked
@@ -98,6 +100,28 @@ def scrape_site_symbols(site_dir: Path) -> list[str]:
     return sorted(found)
 
 
+def basket_member_symbols() -> list[str]:
+    """Active members of every tracked basket, straight from the membership
+    files (US + HK). The basket-pulse builders (FTR W2 + the HK extension)
+    compute from THIS snapshot, so members must be covered even when no built
+    page emits their data-sym (HK basket pages don't — GAP-3: zero .HK members
+    reached the snapshot via the site scrape). Plain JSON reads, no pandas —
+    this script runs on the slim ubuntu live-quotes lane (requests+pyyaml only).
+    Missing file → that market contributes nothing (never fatal)."""
+    out: list[str] = []
+    for parts in (("baskets", "membership.json"), ("baskets_hk", "membership.json")):
+        p = config.data_dir().joinpath(*parts)
+        try:
+            data = json.loads(p.read_text())
+        except Exception:  # noqa: BLE001
+            continue
+        for basket in (data.get("baskets") or {}).values():
+            for m in basket.get("members") or []:
+                if m.get("removed") is None and m.get("ticker"):
+                    out.append(str(m["ticker"]))
+    return out
+
+
 def top_conviction(site_dir: Path, n: int) -> list[str]:
     """Top-N US single names by |conviction| from the search index — so the most-
     viewed single-stock pages (whose data-sym is set client-side, not in static
@@ -115,21 +139,29 @@ def top_conviction(site_dir: Path, n: int) -> list[str]:
 
 
 def build_universe(site_dir: Path, extra: list[str] | None = None,
-                   cap: int = 2200, top_n: int = 120) -> list[str]:
+                   cap: int = 3000, top_n: int = 120) -> list[str]:
     """CORE index/futures symbols first (never dropped by the cap), then every
-    site data-sym, then top-N US conviction names, then config/CLI extras.
+    tracked basket member (US + HK membership files), then every site data-sym,
+    then top-N US conviction names, then config/CLI extras.
     De-duped, charset-validated, capped.
 
-    Cap raised from 800 → 2200 (2026-07-09): the full scraped universe is ~1942
-    symbols (CORE 39 + site data-sym ~1918 + conviction overlap). A Yahoo-path
-    timing run resolved 1938/1942 in 53 s wall-clock — well within the live-quotes
-    workflow 8-min job timeout (~11 % utilisation). File size at full universe was
-    275 KB (< 500 KB browser-fetch budget). At cap=800 only ~249/680 basket members
-    survived alphabetical truncation; cap=2200 covers the whole scraped universe
-    with ~250 symbol headroom for site growth."""
+    Cap raised from 800 → 2200 (2026-07-09, #2041): the full scraped universe is
+    ~1942 symbols (CORE 39 + site data-sym ~1918 + conviction overlap). A
+    Yahoo-path timing run resolved 1938/1942 in 53 s wall-clock — well within the
+    live-quotes workflow 8-min job timeout (~11 % utilisation). File size at full
+    universe was 275 KB (< 500 KB browser-fetch budget). At cap=800 only ~249/680
+    basket members survived alphabetical truncation.
+    Raised 2200 → 3000 (2026-07-12, HK pulse): the membership leg joins every
+    tracked US + HK basket member explicitly (~810 symbols, +147 unique .HK) so
+    pulse coverage never depends on which pages happen to emit a data-sym;
+    production universe lands ~2130 unique. At the measured ~37 symbols/s Yahoo
+    rate that is ~58 s — still ~12 % of the 8-min job timeout — and 3000 leaves
+    ~870 symbols of growth headroom. Basket members sit right after CORE so a
+    future cap squeeze can never truncate the pulse universe (the ordering IS
+    the priority)."""
     ordered: list[str] = []
     seen: set[str] = set()
-    for s in (CORE_SYMBOLS + scrape_site_symbols(site_dir)
+    for s in (CORE_SYMBOLS + basket_member_symbols() + scrape_site_symbols(site_dir)
               + top_conviction(site_dir, top_n) + list(extra or [])):
         s = str(s).strip().upper()
         if s and s not in seen and _SYMBOL_RE.match(s):
@@ -210,7 +242,7 @@ def _validate_symbols(syms: list[str]) -> list[str]:
 
 
 def build(site_dir: Path, *, offline: bool = False, extra: list[str] | None = None,
-          cap: int = 2200, symbols: list[str] | None = None) -> dict:
+          cap: int = 3000, symbols: list[str] | None = None) -> dict:
     now = datetime.now(timezone.utc)
     lcfg = config.load().get("live") or {}
     # symbols= builds an EXACT-universe snapshot (bypasses CORE + site scrape +
@@ -246,7 +278,7 @@ def main() -> None:
     ap.add_argument("--out", default="quotes.json", help="output JSON path")
     ap.add_argument("--site", default=None, help="built-site dir (default: config site_dir)")
     ap.add_argument("--offline", action="store_true", help="no network — empty snapshot")
-    ap.add_argument("--max", type=int, default=2200, help="universe cap")
+    ap.add_argument("--max", type=int, default=3000, help="universe cap")
     ap.add_argument("--symbols", default=None,
                     help="comma-separated EXACT universe (bypass CORE+scrape+conviction); "
                          "e.g. 'BTC-USD' for the hourly crypto-only snapshot")
