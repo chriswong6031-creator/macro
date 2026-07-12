@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-12T14:58:48.623198+00:00",
+  "produced_at": "2026-07-12T20:18:20.928588+00:00",
   "as_of": "2026-07-09",
   "status": "degraded",
   "phase": "final",
@@ -471,7 +471,7 @@
   },
   "causal_lab": {
     "available": true,
-    "asof": "2026-07-12T10:01:42Z",
+    "asof": "2026-07-12T15:28:22Z",
     "new_edges_this_week_by_verdict": {
       "insufficient_power": 22,
       "null": 11,
