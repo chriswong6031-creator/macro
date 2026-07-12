@@ -193,6 +193,15 @@ lanes:
           NO LLM. Deterministic n-gram/statistics only.
           DISPLAY/WATCHLIST — all outputs may_rank/may_gate/may_size/may_escalate=false.
           Always exits 0 (tolerant; absent stores → honest nulls written).
+      - id: backfill_qledger_us
+        module: scripts.backfill_qledger_us
+        note: >
+          ALTDATA_REBOOT W2 (#2397) — per-channel qledger claim backfill: one
+          claim family per real altdata claim; also registers new radar
+          edge_snapshots and policy theses as qledger claims. Idempotent
+          (stable claim_ids prevent duplicates). Runs AFTER collectors
+          (data/altdata/theses.jsonl must be fresh) and BEFORE commit data so
+          claims.jsonl rides the same push. Non-fatal (step always exits 0).
       - id: publish_r2_attention
         module: scripts.publish_r2
         args: [--dirs, attention]
