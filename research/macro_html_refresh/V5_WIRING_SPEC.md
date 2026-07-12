@@ -114,3 +114,58 @@ EN/ZH × 1440/390: zero console errors, zero horizontal scroll · keyboard: popo
 Escape ordering (popover → island → modal guards intact) · localStorage keys unchanged
 (`mx4_view`, `mx2_state`) · v4 audit fixes must survive (Escape modal guard, focus trap,
 alerts-pill tap, help-tip tap, live fill sync — now gauge sync) · ledger view pixel-faithful.
+
+---
+
+# v5.1 addendum — popup dashboards everywhere (OPERATOR RULING 2026-07-12)
+
+Operator, verbatim intent: (1) "get rid of the colored lines on the left side of each container";
+(2) the Grid/Ledger switch should NOT exist anymore — grid is the ONLY view; (3) every simple
+container gets a "beautifully designed" POPUP detailed dashboard — the in-flow island/tray
+expansions are retired ("some are still functioning as ledgers"); popup content = MORE detail,
+still user-friendly, NO added technical jargon.
+
+## 1. Remove accents + toggle + ledger view (macro page only)
+- Delete every `border-left:3px …` card/band accent in the mx5 layer (cards keep glass border only).
+- Delete the `[Grid|Ledger]` segmented control, `mx4SetView`, the localStorage `mx4_view` inline
+  guard; `mx4-grid` class is baked permanently on body (CSS keys off it; do not rename).
+- Retire the ledger presentation: `.sx-sum` rows no longer render (delete from template, macro mode),
+  `mx2Toggle`/`mx2ToggleAll`/Expand-all button/`mx2_state` restore JS and the "press a card for
+  detail"/"click rows to expand" footer hints all removed for macro mode. us_stocks untouched.
+
+## 2. Popup dialog system (extend the ratified popover idiom)
+- One generalized `mx5OpenDlg(id)` system: desktop = centered fixed glass dialog (max-width 980px,
+  max-height 82vh, internal scroll, near-opaque `--pop-bg`, backdrop blur+dim, visible close X);
+  ≤700px = full bottom sheet (12px side margins, 85vh, sticky close bar). Esc / outside-click /
+  X close; focus into dialog on open, restored on close; aria-modal; reduced-motion = no animation;
+  body scroll locked while open. Escape ordering: dialog → (nothing else on this page now) →
+  release-radar modal guards intact.
+- The two existing scorecard popovers ("N signals aligned", "Elevated Risk · N") UPGRADE into this
+  dialog system and ABSORB their islands' full content (see §3). Same trigger buttons.
+
+## 3. Per-card popup dashboards (content = the old island interiors, re-skinned to v5 glass and
+de-jargoned; every string bilingual; no invented data; NO raw enums/z-scores/study IDs — plain
+words; keep Tier-2 receipts inside `?` tips where they already exist)
+- SIGNALS dialog (from the evidence island): six factor deep-rows (name, plain-word read subtext,
+  0-100 bar, score), weakest-leg callout, flip-trigger line.
+- RISK dialog (from the risk island): dominant-driver header, full scare ladder w/ plain
+  explanations, "what faded" chips if engine provides, drawdown boxes, sentiment decomposition —
+  the MX2-SENTIMENT pinned block moves here BYTE-VERBATIM (relocation ok, edits not).
+  Radar/ignition banner cards keep their existing markup inside the dialog top.
+- MARKETS dialog: 4 index-health deep cards (trend words, distance from highs, momentum in plain
+  words), hot/cold sector columns, the S&P heatmap, 8 asset tiles.
+- EVENTS dialog: full week calendar w/ per-event typical-move plain lines, release-radar cards
+  (the existing release-radar modal remains reachable from inside), fed meeting strip.
+- ALERTS dialog (from the news island): all fired alerts + the ranked headlines list.
+- POLICY dialog: lever cards, repricing meter, flip-confirmation — all labeled rows, plain words.
+- AI BRIEF dialog: the full reading card + source mix + top tickers.
+- NEW small dialogs for the static cards: FED (outcome distribution detail + upcoming meetings from
+  prediction_markets), SENTIMENT (fear/greed legs breakdown in plain words + the dial), SECTOR
+  (full sector heat detail). What-To-Do, deep-context chips, health strip: no popup.
+- Faces: whole-card press opens its dialog (role=button, Enter/Space, aria-haspopup="dialog").
+
+## 4. Guards (unchanged) + extras
+All §6 invariants hold. Plus: with sx-sum/mx2Toggle gone, ensure no orphaned JS references
+(mx2Toggle must not be called anywhere on macro; grep the rendered page). localStorage keys
+mx2_state/mx4_view become unused — leave old values untouched (no migration code). Ledger-view
+CSS branches may be deleted. site/us_stocks.html byte-identical, news/macro_signals restored.
