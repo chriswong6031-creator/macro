@@ -424,3 +424,42 @@ class TestDeterminism:
             r2 = two_tier_read(em_stress_state="calm")
         assert r1["state"] == r2["state"]
         assert r1["tier2"]["hot_count"] == r2["tier2"]["hot_count"]
+
+
+class TestFrozenBasket:
+    """Pin tests for the adjudicated 6-DM / 6-EM basket (IRD-R4, 2026-07-12)."""
+
+    def test_exact_dm_tickers(self):
+        """DM sub-basket must be exactly EWJ, EWG, EWU, EWC, EWA, EWL."""
+        from engine.contagion import _ETF_BASKET_DM
+        expected_dm = {"EWJ", "EWG", "EWU", "EWC", "EWA", "EWL"}
+        assert set(_ETF_BASKET_DM) == expected_dm, (
+            f"DM basket mismatch: expected {expected_dm}, got {set(_ETF_BASKET_DM)}"
+        )
+
+    def test_exact_em_tickers(self):
+        """EM sub-basket must be exactly EWZ, EWW, INDA, EIDO, EZA, EWY."""
+        from engine.contagion import _ETF_BASKET_EM
+        expected_em = {"EWZ", "EWW", "INDA", "EIDO", "EZA", "EWY"}
+        assert set(_ETF_BASKET_EM) == expected_em, (
+            f"EM basket mismatch: expected {expected_em}, got {set(_ETF_BASKET_EM)}"
+        )
+
+    def test_full_basket_size_14(self):
+        """Full basket must have exactly 14 tickers (6 DM + 6 EM + EEM + SPY)."""
+        assert len(_ETF_BASKET) == 14, (
+            f"Basket size mismatch: expected 14, got {len(_ETF_BASKET)}"
+        )
+
+    def test_eem_spy_in_basket(self):
+        """EEM and SPY must both be in the full basket."""
+        assert "EEM" in _ETF_BASKET
+        assert "SPY" in _ETF_BASKET
+
+    def test_no_old_coverage_greedy_tickers(self):
+        """Old coverage-greedy tickers (EWD, EWH, EWI, EWK, EWM, EWN, EWO) must not appear."""
+        old_tickers = {"EWD", "EWH", "EWI", "EWK", "EWM", "EWN", "EWO"}
+        overlap = old_tickers.intersection(set(_ETF_BASKET))
+        assert not overlap, (
+            f"Old coverage-greedy tickers still in basket: {overlap}"
+        )

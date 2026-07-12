@@ -33,6 +33,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from engine.ird_velocity import velocity_fields as _ird_velocity
 from lib import store
 
 log = logging.getLogger(__name__)
@@ -163,6 +164,8 @@ def _country_row(spec: dict, f: pd.DataFrame, us_y10_last: float | None) -> dict
 
     chg = _chg_bp(y10)
     diff = (lvl - us_y10_last) * 100.0 if us_y10_last is not None else None
+    # IRD-R13 velocity fields (shared ird_velocity grammar)
+    vel = _ird_velocity(y10.dropna())
     return {
         "code": spec["code"], "en": spec["en"], "zh": spec["zh"], "ccy": spec["ccy"],
         "cadence": spec["cadence"], "stale": stale, "gdp_w": spec["gdp_w"],
@@ -172,6 +175,11 @@ def _country_row(spec: dict, f: pd.DataFrame, us_y10_last: float | None) -> dict
         "z1y": _r(_z(y10, _TY), 2), "z5y": _r(_z(y10, _TY * 5), 2),
         "diff_vs_us_bp": _r(diff, 0),
         "real_10y": _r(float(real.dropna().iloc[-1])) if real is not None and not real.dropna().empty else None,
+        # IRD-R13 velocity (basis-point changes of 10y level; window_days disclosed)
+        "vel_5d_bp": vel["vel_5d_bp"],
+        "vel_20d_bp": vel["vel_20d_bp"],
+        "vel_20d_z": vel["vel_20d_z"],
+        "vel_window_days": vel["window_days"],
         "_y10_lvl": lvl,
     }
 
@@ -317,4 +325,115 @@ def _drivers_for(s: dict) -> dict:
             "note_en": "A widening US-vs-world 10y premium is a USD tailwind (rate-differential / "
                        "carry channel); a narrowing premium pressures the dollar.",
         },
+    }
+
+
+def _load_series_standalone(spec: dict, key_field: str) -> pd.Series | None:
+    """Load a sovereign series without a pre-built frame (for inversion_board standalone calls).
+
+    For 'frame'-sourced series (US), loads from FRED directly (DGS10/DGS2).
+    For all other sources, uses the same store.read path as _series().
+    """
+    key = spec.get(key_field)
+    if not key:
+        return None
+    src = spec["src"]
+    if src == "frame":
+        # US: map column aliases to FRED series ids
+        _frame_to_fred = {
+            "us10y": "DGS10", "us2y": "DGS2", "us3m": "DGS3MO",
+            "us10y_real": "DFII10",
+        }
+        fred_id = _frame_to_fred.get(key)
+        if not fred_id:
+            return None
+        df = store.read("fred", fred_id)
+        if df is None or df.empty:
+            return None
+        return df.iloc[:, 0].astype(float).dropna()
+    grp = {"ecb": "sovereign", "jgb": "sovereign", "fred": "fred"}[src]
+    df = store.read(grp, key)
+    if df is None or df.empty:
+        return None
+    return df.iloc[:, 0].astype(float).dropna()
+
+
+def inversion_board() -> dict:
+    """Curve inversion board for ROSTER sovereigns (IRD-R13 / W2 task).
+
+    For each ROSTER country with sufficient data computes the 10y-2y (or 10y-3m) slope.
+    Returns:
+      n_inverted    : int — number of sovereigns with inverted yield curves
+      n_total       : int — total sovereigns with data
+      countries     : list[{cc, slope_bp, inverted, since_days}]
+      synchronized  : bool — True if >=half of n_total are inverted
+      built         : ISO timestamp
+    """
+    from datetime import datetime, timezone
+
+    rows: list[dict] = []
+    for spec in ROSTER:
+        try:
+            y10 = _load_series_standalone(spec, "y10")
+            if y10 is None or y10.dropna().empty:
+                continue
+            y2 = _load_series_standalone(spec, "y2")
+            short = _load_series_standalone(spec, "short")
+
+            # Prefer 10y-2y; fall back to 10y-3m
+            long_last = float(y10.dropna().iloc[-1])
+            slope_bp: float | None = None
+            if y2 is not None and not y2.dropna().empty:
+                slope_bp = (long_last - float(y2.dropna().iloc[-1])) * 100.0
+            elif short is not None and not short.dropna().empty:
+                slope_bp = (long_last - float(short.dropna().iloc[-1])) * 100.0
+
+            if slope_bp is None:
+                continue
+
+            inverted = slope_bp < 0.0
+
+            # since_days: how many consecutive calendar days the curve has been inverted
+            since_days: int | None = None
+            if inverted:
+                # build daily slope series to count consecutive inverted days
+                # use same approach: only available if both legs present
+                if y2 is not None and not y2.dropna().empty:
+                    # align y2 onto y10 index (forward-fill up to 40d for monthly series)
+                    y10_s = y10.dropna()
+                    y2_s = y2.dropna()
+                    aligned_idx = y10_s.index.union(y2_s.index).sort_values()
+                    y10_a = y10_s.reindex(aligned_idx).ffill(limit=40).reindex(y10_s.index)
+                    y2_a = y2_s.reindex(y10_s.index).ffill(limit=40)
+                    slope_series = ((y10_a - y2_a) * 100.0).dropna()
+                    if not slope_series.empty:
+                        inverted_mask = slope_series < 0.0
+                        # Count from the end while True
+                        count = 0
+                        for v in reversed(inverted_mask.values):
+                            if v:
+                                count += 1
+                            else:
+                                break
+                        since_days = count
+
+            rows.append({
+                "cc": spec["code"],
+                "slope_bp": round(slope_bp, 1),
+                "inverted": inverted,
+                "since_days": since_days,
+            })
+        except Exception:  # noqa: BLE001 — fail-open per country
+            continue
+
+    n_inverted = sum(1 for r in rows if r["inverted"])
+    n_total = len(rows)
+    synchronized = (n_inverted >= (n_total / 2)) if n_total > 0 else False
+
+    return {
+        "n_inverted": n_inverted,
+        "n_total": n_total,
+        "countries": rows,
+        "synchronized": bool(synchronized),
+        "built": datetime.now(timezone.utc).isoformat(),
     }

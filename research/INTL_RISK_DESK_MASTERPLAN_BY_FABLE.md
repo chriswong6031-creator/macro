@@ -149,7 +149,12 @@ reuse `.rcard`/`.rdesk`/`.kpi`/`.chip` scaffolding — no new idiom.
   Same EM spread level with quiet Tier-2 = "contained — watch"; with hot Tier-2 = "transmitting".
 - **IRD-R4 · Spillover index.** DY connectedness is the flagship self-built contagion gauge.
   Parameters pre-registered here: 150d window, VAR(2), H=10, Garman-Klass vols, basket =
-  12 country ETFs + EEM + SPY. Parameter changes require a masterplan edit, not code drift.
+  6 DM + 6 EM country ETFs + EEM + SPY (frozen 2026-07-12; coverage-greedy all-DM 12-ticker draft rejected).
+  DM basket: EWJ (Japan), EWG (Germany), EWU (UK), EWC (Canada), EWA (Australia), EWL (Switzerland).
+  EM basket: EWZ (Brazil), EWW (Mexico), INDA (India), EIDO (Indonesia), EZA (South Africa), EWY (South Korea).
+  All 12 country ETFs verified present in data/intl_etf (2026-07-12); EEM + SPY from yahoo store.
+  Parameter changes require a masterplan edit, not code drift.
+  2026-07-12 — W2: DY basket frozen 6DM/6EM (adjudicated — coverage-greedy all-DM draft rejected); engines landed.
 - **IRD-R5 · Swap lines are confirmation, not triggers.** Weekly Wednesday levels lag price
   stress by days-to-weeks (2008/2011/2020 case law). They grade severity after price signals
   fire; no alert keys off them.

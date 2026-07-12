@@ -668,6 +668,64 @@ def main() -> int:
         snap["bond_compass"] = compass         # directional duration / curve lean (display-only)
     if xasset is not None:
         snap["bond_cross_asset"] = xasset      # measured bond→asset transmission betas
+
+    # IRD-W2: additive `intl` namespace — fail-open; existing keys untouched when absent
+    try:
+        import json as _json
+        from pathlib import Path as _Path
+        _intl_risk_path = config.data_dir() / "intl_risk" / "latest.json"
+        _intl_risk = None
+        if _intl_risk_path.exists():
+            _intl_risk = _json.loads(_intl_risk_path.read_text(encoding="utf-8"))
+        _em_oas_ladder: dict | None = None
+        try:
+            from engine.intl_risk import em_stress as _em_stress_for_bonds
+            _ems = _em_stress_for_bonds()
+            # EM OAS ladder: extract per-series vel from the legs payload
+            _em_oas_ladder = {
+                k: {
+                    "value": v.get("value"),
+                    "vel_5d_z": v.get("vel_5d_z"),
+                    "vel_20d_z": v.get("vel_20d_z"),
+                    "asof": v.get("asof"),
+                }
+                for k, v in (_ems.get("legs") or {}).items()
+                if isinstance(v, dict)
+            }
+        except Exception:  # noqa: BLE001
+            pass
+
+        _inversion_summary: dict | None = None
+        try:
+            from engine.intl_bonds import inversion_board as _inv_board
+            _ib = _inv_board()
+            _inversion_summary = {
+                "n_inverted": _ib.get("n_inverted"),
+                "n_total": _ib.get("n_total"),
+                "synchronized": _ib.get("synchronized"),
+            }
+        except Exception:  # noqa: BLE001
+            pass
+
+        _swap_lines_bn: float | None = None
+        try:
+            from lib import store as _bond_store
+            _swpt = _bond_store.read("fred", "SWPT")
+            if _swpt is not None and not _swpt.empty:
+                _swap_lines_bn = round(float(_swpt.iloc[:, 0].dropna().iloc[-1]) / 1000.0, 1)
+        except Exception:  # noqa: BLE001
+            pass
+
+        snap["intl"] = {
+            "em_oas_ladder": _em_oas_ladder,
+            "inversion_board": _inversion_summary,
+            "swap_lines_bn": _swap_lines_bn,
+            "em_stress_state": (_intl_risk or {}).get("em_stress", {}).get("state") if _intl_risk else None,
+            "display_only": True,
+        }
+    except Exception as _intl_err:  # noqa: BLE001 — additive, never fatal
+        log.error("bond_health intl namespace failed (%s)", _intl_err)
+
     (outdir / "bond_health.json").write_text(json.dumps(snap, indent=2, default=str, ensure_ascii=False))
     log.info("wrote data/bonds/{latest,bond_health}.json — health=%s phase=%s",
              snap.get("health_score"), snap.get("cycle_phase"))

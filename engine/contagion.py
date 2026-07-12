@@ -8,12 +8,13 @@ IRD-R4 PRE-REGISTERED PARAMETERS (frozen — any change requires a masterplan ed
   VAR lag:      2
   Horizon H:    10 (generalized FEVD)
   Vol measure:  Garman-Klass range-based vol
-  Basket:       12 country ETFs (longest coverage from data/intl_etf) + EEM + SPY
+  Basket:       6 DM + 6 EM country ETFs + EEM + SPY (adjudicated 2026-07-12)
 
-12 ETFs selected by longest store coverage (all start 1996-03-18, verified 2026-07-12):
-  EWA (Australia), EWC (Canada), EWD (Sweden), EWG (Germany), EWH (Hong Kong),
-  EWI (Italy), EWJ (Japan), EWK (Belgium), EWL (Switzerland), EWM (Malaysia),
-  EWN (Netherlands), EWO (Austria) — 12 tickers with equal 7627-row depth.
+FROZEN ADJUDICATED BASKET (2026-07-12 — coverage-greedy all-DM draft rejected):
+  DM (6): EWJ (Japan), EWG (Germany), EWU (UK), EWC (Canada), EWA (Australia), EWL (Switzerland)
+  EM (6): EWZ (Brazil), EWW (Mexico), INDA (India), EIDO (Indonesia), EZA (South Africa), EWY (South Korea)
+  + EEM (broad EM benchmark) + SPY (US benchmark)
+  Total: 14 tickers. All verified present in data/intl_etf (2026-07-12).
 
 Public API
 ----------
@@ -43,14 +44,14 @@ _DY_VAR_LAG = 2
 _DY_HORIZON = 10
 _DY_WEEKLY_STRIDE = 5   # every 5th business day for the ~1y history
 
-# Country ETF basket: 12 longest-coverage ETFs (verified 2026-07-12, all n=7627)
-# + EEM and SPY appended so total basket size = 14
-_ETF_BASKET = [
-    "EWA", "EWC", "EWD", "EWG", "EWH",
-    "EWI", "EWJ", "EWK", "EWL", "EWM",
-    "EWN", "EWO",  # 12 country ETFs
-    "EEM", "SPY",  # benchmark additions (EEM from yahoo, SPY from yahoo)
-]
+# Frozen adjudicated basket (IRD-R4, adjudicated 2026-07-12):
+#   coverage-greedy all-DM 12-ticker draft rejected; replaced with 6-DM / 6-EM split.
+# DM (6): EWJ, EWG, EWU, EWC, EWA, EWL
+# EM (6): EWZ, EWW, INDA, EIDO, EZA, EWY
+# + EEM (broad EM) + SPY (US) — total 14 tickers, all in data/intl_etf (except EEM/SPY from yahoo)
+_ETF_BASKET_DM = ["EWJ", "EWG", "EWU", "EWC", "EWA", "EWL"]
+_ETF_BASKET_EM = ["EWZ", "EWW", "INDA", "EIDO", "EZA", "EWY"]
+_ETF_BASKET = _ETF_BASKET_DM + _ETF_BASKET_EM + ["EEM", "SPY"]
 
 _CORR_WINDOW = 60       # days for correlation tightening
 _TWO_YEARS = 504        # ~2y in trading days

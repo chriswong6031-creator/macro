@@ -263,6 +263,231 @@ def liquidity(fed_bs: pd.Series | None, on_rrp: pd.Series | None,
 
 
 # --------------------------------------------------------------------------- #
+# IRD-R10 · DXY smile decomposition (display-only — no vote added)
+# --------------------------------------------------------------------------- #
+# DXY weights (ICE benchmark, rounded): EUR 57.6%, JPY 13.6%, GBP 11.9%,
+# CAD 9.1%, SEK 4.2%, CHF 3.6%.  We have 2y rates for EUR/JPY/GBP only.
+# Re-weight within the three available: EUR 69.3%, JPY 16.4%, GBP 14.3%
+# (proportional to their DXY weights; documented here for IRD-R10 surface).
+_SMILE_WEIGHTS_2Y = {
+    "eur": 0.693,   # ez_aaa_2y from sovereign store
+    "jpy": 0.164,   # jgb_2y from sovereign store
+    "gbp": 0.143,   # IR3TIB01GBM156N (monthly) from fred store — forward-filled
+}
+_SMILE_OLS_WINDOW = 120   # 120 calendar-day rolling OLS (trading days ≈ 84d)
+_SMILE_RESID_WINDOW = 20  # cumulative residual lookback
+_SMILE_Z_WINDOW_DAYS = 252  # 1y for z-score of residual
+
+
+def _load_series_for_smile(store_obj) -> dict[str, pd.Series | None]:
+    """Load DXY, US 2y, and foreign 2y rates for smile decomposition."""
+    from lib import store as _store
+
+    def _read_col(grp: str, name: str) -> pd.Series | None:
+        df = _store.read(grp, name)
+        if df is None or df.empty:
+            return None
+        s = df.iloc[:, 0].astype(float).dropna()
+        return s if not s.empty else None
+
+    return {
+        "dxy": _read_col("yahoo", "DX-Y.NYB"),
+        "us2y": _read_col("fred", "DGS2"),
+        "eur2y": _read_col("sovereign", "ez_aaa_2y"),
+        "jpy2y": _read_col("sovereign", "jgb_2y"),
+        "gbp2y": _read_col("fred", "IR3TIB01GBM156N"),   # monthly; forward-filled
+    }
+
+
+def smile_decomp() -> dict | None:
+    """IRD-R10 DXY smile decomposition (display-only, never scored).
+
+    Computes:
+      - 120d rolling OLS of daily DXY log-returns on daily change of the
+        US-minus-basket 2y rate differential (USD − weighted EUR/JPY/GBP 2y).
+      - beta    : regression slope (current 120d window)
+      - r2      : OLS R² (current window)
+      - residual_20d : cumulative 20d OLS residual = safety/risk-premium read
+      - safety_bid_today : bool — DXY up 5d AND DGS2 down 5d
+      - regime  : 'rates-driven' | 'safety-driven' | 'mixed'
+                  |z| < 1 → rates-driven; z ≥ 1 → safety-driven; z ≤ -1 → mixed
+      - regime_60d : same regime computed on a 60d residual z window for sensitivity
+      - weights_used : dict documenting the 2y basket composition
+      - gaps    : list of data notes
+
+    Fail-open: returns None if DXY or US 2y are absent.
+    """
+    import math
+    from datetime import datetime, timezone
+
+    gaps: list[str] = []
+    series = _load_series_for_smile(None)
+
+    dxy = series.get("dxy")
+    us2y = series.get("us2y")
+    if dxy is None or dxy.empty:
+        gaps.append("smile_decomp: DXY (DX-Y.NYB) absent")
+        return {"gaps": gaps, "regime": None, "display_only": True}
+    if us2y is None or us2y.empty:
+        gaps.append("smile_decomp: DGS2 absent")
+        return {"gaps": gaps, "regime": None, "display_only": True}
+
+    # Build basket 2y (weighted EUR/JPY/GBP)
+    basket_parts: list[tuple[pd.Series, float]] = []
+    for key, weight in _SMILE_WEIGHTS_2Y.items():
+        s = series.get(f"{key[:3]}2y")
+        if s is not None and not s.empty:
+            basket_parts.append((s, weight))
+        else:
+            gaps.append(f"smile_decomp: {key}_2y absent — re-weighted to available")
+
+    if not basket_parts:
+        gaps.append("smile_decomp: no foreign 2y series available — differential leg null")
+        return {"gaps": gaps, "regime": None, "display_only": True}
+
+    # Re-normalize weights to available series
+    total_w = sum(w for _, w in basket_parts)
+    basket_parts = [(s, w / total_w) for s, w in basket_parts]
+
+    # Build common daily index (union of all series)
+    all_idx = dxy.index
+    for s, _ in basket_parts:
+        all_idx = all_idx.union(s.index)
+    all_idx = all_idx.union(us2y.index)
+    all_idx = all_idx.sort_values()
+
+    # Forward-fill monthly series up to 40 days (monthly cadence)
+    dxy_a = dxy.reindex(all_idx).ffill(limit=5)
+    us2y_a = us2y.reindex(all_idx).ffill(limit=5)
+    basket_2y = sum(s.reindex(all_idx).ffill(limit=40) * w for s, w in basket_parts)
+
+    # Daily changes
+    dxy_ret = np.log(dxy_a / dxy_a.shift(1))       # DXY log return
+    diff_chg = (us2y_a - basket_2y).diff(1)         # Δ(US 2y − basket 2y)
+
+    # Align to intersection with both non-null
+    common = dxy_ret.dropna().index.intersection(diff_chg.dropna().index)
+    if len(common) < _SMILE_OLS_WINDOW + _SMILE_RESID_WINDOW + 10:
+        gaps.append(f"smile_decomp: insufficient common history ({len(common)} rows)")
+        return {"gaps": gaps, "regime": None, "display_only": True}
+
+    dxy_ret = dxy_ret.reindex(common)
+    diff_chg = diff_chg.reindex(common)
+
+    # Rolling 120d OLS: dxy_ret = beta * diff_chg + alpha + resid
+    n = len(common)
+    W = _SMILE_OLS_WINDOW
+    beta_ser = pd.Series(index=common, dtype=float)
+    r2_ser = pd.Series(index=common, dtype=float)
+    resid_ser = pd.Series(index=common, dtype=float)
+
+    for end in range(W, n + 1):
+        y = dxy_ret.iloc[end - W: end].values
+        x = diff_chg.iloc[end - W: end].values
+        mask = np.isfinite(y) & np.isfinite(x)
+        if mask.sum() < W // 2:
+            continue
+        y_, x_ = y[mask], x[mask]
+        x_m = x_ - x_.mean()
+        y_m = y_ - y_.mean()
+        denom = np.dot(x_m, x_m)
+        if denom < 1e-12:
+            continue
+        b = np.dot(x_m, y_m) / denom
+        a = y_.mean() - b * x_.mean()
+        y_hat = a + b * x_
+        ss_res = np.dot(y_ - y_hat, y_ - y_hat)
+        ss_tot = np.dot(y_m, y_m)
+        r2 = float(1.0 - ss_res / ss_tot) if ss_tot > 1e-12 else 0.0
+        beta_ser.iloc[end - 1] = b
+        r2_ser.iloc[end - 1] = r2
+        # Today's residual: y[-1] - (a + b * x[-1])
+        resid_today = float(dxy_ret.iloc[end - 1]) - (a + b * float(diff_chg.iloc[end - 1]))
+        resid_ser.iloc[end - 1] = resid_today if math.isfinite(resid_today) else float("nan")
+
+    beta_ser = beta_ser.dropna()
+    r2_ser = r2_ser.dropna()
+    resid_ser = resid_ser.dropna()
+
+    if resid_ser.empty:
+        gaps.append("smile_decomp: OLS produced no valid windows")
+        return {"gaps": gaps, "regime": None, "display_only": True}
+
+    # cumulative 20d residual (the safety/risk premium read)
+    resid_20d_cum = resid_ser.rolling(_SMILE_RESID_WINDOW, min_periods=10).sum()
+    resid_20d = float(resid_20d_cum.iloc[-1]) if not resid_20d_cum.dropna().empty else None
+
+    # z-score of 20d cumulative residual vs trailing 1y (252 obs) distribution
+    def _resid_z(window: int) -> float | None:
+        r = resid_20d_cum.dropna()
+        if len(r) < window // 4:
+            return None
+        w = r.iloc[-window:]
+        sd = float(w.std())
+        if sd < 1e-12 or not math.isfinite(sd):
+            return None
+        z = float(r.iloc[-1]) / sd
+        return round(z, 3) if math.isfinite(z) else None
+
+    resid_z = _resid_z(_SMILE_Z_WINDOW_DAYS)
+    resid_z_60d = _resid_z(60)
+
+    def _regime_from_z(z: float | None) -> str:
+        if z is None:
+            return "unknown"
+        if z >= 1.0:
+            return "safety-driven"
+        if z <= -1.0:
+            return "mixed"    # negative residual = risk-appetite, dollar soft on rates alone
+        return "rates-driven"
+
+    # 5d safety-bid flag: DXY up AND DGS2 down
+    safety_bid_today: bool | None = None
+    if len(dxy_a.dropna()) >= 6 and len(us2y_a.dropna()) >= 6:
+        dxy_5d = float(dxy_a.dropna().iloc[-1]) - float(dxy_a.dropna().iloc[-6])
+        dgs2_5d = float(us2y_a.dropna().iloc[-1]) - float(us2y_a.dropna().iloc[-6])
+        safety_bid_today = bool(dxy_5d > 0 and dgs2_5d < 0)
+
+    beta_last = float(beta_ser.iloc[-1]) if not beta_ser.empty else None
+    r2_last = float(r2_ser.iloc[-1]) if not r2_ser.empty else None
+
+    # Actual weights after re-normalization (for surface disclosure)
+    weights_used = {
+        f"{k[:3]}2y": round(w, 3)
+        for (_, w), k in zip(basket_parts, _SMILE_WEIGHTS_2Y.keys())
+    }
+
+    return {
+        "beta": round(beta_last, 4) if beta_last is not None and math.isfinite(beta_last) else None,
+        "r2": round(r2_last, 3) if r2_last is not None and math.isfinite(r2_last) else None,
+        "residual_20d": round(resid_20d, 5) if resid_20d is not None and math.isfinite(resid_20d) else None,
+        "residual_20d_z": resid_z,
+        "regime": _regime_from_z(resid_z),
+        "regime_60d": _regime_from_z(resid_z_60d),
+        "safety_bid_today": safety_bid_today,
+        "ols_window_days": _SMILE_OLS_WINDOW,
+        "z_window_days": _SMILE_Z_WINDOW_DAYS,
+        "regime_thresholds": {
+            "rates_driven": "|z| < 1",
+            "safety_driven": "z >= 1 (positive residual — DXY up more than rates explain)",
+            "mixed": "z <= -1 (negative residual — risk-appetite, DXY soft vs rates)",
+        },
+        "weights_used": weights_used,
+        "weights_note": (
+            "DXY basket weights: EUR 57.6%, JPY 13.6%, GBP 11.9% "
+            "(ICE benchmark). Re-weighted to available 2y series: "
+            f"EUR {_SMILE_WEIGHTS_2Y['eur']:.1%}, JPY {_SMILE_WEIGHTS_2Y['jpy']:.1%}, "
+            f"GBP {_SMILE_WEIGHTS_2Y['gbp']:.1%}. "
+            "CAD/SEK/CHF excluded (no 2y in store). "
+            f"Actual weights after re-norm: {weights_used}."
+        ),
+        "gaps": gaps,
+        "display_only": True,
+        "built": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# --------------------------------------------------------------------------- #
 # 7 · smile confirmation + triple-red haven-loss flag
 # --------------------------------------------------------------------------- #
 # smile regime -> the implied USD direction (strong/weak)
@@ -358,8 +583,16 @@ def dollar_desk(dol: pd.DataFrame, drivers: dict, extra: dict, cfg: dict) -> dic
         else:
             lean, lean_zh = "mixed backdrop", "分化背景"
 
+        # IRD-R10: smile_decomp is DISPLAY-ONLY; no vote added to the lean accumulator
+        try:
+            sd = smile_decomp()
+        except Exception as _sd_exc:  # noqa: BLE001
+            log.warning("smile_decomp failed (%s)", _sd_exc)
+            sd = None
+
         return {"real_rate": rr, "fed_path": fp, "positioning": po, "valuation": va,
                 "trend": tr, "liquidity": lq, "smile": sm,
+                "smile_decomp": sd,   # IRD-R10 display-only leg
                 "lean": lean, "lean_zh": lean_zh,
                 "lean_net": net, "lean_n": len(votes)}
     except Exception as e:  # noqa: BLE001 — desk must never break the build

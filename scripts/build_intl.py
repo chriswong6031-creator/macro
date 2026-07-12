@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -152,14 +153,106 @@ def main() -> int:
             if src.exists():
                 site_assets.copy_asset(a, src, site)
 
+        # ---- IRD-W2: intl_risk composite desk (fail-open per leg) ---------------
+        _ird_t0 = time.time()
+        em_stress_result = None
+        contagion_state = None
+        try:
+            from engine.intl_risk import em_stress as _em_stress
+            em_stress_result = _em_stress()
+        except Exception as _e:
+            log.error("intl_risk em_stress failed (%s)", _e)
+
+        spillover_result = None
+        try:
+            from engine.contagion import spillover as _spillover
+            spillover_result = _spillover()
+        except Exception as _e:
+            log.error("contagion spillover failed (%s)", _e)
+
+        corr_result = None
+        try:
+            from engine.contagion import corr_tightening as _corr_tightening
+            corr_result = _corr_tightening()
+        except Exception as _e:
+            log.error("contagion corr_tightening failed (%s)", _e)
+
+        two_tier_result = None
+        try:
+            from engine.contagion import two_tier_read as _two_tier_read
+            _em_state = (em_stress_result or {}).get("state")
+            two_tier_result = _two_tier_read(em_stress_state=_em_state)
+            contagion_state = (two_tier_result or {}).get("state")
+        except Exception as _e:
+            log.error("contagion two_tier_read failed (%s)", _e)
+
+        cb_desk_result = None
+        try:
+            from engine.cb_desk import snapshot as _cb_snapshot
+            cb_desk_result = _cb_snapshot()
+        except Exception as _e:
+            log.error("cb_desk snapshot failed (%s)", _e)
+
+        inversion_result = None
+        try:
+            from engine.intl_bonds import inversion_board as _inversion_board
+            inversion_result = _inversion_board()
+        except Exception as _e:
+            log.error("intl_bonds inversion_board failed (%s)", _e)
+
+        # Read smile_decomp from forex/latest.json if fresh (<36h)
+        smile_result = None
+        try:
+            _forex_path = config.data_dir() / "forex" / "latest.json"
+            if _forex_path.exists():
+                _forex_age_h = (time.time() - _forex_path.stat().st_mtime) / 3600.0
+                if _forex_age_h < 36:
+                    _forex_raw = json.loads(_forex_path.read_text(encoding="utf-8"))
+                    smile_result = (_forex_raw.get("dollar_desk") or {}).get("smile_decomp")
+        except Exception as _e:
+            log.error("smile_decomp read from forex/latest.json failed (%s)", _e)
+
+        _ird_elapsed = time.time() - _ird_t0
+        print(f"[timing] build_intl intl_risk block: {_ird_elapsed:.2f}s")
+        log.info("[timing] build_intl intl_risk block: %.2fs", _ird_elapsed)
+
+        # Assemble intl_risk payload and write to data/intl_risk/latest.json
+        _ird_dir = config.data_dir() / "intl_risk"
+        _ird_dir.mkdir(parents=True, exist_ok=True)
+        _intl_risk_payload = {
+            "built": datetime.now(timezone.utc).isoformat(),
+            "timing_sec": round(_ird_elapsed, 2),
+            "em_stress": em_stress_result,
+            "vulnerability": None,   # slow table — not computed in daily path
+            "spillover": spillover_result,
+            "corr_tightening": corr_result,
+            "two_tier": two_tier_result,
+            "cb_desk": cb_desk_result,
+            "smile": smile_result,
+            "inversion_board": inversion_result,
+        }
+        (_ird_dir / "latest.json").write_text(
+            json.dumps(_intl_risk_payload, indent=2, default=str, ensure_ascii=False)
+        )
+        log.info("wrote data/intl_risk/latest.json (em_stress=%s, contagion=%s)",
+                 (em_stress_result or {}).get("state"), contagion_state)
+
+        # Plumb vm['risk_desk'] — no template work (W3), just make it available
+        vm["risk_desk"] = _intl_risk_payload
+
         # landing-hub card stat (presence-gated by the .html existing)
         s = vm["summary"]
         idir = config.data_dir() / "intl"
         idir.mkdir(parents=True, exist_ok=True)
-        (idir / "hub.json").write_text(json.dumps({
+        _hub_payload = {
             "date": latest.get("date", ""),
             "label": f"{s['n']} economies · {s['dominant_quad']}",
-            "recession_watch": s.get("recession_watch", 0)}, indent=2))
+            "recession_watch": s.get("recession_watch", 0),
+            # IRD-W2 additive keys for hub.json
+            "em_stress_state": (em_stress_result or {}).get("state"),
+            "contagion_state": contagion_state,
+        }
+        (idir / "hub.json").write_text(json.dumps(_hub_payload, indent=2))
     except Exception as e:  # noqa: BLE001
         log.error("intl page render failed (%s); skipping", e)
         return 0

@@ -415,6 +415,16 @@ on:
       - "tests/test_intl_risk.py"
       - "tests/test_contagion.py"
       - "tests/test_cb_desk.py"
+      # IRD-W2 integrations: velocity, inversion, smile decomp, build wiring, world_state
+      - "engine/ird_velocity.py"
+      - "engine/intl_bonds.py"
+      - "engine/intl_rates.py"
+      - "engine/forex_dollar.py"
+      - "engine/neuralweb/world_state.py"
+      - "scripts/build_intl.py"
+      - "scripts/build_bonds.py"
+      - "tests/test_ird_velocity.py"
+      - "tests/test_ird_wiring.py"
   workflow_dispatch:
 
 permissions:
@@ -1568,7 +1578,7 @@ jobs:
       - name: install deps
         run: pip install pytest pandas numpy pyyaml pyarrow requests
       - name: IRD substrate + engines test suite
-        run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py tests/test_intl_risk.py tests/test_contagion.py tests/test_cb_desk.py -q
+        run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py tests/test_intl_risk.py tests/test_contagion.py tests/test_cb_desk.py tests/test_ird_velocity.py tests/test_ird_wiring.py -q
 
   altdata-brain-govern:
     # altdata-brain PR-B: de-escalation-only law enforcement + false Wilson de-dup
