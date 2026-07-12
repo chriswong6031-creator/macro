@@ -114,6 +114,12 @@ entries:
     section: 1
     section_name: forbidden_by_ruling
 
+  - topic: 'Hypothesis-slot pre-reservation via standalone coverage census (bypassing WA-R8''s ≥8-cases + Opus fingerprint + explicit-ruling gate)'
+    verdict: 'FORBIDDEN — a census proves testability, never entitlement; second attempted end-run (LR docket round 1, LH brainstorm round 2)'
+    source: 'LHB-R5, `LONG_HOLD_LOBE_BRAINSTORM_ADJUDICATION_BY_FABLE.md`; precedent LR-R9'
+    section: 1
+    section_name: forbidden_by_ruling
+
   - topic: 'Insider × T2 interaction'
     verdict: 'KILLED'
     source: 'Codex buy-decision docket adjudication (#1781)'
