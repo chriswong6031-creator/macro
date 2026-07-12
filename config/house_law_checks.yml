@@ -38,11 +38,16 @@ checks:
 
   - law_id: ui.inline_js_parses
     summary: >
-      Every inline <script> block in committed site HTML must be syntactically
-      valid JavaScript. A syntax error blanks the page silently (IIFE aborts).
+      Every inline <script> block AND quoted on*= handler attribute in committed
+      site HTML must be syntactically valid JavaScript (handlers node-checked as
+      function bodies, mirroring browser handler compilation). Smart-quote
+      contamination (U+2018/U+2019/U+201C/U+201D as JS delimiters — in <script>
+      code position or anywhere in a raw on*= value) is a hard error, including
+      in templates/*.j2 (Jinja-stripped). A script syntax error blanks the page
+      silently (IIFE aborts); a handler error throws on every click.
     source_ref:
       - scripts/check_inline_js.py
-      - "PRs #152 #155"
+      - "PRs #152 #155 #2321 #2409"
     severity: hard
     check_script: scripts/check_inline_js.py
     ci_wiring:
@@ -58,15 +63,18 @@ checks:
       - workflow: .github/workflows/engine-render.yml
         job: engine-render
         lane: render
-    selftest: false
-    selftest_exempt_reason: >
-      Thin node --check wrapper; functional coverage provided by
-      tests/test_check_inline_js.py.
+    selftest: true
     allowlist: null
     ratchet: null
     known_limits:
       - Scans committed site/; does not cover dynamically generated fragments
         injected by JavaScript at runtime.
+      - .j2 templates get the smart-quote scan only — node cannot parse Jinja,
+        so plain-JS syntax errors in a .j2 still surface at the next render.
+      - Handlers in unquoted attribute syntax (onclick=f()) are not extracted
+        (none in the tree; quoted is the house style).
+      - Curly quotes INSIDE JS string literals are legal (bilingual display
+        copy); only code-position/raw-attribute hits are contamination.
     owner_program: engine-fix-masterplan
     notes: null
 
