@@ -19,6 +19,12 @@ ANTI-ROT:
   The dream cycle triggers resummary of lessons.jsonl when it exceeds the byte cap
   (see engine.metabolism.memory.resummary_lessons).
 
+OUTCOME PRIOR LEDGER (R-V8-10):
+  data/metabolism/outcome_priors.jsonl is an append-only durable ledger: one row
+  per newly-closed contract (proposal_id dedup; idempotent).  The preference prior
+  is computed FROM this ledger so rotating trial_ledger.jsonl does not lobotomize
+  the organism.  A one-time backfill from existing verify records runs on first use.
+
 NEVER-RAISE CONTRACT: all public functions return safe fallbacks on any error.
 """
 from __future__ import annotations
@@ -37,6 +43,9 @@ log = logging.getLogger(__name__)
 
 SCHEMA = "metabolism.preference_prior.v1"
 OUTPUT_PATH = ("data", "metabolism", "preference_prior.json")
+
+# R-V8-10: durable outcome-prior ledger (append-only; dedup by proposal_id)
+OUTCOME_PRIORS_PATH = ("data", "metabolism", "outcome_priors.jsonl")
 
 # Minimum number of CLOSED (check_by arrived) contracts before emitting calibration.
 # Most contracts pending until ~2026-10-15; print accruing until then.
@@ -58,6 +67,232 @@ def _now_iso() -> str:
 
 def _today_str() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+# ── Outcome-prior ledger (R-V8-10) ────────────────────────────────────────────
+
+def _outcome_priors_path(root: Path) -> Path:
+    return root.joinpath(*OUTCOME_PRIORS_PATH)
+
+
+def _load_outcome_prior_ids(root: Path) -> set[str]:
+    """Load the set of proposal_ids already in outcome_priors.jsonl.  NEVER raises."""
+    seen: set[str] = set()
+    p = _outcome_priors_path(root)
+    if not p.exists():
+        return seen
+    try:
+        for line in p.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+                pid = r.get("proposal_id")
+                if pid:
+                    seen.add(str(pid))
+            except Exception:  # noqa: BLE001
+                continue
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dream._load_outcome_prior_ids: %s", exc)
+    return seen
+
+
+def _load_outcome_priors(root: Path) -> list[dict[str, Any]]:
+    """Load all rows from outcome_priors.jsonl.  NEVER raises."""
+    rows: list[dict[str, Any]] = []
+    p = _outcome_priors_path(root)
+    if not p.exists():
+        return rows
+    try:
+        for line in p.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+                rows.append(r)
+            except Exception:  # noqa: BLE001
+                continue
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dream._load_outcome_priors: %s", exc)
+    return rows
+
+
+def _append_outcome_prior_row(root: Path, row: dict[str, Any]) -> None:
+    """Append one row to outcome_priors.jsonl.  NEVER raises."""
+    try:
+        p = _outcome_priors_path(root)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with p.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row, default=str) + "\n")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dream._append_outcome_prior_row: %s", exc)
+
+
+def _build_prior_row(
+    proposal_id: str,
+    contract: dict[str, Any],
+    verify_record: dict[str, Any],
+    ts: str,
+) -> dict[str, Any]:
+    """Build one outcome_priors row from a verify record + the contract dict.
+
+    Extracts kind, tier, lobe, sensors from the contract (which is the docket
+    proposal snapshot embedded in the verify record).  Falls back to empty/unknown
+    gracefully.
+    """
+    realized = verify_record.get("realized") or {}
+    triage = verify_record.get("triage") or {}
+    # sensors: may be a list under fitness_sensors, or a single sensor string
+    sensors_raw = (
+        contract.get("fitness_sensors")
+        or contract.get("sensors")
+        or []
+    )
+    if isinstance(sensors_raw, str):
+        sensors_raw = [sensors_raw] if sensors_raw else []
+    # Also include targets_sensor if present and not redundant
+    target = contract.get("targets_sensor") or contract.get("sensor") or ""
+    if target and target not in sensors_raw:
+        sensors_raw = list(sensors_raw) + [target]
+
+    return {
+        "proposal_id": proposal_id,
+        "kind": str(contract.get("kind") or contract.get("bucket") or "unknown"),
+        "tier": str(contract.get("tier") or "unknown"),
+        "lobe": str(contract.get("lobe") or contract.get("lobe_id") or ""),
+        "sensors": [str(s) for s in sensors_raw if s],
+        "outcome": str(realized.get("outcome") or "UNKNOWN"),
+        "triage": str(triage.get("classification") or ""),
+        "ts": ts,
+    }
+
+
+def _compute_backfill_rows(
+    root: Path,
+    existing_ids: set[str],
+    ts: str,
+    contract_index: dict[str, dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """PURE: scan existing verify records, return prior rows not yet in the ledger.
+
+    Does NOT write.  Mutates `existing_ids` in place to dedup within the batch so a
+    caller can chain compute passes (backfill then accrue).  NEVER raises.
+
+    Splitting compute from persist is what lets dry_run reflect the SAME calibration
+    a real run would produce (#2441 regression: calibration read only the persisted
+    ledger, so dry_run — which skipped the write — always saw insufficient_data even
+    with plenty of seeded verify records).
+
+    `contract_index` (proposal_id → trial_ledger row) supplies construction
+    provenance (kind/tier/lobe/sensors) when a verify record does not embed its own
+    contract — without it the calibration buckets collapse to 'unknown'.
+    """
+    rows: list[dict[str, Any]] = []
+    idx = contract_index if contract_index is not None else _load_contract_index(root)
+    try:
+        verify_dir = root / "data" / "metabolism" / "verify"
+        if not verify_dir.exists():
+            return rows
+        for f in sorted(verify_dir.glob("*.json")):
+            try:
+                data = json.loads(f.read_text(encoding="utf-8"))
+                if data.get("schema") != "metabolism.verify.v1":
+                    continue
+                proposal_id = str(data.get("proposal_id") or "")
+                if not proposal_id or proposal_id in existing_ids:
+                    continue
+                realized = data.get("realized") or {}
+                outcome = str(realized.get("outcome") or "")
+                # Only backfill concluded (non-pending) records
+                if not outcome or outcome == "PENDING":
+                    continue
+                # Provenance: prefer an embedded contract, else join trial_ledger.
+                contract = data.get("contract") or idx.get(proposal_id) or {}
+                rows.append(_build_prior_row(proposal_id, contract, data, ts))
+                existing_ids.add(proposal_id)
+            except Exception:  # noqa: BLE001
+                continue
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dream._compute_backfill_rows: %s", exc)
+    return rows
+
+
+def _compute_accrue_rows(
+    root: Path,
+    existing_ids: set[str],
+    closed_contracts: list[dict[str, Any]],
+    verify_outcomes: list[dict[str, Any]],
+    ts: str,
+) -> list[dict[str, Any]]:
+    """PURE: return prior rows for newly-closed contracts not yet in the ledger.
+
+    Does NOT write.  Mutates `existing_ids` in place.  NEVER raises.
+    """
+    rows: list[dict[str, Any]] = []
+    try:
+        outcome_index: dict[str, dict[str, Any]] = {}
+        for v in verify_outcomes:
+            key = str(v.get("proposal_id") or "")
+            if key:
+                outcome_index[key] = v
+        for c in closed_contracts:
+            proposal_id = str(c.get("proposal_id") or c.get("dedup_hash") or "")
+            if not proposal_id or proposal_id in existing_ids:
+                continue
+            v = outcome_index.get(proposal_id) or {}
+            row = _build_prior_row(proposal_id, c, v, ts)
+            # If no verify record found, use contract outcome field if present
+            if not v and c.get("outcome"):
+                row["outcome"] = str(c["outcome"])
+            rows.append(row)
+            existing_ids.add(proposal_id)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dream._compute_accrue_rows: %s", exc)
+    return rows
+
+
+def _backfill_outcome_priors(root: Path) -> int:
+    """One-time backfill: scan existing verify records and append any not yet in ledger.
+
+    Safe to call repeatedly — idempotent due to proposal_id dedup.
+    Returns number of rows newly appended.  NEVER raises.
+    """
+    try:
+        existing_ids = _load_outcome_prior_ids(root)
+        rows = _compute_backfill_rows(root, existing_ids, _now_iso())
+        for row in rows:
+            _append_outcome_prior_row(root, row)
+        if rows:
+            log.info("dream._backfill_outcome_priors: backfilled %d rows", len(rows))
+        return len(rows)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dream._backfill_outcome_priors: %s", exc)
+        return 0
+
+
+def _accrue_new_outcome_rows(
+    root: Path,
+    closed_contracts: list[dict[str, Any]],
+    verify_outcomes: list[dict[str, Any]],
+    ts: str,
+) -> int:
+    """Append any newly-closed contracts not yet in outcome_priors.jsonl.
+
+    Returns count of newly appended rows.  NEVER raises.
+    """
+    try:
+        existing_ids = _load_outcome_prior_ids(root)
+        rows = _compute_accrue_rows(
+            root, existing_ids, closed_contracts, verify_outcomes, ts
+        )
+        for row in rows:
+            _append_outcome_prior_row(root, row)
+        return len(rows)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dream._accrue_new_outcome_rows: %s", exc)
+        return 0
 
 
 # ── Load closed contracts ─────────────────────────────────────────────────────
@@ -109,6 +344,36 @@ def _load_closed_contracts(root: Path, today: str) -> list[dict[str, Any]]:
             malformed_count,
         )
     return closed
+
+
+def _load_contract_index(root: Path) -> dict[str, dict[str, Any]]:
+    """Map proposal_id → its trial_ledger contract row (kind/tier/lobe/sensors).
+
+    Verify records do not always embed their contract, so backfilling a prior row
+    purely from a verify record loses the construction provenance (kind/lobe/sensor)
+    that lives in the trial_ledger row — which is exactly what the calibration
+    buckets key on.  This index lets the backfill JOIN outcome (verify) with
+    provenance (contract).  NEVER raises.
+    """
+    index: dict[str, dict[str, Any]] = {}
+    ledger_path = root / "data" / "trial_ledger.jsonl"
+    if not ledger_path.exists():
+        return index
+    try:
+        for line in ledger_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+                pid = str(r.get("proposal_id") or r.get("dedup_hash") or "")
+                if pid:
+                    index[pid] = r  # last row for a pid wins
+            except Exception:  # noqa: BLE001
+                continue
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dream._load_contract_index: %s", exc)
+    return index
 
 
 def _load_verify_outcomes(root: Path) -> list[dict[str, Any]]:
@@ -194,6 +459,86 @@ def _build_calibration(
     return calibration
 
 
+# ── Calibration from outcome_priors ledger (R-V8-10/R-V8-12) ─────────────────
+
+def _build_calibration_from_priors(
+    prior_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Build calibration buckets from outcome_priors.jsonl rows.
+
+    Computes:
+      - by_kind: {kind → {total, confirmed, hit_rate}}
+      - by_lobe_sensor: {"{lobe}:{sensor}" → {total, confirmed, hit_rate}}
+      - overall: aggregate
+
+    A row is "confirmed" when outcome == "CONFIRMED" (case-insensitive).
+    NEVER raises.
+    """
+    kind_counts: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"total": 0, "confirmed": 0}
+    )
+    lobe_sensor_counts: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"total": 0, "confirmed": 0}
+    )
+
+    for row in prior_rows:
+        outcome = str(row.get("outcome") or "").upper()
+        triage = str(row.get("triage") or "").lower()
+
+        # R-V8-11 / FIX-4: UNVERIFIABLE outcomes are excluded from BOTH numerator
+        # and denominator — an un-evaluable outcome is not evidence the construction
+        # is bad.  Only CONFIRMED and FALSIFIER_TRIPPED count.
+        if outcome == "UNVERIFIABLE":
+            continue
+
+        # A hit requires outcome=='CONFIRMED' AND triage=='confirmed' (conjunction).
+        is_confirmed = outcome == "CONFIRMED" and triage == "confirmed"
+
+        kind = str(row.get("kind") or "unknown")
+        lobe = str(row.get("lobe") or "")
+        sensors = row.get("sensors") or []
+        if isinstance(sensors, str):
+            sensors = [sensors] if sensors else []
+
+        kind_counts[kind]["total"] += 1
+        if is_confirmed:
+            kind_counts[kind]["confirmed"] += 1
+
+        # Per (lobe, sensor) bucket — one entry per sensor
+        sensor_list = [str(s) for s in sensors if s]
+        if not sensor_list:
+            sensor_list = ["_no_sensor"]
+        for sensor in sensor_list:
+            key = f"{lobe}:{sensor}"
+            lobe_sensor_counts[key]["total"] += 1
+            if is_confirmed:
+                lobe_sensor_counts[key]["confirmed"] += 1
+
+    def _hit_rate(d: dict[str, int]) -> float | None:
+        if d["total"] == 0:
+            return None
+        return round(d["confirmed"] / d["total"], 3)
+
+    total_all = sum(v["total"] for v in kind_counts.values())
+    confirmed_all = sum(v["confirmed"] for v in kind_counts.values())
+
+    return {
+        "by_kind": {
+            k: {"total": v["total"], "confirmed": v["confirmed"], "hit_rate": _hit_rate(v)}
+            for k, v in kind_counts.items()
+        },
+        "by_lobe_sensor": {
+            k: {"total": v["total"], "confirmed": v["confirmed"], "hit_rate": _hit_rate(v)}
+            for k, v in lobe_sensor_counts.items()
+        },
+        "overall": {
+            "total": total_all,
+            "confirmed": confirmed_all,
+            "hit_rate": round(confirmed_all / total_all, 3) if total_all > 0 else None,
+        },
+    }
+
+
 # ── Advisory-only observations ─────────────────────────────────────────────────
 
 def _build_advisory_observations(calibration: dict[str, Any]) -> list[str]:
@@ -260,21 +605,42 @@ def run_dream_cycle(
                 log.info("dream: guard unavailable + not explicitly armed — skipping (fail-closed)")
                 return _paused_prior(ts)
 
+        # R-V8-10: compute the durable-ledger rows this cycle would add — backfill
+        # from existing verify records + accrue newly-closed contracts. Compute is
+        # PURE (no write) so dry_run reflects the SAME calibration a real run would
+        # produce (#2441 regression fix); persistence is gated on `not dry_run`.
+        existing_rows = _load_outcome_priors(repo)
+        seen_ids = {str(r.get("proposal_id") or "") for r in existing_rows}
+        seen_ids.discard("")
+        contract_index = _load_contract_index(repo)
+        backfill_rows = _compute_backfill_rows(repo, seen_ids, ts, contract_index)
+
         # Load closed contracts + verify outcomes
         closed = _load_closed_contracts(repo, today)
         outcomes = _load_verify_outcomes(repo)
+        accrue_rows = _compute_accrue_rows(repo, seen_ids, closed, outcomes, ts)
+
+        new_rows = backfill_rows + accrue_rows
+        if not dry_run:
+            for row in new_rows:
+                _append_outcome_prior_row(repo, row)
+
+        # Build calibration FROM the durable ledger (rotation-proof).  In dry_run the
+        # rows aren't persisted, so union them in-memory for an honest preview.
+        prior_rows = existing_rows + new_rows
+        n_prior_rows = len(prior_rows)
 
         # Honest null: not enough mature data yet
-        if len(closed) < MIN_CLOSED_CONTRACTS:
-            prior = _insufficient_data_prior(ts, n_closed=len(closed))
+        if n_prior_rows < MIN_CLOSED_CONTRACTS:
+            prior = _insufficient_data_prior(ts, n_closed=n_prior_rows)
             if not dry_run:
                 _write_prior(prior, repo)
             # Anti-rot check even on insufficient data
             _maybe_resummary(repo)
             return prior
 
-        # Build calibration
-        calibration = _build_calibration(closed, outcomes)
+        # Build calibration from durable prior ledger (R-V8-10: rotation-proof)
+        calibration = _build_calibration_from_priors(prior_rows)
         observations = _build_advisory_observations(calibration)
 
         prior: dict[str, Any] = {
@@ -287,7 +653,7 @@ def run_dream_cycle(
                 "This prior is context-only — it NEVER alters gates, thresholds, "
                 "or authority surfaces. It is appended to the next PROPOSE prompt."
             ),
-            "n_closed_contracts": len(closed),
+            "n_closed_contracts": n_prior_rows,
             "n_verify_outcomes": len(outcomes),
             "calibration": calibration,
             "advisory_observations": observations,
@@ -311,8 +677,8 @@ def run_dream_cycle(
         _maybe_resummary(repo)
 
         log.info(
-            "dream: wrote preference_prior (n_closed=%d, n_outcomes=%d)",
-            len(closed), len(outcomes),
+            "dream: wrote preference_prior (n_prior_rows=%d, n_outcomes=%d)",
+            n_prior_rows, len(outcomes),
         )
         return prior
 
@@ -410,4 +776,25 @@ def load_preference_prior(root: Path | None = None) -> dict[str, Any]:
         return json.loads(p.read_text(encoding="utf-8"))
     except Exception as exc:  # noqa: BLE001
         log.warning("dream.load_preference_prior: %s", exc)
+        return {}
+
+
+def load_outcome_priors(root: Path | None = None) -> list[dict[str, Any]]:
+    """Load all rows from data/metabolism/outcome_priors.jsonl.  NEVER raises."""
+    return _load_outcome_priors(_repo_root(root))
+
+
+def get_calibration_from_priors(root: Path | None = None) -> dict[str, Any]:
+    """Load outcome_priors.jsonl and return calibration buckets.  NEVER raises.
+
+    Returns a calibration dict with by_kind, by_lobe_sensor, and overall keys.
+    Returns an empty dict when the ledger is absent or empty.
+    """
+    try:
+        rows = load_outcome_priors(root)
+        if not rows:
+            return {}
+        return _build_calibration_from_priors(rows)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dream.get_calibration_from_priors: %s", exc)
         return {}

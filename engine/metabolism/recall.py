@@ -23,6 +23,11 @@ log = logging.getLogger(__name__)
 
 LESSONS_PATH = ("data", "metabolism", "lessons.jsonl")
 
+# Sentinel returned by recall_lessons when the lesson corpus is absent or empty.
+# Callers should compare against this constant rather than using fragile startswith('(')
+# pattern matching (FIX-6 / R-V8-12).
+LESSONS_ABSENT_SENTINEL = "(lessons.jsonl not yet present — accruing)"
+
 # Score weights
 _WEIGHT_LOBE_MATCH = 4.0            # strong: lobe keyword found anywhere in row
 _WEIGHT_CONSTRUCTION_JACCARD = 3.0  # token-overlap on construction field only
@@ -323,7 +328,7 @@ def recall_lessons(
         repo = _repo_root(root)
         p = repo.joinpath(*LESSONS_PATH)
         if not p.exists():
-            return "(lessons.jsonl not yet present — accruing)"
+            return LESSONS_ABSENT_SENTINEL
 
         top_rows = recall_lesson_rows(
             lobe=lobe,
@@ -334,7 +339,7 @@ def recall_lessons(
         )
 
         if not top_rows:
-            return "(lessons.jsonl not yet present — accruing)"
+            return LESSONS_ABSENT_SENTINEL
 
         def _fmt(row: dict) -> str:
             # Compact format: drop internal scoring fields for the prompt

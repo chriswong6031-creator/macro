@@ -122,6 +122,10 @@ jobs:
           if [ -f data/metabolism/key_ledger.jsonl ]; then
             git add data/metabolism/key_ledger.jsonl
           fi
+          # R-V8-10: durable outcome-prior ledger — persisted across rotations (FIX-1).
+          if [ -f data/metabolism/outcome_priors.jsonl ]; then
+            git add data/metabolism/outcome_priors.jsonl
+          fi
           if git diff --cached --quiet; then
             echo "no dream artifact changes — nothing to commit."
             exit 0
