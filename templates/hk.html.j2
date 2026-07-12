@@ -149,9 +149,12 @@
   .tag-avoid { background: color-mix(in srgb, var(--down) 18%, var(--panel)); color: color-mix(in srgb, var(--down) 85%, var(--text)); }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%;
           border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
-  .help .tip { display:none; position:absolute; bottom:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel);
+  .help .tip { display:none; position:absolute; bottom:140%; left:50%; transform:translateX(-50%); width:330px; background:var(--panel);
                border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text);
-               font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); }
+               font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow);
+               max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content:''; position:absolute; bottom:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { display:block; }
   .stat-row { display:flex; flex-wrap:wrap; gap:18px; align-items:baseline; margin:2px 0 10px; }
   .stat-row .v { font-size:22px; font-weight:800; color:var(--text); }

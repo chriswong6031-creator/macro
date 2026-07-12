@@ -49,7 +49,9 @@
   .leg-bar { flex:1; height:7px; border-radius:4px; background:var(--line); overflow:hidden; }
   .leg-bar i { display:block; height:100%; background:var(--muted); }
   .help { position:relative; display:inline-grid; place-items:center; width:15px; height:15px; border:1px solid var(--line); border-radius:50%; font-size:10px; color:var(--muted); cursor:help; vertical-align:middle; }
-  .help .tip { visibility:hidden; opacity:0; position:absolute; z-index:20; bottom:130%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.5; color:var(--text); box-shadow:0 8px 24px -10px rgba(0,0,0,.5); text-align:left; }
+  .help .tip { visibility:hidden; opacity:0; position:absolute; z-index:20; bottom:130%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.5; color:var(--text); box-shadow:0 8px 24px -10px rgba(0,0,0,.5); text-align:left; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content:''; position:absolute; bottom:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { visibility:visible; opacity:1; }
   /* phone: a 280px tooltip centred on a help icon near the right edge spilled off
      the screen (it widened the page even while hidden). Anchor it to the icon's
