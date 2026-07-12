@@ -225,10 +225,23 @@ def _is_construction_parked(
 
         expiry_days = _load_park_expiry_days(root)
 
-        # Collect parked/released/expired per proposal_id
-        parked_pids: set[str] = set()
+        # FIX-B3: Expiry must be per-row, not per-pid.  proposal_id is a stable
+        # dedup_hash (same construction = same pid across fresh falsifiers), so a
+        # construction re-parked by a new falsifier shares the pid of its own
+        # expired row.  The old per-pid logic added the pid to expired_pids on
+        # seeing the old row, then subtracted it from blocked_pids — wrongly
+        # unblocking the construction even though a fresh re-park row also exists.
+        #
+        # Correct logic: for each matching pid, determine whether that pid is
+        # blocked by examining whether its MOST-RECENT matching row is:
+        #   - explicitly released (release_grant_id present) → not blocked, OR
+        #   - expired (age >= expiry_days) → not blocked (auto-release), OR
+        #   - neither → blocked.
+
+        # Collect all matching non-release rows per pid; track explicitly-released pids
+        from collections import defaultdict  # noqa: PLC0415
+        pid_park_rows: dict[str, list[dict]] = defaultdict(list)
         released_pids: set[str] = set()
-        expired_pids: set[str] = set()
 
         for row in rows:
             if row.get("schema") != "metabolism.parked_construction.v1":
@@ -252,27 +265,40 @@ def _is_construction_parked(
             if row.get("release_grant_id"):
                 # Explicit ADJUDICATE release — highest-priority unpark
                 released_pids.add(row_pid)
-            elif _park_row_is_expired(row, expiry_days):
-                # Auto-expiry: park older than park_expiry_days → treated as released
-                expired_pids.add(row_pid)
+            else:
+                pid_park_rows[row_pid].append(row)
+
+        # A pid is blocked iff:
+        #   - NOT explicitly released, AND
+        #   - its MOST-RECENT park row is not expired (fresh re-park is active)
+        blocked_pids: set[str] = set()
+        for pid, matching_rows in pid_park_rows.items():
+            if pid in released_pids:
+                continue  # explicit release wins
+            # Sort by ts descending to find the most-recent park row for this pid
+            try:
+                matching_rows.sort(
+                    key=lambda r: str(r.get("ts") or ""),
+                    reverse=True,
+                )
+            except Exception:  # noqa: BLE001
+                pass
+            most_recent = matching_rows[0]
+            if _park_row_is_expired(most_recent, expiry_days):
                 log.info(
-                    "BUILD: _is_construction_parked: park row for pid=%s lobe=%s is "
-                    "older than park_expiry_days=%d — treating as auto-released",
-                    row_pid, row_lobe, expiry_days,
+                    "BUILD: _is_construction_parked: most-recent park row for "
+                    "pid=%s lobe=%s is older than park_expiry_days=%d — "
+                    "treating as auto-released",
+                    pid, prop_lobe, expiry_days,
                 )
             else:
-                parked_pids.add(row_pid)
+                blocked_pids.add(pid)
 
-        # A proposal is blocked only if it has an active parked row AND no release row
-        # (expired rows count as released for this check)
-        effective_released = released_pids | expired_pids
-        blocked_pids = parked_pids - effective_released
         if blocked_pids:
             log.info(
                 "BUILD: _is_construction_parked: lobe=%s kind=%s sensors=%s matched "
-                "parked pids=%s (released=%s expired=%s)",
-                prop_lobe, prop_kind, prop_sensors, blocked_pids,
-                released_pids, expired_pids,
+                "parked pids=%s (released=%s)",
+                prop_lobe, prop_kind, prop_sensors, blocked_pids, released_pids,
             )
             return True
         return False

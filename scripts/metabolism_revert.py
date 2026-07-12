@@ -101,12 +101,19 @@ _REVERT_BRANCH_PREFIX = "claude/metabolism-revert-"
 _REVERT_BRANCH_PREFIX_SHORT = "metabolism/revert-"
 
 
+_COUNT_OPEN_PRS_ERROR = -1  # sentinel: gh call failed → fail closed
+
+
 def _count_open_revert_prs(root: Path) -> int:
     """Count currently-open revert PRs opened by this lane.
 
     Queries 'gh pr list --state open' and counts PRs whose head branch starts
-    with the revert prefix.  Returns 0 on any gh failure so a gh outage does
-    not permanently block new reverts.  NEVER raises.
+    with the revert prefix.
+
+    FIX-B4: Returns _COUNT_OPEN_PRS_ERROR (-1) on ANY gh failure so the caller
+    can fail closed (open zero new PRs this run) rather than treating a gh
+    outage as "no PRs open" (which would allow up to max_prs NEW PRs while
+    max_prs are already open).  NEVER raises.
 
     FIX-3: bound is on SIMULTANEOUSLY-OPEN PRs, not per-run count.
     """
@@ -125,10 +132,11 @@ def _count_open_revert_prs(root: Path) -> int:
         )
         if result.returncode != 0:
             log.warning(
-                "metabolism_revert._count_open_revert_prs: gh pr list exited %d: %s",
+                "metabolism_revert._count_open_revert_prs: gh pr list exited %d: %s "
+                "— failing closed (no new revert PRs this run)",
                 result.returncode, result.stderr[:200],
             )
-            return 0  # fail-open: gh outage → don't block
+            return _COUNT_OPEN_PRS_ERROR  # FIX-B4: fail closed
         prs = json.loads(result.stdout or "[]")
         count = sum(
             1 for pr in prs
@@ -138,8 +146,12 @@ def _count_open_revert_prs(root: Path) -> int:
         log.info("metabolism_revert._count_open_revert_prs: found %d open revert PR(s)", count)
         return count
     except Exception as exc:  # noqa: BLE001
-        log.warning("metabolism_revert._count_open_revert_prs: %s — returning 0", exc)
-        return 0  # fail-open
+        log.warning(
+            "metabolism_revert._count_open_revert_prs: %s — failing closed "
+            "(no new revert PRs this run)",
+            exc,
+        )
+        return _COUNT_OPEN_PRS_ERROR  # FIX-B4: fail closed
 
 
 # ── Actioned-marker helpers ───────────────────────────────────────────────────
@@ -367,10 +379,21 @@ def _resolve_merge_sha(pr_number: int, root: Path) -> str | None:
 # ── Worktree helpers ──────────────────────────────────────────────────────────
 
 def _create_revert_worktree(branch: str, root: Path) -> dict[str, Any]:
-    """Create a temp worktree off origin/main for the revert.  NEVER raises."""
+    """Create a temp worktree off origin/main for the revert.  NEVER raises.
+
+    FIX-B2: On a retry (status=revert_pr_open_failed) the branch was already
+    pushed on the previous attempt.  If 'git worktree add -b ...' reports
+    'branch already exists', we fall back to 'git worktree add --track' to
+    check out the existing branch instead of failing with a non-retryable error.
+    """
     try:
         subprocess.run(
             ["git", "fetch", "origin", "main"],
+            cwd=str(root), capture_output=True, timeout=60,
+        )
+        # Also fetch the branch itself in case it exists on origin from a prior attempt
+        subprocess.run(
+            ["git", "fetch", "origin", branch],
             cwd=str(root), capture_output=True, timeout=60,
         )
         # Worktree path: sibling of repo root
@@ -378,13 +401,55 @@ def _create_revert_worktree(branch: str, root: Path) -> dict[str, Any]:
         if wt_path.exists():
             log.info("metabolism_revert: worktree already exists at %s", wt_path)
             return {"wt_path": str(wt_path), "error": None}
+        # Try the normal new-branch path first
         result = subprocess.run(
             ["git", "worktree", "add", str(wt_path), "-b", branch, "origin/main"],
             cwd=str(root), capture_output=True, text=True, timeout=60,
         )
-        if result.returncode != 0:
-            return {"wt_path": None, "error": result.stderr.strip()[:400]}
-        return {"wt_path": str(wt_path), "error": None}
+        if result.returncode == 0:
+            return {"wt_path": str(wt_path), "error": None}
+
+        stderr_lower = (result.stderr or "").lower()
+        # FIX-B2: detect "branch already exists" and reuse the existing remote branch
+        if "already exists" in stderr_lower or "branch named" in stderr_lower:
+            log.info(
+                "metabolism_revert: branch %s already exists (likely from a prior attempt) "
+                "— retrying worktree add without -b to reuse the branch",
+                branch,
+            )
+            # Try to add the worktree using the existing branch from origin
+            r2 = subprocess.run(
+                ["git", "worktree", "add", str(wt_path), f"origin/{branch}"],
+                cwd=str(root), capture_output=True, text=True, timeout=60,
+            )
+            if r2.returncode == 0:
+                # Set the local branch to track origin branch
+                subprocess.run(
+                    ["git", "-C", str(wt_path), "checkout", "-B", branch,
+                     f"origin/{branch}"],
+                    cwd=str(root), capture_output=True, text=True, timeout=60,
+                )
+                return {"wt_path": str(wt_path), "error": None}
+            # If that also fails (e.g. branch not yet pushed), fall back to
+            # deleting the local branch ref and re-creating
+            log.info(
+                "metabolism_revert: worktree add from origin/%s failed (%s) "
+                "— deleting local branch ref and retrying",
+                branch, r2.stderr.strip()[:200],
+            )
+            subprocess.run(
+                ["git", "branch", "-D", branch],
+                cwd=str(root), capture_output=True, text=True, timeout=30,
+            )
+            r3 = subprocess.run(
+                ["git", "worktree", "add", str(wt_path), "-b", branch, "origin/main"],
+                cwd=str(root), capture_output=True, text=True, timeout=60,
+            )
+            if r3.returncode == 0:
+                return {"wt_path": str(wt_path), "error": None}
+            return {"wt_path": None, "error": r3.stderr.strip()[:400]}
+
+        return {"wt_path": None, "error": result.stderr.strip()[:400]}
     except Exception as exc:  # noqa: BLE001
         return {"wt_path": None, "error": str(exc)}
 
@@ -771,8 +836,17 @@ def main(argv: list[str] | None = None) -> int:
     # ── Bound by max_open_revert_prs (SIMULTANEOUSLY OPEN, not per-run) ─────
     # FIX-3: query gh pr list for already-open revert PRs so the cap applies
     # to the global count of open PRs, not just PRs opened in this run.
+    # FIX-B4: _count_open_revert_prs returns _COUNT_OPEN_PRS_ERROR (-1) on
+    # any gh failure; fail closed → open ZERO new PRs this run (defer).
     max_prs = _load_max_open_revert_prs(root)
     already_open = _count_open_revert_prs(root)
+    if already_open == _COUNT_OPEN_PRS_ERROR:
+        log.warning(
+            "metabolism_revert: gh pr list failed — failing closed: "
+            "deferring all %d plan(s) to next run (cannot verify open PR count)",
+            len(plans),
+        )
+        return 0
     slots_available = max(0, max_prs - already_open)
     to_process = plans[:slots_available]
     skipped = len(plans) - len(to_process)

@@ -1315,3 +1315,399 @@ class TestParkExpiry:
         assert blocked is False, (
             "Park older than park_expiry_days must auto-release (not block)"
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX-B1: breach/park tracked independently — partial run does not re-fire
+#         the already-completed effect
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestReflexPartialFailureDoesNotDoubleFirBreach:
+    """FIX-B1: breach succeeds + park raises on run 1 → run 2 fires park only.
+
+    A completed breach must never fire twice even if park keeps failing.
+    Exactly one breach row must exist after two runs.
+    """
+
+    def test_breach_not_repeated_when_park_fails(self):
+        import scripts.metabolism_verify as mv
+        importlib.reload(mv)
+        from engine.metabolism.verify import (
+            _reflex_already_executed,
+            _reflex_effect_done,
+        )
+
+        d = _tmp_root()
+        (d / "data" / "metabolism" / "reflex").mkdir(parents=True, exist_ok=True)
+        (d / "data" / "metabolism" / "lifecycle").mkdir(parents=True, exist_ok=True)
+
+        contract = {
+            "lobe": "til_partial",
+            "sensor": "momentum",
+            "kind": "til",
+            "proposal_id": "p_partial_fixb1",
+        }
+        record = {
+            "cycle_id": "cycle-partial-b1",
+            "contract": contract,
+            "triage": {"classification": "overfit", "action": "revert_plan"},
+            "_side_effect_intents": {"breach_intent": True, "park_intent": True},
+        }
+
+        breach_call_count = [0]
+        park_call_count = [0]
+
+        def fake_breach(cycle_id, contract_arg, triage_arg, root_arg):
+            breach_call_count[0] += 1
+
+        def fake_park_fail(cycle_id, contract_arg, root_arg):
+            park_call_count[0] += 1
+            raise RuntimeError("simulated park failure")
+
+        # Run 1: breach succeeds, park raises
+        from engine.metabolism import verify as v
+        with patch.object(v, "_feed_breach_from_falsifier", side_effect=fake_breach):
+            with patch.object(v, "_park_construction_from_falsifier",
+                              side_effect=fake_park_fail):
+                mv._execute_reflex_intents("cycle-partial-b1", record, d)
+
+        assert breach_call_count[0] == 1, "breach must fire exactly once on run 1"
+        assert park_call_count[0] == 1, "park must be attempted on run 1"
+
+        # After run 1: breach_executed=True, park_executed=False
+        assert _reflex_effect_done("cycle-partial-b1", d, "breach_executed"), (
+            "breach_executed must be True in marker after run 1"
+        )
+        assert not _reflex_effect_done("cycle-partial-b1", d, "park_executed"), (
+            "park_executed must be False in marker after run 1"
+        )
+        assert not _reflex_already_executed("cycle-partial-b1", d), (
+            "_reflex_already_executed must be False after partial run"
+        )
+
+        def fake_park_ok(cycle_id, contract_arg, root_arg):
+            park_call_count[0] += 1
+
+        # Run 2: breach must NOT re-fire; park must complete
+        with patch.object(v, "_feed_breach_from_falsifier", side_effect=fake_breach):
+            with patch.object(v, "_park_construction_from_falsifier",
+                              side_effect=fake_park_ok):
+                mv._execute_reflex_intents("cycle-partial-b1", record, d)
+
+        assert breach_call_count[0] == 1, (
+            "FIX-B1: breach must NOT be re-fired on run 2 (already succeeded)"
+        )
+        assert park_call_count[0] == 2, "park must fire on run 2"
+
+        # After run 2: both done
+        assert _reflex_already_executed("cycle-partial-b1", d), (
+            "Both effects must be marked done after run 2"
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX-B2: retry on 'branch already exists' reaches PR-open (no orphan)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestRevertWorktreeBranchAlreadyExists:
+    """FIX-B2: attempt-1 push-ok/PR-fail → attempt-2 opens PR, no unhandled
+    'branch already exists' error.
+    """
+
+    def test_retry_after_pr_fail_opens_pr(self):
+        """Simulates the full retry lifecycle:
+        - Attempt 1: worktree created, revert ok, push ok, gh pr create fails
+          → marker written with status=revert_pr_open_failed
+        - Attempt 2: branch already exists on origin → worktree reuses branch
+          → PR opened successfully
+        """
+        mr = _import_revert()
+        d = _tmp_root()
+        pid = "p_retry_b2"
+        branch = f"metabolism/revert-{pid}"
+
+        pr_open_calls = [0]
+
+        def fake_open_pr_fail(*args, **kwargs):
+            pr_open_calls[0] += 1
+            if pr_open_calls[0] == 1:
+                return {"pr_number": None, "pr_url": None, "opened": False,
+                        "error": "gh: failed"}
+            return {"pr_number": 200, "pr_url": "https://example.com/200",
+                    "opened": True}
+
+        fake_run_ok = MagicMock()
+        fake_run_ok.returncode = 0
+        fake_run_ok.stdout = ""
+        fake_run_ok.stderr = ""
+
+        # Attempt 1: everything succeeds except gh pr create
+        env = _armed_env()
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mr, "_resolve_pr_number", return_value=42):
+                with patch.object(mr, "_resolve_merge_sha", return_value="sha_b2"):
+                    with patch.object(mr, "_create_revert_worktree",
+                                      return_value={"wt_path": tempfile.mkdtemp(),
+                                                    "error": None}):
+                        with patch.object(mr, "_remove_revert_worktree"):
+                            with patch.object(mr, "_push_revert_branch",
+                                              return_value=True):
+                                with patch.object(mr, "_open_draft_revert_pr",
+                                                  side_effect=fake_open_pr_fail):
+                                    with patch("subprocess.run",
+                                               return_value=fake_run_ok):
+                                        result1 = mr._process_one_plan(
+                                            {"proposal_id": pid,
+                                             "cycle_id": "cycle-b2",
+                                             "verify_path": "/fake",
+                                             "revert_plan": {"action": "git_revert",
+                                                             "target": "test"},
+                                             "do_not_rebuild_row": {}},
+                                            d,
+                                            dry_run=False,
+                                        )
+
+        assert result1.get("status") == "revert_pr_open_failed"
+        # The plan is retryable
+        assert not mr._is_actioned(pid, d), "Must remain retryable after attempt 1"
+
+        # Attempt 2: branch already exists scenario — worktree returns ok with
+        # the existing path (simulates _create_revert_worktree handling the
+        # "already exists" case correctly)
+        wt2 = tempfile.mkdtemp(prefix="fake_wt_retry_")
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mr, "_resolve_pr_number", return_value=42):
+                with patch.object(mr, "_resolve_merge_sha", return_value="sha_b2"):
+                    with patch.object(mr, "_create_revert_worktree",
+                                      return_value={"wt_path": wt2, "error": None}):
+                        with patch.object(mr, "_remove_revert_worktree"):
+                            with patch.object(mr, "_push_revert_branch",
+                                              return_value=True):
+                                with patch.object(mr, "_open_draft_revert_pr",
+                                                  side_effect=fake_open_pr_fail):
+                                    with patch("subprocess.run",
+                                               return_value=fake_run_ok):
+                                        result2 = mr._process_one_plan(
+                                            {"proposal_id": pid,
+                                             "cycle_id": "cycle-b2",
+                                             "verify_path": "/fake",
+                                             "revert_plan": {"action": "git_revert",
+                                                             "target": "test"},
+                                             "do_not_rebuild_row": {}},
+                                            d,
+                                            dry_run=False,
+                                        )
+
+        assert result2.get("status") == "revert_pr_opened", (
+            f"FIX-B2: attempt 2 must open the PR, got {result2.get('status')!r}"
+        )
+        # Plan is now permanently actioned
+        assert mr._is_actioned(pid, d), "After successful PR open, plan must be actioned"
+        # Marker shows final status
+        marker = json.loads(
+            (d / "data" / "metabolism" / "revert" / f"{pid}.json").read_text()
+        )
+        assert marker.get("status") == "revert_pr_opened"
+
+    def test_create_worktree_handles_branch_exists_string(self):
+        """_create_revert_worktree 'already exists' path returns wt_path (not error)
+        when the branch is known on origin from a prior push."""
+        mr = _import_revert()
+        d = _tmp_root()
+        branch = "metabolism/revert-test-b2"
+
+        # First run: git worktree add -b returns "already exists" error
+        call_count = [0]
+        fake_wt = tempfile.mkdtemp(prefix="fake_wt_b2_")
+
+        def fake_run(cmd, **kwargs):
+            call_count[0] += 1
+            r = MagicMock()
+            r.stdout = ""
+            if "worktree" in cmd and "add" in cmd and "-b" in cmd:
+                # Simulate branch-already-exists error
+                r.returncode = 128
+                r.stderr = "fatal: a branch named '{}' already exists".format(branch)
+            elif "worktree" in cmd and "add" in cmd and f"origin/{branch}" in cmd:
+                # Simulate successful checkout of existing remote branch
+                r.returncode = 0
+                r.stderr = ""
+                # Create the path so exists() check works
+                import os as _os
+                expected_wt_path = d.parent / branch.replace("/", "_")
+                _os.makedirs(str(expected_wt_path), exist_ok=True)
+            else:
+                r.returncode = 0
+                r.stderr = ""
+            return r
+
+        with patch("subprocess.run", side_effect=fake_run):
+            result = mr._create_revert_worktree(branch, d)
+
+        # Must not return an error — wt_path should be set
+        assert result.get("error") is None or result.get("wt_path") is not None, (
+            "FIX-B2: _create_revert_worktree must not error out on 'branch already exists'"
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX-B3: old expired park + fresh re-park (same pid) → BLOCKED
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestFreshReparkAfterExpiredBlocksConstruction:
+    """FIX-B3: expiry is per-row.  An old expired row + a fresh row (same pid)
+    must leave the construction BLOCKED — the fresh row's age wins.
+    """
+
+    def test_old_expired_plus_fresh_repark_is_blocked(self):
+        mb = _import_build()
+        d = _tmp_root()
+        (d / "config" / "metabolism_budget.yml").write_text(
+            "schema: metabolism_budget.v1\npark_expiry_days: 30\n"
+        )
+
+        claims_path = d / "data" / "metabolism" / "claims.jsonl"
+        # Old park row: 35 days old (expired)
+        old_ts = (datetime.now(timezone.utc) - timedelta(days=35)).isoformat(
+            timespec="seconds"
+        )
+        # Fresh park row: today (within expiry window) — SAME pid (re-park by
+        # a new falsifier)
+        fresh_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+        old_park_row = {
+            "schema": "metabolism.parked_construction.v1",
+            "ts": old_ts,
+            "proposal_id": "p_repark_b3",  # STABLE pid
+            "parked_construction": {"lobe": "til", "sensors": ["mom"], "kind": "til"},
+            "release_grant_id": None,
+        }
+        fresh_park_row = {
+            "schema": "metabolism.parked_construction.v1",
+            "ts": fresh_ts,
+            "proposal_id": "p_repark_b3",  # SAME stable pid
+            "parked_construction": {"lobe": "til", "sensors": ["mom"], "kind": "til"},
+            "release_grant_id": None,
+        }
+        claims_path.parent.mkdir(parents=True, exist_ok=True)
+        # Write old row first, then fresh row
+        claims_path.write_text(
+            json.dumps(old_park_row) + "\n" + json.dumps(fresh_park_row) + "\n"
+        )
+
+        proposal = {
+            "proposal_id": "p_new_b3",
+            "lobe": "til",
+            "kind": "til",
+            "targets_sensor": "mom",
+        }
+
+        blocked = mb._is_construction_parked(proposal, root=d)
+        assert blocked is True, (
+            "FIX-B3: old expired park + fresh re-park (same pid) must BLOCK the "
+            "construction — expiry is per-row, the fresh row is active"
+        )
+
+    def test_only_expired_park_rows_unblocks(self):
+        """When ONLY expired rows exist (no fresh re-park), not blocked."""
+        mb = _import_build()
+        d = _tmp_root()
+        (d / "config" / "metabolism_budget.yml").write_text(
+            "schema: metabolism_budget.v1\npark_expiry_days: 30\n"
+        )
+
+        claims_path = d / "data" / "metabolism" / "claims.jsonl"
+        old_ts = (datetime.now(timezone.utc) - timedelta(days=35)).isoformat(
+            timespec="seconds"
+        )
+        park_row = {
+            "schema": "metabolism.parked_construction.v1",
+            "ts": old_ts,
+            "proposal_id": "p_all_expired",
+            "parked_construction": {"lobe": "til", "sensors": ["mom"], "kind": "til"},
+            "release_grant_id": None,
+        }
+        claims_path.parent.mkdir(parents=True, exist_ok=True)
+        claims_path.write_text(json.dumps(park_row) + "\n")
+
+        proposal = {
+            "proposal_id": "p_new_allexp",
+            "lobe": "til",
+            "kind": "til",
+            "targets_sensor": "mom",
+        }
+        blocked = mb._is_construction_parked(proposal, root=d)
+        assert blocked is False, (
+            "When all matching rows are expired, construction must NOT be blocked"
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX-B4: gh error counting open PRs → fail closed (zero new PRs)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestCountOpenRevertPrsFailClosed:
+    """FIX-B4: gh returncode!=0 → zero new revert PRs opened this run."""
+
+    def test_gh_error_opens_zero_new_prs(self):
+        """When gh pr list returns non-zero, no new plans are processed."""
+        mr = _import_revert()
+        d = _tmp_root()
+        (d / "config" / "metabolism_budget.yml").write_text(
+            "schema: metabolism_budget.v1\nmax_open_revert_prs: 5\n"
+        )
+
+        _write_verify_record(d, "cycle-b4-a", "revert_plan", "pid_b4_a")
+        _write_verify_record(d, "cycle-b4-b", "revert_plan", "pid_b4_b")
+
+        # gh pr list fails
+        fake_gh_fail = MagicMock()
+        fake_gh_fail.returncode = 1
+        fake_gh_fail.stdout = ""
+        fake_gh_fail.stderr = "gh: network error"
+
+        process_calls: list[str] = []
+
+        def fake_process(plan, root, *, dry_run=False):
+            process_calls.append(plan.get("proposal_id"))
+            return {"status": "revert_pr_opened"}
+
+        env = _armed_env()
+        with patch.dict(os.environ, env, clear=False):
+            with patch("subprocess.run", return_value=fake_gh_fail):
+                with patch.object(mr, "_process_one_plan", side_effect=fake_process):
+                    mr.main(["--root", str(d)])
+
+        assert len(process_calls) == 0, (
+            "FIX-B4: when gh pr list fails, zero new revert PRs must be opened "
+            f"(got {len(process_calls)} process calls)"
+        )
+
+    def test_gh_exception_opens_zero_new_prs(self):
+        """When gh raises an exception, no new plans are processed."""
+        mr = _import_revert()
+        d = _tmp_root()
+        (d / "config" / "metabolism_budget.yml").write_text(
+            "schema: metabolism_budget.v1\nmax_open_revert_prs: 5\n"
+        )
+
+        _write_verify_record(d, "cycle-b4-exc", "revert_plan", "pid_b4_exc")
+
+        process_calls: list[str] = []
+
+        def fake_process(plan, root, *, dry_run=False):
+            process_calls.append(plan.get("proposal_id"))
+            return {"status": "revert_pr_opened"}
+
+        def fake_run(*args, **kwargs):
+            raise OSError("gh not found")
+
+        env = _armed_env()
+        with patch.dict(os.environ, env, clear=False):
+            with patch("subprocess.run", side_effect=fake_run):
+                with patch.object(mr, "_process_one_plan", side_effect=fake_process):
+                    mr.main(["--root", str(d)])
+
+        assert len(process_calls) == 0, (
+            "FIX-B4: gh exception must also result in zero new revert PRs"
+        )

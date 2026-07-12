@@ -1066,8 +1066,10 @@ def _reflex_marker_path(cycle_id: str, root: Path) -> Path:
 
 
 def _reflex_already_executed(cycle_id: str, root: Path) -> bool:
-    """True if the breach+park side-effects were already executed for this cycle.
+    """True if BOTH breach+park side-effects were already executed for this cycle.
 
+    FIX-B1: Only returns True when BOTH flags are set.  Callers that need
+    per-effect granularity should use _reflex_effect_done() instead.
     NEVER raises.
     """
     try:
@@ -1079,6 +1081,26 @@ def _reflex_already_executed(cycle_id: str, root: Path) -> bool:
     except Exception as exc:  # noqa: BLE001
         log.warning("verify._reflex_already_executed(%s): %s", cycle_id, exc)
         return False  # fail-open: retry is safe (breach/park are idempotent per cycle)
+
+
+def _reflex_effect_done(cycle_id: str, root: Path, effect: str) -> bool:
+    """True if a specific side-effect ('breach_executed' or 'park_executed')
+    was already successfully run for this cycle.
+
+    FIX-B1: Used by _execute_reflex_intents to skip only the effect that already
+    ran, so a partial failure on run 1 can complete the remaining effect on run 2
+    without re-firing the already-completed effect.
+    NEVER raises.
+    """
+    try:
+        p = _reflex_marker_path(cycle_id, root)
+        if not p.exists():
+            return False
+        data = json.loads(p.read_text(encoding="utf-8"))
+        return bool(data.get(effect))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("verify._reflex_effect_done(%s, %s): %s", cycle_id, effect, exc)
+        return False  # fail-open: safe to retry
 
 
 def _write_reflex_marker(
