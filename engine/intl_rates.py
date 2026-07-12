@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 
 from engine import intl_compare, intl_inputs
+from engine.ird_velocity import velocity_fields_bp as _ird_velocity
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -95,6 +96,9 @@ def rates_desk(records: list[dict]) -> dict:
         slope = m.get("curve")
         shape_key, shape_en, shape_zh = _curve_shape(slope)
         carry = round(y10 - us10, 2) if (y10 is not None and us10 is not None) else None
+        # IRD-R13 velocity fields on the 10y series (fail-open)
+        y10_series = _series(f"{cc}_yield_10y")
+        vel = _ird_velocity(y10_series) if y10_series is not None else {"vel_5d_bp": None, "vel_20d_bp": None, "vel_20d_z": None, "window_days": None}
         rows.append({
             "cc": cc, "name": r["name"], "name_zh": r.get("name_zh", r["name"]),
             "flag": r["flag"], "region": r.get("region"),
@@ -105,6 +109,11 @@ def rates_desk(records: list[dict]) -> dict:
             "stance": r.get("liquidity"),
             "y10_asof": af.get("yield_10y"), "cpi_asof": af.get("cpi_yoy"),
             "spark": _spark(_series(f"{cc}_yield_10y")),
+            # IRD-R13 velocity (basis-point changes; window_days disclosed)
+            "vel_5d_bp": vel["vel_5d_bp"],
+            "vel_20d_bp": vel["vel_20d_bp"],
+            "vel_20d_z": vel["vel_20d_z"],
+            "vel_window_days": vel["window_days"],
         })
     # rank by carry (highest real pull first) where present
     have_carry = [r for r in rows if r["carry_vs_us"] is not None]

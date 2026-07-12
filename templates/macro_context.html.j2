@@ -762,6 +762,45 @@ body::before {
     {% if vm.weather_board %}
     <div class="weather-grid">
       {% for dom in vm.weather_board %}
+      {% if dom.card_type == 'intl_risk' %}
+      <!-- ── International Risk domain card (IRD-W4) ── -->
+      <div class="domain-card">
+        <div class="domain-name">
+          <span class="domain-name-en">{{ t('International Risk', '国际风险') }}</span>
+          {% if dom.asof %}
+          <span class="domain-asof {{ dom.stale_cls }}"
+                data-tip-en="Source as-of {{ dom.asof }}"
+                data-tip-zh="数据截至 {{ dom.asof }}">{{ dom.asof }}</span>
+          {% endif %}
+        </div>
+        {% if dom.null_state %}
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">{{ t('No data yet — updates tonight', '暂无数据，今晚更新') }}</div>
+        {% else %}
+        <!-- State line: plain-word contagion read -->
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:{% if dom.state_cls == 'c-up' %}var(--up){% elif dom.state_cls == 'c-down' %}var(--down){% elif dom.state_cls == 'c-warn' %}var(--warn){% else %}var(--muted){% endif %}">
+          {{ t(dom.state_en, dom.state_zh) }}
+        </div>
+        <!-- Stat row 1: EM stress -->
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px">
+          <span style="color:var(--muted)">{{ t('EM stress', '新兴市场') }}</span>
+          <span style="font-weight:600;color:{% if dom.em_cls == 'c-up' %}var(--up){% elif dom.em_cls == 'c-down' %}var(--down){% elif dom.em_cls == 'c-warn' %}var(--warn){% else %}var(--muted){% endif %}">{{ t(dom.em_text_en, dom.em_text_zh) }}</span>
+        </div>
+        <!-- Stat row 2: Dollar regime -->
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:10px">
+          <span style="color:var(--muted)">{{ t('Dollar', '美元') }}</span>
+          <span style="font-weight:600;color:{% if dom.dollar_cls == 'c-up' %}var(--up){% elif dom.dollar_cls == 'c-down' %}var(--down){% elif dom.dollar_cls == 'c-warn' %}var(--warn){% else %}var(--muted){% endif %}">{{ t(dom.dollar_text_en, dom.dollar_text_zh) }}</span>
+        </div>
+        <!-- Stance line -->
+        <div style="font-size:11px;padding:7px 10px;background:var(--panel2);border-radius:7px;border-left:3px solid var(--line);line-height:1.4;margin-bottom:10px">
+          {{ t(dom.stance_en, dom.stance_zh) }}
+        </div>
+        {% endif %}
+        <!-- Detail link -->
+        <a href="{{ dom.detail_href }}" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--link);text-decoration:none">
+          <span class="l-en">Risk desk &#8594;</span><span class="l-zh">风险台 &#8594;</span>
+        </a>
+      </div>
+      {% else %}
       <div class="domain-card">
         <div class="domain-name">
           <span class="domain-name-en">{{ t(dom.domain_en, dom.domain_zh) }}</span>
@@ -799,6 +838,7 @@ body::before {
         </div>
         {% endif %}
       </div>
+      {% endif %}
       {% endfor %}
     </div>
     {% else %}

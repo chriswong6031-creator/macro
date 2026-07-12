@@ -529,7 +529,7 @@
     <div class="kpi"><div class="k"><span class="l-en">Avg correlation</span><span class="l-zh">平均相关性</span></div>
       <div class="v">0.53</div><div class="s"><span class="l-en">cross-market, USD</span><span class="l-zh">跨市场，美元</span></div></div>
   </div>
-  <p class="caveat" style="margin-top:13px"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-10 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-12 11:31 UTC · <span class="l-en">context only</span><span class="l-zh">仅作背景</span>
+  <p class="caveat" style="margin-top:13px"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-10 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-12 11:17 UTC · <span class="l-en">context only</span><span class="l-zh">仅作背景</span>
     · <a href="intl_stocks.html" style="color:var(--link);font-weight:700"><span class="l-en">Stock dashboard</span><span class="l-zh">股票看板</span> →</a></p>
 </div>
 
@@ -1046,6 +1046,532 @@
     
   </div>
 </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- ===== IRD EXTRA CSS (scoped classes, minimal) ===== -->
+<style>
+  .ird-stage{position:relative;margin:0 0 16px;padding:20px 22px 18px;border-radius:16px;
+    background:linear-gradient(var(--panel),var(--panel)) padding-box,var(--acc-grad) border-box;
+    border:1.5px solid transparent;
+    box-shadow:0 16px 48px -24px color-mix(in srgb,var(--acc1) 45%,transparent);}
+  .ird-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;
+    letter-spacing:.13em;text-transform:uppercase;color:#fff;background:var(--acc-grad);
+    padding:4px 11px;border-radius:999px;}
+  .ird-title{font-size:20px;font-weight:800;letter-spacing:-.01em;margin:10px 0 4px;color:var(--text);}
+  .ird-subtitle{font-size:13px;color:var(--muted);margin:0 0 14px;}
+  .ird-hchips{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px;}
+  @media(max-width:900px){.ird-hchips{grid-template-columns:1fr 1fr;}}
+  .ird-hchip{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
+  .ird-hchip.state-warn{border-color:color-mix(in srgb,var(--down) 45%,var(--line));background:color-mix(in srgb,var(--down) 6%,var(--panel2));}
+  .ird-hchip.state-ok{border-color:color-mix(in srgb,var(--up) 35%,var(--line));background:color-mix(in srgb,var(--up) 5%,var(--panel2));}
+  .ird-hchip.state-caut{border-color:color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn) 5%,var(--panel2));}
+  .ird-hchip .hc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px;}
+  .ird-hchip .hc-state{font-size:14px;font-weight:800;line-height:1.2;margin-bottom:3px;}
+  .ird-hchip .hc-state.red{color:var(--down);}
+  .ird-hchip .hc-state.green{color:var(--up);}
+  .ird-hchip .hc-state.info{color:var(--info);}
+  .ird-hchip .hc-detail{font-size:11px;color:var(--muted);margin-top:2px;}
+  .ird-hchip .hc-stance{font-size:11px;color:var(--muted);margin-top:4px;}
+  .ird-hchip .hc-stance b{color:var(--text);}
+  .ird-safety-tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;
+    background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn);
+    border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);margin-top:4px;}
+  .ird-twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:860px){.ird-twocol{grid-template-columns:1fr;}}
+  .ird-dial-wrap{display:flex;align-items:center;gap:16px;margin:12px 0;}
+  .ird-dial-circle{width:80px;height:80px;border-radius:50%;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;border:3px solid color-mix(in srgb,var(--warn) 60%,var(--line));
+    background:color-mix(in srgb,var(--warn) 8%,var(--panel2));flex-shrink:0;}
+  .ird-dial-circle .dc-num{font-size:24px;font-weight:800;color:var(--warn);line-height:1;}
+  .ird-dial-circle .dc-of{font-size:10px;color:var(--muted);font-weight:600;}
+  .ird-tx-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .ird-tx-row:last-child{border-bottom:none;}
+  .ird-tx-rank{width:18px;font-size:11px;color:var(--muted);font-weight:700;}
+  .ird-tx-flag{font-size:16px;}
+  .ird-tx-name{flex:1;font-weight:600;}
+  .ird-tx-bar-wrap{width:80px;height:6px;background:var(--panel);border-radius:3px;overflow:hidden;}
+  .ird-tx-bar{height:100%;border-radius:3px;background:var(--warn);}
+  .ird-tx-val{font-size:11px;color:var(--muted);width:44px;text-align:right;}
+  .ird-us-recv{display:flex;align-items:center;gap:10px;margin:10px 0 12px;padding:8px 12px;
+    background:var(--panel2);border-radius:9px;border:1px solid var(--line);}
+  .ird-us-recv .ur-num{font-size:20px;font-weight:800;color:var(--info);}
+  .ird-us-recv .ur-text{font-size:12px;color:var(--muted);}
+  .ird-us-recv .ur-text b{color:var(--text);}
+  .ird-channels{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
+  table.ird-cb{border-collapse:collapse;width:100%;font-size:12.5px;}
+  table.ird-cb th,table.ird-cb td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;}
+  table.ird-cb th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;}
+  table.ird-cb td.r{text-align:right;}
+  table.ird-cb tr:hover td{background:var(--panel2);}
+  .ird-stance{display:inline-block;padding:2px 8px;border-radius:7px;font-size:11px;font-weight:700;}
+  .stance-cutting{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 34%,transparent);}
+  .stance-raising{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 36%,transparent);}
+  .stance-holding{background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent);}
+  .ird-bs{display:inline-block;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;
+    border:1px solid var(--line);color:var(--muted);background:var(--panel2);}
+  .ird-bs.adding{color:var(--up);border-color:color-mix(in srgb,var(--up) 30%,var(--line));background:color-mix(in srgb,var(--up) 8%,var(--panel2));}
+  .ird-bs.draining{color:var(--down);border-color:color-mix(in srgb,var(--down) 30%,var(--line));background:color-mix(in srgb,var(--down) 8%,var(--panel2));}
+  .ird-spread-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0;}
+  @media(max-width:720px){.ird-spread-grid{grid-template-columns:1fr 1fr;}}
+  .ird-spread-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+  .ird-spread-card .sc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px;}
+  .ird-spread-card .sc-val{font-size:20px;font-weight:800;color:var(--text);line-height:1.1;}
+  .ird-spread-card .sc-vel{font-size:11px;margin-top:3px;}
+  .vel-up{color:var(--down);}.vel-dn{color:var(--up);}.vel-flat{color:var(--muted);}
+  .ird-inv-row{display:flex;align-items:center;gap:10px;margin:10px 0;padding:8px 12px;
+    background:color-mix(in srgb,var(--up) 6%,var(--panel2));
+    border:1px solid color-mix(in srgb,var(--up) 25%,var(--line));border-radius:9px;}
+  .ird-inv-row .inv-num{font-size:22px;font-weight:800;color:var(--up);}
+  .ird-inv-row .inv-num.warn{color:var(--warn);}
+  .ird-inv-row .inv-num.red{color:var(--down);}
+  .ird-inv-row .inv-text{font-size:12px;color:var(--muted);}
+  .ird-inv-row .inv-text b{color:var(--text);}
+  .ird-dollar-card{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px 16px;}
+  .ird-dollar-card .regime-word{font-size:18px;font-weight:800;color:var(--info);margin-bottom:6px;}
+  .ird-dollar-card .regime-sentence{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:10px;}
+  .ird-dollar-null{font-size:13px;color:var(--muted);font-style:italic;line-height:1.5;}
+  .ird-frag-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .ird-frag-row:last-child{border-bottom:none;}
+  .ird-frag-country{font-size:13px;font-weight:700;flex:1;}
+  .ird-frag-desc{font-size:12px;color:var(--muted);display:block;margin-top:1px;}
+  .ird-frag-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+  .ird-asof{font-size:11px;color:var(--muted);margin-top:8px;}
+</style>
+
+<!-- ===== IRD HERO STRIP ===== -->
+<div class="ird-stage">
+  <span class="ird-badge">🌐 <span class="l-en">International Risk Desk</span><span class="l-zh">国际风险台</span></span>
+  <div class="ird-title"><span class="l-en">International Risk Desk</span><span class="l-zh">国际风险台</span></div>
+  <div class="ird-subtitle"><span class="l-en">Four signals. One read: where risk is building, what crosses to the US, and what to do.</span><span class="l-zh">四个信号，一张快照：风险在哪积聚，什么传导至美国，该怎么做。</span></div>
+
+  <div class="ird-hchips">
+
+    
+    <div class="ird-hchip state-warn">
+      <div class="hc-lbl"><span class="l-en">Emerging Markets</span><span class="l-zh">新兴市场</span></div>
+      <div class="hc-state red">
+        <span class="l-en">Strains showing</span><span class="l-zh">压力显现</span>
+      </div>
+      <div class="hc-detail">
+          <span class="l-en">Elevated: 2 of 6 stress signals hot</span><span class="l-zh">偏高：2/6个压力信号触发</span>
+      </div>
+      <div class="hc-stance"><b><span class="l-en">Watch — don't chase</span><span class="l-zh">观望，勿追入</span></b> <span class="l-en">EM positions</span><span class="l-zh">新兴市场仓位</span></div>
+    </div>
+
+    
+    <div class="ird-hchip state-ok">
+      <div class="hc-lbl"><span class="l-en">Contagion to US</span><span class="l-zh">对美传导</span></div>
+      <div class="hc-state green">
+        <span class="l-en">Not reaching US markets</span><span class="l-zh">尚未传导至美国</span>
+      </div>
+      <div class="hc-detail">
+        0 <span class="l-en">of 5 US transmission channels are hot</span><span class="l-zh">个美国传导渠道触发</span>
+      </div>
+      <div class="hc-stance">
+        <b><span class="l-en">Ignore for US book</span><span class="l-zh">美股仓位可忽略</span></b>
+          <span class="l-en"> — check again if EM worsens</span><span class="l-zh">——如EM恶化则重新审视</span>
+      </div>
+    </div>
+
+    
+    <div class="ird-hchip state-caut">
+      <div class="hc-lbl"><span class="l-en">Dollar</span><span class="l-zh">美元</span></div>
+        <div class="hc-state" style="color:var(--muted);font-size:12px;"><span class="l-en">Read updates tonight</span><span class="l-zh">今晚更新读数</span></div>
+        <div class="hc-detail"><span class="l-en">Not enough fresh data</span><span class="l-zh">数据暂不足</span></div>
+        <div class="ird-safety-tag">
+          ⚠ <span class="l-en">Safety bid today</span><span class="l-zh">今日避险需求</span>
+            <span class="l-en"> (DXY +0.1%, 2yr -1.0 bp)</span><span class="l-zh">（DXY +0.1%，2年期 -1.0 bp）</span>
+        </div>
+      <div class="hc-stance" style="margin-top:5px;"><b><span class="l-en">Watch — don't chase</span><span class="l-zh">观望，勿追入</span></b> <span class="l-en">dollar strength</span><span class="l-zh">美元强势</span></div>
+    </div>
+
+    
+    <div class="ird-hchip state-ok">
+      <div class="hc-lbl"><span class="l-en">Dollar Funding</span><span class="l-zh">美元融资</span></div>
+      <div class="hc-state green"><span class="l-en">Calm</span><span class="l-zh">平静</span></div>
+      <div class="hc-detail">
+          <span class="l-en">Swap lines ~$0.2bn outstanding · money-market spreads normal</span><span class="l-zh">互换额度余额约0.2亿美元·货币市场息差正常</span>
+      </div>
+      <div class="hc-stance"><b><span class="l-en">Ignore</span><span class="l-zh">忽略</span></b> <span class="l-en">— no funding stress</span><span class="l-zh">——无融资压力</span></div>
+    </div>
+
+  </div><!-- /hero chips -->
+
+  <div class="ird-asof" style="margin-top:14px;">
+    <span class="l-en">As of 2026-07-12 · context only, not a forecast</span><span class="l-zh">截至 2026-07-12 · 仅作背景，非预测</span>
+  </div>
+</div><!-- /ird-stage -->
+
+<!-- ===== IRD 2-COL GRID ===== -->
+<div class="ird-twocol">
+
+  <!-- LEFT: Contagion board + CB desk -->
+  <div>
+
+    <!-- CONTAGION BOARD -->
+    <div class="panel">
+      <div class="sec-h">
+        <h2><span class="l-en">Contagion board</span><span class="l-zh">传导看板</span> <span class="help">?<span class="tip"><span class="l-en">How tightly are global markets linked right now? The score (0–100) measures how far a shock in one market travels to others, using a rolling 150-day window. Higher = shocks spread faster. Top shock senders are markets that export the most stress to peers. US receiving share = how much of international stress eventually reaches the S&P 500 — this is a transmission read, not a causal share. Source: daily ETF returns.</span><span class="l-zh">全球市场目前关联程度如何？得分（0–100）衡量某市场冲击向其他市场的传导程度，使用150日滚动窗口。数值越高，冲击传播越快。前三大冲击输出方是最多向同伴输出压力的市场。美国接收份额 = 国际压力最终传导至标普500的比例——这是传导读数，非因果占比。数据来源：ETF日度收益。</span></span></span></h2>
+        <span class="sub"><span class="l-en">How connected are markets right now?</span><span class="l-zh">市场间关联程度如何？</span></span>
+      </div>
+      <div class="ird-dial-wrap">
+        <div class="ird-dial-circle">
+          <div class="dc-num">82</div>
+          <div class="dc-of">/ 100</div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px;"><span class="l-en">Markets tightly linked — shocks travel fast</span><span class="l-zh">市场高度关联——冲击快速传播</span></div>
+          <div class="small muted"><span class="l-en">Above 80: stress in any market can quickly reach others. Below 60: markets absorb their own shocks.</span><span class="l-zh">超过80：任意市场的压力可快速蔓延。低于60：市场能消化自身冲击。</span></div>
+          <div style="margin-top:8px;opacity:.8;"><svg class="nch" viewBox="0 0 200 34" preserveAspectRatio="none" width="100%" height="34"><polyline points="0,34 0.0,9.3 3.9,9.3 7.8,8.8 11.8,8.6 15.7,8.8 19.6,8.4 23.5,8.2 27.5,8.2 31.4,8.3 35.3,9.0 39.2,8.6 43.1,8.4 47.1,8.4 51.0,8.7 54.9,8.8 58.8,9.3 62.7,8.8 66.7,11.9 70.6,11.9 74.5,11.4 78.4,11.3 82.4,16.2 86.3,34.0 90.2,30.6 94.1,27.8 98.0,25.5 102.0,22.2 105.9,19.2 109.8,19.1 113.7,20.7 117.6,23.2 121.6,21.7 125.5,20.9 129.4,20.9 133.3,15.1 137.3,19.0 141.2,19.0 145.1,20.5 149.0,19.2 152.9,21.6 156.9,22.7 160.8,19.6 164.7,17.5 168.6,17.3 172.5,19.6 176.5,19.9 180.4,18.7 184.3,19.8 188.2,20.9 192.2,23.1 196.1,23.9 200.0,20.3 200,34" fill="var(--warn)" opacity="0.12" stroke="none"/><polyline points="0.0,9.3 3.9,9.3 7.8,8.8 11.8,8.6 15.7,8.8 19.6,8.4 23.5,8.2 27.5,8.2 31.4,8.3 35.3,9.0 39.2,8.6 43.1,8.4 47.1,8.4 51.0,8.7 54.9,8.8 58.8,9.3 62.7,8.8 66.7,11.9 70.6,11.9 74.5,11.4 78.4,11.3 82.4,16.2 86.3,34.0 90.2,30.6 94.1,27.8 98.0,25.5 102.0,22.2 105.9,19.2 109.8,19.1 113.7,20.7 117.6,23.2 121.6,21.7 125.5,20.9 129.4,20.9 133.3,15.1 137.3,19.0 141.2,19.0 145.1,20.5 149.0,19.2 152.9,21.6 156.9,22.7 160.8,19.6 164.7,17.5 168.6,17.3 172.5,19.6 176.5,19.9 180.4,18.7 184.3,19.8 188.2,20.9 192.2,23.1 196.1,23.9 200.0,20.3" fill="none" stroke="var(--warn)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="200.0" cy="20.3" r="2.6" fill="var(--warn)"/></svg></div>
+        </div>
+      </div>
+      <div style="margin:10px 0;">
+        <div class="small muted" style="margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">
+          <span class="l-en">Top 3 shock senders</span><span class="l-zh">前三大冲击输出方</span>
+        </div>
+        <div class="ird-tx-row">
+          <span class="ird-tx-rank">#1</span>
+          <span class="ird-tx-flag">🇦🇺</span>
+          <span class="ird-tx-name"><span class="l-en">Australia</span><span class="l-zh">澳大利亚</span></span>
+          <div class="ird-tx-bar-wrap" title="EWA · 128.1 pts to others">
+            <div class="ird-tx-bar" style="width:100%"></div>
+          </div>
+          <span class="ird-tx-val">128 pts</span>
+        </div>
+        <div class="ird-tx-row">
+          <span class="ird-tx-rank">#2</span>
+          <span class="ird-tx-flag">🇨🇭</span>
+          <span class="ird-tx-name"><span class="l-en">Switzerland</span><span class="l-zh">瑞士</span></span>
+          <div class="ird-tx-bar-wrap" title="EWL · 126.2 pts to others">
+            <div class="ird-tx-bar" style="width:99%"></div>
+          </div>
+          <span class="ird-tx-val">126 pts</span>
+        </div>
+        <div class="ird-tx-row">
+          <span class="ird-tx-rank">#3</span>
+          <span class="ird-tx-flag">🇿🇦</span>
+          <span class="ird-tx-name"><span class="l-en">South Africa</span><span class="l-zh">南非</span></span>
+          <div class="ird-tx-bar-wrap" title="EZA · 110.8 pts to others">
+            <div class="ird-tx-bar" style="width:86%"></div>
+          </div>
+          <span class="ird-tx-val">111 pts</span>
+        </div>
+      </div>
+      <div class="ird-us-recv">
+        <div class="ur-num">72.6%</div>
+        <div class="ur-text">
+          <b><span class="l-en">US markets partially exposed to global moves</span><span class="l-zh">美国市场对全球走势有一定敞口</span></b>
+          <span class="help">?<span class="tip"><span class="l-en">US receiving share (precise: 72.6%): what fraction of global shock variance is absorbed by the US index. Source: 150-day rolling VAR, 10-step horizon. This is a transmission read — not a statement that X% of US price moves are caused by overseas markets.</span><span class="l-zh">美国接收份额（精确值：72.6%）：全球冲击方差中有多大比例被美国指数吸收。数据来源：150日滚动VAR，10步预测。这是传导读数——并非X%的美国价格走势由海外市场引起。</span></span></span>
+        </div>
+      </div>
+
+      
+      <div class="small muted" style="margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">
+        <span class="l-en">5 US transmission channels</span><span class="l-zh">5个美国传导渠道</span>
+      </div>
+      <div class="ird-channels">
+        <span class="chip ok"><span class="l-en">US credit spreads</span><span class="l-zh">美国信用利差</span></span>
+        <span class="chip ok"><span class="l-en">Bank shares</span><span class="l-zh">银行股</span></span>
+        <span class="chip ok"><span class="l-en">Bond-market volatility</span><span class="l-zh">债市波动</span></span>
+        <span class="chip ok"><span class="l-en">Money-market plumbing</span><span class="l-zh">货币市场管道</span></span>
+        <span class="chip caut"><span class="l-en">Dollar safety bid</span><span class="l-zh">美元避险需求</span></span>
+      </div>
+      <p class="caveat ird-asof"><span class="l-en">Data as of 2026-07-10</span><span class="l-zh">数据截至 2026-07-10</span>. <span class="l-en">"Dollar safety bid" flagged but not yet a hot channel — watch if it persists.</span><span class="l-zh">"美元避险需求"已标记，但尚未构成热传导渠道——如持续则需关注。</span>
+      </p>
+    </div><!-- /contagion -->
+
+    <!-- CENTRAL BANK DESK -->
+    <div class="panel">
+      <div class="sec-h">
+        <h2><span class="l-en">Central bank desk</span><span class="l-zh">央行动态台</span> <span class="help">?<span class="tip"><span class="l-en">Rates from public data. Stance = realized rate changes over the trailing 3 months — not forward guidance or market pricing. Balance sheet: available for Fed, ECB, and BoJ only (public weekly data); others are honest nulls. Next meeting dates are calendar-only.  Descriptive only — no policy-intent projection.</span><span class="l-zh">利率来自公开数据。立场 = 过去3个月已实现的利率变动——非前瞻指引或市场定价。资产负债表：仅限美联储、欧央行和日本央行（公开周度数据）；其他为诚实缺失。下次会议日期仅为日历。仅描述，不预测政策意图。</span></span></span></h2>
+        <span class="sub"><span class="l-en">What the major central banks are actually doing</span><span class="l-zh">主要央行的实际政策动向</span></span>
+      </div>
+      <table class="ird-cb">
+        <thead><tr>
+          <th><span class="l-en">Bank</span><span class="l-zh">央行</span></th>
+          <th class="r"><span class="l-en">Rate</span><span class="l-zh">利率</span></th>
+          <th><span class="l-en">Stance</span><span class="l-zh">立场</span></th>
+          <th><span class="l-en">Last move</span><span class="l-zh">近期动向</span></th>
+          <th><span class="l-en">Balance sheet</span><span class="l-zh">资产负债表</span></th>
+          <th><span class="l-en">Next meeting</span><span class="l-zh">下次会议</span></th>
+        </tr></thead>
+        <tbody>
+        <tr>
+          <td>🇺🇸 <span class="l-en">Federal Reserve (FOMC)</span><span class="l-zh">美联储（FOMC）</span></td>
+          <td class="r"><b>3.62%</b></td>
+          <td><span class="ird-stance stance-cutting"><span class="l-en">Cutting</span><span class="l-zh">降息</span></span></td>
+          <td>
+              <span class="pos">↓</span>
+              2026-5
+          </td>
+          <td>
+              <span class="ird-bs adding">
+                <span class="l-en">Adding</span><span class="l-zh">扩表</span>
+              </span>
+          </td>
+          <td>
+              <span class="small">
+                07-29 · 17d
+              </span>
+          </td>
+        </tr>
+        <tr>
+          <td>🇪🇺 <span class="l-en">European Central Bank</span><span class="l-zh">欧洲央行</span></td>
+          <td class="r"><b>2.25%</b></td>
+          <td><span class="ird-stance stance-raising"><span class="l-en">Raising</span><span class="l-zh">加息</span></span></td>
+          <td>
+              <span class="neg">↑</span>
+              2026-6
+          </td>
+          <td>
+              <span class="ird-bs draining">
+                <span class="l-en">Draining</span><span class="l-zh">缩表</span>
+              </span>
+          </td>
+          <td>
+              <span class="small">
+                07-23 · 11d
+              </span>
+          </td>
+        </tr>
+        <tr>
+          <td>🇯🇵 <span class="l-en">Bank of Japan</span><span class="l-zh">日本银行</span></td>
+          <td class="r"><b>0.73%</b></td>
+          <td><span class="ird-stance stance-cutting"><span class="l-en">Cutting</span><span class="l-zh">降息</span></span></td>
+          <td>
+              <span class="neg">↑</span>
+              2026-1
+          </td>
+          <td>
+              <span class="ird-bs draining">
+                <span class="l-en">Draining</span><span class="l-zh">缩表</span>
+              </span>
+          </td>
+          <td>
+              <span class="small">
+                07-31 · 19d
+              </span>
+          </td>
+        </tr>
+        <tr>
+          <td>🇬🇧 <span class="l-en">Bank of England</span><span class="l-zh">英格兰银行</span></td>
+          <td class="r"><b>3.71%</b></td>
+          <td><span class="ird-stance stance-cutting"><span class="l-en">Cutting</span><span class="l-zh">降息</span></span></td>
+          <td>
+              <span class="pos">↓</span>
+              2026-1
+          </td>
+          <td><span class="muted">—</span>
+          </td>
+          <td>
+              <span class="small">
+                07-30 · 18d
+              </span>
+          </td>
+        </tr>
+        <tr>
+          <td>🇨🇭 <span class="l-en">Swiss National Bank</span><span class="l-zh">瑞士国家银行</span></td>
+          <td class="r"><b>-0.04%</b></td>
+          <td><span class="ird-stance stance-raising"><span class="l-en">Raising</span><span class="l-zh">加息</span></span></td>
+          <td>
+              <span class="neg">↑</span>
+              2025-11
+          </td>
+          <td><span class="muted">—</span>
+          </td>
+          <td>
+              <span class="small">
+                09-17 · 67d
+              </span>
+          </td>
+        </tr>
+        <tr>
+          <td>🇨🇦 <span class="l-en">Bank of Canada</span><span class="l-zh">加拿大央行</span></td>
+          <td class="r"><b>2.29%</b></td>
+          <td><span class="ird-stance stance-raising"><span class="l-en">Raising</span><span class="l-zh">加息</span></span></td>
+          <td>
+              <span class="neg">↑</span>
+              2026-5
+          </td>
+          <td><span class="muted">—</span>
+          </td>
+          <td>
+              <span class="chip warn">
+                07-15 · 3d
+              </span>
+          </td>
+        </tr>
+        <tr>
+          <td>🇦🇺 <span class="l-en">Reserve Bank of Australia</span><span class="l-zh">澳大利亚储备银行</span></td>
+          <td class="r"><b>4.43%</b></td>
+          <td><span class="ird-stance stance-raising"><span class="l-en">Raising</span><span class="l-zh">加息</span></span></td>
+          <td>
+              <span class="neg">↑</span>
+              2026-5
+          </td>
+          <td><span class="muted">—</span>
+          </td>
+          <td>
+              <span class="small">
+                08-11 · 30d
+              </span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+      <p class="caveat" style="margin-top:8px;">
+        <span class="l-en">Balance-sheet data available for Fed, ECB, and BoJ only — others are honest nulls. Rate data as of 2026-07-10</span><span class="l-zh">资产负债表数据仅限美联储、欧央行和日本央行——其余为实际缺失。利率数据截至2026-07-10</span>
+      </p>
+    </div><!-- /cb desk -->
+
+  </div><!-- /left col -->
+
+  <!-- RIGHT: Credit & Bond + Dollar Decomp -->
+  <div>
+
+    <!-- CREDIT & BOND STRESS -->
+    <div class="panel">
+      <div class="sec-h">
+        <h2><span class="l-en">Credit & bond stress</span><span class="l-zh">信用与债券压力</span> <span class="help">?<span class="tip"><span class="l-en">Credit spreads = the extra yield emerging-market bonds pay above comparable Treasuries, in percentage points. Velocity arrow = direction of 20-day move (↑ widening = more stress, ↓ tightening = easing). EM high-yield source: BAML EM High Yield index. Regional spreads: BAML regional subindices. Inversion board: 10yr minus 3-month yield for 6 major curves. EM spread history collected since Jul 2023 (data-vendor cap) — long-run comparisons build up over time.</span><span class="l-zh">信用利差 = 新兴市场债券相对同期美债的超额收益率（百分点）。速度箭头 = 20日走势方向（↑走阔 = 压力上升，↓收窄 = 压力减轻）。新兴市场高收益来源：美银美林新兴市场高收益指数。地区利差：美银美林地区子指数。倒挂看板：6个主要收益率曲线的10年减3月期利差。新兴市场利差数据自2023年7月起收集（数据供应商限制）——长期比较随时间积累。</span></span></span></h2>
+        <span class="sub"><span class="l-en">Are lenders charging more for risk?</span><span class="l-zh">贷款方是否在为风险索取更高溢价？</span></span>
+      </div>
+
+      <div class="ird-spread-grid">
+        <!-- EM HY -->
+        <div class="ird-spread-card">
+          <div class="sc-label"><span class="l-en">EM high-yield spreads</span><span class="l-zh">新兴市场高收益利差</span></div>
+          <div class="sc-val">3.08%</div>
+          <div class="sc-vel vel-up">
+            ↑
+            <span class="l-en">Widening (20d)</span><span class="l-zh">走阔（20日）</span>
+          </div>
+        </div>
+        <!-- Asia -->
+        <div class="ird-spread-card">
+          <div class="sc-label"><span class="l-en">Asia credit spreads</span><span class="l-zh">亚洲信用利差</span></div>
+          <div class="sc-val">0.82%</div>
+          <div class="sc-vel vel-flat">
+            →
+            <span class="l-en">Steady</span><span class="l-zh">持平</span>
+          </div>
+        </div>
+        <!-- LatAm -->
+        <div class="ird-spread-card latam-hot"
+          style="border-color:color-mix(in srgb,var(--warn) 30%,var(--line))">
+          <div class="sc-label">
+            <span class="l-en">LatAm credit spreads</span><span class="l-zh">拉美信用利差</span>
+              <span class="chip caut" style="margin-left:4px;font-size:9px;padding:1px 5px;"><span class="l-en">Hottest</span><span class="l-zh">最热</span></span>
+          </div>
+          <div class="sc-val">2.28%</div>
+          <div class="sc-vel vel-up">
+            ↑
+            <span class="l-en">Widening slowly (20d)</span><span class="l-zh">缓慢走阔（20日）</span>
+          </div>
+        </div>
+        <!-- EMEA -->
+        <div class="ird-spread-card">
+          <div class="sc-label"><span class="l-en">EMEA credit spreads</span><span class="l-zh">欧非中东信用利差</span></div>
+          <div class="sc-val">1.45%</div>
+          <div class="sc-vel vel-dn">
+            ↓
+            <span class="l-en">Tightening (20d)</span><span class="l-zh">收窄（20日）</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Curve Inversion Board -->
+      <div class="ird-inv-row" style="background:color-mix(in srgb,var(--up) 6%,var(--panel2));border-color:color-mix(in srgb,var(--up) 25%,var(--line))">
+        <div class="inv-num " style="color:var(--up)">0 / 6</div>
+        <div class="inv-text">
+          <b><span class="l-en">Yield curves inverted</span><span class="l-zh">收益率曲线倒挂</span></b><br>
+            <span class="l-en">All 6 tracked curves positively sloped — no recession signal from bond markets</span><span class="l-zh">所有6条跟踪曲线均正斜率——债市无衰退信号</span>
+        </div>
+      </div>
+
+      <!-- EMB/IEF spark: EM bonds vs US Treasuries trend -->
+      <div style="margin-top:10px;">
+        <div class="small muted" style="margin-bottom:3px;"><span class="l-en">EM bonds vs US Treasuries — last 120 days</span><span class="l-zh">新兴市场债 vs 美债——过去120天</span></div>
+        <svg class="nch" viewBox="0 0 220 38" preserveAspectRatio="none" width="100%" height="38"><polyline points="0,38 0.0,22.7 1.8,23.4 3.7,20.1 5.5,20.2 7.4,19.7 9.2,20.0 11.1,19.5 12.9,19.8 14.8,20.3 16.6,20.5 18.5,20.1 20.3,20.6 22.2,20.2 24.0,22.2 25.9,20.6 27.7,20.6 29.6,21.6 31.4,19.9 33.3,21.9 35.1,23.2 37.0,21.9 38.8,20.4 40.7,21.7 42.5,21.0 44.4,22.8 46.2,23.1 48.1,22.0 49.9,24.0 51.8,26.1 53.6,25.3 55.5,27.3 57.3,24.1 59.2,25.3 61.0,28.8 62.9,29.4 64.7,27.5 66.6,26.7 68.4,29.8 70.3,32.0 72.1,32.4 73.9,31.2 75.8,33.1 77.6,31.4 79.5,35.4 81.3,31.5 83.2,32.5 85.0,30.3 86.9,31.6 88.7,34.9 90.6,38.0 92.4,33.9 94.3,31.9 96.1,32.6 98.0,31.2 99.8,32.4 101.7,26.7 103.5,24.0 105.4,23.0 107.2,21.1 109.1,20.3 110.9,20.3 112.8,21.1 114.6,19.9 116.5,19.8 118.3,20.0 120.2,19.1 122.0,21.0 123.9,20.5 125.7,20.2 127.6,20.1 129.4,20.1 131.3,19.3 133.1,19.3 135.0,20.1 136.8,18.2 138.7,16.5 140.5,17.0 142.4,17.0 144.2,16.1 146.1,15.6 147.9,16.8 149.7,16.4 151.6,16.8 153.4,17.2 155.3,17.2 157.1,17.0 159.0,16.9 160.8,16.3 162.7,15.9 164.5,14.0 166.4,13.8 168.2,13.3 170.1,12.8 171.9,11.7 173.8,12.4 175.6,11.9 177.5,13.2 179.3,13.3 181.2,12.5 183.0,13.9 184.9,12.3 186.7,10.7 188.6,9.1 190.4,10.9 192.3,10.2 194.1,9.5 196.0,9.3 197.8,10.9 199.7,12.9 201.5,13.4 203.4,15.0 205.2,13.4 207.1,12.7 208.9,11.9 210.8,11.3 212.6,10.7 214.5,10.2 216.3,9.9 218.2,10.2 220.0,9.5 220,38" fill="var(--info)" opacity="0.12" stroke="none"/><polyline points="0.0,22.7 1.8,23.4 3.7,20.1 5.5,20.2 7.4,19.7 9.2,20.0 11.1,19.5 12.9,19.8 14.8,20.3 16.6,20.5 18.5,20.1 20.3,20.6 22.2,20.2 24.0,22.2 25.9,20.6 27.7,20.6 29.6,21.6 31.4,19.9 33.3,21.9 35.1,23.2 37.0,21.9 38.8,20.4 40.7,21.7 42.5,21.0 44.4,22.8 46.2,23.1 48.1,22.0 49.9,24.0 51.8,26.1 53.6,25.3 55.5,27.3 57.3,24.1 59.2,25.3 61.0,28.8 62.9,29.4 64.7,27.5 66.6,26.7 68.4,29.8 70.3,32.0 72.1,32.4 73.9,31.2 75.8,33.1 77.6,31.4 79.5,35.4 81.3,31.5 83.2,32.5 85.0,30.3 86.9,31.6 88.7,34.9 90.6,38.0 92.4,33.9 94.3,31.9 96.1,32.6 98.0,31.2 99.8,32.4 101.7,26.7 103.5,24.0 105.4,23.0 107.2,21.1 109.1,20.3 110.9,20.3 112.8,21.1 114.6,19.9 116.5,19.8 118.3,20.0 120.2,19.1 122.0,21.0 123.9,20.5 125.7,20.2 127.6,20.1 129.4,20.1 131.3,19.3 133.1,19.3 135.0,20.1 136.8,18.2 138.7,16.5 140.5,17.0 142.4,17.0 144.2,16.1 146.1,15.6 147.9,16.8 149.7,16.4 151.6,16.8 153.4,17.2 155.3,17.2 157.1,17.0 159.0,16.9 160.8,16.3 162.7,15.9 164.5,14.0 166.4,13.8 168.2,13.3 170.1,12.8 171.9,11.7 173.8,12.4 175.6,11.9 177.5,13.2 179.3,13.3 181.2,12.5 183.0,13.9 184.9,12.3 186.7,10.7 188.6,9.1 190.4,10.9 192.3,10.2 194.1,9.5 196.0,9.3 197.8,10.9 199.7,12.9 201.5,13.4 203.4,15.0 205.2,13.4 207.1,12.7 208.9,11.9 210.8,11.3 212.6,10.7 214.5,10.2 216.3,9.9 218.2,10.2 220.0,9.5" fill="none" stroke="var(--info)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="220.0" cy="9.5" r="2.6" fill="var(--info)"/></svg>
+      </div>
+
+      <p class="caveat ird-asof">
+        <span class="l-en">EM spread history collected since Jul 2023 (data-vendor cap) — long-term comparisons build up over time.</span><span class="l-zh">新兴市场利差数据自2023年7月起收集（数据供应商限制）——长期比较数据将随时间积累。</span> <span class="l-en">Spread data as of 2026-07-09</span><span class="l-zh">利差数据截至2026-07-09</span>.
+      </p>
+    </div><!-- /credit -->
+
+    <!-- WHAT'S DRIVING THE DOLLAR -->
+    <div class="panel">
+      <div class="sec-h">
+        <h2><span class="l-en">What's driving the dollar?</span><span class="l-zh">美元走势的驱动因素</span>
+            <span class="help">?<span class="tip"><span class="l-en">Dollar read updates nightly from the forex desk. The regime is determined by a 120-day rolling decomposition comparing rate-differential vs risk-off vs residual drivers. When data is fresh, this panel shows the dominant regime and a one-sentence explanation.</span><span class="l-zh">美元读数每晚从外汇台更新。制度由120日滚动分解确定，比较利差、避险与残差驱动因素。数据刷新后，本面板显示主导制度及一句话说明。</span></span></span>
+        </h2>
+        <span class="sub"><span class="l-en">Watch — don't chase dollar strength until the read is fresh</span><span class="l-zh">等待最新读数后再追美元强势</span></span>
+      </div>
+
+      <div class="ird-dollar-card">
+          
+          <div class="ird-dollar-null">
+            <span class="l-en">Not enough fresh data — the dollar read updates after tonight's build.</span><span class="l-zh">数据暂不足——美元读数将在今晚构建后更新。</span>
+          </div>
+          <div style="margin-top:10px;">
+            <span class="ird-safety-tag">
+              ⚠ <span class="l-en">Safety bid today</span><span class="l-zh">今日避险需求</span>
+                <span class="l-en">: DXY +0.1% while 2yr fell 1.0 bp</span><span class="l-zh">：DXY +0.1%，2年期下降1.0 bp</span>
+            </span>
+            <div class="small muted" style="margin-top:6px;"><span class="l-en">DXY rose while 2-year yields fell over the past 5 days — consistent with safe-haven demand, not rate arbitrage. This is a 5-day observation, not a regime call.</span><span class="l-zh">过去5天内DXY上涨而2年期收益率下降——与避险需求一致，而非利率套利。这是5日观察，非制度判断。</span></div>
+          </div>
+      </div>
+      <p class="caveat ird-asof">
+          <span class="l-en">Dollar regime read not yet available — updates nightly.</span><span class="l-zh">美元制度读数暂不可用——每晚更新。</span>
+      </p>
+    </div><!-- /dollar -->
+
+  </div><!-- /right col -->
+
+</div><!-- /ird-twocol -->
+
+<!-- ===== FRAGILITY MAP (FULL WIDTH) ===== -->
+<div class="panel">
+  <div class="sec-h">
+    <h2><span class="l-en">Fragility map</span><span class="l-zh">脆弱性地图</span>
+      <span class="help">?<span class="tip"><span class="l-en">Flags countries where structural vulnerabilities coincide: debt-to-GDP above 70% and rising, fiscal deficit below −5% of GDP, or current account deficit below −3% of GDP. BIS credit gap where available. Source: IMF WEO 2025. Annual data — updates with IMF WEO releases. Berg &amp; Pattillo (1999) criterion adapted. Presence of a flag = vulnerabilities exist, not that a crisis is imminent; most historically flagged countries did not experience a crisis.</span><span class="l-zh">标记存在结构性脆弱因素的国家：债务/GDP超过70%且上升、财政赤字低于GDP的−5%，或经常账户赤字低于GDP的−3%。BIS信用缺口（可用时）。来源：IMF WEO 2025。年度数据——随IMF WEO发布更新。改编自Berg &amp; Pattillo（1999）标准。有标记 = 脆弱性存在，不代表危机即将发生；历史上大多数预警未演变为危机。</span></span></span></h2>
+    <span class="sub"><span class="l-en">Slow-moving structural vulnerabilities — not a timing signal</span><span class="l-zh">缓慢变化的结构性脆弱因素——非择时信号</span></span>
+  </div>
+    
+    <p class="muted" style="font-size:13px;line-height:1.6;padding:12px 0;">
+      <span class="l-en">Fragility data updates with the IMF World Economic Outlook — available here after the next WEO release. This is a slow-moving lens: it changes annually, not daily.</span><span class="l-zh">脆弱性数据随IMF《世界经济展望》更新——下次WEO发布后将在此呈现。这是缓慢变化的视角：按年更新，非按日。</span>
+    </p>
+
+  <p class="caveat ird-asof">
+    <span class="l-en">Slow-moving fundamentals — flags fragility, not timing; most historical warnings did not become crises.</span><span class="l-zh">缓慢变化的基本面指标——揭示脆弱性，非择时信号；历史上大多数预警并未演变为危机。</span>
+    <span class="help">?<span class="tip"><span class="l-en">Berg &amp; Pattillo (1999) criterion adapted: debt &gt;70% GDP and rising, fiscal balance &lt;−5%, current account &lt;−3%. Source: IMF WEO 2025. BIS credit gap where available. Annual data — updates with IMF WEO releases.</span><span class="l-zh">Berg &amp; Pattillo（1999）改编标准：债务&gt;70% GDP且上升，财政余额&lt;−5%，经常账户&lt;−3%。来源：IMF WEO 2025。BIS信用缺口（可用时）。年度数据——随IMF WEO发布更新。</span></span></span>
+    <span class="l-en">Data as of IMF WEO 2025 (where available)</span><span class="l-zh">数据来源：IMF WEO 2025（可用时）</span>
+  </p>
+</div><!-- /fragility -->
+
 
 
 <!-- ===== Growth × inflation regime map ===== -->

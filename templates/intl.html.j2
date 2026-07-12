@@ -467,6 +467,685 @@
 </div>
 {% endif %}
 
+{% if mode != 'stocks' and risk_desk %}
+{# =====================================================================
+   INTERNATIONAL RISK DESK — Variant A (board-first)
+   Six panels: Hero strip → 2-col grid (Contagion+CB | Credit+Dollar) → Fragility
+   All strings via the t() macro (dual-span EN/ZH). No tickers or method names
+   visible at glance tier. ? tips carry Tier-2 receipts. Honest nulls throughout.
+   ===================================================================== #}
+{%- set RD = risk_desk %}
+{%- set EMS = RD.em_stress or {} %}
+{%- set SPL = RD.spillover or {} %}
+{%- set TTR = RD.two_tier or {} %}
+{%- set CBD = RD.cb_desk or {} %}
+{%- set INV = RD.inversion_board or {} %}
+{%- set SM  = RD.smile %}
+{%- set TXDISP = RD.top_transmitters_display or [] %}
+{%- set SWAP = RD.get('swap_lines_bn') %}
+
+{# ---- derive hero-chip states from payload ---- #}
+{%- set ems_state = EMS.get('state', 'unknown') if EMS else 'unknown' %}
+{%- set ems_legs_hot = EMS.get('legs_hot', []) if EMS else [] %}
+{%- set tier2_hot = (TTR.get('tier2') or {}).get('hot_count', 0) %}
+{%- set safety_bid = TTR.get('safety_bid', false) %}
+{%- set safety_bid_leg = ((TTR.get('tier2') or {}).get('legs') or {}).get('safety_bid_flag') or {} %}
+{%- set dxy5d = safety_bid_leg.get('dxy_5d_chg') %}
+{%- set dgs2_5d = safety_bid_leg.get('dgs2_5d_chg') %}
+{%- set us_from = SPL.get('us_from_others') %}
+{%- set total_conn = SPL.get('total_connectedness') %}
+
+{# em_stress state → plain words #}
+{%- if ems_state == 'stressed' %}
+  {%- set ems_word_en = 'Under stress' %}
+  {%- set ems_word_zh = '处于压力中' %}
+  {%- set ems_stance_en = 'Watch — don\'t chase' %}
+  {%- set ems_stance_zh = '观望，勿追入' %}
+  {%- set ems_chip = 'warn' %}
+{%- elif ems_state == 'strained' %}
+  {%- set ems_word_en = 'Strains showing' %}
+  {%- set ems_word_zh = '压力显现' %}
+  {%- set ems_stance_en = 'Watch — don\'t chase' %}
+  {%- set ems_stance_zh = '观望，勿追入' %}
+  {%- set ems_chip = 'warn' %}
+{%- elif ems_state == 'calm' %}
+  {%- set ems_word_en = 'Calm' %}
+  {%- set ems_word_zh = '平静' %}
+  {%- set ems_stance_en = 'No action needed' %}
+  {%- set ems_stance_zh = '无需操作' %}
+  {%- set ems_chip = 'ok' %}
+{%- else %}
+  {%- set ems_word_en = 'Monitoring' %}
+  {%- set ems_word_zh = '持续监测' %}
+  {%- set ems_stance_en = 'Watch — check again tomorrow' %}
+  {%- set ems_stance_zh = '观望，明日再查' %}
+  {%- set ems_chip = 'mute' %}
+{%- endif %}
+
+{# contagion → plain words from tier2 hot count #}
+{%- if tier2_hot >= 2 %}
+  {%- set cntg_word_en = 'Reaching US markets' %}
+  {%- set cntg_word_zh = '正向美国传导' %}
+  {%- set cntg_chip = 'warn' %}
+  {%- set cntg_stance_en = 'Tighten stops on US positions' %}
+  {%- set cntg_stance_zh = '收紧美股止损' %}
+{%- elif tier2_hot == 1 %}
+  {%- set cntg_word_en = 'Early signs of contagion' %}
+  {%- set cntg_word_zh = '传导初现迹象' %}
+  {%- set cntg_chip = 'caut' %}
+  {%- set cntg_stance_en = 'Watch — check again if EM worsens' %}
+  {%- set cntg_stance_zh = '观望——如EM恶化则重新审视' %}
+{%- else %}
+  {%- set cntg_word_en = 'Not reaching US markets' %}
+  {%- set cntg_word_zh = '尚未传导至美国' %}
+  {%- set cntg_chip = 'ok' %}
+  {%- set cntg_stance_en = 'Ignore for US book' %}
+  {%- set cntg_stance_zh = '美股仓位可忽略' %}
+{%- endif %}
+
+{# connectedness plain read #}
+{%- if total_conn is not none and total_conn >= 80 %}
+  {%- set conn_read_en = 'Markets tightly linked — shocks travel fast' %}
+  {%- set conn_read_zh = '市场高度关联——冲击快速传播' %}
+{%- elif total_conn is not none and total_conn >= 60 %}
+  {%- set conn_read_en = 'Moderate links between markets' %}
+  {%- set conn_read_zh = '市场间关联程度适中' %}
+{%- else %}
+  {%- set conn_read_en = 'Markets absorbing their own shocks' %}
+  {%- set conn_read_zh = '市场消化自身冲击' %}
+{%- endif %}
+
+{# US receiving share plain read #}
+{%- if us_from is not none and us_from >= 75 %}
+  {%- set us_recv_en = 'US markets are tightly plugged into global moves right now' %}
+  {%- set us_recv_zh = '美国市场目前与全球走势高度联动' %}
+{%- elif us_from is not none and us_from < 55 %}
+  {%- set us_recv_en = 'US markets fairly insulated right now' %}
+  {%- set us_recv_zh = '美国市场目前相对隔离' %}
+{%- else %}
+  {%- set us_recv_en = 'US markets partially exposed to global moves' %}
+  {%- set us_recv_zh = '美国市场对全球走势有一定敞口' %}
+{%- endif %}
+
+{# top transmitter max value for bar scaling #}
+{%- set tx_max = namespace(v=1.0) %}
+{%- for tx in TXDISP %}
+  {%- if tx.to_others_pct is not none and tx.to_others_pct > tx_max.v %}
+    {%- set tx_max.v = tx.to_others_pct %}
+  {%- endif %}
+{%- endfor %}
+
+{# CB stance labels #}
+{%- set CB_STANCE_EN = {'easing': 'Cutting', 'hiking': 'Raising', 'holding': 'Holding'} %}
+{%- set CB_STANCE_ZH = {'easing': '降息', 'hiking': '加息', 'holding': '按兵不动'} %}
+{%- set CB_STANCE_CSS = {'easing': 'stance-cutting', 'hiking': 'stance-raising', 'holding': 'stance-holding'} %}
+{%- set CC_FLAG = {'US':'🇺🇸','XM':'🇪🇺','JP':'🇯🇵','GB':'🇬🇧','CH':'🇨🇭','CA':'🇨🇦','AU':'🇦🇺'} %}
+
+{# inversion board #}
+{%- set n_inv = INV.get('n_inverted', 0) %}
+{%- set n_total_inv = INV.get('n_total', 6) %}
+{%- set inv_countries = INV.get('countries') or [] %}
+{%- set inv_sync = INV.get('synchronized', false) %}
+
+{# em_stress legs for credit panel #}
+{%- set ES_LEGS = EMS.get('legs') or {} %}
+{%- set em_hy = ES_LEGS.get('em_hy_oas') or {} %}
+{%- set TIER1 = TTR.get('tier1') or {} %}
+{%- set REG_OAS = TIER1.get('regional_oas') or {} %}
+{%- set asia_oas = REG_OAS.get('asia') or {} %}
+{%- set latam_oas = REG_OAS.get('latam') or {} %}
+{%- set emea_oas = REG_OAS.get('emea') or {} %}
+
+{# hottest region (for LatAm badge) #}
+{%- set hottest_region = TIER1.get('hottest_region') %}
+
+<!-- ===== IRD EXTRA CSS (scoped classes, minimal) ===== -->
+<style>
+  .ird-stage{position:relative;margin:0 0 16px;padding:20px 22px 18px;border-radius:16px;
+    background:linear-gradient(var(--panel),var(--panel)) padding-box,var(--acc-grad) border-box;
+    border:1.5px solid transparent;
+    box-shadow:0 16px 48px -24px color-mix(in srgb,var(--acc1) 45%,transparent);}
+  .ird-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;
+    letter-spacing:.13em;text-transform:uppercase;color:#fff;background:var(--acc-grad);
+    padding:4px 11px;border-radius:999px;}
+  .ird-title{font-size:20px;font-weight:800;letter-spacing:-.01em;margin:10px 0 4px;color:var(--text);}
+  .ird-subtitle{font-size:13px;color:var(--muted);margin:0 0 14px;}
+  .ird-hchips{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px;}
+  @media(max-width:900px){.ird-hchips{grid-template-columns:1fr 1fr;}}
+  .ird-hchip{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
+  .ird-hchip.state-warn{border-color:color-mix(in srgb,var(--down) 45%,var(--line));background:color-mix(in srgb,var(--down) 6%,var(--panel2));}
+  .ird-hchip.state-ok{border-color:color-mix(in srgb,var(--up) 35%,var(--line));background:color-mix(in srgb,var(--up) 5%,var(--panel2));}
+  .ird-hchip.state-caut{border-color:color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn) 5%,var(--panel2));}
+  .ird-hchip .hc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px;}
+  .ird-hchip .hc-state{font-size:14px;font-weight:800;line-height:1.2;margin-bottom:3px;}
+  .ird-hchip .hc-state.red{color:var(--down);}
+  .ird-hchip .hc-state.green{color:var(--up);}
+  .ird-hchip .hc-state.info{color:var(--info);}
+  .ird-hchip .hc-detail{font-size:11px;color:var(--muted);margin-top:2px;}
+  .ird-hchip .hc-stance{font-size:11px;color:var(--muted);margin-top:4px;}
+  .ird-hchip .hc-stance b{color:var(--text);}
+  .ird-safety-tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;
+    background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn);
+    border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);margin-top:4px;}
+  .ird-twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:860px){.ird-twocol{grid-template-columns:1fr;}}
+  .ird-dial-wrap{display:flex;align-items:center;gap:16px;margin:12px 0;}
+  .ird-dial-circle{width:80px;height:80px;border-radius:50%;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;border:3px solid color-mix(in srgb,var(--warn) 60%,var(--line));
+    background:color-mix(in srgb,var(--warn) 8%,var(--panel2));flex-shrink:0;}
+  .ird-dial-circle .dc-num{font-size:24px;font-weight:800;color:var(--warn);line-height:1;}
+  .ird-dial-circle .dc-of{font-size:10px;color:var(--muted);font-weight:600;}
+  .ird-tx-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .ird-tx-row:last-child{border-bottom:none;}
+  .ird-tx-rank{width:18px;font-size:11px;color:var(--muted);font-weight:700;}
+  .ird-tx-flag{font-size:16px;}
+  .ird-tx-name{flex:1;font-weight:600;}
+  .ird-tx-bar-wrap{width:80px;height:6px;background:var(--panel);border-radius:3px;overflow:hidden;}
+  .ird-tx-bar{height:100%;border-radius:3px;background:var(--warn);}
+  .ird-tx-val{font-size:11px;color:var(--muted);width:44px;text-align:right;}
+  .ird-us-recv{display:flex;align-items:center;gap:10px;margin:10px 0 12px;padding:8px 12px;
+    background:var(--panel2);border-radius:9px;border:1px solid var(--line);}
+  .ird-us-recv .ur-num{font-size:20px;font-weight:800;color:var(--info);}
+  .ird-us-recv .ur-text{font-size:12px;color:var(--muted);}
+  .ird-us-recv .ur-text b{color:var(--text);}
+  .ird-channels{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
+  table.ird-cb{border-collapse:collapse;width:100%;font-size:12.5px;}
+  table.ird-cb th,table.ird-cb td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;}
+  table.ird-cb th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;}
+  table.ird-cb td.r{text-align:right;}
+  table.ird-cb tr:hover td{background:var(--panel2);}
+  .ird-stance{display:inline-block;padding:2px 8px;border-radius:7px;font-size:11px;font-weight:700;}
+  .stance-cutting{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 34%,transparent);}
+  .stance-raising{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 36%,transparent);}
+  .stance-holding{background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent);}
+  .ird-bs{display:inline-block;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;
+    border:1px solid var(--line);color:var(--muted);background:var(--panel2);}
+  .ird-bs.adding{color:var(--up);border-color:color-mix(in srgb,var(--up) 30%,var(--line));background:color-mix(in srgb,var(--up) 8%,var(--panel2));}
+  .ird-bs.draining{color:var(--down);border-color:color-mix(in srgb,var(--down) 30%,var(--line));background:color-mix(in srgb,var(--down) 8%,var(--panel2));}
+  .ird-spread-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0;}
+  @media(max-width:720px){.ird-spread-grid{grid-template-columns:1fr 1fr;}}
+  .ird-spread-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+  .ird-spread-card .sc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px;}
+  .ird-spread-card .sc-val{font-size:20px;font-weight:800;color:var(--text);line-height:1.1;}
+  .ird-spread-card .sc-vel{font-size:11px;margin-top:3px;}
+  .vel-up{color:var(--down);}.vel-dn{color:var(--up);}.vel-flat{color:var(--muted);}
+  .ird-inv-row{display:flex;align-items:center;gap:10px;margin:10px 0;padding:8px 12px;
+    background:color-mix(in srgb,var(--up) 6%,var(--panel2));
+    border:1px solid color-mix(in srgb,var(--up) 25%,var(--line));border-radius:9px;}
+  .ird-inv-row .inv-num{font-size:22px;font-weight:800;color:var(--up);}
+  .ird-inv-row .inv-num.warn{color:var(--warn);}
+  .ird-inv-row .inv-num.red{color:var(--down);}
+  .ird-inv-row .inv-text{font-size:12px;color:var(--muted);}
+  .ird-inv-row .inv-text b{color:var(--text);}
+  .ird-dollar-card{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px 16px;}
+  .ird-dollar-card .regime-word{font-size:18px;font-weight:800;color:var(--info);margin-bottom:6px;}
+  .ird-dollar-card .regime-sentence{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:10px;}
+  .ird-dollar-null{font-size:13px;color:var(--muted);font-style:italic;line-height:1.5;}
+  .ird-frag-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .ird-frag-row:last-child{border-bottom:none;}
+  .ird-frag-country{font-size:13px;font-weight:700;flex:1;}
+  .ird-frag-desc{font-size:12px;color:var(--muted);display:block;margin-top:1px;}
+  .ird-frag-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+  .ird-asof{font-size:11px;color:var(--muted);margin-top:8px;}
+</style>
+
+<!-- ===== IRD HERO STRIP ===== -->
+<div class="ird-stage">
+  <span class="ird-badge">🌐 {{ t('International Risk Desk', '国际风险台') }}</span>
+  <div class="ird-title">{{ t('International Risk Desk', '国际风险台') }}</div>
+  <div class="ird-subtitle">{{ t('Four signals. One read: where risk is building, what crosses to the US, and what to do.', '四个信号，一张快照：风险在哪积聚，什么传导至美国，该怎么做。') }}</div>
+
+  <div class="ird-hchips">
+
+    {# CHIP 1: EM Stress #}
+    <div class="ird-hchip state-{{ 'warn' if ems_chip == 'warn' else 'ok' if ems_chip == 'ok' else 'caut' }}">
+      <div class="hc-lbl">{{ t('Emerging Markets', '新兴市场') }}</div>
+      <div class="hc-state {{ 'red' if ems_chip == 'warn' else 'green' if ems_chip == 'ok' else '' }}">
+        {{ t(ems_word_en, ems_word_zh) }}
+      </div>
+      <div class="hc-detail">
+        {%- if ems_legs_hot %}
+          {{ t('Elevated: ' + (ems_legs_hot|length|string) + ' of ' + (EMS.get('n_legs_total', 6)|string) + ' stress signals hot', '偏高：' + (ems_legs_hot|length|string) + '/' + (EMS.get('n_legs_total', 6)|string) + '个压力信号触发') }}
+        {%- else %}
+          {{ t('All stress signals within normal range', '所有压力信号均在正常范围') }}
+        {%- endif %}
+      </div>
+      <div class="hc-stance"><b>{{ t(ems_stance_en, ems_stance_zh) }}</b> {{ t('EM positions', '新兴市场仓位') }}</div>
+    </div>
+
+    {# CHIP 2: Contagion to US #}
+    <div class="ird-hchip state-{{ 'warn' if tier2_hot >= 2 else 'caut' if tier2_hot == 1 else 'ok' }}">
+      <div class="hc-lbl">{{ t('Contagion to US', '对美传导') }}</div>
+      <div class="hc-state {{ 'red' if tier2_hot >= 2 else '' if tier2_hot == 1 else 'green' }}">
+        {{ t(cntg_word_en, cntg_word_zh) }}
+      </div>
+      <div class="hc-detail">
+        {{ tier2_hot }} {{ t('of 5 US transmission channels are hot', '个美国传导渠道触发') }}
+      </div>
+      <div class="hc-stance">
+        <b>{{ t(cntg_stance_en, cntg_stance_zh) }}</b>
+        {%- if tier2_hot < 2 %}
+          {{ t(' — check again if EM worsens', '——如EM恶化则重新审视') }}
+        {%- endif %}
+      </div>
+    </div>
+
+    {# CHIP 3: Dollar — honest null when smile absent #}
+    <div class="ird-hchip state-{{ 'caut' if safety_bid else 'ok' if not SM else 'ok' }}">
+      <div class="hc-lbl">{{ t('Dollar', '美元') }}</div>
+      {%- if SM %}
+        {%- set regime_label_en = 'Dollar moving on rate differences, not fear' if SM.get('regime') == 'rates-driven' else 'Dollar being bought as shelter' if SM.get('regime') == 'safety-driven' else 'Mixed picture' %}
+        {%- set regime_label_zh = '受利差驱动' if SM.get('regime') == 'rates-driven' else '避险买入' if SM.get('regime') == 'safety-driven' else '信号混合' %}
+        {%- set regime_detail_en = 'Rate gaps, not fear, explain recent moves' if SM.get('regime') == 'rates-driven' else 'Investors are paying up for dollar safety' if SM.get('regime') == 'safety-driven' else 'Rate gaps and risk mood both in play' %}
+        {%- set regime_detail_zh = '近期走势由利差主导，非恐慌驱动' if SM.get('regime') == 'rates-driven' else '投资者正为美元避险支付溢价' if SM.get('regime') == 'safety-driven' else '利差与风险情绪均有影响' %}
+        <div class="hc-state info">{{ t(regime_label_en, regime_label_zh) }}</div>
+        <div class="hc-detail">{{ t(regime_detail_en, regime_detail_zh) }}</div>
+      {%- else %}
+        <div class="hc-state" style="color:var(--muted);font-size:12px;">{{ t('Read updates tonight', '今晚更新读数') }}</div>
+        <div class="hc-detail">{{ t('Not enough fresh data', '数据暂不足') }}</div>
+      {%- endif %}
+      {%- if safety_bid %}
+        <div class="ird-safety-tag">
+          ⚠ {{ t('Safety bid today', '今日避险需求') }}
+          {%- if dxy5d is not none and dgs2_5d is not none %}
+            {{ t(' (DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + ', 2yr ' + ('%+.1f bp' | format(dgs2_5d)) + ')', '（DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + '，2年期 ' + ('%+.1f bp' | format(dgs2_5d)) + '）') }}
+          {%- endif %}
+        </div>
+      {%- endif %}
+      <div class="hc-stance" style="margin-top:5px;"><b>{{ t('Watch — don\'t chase', '观望，勿追入') }}</b> {{ t('dollar strength', '美元强势') }}</div>
+    </div>
+
+    {# CHIP 4: Dollar Funding (swap lines + money-market corridor) #}
+    {%- set sofr_iorb = ((TTR.get('tier2') or {}).get('legs') or {}).get('sofr_iorb_corridor') or {} %}
+    {%- set fund_hot = sofr_iorb.get('hot', false) %}
+    <div class="ird-hchip state-{{ 'warn' if fund_hot else 'ok' }}">
+      <div class="hc-lbl">{{ t('Dollar Funding', '美元融资') }}</div>
+      <div class="hc-state {{ 'red' if fund_hot else 'green' }}">{{ t('Under stress' if fund_hot else 'Calm', '压力中' if fund_hot else '平静') }}</div>
+      <div class="hc-detail">
+        {%- if SWAP is not none %}
+          {{ t('Swap lines ~$' + ('%.1f' | format(SWAP)) + 'bn outstanding · money-market spreads normal', '互换额度余额约' + ('%.1f' | format(SWAP)) + '亿美元·货币市场息差正常') }}
+        {%- else %}
+          {{ t('Money-market spreads normal', '货币市场息差正常') }}
+        {%- endif %}
+      </div>
+      <div class="hc-stance"><b>{{ t('Ignore' if not fund_hot else 'Watch', '忽略' if not fund_hot else '关注') }}</b> {{ t('— no funding stress' if not fund_hot else '— funding stress building', '——无融资压力' if not fund_hot else '——融资压力积累中') }}</div>
+    </div>
+
+  </div><!-- /hero chips -->
+
+  <div class="ird-asof" style="margin-top:14px;">
+    {{ t('As of ' + (RD.get('built', '')[:10] or '—') + ' · context only, not a forecast', '截至 ' + (RD.get('built', '')[:10] or '—') + ' · 仅作背景，非预测') }}
+  </div>
+</div><!-- /ird-stage -->
+
+<!-- ===== IRD 2-COL GRID ===== -->
+<div class="ird-twocol">
+
+  <!-- LEFT: Contagion board + CB desk -->
+  <div>
+
+    <!-- CONTAGION BOARD -->
+    <div class="panel">
+      <div class="sec-h">
+        <h2>{{ t('Contagion board', '传导看板') }} {{ help('How tightly are global markets linked right now? The score (0–100) measures how far a shock in one market travels to others, using a rolling 150-day window. Higher = shocks spread faster. Top shock senders are markets that export the most stress to peers. US receiving share = how much of international stress eventually reaches the S&P 500 — this is a transmission read, not a causal share. Source: daily ETF returns.', '全球市场目前关联程度如何？得分（0–100）衡量某市场冲击向其他市场的传导程度，使用150日滚动窗口。数值越高，冲击传播越快。前三大冲击输出方是最多向同伴输出压力的市场。美国接收份额 = 国际压力最终传导至标普500的比例——这是传导读数，非因果占比。数据来源：ETF日度收益。') }}</h2>
+        <span class="sub">{{ t('How connected are markets right now?', '市场间关联程度如何？') }}</span>
+      </div>
+
+      {%- if total_conn is not none %}
+      <div class="ird-dial-wrap">
+        <div class="ird-dial-circle">
+          <div class="dc-num">{{ '%.0f' | format(total_conn) }}</div>
+          <div class="dc-of">/ 100</div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px;">{{ t(conn_read_en, conn_read_zh) }}</div>
+          <div class="small muted">{{ t('Above 80: stress in any market can quickly reach others. Below 60: markets absorb their own shocks.', '超过80：任意市场的压力可快速蔓延。低于60：市场能消化自身冲击。') }}</div>
+          {%- if RD.get('spillover_spark_svg') %}
+          <div style="margin-top:8px;opacity:.8;">{{ RD.get('spillover_spark_svg') | safe }}</div>
+          {%- endif %}
+        </div>
+      </div>
+      {%- else %}
+      <p class="muted small">{{ t('Connectedness data not available', '关联度数据暂不可用') }}</p>
+      {%- endif %}
+
+      {%- if TXDISP %}
+      <div style="margin:10px 0;">
+        <div class="small muted" style="margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">
+          {{ t('Top 3 shock senders', '前三大冲击输出方') }}
+        </div>
+        {%- for tx in TXDISP[:3] %}
+        {%- set bar_pct = (tx.to_others_pct / tx_max.v * 100) | round | int if tx_max.v > 0 else 0 %}
+        <div class="ird-tx-row">
+          <span class="ird-tx-rank">#{{ loop.index }}</span>
+          <span class="ird-tx-flag">{{ tx.flag }}</span>
+          <span class="ird-tx-name">{{ t(tx.name_en, tx.name_zh) }}</span>
+          <div class="ird-tx-bar-wrap" title="{{ tx.ticker }} · {{ '%.1f' | format(tx.to_others_pct) }} pts to others">
+            <div class="ird-tx-bar" style="width:{{ bar_pct }}%"></div>
+          </div>
+          <span class="ird-tx-val">{{ '%.0f' | format(tx.to_others_pct) }} pts</span>
+        </div>
+        {%- endfor %}
+      </div>
+      {%- endif %}
+
+      {%- if us_from is not none %}
+      <div class="ird-us-recv">
+        <div class="ur-num">{{ '%.1f' | format(us_from) }}%</div>
+        <div class="ur-text">
+          <b>{{ t(us_recv_en, us_recv_zh) }}</b>
+          <span class="help">?<span class="tip">{{ t('US receiving share (precise: ' + ('%.1f' | format(us_from)) + '%): what fraction of global shock variance is absorbed by the US index. Source: 150-day rolling VAR, 10-step horizon. This is a transmission read — not a statement that X% of US price moves are caused by overseas markets.', '美国接收份额（精确值：' + ('%.1f' | format(us_from)) + '%）：全球冲击方差中有多大比例被美国指数吸收。数据来源：150日滚动VAR，10步预测。这是传导读数——并非X%的美国价格走势由海外市场引起。') }}</span></span>
+        </div>
+      </div>
+      {%- endif %}
+
+      {# 5 transmission channels from tier2 legs #}
+      {%- set t2legs = (TTR.get('tier2') or {}).get('legs') or {} %}
+      <div class="small muted" style="margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">
+        {{ t('5 US transmission channels', '5个美国传导渠道') }}
+      </div>
+      <div class="ird-channels">
+        {%- set ch_us_hy = t2legs.get('us_hy_oas_vel') or {} %}
+        <span class="chip {{ 'warn' if ch_us_hy.get('hot') else 'ok' }}">{{ t('US credit spreads', '美国信用利差') }}</span>
+        {%- set ch_kre = t2legs.get('kre_spy_rs') or {} %}
+        <span class="chip {{ 'warn' if ch_kre.get('hot') else 'ok' }}">{{ t('Bank shares', '银行股') }}</span>
+        {%- set ch_move = t2legs.get('move_pctile') or {} %}
+        <span class="chip {{ 'warn' if ch_move.get('hot') else 'ok' }}">{{ t('Bond-market volatility', '债市波动') }}</span>
+        {%- set ch_sofr = t2legs.get('sofr_iorb_corridor') or {} %}
+        <span class="chip {{ 'warn' if ch_sofr.get('hot') else 'ok' }}">{{ t('Money-market plumbing', '货币市场管道') }}</span>
+        {%- set ch_saf = t2legs.get('safety_bid_flag') or {} %}
+        <span class="chip {{ 'warn' if ch_saf.get('hot') else 'caut' if safety_bid else 'ok' }}">{{ t('Dollar safety bid', '美元避险需求') }}</span>
+      </div>
+      <p class="caveat ird-asof">
+        {%- if SPL.get('as_of') %}{{ t('Data as of ' + SPL.get('as_of', ''), '数据截至 ' + SPL.get('as_of', '')) }}.{%- endif %}
+        {%- if safety_bid %} {{ t('"Dollar safety bid" flagged but not yet a hot channel — watch if it persists.', '"美元避险需求"已标记，但尚未构成热传导渠道——如持续则需关注。') }}{%- endif %}
+      </p>
+    </div><!-- /contagion -->
+
+    <!-- CENTRAL BANK DESK -->
+    {%- if CBD and CBD.get('cbs') %}
+    <div class="panel">
+      <div class="sec-h">
+        <h2>{{ t('Central bank desk', '央行动态台') }} {{ help('Rates from public data. Stance = realized rate changes over the trailing 3 months — not forward guidance or market pricing. Balance sheet: available for Fed, ECB, and BoJ only (public weekly data); others are honest nulls. Next meeting dates are calendar-only.  Descriptive only — no policy-intent projection.', '利率来自公开数据。立场 = 过去3个月已实现的利率变动——非前瞻指引或市场定价。资产负债表：仅限美联储、欧央行和日本央行（公开周度数据）；其他为诚实缺失。下次会议日期仅为日历。仅描述，不预测政策意图。') }}</h2>
+        <span class="sub">{{ t('What the major central banks are actually doing', '主要央行的实际政策动向') }}</span>
+      </div>
+      <table class="ird-cb">
+        <thead><tr>
+          <th>{{ t('Bank', '央行') }}</th>
+          <th class="r">{{ t('Rate', '利率') }}</th>
+          <th>{{ t('Stance', '立场') }}</th>
+          <th>{{ t('Last move', '近期动向') }}</th>
+          <th>{{ t('Balance sheet', '资产负债表') }}</th>
+          <th>{{ t('Next meeting', '下次会议') }}</th>
+        </tr></thead>
+        <tbody>
+        {%- for cb in CBD.get('cbs', []) %}
+        {%- set trend = cb.get('trend_3m', 'holding') %}
+        {%- set stance_css = CB_STANCE_CSS.get(trend, 'stance-holding') %}
+        {%- set stance_en = CB_STANCE_EN.get(trend, 'Holding') %}
+        {%- set stance_zh = CB_STANCE_ZH.get(trend, '按兵不动') %}
+        {%- set last_chg = cb.get('last_change') or {} %}
+        {%- set next_mtg = cb.get('next_meeting') or {} %}
+        {%- set bs = cb.get('bs_impulse') %}
+        {%- set days_to = next_mtg.get('days') %}
+        <tr>
+          <td>{{ CC_FLAG.get(cb.get('country', ''), '🌐') }} {{ t(cb.get('name_en',''), cb.get('name_zh','')) }}</td>
+          <td class="r"><b>{{ '%.2f' | format(cb.get('policy_rate', 0)) }}%</b></td>
+          <td><span class="ird-stance {{ stance_css }}">{{ t(stance_en, stance_zh) }}</span></td>
+          <td>
+            {%- if last_chg %}
+              <span class="{{ 'pos' if last_chg.get('direction') == 'cut' else 'neg' }}">{{ '↓' if last_chg.get('direction') == 'cut' else '↑' }}</span>
+              {{ (last_chg.get('date', '')[:7] or '').replace('-0', '-') }}
+            {%- else %}<span class="muted">—</span>{%- endif %}
+          </td>
+          <td>
+            {%- if bs %}
+              {%- set imp = bs.get('impulse_13w', 0) or 0 %}
+              <span class="ird-bs {{ 'adding' if imp > 0 else 'draining' if imp < 0 else '' }}">
+                {{ t('Adding' if imp > 0 else 'Draining' if imp < 0 else 'Flat', '扩表' if imp > 0 else '缩表' if imp < 0 else '持平') }}
+              </span>
+            {%- else %}<span class="muted">—</span>{%- endif %}
+          </td>
+          <td>
+            {%- if next_mtg.get('date') %}
+              {%- set mtg_date = next_mtg.get('date', '')[:10] %}
+              {%- set mtg_short = mtg_date[5:] if mtg_date else '' %}
+              <span class="{{ 'chip warn' if days_to is not none and days_to <= 5 else 'small' }}">
+                {{ mtg_short }}
+                {%- if days_to is not none %} · {{ days_to }}d{%- endif %}
+              </span>
+            {%- else %}<span class="muted">—</span>{%- endif %}
+          </td>
+        </tr>
+        {%- endfor %}
+        </tbody>
+      </table>
+      <p class="caveat" style="margin-top:8px;">
+        {{ t('Balance-sheet data available for Fed, ECB, and BoJ only — others are honest nulls. Rate data as of ' + (CBD.get('as_of','') or ''), '资产负债表数据仅限美联储、欧央行和日本央行——其余为实际缺失。利率数据截至' + (CBD.get('as_of','') or '')) }}
+      </p>
+    </div>
+    {%- endif %}<!-- /cb desk -->
+
+  </div><!-- /left col -->
+
+  <!-- RIGHT: Credit & Bond + Dollar Decomp -->
+  <div>
+
+    <!-- CREDIT & BOND STRESS -->
+    <div class="panel">
+      <div class="sec-h">
+        <h2>{{ t('Credit & bond stress', '信用与债券压力') }} {{ help('Credit spreads = the extra yield emerging-market bonds pay above comparable Treasuries, in percentage points. Velocity arrow = direction of 20-day move (↑ widening = more stress, ↓ tightening = easing). EM high-yield source: BAML EM High Yield index. Regional spreads: BAML regional subindices. Inversion board: 10yr minus 3-month yield for 6 major curves. EM spread history collected since Jul 2023 (data-vendor cap) — long-run comparisons build up over time.', '信用利差 = 新兴市场债券相对同期美债的超额收益率（百分点）。速度箭头 = 20日走势方向（↑走阔 = 压力上升，↓收窄 = 压力减轻）。新兴市场高收益来源：美银美林新兴市场高收益指数。地区利差：美银美林地区子指数。倒挂看板：6个主要收益率曲线的10年减3月期利差。新兴市场利差数据自2023年7月起收集（数据供应商限制）——长期比较随时间积累。') }}</h2>
+        <span class="sub">{{ t('Are lenders charging more for risk?', '贷款方是否在为风险索取更高溢价？') }}</span>
+      </div>
+
+      <div class="ird-spread-grid">
+        <!-- EM HY -->
+        {%- set em_hy_v = em_hy.get('value') %}
+        {%- set em_hy_vel = em_hy.get('vel_20d_z') %}
+        <div class="ird-spread-card">
+          <div class="sc-label">{{ t('EM high-yield spreads', '新兴市场高收益利差') }}</div>
+          <div class="sc-val">{{ ('%.2f' | format(em_hy_v) + '%') if em_hy_v is not none else '—' }}</div>
+          <div class="sc-vel {{ 'vel-up' if em_hy_vel is not none and em_hy_vel > 0.1 else 'vel-dn' if em_hy_vel is not none and em_hy_vel < -0.1 else 'vel-flat' }}">
+            {{ '↑' if em_hy_vel is not none and em_hy_vel > 0.1 else '↓' if em_hy_vel is not none and em_hy_vel < -0.1 else '→' }}
+            {{ t('Widening (20d)', '走阔（20日）') if em_hy_vel is not none and em_hy_vel > 0.1 else t('Tightening (20d)', '收窄（20日）') if em_hy_vel is not none and em_hy_vel < -0.1 else t('Steady (20d)', '持平（20日）') }}
+          </div>
+        </div>
+        <!-- Asia -->
+        {%- set asia_v = asia_oas.get('value') %}
+        {%- set asia_vel = asia_oas.get('vel_20d_z') %}
+        <div class="ird-spread-card">
+          <div class="sc-label">{{ t('Asia credit spreads', '亚洲信用利差') }}</div>
+          <div class="sc-val">{{ ('%.2f' | format(asia_v) + '%') if asia_v is not none else '—' }}</div>
+          <div class="sc-vel {{ 'vel-up' if asia_vel is not none and asia_vel > 0.1 else 'vel-dn' if asia_vel is not none and asia_vel < -0.1 else 'vel-flat' }}">
+            {{ '↑' if asia_vel is not none and asia_vel > 0.1 else '↓' if asia_vel is not none and asia_vel < -0.1 else '→' }}
+            {{ t('Widening (20d)', '走阔（20日）') if asia_vel is not none and asia_vel > 0.1 else t('Tightening (20d)', '收窄（20日）') if asia_vel is not none and asia_vel < -0.1 else t('Steady', '持平') }}
+          </div>
+        </div>
+        <!-- LatAm -->
+        {%- set latam_v = latam_oas.get('value') %}
+        {%- set latam_vel = latam_oas.get('vel_20d_z') %}
+        <div class="ird-spread-card {{ 'latam-hot' if hottest_region == 'latam' else '' }}"
+          {% if hottest_region == 'latam' %}style="border-color:color-mix(in srgb,var(--warn) 30%,var(--line))"{% endif %}>
+          <div class="sc-label">
+            {{ t('LatAm credit spreads', '拉美信用利差') }}
+            {%- if hottest_region == 'latam' %}
+              <span class="chip caut" style="margin-left:4px;font-size:9px;padding:1px 5px;">{{ t('Hottest', '最热') }}</span>
+            {%- endif %}
+          </div>
+          <div class="sc-val">{{ ('%.2f' | format(latam_v) + '%') if latam_v is not none else '—' }}</div>
+          <div class="sc-vel {{ 'vel-up' if latam_vel is not none and latam_vel > 0.1 else 'vel-dn' if latam_vel is not none and latam_vel < -0.1 else 'vel-flat' }}">
+            {{ '↑' if latam_vel is not none and latam_vel > 0.1 else '↓' if latam_vel is not none and latam_vel < -0.1 else '→' }}
+            {{ t('Widening slowly (20d)', '缓慢走阔（20日）') if latam_vel is not none and latam_vel > 0.1 else t('Tightening (20d)', '收窄（20日）') if latam_vel is not none and latam_vel < -0.1 else t('Steady', '持平') }}
+          </div>
+        </div>
+        <!-- EMEA -->
+        {%- set emea_v = emea_oas.get('value') %}
+        {%- set emea_vel = emea_oas.get('vel_20d_z') %}
+        <div class="ird-spread-card">
+          <div class="sc-label">{{ t('EMEA credit spreads', '欧非中东信用利差') }}</div>
+          <div class="sc-val">{{ ('%.2f' | format(emea_v) + '%') if emea_v is not none else '—' }}</div>
+          <div class="sc-vel {{ 'vel-up' if emea_vel is not none and emea_vel > 0.1 else 'vel-dn' if emea_vel is not none and emea_vel < -0.1 else 'vel-flat' }}">
+            {{ '↑' if emea_vel is not none and emea_vel > 0.1 else '↓' if emea_vel is not none and emea_vel < -0.1 else '→' }}
+            {{ t('Widening (20d)', '走阔（20日）') if emea_vel is not none and emea_vel > 0.1 else t('Tightening (20d)', '收窄（20日）') if emea_vel is not none and emea_vel < -0.1 else t('Steady', '持平') }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Curve Inversion Board -->
+      {%- set inv_color_cls = 'warn' if n_inv > 0 and n_inv < n_total_inv else 'red' if n_inv == n_total_inv else '' %}
+      <div class="ird-inv-row" style="{{ 'background:color-mix(in srgb,var(--up) 6%,var(--panel2));border-color:color-mix(in srgb,var(--up) 25%,var(--line))' if n_inv == 0 else 'background:color-mix(in srgb,var(--warn) 6%,var(--panel2));border-color:color-mix(in srgb,var(--warn) 25%,var(--line))' if n_inv < n_total_inv else 'background:color-mix(in srgb,var(--down) 6%,var(--panel2));border-color:color-mix(in srgb,var(--down) 25%,var(--line))' }}">
+        <div class="inv-num {{ 'warn' if n_inv > 0 and n_inv < n_total_inv else 'red' if n_inv == n_total_inv else '' }}" style="{{ 'color:var(--up)' if n_inv == 0 else 'color:var(--warn)' if n_inv < n_total_inv else 'color:var(--down)' }}">{{ n_inv }} / {{ n_total_inv }}</div>
+        <div class="inv-text">
+          <b>{{ t('Yield curves inverted', '收益率曲线倒挂') }}</b><br>
+          {%- if n_inv == 0 %}
+            {{ t('All ' + n_total_inv|string + ' tracked curves positively sloped — no recession signal from bond markets', '所有' + n_total_inv|string + '条跟踪曲线均正斜率——债市无衰退信号') }}
+          {%- else %}
+            {{ t(n_inv|string + ' of ' + n_total_inv|string + ' curves inverted — watch for further spread', n_inv|string + '/' + n_total_inv|string + '条曲线倒挂——关注是否进一步蔓延') }}
+          {%- endif %}
+        </div>
+      </div>
+
+      <!-- EMB/IEF spark: EM bonds vs US Treasuries trend -->
+      {%- if RD.get('emb_ief_spark_svg') %}
+      <div style="margin-top:10px;">
+        <div class="small muted" style="margin-bottom:3px;">{{ t('EM bonds vs US Treasuries — last 120 days', '新兴市场债 vs 美债——过去120天') }}</div>
+        {{ RD.get('emb_ief_spark_svg') | safe }}
+      </div>
+      {%- endif %}
+
+      <p class="caveat ird-asof">
+        {{ t('EM spread history collected since Jul 2023 (data-vendor cap) — long-term comparisons build up over time.', '新兴市场利差数据自2023年7月起收集（数据供应商限制）——长期比较数据将随时间积累。') }}
+        {%- if em_hy.get('asof') %} {{ t('Spread data as of ' + em_hy.get('asof',''), '利差数据截至' + em_hy.get('asof','')) }}.{%- endif %}
+      </p>
+    </div><!-- /credit -->
+
+    <!-- WHAT'S DRIVING THE DOLLAR -->
+    <div class="panel">
+      <div class="sec-h">
+        <h2>{{ t('What\'s driving the dollar?', '美元走势的驱动因素') }}
+          {%- if SM %}
+            {{ help('Dollar regime uses a 120-day rolling window. Rate-differential weight: how much of the DXY move correlates with the US-vs-world short-rate spread. Risk-off weight: DXY vs VIX co-movement. Residual: unexplained. Dual-window confirmed over both 5d and 20d. Weights used: ' + (SM.get('weights_used')|string if SM.get('weights_used') else 'standard') + '. Window-sensitive: regime may shift with a different window.', '美元制度使用120日滚动窗口。利差权重：DXY走势与美国对全球短期利差的相关程度。避险权重：DXY与VIX的同步走势。残差：不可解释部分。双窗口在5日和20日均已确认。使用权重：' + (SM.get('weights_used')|string if SM.get('weights_used') else '标准') + '。窗口敏感：不同窗口下制度判断可能不同。') }}
+          {%- else %}
+            {{ help('Dollar read updates nightly from the forex desk. The regime is determined by a 120-day rolling decomposition comparing rate-differential vs risk-off vs residual drivers. When data is fresh, this panel shows the dominant regime and a one-sentence explanation.', '美元读数每晚从外汇台更新。制度由120日滚动分解确定，比较利差、避险与残差驱动因素。数据刷新后，本面板显示主导制度及一句话说明。') }}
+          {%- endif %}
+        </h2>
+        <span class="sub">{{ t('Watch — don\'t chase dollar strength until the read is fresh', '等待最新读数后再追美元强势') }}</span>
+      </div>
+
+      <div class="ird-dollar-card">
+        {%- if SM %}
+          {%- set regime = SM.get('regime', '') %}
+          {%- if regime == 'rates-driven' %}
+            <div class="regime-word">{{ t('Rate-driven', '利差驱动') }}</div>
+            <div class="regime-sentence">{{ t('Rate differences between the US and other major economies explain the recent dollar move — not a flight to safety.', '美国与其他主要经济体之间的利差是近期美元走势的主因，而非避险需求。') }}</div>
+          {%- elif regime == 'safety-driven' %}
+            <div class="regime-word">{{ t('Safety-driven', '避险驱动') }}</div>
+            <div class="regime-sentence">{{ t('The dollar is being bought as a safe haven — investors are moving to safety, not chasing rate differentials.', '美元正作为避险资产被买入——投资者在避险，而非追逐利差。') }}</div>
+          {%- else %}
+            <div class="regime-word">{{ t('Mixed picture', '信号混合') }}</div>
+            <div class="regime-sentence">{{ t('No single driver dominates the dollar\'s recent move — both rate differences and risk sentiment are playing a role.', '近期美元走势无单一主导因素——利差与风险情绪均有作用。') }}</div>
+          {%- endif %}
+          {%- if safety_bid %}
+          <div style="margin-bottom:10px;">
+            <span class="ird-safety-tag">
+              ⚠ {{ t('Safety bid today', '今日避险需求') }}
+              {%- if dxy5d is not none and dgs2_5d is not none %}
+                {{ t(': DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + ' while 2yr fell ' + ('%.1f bp' | format(dgs2_5d|abs)), '：DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + '，2年期下降' + ('%.1f bp' | format(dgs2_5d|abs))) }}
+              {%- endif %}
+            </span>
+            <span class="small muted" style="margin-left:8px;">{{ t('5-day signal · not structural', '5日信号·非结构性') }}</span>
+          </div>
+          {%- endif %}
+        {%- else %}
+          {# Honest null — smile is absent #}
+          <div class="ird-dollar-null">
+            {{ t('Not enough fresh data — the dollar read updates after tonight\'s build.', '数据暂不足——美元读数将在今晚构建后更新。') }}
+          </div>
+          {%- if safety_bid %}
+          <div style="margin-top:10px;">
+            <span class="ird-safety-tag">
+              ⚠ {{ t('Safety bid today', '今日避险需求') }}
+              {%- if dxy5d is not none and dgs2_5d is not none %}
+                {{ t(': DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + ' while 2yr fell ' + ('%.1f bp' | format(dgs2_5d|abs)), '：DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + '，2年期下降' + ('%.1f bp' | format(dgs2_5d|abs))) }}
+              {%- endif %}
+            </span>
+            <div class="small muted" style="margin-top:6px;">{{ t('DXY rose while 2-year yields fell over the past 5 days — consistent with safe-haven demand, not rate arbitrage. This is a 5-day observation, not a regime call.', '过去5天内DXY上涨而2年期收益率下降——与避险需求一致，而非利率套利。这是5日观察，非制度判断。') }}</div>
+          </div>
+          {%- endif %}
+        {%- endif %}
+      </div>
+      <p class="caveat ird-asof">
+        {%- if SM %}
+          {{ t('120-day rolling window · As of ' + (RD.get('built','')[:10] or ''), '120日滚动窗口 · 截至' + (RD.get('built','')[:10] or '')) }}
+        {%- else %}
+          {{ t('Dollar regime read not yet available — updates nightly.', '美元制度读数暂不可用——每晚更新。') }}
+        {%- endif %}
+      </p>
+    </div><!-- /dollar -->
+
+  </div><!-- /right col -->
+
+</div><!-- /ird-twocol -->
+
+<!-- ===== FRAGILITY MAP (FULL WIDTH) ===== -->
+<div class="panel">
+  <div class="sec-h">
+    <h2>{{ t('Fragility map', '脆弱性地图') }}
+      {{ help('Flags countries where structural vulnerabilities coincide: debt-to-GDP above 70% and rising, fiscal deficit below −5% of GDP, or current account deficit below −3% of GDP. BIS credit gap where available. Source: IMF WEO 2025. Annual data — updates with IMF WEO releases. Berg &amp; Pattillo (1999) criterion adapted. Presence of a flag = vulnerabilities exist, not that a crisis is imminent; most historically flagged countries did not experience a crisis.', '标记存在结构性脆弱因素的国家：债务/GDP超过70%且上升、财政赤字低于GDP的−5%，或经常账户赤字低于GDP的−3%。BIS信用缺口（可用时）。来源：IMF WEO 2025。年度数据——随IMF WEO发布更新。改编自Berg &amp; Pattillo（1999）标准。有标记 = 脆弱性存在，不代表危机即将发生；历史上大多数预警未演变为危机。') }}</h2>
+    <span class="sub">{{ t('Slow-moving structural vulnerabilities — not a timing signal', '缓慢变化的结构性脆弱因素——非择时信号') }}</span>
+  </div>
+
+  {%- set VULN = RD.get('vulnerability') %}
+  {%- if VULN and VULN.get('countries') %}
+    {%- set flagged = VULN.get('countries') | selectattr('fragile', 'equalto', true) | list %}
+    {%- for c in flagged[:3] %}
+    <div class="ird-frag-row">
+      <span style="font-size:20px;flex-shrink:0;">{{ c.get('flag', '🌐') }}</span>
+      <div>
+        <div class="ird-frag-country">{{ t(c.get('name_en', c.get('cc','')), c.get('name_zh', c.get('cc',''))) }}</div>
+        <span class="ird-frag-desc">{{ t(c.get('desc_en', ''), c.get('desc_zh', '')) }}</span>
+        <div class="ird-frag-tags">
+          {%- for tag in c.get('tags', []) %}
+          <span class="chip warn" style="font-size:10px;padding:1px 6px;">{{ t(tag.get('en',''), tag.get('zh','')) }}</span>
+          {%- endfor %}
+        </div>
+      </div>
+    </div>
+    {%- endfor %}
+    {%- if flagged | length > 3 %}
+    <details style="margin-top:8px;">
+      <summary class="more-btn" style="list-style:none;cursor:pointer;">
+        {{ t('View all ' + (VULN.get('countries')|length|string) + ' countries →', '查看全部' + (VULN.get('countries')|length|string) + '个国家 →') }}
+      </summary>
+      <div style="margin-top:8px;">
+        {%- for c in flagged[3:] %}
+        <div class="ird-frag-row">
+          <span style="font-size:20px;flex-shrink:0;">{{ c.get('flag', '🌐') }}</span>
+          <div>
+            <div class="ird-frag-country">{{ t(c.get('name_en', c.get('cc','')), c.get('name_zh', c.get('cc',''))) }}</div>
+            <span class="ird-frag-desc">{{ t(c.get('desc_en',''), c.get('desc_zh','')) }}</span>
+          </div>
+        </div>
+        {%- endfor %}
+      </div>
+    </details>
+    {%- endif %}
+  {%- else %}
+    {# vulnerability is null — honest null with plain-words explanation #}
+    <p class="muted" style="font-size:13px;line-height:1.6;padding:12px 0;">
+      {{ t('Fragility data updates with the IMF World Economic Outlook — available here after the next WEO release. This is a slow-moving lens: it changes annually, not daily.', '脆弱性数据随IMF《世界经济展望》更新——下次WEO发布后将在此呈现。这是缓慢变化的视角：按年更新，非按日。') }}
+    </p>
+  {%- endif %}
+
+  <p class="caveat ird-asof">
+    {{ t('Slow-moving fundamentals — flags fragility, not timing; most historical warnings did not become crises.', '缓慢变化的基本面指标——揭示脆弱性，非择时信号；历史上大多数预警并未演变为危机。') }}
+    {{ help('Berg &amp; Pattillo (1999) criterion adapted: debt &gt;70% GDP and rising, fiscal balance &lt;−5%, current account &lt;−3%. Source: IMF WEO 2025. BIS credit gap where available. Annual data — updates with IMF WEO releases.', 'Berg &amp; Pattillo（1999）改编标准：债务&gt;70% GDP且上升，财政余额&lt;−5%，经常账户&lt;−3%。来源：IMF WEO 2025。BIS信用缺口（可用时）。年度数据——随IMF WEO发布更新。') }}
+    {{ t('Data as of IMF WEO 2025 (where available)', '数据来源：IMF WEO 2025（可用时）') }}
+  </p>
+</div><!-- /fragility -->
+
+{% endif %}{# end risk_desk section #}
+
 <!-- ===== Growth × inflation regime map ===== -->
 <div class="panel">
   <h2>{{ t('Regime map — growth × inflation', '周期图 — 增长 × 通胀') }} {{ help('Places each economy on the growth/inflation clock. Right side = better growth; top = more inflation pressure.', '把每个经济体放在增长/通胀时钟上。右侧增长更好；上方通胀压力更高。') }}</h2>

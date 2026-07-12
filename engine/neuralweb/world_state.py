@@ -1332,6 +1332,55 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
         return null_out
 
 
+def _compose_intl_risk(root: "Path | str | None" = None) -> dict:
+    """Compose intl_risk lobe from data/intl_risk/latest.json (IRD-W2).
+
+    Display-only. Reads: em_stress_state, two_tier_state, total_connectedness,
+    top_transmitters, swap_lines_bn, dollar_regime.
+    Fail-open: missing / unreadable json → null-shaped dict with display_only=True.
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "intl_risk" / "latest.json"
+
+    null_out: dict = {
+        "em_stress_state": None,
+        "two_tier_state": None,
+        "total_connectedness": None,
+        "top_transmitters": None,
+        "swap_lines_bn": None,
+        "dollar_regime": None,
+        "display_only": True,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        em_stress = raw.get("em_stress") or {}
+        two_tier = raw.get("two_tier") or {}
+        spillover = raw.get("spillover") or {}
+        smile = raw.get("smile") or {}
+        # swap_lines_bn: written at top level by build_intl (SWPT $M→$bn via FRED).
+        # Fall back to the old liquidity_plumbing sub-key for backward compat.
+        swap_lines_bn = raw.get("swap_lines_bn")
+        if swap_lines_bn is None:
+            lp = raw.get("liquidity_plumbing") or {}
+            swap_lines_bn = lp.get("swap_lines_bn")
+
+        return _display_only({
+            "em_stress_state": _clean(em_stress.get("state")),
+            "two_tier_state": _clean(two_tier.get("state")),
+            "total_connectedness": _clean(spillover.get("total_connectedness")),
+            "top_transmitters": spillover.get("top_transmitters"),
+            "swap_lines_bn": _clean(swap_lines_bn),
+            "dollar_regime": _clean(smile.get("regime")),
+        })
+    except Exception as exc:  # noqa: BLE001
+        log.warning("intl_risk: compose failed — %s", exc)
+        return null_out
+
+
 def _compose_rates_credit(root: "Path | str | None" = None) -> dict:
     """Compose rates_credit lobe from data/bonds/bond_health.json.
 
@@ -2672,6 +2721,24 @@ def build_world_state(
         log.warning("world_state: contradictions block failed — %s", exc)
         gaps.append(f"contradictions: {exc}")
 
+    # IRD-W2: intl_risk display lobe
+    _intl_risk_path = data_dir / "intl_risk" / "latest.json"
+    try:
+        intl_risk_block: dict = _compose_intl_risk(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: intl_risk lobe failed — %s", exc)
+        gaps.append(f"intl_risk: {exc}")
+        intl_risk_block = {"em_stress_state": None, "two_tier_state": None,
+                           "total_connectedness": None, "top_transmitters": None,
+                           "swap_lines_bn": None, "dollar_regime": None,
+                           "display_only": True}
+    # Intentionally no gap appended when the file is absent: the fail-open null
+    # payload from _compose_intl_risk already communicates absence (display_only=True,
+    # all fields None).  Sibling lobes (rates_transmission, fx_dollar, etc.) append a
+    # gap on absence because those are expected-present artifacts; intl_risk is
+    # optional and produced by build_intl — matches the liquidity_plumbing pattern.
+    sources[str(_intl_risk_path.relative_to(repo))] = None  # no asof field in this artifact
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict[str, Any] = {
         "verdict": verdict_block,
@@ -2711,6 +2778,7 @@ def build_world_state(
         ),
         "live_overlay": live_overlay_block,
         "contradictions": contradictions_block,
+        "intl_risk": intl_risk_block,  # IRD-W2 display-only lobe
         "gaps": gaps,
         "sources": sources,
     }

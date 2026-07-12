@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -86,6 +87,183 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("intl rates desk failed (%s)", e)
 
+    # ---- IRD-W2: intl_risk composite desk (fail-open per leg) -------------------
+    # HOISTED above the page-render try so a template failure does NOT kill the
+    # artifact write.  vm['risk_desk'] then just references the computed dict.
+    _ird_t0 = time.time()
+    em_stress_result = None
+    contagion_state = None
+    try:
+        from engine.intl_risk import em_stress as _em_stress
+        em_stress_result = _em_stress()
+    except Exception as _e:
+        log.error("intl_risk em_stress failed (%s)", _e)
+
+    spillover_result = None
+    try:
+        from engine.contagion import spillover as _spillover
+        spillover_result = _spillover()
+    except Exception as _e:
+        log.error("contagion spillover failed (%s)", _e)
+
+    corr_result = None
+    try:
+        from engine.contagion import corr_tightening as _corr_tightening
+        corr_result = _corr_tightening()
+    except Exception as _e:
+        log.error("contagion corr_tightening failed (%s)", _e)
+
+    two_tier_result = None
+    try:
+        from engine.contagion import two_tier_read as _two_tier_read
+        _em_state = (em_stress_result or {}).get("state")
+        two_tier_result = _two_tier_read(em_stress_state=_em_state)
+        contagion_state = (two_tier_result or {}).get("state")
+    except Exception as _e:
+        log.error("contagion two_tier_read failed (%s)", _e)
+
+    cb_desk_result = None
+    try:
+        from engine.cb_desk import snapshot as _cb_snapshot
+        cb_desk_result = _cb_snapshot()
+    except Exception as _e:
+        log.error("cb_desk snapshot failed (%s)", _e)
+
+    inversion_result = None
+    try:
+        from engine.intl_bonds import inversion_board as _inversion_board
+        inversion_result = _inversion_board()
+    except Exception as _e:
+        log.error("intl_bonds inversion_board failed (%s)", _e)
+
+    # Read smile_decomp from forex/latest.json if fresh (<36h)
+    smile_result = None
+    try:
+        _forex_path = config.data_dir() / "forex" / "latest.json"
+        if _forex_path.exists():
+            _forex_age_h = (time.time() - _forex_path.stat().st_mtime) / 3600.0
+            if _forex_age_h < 36:
+                _forex_raw = json.loads(_forex_path.read_text(encoding="utf-8"))
+                smile_result = (_forex_raw.get("dollar_desk") or {}).get("smile_decomp")
+    except Exception as _e:
+        log.error("smile_decomp read from forex/latest.json failed (%s)", _e)
+
+    # Read SWPT (Fed swap lines) from FRED store: $M → $bn (same as build_bonds)
+    _swap_lines_bn: float | None = None
+    try:
+        from lib import store as _ird_store
+        _swpt_df = _ird_store.read("fred", "SWPT")
+        if _swpt_df is not None and not _swpt_df.empty:
+            _swpt_val = _swpt_df.iloc[:, 0].dropna()
+            if not _swpt_val.empty:
+                _swap_lines_bn = round(float(_swpt_val.iloc[-1]) / 1000.0, 1)  # $M → $bn
+    except Exception as _e:
+        log.error("swap_lines_bn (SWPT) read failed (%s)", _e)
+
+    _ird_elapsed = time.time() - _ird_t0
+    print(f"[timing] build_intl intl_risk block: {_ird_elapsed:.2f}s")
+    log.info("[timing] build_intl intl_risk block: %.2fs", _ird_elapsed)
+
+    # Assemble intl_risk payload and write to data/intl_risk/latest.json.
+    # Written BEFORE the page-render try so template failures cannot kill this artifact.
+    _ird_dir = config.data_dir() / "intl_risk"
+    _ird_dir.mkdir(parents=True, exist_ok=True)
+
+    # ---- IRD-W3 shim: transmitter display names (ticker→country name EN+ZH) ------
+    _TRANSMITTER_NAMES: dict[str, dict[str, str]] = {
+        "EWA": {"en": "Australia",     "zh": "澳大利亚", "flag": "🇦🇺"},
+        "EWL": {"en": "Switzerland",   "zh": "瑞士",     "flag": "🇨🇭"},
+        "EZA": {"en": "South Africa",  "zh": "南非",     "flag": "🇿🇦"},
+        "EWJ": {"en": "Japan",         "zh": "日本",     "flag": "🇯🇵"},
+        "EWG": {"en": "Germany",       "zh": "德国",     "flag": "🇩🇪"},
+        "EWU": {"en": "United Kingdom","zh": "英国",     "flag": "🇬🇧"},
+        "EWC": {"en": "Canada",        "zh": "加拿大",   "flag": "🇨🇦"},
+        "EWZ": {"en": "Brazil",        "zh": "巴西",     "flag": "🇧🇷"},
+        "EWW": {"en": "Mexico",        "zh": "墨西哥",   "flag": "🇲🇽"},
+        "INDA": {"en": "India",        "zh": "印度",     "flag": "🇮🇳"},
+        "EIDO": {"en": "Indonesia",    "zh": "印尼",     "flag": "🇮🇩"},
+        "EWY": {"en": "South Korea",   "zh": "韩国",     "flag": "🇰🇷"},
+        "EWT": {"en": "Taiwan",        "zh": "台湾",     "flag": "🇹🇼"},
+        "EEM": {"en": "EM Broad",      "zh": "新兴市场",  "flag": "🌏"},
+        "SPY": {"en": "United States", "zh": "美国",     "flag": "🇺🇸"},
+    }
+
+    # ---- IRD-W3 shim: EMB/IEF ratio spark from emb_ief leg history ----------------
+    # emb_ief leg value in em_stress is a ratio; history comes from spillover.
+    # We compute a 120d EMB/IEF ratio from the yahoo store (fail-open).
+    _emb_ief_spark_svg: str = ""
+    try:
+        from scripts.build_intl_library import _spark_svg as _w3_spark
+        from lib import store as _w3_store
+        _emb_df = _w3_store.read("yahoo", "EMB")
+        _ief_df = _w3_store.read("yahoo", "IEF")
+        if _emb_df is not None and _ief_df is not None and not _emb_df.empty and not _ief_df.empty:
+            _emb_s = _emb_df.iloc[:, 0].dropna()
+            _ief_s = _ief_df.iloc[:, 0].dropna()
+            _ratio = _emb_s.div(_ief_s).dropna().tail(120)
+            if len(_ratio) >= 10:
+                _emb_ief_spark_svg = _w3_spark(
+                    list(_ratio.values), color="var(--info)", w=220, h=38
+                )
+    except Exception as _w3_e:
+        log.warning("IRD-W3 emb_ief spark failed (fail-open): %s", _w3_e)
+
+    # ---- IRD-W3 shim: spillover history spark (total connectedness weekly) --------
+    _spillover_spark_svg: str = ""
+    try:
+        from scripts.build_intl_library import _spark_svg as _w3_spark2
+        _sp_hist = (spillover_result or {}).get("history_weekly") or []
+        _sp_vals = [row.get("total") for row in _sp_hist[-52:] if row.get("total") is not None]
+        if len(_sp_vals) >= 4:
+            _spillover_spark_svg = _w3_spark2(
+                _sp_vals, color="var(--warn)", w=200, h=34
+            )
+    except Exception as _w3_e2:
+        log.warning("IRD-W3 spillover spark failed (fail-open): %s", _w3_e2)
+
+    # ---- Annotate top_transmitters with display names ---------------------------
+    _annotated_transmitters: list[dict] = []
+    try:
+        for _tx in (spillover_result or {}).get("top_transmitters") or []:
+            _tk = _tx.get("ticker", "")
+            _info = _TRANSMITTER_NAMES.get(_tk, {})
+            _annotated_transmitters.append({
+                "ticker": _tk,
+                "to_others_pct": _tx.get("to_others_pct"),
+                "name_en": _info.get("en", _tk),
+                "name_zh": _info.get("zh", _tk),
+                "flag": _info.get("flag", ""),
+            })
+    except Exception as _w3_e3:
+        log.warning("IRD-W3 transmitter annotation failed (fail-open): %s", _w3_e3)
+
+    _intl_risk_payload = {
+        "built": datetime.now(timezone.utc).isoformat(),
+        "timing_sec": round(_ird_elapsed, 2),
+        "em_stress": em_stress_result,
+        "vulnerability": None,   # slow table — not computed in daily path
+        "spillover": spillover_result,
+        "corr_tightening": corr_result,
+        "two_tier": two_tier_result,
+        "cb_desk": cb_desk_result,
+        "smile": smile_result,
+        "inversion_board": inversion_result,
+        # IRD-W2 fix #6: swap_lines_bn at top level so _compose_intl_risk can read it
+        "swap_lines_bn": _swap_lines_bn,
+        # IRD-W3 shims: display-enriched data for the template surface
+        "top_transmitters_display": _annotated_transmitters,
+        "emb_ief_spark_svg": _emb_ief_spark_svg,
+        "spillover_spark_svg": _spillover_spark_svg,
+    }
+    try:
+        (_ird_dir / "latest.json").write_text(
+            json.dumps(_intl_risk_payload, indent=2, default=str, ensure_ascii=False)
+        )
+        log.info("wrote data/intl_risk/latest.json (em_stress=%s, contagion=%s)",
+                 (em_stress_result or {}).get("state"), contagion_state)
+    except Exception as _e:
+        log.error("failed to write intl_risk/latest.json (%s)", _e)
+
     try:
         from engine import intl_stocks
         closes, members = intl_stocks.panel()
@@ -123,6 +301,8 @@ def main() -> int:
             "setups": setups,
             "perf": perf,
             "rates": rates,
+            # risk_desk available to template (None-safe: may be partial on engine error)
+            "risk_desk": _intl_risk_payload,
         }
 
         site = Path(config.load()["storage"]["site_dir"])
@@ -156,10 +336,15 @@ def main() -> int:
         s = vm["summary"]
         idir = config.data_dir() / "intl"
         idir.mkdir(parents=True, exist_ok=True)
-        (idir / "hub.json").write_text(json.dumps({
+        _hub_payload = {
             "date": latest.get("date", ""),
             "label": f"{s['n']} economies · {s['dominant_quad']}",
-            "recession_watch": s.get("recession_watch", 0)}, indent=2))
+            "recession_watch": s.get("recession_watch", 0),
+            # IRD-W2 additive keys for hub.json
+            "em_stress_state": (em_stress_result or {}).get("state"),
+            "contagion_state": contagion_state,
+        }
+        (idir / "hub.json").write_text(json.dumps(_hub_payload, indent=2))
     except Exception as e:  # noqa: BLE001
         log.error("intl page render failed (%s); skipping", e)
         return 0

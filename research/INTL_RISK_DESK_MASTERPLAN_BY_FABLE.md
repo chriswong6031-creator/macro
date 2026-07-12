@@ -149,7 +149,12 @@ reuse `.rcard`/`.rdesk`/`.kpi`/`.chip` scaffolding — no new idiom.
   Same EM spread level with quiet Tier-2 = "contained — watch"; with hot Tier-2 = "transmitting".
 - **IRD-R4 · Spillover index.** DY connectedness is the flagship self-built contagion gauge.
   Parameters pre-registered here: 150d window, VAR(2), H=10, Garman-Klass vols, basket =
-  12 country ETFs + EEM + SPY. Parameter changes require a masterplan edit, not code drift.
+  6 DM + 6 EM country ETFs + EEM + SPY (frozen 2026-07-12; coverage-greedy all-DM 12-ticker draft rejected).
+  DM basket: EWJ (Japan), EWG (Germany), EWU (UK), EWC (Canada), EWA (Australia), EWL (Switzerland).
+  EM basket: EWZ (Brazil), EWW (Mexico), INDA (India), EIDO (Indonesia), EZA (South Africa), EWY (South Korea).
+  All 12 country ETFs verified present in data/intl_etf (2026-07-12); EEM + SPY from yahoo store.
+  Parameter changes require a masterplan edit, not code drift.
+  2026-07-12 — W2: DY basket frozen 6DM/6EM (adjudicated — coverage-greedy all-DM draft rejected); engines landed.
 - **IRD-R5 · Swap lines are confirmation, not triggers.** Weekly Wednesday levels lag price
   stress by days-to-weeks (2008/2011/2020 case law). They grade severity after price signals
   fire; no alert keys off them.
@@ -175,8 +180,14 @@ reuse `.rcard`/`.rdesk`/`.kpi`/`.chip` scaffolding — no new idiom.
 - **IRD-R12 · Surface law.** Design Doctrine binds every panel: stance vocabulary on Tier 1,
   banned vocab demoted to hover receipts, one as-of + one footnote per panel, bilingual parity,
   reuse existing card idioms (no new tape forms; tape v3 is the only sanctioned tape).
-- **IRD-R13 · Velocity grammar.** One shared construction everywhere: Δ5d and Δ20d, z-scored on
-  2y history (or max available, disclosed). "Velocity" means exactly this on every IRD surface.
+- **IRD-R13 · Velocity grammar.** One shared construction everywhere (implemented in
+  `engine/ird_velocity.py`): Δ5d and Δ20d (× 100 = basis points for yield/OAS series in
+  %-point units; scale=1 for ratio/level series).  The 20d velocity z-score is a TRUE z:
+  `(current_20d_chg − mean(hist)) / std(hist)` where `hist` is the trailing 2y (504bd) of the
+  20d-change series EXCLUDING the current observation (causal).  Callers: `intl_bonds` /
+  `intl_rates` use `velocity_fields_bp()` (scale=100); `intl_risk` / `contagion` use
+  `velocity_fields(scale=1)` via `_vel_z_20d()` thin wrappers.  "Velocity" means exactly this
+  on every IRD surface — window_days disclosed.
 
 Standing kills this program must not disturb: C1/C2/C4c/C5/C6/C7/C8 (all CONTEXT/INVERTED,
 weight 0), per-pair FX gating (INTL-43), lead-lag read-throughs beyond transmission reads
@@ -239,3 +250,4 @@ printed.
 
 ### Status log
 - 2026-07-12 — Masterplan authored (Fable) from 11-agent census+research fan-out; W1 dispatch next.
+- 2026-07-12 — W3 surface shipped (intl.html risk desk, variant-A board adjudicated from 2 mockups; doctrine §5 checklist pass) + W4 weather-station intl_risk domain card; program W0–W4 complete. First nightly with full data 2026-07-13; clocks stand (08-15, 10-15).

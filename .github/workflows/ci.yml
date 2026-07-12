@@ -408,6 +408,26 @@ on:
       # need explicit paths so a test-only or script-only change still re-runs.
       - "scripts/backfill_edgar_quarterly.py"
       - "tests/test_edgar_quarterly_tags.py"
+      # IRD-W2 engines: EM stress, contagion/DY spillover, CB desk
+      - "engine/intl_risk.py"
+      - "engine/contagion.py"
+      - "engine/cb_desk.py"
+      - "tests/test_intl_risk.py"
+      - "tests/test_contagion.py"
+      - "tests/test_cb_desk.py"
+      # IRD-W2 integrations: velocity, inversion, smile decomp, build wiring, world_state
+      - "engine/ird_velocity.py"
+      - "engine/intl_bonds.py"
+      - "engine/intl_rates.py"
+      - "engine/forex_dollar.py"
+      - "engine/neuralweb/world_state.py"
+      - "scripts/build_intl.py"
+      - "scripts/build_bonds.py"
+      - "tests/test_ird_velocity.py"
+      - "tests/test_ird_wiring.py"
+      # IRD-W4 weather-station intl_risk card (builder lives in build_macro_context)
+      - "scripts/build_macro_context.py"
+      - "templates/macro_context.html.j2"
   workflow_dispatch:
 
 permissions:
@@ -1547,12 +1567,10 @@ jobs:
       - name: live flow ops test suite
         run: python -m pytest tests/test_live_flow_tiering.py -v
 
-  ird-w1-substrate:
-    # IRD-W1 International Risk Desk substrate tests:
-    #   - IMF WEO adapter (hermetic, canned fixture, no network)
-    #   - FRED alias-collision lint (config integrity)
-    #   - CB meeting calendar schema sanity
-    #   - liquidity_plumbing swap-lines Phase-5 integration tests
+  ird-substrate-engines:
+    # IRD-W1 + IRD-W2 International Risk Desk tests:
+    #   W1: IMF WEO adapter, FRED alias-collision lint, CB calendar, liquidity_plumbing
+    #   W2: intl_risk (EM stress + vulnerability), contagion (DY + two-tier), cb_desk
     # Zero network calls; all inputs are synthetic.
     runs-on: ubuntu-latest
     steps:
@@ -1561,9 +1579,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pandas numpy pyyaml pyarrow requests
-      - name: IRD-W1 substrate test suite
-        run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py -q
+        # jinja2: test_ird_wiring imports scripts.build_intl / build_macro_context (template env)
+        run: pip install pytest pandas numpy pyyaml pyarrow requests jinja2
+      - name: IRD substrate + engines test suite
+        run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py tests/test_intl_risk.py tests/test_contagion.py tests/test_cb_desk.py tests/test_ird_velocity.py tests/test_ird_wiring.py -q
 
   altdata-brain-govern:
     # altdata-brain PR-B: de-escalation-only law enforcement + false Wilson de-dup

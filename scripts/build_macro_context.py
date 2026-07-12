@@ -40,9 +40,9 @@ log = logging.getLogger("build_macro_context")
 _STALE_WARN_DAYS = 2
 _STALE_OLD_DAYS = 5
 
-# ── Domain order (now includes intl) ────────────────────────────────────────
+# ── Domain order (now includes intl and intl_risk) ─────────────────────────
 DOMAIN_ORDER = [
-    "us", "market", "transmission", "fx", "bonds",
+    "us", "market", "transmission", "fx", "intl_risk", "bonds",
     "commodity", "china", "hk", "canada", "dispersion", "intl",
 ]
 
@@ -52,6 +52,7 @@ DOMAIN_LABELS: dict[str, tuple[str, str]] = {
     "market":       ("Market State",        "市场状态"),
     "transmission": ("Rates Transmission",  "利率传导"),
     "fx":           ("FX / Dollar",         "外汇 / 美元"),
+    "intl_risk":    ("International Risk",  "国际风险"),
     "bonds":        ("Bonds & Credit",      "债券与信用"),
     "commodity":    ("Commodities",         "大宗商品"),
     "china":        ("China",               "中国"),
@@ -114,6 +115,10 @@ FIELD_LABELS: dict[str, tuple[str, str]] = {
     "canada_cycle_tag":       ("Cycle",                 "周期阶段"),
     # dispersion
     "dispersion_state":       ("State",                 "状态"),
+    # intl_risk
+    "intl_risk_state":        ("Foreign Stress",        "境外压力状态"),
+    "intl_risk_em_stress":    ("EM Stress",             "新兴市场压力"),
+    "intl_risk_dollar":       ("Dollar Regime",         "美元周期"),
     # intl
     "intl_au_quad":           ("Australia",             "澳大利亚"),
     "intl_ez_quad":           ("Eurozone",              "欧元区"),
@@ -540,6 +545,137 @@ def _build_risk_radar(world_state: dict | None, snapshot: dict | None) -> dict:
     }
 
 
+def _build_intl_risk_card(world_state: dict | None, today: str) -> dict:
+    """Build the International Risk domain card from the world_state.intl_risk lobe.
+
+    Card shape is compatible with the weather-board loop but carries card_type='intl_risk'
+    so the template can render the richer prose layout (state line, stat rows, stance, link).
+
+    Fail-open: missing or null lobe → card renders with null_state=True, never crashes.
+    """
+    ws = world_state or {}
+    lobe = ws.get("intl_risk") or {}
+
+    two_tier_state = lobe.get("two_tier_state")  # "quiet", "contained", "watching", "transmitting"
+    em_stress_state = lobe.get("em_stress_state")  # "calm", "strained", "stressed"
+    dollar_regime = lobe.get("dollar_regime")  # engine enum: rates-driven | safety-driven | mixed
+    swap_lines_bn = lobe.get("swap_lines_bn")  # float or None
+    total_connectedness = lobe.get("total_connectedness")  # float or None
+    top_transmitters = lobe.get("top_transmitters") or []
+
+    # Resolve as-of: intl_risk/latest.json has no top-level asof; use built date if available
+    # world_state sources map doesn't carry intl_risk asof — use today as best-effort null
+    # (data/intl_risk/latest.json carries a top-level "built" field; we don't re-read it here)
+    asof = today  # honest null; nightly will produce today's date
+
+    null_state = (two_tier_state is None and em_stress_state is None)
+
+    # ── State line (plain-word contagion read) ──────────────────────────────
+    _state_map_en: dict[str, str] = {
+        "quiet":       "Quiet abroad",
+        "contained":   "Foreign stress not reaching US markets",
+        "watching":    "Some US channels warming",
+        "transmitting":"Foreign stress reaching US markets",
+    }
+    _state_map_zh: dict[str, str] = {
+        "quiet":       "境外平静",
+        "contained":   "境外压力未传导至美国市场",
+        "watching":    "部分美国渠道升温",
+        "transmitting":"境外压力已传导至美国市场",
+    }
+
+    if null_state:
+        state_en = "No data yet"
+        state_zh = "暂无数据"
+    else:
+        state_en = _state_map_en.get(two_tier_state or "", two_tier_state or "—")
+        state_zh = _state_map_zh.get(two_tier_state or "", two_tier_state or "—")
+
+    # ── EM stress plain-word ─────────────────────────────────────────────────
+    _em_map_en: dict[str, str] = {
+        "calm":     "EM conditions calm",
+        "strained": "EM showing strain",
+        "stressed": "EM under stress",
+    }
+    _em_map_zh: dict[str, str] = {
+        "calm":     "新兴市场平静",
+        "strained": "新兴市场显现压力",
+        "stressed": "新兴市场承压",
+    }
+    em_text_en = _em_map_en.get(em_stress_state or "", "updates tonight") if em_stress_state else "updates tonight"
+    em_text_zh = _em_map_zh.get(em_stress_state or "", "今晚更新") if em_stress_state else "今晚更新"
+
+    # ── Dollar regime plain-word ─────────────────────────────────────────────
+    # Engine vocabulary (forex_dollar.smile_decomp): rates-driven | safety-driven | mixed.
+    # Unmapped values fall to a plain-word default — NEVER the raw enum (doctrine Law 2).
+    _dollar_map_en: dict[str, str] = {
+        "rates-driven":      "Dollar: moving on rate gaps",
+        "safety-driven":     "Dollar: safe-haven demand",
+        "mixed":             "Dollar: mixed drivers",
+    }
+    _dollar_map_zh: dict[str, str] = {
+        "rates-driven":      "美元：利差驱动",
+        "safety-driven":     "美元：避险需求",
+        "mixed":             "美元：多因素混合",
+    }
+    dollar_text_en = _dollar_map_en.get(dollar_regime or "", "Dollar: unclear read") if dollar_regime else "updates tonight"
+    dollar_text_zh = _dollar_map_zh.get(dollar_regime or "", "美元：读数不明") if dollar_regime else "今晚更新"
+
+    # ── Stance (Doctrine Law 1: plain-word "so what do I do") ───────────────
+    if null_state:
+        stance_en = "Watching for tonight's data"
+        stance_zh = "等待今晚数据"
+    elif two_tier_state == "transmitting":
+        stance_en = "Reduce EM exposure — contagion is active"
+        stance_zh = "降低新兴市场敞口——传导风险已激活"
+    elif two_tier_state == "watching":
+        stance_en = "Watch US credit channels — stress may deepen"
+        stance_zh = "关注美国信用渠道——压力可能加深"
+    elif two_tier_state == "contained":
+        stance_en = "Monitor — stress contained but not resolved"
+        stance_zh = "监控中——压力受控，但尚未消除"
+    else:  # quiet
+        stance_en = "Quiet abroad — no action required"
+        stance_zh = "境外平静——无需行动"
+
+    # ── CSS class for state chip ─────────────────────────────────────────────
+    _state_cls_map: dict[str, str] = {
+        "quiet":       "c-up",
+        "contained":   "c-warn",
+        "watching":    "c-warn",
+        "transmitting":"c-down",
+    }
+    state_cls = _state_cls_map.get(two_tier_state or "", "c-muted")
+
+    return {
+        "domain": "intl_risk",
+        "domain_en": "International Risk",
+        "domain_zh": "国际风险",
+        "asof": asof,
+        "stale_cls": "stale-ok",  # built freshly; nightly re-stamps
+        "chips": [],  # not used for intl_risk card type
+        "card_type": "intl_risk",
+        "null_state": null_state,
+        # State line
+        "state_en": state_en,
+        "state_zh": state_zh,
+        "state_cls": state_cls,
+        # Stat row 1: EM stress
+        "em_text_en": em_text_en,
+        "em_text_zh": em_text_zh,
+        "em_cls": _chip_class(em_stress_state),
+        # Stat row 2: Dollar regime
+        "dollar_text_en": dollar_text_en,
+        "dollar_text_zh": dollar_text_zh,
+        "dollar_cls": _chip_class(dollar_regime),
+        # Stance
+        "stance_en": stance_en,
+        "stance_zh": stance_zh,
+        # Detail link
+        "detail_href": "intl.html",
+    }
+
+
 def _load_ledger_cache(ledger_path: Path | None, n: int = 8) -> dict:
     """Read ledger.parquet ONCE, sort by asof, and return a lookup dict.
 
@@ -578,8 +714,13 @@ def _build_weather_board(
     today: str,
     ledger_cache: dict,
     transitions: list[dict],
+    world_state: dict | None = None,
 ) -> list[dict]:
-    """Build domain-grouped chip rows with history dots and changed-today markers."""
+    """Build domain-grouped chip rows with history dots and changed-today markers.
+
+    The intl_risk domain card is injected from world_state.intl_risk (IRD-W4) since
+    that lobe lives in world_state, not in the macro_snapshot labels.
+    """
     if not snapshot:
         return []
     labels = snapshot.get("labels", {})
@@ -614,6 +755,10 @@ def _build_weather_board(
 
     board: list[dict] = []
     for domain in DOMAIN_ORDER:
+        # intl_risk is injected from world_state, not from snapshot labels
+        if domain == "intl_risk":
+            board.append(_build_intl_risk_card(world_state, today))
+            continue
         domain_labels = labels.get(domain, {})
         if not domain_labels:
             continue
@@ -645,6 +790,7 @@ def _build_weather_board(
             "asof": src_asof or "",
             "stale_cls": stale_cls,
             "chips": chips,
+            "card_type": "standard",
         })
     return board
 
@@ -1090,7 +1236,7 @@ def _build_view_model(
 
     hero = _build_hero(world_state, snapshot, regime_data=regime_data)
     risk_radar = _build_risk_radar(world_state, snapshot)
-    weather_board = _build_weather_board(snapshot, today, ledger_cache, transitions)
+    weather_board = _build_weather_board(snapshot, today, ledger_cache, transitions, world_state=world_state)
     global_quad_map = _build_global_quad_map(world_state, snapshot)
     rates_liquidity = _build_rates_liquidity(world_state, regime_data, data_dir)
     headwind_tailwind = _build_headwind_tailwind(world_state, snapshot)
