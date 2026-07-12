@@ -1,0 +1,170 @@
+{
+  "as_of": "2026-07-10",
+  "weights_basis": "polygon_mktcap",
+  "trend_state": "turning_up",
+  "structure": {
+    "dd_from_252d_high": -0.045331,
+    "chip": "recovering"
+  },
+  "run": {
+    "start": "2026-07-01",
+    "sessions": 7,
+    "cw_ret": 0.033465,
+    "spy_ret": 0.012323
+  },
+  "k7": {
+    "trend": 3,
+    "rs": 5
+  },
+  "cw": {
+    "r2": 0.017178,
+    "r5": 0.033058,
+    "r10": 0.09895,
+    "r20": 0.047264,
+    "rel20": 0.00389
+  },
+  "ew": {
+    "r10": 0.109684,
+    "r20": 0.056843
+  },
+  "members": [
+    {
+      "sym": "AAPL",
+      "w": 0.205097,
+      "r5": 0.021676,
+      "r10": 0.145993,
+      "r20": 0.081419,
+      "rs20": 0.038045,
+      "above50": true,
+      "above200": true,
+      "mtf": null,
+      "contrib10": 0.3073
+    },
+    {
+      "sym": "MSFT",
+      "w": 0.126885,
+      "r5": -0.013803,
+      "r10": 0.091461,
+      "r20": -0.030854,
+      "rs20": -0.074228,
+      "above50": false,
+      "above200": false,
+      "mtf": null,
+      "contrib10": 0.1191
+    },
+    {
+      "sym": "NVDA",
+      "w": 0.220297,
+      "r5": 0.08279,
+      "r10": 0.077756,
+      "r20": 0.05259,
+      "rs20": 0.009216,
+      "above50": true,
+      "above200": true,
+      "mtf": null,
+      "contrib10": 0.1758
+    },
+    {
+      "sym": "AMZN",
+      "w": 0.116772,
+      "r5": 0.011003,
+      "r10": 0.080745,
+      "r20": 0.03084,
+      "rs20": -0.012534,
+      "above50": false,
+      "above200": true,
+      "mtf": null,
+      "contrib10": 0.0968
+    },
+    {
+      "sym": "GOOGL",
+      "w": 0.196786,
+      "r5": -0.007585,
+      "r10": 0.03919,
+      "r20": 0.002245,
+      "rs20": -0.041129,
+      "above50": false,
+      "above200": true,
+      "mtf": null,
+      "contrib10": 0.0792
+    },
+    {
+      "sym": "META",
+      "w": 0.068218,
+      "r5": 0.14807,
+      "r10": 0.232726,
+      "r20": 0.173124,
+      "rs20": 0.12975,
+      "above50": true,
+      "above200": true,
+      "mtf": null,
+      "contrib10": 0.1629
+    },
+    {
+      "sym": "TSLA",
+      "w": 0.065946,
+      "r5": 0.036371,
+      "r10": 0.087012,
+      "r20": 0.068581,
+      "rs20": 0.025207,
+      "above50": false,
+      "above200": false,
+      "mtf": null,
+      "contrib10": 0.0589
+    }
+  ],
+  "generals": {
+    "now": [
+      "AAPL",
+      "NVDA",
+      "META"
+    ],
+    "joining": [
+      "TSLA",
+      "AMZN"
+    ],
+    "coverage": 0.646
+  },
+  "spread20": {
+    "max": 0.173124,
+    "min": -0.030854,
+    "range": 0.203978
+  },
+  "mags": null,
+  "tech_legs": [
+    {
+      "id": "mag7",
+      "en": "Mag 7",
+      "zh": "\u4e03\u5de8\u5934",
+      "r10_rel": 0.079718,
+      "r20_rel": 0.010618,
+      "word": "surging"
+    },
+    {
+      "id": "ai_semiconductors",
+      "en": "AI chips",
+      "zh": "AI\u82af\u7247",
+      "r10_rel": -0.039587,
+      "r20_rel": 0.013726,
+      "word": "falling"
+    },
+    {
+      "id": "memory_storage",
+      "en": "Memory",
+      "zh": "\u5b58\u50a8",
+      "r10_rel": -0.175618,
+      "r20_rel": 0.091076,
+      "word": "falling hard"
+    },
+    {
+      "id": "ai_software",
+      "en": "Software",
+      "zh": "\u8f6f\u4ef6",
+      "r10_rel": 0.020537,
+      "r20_rel": -0.127875,
+      "word": "running"
+    }
+  ],
+  "flow": null,
+  "_timing_s": 0.13
+}

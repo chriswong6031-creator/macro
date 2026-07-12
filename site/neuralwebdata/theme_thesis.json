@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-07-11",
-  "generated_at": "2026-07-11T08:45:11Z",
+  "as_of": "2026-07-12",
+  "generated_at": "2026-07-12T05:01:09Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -28,10 +28,10 @@
   "theses": [
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-10",
+      "as_of": "2026-07-12",
       "thesis_id": "ai_semiconductors.v1",
-      "content_hash": "sha256:62c785c3e23322cde69b6ebdfd8e8618ea41b9ab8d132fda5b2026ac93780fe5",
-      "prev_content_hash": "sha256:edad986f6b9bde93d18f4f05eef652e27be8bd81dbb8490ab49521777a6e9996",
+      "content_hash": "sha256:eb7cb1aa698925e91076191589fd054bfced7288b29ad25d351f5381f09f316b",
+      "prev_content_hash": "sha256:62c785c3e23322cde69b6ebdfd8e8618ea41b9ab8d132fda5b2026ac93780fe5",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -109,7 +109,7 @@
           "rule_en": "If crowding on the ai_semiconductors or ai_infra basket exceeds 0.7 (z-score), the risk-adjusted opportunity is diminished — variant perception has become consensus.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.603"
+          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.583"
         },
         {
           "id": "ai_semi_f4",
@@ -465,10 +465,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-10",
+      "as_of": "2026-07-12",
       "thesis_id": "robotics_automation.v1",
-      "content_hash": "sha256:cee5edb532db1570ce945ac4553682438eca3fa08be652f8215d4c4628a3cef6",
-      "prev_content_hash": "sha256:a88cb97d9f5f54d158a7f49fe4ff4ba731ff7572a34fd5db00923219368400d0",
+      "content_hash": "sha256:d279f788f15e1f2d42e6a56be140e2aaa72f05e54f44bad0e30cb181c063069d",
+      "prev_content_hash": "sha256:cee5edb532db1570ce945ac4553682438eca3fa08be652f8215d4c4628a3cef6",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -534,7 +534,7 @@
           "rule_en": "If reshoring basket score falls below 30 or moves to 'avoid' label, the industrial-capex driver underpinning automation demand is weakening.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=47.0"
+          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=52.0"
         },
         {
           "id": "robo_f3",
@@ -808,10 +808,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-12",
       "thesis_id": "solar.v1",
-      "content_hash": "sha256:64d71c9c06787d8cf2968f7813d7baa42e9c7436e4690cd1ca8d039ee6e1cbd1",
-      "prev_content_hash": null,
+      "content_hash": "sha256:1bb3e9bc86e2775cadc6cd70a2177795e26360c6c28cce29347110927a5fb367",
+      "prev_content_hash": "sha256:64d71c9c06787d8cf2968f7813d7baa42e9c7436e4690cd1ca8d039ee6e1cbd1",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -865,7 +865,7 @@
           "rule_en": "If revision_breadth for solar is negative (already -0.342 today), earnings cuts are broadening — the IRA subsidy tailwind is not yet offsetting pricing and permitting headwinds.\n",
           "state": "FIRED",
           "fired": true,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=-0.342"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=-0.153"
         },
         {
           "id": "solar_f2",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-11T08:45:11Z",
-  "inputs_hash": "sha256:060cc588eea2ef728712f0f13a2c64e86b0213174a67f01a660ca86d185442ed",
+  "produced_at": "2026-07-12T05:01:09Z",
+  "inputs_hash": "sha256:39df6d696a0ef7af6e95e980d51048c9252fb774cbaecb098240ba530e468c5c",
   "tier": "display"
 }

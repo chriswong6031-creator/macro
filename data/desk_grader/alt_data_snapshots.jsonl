@@ -404,3 +404,12 @@
 {"date":"2026-07-11","ticker":"AVGO","departed":true,"left_desk":"2026-07-11","last_rank":21,"last_score":42}
 {"date":"2026-07-11","ticker":"BWXT","departed":true,"left_desk":"2026-07-11","last_rank":null,"last_score":24}
 {"date":"2026-07-11","ticker":"PINS","departed":true,"left_desk":"2026-07-11","last_rank":27,"last_score":36}
+{"date":"2026-07-11","ticker":"DASH","rank":15,"score":44,"lean":1,"broken":false}
+{"date":"2026-07-11","ticker":"ACM","rank":18,"score":42,"lean":1,"broken":false}
+{"date":"2026-07-11","ticker":"SPGI","rank":22,"score":38,"lean":1,"broken":false}
+{"date":"2026-07-11","ticker":"NVS","rank":30,"score":34,"lean":1,"broken":false}
+{"date":"2026-07-11","ticker":"ST","rank":null,"score":29,"lean":1,"broken":true}
+{"date":"2026-07-11","ticker":"UROY","rank":null,"score":26,"lean":1,"broken":true}
+{"date":"2026-07-11","ticker":"SGML","rank":null,"score":26,"lean":1,"broken":true}
+{"date":"2026-07-11","ticker":"ACN","rank":null,"score":24,"lean":1,"entry_tier":"T2","broken":true}
+{"date":"2026-07-11","ticker":"XOM","rank":null,"score":24,"lean":1,"broken":true}

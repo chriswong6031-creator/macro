@@ -1,5 +1,5 @@
 {
-  "date": "2026-07-11",
+  "date": "2026-07-12",
   "regime": "mixed / no clear trend",
   "breadth": 0.3,
   "favored": [
@@ -10,7 +10,7 @@
     "dollar"
   ],
   "correlation": "concentrated",
-  "asof": "2026-07-11",
+  "asof": "2026-07-12",
   "flows": {
     "schema": "crossasset_flows.v1",
     "display_only": true,
@@ -80,7 +80,7 @@
           "key": "rates_term",
           "label_en": "Rates term-spread (10y-3m)",
           "label_zh": "\u5229\u7387\u671f\u9650\u5229\u5dee (10\u5e74-3\u6708)",
-          "value": 0.83,
+          "value": 0.85,
           "unit": "%",
           "state": "positive carry"
         }
@@ -139,10 +139,10 @@
       "total_usd_tn": 17.85
     },
     "funding_stress": {
-      "asof": "2026-07-08",
+      "asof": "2026-07-09",
       "state": "calm",
-      "score": 24.0,
-      "spread_bp": -4.0
+      "score": 46.0,
+      "spread_bp": -9.0
     },
     "note": "display-only regime read; TSMOM fails DSR (cross-asset-phase0), lead/lag=lag-1 timezone (cross-asset-leadlag-phase0) \u2014 not a strategy/hedge-ratio"
   }

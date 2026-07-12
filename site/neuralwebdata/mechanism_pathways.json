@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-07-11",
+  "as_of": "2026-07-12",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -28,7 +28,7 @@
       "family": "ai_semis",
       "driver": "ai_semis",
       "pathway_role": "primary",
-      "as_of": "2026-07-11",
+      "as_of": "2026-07-12",
       "direction_en": "Bubble / blow-off unwind",
       "direction_zh": "泡沫/见顶回吐",
       "confidence_ceiling": "context_only",
@@ -38,7 +38,7 @@
       "nodes": [
         {
           "node_id": "driver_ai_semis",
-          "as_of": "2026-07-11",
+          "as_of": "2026-07-12",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "ai_semis",
@@ -66,7 +66,7 @@
       "family": "liquidity",
       "driver": "liquidity_impulse",
       "pathway_role": "alternate",
-      "as_of": "2026-07-11",
+      "as_of": "2026-07-12",
       "direction_en": "net liquidity expanding — broad risk-on tailwind",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -76,7 +76,7 @@
       "nodes": [
         {
           "node_id": "driver_liquidity_impulse",
-          "as_of": "2026-07-11",
+          "as_of": "2026-07-12",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "liquidity_impulse",
@@ -85,7 +85,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 0.6,
+          "value": 0.64,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

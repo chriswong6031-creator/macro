@@ -1399,13 +1399,13 @@
       "region": "INTL",
       "grids": {
         "1D": {
-          "macd": -10.167,
-          "signal": -9.059,
-          "hist": -1.108,
-          "hist_vel3": 0.124,
-          "k": 8.653,
-          "d": 6.587,
-          "depth_pctile": 2.54,
+          "macd": -10.285,
+          "signal": -9.098,
+          "hist": -1.187,
+          "hist_vel3": 0.045,
+          "k": 6.737,
+          "d": 5.948,
+          "depth_pctile": 2.421,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
@@ -1452,13 +1452,13 @@
           "recent_events": []
         },
         "3B": {
-          "macd": -4.914,
-          "signal": -3.289,
-          "hist": -1.626,
-          "hist_vel3": -0.86,
+          "macd": -4.992,
+          "signal": -3.315,
+          "hist": -1.677,
+          "hist_vel3": -0.912,
           "k": 0.086,
           "d": 4.873,
-          "depth_pctile": 20.773,
+          "depth_pctile": 20.263,
           "pctile_window_bars": 2354,
           "pctile_window_days": 3296,
           "fast_reclaim": false,
@@ -1466,13 +1466,13 @@
           "recent_events": []
         },
         "W-FRI": {
-          "macd": 1.778,
-          "signal": 3.511,
-          "hist": -1.734,
-          "hist_vel3": -2.242,
+          "macd": 1.685,
+          "signal": 3.48,
+          "hist": -1.796,
+          "hist_vel3": -2.304,
           "k": 21.891,
           "d": 46.95,
-          "depth_pctile": 59.292,
+          "depth_pctile": 58.679,
           "pctile_window_bars": 1469,
           "pctile_window_days": 2057,
           "fast_reclaim": false,
@@ -1616,5 +1616,5 @@
     ]
   },
   "n_roster": 13,
-  "_timing_s": 2.29
+  "_timing_s": 2.25
 }

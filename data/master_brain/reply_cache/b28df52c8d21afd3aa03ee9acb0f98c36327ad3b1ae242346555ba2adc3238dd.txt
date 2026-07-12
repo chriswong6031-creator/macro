@@ -1,0 +1,20 @@
+**Desk Note: Hong Kong Regime Check**  
+2026-07-10 | Trust-graded, display-only detector — no alpha extracted
+
+**Regime summary**  
+- **Breadth of rotation: narrow** (only 3 of 14 themes eligible). The three that pass the absolute-trend gate are defensive/value pods: Banks, High-Dividend Blue Chips, and Conglomerates & Exchange. The eligibility set is neither broad nor cyclical — a classic risk‑off cluster.  
+- **Headline allocation** sits at ~50% cash, with the Banks theme carrying a modest weight. This is already a cautious posture from the framework.  
+- **Gate helps**: the absolute-trend filter does its job in Hong Kong, historically cutting drawdown and tail risk. So staying inside the discipline — even when it forces high cash — is the one validated edge.  
+- **Absorption 0.57, one‑narrative: false** — no single story is swallowing price discovery, yet the rotation structure itself says growth/cyclical themes aren’t passing muster.  
+- **Macro narrative backdrop** (coincident, never a trigger): unscheduled/surprise news share is elevated at **0.76**, with AI‑tech hype and geopolitics dominating. That combination points to a skittish, headline‑driven tape where binary surprises are frequent.
+
+**Lone momentum leader vs. eligibility**  
+China Tech & Internet (rank 1, score 0.9) carries strong momentum but is **not eligible** under the discipline. Chasing it would mean stepping outside the drawdown‑control gate — the only validated edge. The fragile breadth and the refusal of the gate to bless the leader reinforce the message that this isn’t a broad risk‑on environment.
+
+**Sizing & risk‑on stance**  
+Given narrow eligibility, elevated unscheduled macro noise, and a defensive‑only rotation, the regime **does not support a broad risk‑on theme exposure**. It argues for heeding the high headline cash level and, at minimum, not expanding gross exposure. The gate‑helps signal gives permission to trust the discipline’s defensive posture rather than overriding it with discretionary conviction.
+
+**Falsifiable conditional (not a forecast)**  
+If within the next two weeks the number of eligible themes (currently 3) rises to ≥5 *and* the unscheduled‑news share recedes below 0.6, that would signal an improving risk‑appetite backdrop. Until either of those conditions is met, the regime flag stays yellow — favouring capital preservation over thematic risk‑taking.
+
+*No position sizes, no weights, no buy/sell triggers. This is a fallible read of coincident regime signals, not a prediction.*

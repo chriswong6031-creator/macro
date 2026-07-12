@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.liquidity_plumbing.v1",
-  "asof": "2026-07-09",
+  "asof": "2026-07-10",
   "phase_status": {
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
@@ -24,30 +24,30 @@
   "fed": {
     "assets_bn": 6735.609,
     "assets_chg_20d_bn": 10.212,
-    "reserve_balances_bn": null,
+    "reserve_balances_bn": 3098.911,
     "walcl_stale_days": 4,
-    "policy_stance": "neutral",
+    "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
-    "asof": "2026-07-09"
+    "asof": "2026-07-10"
   },
   "treasury": {
-    "tga_bn": 749.244,
-    "tga_chg_20d_bn": -81.155,
-    "net_issuance_20d_bn": 110.235,
+    "tga_bn": 744.637,
+    "tga_chg_20d_bn": -56.447,
+    "net_issuance_20d_bn": 124.1,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
-    "asof": "2026-07-08"
+    "asof": "2026-07-09"
   },
   "rrp": {
-    "rrp_bn": 5.772,
-    "rrp_chg_20d_bn": 5.385,
+    "rrp_bn": 0.545,
+    "rrp_chg_20d_bn": 0.085,
     "buffer_state": "exhausted"
   },
   "quantity": {
-    "netliq_bn": 5980.593,
-    "netliq_chg_20d_bn": 56.667,
-    "netliq_chg_65d_bn": 48.821,
-    "netliq_pctile_expanding": 0.835347,
+    "netliq_bn": 5990.427,
+    "netliq_chg_20d_bn": 65.007,
+    "netliq_chg_65d_bn": -6.188,
+    "netliq_pctile_expanding": 0.840208,
     "overlay": "expanding"
   },
   "quality": {
@@ -67,42 +67,38 @@
   "funding": {
     "effr_minus_iorb_bp": -3.0,
     "effr_minus_iorb_d20_bp": 0.0,
-    "effr_minus_iorb_pctile": 0.8838,
-    "sofr_minus_iorb_bp": -7.0,
-    "sofr_minus_iorb_d20_bp": -5.0,
-    "sofr_minus_iorb_pctile": 0.7054,
-    "sofr_99pctl_minus_iorb_bp": 2.0,
+    "effr_minus_iorb_pctile": 0.8839,
+    "sofr_minus_iorb_bp": -12.0,
+    "sofr_minus_iorb_d20_bp": -7.0,
+    "sofr_minus_iorb_pctile": 0.0779,
+    "sofr_99pctl_minus_iorb_bp": 0.0,
     "sofr_99pctl_minus_iorb_d20_bp": -4.0,
-    "sofr_99pctl_minus_iorb_pctile": 0.4695,
+    "sofr_99pctl_minus_iorb_pctile": 0.3685,
     "srf_takeup_bn": null,
     "discount_window_primary_credit_bn": null,
     "reserve_scarcity_state": "normalizing",
-    "asof": "2026-07-08"
+    "asof": "2026-07-09"
   },
   "components": {
     "walcl": {
       "level_bn": 6735.6,
       "d20_bn": 10.2,
-      "d65_bn": 60.3,
-      "pctile": 0.7701
+      "d65_bn": 41.7,
+      "pctile": 0.7702
     },
     "rrp": {
-      "level_bn": 5.8,
-      "d20_bn": 5.4,
-      "d65_bn": -9.6,
-      "pctile": 0.4919
+      "level_bn": 0.5,
+      "d20_bn": 0.1,
+      "d65_bn": 0.4,
+      "pctile": 0.1317
     },
     "tga": {
-      "level_bn": 749.2,
-      "d20_bn": -51.8,
-      "d65_bn": 21.0,
-      "pctile": 0.8578
+      "level_bn": 744.6,
+      "d20_bn": -54.9,
+      "d65_bn": 47.6,
+      "pctile": 0.8553
     },
     "netliq_sparkline_90d": [
-      {
-        "d": "2026-04-10",
-        "v": 5990.1
-      },
       {
         "d": "2026-04-13",
         "v": 5934.7
@@ -349,9 +345,19 @@
       },
       {
         "d": "2026-07-09",
-        "v": 5980.6
+        "v": 5985.2
+      },
+      {
+        "d": "2026-07-10",
+        "v": 5990.4
       }
-    ]
+    ],
+    "reserves": {
+      "level_bn": 3098.9,
+      "d20_bn": 149.1,
+      "d65_bn": -375.8,
+      "pctile": 0.8049
+    }
   },
   "foreign_dollar": {
     "swap_lines_bn": null,
@@ -365,14 +371,13 @@
     "use": "support existing buy setup, never originate one"
   },
   "gaps": [
-    "data/fred/WRESBAL.parquet missing or empty — reserve_balances_bn unavailable until the next FRED collect",
     "SRF take-up and discount-window primary credit not collected yet — srf_takeup_bn / discount_window_primary_credit_bn stay null",
     "H.4.1 swap/FIMA not integrated (Phase 5)"
   ],
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-07-11T08:42:27Z",
-  "inputs_hash": "sha256:c903134b4de1c23058e0964bb08a8b1d6201932d4b4dbaea30bb2d0b0297edd9",
+  "produced_at": "2026-07-12T04:59:01Z",
+  "inputs_hash": "sha256:0e50257cc5fa5b552a174e17dfc297b009627fe2d7905543f255c3cf9600c4d5",
   "tier": "shadow"
 }

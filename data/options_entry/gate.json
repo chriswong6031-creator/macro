@@ -1,6 +1,6 @@
 {
  "schema": "options_entry.gate.v2",
- "generated_at": "2026-07-11 08:35 UTC",
+ "generated_at": "2026-07-12 04:52 UTC",
  "scored": false,
  "status": "building_history",
  "weight": 0.0,
@@ -10,8 +10,8 @@
   21
  ],
  "min_per_bucket": 30,
- "n_ledger_rows": 1019,
- "n_stamped_rows": 1019,
+ "n_ledger_rows": 1095,
+ "n_stamped_rows": 1095,
  "fdr_family": {
   "alpha": 0.1,
   "method": "Benjamini-Hochberg",
@@ -31,8 +31,8 @@
  "tests": {
   "S-DOI": {
    "bucket": "S-DOI: doi_slope_5d > 0 (call-OI accumulating)",
-   "n_cond": 3,
-   "n_base": 4,
+   "n_cond": 6,
+   "n_base": 10,
    "ready": false,
    "breach": {
     "n_cond": 0,
@@ -68,8 +68,8 @@
   },
   "S-VOI": {
    "bucket": "S-VOI: voi_flag True (vol>prior-OI fresh positioning)",
-   "n_cond": 47,
-   "n_base": 6,
+   "n_cond": 55,
+   "n_base": 7,
    "ready": false,
    "breach": {
     "n_cond": 0,
@@ -98,8 +98,8 @@
   },
   "S-VOI-fast": {
    "bucket": "S-VOI-fast",
-   "n_cond": 47,
-   "n_base": 6,
+   "n_cond": 55,
+   "n_base": 7,
    "ready": false,
    "fwd_ret_5": {
     "n_cond": 0,
@@ -110,16 +110,16 @@
     "excludes_zero": false
    },
    "fwd_mfe_5": {
-    "n_cond": 5,
-    "n_base": 2,
-    "delta": -0.03814,
-    "ci_lo": -0.07423,
-    "ci_hi": -0.00204,
-    "excludes_zero": true
+    "n_cond": 13,
+    "n_base": 3,
+    "delta": -0.01417,
+    "ci_lo": -0.05478,
+    "ci_hi": 0.0206,
+    "excludes_zero": false
    }
   },
   "S-WALL": {
-   "n_eligible": 53,
+   "n_eligible": 62,
    "n_priced": 0,
    "wall_touches": 0,
    "fixed_stop_touches": 0,
@@ -129,8 +129,8 @@
   },
   "S-IVSPREAD-F": {
    "bucket": "S-IVSPREAD-F: ivspread_rel > 0 (calls richening)",
-   "n_cond": 3,
-   "n_base": 4,
+   "n_cond": 9,
+   "n_base": 7,
    "ready": false,
    "breach": {
     "n_cond": 0,
@@ -159,8 +159,8 @@
   },
   "S-SKEW_DECEL": {
    "bucket": "S-SKEW_DECEL: skew top-tercile AND skew_5d_chg < 0 (high skew fading)",
-   "n_cond": 1,
-   "n_base": 6,
+   "n_cond": 3,
+   "n_base": 13,
    "ready": false,
    "breach": {
     "n_cond": 0,
@@ -189,8 +189,8 @@
   },
   "S-TOP_RISK": {
    "bucket": "S-TOP_RISK: skew_5d_chg>0 OR ivspread_rel<0 (puts richening/dominant \u2014 caution-only)",
-   "n_cond": 4,
-   "n_base": 3,
+   "n_cond": 7,
+   "n_base": 9,
    "ready": false,
    "breach": {
     "n_cond": 0,
@@ -222,7 +222,7 @@
   "S-PIN_RISK": {
    "bucket": "S-PIN_RISK: opex_days<=5 AND gamma=long AND min_wall_dist<=2% (pin-risk window)",
    "n_cond": 0,
-   "n_base": 8,
+   "n_base": 17,
    "ready": false,
    "breach": {
     "n_cond": 0,
@@ -271,22 +271,22 @@
  },
  "evidence": [
   "S-IVR: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_iv_rank_252 is null until the post-W1.1 IV-backfill PR (ruling A9)",
-  "S-DOI: building history (n_cond=3, n_base=4; need 30/bucket)",
-  "S-VOI: building history (n_cond=47, n_base=6; need 30/bucket)",
-  "S-VOI-fast (5d): building history (n_cond=47, n_base=6; need 30/bucket)",
-  "S-WALL: 0/53 eligible fires priced (price_store_available=False); wall_touches=0, fixed\u22125%_touches=0, wall_before_fixed=0. LIMITATION: close-path study understates intraday touches; a bar may pierce the wall intraday and close back above it. Full stop-out comparison is W2.3.",
-  "S-IVSPREAD-F: building history (n_cond=3, n_base=4; need 30/bucket)",
-  "S-SKEW_DECEL: building history (n_cond=1, n_base=6; need 30/bucket)",
-  "S-TOP_RISK: building history (n_cond=4, n_base=3; need 30/bucket) \u2014 CAUTION-ONLY (RO-3): beneficial direction = flagged fires show WORSE outcomes (correctly identifies bad entries). NEVER initiates a negative position.",
-  "S-PIN_RISK: building history (n_cond=0, n_base=8; need 30/bucket) \u2014 CAUTION-ONLY: beneficial direction = flagged fires show lower clean liftoff / mfe21 (pinning suppresses follow-through). de-escalation only, never a short.",
+  "S-DOI: building history (n_cond=6, n_base=10; need 30/bucket)",
+  "S-VOI: building history (n_cond=55, n_base=7; need 30/bucket)",
+  "S-VOI-fast (5d): building history (n_cond=55, n_base=7; need 30/bucket)",
+  "S-WALL: 0/62 eligible fires priced (price_store_available=False); wall_touches=0, fixed\u22125%_touches=0, wall_before_fixed=0. LIMITATION: close-path study understates intraday touches; a bar may pierce the wall intraday and close back above it. Full stop-out comparison is W2.3.",
+  "S-IVSPREAD-F: building history (n_cond=9, n_base=7; need 30/bucket)",
+  "S-SKEW_DECEL: building history (n_cond=3, n_base=13; need 30/bucket)",
+  "S-TOP_RISK: building history (n_cond=7, n_base=9; need 30/bucket) \u2014 CAUTION-ONLY (RO-3): beneficial direction = flagged fires show WORSE outcomes (correctly identifies bad entries). NEVER initiates a negative position.",
+  "S-PIN_RISK: building history (n_cond=0, n_base=17; need 30/bucket) \u2014 CAUTION-ONLY: beneficial direction = flagged fires show lower clean liftoff / mfe21 (pinning suppresses follow-through). de-escalation only, never a short.",
   "S-VOI2: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_voi2_flag not yet stamped \u2014 awaits W-C harness extension that adds the stricter z-threshold + contract-count-floor to the stamp (future PR). S-VOI original registration stands; this is a distinct, stricter bucket registered after S-VOI was documented as degenerate (n_cond=42/n_base=4).",
-  "W-C stamp coverage [opt_ivspread_rel]: 7/1019 rows (0.7%)",
-  "W-C stamp coverage [opt_skew]: 8/1019 rows (0.8%)",
-  "W-C stamp coverage [opt_skew_5d_chg]: 7/1019 rows (0.7%)",
-  "W-C stamp coverage [opt_opex_days]: 972/1019 rows (95.4%)",
-  "W-C stamp coverage [opt_pin_risk]: 8/1019 rows (0.8%)",
-  "W-C stamp coverage [opt_wall_dist_up_pct]: 8/1019 rows (0.8%)",
-  "W-C stamp coverage [opt_wall_dist_down_pct]: 8/1019 rows (0.8%)"
+  "W-C stamp coverage [opt_ivspread_rel]: 16/1095 rows (1.5%)",
+  "W-C stamp coverage [opt_skew]: 17/1095 rows (1.6%)",
+  "W-C stamp coverage [opt_skew_5d_chg]: 16/1095 rows (1.5%)",
+  "W-C stamp coverage [opt_opex_days]: 1048/1095 rows (95.7%)",
+  "W-C stamp coverage [opt_pin_risk]: 17/1095 rows (1.6%)",
+  "W-C stamp coverage [opt_wall_dist_up_pct]: 17/1095 rows (1.6%)",
+  "W-C stamp coverage [opt_wall_dist_down_pct]: 17/1095 rows (1.6%)"
  ],
  "note": "Pre-registered entry-quality gate (S-IVR/S-DOI/S-WALL/S-VOI + W-C: S-IVSPREAD-F/S-SKEW_DECEL/S-TOP_RISK/S-PIN_RISK/S-VOI2). Display/ledger-seed only until a bucket clears n\u226530 AND a primitive delta's bootstrap CI excludes 0 (doctrine \u00a72.3). Ledger primitives only (ruling A10). FDR family=22 tests, BH \u03b1=0.10. Never scored until a gate passes. S-TOP_RISK/S-PIN_RISK are caution-only: beneficial direction = flagged fires worse (correctly de-escalates entries). Never initiates a negative position (RO-3)."
 }

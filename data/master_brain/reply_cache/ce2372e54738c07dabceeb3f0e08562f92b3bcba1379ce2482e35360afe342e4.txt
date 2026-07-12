@@ -1,0 +1,36 @@
+{
+  "regime_context": "The detector shows broad thematic participation (75% eligible) led by Big Banks, but not a single-narrative market. Momentum ranks are a focus lens with no forecasting edge; the absolute-trend gate is the sole validated mechanism for drawdown control. Several themes fail that gate, signalling heightened downside risk in those areas.",
+  "theses": [
+    {
+      "subject": "Big Banks",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Big Banks leads the momentum focus list and remains eligible under the absolute-trend gate, which has historically reduced drawdowns on Canada/TSX. Durability bar of 0.74 indicates reasonable trend health, though the crowded flag and mixed hurst suggest limiting size.",
+      "evidence": [
+        "rank=1 (attention focus)",
+        "eligible=true (passes absolute-trend gate)",
+        "durability_bar=0.74",
+        "gate_helps=true (trend discipline lowered volatility/drawdown)"
+      ],
+      "dissent": "Crowded positioning (z=1.57) and mixed trend quality increase vulnerability to sharp mean-reversion; momentum ranks have no validated predictive power, and the leader may already be fully priced.",
+      "falsifier_text": "Absolute-trend gate flips to ineligible for Big Banks, or ZEB.TO closes below its 50-day moving average on above-average volume with sustained downside breadth."
+    },
+    {
+      "subject": "Gold Miners",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Gold Miners fails the absolute-trend gate (eligible=false), the detector's only validated edge for drawdown avoidance. Avoiding ineligible themes aligns with the gate's historical risk-control benefit, keeping downside exposure low.",
+      "evidence": [
+        "eligible=false (failed absolute-trend gate)",
+        "gate_helps=true (drawdown control from trend filter)",
+        "durability_bar=0.28 (low trend persistence)"
+      ],
+      "dissent": "A geopolitical or gold price shock could swiftly flip the absolute-trend signal and make the theme eligible; past gate misses are no guarantee of future drawdowns, and the theme could offer uncorrelated upside during such an event.",
+      "falsifier_text": "Gold Miners theme flips to eligible (absolute trend signal positive) and remains eligible for 5 consecutive trading sessions."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

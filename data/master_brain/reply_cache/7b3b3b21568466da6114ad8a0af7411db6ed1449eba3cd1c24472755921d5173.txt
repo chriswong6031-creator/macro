@@ -1,0 +1,30 @@
+TREND-RIDER DESK NOTE — Canada / TSX  
+2026-07-10 | Region: Canada | Benchmark: S&P/TSX  
+Analyst: Thematic Trend-Rider (accountable, no edge extraction)
+
+**CURRENT STATE**  
+Leading theme: Big Banks (ca_banks) – Rank 1, Score 2.1, Eligible (above absolute-trend gate).  
+Closest challenger: Insurers (ca_insurers) – Rank 2, Score 0.51, Eligible.  
+Margin: 1.59; broad rotation (75% eligible); no single narrative dominance.  
+Crowding flag: Big Banks crowded (z=1.57, crowded=true); Insurers crowded (z=1.74); Pipelines crowded.  
+Gate helps: Yes – the absolute-trend gate materially reduced drawdown/tail in this market’s backtest. The gate is the validated edge.
+
+**STRONGEST HONEST CASE FOR STAYING WITH THE LEADING DURABLE THEME(S)**  
+We stay with Big Banks. The absolute-trend gate says it’s still in an uptrend (eligible). Durability bar is solid at 0.74 – historically, themes with high durability survive noise and shakeouts. The rank margin over Insurers is wide (1.59), and no confirmed leadership handoff has occurred. Rotation is broad, but that only tells us that many themes are trending – it does not signal that the leader is about to falter.  
+
+Crowding is real – z-scores >1.5 – but the discipline’s documented failure mode is fading the leader on a crowding flag. The correct application: cap exposure, not exit. We observe crowding as a sizing caution, not a bearish call. The detector’s own guardrails explicitly forbid fading the dominant theme on crowding.  
+
+Insurers, though also durable (0.78) and eligible, sits in second place. Its trend-health (hurst_tag: trend) is even cleaner, but historically it is the Big Banks that have deeper staying power in Canadian markets, and the detector gives it top score. There is no “rotation-timing” edge to swap into Insurers; that would be speculation. The only validated edge is sticking with the Big Banks trend until the absolute gate is breached.  
+
+**FALSIFIABLE CONDITIONAL LEAN**  
+Lean: Big Banks will remain the dominant theme through summer, provided the absolute-trend gate stays positive (i.e., the uptrend structure does not break).  
+Check-by horizon: Re-evaluate at the next monthly gate update (early August 2026) or if the theme’s eligibility flips to false before then.  
+What would falsify this lean: A breach of the absolute-trend gate (price/trend signal) – at that point the discipline demands exit, and the case for staying evaporates. Crowding, rotation chatter, or broadening market participation does NOT falsify; only the gate does.
+
+**ACCOUNTABILITY NOTES**  
+- This is a display-only, trust-graded view. No position size, weight, or trade is implied.  
+- Momentum rank is ~0 IC: it’s a focus lens, not a return forecast.  
+- We do not predict the next narrative; we simply follow the confirmed leader.  
+- Gate helps: the discipline reduces drawdown; staying with the trend is the edge.
+
+— END DESK NOTE —

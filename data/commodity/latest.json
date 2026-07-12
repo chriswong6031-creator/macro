@@ -15,7 +15,7 @@
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": -8.9
+      "conviction": -9.8
     },
     "silver": {
       "label": "Silver",
@@ -25,7 +25,7 @@
       "risk": "Elevated",
       "trend": "up",
       "action": "SELL",
-      "conviction": -17.5
+      "conviction": -18.2
     },
     "copper": {
       "label": "Copper",
@@ -35,7 +35,7 @@
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": -2.3
+      "conviction": -1.7
     },
     "oil": {
       "label": "Oil \u00b7 WTI",

@@ -2,7 +2,7 @@
   "schema": "override_shadow.v1",
   "stub": false,
   "stub_note": "v1: W1 measured overlay merged onto the W3 panel payload (weekly gated-vs-raw series, prior-cycle same-point context, cum gap). Per-cycle attribution + breakeven fan live in data/vector/gate_attribution.json.",
-  "generated_at": "2026-07-11 08:22 UTC",
+  "generated_at": "2026-07-12 04:39 UTC",
   "audience": "owner-only",
   "override": {
     "id": "midterm_blackout",
@@ -33,14 +33,14 @@
     "dampening_path_pct": [
       -84.0,
       -77.0,
-      -48.0
+      -49.0
     ],
     "dampening_note": "Amplitude is dampening cycle-over-cycle (institutionalisation) \u2014 the last leg is the CURRENT drawdown, still open, never banked.",
     "pivot_fit_mae_days": 7.2,
     "pivot_fit_note": "IN-SAMPLE: the same pivots also set the 1064/364 parameters \u2014 this is fit quality, not forecast skill."
   },
   "counterfactual": {
-    "asof": "2026-07-11",
+    "asof": "2026-07-12",
     "gated_pct": {
       "conservative": 0.0,
       "moderate": 0.0,
@@ -55,9 +55,9 @@
     },
     "raw_source": "signals.parquet alloc_*_raw (W0 dual series)",
     "parity_ok": true,
-    "ytd_raw_mean_pct": 15.1,
+    "ytd_raw_mean_pct": 15.0,
     "ytd_raw_days_gt0": 101,
-    "ytd_days": 192
+    "ytd_days": 193
   },
   "falsifiers": {
     "items": [
@@ -72,7 +72,7 @@
       {
         "key": "timing",
         "level": "ok",
-        "text": "Pre-bottom: ~82d until the projected window opens (Oct 2026). Scale in, don't lump in.",
+        "text": "Pre-bottom: ~81d until the projected window opens (Oct 2026). Scale in, don't lump in.",
         "evaluability": "in_window",
         "evaluable": true,
         "why": "W2: escalates to WATCH past the halving clock's worst historical case (2026-10-31 \u2014 inside the gate window), ALERT past the peak-anchored trail (2026-12-10)."
@@ -256,11 +256,11 @@
       },
       {
         "year": 2022,
-        "raw_at_same_elapsed_pct": -18.9,
+        "raw_at_same_elapsed_pct": -19.5,
         "raw_by_release_pct": -15.2
       }
     ],
-    "framing": "Both sides (D3): the gate is ahead of the ungated engine by 5.9pp since Jan 1; in 2018 the ungated engine was -13.3% at this same point and finished the gate window at -19.9%; in 2022 the ungated engine was -18.9% at this same point and finished the gate window at -15.2%.",
+    "framing": "Both sides (D3): the gate is ahead of the ungated engine by 5.9pp since Jan 1; in 2018 the ungated engine was -13.3% at this same point and finished the gate window at -19.9%; in 2022 the ungated engine was -19.5% at this same point and finished the gate window at -15.2%.",
     "no_action_affordances": true
   },
   "as_of": "2026-07-11",

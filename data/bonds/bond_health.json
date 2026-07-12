@@ -8,9 +8,9 @@
   "pillars": {
     "curve": {
       "spread_10y3m": 0.71,
-      "spread_2s10s": 0.38,
-      "curve_tp_adjusted": 0.38,
-      "ntfs": 0.6674999999999973,
+      "spread_2s10s": 0.35,
+      "curve_tp_adjusted": 0.35,
+      "ntfs": 0.6450000000000009,
       "ny_fed_recession_prob": 0.15769918811410977,
       "inverted": false,
       "tp_adj_inverted": false,
@@ -26,7 +26,7 @@
       "hy_oas": 2.7,
       "ig_oas": 0.76,
       "hy_ig_ratio": 3.5526315789473686,
-      "baa_aaa": 0.4299999999999997,
+      "baa_aaa": 0.41999999999999993,
       "ebp": -0.297648271615362,
       "hy_pctile": 0.12400793650793651,
       "distress_band": "tight",
@@ -34,9 +34,9 @@
     },
     "real_inflation": {
       "real_10y": 2.31,
-      "real_5y": 2.0,
-      "breakeven_10y": 2.23,
-      "breakeven_5y5y": 2.18,
+      "real_5y": 1.99,
+      "breakeven_10y": 2.24,
+      "breakeven_5y5y": 2.2,
       "term_premium": null,
       "tp_repriced_positive": null
     },
@@ -45,19 +45,19 @@
       "move_band": null,
       "move_pctile": null,
       "move_leads_vix": false,
-      "sofr_iorb_bp": -6.999999999999984,
-      "repo_spike_bp": 8.999999999999986,
+      "sofr_iorb_bp": -12.00000000000001,
+      "repo_spike_bp": 12.00000000000001,
       "reserve_scarcity": false,
       "repo_stress": false
     },
     "cross_asset": {
-      "stock_bond_corr": 0.5591876513012746,
+      "stock_bond_corr": 0.5643800997722926,
       "regime": "breakdown",
       "hedge_working": false
     },
     "sovereign": {
-      "euro_frag": 0.3926570252000001,
-      "bund_10y": 3.1370395898,
+      "euro_frag": 0.38961770279999985,
+      "bund_10y": 3.1292327833,
       "frag_state": "calm",
       "frag_direction": "widening",
       "jgb_2s10s": 1.308,
@@ -82,7 +82,7 @@
     "commodities": {
       "note_en": "Real-10y is gold's discount rate (inverse); breakevens track oil/energy; curve slope proxies the growth impulse for copper/oil.",
       "real_10y": 2.31,
-      "breakeven_10y": 2.23
+      "breakeven_10y": 2.24
     },
     "bitcoin": {
       "note_en": "BTC is a long-duration, real-rate-sensitive liquidity asset — falling real-10y + easing plumbing is a tailwind; widening credit / rising MOVE is a risk-off gate.",
@@ -93,33 +93,33 @@
       "note_en": "Discount-rate channel (real-10y, term premium) compresses long-duration multiples; credit (HY OAS) is the canary that leads equity drawdowns; the SPEED of yield moves (MOVE) matters more than the level.",
       "hy_oas": 2.7,
       "credit_canary": true,
-      "stock_bond_corr": 0.5591876513012746
+      "stock_bond_corr": 0.5643800997722926
     }
   },
   "fed_path": {
     "asof": "2026-07-10",
-    "built": "2026-07-11T07:36:54.200422+00:00",
+    "built": "2026-07-12T03:49:32.921230+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,
     "target_mid": 3.62,
     "implied": {
       "now": 3.62,
-      "m1": 3.65,
-      "m3": 3.77,
-      "m6": 3.94,
-      "m12": null
+      "m1": 3.67,
+      "m3": 3.81,
+      "m6": 3.98,
+      "m12": 4.08
     },
     "implied_source_en": "ZQ fed-funds futures",
     "implied_source_zh": "ZQ 联邦基金期货",
-    "implied_bp_12m": null,
-    "implied_cuts_12m": null,
+    "implied_bp_12m": 46,
+    "implied_cuts_12m": -2,
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
       "m3": null,
-      "m6": 3.99,
-      "m12": 4.07
+      "m6": 4.04,
+      "m12": 4.12
     },
     "dots": [
       {
@@ -139,35 +139,35 @@
       "horizon_label": "end-2026",
       "horizon_months": 5,
       "fed_dot": 3.8,
-      "market": 3.88,
-      "gap_bp": 8,
-      "lean_en": "market ≈ the Fed",
-      "lean_zh": "市场与美联储基本一致"
+      "market": 3.93,
+      "gap_bp": 13,
+      "lean_en": "market more hawkish than the Fed",
+      "lean_zh": "市场比美联储更鹰派"
     },
-    "ntfs": 0.67,
-    "curve_tp_adj": 0.38,
-    "rate_exp_proxy": 0.59,
-    "headline_en": "Policy set at 3.62%",
-    "headline_zh": "政策利率设定于 3.62%",
-    "read_en": "At end-2026 the market implies 3.88% vs the Fed's 3.80% median dot (+8bp — market ≈ the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.67pp).",
-    "read_zh": "在end-2026，市场隐含 3.88% 对比美联储 3.80% 的中位点（+8基点 — 市场与美联储基本一致）。近端远期利差为正——近端未为降息定价（+0.67个百分点）。",
+    "ntfs": 0.65,
+    "curve_tp_adj": 0.35,
+    "rate_exp_proxy": 0.54,
+    "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.62% → 4.08%)",
+    "headline_zh": "市场为未来12个月定价约加息2次（基金利率 3.62% → 4.08%）",
+    "read_en": "At end-2026 the market implies 3.93% vs the Fed's 3.80% median dot (+13bp — market more hawkish than the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.65pp).",
+    "read_zh": "在end-2026，市场隐含 3.93% 对比美联储 3.80% 的中位点（+13基点 — 市场比美联储更鹰派）。近端远期利差为正——近端未为降息定价（+0.65个百分点）。",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE — it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
     "note_zh": "仅供展示 / LLM 上下文。隐含路径是市场价格（期货隐含的基金利率），并非预测优势，且重新定价是被动的——它在数据和美联储之后变动，并不领先。从不评分，从不作为 MRS 项。ZQ/SR3=无需密钥的 CME 期货；点阵图=FRED FEDTARMD（FOMC SEP 中位数）。请注明 CME/FRED。"
   },
   "intl_bonds": {
     "as_of": "2026-07-10",
     "global": {
-      "avg_10y": 3.89,
-      "avg_10y_chg_63d_bp": 19.0,
+      "avg_10y": 3.88,
+      "avg_10y_chg_63d_bp": 18.0,
       "direction": "rising",
       "avg_slope": 0.87,
       "n": 7,
       "regime": "global yields rising"
     },
     "us_vs_world": {
-      "us_10y": 4.56,
+      "us_10y": 4.54,
       "exus_10y": 3.36,
-      "us_premium_bp": 120.0,
+      "us_premium_bp": 118.0,
       "premium_direction": "stable"
     },
     "countries": [
@@ -179,15 +179,15 @@
         "cadence": "daily",
         "stale": false,
         "gdp_w": 0.42,
-        "y10": 4.56,
-        "y2": 4.21,
-        "slope": 0.35,
+        "y10": 4.54,
+        "y2": 4.16,
+        "slope": 0.38,
         "slope_basis": "2s10s",
         "slope_state": "normal",
-        "chg_63d_bp": 30.0,
+        "chg_63d_bp": 28.0,
         "direction": "rising",
-        "z1y": 1.98,
-        "z5y": 0.92,
+        "z1y": 1.86,
+        "z5y": 0.9,
         "diff_vs_us_bp": 0.0,
         "real_10y": 2.31
       },
@@ -199,16 +199,16 @@
         "cadence": "daily",
         "stale": false,
         "gdp_w": 0.22,
-        "y10": 3.14,
-        "y2": 2.62,
-        "slope": 0.52,
+        "y10": 3.13,
+        "y2": 2.61,
+        "slope": 0.51,
         "slope_basis": "2s10s",
         "slope_state": "normal",
         "chg_63d_bp": 2.0,
         "direction": "stable",
-        "z1y": 1.69,
-        "z5y": 1.06,
-        "diff_vs_us_bp": -142.0,
+        "z1y": 1.64,
+        "z5y": 1.05,
+        "diff_vs_us_bp": -141.0,
         "real_10y": null
       },
       {
@@ -228,7 +228,7 @@
         "direction": "rising",
         "z1y": 1.52,
         "z5y": 2.45,
-        "diff_vs_us_bp": -187.0,
+        "diff_vs_us_bp": -185.0,
         "real_10y": null
       },
       {
@@ -248,7 +248,7 @@
         "direction": "rising",
         "z1y": 1.73,
         "z5y": 1.04,
-        "diff_vs_us_bp": 38.0,
+        "diff_vs_us_bp": 40.0,
         "real_10y": null
       },
       {
@@ -268,7 +268,7 @@
         "direction": "stable",
         "z1y": 1.18,
         "z5y": 0.77,
-        "diff_vs_us_bp": -102.0,
+        "diff_vs_us_bp": -100.0,
         "real_10y": null
       },
       {
@@ -288,7 +288,7 @@
         "direction": "stable",
         "z1y": 1.18,
         "z5y": 1.28,
-        "diff_vs_us_bp": 43.0,
+        "diff_vs_us_bp": 45.0,
         "real_10y": null
       },
       {
@@ -308,22 +308,22 @@
         "direction": "stable",
         "z1y": 1.23,
         "z5y": -0.39,
-        "diff_vs_us_bp": -412.0,
+        "diff_vs_us_bp": -410.0,
         "real_10y": null
       }
     ],
     "em": {
-      "em_oas": 1.44,
+      "em_oas": 1.45,
       "pctile": 4.0,
       "direction": "falling",
       "emb_trend": "up",
       "emb_chg_63d_pct": 1.4
     },
-    "verdict_en": "Global 10y avg 3.89% and rising (+19bp/3m) — a global tightening/duration-bear impulse. US 10y is 120bp above the GDP-weighted rest of the world and stable — the dollar's rate-differential anchor. EM hard-currency OAS 1.44% (falling).",
-    "verdict_zh": "全球10年期均值 3.89%，3个月 +19基点 — 全球收紧/久期偏空动能。美国10年期较GDP加权的世界其余高120基点，利差平稳 — 美元的利差之锚。新兴市场硬通货利差 1.44%（收窄）。",
+    "verdict_en": "Global 10y avg 3.88% and rising (+18bp/3m) — a global tightening/duration-bear impulse. US 10y is 118bp above the GDP-weighted rest of the world and stable — the dollar's rate-differential anchor. EM hard-currency OAS 1.45% (falling).",
+    "verdict_zh": "全球10年期均值 3.88%，3个月 +18基点 — 全球收紧/久期偏空动能。美国10年期较GDP加权的世界其余高118基点，利差平稳 — 美元的利差之锚。新兴市场硬通货利差 1.45%（收窄）。",
     "drivers_for": {
       "forex": {
-        "us_premium_bp": 120.0,
+        "us_premium_bp": 118.0,
         "premium_direction": "stable",
         "note_en": "A widening US-vs-world 10y premium is a USD tailwind (rate-differential / carry channel); a narrowing premium pressures the dollar."
       }
@@ -382,7 +382,7 @@
           "key": "macro",
           "label_en": "Macro impulse (reflation)",
           "label_zh": "宏观动能（再通胀）",
-          "value": -0.48,
+          "value": -0.49,
           "weight": 0.5,
           "state": "bearish",
           "note_en": "Rising copper/gold + breakevens = reflation = a duration headwind.",
@@ -395,11 +395,11 @@
       "rationale_en": "Reflation plus a positive curve points to long-end pressure.",
       "rationale_zh": "再通胀叠加正向曲线，指向长端压力。",
       "slope_10y3m": 0.71,
-      "ntfs": 0.67
+      "ntfs": 0.65
     },
     "expected": {
-      "carry_pct": 4.56,
-      "rolldown_pct": 0.35,
+      "carry_pct": 4.54,
+      "rolldown_pct": 0.37,
       "carry_roll_pct": 4.91,
       "cushion_bp": 61.0,
       "duration": 8.0
@@ -418,7 +418,7 @@
       "slope_chg_bp": 16.0,
       "hy_oas": 2.7,
       "hy_chg_bp": -14.0,
-      "breakeven": 2.23,
+      "breakeven": 2.24,
       "move": 65.0
     },
     "assets": [
@@ -511,8 +511,8 @@
         "corr": -0.03,
         "n": 1437,
         "sign": "neg",
-        "impulse_en": "+30bp/3m",
-        "impulse_zh": "+30基点/3月",
+        "impulse_en": "+28bp/3m",
+        "impulse_zh": "+28基点/3月",
         "verdict": "headwind",
         "story_en": "A bond proxy — high yield, rate-sensitive; rising yields compete it down.",
         "story_zh": "类债券——高股息、对利率敏感；利率上行形成竞争压力。"
@@ -606,8 +606,8 @@
         "corr": 0.36,
         "n": 1227,
         "sign": "pos",
-        "impulse_en": "-14bp/3m",
-        "impulse_zh": "-14基点/3月",
+        "impulse_en": "-13bp/3m",
+        "impulse_zh": "-13基点/3月",
         "verdict": "headwind",
         "story_en": "Breakevens and energy feed each other; growth + inflation impulse.",
         "story_zh": "盈亏平衡通胀与能源相互驱动；增长+通胀动能。"

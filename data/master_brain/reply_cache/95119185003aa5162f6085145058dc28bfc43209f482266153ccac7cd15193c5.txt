@@ -1,0 +1,31 @@
+**Desk Note: Hong Kong Thematic Trend Rider**
+**Date:** 10 July 2026  
+**Subject:** Staying with the Leading Durable Theme(s) – Absolute-Trend Gate Discipline
+
+---
+
+**1. Detector Snapshot**
+- **Headline allocation:** Banks (H + HK) – weight 0.25, cash 0.50
+- **Leadership lens:** China Tech & Internet ranks #1 (score 0.90) but **not eligible** (absolute-trend gate failed). The highest‑scoring **eligible** themes are Banks (#2, 0.653) and High‑Dividend Blue Chips (#3, 0.622).
+- **Gate helps:** Yes – the absolute-trend gate has historically reduced drawdown & volatility; staying with eligible themes is the validated edge.
+
+**2. Strongest Case for Staying with Banks**
+The detector is already positioned in Banks (25% exposure, 50% cash), signalling that the theme has passed its absolute-trend filter and remains the active durable narrative. The case for persisting:
+
+- **Trend‑gate eligibility (validated risk control):** Banks is `eligible = true`. Even though its Hurst tag is “mean‑revert”, the absolute‑trend line has not been breached. The discipline’s only verified edge is drawdown avoidance – exiting an eligible theme would mean abandoning that edge without a confirmed handoff.
+- **Rank & durability context:** Rank #2 (score 0.653) with a durability bar of **0.46** (moderate). Durability is not high, but it is sufficient to keep the theme inside the gate. The cash buffer (50%) already reflects the moderate durability and mean‑reverting character – a built‑in de‑risk, not a reason to abandon.
+- **No reflexivity trap:** Crowding z‑score -0.26 (not crowded), breadth 0.308, and `one_narrative = false`. There is no structural fragility or consensus‑chase warning that would demand fading the leader. Fading the dominant eligible theme is the documented failure mode.
+- **Rotation timing has no edge:** The rotation margin (0.247) between China Tech (ineligible) and Banks is display‑only. Handoff timing is not predictive; the discipline waits for a **confirmed** change in eligibility, not a score gap.
+
+**3. Secondary Durable Theme Worth Watching**
+- **High‑Dividend Blue Chips** (rank #3, score 0.622, eligible, durability 0.59, trend tag). It offers higher durability and a pure trending structure. While not the headline allocation, it acts as a natural complement. If Banks eventually loses eligibility, a rotation into Dividend Blue Chips would be a plausible next step – but that prediction is forbidden; we simply note its presence as a second durable pillar.
+
+**4. Why Not China Tech (Despite Rank #1)**
+China Tech leads the momentum lens (score 0.90, breadth 0.421) but is **ineligible**. The absolute‑trend gate is the only validated tool; chasing a top‑scoring ineligible theme would be speculating on mean‑reversion that the detector does not forecast. Stay the course.
+
+**5. Falsifiable Conditional & Check‑By Horizon**
+- **Hypothesis:** Banks remains a durable, eligible theme suitable for trend‑following with the current 25% exposure / 50% cash discipline.
+- **Check‑by:** The next review. If Banks’ durability bar drops below the gate threshold (becomes ineligible), the discipline calls for exit; otherwise, the case for staying remains intact.
+- **Accountability:** The absolute‑trend gate prevents large drawdowns, not guarantees returns. Should Banks break its trend line, the track record will record a miss, but the process will have been followed.
+
+*This note is a fallible, conditional assessment – not a return forecast, not a size recommendation, and not a prediction of the next theme.*

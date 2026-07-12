@@ -1,0 +1,74 @@
+{
+  "schema": "prophet.trade_plan/v1",
+  "id": "QCOM-BULL-20260710",
+  "asof": "2026-07-11",
+  "asset": "QCOM",
+  "direction": "BULL",
+  "thesis": "QCOM \u2014 conviction 75/100 (high) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+  "thesis_zh": "QCOM \u2014 \u786e\u4fe1\u5ea6 75/100\uff08\u9ad8\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+  "source_engines": [
+    "us_standouts_buy_lane",
+    "neural_web"
+  ],
+  "trigger": 192.8,
+  "entry": 189.2,
+  "invalidation": 177.0912,
+  "targets": [
+    207.3632,
+    225.5264
+  ],
+  "horizon_days": 45,
+  "min_hold_days": 10,
+  "tranche": 1,
+  "option_contract": null,
+  "management_ref": "prophet/state/QCOM-BULL-20260710.json",
+  "authority_tier": "display",
+  "reliability": {
+    "plan": "display \u2014 us_standouts buy-lane originated; display-only until forward ledger gate passes",
+    "option_premium": "null \u2014 symbol not in ThetaData store"
+  },
+  "signal_date": "2026-07-10",
+  "what_to_do_now": [
+    "Watch for price to reach the trigger level ($192.80) before entering. No position until trigger is confirmed.",
+    "Keep size small on initial entry; the buy zone extends from trigger up to $207.36 (T1). There is no need to rush.",
+    "If trigger confirms, scale in gradually. Invalidation is $177.09; exit on a close below that level."
+  ],
+  "what_to_do_now_zh": [
+    "\u7b49\u5f85\u4ef7\u683c\u89e6\u53ca\u89e6\u53d1\u70b9\uff08$192.80\uff09\u540e\u518d\u5165\u573a\uff0c\u89e6\u53d1\u786e\u8ba4\u524d\u4e0d\u5efa\u4ed3\u3002",
+    "\u521d\u59cb\u5efa\u4ed3\u4fdd\u6301\u5c0f\u4ed3\u4f4d\uff1b\u4e70\u5165\u533a\u95f4\u4ece\u89e6\u53d1\u70b9\u5ef6\u4f38\u81f3 $207.36\uff08T1\uff09\uff0c\u65e0\u9700\u6025\u4e8e\u5165\u573a\u3002",
+    "\u89e6\u53d1\u786e\u8ba4\u540e\u9010\u6b65\u52a0\u4ed3\u3002\u6b62\u635f\u53c2\u8003\u4f4d\u4e3a $177.09\uff0c\u6536\u76d8\u8dcc\u7834\u8be5\u4f4d\u5373\u79bb\u573a\u3002"
+  ],
+  "profit_plan": [
+    {
+      "level": 207.3632,
+      "label": "T1",
+      "action": "Scale out 40%, trail stop to entry",
+      "status": "ACTIVE"
+    },
+    {
+      "level": 225.5264,
+      "label": "T2",
+      "action": "Close remaining 60%, exit full position",
+      "status": "PENDING"
+    }
+  ],
+  "profit_plan_zh": [
+    {
+      "level": 207.3632,
+      "label": "T1",
+      "action": "\u51cf\u4ed3 40%\uff0c\u5c06\u6b62\u635f\u4e0a\u79fb\u81f3\u5165\u573a\u4f4d",
+      "status": "ACTIVE"
+    },
+    {
+      "level": 225.5264,
+      "label": "T2",
+      "action": "\u5e73\u4ed3\u5269\u4f59 60%\uff0c\u5168\u90e8\u79bb\u573a",
+      "status": "PENDING"
+    }
+  ],
+  "_signal_date": "2026-07-10",
+  "_conviction_score": 75,
+  "_act_level": 1,
+  "_r_unit": 12.1088,
+  "_gate_go": false
+}

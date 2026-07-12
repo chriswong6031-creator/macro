@@ -1,0 +1,36 @@
+### Narrative-Emergence Scout — Desk Note  
+**Market:** Hong Kong | **As-of:** 2026-07-10  
+**Detector Verdict:** Discipline not prediction. Momentum lens IC ~0; absolute-trend gate is the only validated edge (drawdown control). Rotation timing is display-only. Guardrails forbid return forecasts, fade calls, and next-theme predictions.  
+
+---
+
+### Emerging Watch (ONE falsifiable hypothesis)
+
+**Theme:** High-Dividend Blue Chips (hk_dividend)  
+**ID:** hk_dividend  
+**Current Context:**  
+- **Rank/Score:** 3rd out of 14; score 0.622 (eligible, scorable false — ETF proxy absent).  
+- **Durability Bar:** 0.59 (the highest among eligible themes; *trend*-type Hurst, unlike the mean-reverting headline Banks).  
+- **Breadth:** 0.25 (moderate participation).  
+- **Crowding Z:** -0.50 (not crowded; no reflexive top risk).  
+- **Rotation Structure:** Headline is Banks (weight 0.25, cash 0.50) — a narrow, defensive allocation. Absorption 0.57, not one-narrative.  
+
+**Hypothesis (forming, not yet confirmed leadership):**  
+High-Dividend Blue Chips is quietly building trend strength as a second defensive stream. Its above-average durability and trend persistence may allow it to absorb flows if the current Banks theme (mean-reverting, durability 0.46) stalls or suffers a shake-out. This is not a prediction of a handoff; it is a conditional emergence watch: *if* Banks’ mean-reversion nature kicks in, the next most durable eligible defensive theme could begin to assert itself.  
+
+**Kill-Criterion (check-by: 2026-07-24):**  
+The hypothesis is falsified if, within two weeks:  
+- The theme’s score falls **below 0.55** and/or its rank drops to **5th or worse**.  
+- **Or** Banks’ score rises above **0.75** and its durability bar improves to ≥0.55 (suggesting Banks is transitioning from mean-revert to trend, solidifying its sole defensive leadership).  
+
+In either case, the forming thesis loses its footing, and the watch is removed.  
+
+---
+
+**Important caveats – why this is a fallible, un-sized conditional:**  
+- The detector’s momentum rank is a focus lens, not alpha. High-Dividend’s position may simply reflect its bond-proxy nature in a still-cautious macro environment; no forward return edge is implied.  
+- No basket-level drawdown edge exists for crowding or rotation signals. This note is purely a **narrative-formation observation**, not a timing call.  
+- Track record n=0 — zero out-of-sample confirmation.  
+- Per guardrails: *Do not fade the dominant theme; do not predict the next leader.* This watch only flags a potential broadening, not a decline of Banks.  
+
+**Action Permitted:** None. For situational awareness only.

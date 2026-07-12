@@ -1,0 +1,37 @@
+{
+  "regime_context": "The detector shows narrow leadership: only 3 of 14 themes (Banks, High-Dividend, Conglomerates) are trend-gate eligible. China Tech leads momentum rank but fails the absolute-trend gate, the only validated edge for drawdown control. Crowding is absent across all themes. Rotation margin moderate (0.247) with no directional signal. Macro backdrop: AI/tech and geopolitics narratives dominate, with high unscheduled news shock risk (0.76).",
+  "theses": [
+    {
+      "subject": "China Tech & Internet",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "China Tech leads cross-sectional momentum but is not eligible under the absolute-trend gate, which has historically reduced volatility and drawdowns in this market. Until the theme re-establishes trend and becomes eligible, direct exposure carries elevated shakeout risk.",
+      "evidence": [
+        "Rank 1 score 0.9 but eligible: false",
+        "gate_helps: true for Hong Kong market",
+        "durability_bar low at 0.37",
+        "hurst_tag: trend despite eligibility failure, suggesting incomplete or fragile trend structure"
+      ],
+      "dissent": "China Tech momentum may be strong enough to overcome the trend-gate lag; the gate could produce a false negative during a rapid recovery, causing underperformance of the avoid stance.",
+      "falsifier_text": "China Tech becomes eligible (passes absolute trend gate) on the next weekly review."
+    },
+    {
+      "subject": "Banks (H + HK)",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Banks is the top eligible theme and the detector headline, suggesting it qualifies for risk-managed exposure per the validated trend-gate. However, its mean-reverting signature argues against a directional return forecast; overweight as a lower-volatility carry while eligibility persists.",
+      "evidence": [
+        "Eligible: true (trend-gate passed)",
+        "Headline with weight 0.25 and cash 0.5",
+        "durability_bar 0.46 moderate",
+        "gate_helps: true, so eligibility historically associated with lower volatility and shallower drawdowns"
+      ],
+      "dissent": "Mean-reverting dynamics could result in flat or negative returns despite lower volatility; the trend-gate may retain exposure when it should be underweight, and the theme lacks a scorable proxy for immediate verification.",
+      "falsifier_text": "Banks loses eligibility or durability_bar drops below 0.35, signaling trend disintegration."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

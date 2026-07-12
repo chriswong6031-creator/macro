@@ -1,0 +1,59 @@
+{
+  "regime_context": "Flow read is display-only with no validated forward edge; VIX is low (15.0, 12th pctile) while fear is building (fear_built 0.297, vel 90th pctile) but no relief snap is present. Absorption concentrates in a cyclical cluster (Financials, Real Estate, Consumer Discretionary, Industrials), while high-RS sectors like Health Care and Information Technology show cooling or extreme levels with no directional signal.",
+  "theses": [
+    {
+      "subject": "Financials",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Financials is the structurally most coherent leg of the dominant absorption cluster, with broad, non-narrow leadership (n=251, HHI 0.007) and a cohering gate despite low cohesion, suggesting genuine group-level co-movement rather than idiosyncratic moves.",
+      "evidence": [
+        "Structural analyst: broad leadership and cohering gate (cohesion 0.341, tier low) indicative of non-narrow movement",
+        "Flow cluster: Financials listed in dominant absorption cluster (mixed regime, absorption 0.46)"
+      ],
+      "dissent": "The flow lens is display-only with null forward edge; current absorption is coincident and may reverse without warning, and the low-VIX regime may inflate correlation estimates.",
+      "falsifier_text": "Financials cohesion gate flips to cohering=false OR HHI rises above 0.02 (becoming single-name-driven) within 20 days."
+    },
+    {
+      "subject": "Real Estate",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Real Estate exhibits the strongest internal cohesion within the cyclical cluster (cohesion 0.423, cohering true) with broad breadth (n=103, HHI 0.017), suggesting a genuine co-moving group that reinforces the defensive-cyclical rotation narrative.",
+      "evidence": [
+        "Structural analyst: moderate confidence, cohering gate and broad leadership confirm genuine co-movement",
+        "Flow cluster: Real Estate is part of the dominant absorption cluster alongside Financials"
+      ],
+      "dissent": "The overall flow verdict is display-only; any directional lean derived from cohesion or absorption patterns has no forward predictive power, and the pattern may dissipate if correlations inflate.",
+      "falsifier_text": "Real Estate cohesion drops below 0.3 AND breadth narrows (HHI > 0.05) within 20 days."
+    },
+    {
+      "subject": "Health Care",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Health Care sits at extreme relative strength (94th pctile) with low cohesion (0.21) and no directional signal, presenting a mean-reversion trap where recent surges are likely coincident and driven by idiosyncratic names, rather than a sustainable theme.",
+      "evidence": [
+        "Skeptic analyst: extreme RS percentile and low cohesion indicate a mean-reverting, coincident surge",
+        "Flow detector: Health Care sector stage 'confirmed' but cohesion low (0.206), directional false, leadership breadth broad but HHI 0.01"
+      ],
+      "dissent": "Base-rate analyst: the flow lens has no forward edge (rank-IC ~0); extreme RS is not predictive, so any mean-reversion call is indistinguishable from random.",
+      "falsifier_text": "Health Care relative strength percentile remains above 0.8 AND cohesion rises above 0.35 with cohering gate true within 20 days."
+    },
+    {
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Information Technology is cooling with a negative flow score (-0.535), cohesion gate failing (cohering false), and extreme RS (91st pctile), suggesting fragmentation under the surface and a high risk that the sector's momentum is already priced in, making it vulnerable to a reversal.",
+      "evidence": [
+        "Skeptic analyst: cooling stage with failing cohesion gate flags fragmentation and fade potential at extreme RS",
+        "Opportunity analyst: cooling with negative flow score and high RS percentile, a similar underweight recently hit",
+        "Flow detector: Information Technology stage 'cooling', cohesion 0.211, cohering false, rs_pctile 0.913"
+      ],
+      "dissent": "Base-rate analyst: no forward edge exists from this lens; a sudden VIX spike could activate the stress-conditional signal and turn this into a continuation trade, making the underweight wrong.",
+      "falsifier_text": "Information Technology cohesion gate flips to cohering true AND rs_pctile stays above 0.8 within 20 days."
+    }
+  ],
+  "confidence": "low"
+}

@@ -1,0 +1,30 @@
+{
+  "stance": "The flow lens is display-only with no validated forward edge (rank-IC ~0); base-rate analysis shows any directional call from this lens is indistinguishable from random, so no active sector views are warranted.",
+  "candidates": [
+    {
+      "subject": "Health Care",
+      "lean": "none",
+      "rationale": "Extreme relative strength percentile (0.937) is not predictive from this lens; no edge exists.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Information Technology",
+      "lean": "none",
+      "rationale": "High rs_pctile (0.913) amid cooling stage; lens lacks forward signal validity.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Communication Services",
+      "lean": "none",
+      "rationale": "Very low rs_pctile (0.036) is not a contrarian signal in this display-only framework.",
+      "strength": "weak"
+    },
+    {
+      "subject": "VIX",
+      "lean": "none",
+      "rationale": "Regime snap is coincident and offers no forward edge; fear-builder not actionable.",
+      "strength": "weak"
+    }
+  ],
+  "key_risk": "The lens could develop a forward edge in future regimes not captured by existing backtests, making this base-rate read too conservative and missing genuine sector opportunities."
+}

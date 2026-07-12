@@ -1,0 +1,33 @@
+**Desk Note — Crowding-Skeptic Analyst**
+China A‑shares thematic detector | 2026‑07‑10
+*Fallible, falsifiable, never a position size — sizing caution only.*
+
+### Most over‑extended / crowded theme : Semiconductors (`cn_semis`)
+
+- **Crowding z‑score 0.93** — highest among the leadership cohort, yet not flagged `crowded` (threshold presumably >1.0). The signal is blinking amber: near‑universal ownership with no cheap marginal buyer left.
+- **Breadth 0.955** — practically every constituent is participating. In China A‑shares, such extreme breadth in a single thematic silo has historically marked fragility: when the trade turns, liquidity evaporates across the entire basket.
+- **Durability 0.92** — trend is robust, but durability is a coincident, not a forecast. At this degree of extension, the theme has “taken on” all available fundamental believers; a single macro or policy shock can trigger a violent position washout.
+- **Score 2.61, rank #2** — the momentum lens says the theme is working, but the *only* validated edge is sizing down to avoid drawdown, not chasing. This is a **size‑down** call on Semis, not a fade.
+
+---
+
+### Sharpest bear case on each long
+
+| Theme (id) | Score / Rank | Bear case (coincident analysis, not a forecast) |
+|------------|--------------|--------------------------------------------------|
+| **AI Compute & Optics** (`cn_ai_compute`) | 2.87 (#1) | The leader is the entire “narrowing rotation” narrative. Breadth of 0.59 and absorption 0.35 mean the CSI 300 is leaning on a handful of optics/ server names. Any US chip‑sanctions tightening or global AI capex rethink (e.g., DeepSeek‑style efficiency fears) would hit the optics sub‑theme violently. Low crowding is not a shield; it is a function of the theme still concentrating flows. If the narrative fractures, the whole leadership complex falls with it. |
+| **Semiconductors** (`cn_semis`) | 2.61 (#2) | Beyond the crowding flag, domestic overcapacity in legacy nodes is a slow‑grind headwind. The market is pricing a structural re‑rating from import substitution, yet capex announcements continue to outstrip end‑demand assumptions. The extreme breadth (0.96) and durability (0.92) imply a full‑priced momentum loop; when it snaps, there will be no “quality defensives” shelter inside the theme. |
+| **Consumer Electronics** (`cn_consumer_elec`) | 1.25 (#3) | The theme’s score is an artifact of a few large‑cap names riding the AI‑edge device hype. The Chinese consumer is still deleveraging, housing wealth effect is negative, and replacement cycles for smartphones/PCs remain elongated. The rally feels like inventory restocking, not a demand cycle; earnings expectations are at risk of disappointment by Q3 guidance. |
+| **Robotics & Automation** (`cn_robotics`) | 0.90 (#4) | Government policy narratives (e.g., “humanoid robot industry chain”) have inflated valuations without revenue. Breadth is only 0.55 — a handful of stocks drive the score; the rest are dead weight. If fiscal stimulus is delayed or scaled down, the theme’s low‑quality float will reprice fast. Durability (0.72) is decent, but that only tells you the trend has persisted, not that it will survive a growth scare. |
+| **Rare Earth & Magnets** (`cn_rare_earth`) | 0.69 (#5) | Hurst tag is “mean‑revert” (durability 0.44). This is not a trend — it’s a spasm of geopolitical narrative (export controls) that repeatedly fails to sustain. Breadth is a miserable 0.22. Historically, rare earth names spike on supply‑disruption headlines, then fade within weeks. Being long here is a bet on sustained US‑China escalation, not on an enduring fundamental shortage, given China’s own mine expansions. |
+| **Innovative Pharma & CXO** (`cn_pharma_cxo`) | 0.30 (#6) | Only theme flagged `crowded` (z=1.21) and breadth 1.0. The BIOSECURE Act overhang and US decoupling pressures have not gone away; they are temporarily forgotten. The perfect breadth means all stocks have been bid indiscriminately. Any negative FDA ruling, clinical trial miss, or US political headline will unwind this “risk‑on” pharma trade instantaneously. Even if the trend persists, the size must be capped aggressively — this is a classic “last‑money” setup. |
+
+---
+
+### Falsifiable conditional lean (no direction, no trade)
+
+*“If, by the close of the next two weeks (check‑by 2026‑07‑24), the median stock in `cn_semis` closes below its 20‑day moving average, then the absorption and breadth carry a high risk of rolling over, which has historically triggered a deeper drawdown in the theme. Under that regime, any remaining exposure should be further size‑downed.”*
+
+**Why this matters:** The backtest is clear — the absolute‑trend gate did **not** hold in this market, so this conditional is experimental and must be gated with positional humility. It is a volatility‑aware sizing aid, never a signal.
+
+*This note is a fallible exercise in falsification; it is not a directional recommendation, not a sell, and not a prediction of the next narrative. It is designed to be wrong often, so that when it is right, drawdown is smaller.*

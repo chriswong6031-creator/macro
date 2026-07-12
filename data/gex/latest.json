@@ -49,14 +49,14 @@
    "regime": "long",
    "tier": "full",
    "net_gex_bn": 6.14,
-   "gamma_flip": 750.47,
+   "gamma_flip": 750.46,
    "dist_to_flip_pct": 0.59,
-   "iv30": 12.44,
+   "iv30": 12.52,
    "put_call_oi_ratio": 1.52,
    "call_wall": 760.0,
    "put_wall": 740.0,
    "max_pain": 745.0,
-   "daily_move_pct": 0.78
+   "daily_move_pct": 0.79
   },
   "QQQ": {
    "spot": 725.51,
@@ -102,10 +102,10 @@
   }
  },
  "market": {
-  "skew": 144.67,
-  "skew_asof": "2026-07-09",
-  "index_pc_ratio": 1.072,
-  "equity_pc_ratio": 1.076,
-  "put_call_asof": "2026-07-09"
+  "skew": 144.27,
+  "skew_asof": "2026-07-10",
+  "index_pc_ratio": 1.468,
+  "equity_pc_ratio": 1.054,
+  "put_call_asof": "2026-07-11"
  }
 }

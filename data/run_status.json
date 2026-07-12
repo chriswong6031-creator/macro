@@ -1804,8 +1804,8 @@
       "status": "ok",
       "n_leaders": 116,
       "base_json": "site/flowtracker/base.json",
-      "as_of": "2026-07-11T07:59:20.747536+00:00",
-      "checked_at": "2026-07-11T07:59:21.747192+00:00"
+      "as_of": "2026-07-12T04:07:50.291246+00:00",
+      "checked_at": "2026-07-12T04:07:51.236137+00:00"
     }
   },
   "circuit_breaker": {

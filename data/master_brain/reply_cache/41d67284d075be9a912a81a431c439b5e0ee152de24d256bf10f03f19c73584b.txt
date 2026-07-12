@@ -1,0 +1,36 @@
+{
+  "stance": "The cyclical cluster (Consumer Discretionary, Real Estate, Financials, Industrials) shows mixed internal coherence. Financials and Real Estate exhibit genuine, broad-based co-movement, while Industrials and Consumer Discretionary lack cohesion, suggesting the cluster’s core is in the former two sectors; the top pair Industrials–Materials survives but is sustained by Materials’ cohesion, not Industrials’.",
+  "candidates": [
+    {
+      "subject": "Financials",
+      "lean": "overweight",
+      "rationale": "Broad leadership (HHI 0.007, n=251) and cohering (cohesion 0.341) indicate genuine, non-narrow group movement, making it the lead leg of the cyclical cluster.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Real Estate",
+      "lean": "overweight",
+      "rationale": "Cohering (cohesion 0.423) with broad breadth (n=103, HHI 0.017) confirms genuine co-movement and reinforces the cluster’s defensive-cyclical rotation narrative.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Industrials",
+      "lean": "underweight",
+      "rationale": "Despite being in the dominant cluster and the high-correlation pair with Materials, internal cohesion is absent (cohering false, cohesion 0.225), flagging a diffuse, non-thematic move.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Consumer Discretionary",
+      "lean": "underweight",
+      "rationale": "Part of the dominant cluster but cohesion is negative (false) and change is declining, undermining any reliable co-movement signal for the group.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Health Care",
+      "lean": "overweight",
+      "rationale": "Strong relative strength (rs_pctile 0.937) and broad leadership (HHI 0.01, n=165) with confirmed stage, despite low cohesion, suggesting a resilient, broad-based theme outside the cyclical cluster.",
+      "strength": "moderate"
+    }
+  ],
+  "key_risk": "The low-VIX regime (15.0) may inflate correlation estimates artificially; a sudden volatility spike could dissolve the apparent cluster coherence and reverse the breadth signal."
+}

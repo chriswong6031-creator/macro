@@ -11,3 +11,6 @@
 {"asof": "2026-07-11", "domain": "us", "field": "us_froth_band", "from_value": "watch", "to_value": "calm", "macro_context_id": "69b5b1debed9e81a"}
 {"asof": "2026-07-11", "domain": "fx", "field": "fx_regime_radar", "from_value": "em_crisis_capital_flight", "to_value": null, "macro_context_id": "69b5b1debed9e81a"}
 {"asof": "2026-07-11", "domain": "hk", "field": "hk_quad", "from_value": "Q4", "to_value": "Q3", "macro_context_id": "69b5b1debed9e81a"}
+{"asof": "2026-07-12", "domain": "us", "field": "cross_asset_verdict", "from_value": "mixed", "to_value": "diverge", "macro_context_id": "8519acbf68ceb555"}
+{"asof": "2026-07-12", "domain": "canada", "field": "canada_quad", "from_value": "Q4", "to_value": "Q1", "macro_context_id": "8519acbf68ceb555"}
+{"asof": "2026-07-12", "domain": "canada", "field": "canada_cycle_tag", "from_value": "late", "to_value": "mid", "macro_context_id": "8519acbf68ceb555"}

@@ -1,0 +1,35 @@
+{
+  "regime_context": "The detector shows AI Compute & Optics leading a narrowing tech thematic rotation, with Semiconductors as a durable high-breadth challenger. The absolute-trend gate has no historical drawdown edge in China A-shares (mean-reverting tape), so all trend-following signals are unvalidated and require low conviction. Macro backdrop is dominated by AI/tech and geopolitics headlines with high unscheduled surprise share, adding to regime risk.",
+  "theses": [
+    {
+      "subject": "AI Compute & Optics",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The theme ranks #1 with a durable trend (hurst trend, durability 0.75), healthy breadth (0.588), and no crowding flag, suggesting the trend may persist barring a sharp mean-reversion shock. This is a trend-following lean conditional on the regime remaining net-trending; the gate's failure means no drawdown protection is implied.",
+      "evidence": [
+        "rank #1 with score 2.87, leading rotation margin of 0.26 over semiconductors",
+        "durability_bar 0.75, hurst_tag 'trend', breadth 0.588",
+        "crowded: false, crowding_z -0.01"
+      ],
+      "dissent": "China A-shares' mean-reverting tendency and the absolute-trend gate's historical failure here raise the risk of a rapid reversal; geopolitics and policy surprises (unscheduled_share 0.76) could trigger a sudden rotation out of tech leadership.",
+      "falsifier_text": "If AI Compute's score drops below 2.0 and its breadth falls under 0.4 within 10 trading days, the overweight call is invalidated."
+    },
+    {
+      "subject": "Innovative Pharma & CXO",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The theme is flagged as crowded (crowding_z 1.21, crowded: true) despite strong trend attributes (durability 0.9, breadth 1.0). Crowding is a sizing-down caution, not a fade signal, so the prudent stance is to avoid initiating new longs and cap existing exposure. The mean-reverting tape increases the risk of a shake-out in crowded names.",
+      "evidence": [
+        "rank #6 score 0.295, eligible true",
+        "durability_bar 0.9, breadth 1.0, hurst_tag 'trend'",
+        "crowding_z 1.21, crowded: true"
+      ],
+      "dissent": "The exceptionally high durability and perfect breadth suggest the trend is robust; crowding could reflect institutional conviction rather than a topping signal, and a mean-reverting tape does not guarantee an imminent drawdown.",
+      "falsifier_text": "If crowding_z drops below 0.75 while breadth remains above 0.9, the avoid caution is premature and the thesis should be reconsidered."
+    }
+  ],
+  "emerging_watch": "Semiconductors (challenger, score 2.61) may be forming a confirmed leadership handoff if its score overtakes AI Compute for two consecutive weeks and breadth holds above 0.8. Kill-criterion: score gap widens back to >0.5 in favor of AI Compute.",
+  "confidence": "low"
+}

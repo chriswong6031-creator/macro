@@ -1,6 +1,6 @@
 {
   "schema": "winner_autopsy_panel.v1",
-  "generated_at": "2026-07-11T08:45:10Z",
+  "generated_at": "2026-07-12T05:01:07Z",
   "display_only": true,
   "horizon_role": "hold_thesis",
   "census": {
@@ -2158,23 +2158,6 @@
         }
       },
       {
-        "ticker": "UNH",
-        "sector": "Health Care",
-        "benchmark": "XLV",
-        "state": "continuation",
-        "excess_21d_pp": 0.08,
-        "excess_42d_pp": 5.36,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.3,
-        "days_in_state": 52,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
         "ticker": "DVAX",
         "sector": "",
         "benchmark": "SPY",
@@ -2234,6 +2217,23 @@
         "excess_42d_pp": 7.54,
         "new_high_63d": false,
         "dollar_vol_z21": -1.42,
+        "days_in_state": 53,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "UNH",
+        "sector": "Health Care",
+        "benchmark": "XLV",
+        "state": "continuation",
+        "excess_21d_pp": -1.11,
+        "excess_42d_pp": 0.29,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.17,
         "days_in_state": 53,
         "gex_state": null,
         "hazards": [],

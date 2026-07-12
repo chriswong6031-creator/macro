@@ -1,13 +1,8 @@
 {
-  "7db337a10577": {
-    "name_en": "Emerging Information Technology cluster",
-    "name_zh": "\u65b0\u5174 Information Technology \u96c6\u7fa4",
-    "score": 46.9
-  },
   "82fa80f4d954": {
     "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Health Care",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Health Care",
-    "score": 64.3
+    "score": 64.1
   },
   "9c9eb9dc358b": {
     "name_en": "Emerging Real Estate cluster",
@@ -19,14 +14,19 @@
     "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
     "score": 45.8
   },
+  "e4b362976b66": {
+    "name_en": "Cross-sector cluster \u00b7 Information Technology + Financials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Financials",
+    "score": 53.4
+  },
   "ede1da478398": {
     "name_en": "Cross-sector cluster \u00b7 Information Technology + Communication Services",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Communication Services",
-    "score": 69.4
+    "score": 69.7
   },
   "f449e2014f48": {
     "name_en": "Cross-sector cluster \u00b7 Information Technology + Consumer Discretionary",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Consumer Discretionary",
-    "score": 73.1
+    "score": 72.7
   }
 }

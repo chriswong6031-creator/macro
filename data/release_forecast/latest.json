@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast.v2",
-  "asof": "2026-07-11T08:42:27Z",
+  "asof": "2026-07-12T04:59:02Z",
   "display_only": true,
   "authority": {
     "can_score": false,
@@ -46,10 +46,10 @@
         "market_implied": {
           "source": "polymarket",
           "event_key": "cpi_print",
-          "event_title": "Core CPI YoY - June 2026",
-          "implied": "2.8%",
-          "prob_top": 0.535,
-          "asof": "2026-07-09"
+          "event_title": "Core CPI MoM - July 2026",
+          "implied": "0.2%",
+          "prob_top": 0.615,
+          "asof": "2026-07-11"
         }
       },
       "surprise_skew": {
@@ -103,9 +103,9 @@
       },
       "regime_axis": "inflation",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -148,10 +148,10 @@
       "market_implied": {
         "source": "polymarket",
         "event_key": "cpi_print",
-        "event_title": "Core CPI YoY - June 2026",
-        "implied": "2.8%",
-        "prob_top": 0.535,
-        "asof": "2026-07-09"
+        "event_title": "Core CPI MoM - July 2026",
+        "implied": "0.2%",
+        "prob_top": 0.615,
+        "asof": "2026-07-11"
       },
       "expectation_read": {
         "tag": "above_expectations",
@@ -320,10 +320,10 @@
         "market_implied": {
           "source": "polymarket",
           "event_key": "cpi_print",
-          "event_title": "Core CPI YoY - June 2026",
-          "implied": "2.8%",
-          "prob_top": 0.535,
-          "asof": "2026-07-09"
+          "event_title": "Core CPI MoM - July 2026",
+          "implied": "0.2%",
+          "prob_top": 0.615,
+          "asof": "2026-07-11"
         }
       },
       "surprise_skew": {
@@ -374,9 +374,9 @@
       },
       "regime_axis": "inflation",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -414,10 +414,10 @@
       "market_implied": {
         "source": "polymarket",
         "event_key": "cpi_print",
-        "event_title": "Core CPI YoY - June 2026",
-        "implied": "2.8%",
-        "prob_top": 0.535,
-        "asof": "2026-07-09"
+        "event_title": "Core CPI MoM - July 2026",
+        "implied": "0.2%",
+        "prob_top": 0.615,
+        "asof": "2026-07-11"
       },
       "expectation_read": {
         "tag": "aligned",
@@ -523,9 +523,9 @@
       },
       "regime_axis": "inflation",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -594,9 +594,9 @@
       "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -661,9 +661,9 @@
       "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -755,9 +755,9 @@
       },
       "regime_axis": "inflation",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -859,9 +859,9 @@
       },
       "regime_axis": "inflation",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -939,9 +939,9 @@
       "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -1006,9 +1006,9 @@
       "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -1105,9 +1105,9 @@
       },
       "regime_axis": "growth",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -1230,10 +1230,10 @@
         "market_implied": {
           "source": "polymarket",
           "event_key": "cpi_print",
-          "event_title": "Core CPI YoY - June 2026",
-          "implied": "2.8%",
-          "prob_top": 0.535,
-          "asof": "2026-07-09"
+          "event_title": "Core CPI MoM - July 2026",
+          "implied": "0.2%",
+          "prob_top": 0.615,
+          "asof": "2026-07-11"
         }
       },
       "surprise_skew": {
@@ -1287,9 +1287,9 @@
       },
       "regime_axis": "inflation",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -1332,10 +1332,10 @@
       "market_implied": {
         "source": "polymarket",
         "event_key": "cpi_print",
-        "event_title": "Core CPI YoY - June 2026",
-        "implied": "2.8%",
-        "prob_top": 0.535,
-        "asof": "2026-07-09"
+        "event_title": "Core CPI MoM - July 2026",
+        "implied": "0.2%",
+        "prob_top": 0.615,
+        "asof": "2026-07-11"
       },
       "expectation_read": {
         "tag": "above_expectations",
@@ -1504,10 +1504,10 @@
         "market_implied": {
           "source": "polymarket",
           "event_key": "cpi_print",
-          "event_title": "Core CPI YoY - June 2026",
-          "implied": "2.8%",
-          "prob_top": 0.535,
-          "asof": "2026-07-09"
+          "event_title": "Core CPI MoM - July 2026",
+          "implied": "0.2%",
+          "prob_top": 0.615,
+          "asof": "2026-07-11"
         }
       },
       "surprise_skew": {
@@ -1558,9 +1558,9 @@
       },
       "regime_axis": "inflation",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -1598,10 +1598,10 @@
       "market_implied": {
         "source": "polymarket",
         "event_key": "cpi_print",
-        "event_title": "Core CPI YoY - June 2026",
-        "implied": "2.8%",
-        "prob_top": 0.535,
-        "asof": "2026-07-09"
+        "event_title": "Core CPI MoM - July 2026",
+        "implied": "0.2%",
+        "prob_top": 0.615,
+        "asof": "2026-07-11"
       },
       "expectation_read": {
         "tag": "aligned",
@@ -1707,9 +1707,9 @@
       },
       "regime_axis": "inflation",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -1778,9 +1778,9 @@
       "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -1845,9 +1845,9 @@
       "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -1922,9 +1922,9 @@
       "input_manifest": {},
       "regime_axis": "growth",
       "policy_backdrop": {
-        "fed_stance": "neutral",
-        "gap_bp": 8,
-        "implied_cuts_12m": null,
+        "fed_stance": "hawkish",
+        "gap_bp": 13,
+        "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
       },
@@ -1962,8 +1962,8 @@
   "scoreboard_ref": "data/release_forecast/scoreboard.json",
   "capture_health": {
     "asof": "2026-07-11",
-    "last_nightly_asof": "2026-07-10",
-    "nightly_gap_days": 1,
+    "last_nightly_asof": "2026-07-11",
+    "nightly_gap_days": 0,
     "past_due_unscored": [
       {
         "release": "claims",
@@ -1974,10 +1974,10 @@
       }
     ],
     "enricher_staleness": {
-      "kalshi_releases_mtime": "2026-07-11T06:55:40Z",
-      "cleveland_nowcast_mtime": "2026-07-11T06:55:40Z",
-      "work_stoppages_mtime": "2026-07-10T14:42:21Z",
-      "print_integrity_mtime": "2026-07-10T14:42:21Z"
+      "kalshi_releases_mtime": "2026-07-12T03:06:16Z",
+      "cleveland_nowcast_mtime": "2026-07-12T03:06:16Z",
+      "work_stoppages_mtime": "2026-07-11T06:12:07Z",
+      "print_integrity_mtime": "2026-07-11T06:12:07Z"
     },
     "past_due_unscored_count": 1
   }

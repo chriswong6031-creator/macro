@@ -6,11 +6,11 @@
     "granted": false,
     "lift_lb": null,
     "reason": "insufficient-n: n=9 < min_n=25",
-    "evidence_asof": "2026-07-11",
-    "evaluated_at": "2026-07-11T08:36:48+00:00"
+    "evidence_asof": "2026-07-12",
+    "evaluated_at": "2026-07-12T04:54:23+00:00"
   },
-  "generated_at": "2026-07-11T08:36:48.582871+00:00",
-  "state_asof": "2026-07-11",
+  "generated_at": "2026-07-12T04:54:23.577549+00:00",
+  "state_asof": "2026-07-12",
   "model": "claude-opus-4-8",
   "regime_read": null,
   "regime_read_zh": null,
@@ -77,6 +77,6 @@
   "confidence": "low",
   "n_clusters": 12,
   "raw_text": null,
-  "degraded_reason": "llm_error",
+  "degraded_reason": "rate_limited_all",
   "disclaimer": "An AI reading of the desk's own deterministic convergence \u2014 accountable and falsifiable, not a guarantee. Every call cites the channels/actors it is based on, is graded vs SPY over the horizon, and can be wrong or overconfident. The Mastermind sizes it through its own risk framework; treat as odds, not a forecast."
 }

@@ -1,0 +1,25 @@
+# Macro-Regime Desk Note — Canada / TSX  
+**As of 2026-07-10**  
+**Role: Analyst | Trust-graded, display-only, no position size**
+
+## Regime Snapshot
+- **Headline theme:** Big Banks (weight 0.25, cash 0.0, durability 0.74, crowded, mixed Hurst)  
+- **Rotation:** Broad (75% of themes eligible), absorption 0.37, no single narrative, non‑directional  
+- **Gate_helps:** True — absolute‑trend gate validated as a drawdown‑control edge on this market  
+- **Macro backdrop:** AI/tech dominates headlines (57.8% of recent flow), geopolitics second (19.7%), unscheduled‑share **0.76** (high surprise/volatility regime)  
+
+## Interpretation
+**Risk‑on theme exposure IS supported, but with a sizing cap on the crowded leader and smaller overall size than a low‑surprise regime would allow.**  
+
+The dominant narrative (Big Banks) is fully invested (cash 0.0), but it is crowded and its durability bar, while decent (0.74), reflects a mixed trend structure — not a clean, high‑durability trend. The broad rotation (0.75 fraction) and moderate absorption (0.37) mean that leadership is not concentrated into a single narrative; the market is dispersing flows, which historically limits the risk of a sudden‑breakout‑failure. The validated absolute‑trend gate *is* the single reliable edge here: it has demonstrably cut drawdowns and tail risk on the TSX sector universe, and `gate_helps` is true. That gate alone justifies maintaining thematic exposure *if* the discipline is followed — i.e., any theme that falls below its absolute‑trend gate should be removed to cash or reduced to zero per the rule.
+
+The macro narrative backdrop adds caution: a 0.76 unscheduled‑share signals an environment rich in surprise, which elevates the probability of abrupt volatility spikes. This does **not** trigger a wholesale move to cash — the gate is designed to handle such spikes — but it does argue for reduced aggregate allocation (i.e., smaller notional exposure) relative to a “steady‑news” regime.
+
+The guardrails demand that we do **not** fade the leader on the crowding flag. Instead, Banks should be *capped* (no overweight beyond the model’s standard maximum) and never shorted or underweighted on this signal alone.
+
+## Conditional Lean (falsifiable)
+**If the TSX Big Banks theme remains above its absolute‑trend gate (durability-bar > 0.7 *and* theme-level trend intact) through the next 10 trading days, and if breadth of rotation does not collapse below 0.5, then the regime continues to support risk‑on theme exposure (with gates and crowding‑caps applied).**  
+*Check‑by horizon: 2026-07-24.*  
+If the absolute‑trend gate breaks for Banks or two‑thirds of eligible themes, cash levels should rise materially according to the discipline — no second‑guessing.  
+
+**Accountability marker:** This view is a fallible regime read, not a return forecast. I will update the conditional if either the gate status or the breadth‑of‑rotation structure changes materially before the check‑by date.

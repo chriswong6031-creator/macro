@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-11T08:37:00.961823+00:00",
+  "generated_utc": "2026-07-12T04:54:36.432663+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -801,11 +801,10 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.25,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
       "alt_channels": [
         "affiliation",
-        "hf_model_momentum",
         "special_situation"
       ],
       "top_holder": {
@@ -999,8 +998,8 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 7,
-      "alt_weighted": 2.7,
+      "alt_score": 8,
+      "alt_weighted": 3.05,
       "alt_channels": [
         "13f_add",
         "affiliation",
@@ -1008,6 +1007,7 @@
         "cnbc_pick",
         "github_momentum",
         "gov_contract",
+        "hf_model_momentum",
         "patent_cluster"
       ],
       "top_holder": {
@@ -1662,6 +1662,14 @@
   "n_candidates": 0,
   "filings": [
     {
+      "date": "2026-07-10",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "5.02,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926023318/djt20260709_8k.htm"
+    },
+    {
       "date": "2026-07-06",
       "form": "8-K",
       "company": "American Bitcoin Corp.",
@@ -1748,14 +1756,6 @@
       "ticker": "HUT",
       "items": "5.07",
       "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926073505/tm2617732d1_8k.htm"
-    },
-    {
-      "date": "2026-06-10",
-      "form": "8-K",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024735/ef20075853_ex99-1.htm"
     }
   ]
 }

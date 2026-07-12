@@ -1,0 +1,28 @@
+{
+  "summary": "China A-shares stuck in stagflation with policy easing in progress; sector extremes align with mean-reversion thesis, while Hong Kong shows global-risk/USD pressure and peg outflows.",
+  "regime_read": "China sits in the ‘Stagflation’ quadrant (growth -0.14, inflation +0.09) with low confidence (0.078) and a mid-cycle tag. PBoC liquidity overlay reads neutral, but the impulse is unequivocally easing in progress—cumulative RRR/LPR cuts and predicted further moves. A-share sector relative strength is starkly bifurcated: Semiconductors (+64% 60d) and Technology (+39% 60d) are extended, while deep cyclical/defensive pullbacks dominate (Coal -10.6% 60d, Solar -18.2%, Baijiu -21.8%). This pattern, together with smallcap outperforming largecap, fits the mean-reversion norm—leaders are extreme and laggards offer higher-odds setups.\n\nHong Kong shares the same stagflation label but with weaker growth (-0.25) and global risk neutral. Crucially, the HKD peg is on the weak side (distance 0.858) with outflows, and the Fear/Euphoria score sits at 31 (Fear). Sector RS shows Internet & Tech still a relative leader but with negative 20d momentum, while Healthcare & Pharma recently rallied. The US macro backdrop is Goldilocks with expanding liquidity, but hawkish fed repricing keeps real yields restrictive and the dollar trend up—explaining the tailwind for the USD and headwinds for HK equities, consistent with the thesis that Hong Kong rides global risk and the dollar far more than the mainland.",
+  "conflicts": [
+    "Stagflation quadrant (negative growth, positive inflation) contradicts the ‘easing in progress’ policy impulse—easing is pro‑growth but growth is weakening, creating a dilemma.",
+    "PBoC liquidity overlay remains neutral despite cumulative RRR/LPR cuts; the corridor classifier hasn’t confirmed the easing cycle, so effective liquidity conditions are uncertain.",
+    "Semiconductors rank #1 RS with extreme 60d momentum (+64.3%), yet radar shows negative sector net‑flow, southbound flow fading, and alt‑data distributing—a clear conflict between price trajectory and smart‑money signals, reinforcing mean‑reversion risks.",
+    "Hong Kong peg weak‑side outflow occurs even with US macro in low‑risk Goldilocks, driven by restrictive US real yields and hawkish repricing, conflicting with a typical risk‑on EM‑friendly environment.",
+    "A‑share cyclicals/defensives ratio down –3.4% 20d and inflation basket down –24.4% 20d contradict stagflation, where commodity/inflation beneficiaries would normally hold up; this may signal an imminent regime shift.",
+    "Offshore‑onshore ETF gap (z +2.29) suggests US‑listed China tech is leading, but the tech/internet tilt may reflect sector rotation rather than pure venue sentiment, muddying the signal."
+  ],
+  "rotation_check": "The working thesis—that A‑shares mean‑revert on domestic policy/liquidity and Hong Kong is controlled by global risk/USD—holds broadly. A‑share sector extremes (leaders stretched, laggards deeply sold) are textbook mean‑reversion setups, and radar divergences (negative for Semis, positive for Defense) support that rotation. The easing policy impulse provides a domestic catalyst, though the neutral liquidity overlay tempers conviction. HK indeed diverges: peg outflows and the Fear reading align with the dollar‑supportive US backdrop, while HK’s sector RS is mixed and global risk neutral. The low regime confidence (0.078) and mid‑cycle tag remind us the thesis is not yet validated by hard data.",
+  "transmission": [
+    "PBoC RRR/LPR cuts → improved liquidity → rate‑sensitive brokers/property lead → broader market breadth (easing‑reflation chain, 2/5 legs aligned).",
+    "US dollar strength/restrictive real yields → EM & HK equity headwinds → peg outflows intensify → HK underperformance vs A‑shares.",
+    "Upstream commodity disinflation (coal/energy basket leading down) → easing inflation pressures → room for more PBoC easing, reinforcing the mean‑reversion rotation from growth/tech to value/cyclicals.",
+    "USDCNY moves (currently flat) → capital flow signals; a sharp CNY weakening would amplify HK outflows and southbound distribution."
+  ],
+  "watch_items": [
+    "Jul 10 money supply, RMB loans & TSF data (credit impulse) – confirmation for easing‑reflation chain.",
+    "Jul 15 China IP, FAI, retail sales & Q2 GDP – could shift the growth/inflation quadrant and policy urgency.",
+    "Jul 20 LPR fix – a cut would validate the easing bias and trigger rate‑sensitive sectors.",
+    "USD trend & USDCNY break above 6.85 – would accelerate outflows and hurt HK.",
+    "Semiconductor sector flow divergence resolution (price roll‑over or flow turning positive).",
+    "Defense sector flow continuation and radar accumulation signals, to confirm the positive divergence."
+  ],
+  "confidence": "medium"
+}

@@ -2,7 +2,7 @@
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
   "asof": "2026-07-11",
-  "n_events_logged": 30,
+  "n_events_logged": 36,
   "n_events_graded": 0,
   "classes": [
     {
@@ -21,7 +21,7 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 2,
+      "n": 4,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -60,7 +60,7 @@
     {
       "event_type": "litigation",
       "direction": "bearish",
-      "n": 15,
+      "n": 17,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -125,7 +125,20 @@
     {
       "event_type": "product_launch",
       "direction": "bullish",
-      "n": 2,
+      "n": 3,
+      "n_graded": 0,
+      "hit_5d": null,
+      "hit_21d": null,
+      "avg_rel_5d": null,
+      "avg_rel_21d": null,
+      "wilson_low_5d": null,
+      "wilson_high_5d": null,
+      "verdict": "insufficient"
+    },
+    {
+      "event_type": "rating_change",
+      "direction": "mixed",
+      "n": 1,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -137,7 +150,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 130,
+    "n_sampled": 137,
     "n_graded": 0,
     "classes": []
   }

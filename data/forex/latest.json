@@ -1,6 +1,6 @@
 {
-  "date": "Jul 11, 2026",
-  "asof": "2026-07-11",
+  "date": "Jul 12, 2026",
+  "asof": "2026-07-12",
   "regime": "US growth premium",
   "favored": [
     "USD"
@@ -12,14 +12,14 @@
       "quote": 1.1419,
       "chg": -1.4,
       "action": "FLAT",
-      "score": -16.8
+      "score": -18.2
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3398,
-      "chg": -0.1,
+      "quote": 1.3401,
+      "chg": -0.2,
       "action": "FLAT",
-      "score": 7.8
+      "score": 7.4
     },
     "USDJPY": {
       "label": "USD/JPY",
@@ -33,35 +33,35 @@
       "quote": 0.8078,
       "chg": 1.9,
       "action": "FLAT",
-      "score": 17.2
+      "score": 17.3
     },
     "AUDUSD": {
       "label": "AUD/USD",
       "quote": 0.6955,
       "chg": -0.8,
       "action": "SHORT",
-      "score": -42.0
+      "score": -41.2
     },
     "USDCAD": {
       "label": "USD/CAD",
       "quote": 1.4153,
       "chg": 0.1,
       "action": "FLAT",
-      "score": 14.7
+      "score": 17.9
     },
     "USDMXN": {
       "label": "USD/MXN",
       "quote": 17.462,
       "chg": 1.4,
       "action": "FLAT",
-      "score": -14.7
+      "score": -16.9
     },
     "USDBRL": {
       "label": "USD/BRL",
       "quote": 5.1075,
       "chg": -0.3,
       "action": "FLAT",
-      "score": -2.3
+      "score": -7.5
     },
     "USDCNH": {
       "label": "USD/CNH",
@@ -74,13 +74,13 @@
   "dollar_desk": {
     "lean": "dollar-supportive backdrop",
     "lean_zh": "\u504f\u591a\u7f8e\u5143\u80cc\u666f",
-    "lean_net": 3,
-    "lean_n": 3,
+    "lean_net": 4,
+    "lean_n": 4,
     "real_rate_regime": "Restrictive real yields",
-    "real_rate_z": 0.88,
-    "fed_path_bps": 38.0,
-    "fed_path_lean": "steady",
-    "usd_pos_pctile": 73.0,
+    "real_rate_z": 0.87,
+    "fed_path_bps": 41.0,
+    "fed_path_lean": "hawkish_repricing",
+    "usd_pos_pctile": 75.0,
     "usd_pos_state": "neutral",
     "usd_reer_gap_pct": 0.4,
     "usd_valuation": "fair",
@@ -120,11 +120,11 @@
     "active": [],
     "intensity": {
       "carry_unwind": 11.2,
-      "dollar_wrecking_ball": 29.2,
-      "em_crisis_capital_flight": 18.1,
+      "dollar_wrecking_ball": 20.9,
+      "em_crisis_capital_flight": 18.8,
       "haven_flight_risk_off": 0,
       "reflation_risk_on": 0,
-      "intervention_risk": 3.1
+      "intervention_risk": 0.4
     }
   }
 }

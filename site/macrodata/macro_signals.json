@@ -1,15 +1,15 @@
 {
   "date": "2026-07-10",
-  "generated_utc": "2026-07-12 02:39",
+  "generated_utc": "2026-07-12 03:16",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
     "tiers": {
       "leading": {
         "asof": "2026-07-31",
-        "index": 94.71698886640438,
-        "mom6": 0.27631425125574083,
-        "trend": 0.5710115015936071,
+        "index": 94.72675841936713,
+        "mom6": 0.28608380421849233,
+        "trend": 0.5738028024401075,
         "diffusion": 75.0,
         "n_legs": 4,
         "direction": "rising",
@@ -385,7 +385,7 @@
           0.69,
           1.04,
           0.55,
-          0.28
+          0.29
         ],
         "spark_trend": [
           -2.0,
@@ -1133,7 +1133,7 @@
           94.61,
           94.88,
           94.69,
-          94.72
+          94.73
         ]
       },
       "coincident": {
@@ -2269,11 +2269,11 @@
       },
       "lagging": {
         "asof": "2026-06-30",
-        "index": 92.87996451365433,
-        "mom6": 0.48088073596362335,
-        "trend": -0.03522620864353041,
-        "diffusion": 0.0,
-        "n_legs": 2,
+        "index": 93.1187131850253,
+        "mom6": 0.7196294073345939,
+        "trend": 0.03297860921968758,
+        "diffusion": 33.333333333333336,
+        "n_legs": 3,
         "direction": "rising",
         "spark_mom6": [
           -0.02,
@@ -2646,7 +2646,7 @@
           -0.58,
           -0.19,
           0.67,
-          0.48,
+          0.72,
           null
         ],
         "spark_trend": [
@@ -3020,7 +3020,7 @@
           -0.77,
           -0.61,
           -0.24,
-          -0.04,
+          0.03,
           null
         ],
         "spark_index": [
@@ -3394,12 +3394,12 @@
           92.53,
           92.7,
           93.24,
-          92.88,
+          93.12,
           null
         ]
       }
     },
-    "cl_ratio_mom6": -0.6066970086217651,
+    "cl_ratio_mom6": -0.746624836714858,
     "recession_signal": {
       "available": true,
       "state": "off",
@@ -4032,22 +4032,22 @@
       "stlfsi": -0.7246
     },
     "systemic_stress": {
-      "ofr_fsi": -2.839,
-      "ofr_fsi_pctile": 0.040873015873015874,
-      "ofr_fsi_change_13w": -1.043,
+      "ofr_fsi": -2.082,
+      "ofr_fsi_pctile": 0.2488095238095238,
+      "ofr_fsi_change_13w": -0.286,
       "state": "calm",
       "trend": "easing",
       "functional": {
-        "credit": -1.208,
-        "equity_valuation": -0.585,
-        "safe_assets": -0.328,
-        "funding": -0.126,
-        "volatility": -0.591
+        "credit": -1.188,
+        "equity_valuation": -0.564,
+        "safe_assets": -0.32,
+        "funding": -0.105,
+        "volatility": 0.094
       },
       "regional": {
-        "united_states": -1.346,
-        "other_advanced": -0.923,
-        "emerging_markets": -0.571
+        "united_states": -1.278,
+        "other_advanced": -0.247,
+        "emerging_markets": -0.557
       },
       "leading_driver": null,
       "leading_driver_key": null,
@@ -4069,8 +4069,8 @@
         "ebp_level": 19.345238095238095,
         "claims": 0.0
       },
-      "curve_raw": 0.38,
-      "curve_tp_adjusted": 0.38,
+      "curve_raw": 0.35,
+      "curve_tp_adjusted": 0.35,
       "sahm": 0.07,
       "ebp": -0.297648271615362,
       "ny_fed_prob": 0.54,
@@ -4090,9 +4090,9 @@
       "indeed_postings": 101.39,
       "indeed_chg_3m_pct": -1.4770187542512803,
       "indeed_trend": "falling",
-      "withheld_tax_yoy_pct": 0.7932848725920261,
+      "withheld_tax_yoy_pct": 3.195517943286874,
       "income_trend": "rising",
-      "read": "labor mixed"
+      "read": "labor firm"
     },
     "inflation_nowcast": {
       "sticky_ann": 0.27223140233333337,
@@ -4110,11 +4110,11 @@
       "vix_term": null,
       "vix_term_state": null,
       "vix_term_lead_lag": "coincident",
-      "skew": 144.67,
-      "skew_pctile": 0.40575396825396826,
-      "stock_bond_corr": 0.5591876513012746,
+      "skew": 144.27,
+      "skew_pctile": 0.3898809523809524,
+      "stock_bond_corr": 0.5643800997722926,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.6123557857928646,
+      "roro": 0.62425189311833,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.8982896637391486,
       "news_sentiment": 0.09985840320587158,
@@ -4164,7 +4164,7 @@
       "vix_term": null,
       "breadth_div": false,
       "spy_high_prox": 0.9964781564088152,
-      "breadth_above200_pctile": 0.5902777777777778,
+      "breadth_above200_pctile": 0.7301587301587301,
       "credit_widen": false,
       "hy_oas_chg_21d_bp": -8.0,
       "lead_lag": "leading",
@@ -4174,8 +4174,8 @@
       "caution_reason_zh": null
     },
     "style_tilt": {
-      "yield_chg_1m_bp": 11.0,
-      "tilt": "value",
+      "yield_chg_1m_bp": 9.0,
+      "tilt": "neutral",
       "driver": "10y yield direction",
       "measured": "rising 10y -> value (+0.84%/63d, t=+3.0, all 4 sub-periods); Q1->value, Q4->growth"
     }
@@ -4225,7 +4225,7 @@
   "fear_euphoria": {
     "fe_score": 93,
     "band": "Euphoria",
-    "roro": 0.6123557857928646,
+    "roro": 0.62425189311833,
     "roro_state": "risk-on",
     "legs": [
       {
@@ -4248,8 +4248,8 @@
         "key": "skew",
         "name_en": "SKEW (tail pricing)",
         "name_zh": "SKEW \u5c3e\u90e8\u5b9a\u4ef7",
-        "value": 0.248,
-        "pct": 55,
+        "value": 0.319,
+        "pct": 58,
         "lean": "risk-on"
       },
       {
@@ -4511,10 +4511,10 @@
     "disclaimer_en": "Sentiment context only \u2014 display-only composite of public market indicators. Never scored, never feeds the regime engine, no forward claim. Greed/fear readings are not contrarian signals without regime context.",
     "disclaimer_zh": "\u4ec5\u4e3a\u60c5\u7eea\u53c2\u8003 \u2014 \u516c\u5f00\u5e02\u573a\u6307\u6807\u7684\u4ec5\u5c55\u793a\u5408\u6210\u3002\u4e0d\u8ba1\u5206\uff0c\u4e0d\u8fdb\u5165\u5468\u671f\u5f15\u64ce\uff0c\u65e0\u524d\u77bb\u6027\u5224\u65ad\u3002\u8d2a\u5a6a/\u6050\u60e7\u8bfb\u6570\u82e5\u65e0\u5468\u671f\u80cc\u666f\uff0c\u4e0d\u6784\u6210\u53cd\u5411\u4fe1\u53f7\u3002"
   },
-  "growth_score": 0.133,
+  "growth_score": 0.2,
   "inflation_score": -0.52,
   "components_confirming": [
-    "<span class=\"l-en\">growth \u00b7 2-yr yield</span><span class=\"l-zh\">\u589e\u957f \u00b7 2\u5e74\u671f\u6536\u76ca\u7387</span>",
+    "<span class=\"l-en\">growth \u00b7 market breadth</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u5e02\u573a\u5e7f\u5ea6</span>",
     "<span class=\"l-en\">growth \u00b7 payrolls</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u975e\u519c\u5c31\u4e1a</span>",
     "<span class=\"l-en\">growth \u00b7 industrial production</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u5de5\u4e1a\u751f\u4ea7</span>",
     "<span class=\"l-en\">growth \u00b7 wei_trend</span><span class=\"l-zh\">\u589e\u957f \u00b7 wei_trend</span>",
@@ -4606,39 +4606,39 @@
   "positioning": [
     {
       "name": "<span class=\"l-en\">S&amp;P 500 futures speculators</span><span class=\"l-zh\">\u6807\u666e500 \u671f\u8d27\u6295\u673a\u8005</span>",
-      "pct": 43.72496662216289,
+      "pct": 42.62841894596397,
       "label": "<span class=\"l-en\">normal</span><span class=\"l-zh\">\u6b63\u5e38</span>",
       "verdict": "<span class=\"l-en\">nothing notable</span><span class=\"l-zh\">\u65e0\u663e\u8457</span>",
       "left": "<span class=\"l-en\">crowded short</span><span class=\"l-zh\">\u62e5\u6324\u505a\u7a7a</span>",
       "right": "<span class=\"l-en\">crowded long</span><span class=\"l-zh\">\u62e5\u6324\u505a\u591a</span>",
-      "tip": "<span class=\"l-en\">Net bets of speculative futures traders on the S&amp;P 500, as % of all open contracts (CFTC weekly data). Deeply negative + low percentile = everyone&#39;s already short \u2014 fuel for squeezes. Very high = crowded long. Today: -1.9% of open contracts, 44th percentile of 30 years (as of 2026-06-30, 3-day reporting lag).</span><span class=\"l-zh\">\u6295\u673a\u6027\u671f\u8d27\u4ea4\u6613\u8005\u5728\u6807\u666e500\u4e0a\u7684\u51c0\u5934\u5bf8\uff0c\u5360\u5168\u90e8\u672a\u5e73\u4ed3\u5408\u7ea6\u7684\u767e\u5206\u6bd4\uff08CFTC \u5468\u5ea6\u6570\u636e\uff09\u3002\u6df1\u5ea6\u4e3a\u8d1f + \u4f4e\u767e\u5206\u4f4d = \u5927\u5bb6\u90fd\u5df2\u505a\u7a7a \u2014 \u903c\u7a7a\u71c3\u6599\u3002\u6781\u9ad8 = \u62e5\u6324\u505a\u591a\u3002 \u4eca\u65e5\uff1a\u5360\u672a\u5e73\u4ed3\u5408\u7ea6 -1.9%\uff0c30\u5e74\u5185\u7b2c 44 \u767e\u5206\u4f4d\uff08\u622a\u81f3 2026-06-30\uff0c\u62a5\u544a\u5ef6\u8fdf3\u5929\uff09\u3002</span>"
+      "tip": "<span class=\"l-en\">Net bets of speculative futures traders on the S&amp;P 500, as % of all open contracts (CFTC weekly data). Deeply negative + low percentile = everyone&#39;s already short \u2014 fuel for squeezes. Very high = crowded long. Today: -2.2% of open contracts, 43th percentile of 30 years (as of 2026-07-07, 3-day reporting lag).</span><span class=\"l-zh\">\u6295\u673a\u6027\u671f\u8d27\u4ea4\u6613\u8005\u5728\u6807\u666e500\u4e0a\u7684\u51c0\u5934\u5bf8\uff0c\u5360\u5168\u90e8\u672a\u5e73\u4ed3\u5408\u7ea6\u7684\u767e\u5206\u6bd4\uff08CFTC \u5468\u5ea6\u6570\u636e\uff09\u3002\u6df1\u5ea6\u4e3a\u8d1f + \u4f4e\u767e\u5206\u4f4d = \u5927\u5bb6\u90fd\u5df2\u505a\u7a7a \u2014 \u903c\u7a7a\u71c3\u6599\u3002\u6781\u9ad8 = \u62e5\u6324\u505a\u591a\u3002 \u4eca\u65e5\uff1a\u5360\u672a\u5e73\u4ed3\u5408\u7ea6 -2.2%\uff0c30\u5e74\u5185\u7b2c 43 \u767e\u5206\u4f4d\uff08\u622a\u81f3 2026-07-07\uff0c\u62a5\u544a\u5ef6\u8fdf3\u5929\uff09\u3002</span>"
     },
     {
       "name": "<span class=\"l-en\">10-yr Treasury futures speculators</span><span class=\"l-zh\">10\u5e74\u671f\u7f8e\u503a \u671f\u8d27\u6295\u673a\u8005</span>",
-      "pct": 5.531914893617021,
+      "pct": 6.136087484811665,
       "label": "<span class=\"l-en\">crowded short</span><span class=\"l-zh\">\u62e5\u6324\u505a\u7a7a</span>",
       "verdict": "<span class=\"l-en\">everyone is already short \u2014 stretched; squeezes start here</span><span class=\"l-zh\">\u5927\u5bb6\u90fd\u5df2\u505a\u7a7a \u2014 \u5df2\u62c9\u4f38\uff1b\u903c\u7a7a\u7531\u6b64\u5f00\u59cb</span>",
       "left": "<span class=\"l-en\">crowded short</span><span class=\"l-zh\">\u62e5\u6324\u505a\u7a7a</span>",
       "right": "<span class=\"l-en\">crowded long</span><span class=\"l-zh\">\u62e5\u6324\u505a\u591a</span>",
-      "tip": "<span class=\"l-en\">Speculators&#39; net position in 10-year Treasury futures. Extreme shorts have historically preceded falling yields (bond rallies), and vice versa. Today: -15.4% of open contracts, 6th percentile of 30 years (as of 2026-06-30, 3-day reporting lag).</span><span class=\"l-zh\">\u6295\u673a\u8005\u572810\u5e74\u671f\u7f8e\u503a\u671f\u8d27\u4e0a\u7684\u51c0\u5934\u5bf8\u3002\u5386\u53f2\u4e0a\u6781\u7aef\u505a\u7a7a\u5f80\u5f80\u5148\u4e8e\u6536\u76ca\u7387\u4e0b\u884c\uff08\u503a\u5238\u4e0a\u6da8\uff09\uff0c\u53cd\u4e4b\u4ea6\u7136\u3002 \u4eca\u65e5\uff1a\u5360\u672a\u5e73\u4ed3\u5408\u7ea6 -15.4%\uff0c30\u5e74\u5185\u7b2c 6 \u767e\u5206\u4f4d\uff08\u622a\u81f3 2026-06-30\uff0c\u62a5\u544a\u5ef6\u8fdf3\u5929\uff09\u3002</span>"
+      "tip": "<span class=\"l-en\">Speculators&#39; net position in 10-year Treasury futures. Extreme shorts have historically preceded falling yields (bond rallies), and vice versa. Today: -15.3% of open contracts, 6th percentile of 30 years (as of 2026-07-07, 3-day reporting lag).</span><span class=\"l-zh\">\u6295\u673a\u8005\u572810\u5e74\u671f\u7f8e\u503a\u671f\u8d27\u4e0a\u7684\u51c0\u5934\u5bf8\u3002\u5386\u53f2\u4e0a\u6781\u7aef\u505a\u7a7a\u5f80\u5f80\u5148\u4e8e\u6536\u76ca\u7387\u4e0b\u884c\uff08\u503a\u5238\u4e0a\u6da8\uff09\uff0c\u53cd\u4e4b\u4ea6\u7136\u3002 \u4eca\u65e5\uff1a\u5360\u672a\u5e73\u4ed3\u5408\u7ea6 -15.3%\uff0c30\u5e74\u5185\u7b2c 6 \u767e\u5206\u4f4d\uff08\u622a\u81f3 2026-07-07\uff0c\u62a5\u544a\u5ef6\u8fdf3\u5929\uff09\u3002</span>"
     },
     {
       "name": "<span class=\"l-en\">US Dollar futures speculators</span><span class=\"l-zh\">\u7f8e\u5143 \u671f\u8d27\u6295\u673a\u8005</span>",
-      "pct": 59.46801773274224,
-      "label": "<span class=\"l-en\">normal</span><span class=\"l-zh\">\u6b63\u5e38</span>",
-      "verdict": "<span class=\"l-en\">nothing notable</span><span class=\"l-zh\">\u65e0\u663e\u8457</span>",
+      "pct": 60.25316455696203,
+      "label": "<span class=\"l-en\">leaning long</span><span class=\"l-zh\">\u504f\u5411\u505a\u591a</span>",
+      "verdict": "<span class=\"l-en\">above normal, nothing extreme</span><span class=\"l-zh\">\u9ad8\u4e8e\u6b63\u5e38\uff0c\u4f46\u4e0d\u6781\u7aef</span>",
       "left": "<span class=\"l-en\">crowded short</span><span class=\"l-zh\">\u62e5\u6324\u505a\u7a7a</span>",
       "right": "<span class=\"l-en\">crowded long</span><span class=\"l-zh\">\u62e5\u6324\u505a\u591a</span>",
-      "tip": "<span class=\"l-en\">Speculators&#39; net position on the dollar index. Extremes tend to mark dollar turning points, which matter for commodities and foreign earnings. Today: +24.0% of open contracts, 59th percentile of 30 years (as of 2026-06-30, 3-day reporting lag).</span><span class=\"l-zh\">\u6295\u673a\u8005\u5728\u7f8e\u5143\u6307\u6570\u4e0a\u7684\u51c0\u5934\u5bf8\u3002\u6781\u7aef\u503c\u5f80\u5f80\u6807\u5fd7\u7f8e\u5143\u7684\u8f6c\u6298\u70b9\uff0c\u5bf9\u5927\u5b97\u5546\u54c1\u4e0e\u6d77\u5916\u76c8\u5229\u81f3\u5173\u91cd\u8981\u3002 \u4eca\u65e5\uff1a\u5360\u672a\u5e73\u4ed3\u5408\u7ea6 +24.0%\uff0c30\u5e74\u5185\u7b2c 59 \u767e\u5206\u4f4d\uff08\u622a\u81f3 2026-06-30\uff0c\u62a5\u544a\u5ef6\u8fdf3\u5929\uff09\u3002</span>"
+      "tip": "<span class=\"l-en\">Speculators&#39; net position on the dollar index. Extremes tend to mark dollar turning points, which matter for commodities and foreign earnings. Today: +24.9% of open contracts, 60th percentile of 30 years (as of 2026-07-07, 3-day reporting lag).</span><span class=\"l-zh\">\u6295\u673a\u8005\u5728\u7f8e\u5143\u6307\u6570\u4e0a\u7684\u51c0\u5934\u5bf8\u3002\u6781\u7aef\u503c\u5f80\u5f80\u6807\u5fd7\u7f8e\u5143\u7684\u8f6c\u6298\u70b9\uff0c\u5bf9\u5927\u5b97\u5546\u54c1\u4e0e\u6d77\u5916\u76c8\u5229\u81f3\u5173\u91cd\u8981\u3002 \u4eca\u65e5\uff1a\u5360\u672a\u5e73\u4ed3\u5408\u7ea6 +24.9%\uff0c30\u5e74\u5185\u7b2c 60 \u767e\u5206\u4f4d\uff08\u622a\u81f3 2026-07-07\uff0c\u62a5\u544a\u5ef6\u8fdf3\u5929\uff09\u3002</span>"
     },
     {
       "name": "<span class=\"l-en\">Gold futures speculators</span><span class=\"l-zh\">\u9ec4\u91d1 \u671f\u8d27\u6295\u673a\u8005</span>",
-      "pct": 98.17518248175182,
+      "pct": 97.99392097264437,
       "label": "<span class=\"l-en\">extreme long</span><span class=\"l-zh\">\u6781\u5ea6\u505a\u591a</span>",
       "verdict": "<span class=\"l-en\">everyone is already long \u2014 most extreme in our records; contrarian alert</span><span class=\"l-zh\">\u5927\u5bb6\u90fd\u5df2\u505a\u591a \u2014 \u6211\u4eec\u8bb0\u5f55\u4e2d\u6700\u6781\u7aef\uff1b\u53cd\u5411\u9884\u8b66</span>",
       "left": "<span class=\"l-en\">crowded short</span><span class=\"l-zh\">\u62e5\u6324\u505a\u7a7a</span>",
       "right": "<span class=\"l-en\">crowded long</span><span class=\"l-zh\">\u62e5\u6324\u505a\u591a</span>",
-      "tip": "<span class=\"l-en\">Speculators&#39; net position in gold futures. Near the 100th percentile = the most crowded gold trade in decades \u2014 vulnerable to shakeouts. Today: +52.5% of open contracts, 98th percentile of 30 years (as of 2026-06-30, 3-day reporting lag).</span><span class=\"l-zh\">\u6295\u673a\u8005\u5728\u9ec4\u91d1\u671f\u8d27\u4e0a\u7684\u51c0\u5934\u5bf8\u3002\u63a5\u8fd1\u7b2c100\u767e\u5206\u4f4d = \u6570\u5341\u5e74\u6765\u6700\u62e5\u6324\u7684\u9ec4\u91d1\u4ea4\u6613 \u2014 \u6613\u906d\u6d17\u76d8\u3002 \u4eca\u65e5\uff1a\u5360\u672a\u5e73\u4ed3\u5408\u7ea6 +52.5%\uff0c30\u5e74\u5185\u7b2c 98 \u767e\u5206\u4f4d\uff08\u622a\u81f3 2026-06-30\uff0c\u62a5\u544a\u5ef6\u8fdf3\u5929\uff09\u3002</span>"
+      "tip": "<span class=\"l-en\">Speculators&#39; net position in gold futures. Near the 100th percentile = the most crowded gold trade in decades \u2014 vulnerable to shakeouts. Today: +52.2% of open contracts, 98th percentile of 30 years (as of 2026-07-07, 3-day reporting lag).</span><span class=\"l-zh\">\u6295\u673a\u8005\u5728\u9ec4\u91d1\u671f\u8d27\u4e0a\u7684\u51c0\u5934\u5bf8\u3002\u63a5\u8fd1\u7b2c100\u767e\u5206\u4f4d = \u6570\u5341\u5e74\u6765\u6700\u62e5\u6324\u7684\u9ec4\u91d1\u4ea4\u6613 \u2014 \u6613\u906d\u6d17\u76d8\u3002 \u4eca\u65e5\uff1a\u5360\u672a\u5e73\u4ed3\u5408\u7ea6 +52.2%\uff0c30\u5e74\u5185\u7b2c 98 \u767e\u5206\u4f4d\uff08\u622a\u81f3 2026-07-07\uff0c\u62a5\u544a\u5ef6\u8fdf3\u5929\uff09\u3002</span>"
     },
     {
       "name": "<span class=\"l-en\">Pro fund managers</span><span class=\"l-zh\">\u4e13\u4e1a\u57fa\u91d1\u7ecf\u7406</span>",
@@ -4652,11 +4652,11 @@
     {
       "name": "<span class=\"l-en\">Options hedging mood</span><span class=\"l-zh\">\u671f\u6743\u5bf9\u51b2\u60c5\u7eea</span>",
       "pct": null,
-      "label": "<span class=\"l-en\">guarded</span><span class=\"l-zh\">\u8b66\u60d5</span>",
-      "verdict": "<span class=\"l-en\">more puts than calls \u2014 mild caution</span><span class=\"l-zh\">\u770b\u8dcc\u591a\u4e8e\u770b\u6da8 \u2014 \u8f7b\u5ea6\u8c28\u614e</span>",
+      "label": "<span class=\"l-en\">heavy hedging</span><span class=\"l-zh\">\u5927\u91cf\u5bf9\u51b2</span>",
+      "verdict": "<span class=\"l-en\">lots of downside protection being bought \u2014 fear elevated</span><span class=\"l-zh\">\u5927\u91cf\u4e70\u5165\u4e0b\u884c\u4fdd\u62a4 \u2014 \u6050\u614c\u5347\u9ad8</span>",
       "left": "",
       "right": "",
-      "tip": "<span class=\"l-en\">Put/call volume ratio on S&amp;P index options, computed from CBOE&#39;s chain: bearish bets \u00f7 bullish bets traded today. Above ~1.3 = heavy hedging; below ~0.8 = complacency. Today: 1.07 (as of 2026-07-09). A young series \u2014 labels are based on standard thresholds until enough history accrues.</span><span class=\"l-zh\">\u6807\u666e\u6307\u6570\u671f\u6743\u7684\u770b\u8dcc/\u770b\u6da8\u6210\u4ea4\u91cf\u6bd4\uff0c\u7531 CBOE \u671f\u6743\u94fe\u8ba1\u7b97\uff1a\u4eca\u65e5\u770b\u7a7a\u62bc\u6ce8 \u00f7 \u770b\u591a\u62bc\u6ce8\u3002\u9ad8\u4e8e\u7ea61.3 = \u5927\u91cf\u5bf9\u51b2\uff1b\u4f4e\u4e8e\u7ea60.8 = \u81ea\u6ee1\u3002\u4eca\u65e5\uff1a1.07\uff08\u622a\u81f3 2026-07-09\uff09\u3002\u8fd9\u662f\u4e00\u4e2a\u8f83\u65b0\u7684\u5e8f\u5217 \u2014 \u5728\u79ef\u7d2f\u8db3\u591f\u5386\u53f2\u524d\uff0c\u6807\u7b7e\u57fa\u4e8e\u6807\u51c6\u9608\u503c\u3002</span>"
+      "tip": "<span class=\"l-en\">Put/call volume ratio on S&amp;P index options, computed from CBOE&#39;s chain: bearish bets \u00f7 bullish bets traded today. Above ~1.3 = heavy hedging; below ~0.8 = complacency. Today: 1.47 (as of 2026-07-11). A young series \u2014 labels are based on standard thresholds until enough history accrues.</span><span class=\"l-zh\">\u6807\u666e\u6307\u6570\u671f\u6743\u7684\u770b\u8dcc/\u770b\u6da8\u6210\u4ea4\u91cf\u6bd4\uff0c\u7531 CBOE \u671f\u6743\u94fe\u8ba1\u7b97\uff1a\u4eca\u65e5\u770b\u7a7a\u62bc\u6ce8 \u00f7 \u770b\u591a\u62bc\u6ce8\u3002\u9ad8\u4e8e\u7ea61.3 = \u5927\u91cf\u5bf9\u51b2\uff1b\u4f4e\u4e8e\u7ea60.8 = \u81ea\u6ee1\u3002\u4eca\u65e5\uff1a1.47\uff08\u622a\u81f3 2026-07-11\uff09\u3002\u8fd9\u662f\u4e00\u4e2a\u8f83\u65b0\u7684\u5e8f\u5217 \u2014 \u5728\u79ef\u7d2f\u8db3\u591f\u5386\u53f2\u524d\uff0c\u6807\u7b7e\u57fa\u4e8e\u6807\u51c6\u9608\u503c\u3002</span>"
     },
     {
       "name": "<span class=\"l-en\">Market-maker effect</span><span class=\"l-zh\">\u505a\u5e02\u5546\u6548\u5e94</span>",
@@ -4665,7 +4665,7 @@
       "verdict": "<span class=\"l-en\">market-makers&#39; hedging absorbs moves \u2014 calmer tape likely (and we&#39;re near the tipping point \u2014 it can flip any day)</span><span class=\"l-zh\">\u505a\u5e02\u5546\u5bf9\u51b2\u5438\u6536\u6ce2\u52a8 \u2014 \u76d8\u9762\u53ef\u80fd\u66f4\u5e73\u9759\uff08\u4e14\u6211\u4eec\u5df2\u63a5\u8fd1\u4e34\u754c\u70b9 \u2014 \u968f\u65f6\u53ef\u80fd\u53cd\u8f6c\uff09</span>",
       "left": "",
       "right": "",
-      "tip": "<span class=\"l-en\">Estimated dealer gamma (GEX) from the S&amp;P options chain, standard assumption (dealers long calls/short puts). Positive = their hedging dampens market moves; negative = it amplifies them. Today: +81bn per 1% move (as of 2026-07-09). An estimate, not ground truth.</span><span class=\"l-zh\">\u7531\u6807\u666e\u671f\u6743\u94fe\u4f30\u7b97\u7684\u505a\u5e02\u5546 gamma\uff08GEX\uff09\uff0c\u91c7\u7528\u6807\u51c6\u5047\u8bbe\uff08\u505a\u5e02\u5546\u6301\u6709\u591a\u5934\u770b\u6da8/\u7a7a\u5934\u770b\u8dcc\uff09\u3002\u6b63\u503c = \u5176\u5bf9\u51b2\u6291\u5236\u5e02\u573a\u6ce2\u52a8\uff1b\u8d1f\u503c = \u653e\u5927\u6ce2\u52a8\u3002\u4eca\u65e5\uff1a\u6bcf1%\u6ce2\u52a8 +81\u5341\u4ebf \uff08\u622a\u81f3 2026-07-09\uff09\u3002\u8fd9\u662f\u4f30\u7b97\uff0c\u5e76\u975e\u771f\u5b9e\u503c\u3002</span>"
+      "tip": "<span class=\"l-en\">Estimated dealer gamma (GEX) from the S&amp;P options chain, standard assumption (dealers long calls/short puts). Positive = their hedging dampens market moves; negative = it amplifies them. Today: +86bn per 1% move (as of 2026-07-11). An estimate, not ground truth.</span><span class=\"l-zh\">\u7531\u6807\u666e\u671f\u6743\u94fe\u4f30\u7b97\u7684\u505a\u5e02\u5546 gamma\uff08GEX\uff09\uff0c\u91c7\u7528\u6807\u51c6\u5047\u8bbe\uff08\u505a\u5e02\u5546\u6301\u6709\u591a\u5934\u770b\u6da8/\u7a7a\u5934\u770b\u8dcc\uff09\u3002\u6b63\u503c = \u5176\u5bf9\u51b2\u6291\u5236\u5e02\u573a\u6ce2\u52a8\uff1b\u8d1f\u503c = \u653e\u5927\u6ce2\u52a8\u3002\u4eca\u65e5\uff1a\u6bcf1%\u6ce2\u52a8 +86\u5341\u4ebf \uff08\u622a\u81f3 2026-07-11\uff09\u3002\u8fd9\u662f\u4f30\u7b97\uff0c\u5e76\u975e\u771f\u5b9e\u503c\u3002</span>"
     },
     {
       "name": "<span class=\"l-en\">Fear gauge</span><span class=\"l-zh\">\u6050\u614c\u6307\u6807</span>",
