@@ -172,7 +172,18 @@ MASTER_SYSTEM_TMPL = (
     "- Do NOT give position sizes or fire trades — the deterministic system does "
     "that. Give the read and what to watch.\n"
     "- Be honest about uncertainty and small samples. Flag conflicts rather than "
-    "papering over them. Cite which dashboard supports each claim.\n\n"
+    "papering over them. Cite which dashboard supports each claim.\n"
+    "- If `neural_web` is present in the state, use it to CALIBRATE and cross-check "
+    "your read — never as independent confirmation when a block carries "
+    "_tape_family='nw_synthesis' (those are aggregations of the same US price tape "
+    "the macro block already reads, i.e. decomposition, not independent signal).\n"
+    "- If a neural_web block has stale:true or absent:true, say so plainly "
+    "('X is stale as of DATE' / 'not available') — never paper over a stale or "
+    "absent block by synthesising as if the data were current.\n"
+    "- The neural_web.cortex block is the overnight AI deliberation. When its "
+    "status is 'degraded', treat NW deliberation as absent (one honest line). "
+    "When present, weigh what_fired and deserves_operator as attention flags — "
+    "never as primary signals.\n\n"
     "Working rotation thesis to test:\n{thesis}\n\n"
     + _SCHEMA_TAIL + _MACRO_THESES_TAIL
 )
@@ -199,7 +210,15 @@ CHINA_SYSTEM_TMPL = (
     "- Do NOT give position sizes or fire trades — the deterministic system does "
     "that. Give the read and what to watch.\n"
     "- Be honest about uncertainty and small samples. Cite which panel supports each "
-    "claim.\n\n"
+    "claim.\n"
+    "- If `neural_web` is present in the state, use it to CALIBRATE and cross-check "
+    "your read — never as independent confirmation when a block carries "
+    "_tape_family='nw_synthesis' (same-tape decomposition, not independent signal).\n"
+    "- If a neural_web block has stale:true or absent:true, say so plainly "
+    "('X is stale as of DATE' / 'not available') — never paper over a stale block.\n"
+    "- The neural_web.cortex block is the overnight AI deliberation. When degraded, "
+    "treat NW deliberation as absent (one honest line). When present, weigh "
+    "what_fired and deserves_operator as attention flags, never as primary signals.\n\n"
     "Working thesis to test:\n{thesis}\n\n"
     + _SCHEMA_TAIL
 )
@@ -1010,6 +1029,12 @@ def gather_state(root: Path | None = None) -> dict:
             state["oracle_rotation"] = oracle_block
     except Exception:  # noqa: BLE001 — additive, never fatal
         pass
+    # ADB-W1: inject NW context packet (lazy import so a broken NW package never breaks the brief)
+    try:
+        from engine.neuralweb import brief_context  # noqa: PLC0415
+        state["neural_web"] = brief_context.macro_slice(root)
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
     return state
 
 
@@ -1089,6 +1114,12 @@ def gather_china_state(root: Path | None = None) -> dict:
             state["china_intel"] = intel
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.debug("china_intel state unavailable (%s)", e)
+    # ADB-W1: inject NW China context packet (lazy import so a broken NW package never breaks the brief)
+    try:
+        from engine.neuralweb import brief_context  # noqa: PLC0415
+        state["neural_web"] = brief_context.china_slice(root)
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
     return state
 
 
@@ -1437,6 +1468,13 @@ def run(persist: bool = True, root: Path | None = None, force: bool = False,
                     return prev
         state = spec["state_fn"](root)
         brief = synthesize(state, cfg, lens=lens, root=root)
+        # ADB-R9: additive optional keys — schema id stays master_brief.v1
+        brief["nw_context_used"] = bool(state.get("neural_web"))
+        _nw = state.get("neural_web") or {}
+        _cortex = _nw.get("cortex") or {}
+        brief["cortex_status"] = (
+            _cortex.get("status", "absent") if not _cortex.get("absent") else "absent"
+        )
         _translate_brief(brief, cfg)          # attach brief['zh'] for the 中文 toggle
         if persist:
             try:

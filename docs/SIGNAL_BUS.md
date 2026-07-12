@@ -125,9 +125,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | causal-nulls | `data/neuralweb/causal_nulls.jsonl` | jsonl | weekly | display | 2 | 0 |
 | causal-edges | `data/neuralweb/causal_edges.jsonl` | jsonl | weekly | display | 1 | 0 |
 | causal-frontier | `data/neuralweb/causal_frontier.json` | json | daily-engine | display | 1 | 0 |
+| causal-lab-state | `data/neuralweb/causal_lab_state.json` | json | daily-engine | display | 1 | 0 |
 | causal-llm-lane | `data/neuralweb/causal_llm_lane.json` | json | daily-engine | infrastructure | 1 | 0 |
 | causal-brainstorm-runs | `data/neuralweb/causal_brainstorm_runs.jsonl` | jsonl | weekly | infrastructure | 0 | 0 |
-| causal-lab-state | `data/neuralweb/causal_lab_state.json` | json | daily-engine | display | 0 | 0 |
 | causal-surprise-queue | `data/neuralweb/causal_surprise_queue.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | site-causal-lab-state | `site/neuralwebdata/causal_lab_state.json` | json | daily-engine | display | 0 | 0 |
 
@@ -515,12 +515,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 10 | 1 |
+| world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 11 | 1 |
+| liquidity-plumbing | `data/neuralweb/liquidity_plumbing.json` | json | daily-engine | shadow | 5 | 0 |
 | spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 5 | 0 |
-| liquidity-plumbing | `data/neuralweb/liquidity_plumbing.json` | json | daily-engine | shadow | 4 | 0 |
+| cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 3 | 1 |
 | mechanism-pathways | `data/neuralweb/mechanism_pathways.json` | json | daily-engine | display | 4 | 0 |
 | confluence-graph | `data/neuralweb/confluence_graph.json` | json | daily-engine | display | 2 | 1 |
-| cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 2 | 1 |
 | cortex-probation | `data/neuralweb/cortex/probation.json` | json | nightly-cortex | infrastructure | 2 | 1 |
 | feeds-plane | `site/feeds/` | json | daily-engine | infrastructure | 1 | 2 |
 | governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 3 | 0 |
@@ -530,17 +530,19 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | rule-experiment-registry | `data/rule_experiments/registry.jsonl` | jsonl | on-demand | infrastructure | 3 | 0 |
 | site-artifact-manifest | `site/factordata/contracts/artifact_manifest.json` | json | daily-engine | infrastructure | 1 | 2 |
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
+| attention-deterministic | `data/neuralweb/attention_deterministic.json` | json | daily-engine | display | 2 | 0 |
 | confluence-tape | `data/neuralweb/confluence_tape.jsonl` | jsonl | daily-engine | display | 2 | 0 |
+| evidence-clock | `data/neuralweb/evidence_clock.json` | json | daily-engine | display | 2 | 0 |
 | evidence-clock-reviews | `data/neuralweb/evidence_clock_reviews.jsonl` | jsonl | on-demand | display | 2 | 0 |
 | kernel-decisions | `data/neuralweb/kernel_decisions.json` | json | on-demand | infrastructure | 1 | 1 |
 | nw-health-run-history | `data/neuralweb/nw_health_run_history.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
 | reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
-| attention-deterministic | `data/neuralweb/attention_deterministic.json` | json | daily-engine | display | 1 | 0 |
 | causal-mechanisms | `data/neuralweb/causal_mechanisms.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | claim-accountability | `data/governance/claim_accountability.json` | json | collect | infrastructure | 1 | 0 |
+| confluence-sequence | `data/neuralweb/confluence_sequence.json` | json | daily-engine | display | 1 | 0 |
+| confluence-strength | `data/neuralweb/confluence_strength.json` | json | daily-engine | display | 1 | 0 |
 | cortex-attention-firings | `data/reflexes/cortex_attention/firings.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
 | cortex-attention-grades | `data/reflexes/cortex_attention/grades.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
-| evidence-clock | `data/neuralweb/evidence_clock.json` | json | daily-engine | display | 1 | 0 |
 | fred-wresbal | `data/fred/WRESBAL.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | kernel-estimates | `data/neuralweb/kernel_estimates.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
 | mechanism-pathways-history | `data/neuralweb/mechanism_pathways_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
@@ -560,8 +562,6 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-neuralweb-health-history | `site/neuralwebdata/health_history.json` | json | daily-engine | display | 1 | 0 |
 | causal-feature-inventory | `data/neuralweb/causal_feature_inventory.json` | json | daily-engine | infrastructure | 0 | 0 |
 | confluence-candidates | `data/neuralweb/confluence_candidates.jsonl` | jsonl | daily-engine | display | 0 | 0 |
-| confluence-sequence | `data/neuralweb/confluence_sequence.json` | json | daily-engine | display | 0 | 0 |
-| confluence-strength | `data/neuralweb/confluence_strength.json` | json | daily-engine | display | 0 | 0 |
 | entity-thesis-mechanism-registry | `data/neuralweb/entity_thesis_mechanism_registry.json` | json | daily-engine | infrastructure | 0 | 0 |
 | hypothesis-inbox | `data/neuralweb/cortex/hypothesis_inbox.jsonl` | jsonl | nightly-cortex | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
@@ -591,7 +591,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| neuralweb-mastermind-context | `data/neuralweb/mastermind_context.json` | json | daily-engine | display | 1 | 1 |
+| neuralweb-mastermind-context | `data/neuralweb/mastermind_context.json` | json | daily-engine | display | 2 | 1 |
 | site-neuralweb-market-plane | `site/neuralwebdata/market_plane.json` | json | daily-engine | display | 1 | 1 |
 | analyst-targets | `data/analyst/targets.parquet` | parquet | collect | display | 1 | 0 |
 | site-neuralweb-mastermind-context | `site/neuralwebdata/mastermind_context.json` | json | daily-engine | display | 0 | 1 |
@@ -602,7 +602,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 4 | 0 |
-| covariance-spine | `data/neuralweb/covariance_spine.json` | json | daily-engine | infrastructure | 1 | 0 |
+| covariance-spine | `data/neuralweb/covariance_spine.json` | json | daily-engine | infrastructure | 2 | 0 |
 | grading-closure | `data/governance/grading_closure.json` | json | collect | infrastructure | 1 | 0 |
 | covariance-spine-history | `data/neuralweb/covariance_spine_history.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 | operator-action-ledger | `data/operator/action_ledger.jsonl` | jsonl | on-demand | infrastructure | 0 | 0 |
@@ -812,8 +812,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| theme-state | `data/neuralweb/theme_state.json` | json | daily-engine | display | 5 | 0 |
 | site-theme-thesis | `site/neuralwebdata/theme_thesis.json` | json | daily-engine | display | 4 | 0 |
-| theme-state | `data/neuralweb/theme_state.json` | json | daily-engine | display | 4 | 0 |
 | qledger-falsifier-evaluations | `data/qledger/falsifier_evaluations.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-theme-pathways | `site/neuralwebdata/theme_pathways.json` | json | daily-engine | display | 1 | 0 |
 | theme-phase-history | `data/neuralweb/theme_phase_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
@@ -933,6 +933,13 @@ flowchart LR
     C_engine_neuralweb_query_py["engine/neuralweb/query.py"]
     C_engine_qledger_ui_py["engine/qledger_ui.py"]
     OVF_qledger_claims["...+10 more"]
+    P_engine_neuralweb_world_state_py(("engine/neuralweb/world_state.py"))
+    A_world_state["world-state"]
+    C_scripts_build_feeds_py["scripts/build_feeds.py"]
+    C_scripts_notify_py["scripts/notify.py"]
+    C_scripts_build_impulse_py["scripts/build_impulse.py"]
+    C_engine_etf_pulse_py["engine/etf_pulse.py"]
+    OVF_world_state["...+8 more"]
     P_scripts_midsmall_pit_py(("scripts/midsmall_pit.py"))
     A_breadth_sp1500_pit["breadth-sp1500-pit"]
     C_engine_grading_py["engine/grading.py"]
@@ -940,13 +947,6 @@ flowchart LR
     C_engine_index_changes_py["engine/index_changes.py"]
     C_engine_intel_discovery_py["engine/intel_discovery.py"]
     OVF_breadth_sp1500_pit["...+7 more"]
-    P_engine_neuralweb_world_state_py(("engine/neuralweb/world_state.py"))
-    A_world_state["world-state"]
-    C_scripts_build_feeds_py["scripts/build_feeds.py"]
-    C_scripts_notify_py["scripts/notify.py"]
-    C_scripts_build_impulse_py["scripts/build_impulse.py"]
-    C_engine_etf_pulse_py["engine/etf_pulse.py"]
-    OVF_world_state["...+7 more"]
     P_engine_qbus_py(("engine/qbus.py"))
     A_qbus_items["qbus-items"]
     C_engine_china_news_intel_py["engine/china_news_intel.py"]
@@ -1025,18 +1025,18 @@ flowchart LR
     A_qledger_claims --> C_engine_neuralweb_query_py
     A_qledger_claims --> C_engine_qledger_ui_py
     A_qledger_claims --> OVF_qledger_claims
-    P_scripts_midsmall_pit_py --> A_breadth_sp1500_pit
-    A_breadth_sp1500_pit --> C_engine_grading_py
-    A_breadth_sp1500_pit --> C_engine_group_flow_py
-    A_breadth_sp1500_pit --> C_engine_index_changes_py
-    A_breadth_sp1500_pit --> C_engine_intel_discovery_py
-    A_breadth_sp1500_pit --> OVF_breadth_sp1500_pit
     P_engine_neuralweb_world_state_py --> A_world_state
     A_world_state --> C_scripts_build_feeds_py
     A_world_state --> C_scripts_notify_py
     A_world_state --> C_scripts_build_impulse_py
     A_world_state --> C_engine_etf_pulse_py
     A_world_state --> OVF_world_state
+    P_scripts_midsmall_pit_py --> A_breadth_sp1500_pit
+    A_breadth_sp1500_pit --> C_engine_grading_py
+    A_breadth_sp1500_pit --> C_engine_group_flow_py
+    A_breadth_sp1500_pit --> C_engine_index_changes_py
+    A_breadth_sp1500_pit --> C_engine_intel_discovery_py
+    A_breadth_sp1500_pit --> OVF_breadth_sp1500_pit
     P_engine_qbus_py --> A_qbus_items
     A_qbus_items --> C_engine_china_news_intel_py
     A_qbus_items --> C_engine_communique_diff_py
