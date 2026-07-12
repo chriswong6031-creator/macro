@@ -336,3 +336,30 @@ class TestHkBilingualCopy:
         for ev in payload["active"]:
             assert "sector_name_en" in ev, f"Missing sector_name_en in event {ev.get('id')}"
             assert "sector_name_zh" in ev, f"Missing sector_name_zh in event {ev.get('id')}"
+
+
+# ─────────────────────────────────────────── build() southbound fail-open ────
+
+
+def test_build_southbound_absent_fails_open(tmp_path, monkeypatch):
+    """build() with NO parquet stores present writes a valid payload with no
+    southbound_ctx key and does not raise (review fix-list item: the parquet
+    embed is display context and must never block the events payload)."""
+    import scripts.build_rotation_events_hk as bld
+
+    a, b = _aligned_pair()
+    site = tmp_path / "site"
+    (site / "marketdata").mkdir(parents=True)
+    data = tmp_path / "data"
+    data.mkdir()
+
+    monkeypatch.setattr(bld.sector_legs_hk, "sector_closes",
+                        lambda site_dir=None: _hk_sectors(a, b))
+    monkeypatch.setattr(bld.config, "data_dir", lambda: data)
+
+    out = bld.build(site=site, generated_utc="2026-07-12 12:00 UTC")
+    assert isinstance(out, dict)
+
+    payload = json.loads((site / "marketdata" / "rotation_events_hk.json").read_text())
+    assert "southbound_ctx" not in payload
+    assert "active" in payload

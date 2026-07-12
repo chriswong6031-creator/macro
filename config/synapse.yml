@@ -3478,7 +3478,7 @@ artifacts:
     notes: >
       RC-R14 HK rotation-event detector port (2026-07-12).
       Active HK basket handoff events (blowoff-crash / fresh-low turn / ratio confirm)
-      across 4 curated complexes, 10 legs, sourced from site/hkbasketdata/baskets.json
+      across 4 curated complexes, 11 legs, sourced from site/hkbasketdata/baskets.json
       level series. Append-only ledger at data/rotation_events_hk/events.jsonl (RC-R2 law).
       Display/context tier only — no rank, gate, size, or stance change.
       authority.may_rank/gate/size/escalate=false. Southbound aggregate context embedded
