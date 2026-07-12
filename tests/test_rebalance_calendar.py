@@ -208,11 +208,14 @@ class TestTag:
         assert result["is_quarter_end"] is True
 
     def test_td_to_quarter_end_sign_convention(self):
-        """td_to_quarter_end:
+        """td_to_quarter_end is the SIGNED distance to the nearest QE:
           - zero on the QE day itself
-          - positive N sessions BEFORE the nearest QE (td = N, future-pointing)
-          - the session immediately AFTER a QE points to the NEXT QE so is also positive
-        Convention: always positive = distance to the next upcoming QE; zero on the day.
+          - positive N sessions BEFORE the nearest QE (d is before QE)
+          - negative N sessions AFTER the nearest QE (d is after QE)
+        Symmetry: post-QE sessions get a small negative td, not a large
+        positive distance to the next quarter's QE (~63 sessions away).
+        This ensures in_qtr_end_window covers both 3 sessions before AND
+        3 sessions after each QE (residual rebalance execution window).
         """
         qe_dates = quarter_end_sessions(2024, 2024)
         qe = qe_dates[0]  # March 28 2024
@@ -230,15 +233,16 @@ class TestTag:
         r_before = tag(d_before)
         assert r_before["td_to_quarter_end"] > 0
 
-        # One session after → points to the NEXT QE (also positive)
+        # One session after → negative (nearest QE is the one just passed)
         d_after = qe
         while True:
             d_after += __import__('datetime').timedelta(days=1)
             if is_session(d_after):
                 break
         r_after = tag(d_after)
-        # td_to_quarter_end points to the NEXT QE (June 28 2024), so it's positive
-        assert r_after["td_to_quarter_end"] > 0
+        # nearest QE is March 28 (just behind us), so td = -1
+        assert r_after["td_to_quarter_end"] == -1
+        assert r_after["in_qtr_end_window"] is True
 
 
 # ── build_tag_frame ───────────────────────────────────────────────────────────

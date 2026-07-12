@@ -6,10 +6,9 @@ NOVEL_IDEAS.md and is NOT revived here).
 
 Emits per-session tags:
   is_quarter_end          — last NYSE session of Mar/Jun/Sep/Dec
-  td_to_quarter_end       — trading-day distance to the nearest upcoming QE:
+  td_to_quarter_end       — signed trading-day distance to the NEAREST QE:
                             0 on the QE day itself; positive = sessions until
-                            the next QE (on a day after QE this points to the
-                            NEXT quarter's QE, so it is always >= 0)
+                            the next QE; negative = sessions since the last QE
   in_qtr_end_window       — |td_to_quarter_end| <= 3
   is_russell_recon_session — rule: last Friday of June, adjusted if closed;
                             RECON_OVERRIDES wins when present
@@ -192,17 +191,18 @@ def tag(d: date) -> dict[str, Any]:
     qe_set = set(quarter_end_sessions(y - 1, y + 1))
     is_qe = d in qe_set
 
-    # nearest future quarter-end
-    future_qes = sorted(q for q in qe_set if q >= d)
+    # nearest quarter-end in either direction (symmetric +/- window)
+    future_qes = sorted(q for q in qe_set if q > d)
     past_qes = sorted((q for q in qe_set if q < d), reverse=True)
     if is_qe:
         td_to_qe = 0
-    elif future_qes:
-        td_to_qe = _signed_td(d, future_qes[0])
-    elif past_qes:
-        td_to_qe = _signed_td(d, past_qes[0])
     else:
-        td_to_qe = 999  # fallback; should never happen in practice
+        candidates = []
+        if future_qes:
+            candidates.append(_signed_td(d, future_qes[0]))   # positive
+        if past_qes:
+            candidates.append(_signed_td(d, past_qes[0]))     # negative
+        td_to_qe = min(candidates, key=abs) if candidates else 999
 
     in_qe_window = abs(td_to_qe) <= 3
 
@@ -270,17 +270,18 @@ def build_tag_frame(sessions: list[date]) -> "pd.DataFrame":
     rows = []
     for s in sessions:
         is_qe = s in qe_set
-        # Signed td to nearest quarter-end
-        future_qes = sorted(q for q in qe_set if q >= s)
+        # Signed td to NEAREST quarter-end (symmetric +/- window)
+        future_qes = sorted(q for q in qe_set if q > s)
         past_qes = sorted((q for q in qe_set if q < s), reverse=True)
         if is_qe:
             td_qe = 0
-        elif future_qes:
-            td_qe = _signed_td(s, future_qes[0])
-        elif past_qes:
-            td_qe = _signed_td(s, past_qes[0])
         else:
-            td_qe = 999
+            candidates = []
+            if future_qes:
+                candidates.append(_signed_td(s, future_qes[0]))   # positive
+            if past_qes:
+                candidates.append(_signed_td(s, past_qes[0]))     # negative
+            td_qe = min(candidates, key=abs) if candidates else 999
 
         rows.append({
             "date": s,

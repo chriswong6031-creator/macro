@@ -74,7 +74,7 @@ def test_all_artifact_ids_present():
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
     assert len(artifact_ids) == 404, (
-        f"Expected 393 artifacts in synapse.yml, found {len(artifact_ids)}. "
+        f"Expected 404 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (RLT-R2 added rebalance-pulse-events, rebalance-pulse-latest,"
         " rebalance-pulse-site = 401->404;"
