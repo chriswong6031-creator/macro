@@ -1,0 +1,110 @@
+{
+  "schema": "pricing_power_manifest.v1",
+  "generated_at": "2026-07-12T14:03:20.310375+00:00",
+  "as_of": "2026-07-12",
+  "smoke": false,
+  "counts": {
+    "n_tickers": 1507,
+    "n_challenged": 93,
+    "n_not_observed": 1389,
+    "n_unverifiable": 25,
+    "n_with_2plus_quarters": 1503
+  },
+  "sector_peer_n_table": [
+    {
+      "sector": "Communication Services",
+      "median_peer_n": 0.0,
+      "min_peer_n": 0,
+      "max_peer_n": 22,
+      "n_tickers": 51
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "median_peer_n": 0.0,
+      "min_peer_n": 0,
+      "max_peer_n": 142,
+      "n_tickers": 195
+    },
+    {
+      "sector": "Consumer Staples",
+      "median_peer_n": 0.0,
+      "min_peer_n": 0,
+      "max_peer_n": 72,
+      "n_tickers": 77
+    },
+    {
+      "sector": "Energy",
+      "median_peer_n": 0.0,
+      "min_peer_n": 0,
+      "max_peer_n": 24,
+      "n_tickers": 69
+    },
+    {
+      "sector": "Financials",
+      "median_peer_n": 0.0,
+      "min_peer_n": 0,
+      "max_peer_n": 2,
+      "n_tickers": 254
+    },
+    {
+      "sector": "Health Care",
+      "median_peer_n": 0.0,
+      "min_peer_n": 0,
+      "max_peer_n": 123,
+      "n_tickers": 168
+    },
+    {
+      "sector": "Industrials",
+      "median_peer_n": 0.0,
+      "min_peer_n": 0,
+      "max_peer_n": 181,
+      "n_tickers": 257
+    },
+    {
+      "sector": "Information Technology",
+      "median_peer_n": 0.0,
+      "min_peer_n": 0,
+      "max_peer_n": 171,
+      "n_tickers": 190
+    },
+    {
+      "sector": "Materials",
+      "median_peer_n": 0.0,
+      "min_peer_n": 0,
+      "max_peer_n": 61,
+      "n_tickers": 77
+    },
+    {
+      "sector": "Real Estate",
+      "median_peer_n": 0.0,
+      "min_peer_n": 0,
+      "max_peer_n": 26,
+      "n_tickers": 108
+    },
+    {
+      "sector": "Utilities",
+      "median_peer_n": 0.0,
+      "min_peer_n": 0,
+      "max_peer_n": 12,
+      "n_tickers": 59
+    }
+  ],
+  "elapsed_seconds": 15.6,
+  "firewall": {
+    "horizon_role": "hold_thesis",
+    "display_only": true,
+    "scored_path_surfaces": [],
+    "note": "MUST NOT feed board ordering, alert triage, top-setups, or push floor."
+  },
+  "notes": [
+    "Gross-margin leg only (LHB-W3 A2 pilot). Receivables leg waits for LHB-R6 backfill.",
+    "peer gate: same-sector peer median gm_yoy > company change + 50bp (FFB-R9).",
+    "state=challenged: two consecutive filed quarters satisfying (a)+(b)+(c).",
+    "state=unverifiable: <2 computable quarters or peer_n < 15.",
+    "NEVER state=broken from this monitor (LHB-R3).",
+    "No outcome-conditioned aggregates in this manifest (WA-R7 fence)."
+  ],
+  "_display_only": true,
+  "_horizon_role": "hold_thesis",
+  "_version": "v1"
+}
