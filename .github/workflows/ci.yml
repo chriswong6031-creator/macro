@@ -1275,6 +1275,22 @@ jobs:
       - name: hk integration seam tests
         run: python -m pytest tests/test_hk_integration_seams.py -q
 
+  hkrv-w3-banner:
+    # HKRV-W3: leadership banner + CONFIRMING TURN chip in hk.html.j2.
+    # Tests: banner renders with leaders_participating; absent on quiet/missing;
+    # dynamic counts from members; breadth line; Tier-2 receipt; chip on TURN IN
+    # PROGRESS item; chip absent when none; no CJK in title= attrs; bilingual spans.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 markupsafe
+      - name: hkrv w3 banner tests
+        run: python -m pytest tests/test_hkrv_w3_banner.py -q
+
   basket-staleness-warn:
     # M7C-R8: basket store staleness warning in scripts/build_baskets.py —
     # fires a ::warning annotation and ops alert when collect timed out upstream.
