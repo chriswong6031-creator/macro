@@ -12,6 +12,11 @@ NVDA AMZN GOOGL META TSLA) with:
   member table  — weight, returns, relative-strength, MA booleans, contrib10
   generals      — coverage leaders + joiners
   tech_legs     — basket-relative performance vs SPY for contextual legs
+  flow          — optional flow context from cohorts.parquet (fail-open, null
+                  when FL-B artifact absent); see _compute_flow_block() for
+                  pc_word thresholds (volume P/C ratio: call_tilted ≤ 0.75,
+                  put_tilted ≥ 1.25, else balanced). NO direction language;
+                  display-only (FC-R5 / FL-D).
   ledger        — data/mag7_regime/ledger.jsonl, one row per session,
                   idempotent by date
 
@@ -21,6 +26,11 @@ Inputs:
   data/sp500_heatmap/reference.parquet  shares outstanding for mktcap weights
   site/stockdata/mtf_upturn.json     per-member MTF state (fail-open → null)
   data/massive_stock_day/MAGS.parquet  MAGS ETF reference (display-only)
+  data/options_flow/cohorts.parquet  FL-B cohort flow store (fail-open → null
+                                     when absent; columns: date, cohort_id,
+                                     gross_premium_mn, net_premium_mn,
+                                     pc_ratio, zerodte_share, n_members_covered,
+                                     n_members)
 
 Outputs:
   data/mag7_regime/latest.json       snapshot
@@ -622,6 +632,219 @@ def _append_ledger(
 
 
 # ---------------------------------------------------------------------------
+# cohort_flow.v1 forward ledger (FC-R5) — nightly, accrual only
+# ---------------------------------------------------------------------------
+
+_COHORT_FLOW_LEDGER_DIR = "cohort_flow_ledger"
+_COHORT_FLOW_LEDGER_FILE = "ledger.jsonl"
+
+# Cohort ids we record in the ledger (mag7 + the three basket cohorts).
+_COHORT_FLOW_COHORTS: list[str] = [
+    "mag7",
+    "memory_storage",
+    "ai_semiconductors",
+    "ai_software",
+]
+
+
+def _append_cohort_flow_ledger(
+    date_str: str,
+    flow_rows: list[dict],
+    *,
+    root: Path | None = None,
+) -> None:
+    """Append one row per cohort to data/cohort_flow_ledger/ledger.jsonl.
+
+    Idempotent by (date, cohort). Gated on COLLECT_LANE=nightly (house law:
+    nightly is sole advancer of data/ forward ledgers).
+
+    Schema per row: {date, cohort, tilt, pc_ratio, gross_mn}
+
+    DOCTRINE: accrual only (FC-R5 / FL-D / FT-R9). This ledger grades NOTHING
+    yet — registered as an expected-NULL forward meter. No direction language.
+    """
+    import os as _os
+    lane = _os.environ.get("COLLECT_LANE", "") or _os.environ.get("US_LANE", "")
+    if lane.lower() != "nightly":
+        log.debug("mag7_regime: cohort_flow ledger skipped (COLLECT_LANE != nightly)")
+        return
+
+    if not flow_rows:
+        return
+
+    try:
+        base = root or config.data_dir()
+        p = base / _COHORT_FLOW_LEDGER_DIR / _COHORT_FLOW_LEDGER_FILE
+        p.parent.mkdir(parents=True, exist_ok=True)
+
+        # Load existing to check idempotency
+        existing_keys: set[tuple] = set()
+        if p.exists():
+            for line in p.read_text().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    existing_keys.add((obj.get("date"), obj.get("cohort")))
+                except Exception:  # noqa: BLE001
+                    pass
+
+        appended = 0
+        with p.open("a") as fh:
+            for row in flow_rows:
+                key = (row.get("date"), row.get("cohort"))
+                if key in existing_keys:
+                    continue
+                fh.write(json.dumps(row, default=str) + "\n")
+                existing_keys.add(key)
+                appended += 1
+
+        if appended:
+            log.info("mag7_regime: cohort_flow ledger appended %d rows for %s", appended, date_str)
+    except Exception as e:  # noqa: BLE001
+        log.warning("mag7_regime: cohort_flow ledger append failed: %s", e)
+
+
+# ---------------------------------------------------------------------------
+# Flow block (FC-R5 / FL-D) — fail-open, cohorts.parquet optional
+# ---------------------------------------------------------------------------
+
+# P/C ratio thresholds for tilt words (volume put/call ratio).
+# call_tilted  : pc_ratio <= 0.75  (calls dominate by volume)
+# put_tilted   : pc_ratio >= 1.25  (puts dominate by volume)
+# balanced     : between 0.75 and 1.25
+_FLOW_CALL_TILTED_THRESHOLD = 0.75
+_FLOW_PUT_TILTED_THRESHOLD = 1.25
+_FLOW_TILT_SESSIONS = 5  # look-back window for tilt_sessions count
+
+
+def _pc_word(pc_ratio: float | None) -> str | None:
+    """Return tilt word for a single session's P/C ratio; None if missing."""
+    if pc_ratio is None or (isinstance(pc_ratio, float) and math.isnan(pc_ratio)):
+        return None
+    if pc_ratio <= _FLOW_CALL_TILTED_THRESHOLD:
+        return "call_tilted"
+    if pc_ratio >= _FLOW_PUT_TILTED_THRESHOLD:
+        return "put_tilted"
+    return "balanced"
+
+
+def _compute_flow_block(
+    *,
+    cohort_id: str = "mag7",
+    root: Path | None = None,
+) -> dict | None:
+    """Compute the optional flow block from data/options_flow/cohorts.parquet.
+
+    Returns None when the file is absent (fail-open: panel unchanged).
+    Returns a dict {asof, gross_mn, pc_word, tilt_sessions, coverage} when
+    the file is present and the mag7 cohort row is found.
+
+    P/C ratio = put volume / call volume (volume-based, not premium-based).
+    pc_word thresholds:
+      call_tilted  : pc_ratio <= 0.75
+      put_tilted   : pc_ratio >= 1.25
+      balanced     : else
+
+    DOCTRINE: NO direction language beyond tilt words; NO score. Display-only
+    (FC-R5 / FL-D). buy-vs-sell direction is approximate — size and call/put
+    mix are the solid reads.
+    """
+    try:
+        base = root or config.data_dir()
+        p = base / "options_flow" / "cohorts.parquet"
+        if not p.exists():
+            return None
+
+        df = pd.read_parquet(p)
+        if df.empty:
+            return None
+
+        # Normalise date column
+        if "date" not in df.columns:
+            log.warning("mag7_regime: flow block: cohorts.parquet missing 'date' column")
+            return None
+
+        df = df.copy()
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date")
+
+        # Filter to the mag7 cohort
+        if "cohort_id" not in df.columns:
+            log.warning("mag7_regime: flow block: cohorts.parquet missing 'cohort_id' column")
+            return None
+
+        mag7_rows = df[df["cohort_id"] == cohort_id]
+        if mag7_rows.empty:
+            return None
+
+        # Latest row
+        latest = mag7_rows.iloc[-1]
+        asof = _iso(latest["date"])
+
+        gross_mn: float | None = None
+        try:
+            raw = latest.get("gross_premium_mn")
+            if raw is not None and not (isinstance(raw, float) and math.isnan(raw)):
+                gross_mn = round(float(raw), 2)
+        except Exception:  # noqa: BLE001
+            pass
+
+        pc_ratio_latest: float | None = None
+        try:
+            raw = latest.get("pc_ratio")
+            if raw is not None and not (isinstance(raw, float) and math.isnan(raw)):
+                pc_ratio_latest = float(raw)
+        except Exception:  # noqa: BLE001
+            pass
+
+        tilt_word = _pc_word(pc_ratio_latest)
+
+        # coverage: "X of 7"
+        coverage: str | None = None
+        try:
+            n_cov = latest.get("n_members_covered")
+            n_tot = latest.get("n_members")
+            if n_cov is not None and n_tot is not None:
+                coverage = f"{int(n_cov)} of {int(n_tot)}"
+        except Exception:  # noqa: BLE001
+            pass
+
+        # zerodte_share
+        zerodte: float | None = None
+        try:
+            raw = latest.get("zerodte_share")
+            if raw is not None and not (isinstance(raw, float) and math.isnan(raw)):
+                zerodte = round(float(raw), 4)
+        except Exception:  # noqa: BLE001
+            pass
+
+        # tilt_sessions: count call_tilted in last N sessions
+        recent = mag7_rows.tail(_FLOW_TILT_SESSIONS)
+        tilt_sessions: int = 0
+        for _, row in recent.iterrows():
+            pc = row.get("pc_ratio")
+            if _pc_word(pc) == "call_tilted":
+                tilt_sessions += 1
+
+        return {
+            "asof": asof,
+            "gross_mn": gross_mn,
+            "pc_word": tilt_word,
+            "tilt_sessions": tilt_sessions,
+            "coverage": coverage,
+            "zerodte_share": zerodte,
+            "pc_ratio": round(pc_ratio_latest, 4) if pc_ratio_latest is not None else None,
+        }
+    except Exception as e:  # noqa: BLE001
+        import traceback as _tb
+        log.warning("mag7_regime: flow block failed: %s", e)
+        log.debug("mag7_regime: flow block traceback: %s", _tb.format_exc())
+        return None
+
+
+# ---------------------------------------------------------------------------
 # Main snapshot
 # ---------------------------------------------------------------------------
 
@@ -775,6 +998,29 @@ def snapshot(root: str | Path | None = None) -> dict:
     # --- tech_legs ---
     tech_legs = _compute_tech_legs(spy, root=_data_root)
 
+    # --- flow block (FC-R5 / FL-D) — fail-open; None when FL-B artifact absent ---
+    flow_block = _compute_flow_block(root=_data_root)
+
+    # --- cohort_flow.v1 forward ledger (FC-R5) — accrual only, nightly-gated ---
+    # Build ledger rows for all four cohorts (fail-open: missing rows → skipped).
+    try:
+        _flow_ledger_rows: list[dict] = []
+        for _cid in _COHORT_FLOW_COHORTS:
+            _fb = flow_block if _cid == "mag7" else _compute_flow_block(
+                cohort_id=_cid, root=_data_root
+            )
+            if _fb is not None:
+                _flow_ledger_rows.append({
+                    "date": as_of,
+                    "cohort": _cid,
+                    "tilt": _fb.get("pc_word"),
+                    "pc_ratio": _fb.get("pc_ratio"),
+                    "gross_mn": _fb.get("gross_mn"),
+                })
+        _append_cohort_flow_ledger(as_of, _flow_ledger_rows, root=_data_root)
+    except Exception as _ex:  # noqa: BLE001
+        log.warning("mag7_regime: cohort_flow ledger build failed: %s", _ex)
+
     elapsed = round(time.monotonic() - t0, 2)
     log.info("[timing] mag7_regime.snapshot: %.2fs", elapsed)
 
@@ -795,6 +1041,9 @@ def snapshot(root: str | Path | None = None) -> dict:
         "spread20": spread20,
         "mags": mags_payload,
         "tech_legs": tech_legs,
+        # FC-R5 / FL-D: optional flow context block. None when FL-B cohorts.parquet
+        # absent (fail-open). NO direction language; display-only context chip.
+        "flow": flow_block,
         "_timing_s": elapsed,
     }
 

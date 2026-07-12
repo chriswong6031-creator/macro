@@ -520,3 +520,61 @@ clustering).
 | MAGS (reference) | `data/massive_stock_day/MAGS.parquet` | ~2021 → 2026-07-02 | Traded reference only; not used in computation (RL-R12 law) |
 
 Census script: `scripts/_mag7_field_guide_census.py`
+
+---
+
+## SECTION 6 — Presidential buy-endorsement episodes (exhibit, FC-R9)
+
+**Status:** Event catalog only. No signal claims. No win-rate claims. PS-R1 standing: no
+intent prediction, no timing forecast, no LLM-emitted probabilities.
+
+**Honest n statement (binding):** The three historical episodes below are *selected* episodes
+with no false-positive denominator — nobody has counted the loud market-positive statements
+that marked nothing. What is known is n≈3-4 with outcomes that vary. That is an anecdote,
+not an edge. The registry (`data/statement_tape/registry.jsonl`) exists so a base rate can
+ever be measured when enough episodes accumulate and a denominator can be defined.
+
+### Historical catalog (n=3, pre-2026)
+
+| Date | Venue | Approximate quote / context | Market context on date | 30-day outcome |
+|------|-------|-----------------------------|------------------------|----------------|
+| 2018-12-26 | Twitter | Multiple tweets criticizing the Fed / urging markets higher (fed_pressure + market_boost) | One day **after** the exact S&P 500 bear-market intraday low (2018-12-24). The low was already in. | SPY +7.9% over the subsequent 30 calendar days from the Dec 24 low. Statement trailed the low. |
+| 2020-03-13 | White House press briefing / emergency declaration | "The market is going to be fine" (paraphrase); emergency Coronavirus declaration accompanied by rally claims | ~10% **above** the eventual price low (2020-03-23). | SPY fell approximately −10% further over the next 10 trading days before the real low. Statement was 10 days and −10% early. |
+| 2025-04-09 | Truth Social | "THIS IS A GREAT TIME TO BUY!!! DJT" (verbatim, 09:37 ET) | Statement was posted at 09:37 ET; a tariff-pause announcement followed hours later the same day. SPY +9.5% on the day. | Subsequent weeks formed a durable low. Statement was coincident with both the price low and the policy catalyst. |
+
+**Pattern read (conditions-framing, not a signal):** In 2018 the statement came one day after
+the low (a near-miss in the endorser's favor, but the low was already in). In 2020 it came
+10 trading sessions and ~10% before the real low (a miss). In 2025 it coincided with the
+low and was followed hours later by the policy action that drove the rally. Three episodes,
+three different relationships between statement and low. No consistent leading or lagging
+pattern is established.
+
+### 2026 instance (this cycle)
+
+The 2026 Mag-7 drawdown low was **2026-06-26** (MAGS ~$61.60). Verified statement dates:
+
+| Date | Venue | Content | Timing vs 2026-06-26 low |
+|------|-------|---------|--------------------------|
+| 2026-06-07 | Truth Social | "Stocks should go up, not down" (paraphrase) | **19 calendar days before** the low — statement preceded the low |
+| 2026-06-26 | Public remarks | Warsh-confidence / low-rates remarks (paraphrase) | **Same day** as the low — coincident |
+| 2026-07-02 | CNBC Squawk Box | "81 records… everybody's profiting" (paraphrase) | **~4 trading sessions after** the low — statement trailed |
+| 2026-07-06 | Rose Garden | Anti-short-seller remarks (paraphrase) | **~7 trading sessions after** the low — statement trailed |
+
+**2026 heuristic result:** The Jun 7 statement was 19 days early. The Jun 26 coincident
+statement aligned with the low but could not be distinguished from coincidence in real time.
+The Jul 2 and Jul 6 statements trailed the low. **The "buy-endorsement" heuristic as an
+entry trigger was a miss for this instance** — the operator's real-time doubt ("memory was
+falling off a cliff") was reasonable, and the statements that most loudly endorsed markets
+came after the recovery was already underway.
+
+### What the registry is for
+
+The statement tape (`data/statement_tape/registry.jsonl`) is append-only. Its purpose is to
+accumulate a denominator. Over time — with both the episodes above AND the statements that
+marked nothing notable — it will be possible to test whether there is any systematic
+relationship between loud market-positive statements and price behavior. Until that
+denominator exists, the catalog above is a descriptive exhibit, not a testable hypothesis.
+
+**No "validated" language appears here because nothing has been tested with a pre-registered
+denominator.** The word "pattern" in this section means "historical observation in a small
+selected sample."

@@ -73,9 +73,10 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 391, (
-        f"Expected 391 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 392, (
+        f"Expected 392 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (FL-D FC-R5 added cohort-flow-ledger = 391->392;"
         " (mag7-regime engine Lane C added mag7-regime-latest, mag7-regime-site,"
         " mag7-regime-ledger = 388->391;"
         " (NW W4 'the eye' added confluence-strength, confluence-tape,"
