@@ -212,6 +212,10 @@ _WEIGHT_PRIOR = {
 }
 
 # cycle states that BLOCK a buy verb + cap the entry axis (research §6.3).
+# Cross-ref: engine/cycles.py _ALIGN_BAD_STATES gates the bottoming-alignment strip.
+# The two sets intentionally diverge on COUNTERTREND BOUNCE: _ALIGN_BAD_STATES includes it
+# (no alignment signal), while _CYCLE_BLOCK_STATES does NOT (the name is scoreable but cannot
+# enter the buy strip).  Update both sets together whenever the cycle ontology changes.
 _CYCLE_BLOCK_STATES = {"DECLINE", "ROLLING OVER", "TOP WATCH"}
 _BLOCK_URGENCY = {"exit", "avoid"}
 

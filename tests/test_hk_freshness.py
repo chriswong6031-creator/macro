@@ -114,7 +114,8 @@ class TestHKFreshnessSentinel:
                       bell_date: date | None = None,
                       standouts_asof: date | None = None,
                       regime_date: date | None = None,
-                      prev_cache_max: date | None = None) -> dict:
+                      prev_cache_max: date | None = None,
+                      southbound_date: date | None = None) -> dict:
         """Set up fake stores in tmpdir and run sentinel."""
         data_root = tmpdir / "data"
         site_root = tmpdir / "site"
@@ -147,6 +148,11 @@ class TestHKFreshnessSentinel:
             _write_json(state_dir / "state.json",
                         {"cache_max": str(prev_cache_max)})
 
+        # Write southbound holdings parquet (check 7 — W5 addition)
+        if southbound_date is not None:
+            _write_parquet_with_date(
+                data_root / "hk_southbound" / "holdings.parquet", southbound_date)
+
         with (patch("lib.config.data_dir", return_value=data_root),
               patch("lib.config.load", return_value={"storage": {"site_dir": str(site_root)}}),
               patch("lib.config.ROOT", tmpdir)):
@@ -167,6 +173,7 @@ class TestHKFreshnessSentinel:
             bell_date=expected,
             standouts_asof=expected,
             regime_date=expected,
+            southbound_date=expected,
         )
         assert result["verdict"] == "ok", f"Expected ok, got {result['verdict']}: {result}"
 
@@ -255,6 +262,7 @@ class TestHKFreshnessSentinel:
             bell_date=expected,
             standouts_asof=expected,
             regime_date=expected,
+            southbound_date=expected,
         )
         if result["verdict"] == "ok":
             assert result["banner_message"] is None
@@ -321,6 +329,7 @@ class TestHKFreshnessSentinel:
             bell_date=expected,
             standouts_asof=expected,
             regime_date=expected,
+            southbound_date=expected,
             prev_cache_max=date(2026, 7, 7),   # yesterday was fresh, today is fresh
         )
         assert result["regression"]["ok"], f"Regression should not fire: {result['regression']}"

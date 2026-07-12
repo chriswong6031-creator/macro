@@ -565,7 +565,8 @@ jobs:
           tests/test_mag7_regime.py
           tests/test_theme_scoring_leadership_split.py
           tests/test_ignition_persistence.py
-          tests/test_mag7_panel.py -q
+          tests/test_mag7_panel.py
+          tests/test_hk_robustness_w5.py -q
 
   collector-registry:
     # timeout: this job had none (6h GitHub default) — a wedged one-shot (e.g. the
@@ -1139,6 +1140,22 @@ jobs:
         run: pip install pytest pandas numpy scipy pyyaml pyarrow
       - name: ratio lens test suite
         run: python -m pytest tests/test_oracle_ratio_lens.py -q
+
+  hk-leadership:
+    # HKRV-W2: HK Leadership Participation organ (engine/hk_leadership.py).
+    # Tests: thrust detection (0.25→0.65 fires; hover 0.5 does not), fail-open
+    # on missing breadth, ledger gate (no write outside CN_LANE=asia), copy
+    # fields present EN+ZH.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: hk leadership organ tests
+        run: python -m pytest tests/test_hk_leadership.py -q
 
   basket-staleness-warn:
     # M7C-R8: basket store staleness warning in scripts/build_baskets.py —
