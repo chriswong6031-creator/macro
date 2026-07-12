@@ -13,7 +13,8 @@ Covers:
   T9 -- check_title_i18n passes on baskets_china.html.j2
   T10 -- sleeve build end-to-end smoke: build() completes without exception (sibling build intact)
   T11 -- ASCII attribute delimiters: no Chinese characters inside HTML attribute values
-         in the edited portion of cn_reversal_sleeve.html.j2
+         in the edited portion of cn_reversal_sleeve.html.j2 (data-*-zh bilingual
+         carrier attributes exempt — placeholder/tooltip relabel idiom)
   T12 -- sleeve template: backcast section still present and labeled 'upper bound'
   T13 -- rederive_stats JSON has required keys (sanity of the committed artifact)
 """
@@ -33,7 +34,6 @@ from lib import config  # noqa: E402
 TEMPLATES = config.ROOT / "templates"
 SLEEVE_TEMPLATE = TEMPLATES / "cn_reversal_sleeve.html.j2"
 BASKETS_CHINA_TEMPLATE = TEMPLATES / "baskets_china.html.j2"
-CHINA_TEMPLATE = TEMPLATES / "china.html.j2"
 REDERIVE_STATS = config.ROOT / "research" / "china_alpha" / "w5" / "w5a_rederive_stats.json"
 
 # --------------------------------------------------------------------------- #
@@ -239,16 +239,22 @@ def test_sleeve_build_smoke(tmp_path):
 #  T11 — ASCII attribute delimiters: no CJK inside HTML attribute values       #
 # --------------------------------------------------------------------------- #
 _CJK_RE = re.compile(r"[一-鿿㐀-䶿　-〿＀-￯]")
-_ATTR_RE = re.compile(r'(?:class|id|href|src|data-[\w-]+|style|aria-[\w-]+)\s*=\s*"([^"]*)"')
+_ATTR_RE = re.compile(r'(class|id|href|src|data-[\w-]+|style|aria-[\w-]+)\s*=\s*"([^"]*)"')
 
 
 def test_no_cjk_in_html_attributes_sleeve_template():
     """No Chinese characters inside HTML attribute values in the sleeve template.
-    t() / dual-span is the only permitted channel for CJK text."""
+    t() / dual-span is the channel for CJK text, EXCEPT `data-*-zh` carrier
+    attributes (e.g. data-ph-zh, data-tip-zh): placeholder/tooltip text cannot
+    hold l-en/l-zh spans, so pages store the ZH string in a data attribute and
+    relabel on langchange (same idiom china.html.j2 uses).  title= attributes
+    stay guarded separately via check_title_i18n (T8/T9)."""
     src = SLEEVE_TEMPLATE.read_text()
     violations = []
     for m in _ATTR_RE.finditer(src):
-        val = m.group(1)
+        attr, val = m.group(1), m.group(2)
+        if attr.endswith("-zh"):
+            continue
         if _CJK_RE.search(val):
             violations.append(f"CJK in attribute near: {m.group(0)[:80]!r}")
     assert not violations, f"CJK found in HTML attributes:\n" + "\n".join(violations)
@@ -289,13 +295,8 @@ def test_committed_rederive_stats_has_required_keys():
 
 
 # --------------------------------------------------------------------------- #
-#  T14 — china.html.j2 has link to cn_reversal_sleeve.html in the help text   #
+#  T14 — RETIRED (was: china.html.j2 links to cn_reversal_sleeve.html)         #
+#  PR #1337 "Simplify dashboard copy and footers" deliberately condensed the   #
+#  long board caveat that carried the sleeve deep-link; the sleeve page stays  #
+#  linked (page not orphaned) via baskets_china.html.j2 — guarded by T4.       #
 # --------------------------------------------------------------------------- #
-def test_china_template_links_to_sleeve_page():
-    src = CHINA_TEMPLATE.read_text()
-    # The link must appear in a context that mentions 'separate' and is near the reversal copy
-    assert "cn_reversal_sleeve.html" in src
-    # confirm it's in a paragraph-level note near the board (not just any occurrence)
-    idx = src.find("cn_reversal_sleeve.html")
-    window = src[max(0, idx - 200):idx + 200]
-    assert "separate" in window.lower() or "独立" in window
