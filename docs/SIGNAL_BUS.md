@@ -353,10 +353,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| edgar-statements-quarterly | `data/edgar/statements_quarterly.parquet` | parquet | on-demand | display | 3 | 0 |
 | long-hold-delivery-waterfall-panel | `data/research/delivery_waterfall_panel.json` | json | on-demand | display | 2 | 0 |
 | breakaway-watch-states | `data/research/breakaway_watch.parquet` | parquet | daily-engine | display | 1 | 0 |
 | capital-allocation-delta | `embedded: capital_allocation block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
-| edgar-statements-quarterly | `data/edgar/statements_quarterly.parquet` | parquet | on-demand | display | 1 | 0 |
 | expect-drift-ruler-p-results | `data/research/expect_drift_ruler_p_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | great-company-trap | `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | insider-lh-panel | `data/research/insider_lh_panel.parquet` | parquet | on-demand | display | 1 | 0 |
@@ -1227,13 +1227,6 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/neuralweb/confluence_sequence.py`
 - **extra writers:**
   - scripts/build_confluence_strength.py — invokes confluence_sequence.append_tape_and_build_sequence
-
-### edgar-statements-quarterly
-
-- **path:** `data/edgar/statements_quarterly.parquet`
-- **declared producer:** `scripts/backfill_edgar_quarterly.py`
-- **extra writers:**
-  - scripts/research/build_pricing_power_monitor.py — reads (first consumer)
 
 ### event-windows
 

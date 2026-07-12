@@ -34,6 +34,10 @@ Point-in-time gating:
   A quarter is visible ONLY from its filed date (not period_end + 120d approximation
   — the real filed date is available and must be used for PIT correctness).
   asof_date=None gates against today (live display path).
+  Caveat: backfill_edgar_quarterly.py deduplicates to the LATEST filing per
+  (ticker, fy, fq). An amended quarter's original values and original filed-date
+  are therefore overwritten by the amendment's filed date. PIT gating is faithful
+  to the surviving (amended) row — not strictly amendment-PIT-faithful.
 
 Fiscal alignment:
   Quarters are matched by (fiscal_year, fiscal_quarter) — same fiscal quarter
@@ -289,16 +293,28 @@ def compute_pricing_power_state(
             return None
         return matches.iloc[0]
 
-    # Evaluate each visible quarter (most recent first) — look for two consecutive
-    # filed quarters that BOTH satisfy (a)+(b)+(c).
-    # "Consecutive filed quarters" = two quarters where both satisfy the criteria,
-    # and they are the two most recently filed quarters that are evaluable.
-    # NOTE: the FILING ORDER is used (not just fiscal adjacency).
-    # We collect all evaluable fired quarters (sorted by filed desc), then check
-    # if the top-2 most recent both fired.
+    # Evaluate each visible quarter (most recent first) — look for two CONSECUTIVE
+    # fiscally-adjacent quarters that BOTH satisfy (a)+(b)+(c).
+    #
+    # "Consecutive" = two quarters that differ by exactly ONE fiscal quarter in
+    # (fiscal_year, fiscal_quarter) space (e.g. Q2→Q1 same year, or Q1→Q4 prev year).
+    #
+    # Chain rule (uniform, Findings 1+2):
+    #   - Scan most-recent-first (sorted by fy/fq desc).
+    #   - ANY evaluable quarter that does NOT fire all three gates (a)+(b)+(c) RESETS
+    #     the chain once we have started one. "Evaluable" = has a computable prior-year
+    #     row and computable gm_yoy values.
+    #   - A quarter with no prior-year row (cannot compute) is SKIPPED without
+    #     breaking the chain (it is not evaluable — the docstring treats coverage gaps
+    #     as "not observable", neither confirming nor breaking).
+    #   - A quarter with computable values that fails (a), (b), or (c) DOES break
+    #     the chain, making the gap explicit.
+    #
+    # This ensures revenue-shrink, thin-peers, and sector-wide quarters are treated
+    # identically once a chain has started: they all reset it.
 
-    qualifying: list[dict] = []   # quarters satisfying (a)+(b) pre-peer-gate
-    peer_gate_fired: list[dict] = []  # quarters satisfying (a)+(b)+(c)
+    qualifying: list[dict] = []   # all evaluable quarters (a+b satisfied), pre-peer-gate
+    peer_gate_fired: list[dict] = []  # current consecutive run of (a)+(b)+(c) quarters
 
     # We scan from most recent filed quarter backwards
     for _, cur_row in visible.iterrows():
@@ -307,26 +323,30 @@ def compute_pricing_power_state(
 
         prior_row = _prior_row(fy, fq)
         if prior_row is None:
-            continue  # no prior-year comparable
+            # No prior-year comparable: not evaluable — skip without breaking chain
+            continue
 
         calc = _quarter_gm_yoy(cur_row, prior_row)
         if calc is None:
+            # Insufficient data: not evaluable — skip without breaking chain
             continue
+
+        # This quarter IS evaluable: any failure below breaks the chain.
+        # Capture chain-break helper (resets peer_gate_fired to empty).
+        def _reset_chain_if_started() -> None:
+            nonlocal peer_gate_fired
+            if peer_gate_fired:
+                peer_gate_fired = []
 
         # (a) revenue YoY growth > 0
         if not calc["revenue_positive"]:
-            continue
+            _reset_chain_if_started()
+            continue  # keep scanning older quarters
 
         # (b) gross-margin YoY change <= -100 bp
         if calc["gm_change_bp"] > _GM_DETERIORATION_THRESHOLD_BP:
-            # This quarter does NOT qualify for (b)
-            # Stop scanning — we need two CONSECUTIVE qualifying quarters.
-            # If the most-recent quarter doesn't qualify, we can't have two in a row.
-            # NOTE: we scan most-recent-first, so if the first doesn't qualify, stop.
-            if not qualifying:
-                break
-            # If we already have some qualifying quarters, stop here
-            break
+            _reset_chain_if_started()
+            continue  # keep scanning older quarters
 
         # Quarter satisfies (a)+(b): compute peer gate
         peer_n, peer_median_bp = _compute_peer_gm_changes(
@@ -346,11 +366,10 @@ def compute_pricing_power_state(
         }
         qualifying.append(q_info)
 
-        # (c) peer gate: if peer_median not computable (<15 peers), mark unverifiable
-        # but keep scanning so we can accumulate qualifying count
+        # (c) peer gate: thin peers → unverifiable; resets chain (not observable)
         if peer_median_bp is None:
-            # peer gate unverifiable — cannot confirm company-specificity
             q_info["peer_gate"] = "unverifiable_thin_peers"
+            _reset_chain_if_started()
             continue
 
         # peer gate: peer median > company change + 50 bp
@@ -358,15 +377,25 @@ def compute_pricing_power_state(
         if peer_median_bp > company_plus_gap:
             q_info["peer_gate"] = "fired"
             peer_gate_fired.append(q_info)
+            # Early exit once we have 2 consecutive fired quarters
+            if len(peer_gate_fired) >= 2:
+                break
         else:
-            # Sector-wide compression — peer gate does NOT fire
+            # Sector-wide compression — peer gate does NOT fire; resets chain
             q_info["peer_gate"] = "suppressed_sector_wide"
-            # A sector-wide quarter breaks the "consecutive" chain
-            # If we've already found some fired quarters, a suppressed quarter
-            # in between means the chain is broken.
-            if not peer_gate_fired:
-                continue  # keep scanning older quarters
-            break
+            _reset_chain_if_started()
+            continue  # keep scanning older quarters
+
+    # Enforce fiscal adjacency: the two fired quarters must be exactly one fiscal
+    # quarter apart (Q_k and Q_{k-1} in fiscal calendar).
+    def _fiscally_adjacent(q_newer: dict, q_older: dict) -> bool:
+        """True when q_newer is exactly one fiscal quarter after q_older."""
+        fy_n, fq_n = q_newer["fiscal_year"], q_newer["fiscal_quarter"]
+        fy_o, fq_o = q_older["fiscal_year"], q_older["fiscal_quarter"]
+        if fq_n > 1:
+            return fy_o == fy_n and fq_o == fq_n - 1
+        # fq_n == 1: the previous quarter is Q4 of the prior year
+        return fy_o == fy_n - 1 and fq_o == 4
 
     # Determine state
     # Unverifiable conditions:
@@ -384,17 +413,21 @@ def compute_pricing_power_state(
                 reason=f"peer coverage thin (n={most_recent_q['peer_n']} < {_MIN_PEER_N})",
             )
 
-    # Challenged: two or more consecutive peer_gate_fired quarters
+    # Challenged: two consecutive (fiscally adjacent) peer_gate_fired quarters.
+    # The chain-reset logic above ensures peer_gate_fired only holds contiguous
+    # fired quarters; we still verify adjacency as a belt-and-suspenders guard.
     if len(peer_gate_fired) >= 2:
-        two_quarters = peer_gate_fired[:2]
-        # Use the most recent quarter's peer stats for top-level summary
-        recent_q = two_quarters[0]
-        return _result(
-            ticker, asof_str, "challenged",
-            two_quarters,
-            recent_q["peer_n"], recent_q["peer_median_change_bp"],
-            coverage_n,
-        )
+        q_newer, q_older = peer_gate_fired[0], peer_gate_fired[1]
+        if _fiscally_adjacent(q_newer, q_older):
+            two_quarters = [q_newer, q_older]
+            recent_q = two_quarters[0]
+            return _result(
+                ticker, asof_str, "challenged",
+                two_quarters,
+                recent_q["peer_n"], recent_q["peer_median_change_bp"],
+                coverage_n,
+            )
+        # Non-adjacent fired quarters: chain was not truly consecutive → not_observed
 
     # If <2 qualifying quarters at all — not_observed
     if coverage_n < 2 or len(qualifying) < 2:

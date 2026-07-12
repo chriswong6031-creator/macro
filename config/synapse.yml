@@ -6176,13 +6176,12 @@ artifacts:
   #               FALSIFIER_FIELD_BOOK_ADJUDICATION_BY_FABLE.md FFB-R7/R8/R9
   # ---------------------------------------------------------------------------
 
-  # --- LHB-W3 A2: Input store (first consumer registration) ---
+  # --- LHB-W3 A2: Input store registration (first FORMAL registration) ---
   edgar-statements-quarterly:
     path: data/edgar/statements_quarterly.parquet
     format: parquet
     producer: scripts/backfill_edgar_quarterly.py
-    known_extra_writers:
-      - "scripts/research/build_pricing_power_monitor.py — reads (first consumer)"
+    known_extra_writers: []
     owner_program: long-hold
     cadence: on-demand
     storage: git
@@ -6196,6 +6195,8 @@ artifacts:
     fdr_family: long_hold
     consumers:
       - scripts/research/build_pricing_power_monitor.py
+      - engine/stock_fundamentals.py
+      - engine/event_landmine.py
     external_consumers: []
     notes: >
       Quarterly EDGAR financial statement data (~62k rows, ~1,507 tickers as of 2026-07).
@@ -6204,9 +6205,11 @@ artifacts:
       op_income, ni, cfo, capex, shares, repurchases, long_term_debt, current_debt,
       cash, net_debt, receivables, inventory, payables, contract_liabilities.
       Producer: scripts/backfill_edgar_quarterly.py (on-demand backfill).
+      Pre-existing consumers: engine/stock_fundamentals.py (capital-allocation-delta
+      artifact) and engine/event_landmine.py (event-windows artifact, PR #1782 columns).
+      LHB-W3 A2 added the first formal synapse registration (LHB-R6 obligation).
       LHB-R6 enrichment (receivables/inventory/payables/contract_liabilities) uses
       real XBRL tag chains; these columns exist in the store but coverage is partial.
-      First consumer: scripts/research/build_pricing_power_monitor.py (LHB-W3 A2).
       FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert triage,
       top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
 

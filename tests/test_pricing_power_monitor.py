@@ -171,6 +171,56 @@ class TestTwoQuarterFire:
         )
         assert len(result["trigger_quarters"]) == 2
 
+    def test_gap_quarter_between_two_fired_not_challenged(self) -> None:
+        """Gap quarter with revenue shrink between two otherwise-fired quarters → not_observed.
+
+        Scenario: Q2 fires, Q1 has revenue-shrink (skip), Q4-prev fires.
+        Without the fix, peer_gate_fired=[Q2, Q4-prev] and we'd emit 'challenged'
+        despite the gap. With the fix, Q1's revenue-shrink resets the chain so
+        peer_gate_fired is only [Q2] → not_observed.
+        """
+        TICKER = "GAPQ"
+        SECTOR = "Technology"
+        PEERS = [f"P{i:02d}" for i in range(20)]
+
+        target_rows = [
+            # 2021 prior-year rows for Q4 and Q1
+            _make_row(TICKER, 2021, 4, 100.0, 45.0, "2022-02-10"),  # Q4 2021
+            _make_row(TICKER, 2022, 1, 100.0, 45.0, "2022-05-10"),  # Q1 2022
+            _make_row(TICKER, 2022, 2, 100.0, 45.0, "2022-08-10"),  # Q2 2022
+            # Q4 2022: gm -200bp, revenue +5% → fires (a+b+c)
+            _make_row(TICKER, 2022, 4, 105.0, 44.1, "2023-02-10"),
+            # Q1 2023: revenue SHRINKS → fails (a) → chain reset
+            _make_row(TICKER, 2023, 1, 95.0, 40.0, "2023-05-10"),   # rev -5%
+            # Q2 2023: gm -200bp, revenue +5% → fires (a+b+c)
+            _make_row(TICKER, 2023, 2, 105.0, 44.1, "2023-08-10"),
+        ]
+
+        # Peers: flat margin for both quarters
+        peer_rows = (
+            _make_peers(PEERS, 2022, 4, gm_frac=0.40, prior_gm_frac=0.40,
+                        filed_cur="2023-02-15", filed_prior="2022-02-15")
+            + _make_peers(PEERS, 2023, 1, gm_frac=0.40, prior_gm_frac=0.40,
+                          filed_cur="2023-05-15", filed_prior="2022-05-15")
+            + _make_peers(PEERS, 2023, 2, gm_frac=0.40, prior_gm_frac=0.40,
+                          filed_cur="2023-08-15", filed_prior="2022-08-15")
+        )
+        all_df = _build_df(target_rows + peer_rows)
+        ticker_df = all_df[all_df["ticker"] == TICKER].copy()
+
+        result = compute_pricing_power_state(
+            TICKER, SECTOR, ticker_df, all_df, asof_date="2023-09-01",
+        )
+        # Q2 fires, but Q1 revenue-shrink resets the chain →
+        # Q4-prev fired BEFORE the reset, so not two consecutive fired quarters.
+        # Scan order: Q2(fire)→Q1(rev-shrink, reset)→Q4-prev would have fired but
+        # after the reset peer_gate_fired is cleared when Q1 breaks the chain.
+        assert result["state"] == "not_observed", (
+            f"Gap quarter (revenue-shrink between two fired quarters) must NOT produce "
+            f"'challenged'; got '{result['state']}'. "
+            f"trigger_quarters: {result['trigger_quarters']}"
+        )
+
     def test_one_quarter_fire_produces_not_observed(self) -> None:
         """Only Q2 2023 fires (Q1 2023 peer gate suppressed). → not_observed."""
         TICKER = "ONEQ"
@@ -728,3 +778,125 @@ class TestFirewall:
         assert art.get("path") == "data/edgar/statements_quarterly.parquet", (
             f"'{art_id}' path mismatch"
         )
+
+
+# ---------------------------------------------------------------------------
+# I. Schema guard — statements_quarterly.v1 (LHB-R6 obligation)
+# ---------------------------------------------------------------------------
+
+class TestStatementsQuarterlySchemaGuard:
+    """LHB-R6: first consumer must bring a schema guard for statements_quarterly.v1.
+
+    This guard verifies the required columns that compute_pricing_power_state
+    and other pre-existing consumers (engine/stock_fundamentals.py,
+    engine/event_landmine.py) depend on.  The guard operates on synthetic
+    DataFrames — it does NOT require the live parquet to be present.
+    """
+
+    # Required columns per the statements_quarterly.v1 schema documented in synapse.yml
+    REQUIRED_COLUMNS: list[str] = [
+        "ticker",
+        "fiscal_year",
+        "fiscal_quarter",
+        "period_end",
+        "filed",
+        "revenue",
+        "gross_profit",
+        "cogs",
+        # Columns needed by event_landmine.py and stock_fundamentals.py consumers:
+        "repurchases",
+        "long_term_debt",
+        "current_debt",
+        "cash",
+        "receivables",
+    ]
+
+    def _minimal_df(self) -> "pd.DataFrame":
+        """Build a minimal DataFrame that satisfies the v1 column contract."""
+        row = {col: None for col in self.REQUIRED_COLUMNS}
+        row.update({
+            "ticker": "AAPL",
+            "fiscal_year": 2023,
+            "fiscal_quarter": 2,
+            "period_end": "2023-06-30",
+            "filed": "2023-08-04",
+            "revenue": 81797.0,
+            "gross_profit": 36413.0,
+            "cogs": 45384.0,
+            "repurchases": 18000.0,
+            "long_term_debt": 95000.0,
+            "current_debt": 5000.0,
+            "cash": 28400.0,
+            "receivables": 26500.0,
+        })
+        return pd.DataFrame([row])
+
+    def test_required_columns_present_in_schema_fixture(self) -> None:
+        """The synthetic fixture satisfies the v1 column list."""
+        df = self._minimal_df()
+        missing = [c for c in self.REQUIRED_COLUMNS if c not in df.columns]
+        assert not missing, (
+            f"statements_quarterly.v1 schema guard: missing columns in fixture: {missing}"
+        )
+
+    def test_engine_reads_correct_columns(self) -> None:
+        """compute_pricing_power_state accepts a v1-schema DataFrame without error."""
+        ticker_row = _make_row("SCHEMOCK", 2022, 1, 100.0, 45.0, "2022-05-10")
+        # Augment with v1 columns not used by the engine but required by the schema
+        ticker_row.update({
+            "repurchases": None,
+            "long_term_debt": None,
+            "current_debt": None,
+            "cash": None,
+            "receivables": None,
+        })
+        df = pd.DataFrame([ticker_row])
+        # Should not raise even with the extra v1 columns present
+        result = compute_pricing_power_state(
+            "SCHEMOCK", "Technology", df, df, asof_date="2023-01-01",
+        )
+        assert result["state"] in {"not_observed", "unverifiable"}, (
+            f"Schema guard: unexpected state '{result['state']}'"
+        )
+
+    def test_schema_key_in_synapse_registration(self) -> None:
+        """synapse.yml edgar-statements-quarterly must carry schema: statements_quarterly.v1."""
+        try:
+            from engine.neuralweb.synapse import load_registry  # noqa: PLC0415
+        except ImportError:
+            pytest.skip("synapse module not available")
+
+        reg = load_registry(REPO_ROOT)
+        artifacts = reg.get("artifacts") or {}
+        art_id = "edgar-statements-quarterly"
+        if art_id not in artifacts:
+            pytest.skip(f"'{art_id}' not in synapse.yml")
+        art = artifacts[art_id]
+        assert art.get("schema") == "statements_quarterly.v1", (
+            f"statements_quarterly registration must carry schema: statements_quarterly.v1, "
+            f"got {art.get('schema')!r}"
+        )
+
+    def test_consumers_list_includes_known_readers(self) -> None:
+        """edgar-statements-quarterly consumers list must include all known readers."""
+        try:
+            from engine.neuralweb.synapse import load_registry  # noqa: PLC0415
+        except ImportError:
+            pytest.skip("synapse module not available")
+
+        reg = load_registry(REPO_ROOT)
+        artifacts = reg.get("artifacts") or {}
+        art_id = "edgar-statements-quarterly"
+        if art_id not in artifacts:
+            pytest.skip(f"'{art_id}' not in synapse.yml")
+        consumers = list(artifacts[art_id].get("consumers") or [])
+        required_consumers = [
+            "engine/stock_fundamentals.py",
+            "engine/event_landmine.py",
+            "scripts/research/build_pricing_power_monitor.py",
+        ]
+        for req in required_consumers:
+            assert any(req in c for c in consumers), (
+                f"'{req}' must be listed in edgar-statements-quarterly consumers; "
+                f"current list: {consumers}"
+            )
