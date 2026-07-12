@@ -390,6 +390,11 @@ on:
       - "scripts/build_intraday_flow.py"
       - "tests/test_intraday_flow.py"
       - "tests/test_intraday_flow_stance.py"
+      # SA-W1 standout accountability: attribution organ + fitness card.
+      # Any change to the engine module or tests must re-prove the attribution
+      # taxonomy, effective-n math, keep-first sidecar, and never-raise contract.
+      - "engine/standout_audit.py"
+      - "tests/test_standout_audit.py"
       # altdata-brain de-escalation law + false Wilson de-dup comment fix (PR-B):
       # any change to the brain module or either test file must re-prove the law holds.
       - "engine/altdata_brain.py"
@@ -729,6 +734,7 @@ jobs:
           tests/test_t0_indicator.py
           tests/test_intraday_flow.py
           tests/test_intraday_flow_stance.py
+          tests/test_standout_audit.py
           tests/test_altdata_hygiene.py
           tests/test_china_news_engine.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema

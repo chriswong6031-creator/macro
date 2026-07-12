@@ -1,0 +1,36 @@
+{
+  "schema": "standout_audit.scoreboard.v1",
+  "as_of": "2026-07-12",
+  "note": "CIs are cluster-unit (entry-date-collapsed) and descriptive only. No significance claims. Cells with effective_n<3 print state='ACCRUING'.",
+  "timing_basis": [
+    "board_tenure"
+  ],
+  "timing_basis_note": "signaled_too_late fires only on board_tenure_days > A2_SIGNALED_TOO_LATE_TENURE. Extension-percentile and ticks-since-cross clauses NOT wired (columns absent).",
+  "buy_lane_rows": 0,
+  "all_lanes_rows": 0,
+  "strata": {},
+  "coverage_monitor": {
+    "frozen_baseline": null,
+    "frozen_baseline_note": "Not yet frozen. Will be anchored at first sensor-maturity date.",
+    "trailing_4wk_buy_count": 365,
+    "weekly_history": [
+      {
+        "week": "2026-06-15/2026-06-21",
+        "unique_tickers": 182
+      },
+      {
+        "week": "2026-06-22/2026-06-28",
+        "unique_tickers": 209
+      },
+      {
+        "week": "2026-06-29/2026-07-05",
+        "unique_tickers": 64
+      }
+    ],
+    "data_gap": null
+  },
+  "gate_suppressed": {
+    "state": "data_gap",
+    "reason": "data_gap: near_miss store lacks excess_spy column"
+  }
+}

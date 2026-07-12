@@ -1,0 +1,9 @@
+{
+  "last_run_utc": "2026-07-12T11:17:44.587468+00:00",
+  "last_graded_asof": "2026-07-01",
+  "rows_matured_total": 0,
+  "rows_attributed_total": 0,
+  "new_attributed_this_run": 0,
+  "new_evidence_packs_this_run": 0,
+  "schema": "standout_audit.state.v1"
+}
