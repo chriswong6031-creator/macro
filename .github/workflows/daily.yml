@@ -2057,13 +2057,15 @@ jobs:
   # build_tech_lab_data.py is heavy (~219 tickers × 64 signals, a few minutes)
   # and writes ONLY site/factordata/tech_screener.json + tech_lab.json (+ the
   # optional site/factordata/tech_events/ subtree when that sibling PR lands).
+  # build_tech_confluence.py (multi-signal combo miner, ~8 min measured on the
+  # full universe) runs after it → site/factordata/tech_confluence.json.
   # Kept off the main render path so it never adds to the ~67min render budget.
   # Needs: engine (data/stocks/ parquets, site/factordata/us_standouts.json).
   tech_lab_offrender:
     needs: engine
     if: always()
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
@@ -2084,11 +2086,22 @@ jobs:
             echo "::warning title=tech_lab_data::build_tech_lab_data rc=$rc (artifacts may be stale)"
           fi
           exit 0
+      - name: rebuild Technical Lab combo miner (tech_confluence, ~8 min)
+        run: |
+          set +e
+          python scripts/build_tech_confluence.py; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=tech_confluence::build_tech_confluence rc=$rc (combo artifact may be stale)"
+          fi
+          exit 0
       - name: commit Technical Lab artifacts
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add site/factordata/tech_screener.json site/factordata/tech_lab.json
+          if [ -f site/factordata/tech_confluence.json ]; then
+            git add site/factordata/tech_confluence.json
+          fi
           # tech_events is written by a sibling PR (TLT-W3); pick it up once present.
           if [ -d site/factordata/tech_events ]; then
             git add site/factordata/tech_events

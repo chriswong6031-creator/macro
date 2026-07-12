@@ -114,15 +114,8 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
 .confl-chip:hover { border-color:var(--link);color:var(--text); }
 .confl-chip.active { background:rgba(122,167,224,.18);border-color:var(--link);color:var(--link); }
 .confl-chip.buy-chip.active { background:rgba(31,154,85,.15);border-color:var(--up);color:var(--up); } html[data-theme="dark"] .confl-chip.buy-chip.active { color:#3fc07e;border-color:#3fc07e; }
-.logic-toggle { display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;width:fit-content; }
-.logic-btn { padding:5px 14px;font-size:12px;font-weight:700;border:none;background:var(--panel2);color:var(--muted);transition:all .12s;cursor:pointer; }
-.logic-btn.active { background:var(--link);color:#fff; }
-.confl-result { display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:10px;background:var(--panel2);border:1px solid var(--line); }
-.confl-count { font-size:28px;font-weight:800;color:var(--link);font-variant-numeric:tabular-nums; }
 .confl-count-label { font-size:11px;color:var(--muted);margin-top:2px; }
-.confl-result-tickers { font-size:11px;color:var(--muted);max-width:140px;text-align:right;line-height:1.6; }
 .tl-empty { color:var(--muted);font-size:13px;padding:20px 0;text-align:center; }
-.confl-empty { color:var(--warn);font-size:12px;padding:8px 0; }
 
 /* ═══ TAB 2: SIGNAL LAB ═══ */
 .lab-layout { display:grid;grid-template-columns:280px 1fr;gap:16px; }
@@ -255,6 +248,69 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
 .code-kw { color:var(--link); }
 .code-str { color:#1f9a55; } html[data-theme="dark"] .code-str { color:#3fc07e; }
 
+/* ═══ TAB: COMBOS ═══ */
+.cb-stance { margin:0 0 16px;padding:12px 16px;border-radius:10px;background:rgba(122,167,224,.07);border:1px solid rgba(122,167,224,.18);font-size:12.5px;line-height:1.65;color:var(--text); }
+.cb-stance .muted { color:var(--muted); }
+.cb-toolbar { display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px; }
+.cb-side-toggle { display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden; }
+.cb-side-btn { padding:6px 16px;font-size:12px;font-weight:700;border:none;background:var(--panel2);color:var(--muted);cursor:pointer;transition:all .12s; }
+.cb-side-btn.active-long { background:rgba(31,154,85,.16);color:#1f9a55; } html[data-theme="dark"] .cb-side-btn.active-long { color:#3fc07e; }
+.cb-side-btn.active-short { background:rgba(210,63,63,.14);color:#d23f3f; } html[data-theme="dark"] .cb-side-btn.active-short { color:#ef6a6a; }
+.cb-name { font-weight:700;font-size:12.5px;line-height:1.35; }
+.cb-legs { display:flex;flex-wrap:wrap;gap:4px;margin-top:4px; }
+.cb-leg-chip { display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:5px;font-size:9.5px;font-weight:600;background:var(--panel2);border:1px solid var(--line);color:var(--muted);white-space:nowrap; }
+.cb-leg-chip .tfb { font-weight:800;font-size:8.5px;padding:0 3px;border-radius:3px;background:rgba(122,167,224,.18);color:var(--link); }
+.cb-leg-chip .tfb.w { background:rgba(224,160,48,.16);color:var(--warn); }
+.wrbar { display:inline-flex;align-items:center;gap:6px; }
+.wrbar svg { flex:none; }
+.wr-of10 { font-weight:750;font-variant-numeric:tabular-nums;font-size:13px; }
+.cons-chip { display:inline-block;padding:1px 7px;border-radius:5px;font-size:9.5px;font-weight:700;white-space:nowrap; }
+.cons-yes { background:rgba(31,154,85,.14);color:#1f9a55; } html[data-theme="dark"] .cons-yes { color:#3fc07e; }
+.cons-no  { background:rgba(224,160,48,.12);color:var(--warn); }
+.match-now-btn { display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:700;background:rgba(122,167,224,.12);border:1px solid rgba(122,167,224,.3);color:var(--link);cursor:pointer;white-space:nowrap; }
+.match-now-btn.zero { background:var(--panel2);border-color:var(--line);color:var(--muted); }
+
+/* combo detail drawer */
+.cbd-header { display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px; }
+.cbd-title { font-size:17px;font-weight:800;line-height:1.3;flex:1;min-width:200px; }
+.cbd-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px; }
+@media(max-width:640px){ .cbd-grid { grid-template-columns:repeat(2,1fr); } }
+.cbd-htable-wrap { background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px; }
+.cbd-htable-wrap table { width:100%;border-collapse:collapse;font-size:12px; }
+.cbd-htable-wrap th { text-align:right;color:var(--muted);font-weight:600;padding:8px 12px;border-bottom:1px solid var(--line);font-size:10.5px; }
+.cbd-htable-wrap th:first-child { text-align:left; }
+.cbd-htable-wrap td { padding:7px 12px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;text-align:right; }
+.cbd-htable-wrap td:first-child { text-align:left;font-weight:600; }
+.cbd-htable-wrap tr:last-child td { border-bottom:none; }
+.cbd-matches { display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px; }
+.cbd-match-tk { padding:3px 10px;border-radius:7px;font-size:12px;font-weight:700;background:var(--panel2);border:1px solid var(--line);cursor:pointer;transition:all .12s; }
+.cbd-match-tk:hover,.cbd-match-tk.sel { border-color:var(--link);color:var(--link); }
+
+/* custom combo builder */
+.cb-builder-grid { display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px; }
+@media(max-width:860px){ .cb-builder-grid { grid-template-columns:minmax(0,1fr); } }
+.cb-pick-search { width:100%;padding:7px 11px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);outline:none;margin-bottom:8px;box-sizing:border-box; }
+.cb-pick-area { max-height:340px;overflow-y:auto;padding-right:4px; }
+.cb-result-card { background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;position:sticky;top:12px;align-self:start; }
+.cbr-count { font-size:30px;font-weight:800;color:var(--link);line-height:1;font-variant-numeric:tabular-nums; }
+.cbr-stats { margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;line-height:1.7; }
+.cbr-stats .row { display:flex;justify-content:space-between;gap:8px; }
+.cbr-stats .k { color:var(--muted); }
+.cbr-note { font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5; }
+.cbr-names { display:flex;flex-wrap:wrap;gap:5px;margin-top:8px; }
+
+/* screener right rail — top combos now */
+.rail-combo-card { padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);cursor:pointer;transition:border-color .12s; }
+.rail-combo-card:hover { border-color:var(--link); }
+.rail-combo-name { font-size:12px;font-weight:700;line-height:1.35; }
+.rail-combo-sub { font-size:10.5px;color:var(--muted);margin-top:3px; }
+.rail-combo-tks { font-size:11px;color:var(--link);font-weight:600;margin-top:5px; }
+
+/* help tip (Tier-2 receipt popover) */
+.tl-help { position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);color:var(--muted);font-size:10px;font-weight:700;cursor:default; }
+.tl-help:hover::before { content:attr(data-tip-en);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);min-width:230px;max-width:300px;padding:9px 11px;border-radius:8px;background:var(--panel);border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:11px;font-weight:400;color:var(--text);line-height:1.55;white-space:normal;z-index:50;text-align:left;padding-bottom:13px; }
+html[data-lang="zh"] .tl-help:hover::before { content:attr(data-tip-zh); }
+
 /* scrollbar */
 ::-webkit-scrollbar { width:6px;height:6px; }
 ::-webkit-scrollbar-track { background:transparent; }
@@ -312,6 +368,10 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
   <button class="tab-btn" data-tab="screener" id="tb-screener">
     <span class="l-en">Screener</span><span class="l-zh">筛选器</span>
     <span class="tab-badge" id="badge-screener">{{ universe_n_screener or '—' }}</span>
+  </button>
+  <button class="tab-btn" data-tab="combos" id="tb-combos">
+    <span class="l-en">Combos</span><span class="l-zh">信号组合</span>
+    <span class="tab-badge" id="badge-combos">—</span>
   </button>
   <button class="tab-btn" data-tab="siglab" id="tb-siglab">
     <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span>
@@ -401,60 +461,197 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
       </div>
     </div>
 
-    <!-- Right: Confluence builder -->
+    <!-- Right: top combos matching now -->
     <div class="confl-builder">
       <div>
         <div class="confl-title">
-          <span class="l-en">Confluence Builder</span>
-          <span class="l-zh">共振筛选器</span>
+          <span class="l-en">Combos matching now</span>
+          <span class="l-zh">当前匹配的信号组合</span>
         </div>
         <div class="confl-desc">
-          <span class="l-en">Pick 2–4 signals, choose logic, and see how many names currently satisfy the conditions.</span>
-          <span class="l-zh">选择 2–4 个信号，设置逻辑，查看当前满足条件的标的数量。</span>
+          <span class="l-en">Backtested signal groups with at least one stock matching today. Click one for its full record, or build your own in the Combos tab.</span>
+          <span class="l-zh">回测过的信号组合，今日至少有一只股票满足条件。点击查看完整记录，或在“信号组合”页自行搭配。</span>
         </div>
       </div>
-
-      <div id="confl-chip-area">
-        <!-- Populated from JS after data load -->
+      <div id="screener-combo-rail" style="display:flex;flex-direction:column;gap:8px;">
         <p class="r-neu" style="font-size:12px;">
-          <span class="l-en">Loading signals…</span>
-          <span class="l-zh">加载信号中…</span>
+          <span class="l-en">Loading combos…</span>
+          <span class="l-zh">加载组合中…</span>
         </p>
       </div>
+      <button class="match-now-btn" style="align-self:flex-start;" onclick="tlGoCombos()">
+        <span class="l-en">Open the combo lab →</span>
+        <span class="l-zh">打开组合实验室 →</span>
+      </button>
+    </div>
+  </div>
+</div>
 
-      <div>
-        <div class="confl-section-label">
-          <span class="l-en">Logic</span>
-          <span class="l-zh">逻辑</span>
+{# ═══════════════════════════════════════════
+   TAB: COMBOS — backtested signal combinations
+═══════════════════════════════════════════ #}
+<div class="tab-panel" id="tab-combos">
+
+  <div class="cb-stance">
+    <strong><span class="l-en">Signal combos — groups of 2–4 signals that historically won together more often than chance.</span><span class="l-zh">信号组合 — 由2–4个信号构成、历史上共同出现时胜率高于随机的组合。</span></strong>
+    <span class="muted">
+      <span class="l-en"> Found by automated search, so treat them as leads to watch, not proof. Win rates count each calendar month once (clustered fires don't inflate them) and are quoted for the recent era (2018+), with a "held up in both eras" check against the years before.</span>
+      <span class="l-zh"> 由自动搜索发现，应视为值得关注的线索而非定论。胜率按日历月去重统计（密集触发不会虚增），引用2018年以来的数据，并对照更早年份做“两期均稳”检验。</span>
+    </span>
+    <span class="tl-help" id="cb-receipt-tip" data-tip-en="" data-tip-zh="">?</span>
+  </div>
+
+  <div class="cb-toolbar">
+    <div class="cb-side-toggle">
+      <button class="cb-side-btn active-long" id="cb-side-long" onclick="tlCombosSide('long')">
+        <span class="l-en">Bullish</span><span class="l-zh">看多</span>
+      </button>
+      <button class="cb-side-btn" id="cb-side-short" onclick="tlCombosSide('short')">
+        <span class="l-en">Bearish</span><span class="l-zh">看空</span>
+      </button>
+    </div>
+    <select class="sc-select" id="cb-k-filter" onchange="tlRenderCombos()">
+      <option value="" data-en="All sizes" data-zh="全部规模">All sizes</option>
+      <option value="2" data-en="2 signals" data-zh="2个信号">2 signals</option>
+      <option value="3" data-en="3 signals" data-zh="3个信号">3 signals</option>
+      <option value="4" data-en="4 signals" data-zh="4个信号">4 signals</option>
+    </select>
+    <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;">
+      <input type="checkbox" id="cb-only-now" onchange="tlRenderCombos()">
+      <span class="l-en">matching now only</span><span class="l-zh">仅显示当前匹配</span>
+    </label>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="tl-card" id="cb-board-card">
+    <div class="tl-card-header">
+      <h2>
+        <span class="l-en">Combo leaderboard</span>
+        <span class="l-zh">组合排行榜</span>
+        <span class="tl-help" data-tip-en="Ranked by a conservative estimate (Wilson lower bound) of the 2018+ month-collapsed win rate minus the random-entry baseline, at the 21-day horizon. Full receipts in each row's detail view." data-tip-zh="按21日窗口、2018年后按月去重胜率的保守估计（Wilson下界）减去随机基准排序。完整依据见每行详情。">?</span>
+        <span class="h-note" id="cb-board-note"></span>
+      </h2>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tl" id="cb-table">
+        <thead>
+          <tr>
+            <th><span class="l-en">Combo</span><span class="l-zh">组合</span></th>
+            <th class="tl-num"><span class="l-en">Wins per 10 (2018+)</span><span class="l-zh">每10次胜次(2018后)</span></th>
+            <th class="tl-num"><span class="l-en">vs random</span><span class="l-zh">对比随机</span></th>
+            <th><span class="l-en">Both eras?</span><span class="l-zh">两期均稳?</span></th>
+            <th class="tl-num"><span class="l-en">Entries/yr</span><span class="l-zh">年均触发</span></th>
+            <th class="tl-num"><span class="l-en">Fires 3y</span><span class="l-zh">近3年触发</span></th>
+            <th><span class="l-en">Matching now</span><span class="l-zh">当前匹配</span></th>
+          </tr>
+        </thead>
+        <tbody id="cb-tbody">
+          <tr><td colspan="7" class="tl-empty">
+            <span class="l-en">Loading…</span><span class="l-zh">加载中…</span>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl-footer">
+      <span id="cb-count-note"></span>
+      <div class="tbl-page-btns" id="cb-pages"></div>
+    </div>
+  </div>
+
+  <!-- Combo detail (hidden until row clicked) -->
+  <div id="cb-detail" style="display:none;">
+    <div style="margin:0 0 10px;">
+      <button onclick="tlComboBack()" style="font-size:12px;color:var(--link);background:none;border:none;cursor:pointer;padding:0;">
+        ← <span class="l-en">Back to leaderboard</span><span class="l-zh">返回排行榜</span>
+      </button>
+    </div>
+    <div class="tl-card">
+      <div class="cbd-header">
+        <div>
+          <div class="cbd-title" id="cbd-name">—</div>
+          <div class="cb-legs" id="cbd-legs"></div>
         </div>
-        <div class="logic-toggle">
-          <button class="logic-btn active" id="logic-all" onclick="tlConflSetLogic('ALL')">
-            <span class="l-en">ALL match</span>
-            <span class="l-zh">全部匹配</span>
-          </button>
-          <button class="logic-btn" id="logic-any" onclick="tlConflSetLogic('ANY')">
-            <span class="l-en">ANY match</span>
-            <span class="l-zh">任一匹配</span>
-          </button>
-        </div>
+        <div id="cbd-badges" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;"></div>
       </div>
 
-      <div class="confl-result" id="confl-result">
-        <div>
-          <div class="confl-count" id="confl-count">—</div>
-          <div class="confl-count-label" id="confl-count-label">
-            <span class="l-en">pick signals above</span>
-            <span class="l-zh">请选择信号</span>
+      <div class="cbd-grid" id="cbd-grid"></div>
+
+      <div class="cbd-htable-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><span class="l-en">Hold for</span><span class="l-zh">持有期</span></th>
+              <th><span class="l-en">Entries</span><span class="l-zh">进场数</span></th>
+              <th><span class="l-en">Wins per 10 (all)</span><span class="l-zh">每10次胜次(全部)</span></th>
+              <th><span class="l-en">Wins per 10 (2018+)</span><span class="l-zh">每10次胜次(2018后)</span></th>
+              <th><span class="l-en">Wins per 10 (pre-2018)</span><span class="l-zh">每10次胜次(2018前)</span></th>
+              <th><span class="l-en">vs random (2018+)</span><span class="l-zh">对比随机(2018后)</span></th>
+              <th><span class="l-en">Avg move</span><span class="l-zh">平均涨跌</span></th>
+            </tr>
+          </thead>
+          <tbody id="cbd-htable-body"></tbody>
+        </table>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;margin-bottom:4px;">
+        <span class="l-en">Stocks matching right now</span><span class="l-zh">当前满足条件的股票</span>
+      </div>
+      <div class="cbd-matches" id="cbd-matches"></div>
+
+      <div class="mini-chart-wrap">
+        <div class="mini-chart-header">
+          <span class="mini-chart-title">
+            <span class="l-en">Past combo entries on a chart</span>
+            <span class="l-zh">历史组合进场点位图</span>
+          </span>
+          <div class="chart-ctrl">
+            <select id="cbd-ticker-select" onchange="tlComboChartDraw()"></select>
           </div>
         </div>
-        <div class="confl-result-tickers" id="confl-tickers"></div>
+        <div class="chart-container" id="cbd-chart-container"></div>
+        <div class="chart-fallback" id="cbd-chart-fallback">
+          <span class="l-en">Pick a ticker above to load real bars</span>
+          <span class="l-zh">请选择标的以加载真实行情</span>
+        </div>
+        <div class="chart-note" id="cbd-chart-note" style="display:none;"></div>
       </div>
-      <div id="confl-empty-msg" style="display:none;" class="confl-empty">
-        <span class="l-en">0 names match — loosen to ANY or drop a signal</span>
-        <span class="l-zh">0个标的匹配 — 改为任一匹配或减少信号</span>
+
+      <div class="null-banner" id="cbd-receipt"></div>
+    </div>
+  </div>
+
+  <!-- Custom combo builder -->
+  <div class="tl-card" style="margin-top:16px;" id="cb-builder-card">
+    <div class="tl-card-header">
+      <h2>
+        <span class="l-en">Build your own combo</span>
+        <span class="l-zh">自建信号组合</span>
+        <span class="tl-help" data-tip-en="Pick up to 4 signals. 'W' chips use weekly bars — slower signals often work better there as backdrop. If your exact combo was covered by the backtest its record appears on the right; either way you see which stocks match today (state on, or event fired within 5 days)." data-tip-zh="最多选择4个信号。带“W”的为周线信号 — 较慢的信号常更适合作为周线背景。若该组合在回测覆盖范围内，右侧会显示其历史记录；无论如何都会显示今日匹配的股票（状态激活或事件5日内触发）。">?</span>
+      </h2>
+    </div>
+    <div class="cb-builder-grid">
+      <div>
+        <input class="cb-pick-search" type="text" id="cb-pick-search"
+          data-ph-en="Filter signals…" data-ph-zh="筛选信号…"
+          placeholder="Filter signals…" oninput="tlBuilderFilter()">
+        <div class="cb-pick-area" id="cb-pick-area">
+          <p class="r-neu" style="font-size:12px;">
+            <span class="l-en">Loading signals…</span><span class="l-zh">加载信号中…</span>
+          </p>
+        </div>
+      </div>
+      <div class="cb-result-card" id="cb-result-card">
+        <div class="cbr-count" id="cbr-count">—</div>
+        <div class="confl-count-label" id="cbr-label">
+          <span class="l-en">pick 2+ signals</span><span class="l-zh">请选择至少2个信号</span>
+        </div>
+        <div class="cbr-names" id="cbr-names"></div>
+        <div class="cbr-stats" id="cbr-stats" style="display:none;"></div>
+        <div class="cbr-note" id="cbr-note"></div>
       </div>
     </div>
   </div>
+
 </div>
 
 {# ═══════════════════════════════════════════
@@ -574,9 +771,12 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
                 <span class="l-zh">价格图 · 信号触发</span>
               </span>
               <div class="chart-ctrl">
-                <select id="det-ticker-select" onchange="tlLabChartDraw()">
-                  <option value="" data-en="Select ticker with fires…" data-zh="选择触发标的…">Select ticker with fires…</option>
-                </select>
+                <input class="sc-input" style="max-width:150px;" list="tl-all-tickers" id="det-ticker-select"
+                  data-ph-en="Any ticker, e.g. NVDA" data-ph-zh="任意标的，如 NVDA"
+                  placeholder="Any ticker, e.g. NVDA"
+                  onchange="tlLabChartDraw()">
+                <datalist id="tl-all-tickers"></datalist>
+                <select class="sc-select" id="det-fired-select" onchange="tlLabPickFired(this.value)"></select>
               </div>
             </div>
             <div class="chart-container" id="det-chart-container"></div>
@@ -824,6 +1024,26 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
     </div>
 
     <div class="how-card">
+      <h3>&#129513; <span class="l-en">Combo miner (multi-signal backtest)</span><span class="l-zh">组合挖掘器（多信号回测）</span></h3>
+      <p>
+        <span class="l-en">Mines 2–4-signal combos across daily + weekly legs (rising-edge fires, month-collapsed win rates, 2018 train/test split). Writes <code>site/factordata/tech_confluence.json</code>. Full run ≈ 8 min; nightly off-render.</span>
+        <span class="l-zh">在日线+周线信号上挖掘2–4个信号的组合（上升沿触发、按月去重胜率、2018年训练/检验分割）。输出 <code>site/factordata/tech_confluence.json</code>。全量运行约8分钟，夜间离线执行。</span>
+      </p>
+      <div class="code-block-wrap">
+        <button class="copy-btn" onclick="tlCopyCode(this)">Copy</button>
+        <div class="code-block"><span class="code-comment"># smoke run (12 tickers)</span>
+<span class="code-kw">python</span> scripts/build_tech_confluence.py --sample 12 \
+  --output /tmp/tcf_smoke.json
+
+<span class="code-comment"># full universe (what the nightly runs)</span>
+<span class="code-kw">python</span> scripts/build_tech_confluence.py
+
+<span class="code-comment"># unit tests (synthetic fixtures, no data store needed)</span>
+<span class="code-kw">python</span> -m pytest tests/test_tech_confluence.py -q</div>
+      </div>
+    </div>
+
+    <div class="how-card">
       <h3>&#9989; <span class="l-en">Run the test suite</span><span class="l-zh">运行测试套件</span></h3>
       <p>
         <span class="l-en">Correctness, era-split logic, CLI tier stamps, fixture determinism, parity with Terminal TypeScript.</span>
@@ -902,10 +1122,14 @@ var _catalogRows = [];
 var _catalogSort = 'edge_wr';
 var _catalogAsc  = false;
 
-/* confluence */
-var _activeConfl = new Set();
-var _conflLogic  = 'ALL';
-var _MAX_CONFL   = 4;
+/* combos (backtested confluence artifact) */
+var CBD = null;            // tech_confluence.json payload (null until loaded; stays null on 404)
+var _cbSide = 'long';
+var _cbPage = 0;
+var _cbActiveCombo = null; // combo object shown in detail
+var _cbChart = null;
+var _bSel = new Set();     // builder: selected leg indices
+var _MAX_LEGS = 4;
 
 /* signal lab */
 var _activeSigId = null;
@@ -919,7 +1143,7 @@ var _profChart = null;
 var _profChartSeries = null;
 
 /* ─── Tab router (hash-based) ─────────────────────────────────────────── */
-var TABS = ['screener','siglab','stock','test'];
+var TABS = ['screener','combos','siglab','stock','test'];
 function tlSwitchTab(id) {
   TABS.forEach(function(t) {
     var el = document.getElementById('tab-' + t);
@@ -1077,111 +1301,395 @@ function tlRenderScreener() {
   }
 }
 
-/* ─── Confluence Builder ─────────────────────────────────────────────── */
-function tlBuildConflChips() {
-  // Group by family, show signals with fires first
-  var families = {};
-  Object.keys(SIG_FIRES).forEach(function(sid) {
-    var sc = (window._SCREENER_SIGS||{})[sid];
-    if (!sc) return;
-    var fam = sc.family || 'other';
-    if (!families[fam]) families[fam] = [];
-    families[fam].push(sid);
-  });
-
-  var html = '';
-  Object.keys(families).sort().forEach(function(fam) {
-    var sids = families[fam];
-    if (!sids.length) return;
-    html += '<div><div class="confl-section-label">' + esc(_familyLabel(fam)) + '</div><div class="confl-chips">';
-    sids.forEach(function(sid) {
-      var sc = (window._SCREENER_SIGS||{})[sid];
-      var lab = SIGS[sid];
-      var enName = esc((sc&&sc.display_en)||sid);
-      var dir = (sc&&sc.direction) || 0;
-      var isBuy = dir > 0 ? ' buy-chip' : '';
-      html += '<button class="confl-chip' + isBuy + '" data-sid="' + sid + '" onclick="tlConflToggle(this,\'' + sid + '\')">' + enName + '</button>';
-    });
-    html += '</div></div>';
-  });
-  var area = document.getElementById('confl-chip-area');
-  if (area) area.innerHTML = html || '<p class="r-neu" style="font-size:12px;">No signals with current fires</p>';
-
-  // Set default: pick 2 signals with non-empty intersection (computed dynamically)
-  var pairs = Object.keys(SIG_FIRES);
-  var defaultA = null, defaultB = null;
-  for (var i=0; i<pairs.length && !defaultA; i++) {
-    var setA = new Set(SIG_FIRES[pairs[i]]);
-    for (var j=i+1; j<pairs.length && !defaultA; j++) {
-      var setB = SIG_FIRES[pairs[j]];
-      var inter = setB.filter(function(t){ return setA.has(t); });
-      if (inter.length >= 1) { defaultA = pairs[i]; defaultB = pairs[j]; }
-    }
-  }
-  if (defaultA && defaultB) {
-    _activeConfl.add(defaultA);
-    _activeConfl.add(defaultB);
-    document.querySelectorAll('#confl-chip-area .confl-chip').forEach(function(btn) {
-      var sid = btn.getAttribute('data-sid');
-      if (sid === defaultA || sid === defaultB) btn.classList.add('active');
-    });
-  }
-  tlConflUpdate();
+/* ─── Combos: helpers ─────────────────────────────────────────────────── */
+function _per10(wr) { return wr != null ? (wr * 10).toFixed(1) : '—'; }
+function _per10Edge(e) { return e != null ? (e >= 0 ? '+' : '') + (e * 10).toFixed(1) : '—'; }
+function _cbBase(side) {
+  return CBD && CBD.base && CBD.base[side] && CBD.base[side].h21 ? CBD.base[side].h21 : {};
+}
+function _legChip(li) {
+  var leg = CBD.legs[li];
+  if (!leg) return '';
+  var nm = isZh() ? (leg.display_zh || leg.display_en) : leg.display_en;
+  nm = nm.split(' — ')[0].split('（')[0].split(' (')[0];
+  return '<span class="cb-leg-chip"><span class="tfb' + (leg.tf === 'W' ? ' w' : '') + '">' + leg.tf + '</span>' + esc(nm) + '</span>';
+}
+function _comboName(c) {
+  return esc(isZh() ? (c.name_zh || c.name_en) : c.name_en);
+}
+function _consChip(c) {
+  return c.consistent
+    ? '<span class="cons-chip cons-yes">' + L('held both eras','两期均稳') + '</span>'
+    : '<span class="cons-chip cons-no">' + L('recent era only','仅近期') + '</span>';
+}
+function _wrOf10Cell(wr, baseWr) {
+  if (wr == null) return '<span class="r-neu">—</span>';
+  var w = Math.max(0, Math.min(80, wr * 80));
+  var b = Math.max(0, Math.min(80, (baseWr || 0) * 80));
+  return '<span class="wrbar"><svg width="80" height="12" viewBox="0 0 80 12">' +
+    '<rect x="0" y="3" width="80" height="6" rx="3" fill="var(--panel2)"/>' +
+    '<rect x="0" y="3" width="' + w.toFixed(1) + '" height="6" rx="3" fill="#5b8def"/>' +
+    '<line x1="' + b.toFixed(1) + '" y1="0" x2="' + b.toFixed(1) + '" y2="12" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2,2"/>' +
+    '</svg><span class="wr-of10">' + _per10(wr) + '</span></span>';
 }
 
-window.tlConflToggle = function(btn, sid) {
-  if (_activeConfl.has(sid)) {
-    _activeConfl.delete(sid);
-    btn.classList.remove('active');
-  } else if (_activeConfl.size < _MAX_CONFL) {
-    _activeConfl.add(sid);
-    btn.classList.add('active');
-  }
-  tlConflUpdate();
+/* ─── Combos: leaderboard ─────────────────────────────────────────────── */
+window.tlGoCombos = function() { tlSwitchTab('combos'); };
+
+window.tlCombosSide = function(side) {
+  _cbSide = side; _cbPage = 0;
+  var lb = document.getElementById('cb-side-long');
+  var sb = document.getElementById('cb-side-short');
+  lb.className = 'cb-side-btn' + (side === 'long' ? ' active-long' : '');
+  sb.className = 'cb-side-btn' + (side === 'short' ? ' active-short' : '');
+  tlComboBack();
+  tlRenderCombos();
 };
 
-window.tlConflSetLogic = function(l) {
-  _conflLogic = l;
-  document.getElementById('logic-all').classList.toggle('active', l==='ALL');
-  document.getElementById('logic-any').classList.toggle('active', l==='ANY');
-  tlConflUpdate();
-};
-
-function tlConflUpdate() {
-  var countEl = document.getElementById('confl-count');
-  var labelEl = document.getElementById('confl-count-label');
-  var tksEl   = document.getElementById('confl-tickers');
-  var emptyEl = document.getElementById('confl-empty-msg');
-
-  if (_activeConfl.size === 0) {
-    countEl.textContent = '—';
-    labelEl.innerHTML = L('pick signals above','请选择信号');
-    tksEl.innerHTML = '';
-    if (emptyEl) emptyEl.style.display = 'none';
+window.tlRenderCombos = function() {
+  var tbody = document.getElementById('cb-tbody');
+  if (!tbody) return;
+  if (!CBD) {
+    tbody.innerHTML = '<tr><td colspan="7" class="tl-empty">' +
+      L('Combo backtest data pending nightly generation.','组合回测数据等待夜间生成。') + '</td></tr>';
     return;
   }
-  var sets = Array.from(_activeConfl).map(function(sid){ return new Set(SIG_FIRES[sid]||[]); });
-  var result;
-  if (_conflLogic === 'ALL') {
-    result = sets.reduce(function(acc, s){ return new Set(Array.from(acc).filter(function(x){ return s.has(x); })); });
-  } else {
-    result = new Set(sets.reduce(function(acc,s){ return acc.concat(Array.from(s)); }, []));
+  var kf = document.getElementById('cb-k-filter').value;
+  var onlyNow = document.getElementById('cb-only-now').checked;
+  var rows = (CBD.combos[_cbSide] || []).filter(function(c) {
+    if (kf && String(c.k) !== kf) return false;
+    if (onlyNow && !(c.active_now || []).length) return false;
+    return true;
+  });
+  var base = _cbBase(_cbSide);
+  var PAGE = 15;
+  var pages = Math.max(1, Math.ceil(rows.length / PAGE));
+  _cbPage = Math.min(_cbPage, pages - 1);
+  var slice = rows.slice(_cbPage * PAGE, (_cbPage + 1) * PAGE);
+
+  tbody.innerHTML = slice.length ? slice.map(function(c) {
+    var h = c.h21 || {};
+    var nNow = (c.active_now || []).length;
+    return '<tr onclick="tlOpenCombo(\'' + c.id + '\')">' +
+      '<td style="max-width:340px;"><div class="cb-name">' + _comboName(c) + '</div>' +
+        '<div class="cb-legs">' + (c.legs || []).map(_legChip).join('') + '</div></td>' +
+      '<td class="tl-num">' + _wrOf10Cell(h.wr_mc_test, base.wr_mc_test) + '</td>' +
+      '<td class="tl-num">' + _edgeChip(c.edge_wr_test) + '</td>' +
+      '<td>' + _consChip(c) + '</td>' +
+      '<td class="tl-num">' + (c.fires_per_year != null ? c.fires_per_year.toFixed(1) : '—') + '</td>' +
+      '<td class="tl-num">' + (c.fires_last3y != null ? c.fires_last3y : '—') + '</td>' +
+      '<td><span class="match-now-btn' + (nNow ? '' : ' zero') + '">' + nNow + ' ' +
+        (nNow ? L('now','现在') : L('none','无')) + '</span></td>' +
+      '</tr>';
+  }).join('') : '<tr><td colspan="7" class="tl-empty">' + L('No combos under this filter.','该筛选下无组合。') + '</td></tr>';
+
+  var note = document.getElementById('cb-count-note');
+  if (note) note.innerHTML = L(
+    rows.length + ' combos · searched ' + _cbSearchedTotal() + ' candidates in total',
+    rows.length + ' 个组合 · 共搜索 ' + _cbSearchedTotal() + ' 个候选');
+  var pgEl = document.getElementById('cb-pages');
+  pgEl.innerHTML = '';
+  if (pages > 1) {
+    for (var p = 0; p < pages; p++) {
+      (function(pg) {
+        var btn = document.createElement('button');
+        btn.className = 'tbl-page-btn' + (pg === _cbPage ? ' active' : '');
+        btn.textContent = pg + 1;
+        btn.onclick = function() { _cbPage = pg; tlRenderCombos(); };
+        pgEl.appendChild(btn);
+      })(p);
+    }
   }
-  var tks = Array.from(result);
-  countEl.textContent = tks.length;
-  var logic_zh = _conflLogic === 'ALL' ? '全部' : '任一';
-  labelEl.innerHTML = L('names match · ' + _conflLogic, '个标的匹配 · ' + logic_zh);
-  if (tks.length === 0) {
-    tksEl.innerHTML = '';
-    if (emptyEl) emptyEl.style.display = '';
-  } else {
-    if (emptyEl) emptyEl.style.display = 'none';
-    var show = tks.slice(0,5).map(function(t){ return '<span style="color:var(--link);font-weight:600;">'+esc(t)+'</span>'; }).join(' · ');
-    var more = tks.length > 5 ? ' <span>+' + (tks.length-5) + ' more</span>' : '';
-    tksEl.innerHTML = show + more;
-  }
+  var bn = document.getElementById('cb-board-note');
+  if (bn) bn.innerHTML = L('click a row for the full record', '点击行查看完整记录');
+};
+
+function _cbSearchedTotal() {
+  if (!CBD || !CBD.n_evaluated) return '—';
+  var t = 0;
+  ['long','short'].forEach(function(s) {
+    var m = CBD.n_evaluated[s] || {};
+    Object.keys(m).forEach(function(k) { t += m[k] || 0; });
+  });
+  return t.toLocaleString();
 }
 
+/* ─── Combos: detail ──────────────────────────────────────────────────── */
+window.tlOpenCombo = function(id) {
+  if (!CBD) return;
+  var c = (CBD.combos[_cbSide] || []).filter(function(x) { return x.id === id; })[0];
+  if (!c) return;
+  _cbActiveCombo = c;
+  document.getElementById('cb-board-card').style.display = 'none';
+  document.getElementById('cb-detail').style.display = '';
+
+  document.getElementById('cbd-name').textContent = isZh() ? (c.name_zh || c.name_en) : c.name_en;
+  document.getElementById('cbd-legs').innerHTML = (c.legs || []).map(_legChip).join('');
+  document.getElementById('cbd-badges').innerHTML = _consChip(c) +
+    '<span class="chip">' + c.k + ' ' + L('signals','个信号') + '</span>';
+
+  var base = _cbBase(_cbSide);
+  var h = c.h21 || {};
+  var cells = [
+    { k: L('Wins per 10 · 2018+','每10次胜次·2018后'), v: _per10(h.wr_mc_test),
+      cls: (c.edge_wr_test || 0) > 0 ? 'sv-up' : 'sv-neu',
+      b: L('random ≈ ' + _per10(base.wr_mc_test), '随机 ≈ ' + _per10(base.wr_mc_test)) },
+    { k: L('Entries · 2018+','进场数·2018后'), v: h.n_test != null ? h.n_test : '—', cls: 'sv-neu',
+      b: L((h.months_test || 0) + ' distinct months', (h.months_test || 0) + ' 个不同月份') },
+    { k: L('Entries / year','年均进场'), v: c.fires_per_year != null ? c.fires_per_year.toFixed(1) : '—', cls: 'sv-neu',
+      b: L(c.fires_last3y + ' in the last 3y', '近3年 ' + c.fires_last3y + ' 次') },
+    { k: L('Reward vs risk','盈亏比'), v: c.mfe_mae_med != null ? c.mfe_mae_med.toFixed(2) + '×' : '—',
+      cls: c.mfe_mae_med >= 1 ? 'sv-up' : 'sv-neu', b: L('typical best move ÷ worst move','典型最大有利÷最大不利') }
+  ];
+  document.getElementById('cbd-grid').innerHTML = cells.map(function(x) {
+    return '<div class="stat-cell"><div class="sk">' + x.k + '</div><div class="sv ' + x.cls + '">' + x.v + '</div><div class="sb">' + x.b + '</div></div>';
+  }).join('');
+
+  // horizon table
+  var hb = document.getElementById('cbd-htable-body');
+  hb.innerHTML = (CBD.horizons || [10,21,42,63]).map(function(hz) {
+    var s = c['h' + hz] || {};
+    var edge = (c.edges_by_h || {})[hz];
+    return '<tr>' +
+      '<td>' + hz + L('d','日') + '</td>' +
+      '<td>' + (s.n != null ? s.n : '—') + '</td>' +
+      '<td>' + _per10(s.wr_mc) + '</td>' +
+      '<td>' + _per10(s.wr_mc_test) + '</td>' +
+      '<td>' + _per10(s.wr_mc_train) + '</td>' +
+      '<td class="' + (edge > 0.01 ? 'r-pos' : edge < -0.01 ? 'r-neg' : '') + '">' + _per10Edge(edge) + '</td>' +
+      '<td class="' + ((s.mean || 0) > 0 ? 'r-pos' : 'r-neg') + '">' + (s.mean != null ? _pct(s.mean) : '—') + '</td>' +
+      '</tr>';
+  }).join('');
+
+  // matches now
+  var mt = document.getElementById('cbd-matches');
+  var act = c.active_now || [];
+  mt.innerHTML = act.length
+    ? act.map(function(tk) {
+        return '<span class="cbd-match-tk" onclick="tlOpenProfile(\'' + tk + '\')">' + esc(tk) + '</span>';
+      }).join('')
+    : '<span class="r-neu" style="font-size:12px;">' + L('none right now — conditions not aligned today','当前无 — 今日条件未对齐') + '</span>';
+
+  // chart ticker options: tickers with recent fires (dedup, newest first)
+  var seen = {};
+  var tks = [];
+  (c.recent_fires || []).forEach(function(f) {
+    if (!seen[f.ticker]) { seen[f.ticker] = 1; tks.push(f.ticker); }
+  });
+  var sel = document.getElementById('cbd-ticker-select');
+  sel.innerHTML = tks.map(function(tk) { return '<option value="' + tk + '">' + tk + '</option>'; }).join('');
+  if (tks.length) { sel.value = tks[0]; tlComboChartDraw(); }
+  else {
+    var fb = document.getElementById('cbd-chart-fallback');
+    if (fb) { fb.style.display = ''; fb.innerHTML = L('No fires in the last 3 years to chart.','近3年无触发，无法绘图。'); }
+  }
+
+  // Tier-2 receipt
+  document.getElementById('cbd-receipt').innerHTML =
+    '<strong>' + L('Receipt:','依据：') + '</strong> ' + L(
+      'search over ' + _cbSearchedTotal() + ' candidates · win rates collapse each calendar month to one observation · train/test split at ' + (CBD.split_date || '2018-01-01') +
+      ' · ranked by a conservative lower bound minus the random baseline at 21 days · survivor mega-cap universe (' + (CBD.universe_n || '—') + ' names) · descriptive research, not a recommendation.',
+      '共搜索 ' + _cbSearchedTotal() + ' 个候选 · 胜率按日历月合并为单一观测 · 以 ' + (CBD.split_date || '2018-01-01') + ' 划分训练/检验期 · 按21日保守下界减随机基准排序 · 幸存大盘股宇宙（' + (CBD.universe_n || '—') + '只）· 描述性研究，非投资建议。');
+};
+
+window.tlComboBack = function() {
+  document.getElementById('cb-board-card').style.display = '';
+  document.getElementById('cb-detail').style.display = 'none';
+  _cbActiveCombo = null;
+};
+
+window.tlComboChartDraw = function() {
+  var c = _cbActiveCombo;
+  if (!c) return;
+  var sel = document.getElementById('cbd-ticker-select');
+  var tk = sel ? sel.value : '';
+  if (!tk) return;
+  tlFetchOhlc(tk, function(ohlc) {
+    var container = document.getElementById('cbd-chart-container');
+    var fallback = document.getElementById('cbd-chart-fallback');
+    if (!container) return;
+    if (_cbChart && _cbChart._lwChart) { try { _cbChart._lwChart.remove(); } catch(e){} _cbChart = null; }
+    container.innerHTML = '';
+    var bars = _parseOhlc(ohlc);
+    if (bars.length < 5 || typeof LightweightCharts === 'undefined') {
+      if (fallback) { fallback.style.display = ''; fallback.innerHTML = L('Real bars unavailable for ' + tk + '.', tk + ' 真实行情不可用。'); }
+      return;
+    }
+    if (fallback) fallback.style.display = 'none';
+    var lw = LightweightCharts.createChart(container, tlChartOpts());
+    var series = lw.addCandlestickSeries({
+      upColor:'#1f9a55', downColor:'#d23f3f',
+      borderUpColor:'#1f9a55', borderDownColor:'#d23f3f',
+      wickUpColor:'#1f9a55', wickDownColor:'#d23f3f'
+    });
+    series.setData(bars);
+    var dirUp = c.dir >= 0;
+    var markers = (c.recent_fires || []).filter(function(f) { return f.ticker === tk; })
+      .map(function(f) {
+        return { time: f.date, position: dirUp ? 'belowBar' : 'aboveBar',
+          color: dirUp ? '#3fc07e' : '#ef6a6a', shape: dirUp ? 'arrowUp' : 'arrowDown',
+          text: 'entry' };
+      })
+      .filter(function(m) { return bars.some(function(b) { return b.time === m.time; }); })
+      .sort(function(a, b) { return a.time < b.time ? -1 : 1; });
+    if (markers.length) series.setMarkers(markers);
+    var noteEl = document.getElementById('cbd-chart-note');
+    if (noteEl) {
+      noteEl.style.display = '';
+      noteEl.innerHTML = L(tk + ' · ' + markers.length + ' combo entries in the charted window (real dates)',
+                           tk + ' · 图内 ' + markers.length + ' 次组合进场（真实日期）');
+    }
+    lw.timeScale().fitContent();
+    _cbChart = { _lwChart: lw };
+  });
+};
+
+/* ─── Combos: screener rail ───────────────────────────────────────────── */
+function tlRenderComboRail() {
+  var rail = document.getElementById('screener-combo-rail');
+  if (!rail) return;
+  if (!CBD) {
+    rail.innerHTML = '<p class="r-neu" style="font-size:12px;">' +
+      L('Combo backtest data pending nightly generation.','组合回测数据等待夜间生成。') + '</p>';
+    return;
+  }
+  var top = (CBD.combos.long || []).filter(function(c) { return (c.active_now || []).length > 0; }).slice(0, 5);
+  if (!top.length) {
+    rail.innerHTML = '<p class="r-neu" style="font-size:12px;">' +
+      L('No backtested combo has a match today — nothing to chase.','今日无回测组合匹配 — 不必追进。') + '</p>';
+    return;
+  }
+  rail.innerHTML = top.map(function(c) {
+    var h = c.h21 || {};
+    return '<div class="rail-combo-card" onclick="tlSwitchTab(\'combos\');tlCombosSide(\'long\');tlOpenCombo(\'' + c.id + '\')">' +
+      '<div class="rail-combo-name">' + _comboName(c) + '</div>' +
+      '<div class="rail-combo-sub">' + L('won ' + _per10(h.wr_mc_test) + ' of 10 since 2018 · ' + (c.fires_per_year || 0).toFixed(1) + ' entries/yr',
+                                          '2018年来每10次胜' + _per10(h.wr_mc_test) + '次 · 年均' + (c.fires_per_year || 0).toFixed(1) + '次') + '</div>' +
+      '<div class="rail-combo-tks">' + (c.active_now || []).slice(0, 6).map(esc).join(' · ') + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+/* ─── Combos: custom builder ──────────────────────────────────────────── */
+function tlBuildBuilderChips() {
+  var area = document.getElementById('cb-pick-area');
+  if (!area) return;
+  if (!CBD) {
+    area.innerHTML = '<p class="r-neu" style="font-size:12px;">' +
+      L('Signal list arrives with the nightly combo data.','信号列表随夜间组合数据生成。') + '</p>';
+    return;
+  }
+  var byFam = {};
+  CBD.legs.forEach(function(leg, i) {
+    if (!byFam[leg.family]) byFam[leg.family] = [];
+    byFam[leg.family].push(i);
+  });
+  var html = '';
+  Object.keys(byFam).sort().forEach(function(fam) {
+    html += '<div class="confl-section-label" style="margin-top:8px;">' + esc(_familyLabel(fam)) + '</div><div class="confl-chips">';
+    byFam[fam].forEach(function(i) {
+      var leg = CBD.legs[i];
+      var nm = (leg.display_en || '').split(' — ')[0].split(' (')[0];
+      html += '<button class="confl-chip' + (leg.direction > 0 ? ' buy-chip' : '') + (_bSel.has(i) ? ' active' : '') + '" data-li="' + i + '" data-name="' + esc(nm.toLowerCase()) + '" onclick="tlBuilderToggle(this,' + i + ')">' +
+        esc(nm) + (leg.tf === 'W' ? ' <span style="opacity:.7;font-size:9px;">·W</span>' : '') + '</button>';
+    });
+    html += '</div>';
+  });
+  area.innerHTML = html;
+  tlBuilderUpdate();
+}
+
+window.tlBuilderToggle = function(btn, li) {
+  if (_bSel.has(li)) { _bSel.delete(li); btn.classList.remove('active'); }
+  else if (_bSel.size < _MAX_LEGS) { _bSel.add(li); btn.classList.add('active'); }
+  tlBuilderUpdate();
+};
+
+window.tlBuilderFilter = function() {
+  var q = (document.getElementById('cb-pick-search').value || '').trim().toLowerCase();
+  document.querySelectorAll('#cb-pick-area .confl-chip').forEach(function(btn) {
+    btn.style.display = (!q || (btn.getAttribute('data-name') || '').indexOf(q) >= 0) ? '' : 'none';
+  });
+};
+
+function tlBuilderUpdate() {
+  var countEl = document.getElementById('cbr-count');
+  var labelEl = document.getElementById('cbr-label');
+  var namesEl = document.getElementById('cbr-names');
+  var statsEl = document.getElementById('cbr-stats');
+  var noteEl = document.getElementById('cbr-note');
+  if (!countEl || !CBD) return;
+
+  if (_bSel.size < 2) {
+    countEl.textContent = '—';
+    labelEl.innerHTML = L('pick 2+ signals','请选择至少2个信号');
+    namesEl.innerHTML = ''; statsEl.style.display = 'none'; noteEl.innerHTML = '';
+    return;
+  }
+  var legs = Array.from(_bSel).sort(function(a, b) { return a - b; });
+
+  // live matches from the `now` map
+  var matches = Object.keys(CBD.now || {}).filter(function(tk) {
+    var on = CBD.now[tk];
+    return legs.every(function(li) { return on.indexOf(li) >= 0; });
+  });
+  countEl.textContent = matches.length;
+  labelEl.innerHTML = L('stocks match today','只股票今日匹配');
+  namesEl.innerHTML = matches.slice(0, 12).map(function(tk) {
+    return '<span class="cbd-match-tk" onclick="tlOpenProfile(\'' + tk + '\')">' + esc(tk) + '</span>';
+  }).join('') + (matches.length > 12 ? ' <span class="r-neu" style="font-size:11px;">+' + (matches.length - 12) + '</span>' : '');
+
+  // mixed directions?
+  var dirs = {};
+  legs.forEach(function(li) { dirs[CBD.legs[li].direction > 0 ? 'b' : 's'] = 1; });
+  if (dirs.b && dirs.s) {
+    statsEl.style.display = 'none';
+    noteEl.innerHTML = L('Mixed bullish + bearish picks — live matches shown, but the backtest only covers same-direction combos.',
+                         '混合了看多与看空信号 — 仅显示当前匹配；回测只覆盖同方向组合。');
+    return;
+  }
+  var side = dirs.s ? 'short' : 'long';
+
+  // exact backtest record? search top combos then the all-pairs matrix
+  var key = legs.join(',');
+  var hit = (CBD.combos[side] || []).filter(function(c) {
+    return (c.legs || []).slice().sort(function(a, b) { return a - b; }).join(',') === key;
+  })[0];
+  var base = _cbBase(side);
+
+  if (hit) {
+    var h = hit.h21 || {};
+    statsEl.style.display = '';
+    statsEl.innerHTML =
+      '<div class="row"><span class="k">' + L('Wins per 10 (2018+)','每10次胜次(2018后)') + '</span><b>' + _per10(h.wr_mc_test) + '</b></div>' +
+      '<div class="row"><span class="k">' + L('vs random','对比随机') + '</span><b>' + _per10Edge(hit.edge_wr_test) + '</b></div>' +
+      '<div class="row"><span class="k">' + L('Entries/yr','年均进场') + '</span><b>' + (hit.fires_per_year || 0).toFixed(1) + '</b></div>' +
+      '<div class="row"><span class="k">' + L('Both eras?','两期均稳?') + '</span><b>' + (hit.consistent ? L('yes','是') : L('recent only','仅近期')) + '</b></div>';
+    noteEl.innerHTML = '<a style="color:var(--link);cursor:pointer;" onclick="tlCombosSide(\'' + side + '\');tlOpenCombo(\'' + hit.id + '\')">' +
+      L('full record →','完整记录 →') + '</a>';
+    return;
+  }
+  if (legs.length === 2) {
+    var pair = (CBD.pairs[side] || []).filter(function(p) {
+      var a = Math.min(p[0], p[1]), b = Math.max(p[0], p[1]);
+      return a === legs[0] && b === legs[1];
+    })[0];
+    if (pair) {
+      statsEl.style.display = '';
+      statsEl.innerHTML =
+        '<div class="row"><span class="k">' + L('Wins per 10 (2018+)','每10次胜次(2018后)') + '</span><b>' + _per10(pair[3]) + '</b></div>' +
+        '<div class="row"><span class="k">' + L('vs random','对比随机') + '</span><b>' + _per10Edge(pair[4]) + '</b></div>' +
+        '<div class="row"><span class="k">' + L('Months covered (2018+)','覆盖月数(2018后)') + '</span><b>' + pair[5] + '</b></div>' +
+        '<div class="row"><span class="k">' + L('Both eras?','两期均稳?') + '</span><b>' + (pair[6] ? L('yes','是') : L('recent only','仅近期')) + '</b></div>';
+      noteEl.innerHTML = L('Backtested pair · random baseline ≈ ' + _per10(base.wr_mc_test) + ' of 10.',
+                           '已回测组合 · 随机基准 ≈ 每10次' + _per10(base.wr_mc_test) + '次。');
+      return;
+    }
+  }
+  statsEl.style.display = 'none';
+  noteEl.innerHTML = L('This exact combo did not clear the backtest thresholds (too few fires or too little history) — live matches only. That is a data gap, not a verdict.',
+                       '该组合未达到回测门槛（触发过少或历史不足）— 仅显示当前匹配。这是数据空白，非结论。');
+}
 /* ─── Signal Picker (Tab 2) ─────────────────────────────────────────────── */
 function tlBuildPicker() {
   var families = {};
@@ -1338,15 +1846,22 @@ window.tlSelectSignal = function(sid) {
       '</tr>';
   }).join('');
 
-  // Populate ticker select for chart
+  // Chart ticker: free input (any universe ticker) + quick-pick of names firing now
   var sc = (window._SCREENER_SIGS||{})[sid];
   var firingTickers = sc ? (sc.tickers||[]).map(function(t){return t.ticker;}) : [];
-  var sel = document.getElementById('det-ticker-select');
-  sel.innerHTML = '<option value="" data-en="Select ticker with fires…" data-zh="选择触发标的…">'+(isZh()?'选择触发标的…':'Select ticker with fires…')+'</option>' +
-    firingTickers.map(function(tk){ return '<option value="'+tk+'">'+tk+'</option>'; }).join('');
-  if (firingTickers.length > 0) {
-    sel.value = firingTickers[0];
-    tlLabChartDraw();
+  var fsel = document.getElementById('det-fired-select');
+  if (fsel) {
+    var ph = isZh() ? '正在触发的标的…' : 'Firing now…';
+    fsel.innerHTML = '<option value="">' + ph + ' (' + firingTickers.length + ')</option>' +
+      firingTickers.map(function(tk){ return '<option value="'+tk+'">'+tk+'</option>'; }).join('');
+  }
+  var inp = document.getElementById('det-ticker-select');
+  if (inp) {
+    var cur = (inp.value || '').trim().toUpperCase();
+    if (!cur || !STKS[cur]) {
+      inp.value = firingTickers.length ? firingTickers[0] : (STKS['AAPL'] ? 'AAPL' : (Object.keys(STKS)[0] || ''));
+    }
+    if (inp.value) tlLabChartDraw();
   }
 
   // Show null banner if needed
@@ -1506,9 +2021,16 @@ function tlDrawChart(containerId, fallbackId, noteId, ticker, sigId, ohlcData, e
 }
 
 /* ─── Signal Lab chart ─────────────────────────────────────────────────── */
+window.tlLabPickFired = function(tk) {
+  if (!tk) return;
+  var inp = document.getElementById('det-ticker-select');
+  if (inp) inp.value = tk;
+  tlLabChartDraw();
+};
+
 window.tlLabChartDraw = function() {
   var sel = document.getElementById('det-ticker-select');
-  var ticker = sel ? sel.value : '';
+  var ticker = sel ? sel.value.trim().toUpperCase() : '';
   if (!ticker || !_activeSigId) return;
 
   tlFetchOhlc(ticker, function(ohlc, err) {
@@ -1713,35 +2235,40 @@ window.tlCopyCode = function(btn) {
 
 /* ─── i18n: swap placeholders & option text ─────────────────────────────── */
 function _swapI18n(zh) {
-  // Screener search placeholder
-  var si = document.getElementById('screener-search');
-  if (si) si.placeholder = zh ? (si.getAttribute('data-ph-zh')||'') : (si.getAttribute('data-ph-en')||'');
-  // Band filter options
-  var bf = document.getElementById('band-filter');
-  if (bf) [].forEach.call(bf.options, function(o){
-    o.textContent = zh ? (o.getAttribute('data-zh')||o.textContent) : (o.getAttribute('data-en')||o.textContent);
+  ['screener-search','ticker-search-input','cb-pick-search','det-ticker-select'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && el.getAttribute('data-ph-en')) el.placeholder = zh ? (el.getAttribute('data-ph-zh')||'') : (el.getAttribute('data-ph-en')||'');
   });
-  // Ticker search placeholder
-  var ti = document.getElementById('ticker-search-input');
-  if (ti) ti.placeholder = zh ? (ti.getAttribute('data-ph-zh')||'') : (ti.getAttribute('data-ph-en')||'');
+  ['band-filter','cb-k-filter'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (sel) [].forEach.call(sel.options, function(o){
+      o.textContent = zh ? (o.getAttribute('data-zh')||o.textContent) : (o.getAttribute('data-en')||o.textContent);
+    });
+  });
 }
 _swapI18n(isZh());
 document.addEventListener('langchange', function(e) {
   _swapI18n(e.detail === 'zh');
   tlRenderScreener();
   tlRenderCatalog();
-  tlConflUpdate();
+  tlRenderCombos();
+  tlRenderComboRail();
+  tlBuildBuilderChips();
+  if (_cbActiveCombo) tlOpenCombo(_cbActiveCombo.id);
 });
 
 /* ─── Data load ─────────────────────────────────────────────────────────── */
 Promise.all([
   fetch('factordata/tech_screener.json').then(function(r){ if(!r.ok) throw new Error('screener '+r.status); return r.json(); }),
-  fetch('factordata/tech_lab.json').then(function(r){ if(!r.ok) throw new Error('lab '+r.status); return r.json(); })
+  fetch('factordata/tech_lab.json').then(function(r){ if(!r.ok) throw new Error('lab '+r.status); return r.json(); }),
+  // combo backtest artifact is OPTIONAL — page degrades to pending notes without it
+  fetch('factordata/tech_confluence.json').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
 ]).then(function(results) {
   var screener = results[0];
   var lab      = results[1];
+  CBD          = results[2];
 
-  // screener signals (for confluence builder + picker fire counts)
+  // screener signals (for picker fire counts)
   window._SCREENER_SIGS = screener.signals || {};
 
   // Build SIG_FIRES map
@@ -1769,11 +2296,17 @@ Promise.all([
   tlBuildCatalogRows();
   tlBuildTickerList();
 
+  // Universe-wide ticker datalist for the Signal Lab free input
+  var dl = document.getElementById('tl-all-tickers');
+  if (dl) dl.innerHTML = Object.keys(STKS).sort().map(function(tk){ return '<option value="'+tk+'">'; }).join('');
+
   // Render
   tlRenderScreener();
   tlRenderCatalog();
   tlBuildPicker();
-  tlBuildConflChips();
+  tlRenderCombos();
+  tlRenderComboRail();
+  tlBuildBuilderChips();
 
   // Populate ticker list in stock tab
   tlTickerSearch('');
@@ -1786,6 +2319,16 @@ Promise.all([
   if (nb) nb.textContent = Object.keys(STKS).length;
   var sb = document.getElementById('badge-siglab');
   if (sb) sb.textContent = Object.keys(SIGS).length;
+  var cb = document.getElementById('badge-combos');
+  if (cb) cb.textContent = CBD ? ((CBD.combos.long||[]).length + (CBD.combos.short||[]).length) : '—';
+
+  // Tier-2 receipt on the combos stance line
+  var tip = document.getElementById('cb-receipt-tip');
+  if (tip && CBD) {
+    tip.setAttribute('data-tip-en', 'Receipt: ' + (CBD.search_caveat || '') + ' · universe: ' + (CBD.universe_caveat || '') +
+      ' · split ' + (CBD.split_date || '') + ' · ranked by Wilson lower bound minus baseline at 21d.');
+    tip.setAttribute('data-tip-zh', '依据：共搜索' + _cbSearchedTotal() + '个候选 · 幸存大盘股宇宙 · 按月去重胜率 · 以' + (CBD.split_date || '') + '划分训练/检验期 · 按21日Wilson下界减基准排序。');
+  }
 
 }).catch(function(err) {
   console.error('tech_lab data load failed:', err);
