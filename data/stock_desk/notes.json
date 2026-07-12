@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-07-10",
-  "generated_at": "2026-07-12T09:34:20.413988+00:00",
+  "generated_at": "2026-07-12T15:10:52.073867+00:00",
   "degraded": null,
   "notes": [
     {
@@ -11,16 +11,16 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Engine marks a base-building setup with residual earnings-surprise and insider-context support; off-high entry aids risk/reward, but low conviction stems from the track record and the display-only nature of the event-edge detectors.",
+      "thesis": "VTRS is forming a base with a positive earnings surprise (SUE z=1.8) and residual momentum (z=1.68); the pullback from highs and non-blocked entry axis support a cautious constructive lean, tempered by accounting watch and negative revisions.",
       "evidence": [
-        "verdict: 'Constructive \u2014 building a base'",
-        "entry z 0.44, not blocked, off-high -5.8%",
-        "SUE z 1.8 (41d fresh) drives selection",
-        "accounting watch flag flagged as caution"
+        "verdict: Constructive \u2014 building a base",
+        "selection axis: SUE validated z=1.8, momentum context z=1.68",
+        "entry axis: non-blocked, off-high -5.8%, BOTTOM WATCH",
+        "trust tier: event-edge (confluence, not standalone alpha)"
       ],
-      "dissent": "The accounting watch flag and negative quality z-score (-0.82) raise the risk of a fundamental disappointment that could undermine the base and erase the insider-premise.",
+      "dissent": "The recent downward direction, negative revision trend, and accounting watch flag could signify deteriorating fundamentals that overwhelm the SUE read.",
       "falsifier": {
-        "text": "Next quarterly earnings (est. ~2 months) miss consensus by >5%, or price loses the base and trades below $15 on volume.",
+        "text": "VTRS closes below $15.00 (near-term support) on above-average volume, negating the base-building thesis.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "VTRS",
@@ -39,49 +39,20 @@
       "name": null,
       "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "High-confluence leader with clean accounting, positive revisions, and no cycle block, but the board's caution urgency and a track record of zero directional accuracy keep conviction low; relative outperformance likely only if the revision trend holds.",
+      "horizon_d": 10,
+      "thesis": "HR carries high selection confluence with strong revisions (z=2.24) and momentum (z=1.33) while near all-time highs; the constructive verdict is supported by clean accounting and a non-blocked entry, though immediate upside is constrained by the 'caution' urgency near the highs.",
       "evidence": [
-        "verdict: 'High-confluence leader (context)'",
-        "revisions z 2.24 (literature tier) drives selection",
-        "entry z 0.68, not blocked, but board urgency 'caution'",
-        "quality z positive, accounting clean"
+        "verdict: High-confluence leader (context)",
+        "selection axis z=1.58 (revision 2.24, momentum 1.33, SUE present)",
+        "entry axis positive, off-high ~0%, HOLD state",
+        "quality: clean accounting"
       ],
-      "dissent": "The stock is at highs with no pullback buffer; any macro or sector rotation could trigger mean reversion before the event edge materialises, especially given the trust tier is context-only.",
+      "dissent": "Mean-reversion risk from overbought levels and a negative tailwind (spotlight) could trigger a sharp pullback, with no fresh catalyst to extend the move.",
       "falsifier": {
-        "text": "Revisions z-score drops below 0 and price breaks below the $19.80 consolidation area.",
+        "text": "HR closes below its 50-day simple moving average on high volume, breaking the near-high holding pattern.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "HR",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 15
-        }
-      },
-      "check_by": "2026-07-31",
-      "engine_verdict": "High-confluence leader (context)"
-    },
-    {
-      "id": "2026-07-10-MS-3",
-      "ticker": "MS",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "Leader profile with residual momentum and a positive SUE, but the imminent earnings binary (3 days) and weak fundamentals make this a higher-risk, size-down event bet; lean constructive only post-earnings if numbers confirm the revisions trend.",
-      "evidence": [
-        "verdict: 'Leader \u00b7 weak fundamentals \u2014 higher-risk'",
-        "SUE z 1.2 (41d fresh) and momentum alpha z 1.12 support selection",
-        "entry z 1.25, urgency 'imminent' with earnings in 3d",
-        "accounting watch and weak fundamentals flagged as cautions"
-      ],
-      "dissent": "An earnings miss could gap the stock down sharply, given the weak fundamental backdrop and the fact that the event-edge detectors are not validated forward predictors.",
-      "falsifier": {
-        "text": "Q2 earnings (in ~3 days) miss consensus and the stock gaps below $210 on the release.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "MS",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
@@ -89,6 +60,35 @@
         }
       },
       "check_by": "2026-07-24",
+      "engine_verdict": "High-confluence leader (context)"
+    },
+    {
+      "id": "2026-07-10-MS-3",
+      "ticker": "MS",
+      "name": null,
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 5,
+      "thesis": "Despite a leader verdict and positive selection (SUE z=1.2, momentum z=1.12), the imminent earnings event (3 days), weak fundamentals (quality z=-1.07, accounting watch), and binary risk override the constructive signal; a cautious lean reduces exposure to an adverse surprise.",
+      "evidence": [
+        "verdict: Leader \u00b7 weak fundamentals \u2014 higher-risk",
+        "cautions: earnings in 3d \u2014 binary event, size down; accounting watch",
+        "selection axis positive but contingent on upcoming report",
+        "quality axis z=-1.07"
+      ],
+      "dissent": "If earnings handily beat and guidance upgrades, the cautious lean will miss a strong post-event rally; the selection edge could materialize as a powerful breakout.",
+      "falsifier": {
+        "text": "MS reports a comprehensive earnings beat and raises guidance, and the stock closes above $235 within 2 days of the release.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "MS",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 5
+        }
+      },
+      "check_by": "2026-07-17",
       "engine_verdict": "Leader \u00b7 weak fundamentals \u2014 higher-risk"
     },
     {
@@ -97,23 +97,23 @@
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "No clear edge per the deterministic profile; selection axis is negative and only entry timing signals (vol-squeeze, RSI) are present, which are insufficient to forecast relative S&P 500 direction.",
+      "horizon_d": 20,
+      "thesis": "FHI lacks a selection edge (SUE z=-0.27, revision -0.64) despite positive momentum and a FRESH BUY board state; the deterministic 'neutral' verdict reflects insufficient signal strength to justify a directional lean.",
       "evidence": [
-        "verdict: 'Neutral \u2014 no clear edge'",
-        "selection z -0.096, SUE z -0.27, revisions z -0.64",
-        "entry z 0.29 positive but unsupported by selection",
-        "quality z -1.25, despite clean accounting"
+        "verdict: Neutral \u2014 no clear edge",
+        "selection z near zero (-0.10)",
+        "SUE and revision legs negative",
+        "entry axis positive but vol-squeeze only"
       ],
-      "dissent": "A vol-squeeze breakout could spark a short-term momentum move that outperforms for weeks, especially if the macro backdrop remains benign and the quality discount narrows.",
+      "dissent": "A momentum-driven breakout from the vol-squeeze could produce short-term outperformance even with weak fundamentals.",
       "falsifier": {
-        "text": "Price breaks above $62 on volume and selection axis turns positive (SUE z > 0.5).",
+        "text": "FHI closes above $61 on volume 1.5x the 20-day average within 10 trading days, signaling a breakout that invalidates the neutral stance.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-24",
+      "check_by": "2026-08-07",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -123,16 +123,16 @@
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Neutral verdict with no discernible edge; BOTTOM WATCH status and an entry pullback are offset by a negative SUE and flat revisions; the context-only momentum leg does not create a reliable relative-return case.",
+      "thesis": "UTHR's selection axis is flat (z=-0.02) with a strongly negative SUE (-1.01) and negative revisions, offset only by modest momentum; the BOTTOM WATCH board state does not provide a clear edge, confirming the neutral verdict.",
       "evidence": [
-        "verdict: 'Neutral \u2014 no clear edge'",
-        "SUE z -1.01, revisions z -0.19, selection near zero",
-        "entry off-high -8.3% but urgency 'later'",
-        "quality neutral, accounting clean"
+        "verdict: Neutral \u2014 no clear edge",
+        "SUE z=-1.01 (validated negative surprise)",
+        "revision z=-0.19, momentum z=0.93 (context only)",
+        "off-high -8.3%, dir down, no entry urgency"
       ],
-      "dissent": "The deep pullback and potential bottom formation could attract dip-buyers; if earnings surprises for the current quarter turn positive, the name could quickly revert and outperform.",
+      "dissent": "If the SUE was an anomaly and revisions turn sharply positive, the stock's deep pullback could set up a powerful mean-reversion rally.",
       "falsifier": {
-        "text": "Momentum alpha remains above 0.9 and SUE z turns positive, with price breaking above $570 on a follow-through day.",
+        "text": "UTHR's next quarterly earnings surprise (SUE) flips to positive with a z > 1.0, and the stock closes above $570 within 10 days post-release.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -148,16 +148,16 @@
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 15,
-      "thesis": "Profile says no clear edge; the slight positive selection from insider and SUE is marginal, and the catalyst set (quality driver only) is too thin to call a directional lean versus the S&P 500.",
+      "thesis": "OHI shows no clear edge: selection z is marginal (0.09) with tiny insider buy signal, neutral SUE, and negative revisions; the quality axis is stable but insufficient to overcome the neutral verdict.",
       "evidence": [
-        "verdict: 'Neutral \u2014 no clear edge'",
-        "selection z 0.09, insider z 0.03 (marginally positive)",
-        "quality z 0.47, accounting clean, but only driver is quality",
-        "board HOLD, urgency caution, no pullback buffer"
+        "verdict: Neutral \u2014 no clear edge",
+        "selection z=0.09 (insider 0.03, SUE 0.25, revision -0.27)",
+        "entry axis weak (HOLD, caution urgency)",
+        "quality clean but not a driver"
       ],
-      "dissent": "A high-quality REIT with stable earnings and clean accounting could serve as a defensive safe haven if macro volatility rises, leading to relative outperformance on a rotation.",
+      "dissent": "An acceleration in insider buying or a positive revision cycle could tip the balance toward a constructive lean, supported by decent quality.",
       "falsifier": {
-        "text": "Insider buying intensifies and selection z exceeds 0.5, accompanied by a price push above $50 on above-average volume.",
+        "text": "Insider transactions register a cluster of significant open-market purchases (z > 1.5) and analyst revisions turn positive within the next month, accompanied by a price close above $50.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
