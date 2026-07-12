@@ -1,28 +1,11 @@
 {
   "schema": "neuralweb.causal_frontier.v1",
-  "asof": "2026-07-12T05:05:59Z",
+  "asof": "2026-07-12T08:45:24Z",
   "cells": [
     {
       "cause_family": "breadth",
       "cause_feature_id": "breadth__market_breadth",
       "target_family": "entry_quality",
-      "environment": "full",
-      "state": "unexplored",
-      "value_score": 19.0,
-      "era_coverage": [
-        "pre-2000",
-        "2000-08",
-        "2009-16",
-        "2017-20",
-        "2021+",
-        "2022-07+"
-      ],
-      "data_present": true
-    },
-    {
-      "cause_family": "breadth",
-      "cause_feature_id": "breadth__market_breadth",
-      "target_family": "entry_quality",
       "environment": "high_vol_regime",
       "state": "unexplored",
       "value_score": 19.0,
@@ -181,22 +164,6 @@
       "cause_family": "macro_plumbing",
       "cause_feature_id": "fed_net_liquidity",
       "target_family": "entry_quality",
-      "environment": "full",
-      "state": "unexplored",
-      "value_score": 19.0,
-      "era_coverage": [
-        "2000-08",
-        "2009-16",
-        "2017-20",
-        "2021+",
-        "2022-07+"
-      ],
-      "data_present": true
-    },
-    {
-      "cause_family": "macro_plumbing",
-      "cause_feature_id": "fed_net_liquidity",
-      "target_family": "entry_quality",
       "environment": "high_vol_regime",
       "state": "unexplored",
       "value_score": 19.0,
@@ -214,22 +181,6 @@
       "cause_feature_id": "fed_net_liquidity",
       "target_family": "entry_quality",
       "environment": "low_vol_regime",
-      "state": "unexplored",
-      "value_score": 19.0,
-      "era_coverage": [
-        "2000-08",
-        "2009-16",
-        "2017-20",
-        "2021+",
-        "2022-07+"
-      ],
-      "data_present": true
-    },
-    {
-      "cause_family": "macro_plumbing",
-      "cause_feature_id": "fed_net_liquidity",
-      "target_family": "regime_risk",
-      "environment": "full",
       "state": "unexplored",
       "value_score": 19.0,
       "era_coverage": [
@@ -277,23 +228,6 @@
       "cause_family": "regime_macro",
       "cause_feature_id": "regime_v2_pit__growth_inflation",
       "target_family": "entry_quality",
-      "environment": "full",
-      "state": "unexplored",
-      "value_score": 19.0,
-      "era_coverage": [
-        "pre-2000",
-        "2000-08",
-        "2009-16",
-        "2017-20",
-        "2021+",
-        "2022-07+"
-      ],
-      "data_present": true
-    },
-    {
-      "cause_family": "regime_macro",
-      "cause_feature_id": "regime_v2_pit__growth_inflation",
-      "target_family": "entry_quality",
       "environment": "high_vol_regime",
       "state": "unexplored",
       "value_score": 19.0,
@@ -312,23 +246,6 @@
       "cause_feature_id": "regime_v2_pit__growth_inflation",
       "target_family": "entry_quality",
       "environment": "low_vol_regime",
-      "state": "unexplored",
-      "value_score": 19.0,
-      "era_coverage": [
-        "pre-2000",
-        "2000-08",
-        "2009-16",
-        "2017-20",
-        "2021+",
-        "2022-07+"
-      ],
-      "data_present": true
-    },
-    {
-      "cause_family": "regime_macro",
-      "cause_feature_id": "regime_v2_pit__growth_inflation",
-      "target_family": "regime_risk",
-      "environment": "full",
       "state": "unexplored",
       "value_score": 19.0,
       "era_coverage": [
@@ -379,20 +296,6 @@
       "cause_family": "gex",
       "cause_feature_id": "gex_history__spy",
       "target_family": "entry_quality",
-      "environment": "full",
-      "state": "unexplored",
-      "value_score": 18.0,
-      "era_coverage": [
-        "2017-20",
-        "2021+",
-        "2022-07+"
-      ],
-      "data_present": true
-    },
-    {
-      "cause_family": "gex",
-      "cause_feature_id": "gex_history__spy",
-      "target_family": "entry_quality",
       "environment": "high_vol_regime",
       "state": "unexplored",
       "value_score": 18.0,
@@ -408,20 +311,6 @@
       "cause_feature_id": "gex_history__spy",
       "target_family": "entry_quality",
       "environment": "low_vol_regime",
-      "state": "unexplored",
-      "value_score": 18.0,
-      "era_coverage": [
-        "2017-20",
-        "2021+",
-        "2022-07+"
-      ],
-      "data_present": true
-    },
-    {
-      "cause_family": "gex",
-      "cause_feature_id": "gex_history__spy",
-      "target_family": "regime_risk",
-      "environment": "full",
       "state": "unexplored",
       "value_score": 18.0,
       "era_coverage": [
@@ -463,18 +352,6 @@
       "cause_family": "options_entry",
       "cause_feature_id": "options_entry__state",
       "target_family": "entry_quality",
-      "environment": "full",
-      "state": "unexplored",
-      "value_score": 16.0,
-      "era_coverage": [
-        "2022-07+"
-      ],
-      "data_present": true
-    },
-    {
-      "cause_family": "options_entry",
-      "cause_feature_id": "options_entry__state",
-      "target_family": "entry_quality",
       "environment": "high_vol_regime",
       "state": "unexplored",
       "value_score": 16.0,
@@ -488,18 +365,6 @@
       "cause_feature_id": "options_entry__state",
       "target_family": "entry_quality",
       "environment": "low_vol_regime",
-      "state": "unexplored",
-      "value_score": 16.0,
-      "era_coverage": [
-        "2022-07+"
-      ],
-      "data_present": true
-    },
-    {
-      "cause_family": "options_entry",
-      "cause_feature_id": "options_entry__state",
-      "target_family": "regime_risk",
-      "environment": "full",
       "state": "unexplored",
       "value_score": 16.0,
       "era_coverage": [
@@ -535,18 +400,6 @@
       "cause_family": "regime_macro",
       "cause_feature_id": "regime_latest__liquidity_quality",
       "target_family": "entry_quality",
-      "environment": "full",
-      "state": "unexplored",
-      "value_score": 16.0,
-      "era_coverage": [
-        "2022-07+"
-      ],
-      "data_present": true
-    },
-    {
-      "cause_family": "regime_macro",
-      "cause_feature_id": "regime_latest__liquidity_quality",
-      "target_family": "entry_quality",
       "environment": "high_vol_regime",
       "state": "unexplored",
       "value_score": 16.0,
@@ -560,18 +413,6 @@
       "cause_feature_id": "regime_latest__liquidity_quality",
       "target_family": "entry_quality",
       "environment": "low_vol_regime",
-      "state": "unexplored",
-      "value_score": 16.0,
-      "era_coverage": [
-        "2022-07+"
-      ],
-      "data_present": true
-    },
-    {
-      "cause_family": "regime_macro",
-      "cause_feature_id": "regime_latest__liquidity_quality",
-      "target_family": "regime_risk",
-      "environment": "full",
       "state": "unexplored",
       "value_score": 16.0,
       "era_coverage": [
@@ -599,6 +440,23 @@
       "state": "unexplored",
       "value_score": 16.0,
       "era_coverage": [
+        "2022-07+"
+      ],
+      "data_present": true
+    },
+    {
+      "cause_family": "breadth",
+      "cause_feature_id": "breadth__market_breadth",
+      "target_family": "entry_quality",
+      "environment": "full",
+      "state": "null_basin",
+      "value_score": -11.0,
+      "era_coverage": [
+        "pre-2000",
+        "2000-08",
+        "2009-16",
+        "2017-20",
+        "2021+",
         "2022-07+"
       ],
       "data_present": true
@@ -619,14 +477,156 @@
         "2022-07+"
       ],
       "data_present": true
+    },
+    {
+      "cause_family": "macro_plumbing",
+      "cause_feature_id": "fed_net_liquidity",
+      "target_family": "entry_quality",
+      "environment": "full",
+      "state": "null_basin",
+      "value_score": -11.0,
+      "era_coverage": [
+        "2000-08",
+        "2009-16",
+        "2017-20",
+        "2021+",
+        "2022-07+"
+      ],
+      "data_present": true
+    },
+    {
+      "cause_family": "macro_plumbing",
+      "cause_feature_id": "fed_net_liquidity",
+      "target_family": "regime_risk",
+      "environment": "full",
+      "state": "null_basin",
+      "value_score": -11.0,
+      "era_coverage": [
+        "2000-08",
+        "2009-16",
+        "2017-20",
+        "2021+",
+        "2022-07+"
+      ],
+      "data_present": true
+    },
+    {
+      "cause_family": "regime_macro",
+      "cause_feature_id": "regime_v2_pit__growth_inflation",
+      "target_family": "entry_quality",
+      "environment": "full",
+      "state": "null_basin",
+      "value_score": -11.0,
+      "era_coverage": [
+        "pre-2000",
+        "2000-08",
+        "2009-16",
+        "2017-20",
+        "2021+",
+        "2022-07+"
+      ],
+      "data_present": true
+    },
+    {
+      "cause_family": "regime_macro",
+      "cause_feature_id": "regime_v2_pit__growth_inflation",
+      "target_family": "regime_risk",
+      "environment": "full",
+      "state": "null_basin",
+      "value_score": -11.0,
+      "era_coverage": [
+        "pre-2000",
+        "2000-08",
+        "2009-16",
+        "2017-20",
+        "2021+",
+        "2022-07+"
+      ],
+      "data_present": true
+    },
+    {
+      "cause_family": "gex",
+      "cause_feature_id": "gex_history__spy",
+      "target_family": "entry_quality",
+      "environment": "full",
+      "state": "null_basin",
+      "value_score": -12.0,
+      "era_coverage": [
+        "2017-20",
+        "2021+",
+        "2022-07+"
+      ],
+      "data_present": true
+    },
+    {
+      "cause_family": "gex",
+      "cause_feature_id": "gex_history__spy",
+      "target_family": "regime_risk",
+      "environment": "full",
+      "state": "null_basin",
+      "value_score": -12.0,
+      "era_coverage": [
+        "2017-20",
+        "2021+",
+        "2022-07+"
+      ],
+      "data_present": true
+    },
+    {
+      "cause_family": "options_entry",
+      "cause_feature_id": "options_entry__state",
+      "target_family": "entry_quality",
+      "environment": "full",
+      "state": "null_basin",
+      "value_score": -14.0,
+      "era_coverage": [
+        "2022-07+"
+      ],
+      "data_present": true
+    },
+    {
+      "cause_family": "options_entry",
+      "cause_feature_id": "options_entry__state",
+      "target_family": "regime_risk",
+      "environment": "full",
+      "state": "null_basin",
+      "value_score": -14.0,
+      "era_coverage": [
+        "2022-07+"
+      ],
+      "data_present": true
+    },
+    {
+      "cause_family": "regime_macro",
+      "cause_feature_id": "regime_latest__liquidity_quality",
+      "target_family": "entry_quality",
+      "environment": "full",
+      "state": "null_basin",
+      "value_score": -14.0,
+      "era_coverage": [
+        "2022-07+"
+      ],
+      "data_present": true
+    },
+    {
+      "cause_family": "regime_macro",
+      "cause_feature_id": "regime_latest__liquidity_quality",
+      "target_family": "regime_risk",
+      "environment": "full",
+      "state": "null_basin",
+      "value_score": -14.0,
+      "era_coverage": [
+        "2022-07+"
+      ],
+      "data_present": true
     }
   ],
   "state_summary": {
-    "unexplored": 41,
-    "null_basin": 1
+    "unexplored": 30,
+    "null_basin": 12
   },
   "total_cells": 42,
-  "cumulative_causal_scan_width": 24,
+  "cumulative_causal_scan_width": 106,
   "value_heuristic_formula": "score = UNEXPLORED_BONUS(10 if unexplored) + DATA_PRESENT_BONUS(5 if present) + ERA_BREADTH_BONUS(min(era_coverage_len, 4) * 1.0) - NULL_BASIN_PENALTY(20 if null_basin) - KILLED_PENALTY(100 if killed)",
   "target_families": [
     "regime_risk",

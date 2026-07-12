@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.causal_lab_state.v1",
-  "asof": "2026-07-12T05:05:59Z",
+  "asof": "2026-07-12T08:45:24Z",
   "heartbeat": {
     "program": "CHF",
     "wave": "W3",
@@ -9,23 +9,26 @@
   },
   "funnel": {
     "edges_by_verdict": {
-      "insufficient_power": 3,
-      "null": 1
+      "insufficient_power": 22,
+      "null": 11,
+      "insufficient_era_span": 2
     },
-    "total_edges": 4,
-    "nulls_count": 4,
-    "mechanisms_by_status": {},
-    "total_mechanisms": 0
+    "total_edges": 35,
+    "nulls_count": 35,
+    "mechanisms_by_status": {
+      "inbox": 2
+    },
+    "total_mechanisms": 2
   },
   "causal_scan": {
-    "cumulative_width": 24,
+    "cumulative_width": 106,
     "description": "Cumulative distinct cells logged to the causal_scan TrialLedger family. Printed on every surface per CHF-R3 launder-proof multiplicity law."
   },
   "frontier": {
     "total_cells": 42,
     "cells_by_state": {
-      "unexplored": 41,
-      "null_basin": 1
+      "unexplored": 30,
+      "null_basin": 12
     },
     "target_families": [
       "regime_risk",
@@ -45,13 +48,11 @@
   },
   "drift_events": [],
   "llm_lane": {
-    "status": "armed",
-    "asof": "2026-07-11T19:13:14+00:00",
-    "description": "auto_loop armed (operator ruling 2026-07-09); scheduled OAuth LLM run fires on the Tuesday nightly"
+    "status": "ok",
+    "asof": "2026-07-12T08:42:52+00:00",
+    "description": "operator-paste full chain completed 2026-07-12; 2 card(s) filed via ingest firewall (round-1 all-drop, round-2 corrective); scheduled OAuth run still fires Tuesday nightly"
   },
-  "data_absent_notes": [
-    "entry_quality target family unavailable: replay_boarded.parquet not found (set REPLAY_BOARDED_PATH env var to runner-local path)"
-  ],
+  "data_absent_notes": [],
   "authority": {
     "tier": "shadow",
     "display_only": true,
