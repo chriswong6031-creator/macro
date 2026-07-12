@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-11T22:53:19.558658+00:00",
-  "as_of": "2026-07-11",
+  "generated_utc": "2026-07-12T00:03:44.510408+00:00",
+  "as_of": "2026-07-12",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -5942,15 +5942,6 @@
           "parties": "D/Democratic"
         },
         {
-          "ticker": "DASH",
-          "net": 16,
-          "buys": 17,
-          "sells": 1,
-          "members": 2,
-          "est_usd": 136008.0,
-          "parties": "D/Democratic"
-        },
-        {
           "ticker": "ENTG",
           "net": 14,
           "buys": 14,
@@ -5965,6 +5956,15 @@
           "buys": 14,
           "sells": 0,
           "members": 1,
+          "est_usd": 112007.0,
+          "parties": "D/Democratic"
+        },
+        {
+          "ticker": "DASH",
+          "net": 13,
+          "buys": 14,
+          "sells": 1,
+          "members": 2,
           "est_usd": 112007.0,
           "parties": "D/Democratic"
         },
@@ -6005,24 +6005,6 @@
           "parties": "D"
         },
         {
-          "ticker": "VLTO",
-          "net": 9,
-          "buys": 9,
-          "sells": 0,
-          "members": 2,
-          "est_usd": 72004.0,
-          "parties": "D/Democratic"
-        },
-        {
-          "ticker": "ACI",
-          "net": 9,
-          "buys": 9,
-          "sells": 0,
-          "members": 1,
-          "est_usd": 72004.0,
-          "parties": "Democratic"
-        },
-        {
           "ticker": "T",
           "net": 8,
           "buys": 12,
@@ -6030,6 +6012,15 @@
           "members": 4,
           "est_usd": 303506.0,
           "parties": "Democratic/R"
+        },
+        {
+          "ticker": "ACI",
+          "net": 8,
+          "buys": 8,
+          "sells": 0,
+          "members": 1,
+          "est_usd": 64004.0,
+          "parties": "Democratic"
         },
         {
           "ticker": "BWXT",
@@ -6041,21 +6032,30 @@
           "parties": "D"
         },
         {
-          "ticker": "CARR",
+          "ticker": "SPGI",
           "net": 7,
-          "buys": 7,
-          "sells": 0,
+          "buys": 10,
+          "sells": 3,
+          "members": 3,
+          "est_usd": 129005.0,
+          "parties": "Democratic/R/Republican"
+        },
+        {
+          "ticker": "ST",
+          "net": 7,
+          "buys": 8,
+          "sells": 1,
           "members": 2,
-          "est_usd": 105004.0,
-          "parties": "Democratic/R"
+          "est_usd": 64004.0,
+          "parties": "D/Republican"
         }
       ],
       "sells": [
         {
           "ticker": "FLEX",
-          "net": -18,
+          "net": -16,
           "buys": 0,
-          "sells": 18,
+          "sells": 16,
           "members": 1,
           "est_usd": 0.0,
           "parties": "D"
@@ -6070,6 +6070,15 @@
           "parties": "D/Democratic"
         },
         {
+          "ticker": "NVDA",
+          "net": -12,
+          "buys": 2,
+          "sells": 14,
+          "members": 6,
+          "est_usd": 16001.0,
+          "parties": "D/Democratic/R/Republican"
+        },
+        {
           "ticker": "SCI",
           "net": -12,
           "buys": 0,
@@ -6079,19 +6088,10 @@
           "parties": "D"
         },
         {
-          "ticker": "NVDA",
-          "net": -11,
-          "buys": 3,
-          "sells": 14,
-          "members": 6,
-          "est_usd": 24002.0,
-          "parties": "D/Democratic/R/Republican"
-        },
-        {
           "ticker": "TSCO",
-          "net": -11,
+          "net": -10,
           "buys": 3,
-          "sells": 14,
+          "sells": 13,
           "members": 2,
           "est_usd": 24002.0,
           "parties": "D/Democratic"
@@ -6151,6 +6151,15 @@
           "parties": "D"
         },
         {
+          "ticker": "INTU",
+          "net": -7,
+          "buys": 2,
+          "sells": 9,
+          "members": 5,
+          "est_usd": 16001.0,
+          "parties": "D/Democratic/R/Republican"
+        },
+        {
           "ticker": "CMCSA",
           "net": -7,
           "buys": 4,
@@ -6175,15 +6184,6 @@
           "sells": 8,
           "members": 2,
           "est_usd": 8000.0,
-          "parties": "D/Democratic"
-        },
-        {
-          "ticker": "LYV",
-          "net": -7,
-          "buys": 0,
-          "sells": 7,
-          "members": 2,
-          "est_usd": 0.0,
           "parties": "D/Democratic"
         }
       ]
@@ -6477,7 +6477,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 18,
+        "count": 17,
         "items": "8.01"
       },
       {
@@ -6491,19 +6491,9 @@
         "items": "5.02, 7.01, 8.01"
       },
       {
-        "ticker": "BLD",
-        "count": 4,
-        "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
-      },
-      {
         "ticker": "PSKY",
         "count": 4,
         "items": "7.01, 8.01"
-      },
-      {
-        "ticker": "AES",
-        "count": 3,
-        "items": "1.01, 2.03, 7.01, 8.01"
       },
       {
         "ticker": "ASPI",
@@ -6521,9 +6511,9 @@
         "items": "7.01, 8.01"
       },
       {
-        "ticker": "DELL",
+        "ticker": "BLD",
         "count": 3,
-        "items": "1.01, 2.03, 8.01"
+        "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
         "ticker": "DLR",
@@ -6591,6 +6581,11 @@
         "items": "8.01"
       },
       {
+        "ticker": "AES",
+        "count": 2,
+        "items": "1.01, 2.03, 7.01, 8.01"
+      },
+      {
         "ticker": "ALGN",
         "count": 2,
         "items": "5.02, 7.01"
@@ -6599,6 +6594,11 @@
         "ticker": "ALGT",
         "count": 2,
         "items": "1.01, 2.03, 8.01"
+      },
+      {
+        "ticker": "APLD",
+        "count": 2,
+        "items": "1.01, 2.03"
       }
     ],
     "special_situations": [
@@ -43689,6 +43689,13 @@
         "top_issue": "Transportation"
       },
       {
+        "ticker": "VIRT",
+        "spend_usd": 45000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Financial Institutions/Investments/Securities"
+      },
+      {
         "ticker": "WERN",
         "spend_usd": 45000.0,
         "filings": 1,
@@ -43722,13 +43729,6 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Defense"
-      },
-      {
-        "ticker": "CHK",
-        "spend_usd": 30000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Energy/Nuclear"
       }
     ],
     "offexchange": [
@@ -47128,17 +47128,6 @@
         "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$199,467,629 \u00b7 cnbc_pick: Karen Finerman \u00b7 special_situation: Other Situations \u00b7 trump: Amazon Com Inc"
       },
       {
-        "ticker": "DELL",
-        "score": 3,
-        "weighted_score": 1.55,
-        "channel_list": [
-          "activist_13d",
-          "gov_contract",
-          "material_8k"
-        ],
-        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract: $211,758,926 awarded \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 8.01)"
-      },
-      {
         "ticker": "GSK",
         "score": 3,
         "weighted_score": 1.55,
@@ -47251,6 +47240,16 @@
           "special_situation"
         ],
         "why": "gov_contract_accel: $21,010,884, 67.7x accel \u00b7 special_situation: Restructuring"
+      },
+      {
+        "ticker": "SPGI",
+        "score": 2,
+        "weighted_score": 1.2,
+        "channel_list": [
+          "congress_cluster",
+          "special_situation"
+        ],
+        "why": "congress_cluster: 3 members net +7 \u00b7 special_situation: Acquisitions"
       },
       {
         "ticker": "COP",
