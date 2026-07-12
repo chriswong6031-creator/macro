@@ -1,0 +1,35 @@
+name: key-pool-probe
+# Operator diagnostics: verify each CLAUDE_CODE_OAUTH_TOKEN_1/2/3 (+ legacy)
+# secret actually authenticates, with one minimal (max_tokens=1) API call per
+# present key. Run after setting/rotating keys (arming checklist Act 1).
+#
+# Deliberately NOT gated on AUTONOMY_PAUSED: this is a read-only credential
+# health check, not a loop stage — it authors nothing, writes nothing, and
+# never prints a token value (all credential handling stays inside
+# engine/llm_auth, the sanctioned boundary). A red run = at least one PRESENT
+# key is failing (absent keys don't fail the probe — the pool degrades
+# gracefully by design).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install --quiet anthropic pyyaml
+      - name: probe each key (1-token call; names only, never values)
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: python -m scripts.key_pool_probe
