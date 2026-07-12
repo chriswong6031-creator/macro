@@ -606,11 +606,20 @@ def fda_events(approval_days: int = 45, label_days: int = 120, top: int = 25) ->
 
 
 # --------------------------------------------------------------------------- material 8-K
+# The LHB-R7 expansion widened collection to 12 item codes for long-hold consumers, but
+# this channel feeds material_8k convergence (altdata_models) and intel_discovery's
+# _LEADING_CHANNELS scoring — its firing bar must not shift from a data-lane change, so
+# it stays pinned to the original six. Must equal collectors/edgar_8k.LEGACY_VELOCITY_ITEMS
+# (sync-guarded in tests/test_edgar_8k_items.py). Widening this set = a deliberate
+# signal-change PR with its own review, never a side effect.
+_LEGACY_8K_ITEMS = frozenset({"1.01", "2.01", "2.03", "5.02", "7.01", "8.01"})
+
+
 def material_events(window_days: int = 30, top: int = 25) -> list[dict]:
     """Per-ticker count of MATERIAL 8-K filings in the last `window_days` (collectors/edgar_8k.py
     -> data/edgar/material_8k_events.parquet). A cluster (>=2) = a burst of filing-time
     corporate activity (material agreements / acquisitions / financings / leadership) the tape
-    may not have fully digested."""
+    may not have fully digested. Counts are pinned to _LEGACY_8K_ITEMS — see above."""
     p = config.data_dir() / "edgar" / "material_8k_events.parquet"
     if not p.exists():
         return []
@@ -632,9 +641,19 @@ def material_events(window_days: int = 30, top: int = 25) -> list[dict]:
     d = d[d["date"] >= _now() - pd.Timedelta(days=window_days)]
     if d.empty:
         return []
+    # Row-level legacy pin: an 8-K whose items are all expansion-only codes does not count.
+    legacy_mask = d["items"].map(
+        lambda blob: bool(set(str(blob or "").split(",")) & _LEGACY_8K_ITEMS)
+    )
+    d = d[legacy_mask]
+    if d.empty:
+        return []
     rows = []
     for tk, g in d.groupby("ticker"):
-        items = sorted({c for blob in g["items"].dropna() for c in str(blob).split(",") if c})
+        items = sorted(
+            {c for blob in g["items"].dropna() for c in str(blob).split(",") if c}
+            & _LEGACY_8K_ITEMS
+        )
         rows.append({"ticker": tk, "count": int(len(g)), "items": ", ".join(items[:6])})
     rows.sort(key=lambda r: r["count"], reverse=True)
     return rows[:top]
