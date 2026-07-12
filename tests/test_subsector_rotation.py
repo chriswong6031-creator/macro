@@ -98,3 +98,24 @@ def test_breadth_floor_excludes_thin_subsectors():
             "c1": dict(fading), "c2": dict(fading)}
     em = sr.compute_rotation(tree, perf)["highlights"]["emerging"]
     assert "broad" in em and "thin" not in em
+
+
+# ── Rotation Command RC-R4: synthetic-node perf feed ─────────────────────────
+
+def test_perf_from_close_horizons():
+    import pandas as pd
+    idx = pd.bdate_range("2024-01-02", periods=400)
+    s = pd.Series([100.0 * (1.001 ** k) for k in range(400)], index=idx)
+    out = sr.perf_from_close(s)
+    assert out is not None
+    assert set(out) == {"1D", "1W", "1M", "MTD", "3M", "6M", "1Y", "YTD"}
+    assert abs(out["1D"] - 0.1) < 0.02          # +0.1%/session drift
+    assert abs(out["1W"] - 0.5) < 0.1
+    assert out["1Y"] > 20.0                     # ≈ +28.5% over 252 sessions
+    assert out["YTD"] is not None and out["MTD"] is not None
+
+
+def test_perf_from_close_thin_series_none():
+    import pandas as pd
+    idx = pd.bdate_range("2026-01-02", periods=100)
+    assert sr.perf_from_close(pd.Series(100.0, index=idx)) is None

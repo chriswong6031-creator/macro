@@ -2946,3 +2946,4 @@
 {"date":"2026-07-12","key":"energycleanhydrogen","name":"Hydrogen","theme":"Energy Renewable","score":-4.073,"rs_mom":-2.43,"accel":-10.29,"quadrant":"lagging","stage":"neutral","lean":0,"members":["PLUG","BE","APD","FCEL","BLDP","LIN","GTLS","HTOO","CMI"]}
 {"date":"2026-07-12","key":"spaceinfrastructure","name":"Infrastructure","theme":"Space Tech","score":-4.816,"rs_mom":-2.993,"accel":-10.6,"quadrant":"lagging","stage":"neutral","lean":0,"members":["LUNR","RDW","RKLB","SPCE","BA"]}
 {"date":"2026-07-12","key":"spacedataanalytics","name":"Data Analytics","theme":"Space Tech","score":-5.059,"rs_mom":-2.724,"accel":-12.264,"quadrant":"lagging","stage":"neutral","lean":0,"members":["PL","BKSY","SPIR","RDW","RKLB","LDOS"]}
+{"date":"2026-07-12","key":"megacapgenerals","name":"Mag 7 Generals","theme":"Mega-Cap","score":1.586,"rs_mom":0.865,"accel":2.985,"quadrant":"leading","stage":"neutral","lean":0,"members":["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA"]}
