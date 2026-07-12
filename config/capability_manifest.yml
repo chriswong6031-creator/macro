@@ -86,6 +86,7 @@ capabilities:
       - metabolism-adjudicate
       - metabolism-build
       - metabolism-dream
+      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
     allowed_tiers:
       - T0
       - T1
@@ -112,6 +113,7 @@ capabilities:
       - metabolism-adjudicate
       - metabolism-build
       - metabolism-dream
+      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
     allowed_tiers:
       - T0
       - T1
@@ -136,6 +138,7 @@ capabilities:
       - metabolism-adjudicate
       - metabolism-build
       - metabolism-dream
+      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
     allowed_tiers:
       - T0
       - T1
