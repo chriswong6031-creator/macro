@@ -1912,7 +1912,7 @@ class TestRateLimitResilience:
     # Provider-order tests (metered-key-first hardening)
     # ------------------------------------------------------------------
 
-    def test_provider_order_unchanged_without_metered_key(self, repo, monkeypatch):
+    def test_provider_order_unchanged_without_metered_key(self, monkeypatch):
         """Without CORTEX_ANTHROPIC_API_KEY, provider_order must NOT be injected."""
         from engine.neuralweb.cortex import _build_providers, _CORTEX_API_KEY_ENV
 
@@ -1932,7 +1932,7 @@ class TestRateLimitResilience:
             f"got {seen.get('provider_order')!r}"
         )
 
-    def test_provider_order_anthropic_first_with_metered_key(self, repo, monkeypatch):
+    def test_provider_order_anthropic_first_with_metered_key(self, monkeypatch):
         """With CORTEX_ANTHROPIC_API_KEY set, anthropic must be first in provider_order."""
         from engine.neuralweb.cortex import _build_providers, _CORTEX_API_KEY_ENV
 
@@ -1955,7 +1955,7 @@ class TestRateLimitResilience:
         )
         assert "oauth" in order, f"oauth must still be present as fallback; got {order!r}"
 
-    def test_explicit_cfg_provider_order_not_clobbered(self, repo, monkeypatch):
+    def test_explicit_cfg_provider_order_not_clobbered(self, monkeypatch):
         """An explicit provider_order in cfg (from config.yml) must not be overridden."""
         from engine.neuralweb.cortex import _build_providers, _CORTEX_API_KEY_ENV
 
