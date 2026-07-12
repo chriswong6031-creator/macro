@@ -963,6 +963,15 @@ def grade() -> dict:
             "by_archetype":    _slice_table(g, "archetype"),
         }
     out["n_graded"] = max((v.get("n", 0) for v in out["by_horizon"].values()), default=0)
+    # F7: expose the 21d fwd_excess map so callers (build_china_library → run_attribution)
+    # can avoid re-opening per-ticker price stores.  Built from the same _fwd_excess calls
+    # already executed above.  Key = (ticker_str, date_str), value = excess float or None.
+    # Only the 21d horizon is needed by china_standout_audit (primary grading horizon).
+    fwd_excess_map_21d: dict = {}
+    for _i, row in df.iterrows():
+        ex, _ = _fwd_excess(row["ticker"], pd.Timestamp(row["date"]), 21, bench)
+        fwd_excess_map_21d[(str(row["ticker"]), str(row["date"]))] = ex
+    out["fwd_excess_map_21d"] = fwd_excess_map_21d
     return out
 
 

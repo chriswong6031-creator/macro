@@ -2011,17 +2011,19 @@ def main(alpha: dict | None = None) -> dict | None:
                 "partial_session": bool(_sess.get("partial_session")),
                 "session_note": _sess.get("reason"), "lane": _lane,
             }
-            _bn = china_standout_track.append_board(wide["buy"], asof=as_of, lane=_lane)
-            # SA-W2: append today's CN regime row to the PIT daily store (fail-closed: asia lane only).
-            # Must run AFTER build_china.py has produced regime_history.parquet for today.
-            # Placed here because: (a) the CN_LANE gate is already confirmed above, (b) this is the
-            # only commit-writing step in the lane, (c) [timing] tick below measures the impact.
+            # SA-W2 F1 FIX: append today's CN regime row BEFORE append_board so that
+            # append_board's get_regime_for_date(today) call finds the row.  The regime
+            # store is keep-first, so calling append first is the only way the SAME-DAY
+            # board row carries a non-null own_market_regime.  Depends on
+            # regime_history.parquet already being written by china_run.py earlier in
+            # this lane — that dependency is unchanged.
             try:
                 from engine import china_regime_store as _cn_rs  # noqa: PLC0415
                 _rstore_ok = _cn_rs.append(asof=str(as_of))
                 log.info("[timing] cn_regime_store.append (%s)", "OK" if _rstore_ok else "skip/fail")
             except Exception as _rs_e:  # noqa: BLE001 — SA-R16: never suppress grade()
                 log.warning("china_regime_store.append failed (%s) — board track continues", _rs_e)
+            _bn = china_standout_track.append_board(wide["buy"], asof=as_of, lane=_lane)
             _bt = china_standout_track.grade()
             if _bt.get("available"):
                 # Interim (unrealized) mark-to-latest-close read — shown while the forward ledger
@@ -2039,12 +2041,17 @@ def main(alpha: dict | None = None) -> dict | None:
                      wide["coverage"]["partial_session"])
             # SA-W2: CN two-axis attribution + fitness card (fail-closed: asia lane only; SA-R16).
             # Reads the committed board.parquet + bench close; never raises; never suppresses grade().
+            # F7: pass fwd_excess_map_21d from grade() to avoid re-opening per-ticker price stores.
             # [timing] tick after this block measures runtime impact on the asia lane.
             try:
                 from engine import china_standout_audit as _cn_audit  # noqa: PLC0415
                 from engine.china_standout_track import _bench_close as _cn_bench  # noqa: PLC0415,SLF001
                 _bench = _cn_bench()
-                _audit_result = _cn_audit.run_attribution(bench_close=_bench, lane=_lane)
+                # F7: thread the pre-computed map (grade() already opened these stores)
+                _fwd_map = _bt.get("fwd_excess_map_21d") if isinstance(_bt, dict) else None
+                _audit_result = _cn_audit.run_attribution(
+                    bench_close=_bench, lane=_lane, fwd_excess_map=_fwd_map,
+                )
                 log.info("china standout attribution: %s", _audit_result)
             except Exception as _audit_e:  # noqa: BLE001 — SA-R16: attribution never fatal
                 log.warning("china standout attribution failed (%s) — grade output unaffected", _audit_e)

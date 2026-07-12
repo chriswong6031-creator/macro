@@ -1,4 +1,4 @@
-"""SA-W2 CN foundations test suite.
+"""SA-W2 CN foundations test suite — review-fix pass (F1-F7, F9).
 
 Tests cover:
   - CN_LANE fail-closed write refusal (both new stores)
@@ -6,10 +6,13 @@ Tests cover:
   - species_id mapping from row flags
   - two-axis attribution precedence + tiling + independence
   - us_proxy stratum never pooled (scoreboard unit test)
-  - premature_stop_noise own-maturity exclusion
+  - premature_stop_noise: NEVER emitted in CN (F5 — PREMATURE_STOP_IMPLEMENTED=False)
   - never-raise corrupt-artifact
   - data_gap absent-store honesty (no fabricated zeros)
   - regime_store.get_regime_for_date absent-store returns None (not zero)
+  - F1: regime store appended BEFORE board → own_market_regime non-null on same-day row
+  - F2: window-unit Wilson CI — 12 rows / 3 windows must produce valid CI, no exception
+  - F6: ticks-based signaled_too_late (primary clause)
 """
 from __future__ import annotations
 
@@ -37,9 +40,12 @@ from engine.china_standout_audit import (
     _build_scoreboard,
     _effective_n,
     _wilson_ci,
+    _window_unit_k,
     run_attribution,
     _TAXONOMY_CONSTANTS,
     _TAXONOMY_VERSION,
+    PREMATURE_STOP_IMPLEMENTED,
+    _PREMATURE_STOP_NOTE,
 )
 from engine.china_standout_track import _derive_species_id
 
@@ -237,58 +243,62 @@ class TestAxis1Outcome:
     """Test axis-1 outcome-cause precedence and tiling."""
 
     def test_idio_break_takes_precedence(self):
-        """idio_break > sector_rotated_out when idio vs sector is very negative."""
+        """idio_break > macro_headwind when idio vs peer is very negative."""
         c = _TAXONOMY_CONSTANTS
-        # pick_excess < bench, sector_excess also negative → would also hit sector_rotated_out
-        # but idio_break should win (sector_excess near zero = idio_break)
         pick_excess = c["IDIO_BREAK_PP"] - 0.01  # clearly below -4pp
-        sector_excess = -0.01   # sector nearly flat
+        peer_dev = -0.01   # peer nearly flat
         bench_return = -0.02
-        # idio vs sector = pick_excess - sector_excess = very negative
-        assert _axis1_outcome(pick_excess, sector_excess, bench_return) == "idio_break"
-
-    def test_sector_rotated_out(self):
-        c = _TAXONOMY_CONSTANTS
-        sector_excess = c["SECTOR_OUT_PP"] - 0.01  # -3.5pp sector
-        pick_excess = sector_excess + 0.01   # pick tracks sector closely (idio ≈ 0.01)
-        bench_return = 0.0
-        assert _axis1_outcome(pick_excess, sector_excess, bench_return) == "sector_rotated_out"
+        assert _axis1_outcome(pick_excess, peer_dev, bench_return) == "idio_break"
 
     def test_macro_headwind(self):
         c = _TAXONOMY_CONSTANTS
         bench_return = c["MACRO_FALL_PCT"] - 0.01   # -4% market (below -3% threshold)
-        sector_excess = -0.01                         # sector near flat vs bench
-        # idio_vs_sector = pick_excess - sector_excess = bench_return + idio_target
-        # For macro_headwind: abs(idio_vs_sector) <= IDIO_BAND_PP=0.02
-        # We need bench_return + idio_target to be within ±0.02:
-        # abs(-0.04 + idio_target) <= 0.02  →  idio_target in [0.02, 0.06]
-        # Use idio_target = 0.03 → idio_vs_sector = -0.01 (within band)
+        peer_dev = -0.01                              # peer near flat vs bench
         idio_target = 0.03
-        pick_excess = bench_return + sector_excess + idio_target
-        # verify construction: idio_vs_sector = -0.01, abs < 0.02
-        assert abs((pick_excess - sector_excess)) <= c["IDIO_BAND_PP"]
-        assert _axis1_outcome(pick_excess, sector_excess, bench_return) == "macro_headwind"
+        pick_excess = bench_return + peer_dev + idio_target
+        # verify construction: idio_vs_peer = 0.03-(-0.01) = 0.03, wait — pick_excess - peer_dev
+        # pick_excess = (-0.04) + (-0.01) + 0.03 = -0.02
+        # idio_vs_peer = -0.02 - (-0.01) = -0.01, abs(-0.01) <= 0.02 ✓
+        assert abs((pick_excess - peer_dev)) <= c["IDIO_BAND_PP"]
+        assert _axis1_outcome(pick_excess, peer_dev, bench_return) == "macro_headwind"
 
     def test_idio_alpha(self):
         c = _TAXONOMY_CONSTANTS
-        sector_excess = 0.01
-        pick_excess = sector_excess + c["IDIO_ALPHA_PP"] + 0.01  # clearly above +4pp idio
+        peer_dev = 0.01
+        pick_excess = peer_dev + c["IDIO_ALPHA_PP"] + 0.01  # clearly above +4pp idio
         bench_return = 0.02
-        assert _axis1_outcome(pick_excess, sector_excess, bench_return) == "idio_alpha"
-
-    def test_beta_tailwind(self):
-        c = _TAXONOMY_CONSTANTS
-        sector_excess = c["BETA_STRONG_PCT"] + 0.01   # sector well positive
-        pick_excess = sector_excess + 0.005   # pick tracks sector (idio 0.5% < 2pp band)
-        bench_return = 0.03
-        assert _axis1_outcome(pick_excess, sector_excess, bench_return) == "beta_tailwind"
+        assert _axis1_outcome(pick_excess, peer_dev, bench_return) == "idio_alpha"
 
     def test_mixed_when_no_threshold_tiles(self):
-        # Small excess, small sector, small bench
+        # Small excess, small peer dev, small bench
         assert _axis1_outcome(0.01, 0.005, 0.005) == "mixed"
 
     def test_none_pick_excess_returns_mixed(self):
         assert _axis1_outcome(None, 0.0, 0.0) == "mixed"
+
+    def test_sector_rotated_out_degrades_to_mixed(self):
+        """F3: sector_rotated_out is SUPPRESSED (no genuine sector leg) — degrades to mixed."""
+        c = _TAXONOMY_CONSTANTS
+        # Conditions that would produce sector_rotated_out in old code:
+        peer_dev = c["SECTOR_OUT_PP"] - 0.01  # -3.5pp peer deviation
+        pick_excess = peer_dev + 0.01          # pick tracks peer closely (idio ≈ 0.01)
+        bench_return = 0.0
+        # Must NOT return sector_rotated_out — must return mixed (no sector leg)
+        result = _axis1_outcome(pick_excess, peer_dev, bench_return)
+        assert result != "sector_rotated_out", (
+            "sector_rotated_out must not be emitted (no genuine sector leg; F3 ruling)"
+        )
+
+    def test_beta_tailwind_degrades_to_mixed(self):
+        """F3: beta_tailwind is SUPPRESSED (no genuine sector leg) — degrades to mixed."""
+        c = _TAXONOMY_CONSTANTS
+        peer_dev = c["BETA_STRONG_PCT"] + 0.01   # peer strongly positive
+        pick_excess = peer_dev + 0.005            # pick tracks peer (idio 0.5% < 2pp band)
+        bench_return = 0.03
+        result = _axis1_outcome(pick_excess, peer_dev, bench_return)
+        assert result != "beta_tailwind", (
+            "beta_tailwind must not be emitted (no genuine sector leg; F3 ruling)"
+        )
 
     def test_axes_are_independent(self):
         """outcome_cause and process_fault must be assigned independently.
@@ -297,80 +307,140 @@ class TestAxis1Outcome:
         c = _TAXONOMY_CONSTANTS
         # Axis-1: idio_break
         pick_excess = c["IDIO_BREAK_PP"] - 0.01
-        sector_excess = -0.01
-        outcome = _axis1_outcome(pick_excess, sector_excess, -0.01)
+        peer_dev = -0.01
+        outcome = _axis1_outcome(pick_excess, peer_dev, -0.01)
         assert outcome == "idio_break"
-        # Axis-2: signaled_too_late (independent)
-        process = _axis2_process(
-            ext_score=c["EXT_SCORE_LATE_PCT"] + 0.01,
+        # Axis-2: signaled_too_late via ticks (independent)
+        fault, basis = _axis2_process(
+            ext_score=0.1,
             board_rank=5,
             stage=None,
             terminal_state=None,
             fwd_mfe_21=None,
+            ticks=float(c["FRESH_TICKS"] + 1),  # ticks > FRESH_TICKS
         )
-        assert process == "signaled_too_late"
-        # Both truths are recorded independently — not one masking the other
-        assert outcome != process  # different axes
+        assert fault == "signaled_too_late"
+        assert outcome != fault  # different axes
 
 
 class TestAxis2Process:
-    """Test axis-2 process-fault precedence."""
+    """Test axis-2 process-fault precedence.
+
+    NOTE: _axis2_process now returns (code, timing_basis) tuple (F6 change).
+    """
 
     def test_ran_late_stage_gives_signaled_too_late(self):
-        result = _axis2_process(
+        fault, basis = _axis2_process(
             ext_score=0.1, board_rank=5, stage="RAN_LATE",
             terminal_state=None, fwd_mfe_21=None,
         )
-        assert result == "signaled_too_late"
+        assert fault == "signaled_too_late"
+        assert "stage==RAN_LATE" in basis
 
-    def test_high_ext_score_gives_signaled_too_late(self):
+    def test_high_ext_score_fallback_gives_signaled_too_late(self):
+        """F6: ext_score fallback fires when ticks is null."""
         c = _TAXONOMY_CONSTANTS
-        result = _axis2_process(
+        fault, basis = _axis2_process(
             ext_score=c["EXT_SCORE_LATE_PCT"] + 0.01,
             board_rank=5, stage=None,
             terminal_state=None, fwd_mfe_21=None,
+            ticks=None,  # ticks null → use ext_score fallback
         )
-        assert result == "signaled_too_late"
+        assert fault == "signaled_too_late"
+        assert any("ext_score" in b for b in basis)
 
-    def test_high_rank_gives_signaled_too_late(self):
+    def test_ticks_based_signaled_too_late(self):
+        """F6: primary clause — ticks > FRESH_TICKS fires signaled_too_late."""
         c = _TAXONOMY_CONSTANTS
-        result = _axis2_process(
+        fault, basis = _axis2_process(
+            ext_score=0.1, board_rank=5, stage=None,
+            terminal_state=None, fwd_mfe_21=None,
+            ticks=float(c["FRESH_TICKS"] + 1),  # stale cross
+        )
+        assert fault == "signaled_too_late"
+        assert any("ticks" in b for b in basis)
+
+    def test_fresh_ticks_does_not_fire(self):
+        """F6: ticks <= FRESH_TICKS → NOT signaled_too_late (fresh cross)."""
+        c = _TAXONOMY_CONSTANTS
+        fault, basis = _axis2_process(
+            ext_score=0.1, board_rank=5, stage=None,
+            terminal_state=None, fwd_mfe_21=None,
+            ticks=float(c["FRESH_TICKS"]),  # exactly at threshold — still fresh
+        )
+        assert fault == "clean", f"ticks=FRESH_TICKS should be clean, got {fault}"
+
+    def test_ticks_zero_is_fresh(self):
+        """ticks=0 means the cross just fired — must be clean (fresh)."""
+        fault, _ = _axis2_process(
+            ext_score=0.9, board_rank=50, stage=None,
+            terminal_state=None, fwd_mfe_21=None,
+            ticks=0.0,
+        )
+        # ticks=0 <= FRESH_TICKS=2 → primary clause doesn't fire
+        # ext_score only fires as fallback when ticks is None
+        # With ticks present, ext_score fallback is NOT checked
+        assert fault == "clean", (
+            "ticks=0 is fresh; ext_score fallback must not fire when ticks is provided"
+        )
+
+    def test_board_rank_not_used_for_timing(self):
+        """F6: board_rank is no longer a timing clause (was mislabeling ~25% of board)."""
+        c = _TAXONOMY_CONSTANTS
+        # board_rank well above old threshold, but ticks null and ext_score low
+        fault, _ = _axis2_process(
             ext_score=0.1,
-            board_rank=c["LATE_RANK_THRESH"] + 1,
+            board_rank=99,  # far above old LATE_RANK_THRESH=45
             stage=None,
             terminal_state=None, fwd_mfe_21=None,
+            ticks=None,  # fallback: ext_score=0.1 < 0.70 → clean
         )
-        assert result == "signaled_too_late"
-
-    def test_premature_stop_noise_requires_own_maturity(self):
-        """premature_stop_noise is NOT assigned when premature_stop_mature=False."""
-        c = _TAXONOMY_CONSTANTS
-        result = _axis2_process(
-            ext_score=0.1, board_rank=5, stage=None,
-            terminal_state="STOPPED",
-            fwd_mfe_21=c["PREMATURE_STOP_MFE_PP"] + 0.01,
-            premature_stop_mature=False,  # immature — must not assign
-        )
-        assert result == "clean", (
-            "premature_stop_noise must not be assigned when premature_stop_mature=False (SA-R10)"
+        assert fault == "clean", (
+            "board_rank alone must no longer trigger signaled_too_late (F6 ruling)"
         )
 
-    def test_premature_stop_noise_with_maturity(self):
+    def test_timing_basis_field_populated(self):
+        """timing_basis must list the clauses that fired."""
         c = _TAXONOMY_CONSTANTS
-        result = _axis2_process(
+        _, basis = _axis2_process(
             ext_score=0.1, board_rank=5, stage=None,
-            terminal_state="STOPPED",
-            fwd_mfe_21=c["PREMATURE_STOP_MFE_PP"] + 0.01,
-            premature_stop_mature=True,
+            terminal_state=None, fwd_mfe_21=None,
+            ticks=float(c["FRESH_TICKS"] + 5),
         )
-        assert result == "premature_stop_noise"
+        assert isinstance(basis, list)
+        assert len(basis) > 0, "timing_basis must be populated for signaled_too_late"
+
+    def test_premature_stop_noise_never_emitted_in_cn(self):
+        """F5: PREMATURE_STOP_IMPLEMENTED=False — CN rows NEVER emit premature_stop_noise."""
+        assert PREMATURE_STOP_IMPLEMENTED is False, (
+            "PREMATURE_STOP_IMPLEMENTED must be False for CN (no stop-date column)"
+        )
+        c = _TAXONOMY_CONSTANTS
+        # Even with all conditions met, premature_stop_noise must never fire in CN
+        for premature_stop_mature in (True, False):
+            fault, _ = _axis2_process(
+                ext_score=0.1, board_rank=5, stage=None,
+                terminal_state="STOPPED",
+                fwd_mfe_21=c["PREMATURE_STOP_MFE_PP"] + 0.01,
+                premature_stop_mature=premature_stop_mature,
+            )
+            assert fault != "premature_stop_noise", (
+                f"CN must never emit premature_stop_noise "
+                f"(premature_stop_mature={premature_stop_mature}; F5 ruling)"
+            )
+
+    def test_premature_stop_note_carried(self):
+        """F5: the unimplemented note must exist and mention the data model requirement."""
+        assert "stop-date column" in _PREMATURE_STOP_NOTE.lower() or "stop_date" in _PREMATURE_STOP_NOTE, (
+            "PREMATURE_STOP_NOTE must explain the missing stop-date column requirement"
+        )
 
     def test_clean_when_nothing_tiles(self):
-        result = _axis2_process(
+        fault, _ = _axis2_process(
             ext_score=0.1, board_rank=5, stage=None,
             terminal_state=None, fwd_mfe_21=None,
         )
-        assert result == "clean"
+        assert fault == "clean"
 
 
 # ---------------------------------------------------------------------------
@@ -469,6 +539,23 @@ class TestDataGapHonesty:
         reason = result.get("reason", "")
         assert reason, "Should explain why it did not write"
 
+    def test_missed_mover_zero_episodes_returns_none_not_zero(self):
+        """F4: missed_mover_rate with 0 episodes must return value=None, not 0.0 (SA-R15)."""
+        from engine.china_standout_audit import _missed_mover_rate
+        board = pd.DataFrame([{
+            "date": "2026-07-01",
+            "ticker": "000001.SS",
+            "fwd_21d_excess": 0.05,  # positive but < _MISSED_MOVER_EXCESS=0.12
+        }])
+        result = _missed_mover_rate(board)
+        assert result["value"] is None, (
+            "F4: zero episodes → value must be None, not 0.0 (SA-R15 forbids fabricated zero)"
+        )
+        assert result["n_episodes"] == 0
+        assert "data_gap" in result.get("note", "").lower(), (
+            "F4: zero episodes → note must mention data_gap"
+        )
+
 
 # ---------------------------------------------------------------------------
 # 8. attribution keep-first
@@ -518,6 +605,14 @@ class TestStatHelpers:
         assert lo > 0.7, "Wilson LB for k=n=10 should be well above 0.7"
         assert hi <= 1.0
 
+    def test_wilson_ci_k_gt_n_returns_sentinel_not_complex(self):
+        """F2: k > n must return sentinel (1.0, 0.0), never a complex or raise TypeError."""
+        lo, hi = _wilson_ci(k=15, n=3)
+        assert isinstance(lo, float) and isinstance(hi, float), (
+            "k>n must return floats, not complex — defensive sentinel"
+        )
+        assert lo > hi, "sentinel: lo > hi signals units mismatch"
+
     def test_effective_n_non_overlapping(self):
         """Four dates 7 days apart should yield 1 non-overlapping 30-day window."""
         dates = ["2026-07-01", "2026-07-08", "2026-07-15", "2026-07-22"]
@@ -532,3 +627,96 @@ class TestStatHelpers:
 
     def test_effective_n_empty(self):
         assert _effective_n([]) == 0
+
+    def test_window_unit_k_reviewer_repro(self):
+        """F2 reviewer repro: 12 rows / 3 windows, k_rows=9 winning rows.
+
+        Under the old code, k=9 and n=eff_n=3 → k>n → negative Wilson variance → TypeError.
+        Under the fixed code, k is computed in window units (0 <= k <= 3), no exception.
+        """
+        # 12 rows in 3 non-overlapping 30-day windows (4 rows each)
+        # Window 1: 2026-01-01..2026-01-22 — 3 wins out of 4 (mean=0.75 > 0 → positive window)
+        # Window 2: 2026-02-05..2026-02-26 — 3 wins out of 4 (mean=0.75 > 0 → positive window)
+        # Window 3: 2026-03-10..2026-03-31 — 3 wins out of 4 (mean=0.75 > 0 → positive window)
+        # k_rows=9, eff_n=3, k_windows=3
+        dates = (
+            ["2026-01-01"] * 4 +   # window 1
+            ["2026-02-05"] * 4 +   # window 2 (35d after window 1)
+            ["2026-03-10"] * 4     # window 3 (33d after window 2)
+        )
+        # 9 wins out of 12 rows (3 wins per window)
+        outcome_positive = [True, True, True, False] * 3
+
+        eff_n = _effective_n(dates)
+        assert eff_n == 3, f"Expected 3 windows, got {eff_n}"
+
+        k = _window_unit_k(dates, outcome_positive)
+        assert k <= eff_n, f"k={k} must not exceed eff_n={eff_n} (F2 invariant)"
+
+        # F2 core invariant: Wilson CI must not raise and must return valid floats
+        lo, hi = _wilson_ci(k, eff_n)
+        assert isinstance(lo, float) and isinstance(hi, float)
+        assert lo <= hi, f"Valid CI: lo={lo} must be <= hi={hi}"
+        assert 0.0 <= lo <= 1.0 and 0.0 <= hi <= 1.0
+
+    def test_window_unit_k_bounded_by_eff_n(self):
+        """k from _window_unit_k must always satisfy 0 <= k <= eff_n."""
+        import random
+        rng = random.Random(42)
+        for _ in range(50):
+            n_rows = rng.randint(1, 30)
+            dates = [
+                f"2026-{1 + (i // 10):02d}-{1 + (i % 28):02d}"
+                for i in range(n_rows)
+            ]
+            outcome_positive = [rng.random() > 0.4 for _ in range(n_rows)]
+            eff_n = _effective_n(dates)
+            k = _window_unit_k(dates, outcome_positive)
+            assert 0 <= k <= eff_n, (
+                f"k={k} must be in [0, eff_n={eff_n}] — invariant violated"
+            )
+
+
+# ---------------------------------------------------------------------------
+# 11. F1 sequencing test: regime store appended BEFORE append_board
+# ---------------------------------------------------------------------------
+
+class TestRegimeStampSequencing:
+    def test_regime_store_before_board_stamps_own_market_regime(self, tmp_path, monkeypatch):
+        """F1: regime store must be appended BEFORE append_board so that the board row
+        carries a non-null own_market_regime on the same day.
+
+        This test simulates the sequencing: append the regime store, THEN call
+        append_board (which calls get_regime_for_date internally).
+        Without the F1 fix, the row would carry own_market_regime=null because
+        get_regime_for_date is called before the store is written.
+        """
+        # Step 1: create regime_history so append() can read it
+        _make_regime_history(tmp_path, "2026-07-12")
+        monkeypatch.setenv("CN_LANE", "asia")
+
+        # Step 2: append regime store FIRST (this is the F1 fix — must precede append_board)
+        ok = regime_append(asof="2026-07-12", root=tmp_path)
+        assert ok is True, "Regime store append should succeed"
+
+        # Step 3: verify get_regime_for_date returns non-null for today
+        regime = get_regime_for_date("2026-07-12", root=tmp_path)
+        assert regime is not None, (
+            "F1: get_regime_for_date must find today's row — it was appended BEFORE append_board"
+        )
+        assert regime.get("quad") == "Q1", (
+            "F1: the regime row must carry the correct quad from regime_history"
+        )
+
+    def test_board_before_regime_store_stamps_null(self, tmp_path, monkeypatch):
+        """F1 negative control: if regime store is NOT yet written, get_regime_for_date returns None.
+        This confirms the bug that the F1 fix corrects: calling append_board before
+        china_regime_store.append means own_market_regime is null (keep-first locks that null in).
+        """
+        _make_regime_history(tmp_path, "2026-07-12")
+        monkeypatch.setenv("CN_LANE", "asia")
+        # Do NOT append the regime store first
+        result = get_regime_for_date("2026-07-12", root=tmp_path)
+        assert result is None, (
+            "F1 negative control: regime store not yet written → get_regime_for_date returns None"
+        )

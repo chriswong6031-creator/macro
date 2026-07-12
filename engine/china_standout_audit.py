@@ -13,28 +13,40 @@ suppresses the existing grade() call it rides beside (SA-R16).
 
 TAXONOMY v2 (SA-R2 — loop-IMMUTABLE):
   Axis 1 (outcome cause):
-    idio_break         excess vs own sector <= IDIO_BREAK_PP
-    sector_rotated_out sector excess vs benchmark <= SECTOR_OUT_PP
-                       AND pick idio within ±IDIO_BAND_PP of sector
-    macro_headwind     benchmark <= MACRO_FALL_PCT over horizon
-                       AND pick idio within ±IDIO_BAND_PP of sector
-    idio_alpha         excess vs own sector >= IDIO_ALPHA_PP
-    beta_tailwind      pick positive, idio within ±IDIO_BAND_PP, sector/mkt strongly positive
-    mixed              residual (nothing tiles)
+    idio_break              excess vs peer_board_deviation <= IDIO_BREAK_PP
+    peer_board_deviation    (secondary context flag — within-board relative strength vs
+                             same-tier peers; honest name: NOT a sector proxy)
+    sector_rotated_out      DEGRADED: 'mixed' with note 'no_sector_leg' until a genuine
+                             industry/sector grouping column is available in the ledger.
+                             Peer-board deviation is self-referential by construction and
+                             cannot detect sector rotation (F3 adjudicated ruling).
+    macro_headwind          benchmark <= MACRO_FALL_PCT over horizon
+                             AND pick idio within ±IDIO_BAND_PP of peer deviation
+    idio_alpha              excess vs peer deviation >= IDIO_ALPHA_PP
+    beta_tailwind           DEGRADED: 'mixed' with note 'no_sector_leg' — same rationale
+                             as sector_rotated_out (no genuine sector proxy available).
+    mixed                   residual (nothing tiles)
 
-  Precedence (failure): idio_break > sector_rotated_out > macro_headwind
-  Precedence (success): idio_alpha > beta_tailwind
+  Precedence (failure): idio_break > macro_headwind
+  Precedence (success): idio_alpha
 
   Axis 2 (process fault):
-    signaled_too_late  ext_score >= EXT_SCORE_LATE_PCT or board_rank > LATE_RANK_THRESH
-                       or stage == 'RAN_LATE'
-    gate_suppressed    near-miss not implemented yet — degrades to clean
-    premature_stop_noise  terminal_state stopped AND fwd_mfe_21 >= PREMATURE_STOP_MFE_PP
-                          (requires own maturity stamp: +21 post-stop sessions — SA-R10)
-    data_fault         staleness flags at entry (not yet available in CN ledger — data_gap)
-    clean              default
+    signaled_too_late   ticks > FRESH_TICKS (confluence_tiers.FRESH_TICKS=2) when ticks
+                        is non-null; OR ext_score >= ext_score 85th-percentile threshold
+                        (EXT_SCORE_LATE_PCT=0.70 legacy fallback).  timing_basis field
+                        lists which clauses are live for each row.
+    gate_suppressed     near-miss not implemented yet — degrades to clean
+    premature_stop_noise  UNIMPLEMENTED — requires a stop-date column + post-stop window
+                          not derivable from the current ledger (PREMATURE_STOP_IMPLEMENTED=False).
+                          CN rows never emit this code.  The fitness card carries an
+                          'unimplemented' note for this axis-2 code.
+    data_fault          staleness flags at entry (not yet available in CN ledger — data_gap)
+    clean               default
 
 See SA-R2: thresholds in _TAXONOMY_CONSTANTS block; taxonomy_version='v2'.
+SA-W2 review fixes applied: F1 sequencing, F2 window-unit Wilson, F3 peer-board rename +
+honest sector degrade, F4 missed-mover None on zero episodes, F5 premature-stop stub,
+F6 ticks-based timing, F7 fwd_excess_map plumbing.
 """
 from __future__ import annotations
 
@@ -59,18 +71,53 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 _TAXONOMY_CONSTANTS = {
     # Axis-1 thresholds (pp = percentage points; fractions not %)
-    "IDIO_BREAK_PP":      -0.04,   # excess vs sector <= -4pp → idio_break
-    "IDIO_ALPHA_PP":      +0.04,   # excess vs sector >= +4pp → idio_alpha
-    "IDIO_BAND_PP":        0.02,   # ±2pp idio-within-sector band
-    "SECTOR_OUT_PP":      -0.025,  # sector vs benchmark <= -2.5pp → sector_rotated_out
+    "IDIO_BREAK_PP":      -0.04,   # excess vs peer_board_deviation <= -4pp → idio_break
+    "IDIO_ALPHA_PP":      +0.04,   # excess vs peer_board_deviation >= +4pp → idio_alpha
+    "IDIO_BAND_PP":        0.02,   # ±2pp idio-within-peer band
+    # F3: SECTOR_OUT_PP and BETA_STRONG_PCT are defined but NOT used for outcome assignment
+    # until a genuine industry/sector grouping column is available in the ledger.
+    # sector_rotated_out and beta_tailwind degrade to 'mixed' with note 'no_sector_leg'.
+    "SECTOR_OUT_PP":      -0.025,  # reserved — not used until sector_leg available
     "MACRO_FALL_PCT":     -0.03,   # benchmark return <= -3% → macro_headwind
-    "BETA_STRONG_PCT":    +0.02,   # sector/mkt >= +2% for beta_tailwind
+    "BETA_STRONG_PCT":    +0.02,   # reserved — not used until sector_leg available
     # Axis-2 thresholds
-    "EXT_SCORE_LATE_PCT":  0.70,   # ext_score >= 0.70 → signaled_too_late
-    "LATE_RANK_THRESH":    45,     # board_rank > 45 at first appearance → signaled_too_late
-    "PREMATURE_STOP_MFE_PP": 0.04, # fwd_mfe post-stop >= +4pp → premature_stop_noise
+    # F6: signaled_too_late is based on ticks > FRESH_TICKS (primary) or ext_score (fallback).
+    # FRESH_TICKS = 2 (from confluence_tiers; a cross is fresh only while <= 2 ticks old).
+    # EXT_SCORE_LATE_PCT is retained as a fallback for rows where ticks is null.
+    "FRESH_TICKS":         2,      # ticks > 2 on own TF → cross aged, signaled_too_late
+    "EXT_SCORE_LATE_PCT":  0.70,   # ext_score >= 0.70 → signaled_too_late (fallback when ticks null)
+    # F5: PREMATURE_STOP_IMPLEMENTED=False.  The ledger has no stop-date column, so there is no
+    # post-stop window to measure.  Detecting 'stopped AND peaked somewhere in the same 21-session
+    # entry window' is NOT the same construct.  This code is stubbed until a stop-date column exists.
+    "PREMATURE_STOP_MFE_PP": 0.04, # threshold reserved for future implementation
 }
 _TAXONOMY_VERSION = "v2"
+
+# F3: no genuine sector/industry grouping in the current ledger.
+# narr_theme is a basket display name, not an industry classification; it is 89% null.
+# tier is a rank-quality band (T1-T4), not a sector.
+# Until a real sector store lands, sector_rotated_out and beta_tailwind emit 'mixed'
+# with note 'no_sector_leg'.  peer_board_deviation (same-tier mean excess) is retained
+# as a secondary context flag (honest within-board relative strength), NOT as a sector proxy.
+_NO_SECTOR_LEG_NOTE = (
+    "no_sector_leg: sector_rotated_out/beta_tailwind require a genuine industry grouping "
+    "column (e.g. CITIC level-1 industry). narr_theme is 89% null and is a basket theme, "
+    "not an industry classification. tier is a rank-quality band, not a sector. "
+    "Degrades to mixed until a real sector store is joinable at append time."
+)
+
+# F5: premature_stop_noise is NOT implemented in the CN ledger.
+# Requires: stop-date column on the board row + post-stop return window.
+# fwd_mfe_21 and terminal_state_clean8_21 are measured over the SAME 21-session entry
+# window — detecting 'peaked somewhere AND ended stopped' is not the same as
+# 'stopped AND then recovered'.  This code will never fire until the data model changes.
+PREMATURE_STOP_IMPLEMENTED = False
+_PREMATURE_STOP_NOTE = (
+    "unimplemented: premature_stop_noise requires a stop-date column + post-stop window "
+    "not derivable from the current ledger (fwd_mfe_21 and terminal_state_clean8_21 share "
+    "the same 21-session entry window; no post-stop observation is possible). "
+    "PREMATURE_STOP_IMPLEMENTED=False. CN rows never emit this code."
+)
 
 # Maturity horizons
 _GRADE_HORIZON = 21   # primary tactical entry horizon (sessions)
@@ -140,8 +187,19 @@ def _board_path(root: Path | None = None) -> Path:
 # ---------------------------------------------------------------------------
 
 def _wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """Wilson score confidence interval.
+
+    F2 defensive guard: if k > n (units mismatch — e.g. row-count k vs window-count n)
+    this would produce a negative variance → complex sqrt → TypeError.  Clamp and return
+    an error sentinel (1.0, 0.0) so callers can detect the condition; never a complex.
+    """
     if n <= 0:
         return 0.0, 0.0
+    if k > n:
+        # Sentinel: upper < lower signals caller that the input units are inconsistent.
+        # This should never occur after the F2 window-unit collapse fix; retained as a
+        # belt-and-suspenders guard so the function never raises.
+        return 1.0, 0.0
     phat = k / n
     denom = 1 + z * z / n
     centre = (phat + z * z / (2 * n)) / denom
@@ -177,60 +235,112 @@ def _effective_n(dates: list[str]) -> int:
     return windows
 
 
+def _window_unit_k(dates: list[str], outcome_positive: list[bool]) -> int:
+    """SA-R10 F2 fix: collapse to window-level k for Wilson CI.
+
+    For each non-overlapping 30-day window, compute the entry-date-collapsed mean
+    excess positivity within that window.  k = number of windows where the mean
+    excess is positive (mean > 0 across all entries whose dates fall in that window).
+
+    This ensures k <= n (both are window counts) — _wilson_ci can never receive
+    k > n from this function.
+
+    dates: list of entry date strings (same length as outcome_positive)
+    outcome_positive: per-row bool (True if fwd_excess > 0)
+
+    Returns k (number of positive-mean windows) where 0 <= k <= _effective_n(dates).
+    """
+    if not dates:
+        return 0
+    pairs = list(zip(dates, outcome_positive))
+    # Group by date first (equal-weight across same-day entries)
+    date_means: dict[str, float] = {}
+    date_groups: dict[str, list[bool]] = {}
+    for d, pos in pairs:
+        d = str(d)
+        date_groups.setdefault(d, []).append(bool(pos))
+    for d, vals in date_groups.items():
+        date_means[d] = sum(vals) / len(vals)
+
+    # Bin unique dates into non-overlapping 30-day windows; for each window compute mean positivity
+    sorted_dates = sorted(date_means.keys())
+    if not sorted_dates:
+        return 0
+    ts_list = [(pd.Timestamp(d), date_means[d]) for d in sorted_dates]
+    k = 0
+    window_start: pd.Timestamp | None = None
+    window_vals: list[float] = []
+    for t, mean_pos in ts_list:
+        if window_start is None or (t - window_start).days >= 30:
+            # Close out prior window
+            if window_vals:
+                if sum(window_vals) / len(window_vals) > 0:
+                    k += 1
+                window_vals = []
+            window_start = t
+        window_vals.append(mean_pos)
+    # Close final window
+    if window_vals:
+        if sum(window_vals) / len(window_vals) > 0:
+            k += 1
+    return k
+
+
 # ---------------------------------------------------------------------------
 # Axis-1: outcome cause
 # ---------------------------------------------------------------------------
 
 def _axis1_outcome(
-    pick_excess: float | None,       # pick vs benchmark (CSI300)
-    sector_excess_vs_bench: float | None,  # sector vs benchmark
-    bench_return: float | None,      # benchmark return over horizon
+    pick_excess: float | None,              # pick vs benchmark (CSI300)
+    peer_deviation_vs_bench: float | None,  # F3: peer_board_deviation (same-tier mean), NOT sector
+    bench_return: float | None,             # benchmark return over horizon
 ) -> str:
     """Assign one outcome-cause code.
 
     pick_excess = pick_return - bench_return (already CSI300-relative)
-    sector_excess_vs_bench = mean sector peers' return - bench_return
+    peer_deviation_vs_bench = mean same-tier board peer excess vs benchmark (context only, not sector)
     bench_return = benchmark return over the grading horizon
 
+    F3 ADJUDICATED: sector_rotated_out and beta_tailwind are NOT assigned because no genuine
+    industry/sector grouping is available (peer_deviation_vs_bench is same-TIER board peers,
+    not a sector proxy — tier = rank-quality band, not industry).  Those branches degrade to
+    'mixed' with the no_sector_leg note.  The idio_break, macro_headwind, and idio_alpha codes
+    remain valid using peer_board_deviation as a secondary context proxy.
+
     All values are fractions (not %).  Returns 'mixed' on any None input
-    (missing sector data degrades gracefully — never fabricated).
+    (missing peer data degrades gracefully — never fabricated).
     """
     c = _TAXONOMY_CONSTANTS
 
     if pick_excess is None:
         return "mixed"
 
-    # Compute idiosyncratic component vs sector
-    idio_vs_sector: float | None = None
-    if sector_excess_vs_bench is not None:
-        idio_vs_sector = pick_excess - sector_excess_vs_bench
+    # Compute idiosyncratic component vs peer deviation (context proxy, not sector)
+    idio_vs_peer: float | None = None
+    if peer_deviation_vs_bench is not None:
+        idio_vs_peer = pick_excess - peer_deviation_vs_bench
 
     # ── Failures ──────────────────────────────────────────────────────────
-    if idio_vs_sector is not None and idio_vs_sector <= c["IDIO_BREAK_PP"]:
+    if idio_vs_peer is not None and idio_vs_peer <= c["IDIO_BREAK_PP"]:
         return "idio_break"
 
-    if (sector_excess_vs_bench is not None
-            and sector_excess_vs_bench <= c["SECTOR_OUT_PP"]
-            and idio_vs_sector is not None
-            and abs(idio_vs_sector) <= c["IDIO_BAND_PP"]):
-        return "sector_rotated_out"
+    # sector_rotated_out: SUPPRESSED — no genuine sector leg (F3 ruling)
+    # Would require: genuine industry grouping column + >= 3 peers in that industry.
+    # Degrades to 'mixed' (via the residual return below).
 
     if (bench_return is not None
             and bench_return <= c["MACRO_FALL_PCT"]
-            and idio_vs_sector is not None
-            and abs(idio_vs_sector) <= c["IDIO_BAND_PP"]):
+            and idio_vs_peer is not None
+            and abs(idio_vs_peer) <= c["IDIO_BAND_PP"]):
         return "macro_headwind"
 
     # ── Successes ─────────────────────────────────────────────────────────
-    if idio_vs_sector is not None and idio_vs_sector >= c["IDIO_ALPHA_PP"]:
+    if idio_vs_peer is not None and idio_vs_peer >= c["IDIO_ALPHA_PP"]:
         return "idio_alpha"
 
-    if (pick_excess > 0
-            and sector_excess_vs_bench is not None
-            and sector_excess_vs_bench >= c["BETA_STRONG_PCT"]
-            and idio_vs_sector is not None
-            and abs(idio_vs_sector) <= c["IDIO_BAND_PP"]):
-        return "beta_tailwind"
+    # beta_tailwind: SUPPRESSED — no genuine sector leg (F3 ruling)
+    # Would require: sector_excess_vs_bench from a real sector ETF/index (not board peers).
+    # Degrades to 'mixed' (via the residual return below).
 
     return "mixed"
 
@@ -247,50 +357,77 @@ def _axis2_process(
     fwd_mfe_21: float | None,
     *,
     premature_stop_mature: bool = False,
-) -> str:
-    """Assign one process-fault code.
+    ticks: float | None = None,
+) -> tuple[str, list[str]]:
+    """Assign one process-fault code and return (code, timing_basis).
 
-    premature_stop_mature: True only when the row has had +21 post-stop sessions
-    (SA-R10 own maturity stamp for this attribution).  If False, the
-    premature_stop_noise code cannot be assigned (row is immature for that attribution).
+    F5: premature_stop_noise is NEVER assigned (PREMATURE_STOP_IMPLEMENTED=False).
+        Requires a stop-date column + post-stop window not available in the current ledger.
+        The premature_stop_mature / terminal_state / fwd_mfe_21 parameters are retained
+        for API stability and future use; they are not checked here.
+
+    F6: signaled_too_late is based on:
+        Primary: ticks > FRESH_TICKS (=2) when ticks is non-null.
+        Fallback: ext_score >= EXT_SCORE_LATE_PCT (=0.70) when ticks is null.
+        Legacy board_rank clause REMOVED (was a tenure proxy that mislabeled ~25% of board).
+        timing_basis: list of the clauses that fired (for disclosure).
+
+    stage == 'RAN_LATE' overrides both (lifecycle label is the most direct evidence).
+
+    Returns (fault_code, timing_basis_list).
     """
     c = _TAXONOMY_CONSTANTS
+    timing_basis: list[str] = []
 
-    # signaled_too_late
+    # signaled_too_late: stage override (most direct evidence)
     if stage == "RAN_LATE":
-        return "signaled_too_late"
-    if ext_score is not None and ext_score >= c["EXT_SCORE_LATE_PCT"]:
-        return "signaled_too_late"
-    if board_rank is not None and board_rank > c["LATE_RANK_THRESH"]:
-        return "signaled_too_late"
+        timing_basis.append("stage==RAN_LATE")
+        return "signaled_too_late", timing_basis
 
-    # premature_stop_noise — requires own maturity
-    if (premature_stop_mature
-            and terminal_state in ("STOPPED",)
-            and fwd_mfe_21 is not None
-            and fwd_mfe_21 >= c["PREMATURE_STOP_MFE_PP"]):
-        return "premature_stop_noise"
+    # F6: primary — ticks-based (faithful: ticks-since-cross on the signal's own TF)
+    if ticks is not None:
+        timing_basis.append(f"ticks={ticks:.0f}>FRESH_TICKS={c['FRESH_TICKS']}")
+        if ticks > c["FRESH_TICKS"]:
+            return "signaled_too_late", timing_basis
+    else:
+        # F6: fallback — ext_score (covers rows where ticks is null)
+        if ext_score is not None and ext_score >= c["EXT_SCORE_LATE_PCT"]:
+            timing_basis.append(f"ext_score={ext_score:.3f}>=EXT_SCORE_LATE_PCT={c['EXT_SCORE_LATE_PCT']}")
+            return "signaled_too_late", timing_basis
+        timing_basis.append("ticks=null,ext_score_fallback")
+
+    # F5: premature_stop_noise — UNIMPLEMENTED in CN; never fires
+    # (kept as a no-op so callers that pass premature_stop_mature=True don't crash)
+    if not PREMATURE_STOP_IMPLEMENTED:
+        pass  # deliberately empty — see _PREMATURE_STOP_NOTE
 
     # data_fault: not yet derivable from CN ledger columns (no staleness flags at entry)
     # degrades to clean rather than fabricating a fault attribution
 
-    return "clean"
+    return "clean", timing_basis
 
 
 # ---------------------------------------------------------------------------
 # Sector-mean excess computation
 # ---------------------------------------------------------------------------
 
-def _sector_mean_excess(df: pd.DataFrame, ticker: str, date: str, horizon: int = 21) -> float | None:
-    """Compute sector-proxy excess vs CSI300 for the board rows in the same stratum.
+def _peer_board_deviation(df: pd.DataFrame, ticker: str, date: str, horizon: int = 21) -> float | None:
+    """Compute within-board peer deviation: mean fwd excess of same-tier peers on the same date.
 
-    Since no CN sector ETF proxy is available in the ledger, we use the board's own
-    sector-tier mean excess (peers at the same tier on the same date) as the sector leg.
-    This is documented as a limitation: a proper sector ETF proxy would be preferred.
-    Returns None when fewer than 3 peers exist (insufficient for a sector signal).
+    F3 ADJUDICATED RULING: this is NOT a sector proxy.  The 'tier' column is a rank-quality
+    band (T1-T4) derived from signal strength — it is NOT an industry or sector grouping.
+    Peers are same-TIER board peers, not same-sector names.
 
-    DOCUMENT: if a CN sector ETF store becomes available, replace this with the
-    direct ETF return (mirrors the US-side approach in standout_audit.py).
+    This function is retained as a secondary context flag (honest within-board relative
+    strength) but is NEVER used to assign sector_rotated_out or beta_tailwind — those
+    codes require a genuine industry/sector grouping column (see _NO_SECTOR_LEG_NOTE).
+
+    Returns None when fewer than 3 peers exist (insufficient for a meaningful deviation).
+    Returns None when tier is missing.
+
+    When a genuine sector grouping is available (e.g. CITIC level-1 industry joined at
+    append_board time as a new 'industry_group' column), replace this function with a
+    direct industry-group mean excess (peers = same industry, >= 3 members).
     """
     # Filter to same-date, same-tier rows with a graded fwd excess
     row = df[(df["date"].astype(str) == str(date)) & (df["ticker"].astype(str) == str(ticker))]
@@ -318,15 +455,16 @@ def _compute_attribution(df: pd.DataFrame, bench: pd.Series | None) -> pd.DataFr
     df must have:
         date, ticker, board_rank, tier, extended, washout_2w, coiled, stage,
         ext_score, species_id, own_market_regime, fwd_21d_excess (pre-computed),
-        terminal_state_clean8_21, fwd_mfe_21
+        terminal_state_clean8_21, fwd_mfe_21, ticks (optional, for F6 timing)
 
     Returns a DataFrame of attribution rows with columns:
         date, ticker, horizon, taxonomy_version,
-        outcome_cause, process_fault,
+        outcome_cause, process_fault, timing_basis,
         species_id, own_market_regime, regime_stratum,
-        fwd_excess, sector_proxy_excess, bench_return,
-        idio_vs_sector, ext_score, board_rank, stage,
-        attribution_mature_21d, premature_stop_mature
+        fwd_excess, peer_board_deviation, bench_return,
+        idio_vs_peer, ext_score, board_rank, ticks, stage,
+        attribution_mature_21d, premature_stop_note,
+        sector_note
     """
     if df.empty or "fwd_21d_excess" not in df.columns:
         return pd.DataFrame()
@@ -340,7 +478,9 @@ def _compute_attribution(df: pd.DataFrame, bench: pd.Series | None) -> pd.DataFr
         ticker = str(row["ticker"])
         date = str(row["date"])
         pick_excess = float(row["fwd_21d_excess"]) if pd.notna(row["fwd_21d_excess"]) else None
-        sector_excess = _sector_mean_excess(graded, ticker, date)
+
+        # F3: peer_board_deviation (NOT a sector proxy — secondary context flag only)
+        peer_dev = _peer_board_deviation(graded, ticker, date)
 
         # Bench return over horizon — derive from bench series if available
         bench_return: float | None = None
@@ -350,31 +490,27 @@ def _compute_attribution(df: pd.DataFrame, bench: pd.Series | None) -> pd.DataFr
             if len(bslice) > _GRADE_HORIZON:
                 bench_return = float(bslice.iloc[_GRADE_HORIZON] / bslice.iloc[0] - 1.0)
 
-        idio_vs_sector: float | None = None
-        if sector_excess is not None and pick_excess is not None:
-            idio_vs_sector = pick_excess - sector_excess
+        idio_vs_peer: float | None = None
+        if peer_dev is not None and pick_excess is not None:
+            idio_vs_peer = pick_excess - peer_dev
 
-        outcome_cause = _axis1_outcome(pick_excess, sector_excess, bench_return)
+        outcome_cause = _axis1_outcome(pick_excess, peer_dev, bench_return)
 
-        # Premature stop maturity: we can't know if +21 post-stop sessions have elapsed
-        # without knowing the stop date; use a conservative proxy — if fwd_mfe_21 is non-null
-        # the 21d window has matured (the stop happened within those 21 sessions).
         fwd_mfe_21_val = row.get("fwd_mfe_21")
         terminal_state = row.get("terminal_state_clean8_21")
-        premature_stop_mature = bool(
-            pd.notna(fwd_mfe_21_val) and fwd_mfe_21_val is not None
-        )
 
         ext_score_val = float(row["ext_score"]) if pd.notna(row.get("ext_score")) else None
         board_rank_val = int(row["board_rank"]) if pd.notna(row.get("board_rank")) else None
         stage_val = str(row["stage"]) if pd.notna(row.get("stage")) else None
-        process_fault = _axis2_process(
+        # F6: pass ticks for the primary timing clause
+        ticks_val = float(row["ticks"]) if pd.notna(row.get("ticks")) else None
+        process_fault, timing_basis = _axis2_process(
             ext_score_val,
             board_rank_val,
             stage_val,
             terminal_state,
             float(fwd_mfe_21_val) if pd.notna(fwd_mfe_21_val) and fwd_mfe_21_val is not None else None,
-            premature_stop_mature=premature_stop_mature,
+            ticks=ticks_val,
         )
 
         # Regime stratum: 'us_proxy' if own_market_regime is null (pre-store rows)
@@ -391,18 +527,25 @@ def _compute_attribution(df: pd.DataFrame, bench: pd.Series | None) -> pd.DataFr
             "taxonomy_version": _TAXONOMY_VERSION,
             "outcome_cause": outcome_cause,
             "process_fault": process_fault,
+            "timing_basis": "|".join(timing_basis) if timing_basis else "",
             "species_id": row.get("species_id"),
             "own_market_regime": own_regime if (isinstance(own_regime, str)) else None,
             "regime_stratum": regime_stratum,
             "fwd_excess": pick_excess,
-            "sector_proxy_excess": sector_excess,
+            # F3: renamed from sector_proxy_excess → peer_board_deviation; column name change
+            "peer_board_deviation": peer_dev,
             "bench_return": bench_return,
-            "idio_vs_sector": idio_vs_sector,
+            # F3: renamed from idio_vs_sector → idio_vs_peer
+            "idio_vs_peer": idio_vs_peer,
             "ext_score": ext_score_val,
             "board_rank": board_rank_val,
+            "ticks": ticks_val,
             "stage": stage_val,
             "attribution_mature_21d": True,
-            "premature_stop_mature": premature_stop_mature,
+            # F5: premature_stop_noise never fires; carry the note for scoreboard transparency
+            "premature_stop_note": _PREMATURE_STOP_NOTE,
+            # F3: sector note for transparency
+            "sector_note": _NO_SECTOR_LEG_NOTE,
         })
 
     if not rows:
@@ -442,12 +585,16 @@ def _build_scoreboard(attribution: pd.DataFrame, board: pd.DataFrame) -> dict:
 
     cells = []
     # One cell per regime_stratum: us_proxy NEVER pooled with own-market cells (SA-R7).
-    # effective_n = entry-date collapse + non-overlapping 21d windows (SA-R10).
+    # F2 FIX: both k and n must be in WINDOW units (SA-R10).
+    # k = windows with positive mean excess; n = eff_n (total non-overlapping windows).
+    # This prevents k > n (which would cause negative Wilson variance → complex TypeError).
     for regime_str, grp in attribution.groupby("regime_stratum"):
         raw_n = len(grp)
         dates = grp["date"].tolist()
         eff_n = _effective_n(dates)
-        k = int((grp["fwd_excess"] > 0).sum())
+        # F2: collapse to window unit — k is number of windows with mean excess > 0
+        outcome_positive = (grp["fwd_excess"] > 0).tolist()
+        k = _window_unit_k(dates, outcome_positive)
 
         if eff_n < _EFFECTIVE_N_FLOOR:
             cells.append({
@@ -459,16 +606,32 @@ def _build_scoreboard(attribution: pd.DataFrame, board: pd.DataFrame) -> dict:
             })
         else:
             lo, hi = _wilson_ci(k, eff_n)
-            cells.append({
-                "stratum": str(regime_str),
-                "raw_n": raw_n,
-                "effective_n": eff_n,
-                "state": "reported",
-                "hit_rate": round(k / eff_n, 4),
-                "wilson_lo": round(lo, 4),
-                "wilson_hi": round(hi, 4),
-                "us_proxy": regime_str == "us_proxy",
-            })
+            # Detect sentinel (k > n guard fired — should not occur after F2 fix)
+            if lo > hi:
+                log.warning(
+                    "_build_scoreboard: Wilson sentinel (k=%d > n=%d) for stratum=%s — "
+                    "units mismatch; reporting ACCRUING to avoid invalid CI",
+                    k, eff_n, regime_str,
+                )
+                cells.append({
+                    "stratum": str(regime_str),
+                    "raw_n": raw_n,
+                    "effective_n": eff_n,
+                    "state": "ACCRUING",
+                    "us_proxy": regime_str == "us_proxy",
+                    "note": "wilson_sentinel: k>n detected; check unit alignment",
+                })
+            else:
+                cells.append({
+                    "stratum": str(regime_str),
+                    "raw_n": raw_n,
+                    "effective_n": eff_n,
+                    "state": "reported",
+                    "hit_rate_windows": round(k / eff_n, 4),
+                    "wilson_lo": round(lo, 4),
+                    "wilson_hi": round(hi, 4),
+                    "us_proxy": regime_str == "us_proxy",
+                })
 
     # Overall outcome-cause and process-fault mixes
     outcome_mix = attribution["outcome_cause"].value_counts().to_dict()
@@ -523,10 +686,19 @@ def _missed_mover_rate(board: pd.DataFrame) -> dict:
     n_episodes = len(big_winners)
 
     if n_episodes == 0:
+        # F4 FIX: SA-R15 forbids fabricating 0.0 when n_episodes == 0.
+        # Zero episodes means we cannot compute missed_mover_rate at all —
+        # value=None + data_gap note (mirrors the n_episodes>0 degrade below).
         return {
-            "value": 0.0, "n": len(graded), "n_episodes": 0, "maturity": "accruing",
+            "value": None,
+            "n": len(graded),
+            "n_episodes": 0,
+            "maturity": "accruing",
             "source": "data/china_standout_track/board.parquet",
-            "note": "no big-winner episodes at +12pp threshold yet",
+            "note": (
+                "data_gap: no big-winner episodes at +12pp threshold yet — "
+                "missed_mover_rate is undefined (not 0.0); accruing per SA-R15."
+            ),
         }
 
     # All big-winner names were already on the board (they're in the graded set)
@@ -582,14 +754,21 @@ def _build_fitness_card(board: pd.DataFrame, attribution: pd.DataFrame) -> dict:
     if not maturity_floor_met or graded.empty:
         hit_quality = _accruing(n_graded, f"accruing: {n_graded}/25 graded rows needed")
     else:
-        k = int((graded["fwd_21d_excess"] > 0).sum())
+        # F2 FIX: window-unit Wilson — k = windows with positive mean excess, n = eff_n windows
+        outcome_positive = (graded["fwd_21d_excess"] > 0).tolist()
+        dates_list = graded["date"].tolist()
+        k = _window_unit_k(dates_list, outcome_positive)
         lo, _hi = _wilson_ci(k, eff_n)
-        hit_quality = {
-            "value": round(lo, 4), "n": n_graded, "effective_n": eff_n,
-            "maturity": "ready",
-            "source": "data/china_standout_track/board.parquet",
-            "note": "Wilson lower bound of P(excess>0) — cluster-unit CI",
-        }
+        if lo > _hi:  # sentinel: k > n (should not occur after F2 fix)
+            hit_quality = _accruing(n_graded, "wilson_sentinel: k>n — check unit alignment")
+        else:
+            hit_quality = {
+                "value": round(lo, 4), "n": n_graded, "effective_n": eff_n,
+                "k_windows": k,
+                "maturity": "ready",
+                "source": "data/china_standout_track/board.parquet",
+                "note": "Wilson lower bound of P(positive-mean-excess window) — cluster-unit CI (F2 window-unit)",
+            }
 
     # 2. upside_capture
     if not maturity_floor_met or graded.empty:
@@ -687,12 +866,18 @@ def _build_fitness_card(board: pd.DataFrame, attribution: pd.DataFrame) -> dict:
         "sensors": sensors,
         "authority": _AUTHORITY_BLOCK,
         "taxonomy_version": _TAXONOMY_VERSION,
+        "taxonomy_notes": {
+            "premature_stop_noise": _PREMATURE_STOP_NOTE,
+            "sector_leg": _NO_SECTOR_LEG_NOTE,
+        },
         "notes": (
             f"CN standout fitness card. All sensors accruing until SA-R10 floors met "
             f"(currently {n_graded}/25 matured rows, {distinct_dates}/10 distinct dates, "
             f"{eff_n}/3 non-overlapping windows). "
             f"Expected first reads: ~2026-10-15. "
-            f"No 'validated' claim — pre-maturity values are display context only."
+            f"No 'validated' claim — pre-maturity values are display context only. "
+            f"premature_stop_noise: UNIMPLEMENTED (no stop-date column in ledger). "
+            f"sector_rotated_out/beta_tailwind: DEGRADED to mixed (no genuine sector grouping)."
         ),
     }
 
@@ -736,9 +921,11 @@ def _write_evidence(
                     "outcome_cause": str(row["outcome_cause"]),
                     "process_fault": str(row["process_fault"]),
                     "fwd_excess": float(row["fwd_excess"]) if pd.notna(row.get("fwd_excess", None)) else None,
-                    "sector_proxy_excess": float(row["sector_proxy_excess"]) if pd.notna(row.get("sector_proxy_excess", None)) else None,
+                    # F3: renamed from sector_proxy_excess → peer_board_deviation
+                    "peer_board_deviation": float(row["peer_board_deviation"]) if pd.notna(row.get("peer_board_deviation", None)) else None,
                     "bench_return": float(row["bench_return"]) if pd.notna(row.get("bench_return", None)) else None,
-                    "idio_vs_sector": float(row["idio_vs_sector"]) if pd.notna(row.get("idio_vs_sector", None)) else None,
+                    # F3: renamed from idio_vs_sector → idio_vs_peer
+                    "idio_vs_peer": float(row["idio_vs_peer"]) if pd.notna(row.get("idio_vs_peer", None)) else None,
                     "ext_score": float(row["ext_score"]) if pd.notna(row.get("ext_score", None)) else None,
                     "board_rank": int(row["board_rank"]) if pd.notna(row.get("board_rank", None)) else None,
                     "written_at": datetime.now(timezone.utc).isoformat(),

@@ -877,7 +877,9 @@ jobs:
   cn-standout-audit:
     # SA-W2: CN PIT regime store + species_id + two-axis attribution + fitness card.
     # Tests: lane fail-closed, keep-first, species_id mapping, axis precedence, us_proxy
-    # isolation, premature_stop_noise maturity, never-raise, data_gap honesty.
+    # isolation, premature_stop_noise unimplemented (F5), never-raise, data_gap honesty,
+    # F1 regime-stamp sequencing, F2 window-unit Wilson, F6 ticks-based timing.
+    # F9: test_china_standout_track added — covers species_id/regime-stamp changes.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -887,7 +889,7 @@ jobs:
       - name: install deps
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: SA-W2 CN standout audit tests
-        run: python -m pytest tests/test_cn_standout_audit.py -v -q
+        run: python -m pytest tests/test_cn_standout_audit.py tests/test_china_standout_track.py -v -q
 
   workflow-yaml:
     # Every .github/workflows/* file must load as YAML and carry on: + jobs:.
