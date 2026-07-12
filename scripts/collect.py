@@ -132,6 +132,7 @@ def all_adapters() -> dict:
         ("sentiment_aaii", "collectors.sentiment", "AaiiAdapter"),
         ("wiki_pageviews", "collectors.wiki_pageviews", "WikiPageviewsAdapter"),  # offshore attention (display-only; Phase-0 scripts/wiki_attention_phase0.py)
         ("sector_flows", "collectors.sponsors", "SectorFlowAdapter"),
+        ("broad_flows", "collectors.sponsors", "BroadFlowAdapter"),   # RLT-R3: SPY/QQQ/IWM/RSP/DIA creation/redemption proxy
         ("holdings", "collectors.holdings", "HoldingsAdapter"),
         ("etf_holdings", "collectors.etf_holdings", "EtfHoldingsAdapter"),
         ("sector_holdings", "collectors.sector_holdings", "SectorHoldingsAdapter"),
