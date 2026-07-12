@@ -874,6 +874,23 @@ jobs:
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context)
         run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py -q
 
+  cn-standout-audit:
+    # SA-W2: CN PIT regime store + species_id + two-axis attribution + fitness card.
+    # Tests: lane fail-closed, keep-first, species_id mapping, axis precedence, us_proxy
+    # isolation, premature_stop_noise unimplemented (F5), never-raise, data_gap honesty,
+    # F1 regime-stamp sequencing, F2 window-unit Wilson, F6 ticks-based timing.
+    # F9: test_china_standout_track added — covers species_id/regime-stamp changes.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: SA-W2 CN standout audit tests
+        run: python -m pytest tests/test_cn_standout_audit.py tests/test_china_standout_track.py -v -q
+
   workflow-yaml:
     # Every .github/workflows/* file must load as YAML and carry on: + jobs:.
     # An unparseable workflow file makes GitHub stamp a FAILED zero-job run on

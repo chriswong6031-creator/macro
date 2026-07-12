@@ -2311,3 +2311,19 @@ modules:
           (ok / degraded_pack_only). Added 2026-07-11: before this, the lane
           artifact was written only on Tuesdays, so the #2061 arming was
           invisible in it for days. Non-fatal (exit 0 always).
+
+  # SA-W2 (2026-07-12): china_regime_store.append() + china_standout_audit.run_attribution()
+  # run INLINE inside build_china_library.main() (the scripts.build_china step in asia-close.yml).
+  # These are additive non-fatal hooks — no new top-level dag step added (they ride the
+  # existing build_china step). Listed here as a divergence note per dead-wire law.
+  - module: engine.china_regime_store
+    note: >
+      SA-W2: CN PIT regime store. Called inline in build_china_library.main() after
+      append_board(). Fail-closed (CN_LANE=asia gate). Never-raise. Writes
+      data/china_regime/regime_daily.parquet + data/standout_audit/cn_audit_state.json.
+  - module: engine.china_standout_audit
+    note: >
+      SA-W2: CN two-axis attribution. Called inline in build_china_library.main() after
+      grade(). Fail-closed (CN_LANE=asia gate). Never-raise. Writes
+      data/standout_audit/cn_attribution.parquet + cn_evidence.jsonl +
+      site/factordata/cn_audit_scoreboard.json + data/metabolism/fitness/standouts_cn.json.

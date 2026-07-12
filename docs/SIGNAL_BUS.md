@@ -13,7 +13,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | active-build-map | 1 |
 | btc-vector | 5 |
 | causal-hypothesis-factory | 9 |
-| china-alpha | 14 |
+| china-alpha | 20 |
 | china-intel-hub | 2 |
 | china-pick-lab | 3 |
 | china-system | 2 |
@@ -87,15 +87,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 260 |
-| infrastructure | 92 |
+| infrastructure | 93 |
 | scored | 4 |
-| shadow | 63 |
+| shadow | 68 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 402 |
+| git | 408 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -140,10 +140,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | name-score-calls | `data/name_score/us_calls.parquet` | parquet | daily-engine | shadow | 3 | 0 |
 | china-basket-turn-cn | `site/chinabasketdata/basket_turn_cn.json` | json | daily-engine | display | 2 | 0 |
 | china-board-ledger | `data/china_standout_track/board.parquet` | parquet | asia-close | shadow | 2 | 0 |
+| china-regime-pit-daily | `data/china_regime/regime_daily.parquet` | parquet | asia-close | shadow | 2 | 0 |
+| china-standout-cn-audit-state | `data/standout_audit/cn_audit_state.json` | json | asia-close | infrastructure | 2 | 0 |
 | site-china-altdata-mastermind | `site/chinaaltdata/mastermind.json` | json | asia-close | display | 2 | 0 |
 | site-china-intel-briefing | `site/china_intel/briefing.json` | json | asia-close | display | 1 | 1 |
 | china-mtf-upturn | `site/chinastockdata/mtf_upturn_cn.json` | json | daily-engine | display | 1 | 0 |
 | china-radar-ledger | `data/china_radar/ledger.parquet` | parquet | asia-close | shadow | 1 | 0 |
+| china-standout-cn-attribution | `data/standout_audit/cn_attribution.parquet` | parquet | asia-close | shadow | 1 | 0 |
+| china-standout-cn-audit-scoreboard | `site/factordata/cn_audit_scoreboard.json` | json | asia-close | shadow | 1 | 0 |
+| china-standout-cn-evidence | `data/standout_audit/cn_evidence.jsonl` | jsonl | asia-close | shadow | 1 | 0 |
+| china-standout-cn-fitness | `data/metabolism/fitness/standouts_cn.json` | json | asia-close | shadow | 1 | 0 |
 | cn-reversal-sleeve-ledger | `data/cn_reversal_sleeve_track/sleeve.parquet` | parquet | asia-close | shadow | 1 | 0 |
 | site-china-altdata-by-ticker | `site/chinaaltdata/by_ticker.json` | json | asia-close | display | 1 | 0 |
 | china-basket-turn-ledger | `data/china_basket_turn/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
@@ -1115,6 +1121,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - engine/stock_fundamentals.py — _compute_capital_allocation_block() calls compute_capital_allocation() inside panels()
 
+### china-regime-pit-daily
+
+- **path:** `data/china_regime/regime_daily.parquet`
+- **declared producer:** `engine/china_regime_store.py`
+- **extra writers:**
+  - scripts/build_china_library.py — calls china_regime_store.append() in asia lane
+
 ### china-sector-central-calls
 
 - **path:** `data/china_sector_central/calls.parquet`
@@ -1128,6 +1141,42 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/china_sector_cycles.py`
 - **extra writers:**
   - engine/china_sector_cycles_grader.py — grader also appends grade rows to the same parquet
+
+### china-standout-cn-attribution
+
+- **path:** `data/standout_audit/cn_attribution.parquet`
+- **declared producer:** `engine/china_standout_audit.py`
+- **extra writers:**
+  - scripts/build_china_library.py — calls china_standout_audit.run_attribution()
+
+### china-standout-cn-audit-scoreboard
+
+- **path:** `site/factordata/cn_audit_scoreboard.json`
+- **declared producer:** `engine/china_standout_audit.py`
+- **extra writers:**
+  - scripts/build_china_library.py — calls china_standout_audit.run_attribution()
+
+### china-standout-cn-audit-state
+
+- **path:** `data/standout_audit/cn_audit_state.json`
+- **declared producer:** `engine/china_standout_audit.py`
+- **extra writers:**
+  - engine/china_regime_store.py — updates regime_store_last_date
+  - scripts/build_china_library.py — triggers via chain
+
+### china-standout-cn-evidence
+
+- **path:** `data/standout_audit/cn_evidence.jsonl`
+- **declared producer:** `engine/china_standout_audit.py`
+- **extra writers:**
+  - scripts/build_china_library.py — calls china_standout_audit.run_attribution()
+
+### china-standout-cn-fitness
+
+- **path:** `data/metabolism/fitness/standouts_cn.json`
+- **declared producer:** `engine/china_standout_audit.py`
+- **extra writers:**
+  - scripts/build_china_library.py — calls china_standout_audit.run_attribution()
 
 ### cn-pick-lab-snapshots
 
