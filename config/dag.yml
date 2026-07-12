@@ -352,6 +352,7 @@ lanes:
             - scripts.grade_news_events
             - scripts.build_methodology
             - scripts.build_nasdaq_internals
+            - scripts.build_rotation_events
           cl_special:
             - scripts.build_special_situations
           cl_misc:
