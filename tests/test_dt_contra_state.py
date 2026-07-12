@@ -13,6 +13,9 @@ Tests
                                (single source of truth, DT-R11a).
 7. normal_path_with_fixture  — given a tmp stockdata dir with a handful of synthetic
                                ticker JSONs, build() produces correct aggregate counts.
+8. list_root_json_skipped    — index.json (array root) and other non-dict JSONs are
+                               silently skipped without AttributeError (regression for
+                               nightly crash fixed 2026-07-12).
 """
 from __future__ import annotations
 
@@ -234,3 +237,37 @@ def test_normal_path_with_fixture(tmp_path):
     assert aapl["score_pct"] == pytest.approx(0.85)
     assert aapl["whale"] == pytest.approx(65.0)
     assert aapl["whale_chg"] == pytest.approx(12.0)
+
+
+# ---------------------------------------------------------------------------
+#  Test 8: list-root JSON files (index.json, fund_flows.json) are skipped
+# ---------------------------------------------------------------------------
+
+def test_list_root_json_skipped(tmp_path):
+    """build() must not raise when stockdata dir contains list-rooted JSON files.
+
+    Regression test for the nightly crash: index.json is a JSON array, and
+    calling .get() on a list raises AttributeError.  The fix inserts an
+    isinstance(data, dict) guard that skips non-dict roots silently.
+    """
+    stockdata = tmp_path / "stockdata"
+    stockdata.mkdir()
+
+    # Mirrors production: index.json is a plain JSON array of ticker strings.
+    (stockdata / "index.json").write_text(
+        json.dumps(["AAPL", "MSFT", "NVDA"]), encoding="utf-8"
+    )
+    # Another list-rooted sidecar file.
+    (stockdata / "fund_flows.json").write_text(
+        json.dumps([{"ticker": "AAPL", "flow": 1.2}]), encoding="utf-8"
+    )
+    # One real ticker file that should be counted.
+    _write_ticker_json(stockdata, "AAPL", _make_chip("fade", "extended"))
+
+    with mock.patch("scripts.build_dt_contra_state._REPO_ROOT", tmp_path):
+        result = build(stockdata_dir=stockdata)
+
+    # index.json and fund_flows.json are excluded from universe_n entirely.
+    assert result["universe_n"] == 1
+    assert result["n_with_chip"] == 1
+    assert result["states"][0]["ticker"] == "AAPL"

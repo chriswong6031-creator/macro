@@ -901,5 +901,124 @@
     }
    ]
   }
+ },
+ "archetype_groups": {
+  "notes": "Union semantics — tickers may appear in multiple groups simultaneously, like Oracle XR-PAIR. Members drawn only from tickers already present in this file (subsectors or amalgamations). Display-only, descriptive.",
+  "groups": {
+   "ai_compute_supply": {
+    "label_en": "AI Compute Supply Chain",
+    "label_zh": "AI 算力供应链",
+    "rationale": "Semis, memory, semicap, and datacenter-networking suppliers enabling AI infrastructure build-out.",
+    "members": [
+     "NVDA",
+     "AVGO",
+     "AMD",
+     "MU",
+     "MRVL",
+     "ARM",
+     "ALAB",
+     "INTC",
+     "TXN",
+     "ADI",
+     "NXPI",
+     "MPWR",
+     "MCHP",
+     "ASML",
+     "AMAT",
+     "LRCX",
+     "KLAC",
+     "TER",
+     "ANET",
+     "CSCO",
+     "CIEN",
+     "AAOI",
+     "LITE"
+    ]
+   },
+   "ai_capex_spenders": {
+    "label_en": "AI Capex Spenders",
+    "label_zh": "AI 资本支出方",
+    "rationale": "Hyperscalers and model builders that are the primary funders of AI infrastructure capex.",
+    "members": [
+     "MSFT",
+     "GOOGL",
+     "AMZN",
+     "META"
+    ]
+   },
+   "edge_device": {
+    "label_en": "Edge & Device Ecosystem",
+    "label_zh": "终端设备生态",
+    "rationale": "Device-ecosystem and on-device AI participants including consumer electronics and wireless connectivity.",
+    "members": [
+     "AAPL",
+     "QCOM"
+    ]
+   },
+   "software_enterprise": {
+    "label_en": "Enterprise Software",
+    "label_zh": "企业软件",
+    "rationale": "Application and infrastructure software vendors excluding cybersecurity specialists.",
+    "members": [
+     "MSFT",
+     "PLTR",
+     "SNPS",
+     "NBIS",
+     "CRWV",
+     "SHOP",
+     "CDNS",
+     "ADP",
+     "DDOG",
+     "ADBE",
+     "INTU",
+     "ADSK",
+     "PAYX",
+     "ROP",
+     "MSTR",
+     "WDAY"
+    ]
+   },
+   "cyber": {
+    "label_en": "Cybersecurity",
+    "label_zh": "网络安全",
+    "rationale": "Cybersecurity platform and endpoint protection vendors present in the index.",
+    "members": [
+     "PANW",
+     "CRWD",
+     "ZS",
+     "FTNT"
+    ]
+   },
+   "digital_services_media": {
+    "label_en": "Digital Services & Media",
+    "label_zh": "数字服务与媒体",
+    "rationale": "Subscription, ad-platform, and streaming consumer digital services; GOOG/META overlap as ad-platform anchors.",
+    "members": [
+     "NFLX",
+     "GOOG",
+     "GOOGL",
+     "META",
+     "TMUS",
+     "CMCSA",
+     "CHTR",
+     "APP"
+    ]
+   },
+   "megacap_quality": {
+    "label_en": "Mega-cap Quality",
+    "label_zh": "超大盘优质股",
+    "rationale": "Mega-cap anchor names from the existing megacap-anchors amalgamation (membership copied verbatim).",
+    "members": [
+     "AAPL",
+     "MSFT",
+     "NVDA",
+     "AMZN",
+     "GOOGL",
+     "META",
+     "TSLA",
+     "AVGO"
+    ]
+   }
+  }
  }
 }

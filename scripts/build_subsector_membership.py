@@ -344,6 +344,19 @@ def build_russell() -> dict:
 def _write(region: str, payload: dict) -> None:
     out = config.data_dir() / f"baskets_{region}" / "membership.json"
     out.parent.mkdir(parents=True, exist_ok=True)
+
+    # Preserve hand-curated keys that the algorithmic builder does not emit.
+    # Currently: 'archetype_groups' on the nasdaq membership (added by operator,
+    # clobbered each rebuild because build_nasdaq() only emits subsectors+amalgamations).
+    if out.exists() and "archetype_groups" not in payload:
+        try:
+            existing = json.loads(out.read_text(encoding="utf-8"))
+            if isinstance(existing, dict) and "archetype_groups" in existing:
+                payload["archetype_groups"] = existing["archetype_groups"]
+                log.info("%s: re-injected archetype_groups from existing membership.json", region)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("%s: could not read existing membership.json to preserve archetype_groups: %s", region, exc)
+
     out.write_text(json.dumps(payload, indent=1, ensure_ascii=False))
     n_sub = len(payload["subsectors"])
     n_amg = len(payload["amalgamations"])
