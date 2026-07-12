@@ -748,7 +748,7 @@
         {% for c in macro_catalysts[:8] %}
         <div class="rail-line">
           <div class="rail-date">{{ c.date }}{% if c.time_et %}<br>{{ c.time_et }} ET{% endif %}</div>
-          <div class="rail-main"><span class="rail-tag">{{ c.type }}</span>{{ c.label }}</div>
+          <div class="rail-main"><span class="rail-tag">{{ c.type }}</span>{{ t(c.label, c.get('label_zh') or c.label) }}</div>
         </div>
         {% else %}
         <p class="mut">{{ t('No scheduled catalysts in the window.', '窗口内无排定催化。') }}</p>
@@ -760,7 +760,7 @@
         {% for s in event_strip %}
         <div class="rail-line">
           <div class="rail-date">{{ s.dow }} {{ s.md }}{% if s.time_et %}<br>{{ s.time_et }} ET{% endif %}</div>
-          <div class="rail-main"><span class="rail-tag">{{ s.type }}</span>{{ s.label }}</div>
+          <div class="rail-main"><span class="rail-tag">{{ s.type }}</span>{{ t(s.label, s.get('label_zh') or s.label) }}</div>
         </div>
         {% else %}
         <p class="mut">{{ t('No top-tier US prints in the window.', '窗口内无一线美国数据。') }}</p>
@@ -784,7 +784,7 @@
 
       <section class="rail-card">
         <h2>{{ t('Feed intelligence', '新闻情报') }}</h2>
-        {% if SYN.read %}<div class="rail-line"><div class="rail-date">{{ t('Read','读数') }}</div><div class="rail-main">{{ SYN.read }}</div></div>{% endif %}
+        {% if SYN.read %}<div class="rail-line"><div class="rail-date">{{ t('Read','读数') }}</div><div class="rail-main">{{ t(SYN.read, SYN.get('read_zh') or SYN.read) }}</div></div>{% endif %}
         <div class="rail-line">
           <div class="rail-date">{{ t('Channels','通道') }}</div>
           <div class="rail-main">{% for c in SYN_CHANNELS[:5] %}<span class="rail-tag">{{ c.name }}</span>{% else %}<span class="mut">{{ t('No channel cluster yet','暂无通道聚类') }}</span>{% endfor %}</div>

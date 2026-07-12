@@ -6084,3 +6084,228 @@ cortex:
   fallback_model: claude-sonnet-4-6
   max_tool_calls: 24
   max_tokens: 4096
+
+# --------------------------------------------------------------------------- #
+# Odds Desk — historical base-rate Analyzer + Factor Match screener
+# (engine/odds_lab.py + scripts/build_odds.py → site/odds.html).
+# Display-only leaf; degrade-never-raise (builder returns 0 on any error).
+# Heavy per-ticker matrices publish to site/oddsmatrix/ (R2 data plane, NEVER
+# committed); light artifacts (catalog.json / factor_match.json) stay in git.
+# Bucket BOUNDARIES are engine contracts and live in engine/odds_lab.py
+# (unit-tested edges) — this block holds build/runtime params only.
+# --------------------------------------------------------------------------- #
+odds:
+  enabled: true                      # kill-switch: false → build lane no-ops
+  store_dir: "data/odds_ohlcv"       # dedicated full-OHLCV store (gitignored, R2-backed)
+  matrix_dir: "site/oddsmatrix"      # per-ticker columnar matrices (R2; never commit)
+  data_dir: "site/oddsdata"          # catalog.json + factor_match.json (git/Pages)
+  stale_trading_days: 0              # stored series older than the last completed session → 1mo
+                                     # overlap upsert. 0 = refresh EVERY nightly run (one cheap
+                                     # batched call); the spec's literal ">3 trading days" gate
+                                     # left "today's fingerprint" up to 3 sessions stale with no
+                                     # banner — 3 remains only the client-side stale-banner floor.
+  upsert_basis_tol: 0.001            # max relative close diff on upsert overlap dates before the
+                                     # splice is discarded for a period="max" refetch (auto_adjust
+                                     # rebases whole series at each fetch → dividend/split between
+                                     # fetches strands stored history on a stale basis)
+  shallow_rows: 300                  # stored series shorter than this → period="max" backfill
+  batch_size: 40                     # yfinance batch download size
+  batch_pause_s: 1.0                 # polite pause between download batches
+  meta_pause_s: 0.15                 # polite pause between per-ticker .info calls
+  min_rows: 60                       # skip matrix build below this many bars (meaningless sample)
+  ranges: ["5y", "10y", "20y", "max"]   # Analyzer data-range selector
+  horizons: ["1d", "5d", "20d"]         # forward horizons (open-to-close, trading-bar aligned)
+  defaults:                          # Analyzer defaults (mirrors tradeodds defaults)
+    active: ["magnitude", "vix_level", "mkt_trend"]
+    range: "10y"
+    horizon: "1d"
+  factor_match:                      # nightly precomputed universe screener
+    min_n: 10                        # min matched instances per row/horizon (client floor)
+    range: "20y"
+    templates:                       # the honest static-site trade: fixed condition combos
+      - id: core
+        label_en: "Core setup"
+        label_zh: "核心条件"
+        factors: [magnitude, vix_level, mkt_trend]
+      - id: trend
+        label_en: "Trend setup"
+        label_zh: "趋势条件"
+        factors: [mkt_trend, trend_structure, rsi_zone]
+      - id: momentum
+        label_en: "Momentum setup"
+        label_zh: "动量条件"
+        factors: [pct_move, streak, rsi_slope]
+      - id: vol
+        label_en: "Volatility setup"
+        label_zh: "波动率条件"
+        factors: [vix_level, vix_move, rel_vol]
+      - id: quad
+        label_en: "Macro quad setup"
+        label_zh: "宏观象限条件"
+        factors: [quad, mkt_trend, magnitude]
+      - id: strict
+        label_en: "Strict match"
+        label_zh: "严格匹配"
+        factors: [magnitude, vix_level, mkt_trend, rsi_zone, rsi_slope]
+  # Factor catalog metadata (display order = list order; groups mirror the left
+  # rail: core / market / asset). ordered=false → categorical (tolerance always 0).
+  factors:
+    - {id: pct_move,        group: core,   ordered: true,  label_en: "Price Move %",        label_zh: "当日涨跌幅",
+       desc_en: "Close-to-close 1-day change, 0.25% buckets (±3% tails)", desc_zh: "收盘对收盘的单日涨跌幅，每档0.25%（±3%封顶）"}
+    - {id: magnitude,       group: core,   ordered: true,  label_en: "Move Intensity (ATR)", label_zh: "波幅强度（ATR倍数）",
+       desc_en: "Today's move vs prior-day ATR14, half-ATR steps",        desc_zh: "当日涨跌相对前一日ATR14的倍数，每档0.5个ATR"}
+    - {id: vix_level,       group: market, ordered: true,  label_en: "VIX Level",           label_zh: "VIX 水平",
+       desc_en: "VIX close band",                                        desc_zh: "VIX 收盘所处区间"}
+    - {id: vix_move,        group: market, ordered: true,  label_en: "VIX Move",            label_zh: "VIX 单日变动",
+       desc_en: "VIX 1-day % change, 2% steps",                          desc_zh: "VIX 单日百分比变动，每档2%"}
+    - {id: mkt_trend,       group: market, ordered: false, label_en: "Market Trend",        label_zh: "大盘趋势",
+       desc_en: "SPY vs its 50/200-day averages (4 states)",             desc_zh: "SPY 相对50日/200日均线的位置（四种状态）"}
+    - {id: quad,            group: market, ordered: false, label_en: "Macro Quad",          label_zh: "宏观象限",
+       desc_en: "Growth/inflation regime quadrant (our regime engine)",   desc_zh: "增长-通胀宏观象限（本站宏观引擎）"}
+    - {id: month,           group: market, ordered: false, label_en: "Month",               label_zh: "月份",
+       desc_en: "Calendar month (seasonality)",                          desc_zh: "日历月份（季节性）"}
+    - {id: rsi_zone,        group: asset,  ordered: true,  label_en: "RSI Zone",            label_zh: "RSI 区间",
+       desc_en: "RSI14 (Wilder) zone",                                   desc_zh: "RSI14（Wilder）所处区间"}
+    - {id: rsi_slope,       group: asset,  ordered: true,  label_en: "RSI Slope",           label_zh: "RSI 斜率",
+       desc_en: "RSI change over 3 days",                                desc_zh: "RSI 三日变化幅度"}
+    - {id: rel_vol,         group: asset,  ordered: true,  label_en: "Relative Volume",     label_zh: "相对成交量",
+       desc_en: "Volume vs prior 20-day average volume",                 desc_zh: "成交量相对前20日均量的倍数"}
+    - {id: trend_structure, group: asset,  ordered: true,  label_en: "Trend Structure",     label_zh: "趋势结构",
+       desc_en: "EMA9 vs EMA21 spread (% of price)",                     desc_zh: "EMA9 与 EMA21 的价差结构（占价格百分比）"}
+    - {id: streak,          group: asset,  ordered: true,  label_en: "Up/Down Streak",      label_zh: "连涨连跌",
+       desc_en: "Consecutive up/down closes",                            desc_zh: "连续收涨/收跌天数"}
+    - {id: vol_streak,      group: asset,  ordered: true,  label_en: "Volume Streak",       label_zh: "量能连续性",
+       desc_en: "Consecutive days above/below 20-day average volume",    desc_zh: "成交量连续高于/低于20日均量的天数"}
+    - {id: gap,             group: asset,  ordered: true,  label_en: "Overnight Gap",       label_zh: "隔夜跳空",
+       desc_en: "Open vs prior close, 0.25% buckets",                    desc_zh: "开盘相对前收盘的跳空幅度，每档0.25%"}
+    - {id: dist_52w,        group: asset,  ordered: true,  label_en: "52w High Distance",   label_zh: "距52周高点",
+       desc_en: "Close vs rolling 52-week high close",                   desc_zh: "收盘价距52周最高收盘的回撤幅度"}
+  # Universe v1 (spec): index/style + sector SPDRs + industry/asset ETFs + ~110
+  # liquid megacaps (tradeodds popular list). Universe = this list ∩ successfully
+  # fetched — missing/unfetchable names degrade quietly. Keep ≥100 names (the
+  # publish_r2 _DATA_DIR_MIN_FILES=100 guard).
+  universe:
+    # index / style ETFs
+    - SPY
+    - QQQ
+    - IWM
+    - DIA
+    - RSP
+    # sector SPDRs
+    - XLK
+    - XLF
+    - XLE
+    - XLV
+    - XLI
+    - XLY
+    - XLP
+    - XLU
+    - XLB
+    - XLRE
+    - XLC
+    # industry / asset ETFs
+    - SMH
+    - KRE
+    - XBI
+    - GLD
+    - SLV
+    - TLT
+    - HYG
+    # liquid megacaps + tradeodds popular list
+    - NVDA
+    - TSLA
+    - MU
+    - MSFT
+    - AMZN
+    - PLTR
+    - AMD
+    - AAPL
+    - COIN
+    - AVGO
+    - META
+    - NFLX
+    - MSTR
+    - INTC
+    - GOOG
+    - HOOD
+    - CRWD
+    - COHR
+    - APP
+    - ORCL
+    - JPM
+    - WDC
+    - XOM
+    - NOW
+    - GLW
+    - SPOT
+    - CVX
+    - CRM
+    - CAT
+    - LLY
+    - UNH
+    - INTU
+    - GEV
+    - LRCX
+    - AMAT
+    - STX
+    - BAC
+    - V
+    - ROST
+    - TMUS
+    - GS
+    - BKNG
+    - WMT
+    - COST
+    - SHOP
+    - SOFI
+    - KO
+    - PANW
+    - UBER
+    - BA
+    - FCX
+    - DELL
+    - TGT
+    - MA
+    - MRNA
+    - APH
+    - C
+    - WBD
+    - AXP
+    - VRT
+    - AA
+    - ADBE
+    - SMCI
+    - ABBV
+    - MELI
+    - UPS
+    - CSCO
+    - BSX
+    - MDB
+    - WFC
+    - GE
+    - QCOM
+    - JNJ
+    - CIEN
+    - VZ
+    - RTX
+    - IBM
+    - F
+    - OXY
+    - LMT
+    - TER
+    - MRVL
+    - PG
+    - COP
+    - BX
+    - NRG
+    - T
+    # smaller high-interest names (kept only if yfinance has them)
+    - LITE
+    - ASTS
+    - IREN
+    - BE
+    - RKLB
+    - NBIS
+    - AAOI
+    - CRDO
+    - ONDS

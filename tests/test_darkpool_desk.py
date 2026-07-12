@@ -128,6 +128,108 @@ def test_ats_parse_empty_input():
     assert _parse_rows([]).empty
 
 
+def test_ats_complete_weeks_requires_t1_and_t2():
+    """2026-07 repair: weeks are ingested only once BOTH T1 and T2 partitions are
+    published (T1 leads T2 by ~2wk; a T1-only ingest would freeze a half week
+    into the write-once store)."""
+    from datetime import date as _d
+    from collectors.finra_ats_transparency import _complete_weeks
+    parts = {
+        _d(2026, 6, 15): {"T1"},                          # T1-only — not complete
+        _d(2026, 6, 8):  {"T1"},                          # T1-only — not complete
+        _d(2026, 6, 1):  {"NA", "OTCE", "T1", "T2"},      # complete
+        _d(2026, 5, 25): {"T1", "T2"},                    # complete (OTCE optional)
+    }
+    assert _complete_weeks(parts) == [_d(2026, 6, 1), _d(2026, 5, 25)]
+
+
+def test_ats_degradable_covers_gateway_errors():
+    """Retried-out CDN 5xx/429 must degrade to the stored-data heartbeat, same as
+    a hard connection error (FINRA's edge throws sporadic 504s)."""
+    import requests as _rq
+    from collectors.finra_ats_transparency import _degradable
+    resp = _rq.Response()
+    resp.status_code = 504
+    assert _degradable(_rq.HTTPError("HTTP 504", response=resp))
+    assert _degradable(_rq.exceptions.ConnectionError("boom"))
+    resp2 = _rq.Response()
+    resp2.status_code = 404
+    assert not _degradable(_rq.HTTPError("HTTP 404", response=resp2))
+
+
+class _FakePage:
+    def __init__(self, rows, total):
+        self._rows = rows
+        self.headers = {"Record-Total": str(total)}
+
+    def json(self):
+        return self._rows
+
+
+def test_ats_fetch_week_paginates_to_completion(monkeypatch):
+    """Offset pagination must walk every page and stop on the short one
+    (Record-Total verified live 2026-07-11: filtered count, e.g. 192,411
+    for week 2026-06-01)."""
+    from datetime import date as _d
+    import collectors.finra_ats_transparency as fat
+
+    monkeypatch.setattr(fat, "PAGE_SIZE", 2)
+    monkeypatch.setattr(fat, "SLEEP_PAGE", 0)
+    offsets = []
+
+    def fake_http(session, method, url, json_body=None, timeout=60):
+        offsets.append(json_body["offset"])
+        assert json_body["dateRangeFilters"][0]["startDate"] == "2026-06-01"
+        remaining = 5 - json_body["offset"]
+        return _FakePage([{"n": i} for i in range(min(2, remaining))], 5)
+
+    monkeypatch.setattr(fat, "_http", fake_http)
+    rows = fat._fetch_week(None, _d(2026, 6, 1))
+    assert len(rows) == 5
+    assert offsets == [0, 2, 4]
+
+
+def test_ats_fetch_week_refuses_truncation(monkeypatch):
+    """If MAX_PAGES caps out below Record-Total, the week must RAISE (get skipped)
+    rather than persist a silently-truncated file — the exact corruption mode of
+    the pre-repair store (20231106.parquet holds 19,978 of ~150k rows)."""
+    from datetime import date as _d
+    import collectors.finra_ats_transparency as fat
+
+    monkeypatch.setattr(fat, "PAGE_SIZE", 2)
+    monkeypatch.setattr(fat, "MAX_PAGES", 2)
+    monkeypatch.setattr(fat, "SLEEP_PAGE", 0)
+
+    def fake_http(session, method, url, json_body=None, timeout=60):
+        return _FakePage([{"n": 1}, {"n": 2}], 10)   # always-full pages, total 10
+
+    monkeypatch.setattr(fat, "_http", fake_http)
+    with pytest.raises(RuntimeError, match="truncated"):
+        fat._fetch_week(None, _d(2026, 6, 1))
+
+
+def test_ats_loader_skips_heartbeat_parquet(tmp_path, monkeypatch):
+    """data/finra_ats/ holds both <YYYYMMDD>.parquet weeks AND the runner's
+    finra_ats__ingest.parquet heartbeat, which sorts lexicographically LAST —
+    _load_ats must pick the newest WEEK, not the heartbeat (which used to shadow
+    every week file and silently kill the venue table)."""
+    import scripts.build_darkpool_desk as bdd
+
+    ats = tmp_path / "finra_ats"
+    ats.mkdir()
+    week = pd.DataFrame({"week_start": [pd.Timestamp("2026-06-01")] * 2,
+                         "ticker": ["AAPL", "NVDA"], "mpid": ["UBSA", "JPBX"],
+                         "venue_name": ["UBS ATS", "JPB-X"],
+                         "shares": [1.0, 2.0], "trades": [1, 2],
+                         "tier": ["T1", "T1"]})
+    week.to_parquet(ats / "20260601.parquet", index=False)
+    pd.DataFrame({"new_rows": [0]},
+                 index=[pd.Timestamp("2026-06-01")]).to_parquet(ats / "finra_ats__ingest.parquet")
+    monkeypatch.setattr(bdd, "ATS_DIR", ats)
+    df = bdd._load_ats()
+    assert df is not None and set(df["ticker"]) == {"AAPL", "NVDA"}
+
+
 def test_ats_parse_null_mpid_included():
     rows = [{**SAMPLE_ATS_ROWS[0], "MPID": None, "marketParticipantName": None}]
     df = _parse_rows(rows)
@@ -220,7 +322,10 @@ def test_builder_returns_0_when_panel_missing(tmp_path, monkeypatch):
 
 
 def test_builder_disabled_by_config(tmp_path, monkeypatch):
-    """darkpool.enabled=false → builder returns 0 without reading any data."""
+    """darkpool.enabled=false → builder returns 0 without reading any data.
+    The disabled path writes a noindex stub — capture it via bdd.write_page
+    (the import-time-bound name; patching lib.pages.write_page would no-op and
+    the stub would overwrite the REAL site/darkpool.html)."""
     import scripts.build_darkpool_desk as bdd
     from lib import config as lib_config
 
@@ -231,9 +336,13 @@ def test_builder_disabled_by_config(tmp_path, monkeypatch):
         d["darkpool"] = {"enabled": False}
         return d
 
+    written = {}
+    monkeypatch.setattr(bdd, "write_page",
+                        lambda path, html, **kw: written.update(html=html) or path)
     monkeypatch.setattr(lib_config, "load", _fake_load)
     result = bdd.main()
     assert result == 0
+    assert "disabled" in written.get("html", ""), "disabled stub should be written"
 
 
 # ---------------------------------------------------------------------------
@@ -283,9 +392,12 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
         bdd.YAHOO_DIR = tmp_path / "yahoo"      # no yahoo data — oe_share=None
         lib_config.ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-        # Override site write target via write_page
-        from lib import pages as lib_pages
-        orig_write = lib_pages.write_page
+        # Override site write target via write_page. IMPORTANT: the builder binds
+        # `from lib.pages import write_page` at import time, so the patch must go
+        # on bdd.write_page — patching lib.pages.write_page silently no-ops and
+        # bdd.main() then overwrites the REAL site/darkpool.html with this test's
+        # synthetic 2024 panel (found trashing the working tree 2026-07-11).
+        orig_write = bdd.write_page
 
         written_html = {}
 
@@ -294,11 +406,11 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
             (site_dir / "darkpool.html").write_text(html)
             return site_dir / "darkpool.html"
 
-        lib_pages.write_page = _fake_write
+        bdd.write_page = _fake_write
         try:
             rc = bdd.main()
         finally:
-            lib_pages.write_page = orig_write
+            bdd.write_page = orig_write
 
         if rc != 0:
             pytest.skip("builder returned non-zero — may need data; skip nav check")

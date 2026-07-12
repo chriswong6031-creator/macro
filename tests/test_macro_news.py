@@ -399,3 +399,26 @@ def test_fetch_gdelt_maps_rate_limited(monkeypatch, tmp_path):
     articles, reason = mn._fetch_gdelt({}, date(2026, 7, 10))
     assert articles == []
     assert reason == "rate_limited"
+
+
+def test_macro_synthesis_read_is_bilingual_and_deslugged():
+    """read/read_zh are plain-word bilingual twins — no raw channel/tier slugs
+    (doctrine Law 2: no untranslated slugs on user-facing surfaces)."""
+    heads = mn.filter_headlines([{
+        "title": "Federal Reserve rate decision lifts Treasury yields and bank stocks",
+        "domain": "federalreserve.gov",
+        "source": "official",
+        "source_name": "Federal Reserve",
+        "source_tier": "official",
+        "seendate": "2026-06-18T10:00:00+00:00",
+        "url": "https://example.com",
+    }], {"max_show": 5})
+    syn = mn._synthesis(heads)
+    assert syn["read"] and "_" not in syn["read"]
+    assert syn["read_zh"] and "_" not in syn["read_zh"]
+    assert any("一" <= c <= "鿿" for c in syn["read_zh"])
+    # structured fields keep raw slugs for machine consumers — unchanged contract
+    assert syn["dominant_channel"] in mn.CHANNEL_LABEL
+    # empty tape is bilingual too
+    empty = mn._synthesis([])
+    assert empty["read"] and empty["read_zh"]

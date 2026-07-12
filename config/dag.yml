@@ -301,6 +301,9 @@ lanes:
         note: DT-NW-1 — aggregate per-ticker dt_contra chip state into NW display artifact (display-only, seconds)
       - id: build_congress
         module: scripts.build_congress
+      - id: build_odds
+        module: scripts.build_odds
+        note: Odds Desk — historical base-rate analyzer + factor match screener (display-only; returns 0 on error). Shipped #2312 without a dag.yml declaration; conformance fix rode in #2311.
       - id: build_tech_lab
         module: scripts.build_tech_lab
         note: StockInvest Technical Lab hub render (display-only); data-gen build_tech_lab_data wired as daily.yml/tech_lab_offrender (TLT-R2)

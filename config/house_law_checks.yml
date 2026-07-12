@@ -1517,3 +1517,40 @@ checks:
       Established by the v4 sweep finding F1: five propose-test-learn loops held
       divergent blocklists with no cross-read — a construction killed in one loop
       was invisible to the others.
+
+  - law_id: flow_continuity.statement_tape_schema
+    summary: >
+      Statement-tape schema guard (FL-E / FC-R9).  Every non-comment row of
+      data/statement_tape/registry.jsonl must satisfy the binding schema
+      (date, speaker, venue, quote, stance_tag enum, added_by, ISO added_at),
+      and PS-R1 is enforced at the key level: any field name implying
+      prediction or scoring (signal/forecast/prediction/probability/edge) is a
+      hard failure — the tape records what was SAID, never a signal.
+    source_ref:
+      - scripts/check_statement_tape.py
+      - data/statement_tape/registry.jsonl
+      - tests/test_statement_tape.py
+      - "PR #2297"
+    severity: hard
+    check_script: scripts/check_statement_tape.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: engine-render-guards
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      Guard logic (schema, stance enum, PS-R1 key ban, paraphrase warning) is
+      covered by tests/test_statement_tape.py in the same engine-render-guards
+      pytest whitelist; the dedicated CI step runs the guard against the
+      committed registry directly.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Registry is operator/session-appended only (no automated collector per
+        the FL-E scope ruling); the guard validates schema and key-name
+        discipline, not the factual accuracy of quotes.
+    owner_program: flow-continuity
+    notes: >
+      Registered by the post-#2297 census fix (rode along in #2311): the guard
+      shipped in #2297 wired via pytest only, which the registry census could
+      not see; the census red-flagged every later PR.

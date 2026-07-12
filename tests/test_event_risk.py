@@ -125,3 +125,28 @@ def test_resolve_and_track_record(tmp_path):
     tr = er.track_record(path=p)
     assert tr["n"] == 1 and tr["avg_abs"] == 1.5 and tr["up_rate"] == 1.0
     assert tr["n_fragile"] == 1 and tr["avg_abs_fragile"] == 1.5
+
+
+# --------------------------------------------------------------------------- #
+# bilingual parity (docs/DESIGN_DOCTRINE.md) — label_zh / md_zh passthrough
+# --------------------------------------------------------------------------- #
+def test_label_zh_passthrough_and_zh_headline():
+    ev = _ev("FOMC", "2026-06-17", label="FOMC rate decision")
+    ev["label_zh"] = "美联储议息会议"
+    ev["md_zh"] = "6月17日"
+    out = er.snapshot({}, events=[ev], today=TODAY)
+    assert out["label_zh"] == "美联储议息会议"
+    assert out["md_zh"] == "6月17日"
+    assert "美联储议息会议" in out["headline_zh"]
+    assert "FOMC rate decision" not in out["headline_zh"]
+    a = er.as_alert(out)
+    assert "美联储议息会议" in a["message_zh"]
+    assert "FOMC rate decision" not in a["message_zh"]
+
+
+def test_label_zh_falls_back_to_en_label():
+    """Old event dicts without label_zh (stale artifacts) degrade to the EN label."""
+    out = er.snapshot({}, events=[_ev("FOMC", "2026-06-17", label="FOMC decision")],
+                      today=TODAY)
+    assert out["label_zh"] == "FOMC decision"
+    assert er.as_alert(out) is not None
