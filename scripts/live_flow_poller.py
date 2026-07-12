@@ -84,6 +84,40 @@ RETRY_PAUSE_SEC       = 5    # seconds — pause before retry
 # Item 8: RSS logging threshold
 RSS_WARN_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB
 
+# ── FC-R6: two-tier cadence config (DEFAULT OFF) ──────────────────────────────
+# Tier-1 roots are always polled every cycle; tier-2 (long tail) are round-robined.
+# Enable via env: LIVE_FLOW_TWO_TIER=1
+# NEVER raise max_concurrent above 2 without explicit Fable adjudication.
+# max_concurrent override: LIVE_FLOW_MAX_CONCURRENT=N (default: config or 2).
+TWO_TIER_ENV         = "LIVE_FLOW_TWO_TIER"
+MAX_CONCURRENT_ENV   = "LIVE_FLOW_MAX_CONCURRENT"
+
+# FC-R6: Tier-1 roots — ETF anchors + Mag7 + memory-storage names.
+# These are always polled every cycle when two-tier mode is ON.
+TIER1_ROOTS = [
+    # ETF anchors (22)
+    "SPY", "QQQ", "IWM", "GLD", "SLV", "TLT", "HYG", "XLF", "XLE",
+    "XLU", "XLK", "XLV", "XLI", "XLB", "XLY", "XLP", "XLRE",
+    "KRE", "SMH", "XBI", "ARKK", "DIA",
+    # Mag7
+    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA",
+    # Memory storage (flow continuity names)
+    "MU", "WDC", "STX", "SNDK",
+]
+
+# Task 3: pinned always-publish roots (Mag7 + memory + ETF majors).
+# When LIVE_FLOW_PINNED_PUBLISH=1 (DEFAULT ON), these roots are included in the
+# published ticker JSON even if they fall outside the top-40 by gross premium.
+PINNED_PUBLISH_ENV = "LIVE_FLOW_PINNED_PUBLISH"
+PINNED_PUBLISH_ROOTS = [
+    "SPY", "QQQ", "SMH",
+    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA",
+    "MU", "WDC", "STX", "SNDK",
+]
+
+# Daily summary output dir (FC-R8)
+DAILY_SUMMARY_DIR = "live_flow_daily"
+
 
 # ── config access ─────────────────────────────────────────────────────────────
 
@@ -100,6 +134,81 @@ def _r2_public_base() -> str:
         return config.load().get("r2_data_plane", {}).get("public_base", "")
     except Exception:  # noqa: BLE001
         return ""
+
+
+# ── FC-R6: two-tier cadence helpers ──────────────────────────────────────────
+
+def _max_concurrent(cfg: dict) -> int:
+    """Resolve max_concurrent: LIVE_FLOW_MAX_CONCURRENT env > config > default 2.
+
+    HARD LAW: ThetaData T1 backfill shares the 8-request cap.  Default is 2
+    and must not be raised without explicit Fable adjudication.
+    """
+    env_val = os.environ.get(MAX_CONCURRENT_ENV)
+    if env_val is not None:
+        try:
+            return max(1, int(env_val))
+        except ValueError:
+            log.warning("poller: invalid %s=%r — using config/default", MAX_CONCURRENT_ENV, env_val)
+    return int(cfg.get("max_concurrent", 2))
+
+
+def _two_tier_enabled() -> bool:
+    """True iff LIVE_FLOW_TWO_TIER=1.  Default OFF (production safe)."""
+    return os.environ.get(TWO_TIER_ENV, "0").strip() == "1"
+
+
+def _select_cycle_roots(
+    all_roots: list[str],
+    cycle_n: int,
+    cfg: dict,
+) -> tuple[list[str], int]:
+    """Return (roots_for_this_cycle, tail_slot_polled).
+
+    Two-tier cadence (LIVE_FLOW_TWO_TIER=1, DEFAULT OFF):
+      - Tier-1 (TIER1_ROOTS ∩ universe) polled every cycle.
+      - Tier-2 (remaining) split into N_TIER2_BUCKETS buckets; one bucket per cycle
+        (round-robin by cycle_n).  Each long-tail root is polled every
+        N_TIER2_BUCKETS cycles.  Projection example (122 roots):
+          tier1 = 34 (TIER1_ROOTS ∩ universe), tier2 = 88
+          With max_concurrent=2: tier1_time ≈ 34 * ~17s = 578s (~9.6 min)
+          Per-cycle time budget targeted at 10 min → tail slot ≈ 22 roots/cycle
+          N_TIER2_BUCKETS ≈ 88/22 = 4 → each tail root polled every 4 cycles (~40 min).
+
+    When two-tier is OFF: returns all_roots unchanged.
+    Returns tail_slot = -1 when two-tier is OFF or tier-2 is empty.
+    """
+    n_tier2_buckets = int(cfg.get("tier2_buckets", 4))
+
+    if not _two_tier_enabled():
+        return all_roots, -1
+
+    tier1_set = set(TIER1_ROOTS)
+    tier1 = [r for r in all_roots if r.upper() in tier1_set]
+    tier2 = [r for r in all_roots if r.upper() not in tier1_set]
+
+    if not tier2:
+        return tier1 if tier1 else all_roots, -1
+
+    # Round-robin tier-2 bucket
+    bucket_idx = (cycle_n - 1) % n_tier2_buckets
+    bucket_size = max(1, (len(tier2) + n_tier2_buckets - 1) // n_tier2_buckets)
+    start = bucket_idx * bucket_size
+    tier2_slice = tier2[start: start + bucket_size]
+
+    cycle_roots = tier1 + tier2_slice
+    log.info(
+        "poller: two-tier cycle=%d tier1=%d tier2_slot=%d/%d (%d roots)",
+        cycle_n, len(tier1), bucket_idx, n_tier2_buckets, len(tier2_slice),
+    )
+    return cycle_roots, bucket_idx
+
+
+# ── Task 3: pinned-publish helper ─────────────────────────────────────────────
+
+def _pinned_publish_enabled() -> bool:
+    """True by default; set LIVE_FLOW_PINNED_PUBLISH=0 to disable."""
+    return os.environ.get(PINNED_PUBLISH_ENV, "1").strip() != "0"
 
 
 # ── output paths ─────────────────────────────────────────────────────────────
@@ -617,7 +726,7 @@ def run_cycle(
     from engine import live_flow as lf
     import pandas as pd
 
-    max_w = int(cfg.get("max_concurrent", 2))
+    max_w = _max_concurrent(cfg)
     etf_floor  = int(cfg.get("etf_floor",  1_000_000))
     name_floor = int(cfg.get("name_floor",  250_000))
 
@@ -919,6 +1028,8 @@ def run_cycle(
         "requests_last_cycle":   requests_count,
         "cycle_sec":             round(cycle_sec, 1),
         "delta_mode":            delta_mode,
+        "max_concurrent":        max_w,
+        "two_tier":              _two_tier_enabled(),
         "notes":                 notes,
     }
 
@@ -953,6 +1064,105 @@ def run_cycle(
     }
 
     return feed_payload, heat_payload, meta_payload, updated_state, tide_day_state
+
+
+# ── FC-R8: end-of-session daily summary writer ───────────────────────────────
+
+def _daily_summary_path(session_date: str) -> Path:
+    p = config.data_dir() / DAILY_SUMMARY_DIR
+    p.mkdir(parents=True, exist_ok=True)
+    return p / f"{session_date}.json"
+
+
+def write_daily_summary(
+    session_date: str,
+    day_state: dict,
+    baselines: dict,
+    cycle_n: int,
+    asof: str,
+) -> Path | None:
+    """Write end-of-session per-day summary to data/live_flow_daily/YYYY-MM-DD.json.
+
+    Per FC-R8: per-name + per-cohort {gross, soft_net, pc, minutes_covered,
+    quality flags}.  Written locally AND uploaded to R2 WITHOUT the 48h TTL
+    prefix (permanent storage path: live_flow_daily/<date>.json).
+
+    Nightly-idempotent: safe to call multiple times; always overwrites with
+    latest accumulated state.
+
+    Returns the written Path on success, None on failure (INERT).
+    """
+    try:
+        rg = day_state.get("root_gross_today", {})
+        root_minutes = day_state.get("root_minutes", {})
+        market_tide = day_state.get("market_tide_minutes", {})
+
+        # Per-name summary rows
+        names: list[dict] = []
+        for root, gross in sorted(rg.items()):
+            rm = root_minutes.get(root, {})
+            minutes_covered = len(rm)
+            # Cumulative NCP/NPP from root_minutes
+            ncp_total = sum(float(v.get("ncp", 0.0)) for v in rm.values())
+            npp_total = sum(float(v.get("npp", 0.0)) for v in rm.values())
+            soft_net = round(ncp_total + npp_total, 0)
+            # P/C ratio from root_strikes accumulator
+            root_strikes = day_state.get("root_strikes", {}).get(root, {})
+            call_prem = sum(float(v.get("call_prem", 0.0)) for v in root_strikes.values())
+            put_prem = sum(float(v.get("put_prem", 0.0)) for v in root_strikes.values())
+            total_prem = call_prem + put_prem
+            pc_ratio = round(put_prem / call_prem, 3) if call_prem > 0 else None
+            call_share = round(call_prem / total_prem, 4) if total_prem > 0 else None
+            # Baseline info
+            bl = baselines.get(root.upper())
+            has_baseline = bl is not None and bl.get("std") and float(bl["std"]) > 0
+            prem_z = None
+            if has_baseline:
+                m, s = float(bl["mean"]), float(bl["std"])
+                prem_z = round((float(gross) - m) / s, 2)
+            names.append({
+                "root": root,
+                "gross": round(float(gross), 0),
+                "soft_net": soft_net,
+                "pc_ratio": pc_ratio,
+                "call_share": call_share,
+                "minutes_covered": minutes_covered,
+                "has_baseline": has_baseline,
+                "prem_z": prem_z,
+            })
+
+        # Sort by gross desc
+        names.sort(key=lambda r: r["gross"], reverse=True)
+
+        # Market-level tide summary (cumulative NCP/NPP across all minutes)
+        mkt_ncp = sum(float(v.get("ncp", 0.0)) for v in market_tide.values())
+        mkt_npp = sum(float(v.get("npp", 0.0)) for v in market_tide.values())
+        mkt_minutes = len(market_tide)
+
+        summary = {
+            "schema": "live_flow_daily.v1",
+            "session_date": session_date,
+            "asof": asof,
+            "cycle_n": cycle_n,
+            "n_names": len(names),
+            "market": {
+                "gross_total": round(sum(r["gross"] for r in names), 0),
+                "soft_net_total": round(mkt_ncp + mkt_npp, 0),
+                "minutes_covered": mkt_minutes,
+            },
+            "names": names,
+        }
+
+        out_path = _daily_summary_path(session_date)
+        tmp = out_path.with_suffix(".tmp.json")
+        tmp.write_text(json.dumps(summary, default=str))
+        tmp.rename(out_path)
+        log.info("poller: FC-R8 daily summary written — %s (%d names, cycle=%d)",
+                 out_path, len(names), cycle_n)
+        return out_path
+    except Exception as e:  # noqa: BLE001
+        log.warning("poller: FC-R8 daily summary write failed: %s", e)
+        return None
 
 
 def _session_pct() -> float:
@@ -1076,16 +1286,36 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
     last_archive_write = 0.0
     cadence   = int(cfg.get("cadence_sec", 120))
 
+    # FC-R6: log two-tier + max_concurrent configuration at startup
+    if _two_tier_enabled():
+        log.info(
+            "poller: FC-R6 two-tier cadence ON — tier1=%d roots every cycle, "
+            "long tail round-robined (set %s=0 to disable)",
+            len([r for r in roots if r.upper() in set(TIER1_ROOTS)]),
+            TWO_TIER_ENV,
+        )
+    else:
+        log.info(
+            "poller: FC-R6 two-tier cadence OFF (%s) — all %d roots every cycle",
+            TWO_TIER_ENV, len(roots),
+        )
+    mc = _max_concurrent(cfg)
+    log.info("poller: max_concurrent=%d (env %s)", mc, MAX_CONCURRENT_ENV)
+
     cycle_n = 0
     while True:
         loop_t0 = time.perf_counter()
         cycle_n += 1
-        log.info("poller: cycle #%d starting (date=%s delta_mode=%s)",
-                 cycle_n, session_date, delta_mode)
+
+        # FC-R6: two-tier root selection (DEFAULT OFF)
+        cycle_roots, _tail_slot = _select_cycle_roots(roots, cycle_n, cfg)
+
+        log.info("poller: cycle #%d starting (date=%s delta_mode=%s roots=%d)",
+                 cycle_n, session_date, delta_mode, len(cycle_roots))
 
         try:
             feed, heat, meta, updated_state, tide_day_state = run_cycle(
-                roots=roots,
+                roots=cycle_roots,
                 session_date=session_date,
                 delta_mode=delta_mode,
                 day_state=day_state,
@@ -1131,7 +1361,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         tide_path     = _write_json("tide_current.json", tide_payload)
         dte_tide_path = _write_json("dte_tide_current.json", dte_tide_payload)
 
-        # Build ticker JSONs for top ~40 roots by gross premium
+        # Build ticker JSONs for top ~40 roots by gross premium + pinned roots (Task 3).
         ns_map  = _load_names_sectors()
         rg_dict = tide_day_state.get("root_gross_today", {})
         top_roots_by_gross = sorted(rg_dict.items(), key=lambda kv: kv[1], reverse=True)
@@ -1140,7 +1370,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         _tickers_out_dir = _out_dir() / "tickers"
         _tickers_out_dir.mkdir(parents=True, exist_ok=True)
 
-        for tick_root, _ in top_roots_by_gross[:TOP_TICKERS_N]:
+        # Task 3: pinned-publish roots guarantee — Mag7 + memory + SPY/QQQ/SMH are
+        # always included in the published set even if they fall outside the top-40.
+        # Default ON (LIVE_FLOW_PINNED_PUBLISH=1); set =0 to disable.
+        top40_set = {r for r, _ in top_roots_by_gross[:TOP_TICKERS_N]}
+        if _pinned_publish_enabled():
+            pinned_extra = [r for r in PINNED_PUBLISH_ROOTS
+                            if r.upper() not in top40_set and r.upper() in rg_dict]
+            publish_roots = [r for r, _ in top_roots_by_gross[:TOP_TICKERS_N]] + pinned_extra
+        else:
+            publish_roots = [r for r, _ in top_roots_by_gross[:TOP_TICKERS_N]]
+
+        for tick_root in publish_roots:
             try:
                 tk_payload = lf_mod.build_ticker_json(
                     root=tick_root,
@@ -1222,6 +1463,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         except Exception as _rss_err:  # noqa: BLE001
             log.debug("poller: RSS check failed (non-fatal): %s", _rss_err)
 
+        # FC-R8: write end-of-session daily summary (every cycle; nightly-idempotent).
+        # Uploaded to R2 WITHOUT the 48h TTL live_flow/ prefix — permanent storage.
+        daily_summary_path = write_daily_summary(
+            session_date=session_date,
+            day_state=day_state,
+            baselines=baselines,
+            cycle_n=cycle_n,
+            asof=meta.get("asof", ""),
+        )
+
         # Upload to R2
         if s3:
             _upload_r2(s3, bucket, feed_path, R2_PREFIX + "feed_current.json")
@@ -1231,6 +1482,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             _upload_r2(s3, bucket, dte_tide_path, R2_PREFIX + "dte_tide_current.json")
             for tk_local, tk_r2_key in ticker_paths:
                 _upload_r2(s3, bucket, tk_local, tk_r2_key)
+
+            # FC-R8: upload daily summary to R2 WITHOUT the live_flow/ TTL prefix.
+            # Key: live_flow_daily/<date>.json — permanent (no 48h prune).
+            if daily_summary_path is not None:
+                r2_daily_key = f"live_flow_daily/{session_date}.json"
+                _upload_r2(s3, bucket, daily_summary_path, r2_daily_key)
 
             # Hourly archive
             now_ts  = time.time()
