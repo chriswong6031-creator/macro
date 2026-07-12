@@ -134,6 +134,30 @@ fred:
       BAMLC0A0CM: ig_oas          # same caveat
       BAMLEMCBPIOAS: em_oas       # ICE BofA EM corporate OAS — EM/RORO risk leg (Forex Vector)
       BAMLHYH0A0HYM2TRIV: hy_total_return   # ICE BofA US HY TOTAL-RETURN index (1986->); engine.total_return.hy_tr auto-upgrades to it for a deeper Credit-Carry backtest
+    # --- IRD-W1: EM OAS ladder (ICE BofA BAML family; rolling 3y on FRED since Apr-2026; IRD-R9 vintage law) ---
+    # Liveness verified 2026-07-12: all ids return rows through 2026-07-09.
+    em_oas_ladder:
+      BAMLEMHBHYCRPIOAS: em_hy_oas        # EM HY OAS (High Beta) — last obs 2026-07-09
+      BAMLEMRACRPIASIAOAS: em_asia_oas    # EM Asia OAS — last obs 2026-07-09
+      BAMLEMRLCRPILAOAS: em_latam_oas     # EM LatAm OAS — last obs 2026-07-09
+      BAMLEMRECRPIEMEAOAS: em_emea_oas    # EM EMEA OAS — last obs 2026-07-09
+      BAMLEMFSFCRPIOAS: em_fin_oas        # EM Financial Sector OAS — last obs 2026-07-09
+      BAMLEMNSNFCRPIOAS: em_nonfin_oas    # EM Non-Financial Sector OAS — last obs 2026-07-09
+      BAMLEMEBCRPIEOAS: em_euro_oas       # EM Euro-denominated OAS — last obs 2026-07-09
+      BAMLHE00EHYIOAS: euro_hy_oas        # Euro HY OAS — last obs 2026-07-09
+    # --- IRD-W1: swap lines + facility loans (weekly Wednesday; IRD-R5: confirmation tier) ---
+    # Liveness verified 2026-07-12: SWPT last obs 2026-07-08 ($170M), WLCFLL last obs 2026-07-08 ($5822M).
+    swap_lines:
+      SWPT: swap_lines_tot        # CB liquidity swaps outstanding (weekly Wed, $M); convert to $bn in plumbing lobe
+      WLCFLL: fed_facility_loans  # Fed liquidity & credit facility loans outstanding (weekly Wed, $M)
+    # --- IRD-W1: EM vol + corridor rates not yet in any FRED group ---
+    # VXEEMCLS verified 2026-07-12: last obs 2026-07-09 (42.56). EFFR/OBFR verified live.
+    # SOFR already in fx_rates_short (alias: sofr); IORB already in bonds_extra (alias: iorb) — reused, not repeated.
+    em_vol:
+      VXEEMCLS: vxeem             # CBOE Emerging Markets ETF Volatility Index (EEM-implied vol) — EM stress thermometer
+    corridor_rates:
+      EFFR: effr                  # Effective Fed Funds Rate (daily) — IORB spread: EFFR−IORB
+      OBFR: obfr                  # Overnight Bank Funding Rate (daily) — broader-than-EFFR corridor read
     risk:
       VIXCLS: vix_close
       OVXCLS: ovx_oil             # CBOE oil VIX (2007->); energy-sector VRP leg (index_direction)
@@ -3051,6 +3075,29 @@ bis:
     us_dsr: {flow: WS_DSR,        key: "Q.US.P",     col: dsr}
     cn_gap: {flow: WS_CREDIT_GAP, key: "Q.CN.P.A.C", col: gap}
     cn_dsr: {flow: WS_DSR,        key: "Q.CN.P",     col: dsr}
+    # --- IRD-W1: expanded BIS credit-gap + DSR country coverage (vulnerability map §2 SLOW tier) ---
+    # API shape verified 2026-07-12 for JP/GB/XM (all return data); KR verified. Others follow same pattern.
+    # BIS adapter fails-open per series so unverified countries degrade gracefully.
+    jp_gap: {flow: WS_CREDIT_GAP, key: "Q.JP.P.A.C", col: gap}   # Japan — verified 2026-07-12 (data 1974-Q4→)
+    jp_dsr: {flow: WS_DSR,        key: "Q.JP.P",     col: dsr}   # Japan DSR — verified 2026-07-12 (data 1999-Q1→)
+    gb_gap: {flow: WS_CREDIT_GAP, key: "Q.GB.P.A.C", col: gap}   # United Kingdom — verified 2026-07-12 (data 1973-Q1→)
+    gb_dsr: {flow: WS_DSR,        key: "Q.GB.P",     col: dsr}   # UK DSR
+    xm_gap: {flow: WS_CREDIT_GAP, key: "Q.XM.P.A.C", col: gap}   # Euro area — verified 2026-07-12 (data 2009-Q1→)
+    xm_dsr: {flow: WS_DSR,        key: "Q.XM.P",     col: dsr}   # Euro area DSR
+    kr_gap: {flow: WS_CREDIT_GAP, key: "Q.KR.P.A.C", col: gap}   # Korea — verified 2026-07-12 (data 1972-Q4→)
+    kr_dsr: {flow: WS_DSR,        key: "Q.KR.P",     col: dsr}   # Korea DSR
+    br_gap: {flow: WS_CREDIT_GAP, key: "Q.BR.P.A.C", col: gap}   # Brazil — unverified; adapter fails-open
+    br_dsr: {flow: WS_DSR,        key: "Q.BR.P",     col: dsr}   # Brazil DSR
+    mx_gap: {flow: WS_CREDIT_GAP, key: "Q.MX.P.A.C", col: gap}   # Mexico — unverified; adapter fails-open
+    mx_dsr: {flow: WS_DSR,        key: "Q.MX.P",     col: dsr}   # Mexico DSR
+    tr_gap: {flow: WS_CREDIT_GAP, key: "Q.TR.P.A.C", col: gap}   # Turkey — unverified; adapter fails-open
+    tr_dsr: {flow: WS_DSR,        key: "Q.TR.P",     col: dsr}   # Turkey DSR
+    za_gap: {flow: WS_CREDIT_GAP, key: "Q.ZA.P.A.C", col: gap}   # South Africa — unverified; adapter fails-open
+    za_dsr: {flow: WS_DSR,        key: "Q.ZA.P",     col: dsr}   # South Africa DSR
+    in_gap: {flow: WS_CREDIT_GAP, key: "Q.IN.P.A.C", col: gap}   # India — unverified; adapter fails-open
+    in_dsr: {flow: WS_DSR,        key: "Q.IN.P",     col: dsr}   # India DSR
+    id_gap: {flow: WS_CREDIT_GAP, key: "Q.ID.P.A.C", col: gap}   # Indonesia — unverified; adapter fails-open
+    id_dsr: {flow: WS_DSR,        key: "Q.ID.P",     col: dsr}   # Indonesia DSR
 
 credit_cycle:
   boom_gap: 10.0                     # credit-to-GDP gap above this = boom / elevated crisis risk (BIS)
@@ -3058,6 +3105,26 @@ credit_cycle:
   countries:
     us: {gap: us_gap, dsr: us_dsr, label_en: "United States", label_zh: "美国"}
     cn: {gap: cn_gap, dsr: cn_dsr, label_en: "China",         label_zh: "中国"}
+
+# =============================================================================
+# IMF World Economic Outlook DataMapper (IRD-W1 — §2 SLOW tier vulnerability map)
+# Keyless JSON API: one GET per indicator returns ALL countries for all years.
+# Annual data; WEO vintages published April + October. Adapter: collectors/imf_weo.py.
+# Endpoint verified 2026-07-12 (returns JSON with nested values dict; US/EU/JP confirmed).
+# =============================================================================
+imf_weo:
+  enabled: true
+  base_url: "https://www.imf.org/external/datamapper/api/v1"
+  retries: 3
+  timeout: 60
+  # Indicators to fetch (one HTTP GET each)
+  indicators:
+    GGXWDG_NGDP: gross_debt_pct_gdp       # Gross government debt (% of GDP)
+    GGXONLB_NGDP: primary_balance_pct_gdp # Primary net lending/borrowing (% of GDP)
+    BCA_NGDPD: current_account_pct_gdp    # Current account balance (% of GDP)
+  # ISO-3 country codes to retain (the 25-country vulnerability map universe)
+  countries: [USA, CAN, GBR, DEU, FRA, ITA, ESP, JPN, KOR, CHN, IND, IDN,
+              AUS, BRA, MEX, TUR, ZAF, POL, HUN, THA, MYS, PHL, CHL, COL, EGY]
 
 # =============================================================================
 # Rate & inflation TRANSMISSION (engine/rate_inflation_transmission.py +
@@ -5900,7 +5967,13 @@ yahoo:
     factors: [MTUM, QUAL, USMV, SPHB, SPLV]
     ipo: [IPO, FPX]               # Renaissance IPO ETF + First Trust IPOX — aftermarket new-issue basket reality-check (IPO Radar; the "buy IPOs in the secondary market" trade)
     credit: [HYG, LQD]
-    bond_etfs: [TLT, IEF, TIP, EMB]   # Bonds dashboard price/flow proxies: long UST, 7-10y UST, TIPS, EM USD sov
+    bond_etfs: [TLT, IEF, TIP, EMB,   # Bonds dashboard price/flow proxies: long UST, 7-10y UST, TIPS, EM USD sov
+                EMLC,                  # IRD-W1: VanEck EM Local Currency Bond ETF (2010->) — EM local-currency stress proxy (long-history z-score substrate per IRD-R9)
+                PCY,                   # IRD-W1: Invesco EM Sov Debt (2007->) — long-history EM sov spread proxy
+                VWOB]                  # IRD-W1: Vanguard EM Govt Bond ETF (2013->) — EM USD sov broad proxy
+    # IRD-W1: bank-stress relative-strength lane (IRD-R3 Tier-2 US-transmission detector; Mar-2023 reverse-contagion class)
+    bank_etfs: [EUFN,                  # iShares MSCI Europe Financials (2007->) — European bank stress read vs SPY RS
+                KBWB]                  # Invesco KBW Bank ETF (2011->) — US large-bank RS complement to KRE (already in extras)
     intl_etfs: [FXI,                   # China large-cap (US-hours) — factor-exposure China proxy + holding
                 KWEB,                  # KraneShares CSI China Internet (2013->) — offshore internet cohort; onshore/offshore divergence axis
                 MCHI,                  # iShares MSCI China (2011->) — broad China offshore benchmark

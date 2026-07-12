@@ -160,6 +160,7 @@ def all_adapters() -> dict:
         ("sam_gov", "collectors.sam_gov", "SamGovAdapter"),               # SAM.gov pre-award solicitations by NAICS (theme_event radar leg); GATED on SAM_API_KEY -> 'blocked' without it
         ("federal_register", "collectors.federal_register", "FederalRegisterAdapter"),  # Federal Register policy-doc velocity (keyless; two-stage AGENCY-SLUG x TERM filter; theme_event radar leg); degrades gracefully when absent
         ("bis", "collectors.bis", "BisAdapter"),                   # BIS global credit-cycle (credit-gap + DSR)
+        ("imf_weo", "collectors.imf_weo", "ImfWeoAdapter"),         # IRD-W1: IMF WEO DataMapper — annual debt/primary-balance/CA fundamentals (keyless; US shard)
         ("treasury_auctions", "collectors.treasury_auctions", "TreasuryAuctionsAdapter"),  # TreasuryDirect auction RESULTS -> supply-absorption panel (display-only)
         # China A-share dashboard — see research/CHINA_DATA_AUDIT.md
         ("china_prices", "collectors.china_prices", "ChinaPriceAdapter"),

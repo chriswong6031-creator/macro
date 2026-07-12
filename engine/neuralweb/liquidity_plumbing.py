@@ -79,7 +79,8 @@ _PHASE_STATUS = {
     "p3_funding_spreads": "integrated",
     "p3_srf_discount_window": "pending_collection",
     "p3_reserve_balances": "fail_open_until_wresbal_collected",
-    "p5_swap_fima": "pending",
+    "p5_swap_lines": "integrated_ird_w1",   # SWPT/WLCFLL from fred adapter (IRD-W1)
+    "p5_fima_repo": "pending_no_free_breakout",  # no free per-facility source
 }
 
 # 20-trading-day and 65-trading-day lookback windows (business-daily index)
@@ -296,6 +297,7 @@ def compute(
     config: dict | None = None,
     funding_frames: dict | None = None,
     reserves_frame: pd.DataFrame | None = None,
+    swap_frames: dict | None = None,
 ) -> dict:
     """Pure compute — derives the full lobe payload from pre-loaded inputs.
 
@@ -323,6 +325,11 @@ def compute(
         Optional DataFrame from data/fred/WRESBAL.parquet (H.4.1 reserve
         balances, $bn weekly). None → fed.reserve_balances_bn stays null
         with a gaps[] entry.
+    swap_frames:
+        Optional dict for Phase-5 swap-line inputs (IRD-W1), keys:
+        "swap_lines_tot" (data/fred/SWPT.parquet, $M weekly),
+        "fed_facility_loans" (data/fred/WLCFLL.parquet, $M weekly).
+        None or absent keys → foreign_dollar.swap_lines_bn null with a gaps[] entry.
 
     Returns
     -------
@@ -743,13 +750,61 @@ def compute(
         components_block["reserves"] = _component_stats(reserves_series_bn)
 
     # ------------------------------------------------------------------
-    # 8. Foreign dollar block (Phase 5 — ALL null)
+    # 8. Foreign dollar block (Phase 5 — swap lines filled from SWPT/WLCFLL)
     # ------------------------------------------------------------------
-    gaps.append("H.4.1 swap/FIMA not integrated (Phase 5)")
+    # IRD-R5: swap lines are CONFIRMATION tier (grade severity after price signals fire;
+    # no alert keys off them). FIMA repo has no free per-facility breakout —
+    # no free per-facility breakout; aggregate rides H.4.1 repo line.
+    _swap_frames = swap_frames if isinstance(swap_frames, dict) else {}
+    swap_lines_bn: float | None = None
+    facility_loans_bn: float | None = None
+    swap_asof: str | None = None
+
+    swap_raw = _to_series(_swap_frames.get("swap_lines_tot"))
+    if swap_raw is None:
+        gaps.append(
+            "data/fred/SWPT.parquet missing or empty — swap_lines_bn unavailable "
+            "(IRD-R5: confirmation tier; collect with FredAdapter once)"
+        )
+    else:
+        # SWPT is published in $M (millions); convert to $bn
+        latest_val = float(swap_raw.iloc[-1])
+        swap_lines_bn = float(round(latest_val / 1000.0, 3)) if latest_val > 0 else 0.0
+        swap_asof = str(swap_raw.index[-1].date())
+
+    facility_raw = _to_series(_swap_frames.get("fed_facility_loans"))
+    if facility_raw is not None:
+        latest_fac = float(facility_raw.iloc[-1])
+        facility_loans_bn = float(round(latest_fac / 1000.0, 3)) if latest_fac > 0 else 0.0
+        if swap_asof is None:
+            swap_asof = str(facility_raw.index[-1].date())
+    else:
+        gaps.append(
+            "data/fred/WLCFLL.parquet missing or empty — facility_loans_bn unavailable"
+        )
+
+    # Determine state label
+    if swap_lines_bn is not None:
+        if swap_lines_bn > 100:
+            _swap_state = "elevated_draw"
+        elif swap_lines_bn > 0:
+            _swap_state = "low_draw"
+        else:
+            _swap_state = "quiescent"
+    else:
+        _swap_state = "data_unavailable"
+
     foreign_dollar_block: dict[str, Any] = {
-        "swap_lines_bn": None,
-        "fima_repo_bn": None,
-        "state": "not_integrated_yet",
+        "swap_lines_bn": swap_lines_bn,
+        "facility_loans_bn": facility_loans_bn,
+        "fima_repo_bn": None,  # no free per-facility breakout; aggregate rides H.4.1 repo line
+        "state": _swap_state,
+        "note": (
+            "IRD-R5: swap-line levels are confirmation tier — they grade severity "
+            "after price signals fire, never trigger alerts. "
+            "FIMA repo: no free per-facility breakout; aggregate rides H.4.1 repo line."
+        ),
+        "asof": swap_asof,
     }
 
     # ------------------------------------------------------------------
@@ -905,8 +960,13 @@ def degraded_payload(gaps: list[str], summary: str = "Build error — see gaps."
             "netliq_sparkline_90d": [],
         },
         "foreign_dollar": {
-            "swap_lines_bn": None, "fima_repo_bn": None,
-            "state": "not_integrated_yet",
+            "swap_lines_bn": None, "facility_loans_bn": None, "fima_repo_bn": None,
+            "state": "data_unavailable",
+            "note": (
+                "IRD-R5: swap-line levels are confirmation tier. "
+                "FIMA repo: no free per-facility breakout; aggregate rides H.4.1 repo line."
+            ),
+            "asof": None,
         },
         "entry_effect": {
             "direction": "unknown", "quality": "unknown",
@@ -1042,6 +1102,24 @@ def snapshot(root: str | Path | None = None) -> dict:
         except Exception as exc:  # noqa: BLE001
             log.warning("liquidity_plumbing.snapshot: failed to read WRESBAL — %s", exc)
 
+    # 6b. Phase-5 swap lines (IRD-W1): SWPT + WLCFLL from FRED adapter.
+    #     Fail-open: absent until the FRED collector has run with new series in config.
+    swap_frames: dict[str, pd.DataFrame | None] = {}
+    for key, fname in (
+        ("swap_lines_tot", "SWPT.parquet"),
+        ("fed_facility_loans", "WLCFLL.parquet"),
+    ):
+        p = root / "data" / "fred" / fname
+        if not p.exists():
+            log.warning("liquidity_plumbing.snapshot: %s not found (absent until next FRED collect)", fname)
+            swap_frames[key] = None
+        else:
+            try:
+                swap_frames[key] = pd.read_parquet(p)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("liquidity_plumbing.snapshot: failed to read %s — %s", fname, exc)
+                swap_frames[key] = None
+
     # 7. Call compute
     try:
         payload = compute(
@@ -1052,6 +1130,7 @@ def snapshot(root: str | Path | None = None) -> dict:
             config=None,
             funding_frames=funding_frames,
             reserves_frame=reserves_frame,
+            swap_frames=swap_frames,
         )
     except Exception as exc:  # noqa: BLE001
         log.error("liquidity_plumbing.snapshot: compute() raised — %s", exc)
