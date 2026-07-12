@@ -30,9 +30,18 @@ permissions:
 jobs:
   probe:
     runs-on: ${{ github.event.inputs.runner == 'ubuntu-latest' && 'ubuntu-latest' || fromJSON('["self-hosted","macstudio"]') }}
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
+      # Sparse checkout: the probe needs only the auth boundary + its script.
+      # A full checkout of this multi-GB repo on the busy macstudio runner
+      # blew the old 10-minute timeout during checkout (run 29182955692).
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            engine
+            lib
+            scripts
+            config.yml
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
