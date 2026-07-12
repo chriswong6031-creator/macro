@@ -1774,8 +1774,6 @@
   {% endif %}
 
   {% if mode != 'stocks' %}
-  {# MX4 — localStorage guard: if user chose ledger view, strip the server-side default grid class #}
-  <script>try{if(localStorage.getItem('mx4_view')==='ledger')document.body.classList.remove('mx4-grid');}catch(e){}</script>
   <!-- ======================= HEADER ======================= -->
   <div class="panel span12" id="regime-radar">
   <input type="checkbox" id="ms-alerts-toggle" class="ms-alerts-cb" hidden aria-hidden="true">
@@ -3666,7 +3664,7 @@ body.page-macro.mx4-grid .mx5-thesis{
   font-size:13px;font-weight:450;line-height:1.55;
   color:var(--ink-1,rgba(255,255,255,.92));
   margin:12px 0 10px;
-  border-left:3px solid var(--mx5-accent);padding-left:12px;
+  padding-left:0;
 }
 body.page-macro.mx4-grid .mx5-flip{
   font-size:11px;color:var(--ink-2,rgba(255,255,255,.6));
@@ -3892,6 +3890,101 @@ body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
   transition:text-decoration-color .15s;
 }
 .mx5-pop-footer-link:hover{text-decoration-color:var(--mx5-accent);}
+
+/* ══════════════════════════════════════════════════════════════════
+   v5.1 — mx5OpenDlg centered dialog system (§2 addendum)
+   Desktop: centered fixed glass dialog 980px / 82vh
+   Mobile ≤700px: bottom sheet, 12px sides, 85vh, sticky close bar
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Scroll-lock while dialog open */
+body.mx5-dlg-open{ overflow:hidden; }
+
+/* Backdrop dim */
+.mx5-dlg{
+  display:none;position:fixed;inset:0;z-index:200;
+  align-items:center;justify-content:center;
+}
+.mx5-dlg.open{ display:flex; }
+.mx5-dlg-backdrop{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.55);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+
+/* Glass panel */
+.mx5-dlg-panel{
+  position:relative;z-index:1;
+  max-width:980px;width:calc(100% - 48px);
+  max-height:82vh;
+  background:var(--mx5-pop-bg,rgba(13,18,26,.97));
+  border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));
+  border-radius:var(--mx5-radius-card,18px);
+  backdrop-filter:blur(32px);
+  -webkit-backdrop-filter:blur(32px);
+  box-shadow:0 32px 96px rgba(0,0,0,.8),0 1.5px 0 rgba(255,255,255,.09) inset;
+  overflow-y:auto;
+  display:flex;flex-direction:column;
+}
+[data-theme="light"] .mx5-dlg-panel{
+  background:var(--mx5-pop-bg,rgba(255,255,255,.97));
+  box-shadow:0 16px 64px rgba(0,0,0,.15),0 1px 0 rgba(255,255,255,.9) inset;
+}
+
+/* Dialog header (sticky) */
+.mx5-dlg-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 26px 16px;
+  position:sticky;top:0;z-index:2;
+  background:inherit;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+[data-theme="light"] .mx5-dlg-header{border-bottom-color:rgba(0,0,0,.07);}
+.mx5-dlg-title{
+  font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));
+}
+.mx5-dlg-close{
+  display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(255,255,255,.07);border:none;cursor:pointer;
+  color:var(--ink-2,rgba(255,255,255,.6));font-size:18px;line-height:1;
+  font-family:inherit;flex-shrink:0;
+  transition:background .15s;
+}
+.mx5-dlg-close:hover{background:rgba(255,255,255,.14);}
+.mx5-dlg-close:focus-visible{outline:2px solid var(--link,#22d97a);outline-offset:2px;}
+
+/* Dialog body */
+.mx5-dlg-body{
+  padding:24px 26px 28px;flex:1;overflow-y:auto;
+}
+
+/* Animation (desktop) */
+@media(prefers-reduced-motion:no-preference){
+  .mx5-dlg-panel{
+    opacity:0;transform:translateY(-16px) scale(.98);
+    transition:opacity 220ms cubic-bezier(.22,.68,0,1.2),
+                transform 220ms cubic-bezier(.22,.68,0,1.2);
+  }
+  .mx5-dlg.open .mx5-dlg-panel{opacity:1;transform:translateY(0) scale(1);}
+}
+
+/* Mobile bottom sheet (≤700px) */
+@media(max-width:700px){
+  .mx5-dlg{ align-items:flex-end; }
+  .mx5-dlg-panel{
+    width:calc(100% - 24px);max-width:none;
+    max-height:85vh;
+    border-radius:var(--mx5-radius-card,18px) var(--mx5-radius-card,18px) 0 0;
+    margin:0 12px;
+  }
+  @media(prefers-reduced-motion:no-preference){
+    .mx5-dlg-panel{ transform:translateY(24px); }
+    .mx5-dlg.open .mx5-dlg-panel{ transform:translateY(0); }
+  }
+}
 
 /* ── Gauge SVG glow (JS patchable via data attrs) ───────────────── */
 /* Arc and needle updated by risk_state_live.js; see §3.1 */
@@ -4216,14 +4309,12 @@ body.page-macro.mx4-grid #sx-news-v2 .sxg-face.mx5-card-face .mx5-alerts-list{
 body.page-macro.mx4-grid .mx5-alert-item{
   display:flex;align-items:flex-start;gap:11px;
   padding:12px 26px;border-bottom:1px solid rgba(255,255,255,.05);
-  border-left:3px solid transparent;
 }
 body.page-macro.mx4-grid .mx5-alert-item:last-child{border-bottom:none;}
 body.page-macro.mx4-grid .mx5-alert-item.warn{
-  border-left-color:var(--mx5-warn);background:rgba(245,158,11,.04);
+  background:rgba(245,158,11,.04);
 }
 body.page-macro.mx4-grid .mx5-alert-item.info{
-  border-left-color:rgba(255,255,255,.06);
 }
 body.page-macro.mx4-grid .mx5-alert-dot{
   width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;
@@ -4672,7 +4763,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           </div>
           <div class="mx5-pop-footer">
             <button class="mx5-pop-footer-link" type="button"
-                    onclick="mx5CloseAllPopovers();mx2Toggle('sx-evidence')">
+                    onclick="mx5CloseAllPopovers();mx5OpenDlg('dlg-evidence')">
               <span class="l-en">Full breakdown &#8595;</span><span class="l-zh">完整分析 &#8595;</span>
             </button>
           </div>
@@ -4717,7 +4808,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           {% endif %}
           <div class="mx5-pop-footer">
             <button class="mx5-pop-footer-link" type="button"
-                    onclick="mx5CloseAllPopovers();mx2Toggle('sx-risk-v2')">
+                    onclick="mx5CloseAllPopovers();mx5OpenDlg('dlg-risk')">
               <span class="l-en">Full risk detail &#8595;</span><span class="l-zh">完整风险分析 &#8595;</span>
             </button>
           </div>
@@ -4874,24 +4965,11 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {% set _mos2 = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
   <div class="panel span12" style="padding:0 20px">
 
-  {# v2 topbar: brand + view-switcher + expand-all pill #}
+  {# v2 topbar: brand + as-of date (Grid/Ledger toggle and Expand-all removed — grid is permanent) #}
   <div class="mx2-topbar">
-    <span class="mx2-topbar-brand"><span class="l-en">Macro Ledger</span><span class="l-zh">宏观总览</span></span>
+    <span class="mx2-topbar-brand"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观总览</span></span>
     <div class="mx2-topbar-right">
-      {# MX4 segmented view control #}
-      <div class="mx4-view-seg" role="group" aria-label="View">
-        <button id="mx4BtnGrid" class="mx4-seg-btn" type="button" aria-pressed="true" onclick="mx4SetView('grid')">
-          <span class="l-en">Grid</span><span class="l-zh">网格</span>
-        </button>
-        <button id="mx4BtnLedger" class="mx4-seg-btn" type="button" aria-pressed="false" onclick="mx4SetView('ledger')">
-          <span class="l-en">Ledger</span><span class="l-zh">列表</span>
-        </button>
-      </div>
       {% if MS2 %}<span class="mx2-topbar-date"><span class="l-en">as of {{ MS2.asof }}</span><span class="l-zh">{{ MS2.asof }}</span></span>{% endif %}
-      <button id="mx2ExpandAllBtn" class="mx2-expand-btn" onclick="mx2ToggleAll()" type="button">
-        <span class="ea-ic">&#8964;</span>
-        <span class="ea-txt"><span class="l-en">Expand all</span><span class="l-zh">展开全部</span></span>
-      </button>
     </div>
   </div>
 
@@ -4901,21 +4979,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {# 1. EVIDENCE row + tray #}
   {% set _weakest = MS2.components | sort(attribute='score') | first if (MS2 and MS2.components) else none %}
   <div class="sx" id="sx-evidence" style="--isle-color:var(--isle-evidence)">
-    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-evidence')">
-      <span class="sx-label"><span class="l-en">Evidence</span><span class="l-zh">依据</span></span>
-      <div class="sx-glance">
-        <span style="font-size:12px;color:var(--muted)">
-          <span class="l-en">Six-factor breakdown
-            {%- if _weakest %} &nbsp;·&nbsp; flip trigger: {{ _weakest.label_en }} ({{ _weakest.score }}/100){% endif %}
-          </span>
-          <span class="l-zh">六因子分析
-            {%- if _weakest %} &nbsp;·&nbsp; 翻转触发：{{ _weakest.label_zh or _weakest.label_en }} ({{ _weakest.score }}/100){% endif %}
-          </span>
-        </span>
-        <span class="v2-display-badge"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span>
-      </div>
-      <div class="sx-chev">&#8964;</div>
-    </div>
     {# v5 face — WHAT TO DO (grid view; sx-evidence face is now the WTD card)
        Keeps v4 derivation rows verbatim (MS2.components + radar + events) — reskinned to v5 icon tiles.
        Clicking opens the full Evidence island. #}
@@ -4923,7 +4986,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
        scorecard button count) #}
     {% set _ev_n_good = (MS.components | selectattr('tone','equalto','good') | list | length) if (market_state and MS.components) else 0 %}
     {% set _ev_total = (MS.components | length) if (market_state and MS.components) else 0 %}
-    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-evidence')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-evidence');}">
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-evidence')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-evidence');}">
       <div class="mx5-card-title"><span class="l-en">What To Do</span><span class="l-zh">操作建议</span></div>
       <div class="mx5-action-list">
         {# Row 1: regime primary action from MS.radar / MS.label_en #}
@@ -5167,26 +5230,9 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
   {# 2. EVENTS row + tray (contains Release Radar + week-ahead band) #}
   <div class="sx" id="sx-events-v2" style="--isle-color:var(--isle-events)">
-    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-events-v2')">
-      <span class="sx-label"><span class="l-en">Events</span><span class="l-zh">事件</span></span>
-      <div class="sx-glance mx2-events-glance">
-        {% if macro_catalysts %}
-        {% for c in macro_catalysts[:2] %}
-        {% set _ev_zh = c.get('label_zh') or c.label %}
-        <span class="v2chip {{ 'c-warn' if c.impact == 'high' else 'c-info' }}"><span class="l-en">{{ c.label[:22] }}{% if c.label|length > 22 %}…{% endif %}</span><span class="l-zh">{{ _ev_zh[:14] }}{% if _ev_zh|length > 14 %}…{% endif %}</span> {{ _mos2[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</span>
-        {% endfor %}
-        {% endif %}
-        {% if prediction_markets and prediction_markets.events %}
-        {% set _pm_top = (prediction_markets.events|first).outcomes | sort(attribute='prob',reverse=true) | first %}
-        <span style="font-size:12px;color:var(--muted)" class="l-en">{{ t('Fed','Fed') }} {{ _pm_top.outcome }} {{ _pm_top.prob }}%</span>
-        <span style="font-size:12px;color:var(--muted)" class="l-zh">美联储 {{ _pm_top.outcome }} {{ _pm_top.prob }}%</span>
-        {% endif %}
-      </div>
-      <div class="sx-chev">&#8964;</div>
-    </div>
     {# v5 face — UPCOMING EVENTS (week rail + impact badges; fed odds removed to Fed card) #}
     {% set _ev_hi_cnt = (macro_catalysts | selectattr('impact','equalto','high') | list | length) if macro_catalysts else 0 %}
-    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-events-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-events-v2');}">
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-events')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-events');}">
       <div class="mx5-card-title-row">
         <div class="mx5-card-title"><span class="l-en">Upcoming Events</span><span class="l-zh">近期事件</span></div>
         <div class="mx5-card-badge"><span class="l-en">This week</span><span class="l-zh">本周</span></div>
@@ -7219,25 +7265,9 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
   {# 3. MARKETS row + tray #}
   <div class="sx" id="sx-markets-v2" style="--isle-color:var(--isle-markets)">
-    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-markets-v2')">
-      <span class="sx-label"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-      <div class="sx-glance mx2-mkt-glance">
-        {% for ix in index_health %}
-        {% set _ixsym = ix.ticker | replace('_','') %}
-        <div class="mx2-mkt-tile">
-          <div class="mx2-mkt-top">
-            <span class="mx2-mkt-name">{{ _ixsym }}</span>
-            <span class="mx2-mkt-chg {{ 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</span>
-          </div>
-          <div class="mx2-mkt-px nb-px" data-sym="{{ _ixsym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
-        </div>
-        {% endfor %}
-      </div>
-      <div class="sx-chev">&#8964;</div>
-    </div>
     {# v5 face — MARKETS (S2: four glass tiles with price/delta/sparkline; data-bare ids preserved) #}
     {% set _ix_names = {'SPY': 'US Equities', 'QQQ': 'Nasdaq', 'DJI': 'Dow Jones', '_DJI': 'Dow Jones', 'RUT': 'Small Cap', '_RUT': 'Small Cap'} %}
-    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-markets-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-markets-v2');}">
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-markets')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-markets');}">
       {# Eyebrow hidden in v5 card face — card-title replaces it #}
       <div class="mx5-card-title"><span class="l-en">Markets</span><span class="l-zh">市场行情</span></div>
       <div class="mx5-mkt-grid">
@@ -7470,36 +7500,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {% set _rdr_score = _rdr.top_score if _rdr else none %}
   {% set _rdr_col = 'var(--down)' if _rdr_state == 'risk-off' else ('var(--orange,var(--warn))' if _rdr_state in ('elevated','caution') else 'var(--up)') %}
   <div class="sx" id="sx-risk-v2" style="--isle-color:var(--isle-risk)">
-    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-risk-v2')">
-      <span class="sx-label"><span class="l-en">Risk</span><span class="l-zh">风险</span></span>
-      <div class="sx-glance mx2-risk-glance">
-        {# COPY-01 (P0): use the SAME plain-word driver label in both EN and ZH so the two languages match.
-           _rdr.label_en = specific driver name (e.g. "Bubble / blow-off unwind"); _rdr.label_zh = its ZH twin.
-           Was a bug: EN used label_en|upper, ZH used state_zh (a different, coarser concept). #}
-        {% set _rdr_label_en = _rdr.label_en if (_rdr.label_en is defined and _rdr.label_en) else _rdr_state %}
-        {% set _rdr_label_zh = (_rdr.label_zh if (_rdr.label_zh is defined and _rdr.label_zh) else none) or _rdr_label_en %}
-        <span class="mx2-risk-state" style="color:{{ _rdr_col }}">
-          <span class="l-en">{{ _rdr_label_en | title }}</span>
-          <span class="l-zh">{{ _rdr_label_zh }}</span>
-        </span>
-        {% if _rdr_score is not none %}
-        <div class="mx2-risk-intensity">
-          <div class="mx2-risk-bar"><div class="mx2-risk-bar-fill" style="width:{{ _rdr_score }}%;background:{{ _rdr_col }}"></div></div>
-          <span class="v2chip {{ 'c-down' if _rdr_state=='risk-off' else ('c-warn' if _rdr_state in ('elevated','caution') else 'c-up') }}" style="font-size:10px;padding:2px 7px">{{ _rdr_score }}</span>
-        </div>
-        {% endif %}
-        {% if _rdr.dd21 is defined and _rdr.dd21 is not none %}
-        <span class="v2chip c-muted" style="font-size:10px;padding:2px 7px">
-          {# COPY-06: h21 slug → plain words (already fixed in prior stage; keeping consistent) #}
-          <span class="l-en">21-day odds {{ (_rdr.dd21 * 100)|round|int }}%{% if _rdr.dd_lift is defined and _rdr.dd_lift is not none and _rdr.dd_lift > 1.0 %} (rising){% elif _rdr.dd_lift is defined and _rdr.dd_lift is not none %} (falling){% endif %}</span>
-          <span class="l-zh">21天概率 {{ (_rdr.dd21 * 100)|round|int }}%</span>
-        </span>
-        {% endif %}
-      </div>
-      <div class="sx-chev">&#8964;</div>
-    </div>
-    {# MX4 face — grid view card face for RISK (S1 placeholder; face hidden in grid, band zone-2 is its face per spec §2.3) #}
-    <div class="sxg-face sxg-face-risk-hidden" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-risk-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-risk-v2');}">
+    {# RISK face — opens the risk dialog (S1: wires to dialog; full redesign in S3) #}
+    {% set _rdr_label_en = _rdr.label_en if (_rdr.label_en is defined and _rdr.label_en) else _rdr_state %}
+    {% set _rdr_label_zh = (_rdr.label_zh if (_rdr.label_zh is defined and _rdr.label_zh) else none) or _rdr_label_en %}
+    <div class="sxg-face sxg-face-risk-hidden" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-risk')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-risk');}">
       <div class="sxg-face-eyebrow"><span class="l-en">Risk</span><span class="l-zh">风险</span></div>
       <div class="sxg-face-stance" style="color:{{ _rdr_col }}">
         {# COPY-01: use _rdr_label_en/_rdr_label_zh (set above at glance) for parity #}
@@ -7732,22 +7736,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {% set _plrepr = PL.get('repricing_components') %}
   {% set _plrepr_count = _plrepr|length if _plrepr else 0 %}
   <div class="sx" id="sx-policy-v2" style="--isle-color:var(--isle-policy)">
-    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-policy-v2')">
-      <span class="sx-label"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-      <div class="sx-glance mx2-policy-glance">
-        <span class="v2chip {{ _plc }}">
-          <span class="l-en">{{ _pl_state }}</span>
-          <span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_pl_state, _pl_state) }}</span>
-        </span>
-        {% if _plrepr_count > 0 %}
-        <span class="v2chip c-muted"><span class="l-en">{{ _plrepr_count }}/4 repricing</span><span class="l-zh">{{ _plrepr_count }}/4 重定价</span></span>
-        {% endif %}
-        {% if flip_confirmation and flip_confirmation.last_event %}
-        <span class="v2chip c-muted num"><span class="l-en">last flip {{ flip_confirmation.last_event.event_date }}</span><span class="l-zh">最近翻转 {{ flip_confirmation.last_event.event_date }}</span></span>
-        {% endif %}
-      </div>
-      <div class="sx-chev">&#8964;</div>
-    </div>
     {# MX4 face — POLICY (S2 full: plain-word state + last flip + fed-stance + fed-odds path) #}
     {# Plain-word state mapping (no naked enum chip on card face per spec §2.3) #}
     {% set _pl_plain_en = 'Quiet — no active jawboning' if _pl_state == 'QUIET' else ('Armed — active policy intervention' if _pl_state == 'ARMED' else 'Elevated — watch for repricing') %}
@@ -7757,7 +7745,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     {% set _pl_fsl = {'hawkish':'Hawkish','very-hawkish':'Very Hawkish','dovish':'Dovish','very-dovish':'Very Dovish','neutral':'Neutral / hold'} %}
     {% set _pl_fsl_zh = {'hawkish':'鹰派','very-hawkish':'极鹰派','dovish':'鸽派','very-dovish':'极鸽派','neutral':'中性 / 不动'} %}
     {# v5 face — POLICY MONITOR (structured key-rows; keep engine field vocab) #}
-    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-policy-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-policy-v2');}">
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-policy')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-policy');}">
       <div class="mx5-card-title"><span class="l-en">Policy Monitor</span><span class="l-zh">政策监测</span></div>
       <div class="mx5-policy-rows">
         {# Signal / state row #}
@@ -8022,20 +8010,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {# ── 6. AI BRIEF row + tray (Stage B) ── #}
   {% if mode != 'stocks' %}
   <div class="sx" id="sx-aibrief-v2" style="--isle-color:var(--isle-brief)">
-    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-aibrief-v2')">
-      <span class="sx-label"><span class="l-en">AI Brief</span><span class="l-zh">AI简报</span></span>
-      <div class="sx-glance">
-        <span class="v2chip c-info" style="font-size:10px;padding:2px 7px">{{ t('display-only synthesis','仅展示层综合') }}</span>
-        {% if macro_news and macro_news.synthesis and macro_news.synthesis.get('read') %}
-        {# structured glance, not the raw read string (it leaks internal source slugs) #}
-        {% set _gl_syn = macro_news.synthesis %}
-        {% set _gl_ch_en = {'capital_return':'buybacks','fiscal_trade':'fiscal & trade','stock_wire':'stock wire','monetary':'Fed & rates'} %}
-        {% set _gl_ch_zh = {'monetary':'美联储与利率','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','fiscal_trade':'财政与贸易','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股快讯'} %}
-        <span class="mx2-aibrief-glance"><span class="l-en">{{ _gl_syn.get('high_impact_count', 0) }} high-impact item{{ 's' if _gl_syn.get('high_impact_count', 0) != 1 }}{% if _gl_syn.get('dominant_channel') %} · dominant: {{ _gl_ch_en.get(_gl_syn.dominant_channel, _gl_syn.dominant_channel|replace('_',' ')) }}{% endif %}</span><span class="l-zh">{{ _gl_syn.get('high_impact_count', 0) }} 条高影响信息{% if _gl_syn.get('dominant_channel') %} · 主导：{{ _gl_ch_zh.get(_gl_syn.dominant_channel, _gl_syn.dominant_channel) }}{% endif %}</span></span>
-        {% endif %}
-      </div>
-      <div class="sx-chev">&#8964;</div>
-    </div>
     {# MX4 face — grid view card face for AI BRIEF (S3: COPY-03/BIL-01/BIL-03/VIS-02) #}
     {# Channel slug → plain-word translation dict (COPY-03/BIL-01) #}
     {% set _aibf_ch = {
@@ -8061,7 +8035,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     {# v5 face — AI BRIEF (ticker pills + structured bilingual lines + required not-a-signal note) #}
     {% set _abDomCh_clean = _aibf_ch.get(_abCh, _abCh | replace('_',' ')) if _abCh else '' %}
     {% set _abDomCh_clean_zh = _aibf_ch_zh.get(_abCh, _abCh) if _abCh else '' %}
-    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-aibrief-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-aibrief-v2');}">
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-aibrief')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-aibrief');}">
       <div class="mx5-card-title"><span class="l-en">AI Brief</span><span class="l-zh">AI简报</span></div>
       {# Top ticker pills (VIS-02: wraps freely, no fixed-width clip) #}
       {% if _abSyn.get('top_tickers') %}
@@ -8161,24 +8135,14 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {% if mode != 'stocks' %}
   {% set TL_nb = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
   <div class="sx" id="sx-news-v2" style="--isle-color:var(--isle-news)">
-    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-news-v2')">
-      <span class="sx-label"><span class="l-en">News</span><span class="l-zh">新闻</span></span>
-      <div class="sx-glance mx2-news-glance">
-        {% if macro_news and macro_news.headlines %}
-        <span class="v2chip c-muted">{{ macro_news.headlines|length }} {{ t('items','条目') }}</span>
-        {% endif %}
-        <span class="v2chip c-muted"><span class="l-en">press a headline to expand</span><span class="l-zh">点击标题展开</span></span>
-      </div>
-      <div class="sx-chev">&#8964;</div>
-    </div>
-    {# v5 face — ALERTS CENTRE (severity-sorted; warn first; plain_en/zh + message; footer opens island) #}
+    {# v5 face — ALERTS CENTRE (severity-sorted; warn first; plain_en/zh + message; footer opens dialog) #}
     {# alerts VM list: severity-sort: warn > info; top 3 shown #}
     {% set _alv5_all = alerts if alerts else [] %}
     {# Sort: warn severity first, then info #}
     {% set _alv5_sorted = (_alv5_all | selectattr('severity','in',('warn','high','critical')) | list) + (_alv5_all | rejectattr('severity','in',('warn','high','critical')) | list) %}
     {% set _alv5_top = _alv5_sorted[:3] %}
     {% set _alv5_total = _alv5_all | length %}
-    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-news-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-news-v2');}">
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-news')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-news');}">
       <div class="mx5-card-title-row">
         <div class="mx5-card-title"><span class="l-en">Alerts Centre</span><span class="l-zh">警报中心</span></div>
         {% if _alv5_total > 0 %}
@@ -8212,7 +8176,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <span class="l-en">Showing {{ _alv5_top | length }} of {{ _alv5_total }} fired</span>
           <span class="l-zh">显示 {{ _alv5_top | length }} / {{ _alv5_total }} 条</span>
         </span>
-        <button type="button" class="mx5-alert-footer-link" onclick="event.stopPropagation();mx2Toggle('sx-news-v2')">
+        <button type="button" class="mx5-alert-footer-link" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
           <span class="l-zh">查看全部 &#8594;</span>
         </button>
@@ -8238,7 +8202,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <span class="l-en">{{ macro_news.headlines|length }} items</span>
           <span class="l-zh">{{ macro_news.headlines|length }} 条</span>
         </span>
-        <button type="button" class="mx5-alert-footer-link" onclick="event.stopPropagation();mx2Toggle('sx-news-v2')">
+        <button type="button" class="mx5-alert-footer-link" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
           <span class="l-zh">查看全部 &#8594;</span>
         </button>
@@ -8328,21 +8292,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {# ── 8. DEEP CONTEXT row (Stage B — link-out chips + health footer) ── #}
   {% if mode != 'stocks' %}
   <div class="sx" id="sx-deep-context" style="--isle-color:var(--isle-deep)">
-    <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-deep-context')">
-      <span class="sx-label"><span class="l-en">Deep Context</span><span class="l-zh">深度背景</span></span>
-      <div class="sx-glance mx2-deep-row">
-        <div class="mx2-deep-chips">
-          <a class="mx2-deep-chip" href="macro_context.html"><span class="mx2-deep-chip-ic">🌐</span><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></a>
-          <a class="mx2-deep-chip" href="aibrief.html"><span class="mx2-deep-chip-ic">🤖</span><span class="l-en">AI Brief</span><span class="l-zh">AI日报</span></a>
-          <a class="mx2-deep-chip" href="sector_central.html"><span class="mx2-deep-chip-ic">📊</span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
-          <a class="mx2-deep-chip" href="committee.html"><span class="mx2-deep-chip-ic">🧠</span><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
-          <a class="mx2-deep-chip" href="macro_signals.html"><span class="mx2-deep-chip-ic">⚡</span><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
-        </div>
-      </div>
-      <div class="sx-chev">&#8964;</div>
-    </div>
-    {# v5 face — DEEP CONTEXT slim chip row (spec §2.10) #}
-    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-deep-context')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-deep-context');}">
+    {# v5 face — DEEP CONTEXT slim chip row (spec §2.10); no popup for deep-context per S1 spec #}
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-deep-context')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-deep-context');}">
       <div class="mx5-deep-chips">
         <a class="mx5-deep-chip" href="macro_context.html"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></a>
         <a class="mx5-deep-chip" href="aibrief.html"><span class="l-en">AI Brief</span><span class="l-zh">AI日报</span></a>
@@ -8388,191 +8339,448 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
   </div>{# /mx4-rack #}
 
+  {# ── v5.1 S1: Dialog containers — temporary wiring; each card face opens one of these.
+     Content = the old island interiors rendered inline (S2/S3 will redesign).
+     Dialogs rendered outside the rack grid to avoid stacking-context issues. #}
+
+  {# dlg-evidence: Evidence six-factor breakdown #}
+  <div class="mx5-dlg" id="dlg-evidence" role="dialog" tabindex="-1">
+    <div class="mx5-dlg-backdrop"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Evidence — Six-Factor Breakdown</span><span class="l-zh">依据 — 六因子分析</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Six-Factor Breakdown</span><span class="l-zh">六因子分析</span></span><div class="isle-head-line"></div><span class="v2-display-badge" style="margin-left:8px"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span></div>
+        {% if MS2 and MS2.components %}
+        <div class="isle-ev-factors">
+          {% for c in MS2.components %}
+          {% set _ec = 'var(--up)' if c.tone == 'good' else ('var(--down)' if c.tone == 'bad' else 'var(--warn)') %}
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+              <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">{{ c.label_en }}</span><span class="l-zh">{{ c.label_zh or c.label_en }}</span></span>
+              <span style="font-size:16px;font-weight:700;color:{{ _ec }}">{{ c.score }}</span>
+            </div>
+            <div style="height:7px;border-radius:4px;background:rgba(255,255,255,.07)">
+              <div style="height:100%;width:{{ [c.score,100]|min }}%;border-radius:4px;background:{{ _ec }};opacity:.8"></div>
+            </div>
+            {% if c.read_en %}<div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:5px"><span class="l-en">{{ c.read_en }}</span><span class="l-zh">{{ c.read_zh or c.read_en }}</span></div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">No signal data available.</span><span class="l-zh">暂无信号数据。</span></p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# dlg-events: Events catalysts + release radar #}
+  <div class="mx5-dlg" id="dlg-events" role="dialog" tabindex="-1">
+    <div class="mx5-dlg-backdrop"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Events — Catalysts &amp; Release Radar</span><span class="l-zh">事件 — 催化剂与数据发布雷达</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        {# Week-ahead catalysts #}
+        {% if macro_catalysts %}
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Upcoming Catalysts</span><span class="l-zh">近期催化剂</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+          {% for c in macro_catalysts %}
+          {% set _imp = 'var(--down)' if c.impact == 'high' else ('var(--warn)' if c.impact == 'med' else 'var(--muted)') %}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)">
+            <span style="font-size:13px;font-weight:500"><span class="l-en">{{ c.label }}</span><span class="l-zh">{{ c.get('label_zh') or c.label }}</span></span>
+            <span style="font-size:12px;color:{{ _imp }};font-weight:700">{{ c.date }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {# Fed prediction market odds #}
+        {% if prediction_markets and prediction_markets.events %}
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Market Odds</span><span class="l-zh">市场隐含概率</span></span><div class="isle-head-line"></div></div>
+        {% for ev in prediction_markets.events[:3] %}
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));margin-bottom:8px">{{ ev.name }}</div>
+          {% for o in (ev.outcomes | sort(attribute='prob', reverse=true))[:4] %}
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:12px">{{ o.outcome }}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--mx5-accent)">{{ o.prob }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% if not macro_catalysts and not (prediction_markets and prediction_markets.events) %}
+        <p style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">No events data available.</span><span class="l-zh">暂无事件数据。</span></p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# dlg-markets: Index health + cross-asset #}
+  <div class="mx5-dlg" id="dlg-markets" role="dialog" tabindex="-1">
+    <div class="mx5-dlg-backdrop"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Markets — Index Health &amp; Cross-Asset</span><span class="l-zh">市场 — 指数健康度与跨资产</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        {% if index_health %}
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Index Health</span><span class="l-zh">指数健康度</span></span><div class="isle-head-line"></div></div>
+        {% set _ix_nm = {'SPY': 'S&P 500', 'QQQ': 'Nasdaq 100', 'DJI': 'Dow Jones', '_DJI': 'Dow Jones', 'RUT': 'Russell 2000', '_RUT': 'Russell 2000'} %}
+        <div class="idx-card-grid" id="dlg-index-health">
+          {% for ix in index_health %}
+          {% set _ixsym = ix.ticker | replace('_','') %}
+          <div class="idx-card" data-sym="{{ _ixsym }}" data-mkt="us">
+            <div class="idx-card-top"><span class="idx-card-ticker">{{ _ixsym }}</span><span class="idx-card-name">{{ _ix_nm.get(ix.ticker, _ixsym) }}</span></div>
+            <div class="idx-card-px nb-px" data-sym="{{ _ixsym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
+            <div class="idx-card-chg {{ 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</div>
+            <div class="idx-card-chips">
+              <span class="idx-stat {{ 'ok' if ix.dd >= -1 else ('wn' if ix.dd >= -10 else 'mt') }}">{{ '%+.1f'|format(ix.dd) }}%</span>
+              <span class="idx-stat-lbl"><span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              {% if ix.rsi is not none %}<span class="idx-stat mt">RSI {{ ix.rsi }}</span>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">No market data available.</span><span class="l-zh">暂无市场数据。</span></p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# dlg-risk: Risk scare ladder + sentiment (includes MX2-SENTIMENT byte-verbatim) #}
+  {% if market_state %}
+  <div class="mx5-dlg" id="dlg-risk" role="dialog" tabindex="-1">
+    <div class="mx5-dlg-backdrop"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Risk — Scare Ladder &amp; Sentiment</span><span class="l-zh">风险 — 压力梯度与情绪</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        {# Radar banner cards in dialog #}
+        {% if MS.radar and MS.radar.state %}{{ rrc.risk_radar_card(MS.radar, latest.risk_radar.scares if latest.risk_radar else none) }}{% endif %}
+        {% if latest.ignition_radar %}{{ igc.ignition_radar_card(latest.ignition_radar) }}{% endif %}
+        {# Scares ladder #}
+        {% if latest.risk_radar and latest.risk_radar.scares %}
+        <div class="isle-head" style="margin-top:16px"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Risk Ladder</span><span class="l-zh">风险梯度</span></span><div class="isle-head-line"></div></div>
+        <div class="scare-ladder">
+          {% for sc in latest.risk_radar.scares %}
+          {% set _scc = ('sc-band-high' if sc.score >= 70 else ('sc-band-watch' if sc.score >= 50 else ('sc-band-elev' if sc.score >= 35 else 'sc-band-calm'))) %}
+          {% set _scband = (sc.band if sc.band is defined and sc.band else ('WATCH' if sc.score >= 50 else ('ELEVATED' if sc.score >= 35 else 'CALM'))) %}
+          <div class="scare-row">
+            <span class="sc-name"><span class="l-en">{{ sc.label_en if sc.label_en is defined else (sc.name_en if sc.name_en is defined else sc.name) }}</span><span class="l-zh">{{ sc.label_zh if sc.label_zh is defined else (sc.name_zh if sc.name_zh is defined else sc.name) }}</span></span>
+            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ [sc.score,100]|min }}%;background:{{ 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 35 else 'var(--muted)') }}"></div></div>
+            <span class="sc-score" style="color:{{ 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 35 else 'var(--muted)') }}">{{ sc.score }}</span>
+            <span class="sc-band {{ _scc }}">{{ _scband }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {# MX2-SENTIMENT block — RELOCATED from risk tray; content byte-verbatim #}
+        {% set _rdr2 = market_state.radar if market_state.radar is defined else {} %}
+        {% set _rdr_state2 = _rdr2.state if _rdr2 else 'unknown' %}
+        {% set _rdr_col2 = 'var(--down)' if _rdr_state2 == 'risk-off' else ('var(--orange,var(--warn))' if _rdr_state2 in ('elevated','caution') else 'var(--up)') %}
+        <div style="margin-top:20px">
+        {# MX2-SENTIMENT-START #}
+        {% set ff = froth_fragility if froth_fragility is defined else none %}
+        {% set fe = fear_euphoria if fear_euphoria is defined else none %}
+        {% set fg = fear_greed if fear_greed is defined else none %}
+        {% if ff is not none or fe is not none or fg is not none %}
+          {% set _ff_score = ff.score if (ff is not none and ff.score is defined and ff.score is not none) else none %}
+          {% set _ff_x = ff.euphoria_z if (ff is not none and ff.euphoria_z is defined) else none %}
+          {% set _ff_y = ff.fragility_z if (ff is not none and ff.fragility_z is defined) else none %}
+          {% set ax = (_ff_x * 16.67 + 50) | round | int if _ff_x is not none else none %}
+          {% set bx = (_ff_y * 16.67 + 50) | round | int if _ff_y is not none else none %}
+          {% set _fg_val = fg.dial if (fg and fg.dial is defined and fg.dial is not none) else none %}
+          {% set _fg_zone = fg.label_en if (fg and fg.label_en is defined) else 'Neutral' %}
+          {% set _fg_zh = fg.label_zh if (fg and fg.label_zh is defined) else _fg_zone %}
+          {% set _fe_bull = fe.bull_pct if (fe and fe.bull_pct is defined and fe.bull_pct is not none) else none %}
+          {% set _fe_bear = fe.bear_pct if (fe and fe.bear_pct is defined and fe.bear_pct is not none) else none %}
+
+          <div class="mx2-risk-section">
+            <div class="mx2-risk-section-hd"><span class="l-en">Market Sentiment</span><span class="l-zh">市场情绪</span></div>
+
+            {% if _fg_val is not none %}
+            <div class="mx2-sent-row">
+              <div class="mx2-sent-key">{{ t('Fear/Greed','恐贪指数') }}</div>
+              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:{{ _fg_val }}%;background:{{ 'var(--down)' if _fg_val < 30 else ('var(--up)' if _fg_val >= 65 else 'var(--warn)') }}"></div></div>
+              <div class="mx2-sent-val"><span class="num">{{ _fg_val|round|int }}</span>
+                <span class="l-en">{{ _fg_zone }}</span><span class="l-zh">{{ _fg_zh }}</span></div>
+            </div>
+            {% endif %}
+
+            {% if _ff_score is not none %}
+            <div class="mx2-sent-row">
+              <div class="mx2-sent-key">{{ t('Froth/Fragility','泡沫/脆弱') }}</div>
+              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:{{ _ff_score }}%;background:{{ 'var(--warn)' if _ff_score >= 60 else 'var(--muted)' }}"></div></div>
+              <div class="mx2-sent-val"><span class="num">{{ _ff_score }}</span></div>
+            </div>
+            {% endif %}
+
+            {% if _fe_bull is not none %}
+            <div class="mx2-sent-row">
+              <div class="mx2-sent-key">{{ t('Bulls/Bears','多/空') }}</div>
+              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:{{ _fe_bull }}%;background:{{ 'var(--up)' if _fe_bull >= 55 else ('var(--down)' if _fe_bull < 35 else 'var(--warn)') }}"></div></div>
+              <div class="mx2-sent-val"><span class="num">{{ _fe_bull }}%</span> <span class="l-en">bull</span><span class="l-zh">多头</span></div>
+            </div>
+            {% endif %}
+
+            {% if ax is not none and bx is not none %}
+            <div class="froth-split">
+              <div class="froth-split-item"><div class="froth-split-lbl">{{ t('Euphoria','欣喜') }}</div><div class="froth-split-val">{{ ax|round|int }}</div></div>
+              <div class="froth-split-item"><div class="froth-split-lbl">{{ t('Fragility','脆弱') }}</div><div class="froth-split-val">{{ bx|round|int }}</div></div>
+            </div>
+            <div class="muted sm" style="margin-top:8px">{% if ff.track_record and ff.track_record.n %}{{ t('Forward record','前瞻记录') }}: {{ ff.track_record.n }} {{ t('firings','次触发') }} · {{ (ff.track_record.hit_rate * 100)|round|int }}% {{ t('hit','命中') }}. {% else %}{{ t('Forward record accruing.','前瞻记录积累中。') }} {% endif %}{{ t('Display-only — the response is sizing, not selection.','仅供展示——应对是调整仓位，而非选股。') }}</div>
+            {% endif %}
+          </div>
+          {% endif %}{# /froth_fragility card gate #}
+
+        {# MX2-SENTIMENT-END #}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}{# /market_state — dlg-risk #}
+
+  {# dlg-policy: Policy lever + repricing #}
+  {% if policy_lever is defined and policy_lever %}
+  <div class="mx5-dlg" id="dlg-policy" role="dialog" tabindex="-1">
+    <div class="mx5-dlg-backdrop"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Policy — Lever State &amp; Repricing</span><span class="l-zh">政策 — 杠杆状态与重定价</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        <div id="dlg-policy-lever-card">
+          {% set _PL = policy_lever %}
+          {% set _pl_s = _PL.get('state') or 'QUIET' %}
+          {% set _plc2 = 'c-down' if _pl_s == 'ARMED' else ('c-warn' if _pl_s == 'ELEVATED' else 'c-muted') %}
+          <div style="margin-bottom:20px">
+            <div style="font-size:13px;font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));margin-bottom:12px"><span class="l-en">Policy Lever</span><span class="l-zh">政策杠杆</span></div>
+            <span class="chip {{ _plc2 }}" style="font-size:13px;padding:4px 12px">
+              <span class="l-en">{{ _pl_s }}</span><span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_pl_s, _pl_s) }}</span>
+            </span>
+          </div>
+          {% set _plrepr2 = _PL.get('repricing_components') %}
+          {% if _plrepr2 %}
+          <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Repricing Components</span><span class="l-zh">重定价组件</span></span><div class="isle-head-line"></div></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            {% for r in _plrepr2 %}
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px">
+              <span style="font-size:12px"><span class="l-en">{{ r.label_en if r.label_en is defined else r.name }}</span><span class="l-zh">{{ r.label_zh if r.label_zh is defined else (r.name_zh if r.name_zh is defined else r.name) }}</span></span>
+              <span class="chip c-warn" style="font-size:11px;padding:2px 8px"><span class="l-en">Active</span><span class="l-zh">活跃</span></span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}{# /policy_lever — dlg-policy #}
+
+  {# dlg-aibrief: AI Brief synthesis #}
+  {% if mode != 'stocks' %}
+  <div class="mx5-dlg" id="dlg-aibrief" role="dialog" tabindex="-1">
+    <div class="mx5-dlg-backdrop"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">AI Brief — Synthesis</span><span class="l-zh">AI简报 — 综合</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        <a class="isle-aibrief-card aibrief-card" href="aibrief.html" style="display:block">
+          <div class="isle-aibrief-hdr">
+            <div class="isle-aibrief-icon">AI</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text)">{{ t('AI Daily Brief · cross-asset synthesis', 'AI 每日简报 · 跨资产综合') }}</div>
+              <div class="num" style="font-size:11px;color:var(--muted)">{{ latest.date if latest.date else generated_utc[:10] }}</div>
+            </div>
+            <span class="isle-aibrief-badge">{{ t('display-only synthesis of existing signals — not a signal source','仅展示层综合读数 — 非信号来源') }}</span>
+          </div>
+          {% if macro_news and macro_news.synthesis and macro_news.synthesis.get('read') %}
+          {% set _dlg_syn = macro_news.synthesis %}
+          {% set _dlg_ch_zh = {'monetary':'美联储与利率','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','fiscal_trade':'财政与贸易','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股快讯'} %}
+          {% set _dlg_ch_en = {'capital_return':'buybacks','fiscal_trade':'fiscal & trade','stock_wire':'stock wire','monetary':'Fed & rates'} %}
+          <div class="isle-aibrief-body">
+            <span class="l-en">{{ _dlg_syn.get('high_impact_count', 0) }} high-impact item{{ 's' if _dlg_syn.get('high_impact_count', 0) != 1 }} today{% if _dlg_syn.get('dominant_channel') %} · dominant: <strong>{{ _dlg_ch_en.get(_dlg_syn.dominant_channel, _dlg_syn.dominant_channel|replace('_',' ')) }}</strong>{% endif %}</span>
+            <span class="l-zh">今日 {{ _dlg_syn.get('high_impact_count', 0) }} 条高影响信息{% if _dlg_syn.get('dominant_channel') %} · 主导：<strong>{{ _dlg_ch_zh.get(_dlg_syn.dominant_channel, _dlg_syn.dominant_channel) }}</strong>{% endif %}</span>
+          </div>
+          {% else %}
+          <div class="isle-aibrief-body">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假设与后续关注。仅供研究参考，绝非交易信号。') }}</div>
+          {% endif %}
+          <div class="isle-aibrief-footer"><span></span><span class="isle-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span></div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {# dlg-news: Alerts + market intelligence #}
+  <div class="mx5-dlg" id="dlg-news" role="dialog" tabindex="-1">
+    <div class="mx5-dlg-backdrop"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">News — Market Intelligence</span><span class="l-zh">新闻 — 市场情报</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        {# All fired alerts #}
+        {% if alerts %}
+        {% set _dlg_alv5_all = alerts %}
+        {% set _dlg_alv5_sorted = (_dlg_alv5_all | selectattr('severity','in',('warn','high','critical')) | list) + (_dlg_alv5_all | rejectattr('severity','in',('warn','high','critical')) | list) %}
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">All Fired Alerts</span><span class="l-zh">全部触发警报</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+          {% for a in _dlg_alv5_sorted %}
+          {% set _asev2 = 'warn' if a.severity in ('warn','high','critical') else 'info' %}
+          <div style="display:flex;gap:10px;padding:12px;background:{{ 'rgba(245,158,11,.06)' if _asev2=='warn' else 'rgba(255,255,255,.03)' }};border-radius:10px;border:1px solid {{ 'rgba(245,158,11,.18)' if _asev2=='warn' else 'rgba(255,255,255,.06)' }}">
+            <div style="width:8px;height:8px;border-radius:50%;background:{{ 'var(--mx5-warn)' if _asev2=='warn' else 'var(--ink-3,rgba(255,255,255,.36))' }};flex-shrink:0;margin-top:5px"></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:{{ 'var(--mx5-warn)' if _asev2=='warn' else 'var(--ink-1,rgba(255,255,255,.92))' }};margin-bottom:4px"><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh or a.plain_en }}</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {# Headlines #}
+        {% if macro_news and macro_news.headlines %}
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Market Intelligence</span><span class="l-zh">市场情报</span></span><div class="isle-head-line"></div></div>
+        {% set _dlg_TL_nb = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
+        <div class="nb-acc" style="margin-top:12px">
+          {% for h in macro_news.headlines[:10] %}
+          {% set _dlg_tl = _dlg_TL_nb.get(h.theme, [h.theme, h.theme]) %}
+          <details class="nb-item"{% if loop.first %} open{% endif %}>
+            <summary class="nb-sum">
+              <span class="nb-theme">{{ t(_dlg_tl[0], _dlg_tl[1]) }}</span>
+              <span class="nb-htitle"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="{{ h.url }}" target="_blank" rel="noopener">{{ t('Read source','阅读原文') }} →</a>
+            </div>
+          </details>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div style="margin-top:16px;text-align:center">
+          <a href="news.html" style="color:var(--link);font-weight:700;font-size:13px">{{ t('Open the full news feed →','打开完整新闻流 →') }}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# dlg-deep-context: Deep context link-out chips #}
+  <div class="mx5-dlg" id="dlg-deep-context" role="dialog" tabindex="-1">
+    <div class="mx5-dlg-backdrop"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Deep Context — Linked Surfaces</span><span class="l-zh">深度背景 — 关联页面</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        <div class="isle-linkouts">
+          <a class="isle-lout" href="macro_context.html"><span class="isle-lout-icon">&#127760;</span><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></a>
+          <a class="isle-lout" href="aibrief.html"><span class="isle-lout-icon">&#129302;</span><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></a>
+          <a class="isle-lout" href="sector_central.html"><span class="isle-lout-icon">&#128202;</span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
+          <a class="isle-lout" href="news.html"><span class="isle-lout-icon">&#128240;</span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></a>
+          <a class="isle-lout" href="committee.html"><span class="isle-lout-icon">&#129504;</span><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
+          <a class="isle-lout" href="macro_signals.html"><span class="isle-lout-icon">&#9889;</span><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
+          <a class="isle-lout" href="china_intel.html"><span class="isle-lout-icon">&#127464;&#127475;</span><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
+          <a class="isle-lout" href="subsector_rotation.html"><span class="isle-lout-icon">&#128302;</span><span class="l-en">Oracle Rotation</span><span class="l-zh">轮动分析</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}{# /mode != stocks — dialogs #}
+
   {% endif %}{# /mode != stocks #}
 
-  {# v2 footer: keyboard hint + data freshness (view-aware in MX4) #}
-  {% if mode != 'stocks' %}
-  <div class="mx2-ledger-footer" style="font-size:11px;color:var(--muted);padding:10px 0 4px;text-align:center;border-top:1px solid var(--line);margin-top:4px">
-    {# Grid view hint — COPY-07: date removed here (topbar is the canonical page stamp) #}
-    <span class="mx4-hint-grid">
-      <span class="l-en">press a card for detail &nbsp;·&nbsp; nightly pipeline</span>
-      <span class="l-zh">点按卡片查看详情 &nbsp;·&nbsp; 夜间管道</span>
-    </span>
-    {# Ledger view hint — COPY-07: date removed here #}
-    <span class="mx4-hint-ledger">
-      <span class="l-en">&#x2318; click rows to expand &nbsp;·&nbsp; nightly pipeline</span>
-      <span class="l-zh">&#x2318; 点击行展开 &nbsp;·&nbsp; 夜间管道</span>
-    </span>
-  </div>
-  {% endif %}
+  {# v5.1: view-hint footer removed — grid is the permanent view #}
 
   </div>{# /panel span12 #}
 
-  {# Inline JS for v3 island tray toggle + MX4 view-system #}
+  {# ── mx5OpenDlg dialog system (v5.1) — macro mode only ── #}
   <script>
   (function(){
-    var _mx2Ids = ['sx-evidence','sx-events-v2','sx-markets-v2','sx-risk-v2','sx-policy-v2','sx-aibrief-v2','sx-news-v2','sx-deep-context'];
-    var _allOpen = false;
-    /* INT-02: stagger timer ids — cleared on every state-changing entry point */
-    var _staggerTimers = [];
-
     /* Aurora @property polyfill */
     if(CSS && CSS.registerProperty){
       try{ CSS.registerProperty({name:'--isle-aurora-angle',syntax:'<angle>',inherits:false,initialValue:'0deg'}); }catch(e){}
     }
 
-    function _countOpen(){
-      return _mx2Ids.filter(function(id){ var e=document.getElementById(id); return e&&e.hasAttribute('data-open'); }).length;
+    /* ── mx5OpenDlg / mx5CloseDlg ─────────────────────────────────
+       Centered glass dialog (≥701px) / bottom sheet (≤700px).
+       focus-trap: Tab cycles within dialog; focus restores on close.
+       body scroll lock while open; aria-modal; reduced-motion aware.
+    ─────────────────────────────────────────────────────────────── */
+    var _dlgActive = null;
+    var _dlgTrigger = null;
+
+    function _focusFirst(dlg){
+      var focusable = dlg.querySelectorAll('button,a[href],[tabindex]:not([tabindex="-1"])');
+      if(focusable.length) focusable[0].focus();
     }
 
-    function _updateBodyClass(){
-      var n = _countOpen();
-      document.body.classList.toggle('has-open-island', n > 0);
-      document.body.classList.toggle('many-open', n >= 3);
+    function _trapTab(dlg, e){
+      if(e.key !== 'Tab') return;
+      var focusable = Array.prototype.slice.call(
+        dlg.querySelectorAll('button:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])'));
+      if(!focusable.length) return;
+      var first = focusable[0], last = focusable[focusable.length-1];
+      if(e.shiftKey){ if(document.activeElement===first){ e.preventDefault(); last.focus(); } }
+      else { if(document.activeElement===last){ e.preventDefault(); first.focus(); } }
     }
 
-    /* MX4: sync aria-expanded on both .sx-sum and .sxg-face for an .sx element */
-    function _syncAria(el, expanded){
-      el.querySelectorAll('.sx-sum,.sxg-face').forEach(function(s){
-        s.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-      });
-    }
-
-    window.mx2Toggle = function(id){
-      _clearStagger(); /* INT-02: cancel any in-flight expand-all stagger */
-      var el = document.getElementById(id);
-      if(!el) return;
-      var isOpen = el.hasAttribute('data-open');
-      if(isOpen){
-        el.removeAttribute('data-open');
-        _syncAria(el, false);
-      } else {
-        el.setAttribute('data-open','');
-        _syncAria(el, true);
-        document.dispatchEvent(new CustomEvent('mx2-tray-open',{detail:{id:id}}));
-        setTimeout(function(){
-          var island = el.querySelector('.sx-island');
-          if(island){ var rect=island.getBoundingClientRect(); if(rect.top<60||rect.top>window.innerHeight*.7){ var _prefRed=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches; island.scrollIntoView({behavior:_prefRed?'auto':'smooth',block:'nearest'}); } }
-        }, 80);
-      }
-      try{var st=JSON.parse(localStorage.getItem('mx2_state')||'{}');st[id]=!isOpen;localStorage.setItem('mx2_state',JSON.stringify(st));}catch(e){}
-      _updateBodyClass();
-      _updateExpandBtn();
+    window.mx5OpenDlg = function(id){
+      /* Close any open scorecard popovers first */
+      if(window.mx5CloseAllPopovers) window.mx5CloseAllPopovers();
+      if(_dlgActive) window.mx5CloseDlg();
+      var dlg = document.getElementById(id);
+      if(!dlg) return;
+      _dlgTrigger = document.activeElement;
+      _dlgActive = dlg;
+      dlg.classList.add('open');
+      dlg.setAttribute('aria-modal','true');
+      document.body.classList.add('mx5-dlg-open');
+      var prefRed = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+      if(!prefRed) dlg.classList.add('anim');
+      _focusFirst(dlg);
+      dlg._trapHandler = function(e){ _trapTab(dlg, e); };
+      dlg.addEventListener('keydown', dlg._trapHandler);
+      /* backdrop click */
+      var bd = dlg.querySelector('.mx5-dlg-backdrop');
+      if(bd){ bd._clickH = function(){ window.mx5CloseDlg(); }; bd.addEventListener('click', bd._clickH); }
     };
 
-    /* INT-02: cancel all pending stagger timers */
-    function _clearStagger(){
-      _staggerTimers.forEach(function(t){ clearTimeout(t); });
-      _staggerTimers = [];
-    }
-
-    window.mx2ToggleAll = function(){
-      _clearStagger(); /* INT-02: cancel any in-flight stagger before changing state */
-      _allOpen = !_allOpen;
-      if(_allOpen){
-        /* INT-02/INT-06: skip stagger on prefers-reduced-motion */
-        var prefRed = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-        if(prefRed){
-          _mx2Ids.forEach(function(id){
-            var el=document.getElementById(id); if(!el) return;
-            el.setAttribute('data-open',''); _syncAria(el, true);
-          });
-          _updateBodyClass(); _updateExpandBtn();
-        } else {
-          _mx2Ids.forEach(function(id, idx){
-            var t=setTimeout(function(){
-              var el=document.getElementById(id); if(!el) return;
-              el.setAttribute('data-open','');
-              _syncAria(el, true);
-              _updateBodyClass();
-            }, idx * 80);
-            _staggerTimers.push(t);
-          });
-          var tf=setTimeout(function(){ _updateExpandBtn(); }, _mx2Ids.length * 80 + 50);
-          _staggerTimers.push(tf);
-        }
-      } else {
-        _mx2Ids.forEach(function(id){
-          var el=document.getElementById(id); if(!el) return;
-          el.removeAttribute('data-open');
-          _syncAria(el, false);
-        });
-        _updateBodyClass(); _updateExpandBtn();
-      }
-      try{var st=JSON.parse(localStorage.getItem('mx2_state')||'{}');_mx2Ids.forEach(function(id){st[id]=_allOpen;});localStorage.setItem('mx2_state',JSON.stringify(st));}catch(e){}
+    window.mx5CloseDlg = function(){
+      if(!_dlgActive) return;
+      var dlg = _dlgActive;
+      dlg.classList.remove('open','anim');
+      dlg.removeAttribute('aria-modal');
+      document.body.classList.remove('mx5-dlg-open');
+      if(dlg._trapHandler){ dlg.removeEventListener('keydown', dlg._trapHandler); delete dlg._trapHandler; }
+      var bd = dlg.querySelector('.mx5-dlg-backdrop');
+      if(bd && bd._clickH){ bd.removeEventListener('click', bd._clickH); delete bd._clickH; }
+      if(_dlgTrigger && typeof _dlgTrigger.focus === 'function') _dlgTrigger.focus();
+      _dlgActive = null; _dlgTrigger = null;
     };
 
-    function _updateExpandBtn(){
-      var btn = document.getElementById('mx2ExpandAllBtn'); if(!btn) return;
-      var openCnt = _countOpen();
-      _allOpen = openCnt === _mx2Ids.length;
-      btn.classList.toggle('all-open', _allOpen);
-      var txt = btn.querySelector('.ea-txt');
-      if(txt){
-        var enEl=txt.querySelector('.l-en'),zhEl=txt.querySelector('.l-zh');
-        if(enEl) enEl.textContent = _allOpen ? 'Collapse all' : 'Expand all';
-        if(zhEl) zhEl.textContent = _allOpen ? '收起全部' : '展开全部';
-      }
-    }
-
-    /* Keyboard Enter/Space on sx-sum (sxg-face handled via onkeydown inline) */
-    document.querySelectorAll('.sx-sum').forEach(function(el){
-      el.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } });
-    });
-
-    /* Escape closes all — guard: no-op if a modal/overlay is open */
-    document.addEventListener('keydown',function(e){
-      if(e.key==='Escape'){
-        /* INT-01: guard modal/overlay open states */
-        var overlay = document.getElementById('rr-modal-overlay');
-        if(overlay && overlay.classList.contains('open')) return;
-        var trOverlay = document.querySelector('.rr-tr-overlay');
-        if(trOverlay && trOverlay.classList.contains('is-open')) return;
-        _clearStagger(); /* INT-02: cancel any in-flight stagger */
-        _mx2Ids.forEach(function(id){
-          var el=document.getElementById(id);
-          if(el){ el.removeAttribute('data-open'); _syncAria(el, false); }
-        });
-        _allOpen=false; _updateBodyClass(); _updateExpandBtn();
-        try{var st=JSON.parse(localStorage.getItem('mx2_state')||'{}');_mx2Ids.forEach(function(id){st[id]=false;});localStorage.setItem('mx2_state',JSON.stringify(st));}catch(e){}
-      }
-    });
-
-    /* Restore localStorage state */
-    try{
-      var saved = JSON.parse(localStorage.getItem('mx2_state')||'{}');
-      _mx2Ids.forEach(function(id){
-        if(saved[id]===true){
-          var el=document.getElementById(id);
-          if(el){ el.setAttribute('data-open',''); _syncAria(el, true); }
-        }
-      });
-    }catch(e){}
-    _updateBodyClass();
-    _updateExpandBtn();
-
-    /* ── MX4 view-switcher ───────────────────────────────────── */
-    function _syncViewBtns(v){
-      var gBtn=document.getElementById('mx4BtnGrid'), lBtn=document.getElementById('mx4BtnLedger');
-      if(gBtn) gBtn.setAttribute('aria-pressed', v==='grid' ? 'true' : 'false');
-      if(lBtn) lBtn.setAttribute('aria-pressed', v==='ledger' ? 'true' : 'false');
-    }
-
-    window.mx4SetView = function(v){
-      if(v==='ledger'){
-        document.body.classList.remove('mx4-grid');
-      } else {
-        document.body.classList.add('mx4-grid');
-      }
-      _syncViewBtns(v);
-      try{ localStorage.setItem('mx4_view', v); }catch(e){}
-    };
-
-    /* Sync buttons on load to match body class (set server-side or by localStorage guard) */
-    (function(){
-      var isGrid = document.body.classList.contains('mx4-grid');
-      _syncViewBtns(isGrid ? 'grid' : 'ledger');
-    })();
+    /* Escape handler: dialog > scorecard popover > release radar modal guards */
+    document.addEventListener('keydown', function(e){
+      if(e.key !== 'Escape') return;
+      /* INT-01: guard release-radar modal/overlay open states */
+      var overlay = document.getElementById('rr-modal-overlay');
+      if(overlay && overlay.classList.contains('open')) return;
+      var trOverlay = document.querySelector('.rr-tr-overlay');
+      if(trOverlay && trOverlay.classList.contains('is-open')) return;
+      if(_dlgActive){ e.stopImmediatePropagation(); window.mx5CloseDlg(); return; }
+    }, true /* capture — runs before the popover handler which uses bubble */);
 
   })();
   </script>
