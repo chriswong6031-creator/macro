@@ -37,11 +37,13 @@ jobs:
       # blew the old 10-minute timeout during checkout (run 29182955692).
       - uses: actions/checkout@v4
         with:
+          # cone-mode sparse checkout accepts DIRECTORIES only (config.yml
+          # broke run 29183504267); the probe never reads config.yml — the
+          # auth path (lib.config.secret) is env-var only.
           sparse-checkout: |
             engine
             lib
             scripts
-            config.yml
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
