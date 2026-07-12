@@ -853,14 +853,19 @@ def _empty_docket() -> dict:
     return {"proposals": []}
 
 
-def _docket_with_demotion() -> dict:
-    """A docket with a co-pending demotion proposal."""
+def _docket_with_demotion(lobe_id: str = "lobe_000") -> dict:
+    """A docket with a co-pending demotion proposal targeting lobe_id.
+
+    Default is 'lobe_000' which matches what _make_lobe_charters(n_active=N) creates.
+    The lobe_id must appear in the title for _count_valid_swaps to find a valid swap
+    (FIX M1: swap must target a named active lobe in lobe_charters.yml).
+    """
     return {
         "proposals": [
             {
                 "proposal_id": "demote-123",
                 "kind": "lifecycle",
-                "title": "demote til from active to probation",
+                "title": f"demote {lobe_id} from active to probation",
                 "tier": "T0",
                 "rationale": "health degraded",
             }
@@ -1035,20 +1040,28 @@ class TestGenesisScreen:
             assert "CHF" in r["reason"] or "chf" in r["reason"].lower() or token in r["reason"]
             assert "R-V6-3c" in r["reason"]
 
-    def test_chf_token_allow_after_deadline(self, tmp_path):
-        """R-V6-3c: CHF deferral lifted after 2026-10-15."""
+    def test_chf_token_always_denies_no_auto_lift(self, tmp_path):
+        """R-V6-3c REVISED (TASK 5 m1): CHF deferral is unconditional — NO auto-lift.
+
+        DO_NOT_REBUILD §4 says the 2026-10-15 clock is a PRECONDITION needing
+        ≥8 matured candidates + fresh operator ruling, not an automatic lift.
+        A CHF charter must be denied on/after 2026-10-15 just as before it.
+        """
         _make_minimal_budget_yml(tmp_path, max_active=66)
         _make_lobe_charters(tmp_path, n_active=0)
         from engine.metabolism.adjudicate import _genesis_screen
-        prop = _charter_proposal_dict(title="New causal lobe", domain_id="causal")
-        r = _genesis_screen(
-            prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path,
-            _today_override="2026-10-15",  # boundary: not < deadline, so NOT enforced
-        )
-        # 2026-10-15 is NOT before 2026-10-15 (< comparison), so CHF is allowed
-        assert r["allow"] is True, (
-            f"CHF deferral should be lifted on/after 2026-10-15; got: {r['reason']}"
-        )
+        # Deny before, on, and after the old deadline date
+        for today_str in ("2026-09-01", "2026-10-15", "2027-01-01"):
+            prop = _charter_proposal_dict(title="New causal lobe", domain_id="causal")
+            r = _genesis_screen(
+                prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path,
+                _today_override=today_str,
+            )
+            assert r["allow"] is False, (
+                f"CHF charter must be denied unconditionally (no auto-lift); "
+                f"got allow=True for today={today_str!r}: {r['reason']}"
+            )
+            assert "R-V6-3c" in r["reason"]
 
     def test_non_chf_charter_allowed(self, tmp_path):
         """A clean, non-CHF charter proposal passes all genesis screens."""
@@ -1303,3 +1316,243 @@ class TestBudgetKeys:
         )
         assert int(data["genesis_accountability_days"]) == 45
         assert int(data["max_probation_lobes"]) >= 1
+
+
+# ===========================================================================
+# FIX B1 — build_docket carries charter fields to _genesis_screen
+# ===========================================================================
+
+class TestBuildDocketCharterFieldCarry:
+    """FIX B1: build_docket must pass charter fields (proposed_tier etc.) through
+    so _genesis_screen's tier fence does not deny every charter unconditionally."""
+
+    def test_charter_fields_survive_build_docket(self, tmp_path):
+        """A charter-shaped proposal injected into build_docket must retain
+        proposed_tier, proposed_lifecycle_state, domain_id, etc."""
+        from engine.metabolism.propose import build_docket
+        root = tmp_path
+        (root / "config").mkdir(parents=True, exist_ok=True)
+        (root / "docs").mkdir(parents=True, exist_ok=True)
+        (root / "research").mkdir(parents=True, exist_ok=True)
+        (root / "data" / "metabolism").mkdir(parents=True, exist_ok=True)
+
+        charter_raw = {
+            "title": "New macro credit intelligence lobe",
+            "tier": "T0",
+            "kind": "charter",
+            "proposed_tier": "display",
+            "proposed_lifecycle_state": "proposed",
+            "domain_id": "macro-credit",
+            "evidence_refs": ["insight-x"],
+            "uncovered_for_cycles": 5,
+            "roster_budget": {"current_active": 10, "max_active": 66},
+            "targets_sensor": "liveness",
+            "rationale": "macro credit domain uncovered",
+            "fitness_contract": {
+                "sensor": "liveness",
+                "expected_sign": "+",
+                "band": "unspecified",
+                "check_by": "2026-10-15",
+                "placebo_to_beat": "shadow placebo tape",
+            },
+        }
+        d = build_docket("cycle-b1", [charter_raw], root=root, max_docket_size=5)
+        assert len(d["proposals"]) == 1, f"Charter should pass validation; rejected: {d['rejected']}"
+        proposal = d["proposals"][0]
+        # Charter fields must survive the build_docket whitelist
+        assert proposal.get("proposed_tier") == "display", (
+            f"FIX B1: proposed_tier not carried; got {proposal.get('proposed_tier')!r}"
+        )
+        assert proposal.get("proposed_lifecycle_state") == "proposed", (
+            f"FIX B1: proposed_lifecycle_state not carried; got {proposal.get('proposed_lifecycle_state')!r}"
+        )
+        assert proposal.get("domain_id") == "macro-credit"
+        assert proposal.get("evidence_refs") == ["insight-x"]
+        assert proposal.get("uncovered_for_cycles") == 5
+
+    def test_charter_via_build_docket_passes_genesis_screen(self, tmp_path):
+        """End-to-end B1 path: charter fields carried from build_docket reach
+        _genesis_screen and the tier fence passes (not denied as missing tier)."""
+        from engine.metabolism.propose import build_docket
+        from engine.metabolism.adjudicate import _genesis_screen
+
+        _make_minimal_budget_yml(tmp_path, max_active=66, max_probation=5)
+        _make_lobe_charters(tmp_path, n_active=0, n_probation=0)
+        (tmp_path / "docs").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "research").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "data" / "metabolism").mkdir(parents=True, exist_ok=True)
+
+        charter_raw = {
+            "title": "New macro credit intelligence lobe for B1 path",
+            "tier": "T0",
+            "kind": "charter",
+            "proposed_tier": "display",
+            "proposed_lifecycle_state": "proposed",
+            "domain_id": "macro-credit",
+            "targets_sensor": "liveness",
+            "rationale": "macro credit domain uncovered",
+            "fitness_contract": {
+                "sensor": "liveness",
+                "expected_sign": "+",
+                "band": "unspecified",
+                "check_by": "2026-10-15",
+                "placebo_to_beat": "shadow placebo tape",
+            },
+        }
+        d = build_docket("cycle-b1-e2e", [charter_raw], root=tmp_path, max_docket_size=5)
+        assert len(d["proposals"]) == 1, f"rejected: {d['rejected']}"
+        proposal = d["proposals"][0]
+
+        # The proposal with carried fields should pass _genesis_screen
+        r = _genesis_screen(
+            proposal, cycle_id="cycle-b1-e2e", docket=_empty_docket(), root=tmp_path
+        )
+        assert r["allow"] is True, (
+            f"FIX B1: charter via build_docket should pass genesis screen; got: {r['reason']}"
+        )
+
+
+# ===========================================================================
+# FIX M1 — _count_valid_swaps: swap-waiver exploit closed
+# ===========================================================================
+
+class TestValidSwaps:
+    """FIX M1: _count_valid_swaps must reject invalid swap attempts."""
+
+    def test_charter_own_demote_text_does_not_waive(self, tmp_path):
+        """A charter whose own rationale says 'demote weak signals' must NOT
+        waive the roster cap for itself (FIX M1 exploit closure)."""
+        _make_minimal_budget_yml(tmp_path, max_active=2)
+        _make_lobe_charters(tmp_path, n_active=2)  # at cap
+        from engine.metabolism.adjudicate import _genesis_screen
+
+        # Charter proposal with a rationale that mentions "demote" in its OWN text
+        prop = _charter_proposal_dict(
+            title="New intelligence lobe",
+            rationale="we should demote weak signals before adding new ones",
+        )
+        # Docket is empty — the charter itself is the ONLY proposal
+        # (the exploit: old code scanned ALL proposal text including the charter's own)
+        r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is False, (
+            "FIX M1: charter's own 'demote' text must NOT waive the roster cap"
+        )
+        assert "roster cap" in r["reason"]
+
+    def test_demotion_targeting_nonexistent_lobe_does_not_waive(self, tmp_path):
+        """A demotion proposal naming a lobe that is NOT in lobe_charters.yml
+        (or not active) must not count as a valid swap."""
+        _make_minimal_budget_yml(tmp_path, max_active=2)
+        _make_lobe_charters(tmp_path, n_active=2)  # active lobes: lobe_000, lobe_001
+        from engine.metabolism.adjudicate import _genesis_screen
+
+        # Docket has a demotion proposal targeting 'nonexistent_lobe' which isn't in charters
+        nonexistent_demotion = {
+            "proposals": [
+                {
+                    "proposal_id": "demote-ghost",
+                    "kind": "lifecycle",
+                    "title": "demote nonexistent_ghost_lobe from active",
+                    "tier": "T0",
+                    "rationale": "health degraded",
+                }
+            ]
+        }
+        prop = _charter_proposal_dict()
+        r = _genesis_screen(prop, cycle_id="c1", docket=nonexistent_demotion, root=tmp_path)
+        assert r["allow"] is False, (
+            "FIX M1: demotion targeting nonexistent lobe must NOT waive the cap"
+        )
+        assert "roster cap" in r["reason"]
+
+    def test_real_active_lobe_demotion_waives_one_slot(self, tmp_path):
+        """A demotion targeting a REAL active lobe in lobe_charters.yml
+        waives exactly one roster slot (valid swap for R-V6-3a)."""
+        _make_minimal_budget_yml(tmp_path, max_active=2)
+        _make_lobe_charters(tmp_path, n_active=2)  # active lobes: lobe_000, lobe_001
+        from engine.metabolism.adjudicate import _genesis_screen
+
+        # Demotion names lobe_000 which IS in charters with lifecycle_state='active'
+        valid_demotion = {
+            "proposals": [
+                {
+                    "proposal_id": "demote-lobe_000",
+                    "kind": "lifecycle",
+                    "title": "demote lobe_000 from active to probation",
+                    "tier": "T0",
+                    "rationale": "health degraded",
+                }
+            ]
+        }
+        prop = _charter_proposal_dict()
+        r = _genesis_screen(prop, cycle_id="c1", docket=valid_demotion, root=tmp_path)
+        assert r["allow"] is True, (
+            f"FIX M1: valid active-lobe demotion must waive one slot; got: {r['reason']}"
+        )
+
+
+# ===========================================================================
+# FIX M2 — roster cap fails closed on unreadable roster
+# ===========================================================================
+
+class TestRosterCapFailClosed:
+    """FIX M2: the roster-cap path must deny when lobe_charters.yml is unreadable
+    (independent of the probation-capacity fail-closed path tested elsewhere)."""
+
+    def test_malformed_roster_denies_cap_path(self, tmp_path):
+        """Malformed lobe_charters.yml → roster-cap path denies (FIX M2).
+
+        active_nonscored_count returns 0 on load error (never raises), so without
+        this fix the cap check would be 0 >= max_active = False → passes.
+        The explicit readability check must catch this.
+        """
+        _make_minimal_budget_yml(tmp_path, max_active=66, max_probation=5)
+        config_dir = tmp_path / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        # Write malformed YAML that triggers a parse error
+        (config_dir / "lobe_charters.yml").write_text("charters: {{{malformed", encoding="utf-8")
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict()
+        r = _genesis_screen(prop, cycle_id="cyc-m2", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is False, (
+            "FIX M2: malformed lobe_charters.yml must deny via roster-cap path"
+        )
+
+
+# ===========================================================================
+# TASK 5 m2 — CHF token set includes structure-learner constructs
+# ===========================================================================
+
+class TestCHFStructureLearnerTokens:
+    """TASK 5 m2: _CHF_DENY_TOKENS extended with NOTEARS/DAG-GNN/LoRAM/CMIN etc."""
+
+    def test_notears_discovery_lobe_denies(self, tmp_path):
+        """DO_NOT_REBUILD §4 ~line 110: NOTEARS/DAG-GNN class lobes are killed."""
+        _make_minimal_budget_yml(tmp_path, max_active=66, max_probation=5)
+        _make_lobe_charters(tmp_path, n_active=0)
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict(
+            title="NOTEARS discovery lobe for neural web",
+            domain_id="structure-learning",
+        )
+        r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is False, (
+            "TASK 5 m2: NOTEARS discovery lobe must be denied (DO_NOT_REBUILD §4 ~110)"
+        )
+        assert "R-V6-3c" in r["reason"]
+
+    def test_dag_gnn_denies(self, tmp_path):
+        _make_minimal_budget_yml(tmp_path, max_active=66, max_probation=5)
+        _make_lobe_charters(tmp_path, n_active=0)
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict(title="dag-gnn causal discovery lobe")
+        r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is False
+
+    def test_structure_learner_phrase_denies(self, tmp_path):
+        _make_minimal_budget_yml(tmp_path, max_active=66, max_probation=5)
+        _make_lobe_charters(tmp_path, n_active=0)
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict(title="Structure learner for market microstructure")
+        r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is False

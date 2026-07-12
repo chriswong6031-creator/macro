@@ -793,6 +793,17 @@ def build_docket(
                 continue
 
             seen_this_cycle.add(pid)
+            # FIX B1: carry charter fields through so _genesis_screen in adjudicate
+            # receives proposed_tier, proposed_lifecycle_state, domain_id, etc.
+            # Without this, every charter reaches the screen with proposed_tier=None
+            # and the tier fence denies every charter unconditionally (dead code).
+            _CHARTER_PASS_THROUGH_KEYS = (
+                "proposed_tier", "proposed_lifecycle_state",
+                "domain_id", "evidence_refs", "uncovered_for_cycles", "roster_budget",
+            )
+            charter_extras = {
+                k: prop[k] for k in _CHARTER_PASS_THROUGH_KEYS if k in prop
+            }
             proposals.append({
                 "proposal_id": pid,
                 "content_hash": pid,
@@ -803,6 +814,7 @@ def build_docket(
                 "targets_sensor": sensor,
                 "rationale": str(prop.get("rationale") or "").strip(),
                 "fitness_contract": _mint_contract(prop, pid, day, lobe=lobe),
+                **charter_extras,
             })
         except Exception as exc:  # noqa: BLE001
             log.warning("propose: proposal skipped (%s)", exc)
