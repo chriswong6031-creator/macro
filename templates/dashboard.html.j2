@@ -8696,7 +8696,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             {% if n.get('sector_stance') %}
             {%- set _ss_caution = n.sector_stance in ('Reduce', 'Cautious') -%}
             <span class="nb-sec-stance{% if _ss_caution %} ss-caution{% endif %}">
-              <span class="l-en">Sector: {{ n.sector_stance }}</span><span class="l-zh">板块：{{ n.sector_stance_zh or n.sector_stance }}</span>{% if _ss_caution %}<span class="help below"><span class="l-en">?</span><span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>{{ n.sector_stance }}</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>{{ n.sector_stance_zh or n.sector_stance }}</b>——这不是板块层面的买入信号。</span></span></span>{% endif %}
+              <span class="l-en">Sector: {{ n.sector_stance }}</span><span class="l-zh">板块：{{ n.sector_stance_zh or n.sector_stance }}</span>{% if _ss_caution %}<span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>{{ n.sector_stance }}</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>{{ n.sector_stance_zh or n.sector_stance }}</b>——这不是板块层面的判断。</span></span></span>{% endif %}
             </span>
             {% endif %}
             {# 💥 Moving — don't chase (adjudicated UX finding #2 + risk finding #2):
