@@ -1,16 +1,10 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
-{% macro state_cls(s) -%}
-{%- if s == 'CROWDED' %}s-crowded
-{%- elif s == 'LEADERSHIP' %}s-leadership
-{%- elif s == 'BREAKAWAY' %}s-breakaway
-{%- elif s == 'CATALYST_WINDOW' %}s-catalyst
-{%- elif s == 'QUIET_ACCUMULATION' %}s-quiet
-{%- elif s == 'SUPPRESSED' %}s-suppressed
-{%- elif s == 'FAILED' %}s-failed
-{%- else %}s-none{%- endif %}
-{%- endmacro %}
+{# ── Internal chip keys — never shown on glance tier ── #}
+{% set _INTERNAL_CHIPS = ['qa_context','context_ok','bw_failed','bw_continuation_pre_leadership'] %}
+{# ── Lead signal keys for SUPPRESSED lane ── #}
+{% set _LEAD_KEYS = ['revision_positive','rs_turn','obv_divergence','accum_evidence','insider_cluster'] %}
 {# ── Safe-access helpers ────────────────────────────────────────────── #}
 {% set lr = leader_radar if leader_radar is defined and leader_radar else {} %}
 {% set rows = lr.rows if lr.rows is defined and lr.rows is not none else [] %}
@@ -18,566 +12,1476 @@
 {% set regime = lr.regime if lr.regime is defined and lr.regime is not none else {} %}
 {% set handoff_pairs = lr.handoff_pairs if lr.handoff_pairs is defined and lr.handoff_pairs is not none else [] %}
 {% set rerating_watch = lr.rerating_watch if lr.rerating_watch is defined and lr.rerating_watch is not none else [] %}
-{# Display order (most actionable first; assignment precedence lives in the engine): CROWDED → LEADERSHIP → BREAKAWAY → CATALYST_WINDOW → QUIET_ACCUMULATION → SUPPRESSED → FAILED → NONE #}
-{% set _state_order = ['CROWDED','LEADERSHIP','BREAKAWAY','CATALYST_WINDOW','QUIET_ACCUMULATION','SUPPRESSED','FAILED','NONE'] %}
+{% set handoff_context = lr.handoff_context if lr.handoff_context is defined and lr.handoff_context is not none else [] %}
+{# ── State order for display ── #}
+{% set _state_order = ['BREAKAWAY','QUIET_ACCUMULATION','CATALYST_WINDOW','SUPPRESSED','FAILED','NONE'] %}
+{# ── Compute state buckets ── #}
+{% set ns = namespace(
+  catalyst_rows=[],
+  quiet_rows=[],
+  suppressed_rows=[],
+  breakaway_rows=[],
+  failed_rows=[],
+  none_rows=[],
+  leadership_rows=[],
+  crowded_rows=[],
+  cnt_catalyst=0, cnt_quiet=0, cnt_suppressed=0, cnt_breakaway=0, cnt_failed=0, cnt_none=0,
+  cnt_leadership=0, cnt_crowded=0
+) %}
+{% for r in rows %}
+  {% if r.state == 'CATALYST_WINDOW' %}
+    {% set ns.catalyst_rows = ns.catalyst_rows + [r] %}
+    {% set ns.cnt_catalyst = ns.cnt_catalyst + 1 %}
+  {% elif r.state == 'QUIET_ACCUMULATION' %}
+    {% set ns.quiet_rows = ns.quiet_rows + [r] %}
+    {% set ns.cnt_quiet = ns.cnt_quiet + 1 %}
+  {% elif r.state == 'SUPPRESSED' %}
+    {% set ns.suppressed_rows = ns.suppressed_rows + [r] %}
+    {% set ns.cnt_suppressed = ns.cnt_suppressed + 1 %}
+  {% elif r.state == 'BREAKAWAY' %}
+    {% set ns.breakaway_rows = ns.breakaway_rows + [r] %}
+    {% set ns.cnt_breakaway = ns.cnt_breakaway + 1 %}
+  {% elif r.state == 'FAILED' %}
+    {% set ns.failed_rows = ns.failed_rows + [r] %}
+    {% set ns.cnt_failed = ns.cnt_failed + 1 %}
+  {% elif r.state == 'LEADERSHIP' %}
+    {% set ns.leadership_rows = ns.leadership_rows + [r] %}
+    {% set ns.cnt_leadership = ns.cnt_leadership + 1 %}
+  {% elif r.state == 'CROWDED' %}
+    {% set ns.crowded_rows = ns.crowded_rows + [r] %}
+    {% set ns.cnt_crowded = ns.cnt_crowded + 1 %}
+  {% else %}
+    {% set ns.none_rows = ns.none_rows + [r] %}
+    {% set ns.cnt_none = ns.cnt_none + 1 %}
+  {% endif %}
+{% endfor %}
+{# ── Count positive (non-internal) chips for a row ── #}
+{# We embed chip counts into a JS data attribute; Jinja loops count them here #}
+{# ── Plain-word state labels (EN/ZH) ── #}
+{# stage_plain_en / stage_plain_zh used by pipeline and full board #}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Leader Radar · 领袖雷达</title>
+<title>{{ t('Leader Radar', '领袖雷达') }} · Early-entry desk</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
-  *{box-sizing:border-box;}
-  body{background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;margin:0;padding:18px;}
-  @media(min-width:1100px){body{padding:24px max(40px,calc((100vw - 1360px)/2));}}
-  a{text-decoration:none;color:inherit;}
-  h1{font-size:20px;margin:0;}
-  h2{font-size:14px;margin:0 0 8px;font-weight:600;letter-spacing:.2px;}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;}
-  .muted{color:var(--muted);}.sm{font-size:12px;}.xs{font-size:11px;}
-  .topline{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;}
-  .badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;border:1px solid;white-space:nowrap;}
-  .badge-green{color:var(--up);border-color:var(--up);}
-  .badge-orange{color:var(--orange,#f97316);border-color:var(--orange,#f97316);}
-  .badge-muted{color:var(--muted);border-color:var(--line);}
-  .badge-warn{color:var(--orange,#f97316);border-color:var(--orange,#f97316);}
-  .badge-fire{color:#ef4444;border-color:#ef4444;background:rgba(239,68,68,.1);}
-  .badge-caution{color:var(--orange,#f97316);border-color:var(--orange,#f97316);background:rgba(249,115,22,.08);}
-  .banner{padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:12px;border:1px solid;}
-  .banner-stale{background:rgba(239,68,68,.08);border-color:var(--down);color:var(--down);}
-  .banner-info{background:var(--panel2);border-color:var(--line);color:var(--muted);}
-  .tbl-wrap{overflow-x:auto;}
-  table.ltbl{width:100%;border-collapse:collapse;font-size:12px;}
-  table.ltbl th{padding:6px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);border-bottom:2px solid var(--line);white-space:nowrap;}
-  table.ltbl td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
-  table.ltbl tr:last-child td{border-bottom:none;}
-  table.ltbl tr:hover td{background:var(--panel2);}
-  .tk{font-weight:700;font-size:13px;color:var(--blue,#3b82f6);}
-  .leg-row{display:flex;flex-wrap:wrap;gap:2px 4px;margin-top:3px;}
-  .leg{display:inline-block;font-size:10px;padding:1px 5px;border-radius:4px;border:1px solid;}
-  .leg-t{border-color:var(--up);color:var(--up);}
-  .leg-f{color:var(--muted);border-color:transparent;}
-  .leg-n{border-color:var(--line);color:var(--muted);font-style:italic;}
-  .state-chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;border:1px solid;white-space:nowrap;}
-  .s-crowded{background:rgba(239,68,68,.12);border-color:#ef4444;color:#ef4444;}
-  .s-leadership{background:rgba(249,115,22,.1);border-color:var(--orange,#f97316);color:var(--orange,#f97316);}
-  .s-breakaway{background:rgba(34,197,94,.12);border-color:var(--up);color:var(--up);}
-  .s-catalyst{background:rgba(59,130,246,.12);border-color:var(--blue,#3b82f6);color:var(--blue,#3b82f6);}
-  .s-quiet{background:rgba(168,85,247,.1);border-color:#a855f7;color:#a855f7;}
-  .s-suppressed{background:rgba(148,163,184,.08);border-color:var(--muted);color:var(--muted);}
-  .s-failed{background:rgba(239,68,68,.06);border-color:var(--down);color:var(--down);}
-  .s-none{background:transparent;border-color:var(--line);color:var(--muted);}
-  .regime-chip{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;border:1px solid;}
-  .r-narrow{background:rgba(249,115,22,.1);border-color:var(--orange,#f97316);color:var(--orange,#f97316);}
-  .r-broad{background:rgba(34,197,94,.12);border-color:var(--up);color:var(--up);}
-  .r-mixed{background:rgba(148,163,184,.08);border-color:var(--muted);color:var(--muted);}
-  .regime-cond{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:6px;}
-  .rcond{font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid;}
-  .rcond-y{border-color:var(--up);color:var(--up);}
-  .rcond-n{border-color:var(--line);color:var(--muted);}
-  .grp-hd{padding:8px 10px;background:var(--panel2);border-bottom:1px solid var(--line);cursor:pointer;user-select:none;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);}
-  .grp-hd:hover{background:var(--bg);}
-  .grp-rows.collapsed{display:none;}
-  .osc-cell{font-size:11px;}
-  .osc-val{display:inline-block;padding:1px 5px;border-radius:3px;border:1px solid;}
-  .osc-hi{border-color:var(--up);color:var(--up);}
-  .osc-lo{border-color:var(--down);color:var(--down);}
-  .osc-mid{border-color:var(--line);color:var(--muted);}
-  .playbook{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:8px;}
-  .pb-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;font-weight:600;font-size:13px;user-select:none;}
-  .pb-hd:hover{background:var(--panel2);}
-  .pb-hd .car{font-size:11px;color:var(--muted);transition:transform .2s;}
-  .pb-hd.open .car{transform:rotate(90deg);}
-  .pb-bd{display:none;padding:12px 14px;font-size:12px;line-height:1.7;border-top:1px solid var(--line);}
-  .pb-hd.open+.pb-bd{display:block;}
-  .cov-expand{cursor:pointer;color:var(--blue,#3b82f6);font-size:11px;text-decoration:underline;}
-  .cov-names{display:none;margin-top:6px;font-size:11px;color:var(--muted);font-family:monospace;line-height:1.6;}
-  .young-tag{font-size:10px;color:var(--orange,#f97316);font-style:italic;margin-left:3px;}
+/* ── CSS Variables (aurora-glass palette) ── */
+:root {
+  --bg-base:       var(--bg, #0d0f14);
+  --bg-glass:      rgba(18,22,32,0.72);
+  --bg-glass-2:    rgba(24,28,42,0.60);
+  --bg-card:       rgba(20,24,36,0.85);
+  --border:        rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.14);
+  --text-primary:  var(--text, #e8eaf0);
+  --text-secondary:var(--muted, #8b90a8);
+  --text-muted:    #4e5370;
+  --text-dim:      #3a3e54;
+  --col-ignition:  #3b82f6;
+  --col-quiet:     #7c3aed;
+  --col-suppressed:#6b7280;
+  --col-breakaway: #22c55e;
+  --col-leading:   #16a34a;
+  --col-crowded:   #f59e0b;
+  --col-failed:    #ef4444;
+  --glow-ignition:  rgba(59,130,246,0.18);
+  --glow-quiet:     rgba(124,58,237,0.18);
+  --glow-suppressed:rgba(107,114,128,0.12);
+  --glow-breakaway: rgba(34,197,94,0.15);
+  --glow-failed:    rgba(239,68,68,0.10);
+  --radius-card: 14px;
+  --radius-chip: 6px;
+  --transition: 0.18s ease;
+}
+[data-theme="light"] {
+  --bg-base: #f0f2f8;
+  --bg-glass: rgba(255,255,255,0.78);
+  --bg-glass-2: rgba(240,242,248,0.82);
+  --bg-card: rgba(255,255,255,0.92);
+  --border: rgba(0,0,0,0.07);
+  --border-strong: rgba(0,0,0,0.13);
+  --text-primary: #0f1117;
+  --text-secondary: #4b5068;
+  --text-muted: #8a8fa8;
+  --text-dim: #c0c3d0;
+  --glow-ignition: rgba(59,130,246,0.10);
+  --glow-quiet: rgba(124,58,237,0.10);
+  --glow-breakaway: rgba(34,197,94,0.10);
+  --glow-failed: rgba(239,68,68,0.07);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;background:var(--bg-base);color:var(--text-primary);min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased;margin:0;padding-top:24px;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 40% at 15% 20%,rgba(124,58,237,0.12) 0%,transparent 70%),radial-gradient(ellipse 50% 35% at 85% 10%,rgba(59,130,246,0.10) 0%,transparent 70%),radial-gradient(ellipse 40% 30% at 60% 80%,rgba(34,197,94,0.07) 0%,transparent 70%);z-index:0;}
+a{text-decoration:none;color:inherit;}
+.page-wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:20px 28px 48px;}
+.glass{background:var(--bg-glass);border:1px solid var(--border);border-radius:var(--radius-card);backdrop-filter:blur(12px) saturate(1.4);-webkit-backdrop-filter:blur(12px) saturate(1.4);}
+/* ── LANG/THEME visibility ── */
+.l-zh{display:none;}
+[data-lang="zh"] .l-en{display:none;}
+[data-lang="zh"] .l-zh{display:inline;}
+/* ── Banner ── */
+.banner{padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:12px;border:1px solid;}
+.banner-stale{background:rgba(239,68,68,.08);border-color:#ef4444;color:#ef4444;}
+/* ── HEADER ── */
+.site-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:18px 24px;margin-bottom:20px;}
+.header-left{flex:1;min-width:0;}
+.header-eyebrow{font-size:0.72rem;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;}
+.header-title{font-size:1.65rem;font-weight:700;letter-spacing:-0.02em;color:var(--text-primary);line-height:1.2;}
+.header-subtitle{margin-top:6px;font-size:0.88rem;color:var(--text-secondary);max-width:480px;}
+.header-meta{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:0.78rem;color:var(--text-muted);flex-wrap:wrap;}
+.header-meta .dot{width:3px;height:3px;border-radius:50%;background:var(--text-dim);}
+.badge-seeding{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);color:#f59e0b;font-size:0.72rem;font-weight:600;}
+.badge-seeding::before{content:'◉';font-size:0.6rem;}
+.q-afford{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--border-strong);color:var(--text-muted);font-size:0.65rem;cursor:pointer;transition:var(--transition);font-weight:700;border:1px solid var(--border);}
+.q-afford:hover{background:var(--col-ignition);color:#fff;}
+/* Regime capsule */
+.header-right{flex-shrink:0;}
+.regime-capsule{background:var(--bg-glass-2);border:1px solid var(--border-strong);border-radius:var(--radius-card);padding:16px 20px;text-align:center;min-width:200px;}
+.regime-label-top{font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
+.regime-plain{font-size:1.05rem;font-weight:700;line-height:1.2;}
+.regime-plain.r-broad{color:var(--col-breakaway);}
+.regime-plain.r-narrow{color:#f59e0b;}
+.regime-plain.r-mixed{color:var(--text-secondary);}
+.regime-sub{font-size:0.75rem;color:var(--text-secondary);margin-top:4px;}
+.regime-chips-row{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+.regime-chip-sm{padding:2px 7px;border-radius:4px;font-size:0.65rem;font-weight:600;letter-spacing:0.04em;}
+.regime-chip-sm.on{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.25);}
+.regime-chip-sm.off{background:rgba(107,114,128,0.10);color:var(--text-muted);border:1px solid var(--border);}
+/* ── SECTION LABELS ── */
+.section-header{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
+.section-title{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);}
+.section-count{font-size:0.72rem;color:var(--text-dim);}
+.section-rule{flex:1;height:1px;background:var(--border);}
+/* ── EARLY ENTRY BOARD ── */
+.early-entry-section{margin-bottom:24px;}
+.lane-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.lane-col{display:flex;flex-direction:column;gap:10px;}
+.lane-header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;}
+.lane-header.ignition{background:rgba(59,130,246,0.10);border:1px solid rgba(59,130,246,0.20);}
+.lane-header.quiet{background:rgba(124,58,237,0.10);border:1px solid rgba(124,58,237,0.20);}
+.lane-header.suppressed{background:rgba(107,114,128,0.08);border:1px solid rgba(107,114,128,0.15);}
+.lane-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.lane-dot.ignition{background:var(--col-ignition);box-shadow:0 0 8px var(--col-ignition);}
+.lane-dot.quiet{background:var(--col-quiet);box-shadow:0 0 8px var(--col-quiet);}
+.lane-dot.suppressed{background:var(--col-suppressed);}
+.lane-name{font-size:0.85rem;font-weight:700;color:var(--text-primary);flex:1;}
+.lane-count-chip{font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:10px;}
+.lane-count-chip.ignition{background:rgba(59,130,246,0.20);color:#93c5fd;}
+.lane-count-chip.quiet{background:rgba(124,58,237,0.20);color:#c4b5fd;}
+.lane-count-chip.suppressed{background:rgba(107,114,128,0.15);color:var(--text-muted);}
+/* Entry card */
+.entry-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;transition:var(--transition);cursor:pointer;position:relative;overflow:hidden;}
+.entry-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:12px 12px 0 0;}
+.entry-card.ignition{border-color:rgba(59,130,246,0.25);}
+.entry-card.ignition::before{background:linear-gradient(90deg,var(--col-ignition),rgba(99,179,255,0.5));}
+.entry-card.ignition:hover{box-shadow:0 0 24px var(--glow-ignition);border-color:rgba(59,130,246,0.45);}
+.entry-card.quiet{border-color:rgba(124,58,237,0.22);}
+.entry-card.quiet::before{background:linear-gradient(90deg,var(--col-quiet),rgba(167,139,250,0.5));}
+.entry-card.quiet:hover{box-shadow:0 0 24px var(--glow-quiet);border-color:rgba(124,58,237,0.40);}
+.entry-card.suppressed{border-color:rgba(107,114,128,0.18);}
+.entry-card.suppressed::before{background:linear-gradient(90deg,var(--col-suppressed),transparent);}
+.entry-card.suppressed:hover{box-shadow:0 0 16px var(--glow-suppressed);}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.card-ticker{font-size:1.3rem;font-weight:800;letter-spacing:-0.02em;color:var(--text-primary);line-height:1;}
+.card-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.card-days{font-size:0.68rem;color:var(--text-muted);}
+.card-sparkline{width:64px;height:24px;}
+.spark-path{fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+.spark-path.up{stroke:#4ade80;}
+.spark-path.down{stroke:#f87171;}
+.spark-path.flat{stroke:#8b90a8;}
+/* dot bar */
+.evidence-bar{display:flex;align-items:center;gap:6px;margin-bottom:7px;}
+.dot-bar{display:flex;gap:3px;}
+.dot-bar-dot{width:6px;height:6px;border-radius:50%;transition:var(--transition);}
+.dot-bar-dot.filled.ignition{background:var(--col-ignition);}
+.dot-bar-dot.filled.quiet{background:var(--col-quiet);}
+.dot-bar-dot.filled.suppressed{background:var(--text-muted);}
+.dot-bar-dot.empty{background:var(--text-dim);}
+.ev-label{font-size:0.7rem;color:var(--text-muted);}
+.ev-label strong{color:var(--text-secondary);}
+/* evidence line */
+.evidence-line{font-size:0.78rem;color:var(--text-secondary);line-height:1.4;}
+.ev-sep{color:var(--text-dim);margin:0 3px;}
+/* timing chip */
+.timing-chip{display:inline-flex;align-items:center;gap:4px;margin-top:7px;padding:3px 8px;border-radius:5px;font-size:0.7rem;font-weight:600;}
+.timing-chip.near{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.30);color:#93c5fd;}
+.timing-chip.watch{background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.30);color:#c4b5fd;}
+/* fire badge */
+.fire-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:5px;font-size:0.68rem;font-weight:700;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.30);color:#fca5a5;}
+/* Empty lane state */
+.lane-empty{padding:10px 12px;font-size:0.72rem;color:var(--text-muted);font-style:italic;border:1px solid rgba(59,130,246,0.15);border-radius:8px;background:rgba(59,130,246,0.05);line-height:1.5;}
+/* ── LIFECYCLE PIPELINE ── */
+.pipeline-section{margin-bottom:24px;}
+.pipeline-wrap{padding:18px 20px 20px;overflow-x:auto;}
+.pipe-sm-row{display:flex;align-items:stretch;gap:0;border-radius:12px;overflow:hidden;border:1px solid var(--border);min-height:108px;}
+.pipe-seg{display:flex;flex-direction:column;justify-content:flex-start;padding:12px 10px 10px;border-right:1px solid var(--border);cursor:default;transition:background 0.15s;position:relative;min-width:92px;}
+.pipe-seg:last-child{border-right:none;}
+.pipe-seg:hover{background:rgba(255,255,255,0.03);}
+.pipe-seg.empty-stage{border-style:dashed;background:transparent;opacity:0.65;min-width:92px;flex:0 0 92px !important;}
+.pipe-seg.empty-stage:hover{opacity:0.85;}
+.pipe-seg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-bottom:5px;display:inline-block;}
+.pipe-seg-header{display:flex;align-items:center;gap:5px;}
+.pipe-seg-name{font-size:0.72rem;font-weight:700;color:var(--text-primary);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pipe-seg-stance{font-size:0.65rem;color:var(--text-muted);margin-top:3px;line-height:1.3;}
+.pipe-seg-count{font-size:1.65rem;font-weight:800;line-height:1;margin-top:8px;margin-bottom:6px;}
+.pipe-seg-count.col-gray{color:var(--col-suppressed);}
+.pipe-seg-count.col-violet{color:#a78bfa;}
+.pipe-seg-count.col-blue{color:#93c5fd;}
+.pipe-seg-count.col-green{color:#4ade80;}
+.pipe-seg-count.col-led{color:#34d399;}
+.pipe-seg-count.col-amber{color:#fcd34d;}
+.pipe-seg-chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:auto;}
+.pipe-seg-chip{font-size:0.6rem;font-weight:600;padding:1px 5px;border-radius:4px;color:var(--text-secondary);background:var(--border);letter-spacing:0.03em;text-decoration:none;white-space:nowrap;}
+.pipe-seg-chip:hover{color:var(--text-primary);}
+.pipe-seg-chip-more{font-size:0.6rem;font-weight:600;padding:1px 5px;border-radius:4px;color:var(--text-dim);background:transparent;border:1px solid var(--border);}
+.pipe-seg-none-label{font-size:0.62rem;color:var(--text-dim);font-style:italic;margin-top:auto;}
+.pipe-seg-arrow{position:absolute;right:-9px;top:50%;transform:translateY(-50%);z-index:3;width:18px;height:18px;background:var(--bg-base);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:var(--text-dim);pointer-events:none;}
+/* Failed side-pile */
+.pipe-failed-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:10px 14px;border-radius:10px;border:1px dashed rgba(239,68,68,0.28);background:rgba(239,68,68,0.04);}
+.pipe-failed-return{font-size:0.85rem;color:rgba(239,68,68,0.5);flex-shrink:0;}
+.pipe-failed-label{font-size:0.72rem;font-weight:700;color:#f87171;flex-shrink:0;}
+.pipe-failed-note{font-size:0.68rem;color:var(--text-muted);}
+.pipe-failed-count{font-size:1.25rem;font-weight:800;color:#f87171;flex-shrink:0;}
+.pipe-failed-chips{display:flex;flex-wrap:wrap;gap:3px;flex:1;}
+.pipe-failed-chip{font-size:0.6rem;padding:1px 5px;border-radius:4px;background:rgba(239,68,68,0.10);color:#f87171;font-weight:600;text-decoration:none;}
+.pipe-failed-chip:hover{background:rgba(239,68,68,0.18);}
+/* No-signal reservoir */
+.pipe-reservoir{display:flex;align-items:center;gap:10px;margin-top:8px;padding:7px 14px;border-radius:8px;background:rgba(55,65,81,0.15);border:1px solid rgba(55,65,81,0.25);opacity:0.7;}
+.pipe-reservoir-label{font-size:0.68rem;color:var(--text-dim);font-style:italic;}
+.pipe-reservoir-count{font-size:0.78rem;font-weight:700;color:var(--text-dim);}
+/* ── DUAL CARDS ── */
+.dual-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
+.side-card{padding:20px 22px;}
+.side-card-title{font-size:0.88rem;font-weight:700;color:var(--text-primary);margin-bottom:4px;}
+.side-card-sub{font-size:0.75rem;color:var(--text-muted);margin-bottom:14px;}
+/* Handoff empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 0 8px;gap:8px;color:var(--text-muted);}
+.empty-icon{font-size:1.8rem;opacity:0.4;}
+.empty-label{font-size:0.8rem;font-weight:600;}
+.empty-sub{font-size:0.73rem;text-align:center;line-height:1.4;}
+.closest-list{margin-top:12px;}
+.closest-title{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-dim);margin-bottom:8px;}
+.closest-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.78rem;}
+.closest-row:last-child{border-bottom:none;}
+.closest-ticker{font-weight:700;min-width:46px;color:var(--text-primary);}
+.closest-why{color:var(--text-muted);flex:1;font-size:0.73rem;}
+/* Rerating card */
+.rerating-rows{display:flex;flex-direction:column;gap:6px;}
+.rerating-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:var(--bg-glass-2);border:1px solid var(--border);font-size:0.78rem;}
+.rerating-ticker{font-weight:700;min-width:42px;color:var(--text-primary);}
+.rerating-stage-chip{padding:1px 6px;border-radius:4px;font-size:0.63rem;font-weight:700;white-space:nowrap;}
+.rerating-stage-chip.s-breakaway{background:rgba(34,197,94,0.12);color:#4ade80;}
+.rerating-stage-chip.s-quiet{background:rgba(124,58,237,0.12);color:#c4b5fd;}
+.rerating-stage-chip.s-suppressed{background:rgba(107,114,128,0.12);color:#9ca3af;}
+.rerating-stage-chip.s-none{background:rgba(55,65,81,0.20);color:var(--text-muted);}
+.rerating-chips{display:flex;gap:4px;flex:1;flex-wrap:wrap;}
+.rerate-chip{padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:600;background:rgba(124,58,237,0.12);color:#c4b5fd;border:1px solid rgba(124,58,237,0.20);}
+.rerate-chip.warn{background:rgba(245,158,11,0.10);color:#fcd34d;border-color:rgba(245,158,11,0.20);}
+.rerate-chip.null-chip{background:transparent;color:var(--text-dim);border:1px solid var(--border);font-style:italic;}
+/* ── FULL BOARD ── */
+.full-board-section{margin-bottom:24px;}
+.board-toggle{display:flex;align-items:center;gap:8px;padding:12px 18px;cursor:pointer;border-radius:var(--radius-card);border:1px solid var(--border);background:var(--bg-glass-2);transition:var(--transition);user-select:none;justify-content:space-between;}
+.board-toggle:hover{border-color:var(--border-strong);}
+.board-toggle-left{display:flex;align-items:center;gap:10px;}
+.board-toggle-label{font-size:0.82rem;font-weight:600;color:var(--text-primary);}
+.board-toggle-sub{font-size:0.73rem;color:var(--text-muted);}
+.board-caret{color:var(--text-muted);font-size:0.75rem;transition:transform 0.2s;}
+.board-caret.open{transform:rotate(180deg);}
+.board-table-wrap{display:none;padding:0 0 6px;overflow-x:auto;border-radius:0 0 var(--radius-card) var(--radius-card);}
+.board-table-wrap.open{display:block;}
+.board-table{width:100%;border-collapse:collapse;font-size:0.78rem;}
+.board-table th{text-align:left;padding:8px 10px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);border-bottom:1px solid var(--border);white-space:nowrap;}
+.board-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.board-table tr:hover td{background:rgba(255,255,255,0.025);}
+.board-table tr:last-child td{border-bottom:none;}
+/* Board group headers */
+.board-grp-hd td{background:var(--bg-glass-2);font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);cursor:pointer;user-select:none;}
+.board-grp-hd td:hover{background:var(--bg-base);}
+.board-grp-body.collapsed{display:none;}
+/* Stage pills */
+.stage-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.65rem;font-weight:700;white-space:nowrap;}
+.stage-pill.QUIET_ACCUMULATION{background:rgba(124,58,237,0.18);color:#c4b5fd;}
+.stage-pill.BREAKAWAY{background:rgba(34,197,94,0.15);color:#4ade80;}
+.stage-pill.SUPPRESSED{background:rgba(107,114,128,0.15);color:#9ca3af;}
+.stage-pill.FAILED{background:rgba(239,68,68,0.12);color:#f87171;}
+.stage-pill.CATALYST_WINDOW{background:rgba(59,130,246,0.18);color:#93c5fd;}
+.stage-pill.NONE{background:rgba(55,65,81,0.30);color:var(--text-muted);}
+.stage-pill.LEADERSHIP{background:rgba(22,163,74,0.18);color:#4ade80;}
+.stage-pill.CROWDED{background:rgba(245,158,11,0.18);color:#fcd34d;}
+.ticker-link{font-weight:700;font-size:0.85rem;color:var(--text-primary);}
+.board-spark{width:48px;height:18px;display:inline-block;vertical-align:middle;}
+.leg-chips{display:flex;flex-wrap:wrap;gap:3px;}
+.leg-chip{font-size:0.63rem;padding:1px 5px;border-radius:4px;background:rgba(124,58,237,0.12);color:#c4b5fd;}
+.leg-chip.green{background:rgba(34,197,94,0.12);color:#4ade80;}
+.leg-chip.blue{background:rgba(59,130,246,0.12);color:#93c5fd;}
+.leg-chip.gray{background:rgba(107,114,128,0.12);color:#9ca3af;}
+/* ── FIELD GUIDE ACCORDION ── */
+.guide-section{margin-bottom:24px;}
+.guide-wrap{padding:16px 20px;}
+.guide-title{font-size:0.88rem;font-weight:700;margin-bottom:4px;color:var(--text-primary);}
+.guide-sub{font-size:0.75rem;color:var(--text-muted);margin-bottom:14px;}
+.playbook{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px;}
+.pb-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;font-weight:600;font-size:0.82rem;user-select:none;color:var(--text-primary);}
+.pb-hd:hover{background:var(--bg-glass-2);}
+.pb-hd .car{font-size:11px;color:var(--text-muted);transition:transform .2s;}
+.pb-hd.open .car{transform:rotate(90deg);}
+.pb-bd{display:none;padding:12px 14px;font-size:0.77rem;line-height:1.7;border-top:1px solid var(--border);color:var(--text-secondary);}
+.pb-hd.open+.pb-bd{display:block;}
+/* ── FOOTER ── */
+footer{padding:18px 24px;margin-top:8px;}
+.footer-honesty{font-size:0.76rem;color:var(--text-muted);line-height:1.5;}
+/* ── POPOVER ── */
+.popover-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;align-items:center;justify-content:center;}
+.popover-backdrop.open{display:flex;}
+.popover-box{background:#1a1e2e;border:1px solid var(--border-strong);border-radius:14px;padding:20px 22px;max-width:400px;width:90%;box-shadow:0 24px 60px rgba(0,0,0,0.6);}
+[data-theme="light"] .popover-box{background:#fff;}
+.popover-title{font-size:0.9rem;font-weight:700;margin-bottom:6px;color:var(--text-primary);}
+.popover-body{font-size:0.78rem;color:var(--text-secondary);line-height:1.55;}
+.popover-body p{margin:0 0 8px;}
+.popover-body p:last-child{margin-bottom:0;}
+.popover-close{float:right;border:none;background:none;color:var(--text-muted);cursor:pointer;font-size:1rem;line-height:1;padding:0 0 4px 8px;}
+.receipt-chip-list{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0;}
+.receipt-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:5px;font-size:0.72rem;font-weight:600;}
+.receipt-chip.on{background:rgba(124,58,237,0.18);color:#c4b5fd;}
+.receipt-chip.on.ignition{background:rgba(59,130,246,0.18);color:#93c5fd;}
+.receipt-chip.on.suppressed{background:rgba(107,114,128,0.18);color:#9ca3af;}
+.receipt-chip.null{background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--border);opacity:0.7;font-style:italic;}
+.receipt-machine-state{font-size:0.68rem;color:var(--text-dim);font-family:'SF Mono',monospace;padding:4px 8px;background:rgba(255,255,255,0.03);border-radius:5px;margin-top:8px;}
+.receipt-seeding-note{font-size:0.7rem;color:var(--text-muted);margin-top:8px;padding:6px 8px;background:rgba(255,200,0,0.07);border:1px solid rgba(255,200,0,0.14);border-radius:6px;}
+.receipt-context-line{font-size:0.72rem;color:var(--text-secondary);margin-top:4px;padding:2px 8px;}
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .lane-grid{grid-template-columns:1fr;}
+  .dual-cards{grid-template-columns:1fr;}
+  .page-wrap{padding:14px 14px 36px;}
+  .header-right{display:none;}
+  .pipeline-wrap{padding:14px;}
+  .pipe-sm-row{flex-wrap:wrap;min-height:unset;}
+  .pipe-seg{flex:0 0 calc(50% - 1px) !important;min-width:0;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+  .pipe-seg:nth-child(2n){border-right:none;}
+  .pipe-seg-arrow{display:none;}
+}
+@media(max-width:390px){
+  .header-title{font-size:1.25rem;}
+  .entry-card{padding:11px 12px;}
+  .card-ticker{font-size:1.1rem;}
+}
 </style>
 </head>
 <body>
 <nav class="site-nav">
   {% include '_navlinks.html.j2' %}
 </nav>
-<div style="max-width:1360px;margin:0 auto;">
 
-<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px;">
-  <h1>{{ t('Leader Radar', '领袖雷达') }}</h1>
-  <span class="muted sm">{{ t('Lifecycle board · regime · handoff watch · rerating watch', '生命周期看板 · 领导力制度 · 交接观察 · 重估观察') }}</span>
-</div>
-<div class="topline muted xs" style="margin-bottom:14px;">
-  <span>{{ t('As of', '截至') }} {{ lr.as_of[:10] if lr.as_of is defined and lr.as_of is not none else '—' }}</span>
-  {% if cov.n_universe is defined and cov.n_universe is not none %}
-  <span>{{ t('Universe', '样本') }}: {{ cov.n_universe }}</span>
-  {% endif %}
+{# ── Coverage popover ── #}
+<div class="popover-backdrop" id="coverage-popover" onclick="closePopover('coverage-popover')">
+  <div class="popover-box" onclick="event.stopPropagation()">
+    <button class="popover-close" onclick="closePopover('coverage-popover')">&#x2715;</button>
+    <div class="popover-title">
+      {{ t('Coverage receipt', '覆盖情况说明') }}
+    </div>
+    <div class="popover-body">
+      {% set n_univ = cov.n_universe if cov.n_universe is defined and cov.n_universe is not none else '—' %}
+      {% set rev_unc = cov.revisions_uncovered if cov.revisions_uncovered is defined and cov.revisions_uncovered is not none else [] %}
+      <p><strong>{{ t('Universe:', '样本：') }}</strong> {{ n_univ }} {{ t('names tracked', '个标的追踪中') }}</p>
+      <p><strong>{{ t('Price data:', '价格数据：') }}</strong> {{ n_univ }} / {{ n_univ }} {{ t('covered', '已覆盖') }}</p>
+      {% if rev_unc | length > 0 %}
+      <p><strong>{{ t('Revision data:', '预测修订数据：') }}</strong>
+        {% if cov.n_universe is defined and cov.n_universe is not none %}{{ cov.n_universe - rev_unc|length }}{% else %}—{% endif %} / {{ n_univ }} —
+        {{ rev_unc | length }} {{ t('names lack analyst coverage and receive no revision signals.', '个标的缺少分析师覆盖，不含预测修订信号。') }}
+      </p>
+      {% else %}
+      <p><strong>{{ t('Revision data:', '预测修订数据：') }}</strong> {{ t('All names covered.', '全部标的已覆盖。') }}</p>
+      {% endif %}
+      {% if cov.analyst_covered is defined and cov.analyst_covered is not none %}
+      {% set ana_unc = cov.analyst_uncovered if cov.analyst_uncovered is defined and cov.analyst_uncovered is not none else [] %}
+      {% if cov.analyst_covered > 0 %}
+      <p><strong>{{ t('Analyst rating data:', '分析师评级数据：') }}</strong> {{ cov.analyst_covered }} / {{ n_univ }} {{ t('covered', '已覆盖') }}{% if ana_unc | length > 0 %} — {{ ana_unc | length }} {{ t('without', '个缺少') }}{% endif %} <span class="young-tag">{{ t('young data', '数据较新') }}</span></p>
+      {% else %}
+      <p><strong>{{ t('Analyst rating data:', '分析师评级数据：') }}</strong> {{ t('unavailable — the crowding signal that reads it stays blank.', '不可用 — 依赖它的拥挤信号留空。') }}</p>
+      {% endif %}
+      {% endif %}
+      {% if cov.tape_note is defined and cov.tape_note is not none %}
+      <p>{{ cov.tape_note }}</p>
+      {% endif %}
+      <p><strong>{{ t('Machine state', '机器状态') }}</strong> {{ t('labels appear only in receipts and the field guide. Glance tier uses plain English only.', '标签仅出现在说明弹窗和字段指南中。概览层仅使用通俗语言。') }}</p>
+      {% if rows and rows[0].days_in_state is defined and rows[0].days_in_state == 1 %}
+      <p><em>{{ t('Days-in-stage reads 1 everywhere — state store accumulates nightly from here.', '各阶段天数均显示1 — 状态存储从此次起每晚累计。') }}</em></p>
+      {% endif %}
+    </div>
+  </div>
 </div>
 
-{# ── Banners ──────────────────────────────────────────────────────────── #}
+{# ── Regime detail popover ── #}
+<div class="popover-backdrop" id="regime-popover" onclick="closePopover('regime-popover')">
+  <div class="popover-box" onclick="event.stopPropagation()">
+    <button class="popover-close" onclick="closePopover('regime-popover')">&#x2715;</button>
+    <div class="popover-title">
+      {{ t('What does the market regime mean?', '"市场制度"是什么意思？') }}
+    </div>
+    <div class="popover-body">
+      <p>{{ t("The market's internal structure is checked across breadth conditions: what share of stocks are above their 200-day average, how correlated they are, whether leadership is concentrated in a few mega-caps, and whether a rare breadth thrust event fired.", '市场内部结构通过多项广度条件检验：多少股票站在200日均线以上、相关性高低、领涨是否集中于少数超大盘股，以及是否触发罕见的广度冲击事件。') }}</p>
+      {% set rc = regime.chips if regime.chips is defined and regime.chips is not none else {} %}
+      {% if rc.zweig_thrust is defined and rc.zweig_thrust %}
+      <p>{{ t('Rare breadth surge: a Zweig-style breadth thrust event confirmed — historically ~18 occurrences in the modern era. The stage machine weights breakout setups more heavily during broad advances.', '罕见广度冲击：类Zweig广度冲击事件确认 — 现代史约18次发生。在普涨行情中，状态机对突破布局赋予更高权重。') }}</p>
+      {% endif %}
+      <p><strong>{{ t('Machine label:', '机器标签：') }}</strong> <code>{{ regime.label if regime.label is defined else '—' }}</code> · {{ t('display only', '仅供展示') }}</p>
+    </div>
+  </div>
+</div>
+
+{# ── Card receipt popover (single shared, filled by JS) ── #}
+<div class="popover-backdrop" id="card-popover" onclick="closePopover('card-popover')">
+  <div class="popover-box" onclick="event.stopPropagation()">
+    <button class="popover-close" onclick="closePopover('card-popover')">&#x2715;</button>
+    <div class="popover-title" id="card-popover-title"></div>
+    <div class="popover-body" id="card-popover-body"></div>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+{# ── Stale banner ── #}
 {% if lr.stale is defined and lr.stale %}
 <div class="banner banner-stale">
   {{ t('Price store is stale — data may lag by more than 2 sessions. State classification frozen.', '价格存储数据陈旧 — 可能落后超过2个交易日，状态分类已冻结。') }}
 </div>
 {% endif %}
 
-{# ── Coverage banner ───────────────────────────────────────────────────── #}
-<div class="banner banner-info">
-  {% set rev_unc = cov.revisions_uncovered if cov.revisions_uncovered is defined and cov.revisions_uncovered is not none else [] %}
-  {% set mktcap_n = cov.mktcap_n_covered if cov.mktcap_n_covered is defined and cov.mktcap_n_covered is not none else 0 %}
-  <span class="sm">
-    {{ t('Coverage:', '覆盖：') }}
-    {% if cov.n_universe is defined and cov.n_universe is not none %}{{ cov.n_universe }} {{ t('names', '个标的') }} · {% endif %}
-    {% if rev_unc | length > 0 %}
-      {{ rev_unc | length }} {{ t('names without revision data', '个标的缺少分析师预测修订数据') }}<span class="young-tag">{{ t('young data', '数据较新') }}</span>
-      <span class="cov-expand" onclick="var el=document.getElementById('rev-unc-names');el.style.display=el.style.display==='block'?'none':'block';" role="button">{{ t('show list', '展开列表') }}</span>
-      <div id="rev-unc-names" class="cov-names">{{ rev_unc | join(', ') }}</div>
-    {% else %}
-      {{ t('revision data available for all names', '全部标的均有分析师预测修订数据') }}
-    {% endif %}
-    {% if mktcap_n is not none and mktcap_n == 0 %}
-    · {{ t('mktcap weights unavailable — equal-weight fallback used for top-5 share', '市值权重不可用 — 前5强贡献度采用等权替代') }}<span class="young-tag">{{ t('young data', '数据较新') }}</span>
-    {% elif mktcap_n is not none and mktcap_n > 0 %}
-    · {{ t('top-5 share coverage', '前5强覆盖度') }}: {{ mktcap_n }}
-    {% endif %}
-    {% if cov.analyst_covered is defined and cov.analyst_covered is not none %}
-      {% set ana_unc = cov.analyst_uncovered if cov.analyst_uncovered is defined and cov.analyst_uncovered is not none else [] %}
-      {% if cov.analyst_covered > 0 %}
-    · {{ cov.analyst_covered }} {{ t('names with analyst rating data', '个标的有分析师评级数据') }}{% if ana_unc | length > 0 %} ({{ ana_unc | length }} {{ t('without', '个缺少') }}){% endif %}<span class="young-tag">{{ t('young data', '数据较新') }}</span>
-      {% else %}
-    · {{ t('analyst rating data unavailable — crowding chip stays blank', '分析师评级数据不可用 — 拥挤指标留空') }}
+{# ── HEADER ── #}
+<header class="glass site-header">
+  <div class="header-left">
+    <div class="header-eyebrow">{{ t('Leader Radar', '领袖雷达') }}</div>
+    <h1 class="header-title">{{ t('Early-entry desk', '早入场台') }}</h1>
+    <p class="header-subtitle">{{ t('Stocks staged before the crowd arrives — observation, not prediction', '人群到来前已布局的股票 — 观察，非预测') }}</p>
+    <div class="header-meta">
+      {% set n_univ = cov.n_universe if cov.n_universe is defined and cov.n_universe is not none else 0 %}
+      {% if n_univ %}
+      <span>{{ n_univ }} {{ t('names tracked', '个标的追踪中') }}</span>
+      <span class="dot"></span>
       {% endif %}
-    {% endif %}
-    {% if cov.tape_note is defined and cov.tape_note is not none %}
-    · <span class="muted xs">{{ cov.tape_note }}</span>
-    {% endif %}
-  </span>
-</div>
-
-{# ── Regime banner (LR-R5) ─────────────────────────────────────────────── #}
-{% if regime and regime.label is defined and regime.label is not none %}
-<div class="panel" style="margin-bottom:14px;">
-  <h2>{{ t('Leadership Regime', '领导力制度') }}</h2>
-  {% set rl = regime.label %}
-  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
-    <span class="regime-chip {% if rl == 'narrow_leadership' %}r-narrow{% elif rl == 'broad_thrust' %}r-broad{% else %}r-mixed{% endif %}">
-      {% if rl == 'narrow_leadership' %}{{ t('Narrow Leadership', '窄幅领导') }}
-      {% elif rl == 'broad_thrust' %}{{ t('Broad Thrust', '广泛冲击') }}
-      {% else %}{{ t('Mixed', '混合') }}{% endif %}
-    </span>
-    {% if regime.conditions is defined and regime.conditions is not none %}
-    <span class="sm muted">{{ regime.conditions }}</span>
-    {% endif %}
-  </div>
-  {% set rc = regime.chips if regime.chips is defined and regime.chips is not none else {} %}
-  <div class="regime-cond">
-    {% if rc.dispersion_high is defined %}
-    <span class="rcond {% if rc.dispersion_high %}rcond-y{% else %}rcond-n{% endif %}">{{ t('Dispersion high', '离散度高') }}</span>
-    {% endif %}
-    {% if rc.corr_low is defined %}
-    <span class="rcond {% if rc.corr_low %}rcond-y{% else %}rcond-n{% endif %}">{{ t('Avg corr low', '平均相关性低') }}</span>
-    {% endif %}
-    {% if rc.pct_above_200_low is defined %}
-    <span class="rcond {% if rc.pct_above_200_low %}rcond-y{% else %}rcond-n{% endif %}">{{ t('&lt;200dma breadth low', '200日均线上方比例低') }}</span>
-    {% endif %}
-    {% if rc.pct_above_200_high is defined %}
-    <span class="rcond {% if rc.pct_above_200_high %}rcond-y{% else %}rcond-n{% endif %}">{{ t('&gt;200dma breadth high', '200日均线上方比例高') }}</span>
-    {% endif %}
-    {% if rc.top5_share_low is defined %}
-    <span class="rcond {% if rc.top5_share_low %}rcond-y{% else %}rcond-n{% endif %}">
-      {{ t('Top-5 share low', '前5强占比低') }}
-      {% if regime.top5_weighting is defined and regime.top5_weighting == 'equal_fallback' %}
-      <span class="young-tag">({{ t('equal-weight fallback', '等权替代') }})</span>
+      {% set rev_unc = cov.revisions_uncovered if cov.revisions_uncovered is defined and cov.revisions_uncovered is not none else [] %}
+      {% if n_univ and rev_unc | length < n_univ %}
+      <span>{{ n_univ - rev_unc|length }} {{ t('with revision data', '有预测修订数据') }}</span>
+      <span class="dot"></span>
       {% endif %}
-    </span>
-    {% endif %}
-    {% if rc.zweig_thrust is defined and rc.zweig_thrust %}
-    <span class="rcond rcond-y">{{ t('Zweig breadth thrust', '兹威格广度冲击') }} <span class="muted xs" style="font-style:italic;">({{ t('~18 fires in modern history', '现代史约18次触发') }})</span></span>
-    {% endif %}
-  </div>
-</div>
-{% endif %}
-
-{# ── Lifecycle board ────────────────────────────────────────────────────── #}
-<div class="panel">
-<h2>{{ t('Lifecycle Board', '生命周期看板') }}</h2>
-<div class="sm muted" style="margin-bottom:10px;">
-  {{ t('Deterministic state machine per name — stages describe observed evidence, not predictions.', '每个标的的确定性状态机 — 阶段描述观察到的证据，而非预测。') }}
-</div>
-
-{% if rows %}
-<div class="tbl-wrap">
-<table class="ltbl" id="lifecycle-tbl">
-<thead>
-<tr>
-  <th>{{ t('Ticker', '代码') }}</th>
-  <th>{{ t('State', '状态') }}</th>
-  <th>{{ t('Evidence', '证据') }}</th>
-  <th>{{ t('2D Oscillator', '2日振荡器') }}</th>
-  <th>{{ t('Context', '背景') }}</th>
-  <th>{{ t('Flags', '标记') }}</th>
-</tr>
-</thead>
-<tbody id="lifecycle-body">
-{# Group rows by state in precedence order #}
-{% set ns = namespace(current_group='', group_counts={}) %}
-{# Count per state #}
-{% for s in _state_order %}
-  {% set cnt = rows | selectattr('state', 'equalto', s) | list | length %}
-  {% if cnt > 0 %}
-    {% set _ = ns.group_counts.update({s: cnt}) %}
-  {% endif %}
-{% endfor %}
-
-{% for grp_state in _state_order %}
-{% set grp_rows = rows | selectattr('state', 'equalto', grp_state) | list %}
-{% if grp_rows %}
-{# Group header row — NONE group collapsed by default #}
-{% set grp_collapsed = (grp_state == 'NONE') %}
-<tr class="grp-hd" onclick="toggleGroup('grp-{{ grp_state }}')" data-grp="{{ grp_state }}">
-  <td colspan="6">
-    <span class="state-chip {{ state_cls(grp_state) }}">
-      {% if grp_state == 'CROWDED' %}{{ t('CROWDED', '过度拥挤') }}
-      {% elif grp_state == 'LEADERSHIP' %}{{ t('LEADERSHIP', '领涨') }}
-      {% elif grp_state == 'BREAKAWAY' %}{{ t('BREAKAWAY', '突破') }}
-      {% elif grp_state == 'CATALYST_WINDOW' %}{{ t('CATALYST WINDOW', '催化窗口') }}
-      {% elif grp_state == 'QUIET_ACCUMULATION' %}{{ t('QUIET ACCUMULATION', '静默积累') }}
-      {% elif grp_state == 'SUPPRESSED' %}{{ t('SUPPRESSED', '压制') }}
-      {% elif grp_state == 'FAILED' %}{{ t('FAILED', '失败') }}
-      {% else %}{{ t('NONE', '无') }}{% endif %}
-    </span>
-    <span class="muted xs" style="margin-left:8px;">{{ grp_rows | length }} {{ t('names', '个') }}{% if grp_collapsed %} · {{ t('click to expand', '点击展开') }}{% endif %}</span>
-  </td>
-</tr>
-<tbody id="grp-{{ grp_state }}" class="grp-rows{% if grp_collapsed %} collapsed{% endif %}">
-{% for r in grp_rows %}
-{% set chips = r.chips if r.chips is defined and r.chips is not none else {} %}
-{% set ctx = r.context if r.context is defined and r.context is not none else {} %}
-{% set tf2d = ctx.tf2d_state if ctx.tf2d_state is defined and ctx.tf2d_state is not none else {} %}
-{% set de = r.de_escalations if r.de_escalations is defined and r.de_escalations is not none else {} %}
-<tr>
-  <td>
-    <a href="us_stocks.html#{{ r.ticker }}" class="tk">{{ r.ticker }}</a>
-    {% if r.fire_precipice is defined and r.fire_precipice %}
-    <div><span class="badge badge-fire">{{ t('watch window', '观察窗口') }}</span></div>
-    {% endif %}
-    {% if r.fire_onset is defined and r.fire_onset %}
-    <div><span class="badge badge-fire">{{ t('onset today', '今日启动') }}</span></div>
-    {% endif %}
-  </td>
-  <td>
-    <span class="state-chip {{ state_cls(r.state if r.state is not none else 'NONE') }}">
-      {{ r.state | replace('_',' ') if r.state is not none else 'NONE' }}
-    </span>
-    {% set dis = r.days_in_state if r.days_in_state is defined and r.days_in_state is not none else none %}
-    <div class="muted xs" style="margin-top:3px;">
-      {% if dis is not none %}{{ dis }}d{% else %}<em>{{ t('seeding', '初始化') }}</em>{% endif %}
+      {# Seeding badge when all days_in_state are 1 (first run) #}
+      {% if rows and rows[0].days_in_state is defined and rows[0].days_in_state is not none and rows[0].days_in_state <= 1 %}
+      <span class="badge-seeding">{{ t('Seeding — day 1', '初始化 — 第1天') }}</span>
+      <span class="dot"></span>
+      {% endif %}
+      {% if lr.as_of is defined and lr.as_of is not none %}
+      <span>{{ t('As of', '截至') }} {{ lr.as_of[:10] }}</span>
+      {% endif %}
+      <span class="q-afford" onclick="openPopover('coverage-popover')" data-tip-en="Coverage receipt" data-tip-zh="覆盖情况说明">?</span>
     </div>
-  </td>
-  <td>
-    <div class="leg-row">
-      {# Core evidence chips: tri-state rendering — true=filled, false=hollow, null=dimmed+italic #}
-      {% set _chip_defs = [
-        ('rs_turn', t('RS↑', 'RS转涨')),
-        ('rs_line_nh', t('RS-NH', 'RS新高')),
-        ('accum_evidence', t('Accum', '积累')),
-        ('obv_divergence', t('OBV↗', 'OBV背离')),
-        ('revision_positive', t('Rev+', '预测上调')),
-        ('gap_ignition', t('Gap', '跳空')),
-        ('bw_emerging', t('BW↑', '突破新兴')),
-        ('rs_top_decile_4w', t('RS-D1', 'RS前十%')),
-        ('peer_divergence', t('PeerDiv', '同伴背离')),
-        ('monthly_rsi_80', t('mRSI80', '月RSI≥80')),
-        ('extension_extreme', t('Ext', '超伸')),
-        ('parabolic', t('Para', '抛物线')),
-        ('basket_corr_rising', t('CorrUp', '相关性上升')),
-        ('analyst_saturated', t('AnaFull', '分析师饱和')),
-        ('call_skew_rich', t('CallSkew', '看涨偏斜过高')),
-        ('insider_cluster', t('Ins', '内部人聚集')),
-        ('drawdown_25pct', t('DD25%', '回撤≥25%')),
-        ('below_200dma_12m', t('&lt;200d12m', '12月低于200日均')),
-        ('rs_slope_negative_3m', t('RS↓3m', 'RS连续下斜3月')),
-        ('cheap_pctile_40', t('Cheap', '估值低')),
-        ('valuation_extreme', t('Val-Hi', '估值高')),
-      ] %}
-      {% for field, label in _chip_defs %}
-      {% if field in chips and chips[field] is not none %}
-        {% if chips[field] %}
-        <span class="leg leg-t">{{ label }}</span>
+  </div>
+  <div class="header-right">
+    {% if regime and regime.label is defined and regime.label is not none %}
+    <div class="regime-capsule">
+      <div class="regime-label-top">{{ t('Market regime', '市场制度') }}</div>
+      {% set rl = regime.label %}
+      <div class="regime-plain {% if rl == 'broad_thrust' %}r-broad{% elif rl == 'narrow_leadership' %}r-narrow{% else %}r-mixed{% endif %}">
+        {% if rl == 'broad_thrust' %}{{ t('Broad advance', '普涨行情') }}
+        {% elif rl == 'narrow_leadership' %}{{ t('Narrow leadership', '窄幅领导') }}
+        {% else %}{{ t('Mixed', '混合状态') }}{% endif %}
+      </div>
+      <div class="regime-sub">
+        {% if rl == 'broad_thrust' %}{{ t('Many stocks participating', '多数个股参与其中') }}
+        {% elif rl == 'narrow_leadership' %}{{ t('A few leaders carry the market', '少数龙头撑起大盘') }}
+        {% else %}{{ t('Mixed signals', '信号混杂') }}{% endif %}
+      </div>
+      {% set rc = regime.chips if regime.chips is defined and regime.chips is not none else {} %}
+      <div class="regime-chips-row">
+        {% if rc.zweig_thrust is defined and rc.zweig_thrust %}
+        <span class="regime-chip-sm on">{{ t('Rare breadth surge', '罕见广度冲击') }}</span>
+        {% endif %}
+        {% if rc.corr_low is defined %}
+        <span class="regime-chip-sm {% if rc.corr_low %}on{% else %}off{% endif %}">{{ t('Low correlation', '低相关性') }}</span>
+        {% endif %}
+        {% if rc.pct_above_200_high is defined %}
+        <span class="regime-chip-sm {% if rc.pct_above_200_high %}on{% else %}off{% endif %}">{{ t('Most stocks above trend', '多数个股站上趋势线') }}</span>
+        {% endif %}
+      </div>
+      <div style="margin-top:8px;">
+        <span class="q-afford" onclick="openPopover('regime-popover')" data-tip-en="What does this mean?" data-tip-zh="这是什么意思？">?</span>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</header>
+
+{# ── EARLY ENTRY BOARD ── #}
+<section class="early-entry-section">
+  <div class="section-header">
+    <span class="section-title">{{ t('Early entry board', '早入场看板') }}</span>
+    <span class="section-count">— {{ t('hero', '核心') }}</span>
+    <span class="section-rule"></span>
+  </div>
+
+  <div class="lane-grid">
+
+    {# ─── IGNITION WINDOW LANE (CATALYST_WINDOW) ─── #}
+    <div class="lane-col">
+      <div class="lane-header ignition">
+        <div class="lane-dot ignition"></div>
+        <div class="lane-name">{{ t('Ignition window', '点火窗口') }}</div>
+        <span class="lane-count-chip ignition">{{ ns.cnt_catalyst }}</span>
+      </div>
+
+      {% if ns.cnt_catalyst == 0 %}
+      <div class="lane-empty">
+        {{ t('No names in the ignition window today — the quiet-build lane is where the next ones come from.', '今日没有标的进入点火窗口 — 下一批将从静默筑底区涌现。') }}
+      </div>
+      {% else %}
+      {% for r in ns.catalyst_rows %}
+      {# count positive non-internal chips #}
+      {% set ns2 = namespace(k_pos=0, ev1='', ev2='', macd_cross=false, macd_bars=none, fire=false) %}
+      {% set chips = r.chips if r.chips is defined and r.chips is not none else {} %}
+      {% for k, v in chips.items() %}
+        {% if v is sameas true and k not in _INTERNAL_CHIPS %}
+          {% set ns2.k_pos = ns2.k_pos + 1 %}
+        {% endif %}
+      {% endfor %}
+      {% set ctx = r.context if r.context is defined and r.context is not none else {} %}
+      {% set tf2d = ctx.tf2d_state if ctx.tf2d_state is defined and ctx.tf2d_state is not none else {} %}
+      {% if tf2d.macd_approaching_up is defined and tf2d.macd_approaching_up %}{% set ns2.macd_cross = true %}{% endif %}
+      {% if tf2d.macd_bars_to_cross is defined and tf2d.macd_bars_to_cross is not none %}{% set ns2.macd_bars = tf2d.macd_bars_to_cross %}{% endif %}
+      {% if r.fire_precipice is defined and r.fire_precipice %}{% set ns2.fire = true %}{% endif %}
+      {% set spark_cw = tf2d.spark_hist | tojson if tf2d.spark_hist is defined and tf2d.spark_hist is not none else 'null' %}
+      {% set _cw_fwd_pe = ctx.fwd_pe if ctx.fwd_pe is defined and ctx.fwd_pe is not none else none %}
+      {% set _cw_val_pctile = ctx.valuation_pctile_5y if ctx.valuation_pctile_5y is defined and ctx.valuation_pctile_5y is not none else none %}
+      <div class="entry-card ignition" onclick="openCardReceiptFromEl(this)"
+           data-ticker="{{ r.ticker }}" data-stage="CATALYST_WINDOW"
+           data-days="{{ r.days_in_state if r.days_in_state is defined and r.days_in_state is not none else '' }}"
+           data-macd-bars="{{ tf2d.macd_bars_to_cross if tf2d.macd_bars_to_cross is defined and tf2d.macd_bars_to_cross is not none else '' }}"
+           data-chips='{{ chips | tojson }}'
+           data-fwd-pe="{{ _cw_fwd_pe if _cw_fwd_pe is not none else '' }}"
+           data-val-pctile="{{ _cw_val_pctile if _cw_val_pctile is not none else '' }}">
+        <div class="card-top">
+          <a class="card-ticker" href="us_stocks.html#{{ r.ticker }}" onclick="event.stopPropagation()" style="color:inherit;">{{ r.ticker }}</a>
+          <div class="card-right">
+            {% if r.days_in_state is defined and r.days_in_state is not none %}
+            <div class="card-days"><span class="l-en">Day {{ r.days_in_state }}</span><span class="l-zh">第{{ r.days_in_state }}天</span></div>
+            {% endif %}
+            <svg class="card-sparkline" data-hist='{{ spark_cw }}' viewBox="0 0 64 24"></svg>
+          </div>
+        </div>
+        <div class="evidence-bar">
+          <div class="dot-bar" data-k="{{ ns2.k_pos }}" data-n="{{ [ns2.k_pos + 2, 6] | min }}"></div>
+          <span class="ev-label"><span class="l-en"><strong>{{ ns2.k_pos }}</strong> signals</span><span class="l-zh">信号 {{ ns2.k_pos }}</span></span>
+        </div>
+        <div class="evidence-line" data-chips='{{ chips | tojson }}' data-stage="CATALYST_WINDOW"></div>
+        {% if ns2.macd_cross %}
+        <div class="timing-chip near">
+          {{ t('MACD crossing ↑', 'MACD即将上穿') }}{% if ns2.macd_bars is not none %} · ~{{ ns2.macd_bars | int }} {{ t('days', '天') }}{% endif %}
+        </div>
+        {% elif tf2d.macd_cross_up is defined and tf2d.macd_cross_up %}
+        <div class="timing-chip near">{{ t('MACD crossed ↑ today', 'MACD今日上穿') }}</div>
+        {% endif %}
+        {% if ns2.fire %}
+        <div class="fire-badge">&#x26A1; {{ t('Watch window opened', '观察窗口开启') }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+
+    {# ─── QUIET BUILD LANE (QUIET_ACCUMULATION) — ranked by early_entry artifact order ─── #}
+    {# early_entry is a ranked LIST of {ticker,state,k_true,n_avail,...} #}
+    {# Collect early_entry QA entries in artifact order #}
+    {% set ns_ee_qa = namespace(entries=[]) %}
+    {% if lr.early_entry is defined and lr.early_entry is not none and lr.early_entry is iterable %}
+      {% for ee in lr.early_entry %}
+        {% if ee.state is defined and ee.state == 'QUIET_ACCUMULATION' %}
+          {% set ns_ee_qa.entries = ns_ee_qa.entries + [ee] %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    {# Collect early_entry SUPPRESSED entries in artifact order for first-stirrings lane #}
+    {% set ns_ee_supp = namespace(entries=[]) %}
+    {% if lr.early_entry is defined and lr.early_entry is not none and lr.early_entry is iterable %}
+      {% for ee in lr.early_entry %}
+        {% if ee.state is defined and ee.state == 'SUPPRESSED' %}
+          {% set ns_ee_supp.entries = ns_ee_supp.entries + [ee] %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    <div class="lane-col">
+      <div class="lane-header quiet">
+        <div class="lane-dot quiet"></div>
+        <div class="lane-name">{{ t('Quiet build', '静默筑底') }}</div>
+        <span class="lane-count-chip quiet">{{ ns.cnt_quiet }}</span>
+      </div>
+
+      {% set ns_qa_shown = namespace(n=0) %}
+      {# Use early_entry QA list (ranked artifact order) when available, else fall back to ns.quiet_rows #}
+      {% set qa_display = ns_ee_qa.entries if ns_ee_qa.entries | length > 0 else ns.quiet_rows %}
+      {% for _item in qa_display %}
+      {# early_entry items have .ticker; find the main row by linear scan for full chip/context data #}
+      {% if _item.ticker is defined %}
+        {% set _ns_rmatch = namespace(found=_item) %}
+        {% for _mr in rows %}
+          {% if _mr.ticker == _item.ticker %}{% set _ns_rmatch.found = _mr %}{% endif %}
+        {% endfor %}
+        {% set r = _ns_rmatch.found %}
+        {# k_true/n_avail come from the ranked early_entry item directly #}
+        {% set _ee_k = _item.k_true if _item.k_true is defined and _item.k_true is not none else none %}
+        {% set _ee_n = _item.n_avail if _item.n_avail is defined and _item.n_avail is not none else none %}
+      {% else %}
+        {% set r = _item %}
+        {% set _ee_k = none %}
+        {% set _ee_n = none %}
+      {% endif %}
+      {% if ns_qa_shown.n < 4 and r.ticker is defined %}
+        {% set chips = r.chips if r.chips is defined and r.chips is not none else {} %}
+        {% set ctx = r.context if r.context is defined and r.context is not none else {} %}
+        {% set tf2d = ctx.tf2d_state if ctx.tf2d_state is defined and ctx.tf2d_state is not none else {} %}
+        {# k/n from early_entry artifact when present; fall back to chip count #}
+        {% set ns4 = namespace(k_pos=0) %}
+        {% for ck, cv in chips.items() %}
+          {% if cv is sameas true and ck not in _INTERNAL_CHIPS %}
+            {% set ns4.k_pos = ns4.k_pos + 1 %}
+          {% endif %}
+        {% endfor %}
+        {# Use ranked early_entry k_true/n_avail directly when available #}
+        {% set _card_k = _ee_k if _ee_k is not none else ns4.k_pos %}
+        {% set _card_n = _ee_n if _ee_n is not none else ns4.k_pos %}
+        {% set macd_near = tf2d.macd_approaching_up is defined and tf2d.macd_approaching_up %}
+        {% set macd_crossed = tf2d.macd_cross_up is defined and tf2d.macd_cross_up %}
+        {% set macd_bars = tf2d.macd_bars_to_cross if tf2d.macd_bars_to_cross is defined and tf2d.macd_bars_to_cross is not none else none %}
+        {% set spark_data_raw = tf2d.spark_hist | tojson if tf2d.spark_hist is defined and tf2d.spark_hist is not none else 'null' %}
+        {% set _fwd_pe = ctx.fwd_pe if ctx.fwd_pe is defined and ctx.fwd_pe is not none else none %}
+        {% set _val_pctile = ctx.valuation_pctile_5y if ctx.valuation_pctile_5y is defined and ctx.valuation_pctile_5y is not none else none %}
+        <div class="entry-card quiet" onclick="openCardReceiptFromEl(this)"
+             data-ticker="{{ r.ticker }}" data-stage="QUIET_ACCUMULATION"
+             data-days="{{ r.days_in_state if r.days_in_state is defined and r.days_in_state is not none else '' }}"
+             data-macd-bars="{{ macd_bars if macd_bars is not none else '' }}"
+             data-chips='{{ chips | tojson }}'
+             data-fwd-pe="{{ _fwd_pe if _fwd_pe is not none else '' }}"
+             data-val-pctile="{{ _val_pctile if _val_pctile is not none else '' }}">
+          <div class="card-top">
+            <a class="card-ticker" href="us_stocks.html#{{ r.ticker }}" onclick="event.stopPropagation()" style="color:inherit;">{{ r.ticker }}</a>
+            <div class="card-right">
+              {% if r.days_in_state is defined and r.days_in_state is not none %}
+              <div class="card-days"><span class="l-en">Day {{ r.days_in_state }}</span><span class="l-zh">第{{ r.days_in_state }}天</span></div>
+              {% endif %}
+              <svg class="card-sparkline" data-hist='{{ spark_data_raw }}' viewBox="0 0 64 24"></svg>
+            </div>
+          </div>
+          <div class="evidence-bar">
+            <div class="dot-bar" data-k="{{ _card_k }}" data-n="{{ _card_n if _card_n > 0 else _card_k }}"></div>
+            <span class="ev-label"><span class="l-en"><strong>{{ _card_k }}</strong> of {{ _card_n if _card_n > 0 else _card_k }} signals</span><span class="l-zh">信号 {{ _card_k }}/{{ _card_n if _card_n > 0 else _card_k }}</span></span>
+          </div>
+          <div class="evidence-line" data-chips='{{ chips | tojson }}' data-stage="QUIET_ACCUMULATION"></div>
+          {% if macd_near %}
+          <div class="timing-chip near">
+            {{ t('MACD crossing ↑', 'MACD即将上穿') }}{% if macd_bars is not none %} · ~{{ macd_bars | int }} {{ t('days', '天') }}{% endif %}
+          </div>
+          {% elif macd_crossed %}
+          <div class="timing-chip near">{{ t('MACD crossed ↑ today', 'MACD今日上穿') }}</div>
+          {% endif %}
+          {% if r.fire_precipice is defined and r.fire_precipice %}
+          <div class="fire-badge">&#x26A1; {{ t('Watch window opened', '观察窗口开启') }}</div>
+          {% endif %}
+        </div>
+        {% set ns_qa_shown.n = ns_qa_shown.n + 1 %}
+      {% endif %}
+      {% endfor %}
+      {% if ns.cnt_quiet > ns_qa_shown.n %}
+      <div style="font-size:0.72rem;color:var(--text-muted);padding:6px 4px;">
+        +{{ ns.cnt_quiet - ns_qa_shown.n }} {{ t('more in this lane', '个标的在此区间') }}
+      </div>
+      {% endif %}
+    </div>
+
+    {# ─── FIRST STIRRINGS LANE (SUPPRESSED with lead signs) ─── #}
+    <div class="lane-col">
+      <div class="lane-header suppressed">
+        <div class="lane-dot suppressed"></div>
+        <div class="lane-name">{{ t('First stirrings', '初动迹象') }}</div>
+        <span class="lane-count-chip suppressed">{{ ns.cnt_suppressed }} {{ t('left for dead', '无人问津') }}</span>
+      </div>
+
+      {% set ns_supp_shown = namespace(n=0) %}
+      {# Use early_entry SUPPRESSED list (ranked artifact order); each entry has k_true/n_avail = lead signals #}
+      {% set supp_display = ns_ee_supp.entries if ns_ee_supp.entries | length > 0 else ns.suppressed_rows %}
+      {% for _sitem in supp_display %}
+      {% if _sitem.ticker is defined %}
+        {% set _ns_srmatch = namespace(found=_sitem) %}
+        {% for _mr in rows %}
+          {% if _mr.ticker == _sitem.ticker %}{% set _ns_srmatch.found = _mr %}{% endif %}
+        {% endfor %}
+        {% set r = _ns_srmatch.found %}
+        {% set _s_ee_k = _sitem.k_true if _sitem.k_true is defined and _sitem.k_true is not none else none %}
+        {% set _s_ee_n = _sitem.n_avail if _sitem.n_avail is defined and _sitem.n_avail is not none else none %}
+      {% else %}
+        {% set r = _sitem %}
+        {% set _s_ee_k = none %}
+        {% set _s_ee_n = none %}
+      {% endif %}
+      {% if ns_supp_shown.n < 4 and r.ticker is defined %}
+        {% set chips = r.chips if r.chips is defined and r.chips is not none else {} %}
+        {# Count lead signals only for fallback when early_entry k_true unavailable #}
+        {% set ns5 = namespace(lead_k=0) %}
+        {% for lk in _LEAD_KEYS %}
+          {% if lk in chips and chips[lk] is sameas true %}{% set ns5.lead_k = ns5.lead_k + 1 %}{% endif %}
+        {% endfor %}
+        {% set _s_card_k = _s_ee_k if _s_ee_k is not none else ns5.lead_k %}
+        {% set _s_card_n = _s_ee_n if _s_ee_n is not none else ns5.lead_k %}
+        {% if _s_card_k > 0 %}
+          {% set ctx = r.context if r.context is defined and r.context is not none else {} %}
+          {% set tf2d = ctx.tf2d_state if ctx.tf2d_state is defined and ctx.tf2d_state is not none else {} %}
+          {% set spark_s = tf2d.spark_hist | tojson if tf2d.spark_hist is defined and tf2d.spark_hist is not none else 'null' %}
+          {% set _s_fwd_pe = ctx.fwd_pe if ctx.fwd_pe is defined and ctx.fwd_pe is not none else none %}
+          {% set _s_val_pctile = ctx.valuation_pctile_5y if ctx.valuation_pctile_5y is defined and ctx.valuation_pctile_5y is not none else none %}
+          <div class="entry-card suppressed" onclick="openCardReceiptFromEl(this)"
+               data-ticker="{{ r.ticker }}" data-stage="SUPPRESSED"
+               data-days="{{ r.days_in_state if r.days_in_state is defined and r.days_in_state is not none else '' }}"
+               data-chips='{{ chips | tojson }}'
+               data-fwd-pe="{{ _s_fwd_pe if _s_fwd_pe is not none else '' }}"
+               data-val-pctile="{{ _s_val_pctile if _s_val_pctile is not none else '' }}">
+            <div class="card-top">
+              <a class="card-ticker" href="us_stocks.html#{{ r.ticker }}" onclick="event.stopPropagation()" style="color:inherit;">{{ r.ticker }}</a>
+              <div class="card-right">
+                {% if r.days_in_state is defined and r.days_in_state is not none %}
+                <div class="card-days"><span class="l-en">Day {{ r.days_in_state }}</span><span class="l-zh">第{{ r.days_in_state }}天</span></div>
+                {% endif %}
+                <svg class="card-sparkline" data-hist='{{ spark_s }}' viewBox="0 0 64 24" style="flex-shrink:0;"></svg>
+              </div>
+            </div>
+            <div class="evidence-bar">
+              <div class="dot-bar" data-k="{{ _s_card_k }}" data-n="{{ _s_card_n if _s_card_n > 0 else _s_card_k }}"></div>
+              <span class="ev-label"><span class="l-en"><strong>{{ _s_card_k }}</strong> of {{ _s_card_n if _s_card_n > 0 else _s_card_k }} signals</span><span class="l-zh">信号 {{ _s_card_k }}/{{ _s_card_n if _s_card_n > 0 else _s_card_k }}</span></span>
+            </div>
+            <div class="evidence-line" data-chips='{{ chips | tojson }}' data-stage="SUPPRESSED"></div>
+          </div>
+          {% set ns_supp_shown.n = ns_supp_shown.n + 1 %}
         {% endif %}
       {% endif %}
       {% endfor %}
-      {# Also show bw_failed for FAILED state #}
-      {% if chips.bw_failed is defined and chips.bw_failed %}<span class="leg leg-t" style="color:var(--down);border-color:var(--down);">{{ t('BW-Fail', '突破失败') }}</span>{% endif %}
-      {% if chips.bw_continuation is defined and chips.bw_continuation %}<span class="leg leg-t">{{ t('BW-Cont', '突破延续') }}</span>{% endif %}
+      {# "+N more" footer: early_entry SUPPRESSED count vs shown #}
+      {% set _supp_total = ns_ee_supp.entries | length if ns_ee_supp.entries | length > 0 else ns.cnt_suppressed %}
+      {% if _supp_total > ns_supp_shown.n %}
+      <div style="font-size:0.72rem;color:var(--text-muted);padding:6px 4px;">
+        +{{ _supp_total - ns_supp_shown.n }} {{ t('more with lead signs', '个有领先信号') }}
+      </div>
+      {% endif %}
+      {% set no_lead_count = ns.cnt_suppressed - _supp_total %}
+      {% if no_lead_count > 0 %}
+      <div style="font-size:0.72rem;color:var(--text-dim);padding:6px 4px;">
+        {{ no_lead_count }} {{ t('without lead signs — stance: ignore', '个无领先信号 — 建议：忽略') }}
+      </div>
+      {% endif %}
     </div>
-  </td>
-  <td class="osc-cell">
-    {% if tf2d %}
-    {% set rsi14 = tf2d.rsi14 if tf2d.rsi14 is defined and tf2d.rsi14 is not none else none %}
-    {% set stoch = tf2d.stoch if tf2d.stoch is defined and tf2d.stoch is not none else none %}
-    {% if rsi14 is not none %}
-    <span class="osc-val {% if rsi14 > 60 %}osc-hi{% elif rsi14 < 40 %}osc-lo{% else %}osc-mid{% endif %}">RSI {{ rsi14 | int }}</span>
-    {% endif %}
-    {% if stoch is not none %}
-    <span class="osc-val {% if stoch > 70 %}osc-hi{% elif stoch < 30 %}osc-lo{% else %}osc-mid{% endif %}" style="margin-left:3px;">Stoch {{ stoch | int }}</span>
-    {% endif %}
-    {% if tf2d.macd_cross_up is defined and tf2d.macd_cross_up %}<div class="xs muted" style="margin-top:2px;">{{ t('MACD cross ↑', 'MACD上穿') }}</div>{% endif %}
-    {% if tf2d.macd_cross_dn is defined and tf2d.macd_cross_dn %}<div class="xs muted" style="margin-top:2px;">{{ t('MACD cross ↓', 'MACD下穿') }}</div>{% endif %}
-    {% if tf2d.macd_approaching_up is defined and tf2d.macd_approaching_up %}
-    <div class="xs muted" style="margin-top:2px;">{{ t('MACD →↑', 'MACD趋近上穿') }}{% if tf2d.macd_bars_to_cross is defined and tf2d.macd_bars_to_cross is not none %} (~{{ tf2d.macd_bars_to_cross }}{{ t('bars', '根') }}){% endif %}</div>
-    {% endif %}
-    {% if tf2d.stoch_cross_up is defined and tf2d.stoch_cross_up %}<div class="xs muted" style="margin-top:2px;">{{ t('Stoch ↑', '随机上穿') }}</div>{% endif %}
-    {% if tf2d.stoch_cross_dn is defined and tf2d.stoch_cross_dn %}<div class="xs muted" style="margin-top:2px;">{{ t('Stoch ↓', '随机下穿') }}</div>{% endif %}
-    {% else %}
-    <span class="muted xs">—</span>
-    {% endif %}
-  </td>
-  <td class="xs muted">
-    {% set pe = ctx.pe if ctx.pe is defined and ctx.pe is not none else none %}
-    {% set fwd_pe = ctx.fwd_pe if ctx.fwd_pe is defined and ctx.fwd_pe is not none else none %}
-    {% set dte = ctx.days_to_earnings if ctx.days_to_earnings is defined and ctx.days_to_earnings is not none else none %}
-    {% set plabels = ctx.personality_labels if ctx.personality_labels is defined and ctx.personality_labels is not none else [] %}
-    {% set vp5 = ctx.valuation_pctile_5y if ctx.valuation_pctile_5y is defined and ctx.valuation_pctile_5y is not none else none %}
-    {% if pe is not none %}PE: {{ '%.0f' | format(pe) }} · {% endif %}
-    {% if fwd_pe is not none %}FwdPE: {{ '%.0f' | format(fwd_pe) }}<span class="young-tag">*</span> · {% endif %}
-    {% if dte is not none %}<span class="badge badge-caution">E+{{ dte }}d</span> · {% endif %}
-    {% if vp5 is not none %}Val-5y: {{ '%.0f' | format(vp5 * 100) }}p · {% endif %}
-    {% for pl in plabels %}<span class="badge badge-muted">{{ pl }}</span> {% endfor %}
-    {% if pe is none and fwd_pe is none and dte is none and plabels | length == 0 %}—{% endif %}
-  </td>
-  <td>
-    {% set bws = r.breakaway_watch_state if r.breakaway_watch_state is defined and r.breakaway_watch_state is not none else 'none' %}
-    {% if bws != 'none' and bws != '' %}
-    <span class="badge badge-muted">bw:{{ bws }}</span>
-    {% endif %}
-    {% if de %}
-    {% if de.earnings_window is defined and de.earnings_window %}<span class="badge badge-warn">{{ t('EarnWin', '财报窗') }}</span> {% endif %}
-    {% if de.extension_caution is defined and de.extension_caution %}<span class="badge badge-muted">{{ t('ExtCaution', '超伸警示') }}</span> {% endif %}
-    {% if de.crowding_warn is defined and de.crowding_warn %}<span class="badge badge-warn">{{ t('CrowdWarn', '拥挤警告') }}</span> {% endif %}
-    {% endif %}
-  </td>
-</tr>
-{% endfor %}
-</tbody>
-{% endif %}
-{% endfor %}
-</tbody>
-</table>
-</div>
-{% else %}
-<div class="muted sm">{{ t('No lifecycle data yet — first nightly run pending.', '暂无生命周期数据 — 等待首次夜间运行。') }}</div>
-{% endif %}
-</div>
 
-{# ── Handoff watch (LR-R4) ──────────────────────────────────────────────── #}
-<div class="panel">
-<h2>{{ t('Handoff Watch', '交接观察') }}</h2>
-<div class="sm muted" style="margin-bottom:10px;">
-  {{ t('Relative-performance rotation watch — extended basket vs basing names showing pre-onset evidence.', '相对表现轮动观察 — 扩展篮子 vs 正在筑底显示前期证据的标的。') }}
-  {{ t('Descriptive only. No capital-flow direction claim.', '仅供描述。不含资金流向声明。') }}
-</div>
-{% if handoff_pairs %}
-<div class="tbl-wrap">
-<table class="ltbl">
-<thead>
-<tr>
-  <th>{{ t('Extended Basket', '扩展篮子') }}</th>
-  <th>{{ t('Basing Names', '筑底标的') }}</th>
-  <th>{{ t('Evidence', '证据') }}</th>
-</tr>
-</thead>
-<tbody>
-{% for pair in handoff_pairs %}
-<tr>
-  <td class="sm">
-    <span style="font-weight:700;">{{ pair.extended_basket if pair.extended_basket is defined else '—' }}</span>
-    {% if pair.extension_pctile is defined and pair.extension_pctile is not none %}
-    <div class="muted xs">ext: {{ '%.0f' | format(pair.extension_pctile * 100) }}p vs 200d</div>
-    {% endif %}
-  </td>
-  <td>
-    {% set basing = pair.basing_names if pair.basing_names is defined and pair.basing_names is not none else [] %}
-    {% for bn in basing %}
-    <a href="us_stocks.html#{{ bn.ticker }}" class="tk">{{ bn.ticker }}</a>
-    <span class="state-chip {{ state_cls(bn.state if bn.state is defined and bn.state is not none else 'NONE') }}" style="font-size:10px;padding:1px 5px;">{{ bn.state | replace('_',' ') if bn.state is defined and bn.state is not none else '' }}</span>
-    {% if bn.macd_cross_eta is defined and bn.macd_cross_eta is not none %}
-    <span class="badge badge-muted" style="font-size:10px;">MACD-ETA {{ bn.macd_cross_eta }}d</span>
-    {% endif %}
-    {% if not loop.last %}&nbsp;&#183;&nbsp;{% endif %}
+  </div>{# /lane-grid #}
+</section>
+
+{# ── LIFECYCLE PIPELINE ── #}
+<section class="pipeline-section">
+  <div class="section-header">
+    <span class="section-title">{{ t('Lifecycle pipeline', '生命周期管道') }}</span>
+    <span class="section-count">— {{ t('state machine', '状态机') }}</span>
+    <span class="section-rule"></span>
+  </div>
+  <div class="glass pipeline-wrap">
+    {# Pipeline segments (SUPPRESSED→QUIET→CATALYST→BREAKAWAY→LEADERSHIP→CROWDED) #}
+    {# flex proportional to max(count, 2) #}
+    {% set pipe_stages = [
+      ('SUPPRESSED',         'col-gray',   ns.cnt_suppressed,  ns.suppressed_rows,  'Left for dead', '无人问津',    'Ignore', '暂不关注'),
+      ('QUIET_ACCUMULATION', 'col-violet', ns.cnt_quiet,       ns.quiet_rows,       'Quiet build',   '静默筑底',    "Watch — don't chase", '观察—勿追高'),
+      ('CATALYST_WINDOW',    'col-blue',   ns.cnt_catalyst,    ns.catalyst_rows,    'Ignition window','点火窗口',   'Get ready', '做好准备'),
+      ('BREAKAWAY',          'col-green',  ns.cnt_breakaway,   ns.breakaway_rows,   'Breaking away', '突破启动',    "In motion — don't chase", '行情进行中—勿追'),
+      ('LEADERSHIP',         'col-led',    ns.cnt_leadership,  ns.leadership_rows,  'Leading',        '领涨中',     'In favour', '顺风期'),
+      ('CROWDED',            'col-amber',  ns.cnt_crowded,     ns.crowded_rows,     'Crowded',        '过度拥挤',    'Protect gains', '保护利润'),
+    ] %}
+    {% set pipe_colors = {
+      'SUPPRESSED':         'var(--col-suppressed)',
+      'QUIET_ACCUMULATION': 'var(--col-quiet)',
+      'CATALYST_WINDOW':    'var(--col-ignition)',
+      'BREAKAWAY':          'var(--col-breakaway)',
+      'LEADERSHIP':         'var(--col-leading)',
+      'CROWDED':            'var(--col-crowded)',
+    } %}
+    <div class="pipe-sm-row">
+    {% for stage_key, count_cls, cnt, stage_rows, label_en, label_zh, stance_en, stance_zh in pipe_stages %}
+      {% set flex_val = [cnt, 2] | max %}
+      {% set is_empty = cnt == 0 %}
+      {% set dot_color = pipe_colors[stage_key] if stage_key in pipe_colors else 'var(--text-dim)' %}
+      <div class="pipe-seg {% if is_empty %}empty-stage{% endif %}" style="flex:{{ flex_val }} {{ flex_val }} 0;min-width:92px;">
+        <div class="pipe-seg-header">
+          <span class="pipe-seg-dot" style="background:{{ dot_color }};{% if is_empty %}opacity:0.4;{% endif %}"></span>
+          <span class="pipe-seg-name"><span class="l-en">{{ label_en }}</span><span class="l-zh">{{ label_zh }}</span></span>
+        </div>
+        <div class="pipe-seg-count {{ count_cls }}">{{ cnt }}</div>
+        <div class="pipe-seg-stance"><span class="l-en">{{ stance_en }}</span><span class="l-zh">{{ stance_zh }}</span></div>
+        {% if is_empty %}
+        <span class="pipe-seg-none-label"><span class="l-en">none today</span><span class="l-zh">今日无</span></span>
+        {% else %}
+        <div class="pipe-seg-chips">
+          {% set shown_chips = namespace(n=0) %}
+          {% for r in stage_rows %}
+            {% if shown_chips.n < 4 %}
+            <a class="pipe-seg-chip" href="us_stocks.html#{{ r.ticker }}">{{ r.ticker }}</a>
+            {% set shown_chips.n = shown_chips.n + 1 %}
+            {% endif %}
+          {% endfor %}
+          {% if cnt > 4 %}
+          <span class="pipe-seg-chip-more">+{{ cnt - 4 }}</span>
+          {% endif %}
+        </div>
+        {% endif %}
+        {# Arrow connector (not on last segment) #}
+        {% if not loop.last %}
+        <div class="pipe-seg-arrow">&#8250;</div>
+        {% endif %}
+      </div>
     {% endfor %}
-    {% if basing | length == 0 %}<span class="muted xs">—</span>{% endif %}
-  </td>
-  <td>
-    {% set pe = pair.pair_evidence if pair.pair_evidence is defined and pair.pair_evidence is not none else {} %}
-    <div class="leg-row">
-    {% if pe.rs_rolling_over is defined %}
-    <span class="leg {% if pe.rs_rolling_over %}leg-t{% else %}leg-f{% endif %}">{{ t('Basket RS rolling over', '篮子RS回落') }}</span>
-    {% endif %}
-    {% if pe.basing_revision_positive is defined %}
-    <span class="leg {% if pe.basing_revision_positive %}leg-t{% else %}leg-n{% endif %}">{{ t('Basing Rev+', '筑底预测上调') }}</span>
-    {% endif %}
     </div>
-  </td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-</div>
-{% else %}
-<div class="muted sm">{{ t('No handoff pairs detected — extended-leg conditions not met for tracked baskets.', '未检测到交接对 — 被追踪篮子未满足扩展腿条件。') }}</div>
-{% endif %}
-</div>
 
-{# ── Rerating watch (LR-R6) ─────────────────────────────────────────────── #}
-<div class="panel">
-<h2>{{ t('Rerating Watch', '重估观察') }}</h2>
-<div class="sm muted" style="margin-bottom:10px;">
-  {{ t('Names with revision inflection + compressed multiple evidence.', '具有预测上调拐点与估值压缩证据的标的。') }}
-</div>
-{% if rerating_watch %}
-<div class="tbl-wrap">
-<table class="ltbl">
-<thead>
-<tr>
-  <th>{{ t('Ticker', '代码') }}</th>
-  <th>{{ t('State', '状态') }}</th>
-  <th>{{ t('Evidence', '证据') }}</th>
-</tr>
-</thead>
-<tbody>
-{% for rr in rerating_watch %}
-{% set rc = rr.chips if rr.chips is defined and rr.chips is not none else {} %}
-<tr>
-  <td><a href="us_stocks.html#{{ rr.ticker }}" class="tk">{{ rr.ticker }}</a></td>
-  <td>
-    {% set rs = rr.state if rr.state is defined and rr.state is not none else 'NONE' %}
-    <span class="state-chip {{ state_cls(rs) }}">{{ rs | replace('_',' ') }}</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      {% if rc.revision_positive is defined %}
-      <span class="leg {% if rc.revision_positive %}leg-t{% elif rc.revision_positive == false %}leg-f{% else %}leg-n{% endif %}">
-        {{ t('Rev+', '预测上调') }}<span class="young-tag">*</span>
-      </span>
-      {% endif %}
-      {% if rc.revision_breadth_60 is defined %}
-      <span class="leg {% if rc.revision_breadth_60 %}leg-t{% elif rc.revision_breadth_60 == false %}leg-f{% else %}leg-n{% endif %}">
-        {{ t('Rev-Brd≥60%', '预测上调广度≥60%') }}<span class="young-tag">*</span>
-      </span>
-      {% endif %}
-      {% if rc.multiple_compressed is defined %}
-      <span class="leg {% if rc.multiple_compressed %}leg-t{% elif rc.multiple_compressed == false %}leg-f{% else %}leg-n{% endif %}">
-        {{ t('Multiple compressed', '估值压缩') }}
-      </span>
-      {% endif %}
-      {% if rc.earnings_within_14d is defined and rc.earnings_within_14d %}
-      {# Cremers law: earnings date is context-only, rendered as CAUTION #}
-      <span class="badge badge-caution" style="font-size:10px;">{{ t('Earnings within 14d — direction unreliable', '14日内财报 — 方向不可靠') }}</span>
-      {% endif %}
+    {# Failed side-pile #}
+    <div class="pipe-failed-row">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" style="flex-shrink:0;opacity:0.5"><path d="M20 8C20 8 16 4 10 6C5 8 4 14 4 14" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/><polyline points="4,10 4,14 8,14" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="pipe-failed-label">{{ t('Failed breaks', '突破失败') }}</span>
+      <span class="pipe-failed-count">{{ ns.cnt_failed }}</span>
+      <span class="pipe-failed-note" style="margin-right:10px;">{{ t('recycling · Stand aside', '循环中 · 观望回避') }}</span>
+      <div class="pipe-failed-chips">
+        {% set shown_f = namespace(n=0) %}
+        {% for r in ns.failed_rows %}
+          {% if shown_f.n < 20 %}
+          <a class="pipe-failed-chip" href="us_stocks.html#{{ r.ticker }}">{{ r.ticker }}</a>
+          {% set shown_f.n = shown_f.n + 1 %}
+          {% endif %}
+        {% endfor %}
+        {% if ns.cnt_failed > 20 %}
+        <span class="pipe-seg-chip-more">+{{ ns.cnt_failed - 20 }}</span>
+        {% endif %}
+      </div>
     </div>
-  </td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-</div>
-<div class="muted xs" style="margin-top:8px;">* {{ t('Revision store live since 2026-06-16 — history shallow; trajectory tracker matures ~Q4-2026.', '预测修订存储自2026-06-16起运行 — 历史较浅；轨迹追踪器约2026年Q4成熟。') }}</div>
-{% else %}
-<div class="muted sm">{{ t('No rerating watch conditions met.', '未满足重估观察条件。') }}</div>
-{% endif %}
-</div>
 
-{# ── Playbook accordion (LR-R10 / LR-R15) ──────────────────────────────── #}
-<div class="panel">
-<h2>{{ t('Field Guide — Stage Anatomy', '实战手册 — 阶段解析') }}</h2>
-<div class="sm muted" style="margin-bottom:10px;">
-  {{ t('Condensed from the leader lifecycle field guide. What each stage and chip means.', '精简自领袖生命周期实战手册，说明每个阶段和信号指标的含义。') }}
-</div>
+    {# No-signal reservoir #}
+    <div class="pipe-reservoir">
+      <span class="pipe-reservoir-label">{{ t('No signal', '无信号') }}</span>
+      <span class="pipe-reservoir-count">{{ ns.cnt_none }} {{ t('watching', '观察中') }}</span>
+      <span class="pipe-reservoir-label">— {{ t('accumulating context nightly', '每晚积累背景数据') }}</span>
+    </div>
+  </div>
+</section>
 
-<div class="playbook">
-  <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
-    <span>{{ t('Stage 1 — Suppressed / Left-for-dead', '阶段1 — 压制/被遗忘') }}</span><span class="car">▶</span>
-  </div>
-  <div class="pb-bd">
-    {{ t('RS underperforming SPY for ≥3 months, drawdown ≥25% from 52-week high, valuation in cheap territory. Often years below the 200dma. Key question: is the compression cyclical or structural?', 'RS相对SPY下跌≥3个月，自52周高点回撤≥25%，估值处于低廉区间。通常在200日均线下方多年。关键问题：估值压缩是周期性的还是结构性的？') }}
-    <div style="margin-top:8px;"><em>{{ t('Lead indicators:', '领先指标：') }}</em> {{ t('revision_positive (cut cycle ending), cheap valuation pctile', '预测上调（削减周期结束），低廉估值分位') }}</div>
-    <div><em>{{ t('Confirm:', '确认：') }}</em> {{ t('insider_cluster, OBV divergence', '内部人聚集，OBV背离') }}</div>
-  </div>
-</div>
+{# ── DUAL CARDS: Handoff Watch + Rerating Watch ── #}
+<div class="dual-cards">
 
-<div class="playbook">
-  <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
-    <span>{{ t('Stage 2 — Quiet Accumulation', '阶段2 — 静默积累') }}</span><span class="car">▶</span>
-  </div>
-  <div class="pb-bd">
-    {{ t('Base forming: 60-day range compression. At least 2 of: revision cycle turning positive, RS slope turning up while long-term RS still negative (RS-turn), accumulation-day count building, OBV making new highs while price has not. This is the highest-ROI watch stage — incomplete setups here are the Pick Lab\'s precipice ledger.', '筑底形成：60日区间压缩。至少2项：预测周期开始转正，RS斜率上升但长期RS仍为负（RS转向），积累日计数增加，OBV创新高而价格未创新高。这是回报率最高的观察阶段 — 此处未完成的布局是Pick Lab的临界台账。') }}
-    <div style="margin-top:8px;"><em>{{ t('Lead:', '领先：') }}</em> {{ t('rs_turn, revision_positive, obv_divergence', 'RS转向，预测上调，OBV背离') }}</div>
-    <div><em>{{ t('Lag:', '滞后：') }}</em> {{ t('price confirming (bw_emerging)', '价格确认（突破新兴）') }}</div>
-  </div>
-</div>
+  {# Handoff Watch #}
+  <div class="glass side-card">
+    <div class="side-card-title">{{ t('Handoff watch', '接力观察') }}</div>
+    <div class="side-card-sub">{{ t("Stretched leaders basing — who steps up next", '已超伸领涨股筑底 — 谁将接棒') }}</div>
 
-<div class="playbook">
-  <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
-    <span>{{ t('Stage 3 — Catalyst Window', '阶段3 — 催化窗口') }}</span><span class="car">▶</span>
-  </div>
-  <div class="pb-bd">
-    {{ t('Ignition trigger within 10 sessions: gap ≥+5% on ≥2× 20-day volume, breakaway_watch emerging, or RS-line making 126-day new high while price has not (RS leads price). The Stage-2 foundation is the necessary precondition — ignition without a base almost always reverts.', '10个交易日内出现点火触发：跳空≥+5%且成交量≥20日均量的2倍，突破观察新兴，或RS线创126日新高而价格未创（RS领先价格）。阶段2基础是必要前提条件 — 没有筑底基础的点火几乎总是反转。') }}
-    <div style="margin-top:8px;"><em>{{ t('Lead:', '领先：') }}</em> {{ t('rs_line_nh (RS leads price — strongest leading observable)', 'RS创新高（RS领先价格 — 最强领先可观测指标）') }}</div>
-    <div><em>{{ t('Confirm:', '确认：') }}</em> {{ t('gap_ignition, bw_emerging, 2D MACD cross', '跳空点火，突破新兴，2日MACD上穿') }}</div>
-  </div>
-</div>
+    {% if handoff_pairs %}
+    <div class="rerating-rows">
+      {% for pair in handoff_pairs %}
+      <div class="rerating-row">
+        <span class="rerating-ticker">{{ pair.extended_basket if pair.extended_basket is defined else '—' }}</span>
+        {% set basing = pair.basing_names if pair.basing_names is defined and pair.basing_names is not none else [] %}
+        {% for bn in basing %}
+        <a href="us_stocks.html#{{ bn.ticker }}" class="rerate-chip" style="font-size:0.72rem;">{{ bn.ticker }}</a>
+        {% endfor %}
+        {% if pair.extension_pctile is defined and pair.extension_pctile is not none %}
+        <span class="rerate-chip null-chip" style="margin-left:auto;">{{ '%.0f' | format(pair.extension_pctile * 100) }}p</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    {# Empty state #}
+    <div class="empty-state">
+      <div class="empty-icon">—</div>
+      <div class="empty-label">{{ t('No handoff candidates today', '今日无接力候选') }}</div>
+      <div class="empty-sub">{{ t('Nothing is extended enough to trigger a handoff watch. When names in Breaking away become stretched, candidates appear here.', '目前无标的超伸至触发接力观察。当"突破启动"中的标的超伸时，候选将出现在此处。') }}</div>
+    </div>
 
-<div class="playbook">
-  <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
-    <span>{{ t('Stage 4 — Breakaway / Leadership', '阶段4 — 突破/领涨') }}</span><span class="car">▶</span>
-  </div>
-  <div class="pb-bd">
-    {{ t('Detector-D onset (liquid ∧ rel-breakaway ∧ 63d-new-high ∧ vol-confirm). Continuation = RS top-decile persistence ≥4 weeks. Concentration fingerprint: leader RS-accel > 0 while same-basket peer-median RS < 0 (unique leader vs peers diverging).', '突破探测器D启动（流动性 ∧ 相对突破 ∧ 63日新高 ∧ 成交量确认）。延续 = RS前十分位持续≥4周。集中度指纹：领头者RS加速>0，而同篮子同伴中位RS<0（唯一领头者与同伴背离）。') }}
-    <div style="margin-top:8px;"><em>{{ t('Pick Lab onset ledger fires here.', 'Pick Lab启动台账在此触发。') }}</em></div>
-  </div>
-</div>
+    {# Show "closest to stretched" from handoff_context baskets, sorted by extension_pctile_vs_200d desc, top 3 #}
+    {# ZH basket display names #}
+    {% set _basket_zh = {
+      'mag7': '七巨头',
+      'ai_infra': 'AI基础设施',
+      'ai_semiconductors': 'AI半导体',
+      'semicap_equipment': '半导体设备',
+      'memory_storage': '存储芯片',
+      'data_center_power': '数据中心电力',
+      'ai_software': 'AI软件',
+      'ai_neoclouds': 'AI新云',
+    } %}
+    {# Sort handoff_context by extension_pctile_vs_200d desc (nulls last); pick top 3 with non-null pctile #}
+    {% set closest_baskets = namespace(items=[]) %}
+    {% if handoff_context and handoff_context | length > 0 %}
+      {# Two-pass: collect non-null pctile items sorted desc (Jinja has no sort on key; do selection sort top-3) #}
+      {% set _hc_pool = namespace(pool=[]) %}
+      {% for hc in handoff_context %}
+        {% if hc.extension_pctile_vs_200d is defined and hc.extension_pctile_vs_200d is not none %}
+          {% set _hc_pool.pool = _hc_pool.pool + [hc] %}
+        {% endif %}
+      {% endfor %}
+      {# Selection-sort: pick 3 highest pctile items from pool #}
+      {% set _picked = namespace(items=[], used=[]) %}
+      {% for _i in range(3) %}
+        {% if _i < _hc_pool.pool | length %}
+          {% set _best = namespace(item=none, val=-1) %}
+          {% for hc in _hc_pool.pool %}
+            {% if hc.basket not in _picked.used and hc.extension_pctile_vs_200d > _best.val %}
+              {% set _best.item = hc %}
+              {% set _best.val = hc.extension_pctile_vs_200d %}
+            {% endif %}
+          {% endfor %}
+          {% if _best.item is not none %}
+            {% set _picked.items = _picked.items + [_best.item] %}
+            {% set _picked.used = _picked.used + [_best.item.basket] %}
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+      {% set closest_baskets.items = _picked.items %}
+    {% endif %}
 
-<div class="playbook">
-  <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
-    <span>{{ t('Stage 5 — Crowded', '阶段5 — 过度拥挤') }}</span><span class="car">▶</span>
-  </div>
-  <div class="pb-bd">
-    {{ t('≥3 of: extension ≥25% vs 50dma (or ≥90th pctile own history), monthly RSI ≥80, parabolic (4w return > 2× annualized 13w), valuation ≥80th pctile 5y, analyst buy-share ≥85%, call-skew richness, basket-correlation ≥0.75 rising from below 0.5. Late-stage; handoff watch most relevant here.', '≥3项：延伸≥25%（相对50日均线）或≥90分位（自身历史），月RSI≥80，抛物线（4周回报>2倍年化13周），估值≥5年80分位，分析师买入比例≥85%，看涨偏斜过高，篮子相关性≥0.75从低于0.5上升。后期阶段；交接观察在此最为重要。') }}
-  </div>
-</div>
+    {% if closest_baskets.items | length > 0 %}
+    <div class="closest-list">
+      <div class="closest-title">{{ t('Closest to stretched — basket extension check', '最接近超伸 — 篮子伸展检查') }}</div>
+      {% for item in closest_baskets.items %}
+      {% set _slug = item.basket %}
+      {% set _pctile = item.extension_pctile_vs_200d %}
+      {# Round to nearest tenth: e.g. 92.3 → "9 of 10", 54.4 → "5 of 10", 20.5 → "2 of 10" #}
+      {% set _n_of_10 = ((_pctile / 10) | round | int) %}
+      {% set _n_of_10 = [_n_of_10, 1] | max %}
+      {% set _pctile_text_en = 'stretched further above trend than ' + (_n_of_10 | string) + ' of 10 past readings' %}
+      {% set _pctile_text_zh = '伸展度超过过去' + (_n_of_10 | string) + '成时间' %}
+      <div class="closest-row">
+        <span class="closest-ticker" style="text-decoration:none;cursor:default;">
+          <span class="l-en">{{ _slug | replace('_', ' ') | title }}</span><span class="l-zh">{{ _basket_zh[_slug] if _slug in _basket_zh else (_slug | replace('_', ' ') | title) }}</span>
+        </span>
+        <span class="closest-why">
+          <span class="l-en">{{ _pctile_text_en }}</span><span class="l-zh">{{ _pctile_text_zh }}</span>
+          {% if item.rs_21d_slope_sign is defined and item.rs_21d_slope_sign is not none and item.rs_21d_slope_sign < 0 %}
+          · <em><span class="l-en">strength rolling over</span><span class="l-zh">相对强度回落中</span></em>
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
 
-<div class="playbook">
-  <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
-    <span>{{ t('Stage 6 — Failed', '阶段6 — 失败') }}</span><span class="car">▶</span>
+    {% endif %}{# /handoff_pairs else #}
   </div>
-  <div class="pb-bd">
-    {{ t('Breakaway attempt that reversed — Detector-D "failed" state. Evidence dissipated. Not a permanent label; a name can re-accumulate and re-enter Stage 2 (21-session + full de-escalation lockout before the ledger refires).', '突破尝试后反转 — 突破探测器D"失败"状态。证据消散。不是永久标签；一个标的可以重新积累并重新进入阶段2（台账重新触发前需21个交易日 + 完全去升级锁定）。') }}
-  </div>
-</div>
 
-<div class="playbook">
-  <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
-    <span>{{ t('Base rates and chip classification', '基础成功率与信号分类') }}</span><span class="car">▶</span>
-  </div>
-  <div class="pb-bd">
-    <p>{{ t('Even complete setups fail more often than not individually; evidence accrues in the Pick Lab ledgers. A fire badge means the engine logged the event — not that an outcome is expected. Track record builds in the forward ledger over time.', '即使完整布局在单个标的上也更多情况下会失败；证据在Pick Lab台账中积累。触发标记意味着引擎记录了该事件 — 不意味着预期会有某种结果。长期表现在前瞻台账中随时间建立。') }}</p>
-    <div style="margin-top:8px;"><strong>{{ t('Lead signals (appear before price):', '领先信号（先于价格出现）：') }}</strong> {{ t('rs_line_nh, revision_positive, obv_divergence, insider_cluster', 'RS新高，预测上调，OBV背离，内部人聚集') }}</div>
-    <div><strong>{{ t('Confirm signals (coincide with price):', '确认信号（与价格同步）：') }}</strong> {{ t('gap_ignition, bw_emerging, accum_evidence, 2D MACD cross', '跳空点火，突破新兴，积累证据，2日MACD上穿') }}</div>
-    <div><strong>{{ t('Lag signals (appear after price):', '滞后信号（价格后出现）：') }}</strong> {{ t('analyst_saturated, call_skew_rich (crowding markers)', '分析师饱和，看涨偏斜过高（拥挤指标）') }}</div>
-    <div style="margin-top:8px;"><em>{{ t('Value-trap question:', '价值陷阱问题：') }}</em> {{ t('Is the multiple compression cyclical or structural? The chip prints the observable; the answer is yours to supply.', '估值倍数压缩是周期性的还是结构性的？信号指标呈现可观测指标；答案需要你自己判断。') }}</div>
-  </div>
-</div>
+  {# Rerating Watch #}
+  <div class="glass side-card">
+    <div class="side-card-title">{{ t('Rerating watch', '重估观察') }}</div>
+    <div class="side-card-sub">
+      {{ t('Estimates turning up while still cheap', '预期上调而估值仍低') }}
+      {% if rerating_watch | length > 0 %} — {{ rerating_watch | length }} {{ t('names', '个标的') }}{% endif %}
+    </div>
 
-</div>{# end panel #}
+    {% if rerating_watch %}
+    <div class="rerating-rows">
+      {% for rr in rerating_watch %}
+      {% set rc = rr.chips if rr.chips is defined and rr.chips is not none else {} %}
+      {% set rs = rr.state if rr.state is defined and rr.state is not none else 'NONE' %}
+      <div class="rerating-row">
+        <a class="rerating-ticker" href="us_stocks.html#{{ rr.ticker }}" style="text-decoration:none;">{{ rr.ticker }}</a>
+        <span class="rerating-stage-chip {% if rs == 'BREAKAWAY' %}s-breakaway{% elif rs == 'QUIET_ACCUMULATION' %}s-quiet{% elif rs == 'SUPPRESSED' %}s-suppressed{% elif rs == 'LEADERSHIP' %}s-leadership{% elif rs == 'CROWDED' %}s-crowded{% else %}s-none{% endif %}">
+          {% if rs == 'BREAKAWAY' %}{{ t('Breaking away', '突破启动') }}
+          {% elif rs == 'QUIET_ACCUMULATION' %}{{ t('Quiet build', '静默筑底') }}
+          {% elif rs == 'SUPPRESSED' %}{{ t('Left for dead', '无人问津') }}
+          {% elif rs == 'LEADERSHIP' %}{{ t('Leading', '领涨中') }}
+          {% elif rs == 'CROWDED' %}{{ t('Crowded', '过度拥挤') }}
+          {% else %}{{ t('No signal', '无信号') }}{% endif %}
+        </span>
+        <div class="rerating-chips">
+          {% if rc.revision_positive is defined %}
+            {% if rc.revision_positive is sameas true %}<span class="rerate-chip">{{ t('Estimates turning up', '盈利预期转正') }}</span>
+            {% elif rc.revision_positive is sameas false %}<span class="rerate-chip null-chip">{{ t('Estimates not turning up', '盈利预期未转正') }}</span>
+            {% elif rc.revision_positive is none %}<span class="rerate-chip null-chip">{{ t('no revision data', '无预测修订数据') }}</span>
+            {% endif %}
+          {% endif %}
+          {% if rc.revision_breadth_60 is defined %}
+            {% if rc.revision_breadth_60 is sameas true %}<span class="rerate-chip">{{ t('Broad breadth', '广泛修正') }}</span>
+            {% endif %}
+          {% endif %}
+          {% if rc.multiple_compressed is defined and rc.multiple_compressed is none %}<span class="rerate-chip null-chip">{{ t('no valuation data', '无估值数据') }}</span>
+          {% elif rc.multiple_compressed is defined and rc.multiple_compressed is sameas true %}<span class="rerate-chip">{{ t('Cheap vs own history', '估值处于自身低位') }}</span>
+          {% endif %}
+          {% if rc.earnings_within_14d is defined and rc.earnings_within_14d is sameas true %}
+          <span class="rerate-chip warn">{{ t('Earnings &lt;14d', '财报&lt;14天') }}</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="muted" style="font-size:0.78rem;color:var(--text-muted);">{{ t('No rerating conditions met today.', '今日未满足重估观察条件。') }}</div>
+    {% endif %}
+  </div>
 
-</div>{# end max-width wrapper #}
+</div>{# /dual-cards #}
+
+{# ── FULL BOARD ── #}
+<section class="full-board-section">
+  <div class="board-toggle glass" onclick="toggleBoard(this)">
+    <div class="board-toggle-left">
+      <span class="board-toggle-label">{{ t('Full board', '完整看板') }}</span>
+      <span class="board-toggle-sub">{{ t('All', '全部') }} {{ rows | length }} {{ t('names · dense view', '个标的 · 密集视图') }}</span>
+    </div>
+    <span class="board-caret" id="board-caret">&#9660;</span>
+  </div>
+  <div class="board-table-wrap glass" id="board-table-wrap" style="border-radius:0 0 var(--radius-card) var(--radius-card);border-top:none;margin-top:-1px;">
+    <table class="board-table">
+      <thead>
+        <tr>
+          <th>{{ t('Ticker', '代码') }}</th>
+          <th>{{ t('Stage', '阶段') }}</th>
+          <th>{{ t('Stance', '建议') }}</th>
+          <th>{{ t('Evidence', '证据') }}</th>
+          <th>{{ t('Days', '天数') }}</th>
+          <th>{{ t('Momentum', '动量') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+      {# Group rows by state in display order #}
+      {% set board_groups = [
+        ('LEADERSHIP',         'Leading',       '领涨中',    'In favour',               '顺风期',         ns.leadership_rows),
+        ('BREAKAWAY',          'Breaking away', '突破启动',  "In motion — don't chase", '行情进行中—勿追', ns.breakaway_rows),
+        ('QUIET_ACCUMULATION', 'Quiet build',   '静默筑底',  "Watch — don't chase",     '观察—勿追高',    ns.quiet_rows),
+        ('CATALYST_WINDOW',    'Ignition window','点火窗口', 'Get ready',                '做好准备',       ns.catalyst_rows),
+        ('SUPPRESSED',         'Left for dead', '无人问津',  'Ignore',                   '暂不关注',       ns.suppressed_rows),
+        ('CROWDED',            'Crowded',        '过度拥挤', 'Protect gains',            '保护利润',       ns.crowded_rows),
+        ('FAILED',             'Failed break',  '突破失败',  'Stand aside',             '观望回避',       ns.failed_rows),
+        ('NONE',               'No signal',     '无信号',    'Ignore',                  '暂不关注',       ns.none_rows),
+      ] %}
+      {% for grp_key, grp_en, grp_zh, stance_en, stance_zh, grp_rows in board_groups %}
+      {% if grp_rows | length > 0 %}
+      <tr class="board-grp-hd" onclick="toggleBoardGroup('bg-{{ grp_key }}')">
+        <td colspan="6">
+          <span class="stage-pill {{ grp_key }}">
+            <span class="l-en">{{ grp_en }}</span><span class="l-zh">{{ grp_zh }}</span>
+          </span>
+          <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">{{ grp_rows | length }} {{ t('names', '个') }}</span>
+          <span style="margin-left:4px;font-size:0.66rem;color:var(--text-dim);">· {{ t('click to expand/collapse', '点击展开/折叠') }}</span>
+          <span style="float:right;font-size:0.66rem;color:var(--text-dim);font-style:italic;">
+            <span class="l-en">{{ stance_en }}</span><span class="l-zh">{{ stance_zh }}</span>
+          </span>
+        </td>
+      </tr>
+      <tbody id="bg-{{ grp_key }}" class="board-grp-body collapsed">
+      {% for r in grp_rows %}
+        {% set chips = r.chips if r.chips is defined and r.chips is not none else {} %}
+        {% set ctx = r.context if r.context is defined and r.context is not none else {} %}
+        {% set tf2d = ctx.tf2d_state if ctx.tf2d_state is defined and ctx.tf2d_state is not none else {} %}
+        {# Build evidence chips (first 2 positive non-internal) #}
+        {% set ns_ev = namespace(parts=[]) %}
+        {% for ck, cv in chips.items() %}
+          {% if cv is sameas true and ck not in _INTERNAL_CHIPS and ns_ev.parts | length < 2 %}
+            {% set ns_ev.parts = ns_ev.parts + [ck] %}
+          {% endif %}
+        {% endfor %}
+        {# Chip class by state #}
+        {% set chip_cls = 'green' if grp_key == 'BREAKAWAY' else ('blue' if grp_key == 'CATALYST_WINDOW' else 'gray') %}
+        <tr>
+          <td><a class="ticker-link" href="us_stocks.html#{{ r.ticker }}" style="text-decoration:none;">{{ r.ticker }}</a>
+            {% if r.fire_precipice is defined and r.fire_precipice %}<span class="fire-badge" style="font-size:0.6rem;padding:1px 5px;margin-left:4px;">&#x26A1;</span>{% endif %}
+          </td>
+          <td>
+            <span class="stage-pill {{ grp_key }}">
+              <span class="l-en">{{ grp_en }}</span><span class="l-zh">{{ grp_zh }}</span>
+            </span>
+          </td>
+          <td style="font-size:0.72rem;color:var(--text-muted);">
+            <span class="l-en">{{ stance_en }}</span><span class="l-zh">{{ stance_zh }}</span>
+          </td>
+          <td>
+            <div class="leg-chips">
+              {% for ck in ns_ev.parts %}
+              <span class="leg-chip {{ chip_cls }}" data-chip-key="{{ ck }}"></span>
+              {% endfor %}
+            </div>
+          </td>
+          <td style="color:var(--text-muted);">
+            {% if r.days_in_state is defined and r.days_in_state is not none %}{{ r.days_in_state }}{% else %}<em style="font-size:0.68rem;">{{ t('seeding', '初始化') }}</em>{% endif %}
+          </td>
+          <td>
+            {% if tf2d.spark_hist is defined and tf2d.spark_hist is not none %}
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='{{ tf2d.spark_hist | tojson }}'></svg>
+            {% else %}
+            <svg class="board-spark" viewBox="0 0 48 18"></svg>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      {% endif %}
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{# ── FIELD GUIDE ── #}
+<section class="guide-section">
+  <div class="glass guide-wrap">
+    <div class="guide-title">{{ t('Field guide — Stage anatomy', '实战手册 — 阶段解析') }}</div>
+    <div class="guide-sub">{{ t('What each stage means in plain words. Machine names are in parentheses inside each section.', '每个阶段的通俗释义。机器内部名称括注于各节内部。') }}</div>
+
+    <div class="playbook">
+      <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
+        <span>{{ t('Left for dead — First stirrings', '无人问津 — 初动迹象') }}</span><span class="car">&#9658;</span>
+      </div>
+      <div class="pb-bd">
+        <div style="margin-bottom:6px;color:var(--text-dim);font-size:0.72rem;">{{ t('Machine state: SUPPRESSED / 机器状态：SUPPRESSED', 'Machine state: SUPPRESSED / 机器状态：SUPPRESSED') }}</div>
+        {{ t('RS underperforming for ≥3 months, drawdown ≥25% from 52-week high, valuation often in cheap territory. Sometimes years below the 200dma. Key question: is the compression cyclical or structural?', 'RS连续≥3个月跑输大盘，自52周高点回撤≥25%，估值通常处于低廉区间。有时在200日均线下方数年。关键问题：压缩是周期性的还是结构性的？') }}
+        <div style="margin-top:8px;"><em>{{ t('Lead indicators:', '领先指标：') }}</em> {{ t('revision_positive (cut cycle ending), cheap valuation pctile, insider_cluster, OBV divergence', 'revision_positive（削减周期结束），低廉估值分位，insider_cluster，OBV背离') }}</div>
+      </div>
+    </div>
+
+    <div class="playbook">
+      <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
+        <span>{{ t('Quiet build — Watch, don\'t chase', '静默筑底 — 观察，勿追') }}</span><span class="car">&#9658;</span>
+      </div>
+      <div class="pb-bd">
+        <div style="margin-bottom:6px;color:var(--text-dim);font-size:0.72rem;">{{ t('Machine state: QUIET_ACCUMULATION / 机器状态：QUIET_ACCUMULATION', 'Machine state: QUIET_ACCUMULATION / 机器状态：QUIET_ACCUMULATION') }}</div>
+        {{ t('Base forming: 60-day range compression. At least 2 of: revision cycle turning positive (revision_positive), RS slope turning up while long-term RS still negative (rs_turn), accumulation-day count building (accum_evidence), OBV making new highs while price has not (obv_divergence). Highest-ROI watch stage.', '筑底形成：60日区间压缩。至少2项：预测周期开始转正（revision_positive），RS斜率上升但长期RS仍为负（rs_turn），积累日计数增加（accum_evidence），OBV创新高而价格未创（obv_divergence）。回报率最高的观察阶段。') }}
+        <div style="margin-top:8px;"><em>{{ t('Lead:', '领先：') }}</em> rs_turn, revision_positive, obv_divergence</div>
+        <div><em>{{ t('Lag:', '滞后：') }}</em> {{ t('price confirming', '价格确认') }} (bw_emerging)</div>
+      </div>
+    </div>
+
+    <div class="playbook">
+      <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
+        <span>{{ t('Ignition window — Get ready', '点火窗口 — 做好准备') }}</span><span class="car">&#9658;</span>
+      </div>
+      <div class="pb-bd">
+        <div style="margin-bottom:6px;color:var(--text-dim);font-size:0.72rem;">{{ t('Machine state: CATALYST_WINDOW / 机器状态：CATALYST_WINDOW', 'Machine state: CATALYST_WINDOW / 机器状态：CATALYST_WINDOW') }}</div>
+        {{ t('Ignition trigger within 10 sessions: gap ≥+5% on ≥2× 20-day volume (gap_ignition), breakaway watch emerging (bw_emerging), or RS-line making 126-day new high while price has not (rs_line_nh — RS leads price). The Stage-2 foundation is a necessary precondition — ignition without a base almost always reverts.', '10个交易日内出现点火触发：跳空≥+5%且成交量≥20日均量的2倍（gap_ignition），突破观察新兴（bw_emerging），或RS线创126日新高而价格未创（rs_line_nh — RS领先价格）。阶段2基础是必要前提 — 无基础的点火几乎总是反转。') }}
+        <div style="margin-top:8px;"><em>{{ t('Strongest leading observable:', '最强领先可观测指标：') }}</em> rs_line_nh</div>
+        <div><em>{{ t('Confirm:', '确认：') }}</em> gap_ignition, bw_emerging, {{ t('2D MACD cross', '2日MACD上穿') }}</div>
+      </div>
+    </div>
+
+    <div class="playbook">
+      <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
+        <span>{{ t('Breaking away — In motion', '突破启动 — 行情进行中') }}</span><span class="car">&#9658;</span>
+      </div>
+      <div class="pb-bd">
+        <div style="margin-bottom:6px;color:var(--text-dim);font-size:0.72rem;">{{ t('Machine state: BREAKAWAY / 机器状态：BREAKAWAY', 'Machine state: BREAKAWAY / 机器状态：BREAKAWAY') }}</div>
+        {{ t('Detector-D onset: liquid ∧ rel-breakaway ∧ 63d-new-high ∧ vol-confirm. Continuation: RS top-decile persistence ≥4 weeks (rs_top_decile_4w). Concentration fingerprint: leader RS-accel > 0 while same-basket peer-median RS < 0 (peer_divergence).', '突破探测器D启动：流动性 ∧ 相对突破 ∧ 63日新高 ∧ 成交量确认。延续：RS前十分位持续≥4周（rs_top_decile_4w）。集中度指纹：领头者RS加速>0，同伴中位RS<0（peer_divergence）。') }}
+      </div>
+    </div>
+
+    <div class="playbook">
+      <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
+        <span>{{ t('Crowded — Protect gains', '过度拥挤 — 保护利润') }}</span><span class="car">&#9658;</span>
+      </div>
+      <div class="pb-bd">
+        <div style="margin-bottom:6px;color:var(--text-dim);font-size:0.72rem;">{{ t('Machine state: CROWDED / 机器状态：CROWDED', 'Machine state: CROWDED / 机器状态：CROWDED') }}</div>
+        {{ t('≥3 of: extension ≥25% vs 50dma (extension_extreme), monthly RSI ≥80 (monthly_rsi_80), parabolic (parabolic), valuation ≥80th pctile 5y (valuation_extreme), analyst buy-share ≥85% (analyst_saturated), call-skew richness (call_skew_rich), basket-correlation ≥0.75 rising from below 0.5 (basket_corr_rising). Late-stage; handoff watch most relevant.', '≥3项：超伸≥25%（extension_extreme），月RSI≥80（monthly_rsi_80），抛物线（parabolic），估值≥5年80分位（valuation_extreme），分析师买入比例≥85%（analyst_saturated），看涨偏斜过高（call_skew_rich），篮子相关性≥0.75且从低于0.5上升（basket_corr_rising）。后期阶段；接力观察最为重要。') }}
+      </div>
+    </div>
+
+    <div class="playbook">
+      <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
+        <span>{{ t('Failed break — Stand aside', '突破失败 — 观望回避') }}</span><span class="car">&#9658;</span>
+      </div>
+      <div class="pb-bd">
+        <div style="margin-bottom:6px;color:var(--text-dim);font-size:0.72rem;">{{ t('Machine state: FAILED / 机器状态：FAILED', 'Machine state: FAILED / 机器状态：FAILED') }}</div>
+        {{ t('Breakaway attempt that reversed — Detector-D "failed" state (bw_failed). Evidence dissipated. Not a permanent label: a name can re-accumulate and re-enter Quiet build (21-session + full de-escalation lockout before the ledger refires).', '突破尝试后反转 — 突破探测器D"失败"状态（bw_failed）。证据消散。不是永久标签：标的可重新积累并重进静默筑底（台账重新触发前需21个交易日 + 完全去升级锁定）。') }}
+      </div>
+    </div>
+
+    <div class="playbook">
+      <div class="pb-hd" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none';">
+        <span>{{ t('Signal classification & base rates', '信号分类与基础成功率') }}</span><span class="car">&#9658;</span>
+      </div>
+      <div class="pb-bd">
+        <p>{{ t('Even complete setups fail more often than not individually; evidence accrues in the Pick Lab ledgers. A fire badge means the engine logged the event — not that an outcome is expected.', '即使完整布局在单个标的上也更多情况下会失败；证据在Pick Lab台账中积累。触发标记意味着引擎记录了该事件 — 不意味着预期会有某种结果。') }}</p>
+        <div style="margin-top:8px;"><strong>{{ t('Lead signals (appear before price):', '领先信号（先于价格出现）：') }}</strong> rs_line_nh, revision_positive, obv_divergence, insider_cluster</div>
+        <div><strong>{{ t('Confirm signals (coincide with price):', '确认信号（与价格同步）：') }}</strong> gap_ignition, bw_emerging, accum_evidence, {{ t('2D MACD cross', '2日MACD上穿') }}</div>
+        <div><strong>{{ t('Lag signals (appear after price):', '滞后信号（价格后出现）：') }}</strong> analyst_saturated, call_skew_rich</div>
+        <div style="margin-top:8px;"><em>{{ t('Value-trap question:', '价值陷阱问题：') }}</em> {{ t('Is the multiple compression cyclical or structural? The chip prints the observable; the answer is yours to supply.', '估值倍数压缩是周期性还是结构性？信号指标呈现可观测指标；答案需要你自己判断。') }}</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{# ── FOOTER ── #}
+<footer class="glass">
+  <div class="footer-honesty">
+    {{ t('Stages describe observed evidence, not predictions. Even well-staged names fail more often than not — the forward ledger keeps score.', '各阶段描述观察到的证据，而非预测。即使布局完整的标的也更多情况下会失败 — 前瞻台账保存记录。') }}
+    {% if rows and rows[0].days_in_state is defined and rows[0].days_in_state is not none and rows[0].days_in_state <= 1 %}
+    {{ t('Seeding state: stage counters accumulate nightly from here.', '初始化状态：阶段计数器从此次起每晚累计。') }}
+    {% endif %}
+  </div>
+</footer>
+
+</div>{# /page-wrap #}
+
 <script>
-function toggleGroup(id){
-  var el=document.getElementById(id);
-  if(!el)return;
-  el.classList.toggle('collapsed');
+/* ── Plain-word chip labels ── */
+const CHIP_LABELS_EN = {
+  revision_positive: "Estimates turning up",
+  rs_turn: "Strength turning vs market",
+  accum_evidence: "Volume accumulating",
+  obv_divergence: "Buying pressure building under the surface",
+  insider_cluster: "Insiders buying",
+  gap_ignition: "Gapped up on heavy volume",
+  rs_line_nh: "Strength at new highs before price",
+  bw_emerging: "Breakout forming",
+  drawdown_25pct: "Down 25%+ from highs",
+  below_200dma_12m: "A year below trend",
+  cheap_pctile_40: "Cheap vs own history",
+  monthly_rsi_80: "Monthly momentum extreme",
+  extension_extreme: "Stretched far above trend",
+  parabolic: "Going parabolic",
+  analyst_saturated: "Analysts all-in",
+  call_skew_rich: "Call options bid up",
+  basket_corr_rising: "Whole group moving as one",
+  bw_continuation: "Trend running",
+  peer_divergence: "Pulling away from peers",
+  rs_top_decile_4w: "Top-tier strength for a month",
+  rs_slope_negative_3m: "Relative trend recovering",
+  bw_breakaway: "Breakout confirmed",
+  valuation_extreme: "Stretched vs own valuation history",
+};
+const CHIP_LABELS_ZH = {
+  revision_positive: "盈利预期转正",
+  rs_turn: "相对大盘转强",
+  accum_evidence: "成交量温和吸筹",
+  obv_divergence: "底部买盘悄然积累",
+  insider_cluster: "内部人增持",
+  gap_ignition: "放量跳空上行",
+  rs_line_nh: "相对强度先于股价创新高",
+  bw_emerging: "突破酝酿中",
+  drawdown_25pct: "自高点回撤逾25%",
+  below_200dma_12m: "长期低于年线",
+  cheap_pctile_40: "估值处于自身低位",
+  monthly_rsi_80: "月线动能极端",
+  extension_extreme: "远超趋势线",
+  parabolic: "抛物线式上涨",
+  analyst_saturated: "分析师一致看多",
+  call_skew_rich: "看涨期权被追捧",
+  basket_corr_rising: "板块同涨同跌",
+  bw_continuation: "趋势延续中",
+  peer_divergence: "与同行拉开差距",
+  rs_top_decile_4w: "强度居前已达一月",
+  rs_slope_negative_3m: "相对趋势回升中",
+  bw_breakaway: "突破确认",
+  valuation_extreme: "估值相对自身历史偏高",
+};
+const NULL_LABELS_EN = {
+  insider_cluster: "no insider data",
+  call_skew_rich: "no options data",
+  revision_positive: "no revision data",
+  multiple_compressed: "no valuation data",
+};
+const NULL_LABELS_ZH = {
+  insider_cluster: "无内部人数据",
+  call_skew_rich: "无期权数据",
+  revision_positive: "无预测修订数据",
+  multiple_compressed: "无估值数据",
+};
+const EXPECTED_CHIPS = {
+  QUIET_ACCUMULATION: ['revision_positive','rs_turn','accum_evidence','obv_divergence','insider_cluster','call_skew_rich'],
+  CATALYST_WINDOW:    ['gap_ignition','rs_line_nh','bw_emerging','revision_positive','insider_cluster','call_skew_rich'],
+  SUPPRESSED:         ['revision_positive','rs_turn','accum_evidence','obv_divergence','insider_cluster'],
+  BREAKAWAY:          ['extension_extreme','monthly_rsi_80','bw_continuation','bw_breakaway','accum_evidence','revision_positive'],
+};
+const INTERNAL_CHIPS = new Set(['qa_context','context_ok','bw_failed','bw_continuation_pre_leadership']);
+
+function isZH() { return document.documentElement.getAttribute('data-lang') === 'zh'; }
+function chipLabel(k) { return isZH() ? (CHIP_LABELS_ZH[k] || k) : (CHIP_LABELS_EN[k] || k); }
+function nullLabel(k) { return isZH() ? (NULL_LABELS_ZH[k] || k) : (NULL_LABELS_EN[k] || k); }
+
+/* ── Sparkline renderer ── */
+function renderSparkline(svg, histData, colorCls) {
+  if (!histData || histData.length < 2) return;
+  const vals = histData.slice(-10);
+  const mn = Math.min(...vals), mx = Math.max(...vals), rng = mx - mn || 1;
+  const pts = vals.map((v,i) => {
+    const x = (i / (vals.length-1)) * 62 + 1;
+    const y = 22 - ((v - mn) / rng) * 20;
+    return x + ',' + y;
+  }).join(' ');
+  const last = vals[vals.length-1], first = vals[0];
+  const cls = last > first ? 'up' : last < first ? 'down' : 'flat';
+  svg.innerHTML = '<polyline class="spark-path ' + cls + '" points="' + pts + '"/>';
 }
+
+function renderMiniSpark(svg, histData) {
+  if (!histData || histData.length < 2) return;
+  const v = histData.slice(-10);
+  const mn = Math.min(...v), mx = Math.max(...v), rng = mx - mn || 1;
+  const pts = v.map((val,i) => {
+    const x = (i / (v.length-1)) * 46 + 1;
+    const y = 16 - ((val - mn) / rng) * 14;
+    return x + ',' + y;
+  }).join(' ');
+  const col = v[v.length-1] > v[0] ? '#4ade80' : '#f87171';
+  svg.innerHTML = '<polyline points="' + pts + '" fill="none" stroke="' + col + '" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>';
+}
+
+/* ── Dot bar renderer ── */
+function renderDotBar(el) {
+  const k = parseInt(el.dataset.k || 0);
+  const n = parseInt(el.dataset.n || k);
+  const parent = el.closest('.entry-card');
+  const cls = parent ? (parent.classList.contains('ignition') ? 'ignition' : parent.classList.contains('quiet') ? 'quiet' : 'suppressed') : 'suppressed';
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    html += '<div class="dot-bar-dot ' + (i < k ? 'filled ' + cls : 'empty') + '"></div>';
+  }
+  el.innerHTML = html;
+}
+
+/* ── Evidence line renderer ── */
+function renderEvidenceLine(el) {
+  try {
+    const chips = JSON.parse(el.dataset.chips || '{}');
+    const stage = el.dataset.stage || '';
+    const pos = Object.entries(chips).filter(([k,v]) => v === true && !INTERNAL_CHIPS.has(k));
+    const parts = pos.slice(0,2).map(([k]) => chipLabel(k));
+    el.innerHTML = parts.join('<span class="ev-sep">·</span>') || '—';
+  } catch(e) { el.textContent = '—'; }
+}
+
+/* ── Board chip label renderer ── */
+function renderBoardChip(el) {
+  const k = el.dataset.chipKey;
+  el.textContent = chipLabel(k);
+}
+
+/* ── Card receipt via data attributes (safe for JSON chips) ── */
+function openCardReceiptFromEl(el) {
+  const ticker = el.dataset.ticker;
+  const stage  = el.dataset.stage;
+  let chips = {};
+  try { chips = JSON.parse(el.dataset.chips || '{}'); } catch(e) {}
+  const macdBars    = el.dataset.macdBars   ? parseFloat(el.dataset.macdBars)   : null;
+  const daysInState = el.dataset.days       ? parseInt(el.dataset.days, 10)     : null;
+  const fwdPe       = el.dataset.fwdPe      ? parseFloat(el.dataset.fwdPe)      : null;
+  const valPctile   = el.dataset.valPctile  ? parseFloat(el.dataset.valPctile)  : null;
+  openCardReceipt(ticker, stage, chips, macdBars, null, daysInState, fwdPe, valPctile);
+}
+
+/* ── Card receipt popover ── */
+function openCardReceipt(ticker, stage, chips, macdBars, sparkHist, daysInState, fwdPe, valPctile) {
+  const zh = isZH();
+  const STAGE_PLAIN = {
+    CATALYST_WINDOW:    zh ? '点火窗口' : 'Ignition window',
+    QUIET_ACCUMULATION: zh ? '静默筑底' : 'Quiet build',
+    SUPPRESSED:         zh ? '无人问津' : 'Left for dead',
+    BREAKAWAY:          zh ? '突破启动' : 'Breaking away',
+    LEADERSHIP:         zh ? '领涨中'   : 'Leading',
+    CROWDED:            zh ? '过度拥挤' : 'Crowded',
+    FAILED:             zh ? '突破失败' : 'Failed break',
+    NONE:               zh ? '无信号'   : 'No signal',
+  };
+  const stageLabel = STAGE_PLAIN[stage] || stage;
+  const stageCls = stage === 'CATALYST_WINDOW' ? 'ignition' : stage === 'SUPPRESSED' ? 'suppressed' : '';
+
+  document.getElementById('card-popover-title').innerHTML =
+    '<a href="us_stocks.html#' + ticker + '" style="color:inherit;text-decoration:none;">' + ticker + '</a>' +
+    ' · ' + stageLabel;
+
+  const pos = Object.entries(chips).filter(([k,v]) => v === true && !INTERNAL_CHIPS.has(k));
+  const expectedKeys = EXPECTED_CHIPS[stage] || [];
+  const presentSet = new Set(pos.map(([k]) => k));
+  const absentNulls = expectedKeys.filter(k => !presentSet.has(k) && NULL_LABELS_EN[k]);
+
+  let html = '<div class="receipt-chip-list">';
+  pos.forEach(([k]) => {
+    html += '<span class="receipt-chip on ' + stageCls + '">' + chipLabel(k) + '</span>';
+  });
+  absentNulls.forEach(k => {
+    html += '<span class="receipt-chip null">' + nullLabel(k) + '</span>';
+  });
+  html += '</div>';
+  html += '<div class="receipt-machine-state">' +
+    (zh ? '机器状态：' : 'Machine state: ') + stage + ' · ' +
+    (zh ? '仅供展示' : 'display only') + '</div>';
+
+  // Seeding note only when days_in_state is null or <=1
+  if (daysInState === null || daysInState <= 1) {
+    html += '<div class="receipt-seeding-note">' +
+      (zh
+        ? '阶段天数显示1，因为状态存储仅有1次运行 — 首次运行正常'
+        : 'Days-in-stage reads 1 because the state store is 1 session old — normal on first run') +
+      '</div>';
+  }
+
+  // Context lines: fwd_pe and valuation_pctile_5y (guarded — only when non-null)
+  if (fwdPe != null && !isNaN(fwdPe)) {
+    html += '<div class="receipt-context-line">' +
+      (zh
+        ? '预期市盈率 ' + fwdPe.toFixed(1) + 'x'
+        : 'Forward PE ' + fwdPe.toFixed(1) + 'x') +
+      '</div>';
+  }
+  if (valPctile != null && !isNaN(valPctile)) {
+    const pct = Math.round(valPctile);
+    html += '<div class="receipt-context-line">' +
+      (zh
+        ? '估值高于自身5年历史 ' + pct + '%'
+        : 'Valuation higher than ' + pct + '% of its own 5-year history') +
+      '</div>';
+  }
+
+  document.getElementById('card-popover-body').innerHTML = html;
+  openPopover('card-popover');
+}
+
+/* ── Popover helpers ── */
+function openPopover(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function closePopover(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+
+/* ── Full board toggle ── */
+function toggleBoard(toggleEl) {
+  const wrap = document.getElementById('board-table-wrap');
+  const caret = document.getElementById('board-caret');
+  const isOpen = wrap.classList.contains('open');
+  wrap.classList.toggle('open', !isOpen);
+  caret.classList.toggle('open', !isOpen);
+}
+
+/* ── Board group toggle ── */
+function toggleBoardGroup(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('collapsed');
+}
+
+/* ── Init: render all dynamic elements after DOM ready ── */
+(function init() {
+  // Sparklines
+  document.querySelectorAll('.card-sparkline[data-hist]').forEach(function(svg) {
+    try { renderSparkline(svg, JSON.parse(svg.dataset.hist)); } catch(e) {}
+  });
+  document.querySelectorAll('.board-spark[data-hist]').forEach(function(svg) {
+    try { renderMiniSpark(svg, JSON.parse(svg.dataset.hist)); } catch(e) {}
+  });
+  // Dot bars
+  document.querySelectorAll('.dot-bar[data-k]').forEach(renderDotBar);
+  // Evidence lines
+  document.querySelectorAll('.evidence-line[data-chips]').forEach(renderEvidenceLine);
+  // Board chip labels
+  document.querySelectorAll('.leg-chip[data-chip-key]').forEach(renderBoardChip);
+
+  // Re-render on lang change (theme.js dispatches langchange event)
+  document.addEventListener('langchange', function() {
+    document.querySelectorAll('.evidence-line[data-chips]').forEach(renderEvidenceLine);
+    document.querySelectorAll('.leg-chip[data-chip-key]').forEach(renderBoardChip);
+  });
+})();
 </script>
 <script src="theme.js"></script>
 </body>

@@ -1,0 +1,228 @@
+{
+  "variants": [
+    {
+      "variant": "gross",
+      "n_s10": 2607,
+      "n_cmp": 9608,
+      "n_s10_mat": 2607,
+      "n_cmp_mat": 9596,
+      "k2_triggered": false,
+      "k3_stable": true,
+      "primary_s10": {
+        "label": "S10 gross",
+        "n_total": 2607,
+        "n_matured": 2607,
+        "eff_n_ep": 32,
+        "stop_rate": 0.6498,
+        "stop_wlb": 0.6343,
+        "dm_rate": 0.0,
+        "dm_wlb": 0.0,
+        "cush_rate": 0.3502,
+        "cush_wlb": 0.335,
+        "lift_rate": 0.3295,
+        "lift_wlb": 0.3145
+      },
+      "primary_cmp": {
+        "label": "CMP gross",
+        "n_total": 9596,
+        "n_matured": 9596,
+        "eff_n_ep": 33,
+        "stop_rate": 0.6579,
+        "stop_wlb": 0.6499,
+        "dm_rate": 0.0002,
+        "dm_wlb": 0.0001,
+        "cush_rate": 0.3419,
+        "cush_wlb": 0.334,
+        "lift_rate": 0.3235,
+        "lift_wlb": 0.3157
+      },
+      "pvals": {
+        "stopped_126": {
+          "point_s10": 0.6497890295358649,
+          "point_cmp": 0.6578782826177574,
+          "point_diff": -0.008089253081892456,
+          "p_value": 0.484,
+          "ci_lo_90": -0.051814908685807806,
+          "ci_hi_90": 0.026687855156186328,
+          "n_episodes_s10": 32,
+          "n_episodes_cmp": 33,
+          "n_episodes_joint": 33,
+          "metric": "stopped_126",
+          "n_s10": 2607,
+          "n_cmp": 9596
+        },
+        "dead_money_126": {
+          "point_s10": 0.0,
+          "point_cmp": 0.00020842017507294707,
+          "point_diff": -0.00020842017507294707,
+          "p_value": 0.47,
+          "ci_lo_90": -0.0004530601405555929,
+          "ci_hi_90": 0.0,
+          "n_episodes_s10": 32,
+          "n_episodes_cmp": 33,
+          "n_episodes_joint": 33,
+          "metric": "dead_money_126",
+          "n_s10": 2607,
+          "n_cmp": 9596
+        },
+        "cushioned_126": {
+          "point_s10": 0.350210970464135,
+          "point_cmp": 0.3419132972071697,
+          "point_diff": 0.008297673256965343,
+          "p_value": 0.5155,
+          "ci_lo_90": -0.02639938697011185,
+          "ci_hi_90": 0.051908184785106885,
+          "n_episodes_s10": 32,
+          "n_episodes_cmp": 33,
+          "n_episodes_joint": 33,
+          "metric": "cushioned_126",
+          "n_s10": 2607,
+          "n_cmp": 9596
+        },
+        "liftoff_126": {
+          "point_s10": 0.32949750671269656,
+          "point_cmp": 0.3234681117132138,
+          "point_diff": 0.00602939499948274,
+          "p_value": 0.521,
+          "ci_lo_90": -0.028326668279033695,
+          "ci_hi_90": 0.04988569049769496,
+          "n_episodes_s10": 32,
+          "n_episodes_cmp": 33,
+          "n_episodes_joint": 33,
+          "metric": "liftoff_126",
+          "n_s10": 2607,
+          "n_cmp": 9596
+        }
+      },
+      "k1_data": {
+        "stop_diff_pp": 0.81,
+        "dm_diff_pp": 0.02,
+        "cush_diff_pp": 0.83,
+        "stop_beats_5pp": false,
+        "dm_beats_5pp": false,
+        "cush_beats_5pp": false,
+        "stop_p": 0.484
+      },
+      "depth_table": {},
+      "stop_p_for_bh": 0.484
+    },
+    {
+      "variant": "operating",
+      "n_s10": 3028,
+      "n_cmp": 11062,
+      "n_s10_mat": 3026,
+      "n_cmp_mat": 11051,
+      "k2_triggered": false,
+      "k3_stable": false,
+      "primary_s10": {
+        "label": "S10 operating",
+        "n_total": 3026,
+        "n_matured": 3026,
+        "eff_n_ep": 32,
+        "stop_rate": 0.6434,
+        "stop_wlb": 0.629,
+        "dm_rate": 0.0,
+        "dm_wlb": 0.0,
+        "cush_rate": 0.3566,
+        "cush_wlb": 0.3424,
+        "lift_rate": 0.3331,
+        "lift_wlb": 0.3192
+      },
+      "primary_cmp": {
+        "label": "CMP operating",
+        "n_total": 11051,
+        "n_matured": 11051,
+        "eff_n_ep": 33,
+        "stop_rate": 0.6441,
+        "stop_wlb": 0.6366,
+        "dm_rate": 0.0001,
+        "dm_wlb": 0.0,
+        "cush_rate": 0.3558,
+        "cush_wlb": 0.3483,
+        "lift_rate": 0.3337,
+        "lift_wlb": 0.3264
+      },
+      "pvals": {
+        "stopped_126": {
+          "point_s10": 0.6434236615994713,
+          "point_cmp": 0.6441046059180164,
+          "point_diff": -0.0006809443185451514,
+          "p_value": 0.492,
+          "ci_lo_90": -0.05557176312848728,
+          "ci_hi_90": 0.04972369779602207,
+          "n_episodes_s10": 32,
+          "n_episodes_cmp": 33,
+          "n_episodes_joint": 33,
+          "metric": "stopped_126",
+          "n_s10": 3026,
+          "n_cmp": 11051
+        },
+        "dead_money_126": {
+          "point_s10": 0.0,
+          "point_cmp": 9.04895484571532e-05,
+          "point_diff": -9.04895484571532e-05,
+          "p_value": 0.4485,
+          "ci_lo_90": -0.0002456499566521982,
+          "ci_hi_90": 0.0,
+          "n_episodes_s10": 32,
+          "n_episodes_cmp": 33,
+          "n_episodes_joint": 33,
+          "metric": "dead_money_126",
+          "n_s10": 3026,
+          "n_cmp": 11051
+        },
+        "cushioned_126": {
+          "point_s10": 0.35657633840052877,
+          "point_cmp": 0.35580490453352637,
+          "point_diff": 0.0007714338670024024,
+          "p_value": 0.507,
+          "ci_lo_90": -0.04960281177545966,
+          "ci_hi_90": 0.055575920786894,
+          "n_episodes_s10": 32,
+          "n_episodes_cmp": 33,
+          "n_episodes_joint": 33,
+          "metric": "cushioned_126",
+          "n_s10": 3026,
+          "n_cmp": 11051
+        },
+        "liftoff_126": {
+          "point_s10": 0.3331130204890945,
+          "point_cmp": 0.333725454709981,
+          "point_diff": -0.0006124342208864708,
+          "p_value": 0.5095,
+          "ci_lo_90": -0.04925040010325494,
+          "ci_hi_90": 0.05194171438579543,
+          "n_episodes_s10": 32,
+          "n_episodes_cmp": 33,
+          "n_episodes_joint": 33,
+          "metric": "liftoff_126",
+          "n_s10": 3026,
+          "n_cmp": 11051
+        }
+      },
+      "k1_data": {
+        "stop_diff_pp": 0.07,
+        "dm_diff_pp": 0.01,
+        "cush_diff_pp": 0.08,
+        "stop_beats_5pp": false,
+        "dm_beats_5pp": false,
+        "cush_beats_5pp": false,
+        "stop_p": 0.492
+      },
+      "depth_table": {},
+      "stop_p_for_bh": 0.492
+    }
+  ],
+  "bh": {
+    "operating_stop_out": {
+      "p": 0.492,
+      "q": 0.492,
+      "reject": false
+    },
+    "gross_stop_out": {
+      "p": 0.484,
+      "q": 0.492,
+      "reject": false
+    }
+  }
+}

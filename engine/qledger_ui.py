@@ -163,11 +163,12 @@ def _chip_copy(state: str, n_dates: int,
             f"未评级 · n=0",
         )
     if state == STATE_ACCRUING:
-        remaining = max(0, GRADED_MIN_DATES - n_dates)
-        h_str = f"{horizon_d}d " if horizon_d else ""
+        # Plain-word glance tier: state + n_dates in plain language (DESIGN_DOCTRINE Law 2).
+        # Raw stats ("ACCRUING", fractional counts) are demoted to hover/detail; the chip
+        # carries the human-readable signal: "early evidence, N days of data so far".
         return (
-            f"ACCRUING · {n_dates}/{GRADED_MIN_DATES} dates",
-            f"累积中 · {n_dates}/{GRADED_MIN_DATES} 日期",
+            f"early — {n_dates}d of evidence",
+            f"早期积累 — {n_dates}天数据",
         )
     # GRADED
     if hit_rate is not None:

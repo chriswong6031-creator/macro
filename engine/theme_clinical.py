@@ -742,3 +742,6 @@ if __name__ == "__main__":
         f"theme_clinical: {stats.get('themes_with_data', 0)}/{stats.get('total_themes', 0)} "
         f"themes with data, {stats.get('total_studies_stored', 0)} total studies"
     )
+
+    from lib.procutil import hard_exit  # noqa: PLC0415
+    hard_exit(0)

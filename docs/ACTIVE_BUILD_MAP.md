@@ -2,13 +2,35 @@
 
 # Active Build Map
 
-Generated: 2026-07-12T07:01:29.115728+00:00  |  Open PRs: 7  |  Merged (window): 500  |  base: `8d9759f1fc863e6f401f1bfe0921a00004e645f4`
+Generated: 2026-07-12T09:40:51.079325+00:00  |  Open PRs: 29  |  Merged (window): 500  |  base: `cb33e2f54711a28377d660cf3edf3c974ae01ea6`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #2317 | feat(bilingual): china synthesis read/read_zh — de-slug the feed-intelligence read line at the source | `claude/eloquent-goldberg-55b461` | 2026-07-12 | ⚠ protected:1 |
+| #2390 | test(nw): filter rebalance_pulse fixture-absence gap — heal main-red test_full_composition_shape | `claude/heal-ws-fixture` | 2026-07-12 | — |
+| #2389 | feat(ird-w2): International Risk Desk engines — EM stress, DY contagion, CB desk, DXY smile, velocity boards | `claude/ird-w2-engines` | 2026-07-12 | ⚠ protected:4 |
+| #2387 | fix(til): wire W9/W10/W11 collect-lane organs — close 3 dead-wire dag divergences | `feat/til-collect-lane-wiring` | 2026-07-12 | ⚠ protected:3 |
+| #2386 | feat(rotation): RC-R14 China — rotation-event detector port + connect-flow context (display-tier, operator pull-forward) | `claude/rc-cn-rotation` | 2026-07-12 | ⚠ protected:4 |
+| #2385 | fix(ci): filter expected rebalance_pulse gap in test_full_composition_shape (unbreaks neural-web-core on all PRs) | `fix/world-state-rebalance-pulse-gap` | 2026-07-12 | — |
+| #2384 | feat(hk-baskets): factor-split lenses — platforms / tech hardware / miners [RATIFICATION PENDING] | `claude/hk-basket-factor-splits` | 2026-07-12 | DRAFT |
+| #2383 | feat(metabolism): v7 R-V7-7 — audit-reject remediation loop, bounded then parked | `claude/metabolism-audit-remediation` | 2026-07-12 | ⚠ protected:4 |
+| #2382 | fix(nw): declare dormant-armed lobes honestly — park review-log + contradictions-ledger SLAs at 9999 | `fix/nw-dormant-lobe-slas` | 2026-07-12 | ⚠ protected:1 |
+| #2381 | feat(nw): rotation-events world_state lobe + synapse registration for the rotation family (RC deep-integration) | `claude/rc-nw-wiring` | 2026-07-12 | ⚠ protected:2 |
+| #2380 | fix(allocation): region-aware playbook links + basket-name map (HK/CN/CA 404s) | `claude/alloc-region-links-fix` | 2026-07-12 | — |
+| #2379 | fix(nw-health): weekend-aware SLA, as_of rollup unpinning, staleness_from override, placeholder rollup | `fix/nw-health-staleness-semantics` | 2026-07-12 | ⚠ protected:3 |
+| #2378 | fix(deploy): terminal-data-setup installs wrapper from vendored terminal-refresh.sh (stop heredoc clobber of live nightly refresh) | `claude/nice-lalande-c56dd8` | 2026-07-12 | — |
+| #2377 | feat(metabolism): v7 PR audit — adversarial code review gate before autonomous merge (R-V7-1..6) | `claude/metabolism-pr-audit` | 2026-07-12 | ⚠ protected:4 |
+| #2376 | feat(rlt): RLT-R13 — liquidity quality-state truthfulness: v1.1 lobe mapping, flag-accurate summaries, weekly-aware WALCL stale badge | `claude/focused-meitner-f55ac5` | 2026-07-12 | ⚠ protected:1 |
+| #2375 | fix(rotation): collapse the Rotation Events rail — severity-sorted, 4 visible + View-all overlay | `claude/rc-events-collapse` | 2026-07-12 | — |
+| #2373 | fix(altdata): collector rot + signal-construction hygiene sweep (dead feeds, pagination, smart-money list, z-score floors, windows) | `claude/altdata-signal-hygiene` | 2026-07-12 | ⚠ protected:1 |
+| #2372 | fix(altdata-brain): enforce LLM de-escalation-only law + correct false Wilson de-dup comments | `claude/altdata-brain-govern` | 2026-07-12 | ⚠ protected:1 |
+| #2371 | feat(altdata): earnings-call transcript + StockTwits sentiment collectors (data accrual, display wiring deferred) | `claude/altdata-sources-w1` | 2026-07-12 | ⚠ protected:1 |
+| #2370 | feat(ui): flow_velocity upgrade — Terminal stock links, quiet anchors, glance pulse strip | `claude/interesting-yalow-95570c` | 2026-07-12 | — |
+| #2368 | feat(macro): v5 aurora-glass grid — command scorecard + popovers, instrument cards, alerts centre (operator-ratified) | `claude/macro-v5-wiring` | 2026-07-12 | ⚠ CONFLICTING |
+| #2365 | fix(nw): unfreeze dt_contra_state + nasdaq-internals lobes (frozen since 07-06/07-07) | `fix/nw-unfreeze-dtcontra-nasdaq` | 2026-07-12 | ⚠ protected:1 |
+| #2349 | feat(lrv-w3): Leader Radar page complete redesign — aurora-glass UI, early-entry board, pipeline, receipts | `claude/lrv-w3-ui` | 2026-07-12 | — |
+| #2317 | feat(bilingual): china synthesis read/read_zh — de-slug the feed-intelligence read line at the source | `claude/eloquent-goldberg-55b461` | 2026-07-12 | ⚠ CONFLICTING / ⚠ protected:1 |
 | #2129 | prereg(w8b) [DO NOT MERGE — OPERATOR RATIFICATION REQUIRED (FT-R7)]: macro-prior entries for AI-capex complex baskets | `claude/turn-sense-w8b` | 2026-07-10 | DRAFT |
 | #2098 | research(entry-stack): S-SQ def-4 variant pre-registration (DT-R22) — DRAFT, execution gated on Fable §APPROVAL | `claude/sharp-almeida-8d4349` | 2026-07-10 | — |
 | #1888 | test(mri): claims synthetic vintages to raw ALFRED persons scale (~200k) | `claude/nfp-claims-unit-fix` | 2026-07-07 | DRAFT |
@@ -20,12 +42,110 @@ Generated: 2026-07-12T07:01:29.115728+00:00  |  Open PRs: 7  |  Merged (window):
 
 ## File Collisions
 
-_No file collisions detected among open PRs._
+| PR A | PR B | Shared files | Files |
+|------|------|-------------|-------|
+| #2383 | #2377 | 13 ⚠ | `.github/workflows/ci.yml`, `.github/workflows/metabolism-audit.yml`, `config/capability_manifest.yml`, `config/metabolism_budget.yml`, `docs/METABOLISM_ARMING_CHECKLIST.md`, `engine/metabolism/audit.py`, `engine/neuralweb/governance.py`, `research/METABOLISM_V7_PR_AUDIT_BY_FABLE.md` +5 more |
+| #2389 | #2386 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
+| #2389 | #2381 | 2 ⚠ | `config/synapse.yml`, `engine/neuralweb/world_state.py` |
+| #2389 | #2379 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
+| #2387 | #2386 | 2 ⚠ | `config/dag.yml`, `config/synapse.yml` |
+| #2386 | #2379 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
+| #2390 | #2385 | 1 | `tests/test_world_state.py` |
+| #2390 | #2381 | 1 | `tests/test_world_state.py` |
+| #2389 | #2387 | 1 ⚠ | `config/synapse.yml` |
+| #2389 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2389 | #2382 | 1 ⚠ | `config/synapse.yml` |
+| #2389 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2389 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2389 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2389 | #2371 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2389 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2389 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2387 | #2382 | 1 ⚠ | `config/synapse.yml` |
+| #2387 | #2381 | 1 ⚠ | `config/synapse.yml` |
+| #2387 | #2379 | 1 ⚠ | `config/synapse.yml` |
+| #2386 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2386 | #2382 | 1 ⚠ | `config/synapse.yml` |
+| #2386 | #2381 | 1 ⚠ | `config/synapse.yml` |
+| #2386 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2386 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2386 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2386 | #2371 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2386 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2386 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2385 | #2381 | 1 | `tests/test_world_state.py` |
+| #2383 | #2379 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2383 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2383 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2383 | #2371 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2383 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2383 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2382 | #2381 | 1 ⚠ | `config/synapse.yml` |
+| #2382 | #2379 | 1 ⚠ | `config/synapse.yml` |
+| #2381 | #2379 | 1 ⚠ | `config/synapse.yml` |
+| #2379 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2379 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2379 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2379 | #2371 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2379 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2379 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2377 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2377 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2377 | #2371 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2377 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2377 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2373 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2373 | #2371 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2373 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2373 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2372 | #2371 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2372 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2372 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2371 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2371 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #2365 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #2388 | research(long-hold): Long-Hold Lobe brainstorm — paper as-received + adjudication (LHB-R1..R11) | 2026-07-12 |
+| #2374 | research(species): land stranded W5 S10 phase-0 pre-registration (Margin-Inflection Reclaim) | 2026-07-12 |
+| #2369 | fix(qledger): cluster-honest Wilson CI — compute LB on independent date clusters, not correlated obs | 2026-07-12 |
+| #2367 | feat(tech-lab): combo miner — multi-signal cross-timeframe backtests, Combos tab, working builder | 2026-07-12 |
+| #2366 | feat(cortex): try metered CORTEX_ANTHROPIC_API_KEY rung before shared OAuth when present | 2026-07-12 |
+| #2364 | feat(causal): W28 operator cycle — entry_quality family live, CHF-R5 per-date collapse, pack renderer fixes + battery/brainstorm artifacts | 2026-07-12 |
+| #2363 | feat(rlt): W1 PR-B — named TGA impulse + liquidity salience on recovery panel (RLT-R4/R5) | 2026-07-12 |
+| #2362 | feat(rlt): W1 PR-A — US rebalance calendar + Rebalance Pulse organ (RLT-R1/R2) | 2026-07-12 |
+| #2361 | fix(rlt-r6): drop dead watch-lane enrich, sector_score field, add ordering dep comment | 2026-07-12 |
+| #2360 | feat(rlt): W1 PR-C — broad index ETF primary-flow proxy (RLT-R3) | 2026-07-12 |
+| #2359 | feat(ui): port top-accent state idiom to per-stock detail pages (#2347 follow-up) | 2026-07-12 |
+| #2358 | feat(rotation): Rotation Command W2 — replay census, S1/S2 verdicts (ACCRUE), honest late-ruler (RC-R8/R9/R10) | 2026-07-12 |
+| #2356 | ops(vps): run terminal-data nightly under a low-priority systemd scope | 2026-07-12 |
+| #2355 | fix(experiments): come-back sweep 2026-07-12 — clear 7 ready flags + measuring false-ready + dead forward-ledger stamper | 2026-07-12 |
+| #2354 | feat(t0): T0 beta turn indicator on congress + pick-lab; fix pick-lab snapshot producer NameError | 2026-07-12 |
+| #2353 | feat(rlt): W1 PR-C — broad index ETF primary-flow proxy (RLT-R3) | 2026-07-12 |
+| #2352 | feat(rlt): W1 PR-D — standout board sector-stance honesty chips (RLT-R6) | 2026-07-12 |
+| #2351 | prereg(rotation): S1/S2 frozen rulers — RC-R9 pre-registration (before any outcome is computed) | 2026-07-12 |
+| #2350 | docs(rlt): intake regime-shift postmortem memo + RLT-R4b TGA rebuild watch | 2026-07-12 |
+| #2348 | docs(rlt): Rebalance & Liquidity Transmission masterplan (W0) — RLT-R1..R12 | 2026-07-12 |
+| #2347 | feat(ui): scorecard state accents move to top gradient stripes (rip-card idiom) | 2026-07-12 |
+| #2346 | feat(settings): remove Contrast toggle, default soft palette for everyone | 2026-07-12 |
+| #2345 | feat(lrv-r1e): wire analyst_saturated from finnhub recommendation-trends — analyst-targets rejected (no rating counts) | 2026-07-12 |
+| #2344 | feat(commodities): sector index + breadth engine + broad commodity roster (P0+P1, data-tier) | 2026-07-12 |
+| #2343 | feat(ird-w1): International Risk Desk substrate — EM OAS ladder, swap lines, IMF WEO, BIS expansion, CB calendar | 2026-07-12 |
+| #2342 | feat(odds): UI overhaul to approved mockup — hero CI band, condition cards, motion, richer chart, onboarding, share card (matrix v1.1 vol_rel) | 2026-07-12 |
+| #2341 | feat(metabolism): v6-W3 newborn metabolism — generic fitness, multi-lobe propose, accountability clock, shadow genesis (R-V6-4..7) | 2026-07-12 |
+| #2340 | fix(tests): w5b integration — exempt data-*-zh carrier attrs from CJK scan; retire china.html sleeve-link assertion | 2026-07-12 |
+| #2339 | feat(metabolism): v6-W2 genesis gauntlet — charter kind + deterministic genesis screen (R-V6-2/3) | 2026-07-12 |
+| #2338 | feat(ui): site-wide themed custom scrollbars | 2026-07-12 |
+| #2337 | fix(ui): scroll-safe help tips everywhere — port #2329 to all 33 .help pages, replace the overflow-clipped hover bridge | 2026-07-12 |
+| #2336 | feat(lrv-w1): LRV-W1 systems wave — wire RS-rank, insider, skew, basket-corr + early_entry + handoff_context | 2026-07-12 |
+| #2335 | fix(collectors): port adjustment-basis guard to regional ETF/index price stores (china/hk/canada/intl/intl_etf) | 2026-07-12 |
+| #2334 | feat(metabolism): v6 lobe genesis — masterplan + W1 wake the scout (R-V6-1..8) | 2026-07-12 |
+| #2333 | docs(intl-risk-desk): International Risk Desk masterplan (W0) — IRD-R1..R13 | 2026-07-12 |
+| #2332 | fix(intel-hub): chip bleed, China Lens removal, View-all lists, scorecard decrowd, posture removal | 2026-07-12 |
+| #2331 | ops(key-pool-probe): dirs-only sparse checkout — cone mode rejects file paths | 2026-07-12 |
 | #2330 | ops(key-pool-probe): sparse checkout + 30m timeout for the self-hosted runner | 2026-07-12 |
 | #2329 | feat(us-stocks): operator UI overhaul — Mag 7 strip fix, ignition compaction, scroll-safe help tips, panel split + copy sweep | 2026-07-12 |
 | #2328 | docs(macro-v5): binding mockup rev2 — command scorecard + popovers, alerts centre, larger sentiment dial | 2026-07-12 |
@@ -489,43 +609,6 @@ _No file collisions detected among open PRs._
 | #1852 | docs(signal-engine): TIERED_CASCADE §10 — G-T2X in the HTF review section | 2026-07-07 |
 | #1851 | feat(gaming): W4 multi-state gaming tape — collectors + nowcast phase-0 (DATA-BLOCKED) | 2026-07-07 |
 | #1850 | research(dispersion): HC-RC-1 — R-1 construction divergence under real co-firing block inference (adjudication pending) | 2026-07-07 |
-| #1849 | fix(mri): anchor gasoline_mom on the CPI reference month, not asof's month | 2026-07-07 |
-| #1848 | data(china): block-trade tape archiver + SW-L1 mapping — F5-01 accrual infra | 2026-07-07 |
-| #1847 | test(legal): ITC-337 exclusion-risk phase-0 — NULL (parser contamination fix) | 2026-07-07 |
-| #1845 | data(options): W5-B signed-tape pilot + resumable backfill state machine (20 names x 60d) | 2026-07-07 |
-| #1844 | data(consumer): TSA daily throughput collector + display product (2019->) | 2026-07-07 |
-| #1841 | research: time-confound re-check queue Phase A — gate amendments (R1-A1, L3-A1) + citation guards | 2026-07-07 |
-| #1839 | research(cycle): CN-HAR-2 prereg — cn_sector analog calibration + forward confirmation | 2026-07-07 |
-| #1838 | research(cycle): HAR-1 analog-retrieval evaluation — promoted_null (Wave 1) | 2026-07-07 |
-| #1837 | research(cycle): FT-OSC-2 prereg — down-only oscillator re-test on post-2026-07 accrual | 2026-07-07 |
-| #1836 | feat(cycle): phase-clock engine + PHASE-CLOCK-1 evaluation (Wave 1, promoted_null) | 2026-07-07 |
-| #1835 | research(cycle-w1): FALS-OSC kill-switch trial — oscillator covariate family NULL | 2026-07-07 |
-| #1834 | fix(heartbeat): wire a working alert channel (dead-man's switch was ringing into a void) | 2026-07-07 |
-| #1833 | feat(stock): flow-to-price on the per-stock page — 13F since-filing + short-flow z-score | 2026-07-07 |
-| #1832 | feat(mri): Package D — Release Radar UI on the macro page | 2026-07-07 |
-| #1831 | feat(mri): Package C — nightly release-forecast producer + forward ledger + NW registration | 2026-07-07 |
-| #1830 | feat(heartbeat): committed-data-freeze tripwire (catch silent stale-data freezes) | 2026-07-07 |
-| #1829 | feat(cycle): honest headline — hazard-first P(turn≤6m), overdue past-tense ref, fired-falsifier demotion | 2026-07-07 |
-| #1828 | research(mri): Package E — release playbook: descriptive surprise→market transmission study | 2026-07-07 |
-| #1827 | chore(experiments): stock-top-hazard arm — conditional come-back clock 2026-10-07 | 2026-07-07 |
-| #1826 | feat(prophet): W1 — management engine + origination bridge + display artifacts (display-only) | 2026-07-07 |
-| #1825 | feat(mri): Package B — release_forecast engine (CPI/NFP pre-print models) + PIT backtest | 2026-07-07 |
-| #1824 | feat(cpi-lake): monthly oscillator PIT columns + Wave 0 preregistration | 2026-07-07 |
-| #1823 | fix(pipeline): --autostash rebase-pushes so collected data can't be stranded (China/US data freeze) | 2026-07-07 |
-| #1822 | feat(mri): Package A — Macro Release Intelligence masterplan + data spine | 2026-07-07 |
-| #1821 | fix(measurement): replace hardcoded stamp count with derived grand total | 2026-07-07 |
-| #1820 | feat(options): Package E — strike×expiry matrix engine + one-shot publisher | 2026-07-07 |
-| #1819 | feat(committee): translate the dense-web small nodes to Chinese | 2026-07-07 |
-| #1818 | fix(alerts): watchlist sentinel — adapt fetch to live two-table Supabase schema, require operator UUID | 2026-07-07 |
-| #1817 | fix(neural-web): heal registry-count drift 226->232 (momoedge Package A) | 2026-07-07 |
-| #1816 | feat(gex): Package C — gex_structure_state emitter (6-state regime, display-only) | 2026-07-07 |
-| #1815 | feat(options): Package A — options sensor contract (schemas + chain-heat aggregator) | 2026-07-07 |
-| #1814 | feat(committee): new settings-gear menu + Chinese node labels + reconcile MDXAuth | 2026-07-07 |
-| #1813 | feat(neural-web): 'all nodes' toggle restores the full dense synapse web | 2026-07-07 |
-| #1812 | ops(live-flow): pin liveflow launchd lane to dedicated deploy worktree | 2026-07-07 |
-| #1811 | research(momoedge): competitive RE + master build docket (options terminal + Oracle) | 2026-07-07 |
-| #1810 | feat(alerts): watchlist buy-zone sentinel — Supabase watchlist x buy-zone enter-detection -> alert center + Discord (B6) | 2026-07-07 |
-| #1809 | feat(nasdaq-internals): archetype-group taxonomy + descriptive internals artifact (TI-R2/R3/R5) | 2026-07-07 |
 
 ---
 

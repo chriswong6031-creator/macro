@@ -107,6 +107,13 @@ on:
       - "tests/test_risk_radar_recovery.py"
       - "tests/test_canon.py"
       - "tests/test_whitehouse_w5.py"
+      # Winner Autopsy Lab: every case file under research/winners/cases/ must parse
+      # against winner_case.v1 (engine/winner_autopsy.py is already covered by engine/**).
+      - "research/winners/cases/**"
+      - "scripts/research/build_winner_autopsy.py"
+      - "admin/long_hold.py"
+      - "tests/test_winner_autopsy.py"
+      - "tests/test_admin_long_hold.py"
       # IGN WB: Ignition Radar — risk-ON mirror of the Risk Radar.
       # engine/ignition_radar.py + ignition_audit.py US arm + template card.
       - "engine/ignition_radar.py"
@@ -341,6 +348,13 @@ on:
       # T0 beta turn indicator (display-only): engine module + build wiring + test suite.
       - "engine/t0_indicator.py"
       - "tests/test_t0_indicator.py"
+      # IFT-V2 stance engine (dealer_context + stance in engine/intraday_flow.py):
+      # engine file already covered by engine/**, but test files need explicit paths
+      # so a test-only change still re-runs the guard.
+      - "engine/intraday_flow.py"
+      - "scripts/build_intraday_flow.py"
+      - "tests/test_intraday_flow.py"
+      - "tests/test_intraday_flow_stance.py"
   workflow_dispatch:
 
 permissions:
@@ -609,6 +623,7 @@ jobs:
           tests/test_risk_lead_lag.py tests/test_anticipation.py
           tests/test_risk_radar_market_catalysts.py tests/test_risk_radar_recovery.py
           tests/test_canon.py tests/test_whitehouse_w5.py
+          tests/test_winner_autopsy.py tests/test_admin_long_hold.py
           tests/test_board_ledger.py tests/test_grade_us_board.py
           tests/test_options_stamp.py tests/test_sector_pulse_wiring.py
           tests/test_news_page_render.py tests/test_china_lens_hub.py
@@ -623,7 +638,9 @@ jobs:
           tests/test_statement_tape.py
           tests/test_backfill_options_flow.py
           tests/test_rlt_sector_stance_enrich.py
-          tests/test_t0_indicator.py -q
+          tests/test_t0_indicator.py
+          tests/test_intraday_flow.py
+          tests/test_intraday_flow_stance.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)
@@ -702,7 +719,7 @@ jobs:
       - name: factor boundary selftest (guard fires on planted violations)
         run: python3 scripts/check_factor_boundaries.py --selftest
       - name: synapse read-gate unit tests
-        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py -q
+        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py tests/test_delivery_waterfall.py -q
       - name: factor deescalation shadow + boundary guard tests
         run: python -m pytest tests/test_factor_deescalation_shadow.py -q
 
@@ -1001,6 +1018,22 @@ jobs:
       - name: broad ETF flow proxy unit tests
         run: python -m pytest tests/test_broad_etf_flows.py -q
 
+  qledger-cluster-honest-ci:
+    # altdata-diagnosis PR-A: cluster-honest Wilson CI fix.
+    # Proves that _aggregate and promotion_check compute wilson_ci_low on n_dates
+    # (independent date clusters), not on the correlated n_obs, per the
+    # ticker-cluster time-confound law and the altdata_brain.py article3 convention.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: qledger cluster-honest Wilson CI unit tests
+        run: python -m pytest tests/test_qledger_cluster_honest_ci.py -q
+
   house-law-registry:
     # Meta-guard: verifies config/house_law_checks.yml is complete and honest.
     # Three checks in sequence:
@@ -1195,7 +1228,9 @@ jobs:
         # pandas/numpy: the metabolism v2 suite includes tests/test_metabolism.py, whose
         # TestAdaptCortexAttention imports engine/neuralweb/query.py (numpy+pandas). This
         # job is the ONLY CI runner of that suite — importorskip would silence the tests.
-        run: pip install pytest pandas numpy pyyaml
+        # anthropic: test_cortex.py's rate-limit resilience test imports anthropic at
+        # runtime to patch anthropic.Anthropic.__init__ (real import, not mocked).
+        run: pip install pytest pandas numpy pyyaml anthropic
       - name: capability-redline selftest (planted secret caught; clean real files pass)
         run: python3 scripts/check_capability_redline.py --selftest
       - name: capability-redline live scan (hard fail on secret values or value-capture)
@@ -1216,6 +1251,8 @@ jobs:
         run: python -m pytest tests/test_metabolism_v4_w1_dispatch.py tests/test_metabolism_buildlane.py -q
       - name: llm auth waterfall + multi-key failover suite
         run: python -m pytest tests/test_llm_auth.py -q
+      - name: cortex provider routing + tool loop suite
+        run: python -m pytest tests/test_cortex.py -q
       - name: metabolism w2-pulse suite (verify scan mode + dream invocability)
         run: python -m pytest tests/test_metabolism_w2_pulse.py -q
       - name: metabolism v4 w5 suite (steering memory + applier)

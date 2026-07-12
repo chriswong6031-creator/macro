@@ -1,0 +1,1 @@
+{"schema":"metabolism.heartbeat.v1","ts":"2026-07-12T11:24:10+00:00","run_id":"29188767586","workflow":"metabolism-heartbeat","sha":"dd43c27ebc69359994be25878f1210a68c17c9f7","actor":"chriswong6031-creator","autonomy_paused_var":"false","phase":"P0_inert","note":"Phase 0 liveness probe \u2014 no autonomous action taken"}

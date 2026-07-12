@@ -39,7 +39,7 @@
 {% macro memberrow(m, sbt, sid, i, show=False) -%}
 {% set seat = sbt.get(m.ticker) %}{% set cc = confcls(m.vel, seat) %}
 <tr class="mrow {{ cc }}{{ ' show' if show }}" data-sector="{{ sid }}">
-  <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}<a href="{{ ('hk_lookup.html#' if m.ticker.endswith('.HK') else 'china_lookup.html#') ~ m.ticker }}">{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></a></td>
+  <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}<a href="https://app.mastermind-x.com/terminal?sym={{ m.ticker }}&amp;from=macro" target="_blank" rel="noopener">{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></a></td>
   <td>{% if seat %}<span class="seat {{ seat.dir }}" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 {{ '%+.1f'|format(seat.inst_net_yi) }}亿 <span class="ss">{{ seat.n_buy }}/{{ seat.n_sell }}</span></span>{% endif %}</td>
   <td></td>
   <td>{{ rate(m.rate_4wk) }}</td>
@@ -216,9 +216,54 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
 /* HK own-% mini bar */
 .ownbar{display:inline-block;width:46px;height:6px;border-radius:999px;background:var(--grid);position:relative;vertical-align:middle}
 .ownbar i{position:absolute;left:0;top:0;height:100%;border-radius:999px;background:var(--blue)}
+/* ── stock links: quiet by default (no UA blue/underline), Terminal ↗ affordance on hover ── */
+table.board a{color:inherit;text-decoration:none}
+.snm a{transition:color .15s}
+.snm a::after{content:"↗";font-size:10px;font-weight:700;color:var(--blue);opacity:0;margin-left:5px;transition:opacity .15s}
+.snm a:hover{color:var(--blue)}
+.snm a:hover::after{opacity:1}
+.snm a:hover .tk{color:var(--blue)}
+/* ── glance pulse strip: today's answer in four chips ── */
+.pulse{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:16px 0 2px}
+.pchip{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:12px 15px 13px}
+.pchip::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--muted),transparent);opacity:.45;pointer-events:none}
+.pchip.p-in::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent));opacity:1}
+.pchip.p-out::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent));opacity:1}
+html[data-lang="zh"] .pchip.p-in::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent))}
+html[data-lang="zh"] .pchip.p-out::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent))}
+.pchip[data-goto]{cursor:pointer;transition:transform .16s ease,border-color .16s,box-shadow .16s}
+.pchip[data-goto]:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--blue) 45%,var(--grid));box-shadow:0 4px 14px rgba(16,24,40,.08)}
+.pk{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:7px}
+.pnm{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em;line-height:1.3}
+.pm{display:flex;align-items:center;gap:9px;margin-top:8px;flex-wrap:wrap}
+.psub{font-size:11px;color:var(--faint);margin-top:7px;line-height:1.45}
+/* ── panel / channel-card top accent stripes (rip-card idiom) ── */
+.panel{position:relative}
+.panel::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),color-mix(in srgb,var(--blue) 20%,transparent));opacity:.8;pointer-events:none;z-index:1}
+.vcard{overflow:hidden}
+.vcard::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--muted),transparent);opacity:.45;pointer-events:none}
+.vcard.st-in::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent));opacity:1}
+.vcard.st-out::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent));opacity:1}
+.vcard.st-mid::before{background:linear-gradient(90deg,var(--amber),color-mix(in srgb,var(--amber) 30%,transparent));opacity:1}
+html[data-lang="zh"] .vcard.st-in::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent))}
+html[data-lang="zh"] .vcard.st-out::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent))}
+/* ── board affordances: member-row hover, sort-direction arrows, drill flash ── */
+.mrow:hover td{background:color-mix(in srgb,var(--blue) 7%,var(--card))}
+table.board th[data-c]:hover{color:var(--ink)}
+table.board th.s-asc::after{content:" ▲";font-size:8px;color:var(--blue)}
+table.board th.s-desc::after{content:" ▼";font-size:8px;color:var(--blue)}
+@keyframes rowflash{from{background-color:color-mix(in srgb,var(--blue) 22%,transparent)}to{background-color:transparent}}
+tr.flash>td{animation:rowflash 1.5s ease both}
+/* ── ? method tip trigger ── */
+.qm{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--grid);background:var(--card);color:var(--muted);font-size:11px;font-weight:700;cursor:help;flex:none;user-select:none}
+.qm:hover{color:var(--blue);border-color:var(--blue)}
+/* body-appended [data-tip-en] popover (wired in theme.js) — this page doesn't ship
+   theme.css, so its box style is restated here with the page's own tokens */
+[data-tip-en]{cursor:help}
+.i18n-tip-pop{display:none;position:fixed;z-index:12500;max-width:min(320px,calc(100vw - 24px));padding:7px 10px;border-radius:8px;background:var(--card);border:1px solid var(--grid);box-shadow:0 4px 16px rgba(0,0,0,.18);font-size:11px;font-weight:500;line-height:1.5;color:var(--text);text-align:left;white-space:normal}
 .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:1000px}
 .foot b{color:var(--muted)}
-@media (prefers-reduced-motion: reduce){.vbar-fill,.mrow.show td{animation:none}}
+@media (prefers-reduced-motion: reduce){.vbar-fill,.mrow.show td,tr.flash>td,.pchip[data-goto]{animation:none;transition:none}}
 </style>
 </head>
 <body>
@@ -239,19 +284,70 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   </div>
 
   <div class="h1">🌊 {{ t('Capital Flow Velocity','资金流速') }}</div>
-  <div class="intro">{{ t('Where China’s big money is rotating — A-share sectors ranked by 主力 (large-order) flow velocity, drilled into the individual names driving each, with the question at every name: <b>does the institution agree?</b> Cross-border Stock-Connect flows sit below, as context.','中国大资金在向哪里轮动——A股板块按主力（大单）资金流速排序，下钻至驱动它们的个股，并在每只个股追问：<b>机构是否认同？</b> 跨境沪深港通资金作为背景置于下方。') }}</div>
-  <div class="note">{{ t('Display-only positioning lens — flow is <b>never</b> scored into an allocation signal. <b>Velocity</b> = standardized net-flow rate (cumulative-flow drift ÷ its own vol); <b>acceleration</b> = its 2nd derivative. <b>Confluence</b> is a binary agree/diverge read where 主力 flow and Dragon-Tiger institutional seats land on the same name — context, not a manufactured score.','仅供定位参考——资金流向<b>从不</b>计入配置信号。<b>流速</b>＝标准化净流入率（累计流向漂移 ÷ 自身波动）；<b>加速度</b>＝其二阶导。<b>共振</b>＝当主力资金与龙虎榜机构席位落在同一只个股上的二元一致/背离判断——仅为背景，非人造分值。') }}</div>
+  <div class="intro">{{ t('Where China’s big money is rotating — sectors ranked by how fast large-order money moves, drilled to the names driving each, with one question per name: <b>does the institution agree?</b>','中国大资金在向哪里轮动——按主力资金流速排序板块，下钻至驱动个股，每只个股追问：<b>机构是否认同？</b>') }}</div>
+
+  {# ---- glance pulse: today's answer in four chips, computed at render from the
+     same fields the board shows (no stored/ranked score is manufactured) ---- #}
+  {% set sbt = snap.seats_by_ticker or {} %}
+  {% set leaders = ((snap.ashare_names.inflow[:10] + snap.ashare_names.outflow[:10])|sort(attribute='vel', reverse=true)) if snap.ashare_names else [] %}
+  {% macro conftally(m, cns, sbt) %}{% if m.ticker not in cns.seen %}{% set cns.seen = cns.seen + [m.ticker] %}{% set st = sbt.get(m.ticker) %}{% if st and m.vel is not none %}{% if (m.vel>=0.5 and st.dir=='buy') or (m.vel<=-0.5 and st.dir=='sell') %}{% set cns.agree = cns.agree + 1 %}{% elif (m.vel>=0.5 and st.dir=='sell') or (m.vel<=-0.5 and st.dir=='buy') %}{% set cns.div = cns.div + 1 %}{% endif %}{% endif %}{% endif %}{% endmacro %}
+  {% if snap.ashare_sectors and snap.ashare_sectors.rows %}
+  {% set _rv = snap.ashare_sectors.rows|rejectattr('vel','none')|list %}
+  {% if _rv %}
+  {% set topin = (_rv|sort(attribute='vel', reverse=true))|first %}
+  {% set topout = (_rv|sort(attribute='vel'))|first %}
+  {% set cns = namespace(agree=0, div=0, seen=[]) %}
+  {% for r in snap.ashare_sectors.rows %}{% for m in (r.members or []) %}{{ conftally(m, cns, sbt) }}{% endfor %}{% endfor %}
+  {% for m in leaders %}{{ conftally(m, cns, sbt) }}{% endfor %}
+  <div class="pulse">
+    {% if topin.vel > 0 %}
+    <div class="pchip p-in" data-goto="{{ topin.id }}" role="button" tabindex="0">
+      <div class="pk">▲ {{ t('Fastest inflow','流入最快') }}</div>
+      <div class="pnm">{{ t(topin.name, topin.name_zh) }}</div>
+      <div class="pm">{{ vbar(topin.vel, 'md', 1) }} {{ vstate(topin.state, topin.state_zh, topin.vel) }}</div>
+    </div>
+    {% else %}
+    <div class="pchip"><div class="pk">▲ {{ t('Fastest inflow','流入最快') }}</div><div class="pnm">—</div><div class="psub">{{ t('no sector inflowing this week','本周暂无板块净流入') }}</div></div>
+    {% endif %}
+    {% if topout.vel < 0 %}
+    <div class="pchip p-out" data-goto="{{ topout.id }}" role="button" tabindex="0">
+      <div class="pk">▼ {{ t('Fastest outflow','流出最快') }}</div>
+      <div class="pnm">{{ t(topout.name, topout.name_zh) }}</div>
+      <div class="pm">{{ vbar(topout.vel, 'md', 2) }} {{ vstate(topout.state, topout.state_zh, topout.vel) }}</div>
+    </div>
+    {% else %}
+    <div class="pchip"><div class="pk">▼ {{ t('Fastest outflow','流出最快') }}</div><div class="pnm">—</div><div class="psub">{{ t('no sector outflowing this week','本周暂无板块净流出') }}</div></div>
+    {% endif %}
+    <div class="pchip">
+      <div class="pk">🏛 {{ t('Do institutions agree?','机构是否认同？') }}</div>
+      <div class="pnm">{% if cns.agree or cns.div %}{{ t('agree on','一致') }} {{ cns.agree }} · {{ t('diverge on','背离') }} {{ cns.div }}{% else %}{{ t('no overlap today','今日无交集') }}{% endif %}</div>
+      <div class="psub">{{ t('board names where flow meets a Dragon-Tiger institutional seat','榜上资金与龙虎榜机构席位相遇的个股') }}</div>
+    </div>
+    {% set sb = ((snap.aggregate or [])|selectattr('live')|rejectattr('vel_primary','none')|list or [none])|first %}
+    {% if sb %}
+    <div class="pchip {{ 'p-in' if sb.vel_primary >= 0.5 else ('p-out' if sb.vel_primary <= -0.5 else '') }}">
+      <div class="pk">🛰 {{ t('Southbound','南向资金') }}</div>
+      <div class="pm" style="margin-top:2px">{{ vbar(sb.vel_primary, 'md', 3) }} {{ vstate(sb.state, sb.state_zh, sb.vel_primary) }}</div>
+      <div class="psub">{{ t('mainland money into HK · 1-week rate','内地资金流入港股 · 1周速率') }}</div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <div class="note">{{ t('Display-only context — flow is <b>never</b> scored into an allocation signal. How each number is built lives behind the <b>?</b> and in the footer.','仅供参考背景——资金流向<b>从不</b>计入配置信号。各项指标的构建方法见 <b>?</b> 提示与页脚。') }}</div>
   <div class="legend">
     <span class="lg"><span class="vbar vbar-sm"><span class="vbar-track"><span class="vbar-fill pos" style="width:36%"></span></span></span> <b>{{ t('inflow','流入') }}</b></span>
     <span class="lg"><span class="vbar vbar-sm"><span class="vbar-track"><span class="vbar-fill neg" style="width:36%"></span></span></span> <b>{{ t('outflow','流出') }}</b> <span style="color:var(--faint)">{{ t('· ±3σ fills the half-track','· ±3σ 填满半轨') }}</span></span>
     <span class="lg"><i class="cdot conf-buy"></i><i class="cdot conf-sell"></i> <b>{{ t('confluence','共振') }}</b> <span style="color:var(--faint)">{{ t('flow + institutions agree','资金与机构一致') }}</span></span>
     <span class="lg"><i class="cdot conf-diverge"></i> <b>{{ t('divergence','背离') }}</b> <span style="color:var(--faint)">{{ t('they disagree','二者相左') }}</span></span>
+    <span class="lg"><b style="color:var(--blue)">↗</b> <span style="color:var(--faint)">{{ t('click a name to open it in the Terminal','点击个股在终端中打开') }}</span></span>
   </div>
 
   {# ============================ FLOW MAP (PRIMARY) ============================ #}
   {% if snap.ashare_sectors or snap.hk_names %}
-  {% set sbt = snap.seats_by_ticker or {} %}
   <div class="sec-h"><h2>🧭 {{ t('Flow Map','资金流向图') }}</h2>
+    <span class="qm" data-tip-en="Velocity = standardized net-flow rate: the drift of cumulative net flow divided by its own volatility, so ±3σ fills a half-track. Acceleration = the trailing slope of that velocity. Confluence = a render-time agree/diverge read joining large-order flow direction and Dragon-Tiger institutional-seat direction on the same name — context, never a manufactured score." data-tip-zh="流速＝标准化净流入率：累计净流向的漂移除以自身波动，±3σ 填满半轨。加速度＝该流速的滚动斜率。共振＝渲染期将主力资金方向与龙虎榜机构席位方向相连的一致/背离判断——仅为背景，绝非人造分值。" role="button" tabindex="0" aria-label="method">?</span>
     <span class="sub">{{ t('sector → member names → institutional confluence · weekly · as of','板块 → 成分个股 → 机构共振 · 周度 · 截至') }} {{ snap.as_of }}</span>
     <span style="margin-left:auto" class="mkt-toggle" role="group" aria-label="Market">
       <button data-mkt="a" aria-pressed="true">{{ t('A-Share','沪深') }}</button>
@@ -280,8 +376,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
         <tbody>
         {# universe-wide leaderboard — pinned, default-expanded pseudo-sector (the global
            "biggest movers across all names" view, alongside the attributable sector drill-downs) #}
-        {% if snap.ashare_names %}
-        {% set leaders = (snap.ashare_names.inflow[:10] + snap.ashare_names.outflow[:10])|sort(attribute='vel', reverse=true) %}
+        {% if leaders %}
         <tr class="sector-row allnames open" data-sector="__all__" aria-expanded="true">
           <td class="snm"><span class="chev">▸</span> 🏆 {{ t('All A-share names','全市场A股') }}</td>
           <td><span class="cat">{{ t('universe','全域') }}</span></td>
@@ -297,7 +392,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="{{ r.id }}" aria-expanded="false">
             <td class="snm"><span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}</td>
             <td><span class="cat">{{ td(r.category) if r.category else '·' }}</span></td>
-            <td>{{ r.n_members }}{% if r.inst_attention %}<span class="attn" title="members with institutional-seat activity">{{ r.inst_attention }} {{ t('inst','机构') }}</span>{% endif %}</td>
+            <td>{{ r.n_members }}{% if r.inst_attention %}<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股">{{ r.inst_attention }} {{ t('inst','机构') }}</span>{% endif %}</td>
             <td>{{ rate(r.rate_4wk) }}</td>
             <td style="text-align:center">{{ vbar(r.vel, 'md', loop.index) }}</td>
             <td>{{ accel(r.accel) }}</td>
@@ -342,14 +437,14 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr></thead>
           <tbody>
           {% for r in (h.buying or []) %}
-          <tr><td class="snm"><a href="hk_lookup.html#{{ r.ticker }}">{{ r.name or r.ticker }}<span class="tk">{{ r.ticker }}</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym={{ r.ticker }}&amp;from=macro" target="_blank" rel="noopener">{{ r.name or r.ticker }}<span class="tk">{{ r.ticker }}</span></a></td>
             <td style="text-align:left">{{ vstate('accumulating','加仓', r.chg5_pct) }}</td>
             <td>{{ rate(r.chg5_pct) }}</td>
             <td><span class="ownbar"><i style="width:{{ [ (r.own_pct or 0)/30*100, 100]|min |round }}%"></i></span> {{ '%.1f'|format(r.own_pct) if r.own_pct is not none else '·' }}</td>
             <td>HK${{ r.hold_b }}B</td></tr>
           {% endfor %}
           {% for r in (h.selling or []) %}
-          <tr><td class="snm"><a href="hk_lookup.html#{{ r.ticker }}">{{ r.name or r.ticker }}<span class="tk">{{ r.ticker }}</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym={{ r.ticker }}&amp;from=macro" target="_blank" rel="noopener">{{ r.name or r.ticker }}<span class="tk">{{ r.ticker }}</span></a></td>
             <td style="text-align:left">{{ vstate('distributing','减仓', r.chg5_pct) }}</td>
             <td>{{ rate(r.chg5_pct) }}</td>
             <td><span class="ownbar"><i style="width:{{ [ (r.own_pct or 0)/30*100, 100]|min |round }}%"></i></span> {{ '%.1f'|format(r.own_pct) if r.own_pct is not none else '·' }}</td>
@@ -370,7 +465,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
     <span class="sub">{{ t('cross-border context · mainland ↔ HK aggregate flow · daily 1w / 1m / 3m velocity','跨境背景 · 内地 ↔ 香港整体资金 · 日度 1周 / 1月 / 3月流速') }}</span></div>
   <div class="vgrid">
     {% for c in snap.aggregate %}
-    <div class="vcard {{ 'frozen' if not c.live }}">
+    <div class="vcard {{ 'frozen' if not c.live }}{% if c.live and c.vel_primary is not none %} {{ 'st-in' if c.vel_primary >= 0.5 else ('st-out' if c.vel_primary <= -0.5 else 'st-mid') }}{% endif %}">
       <div class="vcard-top">
         <h3>{{ t(c.label, c.label_zh) }}</h3>
         {% if c.live %}{{ vstate(c.state, c.state_zh, c.vel_primary) }}{% else %}<span class="vstate mid">{{ t('frozen','已停更') }}</span>{% endif %}
@@ -429,6 +524,21 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   }
   btns.forEach(function(b){b.addEventListener('click',function(){setMkt(b.getAttribute('data-mkt'));});});
   setMkt(H.getAttribute('data-market')||'a');
+  // ---- pulse chips: click drills straight into that sector's lane ----
+  document.querySelectorAll('.pchip[data-goto]').forEach(function(ch){
+    function go(){
+      var id=ch.getAttribute('data-goto');
+      var row=document.querySelector('tr.sector-row[data-sector="'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'"]');
+      if(!row) return;
+      if(H.getAttribute('data-market')!=='a') setMkt('a');
+      if(!row.classList.contains('open')) row.click();
+      row.scrollIntoView({behavior:'smooth',block:'center'});
+      row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
+      setTimeout(function(){row.classList.remove('flash');},1600);
+    }
+    ch.addEventListener('click',go);
+    ch.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
+  });
   // ---- column sort (keeps open sectors' members attached to their parent) ----
   document.querySelectorAll('table.board').forEach(function(tbl){
     tbl.querySelectorAll('th[data-c]').forEach(function(th){
@@ -448,6 +558,8 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           return asc?x-y:y-x;
         });
         pin.concat(rest).forEach(function(g){ body.appendChild(g.head); g.kids.forEach(function(k){body.appendChild(k);}); });
+        tbl.querySelectorAll('th[data-c]').forEach(function(o){o.classList.remove('s-asc','s-desc');});
+        th.classList.add(asc?'s-asc':'s-desc');
       });
     });
   });

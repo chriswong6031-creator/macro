@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-12T06:29:50.847312+00:00",
+  "generated_at": "2026-07-12T11:37:11.067364+00:00",
   "ok": true,
   "fail_reasons": [],
   "warnings": [
@@ -8,7 +8,7 @@
   "detail": {
     "today_utc": "2026-07-12",
     "last_trading_day": "2026-07-10",
-    "chains_dir": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/polygon_gex/chains",
+    "chains_dir": "/Users/chriswong/actions-runner-1/_work/macro/macro/data/polygon_gex/chains",
     "chains_latest_date": "2026-07-12",
     "chains_count": 24,
     "chains_age_trading_days": -2,

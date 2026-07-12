@@ -4779,8 +4779,8 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       <div class="eg-subhd">
         <h3><span class="l-en">Trial Budgets by Family</span><span class="l-zh">按族分类的试验预算</span></h3>
         <span class="eg-subhd-meta">
-          <span class="l-en">1120 rows · 118 families</span>
-          <span class="l-zh">1120 行 · 118 个族</span>
+          <span class="l-en">1205 rows · 118 families</span>
+          <span class="l-zh">1205 行 · 118 个族</span>
         </span>
       </div>
       <div class="eg-table-wrap">
@@ -4868,8 +4868,8 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           
           <tr>
             <td class="eg-mono">causal_scan</td>
-            <td class="eg-num">25</td>
-            <td class="eg-mono eg-ts">2026-07-09T19:03:56</td>
+            <td class="eg-num">110</td>
+            <td class="eg-mono eg-ts">2026-07-12T08:42:03</td>
           </tr>
           
           <tr>
@@ -5506,8 +5506,8 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       </table>
       </div>
       <div class="eg-footnote">
-        <span class="l-en">Source: <code>data/trial_ledger.jsonl</code> (1120 rows total).</span>
-        <span class="l-zh">来源：<code>data/trial_ledger.jsonl</code>（共 1120 行）。</span>
+        <span class="l-en">Source: <code>data/trial_ledger.jsonl</code> (1205 rows total).</span>
+        <span class="l-zh">来源：<code>data/trial_ledger.jsonl</code>（共 1205 行）。</span>
       </div>
     </div>
     
@@ -5617,8 +5617,8 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 
       
       <p class="eg-ci-caveat">
-        <span class="l-en">Wilson CI is computed on overlapping n_obs (all graded observations), not on independent date clusters. n_dates is shown beside every CI. Max n_dates across all families is currently 13 of the 25-date floor.</span>
-        <span class="l-zh">威尔逊置信区间基于重叠的n_obs（所有已评分观测值）计算，而非独立的日期簇。每个置信区间旁均显示n_dates。当前所有族中n_dates最大值为13，floor为25。</span>
+        <span class="l-en">Wilson CI is computed on independent date clusters (n_dates), not on the larger correlated n_obs. The pooled hit rate is projected onto n_dates: hits_cluster = round(hit_rate × n_dates), n = n_dates. This is the cluster-honest convention per the ticker-cluster time-confound law and the altdata_brain.py article3 convention. n_dates is shown beside every CI. Max n_dates across all families is currently 13 of the 25-date floor. Not yet calibrated — trust/accrual surface, not authority.</span>
+        <span class="l-zh">威尔逊置信区间基于独立日期簇（n_dates）计算，而非较大的相关n_obs。汇总命中率投影到n_dates：hits_cluster = round(hit_rate × n_dates)，n = n_dates。这是依据票据簇时间混淆法则和altdata_brain.py article3惯例的簇诚实约定。每个置信区间旁均显示n_dates。当前所有族中n_dates最大值为13，floor为25。尚未校准——信任/积累面板，非权威结论。</span>
       </p>
 
       <div class="eg-table-wrap">
@@ -5802,7 +5802,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-07-12T08:29:06.313306Z</dd>
+        <dd>2026-07-12T10:12:30.029165Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">

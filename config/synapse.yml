@@ -5967,6 +5967,71 @@ artifacts:
       case count, panel freshness). Honesty surface. DISPLAY-ONLY (WA-R5).
       fdr_family=long_hold. No scored_path_surfaces.
 
+  # --- Long-Hold LHB-W1: A3 Delivery Waterfall (parquet) ---
+  long-hold-delivery-waterfall:
+    path: data/research/delivery_waterfall.parquet
+    format: parquet
+    producer: scripts/research/build_delivery_waterfall.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: delivery_waterfall.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - scripts/research/build_delivery_waterfall.py
+    external_consumers: []
+    notes: >
+      LHB-W1 (A3 Delivery Waterfall). Per-episode fundamental decomposition:
+      log price change from Detector-D onset to as_of split into fundamental-delivery
+      legs vs a valuation/mix/accounting residual. Two paths: pe_identity (profitable)
+      and ev_revenue (loss-maker fallback). Refusal-first: denominator sign change,
+      share-count split guard (>20%), scope change (|dlog(rev)| > ln(2.5)), and
+      missing PIT-eligible fundamentals all trigger refusal with raw components returned.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert triage,
+      top-setups gates, or push floor (LHB-R4 / LH-R1). No outcome-label-conditioned
+      aggregates of waterfall legs — counts and per-episode receipts only (WA-R7).
+      LHB-R4 W3 lock: no growth projections, no multi-year annualised return estimates
+      — PR-N stays W3-locked behind G1 retest. fdr_family=long_hold (LH-R5).
+
+  # --- Long-Hold LHB-W1: A3 Delivery Waterfall (admin panel JSON) ---
+  long-hold-delivery-waterfall-panel:
+    path: data/research/delivery_waterfall_panel.json
+    format: json
+    producer: scripts/research/build_delivery_waterfall.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 8760
+    schema: delivery_waterfall_panel.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - scripts/research/build_delivery_waterfall.py
+      - admin/long_hold.py
+    external_consumers: []
+    notes: >
+      Admin display slice for LHB-W1 delivery_waterfall.parquet. Contains counts
+      (n_episodes / n_ok / n_refused / by_refusal_reason / by_path), ok-status
+      rows with t0 >= 2023-01-01 (capped 80, newest first), and 10 refused examples.
+      NO outcome-label-conditioned aggregates of waterfall legs — counts and per-episode
+      receipts only (WA-R7 + adjudication). FIREWALL: horizon_role=hold_thesis.
+      MUST NOT feed board ordering, alert triage, top-setups gates, or push floor
+      (LHB-R4 / LH-R1). LHB-R4 W3 lock: no growth projections, no multi-year
+      annualised return estimates — PR-N stays W3-locked behind G1 retest.
+      fdr_family=long_hold (LH-R5).
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json
@@ -5978,7 +6043,7 @@ artifacts:
     cadence: on-demand
     storage: git
     asof_field: as_of
-    freshness_sla_hours: 168
+    freshness_sla_hours: 9999
     schema: research_queue.v1
     tier: infrastructure
     horizon_role: context
@@ -5995,6 +6060,14 @@ artifacts:
       budget chokepoint; the ranker has zero write or gating authority over the cortex.
       NOT on the render path; run manually or via future nightly opt-in.
       is_display_only=true — no board rank, no alerts, no sizing.
+      DORMANT-UNWIRED (2026-07-12): the producer exists but is NOT wired into any
+      .github/workflows/ file (grep confirms zero references) and has never run on a
+      schedule — cadence is on-demand and the artifact has never been produced, so it
+      cannot be fresh by design.  A 168h SLA on a never-scheduled artifact is premature.
+      freshness_sla_hours is parked at 9999 (the declared-dormant idiom: still printed
+      'missing' in health.json — nulls printed — but not degraded-driving).  RESTORE
+      the real operational SLA (168h) when the producer goes on a schedule (nightly
+      opt-in or manual cadence with a keeper).
 
   # --- OTA W6: Rotation Turn Desk ---
   oracle-turn-desk:

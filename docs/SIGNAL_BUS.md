@@ -36,7 +36,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | intraday-flow-tracker | 3 |
 | ird | 4 |
 | leader-radar | 5 |
-| long-hold | 28 |
+| long-hold | 30 |
 | macro-context-rail | 15 |
 | macro-release-intel | 6 |
 | mag7-regime | 3 |
@@ -83,7 +83,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 246 |
+| display | 248 |
 | infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
@@ -92,7 +92,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 387 |
+| git | 389 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -343,6 +343,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| long-hold-delivery-waterfall-panel | `data/research/delivery_waterfall_panel.json` | json | on-demand | display | 2 | 0 |
 | breakaway-watch-states | `data/research/breakaway_watch.parquet` | parquet | daily-engine | display | 1 | 0 |
 | capital-allocation-delta | `embedded: capital_allocation block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | expect-drift-ruler-p-results | `data/research/expect_drift_ruler_p_results.parquet` | parquet | on-demand | display | 1 | 0 |
@@ -353,6 +354,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold-clocks | `embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-compounder-features | `embedded: financials.multiyear.compounder inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-dead-name-prices | `data/edgar/dead_name_prices.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
+| long-hold-delivery-waterfall | `data/research/delivery_waterfall.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-expect-drift-manifest | `data/research/expect_drift_panel_manifest.json` | json | on-demand | display | 1 | 0 |
 | long-hold-expect-drift-panel | `data/research/expect_drift_panel.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-expectation-state | `embedded: expectation_state inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |

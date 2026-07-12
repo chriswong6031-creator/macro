@@ -43,6 +43,7 @@ curated, not generated. Do not build an extractor.
 | LLM numeric confidence anywhere in CHF surfaces | FORBIDDEN — RF-16 extension | CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md` |
 | Runtime LLM frame-tag / narrative-frame classification feeding any organ state or escalation-eligible key | FORBIDDEN — TI-R1/CONST-ART1 restated; char-span receipts validate the quote, not the classification; frame annotation is display-only | NAR-R4, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md` |
 | Chatter-only promotion to a narrative candidate state (source-credibility-alone escalation without the cross-modal tape veto) | FORBIDDEN — single credible flare earns salience, never authority; veto unconditional | NAR-R2, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md` |
+| Hypothesis-slot pre-reservation via standalone coverage census (bypassing WA-R8's ≥8-cases + Opus fingerprint + explicit-ruling gate) | FORBIDDEN — a census proves testability, never entitlement; second attempted end-run (LR docket round 1, LH brainstorm round 2) | LHB-R5, `LONG_HOLD_LOBE_BRAINSTORM_ADJUDICATION_BY_FABLE.md`; precedent LR-R9 |
 
 ## 2. Killed / refuted signal families and theses
 
@@ -73,6 +74,7 @@ curated, not generated. Do not build an extractor.
 | CPI-020 | RETIRED — re-test FAIL | CPI lattice batch 2 (#1754) |
 | CPI IX-1 index-transfer down cells | KILLED by sign-stability leg (0/4 PASS) | CPI IX-1 §17 (#1779) |
 | Buyback-floor washout (S11) | FALSIFIED | S11 phase-0 (#1782) |
+| Margin-inflection reclaim (S10 v1.0, strict-sign single-quarter turn as-constructed) | FALSIFIED phase-0 — construction-scoped kill (predicate anti-persistent, EDGAR Q4-gap row-adjacency, episode MDE ≈6–8pp vs 5pp floor); margin-direction retained as confluence input; revival needs a NEW species version + fresh prereg (durability-gated, calendar-adjacent, prefix-matched comparator) | S10 phase-0 adjudication (#2396), research/species/W5_S10_REPORT.md §12 |
 | Fused 100-point "sponsorship breakaway" score (Codex Moderna docket §5.2) | STRUCK — positioning-fusion illegal + Signal Commons R3; replaced by per-axis AND-gate | WA-R1, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` |
 | 13F/ownership as a POSITIVE breakaway signal (Codex Moderna docket §4.1 ownership_pressure) | STRUCK — restates NEXTL-U13 (opposite sign to 3 filed verdicts); survives as context/crowding-hazard only | WA-R2, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` |
 | `cn_supply_absorption` family (incl. D4-01b staged re-entry) | CLOSED — Stage-0 falsifier dead in both 减持新规 regimes at the frozen ruler (EW +1.1pp/21d, t_NW 1.91/1.77 < 2; overlap-lag sensitivity confirms); construct kill (price-only absorption ≡ momentum) stands per #1944. Close-call POSITIVE null retained as confluence context; re-entry needs a fresh operator-ratified prereg (post-规 cell ~doubles by ~2028) | D4-01b Stage 0, `reports/d4-cn-supply-absorption-d401b-stage0.md`; Day-4 adjudication §D4-01 reassessment |

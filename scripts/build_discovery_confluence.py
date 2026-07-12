@@ -206,4 +206,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from lib.procutil import hard_exit  # noqa: PLC0415
+    hard_exit(main())

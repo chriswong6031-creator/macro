@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-12T06:29:50.884196+00:00",
+  "generated_at": "2026-07-12T11:37:11.101713+00:00",
   "as_of": "2026-07-12",
   "absent_stores": [],
   "feature_coverage": {
@@ -397,7 +397,7 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-12T06:29:50.847312+00:00",
+      "generated_at": "2026-07-12T11:37:11.067364+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -407,7 +407,7 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-12T06:29:50.884189+00:00",
+    "generated_at_utc": "2026-07-12T11:37:11.101706+00:00",
     "as_of": "2026-07-12",
     "absent_stores": []
   }

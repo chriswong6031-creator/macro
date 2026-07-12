@@ -1393,15 +1393,23 @@ def build_qledger_reliability() -> dict:
         "rows": rows,
         # §0.5.8 mandatory caveat
         "ci_caveat_en": (
-            "Wilson CI is computed on overlapping n_obs (all graded observations), "
-            "not on independent date clusters. n_dates is shown beside every CI. "
+            "Wilson CI is computed on independent date clusters (n_dates), not on the "
+            "larger correlated n_obs. The pooled hit rate is projected onto n_dates: "
+            "hits_cluster = round(hit_rate × n_dates), n = n_dates. "
+            "This is the cluster-honest convention per the ticker-cluster time-confound "
+            "law and the altdata_brain.py article3 convention. "
+            "n_dates is shown beside every CI. "
             "Max n_dates across all families is currently "
-            f"{max_n_dates} of the {graded_min_dates}-date floor."
+            f"{max_n_dates} of the {graded_min_dates}-date floor. "
+            "Not yet calibrated — trust/accrual surface, not authority."
         ),
         "ci_caveat_zh": (
-            "威尔逊置信区间基于重叠的n_obs（所有已评分观测值）计算，"
-            "而非独立的日期簇。每个置信区间旁均显示n_dates。"
+            "威尔逊置信区间基于独立日期簇（n_dates）计算，而非较大的相关n_obs。"
+            "汇总命中率投影到n_dates：hits_cluster = round(hit_rate × n_dates)，n = n_dates。"
+            "这是依据票据簇时间混淆法则和altdata_brain.py article3惯例的簇诚实约定。"
+            "每个置信区间旁均显示n_dates。"
             f"当前所有族中n_dates最大值为{max_n_dates}，floor为{graded_min_dates}。"
+            "尚未校准——信任/积累面板，非权威结论。"
         ),
     }
 

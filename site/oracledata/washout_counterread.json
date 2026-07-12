@@ -1,0 +1,68 @@
+{
+ "schema": "washout_counterread.v1",
+ "as_of": "2026-07-10",
+ "show": false,
+ "growth_score": 38.1,
+ "growth_band": "calm",
+ "growth_extreme": false,
+ "price_depths": [
+  {
+   "index": "SPY",
+   "metric": "price_63d_drawdown_pctile",
+   "drawdown_pct": -0.35,
+   "depth_pctile": 34.1,
+   "extreme": false,
+   "n_hist": 2520
+  },
+  {
+   "index": "QQQ",
+   "metric": "price_63d_drawdown_pctile",
+   "drawdown_pct": -2.66,
+   "depth_pctile": 58.8,
+   "extreme": false,
+   "n_hist": 2520
+  },
+  {
+   "index": "XLK",
+   "metric": "price_63d_drawdown_pctile",
+   "drawdown_pct": -6.16,
+   "depth_pctile": 74.7,
+   "extreme": false,
+   "n_hist": 2520
+  }
+ ],
+ "price_hits": [],
+ "ihm_depths": [
+  {
+   "index": "SOXX",
+   "metric": "ihm_macd_hist_depth_pctile",
+   "depth_pctile": 5.8,
+   "reason": "low_depth",
+   "washout_turn": false,
+   "extreme": true
+  },
+  {
+   "index": "MAG7",
+   "metric": "ihm_macd_hist_depth_pctile",
+   "depth_pctile": 39.3,
+   "reason": "washout_turn",
+   "washout_turn": true,
+   "extreme": true
+  }
+ ],
+ "ihm_hits": [
+  "SOXX",
+  "MAG7"
+ ],
+ "message_en": null,
+ "message_zh": null,
+ "authority": {
+  "tier": "display",
+  "horizon_role": "context",
+  "may_rank": false,
+  "may_gate": false,
+  "may_size": false,
+  "may_escalate": false
+ },
+ "disclaimer": "Display-tier only. All may_* authority flags are False. It sits BESIDE the risk banner as context and never suppresses it. Forward ledger pre-registered as EXPECTED NULL — a capitulation-zone reading is historically TWO-SIDED (it precedes a bounce about as often as a further leg down); it is context, not a forecast, not a buy signal. Price depth = trailing-63-session drawdown percentile vs 10y self-history; momentum depth (if shown) = IHM MACD-histogram depth, a different quantity, labeled separately. The word 'validated' does not appear on these surfaces."
+}

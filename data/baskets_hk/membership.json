@@ -1,7 +1,7 @@
 {
-  "version": "2026-06-18",
+  "version": "2026-07-12",
   "seed_date": "2021-06-15",
-  "curated": "2026-06-18",
+  "curated": "2026-07-12",
   "benchmark": "_HSI",
   "benchmark_label": "HSI",
   "benchmark_label_zh": "恒生指数",
@@ -165,6 +165,11 @@
           "date": "2026-06-18",
           "action": "expand",
           "note": "Expanded to 19 members (deep cache widened to ~157 HK names)."
+        },
+        {
+          "date": "2026-07-12",
+          "action": "note",
+          "note": "Factor-split lenses created from this umbrella (hk_platform_tech / hk_tech_hardware); umbrella membership unchanged for series continuity."
         }
       ]
     },
@@ -1174,6 +1179,11 @@
           "date": "2026-06-18",
           "action": "expand",
           "note": "Expanded to 11 members (deep cache widened to ~157 HK names)."
+        },
+        {
+          "date": "2026-07-12",
+          "action": "note",
+          "note": "Factor-split lenses created from this umbrella (hk_miners); umbrella membership unchanged for series continuity."
         }
       ]
     },
@@ -1445,6 +1455,216 @@
           "date": "2026-06-18",
           "action": "create",
           "note": "Created Industrials & Infrastructure — 9 equal-weight HK members."
+        }
+      ]
+    },
+    "hk_platform_tech": {
+      "name": "China Platform Megacaps",
+      "name_zh": "中资平台科技龙头",
+      "category": "Tech & Internet",
+      "category_zh": "科技与互联网",
+      "etf_proxy": "3033.HK",
+      "etf_proxy_note": "HS TECH ETF — closest proxy; the index also carries hardware names",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The consumer-internet platform megacaps split out of the China Tech umbrella — the names that share one re-rating factor (domestic consumption, AI application, southbound flow) and lead HK turns. Xiaomi rides here by behavior: it trades with the platform factor, not the hardware one.",
+      "thesis_zh": "从中资科技伞篮拆出的消费互联网平台龙头 — 共享同一重估因子（内需、AI 应用、南向资金）并引领港股拐点的成员。小米按行为归入此篮：其走势跟随平台因子而非硬件因子。",
+      "members": [
+        {
+          "ticker": "0700.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tencent",
+          "rationale": "Tencent — gaming + WeChat super-app + cloud"
+        },
+        {
+          "ticker": "9988.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Alibaba",
+          "rationale": "Alibaba — e-commerce + cloud + AI"
+        },
+        {
+          "ticker": "3690.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Meituan",
+          "rationale": "Meituan — local-services / food-delivery leader"
+        },
+        {
+          "ticker": "9618.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "JD.com",
+          "rationale": "JD.com — self-operated e-commerce + logistics"
+        },
+        {
+          "ticker": "9888.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Baidu",
+          "rationale": "Baidu — search + AI / autonomous driving"
+        },
+        {
+          "ticker": "1024.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kuaishou",
+          "rationale": "Kuaishou — short-video + live commerce"
+        },
+        {
+          "ticker": "9999.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "NetEase",
+          "rationale": "NetEase — gaming + music; the #2 China game publisher"
+        },
+        {
+          "ticker": "9626.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bilibili",
+          "rationale": "Bilibili — Gen-Z video community + games"
+        },
+        {
+          "ticker": "1810.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Xiaomi",
+          "rationale": "Xiaomi — devices + EV; trades with the platform-megacap factor"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2026-07-12",
+          "action": "create",
+          "note": "Created China Platform Megacaps — 9 members split out of hk_china_tech as a factor lens (correlation-audited 2026-07-12); umbrella retained unchanged."
+        }
+      ]
+    },
+    "hk_tech_hardware": {
+      "name": "Tech Hardware & Semis",
+      "name_zh": "科技硬件与半导体",
+      "category": "Tech & Internet",
+      "category_zh": "科技与互联网",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The hardware half of the China Tech umbrella — foundries, telecom equipment and device supply chain. Driven by semiconductor capex, device demand and export controls, a distinctly different clock from the platform re-rating cycle.",
+      "thesis_zh": "中资科技伞篮的硬件一侧 — 代工、通信设备与终端供应链。受半导体资本开支、终端需求与出口管制驱动，与平台重估周期明显不同步。",
+      "members": [
+        {
+          "ticker": "0981.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "SMIC",
+          "rationale": "SMIC — the mainland foundry champion"
+        },
+        {
+          "ticker": "1347.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hua Hong Semiconductor",
+          "rationale": "Hua Hong Semiconductor — mature-node foundry"
+        },
+        {
+          "ticker": "0763.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "ZTE Corporation",
+          "rationale": "ZTE — telecom equipment + 5G/networking"
+        },
+        {
+          "ticker": "0992.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Lenovo",
+          "rationale": "Lenovo — global PC + AI servers"
+        },
+        {
+          "ticker": "2382.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sunny Optical",
+          "rationale": "Sunny Optical — smartphone + auto optics leader"
+        },
+        {
+          "ticker": "0285.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "BYD Electronic",
+          "rationale": "BYD Electronic — handset/EV electronics assembly"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2026-07-12",
+          "action": "create",
+          "note": "Created Tech Hardware & Semis — 6 members split out of hk_china_tech as a factor lens (correlation-audited 2026-07-12); umbrella retained unchanged."
+        }
+      ]
+    },
+    "hk_miners": {
+      "name": "Diversified Miners",
+      "name_zh": "多元化矿业龙头",
+      "category": "Energy & Resources",
+      "category_zh": "能源与资源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The large diversified miners split out of Materials & Metals — copper, gold, aluminium and molybdenum majors that move on one global-metals factor (within-corr 0.69 vs 0.26 for the umbrella's steel/coal/solar tail).",
+      "thesis_zh": "从有色金属伞篮拆出的大型多元化矿业 — 铜、金、铝与钼龙头，跟随单一全球金属因子（组内相关 0.69，而伞篮的钢铁/煤炭/光伏尾部仅 0.26）。",
+      "members": [
+        {
+          "ticker": "2600.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Aluminum Corp of China",
+          "rationale": "Aluminum Corp of China (Chalco) — aluminium (H)"
+        },
+        {
+          "ticker": "0358.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Jiangxi Copper",
+          "rationale": "Jiangxi Copper — copper smelting + mining (H)"
+        },
+        {
+          "ticker": "1378.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "China Hongqiao",
+          "rationale": "China Hongqiao — aluminium smelting leader"
+        },
+        {
+          "ticker": "3993.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "CMOC Group",
+          "rationale": "CMOC Group — molybdenum + copper/cobalt (H)"
+        },
+        {
+          "ticker": "2899.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Zijin Mining",
+          "rationale": "Zijin Mining — global gold + copper major (H)"
+        },
+        {
+          "ticker": "1208.HK",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "MMG",
+          "rationale": "MMG — copper / zinc (Las Bambas)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2026-07-12",
+          "action": "create",
+          "note": "Created Diversified Miners — 6 members split out of hk_materials as a factor lens (correlation-audited 2026-07-12); umbrella retained unchanged."
         }
       ]
     }

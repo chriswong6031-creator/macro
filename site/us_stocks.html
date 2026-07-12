@@ -237,6 +237,9 @@
          display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; row-gap: 1px; }
   .rrx .rrx-cyc-k { font-weight: 700; color: var(--text); }
   .rrx .rrx-cyc-tag { color: var(--rc); font-weight: 700; font-size: 9.5px; }
+  /* RC-R11 washout counter-read chip — a cyan-tinted variant of the modulator row. */
+  .rrx .rrx-cyc.rrx-washout { border-top-color: color-mix(in srgb, var(--cyan, #38bdf8) 22%, var(--line)); }
+  .rrx .rrx-cyc.rrx-washout .rrx-cyc-k { color: var(--cyan, #38bdf8); }
   .rrx .rrx-cyc-sub { color: var(--muted); font-size: 10px; margin: 0; }
   .rrx .rrx-cyc-sec { color: var(--text); font-size: 10px; margin: 0; flex-basis: 100%;
          font-variant-numeric: tabular-nums; }
@@ -278,6 +281,9 @@
   .rrx .rrx-rec-cats.none { font-size: 10.5px; color: var(--muted); font-style: italic; }
   /* RRX2 WA: drivers line ("what faded / still warm") + muted "no signal" chip */
   .rrx .rrx-rec-drv { font-size: 10px; color: var(--muted); line-height: 1.4; margin-top: -2px; }
+  /* RLT-R5: measured-edge salience line — receipt/muted styling, demoted below catalyst chips */
+  .rrx .rrx-rec-sal { font-size: 10px; color: var(--muted); font-style: italic; line-height: 1.4;
+         padding: 2px 0 0; border-top: 1px solid color-mix(in srgb, var(--muted) 20%, transparent); margin-top: 1px; }
   .rrx .rrx-rec-chip.muted { color: var(--muted); font-style: italic; border-style: dashed; }
   .rrx .rrx-rec-do { font-size: 11px; color: var(--text); line-height: 1.4; }
   .rrx .rrx-rec-do-k { font-weight: 800; color: var(--rvc); text-transform: uppercase; letter-spacing: .06em;
@@ -1356,6 +1362,10 @@
   .pc-shaken{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W9-A sector-capitulating safety chip (display-only; no rank power) */
   .nb-sector-cap{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+  /* RLT-R6 sector-stance disclosure chip (display-only; no selection/rank/gate effect) */
+  .nb-sec-stance{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+  .nb-sec-stance.ss-caution{background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 40%,transparent)}
+  .nb-sec-stance .help{width:12px;height:12px;font-size:9px;margin-left:3px;border-color:color-mix(in srgb,var(--warn) 50%,var(--muted));color:var(--warn)}
   /* W1.5 earnings-blackout chip (display-only; no rank power; hygiene context) */
   .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W1.5 board-level suppressed-today note */
@@ -2411,7 +2421,7 @@
     <span class="igs-theme igniting"
       data-tip-en="#3 by turn evidence: 69% of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit — evidence, not a price change · relative strength at a 6-month high · above a rising 200-day average"
       data-tip-zh="转折证据第3名：该主题清单（成分推进、相对强度转折、多周期确认）当前亮起69% — 为证据而非涨幅 · 相对强度创6个月新高 · 高于上升中的200日均线">
-      <span class="igs-rank">#3</span> AI Semiconductors 🔺 ↗</span><span class="igs-asof"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-11</span>
+      <span class="igs-rank">#3</span> AI Semiconductors 🔺 ↗</span><span class="igs-asof"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-12</span>
   </div>
 </div>
   
@@ -4918,6 +4928,11 @@
             
             
             
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
+            
+            
             
             
             
@@ -5158,6 +5173,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
             
             
             
@@ -5402,6 +5422,11 @@
             
             
             
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
+            
+            
             
             
             
@@ -5636,6 +5661,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
             
             
             
@@ -5885,6 +5915,11 @@
             
             
             
+            <span class="nb-sec-stance">
+              <span class="l-en">Sector: Accumulate</span><span class="l-zh">板块：积极配置</span>
+            </span>
+            
+            
             
             <span class="nb-vchip vf-exp"
                   data-tip-en="Already moving — vol-squeeze EXPANSION. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
@@ -6130,6 +6165,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance">
+              <span class="l-en">Sector: Neutral</span><span class="l-zh">板块：中性</span>
+            </span>
             
             
             
@@ -6382,6 +6422,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
             
             
             
@@ -6639,6 +6684,11 @@
             
             
             
+            <span class="nb-sec-stance">
+              <span class="l-en">Sector: Accumulate</span><span class="l-zh">板块：积极配置</span>
+            </span>
+            
+            
             
             
             
@@ -6878,6 +6928,11 @@
             
             <span class="nb-postcross pc-shaken" data-tip-en="Post-cross shake-out then recovery: new low after the 3D cross, recovered above the base midpoint, weekly histogram net-rising. Validated on two panels: stop-out −4.6pp vs fresh crosses, upside odds unchanged. Display only — no ranking power." data-tip-zh="交叉后震仓再复苏：3日交叉后创新低，已收复底部中点以上，周线柱状图净上升。两个面板验证：止损率较新鲜交叉低4.6pp，上涨胜率不变。仅供参考——无排名权重。"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>
             
+            
+            
+            <span class="nb-sec-stance">
+              <span class="l-en">Sector: Neutral</span><span class="l-zh">板块：中性</span>
+            </span>
             
             
             
@@ -7146,6 +7201,11 @@
             
             
             
+            <span class="nb-sec-stance">
+              <span class="l-en">Sector: Neutral</span><span class="l-zh">板块：中性</span>
+            </span>
+            
+            
             
             
             
@@ -7390,6 +7450,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
             
             
             
@@ -7644,6 +7709,11 @@
             
             
             
+            <span class="nb-sec-stance">
+              <span class="l-en">Sector: Neutral</span><span class="l-zh">板块：中性</span>
+            </span>
+            
+            
             
             
             
@@ -7888,6 +7958,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance">
+              <span class="l-en">Sector: Neutral</span><span class="l-zh">板块：中性</span>
+            </span>
             
             
             
@@ -8143,6 +8218,11 @@
             
             
             
+            <span class="nb-sec-stance">
+              <span class="l-en">Sector: Neutral</span><span class="l-zh">板块：中性</span>
+            </span>
+            
+            
             
             
             
@@ -8385,6 +8465,11 @@
             
             
             
+            <span class="nb-sec-stance">
+              <span class="l-en">Sector: Neutral</span><span class="l-zh">板块：中性</span>
+            </span>
+            
+            
             
             
             
@@ -8622,6 +8707,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance">
+              <span class="l-en">Sector: Neutral</span><span class="l-zh">板块：中性</span>
+            </span>
             
             
             
@@ -8877,6 +8967,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance">
+              <span class="l-en">Sector: Constructive</span><span class="l-zh">板块：建设性</span>
+            </span>
             
             
             
@@ -9142,6 +9237,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance">
+              <span class="l-en">Sector: Neutral</span><span class="l-zh">板块：中性</span>
+            </span>
             
             
             
@@ -9422,6 +9522,11 @@
             
             
             
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
+            
+            
             
             
             
@@ -9662,13 +9767,18 @@
             
             
             
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Cautious</span><span class="l-zh">板块：谨慎</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Cautious</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>谨慎</b>——这不是板块层面的判断。</span></span></span>
+            </span>
             
             
             
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">earnings in 4d — binary event, size down</span><span class="l-zh">4天后财报 — 二元事件，减仓</span></span><span class="cau-row"><span class="l-en">weak fundamentals</span><span class="l-zh">基本面偏弱</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+8.4% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +8.4%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            
+            
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">earnings in 3d — binary event, size down</span><span class="l-zh">3天后财报 — 二元事件，减仓</span></span><span class="cau-row"><span class="l-en">weak fundamentals</span><span class="l-zh">基本面偏弱</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+8.4% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +8.4%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -9814,15 +9924,9 @@
             
             
             
-            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
-              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
-            </div>
-            
-            
-            
             
             <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
-              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span><span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:23</span>
+              <span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:23</span>
             </div>
             
             
@@ -9913,6 +10017,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Cautious</span><span class="l-zh">板块：谨慎</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Cautious</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>谨慎</b>——这不是板块层面的判断。</span></span></span>
+            </span>
             
             
             
@@ -10172,6 +10281,11 @@
             
             
             
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
+            
+            
             
             
             
@@ -10410,6 +10524,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
             
             
             
@@ -10660,6 +10779,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
             
             
             
@@ -10930,6 +11054,11 @@
             
             
             
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
+            
+            
             
             <span class="nb-vchip vf-exp"
                   data-tip-en="Already moving — vol-squeeze EXPANSION. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
@@ -11184,6 +11313,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Cautious</span><span class="l-zh">板块：谨慎</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Cautious</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>谨慎</b>——这不是板块层面的判断。</span></span></span>
+            </span>
             
             
             
@@ -11444,6 +11578,11 @@
             
             
             
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Cautious</span><span class="l-zh">板块：谨慎</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Cautious</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>谨慎</b>——这不是板块层面的判断。</span></span></span>
+            </span>
+            
+            
             
             
             
@@ -11694,6 +11833,11 @@
             
             
             
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
+            
+            
             
             
             
@@ -11936,6 +12080,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
             
             
             
@@ -12194,6 +12343,11 @@
             
             
             
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Cautious</span><span class="l-zh">板块：谨慎</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Cautious</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>谨慎</b>——这不是板块层面的判断。</span></span></span>
+            </span>
+            
+            
             
             <span class="nb-vchip vf-exp"
                   data-tip-en="Already moving — vol-squeeze EXPANSION. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
@@ -12449,6 +12603,11 @@
             
             
             
+            
+            
+            <span class="nb-sec-stance ss-caution">
+              <span class="l-en">Sector: Reduce</span><span class="l-zh">板块：减配</span><span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>Reduce</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>减配</b>——这不是板块层面的判断。</span></span></span>
+            </span>
             
             
             

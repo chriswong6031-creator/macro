@@ -1,0 +1,166 @@
+{
+  "event_type": "clinicaltrials",
+  "schema": "ss_event_priors.v2",
+  "is_context_only": true,
+  "generated_at": "2026-07-12 10:00 UTC",
+  "priors": {
+    "_pooled": {
+      "h5d": {
+        "h": 5,
+        "n_events": 635,
+        "n_studiable": 453,
+        "n_imputed_zero": 0,
+        "insufficient": false,
+        "med_excess_pct": -0.49174341707037855,
+        "mean_excess_pct": -0.14818593317672699,
+        "win_rate": 0.4503311258278146,
+        "max_dd_mean_pct": -2.3322000333268855,
+        "pre_drift_pct": -0.04645434071382879,
+        "hac_t": -0.72,
+        "hac_p": 0.4713,
+        "ci90": [
+          -0.00481,
+          -0.00148,
+          0.00194
+        ],
+        "dsr": 0.0025,
+        "split_half_same_sign": false,
+        "surv_lb_mean_pct": -0.14818593317672699,
+        "surv_lb_hac_t": -0.72
+      },
+      "h20d": {
+        "h": 20,
+        "n_events": 621,
+        "n_studiable": 444,
+        "n_imputed_zero": 1,
+        "insufficient": false,
+        "med_excess_pct": -0.09022161931403097,
+        "mean_excess_pct": -0.2927029201867101,
+        "win_rate": 0.49099099099099097,
+        "max_dd_mean_pct": -6.5030472847276934,
+        "pre_drift_pct": -0.14049145557208326,
+        "hac_t": -0.531,
+        "hac_p": 0.5951,
+        "ci90": [
+          -0.01163,
+          -0.00298,
+          0.00565
+        ],
+        "dsr": 0.003,
+        "split_half_same_sign": false,
+        "surv_lb_mean_pct": -0.292045160815504,
+        "surv_lb_hac_t": -0.531
+      },
+      "h60d": {
+        "h": 60,
+        "n_events": 575,
+        "n_studiable": 419,
+        "n_imputed_zero": 1,
+        "insufficient": false,
+        "med_excess_pct": 0.731830235089409,
+        "mean_excess_pct": 0.5252806252672793,
+        "win_rate": 0.5035799522673031,
+        "max_dd_mean_pct": -13.155063464356603,
+        "pre_drift_pct": -0.033331173105518336,
+        "hac_t": 0.457,
+        "hac_p": 0.6474,
+        "ci90": [
+          -0.01196,
+          0.00503,
+          0.02272
+        ],
+        "dsr": 0.1391,
+        "split_half_same_sign": false,
+        "surv_lb_mean_pct": 0.5240299571118809,
+        "surv_lb_hac_t": 0.457
+      }
+    },
+    "phase3_start": {
+      "h5d": {
+        "h": 5,
+        "n_events": 635,
+        "n_studiable": 453,
+        "n_imputed_zero": 0,
+        "insufficient": false,
+        "med_excess_pct": -0.49174341707037855,
+        "mean_excess_pct": -0.14818593317672699,
+        "win_rate": 0.4503311258278146,
+        "max_dd_mean_pct": -2.3322000333268855,
+        "pre_drift_pct": -0.04645434071382879,
+        "hac_t": -0.72,
+        "hac_p": 0.4713,
+        "ci90": [
+          -0.00481,
+          -0.00148,
+          0.00194
+        ],
+        "dsr": 0.0025,
+        "split_half_same_sign": false,
+        "surv_lb_mean_pct": -0.14818593317672699,
+        "surv_lb_hac_t": -0.72
+      },
+      "h20d": {
+        "h": 20,
+        "n_events": 621,
+        "n_studiable": 444,
+        "n_imputed_zero": 1,
+        "insufficient": false,
+        "med_excess_pct": -0.09022161931403097,
+        "mean_excess_pct": -0.2927029201867101,
+        "win_rate": 0.49099099099099097,
+        "max_dd_mean_pct": -6.5030472847276934,
+        "pre_drift_pct": -0.14049145557208326,
+        "hac_t": -0.531,
+        "hac_p": 0.5951,
+        "ci90": [
+          -0.01163,
+          -0.00298,
+          0.00565
+        ],
+        "dsr": 0.003,
+        "split_half_same_sign": false,
+        "surv_lb_mean_pct": -0.292045160815504,
+        "surv_lb_hac_t": -0.531
+      },
+      "h60d": {
+        "h": 60,
+        "n_events": 575,
+        "n_studiable": 419,
+        "n_imputed_zero": 1,
+        "insufficient": false,
+        "med_excess_pct": 0.731830235089409,
+        "mean_excess_pct": 0.5252806252672793,
+        "win_rate": 0.5035799522673031,
+        "max_dd_mean_pct": -13.155063464356603,
+        "pre_drift_pct": -0.033331173105518336,
+        "hac_t": 0.457,
+        "hac_p": 0.6474,
+        "ci90": [
+          -0.01196,
+          0.00503,
+          0.02272
+        ],
+        "dsr": 0.1391,
+        "split_half_same_sign": false,
+        "surv_lb_mean_pct": 0.5240299571118809,
+        "surv_lb_hac_t": 0.457
+      }
+    }
+  },
+  "bh_fdr": {
+    "phase3_start": {
+      "p": 0.7025,
+      "q": 0.7025,
+      "reject": false
+    },
+    "_pooled": {
+      "p": 0.7025,
+      "q": 0.7025,
+      "reject": false
+    }
+  },
+  "n_events_total": 1548,
+  "subtypes": [
+    "phase3_start"
+  ]
+}

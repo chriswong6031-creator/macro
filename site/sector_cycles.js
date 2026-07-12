@@ -48,6 +48,13 @@
   };
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+  // Rotation Command RC-R3: active rotation events + fragmentation flags for THIS page's
+  // cards, fetched client-side from the same two artifacts the subsector_rotation rail
+  // reads. Keyed by lowercase sector id (== s.id == event.sector == fragRow.key). Empty
+  // until loadRotation() resolves; a missing/404 file degrades to no chips (never throws).
+  var ROT_BY_SEC = {};   // 'xlk' -> [event, ...]
+  var FRAG_BY_KEY = {};  // 'xlk' -> fragmentation row (only when .fragmented)
+
   /* ---- i18n (EN default, 中文 when <html data-lang="zh">) ----------------- */
   function curLang() { return document.documentElement.getAttribute("data-lang") === "zh" ? "zh" : "en"; }
   function L(en, zh) { return curLang() === "zh" ? (zh || en) : en; }
@@ -193,6 +200,26 @@
       : L("last turn was currency-driven", "上次拐点由货币驱动");
     return '<span class="cc-fx" title="' + esc(tip) + '">' + CUR_GLYPH + " " +
       L("FX-driven", "汇率驱动") + '</span>';
+  }
+  // Rotation Command RC-R3: a "⟲ handoff active" chip when a first-class rotation event is
+  // live inside this sector (memory→mag7 on XLK during the 2026-06-25 miss), and an
+  // "aggregate not representative" chip when the sector's legs disagree hard. Both sit
+  // beside the "clocks disagree" chip on the exact card that held Topping/SELL through the
+  // miss. Display-only context — full receipt/copy in the hover title.
+  function rotationCardChip(s) {
+    var evs = ROT_BY_SEC[s.id];
+    if (!evs || !evs.length) return "";
+    var e = evs[0], sev = e.severity || "standard";       // events arrive severity-sorted
+    var tip = curLang() === "zh" ? (e.copy_zh || "") : (e.copy_en || "");
+    return '<span class="cc-rot cc-rot-' + esc(sev) + '" title="' + esc(tip) + '">⟲ ' +
+      L("handoff active", "轮动进行中") + (e.day_n != null ? " · d" + esc(e.day_n) : "") + '</span>';
+  }
+  function fragCardChip(s) {
+    var r = FRAG_BY_KEY[s.id];
+    if (!r) return "";
+    var tip = curLang() === "zh" ? (r.copy_zh || "") : (r.copy_en || "");
+    return '<span class="cc-frag" title="' + esc(tip) + '">' +
+      L("aggregate not representative", "聚合读数或失真") + '</span>';
   }
   // small "USD view" pill in the detail head — the USD ETF cycle is disclosed in the drawer.
   function usdViewChip(s) {
@@ -931,7 +958,7 @@
         '<div class="cc-top">' +
           '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + nm(s) + '</div>' +
           '<div class="cc-px">' + pxLine + '</div></div></div>' +
-          '<div class="cc-tags"><div class="cc-phase" style="--ph:' + phaseHue(nw.phase) + '">' + phaseLabel(s) + '</div>' + stanceTag + divTag + sigHTML + fxCardChip(s) + '</div>' +
+          '<div class="cc-tags"><div class="cc-phase" style="--ph:' + phaseHue(nw.phase) + '">' + phaseLabel(s) + '</div>' + stanceTag + divTag + rotationCardChip(s) + fragCardChip(s) + sigHTML + fxCardChip(s) + '</div>' +
         '</div>' +
         '<div class="cc-spark"></div>' +
         '<div class="cc-meta">' +
@@ -1903,6 +1930,26 @@
     }, 350);
     else { guideEntry(); showFirstHint(); }   // novice entry: highlight one line + a tap hint
     _scheduleExtras();
+    loadRotation();
+  }
+  // Rotation Command RC-R3: fetch the two rotation artifacts, index them by lowercase
+  // sector id, and re-mount the cards once they land (mountCards is idempotent — it's the
+  // same re-render hydrateExtras uses). Null-safe: a 404/missing file leaves the maps empty
+  // and no chips render. No MutationObserver — this page re-renders on 'langchange' via
+  // rerender()→mountCards(), so the chips pick up the language flip for free.
+  function loadRotation() {
+    if (typeof fetch !== "function") return;
+    Promise.all([
+      fetch("marketdata/rotation_events.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+      fetch("marketdata/sector_fragmentation.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+    ]).then(function (res) {
+      var ev = res[0], fr = res[1];
+      ROT_BY_SEC = {};
+      ((ev && ev.active) || []).forEach(function (e) { (ROT_BY_SEC[e.sector] = ROT_BY_SEC[e.sector] || []).push(e); });
+      FRAG_BY_KEY = {};
+      ((fr && fr.sectors) || []).forEach(function (r) { if (r.fragmented) FRAG_BY_KEY[r.key] = r; });
+      if (Object.keys(ROT_BY_SEC).length || Object.keys(FRAG_BY_KEY).length) mountCards();
+    });
   }
   // public hook: let a host page (e.g. Sector Central) focus the embedded overlay on a
   // sector/basket by id, switching family + scrolling the chart into view. Returns false

@@ -524,6 +524,9 @@
          display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; row-gap: 1px; }
   .rrx .rrx-cyc-k { font-weight: 700; color: var(--text); }
   .rrx .rrx-cyc-tag { color: var(--rc); font-weight: 700; font-size: 9.5px; }
+  /* RC-R11 washout counter-read chip — a cyan-tinted variant of the modulator row. */
+  .rrx .rrx-cyc.rrx-washout { border-top-color: color-mix(in srgb, var(--cyan, #38bdf8) 22%, var(--line)); }
+  .rrx .rrx-cyc.rrx-washout .rrx-cyc-k { color: var(--cyan, #38bdf8); }
   .rrx .rrx-cyc-sub { color: var(--muted); font-size: 10px; margin: 0; }
   .rrx .rrx-cyc-sec { color: var(--text); font-size: 10px; margin: 0; flex-basis: 100%;
          font-variant-numeric: tabular-nums; }
@@ -565,6 +568,9 @@
   .rrx .rrx-rec-cats.none { font-size: 10.5px; color: var(--muted); font-style: italic; }
   /* RRX2 WA: drivers line ("what faded / still warm") + muted "no signal" chip */
   .rrx .rrx-rec-drv { font-size: 10px; color: var(--muted); line-height: 1.4; margin-top: -2px; }
+  /* RLT-R5: measured-edge salience line — receipt/muted styling, demoted below catalyst chips */
+  .rrx .rrx-rec-sal { font-size: 10px; color: var(--muted); font-style: italic; line-height: 1.4;
+         padding: 2px 0 0; border-top: 1px solid color-mix(in srgb, var(--muted) 20%, transparent); margin-top: 1px; }
   .rrx .rrx-rec-chip.muted { color: var(--muted); font-style: italic; border-style: dashed; }
   .rrx .rrx-rec-do { font-size: 11px; color: var(--text); line-height: 1.4; }
   .rrx .rrx-rec-do-k { font-weight: 800; color: var(--rvc); text-transform: uppercase; letter-spacing: .06em;
@@ -1154,7 +1160,7 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-10 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-12 09:07 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-10 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-12 11:29 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
@@ -2779,7 +2785,7 @@
 
 
 
-<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-12 09:07 UTC</p>
+<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-12 11:29 UTC</p>
 
 <script src="mtf.js"></script>
 <script src="theme.js"></script>

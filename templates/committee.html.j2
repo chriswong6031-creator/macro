@@ -4042,10 +4042,10 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     var stateZhLabel = STATE_ZH[state] || escT(state);
     var stateColor   = STATE_COLOR[state] || 'var(--muted)';
 
-    // WALCL staleness chip (H.4.1 is weekly; flag only when unusually old)
+    // WALCL staleness chip (H.4.1 is weekly: 0-4 flat business days is normal cadence, 5 with a holiday; flag only a missed print)
     var walclStale = (d.quality && d.quality.walcl_stale_days != null) ? d.quality.walcl_stale_days
                    : (d.fed && d.fed.walcl_stale_days != null) ? d.fed.walcl_stale_days : null;
-    var walclChip = (walclStale != null && walclStale > 2)
+    var walclChip = (walclStale != null && walclStale > 5)
       ? '<span class="lq-state-chip" style="color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel2))">'
         + '<span class="l-en">WALCL ' + walclStale + 'd stale</span>'
         + '<span class="l-zh">WALCL 数据滞后 ' + walclStale + ' 天</span></span>'

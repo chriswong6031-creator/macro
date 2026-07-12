@@ -1999,6 +1999,10 @@ jobs:
         env:
           COLLECT_LANE: nightly
         run: python -m scripts.build_oracle_ratio_lens || echo "::warning::ratio_lens build failed (non-fatal — surface keeps last artifact)"
+      - name: rebuild washout counter-read feed (RC-R11 — off-render, non-fatal)
+        env:
+          COLLECT_LANE: nightly
+        run: python -m scripts.build_oracle_washout_counterread || echo "::warning::washout_counterread build failed (non-fatal — surface keeps last artifact)"
       - name: publish oracle panels to R2 (refreshes render-path sponsorship inputs)
         if: always()
         env:
@@ -2030,7 +2034,7 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add site/oracledata/ data/oracle/ratio_lens_ledger.jsonl
+          git add site/oracledata/ data/oracle/ratio_lens_ledger.jsonl data/oracle/washout_counterread_ledger.jsonl
           if git diff --cached --quiet; then echo "no oracle Time Machine or ratio lens changes"; exit 0; fi
           git commit -m "oracle-tm: nightly Time Machine feed + ratio lens refresh $(date -u +%F)"
           # best-effort push (own files -> rebases clean; no other job writes site/oracledata/)
@@ -2059,13 +2063,15 @@ jobs:
   # build_tech_lab_data.py is heavy (~219 tickers × 64 signals, a few minutes)
   # and writes ONLY site/factordata/tech_screener.json + tech_lab.json (+ the
   # optional site/factordata/tech_events/ subtree when that sibling PR lands).
+  # build_tech_confluence.py (multi-signal combo miner, ~8 min measured on the
+  # full universe) runs after it → site/factordata/tech_confluence.json.
   # Kept off the main render path so it never adds to the ~67min render budget.
   # Needs: engine (data/stocks/ parquets, site/factordata/us_standouts.json).
   tech_lab_offrender:
     needs: engine
     if: always()
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
@@ -2086,11 +2092,22 @@ jobs:
             echo "::warning title=tech_lab_data::build_tech_lab_data rc=$rc (artifacts may be stale)"
           fi
           exit 0
+      - name: rebuild Technical Lab combo miner (tech_confluence, ~8 min)
+        run: |
+          set +e
+          python scripts/build_tech_confluence.py; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=tech_confluence::build_tech_confluence rc=$rc (combo artifact may be stale)"
+          fi
+          exit 0
       - name: commit Technical Lab artifacts
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add site/factordata/tech_screener.json site/factordata/tech_lab.json
+          if [ -f site/factordata/tech_confluence.json ]; then
+            git add site/factordata/tech_confluence.json
+          fi
           # tech_events is written by a sibling PR (TLT-W3); pick it up once present.
           if [ -d site/factordata/tech_events ]; then
             git add site/factordata/tech_events

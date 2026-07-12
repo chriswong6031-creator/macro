@@ -1507,7 +1507,7 @@
       "status": "proven",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template: challenger matches-or-beats incumbent on stop-out AND dead-money AND cushion incidence (Wilson lower bound, episode-clustered n floor) at positional horizons (clean15_126 primary). Returns printed as context, not verdict. Board-level forward ledger must reproduce claimed entry-quality spread (§1.3 gate-weight rung).",
       "phase_hint": "horizon=positional deployment=graded_bonus",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-S2",
@@ -1525,7 +1525,7 @@
       "status": "proven",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at rotational horizons (clean8_21 primary): challenger matches-or-beats on stop-out AND dead-money AND cushion incidence. Returns context only.",
       "phase_hint": "horizon=rotational deployment=chip",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-T1-T4",
@@ -1543,7 +1543,7 @@
       "status": "proven",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Incumbent: no flip criteria — this IS the gate. Successor must beat on §1.1 safety-net axes.",
       "phase_hint": "horizon=positional deployment=gate_weight",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-CN-WASHOUT",
@@ -1561,7 +1561,7 @@
       "status": "proven",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at positional horizons. CN channel re-grades on second regime.",
       "phase_hint": "horizon=positional deployment=gate_weight",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-CN-REVERSAL",
@@ -1579,7 +1579,7 @@
       "status": "proven",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Graded on safety-net axes PLUS sleeve-level excess-vs-CSI300 (CN-2 pattern). assert_no_gate() must remain enforced — any gate-addition triggers review.",
       "phase_hint": "horizon=rotational deployment=graded_bonus",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-DISLOC",
@@ -1597,7 +1597,7 @@
       "status": "proven",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Display context chip only. Promotion to graded_bonus requires episode n ≥ 20 AND both halves sign-stable on the median-drawdown clause. Returns are context.",
       "phase_hint": "horizon=positional deployment=chip",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-S3",
@@ -1615,7 +1615,7 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at rotational horizons (clean8_21). VIX-percentile-stratified within-bucket spreads are the primary verdict table. Spread must survive stratification AND agree in sign across ATR-scaled vs fixed barrier schemes. Adjacent: entry premium above episode trough and days-from-radar-peak-severity printed (statistics, not gates).",
       "phase_hint": "horizon=rotational deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-S4",
@@ -1633,7 +1633,7 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Promotion requires beating BOTH the survival-matched control AND the self-healing-adjusted fire set at the §1.2 bootstrap standard (episode-clustered p-value, BH-FDR across wave family, q≤0.10). Wait-cost (entry premium vs raw-bar baseline) printed per §1.2.",
       "phase_hint": "horizon=rotational deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-S5",
@@ -1651,7 +1651,7 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at rotational horizons (clean8_21). Forming and confirmed are graded as SEPARATE fire cohorts. Frontrun gate: forming leads confirmed by ≥3d median (episode-clustered, full distribution). Promotion requires forming to lead confirmed by ≥3d median.",
       "phase_hint": "horizon=rotational deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-S6",
@@ -1669,7 +1669,7 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Primary: (failed2 × COILED) vs COILED alone on OOS basket panel, episode-clustered p-value, BH-FDR q≤0.10, n≥300 per side, both halves sign-stable. Secondary: standalone inversion. Clean kill is acceptable and closes the graveyard row properly.",
       "phase_hint": "horizon=rotational deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-S7",
@@ -1687,7 +1687,7 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Two-sided registration: promotion bar is BEATING the rs_low stratum baseline on the same panels, not beating zero. Episode-clustered p-value, BH-FDR q≤0.10.",
       "phase_hint": "horizon=positional deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-S8",
@@ -1705,7 +1705,7 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at positional horizons. Gated on archive depth — do not run before come_back_on.",
       "phase_hint": "horizon=positional deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-S9",
@@ -1723,25 +1723,25 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at rotational horizons (clean8_21). Must beat unconditional negative-SUE baseline on stop-out AND cushion incidence. BH-FDR q≤0.10.",
       "phase_hint": "horizon=rotational deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-S10",
       "name": "Setup Species S10 — Margin-Inflection Reclaim",
       "kind": "species_phase0",
       "priority": "medium",
-      "cadence": "quarterly",
+      "cadence": "none",
       "what": "When gross/operating margin DIRECTION changes (first improvement after multiple quarters of deterioration) while the name is in washout and price begins to reclaim key levels, the margin turn signals fundamental mean-reversion. Archetype-scoped: consumer/industrial/retail first; financials excluded — EDGAR ratio unreliability. Keys on margin DIRECTION change, not level. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names).",
       "source": "engine/species_registry.py",
       "storage": "data/species/registry.json",
       "started": "2026-07-03",
-      "come_back_on": "2026-08-12",
-      "come_back_note": "Monthly review 2026-07-12: EDGAR gate CLEARED 07-03 (54,853 ticker-quarters, 1,331 tickers, FY2009-2027, 0 failures) but NO phase-0 harness built or run — zero evidence accrued, validation_status stays phase0. NOTE: W5_S10_PREREG.md is stranded on unmerged branch claude/focused-galileo-bd88fb (never PR-ed) — land it before the phase-0 run. Next monthly review 2026-08-12.",
-      "maturation": "W5+ phase-0. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names). Completion date populates come_back_on definitively. GATE CLEARED: backfill completed 2026-07-03 — 54,853 ticker-quarters, 1,331 tickers, FY2009-2027, 0 failures (data/edgar/statements_quarterly.parquet).",
-      "status": "registered",
+      "come_back_on": null,
+      "come_back_note": "FALSIFIED 2026-07-12 (W5 phase-0 run 2026-07-06; adjudicated 2026-07-12 with kill-scrutiny). 2-variant grid (gross/operating margin turn) vs washout+reclaim comparator at clean15_126: stop-out spread +0.81pp / +0.07pp (need >=5pp), BH q=0.49 (m=2 from trial ledger), per-name majority 47.7%/46.9% (minority), K3 sign-unstable on operating; prefix-matched robustness +2.56pp / -0.31pp — kill survives the strictest contrast. Kill is CONSTRUCTION-SCOPED, not mechanism-false: the registered strict-sign single-quarter predicate is anti-persistent (turn persistence 0.40/0.39) and row-adjacency spans the EDGAR Q4 gap; episode-clustered MDE ~6-8pp vs the 5pp floor (see W5_S10_REPORT.md §12). Margin-direction RETAINED as a confluence input. Revival = new species version + fresh prereg (durability-gated turn, calendar-true adjacency, prefix-matched comparator). Terminal. See research/species/W5_S10_REPORT.md + §1.6 graveyard.",
+      "maturation": "FALSIFIED 2026-07-12 (W5 phase-0 run 2026-07-06; adjudicated 2026-07-12 with kill-scrutiny). 2-variant grid (gross/operating margin turn) vs washout+reclaim comparator at clean15_126: stop-out spread +0.81pp / +0.07pp (need >=5pp), BH q=0.49 (m=2 from trial ledger), per-name majority 47.7%/46.9% (minority), K3 sign-unstable on operating; prefix-matched robustness +2.56pp / -0.31pp — kill survives the strictest contrast. Kill is CONSTRUCTION-SCOPED, not mechanism-false: the registered strict-sign single-quarter predicate is anti-persistent (turn persistence 0.40/0.39) and row-adjacency spans the EDGAR Q4 gap; episode-clustered MDE ~6-8pp vs the 5pp floor (see W5_S10_REPORT.md §12). Margin-direction RETAINED as a confluence input. Revival = new species version + fresh prereg (durability-gated turn, calendar-true adjacency, prefix-matched comparator). Terminal. See research/species/W5_S10_REPORT.md + §1.6 graveyard.",
+      "status": "closed",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at positional horizons. Financials excluded throughout. Gated on EDGAR re-crawl completion.",
       "phase_hint": "horizon=positional deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-S11",
@@ -1759,7 +1759,7 @@
       "status": "closed",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at positional horizons. Debt-funded buyback detection required. Gated on EDGAR re-crawl.",
       "phase_hint": "horizon=positional deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-S12",
@@ -1777,7 +1777,7 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at positional horizons. Episode floor is a hard promotion gate (≥8 with ≥1 outside 2020-21). Growth-axis separation required.",
       "phase_hint": "horizon=positional deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-S13",
@@ -1795,7 +1795,7 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Safety-net axes (stop-out, dead-money, cushion incidence at rotational horizons) PLUS sleeve-level excess-vs-SPY (CN-2 pattern). Pre-registered kill criteria: modern-era decay + mega-cap sign flip. assert_no_gate() must remain enforced.",
       "phase_hint": "horizon=rotational deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "h-plc-post-placement-drift",
@@ -2136,7 +2136,7 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Phase-0 gate: (1) ≥25 failed-breakout events logged with measurable forward returns; (2) median 21d forward return in failed-breakout cohort is statistically below the non-failed-breakout control (one-sided t-test, p<0.10); (3) drawdown incidence (max drawdown >15% within 21d) elevated vs control; (4) regime stability: mechanism holds across both risk-off and rotation-active cells. Kill criteria: median forward return NOT below control OR effect driven by single regime.",
       "phase_hint": "horizon=rotational deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "short-interest-history-accrual",
@@ -2838,7 +2838,7 @@
       "status": "accruing",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: {'stop5': 'stop-out within 5 bars of T+1 fill', 'fwd_mdd_21': 'max adverse excursion 21d (RUL-13 primary)', 'rotational_liftoff': 'clean8_21 (1.08/21d) rotational liftoff', 'zone_held_21': 'vol-scaled zone held at 21d (RUL-14 co-primary)', 'dead_money': 'dead-money outcome', 'cushion_rot': 'cushion incidence rotational'}",
       "phase_hint": "horizon=rotational deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "nwci-forward-ledger-first-write",
@@ -3297,7 +3297,7 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at rotational horizons (clean8_21 primary). Non-inferiority = CI_hi < +0.01 on stop5. Superiority = CI_hi < 0 on stop5 (or CI_lo > 0 on cushion_rot / CI_hi < 0 on dead_money). BH-FDR q<=0.10 family-wide (esx_ur_phase0 budget=36).",
       "phase_hint": "horizon=rotational deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-F3_ANTICHASE",
@@ -3315,7 +3315,7 @@
       "status": "accruing",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: {'C1_n_floor': '>= 100 independent episode clusters of would-have-blocked events AND >= 2 calendar quarters of accrual since first ledger row (P1.5 PREREG K1 floor)', 'C2_wilson': 'Wilson 95% lower bound of stop-out improvement (blocked > unblocked) > 0, episode-clustered bootstrap N=1000', 'C3_sign_stability': 'stop-out improvement sign holds in both temporal halves of the shadow ledger'}",
       "phase_hint": "horizon=positional deployment=chip",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-EI-F1D-RW",
@@ -3333,7 +3333,7 @@
       "status": "accruing",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Ship/kill adjudicated at monthly species review once the shadow ledger holds >= 25 forward episode clusters AND >= 2 calendar quarters of accrual: ship the rank-weight only if the C6 shadow rank shows the P2.5-direction safety improvement (63d stop-out and 21d dead-money deltas both favorable) out-of-sample; kill on sign reversal, mirroring the flat-binary F1 precedent. Fable-adjudicated; no automatic flip.",
       "phase_hint": "horizon=positional deployment=ledger_fields",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-EI-PM2-SHELF",
@@ -3351,7 +3351,7 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: {'promotion': 'requires new PREREG with own family + FDR budget (prereg §6.2)'}",
       "phase_hint": "horizon=positional deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-EI-PM1-AVWAP",
@@ -3369,7 +3369,7 @@
       "status": "closed",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: {'none': 'research verdict; no live surface; no flip'}",
       "phase_hint": "horizon=positional deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-EI-PM3-GAP",
@@ -3387,7 +3387,7 @@
       "status": "closed",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: {'none': 'research verdict; no live surface; no flip'}",
       "phase_hint": "horizon=positional deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-EI-PM4-OVERHEAD",
@@ -3405,7 +3405,7 @@
       "status": "closed",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: {'none': 'research verdict; no live surface; no flip'}",
       "phase_hint": "horizon=positional deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "species-EI-PM5-FLOATTURN",
@@ -3423,7 +3423,7 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: {'none': 'research verdict; no live surface; no flip'}",
       "phase_hint": "horizon=positional deployment=unshipped",
-      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-08)"
+      "regime_context": "rate_pressure=pressure · quad=Q1 · vol=normalizing · radar=watch · favor_entries=0 · cap_leadership=0 · deescalation=1 (vector asof 2026-07-10)"
     },
     {
       "id": "oracle-ratio-lens",

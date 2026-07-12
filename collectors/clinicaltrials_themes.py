@@ -575,3 +575,6 @@ if __name__ == "__main__":
         f"({result.get('total_rows_stored', 0)} total stored, "
         f"{result.get('errors', 0)} modality errors)"
     )
+
+    from lib.procutil import hard_exit  # noqa: PLC0415
+    hard_exit(0)

@@ -447,11 +447,22 @@ def compute_basket_confluence(memberships: dict, *, benchmark: str = "SPY",
             g["basket_id"] = bid
             baskets.append(g)
 
+    # RC-R7: annotate dual-membership names (e.g. NVDA ∈ {mag7, ai_semiconductors}) with a
+    # "behaves-as" read from trailing correlation vs each home's ex-name composite — so two
+    # cards showing opposite reads for the same name are reconciled. Additive, never fatal.
+    behaves_as = {}
+    try:
+        from engine import basket_behaves_as
+        behaves_as = basket_behaves_as.annotate(baskets, memberships)
+    except Exception as e:  # noqa: BLE001 — display-only, never blocks the desk
+        log.warning("subsector_confluence: behaves_as annotation failed: %s", e)
+
     baskets.sort(key=lambda g: (_CLASS_ORDER.get(g["class"], 9), -g["entry"]["weight"],
                                 -(g["regime"]["rs_60d"] or 0)))
     ff = funnel(baskets)
     return {
         "ok": True, "universe": universe, "weighting": "equal", "benchmark": benchmark,
+        "behaves_as": behaves_as,
         "as_of": max((g["as_of"] for g in baskets), default=None),
         "coverage": _breadth_coverage(baskets, {"n_baskets": len(baskets)}),
         "entry_now": [g["key"] for g in baskets if g["class"] == "entry_now"],

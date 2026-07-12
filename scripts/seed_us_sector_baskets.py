@@ -6,10 +6,18 @@ DIVERGENCE between the two: an equal-weight sector lagging its cap-weight ETF me
 the sector's move is mega-cap-narrow; equal-weight leading means broad participation.
 
 This complements the 34 hand-curated thematic baskets (which have no sector family)
-and the heatmap's sector membership. Idempotent: re-running replaces the
-``us_sector_*`` entries and leaves every other basket untouched.
+and the heatmap's sector membership. Baskets outside the ``us_sector_*`` family are
+never touched.
 
-    python -m scripts.seed_us_sector_baskets [--dry-run]
+BOOTSTRAP-ONLY: once the ``us_sector_*`` entries exist, the live membership.json is the
+ledger of record — a re-run would rewrite each sector's members to the CURRENT S&P
+snapshot backdated to MEMBER_ADDED (index churn, e.g. HONA in / CAG out, silently
+rewrites history) and discard any dated changelog the entries have accrued. The script
+therefore refuses to replace existing ``us_sector_*`` entries unless --force is passed;
+ongoing index churn belongs on the live file as dated member add/remove rows (nightly
+is the sole advancer of forward ledgers).
+
+    python -m scripts.seed_us_sector_baskets [--dry-run] [--force]
 """
 from __future__ import annotations
 
@@ -86,11 +94,23 @@ def build_sector_baskets() -> dict[str, dict]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Seed equal-weight US sector baskets")
     ap.add_argument("--dry-run", action="store_true", help="print summary, do not write")
+    ap.add_argument("--force", action="store_true",
+                    help="replace existing us_sector_* entries (re-bootstrap; discards "
+                         "their accrued history)")
     args = ap.parse_args(argv)
 
     path = config.data_dir() / "baskets" / "membership.json"
     mem = json.loads(path.read_text())
     baskets = mem.setdefault("baskets", {})
+
+    existing = [k for k in baskets if k.startswith("us_sector_")]
+    if existing and not args.dry_run and not args.force:
+        print(f"refusing to replace {len(existing)} existing us_sector_* baskets in {path} — "
+              "the live file is the ledger of record; re-seeding rewrites members to the "
+              "current S&P snapshot and discards dated history. Record index churn as dated "
+              "member rows on the live file, or pass --force to re-bootstrap.",
+              file=sys.stderr)
+        return 1
 
     new = build_sector_baskets()
     # drop any prior us_sector_* before re-inserting (idempotent)

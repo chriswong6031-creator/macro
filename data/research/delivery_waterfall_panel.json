@@ -1,0 +1,1410 @@
+{
+  "schema": "delivery_waterfall_panel.v1",
+  "generated_at": "2026-07-12T10:36:50.308360+00:00",
+  "as_of": "2026-07-12",
+  "counts": {
+    "n_episodes": 2650,
+    "n_ok": 519,
+    "n_refused": 2131,
+    "by_refusal_reason": {
+      "no_fundamentals_at_anchor": 1843,
+      "share_basis_break": 78,
+      "no_fundamentals_at_asof": 1210,
+      "scope_change_suspected": 70,
+      "missing_shares_for_ev": 173,
+      "missing_revenue": 1
+    },
+    "by_path": {
+      "null": 2131,
+      "pe_identity": 346,
+      "ev_revenue": 173
+    }
+  },
+  "coverage_notes": [
+    "display-only; MUST NOT feed board ordering, alert triage, top-setups, or push floor",
+    "LHB-R4: refusal-first \u2014 raw components returned even on refusal",
+    "no outcome-label aggregates: per-episode receipts only (WA-R7 + adjudication)",
+    "split guard: share-count change >20% between endpoints triggers refusal"
+  ],
+  "rows": [
+    {
+      "ticker": "DLTR",
+      "t0": "2026-07-02",
+      "path": "pe_identity",
+      "dlog_price": 0.006908772556960763,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 0.6932693181737948
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "AXON",
+      "t0": "2026-06-30",
+      "path": "ev_revenue",
+      "dlog_price": 0.009215186819838017,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": 0.9133958037913503
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "VSEC",
+      "t0": "2026-06-30",
+      "path": "pe_identity",
+      "dlog_price": -0.07825727126947601,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -7.527350962031587
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "FBIN",
+      "t0": "2026-06-29",
+      "path": "pe_identity",
+      "dlog_price": 0.012478215685468808,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 1.2556393453419634
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "OC",
+      "t0": "2026-06-29",
+      "path": "ev_revenue",
+      "dlog_price": -0.08488725336597636,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -6.029284786563894
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "PFGC",
+      "t0": "2026-06-29",
+      "path": "pe_identity",
+      "dlog_price": 0.006282920343052112,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 0.6302699288553093
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "TTWO",
+      "t0": "2026-06-29",
+      "path": "ev_revenue",
+      "dlog_price": -0.01611127751371022,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -1.5605508816043057
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "NEO",
+      "t0": "2026-06-26",
+      "path": "ev_revenue",
+      "dlog_price": -0.004243317553929593,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -0.38481207491091185
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "TECH",
+      "t0": "2026-06-25",
+      "path": "pe_identity",
+      "dlog_price": 0.00845084048426692,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 0.8486649638116406
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "GE",
+      "t0": "2026-06-24",
+      "path": "ev_revenue",
+      "dlog_price": -0.016985525800524037,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -1.642369850624703
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "PAYO",
+      "t0": "2026-06-23",
+      "path": "pe_identity",
+      "dlog_price": 0.0056497272149671485,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 0.5665717022269368
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "APH",
+      "t0": "2026-06-18",
+      "path": "pe_identity",
+      "dlog_price": -0.028833498151511705,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -2.842177943043811
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "ENTG",
+      "t0": "2026-06-18",
+      "path": "pe_identity",
+      "dlog_price": -0.20695541832946596,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -18.6944103430295
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "IP",
+      "t0": "2026-06-18",
+      "path": "ev_revenue",
+      "dlog_price": 0.029701196229954263,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": 2.1905052252755297
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "MKSI",
+      "t0": "2026-06-18",
+      "path": "pe_identity",
+      "dlog_price": -0.09760631465330416,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -9.299409158893312
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "TER",
+      "t0": "2026-06-18",
+      "path": "pe_identity",
+      "dlog_price": -0.19704395638436267,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -17.884546246512922
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "LGND",
+      "t0": "2026-06-17",
+      "path": "pe_identity",
+      "dlog_price": 0.1838151225024678,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 20.17936179599309
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "MRNA",
+      "t0": "2026-06-17",
+      "path": "ev_revenue",
+      "dlog_price": 0.25511876118993726,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": 31.669247500469933
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "massive",
+      "basis_mismatch": true
+    },
+    {
+      "ticker": "QLYS",
+      "t0": "2026-06-15",
+      "path": "pe_identity",
+      "dlog_price": 0.28652571557178863,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 33.179241525732415
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "AMAT",
+      "t0": "2026-06-11",
+      "path": "pe_identity",
+      "dlog_price": 0.08638084390020406,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 9.022145344158794
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "ATI",
+      "t0": "2026-06-11",
+      "path": "pe_identity",
+      "dlog_price": -0.06449177450151566,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -6.2456174004347
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "KLAC",
+      "t0": "2026-06-11",
+      "path": "ev_revenue",
+      "dlog_price": -0.04081092471916303,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -3.572017761164592
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "CRS",
+      "t0": "2026-06-09",
+      "path": "pe_identity",
+      "dlog_price": 0.09957595621867732,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 10.470237656861592
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "A",
+      "t0": "2026-06-03",
+      "path": "pe_identity",
+      "dlog_price": -0.020973112875264377,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -2.075470669414614
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "AA",
+      "t0": "2026-06-02",
+      "path": "ev_revenue",
+      "dlog_price": -0.5430454051633022,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -40.36083380718328
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "IBM",
+      "t0": "2026-06-02",
+      "path": "ev_revenue",
+      "dlog_price": -0.13532510240714846,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -11.163962982271869
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "DELL",
+      "t0": "2026-06-01",
+      "path": "pe_identity",
+      "dlog_price": -0.06882270919363975,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -6.650783501304646
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "FDS",
+      "t0": "2026-06-01",
+      "path": "pe_identity",
+      "dlog_price": -0.09173160054735252,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -8.765000907583854
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "GEN",
+      "t0": "2026-06-01",
+      "path": "pe_identity",
+      "dlog_price": -0.06896715519875851,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -6.664266448906442
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "ORCL",
+      "t0": "2026-06-01",
+      "path": "pe_identity",
+      "dlog_price": -0.5678299478403241,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -43.324600907177
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "NOW",
+      "t0": "2026-05-29",
+      "path": "pe_identity",
+      "dlog_price": -0.14381859388685925,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -13.395516036174781
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "NTAP",
+      "t0": "2026-05-29",
+      "path": "pe_identity",
+      "dlog_price": -0.03159138078292756,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -3.1097586652879983
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "RUN",
+      "t0": "2026-05-29",
+      "path": "ev_revenue",
+      "dlog_price": -0.29327978548359734,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -5.717679527363839
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "RVTY",
+      "t0": "2026-05-29",
+      "path": "pe_identity",
+      "dlog_price": 0.07141936367358781,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 7.4031541251489585
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "CMC",
+      "t0": "2026-05-27",
+      "path": "ev_revenue",
+      "dlog_price": -0.20080130920070438,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -17.767700900002982
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "FSLR",
+      "t0": "2026-05-26",
+      "path": "pe_identity",
+      "dlog_price": -0.1696370570360033,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -15.60289256207692
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "MTSI",
+      "t0": "2026-05-26",
+      "path": "ev_revenue",
+      "dlog_price": -0.2835897138203718,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -24.3820492436572
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "SEDG",
+      "t0": "2026-05-21",
+      "path": "ev_revenue",
+      "dlog_price": -0.13253415207184194,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -14.100081039121415
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "VCYT",
+      "t0": "2026-05-18",
+      "path": "pe_identity",
+      "dlog_price": 0.31683140768277296,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 37.277111375188234
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "ENPH",
+      "t0": "2026-05-15",
+      "path": "pe_identity",
+      "dlog_price": -0.16533667452611756,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -15.239171207423452
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "NXT",
+      "t0": "2026-05-14",
+      "path": "pe_identity",
+      "dlog_price": -0.24707025763594626,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -21.891418563922947
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "STRL",
+      "t0": "2026-05-14",
+      "path": "pe_identity",
+      "dlog_price": -0.2646762584799047,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -23.2545633394454
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "ORA",
+      "t0": "2026-05-13",
+      "path": "pe_identity",
+      "dlog_price": -0.19397127762463562,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -17.63184379801731
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "PANW",
+      "t0": "2026-05-13",
+      "path": "pe_identity",
+      "dlog_price": 0.35819715844898603,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 43.07476766669262
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "ILMN",
+      "t0": "2026-05-12",
+      "path": "pe_identity",
+      "dlog_price": 0.2665264418106261,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 30.542210660311753
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "COIN",
+      "t0": "2026-05-11",
+      "path": "pe_identity",
+      "dlog_price": -0.30870795979136645,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -26.560478835722023
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "FTNT",
+      "t0": "2026-05-11",
+      "path": "pe_identity",
+      "dlog_price": 0.31073797782430734,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 36.44316629911981
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "TSLA",
+      "t0": "2026-05-11",
+      "path": "pe_identity",
+      "dlog_price": -0.08739549218501086,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -8.36853713132022
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "CVS",
+      "t0": "2026-05-08",
+      "path": "pe_identity",
+      "dlog_price": 0.13992996432588,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 15.019324147727996
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "CAT",
+      "t0": "2026-05-06",
+      "path": "pe_identity",
+      "dlog_price": 0.027117543742754435,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 2.748857051781939
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "CLSK",
+      "t0": "2026-05-06",
+      "path": "pe_identity",
+      "dlog_price": -0.12080480839894037,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -11.379307714001897
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "EME",
+      "t0": "2026-05-06",
+      "path": "pe_identity",
+      "dlog_price": -0.188287892047307,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -17.162381001655625
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "ICHR",
+      "t0": "2026-05-06",
+      "path": "ev_revenue",
+      "dlog_price": 0.32444121254950353,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": 37.94222202514659
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "KLIC",
+      "t0": "2026-05-06",
+      "path": "ev_revenue",
+      "dlog_price": 0.19181908038089723,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": 22.127131743586382
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "LRCX",
+      "t0": "2026-05-06",
+      "path": "pe_identity",
+      "dlog_price": 0.1652753335685082,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 17.971788993559777
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "LUMN",
+      "t0": "2026-05-06",
+      "path": "ev_revenue",
+      "dlog_price": -0.37682716986091847,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -34.87362952540014
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "MP",
+      "t0": "2026-05-06",
+      "path": "ev_revenue",
+      "dlog_price": -0.33037938113246046,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -28.504939469235
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "MPWR",
+      "t0": "2026-05-06",
+      "path": "pe_identity",
+      "dlog_price": -0.19854169549047906,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -18.00744171716634
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "SMCI",
+      "t0": "2026-05-06",
+      "path": "pe_identity",
+      "dlog_price": -0.2023711996258597,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -18.320832110285934
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "TLN",
+      "t0": "2026-05-06",
+      "path": "ev_revenue",
+      "dlog_price": -0.060813676507024184,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": -4.446803675971756
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "QCOM",
+      "t0": "2026-05-05",
+      "path": "pe_identity",
+      "dlog_price": 0.01758056719620349,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 1.7736014984953696
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "UCTT",
+      "t0": "2026-05-05",
+      "path": "ev_revenue",
+      "dlog_price": 0.24545706731263905,
+      "legs_pct": {
+        "revenue_delivery": 0.0,
+        "ev_multiple_residual": 26.626764590876984
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "PRIM",
+      "t0": "2026-05-04",
+      "path": "pe_identity",
+      "dlog_price": -0.761201583916205,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -53.28951759728089
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "MU",
+      "t0": "2026-05-01",
+      "path": "pe_identity",
+      "dlog_price": 0.5911845974641219,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 80.61266817424399
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "TWLO",
+      "t0": "2026-05-01",
+      "path": "pe_identity",
+      "dlog_price": 0.15724707559548978,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 17.028472697886077
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "ENS",
+      "t0": "2026-04-30",
+      "path": "pe_identity",
+      "dlog_price": -0.035034751875318015,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -3.4428139758395093
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "GOOGL",
+      "t0": "2026-04-30",
+      "path": "pe_identity",
+      "dlog_price": -0.07388672434503007,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -7.122310430604905
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "PWR",
+      "t0": "2026-04-30",
+      "path": "pe_identity",
+      "dlog_price": -0.09977664603458614,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -9.496046036717743
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "ELV",
+      "t0": "2026-04-29",
+      "path": "pe_identity",
+      "dlog_price": 0.1040355007961411,
+      "legs_pct": {
+        "rev_ps_delivery": 15.936133731487324,
+        "margin_delivery": -18.60202498114445,
+        "bottom_line_bridge": 3.4021447609083655,
+        "valuation_mix_accounting_residual": 13.71560932725382
+      },
+      "warnings": [],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "STX",
+      "t0": "2026-04-29",
+      "path": "pe_identity",
+      "dlog_price": 0.3479198155512293,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 41.611869449049024
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "WDC",
+      "t0": "2026-04-29",
+      "path": "pe_identity",
+      "dlog_price": 0.3448780483999796,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": 41.18177357370092
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "POWL",
+      "t0": "2026-04-27",
+      "path": "pe_identity",
+      "dlog_price": -0.11477947659635479,
+      "legs_pct": {
+        "rev_ps_delivery": 0.0,
+        "margin_delivery": 0.0,
+        "bottom_line_bridge": 0.0,
+        "valuation_mix_accounting_residual": -10.843726732180436
+      },
+      "warnings": [
+        "no_new_filing_since_onset"
+      ],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "OGN",
+      "t0": "2026-04-24",
+      "path": "ev_revenue",
+      "dlog_price": 0.18441268337114725,
+      "legs_pct": {
+        "revenue_delivery": -2.920506012806534,
+        "ev_multiple_residual": 7.517093133391017
+      },
+      "warnings": [],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "AESI",
+      "t0": "2026-04-23",
+      "path": "ev_revenue",
+      "dlog_price": -0.11290669031768275,
+      "legs_pct": {
+        "revenue_delivery": 3.72676160108798,
+        "ev_multiple_residual": -0.28030159386150943
+      },
+      "warnings": [],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "COHU",
+      "t0": "2026-04-23",
+      "path": "ev_revenue",
+      "dlog_price": 0.2091331753669614,
+      "legs_pct": {
+        "revenue_delivery": 12.737599526107513,
+        "ev_multiple_residual": 23.43856924319354
+      },
+      "warnings": [],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "UNH",
+      "t0": "2026-04-23",
+      "path": "pe_identity",
+      "dlog_price": 0.18601225956689138,
+      "legs_pct": {
+        "rev_ps_delivery": 12.924774731892509,
+        "margin_delivery": -47.470179538921364,
+        "bottom_line_bridge": 42.49109494882466,
+        "valuation_mix_accounting_residual": 42.49552469048621
+      },
+      "warnings": [],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "URI",
+      "t0": "2026-04-23",
+      "path": "pe_identity",
+      "dlog_price": 0.10662800872287725,
+      "legs_pct": {
+        "rev_ps_delivery": 8.58796177558212,
+        "margin_delivery": -6.840744846978863,
+        "bottom_line_bridge": -0.902841754659478,
+        "valuation_mix_accounting_residual": 10.978555127931223
+      },
+      "warnings": [],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "STLD",
+      "t0": "2026-04-21",
+      "path": "pe_identity",
+      "dlog_price": 0.03886972774654396,
+      "legs_pct": {
+        "rev_ps_delivery": 8.043377274532947,
+        "margin_delivery": -26.69590831394062,
+        "bottom_line_bridge": 1.5367977894782614,
+        "valuation_mix_accounting_residual": 29.279920880988296
+      },
+      "warnings": [],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "CART",
+      "t0": "2026-04-20",
+      "path": "pe_identity",
+      "dlog_price": 0.09487632550735725,
+      "legs_pct": {
+        "rev_ps_delivery": 19.0299442521739,
+        "margin_delivery": -8.065959937437107,
+        "bottom_line_bridge": -3.9558672326065802,
+        "valuation_mix_accounting_residual": 4.616659689405944
+      },
+      "warnings": [],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    },
+    {
+      "ticker": "KALU",
+      "t0": "2026-04-20",
+      "path": "pe_identity",
+      "dlog_price": 0.05522193827165367,
+      "legs_pct": {
+        "rev_ps_delivery": 10.752842718825306,
+        "margin_delivery": 93.00468101203427,
+        "bottom_line_bridge": 11.661709582790092,
+        "valuation_mix_accounting_residual": -55.725304206529735
+      },
+      "warnings": [],
+      "price_source": "yahoo",
+      "basis_mismatch": false
+    }
+  ],
+  "refused_examples": [
+    {
+      "ticker": "IBB",
+      "t0": "2026-07-02",
+      "refusal_reasons": [
+        "no_fundamentals_at_anchor",
+        "no_fundamentals_at_asof"
+      ]
+    },
+    {
+      "ticker": "RDDT",
+      "t0": "2026-07-01",
+      "refusal_reasons": [
+        "no_fundamentals_at_anchor",
+        "no_fundamentals_at_asof"
+      ]
+    },
+    {
+      "ticker": "DCO",
+      "t0": "2026-06-26",
+      "refusal_reasons": [
+        "no_fundamentals_at_anchor",
+        "no_fundamentals_at_asof"
+      ]
+    },
+    {
+      "ticker": "VIK",
+      "t0": "2026-06-26",
+      "refusal_reasons": [
+        "no_fundamentals_at_anchor",
+        "no_fundamentals_at_asof"
+      ]
+    },
+    {
+      "ticker": "VKTX",
+      "t0": "2026-06-24",
+      "refusal_reasons": [
+        "no_fundamentals_at_anchor",
+        "no_fundamentals_at_asof"
+      ]
+    },
+    {
+      "ticker": "ARQT",
+      "t0": "2026-06-22",
+      "refusal_reasons": [
+        "no_fundamentals_at_anchor",
+        "no_fundamentals_at_asof"
+      ]
+    },
+    {
+      "ticker": "LUV",
+      "t0": "2026-06-18",
+      "refusal_reasons": [
+        "missing_shares_for_ev"
+      ]
+    },
+    {
+      "ticker": "W",
+      "t0": "2026-06-18",
+      "refusal_reasons": [
+        "no_fundamentals_at_anchor",
+        "no_fundamentals_at_asof"
+      ]
+    },
+    {
+      "ticker": "NBIS",
+      "t0": "2026-06-17",
+      "refusal_reasons": [
+        "no_fundamentals_at_anchor",
+        "no_fundamentals_at_asof"
+      ]
+    },
+    {
+      "ticker": "HIMS",
+      "t0": "2026-06-16",
+      "refusal_reasons": [
+        "missing_shares_for_ev"
+      ]
+    }
+  ],
+  "_display_only": true,
+  "_horizon_role": "hold_thesis",
+  "_version": "v1"
+}
