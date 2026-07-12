@@ -63,7 +63,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | qualitative-intelligence | 23 |
 | research-factory | 3 |
 | rlt | 3 |
-| rotation-command | 3 |
+| rotation-command | 5 |
 | sector-pulse | 3 |
 | setup-species | 6 |
 | short-side | 1 |
@@ -85,7 +85,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 253 |
+| display | 255 |
 | infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
@@ -94,7 +94,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 394 |
+| git | 396 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -722,7 +722,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | site-marketdata-subsector-confluence | `site/marketdata/subsector_confluence.json` | json | daily-engine | display | 5 | 0 |
+| site-marketdata-rotation-events-china | `site/marketdata/rotation_events_china.json` | json | daily-engine | display | 0 | 2 |
 | site-marketdata-rotation-events | `site/marketdata/rotation_events.json` | json | daily-engine | display | 1 | 0 |
+| data-rotation-events-china-ledger | `data/rotation_events_china/events.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | data-rotation-events-ledger | `data/rotation_events/events.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
 ### sector-pulse
