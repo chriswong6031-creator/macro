@@ -11442,7 +11442,7 @@ artifacts:
     notes: >
       IRD-W1 vulnerability map substrate. Per-(indicator, iso3) parquet files under
       data/imf_weo/<INDICATOR>_<ISO3>.parquet. Three indicators: GGXWDG_NGDP
-      (gross debt %GDP), GGXONLB_NGDP (primary balance %GDP), BCA_NGDPD (current
+      (gross debt %GDP), GGXCNL_NGDP (overall fiscal balance %GDP; GGXONLB not exposed by DataMapper v1), BCA_NGDPD (current
       account %GDP). 25 countries. Annual data from IMF DataMapper API (keyless).
       Display-only; never scored. IRD-R8 Berg-Pattillo caveat applies on all
       on-surface fragility reads. authority.may_rank/gate/size/escalate=false.
@@ -11450,11 +11450,11 @@ artifacts:
   # --- IRD-W1: CB meeting calendar (static display-only date table) ---
   ird-cb-calendar:
     path: data/intl_risk/cb_calendar.yml
-    format: yaml
-    producer: manual
+    format: other
+    producer: <MANUAL>
     known_extra_writers: []
     owner_program: ird
-    cadence: manual
+    cadence: on-demand
     storage: git
     asof_field: null
     freshness_sla_hours: 8760  # hand-curated yearly; no SLA

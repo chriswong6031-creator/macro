@@ -783,11 +783,13 @@ def compute(
             "data/fred/WLCFLL.parquet missing or empty — facility_loans_bn unavailable"
         )
 
-    # Determine state label
+    # Determine state label. A standing sub-$1bn balance is operational residue
+    # (small routine FX ops), not a draw — calling it "low_draw" would cry wolf
+    # on a confirmation-tier gauge (IRD-R5), so the quiescent floor is 1bn.
     if swap_lines_bn is not None:
         if swap_lines_bn > 100:
             _swap_state = "elevated_draw"
-        elif swap_lines_bn > 0:
+        elif swap_lines_bn > 1:
             _swap_state = "low_draw"
         else:
             _swap_state = "quiescent"

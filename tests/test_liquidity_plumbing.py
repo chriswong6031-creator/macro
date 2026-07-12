@@ -1236,7 +1236,7 @@ class TestSwapLinesIntegration:
         assert fd["fima_repo_bn"] is None
 
     def test_low_draw_state(self):
-        """0 < swap_lines_bn <= 100 → state == 'low_draw'."""
+        """1 < swap_lines_bn <= 100 → state == 'low_draw'."""
         swpt = _swap_frame([50_000.0], "swap_lines_tot")    # $50B
         result = compute(
             _regime_latest(),
@@ -1263,6 +1263,22 @@ class TestSwapLinesIntegration:
         )
         fd = result["foreign_dollar"]
         assert fd["swap_lines_bn"] == pytest.approx(0.0, abs=1e-3)
+        assert fd["state"] == "quiescent"
+
+    def test_quiescent_standing_residual(self):
+        """Sub-$1bn standing balance (routine FX ops, e.g. SWPT=$170M live
+        2026-07-12) is quiescent, not a draw — IRD-R5 no-cry-wolf floor."""
+        swpt = _swap_frame([170.0], "swap_lines_tot")   # $170M
+        result = compute(
+            _regime_latest(),
+            _netliq_frame(),
+            _treasury_frames(),
+            _auction_snapshot(),
+            _config(),
+            swap_frames={"swap_lines_tot": swpt},
+        )
+        fd = result["foreign_dollar"]
+        assert fd["swap_lines_bn"] == pytest.approx(0.17, abs=1e-2)
         assert fd["state"] == "quiescent"
 
     def test_facility_loans_populated(self):

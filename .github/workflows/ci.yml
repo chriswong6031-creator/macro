@@ -1373,4 +1373,4 @@ jobs:
       - name: install deps
         run: pip install pytest pandas numpy pyyaml pyarrow requests
       - name: IRD-W1 substrate test suite
-        run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py -q
+        run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py -q

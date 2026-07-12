@@ -2,7 +2,9 @@
 
 House law (FRED alias-collision law): if the same FRED series id appears in
 multiple fred.series groups, every occurrence MUST use the IDENTICAL alias.
-A collision (same id, different alias across groups) kills the entire FredAdapter
+A collision (same id, different alias across groups) silently dict-merges last-wins in
+_all_series(), flipping the stored column alias out from under every consumer (and the
+store upsert outlier guard then reads the wrong parquet — the 2026-07 8-run outage class)
 at runtime — an 8-run outage class event.
 
 Coverage:

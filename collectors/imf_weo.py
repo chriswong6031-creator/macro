@@ -112,6 +112,12 @@ class ImfWeoAdapter(Adapter):
     """IMF WEO DataMapper — annual fiscal/CA fundamentals (IRD-W1 vulnerability map).
 
     group = 'imf_weo' → data/imf_weo/<INDICATOR>_<ISO3>.parquet
+
+    Staleness blind spot (deliberate, documented): fetch() upserts the per-country
+    series itself and returns only the run-summary frame, so run_adapter's
+    detect_stale_series sees a frame stamped today and can never flag a frozen WEO
+    feed. Accepted for annual display-tier data (synapse SLA 4800h covers the store
+    directory); revisit only if this store ever feeds anything time-sensitive.
     """
 
     name = "imf_weo"
