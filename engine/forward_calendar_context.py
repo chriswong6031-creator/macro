@@ -321,7 +321,13 @@ def _gather_cycle_hazards(root: Path) -> dict:
 
 def _gather_odds_fingerprint(root: Path) -> dict:
     """factor_match.json is per-ticker / template-shaped, not a single current-state row.
-    Emit absent with reason per ADB-R4 (no clean current-state row -> absent, do not force)."""
+
+    Emits the closest honest summary available — the SPY core-template 20d base
+    rate (SPY = market proxy) with a Wilson CI computed HERE, deterministically,
+    from the artifact's raw (n, win_rate). The CI is engine-derived, not quoted
+    from odds_lab (lawful: the no-origination law binds LLMs, not deterministic
+    engine code; the LLM still only quotes numbers it is handed). Malformed or
+    missing artifacts fall through to absent markers."""
     try:
         path = root / "site" / "oddsdata" / "factor_match.json"
         data = _read_json(path)
@@ -366,7 +372,9 @@ def _gather_odds_fingerprint(root: Path) -> dict:
         return {
             "as_of": asof,
             "display_only": True,
-            "note": "SPY core-template 20d base rate from factor_match; per-ticker artifact, not a single current-state fingerprint row",
+            "note": ("SPY core-template 20d base rate from factor_match; per-ticker artifact, "
+                     "not a single current-state fingerprint row; Wilson CI engine-derived "
+                     "from the artifact's raw n/win_rate, not quoted from odds_lab"),
             "template": "core",
             "horizon": "20d",
             "n": n,
