@@ -174,6 +174,32 @@ def _pr_ci_green(pr: dict[str, Any]) -> bool:
         return False
 
 
+def _pr_ci_green_at_sha(pr_number: int, expect_sha: str) -> bool:
+    """Return True only if CI is green on EXACTLY `expect_sha` (#2377 review
+    residual 2: the loop-start listing's statusCheckRollup carries no SHA and
+    may be green on an older commit than the audited/merged one).
+
+    Re-fetches the rollup FRESH and requires the PR's live head to still equal
+    the audited SHA — so the green we trust is the green on the code we merge.
+    Fail-closed on any error / drift / empty checks.  NEVER raises.
+    """
+    try:
+        result = subprocess.run(
+            ["gh", "pr", "view", str(pr_number), "--json",
+             "statusCheckRollup,headRefOid"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            return False
+        data = json.loads(result.stdout or "{}")
+        if (data.get("headRefOid") or "") != expect_sha or not expect_sha:
+            return False  # rollup would describe a different commit
+        return _pr_ci_green(data)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_merge._pr_ci_green_at_sha #%s: %s", pr_number, exc)
+        return False
+
+
 def _get_pr_files(pr_number: int) -> list[str]:
     """Return list of changed files for a PR. NEVER raises."""
     try:
@@ -214,11 +240,18 @@ def _mark_pr_ready(pr_number: int, *, dry_run: bool = False) -> bool:
 def _rebase_merge_pr(
     pr_branch: str,
     *,
+    expect_sha: str = "",
     root: Path | None = None,
     dry_run: bool = False,
     retries: int = _MAX_REBASE_RETRIES,
 ) -> dict[str, Any]:
     """Merge a PR via rebase --autostash with retry (registry-race-safe pattern).
+
+    expect_sha : when non-empty, the audited/approved head commit. After the
+      fetch, origin/<pr_branch> MUST equal it or the merge aborts — this pins
+      the merge to exactly the code the auditor approved (#2377 review B3, the
+      SHA-binding TOCTOU). An empty expect_sha keeps the legacy behavior for
+      non-audited callers/tests.
 
     Returns {merged: bool, attempts: int, error: str | None}.
     NEVER raises.
@@ -240,6 +273,22 @@ def _rebase_merge_pr(
                     ["git", "fetch", "origin", "main", pr_branch],
                     cwd=str(r), capture_output=True, timeout=60,
                 )
+                # SHA PIN (#2377 B3): the branch tip must still be the audited
+                # commit. If it moved between the audit gate and now, an
+                # unaudited commit is at the tip — abort, never merge it.
+                if expect_sha:
+                    tip = subprocess.run(
+                        ["git", "rev-parse", f"origin/{pr_branch}"],
+                        cwd=str(r), capture_output=True, text=True, timeout=30,
+                    )
+                    live_sha = (tip.stdout or "").strip()
+                    if tip.returncode != 0 or live_sha != expect_sha:
+                        result["error"] = (
+                            f"sha_pin_mismatch: origin/{pr_branch}={live_sha[:12]} "
+                            f"!= audited {expect_sha[:12]} — aborting merge (B3)"
+                        )
+                        log.warning("MERGE: %s", result["error"])
+                        return result  # fail-closed: do not merge unaudited code
                 # Reset to a clean origin/main tip before applying the PR.
                 # Without this, git pull --rebase would rebase onto whatever branch
                 # happens to be checked out in this worktree (the docket branch),
@@ -568,11 +617,26 @@ def run_merge_lane(
                 results.append(per)
                 continue
 
-            # Step 6: mark ready + rebase-merge
+            # Step 5.6: CI-green BOUND to the audited SHA (#2377 review residual 2).
+            # Step 4 used the loop-start listing (no SHA); re-verify green on the
+            # exact commit we are about to merge. Fail-closed on drift.
+            if not (pr_number and _pr_ci_green_at_sha(pr_number, pr_head_sha)):
+                per["status"] = "ci_not_green_at_audited_sha"
+                per["reason"] = f"CI not green on audited sha {pr_head_sha[:12]}"
+                log.info("MERGE: PR #%s %s — skip", pr_number, per["reason"])
+                results.append(per)
+                continue
+
+            # Step 6: mark ready + rebase-merge — PINNED to the audited SHA
+            # (R-V7-3 / #2377 review B3): the merge must ship exactly the commit
+            # the auditor approved (and step-4 CI went green on). expect_sha makes
+            # _rebase_merge_pr abort if origin/<branch> moved since the audit,
+            # closing the TOCTOU between the step-5.5 SHA check and the merge.
             if pr_number:
                 _mark_pr_ready(pr_number, dry_run=dry_run)
 
-            merge_result = _rebase_merge_pr(pr_branch, root=root, dry_run=dry_run)
+            merge_result = _rebase_merge_pr(
+                pr_branch, expect_sha=pr_head_sha, root=root, dry_run=dry_run)
             per["merge"] = merge_result
             if merge_result.get("merged"):
                 per["status"] = "merged"
