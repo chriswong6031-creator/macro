@@ -147,6 +147,7 @@ jobs:
           run_py "capital flow velocity — CN/HK (build_flow_velocity)" scripts.build_flow_velocity
           run_py "china subsector confluence (build_subsector_confluence --china)" scripts.build_subsector_confluence --china
           run_py "build hong kong / hang seng (build_hk)"             scripts.build_hk
+          run_py "hk rotation events (build_rotation_events_hk)"  scripts.build_rotation_events_hk  # RC-R14 display-tier, reads hkbasketdata/baskets.json in-process
           # W6-CN Fix 4 (lane unification): baskets_china/_ths/baskets_hk previously built
           # in the nightly 02:00 UTC lane (via build_vector.py) on the PRIOR asia close, making
           # them one full CN session behind their sibling pages ~19.5h/day. Moved here so all

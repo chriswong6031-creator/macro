@@ -1729,9 +1729,9 @@ jobs:
         run: python -m pytest tests/test_standout_review.py -v
 
   rc-r14-china-rotation-events:
-    # RC-R14: China rotation-event detector port tests.
-    # Covers: sector_legs_china loader (basket series from baskets.json),
-    # run_nightly data_subdir parameterization (China path isolation from US),
+    # RC-R14: China + HK rotation-event detector port tests.
+    # Covers: sector_legs_china/hk loaders (basket series from baskets.json),
+    # run_nightly data_subdir parameterization (China/HK path isolation from US),
     # append-only ledger regression (RC-R2 law), synthetic detector fire.
     # Network-free: all inputs are synthetic fixtures.
     runs-on: ubuntu-latest
@@ -1742,5 +1742,5 @@ jobs:
           python-version: "3.12"
       - name: install deps
         run: pip install pytest pandas numpy pyyaml pyarrow
-      - name: RC-R14 China rotation events test suite
-        run: python -m pytest tests/test_rotation_events.py tests/test_rotation_events_china.py -v
+      - name: RC-R14 China + HK rotation events test suite
+        run: python -m pytest tests/test_rotation_events.py tests/test_rotation_events_china.py tests/test_rotation_events_hk.py -v
