@@ -3,7 +3,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Group Flow Heatmap &amp; Market Tide · 资金潮汐与板块流量图</title>
@@ -138,6 +137,8 @@
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
         <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
         <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+        <a href="flow_leaders.html">🏆 <span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
+        <a href="leader_radar.html">📡 <span class="l-en">Leader Radar</span><span class="l-zh">领袖雷达</span><span class="d"><span class="l-en">Lifecycle board · regime · handoff watch · rerating watch</span><span class="l-zh">生命周期看板 · 领导力制度 · 交接观察 · 重估观察</span></span></a>
         <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
         <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
@@ -447,7 +448,7 @@
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+          <span class="z-badge z-neu">z -0.5</span>
         
         <span class="tone-chip tone-pos">
           <span class="l-en">call~</span><span class="l-zh">偏多~</span>
@@ -456,6 +457,12 @@
         <span>51<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
         <span>0DTE 52%</span>
       </div>
+      
+      <div class="breadth-bar">
+        <div class="breadth-fill breadth-neg"
+             style="width:33%"></div>
+      </div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 33% (51<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -468,7 +475,7 @@
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+          <span class="z-badge z-neu">z -0.7</span>
         
         <span class="tone-chip tone-pos">
           <span class="l-en">call~</span><span class="l-zh">偏多~</span>
@@ -480,9 +487,9 @@
       
       <div class="breadth-bar">
         <div class="breadth-fill breadth-pos"
-             style="width:100%"></div>
+             style="width:75%"></div>
       </div>
-      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 100% (1<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 75% (4<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -495,7 +502,7 @@
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+          <span class="z-badge z-hi">z 1.8</span>
         
         <span class="tone-chip tone-neu">
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
@@ -504,6 +511,12 @@
         <span>4<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
         <span>0DTE 48%</span>
       </div>
+      
+      <div class="breadth-bar">
+        <div class="breadth-fill "
+             style="width:50%"></div>
+      </div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 50% (4<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -516,7 +529,7 @@
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+          <span class="z-badge z-neu">z -1.0</span>
         
         <span class="tone-chip tone-pos">
           <span class="l-en">call~</span><span class="l-zh">偏多~</span>
@@ -525,6 +538,12 @@
         <span>26<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
         <span>0DTE 61%</span>
       </div>
+      
+      <div class="breadth-bar">
+        <div class="breadth-fill "
+             style="width:46%"></div>
+      </div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 46% (26<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -537,7 +556,7 @@
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+          <span class="z-badge z-neu">z -0.4</span>
         
         <span class="tone-chip tone-neu">
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
@@ -546,6 +565,12 @@
         <span>25<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
         <span>0DTE 44%</span>
       </div>
+      
+      <div class="breadth-bar">
+        <div class="breadth-fill breadth-neg"
+             style="width:32%"></div>
+      </div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 32% (25<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -558,7 +583,7 @@
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+          <span class="z-badge z-neu">z -0.4</span>
         
         <span class="tone-chip tone-neu">
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
@@ -567,6 +592,12 @@
         <span>41<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
         <span>0DTE 29%</span>
       </div>
+      
+      <div class="breadth-bar">
+        <div class="breadth-fill "
+             style="width:51%"></div>
+      </div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 51% (41<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -579,7 +610,7 @@
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+          <span class="z-badge z-neu">z -0.4</span>
         
         <span class="tone-chip tone-neu">
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
@@ -588,6 +619,12 @@
         <span>15<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
         <span>0DTE 27%</span>
       </div>
+      
+      <div class="breadth-bar">
+        <div class="breadth-fill breadth-neg"
+             style="width:33%"></div>
+      </div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 33% (15<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -600,7 +637,7 @@
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+          <span class="z-badge z-neu">z -0.4</span>
         
         <span class="tone-chip tone-neu">
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
@@ -609,6 +646,12 @@
         <span>21<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
         <span>0DTE 26%</span>
       </div>
+      
+      <div class="breadth-bar">
+        <div class="breadth-fill "
+             style="width:57%"></div>
+      </div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 57% (21<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -621,7 +664,7 @@
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+          <span class="z-badge z-neu">z -0.3</span>
         
         <span class="tone-chip tone-neu">
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
@@ -630,6 +673,12 @@
         <span>19<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
         <span>0DTE 21%</span>
       </div>
+      
+      <div class="breadth-bar">
+        <div class="breadth-fill "
+             style="width:42%"></div>
+      </div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 42% (19<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -642,7 +691,7 @@
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+          <span class="z-badge z-neu">z -0.5</span>
         
         <span class="tone-chip tone-neu">
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
@@ -651,6 +700,12 @@
         <span>11<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
         <span>0DTE 14%</span>
       </div>
+      
+      <div class="breadth-bar">
+        <div class="breadth-fill breadth-neg"
+             style="width:18%"></div>
+      </div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 18% (11<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -663,7 +718,7 @@
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-raw"><span class="l-en">raw (<20 obs)</span><span class="l-zh">原始值(<20条)</span></span>
+          <span class="z-badge z-neu">z -0.2</span>
         
         <span class="tone-chip tone-neu">
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
@@ -672,6 +727,12 @@
         <span>3<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
         <span>0DTE 13%</span>
       </div>
+      
+      <div class="breadth-bar">
+        <div class="breadth-fill breadth-neg"
+             style="width:33%"></div>
+      </div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 33% (3<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -693,6 +754,12 @@
         <span>1<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
         <span>0DTE 0%</span>
       </div>
+      
+      <div class="breadth-bar">
+        <div class="breadth-fill breadth-pos"
+             style="width:100%"></div>
+      </div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 100% (1<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -722,6 +789,10 @@
       </div>
       <div class="details muted">
         0DTE 55%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -735,6 +806,10 @@
       </div>
       <div class="details muted">
         0DTE 68%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -748,6 +823,10 @@
       </div>
       <div class="details muted">
         0DTE 72%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -761,6 +840,10 @@
       </div>
       <div class="details muted">
         0DTE 25%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -774,6 +857,10 @@
       </div>
       <div class="details muted">
         0DTE 75%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -787,6 +874,10 @@
       </div>
       <div class="details muted">
         0DTE 56%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -800,6 +891,10 @@
       </div>
       <div class="details muted">
         0DTE 47%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -813,6 +908,10 @@
       </div>
       <div class="details muted">
         0DTE 34%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -826,6 +925,10 @@
       </div>
       <div class="details muted">
         0DTE 56%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -839,6 +942,10 @@
       </div>
       <div class="details muted">
         0DTE 36%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -852,6 +959,10 @@
       </div>
       <div class="details muted">
         0DTE 51%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -865,6 +976,10 @@
       </div>
       <div class="details muted">
         0DTE 50%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -878,6 +993,10 @@
       </div>
       <div class="details muted">
         0DTE 45%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -891,6 +1010,10 @@
       </div>
       <div class="details muted">
         0DTE 51%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -904,6 +1027,10 @@
       </div>
       <div class="details muted">
         0DTE 43%
+        
+        
+        
+        
       </div>
     </div>
     
@@ -1085,7 +1212,7 @@
 <script>
 (function(){
   // ── Data injected from Python ────────────────────────────────────
-  var SPARK = [{"date": "2026-07-02", "net_premium_mn": 881.3399999999999, "premium_mn": 5028.489999999999}, {"date": "2026-07-06", "net_premium_mn": 614.0600000000001, "premium_mn": 3678.4000000000005}, {"date": "2026-07-09", "net_premium_mn": 377.67, "premium_mn": 3700.68}, {"date": "2026-07-10", "net_premium_mn": 51.18, "premium_mn": 2962.08}];
+  var SPARK = [{"date": "2026-05-26", "net_premium_mn": 0.0, "premium_mn": 4637.37}, {"date": "2026-05-27", "net_premium_mn": 0.0, "premium_mn": 3571.07}, {"date": "2026-05-28", "net_premium_mn": 0.0, "premium_mn": 4566.82}, {"date": "2026-05-29", "net_premium_mn": 0.0, "premium_mn": 4263.700000000001}, {"date": "2026-06-01", "net_premium_mn": 0.0, "premium_mn": 3776.81}, {"date": "2026-06-02", "net_premium_mn": 0.0, "premium_mn": 4086.25}, {"date": "2026-06-03", "net_premium_mn": 0.0, "premium_mn": 3604.81}, {"date": "2026-06-04", "net_premium_mn": 0.0, "premium_mn": 4512.27}, {"date": "2026-06-05", "net_premium_mn": 0.0, "premium_mn": 19273.63}, {"date": "2026-06-08", "net_premium_mn": 0.0, "premium_mn": 5012.11}, {"date": "2026-06-09", "net_premium_mn": 0.0, "premium_mn": 10480.45}, {"date": "2026-06-10", "net_premium_mn": 0.0, "premium_mn": 8316.230000000001}, {"date": "2026-06-11", "net_premium_mn": 0.0, "premium_mn": 9615.169999999998}, {"date": "2026-06-12", "net_premium_mn": 0.0, "premium_mn": 7359.450000000001}, {"date": "2026-06-15", "net_premium_mn": 0.0, "premium_mn": 5078.509999999999}, {"date": "2026-06-16", "net_premium_mn": 0.0, "premium_mn": 5554.870000000001}, {"date": "2026-06-17", "net_premium_mn": 0.0, "premium_mn": 9599.03}, {"date": "2026-06-18", "net_premium_mn": 0.0, "premium_mn": 4593.1}, {"date": "2026-06-22", "net_premium_mn": 0.0, "premium_mn": 3584.31}, {"date": "2026-06-23", "net_premium_mn": 0.0, "premium_mn": 5340.05}, {"date": "2026-06-24", "net_premium_mn": 0.0, "premium_mn": 5222.54}, {"date": "2026-06-25", "net_premium_mn": 0.0, "premium_mn": 4612.6}, {"date": "2026-06-26", "net_premium_mn": 0.0, "premium_mn": 4583.38}, {"date": "2026-06-29", "net_premium_mn": 0.0, "premium_mn": 4732.369999999999}, {"date": "2026-06-30", "net_premium_mn": 0.0, "premium_mn": 4570.62}, {"date": "2026-07-01", "net_premium_mn": 0.0, "premium_mn": 4085.89}, {"date": "2026-07-02", "net_premium_mn": 881.3399999999999, "premium_mn": 5028.489999999999}, {"date": "2026-07-06", "net_premium_mn": 614.0600000000001, "premium_mn": 3678.4000000000005}, {"date": "2026-07-09", "net_premium_mn": 377.67, "premium_mn": 3700.68}, {"date": "2026-07-10", "net_premium_mn": 51.18, "premium_mn": 2962.08}];
 
   // ── Sparkline canvas ─────────────────────────────────────────────
   var canvas = document.getElementById('fd-spark');

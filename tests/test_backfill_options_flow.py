@@ -6,13 +6,19 @@ Covers:
 3. Staleness-warning logic: _check_staleness emits ::warning on stale, not on fresh.
 4. _discover_dates: file-selection priority (_all > u392_ > other).
 5. Integration: a synthetic day processed end-to-end yields correct SUMMARY_KEYS.
+6. CRITICAL: 1-row-per-contract (daily schema) — signed fields are NaN, not 0.0.
+   This is the production schema of data/massive_options_day/*.parquet (daily
+   per-contract aggregates). The reviewer confirmed all 9668 contract rows have
+   min/median/max rows-per-contract = 1/1/1. With one row per contract,
+   sign_volume()'s shift() is always NaN → tick=0 → signed_vol=0. The fix:
+   _compute_magnitude_row() stores signed fields as NaN (explicit honest absence).
 """
 from __future__ import annotations
 
 import sys
 import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -21,9 +27,11 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.backfill_options_flow import (
+    MAGNITUDE_KEYS,
+    SIGNED_KEYS,
     SUMMARY_KEYS,
     _ensure_underlying,
-    _extract_summary_row,
+    _compute_magnitude_row,
     _already_present,
 )
 
@@ -31,7 +39,9 @@ from scripts.backfill_options_flow import (
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def _minute_df(sym: str = "SPY", n_rows: int = 20, seed: int = 42) -> pd.DataFrame:
-    """Minimal synthetic minute-agg frame matching the massive_flatfiles schema."""
+    """Minimal synthetic MULTI-ROW minute-agg frame matching the massive_flatfiles
+    schema. Each row is a different minute for the SAME contract — this is the format
+    the live nightly collector produces and what sign_volume() is designed for."""
     rng = np.random.default_rng(seed)
     n = n_rows
     exp_date = datetime.date(2026, 6, 20)
@@ -51,10 +61,135 @@ def _minute_df(sym: str = "SPY", n_rows: int = 20, seed: int = 42) -> pd.DataFra
     })
 
 
+def _daily_df(sym: str = "SPY", n_contracts: int = 50, session: datetime.date = None,
+              seed: int = 42) -> pd.DataFrame:
+    """DAILY per-contract aggregate fixture — ONE row per contract with ONE window_start.
+
+    This matches the PRODUCTION schema of data/massive_options_day/*.parquet as
+    confirmed by the reviewer (verified against 2026-06-25_u392: 9668 contracts,
+    rows-per-contract min/median/max = 1/1/1, all share the same window_start).
+
+    With one row per contract, sign_volume()'s shift() is always NaN → tick=0
+    → signed_vol=0. The backfill must store signed fields as NaN, never 0.0.
+    """
+    if session is None:
+        session = datetime.date(2026, 6, 20)
+    rng = np.random.default_rng(seed)
+    # session start ns (simulate same window_start for all rows = daily aggregate marker)
+    ws = int(pd.Timestamp(session).value)
+    strikes = [200.0 + i * 5.0 for i in range(n_contracts)]
+    is_calls = [i % 2 == 0 for i in range(n_contracts)]
+    exp_date = session + datetime.timedelta(days=2)  # non-zerodte by default
+    tickers = [
+        f"O:{sym}{session.strftime('%y%m%d')}{'C' if c else 'P'}{int(k * 1000):08d}"
+        for k, c in zip(strikes, is_calls)
+    ]
+    return pd.DataFrame({
+        "ticker": tickers,
+        "volume": rng.integers(100, 5000, n_contracts),
+        "open": rng.uniform(1.0, 10.0, n_contracts),
+        "close": rng.uniform(1.0, 10.0, n_contracts),
+        "high": rng.uniform(5.0, 15.0, n_contracts),
+        "low": rng.uniform(0.5, 2.0, n_contracts),
+        "window_start": [ws] * n_contracts,  # identical for all rows = daily agg
+        "transactions": rng.integers(1, 100, n_contracts),
+        "underlying": [sym] * n_contracts,
+        "expiry": pd.to_datetime([exp_date] * n_contracts),
+        "is_call": is_calls,
+        "strike": strikes,
+    })
+
+
 def _minute_df_no_underlying(sym: str = "SPY", n_rows: int = 20) -> pd.DataFrame:
     """Same as _minute_df but WITHOUT the `underlying` column — 2024-era schema variant."""
     df = _minute_df(sym=sym, n_rows=n_rows)
     return df.drop(columns=["underlying"])
+
+
+# ── CRITICAL: 1-row-per-contract (daily schema) test ─────────────────────────
+
+class TestDailySchemaSignedFieldsAreNaN:
+    """Verify the production schema: daily per-contract aggregates produce NaN
+    for signed fields, never 0.0 (which would poison trailing-window baselines).
+
+    Root cause (from reviewer): sign_volume() uses shift() within each ticker to
+    compute minute-over-minute price ticks. With ONE row per contract (the daily
+    production schema), shift() always returns NaN → tick=0 → signed_vol=0.
+    net_premium_mn = Σ(premium × sign(signed_vol)) = 0.0 for every contract.
+    Storing 0.0 is worse than NaN because it survives dropna() and corrupts the
+    baseline for both flare_persistence T2 witness and build_flow_leaders.
+    """
+
+    def test_signed_fields_are_nan_not_zero(self):
+        """1-row-per-contract input MUST produce NaN (not 0.0) for SIGNED_KEYS."""
+        session = datetime.date(2026, 6, 20)
+        daily = _daily_df("AAPL", n_contracts=50, session=session)
+
+        # Confirm this is a 1-row-per-contract frame (production schema)
+        assert daily["ticker"].nunique() == len(daily), "Fixture must be 1 row per contract"
+        assert daily["window_start"].nunique() == 1, "All rows share one window_start = daily agg"
+
+        row = _compute_magnitude_row("AAPL", session, daily)
+        assert row is not None, "_compute_magnitude_row must not return None on valid daily data"
+
+        for col in SIGNED_KEYS:
+            assert col in row.columns, f"Missing column: {col}"
+            v = row[col].iloc[0]
+            assert pd.isna(v), (
+                f"SIGNED column '{col}' must be NaN for daily-schema input, got {v!r}. "
+                f"Storing 0.0 would poison trailing-window baselines (flare_persistence T2, "
+                f"build_flow_leaders net_premium_mn inflection). "
+                f"Root cause: sign_volume() shift() is always NaN with 1 row/contract."
+            )
+
+    def test_magnitude_fields_are_valid_from_daily_data(self):
+        """MAGNITUDE_KEYS must be non-null and numerically valid from daily data."""
+        session = datetime.date(2026, 6, 20)
+        daily = _daily_df("SPY", n_contracts=40, session=session)
+        row = _compute_magnitude_row("SPY", session, daily)
+        assert row is not None
+
+        assert row["volume"].iloc[0] > 0, "volume must be positive"
+        assert row["premium_mn"].iloc[0] > 0, "premium_mn must be positive (options have value)"
+        pc = row["pc_ratio"].iloc[0]
+        # pc_ratio can be None if no calls, but with balanced fixture it should be present
+        if pc is not None:
+            assert pc > 0, f"pc_ratio must be positive, got {pc}"
+        zs = row["zerodte_share"].iloc[0]
+        assert 0.0 <= zs <= 1.0, f"zerodte_share must be [0,1], got {zs}"
+
+    def test_zerodte_share_is_nonzero_when_contracts_expire_on_session(self):
+        """zerodte_share is correctly computed from expiry == session date (daily data)."""
+        session = datetime.date(2026, 6, 20)
+        # Create a mix: half contracts expire today (zerodte), half expire next week
+        daily = _daily_df("NVDA", n_contracts=20, session=session)
+        daily = daily.copy()
+        daily.loc[:10, "expiry"] = pd.Timestamp(session)    # 11 zerodte contracts
+        daily.loc[11:, "expiry"] = pd.Timestamp("2026-06-26")  # rest expire later
+
+        row = _compute_magnitude_row("NVDA", session, daily)
+        assert row is not None
+        zs = row["zerodte_share"].iloc[0]
+        # zerodte contracts are 0..10 = 11 out of 20; should be ~55% of volume
+        assert zs > 0.3, f"Expected meaningful zerodte_share, got {zs}"
+
+    def test_net_premium_mn_not_stored_as_zero(self):
+        """Regression guard: net_premium_mn must be NaN (not 0.0) for daily-schema input.
+        0.0 survives dropna() and would corrupt trailing baselines in both
+        engine/flare_persistence.py (T2 witness) and scripts/build_flow_leaders.py."""
+        session = datetime.date(2026, 6, 20)
+        daily = _daily_df("META", n_contracts=30, session=session)
+        row = _compute_magnitude_row("META", session, daily)
+        assert row is not None
+
+        npm = row["net_premium_mn"].iloc[0]
+        # Must be NaN — not 0.0
+        assert pd.isna(npm), (
+            f"net_premium_mn must be NaN (not 0.0) for daily-schema input. "
+            f"Got {npm!r}. Storing 0.0 poisons flare_persistence T2 witness baseline."
+        )
+        # Explicit check: definitely NOT the value 0.0
+        assert npm != 0.0, "net_premium_mn must not be 0.0 (sentinel for sign collapse)"
 
 
 # ── 1. Schema-variant: _ensure_underlying ────────────────────────────────────
@@ -127,7 +262,7 @@ def test_already_present_returns_false_when_no_store(tmp_path):
 def test_already_present_returns_false_for_new_date():
     """When the date is not in the existing index, _already_present returns False."""
     existing = pd.DataFrame(
-        {"premium_mn": [100.0]},
+        {"premium_mn": [100.0], "net_premium_mn": [None]},
         index=pd.to_datetime(["2026-01-02"])
     )
     with patch("scripts.backfill_options_flow.store") as mock_store:
@@ -136,10 +271,11 @@ def test_already_present_returns_false_for_new_date():
     assert result is False
 
 
-def test_already_present_returns_true_when_date_in_index():
-    """When the date IS in the existing index, _already_present returns True (idempotence)."""
+def test_already_present_returns_true_when_date_in_index_with_nan():
+    """When the date IS in the index with NaN net_premium_mn, _already_present returns True.
+    A NaN-valued row is the correctly-backfilled state — no overwrite needed."""
     existing = pd.DataFrame(
-        {"premium_mn": [100.0, 110.0]},
+        {"premium_mn": [100.0, 110.0], "net_premium_mn": [np.nan, np.nan]},
         index=pd.to_datetime(["2026-01-02", "2026-01-03"])
     )
     with patch("scripts.backfill_options_flow.store") as mock_store:
@@ -148,28 +284,47 @@ def test_already_present_returns_true_when_date_in_index():
     assert result is True
 
 
+def test_already_present_returns_false_when_date_has_zero_net_premium():
+    """When the stored row has net_premium_mn == 0.0 (sign-collapse sentinel from
+    a prior buggy run), _already_present returns False to force an overwrite."""
+    existing = pd.DataFrame(
+        {"premium_mn": [100.0], "net_premium_mn": [0.0]},
+        index=pd.to_datetime(["2026-01-02"])
+    )
+    with patch("scripts.backfill_options_flow.store") as mock_store:
+        mock_store.read.return_value = existing
+        result = _already_present("AAPL", datetime.date(2026, 1, 2))
+    # 0.0 net_premium_mn = sign-collapse artifact → must overwrite
+    assert result is False, (
+        "_already_present must return False when net_premium_mn==0.0 so the "
+        "corrective run can overwrite with NaN via overwrite_overlap=True"
+    )
+
+
 def test_idempotence_full_flow(tmp_path):
-    """Re-running backfill for the same date+ticker must not create duplicate rows.
+    """Re-running backfill for the same date+ticker (with NaN-correct data) must not
+    create duplicate rows.
 
-    Simulates: first call writes 1 row; second call sees it via _already_present
-    and skips → store.upsert called exactly once."""
-    d = datetime.date(2026, 1, 2)
+    Simulates: first call writes 1 row with NaN net_premium_mn (correctly backfilled);
+    second call sees it via _already_present → True → skips.
+    store.upsert called exactly once."""
+    d = datetime.date(2026, 6, 20)
     sym = "SPY"
-    minute = _minute_df(sym)
+    # Use daily schema (production schema) for the fixture
+    daily = _daily_df(sym, n_contracts=30, session=d)
 
-    # Track upsert calls
     upsert_calls = []
 
     def fake_store_read(group, name):
         if upsert_calls:
-            # After first upsert, return data with the date so second pass skips
+            # After first upsert, return data with NaN (correctly backfilled)
             return pd.DataFrame(
-                {"premium_mn": [100.0]},
+                {"premium_mn": [100.0], "net_premium_mn": [np.nan]},
                 index=pd.to_datetime([d])
             )
         return None
 
-    def fake_store_upsert(group, name, sdf, outlier_col=None):
+    def fake_store_upsert(group, name, sdf, outlier_col=None, overwrite_overlap=False):
         upsert_calls.append((group, name))
         return sdf
 
@@ -178,61 +333,64 @@ def test_idempotence_full_flow(tmp_path):
         mock_store.upsert.side_effect = fake_store_upsert
 
         # First run: _already_present returns False → upsert fires
-        sdf = _extract_summary_row(sym, d, minute)
+        sdf = _compute_magnitude_row(sym, d, daily)
         if sdf is not None:
             if not _already_present(sym, d):
-                mock_store.upsert("options_flow", f"summary_{sym}", sdf, outlier_col=None)
+                mock_store.upsert("options_flow", f"summary_{sym}", sdf,
+                                  outlier_col=None, overwrite_overlap=True)
 
-        # Second run: _already_present returns True → skip
+        # Second run: _already_present returns True (NaN is the correct state) → skip
         if not _already_present(sym, d):
-            sdf2 = _extract_summary_row(sym, d, minute)
+            sdf2 = _compute_magnitude_row(sym, d, daily)
             if sdf2 is not None:
-                mock_store.upsert("options_flow", f"summary_{sym}", sdf2, outlier_col=None)
+                mock_store.upsert("options_flow", f"summary_{sym}", sdf2,
+                                  outlier_col=None, overwrite_overlap=True)
 
     assert len(upsert_calls) == 1, (
         f"Expected 1 upsert (idempotent), got {len(upsert_calls)}"
     )
 
 
-# ── 3. _extract_summary_row: correct SUMMARY_KEYS output ─────────────────────
+# ── 3. _compute_magnitude_row: correct SUMMARY_KEYS output ───────────────────
 
-def test_extract_summary_row_returns_correct_keys():
-    """_extract_summary_row must return a 1-row DataFrame with all SUMMARY_KEYS columns."""
+def test_compute_magnitude_row_returns_correct_keys():
+    """_compute_magnitude_row must return a 1-row DataFrame with all SUMMARY_KEYS columns."""
     d = datetime.date(2026, 6, 20)
-    minute = _minute_df("SPY", n_rows=40)
-    sdf = _extract_summary_row("SPY", d, minute)
-    assert sdf is not None, "Expected non-None: SPY minute data should yield a summary row"
+    daily = _daily_df("SPY", n_contracts=40, session=d)
+    sdf = _compute_magnitude_row("SPY", d, daily)
+    assert sdf is not None, "Expected non-None: SPY daily data should yield a summary row"
     assert sdf.shape[0] == 1, "Should be exactly 1 row"
     for k in SUMMARY_KEYS:
         assert k in sdf.columns, f"Missing column: {k}"
     assert sdf.index[0] == pd.Timestamp(d)
 
 
-def test_extract_summary_row_empty_input_returns_none():
-    """When the minute_df is empty, _extract_summary_row returns None."""
+def test_compute_magnitude_row_empty_input_returns_none():
+    """When the day_df is empty, _compute_magnitude_row returns None."""
     d = datetime.date(2026, 6, 20)
     empty = pd.DataFrame()
-    result = _extract_summary_row("SPY", d, empty)
+    result = _compute_magnitude_row("SPY", d, empty)
     assert result is None
 
 
-def test_extract_summary_row_volume_is_positive():
+def test_compute_magnitude_row_volume_is_positive():
     """Volume in the summary row must be a positive integer (sanity check)."""
     d = datetime.date(2026, 6, 20)
-    minute = _minute_df("NVDA", n_rows=30)
-    sdf = _extract_summary_row("NVDA", d, minute)
+    daily = _daily_df("NVDA", n_contracts=30, session=d)
+    sdf = _compute_magnitude_row("NVDA", d, daily)
     assert sdf is not None
     assert sdf["volume"].iloc[0] > 0
 
 
-def test_extract_summary_row_premium_mn_is_float():
+def test_compute_magnitude_row_premium_mn_is_float():
     """premium_mn should be a float (not None) when data is present."""
     d = datetime.date(2026, 6, 20)
-    minute = _minute_df("META", n_rows=25)
-    sdf = _extract_summary_row("META", d, minute)
+    daily = _daily_df("META", n_contracts=25, session=d)
+    sdf = _compute_magnitude_row("META", d, daily)
     assert sdf is not None
     prem = sdf["premium_mn"].iloc[0]
     assert prem is not None and isinstance(float(prem), float)
+    assert prem > 0
 
 
 # ── 4. Staleness-warning logic ────────────────────────────────────────────────
@@ -293,8 +451,8 @@ def test_discover_dates_prefers_all_over_u392(tmp_path):
     root = tmp_path / "massive_options_day" / "2026" / "06"
     root.mkdir(parents=True)
 
-    df_small = _minute_df("SPY", n_rows=5)
-    df_large = _minute_df("SPY", n_rows=100)
+    df_small = _daily_df("SPY", n_contracts=5)
+    df_large = _daily_df("SPY", n_contracts=100)
 
     path_u392 = root / "2026-06-25_u392_0c9663c2.parquet"
     path_all = root / "2026-06-25_all.parquet"
@@ -319,7 +477,7 @@ def test_discover_dates_prefers_u392_over_other(tmp_path):
     root = tmp_path / "massive_options_day" / "2026" / "06"
     root.mkdir(parents=True)
 
-    df = _minute_df("SPY", n_rows=10)
+    df = _daily_df("SPY", n_contracts=10)
     path_other = root / "2026-06-26_u3_somethingelse.parquet"
     path_u392 = root / "2026-06-26_u392_0c9663c2.parquet"
     df.to_parquet(path_other)
@@ -340,7 +498,7 @@ def test_discover_dates_respects_date_range(tmp_path):
     """Only dates within [since, until] are returned."""
     root = tmp_path / "massive_options_day" / "2026" / "06"
     root.mkdir(parents=True)
-    df = _minute_df("SPY", n_rows=5)
+    df = _daily_df("SPY", n_contracts=5)
     for day in ["2026-06-20", "2026-06-25", "2026-06-30"]:
         (root / f"{day}_all.parquet").parent.mkdir(parents=True, exist_ok=True)
         df.to_parquet(root / f"{day}_all.parquet")

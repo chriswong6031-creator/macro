@@ -1,10 +1,36 @@
 """scripts/backfill_options_flow.py — historical backfill of data/options_flow/summary_<KEY>.parquet.
 
 Iterates day-files in the local raw-store (data/massive_options_day/ or
-RAW_STORE_DIR env override), re-uses engine/options_flow.build_flow() EXACTLY
-(import, not reimplementation — byte-identical rows for the same input), and
-upserts the per-ticker summary parquets idempotently (dates already present in
-the store are skipped per ticker).
+RAW_STORE_DIR env override), computes MAGNITUDE-ONLY columns from the daily
+per-contract aggregate feedstock, and upserts idempotently.
+
+WHY MAGNITUDE-ONLY
+==================
+The raw store (data/massive_options_day/*.parquet) contains ONE row per
+option contract per session — a DAILY aggregate, not intraday minute data.
+engine/options_flow.sign_volume() derives net signed direction from the
+MINUTE-OVER-MINUTE close tick (shift within a ticker). With one row per
+contract, shift() always returns NaN, so the tick collapses to 0 and
+net_premium_mn would be stored as literal 0.0 — not NaN — which poisons
+every trailing-window baseline that reads it (flare_persistence T2 witness,
+build_flow_leaders net_premium_mn inflection history).
+
+VALID (computable from daily aggregates):
+  volume, premium_mn, pc_ratio, zerodte_share
+
+INVALID (always collapse to 0 or meaningless without minute ticks / greeks):
+  net_premium_mn, signed_pc, gamma_flow_bn, delta_flow_mn,
+  assumed_gex_bn, fresh_contracts, net_doi, doi_pc
+
+All INVALID columns are stored as NaN (explicit honest absence). Consumers
+that dropna() will skip them cleanly. 0.0 is banned as a sentinel value
+for "not computable".
+
+OVERWRITE SEMANTICS
+===================
+Uses store.upsert(overwrite_overlap=True) so that a re-run with the corrected
+NaN values REPLACES any prior run that may have stored 0.0 (the backfill now
+forces the corrected value into the date-range it owns).
 
 Memory: streams ONE day-file at a time; no multi-GB load.
 
@@ -31,19 +57,30 @@ from collections import defaultdict
 from datetime import date, datetime
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
-from engine import options_flow as of
+from engine.options_flow import sign_volume
 from engine.options_universe import gex_symbols
 from lib import config, procutil, store
 
 log = logging.getLogger(__name__)
 
-SUMMARY_KEYS = (
-    "spot", "volume", "premium_mn", "net_premium_mn", "pc_ratio", "signed_pc",
-    "zerodte_share", "gamma_flow_bn", "delta_flow_mn", "assumed_gex_bn",
-    "fresh_contracts", "net_doi", "doi_pc",
+# Columns we CAN compute honestly from daily per-contract aggregates
+MAGNITUDE_KEYS = ("volume", "premium_mn", "pc_ratio", "zerodte_share")
+
+# Columns that REQUIRE minute-tick signing or per-contract greeks + OI snapshots.
+# These are stored as NaN (explicit honest absence) for the backfill path.
+# DO NOT store 0.0 — that value poisons trailing-window baselines.
+SIGNED_KEYS = (
+    "net_premium_mn", "signed_pc", "gamma_flow_bn", "delta_flow_mn",
+    "assumed_gex_bn", "fresh_contracts", "net_doi", "doi_pc",
 )
+
+# spot is also NaN — not available from the raw flatfile store
+SUMMARY_KEYS = ("spot",) + MAGNITUDE_KEYS + SIGNED_KEYS
+
+_CONTRACT_MULT = 100.0
 
 # OCC regex for fallback parsing when `underlying` column is absent
 _OCC_RE = re.compile(r"^O:([A-Z]+)\d{6}[CP]\d{8}$")
@@ -140,48 +177,99 @@ def _load_day(path: Path, syms: set[str]) -> pd.DataFrame:
 
 
 def _already_present(sym: str, d: date) -> bool:
-    """Return True if this date is already in the stored summary for sym."""
+    """Return True if a VALID backfill row exists for this date.
+
+    Returns False (forcing an overwrite) if:
+    - The date is not in the index at all.
+    - The row has net_premium_mn == 0.0 (sign-collapse sentinel from a prior
+      buggy run; must be replaced with NaN via overwrite_overlap=True).
+    """
     existing = store.read("options_flow", f"summary_{sym}")
     if existing is None or existing.empty:
         return False
     ts = pd.Timestamp(d)
-    return ts in existing.index
+    if ts not in existing.index:
+        return False
+    # Detect the buggy 0.0 sentinel: a prior run stored sign-collapsed zeros.
+    # overwrite_overlap=True in backfill() will fix them when we return False here.
+    row = existing.loc[[ts]]
+    if "net_premium_mn" in row.columns:
+        v = row["net_premium_mn"].iloc[0]
+        if v == 0.0 and not pd.isna(v):
+            log.debug("backfill: %s %s has 0.0 net_premium_mn — will overwrite", sym, d)
+            return False
+    return True
 
 
-def _extract_summary_row(sym: str, d: date, minute_df: pd.DataFrame) -> pd.DataFrame | None:
-    """Build_flow → extract SUMMARY_KEYS → return 1-row DataFrame. None if not available."""
-    try:
-        payload = of.build_flow(sym, minute_df, None, None, d)
-    except Exception as e:  # noqa: BLE001
-        log.warning("backfill: build_flow %s %s failed: %s", sym, d, e)
+def _compute_magnitude_row(sym: str, d: date, day_df: pd.DataFrame) -> pd.DataFrame | None:
+    """Compute MAGNITUDE-ONLY summary columns from daily per-contract data.
+
+    Uses sign_volume() for per-contract aggregation (the vol/premium/expiry
+    values it produces are correct even from daily data; only signed_vol
+    collapses to 0, which we do NOT store).
+
+    Returns a 1-row DataFrame indexed by d, with:
+      - MAGNITUDE_KEYS filled with real values
+      - SIGNED_KEYS stored as NaN (honest absence, not 0.0)
+      - spot stored as NaN (not available from the flatfile store)
+
+    Returns None if aggregation yields no data.
+    """
+    # sign_volume aggregates per-contract; vol/premium/expiry/is_call/strike
+    # are valid sums/firsts. signed_vol is 0 for daily data — we discard it.
+    agg = sign_volume(day_df)
+    if agg is None or agg.empty:
         return None
 
-    if not payload.get("available"):
+    asof_ts = pd.Timestamp(d)
+    tot_vol = float(agg["vol"].sum())
+    if tot_vol == 0:
         return None
 
-    dealer = payload.get("dealer") or {}
-    newpos = payload.get("new_positions") or {}
-    pos = payload.get("positioning") or {}
-    srow = {}
-    for k in SUMMARY_KEYS:
-        if k in payload:
-            srow[k] = payload[k]
-        elif k in dealer:
-            srow[k] = dealer[k]
-        elif k in newpos:
-            srow[k] = newpos[k]
-        elif k in pos:
-            srow[k] = pos[k]
-        else:
-            srow[k] = None
+    # --- MAGNITUDE (valid from daily aggregates) ---
+    prem = float(agg["premium"].sum())
+    premium_mn = round(prem / 1e6, 2)
 
-    sdf = pd.DataFrame({k: [srow[k]] for k in SUMMARY_KEYS},
-                       index=[pd.Timestamp(d)])
+    calls = agg[agg["is_call"]]
+    puts = agg[~agg["is_call"]]
+    cv = float(calls["vol"].sum())
+    pv = float(puts["vol"].sum())
+    pc_ratio = round(pv / cv, 2) if cv > 0 else None
+
+    zerodte_vol = float(
+        agg.loc[agg["expiry"].dt.normalize() == asof_ts.normalize(), "vol"].sum()
+    )
+    zerodte_share = round(zerodte_vol / tot_vol, 3)
+
+    # --- BUILD THE ROW ---
+    # Signed / greeks / OI columns are EXPLICITLY NaN (not 0.0)
+    row: dict[str, object] = {
+        "spot": None,
+        "volume": int(tot_vol),
+        "premium_mn": premium_mn,
+        "net_premium_mn": None,    # requires minute tick-rule signing → NaN
+        "pc_ratio": pc_ratio,
+        "signed_pc": None,         # requires minute tick-rule signing → NaN
+        "zerodte_share": zerodte_share,
+        "gamma_flow_bn": None,     # requires greeks OI snapshot → NaN
+        "delta_flow_mn": None,     # requires greeks OI snapshot → NaN
+        "assumed_gex_bn": None,    # requires greeks OI snapshot → NaN
+        "fresh_contracts": None,   # requires OI snapshot → NaN
+        "net_doi": None,           # requires OI day-over-day snapshot → NaN
+        "doi_pc": None,            # requires OI day-over-day snapshot → NaN
+    }
+
+    sdf = pd.DataFrame({k: [row[k]] for k in SUMMARY_KEYS}, index=[asof_ts])
     return sdf
 
 
 def backfill(since: date, until: date, syms: set[str]) -> dict[str, int]:
-    """Run the backfill. Returns {sym: n_new_rows_written}."""
+    """Run the backfill. Returns {sym: n_new_rows_written}.
+
+    Uses overwrite_overlap=True so that a corrected re-run (e.g., fixing a prior
+    run that stored 0.0 net_premium_mn) forces the new NaN values to win over
+    the previously stored 0.0 values.
+    """
     root = _raw_store_root()
     log.info("backfill: raw store = %s", root)
     day_files = _discover_dates(root, since, until)
@@ -204,11 +292,14 @@ def backfill(since: date, until: date, syms: set[str]) -> dict[str, int]:
                 skipped += 1
                 continue
             msub = day_df[day_df["underlying"] == sym]
-            sdf = _extract_summary_row(sym, d, msub)
+            sdf = _compute_magnitude_row(sym, d, msub)
             if sdf is None:
                 continue
             try:
-                store.upsert("options_flow", f"summary_{sym}", sdf, outlier_col=None)
+                # overwrite_overlap=True: the corrected NaN values overwrite any
+                # prior 0.0 values that may have been stored by an earlier run.
+                store.upsert("options_flow", f"summary_{sym}", sdf,
+                             outlier_col=None, overwrite_overlap=True)
                 counts[sym] += 1
             except Exception as e:  # noqa: BLE001
                 log.warning("backfill: upsert %s %s failed: %s", sym, d, e)
