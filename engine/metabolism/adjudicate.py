@@ -458,16 +458,21 @@ def _genesis_screen(
 
         max_active = int(budget.get("max_active_nonscored_lobes", 66))
         if current_active >= max_active:
-            # Allow only if a co-pending demotion of a REAL named active lobe is present
-            # (FIX M1: swap must target an actual active lobe, not just mention "demote").
+            # Allow only if a co-pending demotion of a REAL named active lobe is
+            # present (FIX M1: swap must target an actual active lobe, deduped by
+            # target). Charters already granted this cycle ALSO draw on the freed
+            # slots (#2339 re-review F1 vector 2: one demotion must not waive N
+            # charters). Fail-closed: an unreadable grant count denies.
             n_valid_swaps = _count_valid_swaps(docket, roster["charters"], proposal)
-            if current_active - n_valid_swaps >= max_active:
+            charter_grants = _count_charter_grants_this_cycle(cycle_id, root)
+            if current_active + charter_grants - n_valid_swaps >= max_active:
                 return {
                     "allow": False,
                     "reason": (
                         f"genesis screen: roster cap {max_active} reached "
-                        f"(current_active={current_active}, valid_swaps={n_valid_swaps}) — "
-                        "R-V6-3a"
+                        f"(current_active={current_active}, "
+                        f"grants_this_cycle={charter_grants}, "
+                        f"valid_swaps={n_valid_swaps}) — R-V6-3a"
                     ),
                 }
 
@@ -599,7 +604,10 @@ def _count_valid_swaps(
     """
     try:
         charter_pid = str(charter_proposal.get("proposal_id") or "")
-        count = 0
+        # Dedupe by TARGET lobe_id: one active lobe can back at most ONE swap,
+        # no matter how many demotion proposals name it (#2339 re-review F1 —
+        # otherwise two proposals demoting the same lobe would waive two slots).
+        swapped_lobes: set[str] = set()
         for prop in (docket.get("proposals") or []):
             try:
                 if not isinstance(prop, dict):
@@ -615,9 +623,8 @@ def _count_valid_swaps(
                 if "demot" not in surface and "retir" not in surface:
                     continue
 
-                # The target lobe must be named in the proposal title (or lobe_id field)
-                # and present in charters as active with a counted tier.
-                # Strategy: scan all active-lobe IDs to see if any appear in the title.
+                # The target lobe must be a NAMED lobe present in charters as
+                # active with a counted tier. Record the lobe_id (deduped).
                 for lobe_id, charter in charters.items():
                     if not isinstance(charter, dict):
                         continue
@@ -625,13 +632,12 @@ def _count_valid_swaps(
                         continue
                     if charter.get("tier") not in _ACTIVE_SWAP_TIERS:
                         continue
-                    # Match lobe_id substring in the title
                     if lobe_id.lower() in title:
-                        count += 1
-                        break  # one valid swap per demotion proposal
+                        swapped_lobes.add(lobe_id)
+                        break  # one target lobe per demotion proposal
             except Exception:  # noqa: BLE001
                 continue
-        return count
+        return len(swapped_lobes)
     except Exception as exc:  # noqa: BLE001
         log.warning("adjudicate._count_valid_swaps: error — returning 0: %s", exc)
         return 0
@@ -658,8 +664,11 @@ def _has_copending_demotion(docket: dict[str, Any]) -> bool:
 
 def _count_charter_grants_this_cycle(cycle_id: str, root: Path | None) -> int:
     """Count prior charter-kind grants already written to the governance log for
-    this cycle.  Returns 0 on any read error (fail-closed = deny if count >=cap).
+    this cycle.
 
+    FAIL-CLOSED: this count is ADDED to the capacity sum in both the roster-cap
+    and probation gates, so an unreadable governance log must inflate the sum
+    (deny), not read as 0 (admit).  Returns a large sentinel on any read error.
     NEVER raises.
     """
     try:
@@ -682,8 +691,8 @@ def _count_charter_grants_this_cycle(cycle_id: str, root: Path | None) -> int:
                 count += 1
         return count
     except Exception as exc:  # noqa: BLE001
-        log.warning("adjudicate._count_charter_grants_this_cycle: %s", exc)
-        return 0
+        log.warning("adjudicate._count_charter_grants_this_cycle: %s — fail-closed sentinel", exc)
+        return 10_000
 
 
 # ── LLM role invocation ───────────────────────────────────────────────────────

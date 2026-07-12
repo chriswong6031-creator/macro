@@ -1490,6 +1490,63 @@ class TestValidSwaps:
             f"FIX M1: valid active-lobe demotion must waive one slot; got: {r['reason']}"
         )
 
+    def test_two_demotions_same_lobe_waive_only_one_slot(self, tmp_path):
+        """#2339 re-review F1 vector 1: two demotion proposals naming the SAME
+        active lobe must waive ONE slot, not two."""
+        _make_minimal_budget_yml(tmp_path, max_active=2)
+        _make_lobe_charters(tmp_path, n_active=2)  # lobe_000, lobe_001
+        from engine.metabolism.adjudicate import _count_valid_swaps
+        from engine.metabolism.lobe_registry import load as _load_registry
+        charters = _load_registry(tmp_path)["charters"]
+        docket = {"proposals": [
+            {"proposal_id": "d1", "kind": "lifecycle",
+             "title": "demote lobe_000 from active"},
+            {"proposal_id": "d2", "kind": "lifecycle",
+             "title": "retire lobe_000 entirely"},
+        ]}
+        n = _count_valid_swaps(docket, charters, _charter_proposal_dict())
+        assert n == 1, f"two demotions of the same lobe must dedupe to 1 slot; got {n}"
+
+    def test_one_demotion_does_not_waive_two_charters(self, tmp_path):
+        """#2339 re-review F1 vector 2: at cap, one demotion + one already-granted
+        charter this cycle must NOT admit a second charter (one freed slot, one
+        charter already consuming it)."""
+        _make_minimal_budget_yml(tmp_path, max_active=2)
+        _make_lobe_charters(tmp_path, n_active=2)
+        # A charter was already granted this cycle (consumes the freed slot)
+        (tmp_path / "data" / "neuralweb").mkdir(parents=True, exist_ok=True)
+        gov_row = {
+            "event_type": "metabolism_adjudication",
+            "target": "metabolism_proposal:c-swap:pid-first",
+            "after": {"role": "orchestrator", "decision": "grant",
+                      "kind": "charter", "tier": "T0"},
+            "note": "orchestrator grant for T0 charter proposal",
+        }
+        (tmp_path / "data" / "neuralweb" / "governance.jsonl").write_text(
+            json.dumps(gov_row) + "\n", encoding="utf-8")
+        valid_demotion = {"proposals": [
+            {"proposal_id": "demote-lobe_000", "kind": "lifecycle",
+             "title": "demote lobe_000 from active to probation"},
+        ]}
+        from engine.metabolism.adjudicate import _genesis_screen
+        # current_active(2) + grants(1) - swaps(1) = 2 >= max_active(2) → deny
+        r = _genesis_screen(_charter_proposal_dict(), cycle_id="c-swap",
+                            docket=valid_demotion, root=tmp_path)
+        assert r["allow"] is False, (
+            f"one demotion must not waive a second charter; got: {r.get('reason')}"
+        )
+        assert "roster cap" in r["reason"]
+
+    def test_grants_counter_fails_closed_on_unreadable_governance(self, tmp_path, monkeypatch):
+        """The charter-grant counter must fail CLOSED (inflate the sum → deny),
+        since it is ADDED to the capacity gates."""
+        from engine.metabolism import adjudicate as adj
+        def boom(*a, **k):
+            raise RuntimeError("governance log unreadable")
+        monkeypatch.setattr(adj, "_events_for_target", boom)
+        n = adj._count_charter_grants_this_cycle("c1", tmp_path)
+        assert n >= 10_000, f"unreadable governance must fail closed (large sentinel); got {n}"
+
 
 # ===========================================================================
 # FIX M2 — roster cap fails closed on unreadable roster
