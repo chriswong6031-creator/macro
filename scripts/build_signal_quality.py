@@ -30,6 +30,7 @@ import argparse  # noqa: E402
 import pandas as pd  # noqa: E402
 from engine.signal_quality import analyze  # noqa: E402
 from engine.bar_derive import daily_close_for  # noqa: E402
+from engine import marker_integrity  # noqa: E402
 
 
 def main() -> None:
@@ -76,7 +77,16 @@ def main() -> None:
             continue
         if not res:
             continue
-        (out_sig / f"{t}.json").write_text(json.dumps(res, separators=(",", ":")))
+        # RC-R2 append-only marker law: a nightly recompute may never re-date or delete
+        # a marker the site already rendered (engine/marker_integrity.py; drift counts
+        # disclosed in res["pit"]). The brain snapshot below reads the MERGED stream.
+        sig_path = out_sig / f"{t}.json"
+        try:
+            prev = json.loads(sig_path.read_text()) if sig_path.exists() else None
+        except Exception:  # noqa: BLE001 — unreadable prior file → treat as new
+            prev = None
+        res = marker_integrity.merge_payload(prev, res)
+        sig_path.write_text(json.dumps(res, separators=(",", ":")))
         asof = res["asof"]
         # `markers` is the validated trade stream only (risk_flag breaches live in their own
         # res["risk_flags"] list), so the brain's `last` is cleanly the last trade decision.

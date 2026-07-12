@@ -117,7 +117,17 @@ def _emit_group_files(site: Path, g: dict, ohlc_dir: str = OHLC_DIR, sig_dir: st
                                                       "bars": _bars_from_candle(cand)})
         g["chart_key"] = key
     if markers.get("markers"):
-        _write_json(site / sig_dir / f"{key}.json", markers)
+        # RC-R2 append-only marker law: merge with the previously RENDERED file so a
+        # nightly recompute can never re-date or delete a marker the site already showed
+        # (engine/marker_integrity.py — divergence disclosed in payload["pit"]).
+        sig_path = site / sig_dir / f"{key}.json"
+        try:
+            prev = json.loads(sig_path.read_text()) if sig_path.exists() else None
+        except Exception:  # noqa: BLE001 — unreadable prior file → treat as new
+            prev = None
+        from engine import marker_integrity
+        markers = marker_integrity.merge_payload(prev, markers)
+        _write_json(sig_path, markers)
         g["has_signals"] = True
 
 
