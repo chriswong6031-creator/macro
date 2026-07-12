@@ -174,6 +174,32 @@ def _pr_ci_green(pr: dict[str, Any]) -> bool:
         return False
 
 
+def _pr_ci_green_at_sha(pr_number: int, expect_sha: str) -> bool:
+    """Return True only if CI is green on EXACTLY `expect_sha` (#2377 review
+    residual 2: the loop-start listing's statusCheckRollup carries no SHA and
+    may be green on an older commit than the audited/merged one).
+
+    Re-fetches the rollup FRESH and requires the PR's live head to still equal
+    the audited SHA — so the green we trust is the green on the code we merge.
+    Fail-closed on any error / drift / empty checks.  NEVER raises.
+    """
+    try:
+        result = subprocess.run(
+            ["gh", "pr", "view", str(pr_number), "--json",
+             "statusCheckRollup,headRefOid"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            return False
+        data = json.loads(result.stdout or "{}")
+        if (data.get("headRefOid") or "") != expect_sha or not expect_sha:
+            return False  # rollup would describe a different commit
+        return _pr_ci_green(data)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_merge._pr_ci_green_at_sha #%s: %s", pr_number, exc)
+        return False
+
+
 def _get_pr_files(pr_number: int) -> list[str]:
     """Return list of changed files for a PR. NEVER raises."""
     try:
@@ -588,6 +614,16 @@ def run_merge_lane(
                 per["reason"] = audit_msg
                 log.info("MERGE: PR #%s audit gate not satisfied — skip: %s",
                          pr_number, audit_msg[:200])
+                results.append(per)
+                continue
+
+            # Step 5.6: CI-green BOUND to the audited SHA (#2377 review residual 2).
+            # Step 4 used the loop-start listing (no SHA); re-verify green on the
+            # exact commit we are about to merge. Fail-closed on drift.
+            if not (pr_number and _pr_ci_green_at_sha(pr_number, pr_head_sha)):
+                per["status"] = "ci_not_green_at_audited_sha"
+                per["reason"] = f"CI not green on audited sha {pr_head_sha[:12]}"
+                log.info("MERGE: PR #%s %s — skip", pr_number, per["reason"])
                 results.append(per)
                 continue
 

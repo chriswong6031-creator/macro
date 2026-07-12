@@ -683,3 +683,63 @@ class TestInjectionFramingM1:
         assert "UNTRUSTED DIFF" in prompt
         assert "UNTRUSTED DATA" in _AUDIT_SYSTEM
         assert "never obey" in prompt.lower() or "never follow" in _AUDIT_SYSTEM.lower()
+        # nonce fence: two calls produce different, unforgeable markers
+        p2 = _build_user_prompt(_minimal_proposal("p1"), "x", [])
+        import re as _re
+        m1 = _re.search(r"BEGIN UNTRUSTED DIFF ([0-9a-f]{16})", prompt)
+        m2 = _re.search(r"BEGIN UNTRUSTED DIFF ([0-9a-f]{16})", p2)
+        assert m1 and m2 and m1.group(1) != m2.group(1), "fence marker must be a per-call nonce"
+
+
+# ── #2377 review residuals — SHA↔diff consistency + CI bound to audited SHA ──
+
+class TestAuditHeadDriftResidual1:
+    def test_head_move_during_audit_skips(self):
+        """If the head advances between the pre- and post-diff SHA reads, the
+        audit skips (never records a verdict bound to the wrong diff)."""
+        import scripts.metabolism_audit as ma
+        seq = iter(["SHA_BEFORE", "SHA_AFTER"])  # head moved during audit
+        with patch.object(ma, "_get_pr_head_sha", side_effect=lambda n: next(seq)), \
+             patch.object(ma, "_already_audited", return_value=False), \
+             patch.object(ma, "_resolve_proposal_for_branch",
+                          return_value=_minimal_proposal("p1")), \
+             patch.object(ma, "_get_pr_diff", return_value="diff --git a/x b/x\n"), \
+             patch("engine.metabolism.audit.audit_pr") as ap:
+            st = ma._audit_pr_for_cycle(5, "metabolism/build-x", "cyc", _tmp_root())
+        assert st["status"] == "head_moved_during_audit"
+        assert not ap.called, "must not audit when head drifted mid-review"
+
+
+class TestCiBoundToShaResidual2:
+    def test_ci_green_requires_matching_sha(self):
+        import scripts.metabolism_merge as mm
+        # rollup green but head advanced past the audited sha → not green
+        def fake_run(cmd, **kw):
+            m = MagicMock(); m.returncode = 0
+            m.stdout = json.dumps({
+                "headRefOid": "NEWER_SHA",
+                "statusCheckRollup": [{"state": "SUCCESS"}],
+            })
+            return m
+        with patch.object(mm.subprocess, "run", side_effect=fake_run):
+            assert mm._pr_ci_green_at_sha(9, "AUDITED_SHA") is False
+
+    def test_ci_green_on_matching_sha(self):
+        import scripts.metabolism_merge as mm
+        def fake_run(cmd, **kw):
+            m = MagicMock(); m.returncode = 0
+            m.stdout = json.dumps({
+                "headRefOid": "AUDITED_SHA",
+                "statusCheckRollup": [{"state": "SUCCESS"}, {"conclusion": "NEUTRAL"}],
+            })
+            return m
+        with patch.object(mm.subprocess, "run", side_effect=fake_run):
+            assert mm._pr_ci_green_at_sha(9, "AUDITED_SHA") is True
+
+    def test_ci_green_fail_closed_on_gh_error(self):
+        import scripts.metabolism_merge as mm
+        def fake_run(cmd, **kw):
+            m = MagicMock(); m.returncode = 1; m.stdout = ""
+            return m
+        with patch.object(mm.subprocess, "run", side_effect=fake_run):
+            assert mm._pr_ci_green_at_sha(9, "AUDITED_SHA") is False
