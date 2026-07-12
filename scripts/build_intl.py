@@ -168,6 +168,75 @@ def main() -> int:
     # Written BEFORE the page-render try so template failures cannot kill this artifact.
     _ird_dir = config.data_dir() / "intl_risk"
     _ird_dir.mkdir(parents=True, exist_ok=True)
+
+    # ---- IRD-W3 shim: transmitter display names (ticker→country name EN+ZH) ------
+    _TRANSMITTER_NAMES: dict[str, dict[str, str]] = {
+        "EWA": {"en": "Australia",     "zh": "澳大利亚", "flag": "🇦🇺"},
+        "EWL": {"en": "Switzerland",   "zh": "瑞士",     "flag": "🇨🇭"},
+        "EZA": {"en": "South Africa",  "zh": "南非",     "flag": "🇿🇦"},
+        "EWJ": {"en": "Japan",         "zh": "日本",     "flag": "🇯🇵"},
+        "EWG": {"en": "Germany",       "zh": "德国",     "flag": "🇩🇪"},
+        "EWU": {"en": "United Kingdom","zh": "英国",     "flag": "🇬🇧"},
+        "EWC": {"en": "Canada",        "zh": "加拿大",   "flag": "🇨🇦"},
+        "EWZ": {"en": "Brazil",        "zh": "巴西",     "flag": "🇧🇷"},
+        "EWW": {"en": "Mexico",        "zh": "墨西哥",   "flag": "🇲🇽"},
+        "INDA": {"en": "India",        "zh": "印度",     "flag": "🇮🇳"},
+        "EIDO": {"en": "Indonesia",    "zh": "印尼",     "flag": "🇮🇩"},
+        "EWY": {"en": "South Korea",   "zh": "韩国",     "flag": "🇰🇷"},
+        "EWT": {"en": "Taiwan",        "zh": "台湾",     "flag": "🇹🇼"},
+        "EEM": {"en": "EM Broad",      "zh": "新兴市场",  "flag": "🌏"},
+        "SPY": {"en": "United States", "zh": "美国",     "flag": "🇺🇸"},
+    }
+
+    # ---- IRD-W3 shim: EMB/IEF ratio spark from emb_ief leg history ----------------
+    # emb_ief leg value in em_stress is a ratio; history comes from spillover.
+    # We compute a 120d EMB/IEF ratio from the yahoo store (fail-open).
+    _emb_ief_spark_svg: str = ""
+    try:
+        from scripts.build_intl_library import _spark_svg as _w3_spark
+        from lib import store as _w3_store
+        _emb_df = _w3_store.read("yahoo", "EMB")
+        _ief_df = _w3_store.read("yahoo", "IEF")
+        if _emb_df is not None and _ief_df is not None and not _emb_df.empty and not _ief_df.empty:
+            _emb_s = _emb_df.iloc[:, 0].dropna()
+            _ief_s = _ief_df.iloc[:, 0].dropna()
+            _ratio = _emb_s.div(_ief_s).dropna().tail(120)
+            if len(_ratio) >= 10:
+                _emb_ief_spark_svg = _w3_spark(
+                    list(_ratio.values), color="var(--info)", w=220, h=38
+                )
+    except Exception as _w3_e:
+        log.warning("IRD-W3 emb_ief spark failed (fail-open): %s", _w3_e)
+
+    # ---- IRD-W3 shim: spillover history spark (total connectedness weekly) --------
+    _spillover_spark_svg: str = ""
+    try:
+        from scripts.build_intl_library import _spark_svg as _w3_spark2
+        _sp_hist = (spillover_result or {}).get("history_weekly") or []
+        _sp_vals = [row.get("total") for row in _sp_hist[-52:] if row.get("total") is not None]
+        if len(_sp_vals) >= 4:
+            _spillover_spark_svg = _w3_spark2(
+                _sp_vals, color="var(--warn)", w=200, h=34
+            )
+    except Exception as _w3_e2:
+        log.warning("IRD-W3 spillover spark failed (fail-open): %s", _w3_e2)
+
+    # ---- Annotate top_transmitters with display names ---------------------------
+    _annotated_transmitters: list[dict] = []
+    try:
+        for _tx in (spillover_result or {}).get("top_transmitters") or []:
+            _tk = _tx.get("ticker", "")
+            _info = _TRANSMITTER_NAMES.get(_tk, {})
+            _annotated_transmitters.append({
+                "ticker": _tk,
+                "to_others_pct": _tx.get("to_others_pct"),
+                "name_en": _info.get("en", _tk),
+                "name_zh": _info.get("zh", _tk),
+                "flag": _info.get("flag", ""),
+            })
+    except Exception as _w3_e3:
+        log.warning("IRD-W3 transmitter annotation failed (fail-open): %s", _w3_e3)
+
     _intl_risk_payload = {
         "built": datetime.now(timezone.utc).isoformat(),
         "timing_sec": round(_ird_elapsed, 2),
@@ -181,6 +250,10 @@ def main() -> int:
         "inversion_board": inversion_result,
         # IRD-W2 fix #6: swap_lines_bn at top level so _compose_intl_risk can read it
         "swap_lines_bn": _swap_lines_bn,
+        # IRD-W3 shims: display-enriched data for the template surface
+        "top_transmitters_display": _annotated_transmitters,
+        "emb_ief_spark_svg": _emb_ief_spark_svg,
+        "spillover_spark_svg": _spillover_spark_svg,
     }
     try:
         (_ird_dir / "latest.json").write_text(
