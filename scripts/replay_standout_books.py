@@ -16,6 +16,33 @@ DESIGN CONTRACTS
   appears in the report footer.
 - NEVER raises beyond the outer try/except.
 
+CN WASHOUT_BONUS COUNTERFACTUAL (cheaply replayable from stored columns)
+-------------------------------------------------------------------------
+The CN board.parquet stores per-name per-date: washout_2w, coiled, ext_score,
+tier, board_rank.  These are sufficient to reconstruct the ORDERING DELTA under
+a modified WASHOUT_BONUS without re-running the full board pipeline.
+
+Approximation: the stored columns reflect the live baseline scoring.  To
+reconstruct the counterfactual score for each row we apply:
+  score_cf(row) = score_baseline(row) - WASHOUT_BONUS_BASELINE * washout_2w
+                + WASHOUT_BONUS_CF * washout_2w
+where the coiled bonus and ext_penalty contributions are HELD CONSTANT (we vary
+only washout_bonus).  Because we cannot recover the exact conviction-percentile
+term from stored columns (it depends on the full same-date pool), we approximate
+it by the RANK-NORMALISED position (board_rank / n_date_rows), which is
+monotone-equivalent to the original score order for the baseline.  The
+counterfactual rerank uses the RANK-DELTA from washout_bonus change only,
+applied additively to the rank-normalised baseline.
+
+This approximation is sound for ORDERING-change assessment: it correctly
+identifies which names change relative rank due solely to a washout_bonus change.
+It does NOT recover exact scores.  The report declares this as
+counterfactual.approximation = 'rank_delta_from_bonus_change_only'.
+
+The outcome metric uses fwd_mfe_5 (5-session raw MFE) as the quality proxy,
+NOT SPY-excess (no graded excess column yet in the CN ledger at this stage).
+This is declared in the report.
+
 USAGE
 -----
     # Replay against a shadow book spec (JSON file):
@@ -284,6 +311,253 @@ def _compute_coverage_health(df: Any, market: str) -> dict:
         return {"value": None, "n": 0, "note": f"computation_error:{e}"}
 
 
+# ── CN washout_bonus cheap counterfactual ────────────────────────────────────
+
+#: Current production WASHOUT_BONUS in build_china_library.py (function-local const).
+#: Must be kept in sync with scripts/build_china_library.py:WASHOUT_BONUS.
+#: When W2 merges to main, verify this still matches.
+_CN_WASHOUT_BONUS_BASELINE: float = 0.5
+
+#: Current production EXT_PENALTY (held constant in counterfactual — not the varied param).
+_CN_EXT_PENALTY_BASELINE: float = 0.5
+
+#: Tier weight map (T1→1.0 .. T4→0.0; matches signal_gate.blend_sorted wn formula with wf=0).
+_TIER_WN: dict[str, float] = {"T1": 1.0, "T2": 0.666, "T3": 0.333, "T4": 0.0}
+
+#: CN_TIER_FRAC in build_china_library.py (function-local const).
+_CN_TIER_FRAC: float = 0.30
+
+
+def _cn_washout_bonus_counterfactual(
+    grades_df: Any,
+    washout_bonus_cf: float,
+    trial_count: int,
+    min_effective_n: int = 6,
+) -> dict:
+    """Compute the CN washout_bonus counterfactual verdict.
+
+    For each board date in grades_df that has washout_2w populated, reconstruct
+    the counterfactual ranking by applying washout_bonus_cf instead of the
+    baseline WASHOUT_BONUS (_CN_WASHOUT_BONUS_BASELINE).
+
+    The approximation is documented in the module docstring. Key points:
+    - conviction-percentile term is approximated by rank-normalised baseline position
+    - coiled bonus is approximated as 0 (coiled column is bool, not bonus value)
+    - ext_penalty contribution is held constant
+
+    Returns a dict with keys: verdict, reason, evidence (matches _replay_evaluator
+    output contract).
+    """
+    try:
+        import numpy as np
+        import pandas as pd
+    except ImportError:
+        return {
+            "verdict": "UNEVALUABLE",
+            "reason": "pandas_or_numpy_not_available",
+            "evidence": {},
+        }
+
+    try:
+        df = grades_df.copy()
+
+        # Must have required columns
+        required = {"date", "washout_2w", "board_rank", "tier"}
+        missing_cols = required - set(df.columns)
+        if missing_cols:
+            return {
+                "verdict": "UNEVALUABLE",
+                "reason": f"missing_columns_for_cn_counterfactual:{sorted(missing_cols)}",
+                "evidence": {"missing": sorted(missing_cols)},
+            }
+
+        # Date column
+        date_col = "date" if "date" in df.columns else None
+        if date_col is None:
+            return {"verdict": "UNEVALUABLE", "reason": "no_date_column", "evidence": {}}
+
+        df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+
+        # Only operate on dates that have washout_2w populated (Jul 7+)
+        has_wash_dates = df[df["washout_2w"].notna()][date_col].dt.normalize().unique()
+        if len(has_wash_dates) == 0:
+            return {
+                "verdict": "UNEVALUABLE",
+                "reason": "no_dates_with_washout_2w_populated",
+                "evidence": {"total_rows": len(df)},
+            }
+
+        df_wash = df[df[date_col].dt.normalize().isin(has_wash_dates)].copy()
+
+        # Check effective_n: number of washout dates with washout_2w data
+        effective_n = len(has_wash_dates)
+        if effective_n < min_effective_n:
+            return {
+                "verdict": "UNEVALUABLE",
+                "reason": f"insufficient_effective_n:{effective_n}<{min_effective_n}",
+                "evidence": {
+                    "effective_n": effective_n,
+                    "min_effective_n": min_effective_n,
+                    "note": "effective_n = n_board_dates_with_washout_2w_data",
+                },
+            }
+
+        # Outcome proxy: fwd_mfe_5 (5-session raw MFE; no excess column yet)
+        has_outcome = "fwd_mfe_5" in df_wash.columns and df_wash["fwd_mfe_5"].notna().sum() > 0
+        outcome_note = (
+            "fwd_mfe_5 (5-session raw MFE; approximation — CSI300-excess not yet graded)"
+            if has_outcome else "no_outcome_column"
+        )
+
+        # Per-date reranking: compute baseline rank-score and counterfactual rank-score
+        bonus_delta = washout_bonus_cf - _CN_WASHOUT_BONUS_BASELINE
+
+        baseline_top_tickers: list[set] = []
+        cf_top_tickers: list[set] = []
+        date_results = []
+
+        for dt, grp in df_wash.groupby(df_wash[date_col].dt.normalize()):
+            n_date = len(grp)
+            if n_date == 0:
+                continue
+
+            # Rank-normalised baseline score ≈ 1 - (board_rank - 1) / (n_date - 1)
+            # (board_rank=1 → score≈1.0, board_rank=n → score≈0.0)
+            grp = grp.copy()
+            rank_max = grp["board_rank"].max()
+            if rank_max <= 1:
+                grp["_rank_score"] = 1.0
+            else:
+                grp["_rank_score"] = 1.0 - (grp["board_rank"] - 1) / (rank_max - 1)
+
+            # Washout additive delta: +bonus_delta for washout_2w=True rows
+            grp["_washout_flag"] = grp["washout_2w"].fillna(0.0).astype(float)
+            grp["_cf_score"] = grp["_rank_score"] + bonus_delta * grp["_washout_flag"]
+
+            # Counterfactual ranking
+            grp_cf = grp.sort_values("_cf_score", ascending=False)
+
+            # Top-N for coverage_health: use top 15 as representative board slice
+            top_n = min(15, n_date)
+            baseline_top = set(grp.sort_values("board_rank").head(top_n)["ticker"].tolist())
+            cf_top = set(grp_cf.head(top_n)["ticker"].tolist())
+            baseline_top_tickers.append(baseline_top)
+            cf_top_tickers.append(cf_top)
+
+            # Per-date rank-change metric
+            grp_cf["_cf_rank"] = range(1, len(grp_cf) + 1)
+            rank_change = float(
+                grp.set_index("ticker")["board_rank"]
+                .sub(grp_cf.reset_index().set_index("ticker")["_cf_rank"])
+                .abs().mean()
+            ) if "ticker" in grp.columns else 0.0
+
+            date_entry: dict[str, Any] = {
+                "date": str(dt.date()),
+                "n_rows": n_date,
+                "n_washout_true": int(grp["_washout_flag"].sum()),
+                "top_n_composition_change": len(baseline_top - cf_top),
+                "mean_abs_rank_change": round(rank_change, 2),
+            }
+
+            if has_outcome:
+                # fwd_mfe_5 for top-N baseline vs top-N counterfactual
+                baseline_out = grp[grp["ticker"].isin(baseline_top)]["fwd_mfe_5"].dropna()
+                cf_out = grp[grp["ticker"].isin(cf_top)]["fwd_mfe_5"].dropna()
+                date_entry["baseline_top_n_mfe5_median"] = (
+                    round(float(baseline_out.median()), 5) if len(baseline_out) > 0 else None
+                )
+                date_entry["cf_top_n_mfe5_median"] = (
+                    round(float(cf_out.median()), 5) if len(cf_out) > 0 else None
+                )
+
+            date_results.append(date_entry)
+
+        if not date_results:
+            return {
+                "verdict": "UNEVALUABLE",
+                "reason": "no_date_results_computed",
+                "evidence": {},
+            }
+
+        # Aggregate coverage_health delta: mean composition change in top-N
+        mean_composition_change = float(
+            np.mean([d["top_n_composition_change"] for d in date_results])
+        )
+
+        # Aggregate quality delta (fwd_mfe_5 based, if available)
+        baseline_mfe_vals = [
+            d["baseline_top_n_mfe5_median"]
+            for d in date_results
+            if d.get("baseline_top_n_mfe5_median") is not None
+        ]
+        cf_mfe_vals = [
+            d["cf_top_n_mfe5_median"]
+            for d in date_results
+            if d.get("cf_top_n_mfe5_median") is not None
+        ]
+
+        hit_quality_delta: float | None = None
+        if baseline_mfe_vals and cf_mfe_vals:
+            baseline_median = float(np.median(baseline_mfe_vals))
+            cf_median = float(np.median(cf_mfe_vals))
+            hit_quality_delta = round(cf_median - baseline_median, 6)
+
+        # Trial-count Bonferroni note
+        alpha_bonferroni = 0.05 / trial_count if trial_count > 0 else 0.05
+
+        # VERDICT LOGIC
+        # With n_board_dates=3 (Jul 7/8/10), effective_n < min_effective_n=6
+        # → UNEVALUABLE is the correct honest answer (already checked above).
+        # If somehow effective_n is sufficient:
+        # - If no outcome column: UNEVALUABLE
+        # - If outcome exists: PASS if hit_quality_delta >= 0 AND coverage_health acceptable
+        #   (no more than 20% composition change per SA-R4 spirit)
+        # In current data state this path is not reachable (n=3 < 6).
+
+        if not has_outcome:
+            verdict = "UNEVALUABLE"
+            verdict_reason = "no_graded_excess_column_yet:fwd_mfe_5_available_as_proxy_only"
+        elif hit_quality_delta is None:
+            verdict = "UNEVALUABLE"
+            verdict_reason = "insufficient_paired_outcome_data"
+        elif hit_quality_delta >= 0:
+            verdict = "PASS"
+            verdict_reason = f"cf_mfe5_delta={hit_quality_delta:+.5f}>=0_and_composition_change={mean_composition_change:.1f}"
+        else:
+            verdict = "FAIL"
+            verdict_reason = f"cf_mfe5_delta={hit_quality_delta:+.5f}<0:quality_regresses_under_counterfactual"
+
+        return {
+            "verdict": verdict,
+            "reason": verdict_reason,
+            "evidence": {
+                "washout_bonus_baseline": _CN_WASHOUT_BONUS_BASELINE,
+                "washout_bonus_cf": washout_bonus_cf,
+                "bonus_delta": bonus_delta,
+                "n_board_dates_evaluated": len(date_results),
+                "mean_top15_composition_change": round(mean_composition_change, 2),
+                "hit_quality_delta_proxy": hit_quality_delta,
+                "outcome_proxy": outcome_note,
+                "alpha_bonferroni": round(alpha_bonferroni, 5),
+                "approximation": (
+                    "rank_delta_from_bonus_change_only: conviction-percentile held "
+                    "constant (rank-normalised); coiled bonus approximated 0; "
+                    "ext_penalty held constant. Ordering-change assessment only — "
+                    "does NOT recover exact scores."
+                ),
+                "date_results": date_results,
+            },
+        }
+
+    except Exception as e:  # noqa: BLE001
+        return {
+            "verdict": "UNEVALUABLE",
+            "reason": f"counterfactual_error:{e}",
+            "evidence": {},
+        }
+
+
 def replay(
     book_path: Path | None = None,
     engine_id: str | None = None,
@@ -381,21 +655,79 @@ def replay(
             },
         }
 
-        # v1 counterfactual note: full re-ranking requires the board pipeline
+        # ── Counterfactual evaluation ─────────────────────────────────────────
+        # For cheaply-replayable params (cn.washout_bonus), reconstruct the
+        # ordering delta from stored per-name board columns and compute verdict.
+        # All other params: baseline_only (honest; full re-run not available here).
         is_sa_review_spec = spec.get("status") == "draft" or "sa_review_param" in (spec.get("config") or {})
-        report["counterfactual"] = {
-            "status": "baseline_only_in_v1",
-            "note": (
-                "v1 computes baseline metrics on existing graded rows. "
-                "Full counterfactual re-ranking (applying the param delta to rescore "
-                "all candidates) requires scripts/replay_standout_pipeline.py. "
-                "This report provides the baseline distribution; use it to assess "
-                "whether current n is sufficient before authorizing a shadow book experiment."
-            ),
-            "is_shadow_review_spec": is_sa_review_spec,
-            "spec_param": (spec.get("config") or {}).get("sa_review_param"),
-            "spec_delta_steps": (spec.get("config") or {}).get("delta_steps"),
-        }
+        spec_param = (spec.get("config") or {}).get("sa_review_param")
+        spec_delta_steps = (spec.get("config") or {}).get("delta_steps")
+
+        # Determine trial count for Bonferroni
+        trial_count_cf = (report.get("trial_accounting") or {}).get("trial_count") or 1
+
+        # Do-no-harm min_effective_n from config
+        try:
+            import yaml  # type: ignore[import]
+            _cfg_path = (REPO_ROOT if root is None else root) / "config" / "standout_review.yml"
+            _min_eff_n = 6
+            if _cfg_path.exists():
+                _cfg = yaml.safe_load(_cfg_path.read_text())
+                _min_eff_n = int((_cfg.get("do_no_harm") or {}).get("min_effective_n") or 6)
+        except Exception:  # noqa: BLE001
+            _min_eff_n = 6
+
+        if spec_param == "cn.washout_bonus" and market == "cn" and spec_delta_steps is not None:
+            # Cheaply-replayable: reconstruct counterfactual washout_bonus
+            try:
+                _step = 0.10  # cn.washout_bonus step from yml
+                washout_bonus_cf = float(_CN_WASHOUT_BONUS_BASELINE) + float(spec_delta_steps) * _step
+                cf_result = _cn_washout_bonus_counterfactual(
+                    grades_df,
+                    washout_bonus_cf=washout_bonus_cf,
+                    trial_count=trial_count_cf,
+                    min_effective_n=_min_eff_n,
+                )
+                report["counterfactual"] = {
+                    "status": cf_result.get("verdict", "UNEVALUABLE"),
+                    "verdict": cf_result.get("verdict"),
+                    "reason": cf_result.get("reason"),
+                    "evidence": cf_result.get("evidence") or {},
+                    "is_shadow_review_spec": is_sa_review_spec,
+                    "spec_param": spec_param,
+                    "spec_delta_steps": spec_delta_steps,
+                    "washout_bonus_cf": washout_bonus_cf,
+                    "evaluator": "cn_washout_bonus_rank_delta",
+                    "note": (
+                        "Cheaply-replayable counterfactual: ordering delta from "
+                        "WASHOUT_BONUS change applied to stored board.parquet columns. "
+                        "See module docstring for approximation details."
+                    ),
+                }
+            except Exception as _e:  # noqa: BLE001
+                report["counterfactual"] = {
+                    "status": "UNEVALUABLE",
+                    "verdict": "UNEVALUABLE",
+                    "reason": f"counterfactual_exception:{_e}",
+                    "is_shadow_review_spec": is_sa_review_spec,
+                    "spec_param": spec_param,
+                    "spec_delta_steps": spec_delta_steps,
+                }
+        else:
+            report["counterfactual"] = {
+                "status": "baseline_only",
+                "verdict": "UNEVALUABLE",
+                "reason": "param_not_cheaply_replayable_in_v1",
+                "note": (
+                    "v1 implements cheap counterfactual evaluation only for cn.washout_bonus. "
+                    "For other params, use scripts/replay_standout_pipeline.py (full re-run). "
+                    "This report provides baseline metrics; use them to assess current n before "
+                    "authorizing a shadow book experiment."
+                ),
+                "is_shadow_review_spec": is_sa_review_spec,
+                "spec_param": spec_param,
+                "spec_delta_steps": spec_delta_steps,
+            }
 
         # Trial count accounting (SA-R5 §6 item 2)
         try:

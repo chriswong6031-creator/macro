@@ -19,9 +19,15 @@ KEY DESIGN CONTRACTS
   Touches NOTHING else. No board output changes.
 
 GOVERNANCE EVENTS (A6 lane-(ii), risk_radar_review schema)
-  a6_llm_proposed  — emitted on proposal intake (before any evaluation)
+  a6_llm_proposed  — emitted on proposal intake (before any evaluation), with applied:False
+                     on rejection paths so the event carries the reject_reason in evidence
   a6_auto_apply    — emitted when shadow_apply decision made (lane: 'shadow_book')
-  a6_rejected      — emitted when proposal is rejected (with reason)
+
+  Note: there is no separate 'a6_rejected' event type. Rejection is encoded on the
+  a6_llm_proposed event via evidence.applied=False + evidence.reject_reason. This
+  matches risk_radar_review.py's schema and the governance vocabulary in
+  engine/neuralweb/governance.py (article 6 events only use a6_llm_proposed and
+  a6_auto_apply as named event types).
 
 DO-NO-HARM GATE (§6, SA-R5)
   1. Temporal split: leave-newest-out (exclude most recent non-overlapping month)
@@ -31,9 +37,37 @@ DO-NO-HARM GATE (§6, SA-R5)
      this is the correct honest state. The lane is expected largely DORMANT
      until SA-R10 floors mature (~2026-09-15 US, ~2026-10-15 CN).
 
-DISJOINTNESS INVARIANT (SA-R2)
-  No whitelisted param may be an attribution threshold or fitness-sensor definition.
-  The hardcoded ATTRIBUTION_SENSOR_CONSTANTS set below is the code-level check.
+CHEAPLY-REPLAYABLE PARAMS (_CHEAP_REPLAY_PARAMS set)
+  cn.washout_bonus is replayable from stored per-name board.parquet columns
+  (washout_2w, tier, board_rank, ext_score). The evaluator reconstructs the
+  ordering delta under a modified bonus, approximating the conviction-percentile
+  term as rank-normalised position. See scripts/replay_standout_books.py for
+  the full counterfactual implementation. All other params fall back to UNEVALUABLE.
+
+DISJOINTNESS (SA-R2) — two distinct effect classes:
+  RULER effects: a param feeds an ATTRIBUTION THRESHOLD or fitness-SENSOR DEFINITION.
+    These are FORBIDDEN in the whitelist (SA-R2). The ATTRIBUTION_SENSOR_CONSTANTS
+    guard below checks for this. Example: EXT_SCORE_LATE_PCT feeds the signaled_too_late
+    sensor definition → forbidden.
+  SELECTION effects: a ranking/bonus param changes which names SURFACE on the board,
+    thereby changing sensor composition over time. This is EXPECTED behavior for any
+    improvement lane and is NOT a violation. The sensors exist to measure exactly
+    this kind of change. Example: cn.washout_bonus changes which names rank higher
+    → changes which names get graded → changes hit_quality composition.
+    This is documented and expected.
+  cn.ext_penalty (ranking weight) feeds the ext_score RANKING contribution, NOT the
+    ext_score VALUE that signaled_too_late's fallback reads. The raw ext_score
+    measurement (extension.score) is independent of ext_penalty. Confirmed: ruler
+    effect does NOT apply. ext_penalty is a selection effect → whitelist-eligible.
+  board_rank→signaled_too_late channel: CLOSED by W2's fix (commit 0562ef126be on
+    origin/claude/sa-w2-cn-audit). The signaled_too_late clause now uses
+    ticks > FRESH_TICKS as primary (nulls fall back to ext_score >= EXT_SCORE_LATE_PCT).
+    The LATE_RANK_THRESH / board_rank clause is REMOVED. Verified against current W2.
+
+NOTE on ATTRIBUTION_SENSOR_CONSTANTS sync:
+  The constant set below is synced to ACTUAL W1 (engine/standout_audit.py) and
+  W2 (engine/china_standout_audit.py) constants as of 2026-07-12. It must be
+  re-synced when W1/W2 merge to main. See comment block at the constant definition.
 
 SA-R16: Never raises. Corrupt-proposal tests ship in tests/test_standout_review.py.
 """
@@ -51,24 +85,96 @@ log = logging.getLogger(__name__)
 
 # ── Attribution/sensor constant names — DISJOINTNESS guard ───────────────────
 # These names are LOOP-IMMUTABLE (SA-R2). No whitelist param may share a name.
-# Source: engine/standout_audit.py TAXONOMY_CONSTANTS + SENSOR_* block.
-ATTRIBUTION_SENSOR_CONSTANTS: frozenset[str] = frozenset({
-    "A1_IDIO_BREAK_THRESHOLD",
-    "A1_SECTOR_ROTATED_SECTOR_THRESH",
-    "A1_SECTOR_ROTATED_IDIO_BAND",
-    "A1_IDIO_ALPHA_THRESHOLD",
-    "A1_BETA_TAILWIND_BENCH_THRESH",
-    "A1_IDIO_BAND",
-    "A2_LATE_EXT_PERCENTILE",
-    "A2_LATE_TICKS",
-    "A2_LATE_TENURE_DAYS",
-    "A2_PREMSTOP_MFE_THRESH",
-    "A2_PREMSTOP_WINDOW",
-    "SENSOR_MIN_MATURED_ROWS",
-    "SENSOR_MIN_ENTRY_DATES",
-    "SENSOR_MIN_NONOVERLAPPING_WINDOWS",
-    "SENSOR_MIN_CALENDAR_MONTHS",
-})
+#
+# SYNC NOTE: This set must be re-synced when W1/W2 merge to main.
+# Attempting dynamic import at check time; falls back to this static set on ImportError.
+#
+# Sources verified 2026-07-12:
+#   W1: engine/standout_audit.py — module-level constants (module_constant)
+#   W2: engine/china_standout_audit.py — _TAXONOMY_CONSTANTS dict keys (module_constant)
+#
+# W1 constants (engine/standout_audit.py, all module-level):
+#   A1_IDIO_BREAK_THRESHOLD, A1_SECTOR_ROTATED_SECTOR_THRESH,
+#   A1_SECTOR_ROTATED_IDIO_BAND, A1_MACRO_SPY_THRESH, A1_MACRO_IDIO_BAND,
+#   A1_IDIO_ALPHA_THRESHOLD, A1_BETA_TAILWIND_IDIO_BAND,
+#   A2_SIGNALED_TOO_LATE_TENURE, A2_PREMATURE_STOP_MFE_THRESH,
+#   A2_PREMATURE_STOP_SESSIONS, A2_GATE_SUPPRESSED_EXCESS_THRESH,
+#   SENSOR_MIN_MATURED_ROWS, SENSOR_MIN_ENTRY_DATES,
+#   SENSOR_MIN_NONOVERLAPPING_WINDOWS, SENSOR_MIN_CALENDAR_MONTHS,
+#   MISSED_MOVER_EPISODE_EXCESS_THRESH, MISSED_MOVER_EPISODE_WINDOW,
+#   MISSED_MOVER_BUY_WINDOW
+#
+# W2 constants (engine/china_standout_audit.py, _TAXONOMY_CONSTANTS dict keys):
+#   IDIO_BREAK_PP, IDIO_ALPHA_PP, IDIO_BAND_PP, SECTOR_OUT_PP, MACRO_FALL_PCT,
+#   BETA_STRONG_PCT, FRESH_TICKS, EXT_SCORE_LATE_PCT, PREMATURE_STOP_MFE_PP
+#
+# Fictional names removed from original list (not in any audit module):
+#   A1_BETA_TAILWIND_BENCH_THRESH, A1_IDIO_BAND, A2_LATE_EXT_PERCENTILE,
+#   A2_LATE_TICKS, A2_LATE_TENURE_DAYS, A2_PREMSTOP_MFE_THRESH, A2_PREMSTOP_WINDOW
+
+
+def _build_attribution_sensor_constants() -> frozenset[str]:
+    """Attempt to import W1/W2 audit modules and read their constants dynamically.
+    Falls back to the static verified list on ImportError — never raises."""
+    # Static verified list (2026-07-12 snapshot of W1 and W2 branches)
+    _STATIC: frozenset[str] = frozenset({
+        # W1 (engine/standout_audit.py) — module-level constants
+        "A1_IDIO_BREAK_THRESHOLD",
+        "A1_SECTOR_ROTATED_SECTOR_THRESH",
+        "A1_SECTOR_ROTATED_IDIO_BAND",
+        "A1_MACRO_SPY_THRESH",
+        "A1_MACRO_IDIO_BAND",
+        "A1_IDIO_ALPHA_THRESHOLD",
+        "A1_BETA_TAILWIND_IDIO_BAND",
+        "A2_SIGNALED_TOO_LATE_TENURE",
+        "A2_PREMATURE_STOP_MFE_THRESH",
+        "A2_PREMATURE_STOP_SESSIONS",
+        "A2_GATE_SUPPRESSED_EXCESS_THRESH",
+        "SENSOR_MIN_MATURED_ROWS",
+        "SENSOR_MIN_ENTRY_DATES",
+        "SENSOR_MIN_NONOVERLAPPING_WINDOWS",
+        "SENSOR_MIN_CALENDAR_MONTHS",
+        "MISSED_MOVER_EPISODE_EXCESS_THRESH",
+        "MISSED_MOVER_EPISODE_WINDOW",
+        "MISSED_MOVER_BUY_WINDOW",
+        # W2 (engine/china_standout_audit.py) — _TAXONOMY_CONSTANTS dict keys
+        "IDIO_BREAK_PP",
+        "IDIO_ALPHA_PP",
+        "IDIO_BAND_PP",
+        "SECTOR_OUT_PP",
+        "MACRO_FALL_PCT",
+        "BETA_STRONG_PCT",
+        "FRESH_TICKS",
+        "EXT_SCORE_LATE_PCT",
+        "PREMATURE_STOP_MFE_PP",
+    })
+    constants: set[str] = set(_STATIC)
+
+    # Attempt dynamic import of W1 module
+    try:
+        import importlib
+        w1 = importlib.import_module("engine.standout_audit")
+        # Read all uppercase names that look like taxonomy constants
+        for name in dir(w1):
+            if name.startswith(("A1_", "A2_", "SENSOR_", "MISSED_MOVER_")):
+                constants.add(name)
+    except Exception:  # noqa: BLE001
+        pass  # fall through to static
+
+    # Attempt dynamic import of W2 module
+    try:
+        import importlib
+        w2 = importlib.import_module("engine.china_standout_audit")
+        tc = getattr(w2, "_TAXONOMY_CONSTANTS", None)
+        if isinstance(tc, dict):
+            constants.update(tc.keys())
+    except Exception:  # noqa: BLE001
+        pass  # fall through to static
+
+    return frozenset(constants)
+
+
+ATTRIBUTION_SENSOR_CONSTANTS: frozenset[str] = _build_attribution_sensor_constants()
 
 # Whitelist keys normalized for disjointness check (strip market prefix)
 _WHITELIST_CANONICAL_KEYS: frozenset[str] = frozenset({
@@ -375,89 +481,97 @@ def _compute_trial_count(whitelist: dict) -> int:
     return max(n, 1)
 
 
+# ── Cheaply-replayable params set ─────────────────────────────────────────────
+# Params whose counterfactual can be evaluated from stored per-name board columns
+# without re-running the full board pipeline. The evaluator in
+# scripts/replay_standout_books.py handles these via rank-delta reconstruction.
+#
+# cn.washout_bonus: stored board.parquet has washout_2w (bool), tier, board_rank,
+#   ext_score. Sufficient to reconstruct ORDERING DELTA under modified bonus.
+#   Approximation: conviction-percentile term held constant (rank-normalised).
+#   See scripts/replay_standout_books.py _cn_washout_bonus_counterfactual().
+_CHEAP_REPLAY_PARAMS: frozenset[str] = frozenset({"cn.washout_bonus"})
+
+
 # ── Evaluator interface ───────────────────────────────────────────────────────
 
 def _replay_evaluator(proposal: dict, delta_amount: float,
                       do_no_harm_cfg: dict, root: str | Path | None = None
                       ) -> dict:
-    """Default replay_books evaluator (Tier-0 evidence per SA-R5).
+    """Replay evaluator (Tier-0 evidence per SA-R5).
 
-    Attempts to re-rank accrued board snapshots under the parameter delta
-    and compute hit_quality + coverage_health deltas on the leave-newest-out
-    split with the trial haircut applied.
+    For params in _CHEAP_REPLAY_PARAMS (cn.washout_bonus): calls the real
+    counterfactual evaluator in scripts/replay_standout_books.py, which
+    reconstructs the ordering delta from stored per-name board.parquet columns.
 
-    At current n (SA-R10 floors not yet met) this will almost always return
-    UNEVALUABLE because effective_n < min_effective_n — the honest DORMANT state.
+    For all other params: returns UNEVALUABLE (honest — full board re-run not
+    available in the in-process evaluator). Use scripts/replay_standout_books.py
+    with --book for manual Tier-0 evidence.
+
+    At current n (SA-R10 floors not yet met, ~2026-09-15 US / ~2026-10-15 CN)
+    this will return UNEVALUABLE because effective_n < min_effective_n — the
+    correct honest DORMANT state.
 
     Returns a dict with keys: verdict ("PASS"|"FAIL"|"UNEVALUABLE"), reason, evidence.
     """
     min_eff_n = int((do_no_harm_cfg or {}).get("min_effective_n") or 6)
+    param = proposal.get("param", "")
     market = proposal.get("market", "us")
 
-    # Try to load the fitness card to check effective_n
-    try:
-        fitness_path = _data_dir(root) / "metabolism" / "fitness" / f"standouts_{market}.json"
-        if not fitness_path.exists():
+    # Route cheaply-replayable params to the real counterfactual evaluator
+    if param in _CHEAP_REPLAY_PARAMS:
+        try:
+            from scripts.replay_standout_books import (
+                _load_grades,
+                _cn_washout_bonus_counterfactual,
+                _data_dir as _replay_data_dir,
+            )
+
+            data_dir = _replay_data_dir(Path(root) if root else None)
+            grades_df, err = _load_grades(data_dir, market)
+            if err:
+                return {
+                    "verdict": "UNEVALUABLE",
+                    "reason": f"grades_load_failed:{err}",
+                    "evidence": {"param": param},
+                }
+
+            # Compute trial count for Bonferroni
+            cfg = _load_config(root)
+            trial_count = _compute_trial_count(_get_whitelist(cfg) if cfg else {})
+
+            # Dispatch to param-specific evaluator
+            if param == "cn.washout_bonus":
+                # delta_steps * step = delta_amount; reconstruct cf bonus
+                from scripts.replay_standout_books import _CN_WASHOUT_BONUS_BASELINE
+                delta_steps = proposal.get("delta_steps", 0)
+                step = 0.10  # cn.washout_bonus step
+                washout_bonus_cf = float(_CN_WASHOUT_BONUS_BASELINE) + int(delta_steps) * step
+                return _cn_washout_bonus_counterfactual(
+                    grades_df,
+                    washout_bonus_cf=washout_bonus_cf,
+                    trial_count=trial_count,
+                    min_effective_n=min_eff_n,
+                )
+
+        except Exception as e:  # noqa: BLE001
+            log.warning("_replay_evaluator: cheap replay failed for %s: %s", param, e)
             return {
                 "verdict": "UNEVALUABLE",
-                "reason": "fitness_card_absent",
-                "evidence": {"path": str(fitness_path)},
+                "reason": f"cheap_replay_error:{e}",
+                "evidence": {"param": param},
             }
-        fc = json.loads(fitness_path.read_text(encoding="utf-8"))
-        sensors = fc.get("sensors") or {}
-        # Use hit_quality effective_n as proxy for accrual maturity
-        hq = sensors.get("hit_quality") or {}
-        eff_n = hq.get("effective_n") or 0
-        if eff_n < min_eff_n:
-            return {
-                "verdict": "UNEVALUABLE",
-                "reason": f"insufficient_effective_n:{eff_n}<{min_eff_n}",
-                "evidence": {"effective_n": eff_n, "min_effective_n": min_eff_n},
-            }
-    except Exception as e:  # noqa: BLE001
-        return {
-            "verdict": "UNEVALUABLE",
-            "reason": f"fitness_card_read_error:{e}",
-            "evidence": {},
-        }
 
-    # Try to load snapshots for re-ranking
-    try:
-        snap_path = _data_dir(root) / "us_board_ledger" / "snapshots.jsonl"
-        if market == "cn":
-            snap_path = _data_dir(root) / "china_standout_track" / "board.parquet"
-        if not snap_path.exists():
-            return {
-                "verdict": "UNEVALUABLE",
-                "reason": f"snapshots_absent:{snap_path}",
-                "evidence": {},
-            }
-    except Exception as e:  # noqa: BLE001
-        return {
-            "verdict": "UNEVALUABLE",
-            "reason": f"snapshot_path_error:{e}",
-            "evidence": {},
-        }
-
-    # v1: For params that are not cheaply replayable from stored per-name columns,
-    # return UNEVALUABLE. Currently all params require a full board re-run which
-    # is not available in the inprocess evaluator. The on-demand
-    # scripts/replay_standout_books.py is the Tier-0 evidence tool (SA-R5).
-    param = proposal.get("param", "")
-    _CHEAP_REPLAY_PARAMS: frozenset[str] = frozenset()  # none yet in v1
-    if param not in _CHEAP_REPLAY_PARAMS:
-        return {
-            "verdict": "UNEVALUABLE",
-            "reason": (
-                f"param_not_cheaply_replayable_in_v1:{param}. "
-                "Use scripts/replay_standout_books.py (Tier-0 evidence tool, SA-R5) "
-                "to evaluate counterfactuals. UNEVALUABLE => reject per SA-R5."
-            ),
-            "evidence": {"param": param},
-        }
-
-    # Placeholder for future cheap replay params
-    return {"verdict": "UNEVALUABLE", "reason": "no_evaluator_reached", "evidence": {}}
+    # All other params: UNEVALUABLE (honest — full board re-run not available)
+    return {
+        "verdict": "UNEVALUABLE",
+        "reason": (
+            f"param_not_cheaply_replayable_in_v1:{param}. "
+            "Use scripts/replay_standout_books.py (Tier-0 evidence tool, SA-R5) "
+            "to evaluate counterfactuals. UNEVALUABLE => reject per SA-R5."
+        ),
+        "evidence": {"param": param},
+    }
 
 
 # ── Shadow book spec writer ───────────────────────────────────────────────────
