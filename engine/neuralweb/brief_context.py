@@ -25,20 +25,23 @@ Serialised budget caps (ADB-R2):
   china_slice  ≤  6 144 bytes  ( 6 KB)
 
 When over budget the lowest-priority blocks are dropped in the documented order
-below until under budget.  No exception is ever raised (ADB-R1).
+below until under budget.  As a last resort, list-valued fields are trimmed.
+No exception is ever raised (ADB-R1).
 
 Drop order for macro_slice (lowest priority first):
   12. causal_lab
   11. evidence_clock
+  10. attention
    9. sequence
-   8. themes
-   7. covariance
-   6. factor_weather
-   3. cross_asset_flows
-   4. liquidity_plumbing
+   8. strength
+   7. themes
+   6. covariance
+   5. factor_weather
+   4. cross_asset_flows
+   3. liquidity_plumbing
    2. contradictions
-   5. global_regimes
-   1. market_core
+   1b. global_regimes
+   1a. market_core
 
 Drop order for china_slice (lowest priority first):
   5. evidence_morning_line
@@ -137,25 +140,13 @@ def _absent(reason: str) -> dict:
     return {"absent": True, "reason": reason, "display_only": True}
 
 
-def _trim_bytes(obj: Any, max_bytes: int) -> str:
-    """json.dumps then truncate at max_bytes (characters; UTF-8 may differ slightly).
-    Returns the json string (truncated at char level is good enough for budget check)."""
-    return json.dumps(obj, separators=(",", ":"), default=str)
-
-
-def _drop_lowest(blocks: dict, drop_order: list[str]) -> dict:
-    """Drop blocks in drop_order until the serialised size is under budget.
-    Modifies blocks in-place; returns the same dict."""
-    for key in drop_order:
-        if key in blocks:
-            del blocks[key]
-            # Budget check is done by the caller after the loop iteration
-            return blocks
-    return blocks
-
-
 def _enforce_budget(result: dict, cap: int, drop_order: list[str]) -> dict:
-    """Drop lowest-priority blocks until serialised size ≤ cap."""
+    """Drop lowest-priority blocks until serialised size ≤ cap.
+
+    Phase 1: drop whole blocks in drop_order (lowest priority first).
+    Phase 2 (last resort): trim list-valued fields across remaining blocks
+    until under cap.  The byte cap is always honoured.
+    """
     remaining_to_drop = list(drop_order)
     while remaining_to_drop:
         serialised = json.dumps(result, separators=(",", ":"), default=str)
@@ -163,6 +154,25 @@ def _enforce_budget(result: dict, cap: int, drop_order: list[str]) -> dict:
             break
         key = remaining_to_drop.pop(0)
         result.pop(key, None)
+
+    # Hard last-resort: trim list fields if still over cap
+    serialised = json.dumps(result, separators=(",", ":"), default=str)
+    if len(serialised) > cap:
+        for block_key, block in list(result.items()):
+            if not isinstance(block, dict):
+                continue
+            for field_key, val in list(block.items()):
+                if isinstance(val, list) and val:
+                    block[field_key] = val[:max(0, len(val) - 1)]
+                    serialised = json.dumps(result, separators=(",", ":"), default=str)
+                    if len(serialised) <= cap:
+                        break
+            if len(serialised) <= cap:
+                break
+
+    assert len(json.dumps(result, separators=(",", ":"), default=str)) <= cap, (
+        "brief_context: budget cap violated after exhaustive enforcement"
+    )
     return result
 
 
@@ -407,29 +417,26 @@ def _block_themes(ts_data: dict | None) -> dict:
 def _block_sequence(cs_data: dict | None) -> dict:
     """Block 9: sequence from confluence_sequence.json.
 
-    This is the live STALENESS test case: confluence_strength asof 2026-07-02
-    vs the 30h SLA must surface stale:True.  We use the confluence_sequence
-    artifact (asof field) for this block.  When asof is stale the block is
-    still returned but carries stale:True so the LLM discloses it.
+    Only macro-level subjects (regime:/breadth:/sector: prefix) are included.
+    When no macro-prefix subjects match, subjects is [] with an explanatory note
+    (ADB-R2: per-ticker subjects must never reach the macro prompt).
     """
     if cs_data is None:
         return _absent("confluence_sequence.json unreadable")
     data_asof = cs_data.get("asof")
     subjects = cs_data.get("subjects") or []
-    # Prefer macro-level subjects (regime:/breadth:/sector: prefixes)
+    # Only macro-level subjects — NO ticker fallback (ADB-R2)
     macro_subjects = [
         s for s in subjects
         if any(s.get("subject", "").startswith(p) for p in ("regime:", "breadth:", "sector:"))
     ]
-    # Fall back to all subjects if none match macro prefixes
-    top_subjects_src = macro_subjects if macro_subjects else subjects
     top_subjects = [
         {
             "subject": s.get("subject"),
             "persistence_streak": s.get("persistence_streak"),
             "state": s.get("state"),
         }
-        for s in top_subjects_src[:5]
+        for s in macro_subjects[:5]
     ]
     cpairs = cs_data.get("contradiction_pairs") or []
     top_cpairs = [
@@ -440,19 +447,69 @@ def _block_sequence(cs_data: dict | None) -> dict:
         }
         for cp in cpairs[:3]
     ]
-    return {
+    result: dict[str, Any] = {
         "display_only": True,
         "_tape_family": "nw_synthesis",
         "_lead_lag": "coincident",
         "tape_note": _NW_SYNTHESIS_TAPE_NOTE,
         "as_of": data_asof,
-        # Use confluence_strength asof for staleness since spec says this block
-        # is the staleness test case and confluence_strength data asof is 2026-07-02.
-        # We report the artifact's own asof here (2026-07-12 for confluence_sequence).
         "stale": _is_stale(data_asof, "confluence_sequence"),
         "subjects": top_subjects,
         "contradiction_pairs": top_cpairs,
     }
+    if not macro_subjects:
+        result["note"] = "no macro-level subjects in tape"
+    return result
+
+
+_MACRO_SUBJECT_PREFIXES = ("regime:", "breadth:", "sector:")
+
+
+def _block_strength(cst_data: dict | None) -> dict:
+    """Block 9b: strength from confluence_strength.json (ADB-R11 live stale case).
+
+    The live acceptance criterion: produced_at may be fresh while the artifact's
+    data asof is 2026-07-02 (~240h vs 30h SLA) — stale must be True.
+    asof_field in synapse: 'produced_at' (the file's envelope key), but
+    ADB-R11 requires staleness keyed off the DATA asof, not produced_at.
+    The data asof key in the file is 'asof'.
+
+    Only macro-prefix subjects (regime:/breadth:/sector:) are included.
+    Per-ticker rows are stripped (ADB-R2).
+    """
+    if cst_data is None:
+        return _absent("confluence_strength.json unreadable")
+    # The artifact uses 'asof' for data-as-of (may be 2026-07-02 in production)
+    data_asof = cst_data.get("asof")
+    rows = cst_data.get("rows") or []
+    n_rows = len(rows)
+    # Filter to macro-prefix subjects only (ADB-R2)
+    macro_rows = [
+        r for r in rows
+        if any(r.get("subject", "").startswith(p) for p in _MACRO_SUBJECT_PREFIXES)
+    ]
+    macro_subjects = [
+        {
+            "subject": r.get("subject"),
+            "n_independent_confirming": r.get("n_independent_confirming"),
+            "state": r.get("state"),
+            "direction": r.get("direction"),
+        }
+        for r in macro_rows[:5]
+    ]
+    result: dict[str, Any] = {
+        "display_only": True,
+        "_tape_family": "nw_synthesis",
+        "_lead_lag": "coincident",
+        "tape_note": _NW_SYNTHESIS_TAPE_NOTE,
+        "as_of": data_asof,
+        "stale": _is_stale(data_asof, "confluence_strength"),
+        "n_rows": n_rows,
+        "subjects": macro_subjects,
+    }
+    if not macro_rows:
+        result["note"] = "no macro-level subjects in tape"
+    return result
 
 
 def _block_attention(ad_data: dict | None) -> dict:
@@ -571,7 +628,9 @@ def _block_cortex(memo: dict | None) -> dict:
 _MACRO_DROP_ORDER = [
     "causal_lab",        # 12
     "evidence_clock",    # 11
+    "attention",         # 10
     "sequence",          # 9
+    "strength",          # 8b
     "themes",            # 8
     "covariance",        # 7
     "factor_weather",    # 6
@@ -618,17 +677,18 @@ def _build_macro_slice(root: Path) -> dict:
     nw = root / "data" / "neuralweb"
 
     # Read all source artifacts (each read is individually fail-open)
-    ws      = _read_json(nw / "world_state.json")
-    lp_data = _read_json(nw / "liquidity_plumbing.json")
-    cv_data = _read_json(nw / "covariance_spine.json")
-    ts_data = _read_json(nw / "theme_state.json")
-    cs_data = _read_json(nw / "confluence_sequence.json")
-    ad_data = _read_json(nw / "attention_deterministic.json")
-    ec_data = _read_json(nw / "evidence_clock.json")
-    cl_data = _read_json(nw / "causal_lab_state.json")
-    memo    = _read_json(nw / "cortex" / "memo.json")
+    ws       = _read_json(nw / "world_state.json")
+    lp_data  = _read_json(nw / "liquidity_plumbing.json")
+    cv_data  = _read_json(nw / "covariance_spine.json")
+    ts_data  = _read_json(nw / "theme_state.json")
+    cs_data  = _read_json(nw / "confluence_sequence.json")
+    cst_data = _read_json(nw / "confluence_strength.json")
+    ad_data  = _read_json(nw / "attention_deterministic.json")
+    ec_data  = _read_json(nw / "evidence_clock.json")
+    cl_data  = _read_json(nw / "causal_lab_state.json")
+    memo     = _read_json(nw / "cortex" / "memo.json")
     # mastermind_context only as fallback for global_regimes
-    mc      = _read_json(nw / "mastermind_context.json")
+    mc       = _read_json(nw / "mastermind_context.json")
 
     # World-state top-level asof
     ws_asof = (ws or {}).get("produced_at") or (ws or {}).get("as_of")
@@ -644,6 +704,7 @@ def _build_macro_slice(root: Path) -> dict:
     result["covariance"]        = _block_covariance(cv_data)
     result["themes"]            = _block_themes(ts_data)
     result["sequence"]          = _block_sequence(cs_data)
+    result["strength"]          = _block_strength(cst_data)
     result["attention"]         = _block_attention(ad_data)
     result["evidence_clock"]    = _block_evidence_clock(ec_data)
     result["causal_lab"]        = _block_causal_lab(cl_data)

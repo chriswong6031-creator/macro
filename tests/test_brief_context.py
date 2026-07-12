@@ -2,21 +2,24 @@
 
 Test coverage
 -------------
-1.  budget_caps_macro       — macro_slice from real repo artifacts ≤ 10 240 bytes
-2.  budget_caps_china       — china_slice from real repo artifacts ≤ 6 144 bytes
-3.  assert_no_authority_macro — macro_slice passes _law.assert_no_authority
-4.  assert_no_authority_china — china_slice passes _law.assert_no_authority
-5.  absent_artifact_macro   — absent-artifact root → absent markers (no raise)
-6.  absent_artifact_china   — absent-artifact root → absent markers (no raise)
-7.  stale_fixture_macro     — world_state with stale asof → stale:True on market_core
-8.  stale_fixture_china     — mastermind_context with stale asof → stale:True on global_weather
-9.  degraded_memo           — degraded memo fixture → status-only cortex tail
+1.  budget_caps_macro          — macro_slice from real repo artifacts ≤ 10 240 bytes
+2.  budget_caps_china          — china_slice from real repo artifacts ≤ 6 144 bytes
+3.  assert_no_authority_macro  — macro_slice passes _law.assert_no_authority
+4.  assert_no_authority_china  — china_slice passes _law.assert_no_authority
+5.  absent_artifact_macro      — absent-artifact root → absent markers (no raise)
+6.  absent_artifact_china      — absent-artifact root → absent markers (no raise)
+7.  stale_fixture_macro        — world_state with stale asof → stale:True on market_core
+8.  stale_fixture_china        — mastermind_context with stale asof → stale:True on global_weather
+9.  degraded_memo              — degraded memo fixture → status-only cortex tail
 10. tape_family_on_every_block_macro — every non-absent macro block has _tape_family
 11. tape_family_on_every_block_china — every non-absent china block has _tape_family
-12. cache_bust              — two states differing only in memo content produce different
-                              json.dumps serialisations (trivially asserted)
-13. confluence_strength_stale — confluence_sequence fixture with asof 2026-07-02 →
-                              stale:True (the W1 acceptance stale test case)
+12. cache_bust                 — two states differing only in memo content produce different
+                                 json.dumps serialisations (trivially asserted)
+13. strength_stale_produced_at_fresh — confluence_strength produced_at fresh / asof 2026-07-02
+                                 → strength block stale:True (ADB-R11 live acceptance test)
+14. no_ticker_subjects_sequence — sequence block subjects list contains NO non-macro-prefix strings
+15. no_ticker_subjects_strength — strength block subjects list contains NO non-macro-prefix strings
+16. oversized_budget_enforced   — synthetic oversized packet stays ≤ cap after enforcement
 """
 from __future__ import annotations
 
@@ -125,6 +128,45 @@ def _minimal_confluence_sequence(asof: str = "2026-07-12") -> dict:
     }
 
 
+def _minimal_confluence_strength(
+    asof: str = "2026-07-12",
+    produced_at: str | None = None,
+) -> dict:
+    """confluence_strength.json fixture.
+
+    In the ADB-R11 live acceptance case, produced_at is fresh (today) while
+    asof is stale (2026-07-02).  The fixture models this shape.
+    """
+    pt = produced_at or f"2026-07-12T05:00:00Z"
+    return {
+        "schema": "neuralweb.confluence_strength.v1",
+        "asof": asof,
+        "produced_at": pt,
+        "display_only": True,
+        "rows": [
+            {
+                "subject": "regime:US",
+                "n_independent_confirming": 3.0,
+                "state": "stable",
+                "direction": "bullish",
+            },
+            {
+                "subject": "breadth:pct_above_200",
+                "n_independent_confirming": 2.0,
+                "state": "strengthening",
+                "direction": "bullish",
+            },
+            # Ticker-level row — must NEVER appear in the strength block
+            {
+                "subject": "AAPL",
+                "n_independent_confirming": 1.5,
+                "state": "stable",
+                "direction": "bullish",
+            },
+        ],
+    }
+
+
 def _minimal_attention(asof: str = "2026-07-12") -> dict:
     return {
         "as_of": asof,
@@ -208,6 +250,7 @@ def _write_full_fixture(nw: Path, ws_asof: str = "2026-07-12",
     _write_json(nw / "covariance_spine.json", _minimal_covariance_spine())
     _write_json(nw / "theme_state.json", _minimal_theme_state())
     _write_json(nw / "confluence_sequence.json", _minimal_confluence_sequence())
+    _write_json(nw / "confluence_strength.json", _minimal_confluence_strength())
     _write_json(nw / "attention_deterministic.json", _minimal_attention())
     _write_json(nw / "evidence_clock.json", _minimal_evidence_clock())
     _write_json(nw / "causal_lab_state.json", _minimal_causal_lab())
@@ -386,25 +429,147 @@ def test_cache_bust(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Test 13: confluence_strength stale fixture (W1 acceptance criterion)
+# Test 13: strength stale fixture (ADB-R11 live acceptance criterion)
 # ---------------------------------------------------------------------------
 
-def test_confluence_strength_stale(tmp_path):
-    """confluence_sequence fixture with asof 2026-07-02 → sequence block stale:True.
+def test_strength_stale_produced_at_fresh(tmp_path):
+    """confluence_strength produced_at=fresh asof=2026-07-02 → strength block stale:True.
 
-    This is the W1 acceptance stale test case: a confluence_sequence artifact
-    with data asof 2026-07-02 vs 30h SLA must surface stale:True.
+    ADB-R11 live acceptance case: produced_at is today (fresh) but data asof
+    is 2026-07-02 (~240h vs 30h SLA).  Staleness must key off asof, not
+    produced_at, so stale must be True.
     """
     from engine.neuralweb.brief_context import macro_slice
     nw = _make_nw_dir(tmp_path)
     _write_full_fixture(nw)
-    # Write stale confluence_sequence (asof = 2026-07-02 ~240h ago)
-    stale_cs = _minimal_confluence_sequence(asof="2026-07-02")
-    _write_json(nw / "confluence_sequence.json", stale_cs)
+    # Write stale confluence_strength: produced_at fresh, asof old
+    stale_cst = _minimal_confluence_strength(
+        asof="2026-07-02",
+        produced_at="2026-07-12T05:00:00Z",  # fresh produced_at
+    )
+    _write_json(nw / "confluence_strength.json", stale_cst)
+
+    result = macro_slice(root=tmp_path)
+    strength = result.get("strength", {})
+    assert not strength.get("absent"), "strength block should be present with stale asof"
+    assert strength.get("stale") is True, (
+        "strength block must be stale when asof=2026-07-02 (keyed off asof, not produced_at)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Tests 14-15: no ticker subjects leak (ADB-R2)
+# ---------------------------------------------------------------------------
+
+_MACRO_PREFIXES = ("regime:", "breadth:", "sector:")
+
+
+def test_no_ticker_subjects_sequence(tmp_path):
+    """sequence block subjects must all have macro-prefix or be absent entirely.
+
+    Production confluence_sequence is 100% ticker-level subjects.  The block
+    must emit subjects=[] (not fall back to ticker rows) when no macro subjects
+    match.  Verified against both the fixture and the real production artifact
+    (if present).
+    """
+    from engine.neuralweb.brief_context import macro_slice
+    nw = _make_nw_dir(tmp_path)
+    _write_full_fixture(nw)
+    # Write ticker-only confluence_sequence (no macro subjects)
+    ticker_only_cs = {
+        "schema": "neuralweb.confluence_sequence.v1",
+        "asof": "2026-07-12",
+        "produced_at": "2026-07-12T05:00:00Z",
+        "subjects": [
+            {"subject": "AAPL", "persistence_streak": 3, "state": "stable"},
+            {"subject": "CB", "persistence_streak": 2, "state": "strengthening"},
+            {"subject": "AVGO", "persistence_streak": 1, "state": "new"},
+            {"subject": "BA", "persistence_streak": 4, "state": "stable"},
+            {"subject": "BIIB", "persistence_streak": 1, "state": "decaying"},
+        ],
+        "contradiction_pairs": [],
+        "display_only": True,
+    }
+    _write_json(nw / "confluence_sequence.json", ticker_only_cs)
 
     result = macro_slice(root=tmp_path)
     seq = result.get("sequence", {})
-    assert not seq.get("absent"), "sequence block should be present with stale asof"
-    assert seq.get("stale") is True, (
-        "sequence block should be stale when confluence_sequence asof is 2026-07-02"
+    subjects = seq.get("subjects", [])
+    for s in subjects:
+        subj_str = s.get("subject", "")
+        assert any(subj_str.startswith(p) for p in _MACRO_PREFIXES), (
+            f"ticker subject leaked into sequence block: {subj_str!r}"
+        )
+
+
+def test_no_ticker_subjects_strength(tmp_path):
+    """strength block subjects must all have macro-prefix (ADB-R2).
+
+    The _minimal_confluence_strength fixture includes a ticker row ('AAPL').
+    The block must strip it.
+    """
+    from engine.neuralweb.brief_context import macro_slice
+    nw = _make_nw_dir(tmp_path)
+    _write_full_fixture(nw)
+    # _minimal_confluence_strength already contains an AAPL ticker row
+
+    result = macro_slice(root=tmp_path)
+    strength = result.get("strength", {})
+    subjects = strength.get("subjects", [])
+    assert subjects is not None, "strength subjects key must be present"
+    for s in subjects:
+        subj_str = s.get("subject", "")
+        assert any(subj_str.startswith(p) for p in _MACRO_PREFIXES), (
+            f"ticker subject leaked into strength block: {subj_str!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test 16: oversized synthetic packet stays ≤ cap after budget enforcement
+# ---------------------------------------------------------------------------
+
+def test_oversized_budget_enforced(tmp_path):
+    """An intentionally oversized packet must be trimmed to ≤ 10 240 bytes."""
+    from engine.neuralweb.brief_context import _enforce_budget, _MACRO_DROP_ORDER, _MACRO_CAP
+    import json
+    # Build a packet that is well over the cap by padding list fields
+    big_list = [{"subject": f"regime:SYN{i}", "state": "stable", "note": "x" * 200}
+                for i in range(100)]
+    oversized: dict = {
+        "market_core": {"_tape_family": "nw_synthesis", "display_only": True,
+                        "as_of": "2026-07-12", "stale": False, "items": big_list},
+        "contradictions": {"_tape_family": "nw_synthesis", "display_only": True,
+                           "as_of": "2026-07-12", "stale": False, "items": big_list},
+        "cross_asset_flows": {"_tape_family": "flows", "display_only": True,
+                              "as_of": "2026-07-12", "stale": False, "items": big_list},
+        "liquidity_plumbing": {"_tape_family": "rates_credit", "display_only": True,
+                               "as_of": "2026-07-12", "stale": False, "items": big_list},
+        "global_regimes": {"_tape_family": "price_regime", "display_only": True,
+                           "as_of": "2026-07-12", "stale": False, "items": big_list},
+        "factor_weather": {"_tape_family": "nw_synthesis", "display_only": True,
+                           "as_of": "2026-07-12", "stale": False, "items": big_list},
+        "covariance": {"_tape_family": "nw_synthesis", "display_only": True,
+                       "as_of": "2026-07-12", "stale": False, "items": big_list},
+        "themes": {"_tape_family": "nw_synthesis", "display_only": True,
+                   "as_of": "2026-07-12", "stale": False, "items": big_list},
+        "sequence": {"_tape_family": "nw_synthesis", "display_only": True,
+                     "as_of": "2026-07-12", "stale": False, "subjects": big_list},
+        "strength": {"_tape_family": "nw_synthesis", "display_only": True,
+                     "as_of": "2026-07-12", "stale": False, "subjects": big_list},
+        "attention": {"_tape_family": "nw_synthesis", "display_only": True,
+                      "as_of": "2026-07-12", "stale": False, "items": big_list},
+        "evidence_clock": {"_tape_family": "ops", "display_only": True,
+                           "as_of": "2026-07-12", "stale": False, "items": big_list},
+        "causal_lab": {"_tape_family": "ops", "display_only": True,
+                       "as_of": "2026-07-12", "stale": False, "items": big_list},
+        "cortex": {"_tape_family": "ops", "display_only": True,
+                   "as_of": "2026-07-12", "stale": False},
+    }
+    pre_size = len(json.dumps(oversized, separators=(",", ":"), default=str))
+    assert pre_size > _MACRO_CAP, "fixture must be oversized to test budget enforcement"
+
+    result = _enforce_budget(oversized, _MACRO_CAP, list(_MACRO_DROP_ORDER))
+    post_size = len(json.dumps(result, separators=(",", ":"), default=str))
+    assert post_size <= _MACRO_CAP, (
+        f"budget enforcement failed: {post_size} > {_MACRO_CAP} bytes"
     )

@@ -3830,7 +3830,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/brief_context.py
     notes: >
       DISPLAY-ONLY. R-V4-6: per-(subject, as_of, direction, horizon) confirming engine
       count with redundancy discount from covariance_spine dominant_overlap_cluster.
