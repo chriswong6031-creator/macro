@@ -7,7 +7,9 @@ and their equal-weight member tickers, then materialises the membership schema
 engine.baskets_canada.compute_canada_baskets() consumes.
 
 Member names are filled from data/canada_search/members.parquet and EVERY ticker is validated
-against the canada_search close cache (fail loud on a miss). Benchmark = S&P/TSX Composite
+against the canada_search close cache (fail loud on a miss) — except tickers in the REMOVED
+registry below, which re-encode the nightly reconciler's dated prunes
+(scripts/reconcile_membership.py) so a regen reproduces the live file. Benchmark = S&P/TSX Composite
 (XIC.TO); most baskets get a clean iShares sector-ETF cross-check. (The once-iconic cannabis
 theme is intentionally omitted — only one name survives in the Composite.) Re-runnable:
 `python -m scripts.seed_canada_baskets`.
@@ -38,8 +40,8 @@ BASKETS: dict[str, dict] = {
         "name": "Big Banks", "name_zh": "大型银行",
         "category": "Financials", "category_zh": "金融",
         "etf_proxy": "ZEB.TO", "etf_proxy_note": "BMO Equal Weight Banks ETF",
-        "thesis": "The backbone of the TSX — the Big-Five chartered banks plus the alt-lenders. Oligopoly economics, fat dividends and a direct read on Canadian credit, mortgages and net-interest-margin. The index's largest single bloc.",
-        "thesis_zh": "多伦多交易所的支柱 — 五大特许银行加另类贷款机构。寡头经济、丰厚分红，直接反映加拿大信贷、按揭与净息差。指数中最大的单一板块。",
+        "thesis": "Canada's major banks and alternative lenders. Tracks credit, mortgages, rates and the TSX financials core.",
+        "thesis_zh": "加拿大主要银行和替代贷款机构。跟踪信贷、房贷、利率和 TSX 金融核心。",
         "members": [
             ("RY.TO", "Royal Bank — the largest Canadian bank"),
             ("TD.TO", "TD Bank — retail + US franchise"),
@@ -54,8 +56,8 @@ BASKETS: dict[str, dict] = {
         "name": "Insurers", "name_zh": "保险",
         "category": "Financials", "category_zh": "金融",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The big lifecos and P&C insurers — earnings and book value geared to equity markets, long-bond yields and Asia/US growth. A rate-sensitive financial sleeve distinct from the banks.",
-        "thesis_zh": "大型寿险与财险公司 — 利润与净资产挂钩权益市场、长债收益率及亚洲/美国增长。区别于银行、对利率敏感的金融板块。",
+        "thesis": "Life and P&C insurers geared to equity markets, yields and book value.",
+        "thesis_zh": "寿险和财险公司，受股市、利率和账面价值影响。",
         "members": [
             ("MFC.TO", "Manulife — life + Asia / Global WAM"),
             ("SLF.TO", "Sun Life — life + asset management"),
@@ -69,8 +71,8 @@ BASKETS: dict[str, dict] = {
         "name": "Asset Managers & Alternatives", "name_zh": "资产管理与另类投资",
         "category": "Financials", "category_zh": "金融",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "Canada's alternative-asset and holding-company complex — the Brookfield empire, Power, Onex, the fund managers and the exchange. Levered to fee-bearing capital, deal flow and private-market valuations.",
-        "thesis_zh": "加拿大的另类资产与控股公司集群 — 博枫体系、Power、Onex、基金管理人与交易所。受管理费资本、交易活动与私募市场估值驱动。",
+        "thesis": "Brookfield, Power, Onex, fund managers and the exchange. Tracks fee capital, deals and private markets.",
+        "thesis_zh": "Brookfield、Power、Onex、基金管理人和交易所。跟踪收费资本、交易和私募市场。",
         "members": [
             ("BN.TO", "Brookfield Corp — alternatives flagship"),
             ("BAM.TO", "Brookfield Asset Management — pure-play fees"),
@@ -86,8 +88,8 @@ BASKETS: dict[str, dict] = {
         "name": "Gold Miners", "name_zh": "黄金矿业",
         "category": "Precious Metals", "category_zh": "贵金属",
         "etf_proxy": "XGD.TO", "etf_proxy_note": "iShares Gold Producers ETF",
-        "thesis": "The TSX's signature theme — senior and mid-tier gold producers levered to the bullion price, central-bank buying and the real-rate / de-dollarization narrative. High operating leverage to gold.",
-        "thesis_zh": "多交所的标志性主题 — 大型与中型金矿生产商，受金价、央行购金与实际利率/去美元化叙事驱动。对金价具高经营杠杆。",
+        "thesis": "Senior and mid-tier gold miners. High operating leverage to bullion, real rates and central-bank demand.",
+        "thesis_zh": "大型和中型金矿商。对金价、实际利率和央行需求具有高杠杆。",
         "members": [
             ("AEM.TO", "Agnico Eagle — top-tier senior producer"),
             ("ABX.TO", "Barrick — global gold/copper major"),
@@ -103,8 +105,8 @@ BASKETS: dict[str, dict] = {
         "name": "Silver & Royalties", "name_zh": "白银与特许权金",
         "category": "Precious Metals", "category_zh": "贵金属",
         "etf_proxy": "XGD.TO", "etf_proxy_note": "loose — Gold Producers ETF",
-        "thesis": "The capital-light royalty/streaming names plus the silver producers — leverage to precious-metals prices with lower operating risk (royalties) or higher beta (silver). A complement to the gold-miner basket.",
-        "thesis_zh": "轻资产的特许权/流式金融公司加白银生产商 — 以更低经营风险（特许权）或更高弹性（白银）押注贵金属价格。黄金矿业篮子的补充。",
+        "thesis": "Silver producers plus royalty and streaming names. Precious-metals beta with mixed operating risk.",
+        "thesis_zh": "白银生产商以及 royalty/streaming 公司。贵金属贝塔与运营风险并存。",
         "members": [
             ("WPM.TO", "Wheaton Precious Metals — streaming leader"),
             ("FNV.TO", "Franco-Nevada — royalty bellwether"),
@@ -120,8 +122,8 @@ BASKETS: dict[str, dict] = {
         "name": "Oil & Gas Producers", "name_zh": "油气生产",
         "category": "Energy", "category_zh": "能源",
         "etf_proxy": "XEG.TO", "etf_proxy_note": "iShares S&P/TSX Energy ETF",
-        "thesis": "The oil-sands integrators and the gas/light-oil E&Ps — heavy free-cash-flow returned via buybacks and dividends. The TSX's leveraged play on WTI/WCS spreads and natural-gas prices.",
-        "thesis_zh": "油砂一体化企业与天然气/轻油勘探生产商 — 充沛自由现金流，通过回购与分红回馈。多交所押注 WTI/WCS 价差与天然气价格的杠杆腿。",
+        "thesis": "Oil sands, gas and light-oil producers. Tracks WTI/WCS spreads, natural gas and cash-return discipline.",
+        "thesis_zh": "油砂、天然气和轻质油生产商。跟踪 WTI/WCS 价差、天然气和现金回报纪律。",
         "members": [
             ("CNQ.TO", "Canadian Natural — oil-sands giant"),
             ("SU.TO", "Suncor — integrated oil sands"),
@@ -136,8 +138,8 @@ BASKETS: dict[str, dict] = {
         "name": "Pipelines & Midstream", "name_zh": "管道与中游",
         "category": "Energy", "category_zh": "能源",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The energy-infrastructure toll-takers — pipelines, gas processing and midstream. Long-life, fee-based cash flows and big dividends; a lower-beta, rate-sensitive income complement to the producers.",
-        "thesis_zh": "能源基建的'收费站' — 管道、天然气处理与中游。长久期、基于费用的现金流与高分红；相对生产商更低 Beta、对利率敏感的收息补充。",
+        "thesis": "Pipelines and midstream toll-takers with fee-based cash flow, dividends and rate sensitivity.",
+        "thesis_zh": "管道和中游收费型资产，具有稳定现金流、股息和利率敏感性。",
         "members": [
             ("ENB.TO", "Enbridge — the pipeline giant"),
             ("TRP.TO", "TC Energy"),
@@ -151,8 +153,8 @@ BASKETS: dict[str, dict] = {
         "name": "Uranium & Nuclear", "name_zh": "铀与核能",
         "category": "Energy", "category_zh": "能源",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "Canada's uranium complex — the dominant producer plus the development names. A high-beta play on the nuclear-renaissance / power-demand thesis and the uranium price; an iconic TSX resource theme.",
-        "thesis_zh": "加拿大铀产业链 — 龙头生产商加开发型公司。押注核能复兴/电力需求与铀价的高弹性主题；多交所标志性的资源主题。",
+        "thesis": "Canada's uranium producer and developers. High-beta read on nuclear demand and uranium prices.",
+        "thesis_zh": "加拿大铀生产商和开发商。高贝塔反映核能需求和铀价。",
         "members": [
             ("CCO.TO", "Cameco — the uranium major"),
             ("NXE.TO", "NexGen Energy — Rook I development"),
@@ -165,8 +167,8 @@ BASKETS: dict[str, dict] = {
         "name": "Base Metals & Copper", "name_zh": "基本金属与铜",
         "category": "Materials", "category_zh": "基础材料",
         "etf_proxy": "XBM.TO", "etf_proxy_note": "iShares S&P/TSX Base Metals ETF",
-        "thesis": "Copper and diversified base-metal miners — leverage to the global growth cycle, electrification demand and supply discipline. The cyclical, China-sensitive end of the TSX materials complex.",
-        "thesis_zh": "铜与多元化基本金属矿企 — 受全球增长周期、电气化需求与供给约束驱动。多交所材料板块中周期性、对中国敏感的一端。",
+        "thesis": "Copper and base-metal miners tied to global growth, electrification and China demand.",
+        "thesis_zh": "铜和基本金属矿商，受全球增长、电气化和中国需求影响。",
         "members": [
             ("TECK-B.TO", "Teck Resources — copper + coal"),
             ("FM.TO", "First Quantum — copper"),
@@ -181,15 +183,15 @@ BASKETS: dict[str, dict] = {
         "name": "Fertilizer, Chemicals & Forestry", "name_zh": "化肥化工与林业",
         "category": "Materials", "category_zh": "基础材料",
         "etf_proxy": "XMA.TO", "etf_proxy_note": "iShares S&P/TSX Materials ETF",
-        "thesis": "The non-metal materials sleeve — the global potash/nitrogen leader, methanol, lumber and specialty packaging. Levered to crop prices, housing and the industrial cycle.",
-        "thesis_zh": "非金属材料板块 — 全球钾肥/氮肥龙头、甲醇、木材与特种包装。受农产品价格、住房与工业周期驱动。",
+        "thesis": "Potash, chemicals, lumber and specialty packaging tied to crops, housing and industrial demand.",
+        "thesis_zh": "钾肥、化工、木材和特种包装，受农业、住房和工业需求影响。",
         "members": [
             ("NTR.TO", "Nutrien — global potash/nitrogen leader"),
             ("MX.TO", "Methanex — the methanol major"),
             ("WFG.TO", "West Fraser Timber — lumber"),
             ("SJ.TO", "Stella-Jones — treated wood"),
             ("CCL-B.TO", "CCL Industries — specialty labels/packaging"),
-            ("WPK.TO", "Winpak — packaging"),
+            ("WPK.TO", "Winpak — packaging"),   # removed 2026-07-01 — see REMOVED
         ],
     },
     # ────────────────────────── Industrials & Tech · 工业与科技 ──────────────────────────
@@ -197,8 +199,8 @@ BASKETS: dict[str, dict] = {
         "name": "Rails & Industrials", "name_zh": "铁路与工业",
         "category": "Industrials & Tech", "category_zh": "工业与科技",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The transport & industrial backbone — the two transcontinental railways, waste, engineering and equipment names. Steady compounders geared to North American freight, infrastructure and capex.",
-        "thesis_zh": "运输与工业骨干 — 两大横贯铁路、固废、工程与设备公司。稳健复利型企业，受北美货运、基建与资本开支驱动。",
+        "thesis": "Rails, waste, engineering and equipment names. Tracks freight, infrastructure and capex.",
+        "thesis_zh": "铁路、废弃物处理、工程和设备公司。跟踪货运、基建和资本开支。",
         "members": [
             ("CP.TO", "CPKC — the only US-Mexico-Canada railway"),
             ("CNR.TO", "Canadian National Railway"),
@@ -213,8 +215,8 @@ BASKETS: dict[str, dict] = {
         "name": "Technology", "name_zh": "科技",
         "category": "Industrials & Tech", "category_zh": "工业与科技",
         "etf_proxy": "XIT.TO", "etf_proxy_note": "iShares S&P/TSX Capped IT ETF",
-        "thesis": "Canada's tech leaders — the e-commerce platform, the serial software acquirer, electronics manufacturing and the SaaS names. The TSX's growth engine, dominated by Shopify and Constellation.",
-        "thesis_zh": "加拿大科技龙头 — 电商平台、连环软件并购方、电子制造与 SaaS 公司。多交所的成长引擎，由 Shopify 与 Constellation 主导。",
+        "thesis": "Shopify, Constellation, electronics and SaaS names. Canada's large-cap growth sleeve.",
+        "thesis_zh": "Shopify、Constellation、电子和 SaaS 公司。加拿大大盘成长股代表。",
         "members": [
             ("SHOP.TO", "Shopify — global e-commerce platform"),
             ("CSU.TO", "Constellation Software — serial acquirer"),
@@ -230,8 +232,8 @@ BASKETS: dict[str, dict] = {
         "name": "Utilities & Renewables", "name_zh": "公用事业与可再生能源",
         "category": "Utilities & Telecom", "category_zh": "公用事业与电信",
         "etf_proxy": "XUT.TO", "etf_proxy_note": "iShares S&P/TSX Utilities ETF",
-        "thesis": "Regulated power & gas utilities plus the renewable-power developers — long-duration, bond-proxy cash flows and dividend growth. A rate-sensitive defensive anchor with a green-energy growth tail.",
-        "thesis_zh": "受监管的电力与燃气公用事业加可再生能源开发商 — 长久期、债券替代型现金流与股息增长。对利率敏感的防御锚，兼具绿色能源成长尾部。",
+        "thesis": "Regulated utilities and renewable-power developers. Defensive, rate-sensitive cash flows.",
+        "thesis_zh": "受监管公用事业和可再生电力开发商。防御性现金流，受利率影响。",
         "members": [
             ("FTS.TO", "Fortis — regulated utility"),
             ("EMA.TO", "Emera"),
@@ -248,8 +250,8 @@ BASKETS: dict[str, dict] = {
         "name": "Telecom", "name_zh": "电信",
         "category": "Utilities & Telecom", "category_zh": "公用事业与电信",
         "etf_proxy": "XCD.TO", "etf_proxy_note": "iShares S&P/TSX Communication ETF",
-        "thesis": "The Canadian telecom oligopoly — wireless + broadband incumbents with high dividends, now wrestling with price competition and heavy capex. A defensive, rate-sensitive income sleeve.",
-        "thesis_zh": "加拿大电信寡头 — 高分红的无线+宽带巨头，正应对价格竞争与高资本开支。防御性、对利率敏感的收息板块。",
+        "thesis": "Wireless and broadband incumbents. Defensive income sleeve facing competition and capex pressure.",
+        "thesis_zh": "无线和宽带龙头。防御性收入板块，但面临竞争和资本开支压力。",
         "members": [
             ("BCE.TO", "BCE — Bell Canada"),
             ("T.TO", "Telus"),
@@ -263,8 +265,8 @@ BASKETS: dict[str, dict] = {
         "name": "Consumer Staples & Retail", "name_zh": "必需消费与零售",
         "category": "Consumer & Real Estate", "category_zh": "消费与地产",
         "etf_proxy": "XST.TO", "etf_proxy_note": "iShares S&P/TSX Consumer Staples ETF",
-        "thesis": "Defensive consumption — the grocers, the global convenience-store roll-up, the dollar-store and the QSR franchisor. Steady, recession-resilient compounders with pricing power.",
-        "thesis_zh": "防御性消费 — 杂货商、全球便利店整合者、一元店与快餐特许经营商。稳健、抗衰退、具提价能力的复利型企业。",
+        "thesis": "Grocers, convenience, dollar-store and QSR leaders. Defensive read on Canadian consumption.",
+        "thesis_zh": "食品零售、便利店、折扣店和快餐龙头。防御性观察加拿大消费。",
         "members": [
             ("ATD.TO", "Alimentation Couche-Tard — global c-stores"),
             ("L.TO", "Loblaw — #1 grocer"),
@@ -279,8 +281,8 @@ BASKETS: dict[str, dict] = {
         "name": "REITs", "name_zh": "房地产信托",
         "category": "Consumer & Real Estate", "category_zh": "消费与地产",
         "etf_proxy": "XRE.TO", "etf_proxy_note": "iShares S&P/TSX Capped REIT ETF",
-        "thesis": "The Canadian REIT complex — retail, apartment, industrial and diversified landlords. Distribution-yield vehicles highly sensitive to bond yields and the rate cycle; a real-asset income sleeve.",
-        "thesis_zh": "加拿大 REIT 板块 — 零售、公寓、工业与多元化地产商。以派息为主、对债券收益率与利率周期高度敏感；实物资产收息板块。",
+        "thesis": "Retail, apartment, industrial and diversified REITs. Real-asset income tied to yields and rates.",
+        "thesis_zh": "零售、公寓、工业和综合 REIT。实物资产收入受收益率和利率影响。",
         "members": [
             ("REI-UN.TO", "RioCan — retail REIT"),
             ("CAR-UN.TO", "Canadian Apartment Properties (CAPREIT)"),
@@ -299,7 +301,7 @@ CURATED = "2026-06-18"   # member-expansion pass
 # validated against the close cache like the base set (fail-loud on a miss).
 EXPANSION: dict[str, list[tuple[str, str]]] = {
     "ca_banks": [
-        ("GSY.TO", "goeasy — non-prime consumer lender"),
+        ("GSY.TO", "goeasy — non-prime consumer lender"),   # removed 2026-07-01 — see REMOVED
     ],
     "ca_insurers": [
         ("DFY.TO", "Definity Financial — P&C insurer (demutualized)"),
@@ -390,24 +392,60 @@ EXPANSION: dict[str, list[tuple[str, str]]] = {
     ],
 }
 
-CONSTRUCTION = ("Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated "
-                "membership changes take effect same-day. Benchmark = S&P/TSX Composite (XIC.TO).")
-HISTORY_NOTE = ("Series before a basket's creation date are a backtest of the membership as of "
-                "creation; live tracking starts at creation. Universe = the canada_search "
-                "S&P/TSX Composite cache (~5y).")
-NOTE = ("Curated S&P/TSX thematic baskets — hindsight-curated and descriptive, not an "
-        "out-of-sample backtest and not a buy list.")
+# ── Post-seed removals (COPY SYNC with the live membership.json) ────────────────────────
+# The nightly membership↔cache reconciler (scripts/reconcile_membership.py, end-of-collect
+# gate) prunes members whose ticker drops off the canada_search close cache, appending a
+# dated changelog entry to the LIVE file. Those removals are re-encoded here so a wholesale
+# regen reproduces the live file instead of resurrecting the member or failing the cache
+# check. The member's tuple STAYS in BASKETS/EXPANSION above (it feeds the historical count
+# in the expand note); the (basket_id, ticker) key here excludes it from the emitted members
+# and appends the exact changelog row. Notes are verbatim from the live file — don't reword.
+# Both names still trade on the TSX; they were deleted from the S&P/TSX Composite at the
+# 2026-06-22 quarterly review (goeasy after the LendCare bad-loan crash; Winpak on float),
+# and canada_search's universe IS the Composite (XIC holdings) — genuine index churn.
+REMOVED: dict[tuple[str, str], dict] = {
+    ("ca_banks", "GSY.TO"): {
+        "date": "2026-07-01",
+        "note": "GSY.TO: removed after leaving the price cache.",
+    },
+    ("ca_materials", "WPK.TO"): {
+        "date": "2026-07-01",
+        "note": "WPK.TO: removed after leaving the price cache.",
+    },
+}
+
+CONSTRUCTION = ("Equal-weight baskets, rebalanced monthly, measured against the S&P/TSX "
+                "Composite.")
+HISTORY_NOTE = ("Available history comes from the canada_search cache. Pre-launch series use "
+                "the basket's starting membership.")
+NOTE = ("Curated S&P/TSX theme baskets for monitoring rotation. Descriptive only, not a "
+        "buy list.")
 
 
 def main() -> int:
     meta = pd.read_parquet(config.data_dir() / "canada_search" / "members.parquet")
     closes = pd.read_parquet(config.data_dir() / "canada_search" / "closes.parquet")
     cols = set(closes.columns)
+    out_dir = config.data_dir() / "baskets_canada"
 
-    def name_of(t: str) -> str:
+    # Names already in the LIVE membership file — fallback when a member's meta row is
+    # missing (a bare ticker must never overwrite a good name). Cache names win when
+    # present: corporate renames (e.g. Taseko → Trekor Metals, 2026-06-29) flow through.
+    live_names: dict[tuple[str, str], str] = {}
+    live_p = out_dir / "membership.json"
+    if live_p.exists():
+        try:
+            live_doc = json.loads(live_p.read_text())
+            live_names = {(bid, m["ticker"]): m["name"]
+                          for bid, b in live_doc.get("baskets", {}).items()
+                          for m in b.get("members", []) if m.get("name")}
+        except Exception as e:  # noqa: BLE001 — degraded live file just loses the fallback
+            log.warning("live membership.json unreadable (%s) — no name fallback", e)
+
+    def name_of(bid: str, t: str) -> str:
         if t in meta.index:
             return str(meta.loc[t, "name"])
-        return t
+        return live_names.get((bid, t)) or t
 
     # fold the 2026-06-18 expansion into the base definitions before materialising
     baskets = {k: dict(v) for k, v in BASKETS.items()}
@@ -416,18 +454,27 @@ def main() -> int:
 
     out_baskets, missing = {}, []
     for bid, b in baskets.items():
-        members = []
+        members, removals = [], []
         for ticker, rationale in b["members"]:
+            rm = REMOVED.get((bid, ticker))
+            if rm is not None:
+                if ticker in cols:
+                    log.warning("removed member %s:%s is back on the canada_search cache — "
+                                "consider re-adding it with a dated changelog entry", bid, ticker)
+                removals.append(rm)
+                continue
             if ticker not in cols:
                 missing.append(f"{bid}:{ticker}")
                 continue
             members.append({"ticker": ticker, "added": SEED, "removed": None,
-                            "name": name_of(ticker), "rationale": rationale})
+                            "name": name_of(bid, ticker), "rationale": rationale})
         cl = [{"date": SEED, "action": "create",
                "note": f"Seeded {b['name']} — equal-weight TSX members."}]
         if bid in EXPANSION:
+            # count at expansion date, before later removals
             cl.append({"date": CURATED, "action": "expand",
-                       "note": f"Expanded to {len(members)} members."})
+                       "note": f"Expanded to {len(members) + len(removals)} members."})
+        cl += [{"date": rm["date"], "action": "remove", "note": rm["note"]} for rm in removals]
         out_baskets[bid] = {
             "name": b["name"], "name_zh": b["name_zh"],
             "category": b["category"], "category_zh": b["category_zh"],
@@ -447,7 +494,6 @@ def main() -> int:
         "construction": CONSTRUCTION, "history_note": HISTORY_NOTE, "note": NOTE,
         "baskets": out_baskets,
     }
-    out_dir = config.data_dir() / "baskets_canada"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "membership.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2))
     n = sum(len(v["members"]) for v in out_baskets.values())

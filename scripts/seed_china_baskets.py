@@ -9,7 +9,9 @@ Authoring contract: here we hand-curate only (ticker, English rationale) per mem
 plus the bilingual theme name / thesis / ETF proxy. The member's Chinese name is filled
 from data/china_search/members.parquet, and EVERY ticker is validated against the
 china_search close cache (fail loud if any is absent) so the page never silently drops a
-member. Re-runnable: `python -m scripts.seed_china_baskets`.
+member — except tickers in the REMOVED registry below, which re-encode the nightly
+reconciler's dated prunes (scripts/reconcile_membership.py) so a regen reproduces the live
+file. Re-runnable: `python -m scripts.seed_china_baskets`.
 
 HONEST BY CONSTRUCTION (house rule, identical to the US baskets): membership is curated
 today with knowledge of the period, so the ~5y series is HINDSIGHT-curated and
@@ -42,8 +44,8 @@ BASKETS: dict[str, dict] = {
         "name": "Semiconductors", "name_zh": "半导体",
         "category": "Technology & AI", "category_zh": "科技与AI",
         "etf_proxy": "512760.SS", "etf_proxy_note": "半导体ETF — chip-localization basket",
-        "thesis": "The chip-localization (国产替代) complex: foundries, equipment, design IP and memory racing to build a domestic stack as export controls tighten. The purest read on China's self-sufficiency drive — high-beta, policy- and cycle-sensitive.",
-        "thesis_zh": "国产替代主线：晶圆代工、设备、设计与存储在出口管制下加速构建本土产业链。最纯粹的自主可控读数 — 高弹性，受政策与周期驱动。",
+        "thesis": "China chip-localization names across foundry, equipment, design and memory.",
+        "thesis_zh": "中国芯片国产化公司，覆盖晶圆代工、设备、设计和存储。",
         "members": [
             ("688981.SS", "SMIC — the flagship foundry; the core of mainland capacity"),
             ("688256.SS", "Cambricon — domestic AI accelerator; the NVDA-alternative bet"),
@@ -73,8 +75,8 @@ BASKETS: dict[str, dict] = {
         "name": "AI Compute & Optics", "name_zh": "AI算力与光模块",
         "category": "Technology & AI", "category_zh": "科技与AI",
         "etf_proxy": "515000.SS", "etf_proxy_note": "loose — broad Technology ETF",
-        "thesis": "The AI capex hardware leg: 800G optical modules, AI servers, switch silicon and domestic accelerators that the data-centre build-out is denominated in. China's most explosive 2024-25 momentum theme and its tightest link to the global AI cycle.",
-        "thesis_zh": "AI 资本开支硬件腿：800G 光模块、AI 服务器、交换芯片与国产算力 — 数据中心建设的承载者。2024-25 最具爆发力的动量主题，与全球 AI 周期联系最紧。",
+        "thesis": "Optics, AI servers, switches and domestic accelerators tied to China AI capex.",
+        "thesis_zh": "光模块、AI 服务器、交换机和国产加速器，受中国 AI 资本开支影响。",
         "members": [
             ("300308.SZ", "Zhongji Innolight — global 800G optical-module leader (中际旭创)"),
             ("300502.SZ", "Eoptolink — 800G optics fast-follower (新易盛)"),
@@ -99,8 +101,8 @@ BASKETS: dict[str, dict] = {
         "name": "Consumer Electronics", "name_zh": "消费电子",
         "category": "Technology & AI", "category_zh": "科技与AI",
         "etf_proxy": "515000.SS", "etf_proxy_note": "loose — broad Technology ETF",
-        "thesis": "The Apple/Android hardware supply chain (果链): precision assembly, acoustics, glass, display and PCB. Levered to the smartphone cycle, AI-phone refresh and any handset-AI hardware upgrade.",
-        "thesis_zh": "苹果/安卓硬件供应链（果链）：精密组装、声学、玻璃、面板与 PCB。受智能手机周期、AI 手机换机与端侧 AI 硬件升级驱动。",
+        "thesis": "Apple/Android supply-chain names tied to smartphones, AI devices and hardware upgrades.",
+        "thesis_zh": "苹果和安卓供应链公司，受智能手机、AI 设备和硬件升级影响。",
         "members": [
             ("002475.SZ", "Luxshare — top precision-assembly / connectors (立讯精密)"),
             ("002241.SZ", "GoerTek — acoustics + AR/VR hardware (歌尔股份)"),
@@ -123,8 +125,8 @@ BASKETS: dict[str, dict] = {
         "name": "Software & AI Apps", "name_zh": "软件与AI应用",
         "category": "Technology & AI", "category_zh": "科技与AI",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "Domestic software, fintech-data and the AIGC application layer (信创 + AI 应用): office suites, speech/LLM, financial terminals and security. Levered to IT-localization mandates and the monetisation of generative AI in China.",
-        "thesis_zh": "国产软件、金融数据与 AIGC 应用层（信创+AI应用）：办公套件、语音/大模型、金融终端与安全。受信创政策与生成式 AI 商业化驱动。",
+        "thesis": "Domestic software and AI application names tied to IT localization and generative AI demand.",
+        "thesis_zh": "国产软件和 AI 应用公司，受 IT 国产化和生成式 AI 需求影响。",
         "members": [
             ("688111.SS", "Kingsoft Office — WPS suite + AI copilot (金山办公)"),
             ("002230.SZ", "iFlytek — speech & LLM platform (科大讯飞)"),
@@ -148,8 +150,8 @@ BASKETS: dict[str, dict] = {
         "name": "Battery & Lithium", "name_zh": "锂电池",
         "category": "New Energy & Autos", "category_zh": "新能源与汽车",
         "etf_proxy": "515030.SS", "etf_proxy_note": "新能源车ETF — battery-heavy",
-        "thesis": "The lithium-battery value chain — cells, lithium resource, separators, electrolyte and anode/cathode. China's dominant export-competitive complex; whipsawed by the lithium price cycle and global EV demand.",
-        "thesis_zh": "锂电池价值链 — 电芯、锂资源、隔膜、电解液与正负极。中国最具出口竞争力的产业集群；受锂价周期与全球电动车需求剧烈牵动。",
+        "thesis": "Lithium battery chain: cells, resources, materials and components. Driven by EV demand and lithium prices.",
+        "thesis_zh": "锂电池产业链：电芯、资源、材料和零部件。受电动车需求和锂价影响。",
         "members": [
             ("300750.SZ", "CATL — the global cell champion (宁德时代)"),
             ("002594.SZ", "BYD — batteries + the EV scale leader (比亚迪)"),
@@ -163,7 +165,7 @@ BASKETS: dict[str, dict] = {
             ("002709.SZ", "Tinci Materials — electrolyte leader (天赐材料)"),
             ("300037.SZ", "Capchem — electrolyte leader (新宙邦)"),
             ("300919.SZ", "CNGR — ternary precursor leader (中伟新材)"),
-            ("300073.SZ", "Easpring — NCM cathode (当升科技)"),
+            ("300073.SZ", "Easpring — NCM cathode (当升科技)"),   # removed 2026-07-01 — see REMOVED
             ("301358.SZ", "Hunan Yuneng — LFP cathode leader (湖南裕能)"),
             ("603799.SS", "Huayou Cobalt — cobalt / nickel + precursors (华友钴业)"),
             ("002850.SZ", "Kedali — battery structural components (科达利)"),
@@ -174,8 +176,8 @@ BASKETS: dict[str, dict] = {
         "name": "Solar / Photovoltaics", "name_zh": "光伏",
         "category": "New Energy & Autos", "category_zh": "新能源与汽车",
         "etf_proxy": "515790.SS", "etf_proxy_note": "光伏ETF",
-        "thesis": "The solar manufacturing chain — silicon, wafers, cells, modules, inverters and film. A textbook over-capacity / price-war cyclical: huge global volume growth wrestling with brutal margin compression.",
-        "thesis_zh": "光伏制造链 — 硅料、硅片、电池、组件、逆变器与胶膜。典型的产能过剩/价格战周期：全球装机高增长与残酷的盈利压缩并存。",
+        "thesis": "Solar manufacturing chain from silicon to modules and inverters. Volume growth versus margin pressure.",
+        "thesis_zh": "光伏制造链，从硅料到组件和逆变器。量增与利润率压力并存。",
         "members": [
             ("601012.SS", "LONGi — wafer + module leader (隆基绿能)"),
             ("600438.SS", "Tongwei — polysilicon + cells (通威股份)"),
@@ -198,8 +200,8 @@ BASKETS: dict[str, dict] = {
         "name": "Autos & NEV Makers", "name_zh": "汽车整车",
         "category": "New Energy & Autos", "category_zh": "新能源与汽车",
         "etf_proxy": "515250.SS", "etf_proxy_note": "智能汽车ETF",
-        "thesis": "Whole-vehicle makers and key suppliers riding the EV/intelligent-driving transition and the export push — legacy OEMs reinventing, new-energy champions scaling, and the parts names (glass, thermal, smart-cockpit) levered to content-per-car.",
-        "thesis_zh": "整车与核心零部件，受电动化/智能化转型与出口浪潮驱动 — 传统车企转身、新能源龙头放量，零部件（玻璃、热管理、智能座舱）受单车价值量提升带动。",
+        "thesis": "China automakers and suppliers tied to EV adoption, intelligent driving and exports.",
+        "thesis_zh": "中国整车和供应商，受电动车渗透、智能驾驶和出口影响。",
         "members": [
             ("002594.SZ", "BYD — the NEV scale + export leader (比亚迪)"),
             ("601633.SS", "Great Wall Motor — SUV/pickup + export (长城汽车)"),
@@ -224,8 +226,8 @@ BASKETS: dict[str, dict] = {
         "name": "Defense & Aerospace", "name_zh": "军工航天",
         "category": "Advanced Manufacturing", "category_zh": "高端制造",
         "etf_proxy": "512660.SS", "etf_proxy_note": "军工ETF",
-        "thesis": "The military-industrial complex — fighters, aero-engines, shipbuilding, milconnectors, infrared and satellites. A policy/order-book theme driven by the defense budget and modernization, largely decoupled from the consumer cycle.",
-        "thesis_zh": "军工产业链 — 战机、航发、船舶、军工连接器、红外与卫星。受国防预算与现代化订单驱动的政策主题，与消费周期基本脱钩。",
+        "thesis": "Military and aerospace suppliers tied to modernization budgets and order books.",
+        "thesis_zh": "军工和航空航天供应商，受现代化预算和订单影响。",
         "members": [
             ("600760.SS", "AVIC Shenyang — fighter-jet prime (中航沈飞)"),
             ("302132.SZ", "AVIC Chengdu — J-series fighters (中航成飞)"),
@@ -239,7 +241,7 @@ BASKETS: dict[str, dict] = {
             ("600879.SS", "Aerospace Times Electronics — missiles / electronics (航天电子)"),
             ("002025.SZ", "Guizhou Space Appliance — mil connectors (航天电器)"),
             ("688297.SS", "AVIC UAS — military drones (中无人机)"),
-            ("600562.SS", "Glarun — defense radar (国睿科技)"),
+            ("600562.SS", "Glarun — defense radar (国睿科技)"),   # removed 2026-07-01 — see REMOVED
             ("000733.SZ", "China Zhenhua — military electronic components (振华科技)"),
         ],
     },
@@ -247,8 +249,8 @@ BASKETS: dict[str, dict] = {
         "name": "Robotics & Automation", "name_zh": "机器人与自动化",
         "category": "Advanced Manufacturing", "category_zh": "高端制造",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "Industrial automation and the humanoid-robot supply chain — servo drives, harmonic reducers, controllers and thermal/actuator parts. A high-beta 2024-25 thematic on the humanoid build-out and factory automation.",
-        "thesis_zh": "工业自动化与人形机器人供应链 — 伺服、谐波减速器、控制器与热管理/执行部件。受人形机器人放量与工厂自动化驱动的高弹性 2024-25 主题。",
+        "thesis": "Automation and humanoid-robot supply chain: drives, reducers, controllers and parts.",
+        "thesis_zh": "自动化和人形机器人供应链：驱动、减速器、控制器和零部件。",
         "members": [
             ("300124.SZ", "Inovance — servo / motion-control leader (汇川技术)"),
             ("688017.SS", "Leader Drive — harmonic reducers (绿的谐波)"),
@@ -268,8 +270,8 @@ BASKETS: dict[str, dict] = {
         "name": "Baijiu / Liquor", "name_zh": "白酒",
         "category": "Consumer & Brands", "category_zh": "核心消费",
         "etf_proxy": "512690.SS", "etf_proxy_note": "酒ETF",
-        "thesis": "The baijiu complex — the bellwether of Chinese premium consumption and the market's quintessential quality-franchise basket. Pricing power and mix versus the property-driven consumption-confidence cycle.",
-        "thesis_zh": "白酒板块 — 中国高端消费的风向标，也是市场最具代表性的优质消费特许经营篮子。提价与产品结构对决地产驱动的消费信心周期。",
+        "thesis": "Premium liquor leaders. Read on Chinese premium consumption and confidence.",
+        "thesis_zh": "高端白酒龙头。观察中国高端消费和信心。",
         "members": [
             ("600519.SS", "Kweichow Moutai — the ultra-premium anchor (贵州茅台)"),
             ("000858.SZ", "Wuliangye — the #2 premium brand (五粮液)"),
@@ -284,8 +286,8 @@ BASKETS: dict[str, dict] = {
         "name": "Home Appliances", "name_zh": "家电",
         "category": "Consumer & Brands", "category_zh": "核心消费",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "White-goods and appliance champions — global-scale, high-ROE, dividend-paying franchises levered to trade-in stimulus (以旧换新), export share gains and the property after-cycle.",
-        "thesis_zh": "白电与家电龙头 — 全球规模、高 ROE、分红型特许经营，受以旧换新刺激、出口份额提升与地产后周期驱动。",
+        "thesis": "White-goods and appliance leaders tied to trade-in stimulus, exports and property after-cycle.",
+        "thesis_zh": "白电和家电龙头，受以旧换新、出口和地产后周期影响。",
         "members": [
             ("000333.SZ", "Midea — diversified appliance + robotics (美的集团)"),
             ("000651.SZ", "Gree — air-conditioning leader (格力电器)"),
@@ -301,8 +303,8 @@ BASKETS: dict[str, dict] = {
         "name": "Food & Beverage", "name_zh": "食品饮料",
         "category": "Consumer & Brands", "category_zh": "核心消费",
         "etf_proxy": "159928.SZ", "etf_proxy_note": "消费ETF — staples",
-        "thesis": "Staple food and non-alcoholic beverage leaders — dairy, condiments, energy drinks, cooking oil and meat. Defensive consumption with brand power; a barometer of mass-market demand and input-cost cycles.",
-        "thesis_zh": "必选食品与软饮龙头 — 乳制品、调味品、功能饮料、食用油与肉制品。具品牌力的防御性消费，是大众需求与成本周期的晴雨表。",
+        "thesis": "Staple food and beverage leaders. Defensive read on mass-market demand and input costs.",
+        "thesis_zh": "大众食品饮料龙头。防御性观察大众需求和成本。",
         "members": [
             ("600887.SS", "Yili — the dairy leader (伊利股份)"),
             ("603288.SS", "Haitian — soy sauce / condiments king (海天味业)"),
@@ -312,7 +314,7 @@ BASKETS: dict[str, dict] = {
             ("600600.SS", "Tsingtao Brewery — premium beer (青岛啤酒)"),
             ("000729.SZ", "Yanjing Brewery — beer (燕京啤酒)"),
             ("600298.SS", "Angel Yeast — yeast / food ingredients (安琪酵母)"),
-            ("603345.SS", "Anjoy Foods — frozen prepared foods (安井食品)"),
+            ("603345.SS", "Anjoy Foods — frozen prepared foods (安井食品)"),   # removed 2026-07-01 — see REMOVED
             ("603156.SS", "Yangyuan — Six Walnuts plant-protein drink (养元饮品)"),
             ("002311.SZ", "Haid Group — animal feed / aquaculture (海大集团)"),
         ],
@@ -322,8 +324,8 @@ BASKETS: dict[str, dict] = {
         "name": "Innovative Pharma & CXO", "name_zh": "创新药与CXO",
         "category": "Healthcare", "category_zh": "医药健康",
         "etf_proxy": "159992.SZ", "etf_proxy_note": "创新药ETF",
-        "thesis": "Innovative-drug developers and the CXO outsourcing chain (CRO/CDMO). The R&D-and-globalization growth engine of China healthcare — levered to out-licensing deals, biotech funding and overseas demand.",
-        "thesis_zh": "创新药企与 CXO 外包链（CRO/CDMO）。中国医药的研发与出海成长引擎 — 受对外授权（BD）、生物科技融资与海外需求驱动。",
+        "thesis": "Innovative pharma and CRO/CDMO names tied to licensing, funding and overseas demand.",
+        "thesis_zh": "创新药和 CRO/CDMO 公司，受授权交易、融资和海外需求影响。",
         "members": [
             ("603259.SS", "WuXi AppTec — the CXO bellwether (药明康德)"),
             ("600276.SS", "Hengrui — the innovative-drug leader (恒瑞医药)"),
@@ -345,8 +347,8 @@ BASKETS: dict[str, dict] = {
         "name": "Medical Devices & TCM", "name_zh": "医疗器械与中药",
         "category": "Healthcare", "category_zh": "医药健康",
         "etf_proxy": "512170.SS", "etf_proxy_note": "医疗ETF",
-        "thesis": "Medical-equipment makers, healthcare services and branded traditional-Chinese-medicine (中药) franchises — domestic-substitution device leaders plus defensive, pricing-power consumer-health brands.",
-        "thesis_zh": "医疗设备、医疗服务与品牌中药特许经营 — 国产替代的器械龙头，叠加具提价能力的防御型消费医疗品牌。",
+        "thesis": "Medical devices, services and TCM brands tied to domestic substitution and defensive health demand.",
+        "thesis_zh": "医疗器械、服务和中药品牌，受国产替代和防御性医疗需求影响。",
         "members": [
             ("300760.SZ", "Mindray — the medical-device leader (迈瑞医疗)"),
             ("688271.SS", "United Imaging — high-end imaging systems (联影医疗)"),
@@ -369,8 +371,8 @@ BASKETS: dict[str, dict] = {
         "name": "Banks", "name_zh": "银行",
         "category": "Financials & Value", "category_zh": "金融与价值",
         "etf_proxy": "512800.SS", "etf_proxy_note": "银行ETF",
-        "thesis": "The banking complex — the big-four state lenders, the joint-stock leaders and the high-growth city/rural banks. The core of the high-dividend (高股息) trade and a direct read on credit, net-interest-margin and property risk.",
-        "thesis_zh": "银行板块 — 国有大行、股份行龙头与高成长城农商行。高股息交易的核心，也是信用、净息差与地产风险的直接读数。",
+        "thesis": "Major banks and regional lenders. Core high-dividend read on credit, margins and property risk.",
+        "thesis_zh": "大型银行和区域银行。高股息核心板块，反映信贷、息差和地产风险。",
         "members": [
             ("601398.SS", "ICBC — the largest state bank (工商银行)"),
             ("601939.SS", "China Construction Bank (建设银行)"),
@@ -396,8 +398,8 @@ BASKETS: dict[str, dict] = {
         "name": "Brokers & Securities", "name_zh": "券商",
         "category": "Financials & Value", "category_zh": "金融与价值",
         "etf_proxy": "512880.SS", "etf_proxy_note": "证券ETF",
-        "thesis": "Securities firms and the fintech-trading platforms — the high-beta vanguard of any A-share bull market. Levered to turnover, margin balances, IPO/M&A activity and consolidation among the majors.",
-        "thesis_zh": "证券公司与金融科技交易平台 — A 股牛市的高弹性先锋。受成交额、两融余额、IPO/并购活动与头部券商整合驱动。",
+        "thesis": "Brokerages and trading platforms tied to turnover, margin balances and capital-market activity.",
+        "thesis_zh": "券商和交易平台，受成交额、两融余额和资本市场活跃度影响。",
         "members": [
             ("600030.SS", "CITIC Securities — the #1 broker (中信证券)"),
             ("300059.SZ", "East Money — retail fintech-broker (东方财富)"),
@@ -420,8 +422,8 @@ BASKETS: dict[str, dict] = {
         "name": "Insurers", "name_zh": "保险",
         "category": "Financials & Value", "category_zh": "金融与价值",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The big listed insurers — life and P&C franchises whose earnings and book value swing on the equity market, long-bond yields and new-business value. A leveraged play on a domestic risk-on turn.",
-        "thesis_zh": "上市大型险企 — 寿险与财险特许经营，利润与净资产随权益市场、长债收益率与新业务价值波动。对国内风险偏好回升的杠杆化表达。",
+        "thesis": "Life and P&C insurers tied to equity markets, yields and new-business value.",
+        "thesis_zh": "寿险和财险公司，受股市、利率和新业务价值影响。",
         "members": [
             ("601318.SS", "Ping An — the integrated insurance leader (中国平安)"),
             ("601628.SS", "China Life — largest life insurer (中国人寿)"),
@@ -434,8 +436,8 @@ BASKETS: dict[str, dict] = {
         "name": "SOE Blue Chips (中特估)", "name_zh": "中特估·央企",
         "category": "Financials & Value", "category_zh": "金融与价值",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The state-owned-enterprise re-rating theme (中国特色估值体系) — the three oil majors, the telecom carriers and the big infrastructure/utility SOEs. A policy-driven, high-dividend value trade on raising returns and valuations of central SOEs.",
-        "thesis_zh": "央企估值重塑主题（中国特色估值体系）— 三桶油、电信运营商与大型基建/公用事业央企。受提升央企回报与估值政策驱动的高股息价值交易。",
+        "thesis": "Central SOE value basket: oil, telecom, infrastructure and utilities with high dividends.",
+        "thesis_zh": "央企价值篮子：石油、电信、基建和公用事业，高股息特征。",
         "members": [
             ("601857.SS", "PetroChina — oil & gas major (中国石油)"),
             ("600028.SS", "Sinopec — refining / chemicals major (中国石化)"),
@@ -460,8 +462,8 @@ BASKETS: dict[str, dict] = {
         "name": "Gold Miners", "name_zh": "黄金",
         "category": "Cyclicals & Resources", "category_zh": "周期与资源",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The gold-mining complex — producers levered to the bullion price, central-bank buying and the real-rate / de-dollarization narrative. A high-beta way to express the gold cycle from A-shares.",
-        "thesis_zh": "黄金采矿板块 — 受金价、央行购金与实际利率/去美元化叙事驱动的生产商。从 A 股表达黄金周期的高弹性方式。",
+        "thesis": "Gold miners levered to bullion, real rates and central-bank demand.",
+        "thesis_zh": "黄金矿商，受金价、实际利率和央行需求影响。",
         "members": [
             ("601899.SS", "Zijin Mining — gold + copper giant (紫金矿业)"),
             ("600547.SS", "Shandong Gold — pure-play producer (山东黄金)"),
@@ -475,8 +477,8 @@ BASKETS: dict[str, dict] = {
         "name": "Industrial Metals", "name_zh": "有色金属",
         "category": "Cyclicals & Resources", "category_zh": "周期与资源",
         "etf_proxy": "512400.SS", "etf_proxy_note": "有色金属ETF",
-        "thesis": "Base and industrial metals — copper, aluminium and molybdenum producers levered to the global growth cycle, the green-capex demand pull and supply discipline. The China read on the commodity super-theme.",
-        "thesis_zh": "基本金属与工业金属 — 铜、铝、钼生产商，受全球增长周期、绿色资本开支需求与供给约束驱动。表达大宗超级主题的中国读数。",
+        "thesis": "Copper, aluminium and industrial metals producers tied to global growth and green capex.",
+        "thesis_zh": "铜、铝和工业金属生产商，受全球增长和绿色资本开支影响。",
         "members": [
             ("603993.SS", "CMOC — copper / cobalt / moly (洛阳钼业)"),
             ("600362.SS", "Jiangxi Copper — copper leader (江西铜业)"),
@@ -497,8 +499,8 @@ BASKETS: dict[str, dict] = {
         "name": "Rare Earth & Magnets", "name_zh": "稀土永磁",
         "category": "Cyclicals & Resources", "category_zh": "周期与资源",
         "etf_proxy": "512400.SS", "etf_proxy_note": "loose — broad nonferrous ETF",
-        "thesis": "Rare-earth resource and permanent-magnet makers — the upstream of EV motors, wind turbines and robotics, and a strategic export-control chokepoint. A policy-and-price theme on China's near-monopoly in the supply chain.",
-        "thesis_zh": "稀土资源与永磁制造 — 电机、风机与机器人的上游，也是战略出口管制的咽喉。受中国近乎垄断供应链的政策与价格驱动的主题。",
+        "thesis": "Rare-earth and magnet makers tied to EV motors, wind, robotics and export controls.",
+        "thesis_zh": "稀土和磁材公司，受电机、风电、机器人和出口管制影响。",
         "members": [
             ("600111.SS", "Northern Rare Earth — the resource giant (北方稀土)"),
             ("000831.SZ", "China Rare Earth — SOE consolidator (中国稀土)"),
@@ -515,8 +517,8 @@ BASKETS: dict[str, dict] = {
         "name": "Coal", "name_zh": "煤炭",
         "category": "Cyclicals & Resources", "category_zh": "周期与资源",
         "etf_proxy": "515220.SS", "etf_proxy_note": "煤炭ETF",
-        "thesis": "Thermal and coking coal producers — the heart of the high-dividend (红利) trade: heavy free-cash-flow, high payout ratios and pricing tied to power demand and supply policy. Defensive yield with cyclical tail risk.",
-        "thesis_zh": "动力煤与焦煤生产商 — 红利交易的核心：充沛自由现金流、高分红比例，价格挂钩电力需求与供给政策。带周期尾部风险的防御性高股息。",
+        "thesis": "Coal producers with high payout and power-demand exposure.",
+        "thesis_zh": "煤炭生产商，高派息并受电力需求影响。",
         "members": [
             ("601088.SS", "China Shenhua — integrated coal/power dividend anchor (中国神华)"),
             ("601225.SS", "Shaanxi Coal — low-cost thermal coal (陕西煤业)"),
@@ -532,37 +534,100 @@ BASKETS: dict[str, dict] = {
     },
 }
 
-CONSTRUCTION = ("Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated "
-                "membership changes take effect same-day. Benchmark = CSI 300 (沪深300).")
-HISTORY_NOTE = ("Series before a basket's creation date are a backtest of the membership as of "
-                "creation; live tracking starts at creation. Universe = the free china_search "
-                "top-market-cap A-share cache (~5y).")
-NOTE = ("Curated A-share thematic baskets — hindsight-curated and descriptive, not an "
-        "out-of-sample backtest and not a buy list.")
+# ── Post-seed removals (COPY SYNC with the live membership.json) ────────────────────────
+# The nightly membership↔cache reconciler (scripts/reconcile_membership.py, end-of-collect
+# gate) prunes members whose ticker drops off the china_search close cache, appending a
+# dated changelog entry to the LIVE file. Those removals are re-encoded here so a wholesale
+# regen reproduces the live file instead of resurrecting the member or failing the cache
+# check. The member's tuple STAYS in BASKETS above (it feeds the historical member count in
+# the create note); the (basket_id, ticker) key here excludes it from the emitted members
+# and appends the exact changelog row. Notes are verbatim from the live file — don't reword.
+# 300073.SZ Easpring (当升科技): still listed on ChiNext, but fell below the china_search
+# top-N-mktcap universe cutoff (pre-append-only collector erased its history column; not in
+# dropped.parquet, so no frozen ~2y retention window applies). Genuine universe trim.
+REMOVED: dict[tuple[str, str], dict] = {
+    ("cn_battery", "300073.SZ"): {
+        "date": "2026-07-01",
+        "note": ("300073.SZ: removed — 当升科技 dropped out of the china_search universe/close "
+                 "cache, so its price history is no longer computable (cache-validation "
+                 "contract: every member must be a live close-cache column). "
+                 "16 members remain."),
+    },
+    # 600562.SS / 603345.SS have since RE-ENTERED the live cache (top-N churn) — the seeder
+    # warns about them at regen; re-adding is a curation decision, not an auto-revert.
+    ("cn_defense", "600562.SS"): {
+        "date": "2026-07-01",
+        "note": ("600562.SS: removed — 国睿科技 dropped out of the china_search universe/close "
+                 "cache, so its price history is no longer computable (cache-validation "
+                 "contract: every member must be a live close-cache column). "
+                 "13 members remain."),
+    },
+    ("cn_food_bev", "603345.SS"): {
+        "date": "2026-07-01",
+        "note": ("603345.SS: removed — 安井食品 dropped out of the china_search universe/close "
+                 "cache, so its price history is no longer computable (cache-validation "
+                 "contract: every member must be a live close-cache column). "
+                 "10 members remain."),
+    },
+}
+
+CONSTRUCTION = "Equal-weight baskets, rebalanced monthly, measured against CSI 300."
+HISTORY_NOTE = ("Available history comes from the china_search cache. Pre-launch series use "
+                "the basket's starting membership.")
+NOTE = ("Curated A-share theme baskets for monitoring rotation. Descriptive only, not a "
+        "buy list.")
 
 
 def main() -> int:
     members_p = config.data_dir() / "china_search" / "members.parquet"
     closes_p = config.data_dir() / "china_search" / "closes.parquet"
+    out_dir = config.data_dir() / "baskets_china"
     meta = pd.read_parquet(members_p)
     cols = set(pd.read_parquet(closes_p, columns=None).columns)
 
-    def zh_name(t: str) -> str:
-        if t in meta.index:
-            v = meta.loc[t, "name_zh"]
-            return str(v).replace(" ", "") if pd.notna(v) else t
-        return t
+    # Names already in the LIVE membership file — the fallback when members.parquet is
+    # degraded for a ticker: top-N dropouts lose their meta row (name would collapse to the
+    # raw ticker), and on ex-div/ex-rights days Sina ships truncated tagged names (XD/XR/DR
+    # + 4 chars, e.g. 中国银行 → XD中国银) that must never overwrite a good name.
+    live_names: dict[tuple[str, str], str] = {}
+    live_p = out_dir / "membership.json"
+    if live_p.exists():
+        try:
+            live_doc = json.loads(live_p.read_text())
+            live_names = {(bid, m["ticker"]): m["name_zh"]
+                          for bid, b in live_doc.get("baskets", {}).items()
+                          for m in b.get("members", []) if m.get("name_zh")}
+        except Exception as e:  # noqa: BLE001 — degraded live file just loses the fallback
+            log.warning("live membership.json unreadable (%s) — no name fallback", e)
+
+    def zh_name(bid: str, t: str) -> str:
+        v = meta.loc[t, "name_zh"] if t in meta.index else None
+        s = str(v).replace(" ", "") if v is not None and pd.notna(v) else ""
+        if s and not s.startswith(("XD", "XR", "DR")):
+            return s
+        return live_names.get((bid, t)) or (s or t)
 
     out_baskets: dict[str, dict] = {}
     missing_all: list[str] = []
     for bid, b in BASKETS.items():
-        members = []
+        members, removals = [], []
         for ticker, rationale in b["members"]:
+            rm = REMOVED.get((bid, ticker))
+            if rm is not None:
+                if ticker in cols:
+                    log.warning("removed member %s:%s is back on the china_search cache — "
+                                "consider re-adding it with a dated changelog entry", bid, ticker)
+                removals.append(rm)
+                continue
             if ticker not in cols:
                 missing_all.append(f"{bid}:{ticker}")
                 continue
             members.append({"ticker": ticker, "added": SEED, "removed": None,
-                            "name_zh": zh_name(ticker), "rationale": rationale})
+                            "name_zh": zh_name(bid, ticker), "rationale": rationale})
+        n_seeded = len(members) + len(removals)   # count at seed date, before later removals
+        cl = [{"date": SEED, "action": "create",
+               "note": f"Seeded {b['name']} — {n_seeded} equal-weight A-share members."}]
+        cl += [{"date": rm["date"], "action": "remove", "note": rm["note"]} for rm in removals]
         out_baskets[bid] = {
             "name": b["name"], "name_zh": b["name_zh"],
             "category": b["category"], "category_zh": b["category_zh"],
@@ -570,8 +635,7 @@ def main() -> int:
             "created": SEED, "weighting": "equal",
             "thesis": b["thesis"], "thesis_zh": b["thesis_zh"],
             "members": members,
-            "changelog": [{"date": SEED, "action": "create",
-                           "note": f"Seeded {b['name']} — {len(members)} equal-weight A-share members."}],
+            "changelog": cl,
         }
 
     if missing_all:
@@ -584,7 +648,6 @@ def main() -> int:
         "construction": CONSTRUCTION, "history_note": HISTORY_NOTE, "note": NOTE,
         "baskets": out_baskets,
     }
-    out_dir = config.data_dir() / "baskets_china"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_p = out_dir / "membership.json"
     out_p.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
