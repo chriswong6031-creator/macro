@@ -63,6 +63,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 try:
     from engine.neuralweb.liquidity_plumbing import (  # noqa: F401
         _derive_reserve_scarcity_state,
+        _derive_tga_impulse,
         _level_d20_pctile,
         _spread_bp,
         _to_series,
@@ -1329,3 +1330,168 @@ class TestSwapLinesIntegration:
         # IRD-R5: swap lines are confirmation only — headline driven by regime
         assert result["headline"]["state"] not in ("foreign_dollar_stress",)
         assert result["authority"]["score_raise"] is False
+
+
+# ---------------------------------------------------------------------------
+# 31. TGA impulse detector (RLT-R4) — _derive_tga_impulse unit tests
+# ---------------------------------------------------------------------------
+
+def _tga_series_bn(
+    values: list[float],
+    start: str = "2026-06-01",
+) -> pd.Series:
+    """Build a business-daily TGA series (values in $bn) for impulse testing."""
+    dates = pd.bdate_range(start, periods=len(values))
+    return pd.Series(values, index=dates)
+
+
+def _jun_jul_2026_tga() -> pd.Series:
+    """Reproduce the Jun 30 → Jul 9 2026 TGA drawdown shape (from masterplan §0).
+
+    Jun-30 ~919bn → Jul-9 ~745bn is ~$174bn drawdown over ~7 business days.
+    We build a series with a flat pre-period (May) then a sharp drawdown in Jul.
+    """
+    # 40 business days starting 2026-05-01
+    dates = pd.bdate_range("2026-05-01", periods=40)
+    vals = [900.0] * 22 + [919.1] + [880.0, 850.0, 807.4, 770.6, 760.0, 744.6] + [744.6] * 10
+    # Trim to 40 rows
+    vals = vals[:40]
+    return pd.Series(vals, index=dates[:len(vals)])
+
+
+class TestTgaImpulseUnit:
+    """Unit tests for _derive_tga_impulse (RLT-R4) using synthetic series."""
+
+    def test_null_input_returns_inactive(self):
+        result = _derive_tga_impulse(None)
+        assert result["active"] is False
+        assert result["direction"] is None
+        assert result["magnitude_bn"] is None
+
+    def test_empty_series_returns_inactive(self):
+        result = _derive_tga_impulse(pd.Series(dtype=float))
+        assert result["active"] is False
+
+    def test_sub_threshold_null(self):
+        """A move of only $50bn should NOT trigger (< $75bn threshold)."""
+        s = _tga_series_bn([900.0, 890.0, 870.0, 860.0, 855.0, 850.0])
+        result = _derive_tga_impulse(s)
+        assert result["active"] is False
+
+    def test_fast_drawdown_episode(self):
+        """$175bn drawdown over 9 business sessions triggers the fast-episode rule."""
+        # Start at 919, drop to 744 over 9 sessions (>= $75bn in <= 10 sessions)
+        vals = [919.0, 900.0, 870.0, 840.0, 810.0, 790.0, 770.0, 760.0, 750.0, 744.0]
+        s = _tga_series_bn(vals)
+        result = _derive_tga_impulse(s)
+        assert result["active"] is True
+        assert result["direction"] == "drawdown"
+        assert result["magnitude_bn"] >= 75.0
+        assert result["days"] is not None and result["days"] <= 10
+        assert result["since"] is not None
+
+    def test_fast_build_episode(self):
+        """$100bn build over 8 business sessions triggers the fast-episode rule."""
+        vals = [700.0, 720.0, 740.0, 760.0, 780.0, 800.0, 810.0, 815.0, 800.0]
+        s = _tga_series_bn(vals)
+        result = _derive_tga_impulse(s)
+        assert result["active"] is True
+        assert result["direction"] == "build"
+        assert result["magnitude_bn"] >= 75.0
+
+    def test_direction_drawdown(self):
+        """direction field must be 'drawdown' when TGA falls."""
+        vals = [900.0] * 2 + [800.0] * 2 + [750.0] * 6
+        s = _tga_series_bn(vals)
+        result = _derive_tga_impulse(s)
+        if result["active"]:
+            assert result["direction"] == "drawdown"
+
+    def test_quarter_end_adjacent_true(self):
+        """Episode starting on Jun 30 or within 7 BD after should set quarter_end_adjacent=True."""
+        # Jun 30 is the quarter end. Start series from Jun 30, show a big drawdown immediately.
+        vals = [919.0, 880.0, 840.0, 800.0, 760.0, 744.0] + [744.0] * 4
+        s = _tga_series_bn(vals, start="2026-06-30")
+        result = _derive_tga_impulse(s)
+        assert result["active"] is True
+        assert result["quarter_end_adjacent"] is True
+
+    def test_quarter_end_adjacent_false(self):
+        """Episode in mid-August (>7 BD from Jun 30, >30 BD from Sep 30) should not be adjacent.
+
+        The series must be long enough to include Jun 30 in the index so the BD-count
+        from Jun 30 to the Aug episode start is correctly computed (>7 BD → not adjacent).
+        """
+        # Build a 60-day series starting 2026-06-01, with a big drawdown near the END
+        # (around Aug 15, which is ~33 BD from Jun 30 and ~32 BD from Sep 30)
+        base_vals = [920.0] * 53  # stable until day 53 (~2026-08-13)
+        drop_vals = [860.0, 820.0, 780.0, 740.0, 700.0, 680.0, 660.0]  # fast drop
+        all_vals = base_vals + drop_vals
+        s = _tga_series_bn(all_vals, start="2026-06-01")
+        result = _derive_tga_impulse(s)
+        if result["active"]:
+            # Episode starts ~2026-08-13, which is ~32 BD from Jun 30 → not adjacent
+            assert result["quarter_end_adjacent"] is False
+
+    def test_summary_en_is_nonempty_string(self):
+        vals = [919.0, 880.0, 840.0, 800.0, 760.0, 744.0] + [744.0] * 4
+        s = _tga_series_bn(vals, start="2026-06-30")
+        result = _derive_tga_impulse(s)
+        assert isinstance(result["summary_en"], str) and len(result["summary_en"]) > 10
+        assert isinstance(result["summary_zh"], str) and len(result["summary_zh"]) > 5
+
+    def test_no_validated_word_in_summary(self):
+        """'validated' must not appear in any impulse summary (CI guard)."""
+        vals = [919.0, 880.0, 840.0, 800.0, 760.0, 744.0] + [744.0] * 4
+        s = _tga_series_bn(vals, start="2026-06-30")
+        result = _derive_tga_impulse(s)
+        assert "validated" not in result["summary_en"].lower()
+        assert "validated" not in result["summary_zh"].lower()
+
+    def test_impulse_block_keys(self):
+        """All required keys must be present in the impulse block."""
+        vals = [919.0, 880.0, 840.0, 800.0, 760.0, 744.0] + [744.0] * 4
+        s = _tga_series_bn(vals, start="2026-06-30")
+        result = _derive_tga_impulse(s)
+        for key in ("active", "direction", "magnitude_bn", "days", "since",
+                    "quarter_end_adjacent", "summary_en", "summary_zh"):
+            assert key in result, f"tga_impulse missing key {key!r}"
+
+    def test_impulse_in_treasury_block(self):
+        """compute() must include tga_impulse sub-block in the treasury block."""
+        result = _full_compute()
+        t = result["treasury"]
+        assert "tga_impulse" in t, "treasury block must contain tga_impulse key"
+        imp = t["tga_impulse"]
+        for key in ("active", "direction", "magnitude_bn", "days", "since",
+                    "quarter_end_adjacent", "summary_en", "summary_zh"):
+            assert key in imp, f"tga_impulse sub-block missing key {key!r}"
+
+
+# ---------------------------------------------------------------------------
+# 32. Phase-label fix (RLT-R4) — p3_reserve_balances reflects actual load state
+# ---------------------------------------------------------------------------
+
+class TestPhaseStatusDynamic:
+    """p3_reserve_balances must reflect actual load state (not always fail-open string)."""
+
+    def test_fail_open_when_no_reserves_frame(self):
+        """Without WRESBAL, p3_reserve_balances must be the fail-open sentinel."""
+        result = _full_compute()
+        ps = result["phase_status"]
+        assert ps["p3_reserve_balances"] == "fail_open_until_wresbal_collected", (
+            f"Expected fail-open sentinel without reserves frame, got {ps['p3_reserve_balances']!r}"
+        )
+
+    def test_integrated_when_reserves_loaded(self):
+        """With WRESBAL frame present, p3_reserve_balances must be 'integrated'."""
+        reserves = _reserves_frame()
+        result = compute(
+            _regime_latest(), _netliq_frame(), _treasury_frames(),
+            _auction_snapshot(), _config(),
+            reserves_frame=reserves,
+        )
+        ps = result["phase_status"]
+        assert ps["p3_reserve_balances"] == "integrated", (
+            f"Expected 'integrated' with WRESBAL loaded, got {ps['p3_reserve_balances']!r}"
+        )

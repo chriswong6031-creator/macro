@@ -6,6 +6,10 @@ score/rank, or fires a hard gate. The ONLY entry-tailwind reference is the
 already-measured cycle-ladder 21d nudge (engine/cycles.py stays untouched).
 
 Phase 0+1: quantity + quality + RRP + TGA + auctions + fed-stance context.
+  RLT-R4: treasury.tga_impulse sub-block: episode detector (drawdown or build
+  >= $75bn within <= 10 business sessions, or >= $120bn cumulative from last
+  quarter-end), with direction/magnitude_bn/days/since/quarter_end_adjacent
+  and plain-word summaries. Names the event; does NOT upgrade quality.
 Phase 3 (funding): EFFR/SOFR/SOFR-99pctl minus IORB spreads INTEGRATED
   (level + 20d delta + expanding percentile + descriptive
   reserve_scarcity_state). SRF take-up and discount-window primary credit
@@ -74,13 +78,19 @@ _AUTHORITY = {
 }
 
 # Integration status per phase — additive minor field (schema stays v1).
-_PHASE_STATUS = {
+# p3_reserve_balances is resolved dynamically in compute() to reflect actual load state.
+_PHASE_STATUS_BASE = {
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
     "p3_srf_discount_window": "pending_collection",
-    "p3_reserve_balances": "fail_open_until_wresbal_collected",
     "p5_swap_lines": "integrated_ird_w1",   # SWPT/WLCFLL from fred adapter (IRD-W1)
     "p5_fima_repo": "pending_no_free_breakout",  # no free per-facility source
+}
+
+# Kept for backward-compat references (degraded_payload, tests); compute() builds its own copy.
+_PHASE_STATUS = {
+    **_PHASE_STATUS_BASE,
+    "p3_reserve_balances": "fail_open_until_wresbal_collected",
 }
 
 # 20-trading-day and 65-trading-day lookback windows (business-daily index)
@@ -244,6 +254,192 @@ def _derive_headline_state(
         return "orderly_drain"
     # fallback
     return "data_degraded"
+
+
+# ---------------------------------------------------------------------------
+# TGA impulse detector (RLT-R4)
+# ---------------------------------------------------------------------------
+
+# Episode thresholds (RLT-R4 ruling text)
+_TGA_THRESHOLD_FAST_BN: float = 75.0    # >= $75bn within <= 10 business sessions
+_TGA_THRESHOLD_FAST_SESSIONS: int = 10
+_TGA_THRESHOLD_QE_BN: float = 120.0     # >= $120bn from the last quarter-end date
+_TGA_QE_ADJ_WINDOW_BD: int = 7          # episode start within 7 business days of quarter end
+
+
+def _quarter_end_dates(year: int) -> list[date]:
+    """Return the four calendar quarter-end dates for a given year (Mar 31, Jun 30, Sep 30, Dec 31).
+
+    Uses simple month-boundary rule as specified in the lane brief — no external calendar import.
+    """
+    from calendar import monthrange
+    ends = []
+    for month in (3, 6, 9, 12):
+        last_day = monthrange(year, month)[1]
+        ends.append(date(year, month, last_day))
+    return ends
+
+
+def _is_quarter_end_adjacent(episode_start: date, tga_index: "pd.DatetimeIndex") -> bool:
+    """True if episode_start is within _TGA_QE_ADJ_WINDOW_BD business sessions after any
+    calendar quarter end (Mar 31, Jun 30, Sep 30, Dec 31) across a 2-year window.
+
+    Business sessions counted by position in the TGA business-daily index.
+    """
+    # Gather candidate quarter-end dates from the year before through the year of episode_start
+    candidate_qe: list[date] = []
+    for yr in (episode_start.year - 1, episode_start.year):
+        candidate_qe.extend(_quarter_end_dates(yr))
+
+    ep_ts = pd.Timestamp(episode_start)
+    for qe in candidate_qe:
+        qe_ts = pd.Timestamp(qe)
+        if qe_ts > ep_ts:
+            continue
+        # Count business sessions between qe_ts and ep_ts in the TGA index
+        sessions_after = int(((tga_index >= qe_ts) & (tga_index <= ep_ts)).sum()) - 1
+        # sessions_after == 0 means same day (qe == episode_start); count 0 as adjacent
+        if 0 <= sessions_after <= _TGA_QE_ADJ_WINDOW_BD:
+            return True
+    return False
+
+
+def _derive_tga_impulse(tga_series_bn: "pd.Series | None") -> dict[str, Any]:
+    """Detect a named TGA drawdown or build episode (RLT-R4).
+
+    Returns a tga_impulse sub-block with:
+      active (bool): episode is firing
+      direction ('drawdown'|'build'|null): which way TGA moved
+      magnitude_bn (float|null): total $ bn moved during episode
+      days (int|null): number of business sessions in episode
+      since (str|null): ISO date of episode start
+      quarter_end_adjacent (bool): episode start within 7 BD after a calendar quarter end
+      summary_en (str): plain-word EN summary
+      summary_zh (str): plain-word ZH equivalent
+
+    Episode rule (RLT-R4):
+      - drawdown or build of >= $75bn within <= 10 business sessions, OR
+      - >= $120bn cumulative move measured from the last quarter-end date
+
+    The impulse NAMES the event; it never upgrades quality or authority.
+    """
+    _null: dict[str, Any] = {
+        "active": False,
+        "direction": None,
+        "magnitude_bn": None,
+        "days": None,
+        "since": None,
+        "quarter_end_adjacent": False,
+        "summary_en": "No TGA impulse detected.",
+        "summary_zh": "未检测到TGA冲量。",
+    }
+
+    if tga_series_bn is None or tga_series_bn.empty or len(tga_series_bn) < 2:
+        return dict(_null)
+
+    try:
+        s = tga_series_bn.sort_index()
+        latest_val = float(s.iloc[-1])
+        latest_date = s.index[-1].date()
+
+        # --- Fast episode: >= $75bn within <= 10 business sessions ---
+        lookback = s.iloc[-(_TGA_THRESHOLD_FAST_SESSIONS + 1):]
+        if len(lookback) >= 2:
+            start_val = float(lookback.iloc[0])
+            move = latest_val - start_val  # positive = build, negative = drawdown
+            if abs(move) >= _TGA_THRESHOLD_FAST_BN:
+                direction = "drawdown" if move < 0 else "build"
+                magnitude_bn = float(round(abs(move), 1))
+                episode_start = lookback.index[0].date()
+                days = len(lookback) - 1
+                qe_adj = _is_quarter_end_adjacent(episode_start, s.index)
+                summary_en, summary_zh = _tga_impulse_summary(
+                    direction, magnitude_bn, episode_start, qe_adj
+                )
+                return {
+                    "active": True,
+                    "direction": direction,
+                    "magnitude_bn": magnitude_bn,
+                    "days": days,
+                    "since": str(episode_start),
+                    "quarter_end_adjacent": qe_adj,
+                    "summary_en": summary_en,
+                    "summary_zh": summary_zh,
+                }
+
+        # --- Quarter-end cumulative episode: >= $120bn from last quarter-end date ---
+        # Find the last quarter-end in the index
+        today = latest_date
+        candidate_qe: list[date] = []
+        for yr in (today.year - 1, today.year):
+            candidate_qe.extend(_quarter_end_dates(yr))
+        past_qe = [d for d in candidate_qe if d <= today]
+        if past_qe:
+            last_qe = max(past_qe)
+            qe_ts = pd.Timestamp(last_qe)
+            qe_slice = s[s.index >= qe_ts]
+            if len(qe_slice) >= 2:
+                qe_start_val = float(qe_slice.iloc[0])
+                move = latest_val - qe_start_val
+                if abs(move) >= _TGA_THRESHOLD_QE_BN:
+                    direction = "drawdown" if move < 0 else "build"
+                    magnitude_bn = float(round(abs(move), 1))
+                    episode_start = qe_slice.index[0].date()
+                    days = len(qe_slice) - 1
+                    qe_adj = _is_quarter_end_adjacent(episode_start, s.index)
+                    summary_en, summary_zh = _tga_impulse_summary(
+                        direction, magnitude_bn, episode_start, qe_adj
+                    )
+                    return {
+                        "active": True,
+                        "direction": direction,
+                        "magnitude_bn": magnitude_bn,
+                        "days": days,
+                        "since": str(episode_start),
+                        "quarter_end_adjacent": qe_adj,
+                        "summary_en": summary_en,
+                        "summary_zh": summary_zh,
+                    }
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("liquidity_plumbing._derive_tga_impulse: error — %s", exc)
+
+    return dict(_null)
+
+
+def _tga_impulse_summary(
+    direction: str, magnitude_bn: float, since: date, qe_adj: bool
+) -> tuple[str, str]:
+    """Plain-word EN+ZH summary for a TGA impulse episode.
+
+    Vocabulary rules: no jargon, no promises, no 'validated'. Describes the
+    mechanism plainly (Treasury spending down its account puts cash into the
+    system; Treasury building it up absorbs cash).
+    """
+    mag_str = f"${magnitude_bn:.0f}B"
+    since_str = since.strftime("%b %-d")
+    if direction == "drawdown":
+        en = (
+            f"Treasury spent down {mag_str} of its cash account since {since_str} — "
+            "that cash re-enters the financial system (supportive while it lasts)."
+        )
+        zh = (
+            f"自{since_str}起，美国财政部已动用现金账户中的{mag_str} — "
+            "这部分资金重新流入金融体系（短期内具支撑性）。"
+        )
+    else:
+        en = (
+            f"Treasury rebuilt its cash account by {mag_str} since {since_str} — "
+            "that cash is absorbed from the financial system (mild headwind while it lasts)."
+        )
+        zh = (
+            f"自{since_str}起，美国财政部已向现金账户补充{mag_str} — "
+            "这部分资金从金融体系中吸收（短期内为温和阻力）。"
+        )
+    if qe_adj:
+        en += " Quarter-end seasonal pattern may be a contributing factor."
+        zh += " 季末季节性规律可能是促成因素之一。"
+    return en, zh
 
 
 def _headline_summary(state: str, quality_label: str | None, overlay: str | None) -> str:
@@ -513,6 +709,7 @@ def compute(
     # exists once the FRED collector has run with WRESBAL in its series list.
     reserve_balances_bn: float | None = None
     reserves_series_bn = _to_series(reserves_frame)
+    _reserves_loaded: bool = False
     if reserves_series_bn is None:
         gaps.append(
             "data/fred/WRESBAL.parquet missing or empty — reserve_balances_bn "
@@ -525,6 +722,7 @@ def compute(
         if float(reserves_series_bn.iloc[-1]) > 50_000:
             reserves_series_bn = reserves_series_bn / 1000.0
         reserve_balances_bn = float(round(reserves_series_bn.iloc[-1], 3))
+        _reserves_loaded = True
 
     fed_block: dict[str, Any] = {
         "assets_bn": assets_bn,
@@ -583,6 +781,7 @@ def compute(
     tga_chg_20d_bn: float | None = None
     net_issuance_20d_bn: float | None = None
     treasury_asof: str | None = None
+    _tga_series_bn: pd.Series | None = None  # kept for impulse detector
 
     tga_frame: pd.DataFrame | None = treasury_frames.get("tga")
     net_issuance_frame: pd.DataFrame | None = treasury_frames.get("net_issuance")
@@ -598,6 +797,7 @@ def compute(
             col = tga_df.columns[0]
             tga_series = (tga_df[col] / 1000.0).dropna()
             if not tga_series.empty:
+                _tga_series_bn = tga_series  # save for impulse detector
                 tga_bn_val = float(round(tga_series.iloc[-1], 3))
                 treasury_asof = str(tga_series.index[-1].date())
                 if len(tga_series) > _D20_ROWS:
@@ -634,12 +834,20 @@ def compute(
             log.warning("liquidity_plumbing: net_issuance frame error — %s", exc)
             gaps.append(f"net_issuance.parquet read error: {exc}")
 
+    # RLT-R4: TGA impulse detector — episode naming, never quality upgrade
+    tga_impulse_block = _derive_tga_impulse(_tga_series_bn)
+    if _tga_series_bn is None:
+        gaps.append(
+            "tga_impulse: TGA series unavailable — impulse detector inactive"
+        )
+
     treasury_block: dict[str, Any] = {
         "tga_bn": tga_bn_val,
         "tga_chg_20d_bn": tga_chg_20d_bn,
         "net_issuance_20d_bn": net_issuance_20d_bn,
         "expected_tga_pressure": "unknown_until_financing_estimates_parser",
         "coupon_supply_pressure": "context_only",
+        "tga_impulse": tga_impulse_block,
         "asof": treasury_asof,
     }
 
@@ -878,10 +1086,19 @@ def compute(
     # ------------------------------------------------------------------
     # 13. Assemble full payload (UNSTAMPED)
     # ------------------------------------------------------------------
+    # Build dynamic phase_status: p3_reserve_balances reflects actual load state
+    _phase_status: dict[str, Any] = {
+        **_PHASE_STATUS_BASE,
+        "p3_reserve_balances": (
+            "integrated" if _reserves_loaded
+            else "fail_open_until_wresbal_collected"
+        ),
+    }
+
     payload: dict[str, Any] = {
         "schema": _SCHEMA,
         "asof": asof_str,
-        "phase_status": _PHASE_STATUS,
+        "phase_status": _phase_status,
         "authority": _AUTHORITY,
         "headline": headline_block,
         "fed": fed_block,
@@ -923,6 +1140,11 @@ def degraded_payload(gaps: list[str], summary: str = "Build error — see gaps."
             "net_issuance_20d_bn": None,
             "expected_tga_pressure": "unknown_until_financing_estimates_parser",
             "coupon_supply_pressure": "context_only",
+            "tga_impulse": {
+                "active": False, "direction": None, "magnitude_bn": None,
+                "days": None, "since": None, "quarter_end_adjacent": False,
+                "summary_en": "No TGA impulse detected.", "summary_zh": "未检测到TGA冲量。",
+            },
             "asof": None,
         },
         "rrp": {"rrp_bn": None, "rrp_chg_20d_bn": None, "buffer_state": "unknown"},

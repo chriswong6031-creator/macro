@@ -38,10 +38,27 @@ MARKET CHANNEL (added W1, RRX-R2..R7):
 """
 from __future__ import annotations
 
+import json
 import logging
 from datetime import date, datetime
+from pathlib import Path
 
 log = logging.getLogger(__name__)
+
+
+def _load_liquidity_plumbing() -> dict:
+    """Load data/neuralweb/liquidity_plumbing.json via lib.config — fail-open to empty dict.
+
+    Uses the same loader pattern as _us_latest(): lib.config.data_dir() for the
+    data root, silent exception swallow, never raises.
+    """
+    try:
+        from lib import config  # noqa: PLC0415
+        p = config.data_dir() / "neuralweb" / "liquidity_plumbing.json"
+        return json.loads(p.read_text()) if p.exists() else {}
+    except Exception as e:  # noqa: BLE001
+        log.debug("recovery: liquidity_plumbing unavailable (%s)", e)
+        return {}
 
 
 def _num(v):
@@ -102,6 +119,81 @@ def _market_catalysts(latest: dict | None = None) -> dict | None:
         return None
 
 
+def _fed_netliq_detail() -> tuple[str, str]:
+    """Build enriched EN+ZH detail strings for the fed_netliq catalyst chip (RLT-R5).
+
+    Reads liquidity_plumbing.json for netliq Δ20d and tga_impulse magnitude.
+    Falls back to the prior generic string if the artifact is absent or the
+    fields are null. NEVER raises.
+    """
+    try:
+        lp = _load_liquidity_plumbing()
+        if not lp:
+            raise ValueError("empty")
+
+        # Strip envelope if present (same pattern as world_state._compose_liquidity_plumbing)
+        try:
+            from engine.neuralweb.envelope import strip_envelope  # noqa: PLC0415
+            payload = strip_envelope(lp)
+        except Exception:  # noqa: BLE001
+            payload = lp
+
+        qty = payload.get("quantity") or {}
+        treasury = payload.get("treasury") or {}
+        chg20 = qty.get("netliq_chg_20d_bn")
+        tga_imp = treasury.get("tga_impulse") or {}
+
+        parts_en = ["Net liquidity (WALCL − RRP − TGA) rising"]
+        parts_zh = ["净流动性（WALCL − RRP − TGA）上升"]
+
+        if chg20 is not None:
+            sign = "+" if chg20 >= 0 else ""
+            parts_en.append(f"({sign}${chg20:.0f}B/20d)")
+            parts_zh.append(f"（{sign}{chg20:.0f}亿美元/20日）")
+
+        if tga_imp.get("active") and tga_imp.get("magnitude_bn") is not None:
+            mag = tga_imp["magnitude_bn"]
+            direction = tga_imp.get("direction", "drawdown")
+            since = tga_imp.get("since", "")
+            since_str = ""
+            if since:
+                try:
+                    from datetime import datetime as _dt  # noqa: PLC0415
+                    d = _dt.strptime(since[:10], "%Y-%m-%d")
+                    since_str = f" since {d.strftime('%b %-d')}"
+                    since_zh = f"自{d.month}月{d.day}日起"
+                except Exception:  # noqa: BLE001
+                    since_str = f" since {since[:10]}"
+                    since_zh = f"自{since[:10]}起"
+            else:
+                since_zh = ""
+
+            if direction == "drawdown":
+                parts_en.append(
+                    f"— Treasury spent down ${mag:.0f}B{since_str} "
+                    "(cash flows into system)"
+                )
+                parts_zh.append(
+                    f"— 财政部{since_zh}动用现金账户{mag:.0f}亿美元（资金流入系统）"
+                )
+            else:
+                parts_en.append(f"— TGA drawdown / reserves added")
+                parts_zh.append("— TGA 回落／准备金注入")
+        else:
+            parts_en.append("— TGA drawdown / reserves added")
+            parts_zh.append("— TGA 回落／准备金注入")
+
+        detail_en = " ".join(parts_en) + "."
+        detail_zh = "".join(parts_zh) + "。"
+        return detail_en, detail_zh
+
+    except Exception:  # noqa: BLE001
+        return (
+            "Net liquidity (WALCL − RRP − TGA) rising — TGA drawdown / reserves added.",
+            "净流动性（WALCL − RRP − TGA）上升 — TGA 回落／准备金注入。",
+        )
+
+
 def _liquidity_catalysts(latest: dict, market: str = "us") -> list[dict]:
     """The supportive-liquidity legs that are firing right now, as display chips. All read the
     display-only context already on the page; each degrades to absent. `fresh` = a genuinely
@@ -118,11 +210,25 @@ def _liquidity_catalysts(latest: dict, market: str = "us") -> list[dict]:
     #    drop). engine/regime.py classifies this into latest['liquidity_overlay'].
     lo = fed_src.get("liquidity_overlay")
     if lo == "expanding":
+        # RLT-R5: enrich detail with netliq Δ20d magnitude and TGA impulse when available.
+        # Fail-open: falls back to the generic string when the artifact is absent.
+        detail_en, detail_zh = _fed_netliq_detail()
         cats.append({
             "key": "fed_netliq", "icon": "💵", "region": "US", "fresh": True,
             "label_en": "Fed liquidity expanding", "label_zh": "美联储流动性扩张",
-            "detail_en": "Net liquidity (WALCL − RRP − TGA) rising — TGA drawdown / reserves added.",
-            "detail_zh": "净流动性（WALCL − RRP − TGA）上升 — TGA 回落／准备金注入。",
+            "detail_en": detail_en,
+            "detail_zh": detail_zh,
+            # RLT-R5: salience — measured odds edge from LIQUIDITY_LADDER, plain words,
+            # never 'validated' (CI guard). Shown only when the catalyst is fresh/active.
+            "salience_en": (
+                "When liquidity is expanding like this, buying dips has historically "
+                "worked ~6pp more often over the next month "
+                "(a measured odds edge, not a promise)."
+            ),
+            "salience_zh": (
+                "历史上，在流动性扩张期间逢低买入的成功率比平均高约6个百分点（次月维度）"
+                "——这是一个经过回测的概率优势，不是承诺。"
+            ),
         })
 
     # 2) Fed policy easing / emergency cut — market pricing + reaction-function read (display-only;
