@@ -3120,7 +3120,7 @@ imf_weo:
   # Indicators to fetch (one HTTP GET each)
   indicators:
     GGXWDG_NGDP: gross_debt_pct_gdp       # Gross government debt (% of GDP)
-    GGXONLB_NGDP: primary_balance_pct_gdp # Primary net lending/borrowing (% of GDP)
+    GGXCNL_NGDP: fiscal_balance_pct_gdp  # Overall net lending/borrowing (% of GDP; GGXONLB primary-balance is NOT exposed by DataMapper v1 — verified 403-free but shape-absent 2026-07-12)
     BCA_NGDPD: current_account_pct_gdp    # Current account balance (% of GDP)
   # ISO-3 country codes to retain (the 25-country vulnerability map universe)
   countries: [USA, CAN, GBR, DEU, FRA, ITA, ESP, JPN, KOR, CHN, IND, IDN,

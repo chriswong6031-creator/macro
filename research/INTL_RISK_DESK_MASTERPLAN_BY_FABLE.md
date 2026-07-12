@@ -77,7 +77,7 @@ Missing — the IRD build:
 
 | Metric | Source | Notes |
 |---|---|---|
-| Debt/GDP, primary balance, current-account | IMF DataMapper API `imf.org/external/datamapper/api/v1/{GGXWDG_NGDP,GGXONLB_NGDP,BCA_NGDPD}` (annual, WEO Apr/Oct) | new tiny keyless adapter, weekly lane |
+| Debt/GDP, fiscal balance, current-account | IMF DataMapper API `imf.org/external/datamapper/api/v1/{GGXWDG_NGDP,GGXCNL_NGDP,BCA_NGDPD}` (annual, WEO Apr/Oct; the GGXONLB primary-balance series is not exposed by DataMapper v1 — overall balance substituted, W1) | new tiny keyless adapter |
 | BIS credit-to-GDP gap + DSR | existing BIS adapter — extend `config.bis.series` to JP/GB/EZ(XM)/KR/BR/MX/TR/ZA/IN/ID | quarterly |
 | REER deviation | BIS REER already collected per-currency (H.10 family) — compute 5y-mean gap per EM | reuses forex REER pattern |
 | Reserves adequacy (context row) | IMF IFS reserves where trivially fetchable; else printed as data-gap null | do not build a scraper for v1 |

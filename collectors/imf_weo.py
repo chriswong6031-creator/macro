@@ -5,7 +5,7 @@ Annual data; WEO vintages published April + October (IMF updates these mid-year)
 
 Indicators:
   GGXWDG_NGDP  — Gross government debt (% of GDP)
-  GGXONLB_NGDP — Primary net lending/borrowing (% of GDP)
+  GGXCNL_NGDP — Overall net lending/borrowing (% of GDP; DataMapper does not expose the GGXONLB primary-balance series)
   BCA_NGDPD    — Current account balance (% of GDP)
 
 Store layout: one parquet per (indicator, iso3) under data/imf_weo/. File name
@@ -62,8 +62,10 @@ def fetch_indicator(
     last_exc: Exception | None = None
     for attempt in range(retries):
         try:
-            r = requests.get(url, timeout=timeout,
-                             headers={"User-Agent": "macro-dashboard research (contact via repo)"})
+            # NOTE: imf.org's edge (Akamai) 403s descriptive/browser-spoof
+            # User-Agent strings but accepts the plain requests/curl defaults —
+            # verified 2026-07-12. Do not add a custom UA header here.
+            r = requests.get(url, timeout=timeout)
             if r.status_code != 200:
                 raise RuntimeError(f"HTTP {r.status_code}")
             data = r.json()
