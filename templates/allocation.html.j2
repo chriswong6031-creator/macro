@@ -262,7 +262,7 @@ var NAMEMAP={};
 function _slugName(id){return String(id||'').replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});}
 function nameEnOf(id){return (NAMEMAP[id]&&NAMEMAP[id].en)||_slugName(id);}
 function nameZhOf(id){return (NAMEMAP[id]&&NAMEMAP[id].zh)||_slugName(id);}
-fetch('basketdata/baskets.json',{cache:'no-cache'})
+fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","canada":"canadabasketdata"}.get(d.region,"basketdata") }}/baskets.json',{cache:'no-cache'})
   .then(function(r){if(!r.ok)throw 0;return r.json();})
   .then(function(d){
     ((d&&d.baskets)||[]).forEach(function(b){
@@ -633,28 +633,31 @@ const sbBadge = id => { const n=STANDOUTS[id]; return n?` <span class="sb-badge"
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const bid = s => /^[a-z0-9_-]+$/i.test(s||'') ? s : '';
+// Region-aware theme link — mirrors the lifecycle-board <a> rule: US has per-basket
+// detail pages; CN/HK/CA deep-link into their baskets page anchors.
+const bkHref = id => {% if d.region == 'us' %}'basket/'+bid(id)+'.html'{% else %}'{{ BASKETS_PAGE }}#b-'+bid(id){% endif %};
 
 function renderEntries(){
   const el=document.getElementById('playbook-entries'); if(!el) return;
   const alloc=ALLOC.allocation||{}, an=ACT_NOW||null;
   const held=new Set((alloc.weights||[]).map(w=>w.id));
   // BUY/HOLD: the de-overlapped trending book + (US) clean-entry buys not already held
-  let buy=(alloc.weights||[]).map(w=>`<a class="prow" href="basket/${bid(w.id)}.html">
+  let buy=(alloc.weights||[]).map(w=>`<a class="prow" href="${bkHref(w.id)}">
     <span class="pverb" style="color:var(--up);border-color:var(--up)">${L('HOLD / ADD','持有/加仓')}</span>
     <span class="pn">#${w.rank} ${L(esc(w.name),esc(w.name_zh))}${sbBadge(w.id)}</span><span class="pw">${Math.round((w.weight||0)*100)}%</span></a>`);
   if(an && an.buy){ an.buy.filter(x=>!held.has(x.id)).forEach(x=>{
     const v=x.action==='enter'?['ENTER','建仓']:['ACCUMULATE','加仓'];
-    buy.push(`<a class="prow" href="basket/${bid(x.id)}.html"><span class="pverb" style="color:#16a34a;border-color:#16a34a">${L(v[0],v[1])}</span>
+    buy.push(`<a class="prow" href="${bkHref(x.id)}"><span class="pverb" style="color:#16a34a;border-color:#16a34a">${L(v[0],v[1])}</span>
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
   // in-favour themes WITHOUT a clean entry (the honest act_now split) — shown, never hidden,
   // with a muted "wait for a pullback" verb. Descriptive presentation, not a signal.
   if(an && an.add_on_pullback){ an.add_on_pullback.filter(x=>!held.has(x.id)).forEach(x=>{
-    buy.push(`<a class="prow" href="basket/${bid(x.id)}.html" title="${esc(x.reason_en||'in favour, but no clean-entry setup right now')}"><span class="pverb" style="color:var(--warn);border-color:var(--warn)">${L('WAIT — PULLBACK','等待回调')}</span>
+    buy.push(`<a class="prow" href="${bkHref(x.id)}" title="${esc(x.reason_en||'in favour, but no clean-entry setup right now')}"><span class="pverb" style="color:var(--warn);border-color:var(--warn)">${L('WAIT — PULLBACK','等待回调')}</span>
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
   // REDUCE/AVOID: (US) act_now reduce + crowded held + de-overlapped displaced (context)
   let sell=[];
   if(an && an.reduce){ an.reduce.forEach(x=>{ const v=x.action==='avoid'?['AVOID','回避','#ef4444']:['TRIM','减仓','#f97316'];
-    sell.push(`<a class="prow" href="basket/${bid(x.id)}.html"><span class="pverb" style="color:${v[2]};border-color:${v[2]}">${L(v[0],v[1])}</span>
+    sell.push(`<a class="prow" href="${bkHref(x.id)}"><span class="pverb" style="color:${v[2]};border-color:${v[2]}">${L(v[0],v[1])}</span>
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}</span><span class="pw">${x.score}</span></a>`); }); }
   (alloc.weights||[]).filter(w=>w.crowded).forEach(w=>sell.push(`<div class="prow"><span class="pverb" style="color:var(--warn);border-color:var(--warn)">${L('SIZE DOWN','降仓')}</span><span class="pn">${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${L('crowded','拥挤')}</span></div>`));
   if(!sell.length) sell.push(`<div class="muted" style="padding:10px 2px;font-size:12px">${L('Nothing flagged to reduce right now.','当前无需减仓的标的。')}</div>`);
