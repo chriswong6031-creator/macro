@@ -97,7 +97,11 @@ def _load_ats() -> pd.DataFrame | None:
     """Load latest available ATS weekly transparency data."""
     if not ATS_DIR.exists():
         return None
-    files = sorted(ATS_DIR.glob("*.parquet"))
+    # Week files are <YYYYMMDD>.parquet — the group dir ALSO holds the runner's
+    # heartbeat series (finra_ats__ingest.parquet), which sorts lexicographically
+    # AFTER every digit-named week file and used to shadow the real latest week
+    # (schema mismatch → silent None → venue table never rendered).
+    files = sorted(p for p in ATS_DIR.glob("*.parquet") if p.stem.isdigit())
     if not files:
         return None
     # Load latest week
