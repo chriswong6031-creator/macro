@@ -1417,21 +1417,33 @@ class TestTgaImpulseUnit:
         assert result["quarter_end_adjacent"] is True
 
     def test_quarter_end_adjacent_false(self):
-        """Episode in mid-August (>7 BD from Jun 30, >30 BD from Sep 30) should not be adjacent.
+        """Fast-path episode well after a QE date: episode_start > 7 BD from last QE → not adjacent.
 
-        The series must be long enough to include Jun 30 in the index so the BD-count
-        from Jun 30 to the Aug episode start is correctly computed (>7 BD → not adjacent).
+        QE-first ordering: the QE path checks cumulative from the last quarter-end.
+        When the total move from last-QE to latest is < $120bn (QE path doesn't fire)
+        but the most-recent 10 sessions show a ≥ $75bn move (fast path fires), and the
+        fast episode_start is > 7 BD after the last QE, quarter_end_adjacent is False.
+
+        Design: 30 BD starting 2026-05-04 (34 BD after Mar-31 QE). Stable at 900
+        for 20 sessions then fast drop to 820 over 10 sessions (−80bn, ≥ $75bn fast
+        threshold). Total from Mar-31 (last QE) = 900→820 = −80bn < $120bn → QE
+        path does NOT fire. Fast path fires; episode_start ~2026-05-29 which is
+        ~42 BD from Mar-31 → quarter_end_adjacent = False.
         """
-        # Build a 60-day series starting 2026-06-01, with a big drawdown near the END
-        # (around Aug 15, which is ~33 BD from Jun 30 and ~32 BD from Sep 30)
-        base_vals = [920.0] * 53  # stable until day 53 (~2026-08-13)
-        drop_vals = [860.0, 820.0, 780.0, 740.0, 700.0, 680.0, 660.0]  # fast drop
+        # 30 BD: stable at 900 for first 20, then drop 8bn/session for 10 sessions → 820
+        base_vals = [900.0] * 20
+        drop_vals = [892.0, 884.0, 876.0, 868.0, 860.0, 852.0, 844.0, 836.0, 828.0, 820.0]
         all_vals = base_vals + drop_vals
-        s = _tga_series_bn(all_vals, start="2026-06-01")
+        s = _tga_series_bn(all_vals, start="2026-05-04")
         result = _derive_tga_impulse(s)
-        if result["active"]:
-            # Episode starts ~2026-08-13, which is ~32 BD from Jun 30 → not adjacent
-            assert result["quarter_end_adjacent"] is False
+        # Fast episode should fire (−80bn ≥ $75bn threshold)
+        assert result["active"] is True, "Expected fast episode to fire on −80bn drop"
+        assert result["direction"] == "drawdown"
+        # Mar-31 is ~34 BD before May-4; episode_start is ~May-29 (~46 BD from Mar-31) → not adjacent
+        assert result["quarter_end_adjacent"] is False, (
+            f"Expected quarter_end_adjacent=False for mid-May episode, got "
+            f"since={result['since']}, qe_adj={result['quarter_end_adjacent']}"
+        )
 
     def test_summary_en_is_nonempty_string(self):
         vals = [919.0, 880.0, 840.0, 800.0, 760.0, 744.0] + [744.0] * 4
@@ -1466,6 +1478,47 @@ class TestTgaImpulseUnit:
         for key in ("active", "direction", "magnitude_bn", "days", "since",
                     "quarter_end_adjacent", "summary_en", "summary_zh"):
             assert key in imp, f"tga_impulse sub-block missing key {key!r}"
+
+    def test_qe_anchored_episode_not_preempted_by_fast_path(self):
+        """RLT-R4 VERIFY: Jun-30 QE episode must be preferred over a pre-QE fast anchor.
+
+        Reproduces the scenario where the 10-BD trailing window spans before the
+        quarter-end date, giving a truncated magnitude and quarter_end_adjacent=False.
+        With QE-first ordering the QE path must be preferred, giving:
+        - since = on or after Jun-30
+        - quarter_end_adjacent = True
+        - magnitude >= the QE-slice move (not truncated by the fast-path anchor)
+
+        Series: 5 pre-QE rows (Jun-25 area) ending at 919, then Jun-30 at 919.1,
+        then 8 post-QE rows declining to 744.6 (~$174.5bn from Jun-30).
+        The 10-BD fast window spans from Jun-25 to Jul-9 (includes pre-QE values),
+        so the old code would anchor at Jun-25 and report ~$127bn and adjacent=False.
+        The fixed code must anchor at Jun-30 and report ~$174.5bn and adjacent=True.
+        """
+        # Build with explicit dates to control alignment precisely.
+        # Jun-30 2026 is a Tuesday; bdate_range("2026-06-24") gives:
+        #   Jun-24(1), Jun-25(2), Jun-26(3), Jun-29(4), Jun-30(5)=QE, Jul-1..Jul-9 (6..12)
+        vals = [900.0, 910.0, 915.0, 919.0, 919.1,   # Jun-24..Jun-30 (QE spike)
+                880.0, 850.0, 807.0, 771.0, 760.0, 745.0, 744.6]  # Jul-1..Jul-9
+        s = _tga_series_bn(vals, start="2026-06-24")
+        result = _derive_tga_impulse(s)
+        assert result["active"] is True
+        assert result["direction"] == "drawdown"
+        # QE-anchored: first date ≥ Jun-30 is Jun-30 itself (919.1 → 744.6 = −174.5bn)
+        assert result["magnitude_bn"] >= 120.0, (
+            f"Expected QE-anchored magnitude >= $120bn, got {result['magnitude_bn']:.1f}bn "
+            f"(since={result['since']}). Fast-path pre-emption bug not fixed."
+        )
+        assert result["quarter_end_adjacent"] is True, (
+            f"Expected quarter_end_adjacent=True for Jun-30 anchor, got "
+            f"since={result['since']}, adj={result['quarter_end_adjacent']}"
+        )
+        # since must be on or after Jun-30 (the QE anchor)
+        import datetime as _dt
+        since_date = _dt.date.fromisoformat(result["since"])
+        assert since_date >= _dt.date(2026, 6, 30), (
+            f"since={result['since']} should be on/after Jun-30 (QE anchor), not pre-QE"
+        )
 
 
 # ---------------------------------------------------------------------------

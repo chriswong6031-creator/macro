@@ -149,7 +149,7 @@ def _fed_netliq_detail() -> tuple[str, str]:
         if chg20 is not None:
             sign = "+" if chg20 >= 0 else ""
             parts_en.append(f"({sign}${chg20:.0f}B/20d)")
-            parts_zh.append(f"（{sign}{chg20:.0f}亿美元/20日）")
+            parts_zh.append(f"（{sign}{chg20*10:.0f}亿美元/20日）")
 
         if tga_imp.get("active") and tga_imp.get("magnitude_bn") is not None:
             mag = tga_imp["magnitude_bn"]
@@ -174,11 +174,13 @@ def _fed_netliq_detail() -> tuple[str, str]:
                     "(cash flows into system)"
                 )
                 parts_zh.append(
-                    f"— 财政部{since_zh}动用现金账户{mag:.0f}亿美元（资金流入系统）"
+                    f"— 财政部{since_zh}动用现金账户{mag*10:.0f}亿美元（资金流入系统）"
                 )
             else:
-                parts_en.append(f"— TGA drawdown / reserves added")
-                parts_zh.append("— TGA 回落／准备金注入")
+                # direction == "build": TGA refilling absorbs cash, but net-liq is
+                # expanding via WALCL growth — describe that channel, not a drawdown.
+                parts_en.append("— WALCL expansion driving net-liq rise")
+                parts_zh.append("— WALCL扩表推动净流动性上升")
         else:
             parts_en.append("— TGA drawdown / reserves added")
             parts_zh.append("— TGA 回落／准备金注入")

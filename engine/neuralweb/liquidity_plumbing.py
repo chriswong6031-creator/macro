@@ -342,38 +342,17 @@ def _derive_tga_impulse(tga_series_bn: "pd.Series | None") -> dict[str, Any]:
         latest_val = float(s.iloc[-1])
         latest_date = s.index[-1].date()
 
-        # --- Fast episode: >= $75bn within <= 10 business sessions ---
-        lookback = s.iloc[-(_TGA_THRESHOLD_FAST_SESSIONS + 1):]
-        if len(lookback) >= 2:
-            start_val = float(lookback.iloc[0])
-            move = latest_val - start_val  # positive = build, negative = drawdown
-            if abs(move) >= _TGA_THRESHOLD_FAST_BN:
-                direction = "drawdown" if move < 0 else "build"
-                magnitude_bn = float(round(abs(move), 1))
-                episode_start = lookback.index[0].date()
-                days = len(lookback) - 1
-                qe_adj = _is_quarter_end_adjacent(episode_start, s.index)
-                summary_en, summary_zh = _tga_impulse_summary(
-                    direction, magnitude_bn, episode_start, qe_adj
-                )
-                return {
-                    "active": True,
-                    "direction": direction,
-                    "magnitude_bn": magnitude_bn,
-                    "days": days,
-                    "since": str(episode_start),
-                    "quarter_end_adjacent": qe_adj,
-                    "summary_en": summary_en,
-                    "summary_zh": summary_zh,
-                }
-
         # --- Quarter-end cumulative episode: >= $120bn from last quarter-end date ---
-        # Find the last quarter-end in the index
+        # Evaluated FIRST so that a QE-anchored episode (e.g. Jun-30 spike) is not
+        # pre-empted by a trailing 10-BD window that anchors the start before the
+        # quarter-end date, which would under-report magnitude and drop the seasonal
+        # attribution (quarter_end_adjacent=False when the real anchor is Jun-30).
         today = latest_date
         candidate_qe: list[date] = []
         for yr in (today.year - 1, today.year):
             candidate_qe.extend(_quarter_end_dates(yr))
         past_qe = [d for d in candidate_qe if d <= today]
+        qe_result: dict[str, Any] | None = None
         if past_qe:
             last_qe = max(past_qe)
             qe_ts = pd.Timestamp(last_qe)
@@ -390,7 +369,7 @@ def _derive_tga_impulse(tga_series_bn: "pd.Series | None") -> dict[str, Any]:
                     summary_en, summary_zh = _tga_impulse_summary(
                         direction, magnitude_bn, episode_start, qe_adj
                     )
-                    return {
+                    qe_result = {
                         "active": True,
                         "direction": direction,
                         "magnitude_bn": magnitude_bn,
@@ -400,6 +379,43 @@ def _derive_tga_impulse(tga_series_bn: "pd.Series | None") -> dict[str, Any]:
                         "summary_en": summary_en,
                         "summary_zh": summary_zh,
                     }
+
+        # --- Fast episode: >= $75bn within <= 10 business sessions ---
+        # Only fires when no QE-cumulative episode already covers the same direction
+        # (avoids truncating the seasonal attribution for near-QE episodes).
+        lookback = s.iloc[-(_TGA_THRESHOLD_FAST_SESSIONS + 1):]
+        fast_result: dict[str, Any] | None = None
+        if len(lookback) >= 2:
+            start_val = float(lookback.iloc[0])
+            move = latest_val - start_val  # positive = build, negative = drawdown
+            if abs(move) >= _TGA_THRESHOLD_FAST_BN:
+                direction = "drawdown" if move < 0 else "build"
+                # Suppress if QE episode already covers this direction — prefer the
+                # seasonally-anchored, larger-magnitude read.
+                if qe_result is None or qe_result["direction"] != direction:
+                    magnitude_bn = float(round(abs(move), 1))
+                    episode_start = lookback.index[0].date()
+                    days = len(lookback) - 1
+                    qe_adj = _is_quarter_end_adjacent(episode_start, s.index)
+                    summary_en, summary_zh = _tga_impulse_summary(
+                        direction, magnitude_bn, episode_start, qe_adj
+                    )
+                    fast_result = {
+                        "active": True,
+                        "direction": direction,
+                        "magnitude_bn": magnitude_bn,
+                        "days": days,
+                        "since": str(episode_start),
+                        "quarter_end_adjacent": qe_adj,
+                        "summary_en": summary_en,
+                        "summary_zh": summary_zh,
+                    }
+
+        # Prefer QE-anchored result (larger magnitude, seasonal context).
+        if qe_result is not None:
+            return qe_result
+        if fast_result is not None:
+            return fast_result
 
     except Exception as exc:  # noqa: BLE001
         log.warning("liquidity_plumbing._derive_tga_impulse: error — %s", exc)
@@ -418,13 +434,14 @@ def _tga_impulse_summary(
     """
     mag_str = f"${magnitude_bn:.0f}B"
     since_str = since.strftime("%b %-d")
+    since_zh = f"{since.month}月{since.day}日"
     if direction == "drawdown":
         en = (
             f"Treasury spent down {mag_str} of its cash account since {since_str} — "
             "that cash re-enters the financial system (supportive while it lasts)."
         )
         zh = (
-            f"自{since_str}起，美国财政部已动用现金账户中的{mag_str} — "
+            f"自{since_zh}起，美国财政部已动用现金账户中的{mag_str} — "
             "这部分资金重新流入金融体系（短期内具支撑性）。"
         )
     else:
@@ -433,7 +450,7 @@ def _tga_impulse_summary(
             "that cash is absorbed from the financial system (mild headwind while it lasts)."
         )
         zh = (
-            f"自{since_str}起，美国财政部已向现金账户补充{mag_str} — "
+            f"自{since_zh}起，美国财政部已向现金账户补充{mag_str} — "
             "这部分资金从金融体系中吸收（短期内为温和阻力）。"
         )
     if qe_adj:
