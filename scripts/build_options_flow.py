@@ -30,7 +30,7 @@ import pandas as pd
 
 from collectors import massive_flatfiles as mf
 from engine import options_flow as of
-from lib import config, store
+from lib import config, nyse_calendar, store
 
 log = logging.getLogger(__name__)
 SUMMARY_KEYS = ("spot", "volume", "premium_mn", "net_premium_mn", "pc_ratio", "signed_pc",
@@ -170,10 +170,37 @@ def build() -> list[dict]:
     return manifest
 
 
+def _check_staleness() -> None:
+    """FC-R11: warn (never fail) when the newest summary row is older than the last NYSE session.
+
+    Emits ::warning so GitHub Actions surfaces it in the annotation panel.
+    Uses if/fi logic: only the warning message path has an exit code effect — never the check."""
+    # Use AAPL as the representative ticker (always in universe)
+    newest: date | None = store.last_date("options_flow", "summary_AAPL")
+    if newest is None:
+        log.info("options_flow staleness-check: no summary_AAPL row yet — skip")
+        return
+    try:
+        expected = nyse_calendar.expected_last_session()
+    except Exception as e:  # noqa: BLE001
+        log.debug("options_flow staleness-check: calendar error %s — skip", e)
+        return
+    if newest < expected:
+        import sys
+        msg = (f"options_flow summary is stale: newest row={newest}, "
+               f"expected last session={expected}. "
+               f"Run scripts/backfill_options_flow.py or await the next nightly build.")
+        print(f"::warning ::{msg}", file=sys.stderr)
+        log.warning("options_flow: %s", msg)
+    else:
+        log.info("options_flow staleness-check: ok (newest=%s, expected=%s)", newest, expected)
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     rows = build()
     log.info("options_flow: built %d names", len(rows))
+    _check_staleness()
     return 0
 
 
