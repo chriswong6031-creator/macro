@@ -79,5 +79,5 @@ ci_red_streak:
   # Number of consecutive CI failures before flagging
   streak_threshold: 3
   # Artifact path for CI status (if present)
-  ci_status_artifact: null   # set to a path if a CI status artifact exists
-  notes: "CI-red streak: skipped when ci_status_artifact is null"
+  ci_status_artifact: data/metabolism/ci_status.json   # R-V8-5: wired by immune lane
+  notes: "CI-red streak: written by metabolism_immune.py each run"

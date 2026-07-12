@@ -65,11 +65,12 @@ files:
   # --- V2-A IMMUTABLE configs (R-V2-8) ---
 
   - path: config/metabolism_anomaly.yml
-    sha256: 66ada967b3aeea85df434c174aa3dd63a89e983700ef5be88588540037c9f1c0
+    sha256: 4b73e80310ce3252777591de69228b835428ddc524bf559d21bc1ce03bfaeb5d
     role: anomaly_thresholds
     notes: >
       V2-A anomaly monitor thresholds (R-V2-9). IMMUTABLE operator-ratified
       policy: robust-z K, n_min, z_thresh per sensor. Loop PRs may NOT modify.
+      R-V8-5: ci_status_artifact wired from null to data/metabolism/ci_status.json.
 
   - path: config/fable_mode_core.md
     sha256: 7034195ac0221da208c75e52bf66e4dd0e9e8f8ec7d403c0b6b4dab314dc5c41
