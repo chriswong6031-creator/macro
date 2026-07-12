@@ -315,6 +315,22 @@ jobs:
         run: |
           python -m scripts.build_discovery_confluence \
             || echo "::warning::discovery confluence join failed (non-fatal)"
+      - name: qledger backfill (altdata + radar + policy → claims.jsonl)
+        # ALTDATA_REBOOT W2 (2026-07-12): routes new altdata theses to per-channel
+        # claim families with pre-registered horizon rulers; emits 2 placebo claims
+        # per real altdata claim. Also registers new radar edge_snapshots and policy
+        # theses as qledger claims. Idempotent — stable claim_ids prevent duplicates.
+        # Runs AFTER collectors (data/altdata/theses.jsonl must be fresh) and BEFORE
+        # commit data (so claims.jsonl is committed in the same push). Non-fatal.
+        run: |
+          set +e
+          python -m scripts.backfill_qledger_us \
+            > "$RUNNER_TEMP/backfill_qledger_us.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/backfill_qledger_us.log"
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=backfill_qledger_us::rc=$rc (non-fatal)"
+          fi
+          exit 0
       - name: commit data
         run: |
           git config user.name "dashboard-bot"

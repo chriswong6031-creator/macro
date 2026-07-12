@@ -1081,6 +1081,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: qledger cluster-honest Wilson CI unit tests
         run: python -m pytest tests/test_qledger_cluster_honest_ci.py -q
+      - name: altdata reboot W2 — per-channel family routing + placebo tests
+        run: python -m pytest tests/test_altdata_reboot_families.py -q
 
   altdata-new-sources:
     # altdata-W1: new free altdata sources — Finnhub transcript metadata catalog
