@@ -70,11 +70,14 @@ max_probation_lobes: 5            # max simultaneous probation lobes (anti-casca
 
 # ── Genesis-specific caps (R-V6-3 — W2 genesis gauntlet) ─────────────────────
 #
-# max_genesis_per_cycle: at most this many new-lobe charters may be granted in
-# a single metabolism cycle.  Set to 1 — one unproven newborn at a time.
-# Enforced by _genesis_screen in engine/metabolism/adjudicate.py.
-# IMMUTABLE: loop PRs cannot modify this.
-max_genesis_per_cycle: 1          # one new lobe per cycle maximum (R-V6-3b)
+# There is deliberately NO per-cycle genesis count cap (operator directive
+# 2026-07-12): genesis throughput is gated on QUALITY + CAPACITY, never on a
+# count — good charters are not throttled; each one independently needs the
+# scout evidence floor, the deterministic genesis screen, and its own two-key
+# grant.  The binding capacity is max_probation_lobes above: a newborn lands
+# in probation, so at most that many unproven newborns can exist at once
+# (grants earlier in the same cycle consume slots immediately).  Enforced by
+# _genesis_screen in engine/metabolism/adjudicate.py (R-V6-3b revised).
 
 # genesis_accountability_days: a genesis lobe that produces ZERO matured
 # (graded) contracts within this many days triggers a demotion docket from the

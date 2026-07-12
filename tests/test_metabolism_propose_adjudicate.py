@@ -784,22 +784,22 @@ class TestProposeKindVocabulary:
 # R-V6-3 — genesis deterministic screen
 # ===========================================================================
 
-def _make_minimal_budget_yml(tmp_path: Path, max_active: int = 66, max_genesis: int = 1) -> None:
+def _make_minimal_budget_yml(tmp_path: Path, max_active: int = 66,
+                             max_probation: int = 5) -> None:
     """Write a minimal metabolism_budget.yml for genesis screen tests."""
     config_dir = tmp_path / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
     content = (
         "schema: metabolism_budget.v1\n"
         f"max_active_nonscored_lobes: {max_active}\n"
-        f"max_probation_lobes: 5\n"
-        f"max_genesis_per_cycle: {max_genesis}\n"
+        f"max_probation_lobes: {max_probation}\n"
         "genesis_accountability_days: 45\n"
     )
     (config_dir / "metabolism_budget.yml").write_text(content, encoding="utf-8")
 
 
-def _make_lobe_charters(tmp_path: Path, n_active: int = 0) -> None:
-    """Write lobe_charters.yml with n_active display-tier active lobes."""
+def _make_lobe_charters(tmp_path: Path, n_active: int = 0, n_probation: int = 0) -> None:
+    """Write lobe_charters.yml with n_active active + n_probation probation lobes."""
     config_dir = tmp_path / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
     charters = {}
@@ -808,6 +808,12 @@ def _make_lobe_charters(tmp_path: Path, n_active: int = 0) -> None:
             "lobe_id": f"lobe_{i:03d}",
             "tier": "display",
             "lifecycle_state": "active",
+        }
+    for i in range(n_probation):
+        charters[f"newborn_{i:03d}"] = {
+            "lobe_id": f"newborn_{i:03d}",
+            "tier": "display",
+            "lifecycle_state": "probation",
         }
     data = {
         "schema": "lobe_charters.v1",
@@ -935,17 +941,28 @@ class TestGenesisScreen:
         r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path)
         assert r["allow"] is True, f"Expected allow=True; got: {r['reason']}"
 
-    # (b) Rate limit
+    # (b) Probation capacity (R-V6-3b REVISED: quality + capacity, never a count)
 
-    def test_rate_limit_deny_second_charter(self, tmp_path):
-        """R-V6-3b: deny a second charter grant in the same cycle."""
-        _make_minimal_budget_yml(tmp_path, max_active=66, max_genesis=1)
-        _make_lobe_charters(tmp_path, n_active=0)
-        # Plant a prior charter grant in the governance log
+    def test_probation_slots_full_denies(self, tmp_path):
+        """R-V6-3b: deny when unproven newborns already fill max_probation_lobes."""
+        _make_minimal_budget_yml(tmp_path, max_active=66, max_probation=2)
+        _make_lobe_charters(tmp_path, n_active=0, n_probation=2)
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict()
+        r = _genesis_screen(prop, cycle_id="cyc-slots", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is False
+        assert "probation slots full" in r["reason"]
+        assert "R-V6-3b" in r["reason"]
+
+    def test_same_cycle_grants_consume_slots(self, tmp_path):
+        """Grants earlier in THIS cycle consume probation slots immediately —
+        two charters in one cycle both pass ONLY while slots remain."""
+        _make_minimal_budget_yml(tmp_path, max_active=66, max_probation=2)
+        _make_lobe_charters(tmp_path, n_active=0, n_probation=1)
         (tmp_path / "data" / "neuralweb").mkdir(parents=True, exist_ok=True)
         gov_row = {
             "event_type": "metabolism_adjudication",
-            "target": "metabolism_proposal:cyc-rl:pid-first",
+            "target": "metabolism_proposal:cyc-multi:pid-first",
             "after": {
                 "role": "orchestrator",
                 "decision": "grant",
@@ -958,19 +975,43 @@ class TestGenesisScreen:
         gov_path.write_text(json.dumps(gov_row) + "\n", encoding="utf-8")
         from engine.metabolism.adjudicate import _genesis_screen
         prop = _charter_proposal_dict()
-        r = _genesis_screen(prop, cycle_id="cyc-rl", docket=_empty_docket(), root=tmp_path)
+        # 1 probation + 1 grant this cycle >= 2 slots → deny
+        r = _genesis_screen(prop, cycle_id="cyc-multi", docket=_empty_docket(), root=tmp_path)
         assert r["allow"] is False
-        assert "rate limit" in r["reason"]
-        assert "R-V6-3b" in r["reason"]
+        assert "probation slots full" in r["reason"]
 
-    def test_rate_limit_allow_first_charter_in_cycle(self, tmp_path):
-        """First charter in a cycle passes the rate-limit gate."""
-        _make_minimal_budget_yml(tmp_path, max_active=66, max_genesis=1)
-        _make_lobe_charters(tmp_path, n_active=0)
+    def test_multiple_charters_allowed_when_capacity(self, tmp_path):
+        """NO per-cycle count cap: with open slots, a second charter in the
+        same cycle passes (operator directive 2026-07-12 — quality-gated,
+        not count-throttled)."""
+        _make_minimal_budget_yml(tmp_path, max_active=66, max_probation=5)
+        _make_lobe_charters(tmp_path, n_active=0, n_probation=1)
+        (tmp_path / "data" / "neuralweb").mkdir(parents=True, exist_ok=True)
+        gov_row = {
+            "event_type": "metabolism_adjudication",
+            "target": "metabolism_proposal:cyc-cap:pid-first",
+            "after": {"role": "orchestrator", "decision": "grant",
+                      "kind": "charter", "tier": "T0"},
+            "note": "orchestrator grant for T0 charter proposal",
+        }
+        (tmp_path / "data" / "neuralweb" / "governance.jsonl").write_text(
+            json.dumps(gov_row) + "\n", encoding="utf-8")
         from engine.metabolism.adjudicate import _genesis_screen
         prop = _charter_proposal_dict()
-        r = _genesis_screen(prop, cycle_id="cyc-fresh", docket=_empty_docket(), root=tmp_path)
-        assert r["allow"] is True, f"Expected allow=True for first charter; got: {r['reason']}"
+        # 1 probation + 1 grant = 2 < 5 slots → allow
+        r = _genesis_screen(prop, cycle_id="cyc-cap", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is True, f"Expected allow with open slots; got: {r['reason']}"
+
+    def test_unreadable_charters_fails_closed(self, tmp_path):
+        """An unreadable roster must never admit a newborn."""
+        _make_minimal_budget_yml(tmp_path, max_active=66, max_probation=5)
+        config_dir = tmp_path / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        (config_dir / "lobe_charters.yml").write_text("{{{not yaml", encoding="utf-8")
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict()
+        r = _genesis_screen(prop, cycle_id="cyc-bad", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is False
 
     # (c) CHF-family deferral
 
@@ -1223,12 +1264,14 @@ class TestAdversaryChartercaseLaw:
 class TestBudgetKeys:
     """Verify the new genesis budget keys are present and correctly typed."""
 
-    def test_budget_has_max_genesis_per_cycle(self, tmp_path):
+    def test_budget_has_no_per_cycle_genesis_cap(self, tmp_path):
+        """R-V6-3b REVISED: genesis is capacity-gated (max_probation_lobes),
+        never count-gated — the retired key must stay retired."""
         from engine.metabolism.adjudicate import _load_genesis_budget
-        _make_minimal_budget_yml(tmp_path, max_genesis=1)
+        _make_minimal_budget_yml(tmp_path)
         budget = _load_genesis_budget(tmp_path)
-        assert "max_genesis_per_cycle" in budget
-        assert int(budget["max_genesis_per_cycle"]) == 1
+        assert "max_genesis_per_cycle" not in budget
+        assert int(budget["max_probation_lobes"]) == 5
 
     def test_budget_has_genesis_accountability_days(self, tmp_path):
         config_dir = tmp_path / "config"
@@ -1237,7 +1280,6 @@ class TestBudgetKeys:
             "schema: metabolism_budget.v1\n"
             "max_active_nonscored_lobes: 66\n"
             "max_probation_lobes: 5\n"
-            "max_genesis_per_cycle: 1\n"
             "genesis_accountability_days: 45\n"
         )
         (config_dir / "metabolism_budget.yml").write_text(content, encoding="utf-8")
@@ -1253,11 +1295,11 @@ class TestBudgetKeys:
         path = root / "config" / "metabolism_budget.yml"
         assert path.exists(), "config/metabolism_budget.yml not found"
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
-        assert "max_genesis_per_cycle" in data, (
-            "config/metabolism_budget.yml missing max_genesis_per_cycle"
+        assert "max_genesis_per_cycle" not in data, (
+            "per-cycle genesis cap retired (R-V6-3b revised) — must stay retired"
         )
         assert "genesis_accountability_days" in data, (
             "config/metabolism_budget.yml missing genesis_accountability_days"
         )
-        assert int(data["max_genesis_per_cycle"]) == 1
         assert int(data["genesis_accountability_days"]) == 45
+        assert int(data["max_probation_lobes"]) >= 1
