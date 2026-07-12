@@ -82,20 +82,35 @@ _FRED_RELEASE_ID: dict[str, int] = {
 }
 
 # per-type display metadata. impact = DISPLAY tier only (see module docstring).
+# label_zh = ZH display twin (bilingual parity, docs/DESIGN_DOCTRINE.md) — every
+# emitted event carries label + label_zh so no template needs its own enum map.
 _META: dict[str, dict] = {
-    "FOMC":     {"time_et": "14:00", "impact": "high", "label": "FOMC rate decision"},
-    "CPI":      {"time_et": "08:30", "impact": "high", "label": "CPI (consumer prices)"},
-    "PPI":      {"time_et": "08:30", "impact": "high", "label": "PPI (producer prices)"},
-    "NFP":      {"time_et": "08:30", "impact": "high", "label": "Jobs report (nonfarm payrolls)"},
-    "GDP":      {"time_et": "08:30", "impact": "high", "label": "GDP (BEA estimate)"},
-    "PCE":      {"time_et": "08:30", "impact": "high", "label": "PCE / personal income (BEA)"},
-    "CLAIMS":   {"time_et": "08:30", "impact": "med",  "label": "Initial jobless claims"},
-    "ISM_MFG":  {"time_et": "10:00", "impact": "med",  "label": "ISM Manufacturing PMI"},
-    "ISM_SVC":  {"time_et": "10:00", "impact": "med",  "label": "ISM Services PMI"},
-    "OPEX":     {"time_et": "16:00", "impact": "med",  "label": "Options expiration"},
-    "AUCTION":  {"time_et": "13:00", "impact": "med",  "label": "Treasury auction"},
-    "OPEC":     {"time_et": "",      "impact": "med",  "label": "OPEC ministerial meeting"},
-    "EIA_WPSR": {"time_et": "10:30", "impact": "med",  "label": "EIA crude/petroleum inventories"},
+    "FOMC":     {"time_et": "14:00", "impact": "high", "label": "FOMC rate decision",
+                 "label_zh": "美联储议息会议"},
+    "CPI":      {"time_et": "08:30", "impact": "high", "label": "CPI (consumer prices)",
+                 "label_zh": "消费者物价指数（CPI）"},
+    "PPI":      {"time_et": "08:30", "impact": "high", "label": "PPI (producer prices)",
+                 "label_zh": "生产者物价指数（PPI）"},
+    "NFP":      {"time_et": "08:30", "impact": "high", "label": "Jobs report (nonfarm payrolls)",
+                 "label_zh": "非农就业报告"},
+    "GDP":      {"time_et": "08:30", "impact": "high", "label": "GDP (BEA estimate)",
+                 "label_zh": "GDP 数据"},
+    "PCE":      {"time_et": "08:30", "impact": "high", "label": "PCE / personal income (BEA)",
+                 "label_zh": "PCE 物价指数"},
+    "CLAIMS":   {"time_et": "08:30", "impact": "med",  "label": "Initial jobless claims",
+                 "label_zh": "初请失业金"},
+    "ISM_MFG":  {"time_et": "10:00", "impact": "med",  "label": "ISM Manufacturing PMI",
+                 "label_zh": "ISM 制造业 PMI"},
+    "ISM_SVC":  {"time_et": "10:00", "impact": "med",  "label": "ISM Services PMI",
+                 "label_zh": "ISM 服务业 PMI"},
+    "OPEX":     {"time_et": "16:00", "impact": "med",  "label": "Options expiration",
+                 "label_zh": "期权到期日"},
+    "AUCTION":  {"time_et": "13:00", "impact": "med",  "label": "Treasury auction",
+                 "label_zh": "国债拍卖"},
+    "OPEC":     {"time_et": "",      "impact": "med",  "label": "OPEC ministerial meeting",
+                 "label_zh": "OPEC 部长级会议"},
+    "EIA_WPSR": {"time_et": "10:30", "impact": "med",  "label": "EIA crude/petroleum inventories",
+                 "label_zh": "EIA 原油库存周报"},
 }
 
 # OPEC + EIA holiday-slip skeleton (commodity scope; refresh annually).
@@ -252,6 +267,20 @@ def _normalize_term(security_type: str, term: str) -> str:
     return f"{bench}-Year {security_type}"
 
 
+_SEC_TYPE_ZH = {"Note": "国债", "Bond": "国债",
+                "TIPS": "通胀保值国债（TIPS）", "FRN": "浮息国债（FRN）"}
+
+
+def _normalize_term_zh(security_type: str, term: str) -> str:
+    """ZH twin of _normalize_term ('20-Year Bond' -> '20年期国债')."""
+    import re
+    label = _normalize_term(security_type, term)
+    m = re.match(r"(\d+)-Year (Note|Bond|TIPS|FRN)$", label)
+    if not m:
+        return label
+    return f"{m.group(1)}年期{_SEC_TYPE_ZH[m.group(2)]}"
+
+
 def _auction_cache_path(today: date) -> Path:
     cdir = config.ROOT / "data/macro/auction_cache"
     try:
@@ -306,6 +335,8 @@ def _auction_events(today: date, end: date) -> list[dict]:
         seen.add(key)
         out.append(_event("AUCTION", d,
                           label=f"{label_term} auction" + (" (reopening)" if reopen else ""),
+                          label_zh=_normalize_term_zh(rec["securityType"], rec.get("securityTerm", ""))
+                                   + "拍卖" + ("（续发行）" if reopen else ""),
                           assets=["bonds"]))
     return out
 
@@ -314,14 +345,20 @@ def _auction_events(today: date, end: date) -> list[dict]:
 # event constructor
 # --------------------------------------------------------------------------- #
 def _event(etype: str, d: date, *, label: str | None = None, tag: str = "",
+           label_zh: str | None = None, tag_zh: str | None = None,
            assets: list[str] | None = None, time_et: str | None = None,
            source: str = "computed") -> dict:
     meta = _META.get(etype, {})
+    en = (label if label is not None else meta.get("label", etype))
+    # ZH twin: explicit > per-type meta > EN label (never empty). tag_zh mirrors tag
+    # unless the call site supplies a translated one.
+    zh = (label_zh if label_zh is not None else meta.get("label_zh") or en)
     ev = {
         "type": etype,
         "date": d.isoformat(),
         "time_et": meta.get("time_et", "") if time_et is None else time_et,
-        "label": (label if label is not None else meta.get("label", etype)) + tag,
+        "label": en + tag,
+        "label_zh": zh + (tag_zh if tag_zh is not None else tag),
         "impact": meta.get("impact", "med"),
         "source": source,
         "is_context_only": True,
@@ -347,6 +384,7 @@ def us_macro_events(today: date | None = None, horizon_days: int = 14,
         d = date.fromisoformat(ds)
         if today <= d <= end:
             out.append(_event("FOMC", d, tag=" (SEP · dot-plot)" if is_sep else "",
+                              tag_zh="（SEP · 点阵图）" if is_sep else "",
                               source="static"))
 
     # tabulated releases (FRED override -> static CY2026 fallback)
@@ -375,7 +413,8 @@ def us_macro_events(today: date | None = None, horizon_days: int = 14,
         if today <= d <= end:
             quad = is_quad_witching(d)
             out.append(_event("OPEX", d,
-                              label="Quad-witching expiration" if quad else "Options expiration"))
+                              label="Quad-witching expiration" if quad else "Options expiration",
+                              label_zh="四巫日期权到期" if quad else "期权到期日"))
 
     # Treasury coupon auctions (keyless TreasuryDirect feed)
     out.extend(_auction_events(today, end))
@@ -398,7 +437,9 @@ def commodity_events(today: date | None = None, horizon_days: int = 14) -> list[
         d = date.fromisoformat(ds)
         if today <= d <= end:
             out.append(_event("FOMC", d, label="FOMC decision",
+                              label_zh="美联储议息决议",
                               tag=" (SEP)" if is_sep else "",
+                              tag_zh="（SEP）" if is_sep else "",
                               assets=metals_energy, source="static"))
     for ds in _OPEC_2026:
         d = date.fromisoformat(ds)
@@ -434,7 +475,8 @@ def high_impact_strip(today: date | None = None, horizon_days: int = 14) -> list
             continue
         d = date.fromisoformat(ev["date"])
         out.append({**ev, "dow": _DOW[d.weekday()],
-                    "md": f"{_MON[d.month]} {d.day}"})
+                    "md": f"{_MON[d.month]} {d.day}",
+                    "md_zh": f"{d.month}月{d.day}日"})
     return out
 
 

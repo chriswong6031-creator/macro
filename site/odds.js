@@ -1169,7 +1169,7 @@
         initTabs();
         initReactivity();
         renderRail();
-        /* ?t=NVDA deep link — validated against the universe, else default SPY */
+        /* ?t=NVDA deep link — checked against the universe, else default SPY */
         var qt = "";
         try { qt = (new URLSearchParams(location.search).get("t") || "").trim().toUpperCase(); } catch (e) { qt = ""; }
         var inUni = qt && cat.universe.some(function (u) { return u.t === qt; });

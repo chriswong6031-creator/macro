@@ -185,8 +185,46 @@ def test_auction_events_parse(monkeypatch):
     evs = ec._auction_events(T, date(2026, 6, 28))
     labels = sorted(e["label"] for e in evs)
     assert labels == ["20-Year Bond auction (reopening)", "7-Year Note auction"]
+    labels_zh = sorted(e["label_zh"] for e in evs)
+    assert labels_zh == ["20年期国债拍卖（续发行）", "7年期国债拍卖"]
     for e in evs:
         assert e["type"] == "AUCTION" and e["impact"] == "med" and e["is_context_only"] is True
+
+
+# --------------------------------------------------------------------------- #
+# bilingual parity (docs/DESIGN_DOCTRINE.md) — every event carries label_zh
+# --------------------------------------------------------------------------- #
+def _has_cjk(s: str) -> bool:
+    return any("一" <= c <= "鿿" for c in s)
+
+
+def test_every_event_carries_label_zh(monkeypatch):
+    _no_auctions(monkeypatch)
+    for e in ec.us_macro_events(T, 30, use_fred=False) + ec.commodity_events(T, 30):
+        assert e.get("label_zh"), f"missing label_zh on {e['type']}"
+        assert _has_cjk(e["label_zh"]), e
+
+
+def test_fomc_sep_tag_translated(monkeypatch):
+    """The SEP/dot-plot tag must not leak the EN tag into the ZH label."""
+    _no_auctions(monkeypatch)
+    ev = next(e for e in ec.us_macro_events(date(2026, 6, 1), 30, use_fred=False)
+              if e["type"] == "FOMC")
+    assert "点阵图" in ev["label_zh"] and "dot-plot" not in ev["label_zh"]
+
+
+def test_opex_quad_witching_label_zh(monkeypatch):
+    _no_auctions(monkeypatch)
+    opex = next(e for e in ec.us_macro_events(date(2026, 6, 15), 7, use_fred=False)
+                if e["type"] == "OPEX")
+    assert opex["label"] == "Quad-witching expiration"
+    assert opex["label_zh"] == "四巫日期权到期"
+
+
+def test_high_impact_strip_md_zh(monkeypatch):
+    _no_auctions(monkeypatch)
+    strip = ec.high_impact_strip(T, 14)
+    assert any(s["type"] == "FOMC" and s["md_zh"] == "6月17日" for s in strip)
 
 
 if __name__ == "__main__":

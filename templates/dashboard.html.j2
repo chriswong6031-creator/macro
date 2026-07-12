@@ -3783,9 +3783,18 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
           {% endfor %}
         </div>
         {% endif %}
-        {# "What faded" chips removed (verify F5): the engine emits `deescalation` (a
-           status dict), never a `deescalated` chip list — the block could never render.
-           If de-escalation chips are wanted, build the list engine-side first. #}
+        {# "What faded" chips — engine-side deescalation.deescalated list (context
+           narration mirroring the rrx card's line; NOT an all-clear). Absent on
+           pre-list artifacts (stale VM pickle) → renders nothing. #}
+        {% set _b2_faded = ((latest.risk_radar.get('deescalation') or {}).get('deescalated') or []) if (latest.risk_radar is defined and latest.risk_radar) else [] %}
+        {% if _b2_faded %}
+        <div class="mx4-bzone-risk-faded">
+          <span><span class="l-en">What faded:</span><span class="l-zh">已消退：</span></span>
+          {% for d in _b2_faded[:3] %}
+          <span><span class="l-en">{{ d.label_en }}</span><span class="l-zh">{{ d.label_zh or d.label_en }}</span>{% if d['from'] is number and d['to'] is number %}&nbsp;{{ d['from']|round|int }}→{{ d['to']|round|int }}{% endif %}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
         <div class="sxg-face-sub" style="color:var(--ink-3);font-size:10px">
           <span class="l-en">Tap for full risk breakdown</span>
           <span class="l-zh">点击查看完整风险分析</span>
@@ -3827,14 +3836,10 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             </span>
           </div>
           {% endif %}
-          {# Row 3: event risk if near-dated — engine emits when_en/when_zh (no bare
-             `when`) and no label_zh; ZH label maps from the release-type enum. #}
+          {# Row 3: event risk if near-dated — engine emits label_zh (event_calendar
+             _META); EN-label fallback covers pre-label_zh artifacts (stale VM pickle). #}
           {% if event_risk is defined and event_risk and event_risk.get('show') %}
-          {% set _evr_zh_lbl = {
-            'CPI':'消费者物价指数（CPI）','PPI':'生产者物价指数（PPI）','FOMC':'美联储议息会议',
-            'NFP':'非农就业报告','CLAIMS':'初请失业金','GDP':'GDP 数据','PCE':'PCE 物价指数',
-            'RETAIL':'零售销售','OPEX':'期权到期日','AUCTION':'国债拍卖',
-          }.get(event_risk.get('type',''), event_risk.get('label','待发事件')) %}
+          {% set _evr_zh_lbl = event_risk.get('label_zh') or event_risk.get('label', '待发事件') %}
           <div class="mx4-todo-row">
             <span class="mx4-todo-dot" style="--todo-dot-color:var(--warn)"></span>
             <span class="mx4-todo-text">
@@ -4073,7 +4078,8 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       <div class="sx-glance mx2-events-glance">
         {% if macro_catalysts %}
         {% for c in macro_catalysts[:2] %}
-        <span class="v2chip {{ 'c-warn' if c.impact == 'high' else 'c-info' }}">{{ c.label[:22] }}{% if c.label|length > 22 %}…{% endif %} {{ _mos2[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</span>
+        {% set _ev_zh = c.get('label_zh') or c.label %}
+        <span class="v2chip {{ 'c-warn' if c.impact == 'high' else 'c-info' }}"><span class="l-en">{{ c.label[:22] }}{% if c.label|length > 22 %}…{% endif %}</span><span class="l-zh">{{ _ev_zh[:14] }}{% if _ev_zh|length > 14 %}…{% endif %}</span> {{ _mos2[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</span>
         {% endfor %}
         {% endif %}
         {% if prediction_markets and prediction_markets.events %}
@@ -4106,7 +4112,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
         {% for c in macro_catalysts[:4] %}
         <div class="sxg-evcal-row">
           <span class="sxg-evcal-date">{{ _mos2[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</span>
-          <span class="sxg-evcal-label">{{ c.label }}</span>
+          <span class="sxg-evcal-label"><span class="l-en">{{ c.label }}</span><span class="l-zh">{{ c.get('label_zh') or c.label }}</span></span>
           {% if c.impact == 'high' %}<span class="sxg-evcal-imp high"><span class="l-en">HIGH</span><span class="l-zh">高</span></span>
           {% elif c.impact == 'med' %}<span class="sxg-evcal-imp med"><span class="l-en">MED</span><span class="l-zh">中</span></span>{% endif %}
         </div>
@@ -4140,7 +4146,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
           {% for c in macro_catalysts[:8] %}
           <div class="isle-ev-cal-card{{ ' hot' if c.impact == 'high' else '' }} isle-stagger isle-s{{ loop.index if loop.index <= 4 else '4' }}">
             <div class="isle-ev-cal-date">{{ _mos2[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</div>
-            <div class="isle-ev-cal-title">{{ c.label }}</div>
+            <div class="isle-ev-cal-title"><span class="l-en">{{ c.label }}</span><span class="l-zh">{{ c.get('label_zh') or c.label }}</span></div>
             <div class="isle-ev-cal-meta">
               {% if c.time_et %}<span style="color:var(--muted);font-size:10px">{{ c.time_et }} ET</span>{% endif %}
               {% if c.impact == 'high' %}<span class="v2chip c-warn" style="font-size:9px;padding:1px 5px">{{ t('HIGH','高') }}</span>{% elif c.impact == 'med' %}<span class="v2chip c-info" style="font-size:9px;padding:1px 5px">{{ t('MED','中') }}</span>{% endif %}
@@ -6920,7 +6926,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
           <div class="nb-foot">
             <a href="news.html" style="color:var(--link);font-weight:700">{{ t('Open the full news feed','打开完整新闻流') }} →</a>
             {% if macro_news.n_kept %}<span>{{ macro_news.n_kept }} {{ t('stories kept','保留条目') }}{% if macro_news.n_raw %} · {{ macro_news.n_raw }} {{ t('scanned','已扫描') }}{% endif %}</span>{% endif %}
-            {% if macro_catalysts %}<span class="nb-cat" style="margin-left:auto">{{ t('Next catalyst','下个催化') }}: <b>{{ macro_catalysts[0].date }}</b> {{ macro_catalysts[0].type }} {{ macro_catalysts[0].label }}</span>{% endif %}
+            {% if macro_catalysts %}<span class="nb-cat" style="margin-left:auto">{{ t('Next catalyst','下个催化') }}: <b>{{ macro_catalysts[0].date }}</b> {{ macro_catalysts[0].type }} <span class="l-en">{{ macro_catalysts[0].label }}</span><span class="l-zh">{{ macro_catalysts[0].get('label_zh') or macro_catalysts[0].label }}</span></span>{% endif %}
           </div>
           {% else %}
           <p class="muted sm">{{ t('No macro headlines right now — the fetch is off or the tape is quiet. Catalysts above remain live.','暂无宏观头条 — 抓取关闭或行情平静。上方日程仍保持更新。') }}</p>
@@ -7400,7 +7406,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       {% for c in macro_catalysts[:8] %}
       <div class="cal-ev cal-{{ c.impact }}">
         <div class="cal-date">{{ _mos[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</div>
-        <div class="cal-lbl">{{ c.label }}</div>
+        <div class="cal-lbl"><span class="l-en">{{ c.label }}</span><span class="l-zh">{{ c.get('label_zh') or c.label }}</span></div>
         <div class="cal-meta">{% if c.time_et %}{{ c.time_et }} ET{% endif %}{% if c.impact == 'high' %} · {{ t('high impact','高影响') }}{% endif %}</div>
       </div>
       {% endfor %}
@@ -8076,7 +8082,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
     <div class="nb-foot">
       <a href="news.html" style="color:var(--link);font-weight:700">{{ t('Open the full news feed','打开完整新闻流') }} →</a>
       {% if macro_news.n_kept %}<span>{{ macro_news.n_kept }} {{ t('stories kept','保留条目') }}{% if macro_news.n_raw %} · {{ macro_news.n_raw }} {{ t('scanned','已扫描') }}{% endif %}</span>{% endif %}
-      {% if macro_catalysts %}<span class="nb-cat" style="margin-left:auto">{{ t('Next catalyst','下个催化') }}: <b>{{ macro_catalysts[0].date }}</b> {{ macro_catalysts[0].type }} {{ macro_catalysts[0].label }}</span>{% endif %}
+      {% if macro_catalysts %}<span class="nb-cat" style="margin-left:auto">{{ t('Next catalyst','下个催化') }}: <b>{{ macro_catalysts[0].date }}</b> {{ macro_catalysts[0].type }} <span class="l-en">{{ macro_catalysts[0].label }}</span><span class="l-zh">{{ macro_catalysts[0].get('label_zh') or macro_catalysts[0].label }}</span></span>{% endif %}
     </div>
     {% else %}
     <p class="muted sm">{{ t('No macro headlines right now — the fetch is off or the tape is quiet. Catalysts above remain live.','暂无宏观头条 — 抓取关闭或行情平静。上方日程仍保持更新。') }}</p>
