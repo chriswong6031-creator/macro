@@ -119,6 +119,10 @@ on:
       - "templates/_mag7_panel.html.j2"
       - "templates/_mag7_panel.css.j2"
       - "tests/test_mag7_panel.py"
+      # FL-D FC-R5: cohort flow chips on turn surfaces + cohort_flow.v1 forward ledger.
+      - "engine/basket_turn_watch.py"
+      - "templates/basket_detail.html.j2"
+      - "tests/test_cohort_flow_chips.py"
       # FL-E statement tape (FC-R9): registry schema guard + curated event catalog.
       - "data/statement_tape/registry.jsonl"
       - "scripts/check_statement_tape.py"
@@ -268,6 +272,11 @@ on:
       - "scripts/check_blocklist_drift.py"
       - "tests/test_metabolism_v4_w3_mission.py"
       - "research/DO_NOT_REBUILD.md"
+      # FL-C live-flow ops (FC-R6/R7/R8 + Task 3): two-tier cadence, pinned publish,
+      # daily summary writer, baselines extension.  Pure-code changes; no network.
+      - "scripts/live_flow_poller.py"
+      - "scripts/build_live_flow_baselines.py"
+      - "tests/test_live_flow_tiering.py"
       # Causal Hypothesis Factory (CHF) + Signal Foundry brainstorm: ten test files wired
       # via the causal-factory job, plus every non-neuralweb module surface they import.
       # engine/neuralweb/** above already covers the causal_* engine modules and cortex.
@@ -582,6 +591,7 @@ jobs:
           tests/test_ignition_persistence.py
           tests/test_mag7_panel.py
           tests/test_index_momentum.py
+          tests/test_cohort_flow_chips.py
           tests/test_statement_tape.py
           tests/test_backfill_options_flow.py -q
 
@@ -1187,3 +1197,19 @@ jobs:
         run: pip install pytest pandas pyarrow jinja2 pyyaml
       - name: basket staleness warn tests
         run: python -m pytest tests/test_basket_staleness_warn.py -q
+
+  live-flow-ops:
+    # FL-C (FC-R6/R7/R8 + Task 3): live-flow lane ops test suite.
+    # Tests two-tier cadence, max_concurrent env override, pinned-publish
+    # guarantee, and end-of-session daily summary writer.
+    # Network-free: no ThetaData, no R2, no Polygon calls.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyyaml pyarrow
+      - name: live flow ops test suite
+        run: python -m pytest tests/test_live_flow_tiering.py -v
