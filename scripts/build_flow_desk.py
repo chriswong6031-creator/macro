@@ -10,8 +10,9 @@ Reads:
   data/flows/etf_flow_proxy.parquet        — sector-ETF creation/redemption proxy
 
 Writes:
-  site/flow_desk.json      — data payload (Market Tide + sector heatmap + top movers + ETF)
+  site/flow_desk.json      — data payload (Market Tide + cohorts + sector heatmap + top movers + ETF)
   site/flow_desk.html      — page (rendered from templates/flow_desk.html.j2)
+  site/flowdata/cohorts.json — cohort-level snapshot + 10-session sparklines (FL-B)
 
 Display-tier only — never feeds any score or rank path.
 Coverage + lag labels are emitted in the JSON and rendered in the HTML.
@@ -41,6 +42,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader
 from lib import config
+from engine.flow_cohorts import build_cohorts
 
 log = logging.getLogger(__name__)
 
@@ -482,6 +484,15 @@ def build() -> dict:
     top_movers = build_top_movers(flow_rows, site_dir=site_dir)
     etf_tile = build_etf_tile(data_dir)
 
+    # FL-B: cohort-level aggregation (Mag7 / Memory / AI chips / Software)
+    site_flowdata_dir = site_dir / "flowdata"
+    try:
+        cohorts = build_cohorts(data_dir, site_flowdata_dir=site_flowdata_dir)
+        log.info("flow_desk: cohorts built — %d cohorts", len(cohorts))
+    except Exception as e:  # noqa: BLE001
+        log.warning("flow_desk: cohort build failed (non-fatal): %s", e)
+        cohorts = []
+
     payload = {
         "schema": "flow_desk.v1",
         "built": str(date.today()),
@@ -490,6 +501,7 @@ def build() -> dict:
         "direction_reliable": False,
         "magnitude_reliable": True,
         "direction_note": "net premium direction is SOFT — approximate (minute tick-rule signing)",
+        "cohorts": cohorts,
         "market_tide": market_tide,
         "sector_heatmap": sector_heatmap,
         "top_movers": top_movers,

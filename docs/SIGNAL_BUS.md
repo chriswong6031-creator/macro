@@ -25,10 +25,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | entry-stack-expansion | 2 |
 | factor-intelligence | 5 |
 | fast-turn | 4 |
+| flow-continuity | 2 |
 | flow-leaders-desk | 2 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
+| ihm | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | intraday-flow-tracker | 3 |
@@ -79,7 +81,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 233 |
+| display | 237 |
 | infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
@@ -88,8 +90,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 375 |
-| gitignored-local | 10 |
+| git | 378 |
+| gitignored-local | 11 |
 | r2 | 6 |
 
 ## Artifacts by owner_program
@@ -251,6 +253,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | basket-turn-cohort-grades | `data/basket_turn/cohort_grades.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | tape-disagreement-ledger | `data/basket_turn/disagreement_ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
+### flow-continuity
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| options-flow-cohorts-json | `site/flowdata/cohorts.json` | json | collect | display | 1 | 0 |
+| options-flow-cohorts-parquet | `data/options_flow/cohorts_*.parquet` | parquet | collect | display | 1 | 0 |
+
 ### flow-leaders-desk
 
 | id | path | format | cadence | tier | consumers | external consumers |
@@ -279,6 +288,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | ignition-radar-latest | `data/ignition_radar/latest.json` | json | daily-engine | display | 4 | 0 |
 | ignition-log-us | `data/ignition_log/us_ignition.jsonl` | jsonl | daily-engine | display | 2 | 0 |
+
+### ihm
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| index-momentum-latest | `data/index_momentum/latest.json` | json | daily-engine | display | 1 | 0 |
+| index-momentum-events | `data/index_momentum/events.parquet` | parquet | daily-engine | display | 0 | 0 |
 
 ### institutional-sector-intelligence
 
@@ -1302,6 +1318,20 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `scripts/build_nw_mastermind_context.py`
 - **extra writers:**
   - engine/neuralweb/mastermind_context.py — build_and_write() writes both canonical and site copy
+
+### options-flow-cohorts-json
+
+- **path:** `site/flowdata/cohorts.json`
+- **declared producer:** `engine/flow_cohorts.py`
+- **extra writers:**
+  - scripts/build_flow_desk.py — calls engine.flow_cohorts.build_cohorts(site_flowdata_dir=...)
+
+### options-flow-cohorts-parquet
+
+- **path:** `data/options_flow/cohorts_*.parquet`
+- **declared producer:** `engine/flow_cohorts.py`
+- **extra writers:**
+  - scripts/build_flow_desk.py — calls engine.flow_cohorts.build_cohorts() which writes via store.upsert
 
 ### pick-lab-snapshots
 
