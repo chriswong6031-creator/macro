@@ -1014,6 +1014,10 @@
   .pc-shaken{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W9-A sector-capitulating safety chip (display-only; no rank power) */
   .nb-sector-cap{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+  /* RLT-R6 sector-stance disclosure chip (display-only; no selection/rank/gate effect) */
+  .nb-sec-stance{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+  .nb-sec-stance.ss-caution{background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 40%,transparent)}
+  .nb-sec-stance .help{width:12px;height:12px;font-size:9px;margin-left:3px;border-color:color-mix(in srgb,var(--warn) 50%,var(--muted));color:var(--warn)}
   /* W1.5 earnings-blackout chip (display-only; no rank power; hygiene context) */
   .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W1.5 board-level suppressed-today note */
@@ -8685,6 +8689,16 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             {% if _pc and _pc.get('shaken') %}<span class="nb-postcross pc-shaken" data-tip-en="Post-cross shake-out then recovery: new low after the 3D cross, recovered above the base midpoint, weekly histogram net-rising. Validated on two panels: stop-out −4.6pp vs fresh crosses, upside odds unchanged. Display only — no ranking power." data-tip-zh="交叉后震仓再复苏：3日交叉后创新低，已收复底部中点以上，周线柱状图净上升。两个面板验证：止损率较新鲜交叉低4.6pp，上涨胜率不变。仅供参考——无排名权重。"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>{% endif %}
             {# W9-A sector-capitulating safety chip — stays at rest (OOS-confirmed safety, minority) #}
             {% if n.get('sector_capitulating') %}<span class="nb-sector-cap" data-tip-en="Sector capitulating — {{ '%.0f'|format((n.sector_capitulating.cohort_frac or 0)*100) }}% of {{ n.sector or 'sector' }} peers in weekly washout at build time. Safety context: stop-out −2.7pp (deep panel) / −3.5pp (OOS), sign-stable all splits — safety context, not a ranking signal." data-tip-zh="板块集体回调——{{ '%.0f'|format((n.sector_capitulating.cohort_frac or 0)*100) }}%的{{ n.sector or '板块' }}同类股处于周线深度超卖。安全背景：止损率−2.7pp（深度面板）/−3.5pp（样本外），各拆分均稳定——仅为安全背景参考，不影响排名。"><span class="l-en">Sector capitulating</span><span class="l-zh">板块集体回调</span></span>{% endif %}
+            {# RLT-R6 sector-stance disclosure chip — display only, no selection/rank/gate effect.
+               Shows the sector_central verdict for this stock's GICS sector.
+               When stance is Reduce or Cautious: cautionary style + scroll-safe ? tip explaining
+               the disagreement (single-stock trigger vs sector-level stance). #}
+            {% if n.get('sector_stance') %}
+            {%- set _ss_caution = n.sector_stance in ('Reduce', 'Cautious') -%}
+            <span class="nb-sec-stance{% if _ss_caution %} ss-caution{% endif %}">
+              <span class="l-en">Sector: {{ n.sector_stance }}</span><span class="l-zh">板块：{{ n.sector_stance_zh or n.sector_stance }}</span>{% if _ss_caution %}<span class="help below">?<span class="tip"><span class="l-en">This is a single-stock bottoming trigger. The sector overall reads <b>{{ n.sector_stance }}</b> — it is not a sector call.</span><span class="l-zh">此为个股筑底触发信号。整体板块读数为<b>{{ n.sector_stance_zh or n.sector_stance }}</b>——这不是板块层面的判断。</span></span></span>{% endif %}
+            </span>
+            {% endif %}
             {# 💥 Moving — don't chase (adjudicated UX finding #2 + risk finding #2):
                renders when vol-squeeze already fired (FIRED_UP/EXPANSION) or alpha_entry=extended
                (leader that spiked, reversal risk) AND entry gauge is NOT already
