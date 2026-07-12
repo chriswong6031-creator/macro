@@ -115,18 +115,18 @@
   .igs .igs-theme.running { color: var(--info);
          border-color: color-mix(in srgb, var(--info) 35%, var(--line)); }
   .igs .igs-theme.fading { color: var(--muted); }
-  .igs .igs-xref { font-size: 10.5px; color: var(--muted); cursor: help; white-space: nowrap;
-         padding: 2px 8px; border-radius: 99px; border: 1px dashed var(--line); margin-left: auto; }
-  /* one merged footer: stance token · engine do-line + track record · as-of right */
-  .igs .igs-ft { margin-top: 9px; padding-top: 8px; font-size: 11px; color: var(--muted);
-         border-top: 1px solid color-mix(in srgb, var(--ic-col) 18%, var(--line));
-         display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
-  .igs .igs-stance { font-weight: 800; color: var(--text); text-transform: uppercase;
-         letter-spacing: .04em; font-size: 10.5px; white-space: nowrap; flex: none; }
-  .igs .igs-ft-body { flex: 1 1 320px; min-width: 0; }
-  .igs .igs-asof { flex: none; margin-left: auto; font-size: 10px; opacity: .75;
-         font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .igs .igs-rank { font-size: 10px; font-weight: 800; opacity: .6;
+         font-variant-numeric: tabular-nums; }
+  /* stance token — top row, right-aligned (footer folded into the ? tip 2026-07-11) */
+  .igs .igs-stance { font-weight: 800; color: var(--ic-col); text-transform: uppercase;
+         letter-spacing: .04em; font-size: 10.5px; white-space: nowrap; flex: none;
+         margin-left: auto; padding: 2px 9px; border-radius: 99px;
+         background: color-mix(in srgb, var(--ic-col) 10%, transparent);
+         border: 1px solid color-mix(in srgb, var(--ic-col) 38%, var(--line)); }
+  .igs .igs-asof { flex: none; margin-left: auto; font-size: 10px; color: var(--muted);
+         opacity: .85; font-variant-numeric: tabular-nums; white-space: nowrap; }
   @media (max-width: 560px) {
     .igs .igs-glance { flex-basis: 100%; }
-    .igs .igs-xref { margin-left: 0; }
+    .igs .igs-stance { margin-left: 0; }
+    .igs .igs-asof { margin-left: 0; }
   }

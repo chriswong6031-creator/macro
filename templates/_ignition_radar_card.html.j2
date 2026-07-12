@@ -134,6 +134,11 @@
 {%- set ic = '🚀' if state == 'ignited' else ('🔥' if state == 'warming' else '⚪') -%}
 {%- set regime = ig.regime if ig.regime else {} -%}
 {%- set fragile = regime.fragile if regime.fragile else false -%}
+{%- set fl = ig.forward_log if ig.forward_log else {} -%}
+{%- set xref = ig.radar_xref if ig.radar_xref else {} -%}
+{%- set narrow = ig.narrow if ig.narrow else {} -%}
+{%- set narrow_items = narrow['items'] if narrow['items'] is defined else [] -%}
+{%- set _any_igniting = narrow_items and (narrow_items | selectattr('state', 'equalto', 'igniting') | list | length > 0) -%}
 <div class="panel span12 igs igs-{{ state }}">
   <div class="igs-top">
     <span class="igs-ic">{{ ic }}</span>
@@ -149,10 +154,22 @@
     {%- if nt and nt.score and nt.score >= 0.55 and nt.streak_sessions and nt.streak_sessions >= 3 and state in ('off', 'warming') %}
     <span class="igs-glance"><span class="l-en">{{ nt.name }} running · day {{ nt.streak_sessions }}</span><span class="l-zh">{{ nt.name_zh if nt.name_zh else nt.name }} 持续运行 · 第{{ nt.streak_sessions }}日</span></span>
     {%- endif %}
-    {{ help('Risk-ON evidence gauge — the Risk Radar\'s mirror. Counts eight broad-market signals (breadth thrusts + participation confirms — hover each dot for what it watches) and theme-level turn evidence across the narrative baskets and sector ETFs. Self-graded nightly against what actually happened next; stays display-only until 30+ graded calls and an operator ruling. Evidence, not a buy signal.', '正向风险偏好证据仪表 — 风险雷达的镜像。统计八个大盘信号（广度推进 + 参与度确认 — 悬停各圆点查看含义）及叙事篮子与行业ETF的主题级转折证据。每晚以后续实际走势自评；累计30次评分并经运营员裁定前仅供展示。仅为证据，非买入信号。') }}
+    {#- ONE merged ? receipt (Tier 2): what it counts + today's engine do-line +
+        self-grade status + the Risk Radar cross-read it mirrors. -#}
+    <span class="help">?<span class="tip">
+      <span class="l-en">Gauges the evidence that risk appetite is turning back ON: eight broad-market turn signals plus turn evidence in the hottest theme groups — a theme's rank reflects its checklist, not a price gain.{% if regime.do_en %} Today: {{ regime.do_en }}{% endif %} {% if fl.n_graded and fl.n_graded > 0 %}Self-graded nightly — {{ fl.n_graded }} calls so far{% if fl.broad_tp_rate is defined and fl.broad_tp_rate != none %}, {{ (fl.broad_tp_rate * 100)|round|int }}% of broad calls confirmed{% endif %}.{% else %}Grades its own calls nightly; the track record is still building.{% endif %}{% if xref.state %} Risk-off mirror (macro page) reads: {{ xref.state }}{% if xref.phase %} · {{ xref.phase }}{% endif %}.{% endif %} Evidence, not a buy signal.</span>
+      <span class="l-zh">衡量风险偏好回暖的证据：八个大盘转折信号加最热主题的转折证据 — 主题排名反映清单证据，并非涨幅。{% if regime.do_zh %}今日：{{ regime.do_zh }}{% endif %} {% if fl.n_graded and fl.n_graded > 0 %}每晚自评 — 已评{{ fl.n_graded }}次{% if fl.broad_tp_rate is defined and fl.broad_tp_rate != none %}，大盘判读确认率{{ (fl.broad_tp_rate * 100)|round|int }}%{% endif %}。{% else %}每晚自评，记录仍在积累。{% endif %}{% if xref.state %}风险预警镜像（宏观页）当前读数：{{ xref.state }}{% if xref.phase %} · {{ xref.phase }}{% endif %}。{% endif %}仅为证据，非买入信号。</span>
+    </span></span>
     {%- if regime.label_en %}
     <span class="igs-glance">{% if fragile %}<span class="igs-frag">⚠</span> {% endif %}{{ t(regime.label_en, regime.label_zh) }}</span>
     {%- endif %}
+    {#- Stance token (Law 1) — always visible, deterministic display mapping from
+        engine state; never escalates beyond the engine's own do-line. -#}
+    <span class="igs-stance">
+      {%- if state == 'ignited' %}{{ t('Get ready','做好准备') }}
+      {%- elif state == 'warming' or fragile or _any_igniting %}{{ t("Watch — don't chase",'观望 — 勿追高') }}
+      {%- else %}{{ t('Nothing to act on yet','暂无可操作信号') }}{% endif -%}
+    </span>
   </div>
   <div class="igs-ev">
     {%- if ig.chips %}
@@ -172,48 +189,21 @@
     </span>
     <span class="igs-kcount">{{ ig.k_count|default(0) }} {{ t('of 8 lit','/ 8 亮起') }}</span>
     {%- endif %}
-    {%- set narrow = ig.narrow if ig.narrow else {} %}
-    {%- set narrow_items = narrow['items'] if narrow['items'] is defined else [] %}
     {%- if narrow_items %}
     <span class="igs-div"></span>
-    <span class="igs-k">{{ t('Hottest themes','最热主题') }}</span>
+    <span class="igs-k" data-tip-en="Ranked by turn evidence — how much of each theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit right now. Hover a theme for its read." data-tip-zh="按转折证据排名 — 各主题清单（成分推进、相对强度转折、多周期确认）当前的亮起比例。悬停查看详情。">{{ t('Hottest themes','最热主题') }}</span>
     {%- for it in narrow_items[:3] %}
     {%- set sc = it.ignition_score|default(0) %}
     <span class="igs-theme {{ it.state if it.state else 'idle' }}"
-      data-tip-en="Turn evidence {{ (sc * 100)|round|int }}% — how much of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit right now{% if it.rs_new_high %} · relative strength at a 6-month high{% endif %}{% if it.above_200d_rising %} · above a rising 200-day average{% endif %}"
-      data-tip-zh="转折证据 {{ (sc * 100)|round|int }}% — 该主题清单（成分推进、相对强度转折、多周期确认）当前的亮起比例{% if it.rs_new_high %} · 相对强度创6个月新高{% endif %}{% if it.above_200d_rising %} · 高于上升中的200日均线{% endif %}">
-      {{- it.name if it.name else it.id }} <b>{{ (sc * 100)|round|int }}%</b>
+      data-tip-en="#{{ loop.index }} by turn evidence: {{ (sc * 100)|round|int }}% of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit — evidence, not a price change{% if it.rs_new_high %} · relative strength at a 6-month high{% endif %}{% if it.above_200d_rising %} · above a rising 200-day average{% endif %}"
+      data-tip-zh="转折证据第{{ loop.index }}名：该主题清单（成分推进、相对强度转折、多周期确认）当前亮起{{ (sc * 100)|round|int }}% — 为证据而非涨幅{% if it.rs_new_high %} · 相对强度创6个月新高{% endif %}{% if it.above_200d_rising %} · 高于上升中的200日均线{% endif %}">
+      <span class="igs-rank">#{{ loop.index }}</span> {{ it.name if it.name else it.id }}
       {%- if it.rs_new_high %} 🔺{% endif %}{% if it.above_200d_rising %} ↗{% endif -%}
     </span>
     {%- endfor %}
     {%- endif %}
-    {%- set xref = ig.radar_xref if ig.radar_xref else {} %}
-    {%- if xref.state %}
-    <span class="igs-xref" data-tip-en="The risk-OFF gauge this one mirrors — its current read, from the Macro dashboard." data-tip-zh="本仪表所镜像的风险预警雷达当前读数（见宏观看板）。">{{ t('Risk Radar','风险雷达') }}: {{ xref.state }}{% if xref.phase %} · {{ xref.phase }}{% endif %}</span>
-    {%- endif %}
-  </div>
-  {%- if regime.do_en %}
-  {#- Stance token (Law 1): deterministic display mapping from engine state —
-      never escalates beyond the engine's own do-line. -#}
-  {%- set _any_igniting = narrow_items and (narrow_items | selectattr('state', 'equalto', 'igniting') | list | length > 0) %}
-  <div class="igs-ft">
-    <span class="igs-stance">
-      {%- if state == 'ignited' %}{{ t('Get ready','做好准备') }}
-      {%- elif state == 'warming' or fragile or _any_igniting %}{{ t("Watch — don't chase",'观望 — 勿追高') }}
-      {%- else %}{{ t('Nothing to act on yet','暂无可操作信号') }}{% endif -%}
-    </span>
-    <span class="igs-ft-body">
-    {{ t(regime.do_en, regime.do_zh) }}
-    {%- set fl = ig.forward_log if ig.forward_log else {} %}
-    {%- if fl.n_graded and fl.n_graded > 0 %}
-    · {{ fl.n_graded }} {{ t('calls self-graded so far','次判读已自评') }}{% if fl.broad_tp_rate is defined and fl.broad_tp_rate != none %} — {{ (fl.broad_tp_rate * 100)|round|int }}% {{ t('of broad calls confirmed','的大盘判读获确认') }}{% endif %}
-    {%- else %}
-    · {{ t('still building its self-graded track record','自评记录积累中') }}
-    {%- endif %}
-    </span>
     {%- if ig.as_of %}<span class="igs-asof">{{ t('as of','截至') }} {{ ig.as_of }}</span>{% endif %}
   </div>
-  {%- endif %}
 </div>
 {%- endif %}
 {%- endmacro %}
