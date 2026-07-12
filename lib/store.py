@@ -103,6 +103,60 @@ def upsert(group: str, name: str, new: pd.DataFrame, outlier_col: str | None = N
     return merged
 
 
+def basis_shifted(group: str, name: str, new: pd.DataFrame, col: str = "close",
+                  tol: float = 1e-3) -> bool:
+    """True when a freshly fetched refresh window sits on a DIFFERENT adjustment
+    basis than the stored series — the signature of a dividend/split between
+    fetches. yfinance re-adjusts the WHOLE series at every fetch, so splicing a
+    short re-based window onto stored history strands every pre-window row on a
+    stale basis: seam-crossing returns/SMAs go silently wrong and an unnoticed
+    split is a 10x level step (measured: data/yahoo/SPY.parquet uniformly
+    +0.2576% off a fresh fetch on all 8,382 rows before 2026-05-18 — exactly one
+    dividend of drift). Note upsert(overwrite_overlap=True) cannot fix this
+    class: it makes the fresh pull own its OWN span but never touches rows older
+    than the window.
+
+    Compares ``col`` on the overlap dates; a relative diff > ``tol`` is a shift.
+    NO overlap at all (stored series ended before the window starts) also
+    returns True — the basis is unverifiable and a splice would leave a bar gap.
+    False when nothing is stored yet (fresh name — nothing to corrupt). Never
+    raises: on a comparison error it logs and returns False (old splice
+    behavior). Callers respond by discarding the window and refetching
+    period='max' for the flagged name — ported from the odds-store guard in
+    scripts/build_odds.ensure_store."""
+    try:
+        old = read(group, name)
+        if old is None or old.empty or col not in old.columns or col not in new.columns:
+            return False
+        oc = old[col].dropna()
+        nc = new[col].dropna()
+        if oc.empty or nc.empty:
+            return False
+        idx = pd.to_datetime(nc.index)
+        if getattr(idx, "tz", None) is not None:
+            idx = idx.tz_localize(None)
+        nc = pd.Series(nc.to_numpy(), index=idx.normalize())
+        nc = nc[~nc.index.duplicated(keep="last")]
+        overlap = oc.index.intersection(nc.index)
+        if len(overlap) == 0:
+            log.info("basis guard %s/%s: no overlap between the refresh window and "
+                     "stored history — full refetch required", group, name)
+            return True
+        oc = oc.loc[overlap].astype(float)
+        nv = nc.loc[overlap].astype(float)
+        rel = (oc - nv).abs() / nv.abs().clip(lower=1e-9)
+        worst = float(rel.max())
+        if worst > tol:
+            log.info("basis guard %s/%s: adjustment basis shifted (max overlap diff "
+                     "%.4f%% over %d dates)", group, name, worst * 100.0, len(overlap))
+            return True
+        return False
+    except Exception as e:  # noqa: BLE001 — a guard must never kill the collect
+        log.warning("basis guard %s/%s: comparison failed (%s) — treating as unshifted",
+                    group, name, e)
+        return False
+
+
 def _guard_outliers(group: str, name: str, old: pd.DataFrame, new: pd.DataFrame, col: str) -> pd.DataFrame:
     hist = old[col].dropna()
     if len(hist) < OUTLIER_MIN_OBS:
