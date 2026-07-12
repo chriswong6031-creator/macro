@@ -668,7 +668,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests
+        # beautifulsoup4: test_china_news_engine.py patches bs4.BeautifulSoup on the
+        # official-pages fetch path, and patch() imports the module.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
