@@ -1389,7 +1389,8 @@ jobs:
         # job is the ONLY CI runner of that suite — importorskip would silence the tests.
         # anthropic: test_cortex.py's rate-limit resilience test imports anthropic at
         # runtime to patch anthropic.Anthropic.__init__ (real import, not mocked).
-        run: pip install pytest pandas numpy pyyaml anthropic
+        # pyarrow: SA-W3 accountability suite (#2451) reads parquet inside this job
+        run: pip install pytest pandas numpy pyyaml anthropic pyarrow
       - name: capability-redline selftest (planted secret caught; clean real files pass)
         run: python3 scripts/check_capability_redline.py --selftest
       - name: capability-redline live scan (hard fail on secret values or value-capture)
