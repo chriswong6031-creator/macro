@@ -244,11 +244,15 @@
       '简报为每次主要判断记录倾向 — 标的、方向、时间窗口与证伪条件，并依据实际价格评分。评分次数不足20次时不显示命中率，仅显示校准说明。'
     ) }}
   </div>
-  {# n-floor law (ADB-R12c): calibration_note, not numeric rate, when n < 20 #}
+  {# n-floor law (ADB-R12c): fixed plain-word sentence on visible tier when n < 20;
+     raw artifact calibration_note moves to hover receipt only. #}
   {% if record_panel.get('calibration_note_en') %}
   <p class="record-cal">
     <span class="l-en">{{ record_panel.calibration_note_en }}</span>
     <span class="l-zh">{{ record_panel.calibration_note_zh or record_panel.calibration_note_en }}</span>
+    {% if record_panel.get('calibration_note_raw_en') %}
+    {{ help(record_panel.calibration_note_raw_en, record_panel.calibration_note_raw_zh or record_panel.calibration_note_raw_en) }}
+    {% endif %}
   </p>
   {% endif %}
   {% if record_panel.get('open_leans') %}

@@ -153,13 +153,17 @@ def _gather_context_strip(data_dir: Path) -> dict:
             out["contradiction_line_en"] = "The main signals are pointing the same way."
             out["contradiction_line_zh"] = "主要信号方向一致。"
 
-        # Full technical note goes in the hover receipt
-        sev_summary = ", ".join(f"{k}: {v}" for k, v in by_sev.items()) if by_sev else ""
+        # Full technical counts go in the hover receipt (drop the raw slug list)
+        n_note = by_sev.get("note", 0)
+        n_tension_sev = by_sev.get("tension", 0)
         out["contradiction_tip_en"] = (
-            f"Contradiction count: {n}. By severity: {sev_summary}. "
-            f"Technical note: {note[:200]}"
+            f"Note: {n} signal divergence(s) detected. "
+            f"By severity — tension: {n_tension_sev}, note: {n_note}."
         ).strip()
-        out["contradiction_tip_zh"] = out["contradiction_tip_en"]  # no ZH translation of raw note
+        out["contradiction_tip_zh"] = (
+            f"提示：检测到 {n} 处信号分歧。"
+            f"按严重程度 — 矛盾：{n_tension_sev}，提示：{n_note}。"
+        )
         ok_count += 1
 
     # 3. liquidity_plumbing.json — headline.state in plain words
@@ -311,14 +315,24 @@ def _gather_forward_panel(data_dir: Path, today: date | None = None) -> dict:
     return out
 
 
+_N_FLOOR_NOTE_EN = (
+    "Too few graded calls yet to judge — this is a public track record, not a proven edge."
+)
+_N_FLOOR_NOTE_ZH = (
+    "已评分的判断还太少，暂无法评价——这是公开的判断记录，不是已证明的优势。"
+)
+
+
 def _gather_record_panel(data_dir: Path) -> dict:
     """Panel C: The brief's own record — track_record.json + open theses.
 
-    n-floor LAW (ADB-R12c): if scored_total < 20, never render a numeric hit-rate
-    on the visible tier; render the artifact's calibration_note instead.
+    n-floor LAW (ADB-R12c): if scored_total < 20, the VISIBLE tier renders a fixed
+    plain-word sentence.  The artifact's raw calibration_note moves to the hover
+    receipt (calibration_note_raw_en/zh) only.
 
     Returns a dict with keys:
       scored_total, calibration_note_en, calibration_note_zh
+      calibration_note_raw_en, calibration_note_raw_zh  — hover receipt (raw artifact)
       show_rate (bool)  — False when n < 20
       open_leans: list of {subject, stance_en, stance_zh, falsifier_en}
       absent (bool)
@@ -328,6 +342,8 @@ def _gather_record_panel(data_dir: Path) -> dict:
         "scored_total": 0,
         "calibration_note_en": None,
         "calibration_note_zh": None,
+        "calibration_note_raw_en": None,
+        "calibration_note_raw_zh": None,
         "show_rate": False,
         "open_leans": [],
     }
@@ -341,8 +357,19 @@ def _gather_record_panel(data_dir: Path) -> dict:
     scored = tr.get("scored_total", 0)
     out["scored_total"] = scored
     out["show_rate"] = scored >= 20
-    out["calibration_note_en"] = tr.get("calibration_note", "")
-    out["calibration_note_zh"] = tr.get("calibration_note_zh", tr.get("calibration_note", ""))
+
+    raw_note_en = tr.get("calibration_note", "")
+    raw_note_zh = tr.get("calibration_note_zh", raw_note_en)
+
+    if scored < 20:
+        # ADB-R12c: fixed plain-word sentence on visible tier; raw note to hover only
+        out["calibration_note_en"] = _N_FLOOR_NOTE_EN
+        out["calibration_note_zh"] = _N_FLOOR_NOTE_ZH
+        out["calibration_note_raw_en"] = raw_note_en
+        out["calibration_note_raw_zh"] = raw_note_zh
+    else:
+        out["calibration_note_en"] = raw_note_en
+        out["calibration_note_zh"] = raw_note_zh
 
     # open leans from theses.jsonl — last few rows
     _LEAN_PLAIN = {

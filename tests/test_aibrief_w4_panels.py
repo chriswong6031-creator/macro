@@ -93,18 +93,23 @@ def _make_liquidity_plumbing(state="stress_liquidity_expansion") -> dict:
 
 
 def _make_track_record(scored_total=2) -> dict:
+    """Fixture shaped to match the live track_record.json format (including the
+    problematic hit-rate text that ADB-R12c must hide from the glance tier)."""
     return {
         "schema": "master_brain_track_record.v1",
         "as_of": "2026-07-11",
         "scored_total": scored_total,
         "open": 4,
         "overall": {"n": scored_total, "hits": scored_total, "misses": 0, "hit_rate": 1.0},
+        # Live-shaped note — contains hit-rate 1.0 and directional accuracy 1.0,
+        # which must NOT appear on the glance tier when n < 20 (ADB-R12c).
         "calibration_note": (
-            f"{scored_total} leans scored. Sample is tiny "
-            "— the brain's leans are accountability, not yet a proven edge."
+            f"{scored_total} leans scored, hit-rate 1.0 (directional accuracy 1.0). "
+            "Sample is tiny — the brain's leans are accountability, not yet a validated edge."
         ),
         "calibration_note_zh": (
-            f"已评分 {scored_total} 条。样本极小——大脑的判断仅为问责，尚非优势。"
+            f"已评分 {scored_total} 条，命中率 1.0（方向准确率 1.0）。"
+            "样本极小——大脑的判断仅为问责，尚非优势。"
         ),
     }
 
@@ -293,14 +298,21 @@ class TestRecordPanel:
         (mb / "theses.jsonl").write_text(json.dumps(thesis) + "\n")
 
     def test_calibration_note_rendered_when_n_below_floor(self):
-        """ADB-R12c: n=2 → calibration note rendered, not a numeric rate."""
+        """ADB-R12c: n=2 → fixed plain-word sentence on visible tier; raw note to hover only."""
         with tempfile.TemporaryDirectory() as td:
             self._write_track_record(Path(td), scored_total=2)
             out = _gather_record_panel(Path(td))
         assert not out["absent"]
         assert out["show_rate"] is False  # n=2 < 20
+        # Visible tier must be the fixed plain-word sentence, no numeric rate
         assert out["calibration_note_en"] is not None
-        assert "tiny" in out["calibration_note_en"].lower() or "scored" in out["calibration_note_en"].lower()
+        assert "hit-rate" not in out["calibration_note_en"]
+        assert "1.0" not in out["calibration_note_en"]
+        assert "100%" not in out["calibration_note_en"]
+        assert "Too few graded calls" in out["calibration_note_en"]
+        # Raw note moved to hover-only field
+        assert out["calibration_note_raw_en"] is not None
+        assert "hit-rate" in out["calibration_note_raw_en"]  # confirms raw note was captured
 
     def test_show_rate_true_when_n_above_floor(self):
         with tempfile.TemporaryDirectory() as td:
@@ -342,18 +354,46 @@ class TestRecordPanel:
         assert "简报自身记录" not in html
 
     def test_no_numeric_rate_in_template_when_n_below_floor(self):
-        """n=2 → template must not expose '100%' or 'hit-rate 1.0' in a raw rate context."""
+        """ADB-R12c: n=2 with live-shaped note (hit-rate 1.0, directional accuracy 1.0).
+        The VISIBLE record-cal paragraph must show the fixed plain-word sentence only.
+        The raw note (with hit-rate stats) is allowed in hover-only attribute values
+        (data-tip-en/zh) but must not appear in the .l-en / .l-zh visible spans."""
         with tempfile.TemporaryDirectory() as td:
             self._write_track_record(Path(td), scored_total=2)
             rp = _gather_record_panel(Path(td))
-        # The calibration_note itself is from the artifact; show_rate=False ensures
-        # no separately generated "hit rate" text is added
         assert rp["show_rate"] is False
-        # Template should not add its own rate calculation (separate from CSS top:100%)
+        # Visible tier must not contain the raw stats
+        assert "hit-rate" not in rp["calibration_note_en"]
+        assert "1.0" not in rp["calibration_note_en"]
+        # Fixed sentences must be present
+        assert "Too few graded calls" in rp["calibration_note_en"]
+        assert "已评分的判断还太少" in rp["calibration_note_zh"]
+
         html = _render(record_panel=rp)
-        # The CSS has "top:100%" — strip CSS block before checking
         body_only = html[html.find("</style>"):]
-        assert "100%" not in body_only  # no percentage-format rate in the rendered body
+
+        # The fixed EN sentence must appear in rendered output
+        assert "Too few graded calls" in body_only, "fixed n-floor EN sentence not rendered"
+        assert "已评分的判断还太少" in body_only, "fixed n-floor ZH sentence not rendered"
+
+        # Extract only the Panel C record-cal paragraph (between record-cal class and open-lean
+        # or end of that panel block) to check that the raw note text is not in visible spans.
+        # Locate the record-cal <p> block
+        record_cal_start = body_only.find('class="record-cal"')
+        assert record_cal_start >= 0, "record-cal class not found in body"
+        record_cal_end = body_only.find("</p>", record_cal_start)
+        record_cal_block = body_only[record_cal_start:record_cal_end]
+
+        # The raw note lives in the help tooltip (.tip span, display:none until hover).
+        # Strip all .help … </span></span> blocks and attribute values, then assert clean.
+        import re
+        # Remove the help tooltip span (class="help"…</span></span>) entirely
+        stripped = re.sub(r'<span class="help">.*?</span></span>', '', record_cal_block, flags=re.DOTALL)
+        # Also strip attribute values
+        stripped = re.sub(r'="[^"]*"', '=""', stripped)
+        assert "hit-rate" not in stripped, (
+            "hit-rate leaked into Panel C visible span content (outside hover tooltip)"
+        )
 
 
 # ── Panel D: Cortex deliberation (template structure only) ──────────────────────
