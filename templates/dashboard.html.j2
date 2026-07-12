@@ -3180,26 +3180,45 @@ body.page-macro.mx4-grid .mx4-hint-grid{display:inline;}
 body.page-macro.mx4-grid .mx4-hint-ledger{display:none;}
 
 /* ── Card spans (desktop ≥1100px) ───────────────────────────── */
-/* evidence=6, events=3, markets=3, policy=3, aibrief=3, news=3, deep-context=3 */
-/* risk hidden face — order:-1 so island opens at top under band */
+/* v5 layout:
+   Row 1 (Command Scorecard) = sx-risk-v2 span 12, order:-1
+   Row 2 (Markets tiles)     = sx-markets-v2 span 12
+   Row 3 (WTD | Events)      = sx-evidence span 6, sx-events-v2 span 6
+   Row 4 (Fed | Sent | Sect) = #sx-v5-fed span 4, #sx-v5-sentiment span 4, #sx-v5-sector span 4
+   Row 5 (Alerts|Policy|AI)  = sx-news-v2 span 5, sx-policy-v2 span 3, sx-aibrief-v2 span 4
+   Row 6 (Deep Context)      = sx-deep-context span 12
+*/
 @media(min-width:1100px){
   body.page-macro.mx4-grid #sx-evidence{grid-column:span 6;}
-  body.page-macro.mx4-grid #sx-events-v2{grid-column:span 3;}
-  body.page-macro.mx4-grid #sx-markets-v2{grid-column:span 3;}
+  body.page-macro.mx4-grid #sx-events-v2{grid-column:span 6;}
+  body.page-macro.mx4-grid #sx-markets-v2{grid-column:span 12;}
   body.page-macro.mx4-grid #sx-risk-v2{grid-column:span 12;order:-1;}
   body.page-macro.mx4-grid #sx-policy-v2{grid-column:span 3;}
-  body.page-macro.mx4-grid #sx-aibrief-v2{grid-column:span 3;}
-  body.page-macro.mx4-grid #sx-news-v2{grid-column:span 3;}
-  body.page-macro.mx4-grid #sx-deep-context{grid-column:span 3;}
+  body.page-macro.mx4-grid #sx-aibrief-v2{grid-column:span 4;}
+  body.page-macro.mx4-grid #sx-news-v2{grid-column:span 5;}
+  body.page-macro.mx4-grid #sx-deep-context{grid-column:span 12;}
+  body.page-macro.mx4-grid #sx-v5-fed{grid-column:span 4;}
+  body.page-macro.mx4-grid #sx-v5-sentiment{grid-column:span 4;}
+  body.page-macro.mx4-grid #sx-v5-sector{grid-column:span 4;}
 }
-/* ≤1100px — all span 6 */
+/* ≤1100px — two-col */
 @media(max-width:1099px){
   body.page-macro.mx4-grid .sx{grid-column:span 6;}
   body.page-macro.mx4-grid #sx-risk-v2{grid-column:span 12;order:-1;}
+  body.page-macro.mx4-grid #sx-markets-v2{grid-column:span 12;}
+  body.page-macro.mx4-grid #sx-deep-context{grid-column:span 12;}
+  body.page-macro.mx4-grid #sx-v5-fed,
+  body.page-macro.mx4-grid #sx-v5-sentiment,
+  body.page-macro.mx4-grid #sx-v5-sector{grid-column:span 6;}
+  body.page-macro.mx4-grid #sx-news-v2{grid-column:span 6;}
+  body.page-macro.mx4-grid #sx-aibrief-v2{grid-column:span 6;}
 }
 /* ≤700px — full width stack */
 @media(max-width:700px){
-  body.page-macro.mx4-grid .sx{grid-column:span 12;}
+  body.page-macro.mx4-grid .sx,
+  body.page-macro.mx4-grid #sx-v5-fed,
+  body.page-macro.mx4-grid #sx-v5-sentiment,
+  body.page-macro.mx4-grid #sx-v5-sector{grid-column:span 12;}
 }
 
 /* Expanded card spans full width */
@@ -3387,9 +3406,10 @@ body.page-macro.mx4-grid .mx4-grid-only{display:block;}
 /* ── Hide mx4-verdict-band (removed in v5) in all views ─────────── */
 body.page-macro .mx4-verdict-band{display:none!important;}
 
-/* ── In grid view: sx-evidence + sx-risk-v2 faces hidden (popovers serve
-   as their glance layer); trays still open full-width from the rack. ── */
-body.page-macro.mx4-grid #sx-evidence .sxg-face{display:none!important;}
+/* ── In grid view: sx-evidence face = WHAT TO DO card (v5); popover button opens island ── */
+/* sx-risk-v2 face still hidden; its tray opens from the rack as before */
+/* sx-evidence face is now visible in grid view as the WTD card — override the hide rule */
+body.page-macro.mx4-grid #sx-evidence .sxg-face{display:flex!important;}
 /* sx-risk-v2 face already hidden via existing rule body.page-macro.mx4-grid #sx-risk-v2 .sxg-face */
 
 /* ══════════════════════════════════════════════════════════
@@ -3843,6 +3863,415 @@ body.page-macro.mx4-grid #mx5-score-numeral{
   /* font-size 24px; glow filter via inline style */
   filter:drop-shadow(0 0 10px rgba(34,217,122,.7));
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   S2 — v5 card face styles (ALL scoped body.page-macro.mx4-grid)
+   Port from v5_final.html rev2; CSS token aliases → mx5 custom props
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── v5 grid ORDER: resequence cards without changing DOM ───────── */
+/* DOM: sx-evidence(WTD), sx-events-v2, sx-markets-v2, sx-risk-v2(order:-1=row1)
+   then sx-policy-v2, sx-aibrief-v2, sx-news-v2, sx-deep-context
+   Static cards injected after sx-events-v2 in DOM so they fall in row 4 naturally.
+   Visual row order: scorecard(-1), markets(1), wtd+events(2), static(3), alerts+policy+ai(4), deep(5) */
+body.page-macro.mx4-grid #sx-markets-v2{order:1;}
+body.page-macro.mx4-grid #sx-evidence{order:2;}
+body.page-macro.mx4-grid #sx-events-v2{order:2;}
+body.page-macro.mx4-grid #sx-v5-fed{order:3;}
+body.page-macro.mx4-grid #sx-v5-sentiment{order:3;}
+body.page-macro.mx4-grid #sx-v5-sector{order:3;}
+body.page-macro.mx4-grid #sx-news-v2{order:4;}
+body.page-macro.mx4-grid #sx-policy-v2{order:4;}
+body.page-macro.mx4-grid #sx-aibrief-v2{order:4;}
+body.page-macro.mx4-grid #sx-deep-context{order:5;}
+
+/* ── v5 static card shell (matches .card in v5_final) ─────────── */
+body.page-macro.mx4-grid .mx5-card{
+  background:var(--mx5-glass-bg);
+  border:1px solid var(--mx5-glass-border);
+  border-radius:var(--mx5-radius-card);
+  backdrop-filter:var(--mx5-blur);
+  box-shadow:var(--mx5-glass-shadow);
+  padding:24px 26px;
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+  height:100%;box-sizing:border-box;
+}
+body.page-macro.mx4-grid .mx5-card::before{
+  content:"";position:absolute;inset:0;
+  border-radius:var(--mx5-radius-card);
+  background:linear-gradient(135deg,rgba(255,255,255,.06) 0%,transparent 55%);
+  pointer-events:none;
+}
+/* sxg-face in grid view = v5 card face; override default padding to match .mx5-card */
+body.page-macro.mx4-grid .sxg-face.mx5-card-face{
+  background:var(--mx5-glass-bg);
+  border:1px solid var(--mx5-glass-border);
+  border-radius:var(--mx5-radius-card)!important;
+  backdrop-filter:var(--mx5-blur);
+  box-shadow:var(--mx5-glass-shadow);
+  padding:24px 26px!important;
+  min-height:unset;
+  height:100%;
+}
+body.page-macro.mx4-grid .sxg-face.mx5-card-face::before{
+  content:"";position:absolute;inset:0;
+  border-radius:inherit;
+  background:linear-gradient(135deg,rgba(255,255,255,.06) 0%,transparent 55%);
+  pointer-events:none;
+}
+body.page-macro.mx4-grid .sxg-face.mx5-card-face:hover{
+  box-shadow:var(--mx5-glass-hover);
+}
+/* Card title row */
+body.page-macro.mx4-grid .mx5-card-title{
+  font-size:13px;font-weight:700;
+  color:var(--ink-1,rgba(255,255,255,.92));
+  letter-spacing:-.01em;margin-bottom:18px;
+}
+body.page-macro.mx4-grid .mx5-card-title-row{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;
+}
+body.page-macro.mx4-grid .mx5-card-badge{
+  font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  padding:3px 9px;border-radius:var(--mx5-radius-pill);
+  background:rgba(255,255,255,.07);color:var(--ink-2,rgba(255,255,255,.6));
+}
+/* Static card sections (not .sx — no island): sit in the rack grid */
+body.page-macro.mx4-grid .sx-v5-static{
+  /* participates in the rack 12-col grid just like .sx */
+}
+body.page-macro:not(.mx4-grid) .sx-v5-static{
+  display:none; /* hidden in ledger view — these are grid-only surfaces */
+}
+
+/* ── MARKETS tiles (v5: four-col strip inside the sxg-face) ────── */
+body.page-macro.mx4-grid #sx-markets-v2 .sxg-face.mx5-card-face{
+  /* Markets face = full-width tile strip; override flex-direction for row layout */
+  display:flex;flex-direction:column;
+  padding:18px 20px 14px!important;
+}
+body.page-macro.mx4-grid .mx5-mkt-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+}
+@media(max-width:900px){
+  body.page-macro.mx4-grid .mx5-mkt-grid{grid-template-columns:1fr 1fr;}
+}
+body.page-macro.mx4-grid .mx5-mkt-tile{
+  background:var(--mx5-glass-bg);
+  border:1px solid var(--mx5-glass-border);
+  border-radius:14px;
+  backdrop-filter:var(--mx5-blur);
+  box-shadow:var(--mx5-glass-shadow);
+  padding:16px 18px 12px;
+  position:relative;overflow:hidden;cursor:pointer;
+  transition:box-shadow .2s;
+}
+body.page-macro.mx4-grid .mx5-mkt-tile::before{
+  content:"";position:absolute;inset:0;border-radius:14px;
+  background:linear-gradient(135deg,rgba(255,255,255,.038) 0%,transparent 60%);
+  pointer-events:none;
+}
+body.page-macro.mx4-grid .mx5-mkt-tile:hover{box-shadow:var(--mx5-glass-hover);}
+body.page-macro.mx4-grid .mx5-mkt-tile.up{border-color:rgba(34,217,122,.26);}
+body.page-macro.mx4-grid .mx5-mkt-tile.dn{border-color:rgba(239,68,68,.26);}
+body.page-macro.mx4-grid .mx5-mkt-ticker{
+  font-size:11px;font-weight:700;letter-spacing:.07em;
+  color:var(--ink-3,rgba(255,255,255,.36));text-transform:uppercase;margin-bottom:3px;
+}
+body.page-macro.mx4-grid .mx5-mkt-sub{
+  font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));
+  letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px;
+}
+body.page-macro.mx4-grid .mx5-mkt-price{
+  font-size:19px;font-weight:700;line-height:1;
+  color:var(--ink-1,rgba(255,255,255,.92));margin-bottom:4px;
+  font-variant-numeric:tabular-nums;
+}
+body.page-macro.mx4-grid .mx5-mkt-delta{font-size:13px;font-weight:600;}
+body.page-macro.mx4-grid .mx5-mkt-delta.up{color:var(--up,#22d97a);}
+body.page-macro.mx4-grid .mx5-mkt-delta.dn{color:var(--down,#ef4444);}
+body.page-macro.mx4-grid .mx5-spark{margin-top:10px;}
+body.page-macro.mx4-grid .mx5-spark svg{width:100%;height:32px;display:block;}
+
+/* ── WHAT TO DO (action-list inside sx-evidence face) ────────── */
+body.page-macro.mx4-grid .mx5-action-list{display:flex;flex-direction:column;}
+body.page-macro.mx4-grid .mx5-action-item{
+  display:flex;align-items:flex-start;gap:13px;
+  padding:13px 0;border-bottom:1px solid rgba(255,255,255,.06);
+}
+body.page-macro.mx4-grid .mx5-action-item:last-child{border-bottom:none;}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-action-item{border-bottom-color:rgba(0,0,0,.06);}
+body.page-macro.mx4-grid .mx5-action-icon{
+  flex-shrink:0;width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(255,255,255,.08);
+}
+body.page-macro.mx4-grid .mx5-action-icon svg{width:16px;height:16px;}
+body.page-macro.mx4-grid .mx5-ai-green{background:rgba(34,217,122,.10);}
+body.page-macro.mx4-grid .mx5-ai-yellow{background:rgba(245,158,11,.10);}
+body.page-macro.mx4-grid .mx5-ai-blue{background:rgba(129,140,248,.10);}
+body.page-macro.mx4-grid .mx5-ai-gray{background:rgba(255,255,255,.06);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-action-icon{border-color:rgba(0,0,0,.06);}
+body.page-macro.mx4-grid .mx5-action-text{flex:1;}
+body.page-macro.mx4-grid .mx5-action-label{
+  font-size:13px;color:var(--ink-1,rgba(255,255,255,.92));
+  line-height:1.45;font-weight:500;
+}
+body.page-macro.mx4-grid .mx5-action-sub{
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;
+}
+
+/* ── UPCOMING EVENTS (timeline inside sx-events-v2 face) ───────── */
+body.page-macro.mx4-grid .mx5-events-sub{
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:18px;
+}
+body.page-macro.mx4-grid .mx5-timeline{position:relative;padding-top:4px;}
+body.page-macro.mx4-grid .mx5-timeline-rail{
+  position:absolute;top:24px;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.07) 15%,rgba(255,255,255,.07) 85%,transparent);
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-timeline-rail{
+  background:linear-gradient(90deg,transparent,rgba(0,0,0,.07) 15%,rgba(0,0,0,.07) 85%,transparent);
+}
+body.page-macro.mx4-grid .mx5-tl-items{
+  display:flex;justify-content:space-between;position:relative;
+}
+body.page-macro.mx4-grid .mx5-tl-item{
+  display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;
+}
+body.page-macro.mx4-grid .mx5-tl-dot{
+  width:12px;height:12px;border-radius:50%;border:2px solid;
+  position:relative;z-index:1;flex-shrink:0;margin-top:12px;
+}
+body.page-macro.mx4-grid .mx5-dot-high{
+  background:rgba(239,68,68,.2);border-color:#ef4444;
+  box-shadow:0 0 8px rgba(239,68,68,.5);
+}
+body.page-macro.mx4-grid .mx5-dot-med{
+  background:rgba(245,158,11,.2);border-color:#f59e0b;
+  box-shadow:0 0 6px rgba(245,158,11,.4);
+}
+body.page-macro.mx4-grid .mx5-dot-low{
+  background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);
+}
+body.page-macro.mx4-grid .mx5-tl-name{
+  font-size:12px;font-weight:700;color:var(--ink-1,rgba(255,255,255,.92));
+  text-align:center;margin-top:4px;
+}
+body.page-macro.mx4-grid .mx5-tl-date{
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));text-align:center;
+}
+body.page-macro.mx4-grid .mx5-tl-badge{
+  font-size:11px;font-weight:700;padding:2px 7px;border-radius:3px;
+  letter-spacing:.04em;text-align:center;
+}
+body.page-macro.mx4-grid .mx5-tl-badge.high{color:#ef4444;background:rgba(239,68,68,.10);}
+body.page-macro.mx4-grid .mx5-tl-badge.med{color:#f59e0b;background:rgba(245,158,11,.10);}
+body.page-macro.mx4-grid .mx5-tl-badge.low{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.05);}
+
+/* ── FED PROBABILITY (static card) ─────────────────────────────── */
+body.page-macro.mx4-grid .mx5-fed-main-row{
+  display:flex;align-items:center;gap:18px;margin-bottom:16px;
+}
+body.page-macro.mx4-grid .mx5-fed-donut-wrap{
+  position:relative;width:76px;height:76px;flex-shrink:0;
+}
+body.page-macro.mx4-grid .mx5-fed-pct-overlay{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:16px;font-weight:800;color:var(--ink-1,rgba(255,255,255,.92));
+  text-align:center;line-height:1.1;
+}
+body.page-macro.mx4-grid .mx5-fed-pct-overlay small{
+  font-size:10px;font-weight:500;color:var(--ink-3,rgba(255,255,255,.36));
+  display:block;margin-top:1px;
+}
+body.page-macro.mx4-grid .mx5-fed-verdict{
+  font-size:16px;font-weight:800;color:var(--mx5-accent);
+}
+body.page-macro.mx4-grid .mx5-fed-desc{
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;line-height:1.4;
+}
+body.page-macro.mx4-grid .mx5-fed-hist-label{
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;
+}
+body.page-macro.mx4-grid .mx5-fed-hist-bars{
+  display:flex;gap:3px;align-items:flex-end;height:44px;
+}
+body.page-macro.mx4-grid .mx5-fed-hist-col{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+body.page-macro.mx4-grid .mx5-fed-hist-bar{width:100%;border-radius:2px 2px 0 0;}
+body.page-macro.mx4-grid .mx5-fed-hist-name{
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));text-align:center;
+}
+body.page-macro.mx4-grid .mx5-fed-policy-note{
+  margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07);
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.55;
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-fed-policy-note{border-top-color:rgba(0,0,0,.07);}
+body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,255,255,.92));}
+
+/* ── MARKET SENTIMENT (static card — odometer dial) ────────────── */
+body.page-macro.mx4-grid .mx5-sentiment-dial-wrap{
+  text-align:center;margin-bottom:4px;
+}
+body.page-macro.mx4-grid .mx5-sentiment-zone-text{
+  font-size:15px;font-weight:700;color:var(--mx5-accent);
+  text-align:center;margin-bottom:3px;
+}
+body.page-macro.mx4-grid .mx5-sentiment-label{
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
+  text-align:center;margin-top:2px;
+}
+
+/* ── SECTOR TEMPERATURE (static card) ──────────────────────────── */
+body.page-macro.mx4-grid .mx5-sector-row{margin-bottom:14px;}
+body.page-macro.mx4-grid .mx5-sector-sub-label{
+  font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:7px;
+}
+body.page-macro.mx4-grid .mx5-sector-chips{display:flex;flex-wrap:wrap;gap:5px;}
+body.page-macro.mx4-grid .mx5-sector-chip{
+  padding:4px 11px;border-radius:var(--mx5-radius-pill);
+  font-size:12px;font-weight:600;
+}
+body.page-macro.mx4-grid .mx5-sector-chip.hot{
+  background:rgba(34,217,122,.11);border:1px solid rgba(34,217,122,.28);
+  color:var(--up,#22d97a);
+}
+body.page-macro.mx4-grid .mx5-sector-chip.cold{
+  background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);
+  color:var(--down,#ef4444);
+}
+body.page-macro.mx4-grid .mx5-sector-heat-divider{
+  margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07);
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-sector-heat-divider{border-top-color:rgba(0,0,0,.06);}
+body.page-macro.mx4-grid .mx5-sector-heat-label{
+  font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:8px;
+}
+body.page-macro.mx4-grid .mx5-sector-heat-bars{
+  display:flex;gap:3px;align-items:flex-end;
+}
+body.page-macro.mx4-grid .mx5-sector-heat-col{
+  flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;
+}
+body.page-macro.mx4-grid .mx5-sector-heat-bar{width:100%;border-radius:3px;}
+body.page-macro.mx4-grid .mx5-sector-heat-name{
+  font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));
+}
+
+/* ── ALERTS CENTRE (sx-news-v2 face) ───────────────────────────── */
+body.page-macro.mx4-grid #sx-news-v2 .sxg-face.mx5-card-face .mx5-alerts-list{
+  display:flex;flex-direction:column;margin:0 -26px;
+}
+body.page-macro.mx4-grid .mx5-alert-item{
+  display:flex;align-items:flex-start;gap:11px;
+  padding:12px 26px;border-bottom:1px solid rgba(255,255,255,.05);
+  border-left:3px solid transparent;
+}
+body.page-macro.mx4-grid .mx5-alert-item:last-child{border-bottom:none;}
+body.page-macro.mx4-grid .mx5-alert-item.warn{
+  border-left-color:var(--mx5-warn);background:rgba(245,158,11,.04);
+}
+body.page-macro.mx4-grid .mx5-alert-item.info{
+  border-left-color:rgba(255,255,255,.06);
+}
+body.page-macro.mx4-grid .mx5-alert-dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;
+}
+body.page-macro.mx4-grid .mx5-alert-dot.warn{
+  background:var(--mx5-warn);box-shadow:0 0 6px rgba(245,158,11,.55);
+}
+body.page-macro.mx4-grid .mx5-alert-dot.info{
+  background:var(--ink-3,rgba(255,255,255,.36));
+}
+body.page-macro.mx4-grid .mx5-alert-content{flex:1;}
+body.page-macro.mx4-grid .mx5-alert-title{
+  font-size:13px;font-weight:600;
+  color:var(--ink-1,rgba(255,255,255,.92));line-height:1.4;
+}
+body.page-macro.mx4-grid .mx5-alert-title.warn{color:var(--mx5-warn);}
+body.page-macro.mx4-grid .mx5-alert-detail{
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
+  margin-top:3px;line-height:1.5;
+}
+body.page-macro.mx4-grid .mx5-alert-footer{
+  margin-top:14px;padding-top:11px;border-top:1px solid rgba(255,255,255,.06);
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
+  display:flex;justify-content:space-between;align-items:center;
+}
+body.page-macro.mx4-grid .mx5-alert-footer-link{
+  background:none;border:none;cursor:pointer;
+  font-size:11px;font-weight:600;color:var(--mx5-accent);
+  font-family:inherit;padding:0;text-decoration:none;
+}
+body.page-macro.mx4-grid .mx5-alert-footer-link:hover{text-decoration:underline;}
+
+/* ── POLICY MONITOR (sx-policy-v2 face) ────────────────────────── */
+body.page-macro.mx4-grid .mx5-policy-rows{display:flex;flex-direction:column;}
+body.page-macro.mx4-grid .mx5-policy-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;
+}
+body.page-macro.mx4-grid .mx5-policy-row:last-child{border-bottom:none;}
+body.page-macro.mx4-grid .mx5-policy-key{
+  color:var(--ink-3,rgba(255,255,255,.36));font-size:12px;
+}
+body.page-macro.mx4-grid .mx5-policy-val{
+  color:var(--ink-1,rgba(255,255,255,.92));font-weight:600;text-align:right;
+}
+
+/* ── AI BRIEF (sx-aibrief-v2 face) ─────────────────────────────── */
+body.page-macro.mx4-grid .mx5-ai-ticker-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px;}
+body.page-macro.mx4-grid .mx5-ai-ticker-pill{
+  padding:4px 10px;border-radius:var(--mx5-radius-pill);
+  background:var(--mx5-accent-dim);border:1px solid rgba(34,217,122,.28);
+  font-size:11px;font-weight:700;color:var(--mx5-accent);letter-spacing:.03em;
+}
+body.page-macro.mx4-grid .mx5-ai-body{
+  font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));
+  line-height:1.55;margin-bottom:10px;
+}
+body.page-macro.mx4-grid .mx5-ai-note{
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:8px;padding:8px 11px;line-height:1.45;margin-top:auto;
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-ai-note{
+  background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06);
+}
+
+/* ── DEEP CONTEXT slim chip row (sx-deep-context face) ─────────── */
+body.page-macro.mx4-grid #sx-deep-context .sxg-face.mx5-card-face{
+  flex-direction:row;align-items:center;gap:10px;
+  flex-wrap:wrap;padding:14px 20px!important;min-height:unset;
+}
+body.page-macro.mx4-grid .mx5-deep-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+body.page-macro.mx4-grid .mx5-deep-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:var(--mx5-radius-pill);
+  background:var(--mx5-glass-bg);border:1px solid var(--mx5-glass-border);
+  font-size:12px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6));
+  text-decoration:none;
+  transition:color .15s,border-color .15s,background .15s;
+}
+body.page-macro.mx4-grid .mx5-deep-chip:hover{
+  color:var(--ink-1,rgba(255,255,255,.92));
+  border-color:rgba(255,255,255,.20);background:rgba(255,255,255,.14);
+}
+
+/* ── Sparkline (idx_spark, static SVG) ─────────────────────────── */
+/* spark colors match sign: .up or .dn set on the tile */
+body.page-macro.mx4-grid .mx5-spark-up path.mx5-spark-area{fill:rgba(34,217,122,.22);}
+body.page-macro.mx4-grid .mx5-spark-up path.mx5-spark-line,
+body.page-macro.mx4-grid .mx5-spark-up polyline{stroke:#22d97a;}
+body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-area{fill:rgba(239,68,68,.16);}
+body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-line,
+body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
 </style>
 {% endif %}
@@ -4424,38 +4853,174 @@ body.page-macro.mx4-grid #mx5-score-numeral{
       </div>
       <div class="sx-chev">&#8964;</div>
     </div>
-    {# MX4 face — EVIDENCE (S2 full: headline stance + six-factor rows + flip footer) #}
-    {# Compute n_good / total for headline (derived in-template from the same MS2.components loop) #}
+    {# v5 face — WHAT TO DO (grid view; sx-evidence face is now the WTD card)
+       Keeps v4 derivation rows verbatim (MS2.components + radar + events) — reskinned to v5 icon tiles.
+       Clicking opens the full Evidence island. #}
     {% set _ev_n_good = (MS2.components | selectattr('tone','equalto','good') | list | length) if (MS2 and MS2.components) else 0 %}
     {% set _ev_total = (MS2.components | length) if (MS2 and MS2.components) else 0 %}
-    <div class="sxg-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-evidence')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-evidence');}">
-      <div class="sxg-face-eyebrow"><span class="l-en">Evidence</span><span class="l-zh">依据</span></div>
-      <div class="sxg-face-stance">
-        <span class="l-en">{{ _ev_n_good }} of {{ _ev_total }} signals aligned{% if _weakest %} — {{ _weakest.label_en }} lagging{% endif %}</span>
-        <span class="l-zh">{{ _ev_total }} 项中 {{ _ev_n_good }} 项看多{% if _weakest %} — {{ _weakest.label_zh or _weakest.label_en }}偏弱{% endif %}</span>
-      </div>
-      {# Six factor rows #}
-      {% if MS2 and MS2.components %}
-      <div class="sxg-ev-rows">
-        {% for c in MS2.components %}
-        {% set _ec2 = 'var(--up)' if c.tone == 'good' else ('var(--down)' if c.tone == 'bad' else 'var(--warn)') %}
-        {% set _et2 = 'evs-good' if c.tone == 'good' else ('evs-bad' if c.tone == 'bad' else 'evs-flat') %}
-        <div class="sxg-ev-row">
-          <span class="sxg-ev-arrow {{ _et2 }}">{{ c.arrow }}</span>
-          <span class="sxg-ev-name">{{ t(c.label_en, c.label_zh) }}</span>
-          <div class="sxg-ev-bar-track"><div class="sxg-ev-bar-fill" style="width:{{ c.score }}%;background:{{ _ec2 }}"></div></div>
-          <span class="sxg-ev-score {{ _et2 }}">{{ c.score }}</span>
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-evidence')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-evidence');}">
+      <div class="mx5-card-title"><span class="l-en">What To Do</span><span class="l-zh">操作建议</span></div>
+      <div class="mx5-action-list">
+        {# Row 1: regime primary action from MS.radar / MS.label_en #}
+        {% if market_state %}
+        {% set _wtd_icon_col = 'mx5-ai-green' if market_state.color == 'green' else ('mx5-ai-yellow' if market_state.color == 'yellow' else 'mx5-ai-gray') %}
+        {% set _wtd_stroke = '#22d97a' if market_state.color == 'green' else ('#f59e0b' if market_state.color == 'yellow' else 'rgba(255,255,255,.38)') %}
+        <div class="mx5-action-item">
+          <div class="mx5-action-icon {{ _wtd_icon_col }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="{{ _wtd_stroke }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              {% if market_state.color == 'green' %}
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+              <polyline points="16 7 22 7 22 13"/>
+              {% elif market_state.color == 'yellow' %}
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+              {% else %}
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+              {% endif %}
+            </svg>
+          </div>
+          <div class="mx5-action-text">
+            {% if MS.radar and MS.radar.state %}
+            <div class="mx5-action-label">
+              <span class="l-en">{{ MS.radar.label_en }} &mdash; {{ MS.radar.do_en }}</span>
+              <span class="l-zh">{{ MS.radar.label_zh or MS.radar.label_en }} &mdash; {{ MS.radar.do_zh or MS.radar.do_en }}</span>
+            </div>
+            <div class="mx5-action-sub">
+              <span class="l-en">Composite {{ MS.score }}/100 &middot; {{ {'green':'risk-on','yellow':'mixed','red':'risk-off'}.get(MS.color,'') }}</span>
+              <span class="l-zh">综合评分 {{ MS.score }}/100 &middot; {{ {'green':'偏多','yellow':'混合','red':'避险'}.get(MS.color,'') }}</span>
+            </div>
+            {% else %}
+            <div class="mx5-action-label">
+              <span class="l-en">{{ MS.label_en }} &mdash; {{ {'green':'Trend-follow, add on strength.','yellow':'Trade with caution. Size small.','red':'Defend capital first. Reduce risk.'}.get(MS.color,'') }}</span>
+              <span class="l-zh">{{ MS.label_zh or MS.label_en }} &mdash; {{ {'green':'顺势而为，强势中加仓。','yellow':'谨慎操作，仓位缩小。','red':'优先保住本金，降低风险。'}.get(MS.color,'') }}</span>
+            </div>
+            <div class="mx5-action-sub">
+              <span class="l-en">Composite {{ MS.score }}/100 &middot; all pillars read</span>
+              <span class="l-zh">综合评分 {{ MS.score }}/100 &middot; 全因子已读</span>
+            </div>
+            {% endif %}
+          </div>
         </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-      {% if _weakest %}
-      <div class="sxg-face-sub">
-        <span class="l-en">Flip trigger: {{ _weakest.label_en }} ({{ _weakest.score }}/100)</span>
-        <span class="l-zh">翻转触发：{{ _weakest.label_zh or _weakest.label_en }}（{{ _weakest.score }}/100）</span>
-      </div>
-      {% endif %}
-    </div>
+        {% endif %}
+
+        {# Row 2: weakest leg watch (from MS2.components — v4 derivation, keep verbatim) #}
+        {% if _weakest %}
+        <div class="mx5-action-item">
+          <div class="mx5-action-icon mx5-ai-yellow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+          <div class="mx5-action-text">
+            <div class="mx5-action-label">
+              <span class="l-en">Watch {{ _weakest.label_en }} &mdash; the weakest leg ({{ _weakest.score }}/100).</span>
+              <span class="l-zh">关注{{ _weakest.label_zh or _weakest.label_en }} &mdash; 最弱分项（{{ _weakest.score }}/100）。</span>
+            </div>
+            <div class="mx5-action-sub">
+              <span class="l-en">Flip trigger if this rolls further</span>
+              <span class="l-zh">若继续下滑则触发翻转</span>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {# Row 3: nearest high-impact event — calendar context (v4 derivation: macro_catalysts) #}
+        {% if macro_catalysts %}
+        {% set _wtd_ev = macro_catalysts | selectattr('impact','equalto','high') | list | first if (macro_catalysts | selectattr('impact','equalto','high') | list) else macro_catalysts[0] %}
+        {% set _wtd_ev_zh = _wtd_ev.get('label_zh') or _wtd_ev.label %}
+        <div class="mx5-action-item">
+          <div class="mx5-action-icon mx5-ai-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <div class="mx5-action-text">
+            <div class="mx5-action-label">
+              <span class="l-en">Expect noise around {{ _wtd_ev.label }} &mdash; don&rsquo;t read the first move as trend.</span>
+              <span class="l-zh">{{ _wtd_ev_zh }}前后噪音加大 &mdash; 勿将初动解读为趋势。</span>
+            </div>
+            <div class="mx5-action-sub">
+              <span class="l-en">{{ _wtd_ev.label }} {{ _wtd_ev.date[5:10] }} &middot; {{ _wtd_ev.impact | upper }} impact</span>
+              <span class="l-zh">{{ _wtd_ev_zh }} {{ _wtd_ev.date[5:10] }} &middot; {{ {'high':'高','med':'中','low':'低'}.get(_wtd_ev.impact, _wtd_ev.impact) }}影响</span>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {# Row 4: risk radar (from MS.radar — v4 derivation: risk level) #}
+        {% if market_state and MS.radar and MS.radar.state %}
+        {% set _wtd_rdr_elevated = _mx5_rdr_state in ('elevated','caution','risk-off') %}
+        <div class="mx5-action-item">
+          <div class="mx5-action-icon {{ 'mx5-ai-yellow' if _wtd_rdr_elevated else 'mx5-ai-gray' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="{{ '#f59e0b' if _wtd_rdr_elevated else 'rgba(255,255,255,.38)' }}" stroke-width="2" stroke-linecap="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div class="mx5-action-text">
+            <div class="mx5-action-label">
+              {% if _wtd_rdr_elevated %}
+              <span class="l-en">A risk is building &mdash; stay normal, just watch it.</span>
+              <span class="l-zh">风险正在积聚 &mdash; 维持正常仓位，密切关注。</span>
+              {% else %}
+              <span class="l-en">Risk radar is quiet &mdash; nothing structural to act on.</span>
+              <span class="l-zh">风险雷达平静 &mdash; 无结构性行动需要。</span>
+              {% endif %}
+            </div>
+            <div class="mx5-action-sub">
+              <span class="l-en">{{ MS.radar.label_en }} at {{ _mx5_radar_top }}</span>
+              <span class="l-zh">{{ MS.radar.label_zh or MS.radar.label_en }} {{ _mx5_radar_top }}</span>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {# Row 5: policy — from flip_confirmation + policy_lever (v4 derivation) #}
+        {% set _wtd_pl_quiet = (not (PL and PL.get('state') in ('ARMED','ELEVATED'))) %}
+        <div class="mx5-action-item">
+          <div class="mx5-action-icon mx5-ai-gray">
+            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.38)" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <div class="mx5-action-text">
+            {% if _wtd_pl_quiet %}
+            <div class="mx5-action-label">
+              <span class="l-en">Policy is quiet &mdash; nothing to position for.</span>
+              <span class="l-zh">政策平静 &mdash; 暂无需提前布局。</span>
+            </div>
+            <div class="mx5-action-sub">
+              {% if flip_confirmation and flip_confirmation.last_event %}
+              <span class="l-en">No active jawboning &middot; last flip {{ flip_confirmation.last_event.event_date }}</span>
+              <span class="l-zh">无积极发声 &middot; 最近翻转 {{ flip_confirmation.last_event.event_date }}</span>
+              {% else %}
+              <span class="l-en">No active jawboning</span>
+              <span class="l-zh">无积极发声</span>
+              {% endif %}
+            </div>
+            {% else %}
+            <div class="mx5-action-label">
+              <span class="l-en">Policy lever is {{ PL.get('state','') }} &mdash; watch for repricing.</span>
+              <span class="l-zh">政策杠杆{{ {'ARMED':'已触发','ELEVATED':'警戒'}.get(PL.get('state',''), PL.get('state','')) }} &mdash; 留意重定价。</span>
+            </div>
+            <div class="mx5-action-sub">
+              <span class="l-en">{{ _plrepr_count }}/4 repricing channels active</span>
+              <span class="l-zh">{{ _plrepr_count }}/4 重定价渠道活跃</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>{# /mx5-action-list #}
+    </div>{# /sxg-face WTD #}
     <div class="sx-tray"><div class="sx-tray-inner-wrap"><div class="sx-island">
       {# Island header beacon #}
       <div class="isle-head">
@@ -4559,43 +5124,48 @@ body.page-macro.mx4-grid #mx5-score-numeral{
       </div>
       <div class="sx-chev">&#8964;</div>
     </div>
-    {# MX4 face — EVENTS (S2 full: headline count + up to 4 calendar rows + Fed odds plain words) #}
+    {# v5 face — UPCOMING EVENTS (week rail + impact badges; fed odds removed to Fed card) #}
     {% set _ev_hi_cnt = (macro_catalysts | selectattr('impact','equalto','high') | list | length) if macro_catalysts else 0 %}
-    <div class="sxg-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-events-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-events-v2');}">
-      <div class="sxg-face-eyebrow"><span class="l-en">Events</span><span class="l-zh">事件</span></div>
-      <div class="sxg-face-stance">
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-events-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-events-v2');}">
+      <div class="mx5-card-title-row">
+        <div class="mx5-card-title"><span class="l-en">Upcoming Events</span><span class="l-zh">近期事件</span></div>
+        <div class="mx5-card-badge"><span class="l-en">This week</span><span class="l-zh">本周</span></div>
+      </div>
+      <div class="mx5-events-sub">
         {% if _ev_hi_cnt %}
-        <span class="l-en">{{ _ev_hi_cnt }} high-impact print{{ 's' if _ev_hi_cnt != 1 }} this week</span>
-        <span class="l-zh">本周 {{ _ev_hi_cnt }} 项高影响数据</span>
-        {% elif macro_catalysts %}
-        <span class="l-en">{{ macro_catalysts|length }} print{{ 's' if macro_catalysts|length != 1 }} this week — none high-impact</span>
-        <span class="l-zh">本周 {{ macro_catalysts|length }} 项数据 — 无高影响项</span>
+        <span class="l-en">{{ _ev_hi_cnt }} high-impact print{{ 's' if _ev_hi_cnt != 1 }} ahead</span>
+        <span class="l-zh">{{ _ev_hi_cnt }} 项高影响数据待发</span>
         {% else %}
-        <span class="l-en">No prints this week</span>
-        <span class="l-zh">本周无数据发布</span>
+        <span class="l-en">Next 5 trading days</span>
+        <span class="l-zh">未来5个交易日</span>
         {% endif %}
       </div>
-      {# Up to 4 calendar rows: date chip · label · impact chip #}
       {% if macro_catalysts %}
-      <div class="sxg-ev-cal-list">
-        {% for c in macro_catalysts[:4] %}
-        <div class="sxg-evcal-row">
-          <span class="sxg-evcal-date">{{ _mos2[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</span>
-          <span class="sxg-evcal-label"><span class="l-en">{{ c.label }}</span><span class="l-zh">{{ c.get('label_zh') or c.label }}</span></span>
-          {% if c.impact == 'high' %}<span class="sxg-evcal-imp high"><span class="l-en">HIGH</span><span class="l-zh">高</span></span>
-          {% elif c.impact == 'med' %}<span class="sxg-evcal-imp med"><span class="l-en">MED</span><span class="l-zh">中</span></span>{% endif %}
+      <div class="mx5-timeline">
+        <div class="mx5-timeline-rail"></div>
+        <div class="mx5-tl-items">
+          {% for c in macro_catalysts[:5] %}
+          {% set _dot_cls = 'mx5-dot-high' if c.impact == 'high' else ('mx5-dot-med' if c.impact == 'med' else 'mx5-dot-low') %}
+          {% set _bdg_cls = 'high' if c.impact == 'high' else ('med' if c.impact == 'med' else 'low') %}
+          {% set _lbl_zh = c.get('label_zh') or c.label %}
+          <div class="mx5-tl-item">
+            <div class="mx5-tl-dot {{ _dot_cls }}"></div>
+            <div class="mx5-tl-name"><span class="l-en">{{ c.label[:8] }}</span><span class="l-zh">{{ _lbl_zh[:5] }}</span></div>
+            <div class="mx5-tl-date">{{ _mos2[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</div>
+            <div class="mx5-tl-badge {{ _bdg_cls }}">
+              <span class="l-en">{{ c.impact | upper }}</span>
+              <span class="l-zh">{{ {'high':'高','med':'中','low':'低'}.get(c.impact, c.impact) }}</span>
+            </div>
+          </div>
+          {% endfor %}
         </div>
-        {% endfor %}
       </div>
-      {% endif %}
-      {# Fed odds in plain words (fix audit COPY-05: no naked "No change 84.5%"; translate outcome to ZH) #}
-      {% if prediction_markets and prediction_markets.events %}
-      {% set _fed_ev = prediction_markets.events | first %}
-      {% set _fed_top = _fed_ev.outcomes | sort(attribute='prob',reverse=true) | first %}
-      {% set _fed_outcome_zh = {'No change':'按兵不动','Rate cut':'降息','Rate hike':'加息','25bps cut':'降息25bp','50bps cut':'降息50bp','25bps hike':'加息25bp'}.get(_fed_top.outcome, _fed_top.outcome) %}
-      <div class="sxg-fed-odds">
-        <span class="l-en">Fed: <b>{{ _fed_top.outcome }}</b> priced at {{ _fed_top.prob }}%</span>
-        <span class="l-zh">美联储：<b>{{ _fed_outcome_zh }}</b> 概率 {{ _fed_top.prob }}%</span>
+      {% else %}
+      <div style="flex:1;display:flex;align-items:center">
+        <span style="font-size:12px;color:var(--ink-3,rgba(255,255,255,.36))">
+          <span class="l-en">No top-tier prints in the window.</span>
+          <span class="l-zh">窗口内无一线数据。</span>
+        </span>
       </div>
       {% endif %}
     </div>
@@ -6383,6 +6953,209 @@ body.page-macro.mx4-grid #mx5-score-numeral{
     </div></div></div>
   </div>{# /sx-events-v2 #}
 
+  {# ── v5 STATIC CARDS — Fed Probability, Market Sentiment, Sector Temperature ── #}
+  {# Grid-only (display:none in ledger view via .sx-v5-static CSS rule) #}
+  {% if mode != 'stocks' %}
+
+  {# ── Fed Probability Instrument ── #}
+  <div class="sx-v5-static" id="sx-v5-fed">
+  {% if prediction_markets and prediction_markets.events %}
+  {% set _fedv5_ev = prediction_markets.events | first %}
+  {% set _fedv5_top = _fedv5_ev.outcomes | sort(attribute='prob',reverse=true) | first %}
+  {% set _fedv5_pct = _fedv5_top.prob | float %}
+  {# Donut: r=30, circumference=2π*30=188.5; filled arc = pct/100*188.5 #}
+  {% set _fedv5_arc_total = 188.5 %}
+  {% set _fedv5_arc_fill = (_fedv5_pct / 100 * _fedv5_arc_total) | round(1) %}
+  {% set _fedv5_arc_gap = (_fedv5_arc_total - _fedv5_arc_fill) | round(1) %}
+  {% set _fedv5_outcome_zh = {'No change':'按兵不动','Rate cut':'降息','Rate hike':'加息','25bps cut':'降息25bp','50bps cut':'降息50bp','25bps hike':'加息25bp'}.get(_fedv5_top.outcome, _fedv5_top.outcome) %}
+  {% set _fedv5_is_hold = 'change' in _fedv5_top.outcome | lower or 'hold' in _fedv5_top.outcome | lower %}
+  <div class="mx5-card">
+    <div class="mx5-card-title"><span class="l-en">Fed Probability Instrument</span><span class="l-zh">美联储概率仪</span></div>
+    <div class="mx5-fed-main-row">
+      <div class="mx5-fed-donut-wrap">
+        <svg viewBox="0 0 80 80" style="width:76px;height:76px;display:block">
+          <defs>
+            <filter id="fedDonutGlow5"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="8"/>
+          <circle cx="40" cy="40" r="30" fill="none" stroke="{{ '#22d97a' if _fedv5_is_hold else '#f59e0b' }}"
+            stroke-width="8" stroke-dasharray="{{ _fedv5_arc_fill }} {{ _fedv5_arc_gap }}"
+            stroke-linecap="round" transform="rotate(-90 40 40)" filter="url(#fedDonutGlow5)"/>
+        </svg>
+        <div class="mx5-fed-pct-overlay">{{ _fedv5_pct | int }}<small>%</small></div>
+      </div>
+      <div>
+        <div class="mx5-fed-verdict">
+          <span class="l-en">{{ _fedv5_top.outcome }}</span>
+          <span class="l-zh">{{ _fedv5_outcome_zh }}</span>
+        </div>
+        <div class="mx5-fed-desc">
+          <span class="l-en">Priced in &mdash; market<br>consensus is a {{ _fedv5_top.outcome | upper }}</span>
+          <span class="l-zh">市场定价 &mdash; 共识为{{ _fedv5_outcome_zh }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="mx5-fed-hist-label"><span class="l-en">Outcome Probability Distribution</span><span class="l-zh">结果概率分布</span></div>
+    <div class="mx5-fed-hist-bars">
+      {% set _fedv5_outcomes = _fedv5_ev.outcomes | sort(attribute='prob') %}
+      {% for oc in _fedv5_outcomes %}
+      {% set _bar_h = ([oc.prob / 2, 2] | max) | round | int %}
+      {% set _is_top = (oc.outcome == _fedv5_top.outcome) %}
+      <div class="mx5-fed-hist-col">
+        <div class="mx5-fed-hist-bar" style="height:{{ _bar_h }}px;{% if _is_top %}background:linear-gradient(180deg,rgba(34,217,122,.45) 0%,rgba(34,217,122,.18) 100%);border:1px solid rgba(34,217,122,.28);box-shadow:0 0 10px rgba(34,217,122,.18);{% else %}background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.15);{% endif %}border-radius:2px 2px 0 0;"></div>
+        <div class="mx5-fed-hist-name"{% if _is_top %} style="color:var(--mx5-accent);font-weight:700"{% endif %}>
+          <span class="l-en">{{ oc.outcome[:6] }}</span>
+          <span class="l-zh">{{ {'No change':'不变','Rate cut':'降','Rate hike':'升','25bps cut':'-25','50bps cut':'-50','25bps hike':'+25'}.get(oc.outcome, oc.outcome[:4]) }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {# Policy note from policy_lever #}
+    {% if PL %}
+    <div class="mx5-fed-policy-note">
+      <strong><span class="l-en">Policy</span><span class="l-zh">政策</span></strong> &mdash;
+      <span class="l-en">{{ {'QUIET':'Quiet · No active jawboning','ELEVATED':'Elevated · watch repricing','ARMED':'Armed · repricing active'}.get(PL.get('state','QUIET'), 'Quiet') }}</span>
+      <span class="l-zh">{{ {'QUIET':'平静 · 无积极发声','ELEVATED':'警戒 · 留意重定价','ARMED':'已触发 · 重定价活跃'}.get(PL.get('state','QUIET'), '平静') }}</span>
+      {% if flip_confirmation and flip_confirmation.last_event %}
+      <br><span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))">
+        <span class="l-en">Last flip {{ flip_confirmation.last_event.event_date }}</span>
+        <span class="l-zh">最近翻转 {{ flip_confirmation.last_event.event_date }}</span>
+      </span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  {# Graceful absent: simple placeholder card #}
+  <div class="mx5-card">
+    <div class="mx5-card-title"><span class="l-en">Fed Probability Instrument</span><span class="l-zh">美联储概率仪</span></div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center">
+      <span style="font-size:12px;color:var(--ink-3,rgba(255,255,255,.36))">
+        <span class="l-en">Fed pricing data — accruing from nightly log.</span>
+        <span class="l-zh">美联储定价数据 — 每晚积累中。</span>
+      </span>
+    </div>
+  </div>
+  {% endif %}
+  </div>{# /sx-v5-fed #}
+
+  {# ── Market Sentiment ── #}
+  <div class="sx-v5-static" id="sx-v5-sentiment">
+  {% set _fgv5 = fear_greed if (fear_greed is defined and fear_greed) else {} %}
+  {% set _fgv5_dial = (_fgv5.get('dial') or 50) | float %}
+  {% set _fgv5_label_en = _fgv5.get('label_en') or ('Neutral' if _fgv5_dial >= 40 and _fgv5_dial <= 60 else ('Greed' if _fgv5_dial > 60 else 'Fear')) %}
+  {% set _fgv5_label_zh = _fgv5.get('label_zh') or {'Extreme Fear':'极度恐慌','Fear':'恐慌','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'}.get(_fgv5_label_en, _fgv5_label_en) %}
+  {% set _fgv5_col = '#22d97a' if _fgv5_dial > 60 else ('#ef4444' if _fgv5_dial < 40 else '#f59e0b') %}
+  {# Needle: SVG rotate transform — angle=dial/100*180, needle points from center (190,185) upward.
+     rotate(angle-90, cx, cy) maps 0→left, 100→right; no trig needed in Jinja. #}
+  {% set _fg_needle_rot = (_fgv5_dial / 100 * 180 - 90) | round(1) %}
+  <div class="mx5-card">
+    <div class="mx5-card-title"><span class="l-en">Market Sentiment</span><span class="l-zh">市场情绪</span></div>
+    <div class="mx5-sentiment-dial-wrap">
+      <svg viewBox="0 0 380 200" style="width:100%;max-width:340px;height:180px;display:inline-block;overflow:visible">
+        <defs>
+          <linearGradient id="sentGrad5" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#ef4444"/>
+            <stop offset="35%"  stop-color="#f59e0b"/>
+            <stop offset="65%"  stop-color="#22d97a"/>
+            <stop offset="100%" stop-color="#22d97a"/>
+          </linearGradient>
+          <filter id="dialGlow5"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        {# Track #}
+        <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="18" stroke-linecap="round"/>
+        {# Gradient decorative track #}
+        <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="url(#sentGrad5)" stroke-width="18" stroke-linecap="round" opacity=".55"/>
+        {# Needle — rotate(angle-90, cx=190, cy=185) where angle=dial/100*180 #}
+        <line x1="190" y1="185" x2="190" y2="30"
+              stroke="{{ _fgv5_col }}" stroke-width="4" stroke-linecap="round"
+              transform="rotate({{ _fg_needle_rot }}, 190, 185)"
+              filter="url(#dialGlow5)"/>
+        <circle cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke="{{ _fgv5_col }}" stroke-width="2.5"/>
+        <circle cx="190" cy="185" r="4"  fill="{{ _fgv5_col }}"/>
+        {# Zone labels (≥11px per spec) #}
+        <text x="20"  y="196" fill="#ef4444" font-size="13" font-family="-apple-system,sans-serif" font-weight="700">PANIC</text>
+        <text x="190" y="18"  fill="rgba(255,255,255,.36)" font-size="12" font-family="-apple-system,sans-serif" text-anchor="middle">NEUTRAL</text>
+        <text x="360" y="196" fill="#22d97a" font-size="13" font-family="-apple-system,sans-serif" text-anchor="end" font-weight="700">EUPHORIA</text>
+      </svg>
+    </div>
+    <div class="mx5-sentiment-zone-text" style="color:{{ _fgv5_col }}">
+      <span class="l-en">{{ _fgv5_label_en }}</span>
+      <span class="l-zh">{{ _fgv5_label_zh }}</span>
+    </div>
+    <div class="mx5-sentiment-label">
+      <span class="l-en">Composite at {{ _fgv5_dial | int }} &middot; {{ _fgv5_label_en | lower }} zone</span>
+      <span class="l-zh">综合指数 {{ _fgv5_dial | int }} &middot; {{ _fgv5_label_zh }}区间</span>
+    </div>
+  </div>
+  </div>{# /sx-v5-sentiment #}
+
+  {# ── Sector Temperature ── #}
+  <div class="sx-v5-static" id="sx-v5-sector">
+  <div class="mx5-card">
+    <div class="mx5-card-title"><span class="l-en">Sector Temperature</span><span class="l-zh">板块温度</span></div>
+    {% if sector_heat %}
+    {% set _shv5_hot = (sector_heat.get('heating') or [])[:3] %}
+    {% set _shv5_cold = (sector_heat.get('cooling') or [])[:3] %}
+    {% if _shv5_hot %}
+    <div class="mx5-sector-row">
+      <div class="mx5-sector-sub-label"><span class="l-en">Hot</span><span class="l-zh">热门</span></div>
+      <div class="mx5-sector-chips">
+        {% for s in _shv5_hot %}
+        <span class="mx5-sector-chip hot">
+          <span class="l-en">{{ s.get('name','') }}</span>
+          <span class="l-zh">{{ s.get('name_zh') or s.get('name','') }}</span>
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if _shv5_cold %}
+    <div class="mx5-sector-row">
+      <div class="mx5-sector-sub-label"><span class="l-en">Cold</span><span class="l-zh">低迷</span></div>
+      <div class="mx5-sector-chips">
+        {% for s in _shv5_cold %}
+        <span class="mx5-sector-chip cold">
+          <span class="l-en">{{ s.get('name','') }}</span>
+          <span class="l-zh">{{ s.get('name_zh') or s.get('name','') }}</span>
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {# Mini heat bar strip #}
+    {% set _shv5_all = ((sector_heat.get('heating') or []) + (sector_heat.get('cooling') or []))[:10] %}
+    {% if _shv5_all %}
+    <div class="mx5-sector-heat-divider">
+      <div class="mx5-sector-heat-label"><span class="l-en">Sector Heat</span><span class="l-zh">板块热图</span></div>
+      <div class="mx5-sector-heat-bars">
+        {% for s in _shv5_all %}
+        {% set _is_heat = s in (sector_heat.get('heating') or []) %}
+        {% set _rk = s.get('rank', loop.index) | int %}
+        {# bar height: rank 1=28px, ... decay; color green for hot, red for cold #}
+        {% set _bar_h = ([28 - (_rk - 1) * 3, 11] | max) %}
+        {% set _bar_col = 'rgba(34,217,122,' ~ ([0.72 - (_rk-1)*0.08, 0.22]|max) ~ ')' if _is_heat else 'rgba(239,68,68,' ~ ([0.65 - (_rk-1)*0.08, 0.18]|max) ~ ')' %}
+        <div class="mx5-sector-heat-col">
+          <div class="mx5-sector-heat-bar" style="height:{{ _bar_h }}px;background:{{ _bar_col }};"></div>
+          <div class="mx5-sector-heat-name">{{ s.get('ticker','??') }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div style="flex:1;display:flex;align-items:center;justify-content:center">
+      <span style="font-size:12px;color:var(--ink-3,rgba(255,255,255,.36))">
+        <span class="l-en">Sector data — accruing from nightly log.</span>
+        <span class="l-zh">板块数据 — 每晚积累中。</span>
+      </span>
+    </div>
+    {% endif %}
+  </div>
+  </div>{# /sx-v5-sector #}
+
+  {% endif %}{# /mode != stocks #}
+
   {# 3. MARKETS row + tray #}
   <div class="sx" id="sx-markets-v2" style="--isle-color:var(--isle-markets)">
     <div class="sx-sum" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-markets-v2')">
@@ -6401,41 +7174,56 @@ body.page-macro.mx4-grid #mx5-score-numeral{
       </div>
       <div class="sx-chev">&#8964;</div>
     </div>
-    {# MX4 face — MARKETS (S2 full: 2×2 quote tiles with consistent number format + sector hot/cold line) #}
-    {# VIS-03 fix: consistent format: thousands commas for price, uniform %chg sign+2dp #}
-    <div class="sxg-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-markets-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-markets-v2');}">
-      <div class="sxg-face-eyebrow"><span class="l-en">Markets</span><span class="l-zh">市场</span></div>
-      <div class="sxg-face-tiles">
+    {# v5 face — MARKETS (S2: four glass tiles with price/delta/sparkline; data-bare ids preserved) #}
+    {% set _ix_names = {'SPY': 'US Equities', 'QQQ': 'Nasdaq', 'DJI': 'Dow Jones', '_DJI': 'Dow Jones', 'RUT': 'Small Cap', '_RUT': 'Small Cap'} %}
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-markets-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-markets-v2');}">
+      {# Eyebrow hidden in v5 card face — card-title replaces it #}
+      <div class="mx5-card-title"><span class="l-en">Markets</span><span class="l-zh">市场行情</span></div>
+      <div class="mx5-mkt-grid">
         {% for ix in index_health[:4] %}
         {% set _ixsym = ix.ticker | replace('_','') %}
-        <div class="sxg-mkt-tile nb-tile" data-sym="{{ _ixsym }}" data-mkt="us">
-          <span class="sxg-mkt-sym">{{ _ixsym }}</span>
-          <span class="sxg-mkt-price nb-px" data-sym="{{ _ixsym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</span>
-          <span class="sxg-mkt-chg {{ 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</span>
+        {% set _ixdir = 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') %}
+        {# idx_spark: list of closes for this ticker; graceful if absent #}
+        {% set _ixspk = (idx_spark.get(_ixsym) or idx_spark.get('^' ~ _ixsym) or []) if (idx_spark is defined and idx_spark) else [] %}
+        <div class="mx5-mkt-tile {{ _ixdir }}" data-sym="{{ _ixsym }}" data-mkt="us">
+          <div class="mx5-mkt-ticker">{{ _ixsym }}</div>
+          <div class="mx5-mkt-sub">{{ _ix_names.get(ix.ticker, _ixsym) }}</div>
+          <div class="mx5-mkt-price nb-px" data-sym="{{ _ixsym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
+          <div class="mx5-mkt-delta {{ _ixdir }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</div>
+          {# Sparkline — Jinja static SVG from idx_spark; absent = no spark box #}
+          {% if _ixspk and _ixspk | length >= 3 %}
+          {% set _spk_n = _ixspk | length %}
+          {% set _spk_min = _ixspk | min %}
+          {% set _spk_max = _ixspk | max %}
+          {% set _spk_range = (_spk_max - _spk_min) if (_spk_max - _spk_min) > 0 else 1 %}
+          {# Compute polyline points: x=i/(n-1)*120, y=32*(1-(v-min)/range) #}
+          {% set _spk_pts = [] %}
+          {% for v in _ixspk %}
+            {% set _sx = (loop.index0 / (_spk_n - 1) * 120) | round(1) %}
+            {% set _sy = (32 * (1 - (v - _spk_min) / _spk_range)) | round(1) %}
+            {% if _spk_pts.append(_sx ~ ',' ~ _sy) %}{% endif %}
+          {% endfor %}
+          {% set _spk_color = '#22d97a' if _ixdir == 'up' else ('#ef4444' if _ixdir == 'dn' else 'rgba(255,255,255,.38)') %}
+          <div class="mx5-spark mx5-spark-{{ _ixdir }}">
+            <svg viewBox="0 0 120 34" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spkGrad_{{ _ixsym }}" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="{{ _spk_color }}" stop-opacity=".26"/>
+                  <stop offset="100%" stop-color="{{ _spk_color }}" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path class="mx5-spark-area"
+                d="{{ _spk_pts | join(' L') }} L120,34 L0,34 Z"
+                fill="url(#spkGrad_{{ _ixsym }})" stroke="none"/>
+              <polyline class="mx5-spark-line"
+                points="{{ _spk_pts | join(' ') }}"
+                fill="none" stroke="{{ _spk_color }}" stroke-width="1.5"/>
+            </svg>
+          </div>
+          {% endif %}
         </div>
         {% endfor %}
       </div>
-      {# Sector hot/cold line from sector_heat (graft 6) #}
-      {% if sector_heat %}
-      {% set _sh_hot = (sector_heat.get('heating') or [])[:2] %}
-      {% set _sh_cold = (sector_heat.get('cooling') or [])[:2] %}
-      <div class="sxg-sector-hot-cold">
-        {% if _sh_hot %}
-        <span class="l-en">
-          <span class="sxg-sector-up">Hot:</span>
-          {% for s in _sh_hot %}{{ s.get('name','') }}{% if not loop.last %}, {% endif %}{% endfor %}
-          {% if _sh_cold %} &nbsp;·&nbsp; <span class="sxg-sector-dn">Cold:</span>
-          {% for s in _sh_cold %}{{ s.get('name','') }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
-        </span>
-        <span class="l-zh">
-          <span class="sxg-sector-up">热门：</span>
-          {% for s in _sh_hot %}{{ s.get('name_zh') or s.get('name','') }}{% if not loop.last %}、{% endif %}{% endfor %}
-          {% if _sh_cold %} &nbsp;·&nbsp; <span class="sxg-sector-dn">低迷：</span>
-          {% for s in _sh_cold %}{{ s.get('name_zh') or s.get('name','') }}{% if not loop.last %}、{% endif %}{% endfor %}{% endif %}
-        </span>
-        {% endif %}
-      </div>
-      {% endif %}
     </div>
     <div class="sx-tray"><div class="sx-tray-inner-wrap"><div class="sx-island">
       {# Island header beacon #}
@@ -6907,43 +7695,59 @@ body.page-macro.mx4-grid #mx5-score-numeral{
     {% set _pl_fed_st = (latest.fed_stance.stance if (latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.stance is defined and latest.fed_stance.stance != 'unknown') else none) %}
     {% set _pl_fsl = {'hawkish':'Hawkish','very-hawkish':'Very Hawkish','dovish':'Dovish','very-dovish':'Very Dovish','neutral':'Neutral / hold'} %}
     {% set _pl_fsl_zh = {'hawkish':'鹰派','very-hawkish':'极鹰派','dovish':'鸽派','very-dovish':'极鸽派','neutral':'中性 / 不动'} %}
-    <div class="sxg-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-policy-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-policy-v2');}">
-      <div class="sxg-face-eyebrow"><span class="l-en">Policy</span><span class="l-zh">政策</span></div>
-      <div class="sxg-policy-state">
-        <span class="l-en">{{ _pl_plain_en }}</span>
-        <span class="l-zh">{{ _pl_plain_zh }}</span>
-      </div>
-      <div class="sxg-policy-rows">
+    {# v5 face — POLICY MONITOR (structured key-rows; keep engine field vocab) #}
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-policy-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-policy-v2');}">
+      <div class="mx5-card-title"><span class="l-en">Policy Monitor</span><span class="l-zh">政策监测</span></div>
+      <div class="mx5-policy-rows">
+        {# Signal / state row #}
+        <div class="mx5-policy-row">
+          <span class="mx5-policy-key"><span class="l-en">Signal</span><span class="l-zh">信号</span></span>
+          <span class="mx5-policy-val">
+            <span class="l-en">{{ _pl_plain_en }}</span>
+            <span class="l-zh">{{ _pl_plain_zh }}</span>
+          </span>
+        </div>
+        {# Status row #}
+        <div class="mx5-policy-row">
+          <span class="mx5-policy-key"><span class="l-en">Status</span><span class="l-zh">状态</span></span>
+          <span class="mx5-policy-val" style="font-size:11px;color:var(--ink-2,rgba(255,255,255,.6))">
+            {% if PL and PL.get('jawboning') and PL.jawboning.get('n_7d') is not none %}
+            <span class="l-en">{{ PL.jawboning.n_7d }} speeches 7d</span>
+            <span class="l-zh">7日 {{ PL.jawboning.n_7d }} 次发声</span>
+            {% else %}
+            <span class="l-en">No active jawboning</span>
+            <span class="l-zh">无积极发声</span>
+            {% endif %}
+          </span>
+        </div>
         {# Last flip row #}
         {% if flip_confirmation is defined and flip_confirmation and flip_confirmation.last_event %}
-        <div class="sxg-policy-row">
-          <span class="sxg-policy-key"><span class="l-en">Last flip</span><span class="l-zh">最近翻转</span></span>
-          <span class="sxg-policy-val">{{ flip_confirmation.last_event.event_date }}</span>
+        <div class="mx5-policy-row">
+          <span class="mx5-policy-key"><span class="l-en">Last flip</span><span class="l-zh">最近翻转</span></span>
+          <span class="mx5-policy-val">{{ flip_confirmation.last_event.event_date }}</span>
         </div>
         {% endif %}
         {# Fed stance row #}
         {% if _pl_fed_st %}
-        <div class="sxg-policy-row">
-          <span class="sxg-policy-key"><span class="l-en">Fed stance</span><span class="l-zh">美联储立场</span></span>
-          <span class="sxg-policy-val"><span class="l-en">{{ _pl_fsl.get(_pl_fed_st, _pl_fed_st) }}</span><span class="l-zh">{{ _pl_fsl_zh.get(_pl_fed_st, _pl_fed_st) }}</span></span>
+        <div class="mx5-policy-row">
+          <span class="mx5-policy-key"><span class="l-en">Fed stance</span><span class="l-zh">美联储立场</span></span>
+          <span class="mx5-policy-val">
+            <span class="l-en">{{ _pl_fsl.get(_pl_fed_st, _pl_fed_st) }}</span>
+            <span class="l-zh">{{ _pl_fsl_zh.get(_pl_fed_st, _pl_fed_st) }}</span>
+          </span>
+        </div>
+        {% endif %}
+        {# Repricing count #}
+        {% if _plrepr_count > 0 %}
+        <div class="mx5-policy-row">
+          <span class="mx5-policy-key"><span class="l-en">Repricing</span><span class="l-zh">重定价</span></span>
+          <span class="mx5-policy-val">
+            <span class="l-en">{{ _plrepr_count }}/4 active</span>
+            <span class="l-zh">{{ _plrepr_count }}/4 活跃</span>
+          </span>
         </div>
         {% endif %}
       </div>
-      {# Fed-odds meeting path (graft 4): labeled inline bars for up to 3 meetings #}
-      {% if prediction_markets and prediction_markets.events %}
-      <div class="sxg-fed-path">
-        {% for e in prediction_markets.events[:3] %}
-        {% set _top = (e.outcomes|sort(attribute='prob',reverse=true))|first %}
-        <div class="sxg-fed-path-row">
-          <span class="sxg-fed-path-lbl">{{ t(e.label_en, e.label_zh) }}</span>
-          <div class="sxg-fed-path-bar"><div class="sxg-fed-path-fill" style="width:{{ _top.prob }}%"></div></div>
-          <span class="sxg-fed-path-pct">{{ _top.prob }}%</span>
-        </div>
-        {% endfor %}
-      </div>
-      {% elif _plrepr_count > 0 %}
-      <div class="sxg-face-sub"><span class="l-en">{{ _plrepr_count }}/4 repricing channels active</span><span class="l-zh">{{ _plrepr_count }}/4 重定价渠道活跃</span></div>
-      {% endif %}
     </div>
     <div class="sx-tray">
       <div class="sx-tray-inner-wrap"><div class="sx-island">
@@ -7193,37 +7997,41 @@ body.page-macro.mx4-grid #mx5-score-numeral{
     {% set _abCh = _abSyn.get('dominant_channel','') %}
     {% set _abTheme = _abSyn.get('dominant_theme','') %}
     {% set _abHiCnt = _abSyn.get('high_impact_count') %}
-    <div class="sxg-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-aibrief-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-aibrief-v2');}">
-      <div class="sxg-face-eyebrow"><span class="l-en">AI Brief</span><span class="l-zh">AI简报</span></div>
-      {# COPY-03/BIL-01: build clean face headline from structured fields; never show raw engine text with slugs #}
-      {% set _abDomTheme = _abSyn.get('dominant_theme','') %}
-      {% set _abDomCh_clean = _aibf_ch.get(_abCh, _abCh) if _abCh else '' %}
-      {% set _abDomCh_clean_zh = _aibf_ch_zh.get(_abCh, _abCh) if _abCh else '' %}
-      {% set _abDomTheme_zh = _aibf_ch_zh.get(_abDomTheme, _aibf_ch.get(_abDomTheme, _abDomTheme)) %}
-      <div class="sxg-face-stance">
+    {# v5 face — AI BRIEF (ticker pills + structured bilingual lines + required not-a-signal note) #}
+    {% set _abDomCh_clean = _aibf_ch.get(_abCh, _abCh | replace('_',' ')) if _abCh else '' %}
+    {% set _abDomCh_clean_zh = _aibf_ch_zh.get(_abCh, _abCh) if _abCh else '' %}
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-aibrief-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-aibrief-v2');}">
+      <div class="mx5-card-title"><span class="l-en">AI Brief</span><span class="l-zh">AI简报</span></div>
+      {# Top ticker pills (VIS-02: wraps freely, no fixed-width clip) #}
+      {% if _abSyn.get('top_tickers') %}
+      <div class="mx5-ai-ticker-pills">
+        {% for tk in _abSyn.top_tickers[:4] %}
+        <span class="mx5-ai-ticker-pill">{{ tk.ticker }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {# Structured body: impact count + channel (BIL-01/COPY-03: clean structured fields, no raw slugs) #}
+      <div class="mx5-ai-body">
         {% if _abHiCnt is not none %}
-        {# Build a clean single-line headline #}
-        <span class="l-en">{{ _abHiCnt }} high-impact items{% if _abDomCh_clean %}; dominant channel {{ _abDomCh_clean }}{% endif %}.</span>
-        <span class="l-zh">{{ _abHiCnt }} 条高影响信息{% if _abDomCh_clean_zh %}；主导频道：{{ _abDomCh_clean_zh }}{% endif %}。</span>
-        {% elif _abCh %}
-        <span class="l-en">Lead channel: {{ _abDomCh_clean }}</span>
-        <span class="l-zh">主导频道：{{ _abDomCh_clean_zh }}</span>
+        <span class="l-en">
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">{{ _abHiCnt }} High-Impact Items</span><br>
+          {% if _abDomCh_clean %}Dominant channel: <span style="color:var(--mx5-accent);font-weight:600">{{ _abDomCh_clean }}</span><br>{% endif %}
+          {{ _abHiCnt }} high-impact signals across channels
+        </span>
+        <span class="l-zh">
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">{{ _abHiCnt }} 条高影响信息</span><br>
+          {% if _abDomCh_clean_zh %}主导频道：<span style="color:var(--mx5-accent);font-weight:600">{{ _abDomCh_clean_zh }}</span><br>{% endif %}
+          {{ _abHiCnt }} 条高影响信号
+        </span>
         {% else %}
         <span class="l-en">Cross-asset synthesis</span>
         <span class="l-zh">跨资产综合</span>
         {% endif %}
       </div>
-      {# Top tickers sub-line (if available, clean summary) #}
-      {% if _abSyn.get('top_tickers') %}
-      <div class="sxg-face-sub">
-        <span class="l-en">Lead: {% for tk in _abSyn.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}, {% endif %}{% endfor %}</span>
-        <span class="l-zh">主要标的：{% for tk in _abSyn.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}、{% endif %}{% endfor %}</span>
-      </div>
-      {% endif %}
-      {# VIS-02: badge un-clipped — use sxg-aibrief-badge (wraps freely) not a fixed-width chip #}
-      <div class="sxg-aibrief-badge">
-        <span class="l-en">A read-through of existing signals — not a signal source.</span>
-        <span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源。</span>
+      {# Required not-a-signal-source note (spec §2.9) #}
+      <div class="mx5-ai-note">
+        <span class="l-en">A read-through of existing signals &mdash; not a signal source.</span>
+        <span class="l-zh">仅为现有信号的汇总解读 &mdash; 非独立信号源。</span>
       </div>
     </div>
     <div class="sx-tray">
@@ -7302,39 +8110,85 @@ body.page-macro.mx4-grid #mx5-score-numeral{
       </div>
       <div class="sx-chev">&#8964;</div>
     </div>
-    {# MX4 face — grid view card face for NEWS (S3: age + BIL-02 fix) #}
-    <div class="sxg-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-news-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-news-v2');}">
-      <div class="sxg-face-eyebrow">
-        <span class="l-en">News</span><span class="l-zh">新闻</span>
-        {% if macro_news and macro_news.headlines %}<span style="font-size:10px;font-weight:400;margin-left:auto;opacity:.7"><span class="l-en">{{ macro_news.headlines|length }} items</span><span class="l-zh">{{ macro_news.headlines|length }} 条</span></span>{% endif %}
-      </div>
-      {% if macro_news and macro_news.headlines %}
-      <div class="sxg-face-news-list">
-        {% for h in macro_news.headlines[:3] %}
-        {# Age from seendate (ISO 8601 string) — compute plain-word age label #}
-        {% set _h_seen = h.seendate or h.pub_date %}
-        {% set _h_age = '' %}
-        {% if _h_seen %}
-          {% set _h_date = _h_seen[:10] %}
-          {# Rough age: compare date string to latest.date — today proxy #}
-          {% if _h_date == (latest.date if latest and latest.date else '') %}
-            {% set _h_age = 'today' %}
-          {% else %}
-            {% set _h_age = _h_date %}
-          {% endif %}
+    {# v5 face — ALERTS CENTRE (severity-sorted; warn first; plain_en/zh + message; footer opens island) #}
+    {# alerts VM list: severity-sort: warn > info; top 3 shown #}
+    {% set _alv5_all = alerts if alerts else [] %}
+    {# Sort: warn severity first, then info #}
+    {% set _alv5_sorted = (_alv5_all | selectattr('severity','in',('warn','high','critical')) | list) + (_alv5_all | rejectattr('severity','in',('warn','high','critical')) | list) %}
+    {% set _alv5_top = _alv5_sorted[:3] %}
+    {% set _alv5_total = _alv5_all | length %}
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-news-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-news-v2');}">
+      <div class="mx5-card-title-row">
+        <div class="mx5-card-title"><span class="l-en">Alerts Centre</span><span class="l-zh">警报中心</span></div>
+        {% if _alv5_total > 0 %}
+        <div class="mx5-card-badge" style="color:var(--mx5-warn);background:var(--mx5-warn-dim);border:1px solid rgba(245,158,11,.20);">
+          <span class="l-en">{{ _alv5_total }} FIRED</span>
+          <span class="l-zh">{{ _alv5_total }} 条触发</span>
+        </div>
         {% endif %}
-        <div class="sxg-news-row">
-          <span class="sxg-news-dot {{ 'sxg-dot-high' if h.importance in ('high','critical') else ('sxg-dot-med' if h.importance == 'medium' else '') }}"></span>
-          <span class="sxg-news-hl">
-            {# BIL-02: ZH rows must not show EN classification labels; use title_zh if present, else title #}
-            <span class="l-en">{{ h.title[:60] }}{% if h.title|length > 60 %}…{% endif %}{% if _h_age %} <span class="sxg-news-age">· {{ _h_age }}</span>{% endif %}</span>
-            <span class="l-zh">{{ (h.get('title_zh') or h.title)[:42] }}{% if (h.get('title_zh') or h.title)|length > 42 %}…{% endif %}{% if _h_age %} <span class="sxg-news-age">· {{ _h_age }}</span>{% endif %}</span>
-          </span>
+      </div>
+      {% if _alv5_top %}
+      <div class="mx5-alerts-list">
+        {% for a in _alv5_top %}
+        {% set _asev = 'warn' if a.severity in ('warn','high','critical') else 'info' %}
+        <div class="mx5-alert-item {{ _asev }}">
+          <div class="mx5-alert-dot {{ _asev }}"></div>
+          <div class="mx5-alert-content">
+            <div class="mx5-alert-title {{ _asev }}">
+              <span class="l-en">{{ a.plain_en }}</span>
+              <span class="l-zh">{{ a.plain_zh or a.plain_en }}</span>
+            </div>
+            <div class="mx5-alert-detail">
+              <span class="l-en">{{ a.message[:120] }}{% if a.message | length > 120 %}…{% endif %}</span>
+              <span class="l-zh">{{ (a.message_zh or a.message)[:80] }}{% if (a.message_zh or a.message) | length > 80 %}…{% endif %}</span>
+            </div>
+          </div>
         </div>
         {% endfor %}
       </div>
+      <div class="mx5-alert-footer">
+        <span>
+          <span class="l-en">Showing {{ _alv5_top | length }} of {{ _alv5_total }} fired</span>
+          <span class="l-zh">显示 {{ _alv5_top | length }} / {{ _alv5_total }} 条</span>
+        </span>
+        <button type="button" class="mx5-alert-footer-link" onclick="event.stopPropagation();mx2Toggle('sx-news-v2')">
+          <span class="l-en">View all &#8594;</span>
+          <span class="l-zh">查看全部 &#8594;</span>
+        </button>
+      </div>
+      {% elif macro_news and macro_news.headlines %}
+      {# No alerts — fall back to top 3 headlines #}
+      <div class="mx5-alerts-list">
+        {% for h in macro_news.headlines[:3] %}
+        <div class="mx5-alert-item info">
+          <div class="mx5-alert-dot info"></div>
+          <div class="mx5-alert-content">
+            <div class="mx5-alert-title">
+              <span class="l-en">{{ h.title[:55] }}{% if h.title|length > 55 %}…{% endif %}</span>
+              <span class="l-zh">{{ (h.get('title_zh') or h.title)[:38] }}{% if (h.get('title_zh') or h.title)|length > 38 %}…{% endif %}</span>
+            </div>
+            {% if h.source_name %}<div class="mx5-alert-detail">{{ h.source_name }}</div>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="mx5-alert-footer">
+        <span>
+          <span class="l-en">{{ macro_news.headlines|length }} items</span>
+          <span class="l-zh">{{ macro_news.headlines|length }} 条</span>
+        </span>
+        <button type="button" class="mx5-alert-footer-link" onclick="event.stopPropagation();mx2Toggle('sx-news-v2')">
+          <span class="l-en">View all &#8594;</span>
+          <span class="l-zh">查看全部 &#8594;</span>
+        </button>
+      </div>
       {% else %}
-      <div class="sxg-face-stance"><span class="l-en">Market intelligence feed</span><span class="l-zh">市场情报</span></div>
+      <div style="flex:1;display:flex;align-items:center">
+        <span style="font-size:12px;color:var(--ink-3,rgba(255,255,255,.36))">
+          <span class="l-en">Market intelligence feed</span>
+          <span class="l-zh">市场情报</span>
+        </span>
+      </div>
       {% endif %}
     </div>
     <div class="sx-tray">
@@ -7426,15 +8280,15 @@ body.page-macro.mx4-grid #mx5-score-numeral{
       </div>
       <div class="sx-chev">&#8964;</div>
     </div>
-    {# MX4 face — grid view card face for DEEP CONTEXT (S1 placeholder; same as sx-sum chip content) #}
-    <div class="sxg-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-deep-context')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-deep-context');}">
-      <div class="sxg-face-eyebrow"><span class="l-en">Deep Context</span><span class="l-zh">深度背景</span></div>
-      <div class="sxg-face-chips">
-        <a class="sxg-deep-chip" href="macro_context.html"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></a>
-        <a class="sxg-deep-chip" href="aibrief.html"><span class="l-en">AI Brief</span><span class="l-zh">AI日报</span></a>
-        <a class="sxg-deep-chip" href="sector_central.html"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
-        <a class="sxg-deep-chip" href="committee.html"><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
-        <a class="sxg-deep-chip" href="macro_signals.html"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
+    {# v5 face — DEEP CONTEXT slim chip row (spec §2.10) #}
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-deep-context')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-deep-context');}">
+      <div class="mx5-deep-chips">
+        <a class="mx5-deep-chip" href="macro_context.html"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></a>
+        <a class="mx5-deep-chip" href="aibrief.html"><span class="l-en">AI Brief</span><span class="l-zh">AI日报</span></a>
+        <a class="mx5-deep-chip" href="sector_central.html"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
+        <a class="mx5-deep-chip" href="committee.html"><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
+        <a class="mx5-deep-chip" href="macro_signals.html"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
+        <a class="mx5-deep-chip" href="china_intel.html"><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
       </div>
     </div>
     <div class="sx-tray">
