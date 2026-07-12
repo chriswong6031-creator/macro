@@ -57,6 +57,22 @@ def test_alternate_keyset_skips_na_segments(monkeypatch):
     assert rec["state"] is None  # no verdict/result → no fabricated state
 
 
+def test_track_record_hook_ready_only_on_graded_verdict(monkeypatch):
+    """Fix 2026-07-12: verdict='measuring' (rows matured, significance gate not yet
+    callable — subsector_track_record vocabulary) must NOT flag ready; it lit
+    subsector-rotation 'ready' 44 days before its callable-verdict date. A graded
+    verdict (validated / a printed null) still must flag ready — nulls are printed."""
+    monkeypatch.setattr(experiments_registry, "_jsonl_dates", lambda rel: (11, 2948))
+    for verdict, expect in [("accruing", None), ("measuring", None),
+                            ("validated", True), ("null", True)]:
+        monkeypatch.setattr(
+            experiments_registry, "_read_json",
+            lambda rel, v=verdict: {"verdict": v, "horizons": {}})
+        out = experiments_registry._refresh_track_record(
+            {"storage": "data/x/snapshots.jsonl", "track_json": "data/x/track_record.json"})
+        assert out.get("ready") is expect, (verdict, out)
+
+
 def test_canonical_keyset_takes_precedence(monkeypatch):
     rec = _compute_with_seed(monkeypatch, [{
         "id": "canon-1", "name": "Canon name", "what": "Canon what",

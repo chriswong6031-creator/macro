@@ -20,6 +20,7 @@ import logging
 import os
 import sys
 import time
+from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -1025,10 +1026,20 @@ def _stamp_personality_forward_ledger(
 ) -> None:
     """Append per-fire personality stamps to data/stock_personality/forward_ledger.parquet.
 
-    Reads data/signal_archive/track_record.parquet for today's buy/rebuy fires.
+    Reads data/signal_archive/track_record.parquet for recent buy/rebuy fires.
     For each fire with a personality object, appends one row.
     Deduped on (ticker, date, type); single-writer (nightly engine job is sole advancer).
     Fail-open: any error is logged at warning and the ledger is left unchanged.
+
+    CONSTRAINT the filter must honor: track_record appends entry rows RETROACTIVELY —
+    buy/rebuy markers are skipped while quality == "pending" (engine/track_record.py
+    anti-repaint gate), so a fire dated D typically lands in the parquet only ~3-4
+    sessions later. A same-day `date == build_date` filter therefore matches nothing,
+    ever (2026-07-12 audit: TTD 07-06 fire appeared in the 07-10 commit, SBUX 07-07 in
+    the 07-12 commit). We scan a bounded lookback window and rely on the dedup key for
+    exactly-once appends; `stamped_on` records the actual write date so the personality
+    lag vs the fire date stays visible (personality read is CURRENT at stamp time, a few
+    sessions after the fire — base personality is slow-moving).
 
     Nightly engine job is the SOLE ADVANCER of this ledger.
     Intraday lanes DISCARD data/ writes per house law.
@@ -1040,8 +1051,17 @@ def _stamp_personality_forward_ledger(
         if not _tr_path.exists():
             return
         _tr = pd.read_parquet(_tr_path, columns=["ticker", "date", "type"])
+        # Lookback floor: 30 days covers the pending-quality lag with wide margin;
+        # 2026-07-06 = ledger wire-in date (never backfill pre-wiring history).
+        try:
+            _lb = (date.fromisoformat(str(build_date)[:10]) - timedelta(days=30)).isoformat()
+        except Exception:  # noqa: BLE001 — unparseable build_date → wire-in floor only
+            _lb = "2026-07-06"
+        _floor = max(_lb, "2026-07-06")
+        _dates = _tr["date"].astype(str)
         _today_fires = _tr[
-            (_tr["date"].astype(str) == str(build_date)) &
+            (_dates >= _floor) &
+            (_dates <= str(build_date)) &
             (_tr["type"].isin(["buy", "rebuy"]))
         ]
         if _today_fires.empty:
@@ -1068,6 +1088,7 @@ def _stamp_personality_forward_ledger(
                 "micro": json.dumps(_micro) if _micro is not None else None,
                 "modes": json.dumps(_cm.get("modes")) if _cm.get("modes") is not None else None,
                 "lineage": "stock_personality.v1",
+                "stamped_on": str(build_date),
             })
         if not _rows:
             return
