@@ -114,11 +114,13 @@ CHANNEL_WEIGHTS: dict[str, float] = {
 }
 
 # Marquee 13F filers whose ADDS carry signal (case-insensitive substring on Fund).
+# Removed defunct funds to prevent false-trigger on 0.85-weight smart_money_13f channel:
+#   melvin — Melvin Capital closed May 2022 (unwound after GameStop short-squeeze losses)
 SMART_MONEY = (
     "berkshire", "scion", "pershing square", "bridgewater", "renaissance",
     "citadel", "tiger global", "coatue", "appaloosa", "icahn", "third point",
     "baupost", "lone pine", "viking global", "soros", "greenlight", "duquesne",
-    "elliott", "starboard", "trian", "altimeter", "whale rock", "melvin",
+    "elliott", "starboard", "trian", "altimeter", "whale rock",
 )
 
 _GOV_FLOOR = 5_000_000.0      # absolute $ floor below which "acceleration" is noise
@@ -157,8 +159,10 @@ def app_ratings_momentum(top: int = 15) -> list[dict]:
         vel = None
         if prior is not None:
             pr = d[(d["time"] == prior) & (d["ticker"] == tk)]["count"].sum()
-            if pr > 0:
-                vel = round(float(reviews - pr), 0)
+            # Relative velocity (delta / prior_count) avoids mega-platform bias.
+            # Floor of 1000 prior reviews prevents tiny-denominator blowups.
+            if pr >= 1000:
+                vel = round(float((reviews - pr) / pr), 4)
         top_app = g.sort_values("count", ascending=False).iloc[0]["app"]
         rows.append({
             "ticker": tk, "rating": round(rating, 2) if rating is not None else None,
@@ -349,9 +353,18 @@ def retail_attention(wsb: list[dict] | None, top: int = 15) -> list[dict]:
 # =========================================================================== #
 # THE WEIGHTED-CONVERGENCE KERNEL — single source for display + by_ticker
 # =========================================================================== #
-def _dpi_z_lookup() -> dict[str, float]:
+_DPI_Z_MIN_DATES = 20   # minimum distinct dates required for z-score path
+
+def _dpi_z_lookup() -> dict[str, dict]:
     """Per-ticker DPI z-score vs the ticker's own off-exchange history, so 'accumulation'
-    means LOW-for-this-name, not a fixed cut. Empty when there's <2 days of history."""
+    means LOW-for-this-name, not a fixed cut.
+
+    Returns {ticker: {"z": float, "basis": "z_score"|"threshold"}} so callers can
+    distinguish statistically-grounded z from fixed-threshold fallbacks.
+
+    Requires >=20 distinct dates for the z-path (ddof=1); otherwise records
+    basis='threshold' so the display layer can disclose the fallback used.
+    """
     df = _read("offexchange")
     if df is None or df.empty or "DPI" not in df.columns:
         return {}
@@ -363,15 +376,20 @@ def _dpi_z_lookup() -> dict[str, float]:
     d = d[d["ticker"].notna() & d["dpi"].notna()]
     if d.empty:
         return {}
-    out: dict[str, float] = {}
+    out: dict[str, dict] = {}
     for tk, g in d.groupby("ticker"):
-        if g["date"].nunique() < 3:
-            continue
+        n_dates = g["date"].nunique()
         g = g.sort_values("date")
-        hist, latest = g["dpi"], g["dpi"].iloc[-1]
-        mu, sd = float(hist.mean()), float(hist.std(ddof=0))
-        if sd and sd > 1e-9:
-            out[tk] = round((latest - mu) / sd, 2)
+        latest = float(g["dpi"].iloc[-1])
+        if n_dates >= _DPI_Z_MIN_DATES:
+            hist = g["dpi"]
+            mu, sd = float(hist.mean()), float(hist.std(ddof=1))
+            if sd and sd > 1e-9:
+                out[tk] = {"z": round((latest - mu) / sd, 2), "basis": "z_score"}
+        else:
+            # Insufficient history for robust z — fall back to fixed threshold;
+            # basis='threshold' is exposed in the payload so the display can disclose it.
+            out[tk] = {"z": None, "basis": "threshold"}
     return out
 
 
@@ -395,9 +413,13 @@ def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str
         r = rec(tk)
         if r is None:
             return
-        for d in drops:                      # an upgraded channel removes its weaker base
-            r["channels"].pop(d, None)
-        if all(d not in r["channels"] for d in drops) or channel not in r["channels"]:
+        # Upgrade channels (drops non-empty) always displace their base targets exactly once.
+        # Base channels (drops empty) are first-seen only — a second base firing from a
+        # different source does not overwrite the first (preserves PIT semantics and prevents
+        # a later base call from undoing an upgrade that already displaced it).
+        if drops or channel not in r["channels"]:
+            for d in drops:                  # displace base only when upgrade is accepted
+                r["channels"].pop(d, None)
             r["channels"][channel] = detail
 
     # --- congress: cluster (>=3 members) outranks a single buyer ---
@@ -462,12 +484,16 @@ def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str
     # --- off-exchange: z-scored when history exists, else fixed accumulation lean ---
     for r in signals.get("offexchange", []):
         tk = r.get("ticker")
-        z = dpi_z.get(tk)
+        entry = dpi_z.get(tk)   # {"z": float|None, "basis": "z_score"|"threshold"} or None
+        z = entry["z"] if entry else None
+        basis = entry["basis"] if entry else None
         m = rec(tk)
         if m is not None:
             m["metrics"]["dpi"] = r.get("dpi")
             if z is not None:
                 m["metrics"]["dpi_z"] = z
+            if basis:
+                m["metrics"]["dpi_basis"] = basis
         accum = (z is not None and z <= -1.0) or (z is None and r.get("lean") == "accumulation")
         if accum:
             if m is not None:
@@ -551,7 +577,11 @@ def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str
         if m is not None:
             m["metrics"]["analyst_bull_ratio"] = r.get("bull_ratio")
         if r.get("hot"):
-            add(r["ticker"], "analyst_upgrade_cluster", f"{r.get('bull_ratio')} bullish, rising")
+            # Detail describes the REVISION DELTA (the actual trigger), not the consensus level.
+            # bull_ratio is carried in metrics as display context only (analyst_trends docstring).
+            delta = r.get("revision_delta")
+            delta_str = f"+{delta}" if delta is not None and delta > 0 else (str(delta) if delta is not None else "rising")
+            add(r["ticker"], "analyst_upgrade_cluster", f"net upgrades {delta_str} revision delta")
     for r in signals.get("insider_mspr", []):
         m = rec(r["ticker"])
         if m is not None:

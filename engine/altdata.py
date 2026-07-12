@@ -675,7 +675,18 @@ def lobbying_spikes(window_days: int = 45, top: int = 15) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- off-exchange
-def offexchange_flow(top: int = 15) -> list[dict]:
+def _business_days_since(dt: pd.Timestamp) -> int:
+    """Calendar days minus weekends between dt and now (approximate business days)."""
+    now = _now()
+    if pd.isna(dt) or dt > now:
+        return 0
+    return int(pd.bdate_range(dt, now).size)
+
+
+def offexchange_flow(top: int = 15, stale_bdays: int = 10) -> list[dict]:
+    """Off-exchange / dark-pool flow. Adds a `stale` flag when the latest date is
+    more than `stale_bdays` business days old. FINRA publication lag is ~10 business
+    days, so the flag fires only beyond that expected lag to avoid false positives."""
     df = _read("offexchange")
     if df is None or df.empty:
         return []
@@ -691,6 +702,8 @@ def offexchange_flow(top: int = 15) -> list[dict]:
         return []
     latest = d["date"].max()
     d = d[d["date"] == latest]
+    # Freshness guard: flag when latest date exceeds FINRA publication lag
+    stale = bool(pd.notna(latest) and _business_days_since(latest) > stale_bdays)
     rows = []
     for _, r in d.iterrows():
         rows.append({
@@ -701,6 +714,7 @@ def offexchange_flow(top: int = 15) -> list[dict]:
             # low DPI (off-exchange short ratio) + high volume reads as net accumulation
             "lean": ("accumulation" if pd.notna(r["dpi"]) and r["dpi"] < 0.40
                      else "distribution" if pd.notna(r["dpi"]) and r["dpi"] > 0.60 else "balanced"),
+            "stale": stale,
         })
     rows.sort(key=lambda r: r["otc_total"], reverse=True)
     return rows[:top]
@@ -745,7 +759,10 @@ def insider_netflow(window_days: int = 90, top: int = 15) -> dict:
 
 
 # --------------------------------------------------------------------------- 13F
-def inst_13f_changes(top: int = 15) -> dict:
+def inst_13f_changes(top: int = 15, window_days: int = 120) -> dict:
+    """13F position changes. `window_days` filters filings with a Date within the last
+    `window_days` so multi-year-old adds cannot anchor channels indefinitely. 13F filings
+    have a 45-day reporting lag, so 120 days covers the most recent two filing periods."""
     df = _read("sec13f_changes")
     if df is None or df.empty:
         return {"adds": [], "trims": []}
@@ -753,10 +770,17 @@ def inst_13f_changes(top: int = 15) -> dict:
         "ticker": df.get("Ticker", pd.Series(dtype=object)).map(_s),
         "fund": df.get("Fund", pd.Series(dtype=object)).map(_s),
         "period": df.get("ReportPeriod", pd.Series(dtype=object)).map(lambda v: (_s(v) or "")[:10]),
+        "date": _dt(df.get("Date")),
         "chg_usd": df.get("Change", pd.Series(dtype=object)).map(_f),
         "chg_shares": df.get("Change_Share", pd.Series(dtype=object)).map(_f),
     })
     d = d[d["ticker"].notna() & d["chg_usd"].notna()]
+    if d.empty:
+        return {"adds": [], "trims": []}
+    # Filter to filings within the time window to prevent stale adds anchoring channels.
+    cutoff = _now() - pd.Timedelta(days=window_days)
+    if d["date"].notna().any():
+        d = d[d["date"].isna() | (d["date"] >= cutoff)]
     if d.empty:
         return {"adds": [], "trims": []}
 
@@ -770,12 +794,18 @@ def inst_13f_changes(top: int = 15) -> dict:
 
 
 # --------------------------------------------------------------------------- trump
-def trump_trades(n: int = 60) -> list[dict]:
+def trump_trades(n: int = 60, window_days: int = 365) -> list[dict]:
+    """Donald Trump stock trades. `window_days` filters by Filed date to prevent
+    indefinitely-old trades from anchoring the trump channel indefinitely."""
     df = _read("trump")
     if df is None or df.empty:
         return []
     d = df.copy()
     d = d.assign(_d=_dt(d.get("Filed"))).sort_values("_d", ascending=False, na_position="last")
+    # Apply time window on Filed date
+    cutoff = _now() - pd.Timedelta(days=window_days)
+    if d["_d"].notna().any():
+        d = d[d["_d"].isna() | (d["_d"] >= cutoff)]
     out = []
     for _, r in d.head(n).iterrows():
         out.append({

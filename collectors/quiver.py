@@ -108,10 +108,34 @@ class QuiverAdapter(Adapter):
                     return data[k]
         return []
 
+    # -- multi-page fetch -------------------------------------------------------
+    _paginated: bool = False   # subclasses set True to enable multi-page loop
+    _page_cap: int = 5         # safety cap on pages to prevent runaway loops
+
+    def _get_paged(self) -> list:
+        """Fetch all pages up to _page_cap. Stops when a page returns empty.
+        Preserves the base query params, advancing `page` each iteration."""
+        base_params = dict(self.query or {})
+        all_rows: list = []
+        for page_num in range(1, self._page_cap + 1):
+            params = {**base_params, "page": page_num}
+            rows = self._get(self.endpoint, params)
+            if not rows:
+                break
+            all_rows.extend(rows)
+            log.debug("quiver/%s: page %d → %d rows", self.dataset, page_num, len(rows))
+            if len(rows) < int(base_params.get("page_size", 1)):
+                # partial page means we've reached the end
+                break
+        return all_rows
+
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         if not self.api_key:
             raise RuntimeError("QUIVER_API_KEY not set")
-        rows = self._get(self.endpoint, self.query)
+        if self._paginated:
+            rows = self._get_paged()
+        else:
+            rows = self._get(self.endpoint, self.query)
         if not rows:
             raise RuntimeError(f"quiver/{self.dataset}: empty response from {self.endpoint}")
         df = pd.DataFrame(rows)
@@ -171,10 +195,18 @@ class InsidersAdapter(QuiverAdapter):
 
 
 class FlightsAdapter(QuiverAdapter):
+    # TOMBSTONE 2026-07-12: last event 2025-07-23 (~354d stale despite stale_after_days=60).
+    # Feed appears plan-limited on the Trader tier — fetch silently returns stale data.
+    # Nightly fetch disabled; table is kept readable for the display layer and downstream
+    # stale-flag behavior in engine/altdata_models.py:flights_proximity().
     name = "quiver_flights"; dataset = "flights"
     endpoint = "/beta/live/flights"
     stale_after_days = 60  # corporate-jet feed runs well behind real time
     key_cols = ("Ticker", "Date", "DepartureCity", "ArrivalCity")
+
+    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+        log.info("quiver/flights: fetch disabled (tombstone 2026-07-12 — plan-limited feed, last event 2025-07-23)")
+        return {}
 
 
 class PatentsAdapter(QuiverAdapter):
@@ -191,9 +223,16 @@ class WallStreetBetsAdapter(QuiverAdapter):
 
 
 class TwitterAdapter(QuiverAdapter):
+    # TOMBSTONE 2026-07-12: API discontinued. Table has 1 row, last date 2023-08-11.
+    # Twitter/X shut down free API access in early 2023; the Quiver endpoint returns
+    # stale or empty data. Nightly fetch disabled; table kept readable for display layer.
     name = "quiver_twitter"; dataset = "twitter"
     endpoint = "/beta/live/twitter"
     key_cols = ("Ticker", "Date")
+
+    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+        log.info("quiver/twitter: fetch disabled (tombstone 2026-07-12 — API discontinued, last data 2023-08-11)")
+        return {}
 
 
 class Sec13FAdapter(QuiverAdapter):
@@ -215,9 +254,16 @@ class CnbcAdapter(QuiverAdapter):
 
 
 class SpacsAdapter(QuiverAdapter):
+    # TOMBSTONE 2026-07-12: dead feed. Table has 2 rows, last date 2023-12-18.
+    # SPAC issuance effectively halted; Quiver endpoint returns stale data.
+    # Nightly fetch disabled; table kept readable for display layer.
     name = "quiver_spacs"; dataset = "spacs"
     endpoint = "/beta/live/spacs"
     key_cols = ("Ticker", "Time")
+
+    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+        log.info("quiver/spacs: fetch disabled (tombstone 2026-07-12 — dead feed, last data 2023-12-18)")
+        return {}
 
 
 class TrumpTradesAdapter(QuiverAdapter):
@@ -233,6 +279,7 @@ class CorporateDonorsAdapter(QuiverAdapter):
     endpoint = "/beta/bulk/corporatedonors"
     data_key = "data"
     query = {"page": 1, "page_size": 5000}
+    _paginated = True          # multi-page: page=1 only missed records beyond 5000
     key_cols = ("BioGuideID", "Ticker", "CompanyCMTEID", "Cycle", "TransactionAmount", "TransactionDate")
 
 
@@ -242,6 +289,7 @@ class QuiverNewsAdapter(QuiverAdapter):
     endpoint = "/beta/live/quivernews"
     data_key = "data"
     query = {"page": 1, "page_size": 500}
+    _paginated = True          # multi-page: page=1 only missed records beyond 500
     key_cols = ("url",)
 
 
@@ -258,6 +306,7 @@ class BillSummariesAdapter(QuiverAdapter):
     name = "quiver_bills"; dataset = "bills"
     endpoint = "/beta/live/bill_summaries"
     query = {"page": 1, "page_size": 200}
+    _paginated = True          # multi-page: page=1 only missed records beyond 200
     key_cols = ("billType", "number", "congress")
 
 
