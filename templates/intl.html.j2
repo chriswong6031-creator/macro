@@ -482,7 +482,7 @@
 {%- set INV = RD.inversion_board or {} %}
 {%- set SM  = RD.smile %}
 {%- set TXDISP = RD.top_transmitters_display or [] %}
-{%- set SWAP = RD.swap_lines_bn %}
+{%- set SWAP = RD.get('swap_lines_bn') %}
 
 {# ---- derive hero-chip states from payload ---- #}
 {%- set ems_state = EMS.get('state', 'unknown') if EMS else 'unknown' %}
@@ -508,7 +508,7 @@
   {%- set ems_stance_en = 'Watch — don\'t chase' %}
   {%- set ems_stance_zh = '观望，勿追入' %}
   {%- set ems_chip = 'warn' %}
-{%- elif ems_state == 'quiet' %}
+{%- elif ems_state == 'calm' %}
   {%- set ems_word_en = 'Calm' %}
   {%- set ems_word_zh = '平静' %}
   {%- set ems_stance_en = 'No action needed' %}
@@ -734,10 +734,12 @@
     <div class="ird-hchip state-{{ 'caut' if safety_bid else 'ok' if not SM else 'ok' }}">
       <div class="hc-lbl">{{ t('Dollar', '美元') }}</div>
       {%- if SM %}
-        {%- set regime_label_en = 'Dollar moving on rate differences, not fear' if SM.get('regime') == 'rate_differential' else 'Dollar being bought as shelter' if SM.get('regime') == 'risk_off' else 'Mixed picture' %}
-        {%- set regime_label_zh = '受利差驱动' if SM.get('regime') == 'rate_differential' else '避险买入' if SM.get('regime') == 'risk_off' else '信号混合' %}
+        {%- set regime_label_en = 'Dollar moving on rate differences, not fear' if SM.get('regime') == 'rates-driven' else 'Dollar being bought as shelter' if SM.get('regime') == 'safety-driven' else 'Mixed picture' %}
+        {%- set regime_label_zh = '受利差驱动' if SM.get('regime') == 'rates-driven' else '避险买入' if SM.get('regime') == 'safety-driven' else '信号混合' %}
+        {%- set regime_detail_en = 'Rate gaps, not fear, explain recent moves' if SM.get('regime') == 'rates-driven' else 'Investors are paying up for dollar safety' if SM.get('regime') == 'safety-driven' else 'Rate gaps and risk mood both in play' %}
+        {%- set regime_detail_zh = '近期走势由利差主导，非恐慌驱动' if SM.get('regime') == 'rates-driven' else '投资者正为美元避险支付溢价' if SM.get('regime') == 'safety-driven' else '利差与风险情绪均有影响' %}
         <div class="hc-state info">{{ t(regime_label_en, regime_label_zh) }}</div>
-        <div class="hc-detail">{{ t('Rate gaps, not fear, explain recent moves', '近期走势由利差主导，非恐慌驱动') }}</div>
+        <div class="hc-detail">{{ t(regime_detail_en, regime_detail_zh) }}</div>
       {%- else %}
         <div class="hc-state" style="color:var(--muted);font-size:12px;">{{ t('Read updates tonight', '今晚更新读数') }}</div>
         <div class="hc-detail">{{ t('Not enough fresh data', '数据暂不足') }}</div>
@@ -746,7 +748,7 @@
         <div class="ird-safety-tag">
           ⚠ {{ t('Safety bid today', '今日避险需求') }}
           {%- if dxy5d is not none and dgs2_5d is not none %}
-            {{ t(' (DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + ', 2yr ' + ('%+.1f bp' | format(dgs2_5d * 100)) + ')', '（DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + '，2年期 ' + ('%+.1f bp' | format(dgs2_5d * 100)) + '）') }}
+            {{ t(' (DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + ', 2yr ' + ('%+.1f bp' | format(dgs2_5d)) + ')', '（DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + '，2年期 ' + ('%+.1f bp' | format(dgs2_5d)) + '）') }}
           {%- endif %}
         </div>
       {%- endif %}
@@ -798,8 +800,8 @@
         <div style="flex:1">
           <div style="font-size:13px;font-weight:700;margin-bottom:3px;">{{ t(conn_read_en, conn_read_zh) }}</div>
           <div class="small muted">{{ t('Above 80: stress in any market can quickly reach others. Below 60: markets absorb their own shocks.', '超过80：任意市场的压力可快速蔓延。低于60：市场能消化自身冲击。') }}</div>
-          {%- if RD.spillover_spark_svg %}
-          <div style="margin-top:8px;opacity:.8;">{{ RD.spillover_spark_svg | safe }}</div>
+          {%- if RD.get('spillover_spark_svg') %}
+          <div style="margin-top:8px;opacity:.8;">{{ RD.get('spillover_spark_svg') | safe }}</div>
           {%- endif %}
         </div>
       </div>
@@ -1004,10 +1006,10 @@
       </div>
 
       <!-- EMB/IEF spark: EM bonds vs US Treasuries trend -->
-      {%- if RD.emb_ief_spark_svg %}
+      {%- if RD.get('emb_ief_spark_svg') %}
       <div style="margin-top:10px;">
         <div class="small muted" style="margin-bottom:3px;">{{ t('EM bonds vs US Treasuries — last 120 days', '新兴市场债 vs 美债——过去120天') }}</div>
-        {{ RD.emb_ief_spark_svg | safe }}
+        {{ RD.get('emb_ief_spark_svg') | safe }}
       </div>
       {%- endif %}
 
@@ -1033,10 +1035,10 @@
       <div class="ird-dollar-card">
         {%- if SM %}
           {%- set regime = SM.get('regime', '') %}
-          {%- if regime == 'rate_differential' %}
+          {%- if regime == 'rates-driven' %}
             <div class="regime-word">{{ t('Rate-driven', '利差驱动') }}</div>
             <div class="regime-sentence">{{ t('Rate differences between the US and other major economies explain the recent dollar move — not a flight to safety.', '美国与其他主要经济体之间的利差是近期美元走势的主因，而非避险需求。') }}</div>
-          {%- elif regime == 'risk_off' %}
+          {%- elif regime == 'safety-driven' %}
             <div class="regime-word">{{ t('Safety-driven', '避险驱动') }}</div>
             <div class="regime-sentence">{{ t('The dollar is being bought as a safe haven — investors are moving to safety, not chasing rate differentials.', '美元正作为避险资产被买入——投资者在避险，而非追逐利差。') }}</div>
           {%- else %}
@@ -1048,7 +1050,7 @@
             <span class="ird-safety-tag">
               ⚠ {{ t('Safety bid today', '今日避险需求') }}
               {%- if dxy5d is not none and dgs2_5d is not none %}
-                {{ t(': DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + ' while 2yr fell ' + ('%.1f bp' | format((dgs2_5d * 100)|abs)), '：DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + '，2年期下降' + ('%.1f bp' | format((dgs2_5d * 100)|abs))) }}
+                {{ t(': DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + ' while 2yr fell ' + ('%.1f bp' | format(dgs2_5d|abs)), '：DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + '，2年期下降' + ('%.1f bp' | format(dgs2_5d|abs))) }}
               {%- endif %}
             </span>
             <span class="small muted" style="margin-left:8px;">{{ t('5-day signal · not structural', '5日信号·非结构性') }}</span>
@@ -1064,7 +1066,7 @@
             <span class="ird-safety-tag">
               ⚠ {{ t('Safety bid today', '今日避险需求') }}
               {%- if dxy5d is not none and dgs2_5d is not none %}
-                {{ t(': DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + ' while 2yr fell ' + ('%.1f bp' | format((dgs2_5d * 100)|abs)), '：DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + '，2年期下降' + ('%.1f bp' | format((dgs2_5d * 100)|abs))) }}
+                {{ t(': DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + ' while 2yr fell ' + ('%.1f bp' | format(dgs2_5d|abs)), '：DXY ' + ('+%.1f%%' | format(dxy5d) if dxy5d >= 0 else '%.1f%%' | format(dxy5d)) + '，2年期下降' + ('%.1f bp' | format(dgs2_5d|abs))) }}
               {%- endif %}
             </span>
             <div class="small muted" style="margin-top:6px;">{{ t('DXY rose while 2-year yields fell over the past 5 days — consistent with safe-haven demand, not rate arbitrage. This is a 5-day observation, not a regime call.', '过去5天内DXY上涨而2年期收益率下降——与避险需求一致，而非利率套利。这是5日观察，非制度判断。') }}</div>
@@ -1093,7 +1095,7 @@
     <span class="sub">{{ t('Slow-moving structural vulnerabilities — not a timing signal', '缓慢变化的结构性脆弱因素——非择时信号') }}</span>
   </div>
 
-  {%- set VULN = RD.vulnerability %}
+  {%- set VULN = RD.get('vulnerability') %}
   {%- if VULN and VULN.get('countries') %}
     {%- set flagged = VULN.get('countries') | selectattr('fragile', 'equalto', true) | list %}
     {%- for c in flagged[:3] %}

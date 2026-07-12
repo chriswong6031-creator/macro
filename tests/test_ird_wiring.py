@@ -409,7 +409,7 @@ def test_build_intl_risk_card_contained():
     assert "not reaching US" in card["state_en"]
     assert card["state_cls"] == "c-warn"  # contained → warn
     assert "strain" in card["em_text_en"].lower()
-    assert "rates" in card["dollar_text_en"].lower()
+    assert "rate gaps" in card["dollar_text_en"].lower()
 
 
 def test_build_intl_risk_card_transmitting():
@@ -420,7 +420,7 @@ def test_build_intl_risk_card_transmitting():
         "intl_risk": {
             "two_tier_state": "transmitting",
             "em_stress_state": "stressed",
-            "dollar_regime": "risk-off",
+            "dollar_regime": "safety-driven",
             "display_only": True,
         }
     }
@@ -428,6 +428,29 @@ def test_build_intl_risk_card_transmitting():
 
     assert card["state_cls"] == "c-down"
     assert "Reduce" in card["stance_en"] or "contagion" in card["stance_en"]
+    # engine enum 'safety-driven' maps to plain words — never the raw enum
+    assert "safe-haven" in card["dollar_text_en"].lower()
+    assert "safety-driven" not in card["dollar_text_en"]
+    assert "safety-driven" not in card["dollar_text_zh"]
+
+
+def test_build_intl_risk_card_unmapped_dollar_regime():
+    """An unmapped dollar_regime value falls to a plain-word default, never the raw enum
+    (doctrine Law 2 — no machine slugs at glance tier)."""
+    from scripts.build_macro_context import _build_intl_risk_card
+
+    ws = {
+        "intl_risk": {
+            "two_tier_state": "quiet",
+            "em_stress_state": "calm",
+            "dollar_regime": "some_future_enum",
+            "display_only": True,
+        }
+    }
+    card = _build_intl_risk_card(world_state=ws, today="2026-07-12")
+    assert "some_future_enum" not in card["dollar_text_en"]
+    assert "some_future_enum" not in card["dollar_text_zh"]
+    assert card["dollar_text_en"]  # non-empty plain word
 
 
 def test_build_intl_risk_card_in_weather_board():

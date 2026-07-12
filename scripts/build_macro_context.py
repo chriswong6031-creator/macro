@@ -558,7 +558,7 @@ def _build_intl_risk_card(world_state: dict | None, today: str) -> dict:
 
     two_tier_state = lobe.get("two_tier_state")  # "quiet", "contained", "watching", "transmitting"
     em_stress_state = lobe.get("em_stress_state")  # "calm", "strained", "stressed"
-    dollar_regime = lobe.get("dollar_regime")  # e.g. "rates-driven", "risk-off", etc.
+    dollar_regime = lobe.get("dollar_regime")  # engine enum: rates-driven | safety-driven | mixed
     swap_lines_bn = lobe.get("swap_lines_bn")  # float or None
     total_connectedness = lobe.get("total_connectedness")  # float or None
     top_transmitters = lobe.get("top_transmitters") or []
@@ -606,20 +606,20 @@ def _build_intl_risk_card(world_state: dict | None, today: str) -> dict:
     em_text_zh = _em_map_zh.get(em_stress_state or "", "今晚更新") if em_stress_state else "今晚更新"
 
     # ── Dollar regime plain-word ─────────────────────────────────────────────
+    # Engine vocabulary (forex_dollar.smile_decomp): rates-driven | safety-driven | mixed.
+    # Unmapped values fall to a plain-word default — NEVER the raw enum (doctrine Law 2).
     _dollar_map_en: dict[str, str] = {
-        "rates-driven":      "Dollar: rates-driven",
-        "risk-off":          "Dollar: safe-haven demand",
-        "risk-on":           "Dollar: risk-on softening",
-        "momentum":          "Dollar: momentum-driven",
+        "rates-driven":      "Dollar: moving on rate gaps",
+        "safety-driven":     "Dollar: safe-haven demand",
+        "mixed":             "Dollar: mixed drivers",
     }
     _dollar_map_zh: dict[str, str] = {
-        "rates-driven":      "美元：利率驱动",
-        "risk-off":          "美元：避险需求",
-        "risk-on":           "美元：风险偏好软化",
-        "momentum":          "美元：动量驱动",
+        "rates-driven":      "美元：利差驱动",
+        "safety-driven":     "美元：避险需求",
+        "mixed":             "美元：多因素混合",
     }
-    dollar_text_en = _dollar_map_en.get(dollar_regime or "", f"Dollar: {dollar_regime}") if dollar_regime else "updates tonight"
-    dollar_text_zh = _dollar_map_zh.get(dollar_regime or "", f"美元：{dollar_regime}") if dollar_regime else "今晚更新"
+    dollar_text_en = _dollar_map_en.get(dollar_regime or "", "Dollar: unclear read") if dollar_regime else "updates tonight"
+    dollar_text_zh = _dollar_map_zh.get(dollar_regime or "", "美元：读数不明") if dollar_regime else "今晚更新"
 
     # ── Stance (Doctrine Law 1: plain-word "so what do I do") ───────────────
     if null_state:

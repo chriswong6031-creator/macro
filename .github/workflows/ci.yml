@@ -425,6 +425,9 @@ on:
       - "scripts/build_bonds.py"
       - "tests/test_ird_velocity.py"
       - "tests/test_ird_wiring.py"
+      # IRD-W4 weather-station intl_risk card (builder lives in build_macro_context)
+      - "scripts/build_macro_context.py"
+      - "templates/macro_context.html.j2"
   workflow_dispatch:
 
 permissions:
