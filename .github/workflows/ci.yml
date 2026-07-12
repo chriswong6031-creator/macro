@@ -329,6 +329,11 @@ on:
       - "scripts/build_leader_radar.py"
       - "tests/test_leader_lifecycle.py"
       - "tests/test_build_leader_radar.py"
+      # altdata-W1: Finnhub transcript catalog + StockTwits sentiment collectors.
+      - "collectors/finnhub_transcripts.py"
+      - "collectors/stocktwits.py"
+      - "tests/test_finnhub_transcripts.py"
+      - "tests/test_stocktwits.py"
       # IRD-W1 International Risk Desk substrate: IMF WEO adapter, CB calendar,
       # FRED alias-collision lint, and liquidity_plumbing swap-lines Phase-5.
       - "collectors/imf_weo.py"
@@ -1033,6 +1038,24 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: qledger cluster-honest Wilson CI unit tests
         run: python -m pytest tests/test_qledger_cluster_honest_ci.py -q
+
+  altdata-new-sources:
+    # altdata-W1: new free altdata sources — Finnhub transcript metadata catalog
+    # (plan-gated graceful no-op on free tier) + StockTwits public sentiment
+    # (keyless, bullish/bearish ratios + watchlist_count). Pure parse + store tests;
+    # no network, no heavy deps.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml requests
+      - name: finnhub transcript collector tests
+        run: python -m pytest tests/test_finnhub_transcripts.py -q
+      - name: stocktwits sentiment collector tests
+        run: python -m pytest tests/test_stocktwits.py -q
 
   house-law-registry:
     # Meta-guard: verifies config/house_law_checks.yml is complete and honest.
