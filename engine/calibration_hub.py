@@ -43,9 +43,14 @@ _DESKS = (
 # alongside the Phase-C desk loops.  These are buy-board track records, not
 # falsifiable-thesis loops, so they use a separate reader that maps the
 # us_board_track.json / cn_standout_track schema.
+#
+# CN note (F2): the real CN ledger is data/china_standout_track/board.parquet
+# (committed, 38KB).  data/cn_standout_track.json does not exist — nothing produces
+# it.  We store the parquet path and let _standout_track_row detect the .parquet
+# extension and read it directly (pandas, never-raise).
 _STANDOUT_TRACKS = (
     ("US Buy Board (v1)", "site/factordata/us_board_track.json", "US"),
-    ("CN Standout Track", "data/cn_standout_track.json", "CN"),
+    ("CN Standout Track", "data/china_standout_track/board.parquet", "CN"),
 )
 
 
@@ -82,8 +87,63 @@ def _desk_health(track: dict) -> tuple[str, str]:
     return "calibrated", f"hit-rate {hr} over {n} scored; conviction ordering holds"
 
 
+def _standout_track_row_from_parquet(label: str, rel_path: str, region: str, root: Path) -> dict:
+    """Build a display-only row from a standout board.parquet file.
+
+    Used for the CN track (data/china_standout_track/board.parquet) because no JSON
+    summary is produced in this wave — the real ledger is the parquet.
+
+    Derives: n_rows (total rows in parquet), n_graded (rows with non-null fwd_mfe_21),
+    date span, and health.  Hit rate is ACCRUING until n_graded >= _MIN_SAMPLE and
+    fwd_mfe_21 represents an honest 21d-excess measure.
+
+    Never raises; absent / parse-fail → cold ACCRUING row.
+    """
+    _cold = {
+        "name": label, "region": region, "rel_path": rel_path,
+        "board_dates": 0, "graded_rows": 0,
+        "h21_hit_rate": None, "h21_n": 0,
+        "health": "cold", "health_note": "no track record yet (ACCRUING)",
+    }
+    try:
+        import pandas as pd  # local import — keep calibration_hub import-light
+        p = root / rel_path
+        if not p.exists():
+            return _cold
+        df = pd.read_parquet(p)
+        n_rows = len(df)
+        # n_graded: rows where the 21d forward metric has matured (non-null)
+        graded_col = "fwd_mfe_21"
+        n_graded = int(df[graded_col].notna().sum()) if graded_col in df.columns else 0
+        # date span from 'date' column
+        date_col = "date"
+        board_dates = 0
+        if date_col in df.columns:
+            board_dates = int(df[date_col].nunique())
+        if n_rows == 0:
+            return dict(_cold, board_dates=board_dates)
+        # hit rate: ACCRUING until n_graded >= floor — fwd_mfe_21 is MFE not excess;
+        # we only count ACCRUING for now (no excess-vs-CSI300 column yet).
+        note = (
+            f"{n_rows} board rows, {n_graded} graded (fwd_mfe_21 non-null) — "
+            "ACCRUING; hit-rate requires excess_21d column (not yet wired)"
+        )
+        return {
+            "name": label, "region": region, "rel_path": rel_path,
+            "board_dates": board_dates,
+            "graded_rows": n_graded,
+            "h21_hit_rate": None, "h21_n": n_graded,
+            "health": "cold", "health_note": note,
+        }
+    except Exception:  # noqa: BLE001
+        return _cold
+
+
 def _standout_track_row(label: str, rel_path: str, region: str, root: Path) -> dict:
-    """Build a display-only row from a standout/board track JSON.
+    """Build a display-only row from a standout/board track JSON or parquet.
+
+    Dispatches to _standout_track_row_from_parquet when rel_path ends in .parquet
+    (used for the CN ledger: data/china_standout_track/board.parquet).
 
     Reads the track's top-level summary fields (board_dates_total, graded_rows_total,
     per_horizon h21 buy_lane hit_rate) and maps them to a calibration-hub-compatible
@@ -93,6 +153,8 @@ def _standout_track_row(label: str, rel_path: str, region: str, root: Path) -> d
     These entries appear separately from _DESKS so the hub can show board-track records
     in one place without conflating them with Phase-C falsifiable-thesis loops.
     """
+    if rel_path.endswith(".parquet"):
+        return _standout_track_row_from_parquet(label, rel_path, region, root)
     track = _read_json(root / rel_path)
     if not track:
         return {

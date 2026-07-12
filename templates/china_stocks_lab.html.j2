@@ -523,6 +523,9 @@
 
   <!-- ================================================================ -->
   <!-- TAB: ACCOUNTABILITY (SA-W5)                                      -->
+  <!-- Schema: cn_audit_scoreboard.v1 (cells / outcome_cause_mix /      -->
+  <!--          process_fault_mix).  NOT the US schema (strata /         -->
+  <!--          coverage_monitor / buy_lane_rows).                       -->
   <!-- ================================================================ -->
   <section data-tab-panel="accountability" style="display:none">
     <div class="acct-header">
@@ -542,17 +545,17 @@
 
     {% set acct = accountability %}
 
-    <!-- ── Stratified scoreboard ── -->
+    <!-- ── Stratified cells (cn_audit_scoreboard.v1 schema) ── -->
     <div class="acct-card">
       <div class="acct-card-title">
-        <span class="l-en">Stratified Scoreboard</span>
-        <span class="l-zh">分层记分板</span>
+        <span class="l-en">Stratified Cells</span>
+        <span class="l-zh">分层单元格</span>
       </div>
-      {% if acct.get('present') and acct.get('buy_lane_rows', 0) > 0 %}
+      {% if acct.get('present') and acct.get('has_cells') %}
       <div class="tbl-scroll">
         <table class="acct-tbl">
           <thead><tr>
-            <th class="l-en">Stratum</th><th class="l-zh">层</th>
+            <th><span class="l-en">Stratum</span><span class="l-zh">层</span></th>
             <th data-tip-en="Raw row count" data-tip-zh="原始行数">
               <span class="l-en">Raw n</span><span class="l-zh">原始n</span>
             </th>
@@ -562,9 +565,14 @@
             <th><span class="l-en">State</span><span class="l-zh">状态</span></th>
           </tr></thead>
           <tbody>
-            {% for key, cell in (acct.get('strata') or {}).items() %}
-            <tr>
-              <td colspan="2" style="text-align:left">{{ key }}</td>
+            {% for cell in (acct.get('cells') or []) %}
+            <tr {% if cell.get('is_us_proxy') %}style="color:var(--muted);font-style:italic"{% endif %}>
+              <td style="text-align:left">
+                {{ cell.get('stratum') or '—' }}
+                {% if cell.get('is_us_proxy') %}
+                <span class="chip chip-muted" style="font-size:10px;vertical-align:middle" title="Pre-store rows using US regime proxy. Never pooled with own-market cells.">us_proxy</span>
+                {% endif %}
+              </td>
               <td>{{ cell.get('raw_n') if cell.get('raw_n') is not none else '—' }}</td>
               <td>{{ cell.get('effective_n') if cell.get('effective_n') is not none else '—' }}</td>
               <td>
@@ -581,6 +589,11 @@
           </tbody>
         </table>
       </div>
+      {% if acct.get('us_proxy_note') %}
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;padding:0 4px">
+        {{ acct.get('us_proxy_note') }}
+      </p>
+      {% endif %}
       {% else %}
       <div class="acct-empty-state">
         <div style="font-size:32px;margin-bottom:8px">📊</div>
@@ -588,77 +601,81 @@
           <span class="l-en">No matured rows yet. Rows accrue as 21d windows close — first read ~Oct 15 2026.</span>
           <span class="l-zh">暂无成熟行。行随21日窗口关闭而累积——首次读取约2026年10月15日。</span>
         </p>
+        {% if acct.get('present') and acct.get('us_proxy_note') %}
+        <p style="font-size:11px;color:var(--muted);margin-top:8px">
+          {{ acct.get('us_proxy_note') }}
+        </p>
+        {% endif %}
       </div>
       {% endif %}
     </div>
 
-    <!-- ── Two-axis failure-mode mix ── -->
+    <!-- ── Two-axis failure-mode mix (cn_audit_scoreboard.v1) ── -->
     <div class="acct-row-grid">
       <div class="acct-card">
         <div class="acct-card-title">
           <span class="l-en">Outcome Causes</span>
           <span class="l-zh">结果原因</span>
         </div>
+        {% if acct.get('present') and acct.get('has_outcome_cause_mix') %}
+        <div class="tbl-scroll">
+          <table class="acct-tbl">
+            <thead><tr>
+              <th><span class="l-en">Cause</span><span class="l-zh">原因</span></th>
+              <th><span class="l-en">Count</span><span class="l-zh">数量</span></th>
+            </tr></thead>
+            <tbody>
+              {% for cause, val in (acct.get('outcome_cause_mix') or {}).items() %}
+              <tr>
+                <td style="text-align:left">{{ cause }}</td>
+                <td>{{ val if val is not none else '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
         <div class="acct-empty-state" style="padding:20px 12px">
           <span class="l-en">Measuring — outcome-cause breakdown available once attribution rows mature.</span>
           <span class="l-zh">测量中——结果原因分解在归因行成熟后可用。</span>
         </div>
+        {% endif %}
       </div>
       <div class="acct-card">
         <div class="acct-card-title">
           <span class="l-en">Process Faults</span>
           <span class="l-zh">流程缺陷</span>
         </div>
+        {% if acct.get('present') and acct.get('has_process_fault_mix') %}
+        <div class="tbl-scroll">
+          <table class="acct-tbl">
+            <thead><tr>
+              <th><span class="l-en">Fault</span><span class="l-zh">缺陷</span></th>
+              <th><span class="l-en">Count</span><span class="l-zh">数量</span></th>
+            </tr></thead>
+            <tbody>
+              {% for fault, val in (acct.get('process_fault_mix') or {}).items() %}
+              <tr>
+                <td style="text-align:left">{{ fault }}</td>
+                <td>{{ val if val is not none else '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
         <div class="acct-empty-state" style="padding:20px 12px">
           <span class="l-en">Measuring — process-fault breakdown available once attribution rows mature.</span>
           <span class="l-zh">测量中——流程缺陷分解在归因行成熟后可用。</span>
         </div>
-      </div>
-    </div>
-
-    <!-- ── Coverage monitor ── -->
-    <div class="acct-card">
-      <div class="acct-card-title">
-        <span class="l-en">Coverage Monitor</span>
-        <span class="l-zh">覆盖率监控</span>
-      </div>
-      {% set cov = acct.get('coverage_monitor') or {} %}
-      <div class="acct-cov-row">
-        <div class="acct-cov-chip">
-          <b>{{ cov.get('trailing_4wk_buy_count') if cov.get('trailing_4wk_buy_count') is not none else '—' }}</b>
-          <span class="l-en"> unique tickers surfaced (trailing 4wk)</span>
-          <span class="l-zh"> 个独特代码（近4周）</span>
-        </div>
-        <div class="acct-cov-chip">
-          <span class="l-en">Frozen baseline: </span>
-          <span class="l-zh">冻结基准：</span>
-          <b>{{ cov.get('frozen_baseline') if cov.get('frozen_baseline') is not none else '—' }}</b>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── Upstream concordance ── -->
-    <div class="acct-card">
-      <div class="acct-card-title">
-        <span class="l-en">Upstream Concordance</span>
-        <span class="l-zh">上游一致性</span>
-      </div>
-      {% set gs = acct.get('gate_suppressed') or {} %}
-      {% if gs.get('state') == 'data_gap' %}
-      <p class="acct-gap-note">
-        <span class="l-en">Gate suppressed: {{ gs.get('reason', '') }}</span>
-        <span class="l-zh">门控被抑制：{{ gs.get('reason', '') }}</span>
-      </p>
-      {% endif %}
-      <div class="acct-empty-state" style="padding:16px 12px">
-        <span class="l-en">Concordance data accruing — available once CN attribution rows mature.</span>
-        <span class="l-zh">一致性数据累积中——CN归因行成熟后可用。</span>
+        {% endif %}
       </div>
     </div>
 
     <p style="margin-top:16px;font-size:11.5px;color:var(--muted)">
       <span class="l-en">Authority: display_only. All numbers from committed CN audit artifacts (SA-W2). Cluster-unit CIs per SA-R10. No verdict language before floor.</span>
       <span class="l-zh">授权：仅展示。所有数字来自已提交CN审计工件（SA-W2）。集群单元置信区间按SA-R10。下限前无结论语言。</span>
+      {% if acct.get('taxonomy_version') %} · taxonomy {{ acct.taxonomy_version }}{% endif %}
       {% if acct.get('as_of') %}· <span class="l-en">As of</span><span class="l-zh">截至</span> {{ acct.as_of }}{% endif %}
     </p>
   </section>

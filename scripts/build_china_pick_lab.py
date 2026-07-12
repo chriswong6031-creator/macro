@@ -959,8 +959,12 @@ def _build() -> None:
 
     # (f) Render
     try:
-        from engine.pick_lab.render_cn import build_vm, render_page
-        vm = build_vm(payload)
+        from engine.pick_lab.render_cn import build_vm, render_page, _load_cn_audit_scoreboard
+        # SA-W5 F1: load the committed CN scoreboard explicitly so build_vm injects real
+        # cells/mix data.  Without this audit_scoreboard=None → {"present": False} and
+        # render_page's "not in vm" guard never fires (key IS present but False).
+        audit_sb = _load_cn_audit_scoreboard(site)
+        vm = build_vm(payload, audit_scoreboard=audit_sb)
         if _IS_ASIA_LANE:
             render_page(vm, site)
         else:

@@ -788,11 +788,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | us-board-ledger-retro-grades-v2 | `data/us_board_ledger/retro_grades_v2.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
 | us-board-ledger-snapshots-v2 | `data/us_board_ledger/snapshots_v2.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
-| us-board-track-v2 | `site/factordata/us_board_track_v2.json` | json | daily-engine | shadow | 1 | 0 |
 | us-standout-attribution | `data/standout_audit/us_attribution.parquet` | parquet | daily-engine | display | 1 | 0 |
 | us-standout-evidence | `data/standout_audit/us_evidence.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | us-standout-fitness-card | `data/metabolism/fitness/standouts_us.json` | json | daily-engine | display | 1 | 0 |
 | us-audit-scoreboard | `site/factordata/us_audit_scoreboard.json` | json | daily-engine | display | 0 | 0 |
+| us-board-track-v2 | `site/factordata/us_board_track_v2.json` | json | daily-engine | shadow | 0 | 0 |
 | us-standout-audit-state | `data/standout_audit/us_audit_state.json` | json | daily-engine | infrastructure | 0 | 0 |
 
 ### stock-personality

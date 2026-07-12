@@ -153,27 +153,54 @@ _DATA_GAP_BOOKS = {"cnlab_block_discount", "cnlab_lhb_inst"}
 def _build_cn_accountability_vm(scoreboard: dict | None) -> dict:
     """Normalise a cn_audit_scoreboard.v1 artifact into a template-safe dict.
 
+    Maps the REAL cn_audit_scoreboard.v1 schema:
+      cells              — list of per-stratum cell dicts (stratum, raw_n, state, etc.)
+      outcome_cause_mix  — dict of outcome-cause category → count / pct
+      process_fault_mix  — dict of process-fault category → count / pct
+      us_proxy_note      — string explaining the us_proxy stratum
+      taxonomy_version   — string
+      as_of, note        — standard fields
+
     Always returns a dict with at least {"present": bool}.
     Never raises; absent or corrupt JSON → {"present": False}.
+
+    NOTE: this intentionally does NOT read strata/coverage_monitor/buy_lane_rows —
+    those belong to the US schema (standout_audit.scoreboard.v1).  The CN schema is
+    produced by a separate grader and has a cell-level layout.
     """
     if not scoreboard:
         return {"present": False}
     try:
-        cov = scoreboard.get("coverage_monitor") or {}
+        cells_raw = scoreboard.get("cells") or []
+        # Enrich each cell: ensure safe display fields
+        cells = []
+        for c in cells_raw:
+            if not isinstance(c, dict):
+                continue
+            cells.append({
+                "stratum": c.get("stratum") or "—",
+                "is_us_proxy": (c.get("stratum") or "") == "us_proxy",
+                "raw_n": c.get("raw_n"),
+                "effective_n": c.get("effective_n"),
+                "state": c.get("state") or "ACCRUING",
+                "hit_rate": c.get("hit_rate"),
+                "note": c.get("note") or "",
+            })
+        # Two-axis mix cards
+        outcome_cause_mix = scoreboard.get("outcome_cause_mix") or {}
+        process_fault_mix = scoreboard.get("process_fault_mix") or {}
         return {
             "present": True,
             "as_of": scoreboard.get("as_of"),
             "note": scoreboard.get("note") or "",
-            "buy_lane_rows": scoreboard.get("buy_lane_rows") or 0,
-            "all_lanes_rows": scoreboard.get("all_lanes_rows") or 0,
-            "strata": scoreboard.get("strata") or {},
-            "coverage_monitor": {
-                "frozen_baseline": cov.get("frozen_baseline"),
-                "trailing_4wk_buy_count": cov.get("trailing_4wk_buy_count"),
-                "weekly_history": cov.get("weekly_history") or [],
-                "data_gap": cov.get("data_gap"),
-            },
-            "gate_suppressed": scoreboard.get("gate_suppressed") or {},
+            "taxonomy_version": scoreboard.get("taxonomy_version") or "",
+            "cells": cells,
+            "has_cells": bool(cells),
+            "outcome_cause_mix": outcome_cause_mix,
+            "has_outcome_cause_mix": bool(outcome_cause_mix),
+            "process_fault_mix": process_fault_mix,
+            "has_process_fault_mix": bool(process_fault_mix),
+            "us_proxy_note": scoreboard.get("us_proxy_note") or "",
         }
     except Exception:  # noqa: BLE001
         return {"present": False}
@@ -291,12 +318,17 @@ def _load_cn_audit_scoreboard(site: Path) -> dict | None:
 def render_page(vm: dict, site: Path | None = None) -> None:
     """Render site/china_stocks_lab.html from vm (output of build_vm).
 
-    SA-W5: if vm does not already contain 'accountability', loads
-    site/factordata/cn_audit_scoreboard.json and injects it.
+    SA-W5: if vm does not already contain 'accountability', or if it contains
+    {"present": False} (the default emitted by build_vm when no audit_scoreboard
+    arg was passed), load site/factordata/cn_audit_scoreboard.json from disk and
+    inject the real scoreboard.  Belt-and-suspenders: the builders should also
+    pass audit_scoreboard explicitly (see build_china_pick_lab.py), but this
+    fallback guarantees the committed JSON is never suppressed.
     """
     site = site or (config.ROOT / "site")
-    # Inject accountability if the caller did not pre-load it
-    if "accountability" not in vm:
+    # Inject accountability when absent OR when build_vm emitted the null sentinel
+    _acct = vm.get("accountability")
+    if "accountability" not in vm or (_acct is not None and not _acct.get("present")):
         vm = dict(vm)
         vm["accountability"] = _build_cn_accountability_vm(_load_cn_audit_scoreboard(site))
     env = Environment(

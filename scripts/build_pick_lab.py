@@ -816,7 +816,7 @@ def _build() -> None:
 
     # (f) Render the page
     try:
-        from engine.pick_lab.render import build_vm, render_page
+        from engine.pick_lab.render import build_vm, render_page, _load_audit_scoreboard
         # Load T0 beta-screen artifact (graceful absent -> None)
         t0_dict = None
         t0_path = site / "factordata" / "t0_indicator.json"
@@ -825,7 +825,12 @@ def _build() -> None:
                 t0_dict = json.loads(t0_path.read_text())
             except Exception as exc_t0:  # noqa: BLE001
                 log.warning("pick_lab: could not load t0_indicator.json (%s)", exc_t0)
-        vm = build_vm(entry_payload, lh_payload, t0_dict=t0_dict)
+        # SA-W5 F1: load the committed scoreboard explicitly so build_vm injects real
+        # coverage data (trailing_4wk, weekly_history, gate_suppressed).  Without this
+        # the default audit_scoreboard=None → {"present": False} and render_page's
+        # "not in vm" guard never fires (key IS present, just {"present": False}).
+        audit_sb = _load_audit_scoreboard(site)
+        vm = build_vm(entry_payload, lh_payload, t0_dict=t0_dict, audit_scoreboard=audit_sb)
         render_page(vm, site)
     except Exception as exc:  # noqa: BLE001
         log.warning("pick_lab: page render failed (%s) — data artifacts are good", exc)

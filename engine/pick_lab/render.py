@@ -315,12 +315,17 @@ def _load_audit_scoreboard(site: Path) -> dict | None:
 def render_page(vm: dict, site: Path | None = None) -> None:
     """Render site/us_stocks_lab.html from vm (the output of build_vm).
 
-    SA-W5: if vm does not already contain 'accountability', loads
-    site/factordata/us_audit_scoreboard.json and injects it.
+    SA-W5: if vm does not already contain 'accountability', or if it contains
+    {"present": False} (the default emitted by build_vm when no audit_scoreboard
+    arg was passed), load site/factordata/us_audit_scoreboard.json from disk and
+    inject the real scoreboard.  Belt-and-suspenders: the builders should also
+    pass audit_scoreboard explicitly (see build_pick_lab.py), but this fallback
+    guarantees the committed JSON is never suppressed.
     """
     site = site or (config.ROOT / "site")
-    # Inject accountability if the caller did not pre-load it
-    if "accountability" not in vm:
+    # Inject accountability when absent OR when build_vm emitted the null sentinel
+    _acct = vm.get("accountability")
+    if "accountability" not in vm or (_acct is not None and not _acct.get("present")):
         vm = dict(vm)
         vm["accountability"] = _build_accountability_vm(_load_audit_scoreboard(site))
     env = Environment(

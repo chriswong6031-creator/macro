@@ -468,10 +468,9 @@ artifacts:
     horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
-    consumers:
-      - engine/calibration_hub.py
+    consumers: []
     external_consumers: []
-    notes: "SA-W5 v2 track summary. NEVER included in us_board_track.json aggregates. board_version=v2 field distinguishes from main track. Lanes: v2_entry_open, v2_setting_up."
+    notes: "SA-W5 v2 track summary. NEVER included in us_board_track.json aggregates. board_version=v2 field distinguishes from main track. Lanes: v2_entry_open, v2_setting_up. Consumer list is empty by design: flip-gate accrual artifact — unconsumed until the v2 flip decision; producer is scripts/grade_us_board.py."
 
   # --- 6 consumers ---
   signal-archive-mtf:

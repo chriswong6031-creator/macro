@@ -1492,12 +1492,27 @@ def run_v2_lane(names: pd.DataFrame, etfs: pd.DataFrame, quiet: bool = False) ->
               f"store total -> {len(full_df)} rows in {V2_RETRO_PARQUET.name}")
 
     # Build a v2-specific track summary (separate JSON, never merged into us_board_track.json)
-    track_v2 = build_track(full_df, v2_boards, names)
+    # SA-W5 F5: map v2_entry_open → 'buy' before calling build_track so that
+    # build_track's `lane == "buy"` filter yields non-empty buy_lane stats and
+    # precision@k is computed for the primary entry lane.  This aliasing is ONLY
+    # applied inside run_v2_lane (not to the parquet/snapshots — raw lanes stay
+    # v2_entry_open/v2_setting_up).  The lane_mapping key stamps the emitted JSON
+    # so consumers know the alias.
+    _V2_LANE_MAPPING = {"v2_entry_open": "buy"}
+    track_input_df = full_df.copy() if not full_df.empty else full_df
+    if not track_input_df.empty and "lane" in track_input_df.columns:
+        track_input_df["lane"] = track_input_df["lane"].map(
+            lambda x: _V2_LANE_MAPPING.get(x, x)
+        )
+    track_v2 = build_track(track_input_df, v2_boards, names)
     # Label this as the v2 board track so consumers can distinguish
     track_v2["board_version"] = "v2"
+    track_v2["lane_mapping"] = _V2_LANE_MAPPING
     track_v2["note"] = (
         "SA-W5 v2 parallel lane (dual-gate+rotation-priority board). "
-        "Lanes: v2_entry_open, v2_setting_up. "
+        "Lanes: v2_entry_open (aliased to 'buy' for precision@k comparability), "
+        "v2_setting_up. "
+        "lane_mapping applied in track only — raw parquet/snapshots retain original lane names. "
         "ISOLATED from main board track — never included in us_board_track.json aggregates."
     )
     V2_TRACK_JSON.parent.mkdir(parents=True, exist_ok=True)
