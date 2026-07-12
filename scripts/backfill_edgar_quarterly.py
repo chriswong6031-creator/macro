@@ -8,7 +8,20 @@ Deliverable: data/edgar/statements_quarterly.parquet
           long_term_debt (LongTermDebtNoncurrent), current_debt (DebtCurrent→LongTermDebtCurrent),
           cash (CashAndCashEquivalentsAtCarryingValue),
           net_debt (= long_term_debt + current_debt − cash; None when no debt tags present),
+          receivables (AccountsReceivableNetCurrent → ReceivablesNetCurrent),
+          inventory (InventoryNet),
+          payables (AccountsPayableCurrent → AccountsPayableAndAccruedLiabilitiesCurrent
+                    → AccountsPayableTradeCurrent),
+          contract_liabilities (ContractWithCustomerLiabilityCurrent →
+                                ContractWithCustomerLiability → DeferredRevenueCurrent
+                                → DeferredRevenue),
           as_of (ISO timestamp)
+
+  LHB-R6 additions (2026-07-12): receivables, inventory, payables, contract_liabilities.
+    receivables and inventory chains are kept tag-consistent with collectors/edgar_facts.py
+    BALANCE dict (annual store); the annual chains are authoritative for those two fields.
+    Gates: A2 receivables leg, A5 accrual, B2 working-capital exclusion.
+
   Dedup rule: for each (ticker, fiscal_year, fiscal_quarter) key, the LATEST-FILED row wins
               on re-runs (idempotent; restatements update the stored value).
 
@@ -31,6 +44,13 @@ USAGE
 
   # Target specific tickers:
   python -m scripts.backfill_edgar_quarterly --tickers AAPL MSFT GOOGL
+
+  IMPORTANT — enriching an existing store: if the store was built before LHB-R6
+  (2026-07-12), the four new columns (receivables, inventory, payables,
+  contract_liabilities) will be NaN for all already-fetched rows because the
+  REFRESH_DAYS skip logic will bypass them.  Run --force to re-fetch the full
+  universe and populate the new columns:
+    python -m scripts.backfill_edgar_quarterly --force
 
 DOWNSTREAM
 ----------
@@ -100,6 +120,38 @@ BALANCE_USD_Q = {
     "long_term_debt": ["LongTermDebtNoncurrent"],
     "current_debt": ["DebtCurrent", "LongTermDebtCurrent"],
     "cash": ["CashAndCashEquivalentsAtCarryingValue"],
+}
+# BALANCE / INSTANT (USD): working-capital receivables, inventory, payables,
+# and deferred revenue.  Added per LHB-R6 (2026-07-12) to gate A2 receivables
+# leg, A5 accrual, and B2 working-capital exclusion.
+#
+# receivables and inventory chains are tag-consistent with the annual collector
+# (collectors/edgar_facts.py BALANCE dict) — the annual chains are authoritative
+# for those two fields so both stores can be compared without tag mismatch.
+#
+# SCOPE CAVEAT (mirrors the current_debt disclosure above): the payables fallback
+# AccountsPayableAndAccruedLiabilitiesCurrent bundles accrued liabilities (a
+# superset of trade payables), and contract_liabilities falls back to TOTAL-scope
+# tags (ContractWithCustomerLiability, DeferredRevenue = current + noncurrent)
+# when the *Current tags are absent. First-non-null resolves per (fy, fq), so a
+# filer migrating tags can switch scope BETWEEN quarters — a spurious QoQ jump at
+# the migration boundary. Acceptable for the direction-reads these gate (A2/B2);
+# any consumer computing levels must check which concept served each quarter.
+# Also: balance instants tagged fp="FY" (not fp="Q4") on some 10-Ks are excluded
+# by the QUARTERLY_FP filter (same as cash/debt/shares) — those filers carry Q4
+# holes in all instant fields; a false-negative, never a contaminated value.
+BALANCE_WORKINGCAP_Q = {
+    # Chains match collectors/edgar_facts.py BALANCE["receivables"] exactly.
+    "receivables": ["AccountsReceivableNetCurrent", "ReceivablesNetCurrent"],
+    # Chains match collectors/edgar_facts.py BALANCE["inventory"] exactly.
+    "inventory": ["InventoryNet"],
+    "payables": ["AccountsPayableCurrent",
+                 "AccountsPayableAndAccruedLiabilitiesCurrent",
+                 "AccountsPayableTradeCurrent"],
+    "contract_liabilities": ["ContractWithCustomerLiabilityCurrent",
+                              "ContractWithCustomerLiability",
+                              "DeferredRevenueCurrent",
+                              "DeferredRevenue"],
 }
 QUARTERLY_FP = {"Q1", "Q2", "Q3", "Q4"}
 QUARTERLY_FORMS = {"10-Q", "10-Q/A", "10-K", "10-K/A"}  # 10-K includes Q4 quarterly data
@@ -212,6 +264,9 @@ def _statements_quarterly(cik: int, ua: str) -> list[dict]:
         series[key] = _concept_q(usgaap, names, unit="USD", instant=True)
     for key, names in REPURCHASE_Q.items():
         series[key] = _concept_q(usgaap, names, instant=False)
+    # LHB-R6 (2026-07-12): working-capital balance sheet fields
+    for key, names in BALANCE_WORKINGCAP_Q.items():
+        series[key] = _concept_q(usgaap, names, unit="USD", instant=True)
 
     # Collect all (fy, fq) keys across all concepts
     all_keys: set[tuple] = set()
@@ -354,7 +409,12 @@ def run(
                               keep="last"))
 
     if not existing.empty:
-        # Remove existing rows for tickers we just re-fetched, then append fresh
+        # Remove existing rows for tickers we just re-fetched, then append fresh.
+        # Column-superset safety (LHB-R6): if fresh has new columns (e.g. receivables,
+        # inventory, payables, contract_liabilities) that existing lacks, pd.concat fills
+        # the missing columns in the existing slice with NaN — no KeyError, no data loss.
+        # Old rows for non-refreshed tickers remain with NaN for the new columns until
+        # those tickers are re-fetched (use --force to refresh the full universe).
         refreshed_tickers = fresh["ticker"].unique()
         existing = existing[~existing["ticker"].isin(refreshed_tickers)]
         combined = pd.concat([existing, fresh], ignore_index=True)
@@ -367,6 +427,13 @@ def run(
                 .drop_duplicates(subset=["ticker", "fiscal_year", "fiscal_quarter"],
                                  keep="last")
                 .reset_index(drop=True))
+
+    # A batch whose new working-capital columns are all-None would otherwise be
+    # inferred object → written as an Arrow null-typed column, which strict
+    # schema-union readers choke on. Coerce to float64 before write.
+    for _wc in BALANCE_WORKINGCAP_Q:
+        if _wc in combined.columns:
+            combined[_wc] = pd.to_numeric(combined[_wc], errors="coerce")
 
     combined.to_parquet(out_p, index=False)
     n_t = combined["ticker"].nunique()

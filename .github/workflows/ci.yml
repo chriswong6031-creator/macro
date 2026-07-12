@@ -396,6 +396,12 @@ on:
       - "scripts/build_subsector_membership.py"
       - "tests/test_build_subsector_membership.py"
       - "data/baskets_nasdaq/membership.json"
+      # LHB-R6 quarterly-store enrichment: receivables, inventory, payables,
+      # contract_liabilities added to statements_quarterly.parquet (2026-07-12).
+      # collectors/** already covers edgar_facts.py; backfill script and test
+      # need explicit paths so a test-only or script-only change still re-runs.
+      - "scripts/backfill_edgar_quarterly.py"
+      - "tests/test_edgar_quarterly_tags.py"
   workflow_dispatch:
 
 permissions:
@@ -779,6 +785,8 @@ jobs:
         run: python -m pytest tests/test_factor_deescalation_shadow.py -q
       - name: edgar 8-K item-code expansion unit tests (LHB-R7)
         run: python -m pytest tests/test_edgar_8k_items.py -q
+      - name: LHB-R6 quarterly-store enrichment tag tests (no network)
+        run: python -m pytest tests/test_edgar_quarterly_tags.py -q
 
   neural-web:
     # neural-web program (W0, #1253 post-mortem): three test files were run by ZERO
