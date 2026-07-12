@@ -214,11 +214,18 @@ def _mark_pr_ready(pr_number: int, *, dry_run: bool = False) -> bool:
 def _rebase_merge_pr(
     pr_branch: str,
     *,
+    expect_sha: str = "",
     root: Path | None = None,
     dry_run: bool = False,
     retries: int = _MAX_REBASE_RETRIES,
 ) -> dict[str, Any]:
     """Merge a PR via rebase --autostash with retry (registry-race-safe pattern).
+
+    expect_sha : when non-empty, the audited/approved head commit. After the
+      fetch, origin/<pr_branch> MUST equal it or the merge aborts — this pins
+      the merge to exactly the code the auditor approved (#2377 review B3, the
+      SHA-binding TOCTOU). An empty expect_sha keeps the legacy behavior for
+      non-audited callers/tests.
 
     Returns {merged: bool, attempts: int, error: str | None}.
     NEVER raises.
@@ -240,6 +247,22 @@ def _rebase_merge_pr(
                     ["git", "fetch", "origin", "main", pr_branch],
                     cwd=str(r), capture_output=True, timeout=60,
                 )
+                # SHA PIN (#2377 B3): the branch tip must still be the audited
+                # commit. If it moved between the audit gate and now, an
+                # unaudited commit is at the tip — abort, never merge it.
+                if expect_sha:
+                    tip = subprocess.run(
+                        ["git", "rev-parse", f"origin/{pr_branch}"],
+                        cwd=str(r), capture_output=True, text=True, timeout=30,
+                    )
+                    live_sha = (tip.stdout or "").strip()
+                    if tip.returncode != 0 or live_sha != expect_sha:
+                        result["error"] = (
+                            f"sha_pin_mismatch: origin/{pr_branch}={live_sha[:12]} "
+                            f"!= audited {expect_sha[:12]} — aborting merge (B3)"
+                        )
+                        log.warning("MERGE: %s", result["error"])
+                        return result  # fail-closed: do not merge unaudited code
                 # Reset to a clean origin/main tip before applying the PR.
                 # Without this, git pull --rebase would rebase onto whatever branch
                 # happens to be checked out in this worktree (the docket branch),
@@ -568,11 +591,16 @@ def run_merge_lane(
                 results.append(per)
                 continue
 
-            # Step 6: mark ready + rebase-merge
+            # Step 6: mark ready + rebase-merge — PINNED to the audited SHA
+            # (R-V7-3 / #2377 review B3): the merge must ship exactly the commit
+            # the auditor approved (and step-4 CI went green on). expect_sha makes
+            # _rebase_merge_pr abort if origin/<branch> moved since the audit,
+            # closing the TOCTOU between the step-5.5 SHA check and the merge.
             if pr_number:
                 _mark_pr_ready(pr_number, dry_run=dry_run)
 
-            merge_result = _rebase_merge_pr(pr_branch, root=root, dry_run=dry_run)
+            merge_result = _rebase_merge_pr(
+                pr_branch, expect_sha=pr_head_sha, root=root, dry_run=dry_run)
             per["merge"] = merge_result
             if merge_result.get("merged"):
                 per["status"] = "merged"
