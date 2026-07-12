@@ -1276,11 +1276,19 @@ def extract_b1_hardening_ladder(
         ev["_fd"] <= t0 + pd.Timedelta(days=252)
     )
     post_ev = ev[post_mask]
-    hard_event_reversed: bool | None = False
-    for _, row in post_ev.iterrows():
-        if B1_REVERSAL_ITEM in _parse_items_list(row.get("items")):
-            hard_event_reversed = True
-            break
+    # Semantic guard (opus review): "reversed" is only meaningful when a HARD event
+    # was actually tracked pre-onset. A post-t0 Item 1.02 with no tracked hard event
+    # is not a reversal of anything — emit None (not-applicable), never False/True,
+    # so the column cannot conflate "no hard event to reverse" with "held firm".
+    hard_event_reversed: bool | None
+    if hard_count == 0:
+        hard_event_reversed = None
+    else:
+        hard_event_reversed = False
+        for _, row in post_ev.iterrows():
+            if B1_REVERSAL_ITEM in _parse_items_list(row.get("items")):
+                hard_event_reversed = True
+                break
 
     return {
         "hard_event_count_126d": hard_count,

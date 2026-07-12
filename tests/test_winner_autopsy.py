@@ -682,6 +682,20 @@ class TestExtractB1HardeningLadder:
         result = wa.extract_b1_hardening_ladder("FOO", t0, events)
         assert result["hard_event_reversed"] is True
 
+    def test_hard_event_reversed_none_without_tracked_hard_event(self):
+        """Semantic guard (opus review): a post-t0 Item 1.02 with NO tracked pre-onset
+        hard event is not a reversal of anything — must be None (not-applicable),
+        never True (fake reversal) or False (fake held-firm)."""
+        t0 = pd.Timestamp("2020-06-01")
+        events = _make_events_df([
+            # soft pre-onset only — nothing hard to reverse
+            {"ticker": "FOO", "filing_date": "2020-05-15", "items": "8.01"},
+            # post-onset termination
+            {"ticker": "FOO", "filing_date": "2020-09-01", "items": "1.02"},
+        ])
+        result = wa.extract_b1_hardening_ladder("FOO", t0, events)
+        assert result["hard_event_reversed"] is None
+
     def test_hard_event_reversed_false_when_no_102(self):
         """No 1.02 after t0: hard_event_reversed=False."""
         t0 = pd.Timestamp("2020-06-01")
