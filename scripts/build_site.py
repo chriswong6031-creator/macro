@@ -3358,15 +3358,17 @@ def main() -> int:
                     }
         except Exception as _spe2:  # noqa: BLE001 — additive, never fatal
             log.warning("stock_personality board attach failed (%s)", _spe2)
-    # RLT-R6 sector-stance disclosure: join sector_central verdicts onto each standout row
-    # (buy AND watch lanes). DISPLAY-ONLY — zero effect on selection, rank, or gating.
+    # RLT-R6 sector-stance disclosure: join sector_central verdicts onto buy-board rows.
+    # DISPLAY-ONLY — zero effect on selection, rank, or gating.
     # Missing sector or missing sector_central data -> field absent, chip silently omitted.
+    # Ordering dependency: sector_central.json must be written by build_sector_rotation
+    # before build_site.main() runs (nightly DAG step order enforces this).
     _sc_path = site / "sectordata" / "sector_central.json"
     if us_standouts and _sc_path.exists():
         try:
             _sc_doc = json.loads(_sc_path.read_text())
-            # Build ETF-ticker -> (label_en, label_zh, score) from the sectors list
-            _sc_by_etf: dict[str, tuple[str, str, int]] = {}
+            # Build ETF-ticker -> (label_en, label_zh) from the sectors list
+            _sc_by_etf: dict[str, tuple[str, str]] = {}
             for _sec in (_sc_doc.get("sectors") or []):
                 _etf = _sec.get("ticker")
                 _conv = _sec.get("conviction") or {}
@@ -3374,19 +3376,17 @@ def main() -> int:
                     _sc_by_etf[_etf] = (
                         _conv["label_en"],
                         _conv.get("label_zh") or _conv["label_en"],
-                        int(_conv.get("score") or 0),
                     )
             # GICS sector string -> SPDR ETF (canonical map from engine/spotlight.py)
             from engine.spotlight import GICS_TO_ETF as _GICS_ETF
-            for _lane in ("buy", "watch"):
-                for _card in (us_standouts.get(_lane) or []):
-                    _gics = _card.get("sector") or ""
-                    _etf = _GICS_ETF.get(_gics)
-                    if _etf and _etf in _sc_by_etf:
-                        _lbl_en, _lbl_zh, _sc_score = _sc_by_etf[_etf]
-                        _card["sector_stance"] = _lbl_en
-                        _card["sector_stance_zh"] = _lbl_zh
-                        _card["sector_score"] = _sc_score
+            # Only buy lane has card rendering; watch rows are not rendered as cards.
+            for _card in (us_standouts.get("buy") or []):
+                _gics = _card.get("sector") or ""
+                _etf = _GICS_ETF.get(_gics)
+                if _etf and _etf in _sc_by_etf:
+                    _lbl_en, _lbl_zh = _sc_by_etf[_etf]
+                    _card["sector_stance"] = _lbl_en
+                    _card["sector_stance_zh"] = _lbl_zh
         except Exception as _rlt6e:  # noqa: BLE001 — additive, never fatal
             log.warning("RLT-R6 sector-stance enrich failed (%s)", _rlt6e)
     # W2 surfaced-outcome strip (written by grade_us_board.py --nightly).
