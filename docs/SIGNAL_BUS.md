@@ -34,7 +34,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | intraday-flow-tracker | 3 |
-| ird | 4 |
+| ird | 5 |
 | leader-radar | 5 |
 | long-hold | 31 |
 | macro-context-rail | 15 |
@@ -85,7 +85,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 255 |
+| display | 256 |
 | infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
@@ -94,7 +94,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 396 |
+| git | 397 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -326,6 +326,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| ird-intl-risk-latest | `data/intl_risk/latest.json` | json | daily-engine | display | 2 | 0 |
 | fred-swpt | `data/fred/SWPT.parquet` | parquet | collect | display | 1 | 0 |
 | fred-wlcfll | `data/fred/WLCFLL.parquet` | parquet | collect | display | 1 | 0 |
 | imf-weo-store | `data/imf_weo/` | parquet | collect | display | 1 | 0 |
