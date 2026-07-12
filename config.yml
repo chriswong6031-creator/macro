@@ -378,7 +378,9 @@ fred:
   tickers:
     sectors: [XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]
     extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI", "^RUT", IJH,   # ^RUT = true Russell 2000 index level; IJH = S&P MidCap 400 (mid-cap leg of the size spectrum)
-             SOXX, IGV, XBI, IBB, GDX, GDXJ, KRE, KBE, ITB, XHB, XME, XOP, OIH, XRT, TAN]  # deep-history thematic ETFs (directional model — narrow purer-driver exposures)
+             SOXX, IGV, XBI, IBB, GDX, GDXJ, KRE, KBE, ITB, XHB, XME, XOP, OIH, XRT, TAN,  # deep-history thematic ETFs (directional model — narrow purer-driver exposures)
+             MAGS,                # Roundhill Magnificent Seven ETF — mega-cap leadership concentration tracker (hk_context_chips em_dm_rs / HKRV-W4)
+             "^KS11"]             # KOSPI composite (Korea) — EM-Asia bellwether; hk_context_chips complement
     style: [IWF, IWD]             # Russell 1000 Growth / Value — style-rotation read (growth vs value leadership)
     factors: [MTUM, QUAL, USMV, SPHB, SPLV]
     ipo: [IPO, FPX]               # Renaissance IPO ETF + First Trust IPOX — aftermarket new-issue basket reality-check (IPO Radar; the "buy IPOs in the secondary market" trade)
@@ -5875,7 +5877,9 @@ yahoo:
   tickers:
     sectors: [XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]
     extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI", "^RUT", IJH,   # ^RUT = true Russell 2000 index level; IJH = S&P MidCap 400 (mid-cap leg of the size spectrum)
-             SOXX, IGV, XBI, IBB, GDX, GDXJ, KRE, KBE, ITB, XHB, XME, XOP, OIH, XRT, TAN]  # deep-history thematic ETFs (directional model — narrow purer-driver exposures)
+             SOXX, IGV, XBI, IBB, GDX, GDXJ, KRE, KBE, ITB, XHB, XME, XOP, OIH, XRT, TAN,  # deep-history thematic ETFs (directional model — narrow purer-driver exposures)
+             MAGS,                # Roundhill Magnificent Seven ETF — mega-cap leadership concentration tracker (hk_context_chips em_dm_rs / HKRV-W4)
+             "^KS11"]             # KOSPI composite (Korea) — EM-Asia bellwether; hk_context_chips complement
     style: [IWF, IWD]             # Russell 1000 Growth / Value — style-rotation read (growth vs value leadership)
     factors: [MTUM, QUAL, USMV, SPHB, SPLV]
     ipo: [IPO, FPX]               # Renaissance IPO ETF + First Trust IPOX — aftermarket new-issue basket reality-check (IPO Radar; the "buy IPOs in the secondary market" trade)

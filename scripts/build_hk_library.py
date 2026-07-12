@@ -1486,6 +1486,18 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     except Exception as _ldr_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
         log.warning("hk leadership compute failed (%s) — existing board intact", _ldr_ex)
         out["leadership"] = None
+    # ---- CONTEXT CHIPS (HKRV-W4, additive, fail-open) — display-tier macro chips.
+    # Reads EXISTING committed stores; never feeds rank/size/gate (AUTHORITY FENCE HKRV-R5).
+    # An error here must not disturb the standout board.
+    try:
+        from engine import hk_context_chips as _hkcc
+        _chips = _hkcc.compute_all()
+        out["context_chips"] = _chips
+        log.info("hk context_chips: %d chips computed (%s)",
+                 len(_chips), ", ".join(_chips.keys()))
+    except Exception as _cc_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
+        log.warning("hk context_chips compute failed (%s) — existing board intact", _cc_ex)
+        out["context_chips"] = {}
     # persist the artifact so a transient build failure leaves a stale-but-present board.
     try:
         fdir = site / "factordata"
