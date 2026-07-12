@@ -69,6 +69,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | short-side | 1 |
 | signal-commons | 8 |
 | signal-foundry | 4 |
+| standout-accountability | 5 |
 | stock-personality | 5 |
 | tech-internals | 1 |
 | thematic-intelligence | 12 |
@@ -85,8 +86,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 256 |
-| infrastructure | 91 |
+| display | 260 |
+| infrastructure | 92 |
 | scored | 4 |
 | shadow | 63 |
 
@@ -94,7 +95,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 397 |
+| git | 402 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -740,7 +741,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| us-board-ledger-retro-grades | `data/us_board_ledger/retro_grades.parquet` | parquet | daily-engine | infrastructure | 9 | 0 |
+| us-board-ledger-retro-grades | `data/us_board_ledger/retro_grades.parquet` | parquet | daily-engine | infrastructure | 10 | 0 |
 | signal-archive-mtf | `data/signal_archive/mtf_signals_latest.json` | json | daily-engine | display | 6 | 0 |
 | experiments-registry-seed | `data/experiments/registry_seed.json` | json | daily-engine | infrastructure | 5 | 0 |
 | signal-archive-track-record | `data/signal_archive/track_record.parquet` | parquet | daily-engine | shadow | 5 | 0 |
@@ -774,6 +775,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | signal-foundry-forward | `data/signal_foundry/forward` | jsonl | daily-engine | display | 1 | 0 |
 | signal-foundry-lane-status | `data/signal_foundry/lane_status.json` | json | on-demand | display | 1 | 0 |
 | signal-foundry-results | `data/signal_foundry/results` | json | weekly | display | 1 | 0 |
+
+### standout-accountability
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| us-standout-attribution | `data/standout_audit/us_attribution.parquet` | parquet | daily-engine | display | 1 | 0 |
+| us-standout-evidence | `data/standout_audit/us_evidence.jsonl` | jsonl | daily-engine | display | 1 | 0 |
+| us-standout-fitness-card | `data/metabolism/fitness/standouts_us.json` | json | daily-engine | display | 1 | 0 |
+| us-audit-scoreboard | `site/factordata/us_audit_scoreboard.json` | json | daily-engine | display | 0 | 0 |
+| us-standout-audit-state | `data/standout_audit/us_audit_state.json` | json | daily-engine | infrastructure | 0 | 0 |
 
 ### stock-personality
 
@@ -952,7 +963,7 @@ flowchart LR
     C_engine_china_standout_track_py["engine/china_standout_track.py"]
     C_engine_spine_py["engine/spine.py"]
     C_engine_track_record_py["engine/track_record.py"]
-    OVF_us_board_ledger_retro_grades["...+5 more"]
+    OVF_us_board_ledger_retro_grades["...+6 more"]
     P_engine_market_state_py(("engine/market_state.py"))
     A_market_state_latest["market-state-latest"]
     C_engine_regime_prior_py["engine/regime_prior.py"]

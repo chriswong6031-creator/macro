@@ -403,6 +403,7 @@ artifacts:
       - engine/china_standout_track.py
       - engine/spine.py
       - engine/track_record.py
+      - engine/standout_audit.py
       - scripts/build_canada.py
       - scripts/build_hk.py
       - scripts/build_hk_library.py
@@ -11953,3 +11954,122 @@ artifacts:
       corr_tightening, two_tier (IRD-R3 contagion state), cb_desk, smile (IRD-R10),
       inversion_board (IRD-R13). Display-only context artifact.
       authority.may_rank/gate/size/escalate=false.
+
+  # --- SA-W1: Standout Accountability — US attribution organ ---
+  us-standout-attribution:
+    path: data/standout_audit/us_attribution.parquet
+    format: parquet
+    producer: engine/standout_audit.py
+    known_extra_writers: []
+    owner_program: standout-accountability
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: standout_audit.v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/standout_audit.py
+    external_consumers: []
+    notes: >
+      SA-W1 two-axis attribution sidecar for US standout buy-board picks at the 21d ruler.
+      Keep-first dedup on (as_of, ticker, lane, horizon, taxonomy_version). Accruing until
+      SA-R10 maturity floors (~2026-09-15). Authority: display-context only, not a signal.
+
+  us-standout-evidence:
+    path: data/standout_audit/us_evidence.jsonl
+    format: jsonl
+    producer: engine/standout_audit.py
+    known_extra_writers: []
+    owner_program: standout-accountability
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: standout_audit.v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/standout_audit.py
+    external_consumers: []
+    notes: >
+      SA-W1 evidence packs: one JSON row per matured US pick with identity, entry-time context
+      stamps (regime, sector, rank, gate/tier cols), outcome numbers, and both attribution axes.
+      Append-only, keep-first on (as_of, ticker, lane). Future consumer: SA-W5 lab templates.
+
+  us-audit-scoreboard:
+    path: site/factordata/us_audit_scoreboard.json
+    format: json
+    producer: engine/standout_audit.py
+    known_extra_writers: []
+    owner_program: standout-accountability
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: standout_audit.scoreboard.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      SA-W1 stratified scoreboard: win-rate/median-excess by regime cell (quad_hard_label,
+      vol_regime, risk_radar_state), lane, outcome_cause, process_fault, sector. Every cell
+      carries raw_n AND effective_n (entry-date-collapsed cluster unit), Wilson CIs on the
+      cluster unit, and upstream concordance rates per organ. No significance claims.
+      Cells with effective_n<3 print state=ACCRUING. SA-W5 lab-page consumer (future).
+
+  us-standout-fitness-card:
+    path: data/metabolism/fitness/standouts_us.json
+    format: json
+    producer: engine/standout_audit.py
+    known_extra_writers: []
+    owner_program: standout-accountability
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: metabolism.standout_fitness.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/metabolism/generic_fitness.py
+    external_consumers: []
+    notes: >
+      SA-W1 US standout fitness card (metabolism.standout_fitness.v1). Six sensors:
+      hit_quality, upside_capture, coverage_health, missed_mover_rate, timing_quality,
+      process_integrity. All accruing until SA-R10 floors (~2026-09-15). SA-R3 balanced-
+      fitness law: precision sensors paired with coverage sensors. Authority: display-context
+      only, is_context_only=true. Consumed by metabolism loop (SA-W3 charter wiring).
+
+  us-standout-audit-state:
+    path: data/standout_audit/us_audit_state.json
+    format: json
+    producer: engine/standout_audit.py
+    known_extra_writers: []
+    owner_program: standout-accountability
+    cadence: daily-engine
+    storage: git
+    asof_field: last_run_utc
+    freshness_sla_hours: 48
+    schema: standout_audit.state.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      SA-W1 freshness stamp: {last_run_utc, last_graded_asof, rows_matured_total,
+      rows_attributed_total, schema}. Written every successful run of engine/standout_audit.py.
+      Heartbeat / organism-state freshness sensor reads this path to detect a persistently-
+      failing audit (SA-R16 silent-death immunity).

@@ -73,9 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 414, (
-        f"Expected 414 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 419, (
+        f"Expected 419 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (SA-W1 standout accountability added us-standout-attribution,"
+        " us-standout-evidence, us-audit-scoreboard, us-standout-fitness-card,"
+        " us-standout-audit-state = 414->419;"
         " (IRD-W2 added ird-intl-risk-latest = 413->414;"
         " (RC-R14 China port added site-marketdata-rotation-events-china,"
         " data-rotation-events-china-ledger = 411->413;"
