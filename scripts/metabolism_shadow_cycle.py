@@ -301,6 +301,32 @@ def _run_sense_organism_state(shadow_root: Path, real_root: Path, cycle_id: str)
         return {"status": "failed", "artifact": None, "note": str(exc)}
 
 
+def _run_sense_scout(shadow_root: Path, real_root: Path, cycle_id: str) -> dict[str, Any]:
+    """SENSE stage 3.5: uncovered-domain scout (R-V6-1/W1).
+
+    Runs scan() against the SHADOW root so observations and any charter
+    proposals land under the shadow data tree, never the real stores. The
+    shadow root symlinks/copies config/, so the real domain universe and
+    charters are what get scanned — production-shaped coverage math.
+    """
+    stage = "sense_scout"
+    try:
+        from engine.metabolism.scout import scan  # type: ignore[import]
+        result = scan(cycle_id=cycle_id, root=shadow_root)
+        return {
+            "status": "ok",
+            "artifact": str(shadow_root / "data" / "metabolism" / "scout" / "observations.jsonl"),
+            "note": (
+                f"scout: {len(result.get('accruing', []))} accruing, "
+                f"{len(result.get('emitted', []))} charter proposal(s) emitted, "
+                f"{len(result.get('covered', []))} covered"
+            ),
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("shadow_cycle[%s]: %s", stage, exc)
+        return {"status": "error", "artifact": None, "note": str(exc)}
+
+
 def _run_sense_insight_bus(shadow_root: Path, real_root: Path, cycle_id: str) -> dict[str, Any]:
     """SENSE stage 3: insight_bus emitters + anomaly_monitor.
 
@@ -780,6 +806,9 @@ def run_shadow_cycle(
 
     # ── Stage: sense_insight_bus ──────────────────────────────────────────────
     stages["sense_insight_bus"] = _run_sense_insight_bus(shadow_root, real_root, cycle_id)
+
+    # ── Stage: sense_scout (uncovered-domain feeler — R-V6-1/W1) ──────────────
+    stages["sense_scout"] = _run_sense_scout(shadow_root, real_root, cycle_id)
 
     # ── Stage: agenda ─────────────────────────────────────────────────────────
     if not use_llm:

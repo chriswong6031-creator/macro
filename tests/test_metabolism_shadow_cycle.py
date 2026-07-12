@@ -429,3 +429,34 @@ class TestCycleMakeId:
         # Bad input must not raise
         cid = _make_cycle_id("not-a-date")
         assert cid.startswith("shadow-")
+
+
+# ── R-V6-1 / W1: the scout feeler is wired into SENSE ────────────────────────
+
+class TestScoutWired:
+    def test_shadow_cycle_runs_scout_stage(self, tmp_path, monkeypatch):
+        """The shadow SENSE sequence must include the scout (it had NO caller
+        anywhere — lobe genesis was structurally OFF, v6 census G1)."""
+        import scripts.metabolism_shadow_cycle as sc
+        called = {}
+
+        import engine.metabolism.scout as scout_mod
+        def fake_scan(cycle_id, root=None, emit=True):
+            called["cycle_id"] = cycle_id
+            called["root"] = root
+            return {"accruing": [], "emitted": [], "covered": []}
+        monkeypatch.setattr(scout_mod, "scan", fake_scan)
+
+        res = sc._run_sense_scout(tmp_path, tmp_path, "shadow-test-scout")
+        assert res["status"] == "ok"
+        assert called["cycle_id"] == "shadow-test-scout"
+        assert called["root"] == tmp_path, "scout must scan the SHADOW root"
+
+    def test_agenda_workflow_invokes_scout(self):
+        """The scheduled SENSE lane must call scout.scan — workflow-content
+        assertion (the class of gap unit tests can't see)."""
+        from pathlib import Path
+        wf = (Path(__file__).resolve().parent.parent
+              / ".github" / "workflows" / "metabolism-agenda.yml").read_text()
+        assert "from engine.metabolism.scout import scan" in wf
+        assert "scan(cycle_id=" in wf
