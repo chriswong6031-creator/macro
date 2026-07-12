@@ -130,6 +130,31 @@ class TestParseCaseFile:
             wa.parse_case_file(str(bad_md))
 
 
+class TestParseAllCases:
+    """Library-wide parse gate: research/winners/README.md promises that a case
+    whose YAML does not parse fails this suite — enforce it for every committed
+    case file, not just the MRNA seed."""
+
+    _CASES = sorted((_REPO_ROOT / "research" / "winners" / "cases").glob("*.md"))
+
+    @pytest.mark.parametrize("case_path", _CASES, ids=lambda p: p.stem)
+    def test_case_parses_with_required_keys(self, case_path):
+        case = wa.parse_case_file(str(case_path))
+        for key in wa._CASE_REQUIRED_KEYS:
+            assert key in case, f"{case_path.stem}: missing required key {key}"
+        ticker, year = case_path.stem.rsplit("_", 1)
+        assert case["ticker"] == ticker, (
+            f"{case_path.stem}: ticker {case['ticker']!r} does not match filename"
+        )
+        assert str(case["episode_year"]) == year, (
+            f"{case_path.stem}: episode_year {case['episode_year']!r} does not match filename"
+        )
+
+    def test_library_glob_found_cases(self):
+        # Guards the glob itself: an empty match would green-skip the parametrized gate.
+        assert len(self._CASES) >= 36
+
+
 # ---------------------------------------------------------------------------
 # 3. detect_episodes — synthetic data
 # ---------------------------------------------------------------------------

@@ -107,6 +107,13 @@ on:
       - "tests/test_risk_radar_recovery.py"
       - "tests/test_canon.py"
       - "tests/test_whitehouse_w5.py"
+      # Winner Autopsy Lab: every case file under research/winners/cases/ must parse
+      # against winner_case.v1 (engine/winner_autopsy.py is already covered by engine/**).
+      - "research/winners/cases/**"
+      - "scripts/research/build_winner_autopsy.py"
+      - "admin/long_hold.py"
+      - "tests/test_winner_autopsy.py"
+      - "tests/test_admin_long_hold.py"
       # IGN WB: Ignition Radar — risk-ON mirror of the Risk Radar.
       # engine/ignition_radar.py + ignition_audit.py US arm + template card.
       - "engine/ignition_radar.py"
@@ -616,6 +623,7 @@ jobs:
           tests/test_risk_lead_lag.py tests/test_anticipation.py
           tests/test_risk_radar_market_catalysts.py tests/test_risk_radar_recovery.py
           tests/test_canon.py tests/test_whitehouse_w5.py
+          tests/test_winner_autopsy.py tests/test_admin_long_hold.py
           tests/test_board_ledger.py tests/test_grade_us_board.py
           tests/test_options_stamp.py tests/test_sector_pulse_wiring.py
           tests/test_news_page_render.py tests/test_china_lens_hub.py
