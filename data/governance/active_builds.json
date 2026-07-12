@@ -1,17 +1,62 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-12T09:40:51.079325+00:00",
+  "generated_at": "2026-07-12T13:05:49.516200+00:00",
   "base": {
-    "sha": "cb33e2f54711a28377d660cf3edf3c974ae01ea6"
+    "sha": "fdd13960a46972515083fabce3129223f93bcca5"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
     {
-      "number": 2390,
-      "title": "test(nw): filter rebalance_pulse fixture-absence gap \u2014 heal main-red test_full_composition_shape",
-      "head_ref": "claude/heal-ws-fixture",
-      "updated_at": "2026-07-12T09:40:30Z",
+      "number": 2436,
+      "title": "fix(til): W11 two-writer coexistence \u2014 keep-last-real law + launchd commit/push tail",
+      "head_ref": "claude/elated-elbakyan-58d86b",
+      "updated_at": "2026-07-12T12:59:27Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 9,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "data/neuralweb/theme_options_witness.json",
+        "engine/theme_options_witness.py",
+        "ops/launchd/com.macro.theme-options-witness.plist",
+        "ops/launchd/run_theme_options_witness.sh",
+        "site/basketdata/options_witness.json",
+        "tests/test_theme_options_witness.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ]
+    },
+    {
+      "number": 2435,
+      "title": "fix(registry): regen compiled kill registry \u2014 unbreak capability-broker (drift from #2388 + #2396)",
+      "head_ref": "claude/fix-blocklist-drift",
+      "updated_at": "2026-07-12T12:45:58Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "config/compiled_kill_registry.yml",
+        "config/signal_foundry_blocklist.yml"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2434,
+      "title": "ci(read-gate): heal synapse-read-gate \u2014 numpy/pandas missing for test_delivery_waterfall",
+      "head_ref": "claude/heal-readgate-numpy",
+      "updated_at": "2026-07-12T12:15:42Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -19,24 +64,461 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "tests/test_world_state.py"
+        ".github/workflows/ci.yml"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 2433,
+      "title": "feat(til-w8): wire census trade-flow collect-lane steps + request-cap hardening \u2014 close the last deferred TIL dead-wire",
+      "head_ref": "claude/heuristic-poincare-ae27f6",
+      "updated_at": "2026-07-12T12:10:18Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/daily.yml",
+        "collectors/census_trade.py",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "tests/test_census_trade.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ]
+    },
+    {
+      "number": 2432,
+      "title": "feat(long-hold): LHB-W2a \u2014 quarterly EDGAR working-capital tags + forced backfill (LHB-R6)",
+      "head_ref": "claude/lhb-w2a-quarterly-tags",
+      "updated_at": "2026-07-12T11:57:21Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "data/edgar/statements_quarterly.parquet",
+        "scripts/backfill_edgar_quarterly.py",
+        "tests/test_edgar_quarterly_tags.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 2431,
+      "title": "feat(long-hold): LHB-W2c \u2014 prospective symbol-directory archival collector (LHB-R8)",
+      "head_ref": "claude/lhb-w2c-symbol-directory",
+      "updated_at": "2026-07-12T11:49:21Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 7,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "collectors/symbol_directory.py",
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md",
+        "scripts/collect.py",
+        "tests/test_signal_bus_doc.py",
+        "tests/test_symbol_directory.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md"
+      ]
+    },
+    {
+      "number": 2430,
+      "title": "research(long-hold): Falsifier Field Book as-received + adjudication (FFB-R1..R9)",
+      "head_ref": "claude/lhb-field-book",
+      "updated_at": "2026-07-12T11:45:45Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/FALSIFIER_FIELD_BOOK_ADJUDICATION_BY_FABLE.md"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 2389,
-      "title": "feat(ird-w2): International Risk Desk engines \u2014 EM stress, DY contagion, CB desk, DXY smile, velocity boards",
-      "head_ref": "claude/ird-w2-engines",
-      "updated_at": "2026-07-12T09:40:28Z",
-      "is_draft": false,
+      "number": 2429,
+      "title": "feat(adb-w4): four new panels on aibrief page (context strip, What's ahead, brief's record, cortex deliberation)",
+      "head_ref": "claude/adb-w4-page",
+      "updated_at": "2026-07-12T11:45:20Z",
+      "is_draft": true,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 20,
+      "files_count": 7,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "scripts/build_aibrief.py",
+        "site/aibrief.html",
+        "site/aibrief.js",
+        "templates/aibrief.html.j2",
+        "templates/aibrief.js",
+        "tests/test_aibrief_w4_panels.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 2428,
+      "title": "feat(adb-w1): NW context packet composer + master_brain wiring",
+      "head_ref": "claude/adb-w1-context-packet",
+      "updated_at": "2026-07-12T11:50:15Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
       "files_truncated": false,
       "files_error": false,
       "files": [
         ".github/workflows/ci.yml",
         "config/synapse.yml",
+        "engine/master_brain.py",
+        "engine/neuralweb/brief_context.py",
+        "tests/test_brief_context.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml",
+        "engine/neuralweb/brief_context.py"
+      ]
+    },
+    {
+      "number": 2427,
+      "title": "feat(cortex): ADB-W3 \u2014 cortex two-way read tools (read_master_brain_theses + read_master_brain_brief)",
+      "head_ref": "claude/adb-w3-cortex-twoway",
+      "updated_at": "2026-07-12T11:41:05Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml",
+        "engine/neuralweb/cortex.py",
+        "tests/test_cortex_adb_w3.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml",
+        "engine/neuralweb/cortex.py"
+      ]
+    },
+    {
+      "number": 2426,
+      "title": "feat(standout-review): SA-W4 \u2014 improvement lanes (clamped shadow-apply engine + Tier-0 replay + lab come-back alerts)",
+      "head_ref": "claude/sa-w4-improvement",
+      "updated_at": "2026-07-12T11:34:22Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 6,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "config/standout_review.yml",
+        "data/experiments/registry_seed.json",
+        "engine/standout_review.py",
+        "scripts/replay_standout_books.py",
+        "tests/test_standout_review.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        "data/experiments/registry_seed.json"
+      ]
+    },
+    {
+      "number": 2425,
+      "title": "docs(adb): AI Daily Brief Deep-Wire masterplan \u2014 wire Neural Web + Cortex + deterministic forward stack into the AI brief (ADB-R1..R16)",
+      "head_ref": "claude/stoic-northcutt-8d3bd4",
+      "updated_at": "2026-07-12T11:12:02Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/AI_DAILY_BRIEF_DEEPWIRE_MASTERPLAN_BY_FABLE.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2424,
+      "title": "feat(long-hold): LHB-W2b \u2014 8-K item-code expansion + PIT-preserving union merge (LHB-R7)",
+      "head_ref": "claude/lhb-w2b-8k-items",
+      "updated_at": "2026-07-12T12:46:24Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "collectors/edgar_8k.py",
+        "data/edgar/material_8k_events.parquet",
+        "engine/altdata.py",
+        "tests/test_edgar_8k_items.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 2421,
+      "title": "feat(standout-audit): SA-W1 \u2014 US attribution organ + off-render lane + standout fitness card",
+      "head_ref": "claude/sa-w1-us-audit",
+      "updated_at": "2026-07-12T12:05:05Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 11,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "data/metabolism/fitness/standouts_us.json",
+        "data/standout_audit/us_audit_state.json",
+        "docs/SIGNAL_BUS.md",
+        "engine/standout_audit.py",
+        "site/factordata/us_audit_scoreboard.json",
+        "tests/test_signal_bus_doc.py",
+        "tests/test_standout_audit.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md"
+      ]
+    },
+    {
+      "number": 2420,
+      "title": "feat(ftr-hk): extend the basket pulse to HK baskets \u2014 per-market session detection + HKEX fastpath window (GAP-3)",
+      "head_ref": "claude/elegant-hoover-079c12",
+      "updated_at": "2026-07-12T10:56:56Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 12,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/intraday-fastpath.yml",
+        ".github/workflows/live-quotes.yml",
+        "scripts/build_basket_pulse.py",
+        "scripts/build_live_quotes.py",
+        "site/allocation.html",
+        "site/allocation_canada.html",
+        "site/allocation_china.html",
+        "site/allocation_hk.html",
+        "site/live/basket_pulse_hk.json",
+        "templates/allocation.html.j2",
+        "tests/test_build_basket_pulse.py",
+        "tests/test_build_live_quotes.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/intraday-fastpath.yml",
+        ".github/workflows/live-quotes.yml"
+      ]
+    },
+    {
+      "number": 2419,
+      "title": "feat(standout-audit): SA-W2 \u2014 CN foundations + attribution (PIT regime store, species_id, two-axis audit, fitness card)",
+      "head_ref": "claude/sa-w2-cn-audit",
+      "updated_at": "2026-07-12T11:18:11Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 9,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "engine/china_regime_store.py",
+        "engine/china_standout_audit.py",
+        "engine/china_standout_track.py",
+        "scripts/build_china_library.py",
+        "tests/test_china_standout_track.py",
+        "tests/test_cn_standout_audit.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ]
+    },
+    {
+      "number": 2416,
+      "title": "fix(blocklist): regenerate compiled kill-registry \u2014 heal main-carried drift",
+      "head_ref": "claude/heal-main-reds",
+      "updated_at": "2026-07-12T12:19:16Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "config/compiled_kill_registry.yml",
+        "config/signal_foundry_blocklist.yml"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 2415,
+      "title": "feat(allocation-hk): IHM 'Index turn' row in the Leaders-moving-first popover [SIGN-OFF PENDING, stacked on #2392]",
+      "head_ref": "claude/alloc-hk-ihm-turn-row",
+      "updated_at": "2026-07-12T10:42:21Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "scripts/build_allocation.py",
+        "templates/allocation.html.j2",
+        "tests/test_hk_index_turn_row.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2412,
+      "title": "feat(allocation): fast-tape 'Past 2 weeks' column on the Narrative Lifecycle Board (r10, display-tier) [MOCKUP \u2014 awaiting operator ratification]",
+      "head_ref": "claude/nlb-fast-tape",
+      "updated_at": "2026-07-12T10:38:07Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/narrative_rotation.py",
+        "templates/allocation.html.j2"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2409,
+      "title": "guard(inline-js): on*= handler attributes + smart-quote contamination scan (+ fix broken china_stocks rip-toggle onclick)",
+      "head_ref": "claude/focused-burnell-ec8483",
+      "updated_at": "2026-07-12T12:01:36Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 7,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "config/house_law_checks.yml",
+        "docs/HOUSE_LAW_CI_GUARD_SUITE.md",
+        "scripts/check_inline_js.py",
+        "site/china_stocks.html",
+        "templates/china.html.j2",
+        "tests/test_check_inline_js.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        "scripts/check_inline_js.py"
+      ]
+    },
+    {
+      "number": 2397,
+      "title": "feat(altdata): per-channel claim families with pre-registered horizon rulers, episode emission, placebo tape (ALTDATA_REBOOT W2)",
+      "head_ref": "claude/altdata-ledger-redesign",
+      "updated_at": "2026-07-12T11:51:29Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 6,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml",
+        "engine/altdata_ledger.py",
+        "research/ALTDATA_REBOOT.md",
+        "scripts/backfill_qledger_us.py",
+        "tests/test_altdata_reboot_families.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml"
+      ]
+    },
+    {
+      "number": 2392,
+      "title": "feat(allocation-hk): 'Leaders moving first' turn banner on allocation page [RATIFICATION PENDING]",
+      "head_ref": "claude/alloc-hk-turn-banner",
+      "updated_at": "2026-07-12T10:45:46Z",
+      "is_draft": true,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "data/baskets_hk/membership.json",
+        "scripts/build_allocation.py",
+        "scripts/seed_hk_baskets.py",
+        "templates/allocation.html.j2"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2389,
+      "title": "feat(ird): International Risk Desk W2-W4 \u2014 engines + intl.html risk desk + weather card",
+      "head_ref": "claude/ird-w2-engines",
+      "updated_at": "2026-07-12T12:47:39Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 29,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml",
+        "data/intl/hub.json",
+        "data/intl_risk/latest.json",
         "docs/SIGNAL_BUS.md",
         "engine/cb_desk.py",
         "engine/contagion.py",
@@ -49,6 +531,13 @@
         "research/INTL_RISK_DESK_MASTERPLAN_BY_FABLE.md",
         "scripts/build_bonds.py",
         "scripts/build_intl.py",
+        "scripts/build_macro_context.py",
+        "site/intl.html",
+        "site/intl_stock.html",
+        "site/intl_stocks.html",
+        "site/macro_context.html",
+        "templates/intl.html.j2",
+        "templates/macro_context.html.j2",
         "tests/test_cb_desk.py",
         "tests/test_contagion.py",
         "tests/test_intl_risk.py",
@@ -64,33 +553,10 @@
       ]
     },
     {
-      "number": 2387,
-      "title": "fix(til): wire W9/W10/W11 collect-lane organs \u2014 close 3 dead-wire dag divergences",
-      "head_ref": "feat/til-collect-lane-wiring",
-      "updated_at": "2026-07-12T09:39:00Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 4,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/daily.yml",
-        "config/dag.yml",
-        "config/synapse.yml",
-        "ops/launchd/com.macro.theme-options-witness.plist"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/daily.yml",
-        "config/dag.yml",
-        "config/synapse.yml"
-      ]
-    },
-    {
       "number": 2386,
       "title": "feat(rotation): RC-R14 China \u2014 rotation-event detector port + connect-flow context (display-tier, operator pull-forward)",
       "head_ref": "claude/rc-cn-rotation",
-      "updated_at": "2026-07-12T09:38:04Z",
+      "updated_at": "2026-07-12T10:45:27Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -118,39 +584,6 @@
         "config/dag.yml",
         "config/synapse.yml"
       ]
-    },
-    {
-      "number": 2385,
-      "title": "fix(ci): filter expected rebalance_pulse gap in test_full_composition_shape (unbreaks neural-web-core on all PRs)",
-      "head_ref": "fix/world-state-rebalance-pulse-gap",
-      "updated_at": "2026-07-12T09:36:59Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 1,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "tests/test_world_state.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 2384,
-      "title": "feat(hk-baskets): factor-split lenses \u2014 platforms / tech hardware / miners [RATIFICATION PENDING]",
-      "head_ref": "claude/hk-basket-factor-splits",
-      "updated_at": "2026-07-12T09:36:26Z",
-      "is_draft": true,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "data/baskets_hk/membership.json",
-        "scripts/seed_hk_baskets.py"
-      ],
-      "protected_paths_touched": []
     },
     {
       "number": 2383,
@@ -189,42 +622,26 @@
       ]
     },
     {
-      "number": 2382,
-      "title": "fix(nw): declare dormant-armed lobes honestly \u2014 park review-log + contradictions-ledger SLAs at 9999",
-      "head_ref": "fix/nw-dormant-lobe-slas",
-      "updated_at": "2026-07-12T09:31:08Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "config/synapse.yml",
-        "engine/risk_radar_review.py"
-      ],
-      "protected_paths_touched": [
-        "config/synapse.yml"
-      ]
-    },
-    {
       "number": 2381,
       "title": "feat(nw): rotation-events world_state lobe + synapse registration for the rotation family (RC deep-integration)",
       "head_ref": "claude/rc-nw-wiring",
-      "updated_at": "2026-07-12T09:30:57Z",
+      "updated_at": "2026-07-12T12:15:19Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 3,
+      "files_count": 5,
       "files_truncated": false,
       "files_error": false,
       "files": [
         "config/synapse.yml",
+        "docs/SIGNAL_BUS.md",
         "engine/neuralweb/world_state.py",
+        "tests/test_signal_bus_doc.py",
         "tests/test_world_state.py"
       ],
       "protected_paths_touched": [
         "config/synapse.yml",
+        "docs/SIGNAL_BUS.md",
         "engine/neuralweb/world_state.py"
       ]
     },
@@ -248,7 +665,7 @@
       "number": 2379,
       "title": "fix(nw-health): weekend-aware SLA, as_of rollup unpinning, staleness_from override, placeholder rollup",
       "head_ref": "fix/nw-health-staleness-semantics",
-      "updated_at": "2026-07-12T09:26:28Z",
+      "updated_at": "2026-07-12T12:05:23Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -268,27 +685,10 @@
       ]
     },
     {
-      "number": 2378,
-      "title": "fix(deploy): terminal-data-setup installs wrapper from vendored terminal-refresh.sh (stop heredoc clobber of live nightly refresh)",
-      "head_ref": "claude/nice-lalande-c56dd8",
-      "updated_at": "2026-07-12T09:17:18Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "app/deploy/terminal-data-setup.sh",
-        "app/deploy/terminal-refresh.sh"
-      ],
-      "protected_paths_touched": []
-    },
-    {
       "number": 2377,
       "title": "feat(metabolism): v7 PR audit \u2014 adversarial code review gate before autonomous merge (R-V7-1..6)",
       "head_ref": "claude/metabolism-pr-audit",
-      "updated_at": "2026-07-12T09:27:48Z",
+      "updated_at": "2026-07-12T10:46:31Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -318,49 +718,10 @@
       ]
     },
     {
-      "number": 2376,
-      "title": "feat(rlt): RLT-R13 \u2014 liquidity quality-state truthfulness: v1.1 lobe mapping, flag-accurate summaries, weekly-aware WALCL stale badge",
-      "head_ref": "claude/focused-meitner-f55ac5",
-      "updated_at": "2026-07-12T09:15:50Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 5,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "engine/neuralweb/liquidity_plumbing.py",
-        "engine/regime.py",
-        "research/REBALANCE_LIQUIDITY_TRANSMISSION_MASTERPLAN_BY_FABLE.md",
-        "templates/committee.html.j2",
-        "tests/test_liquidity_plumbing.py"
-      ],
-      "protected_paths_touched": [
-        "engine/neuralweb/liquidity_plumbing.py"
-      ]
-    },
-    {
-      "number": 2375,
-      "title": "fix(rotation): collapse the Rotation Events rail \u2014 severity-sorted, 4 visible + View-all overlay",
-      "head_ref": "claude/rc-events-collapse",
-      "updated_at": "2026-07-12T09:15:45Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "site/subsector_rotation.html",
-        "templates/subsector_rotation.html.j2"
-      ],
-      "protected_paths_touched": []
-    },
-    {
       "number": 2373,
       "title": "fix(altdata): collector rot + signal-construction hygiene sweep (dead feeds, pagination, smart-money list, z-score floors, windows)",
       "head_ref": "claude/altdata-signal-hygiene",
-      "updated_at": "2026-07-12T09:31:51Z",
+      "updated_at": "2026-07-12T11:51:27Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -382,7 +743,7 @@
       "number": 2372,
       "title": "fix(altdata-brain): enforce LLM de-escalation-only law + correct false Wilson de-dup comments",
       "head_ref": "claude/altdata-brain-govern",
-      "updated_at": "2026-07-12T09:27:03Z",
+      "updated_at": "2026-07-12T11:51:25Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -399,53 +760,13 @@
       ]
     },
     {
-      "number": 2371,
-      "title": "feat(altdata): earnings-call transcript + StockTwits sentiment collectors (data accrual, display wiring deferred)",
-      "head_ref": "claude/altdata-sources-w1",
-      "updated_at": "2026-07-12T09:38:01Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 6,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/ci.yml",
-        "collectors/finnhub_transcripts.py",
-        "collectors/stocktwits.py",
-        "scripts/collect.py",
-        "tests/test_finnhub_transcripts.py",
-        "tests/test_stocktwits.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml"
-      ]
-    },
-    {
-      "number": 2370,
-      "title": "feat(ui): flow_velocity upgrade \u2014 Terminal stock links, quiet anchors, glance pulse strip",
-      "head_ref": "claude/interesting-yalow-95570c",
-      "updated_at": "2026-07-12T09:12:44Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "site/flow_velocity.html",
-        "templates/flow_velocity.html.j2"
-      ],
-      "protected_paths_touched": []
-    },
-    {
       "number": 2368,
       "title": "feat(macro): v5 aurora-glass grid \u2014 command scorecard + popovers, instrument cards, alerts centre (operator-ratified)",
       "head_ref": "claude/macro-v5-wiring",
-      "updated_at": "2026-07-12T09:09:49Z",
+      "updated_at": "2026-07-12T11:49:02Z",
       "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
       "files_count": 7,
       "files_truncated": false,
       "files_error": false,
@@ -464,7 +785,7 @@
       "number": 2365,
       "title": "fix(nw): unfreeze dt_contra_state + nasdaq-internals lobes (frozen since 07-06/07-07)",
       "head_ref": "fix/nw-unfreeze-dtcontra-nasdaq",
-      "updated_at": "2026-07-12T09:15:25Z",
+      "updated_at": "2026-07-12T12:05:17Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -482,25 +803,6 @@
       "protected_paths_touched": [
         ".github/workflows/ci.yml"
       ]
-    },
-    {
-      "number": 2349,
-      "title": "feat(lrv-w3): Leader Radar page complete redesign \u2014 aurora-glass UI, early-entry board, pipeline, receipts",
-      "head_ref": "claude/lrv-w3-ui",
-      "updated_at": "2026-07-12T09:15:04Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 4,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "site/leader_radar.html",
-        "site/leaderradar/radar.json",
-        "templates/leader_radar.html.j2",
-        "tests/test_build_leader_radar.py"
-      ],
-      "protected_paths_touched": []
     },
     {
       "number": 2317,
@@ -651,13 +953,39 @@
       "any_protected": true
     },
     {
-      "pr_a": 2389,
-      "pr_b": 2386,
+      "pr_a": 2431,
+      "pr_b": 2421,
       "shared_files": [
         ".github/workflows/ci.yml",
-        "config/synapse.yml"
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md",
+        "tests/test_signal_bus_doc.py"
       ],
-      "shared_count": 2,
+      "shared_count": 4,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md",
+        "tests/test_signal_bus_doc.py"
+      ],
+      "shared_count": 4,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md",
+        "tests/test_signal_bus_doc.py"
+      ],
+      "shared_count": 4,
       "any_protected": true
     },
     {
@@ -665,23 +993,113 @@
       "pr_b": 2381,
       "shared_files": [
         "config/synapse.yml",
-        "engine/neuralweb/world_state.py"
+        "docs/SIGNAL_BUS.md",
+        "engine/neuralweb/world_state.py",
+        "tests/test_signal_bus_doc.py"
       ],
-      "shared_count": 2,
+      "shared_count": 4,
       "any_protected": true
     },
     {
-      "pr_a": 2389,
-      "pr_b": 2379,
+      "pr_a": 2436,
+      "pr_b": 2433,
+      "shared_files": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 3,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2436,
+      "pr_b": 2421,
+      "shared_files": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 3,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2433,
+      "pr_b": 2421,
+      "shared_files": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 3,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2381,
+      "shared_files": [
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md",
+        "tests/test_signal_bus_doc.py"
+      ],
+      "shared_count": 3,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2419,
       "shared_files": [
         ".github/workflows/ci.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 3,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 3,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2381,
+      "shared_files": [
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md",
+        "tests/test_signal_bus_doc.py"
+      ],
+      "shared_count": 3,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 3,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2436,
+      "pr_b": 2419,
+      "shared_files": [
+        "config/dag.yml",
         "config/synapse.yml"
       ],
       "shared_count": 2,
       "any_protected": true
     },
     {
-      "pr_a": 2387,
+      "pr_a": 2436,
       "pr_b": 2386,
       "shared_files": [
         "config/dag.yml",
@@ -691,6 +1109,276 @@
       "any_protected": true
     },
     {
+      "pr_a": 2435,
+      "pr_b": 2416,
+      "shared_files": [
+        "config/compiled_kill_registry.yml",
+        "config/signal_foundry_blocklist.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2433,
+      "pr_b": 2419,
+      "shared_files": [
+        "config/dag.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2433,
+      "pr_b": 2386,
+      "shared_files": [
+        "config/dag.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2428,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2427,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2419,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2427,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2421,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2419,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2421,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2419,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "engine/altdata.py"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2415,
+      "pr_b": 2392,
+      "shared_files": [
+        "scripts/build_allocation.py",
+        "templates/allocation.html.j2"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
       "pr_a": 2386,
       "pr_b": 2379,
       "shared_files": [
@@ -701,26 +1389,8 @@
       "any_protected": true
     },
     {
-      "pr_a": 2390,
-      "pr_b": 2385,
-      "shared_files": [
-        "tests/test_world_state.py"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 2390,
-      "pr_b": 2381,
-      "shared_files": [
-        "tests/test_world_state.py"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 2389,
-      "pr_b": 2387,
+      "pr_a": 2436,
+      "pr_b": 2431,
       "shared_files": [
         "config/synapse.yml"
       ],
@@ -728,7 +1398,187 @@
       "any_protected": true
     },
     {
-      "pr_a": 2389,
+      "pr_a": 2436,
+      "pr_b": 2428,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2436,
+      "pr_b": 2427,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2436,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/daily.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2436,
+      "pr_b": 2389,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2436,
+      "pr_b": 2381,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2436,
+      "pr_b": 2379,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2432,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2431,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2429,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2428,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2427,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2426,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2424,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2421,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2419,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2416,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2409,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
       "pr_b": 2383,
       "shared_files": [
         ".github/workflows/ci.yml"
@@ -737,10 +1587,1558 @@
       "any_protected": true
     },
     {
-      "pr_a": 2389,
-      "pr_b": 2382,
+      "pr_a": 2434,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2434,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2433,
+      "pr_b": 2431,
       "shared_files": [
         "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2433,
+      "pr_b": 2428,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2433,
+      "pr_b": 2427,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2433,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/daily.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2433,
+      "pr_b": 2389,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2433,
+      "pr_b": 2381,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2433,
+      "pr_b": 2379,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2431,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2429,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2428,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2427,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2426,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2424,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2421,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2419,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2416,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2409,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2432,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2429,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2426,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2424,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2416,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2409,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2431,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2428,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2427,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2426,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2424,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2421,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2419,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2416,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2409,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2429,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2426,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2424,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2416,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2409,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2381,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2428,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2426,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2424,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2416,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2409,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2381,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2427,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2424,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2421,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2419,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2416,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2409,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2426,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2421,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2419,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2416,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2409,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2424,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2416,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2409,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2421,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2420,
+      "pr_b": 2415,
+      "shared_files": [
+        "templates/allocation.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2420,
+      "pr_b": 2412,
+      "shared_files": [
+        "templates/allocation.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2420,
+      "pr_b": 2392,
+      "shared_files": [
+        "templates/allocation.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2420,
+      "pr_b": 2380,
+      "shared_files": [
+        "templates/allocation.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2416,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2409,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2381,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2419,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2416,
+      "pr_b": 2409,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2416,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2416,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2416,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2416,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2416,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2416,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2416,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2416,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2416,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2416,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2415,
+      "pr_b": 2412,
+      "shared_files": [
+        "templates/allocation.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2415,
+      "pr_b": 2380,
+      "shared_files": [
+        "templates/allocation.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2412,
+      "pr_b": 2392,
+      "shared_files": [
+        "templates/allocation.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2412,
+      "pr_b": 2380,
+      "shared_files": [
+        "templates/allocation.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2409,
+      "pr_b": 2397,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2409,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2409,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2409,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2409,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2409,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2409,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2409,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2409,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2409,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2397,
+      "pr_b": 2389,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2397,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2397,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2397,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2397,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2397,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2397,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2397,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2397,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2392,
+      "pr_b": 2380,
+      "shared_files": [
+        "templates/allocation.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
       ],
       "shared_count": 1,
       "any_protected": true
@@ -774,15 +3172,6 @@
     },
     {
       "pr_a": 2389,
-      "pr_b": 2371,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2389,
       "pr_b": 2365,
       "shared_files": [
         ".github/workflows/ci.yml"
@@ -800,46 +3189,10 @@
       "any_protected": true
     },
     {
-      "pr_a": 2387,
-      "pr_b": 2382,
-      "shared_files": [
-        "config/synapse.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2387,
-      "pr_b": 2381,
-      "shared_files": [
-        "config/synapse.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2387,
-      "pr_b": 2379,
-      "shared_files": [
-        "config/synapse.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
       "pr_a": 2386,
       "pr_b": 2383,
       "shared_files": [
         ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2386,
-      "pr_b": 2382,
-      "shared_files": [
-        "config/synapse.yml"
       ],
       "shared_count": 1,
       "any_protected": true
@@ -882,15 +3235,6 @@
     },
     {
       "pr_a": 2386,
-      "pr_b": 2371,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2386,
       "pr_b": 2365,
       "shared_files": [
         ".github/workflows/ci.yml"
@@ -906,15 +3250,6 @@
       ],
       "shared_count": 1,
       "any_protected": true
-    },
-    {
-      "pr_a": 2385,
-      "pr_b": 2381,
-      "shared_files": [
-        "tests/test_world_state.py"
-      ],
-      "shared_count": 1,
-      "any_protected": false
     },
     {
       "pr_a": 2383,
@@ -945,15 +3280,6 @@
     },
     {
       "pr_a": 2383,
-      "pr_b": 2371,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2383,
       "pr_b": 2365,
       "shared_files": [
         ".github/workflows/ci.yml"
@@ -966,24 +3292,6 @@
       "pr_b": 2317,
       "shared_files": [
         ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2382,
-      "pr_b": 2381,
-      "shared_files": [
-        "config/synapse.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2382,
-      "pr_b": 2379,
-      "shared_files": [
-        "config/synapse.yml"
       ],
       "shared_count": 1,
       "any_protected": true
@@ -1026,15 +3334,6 @@
     },
     {
       "pr_a": 2379,
-      "pr_b": 2371,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2379,
       "pr_b": 2365,
       "shared_files": [
         ".github/workflows/ci.yml"
@@ -1071,15 +3370,6 @@
     },
     {
       "pr_a": 2377,
-      "pr_b": 2371,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2377,
       "pr_b": 2365,
       "shared_files": [
         ".github/workflows/ci.yml"
@@ -1107,15 +3397,6 @@
     },
     {
       "pr_a": 2373,
-      "pr_b": 2371,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2373,
       "pr_b": 2365,
       "shared_files": [
         ".github/workflows/ci.yml"
@@ -1134,15 +3415,6 @@
     },
     {
       "pr_a": 2372,
-      "pr_b": 2371,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2372,
       "pr_b": 2365,
       "shared_files": [
         ".github/workflows/ci.yml"
@@ -1152,24 +3424,6 @@
     },
     {
       "pr_a": 2372,
-      "pr_b": 2317,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2371,
-      "pr_b": 2365,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2371,
       "pr_b": 2317,
       "shared_files": [
         ".github/workflows/ci.yml"
@@ -1189,14 +3443,159 @@
   ],
   "recent_merged": [
     {
+      "number": 2423,
+      "title": "fix(baskets): unblock china/canada seeder regen \u2014 encode reconciler prunes + mirror live copy",
+      "merged_at": "2026-07-12T11:18:15Z"
+    },
+    {
+      "number": 2422,
+      "title": "fix(seeders): intl + us_sector seeders bootstrap-only \u2014 refuse overwrite without --force",
+      "merged_at": "2026-07-12T11:39:19Z"
+    },
+    {
+      "number": 2418,
+      "title": "feat(hkrv): two-tier leadership banner \u2014 breadth-confirmed upgrade + R3 cohort honest framing",
+      "merged_at": "2026-07-12T10:45:45Z"
+    },
+    {
+      "number": 2417,
+      "title": "test(winners): library-wide winner_case.v1 parse gate + CI wiring; CRWD sourcing fix",
+      "merged_at": "2026-07-12T10:45:43Z"
+    },
+    {
+      "number": 2414,
+      "title": "research(long-hold): add falsifier field book",
+      "merged_at": "2026-07-12T10:42:45Z"
+    },
+    {
+      "number": 2413,
+      "title": "feat(long-hold): LHB-W1 A3 Fundamental Delivery Waterfall \u2014 refusal-first run decomposition + admin receipt",
+      "merged_at": "2026-07-12T10:38:28Z"
+    },
+    {
+      "number": 2411,
+      "title": "chore(registry): regen compiled kill registry \u2014 heal capability-broker drift (LHB-R5 row)",
+      "merged_at": "2026-07-12T12:04:20Z"
+    },
+    {
+      "number": 2410,
+      "title": "docs(standout-accountability): W0 masterplan \u2014 rolling track-record audits + self-improvement for the standout boards (SA-R1..R16)",
+      "merged_at": "2026-07-12T11:55:33Z"
+    },
+    {
+      "number": 2408,
+      "title": "fix(seeders): backport simplified basket copy into HK/intl/us_sector seeders \u2014 regen no longer clobbers live membership",
+      "merged_at": "2026-07-12T12:27:35Z"
+    },
+    {
+      "number": 2407,
+      "title": "docs(deploy): fix stale deploy-model comment in terminal-data-setup.sh",
+      "merged_at": "2026-07-12T10:22:20Z"
+    },
+    {
+      "number": 2406,
+      "title": "fix(til): hard_exit guard on W8 parquet-touching one-shot entrypoints",
+      "merged_at": "2026-07-12T12:01:58Z"
+    },
+    {
+      "number": 2405,
+      "title": "feat(commodities): two-phase durable-bottom / euphoric-top confluence organ (P2, data-tier)",
+      "merged_at": "2026-07-12T12:08:35Z"
+    },
+    {
+      "number": 2404,
+      "title": "research(winners): add 25 breakaway case studies",
+      "merged_at": "2026-07-12T10:20:17Z"
+    },
+    {
+      "number": 2403,
+      "title": "fix(tests): allow rebalance_pulse gap in test_full_composition_shape",
+      "merged_at": "2026-07-12T10:17:42Z"
+    },
+    {
+      "number": 2401,
+      "title": "fix(til): hard_exit guard on W9-W11 parquet-touching one-shot entrypoints",
+      "merged_at": "2026-07-12T10:12:17Z"
+    },
+    {
+      "number": 2399,
+      "title": "feat(rotation): Rotation Command W3 \u2014 sector_cycles chips (RC-R3), behaves-as (RC-R7), washout counter-read (RC-R11)",
+      "merged_at": "2026-07-12T09:52:24Z"
+    },
+    {
+      "number": 2398,
+      "title": "data(til-w10): arm neuralweb-theme-clinical \u2014 first ClinicalTrials.gov collect + committed artifacts",
+      "merged_at": "2026-07-12T11:04:30Z"
+    },
+    {
+      "number": 2396,
+      "title": "research(species): S10 phase-0 adjudication \u2014 K1 NO-GO ratified, construction-scoped falsification landed",
+      "merged_at": "2026-07-12T11:07:22Z"
+    },
+    {
+      "number": 2395,
+      "title": "fix(nw): declare research-queue lobe honestly \u2014 park never-scheduled SLA at 9999",
+      "merged_at": "2026-07-12T09:48:22Z"
+    },
+    {
+      "number": 2393,
+      "title": "feat(alerts): Alert Command Center v2 \u2014 persistence-aware modeling + user-first reskin",
+      "merged_at": "2026-07-12T10:04:10Z"
+    },
+    {
+      "number": 2391,
+      "title": "feat(intraday-flow): v2 stance-first desk \u2014 dealer-gamma port + fixed live flow + plain-word calls",
+      "merged_at": "2026-07-12T09:59:13Z"
+    },
+    {
       "number": 2388,
       "title": "research(long-hold): Long-Hold Lobe brainstorm \u2014 paper as-received + adjudication (LHB-R1..R11)",
       "merged_at": "2026-07-12T09:39:09Z"
     },
     {
+      "number": 2387,
+      "title": "fix(til): wire W9/W10/W11 collect-lane organs \u2014 close 3 dead-wire dag divergences",
+      "merged_at": "2026-07-12T12:04:31Z"
+    },
+    {
+      "number": 2384,
+      "title": "feat(hk-baskets): factor-split lenses \u2014 platforms / tech hardware / miners [RATIFICATION PENDING]",
+      "merged_at": "2026-07-12T10:17:47Z"
+    },
+    {
+      "number": 2382,
+      "title": "fix(nw): declare dormant-armed lobes honestly \u2014 park review-log + contradictions-ledger SLAs at 9999",
+      "merged_at": "2026-07-12T13:04:40Z"
+    },
+    {
+      "number": 2378,
+      "title": "fix(deploy): terminal-data-setup installs wrapper from vendored terminal-refresh.sh (stop heredoc clobber of live nightly refresh)",
+      "merged_at": "2026-07-12T09:50:24Z"
+    },
+    {
+      "number": 2376,
+      "title": "feat(rlt): RLT-R13 \u2014 liquidity quality-state truthfulness: v1.1 lobe mapping, flag-accurate summaries, weekly-aware WALCL stale badge",
+      "merged_at": "2026-07-12T09:52:33Z"
+    },
+    {
+      "number": 2375,
+      "title": "fix(rotation): collapse the Rotation Events rail \u2014 severity-sorted, 4 visible + View-all overlay",
+      "merged_at": "2026-07-12T09:52:46Z"
+    },
+    {
       "number": 2374,
       "title": "research(species): land stranded W5 S10 phase-0 pre-registration (Margin-Inflection Reclaim)",
       "merged_at": "2026-07-12T09:20:48Z"
+    },
+    {
+      "number": 2371,
+      "title": "feat(altdata): earnings-call transcript + StockTwits sentiment collectors (data accrual, display wiring deferred)",
+      "merged_at": "2026-07-12T11:49:56Z"
+    },
+    {
+      "number": 2370,
+      "title": "feat(ui): flow_velocity upgrade \u2014 Terminal stock links, quiet anchors, glance pulse strip",
+      "merged_at": "2026-07-12T09:54:46Z"
     },
     {
       "number": 2369,
@@ -1282,6 +3681,11 @@
       "number": 2350,
       "title": "docs(rlt): intake regime-shift postmortem memo + RLT-R4b TGA rebuild watch",
       "merged_at": "2026-07-12T08:27:49Z"
+    },
+    {
+      "number": 2349,
+      "title": "feat(lrv-w3): Leader Radar page complete redesign \u2014 aurora-glass UI, early-entry board, pipeline, receipts",
+      "merged_at": "2026-07-12T11:10:25Z"
     },
     {
       "number": 2348,
@@ -3537,156 +5941,6 @@
       "number": 1883,
       "title": "feat(mri): Package I \u2014 surprise distribution + market-implied benchmark + reaction sensitivity",
       "merged_at": "2026-07-07T18:07:13Z"
-    },
-    {
-      "number": 1881,
-      "title": "feat(mri): Package G \u2014 CPI shelter leg + component decomposition (attempt 2/2; honest null on core)",
-      "merged_at": "2026-07-07T17:14:04Z"
-    },
-    {
-      "number": 1880,
-      "title": "feat(mri): \u00a79.1 reconciliation \u2014 claims \u00a76 gate, benchmark-only enforcement, IC4WSA backtest",
-      "merged_at": "2026-07-07T17:24:42Z"
-    },
-    {
-      "number": 1878,
-      "title": "research: Portfolio Risk Desk masterplan \u2014 Codex held-position adjudication (PRD-R1..R12)",
-      "merged_at": "2026-07-07T15:55:48Z"
-    },
-    {
-      "number": 1877,
-      "title": "feat(mri): Package F \u2014 ledger schema v2 + module split + weekly claims target",
-      "merged_at": "2026-07-07T16:08:20Z"
-    },
-    {
-      "number": 1876,
-      "title": "feat(mri): PR-K \u2014 Kalshi release-market collector + first-seen snapshot store (C-2 groundwork)",
-      "merged_at": "2026-07-07T16:26:33Z"
-    },
-    {
-      "number": 1874,
-      "title": "research(long-hold): 10 Codex winner cases + first cross-case fingerprint report (Winner Autopsy W1\u2192W2)",
-      "merged_at": "2026-07-07T15:39:18Z"
-    },
-    {
-      "number": 1873,
-      "title": "feat(prophet): nightly wiring + ledger advancement + flow_idx mirror + pin-probability gross-gamma fix",
-      "merged_at": "2026-07-07T15:38:31Z"
-    },
-    {
-      "number": 1872,
-      "title": "fix(launchd): backfill keepalive python path + RTH gate + ETF daily re-pull",
-      "merged_at": "2026-07-07T15:05:35Z"
-    },
-    {
-      "number": 1871,
-      "title": "feat(signal-lab): Day-3 consolidation \u2014 ledger (11 families), stores, 2 confirmer rows, verdict amendment, queue-drained status",
-      "merged_at": "2026-07-07T14:36:41Z"
-    },
-    {
-      "number": 1870,
-      "title": "research: RC-RUL-5 \u2014 SEQ_TLT split verdict; time-preserving placebo law extended",
-      "merged_at": "2026-07-07T13:59:43Z"
-    },
-    {
-      "number": 1869,
-      "title": "research(oracle): OTA-RC-2 \u2014 SEQ_TLT_RELIEF_WASHOUT under episode-cluster CIs + time-shift placebo (adjudication pending)",
-      "merged_at": "2026-07-07T13:57:07Z"
-    },
-    {
-      "number": 1868,
-      "title": "research: DT-R14 re-check adjudication \u2014 RC-RUL-1..4",
-      "merged_at": "2026-07-07T13:51:40Z"
-    },
-    {
-      "number": 1867,
-      "title": "fix(experiments): un-stitch registry_seed entries mangled in #1857 merge resolution",
-      "merged_at": "2026-07-07T13:41:26Z"
-    },
-    {
-      "number": 1866,
-      "title": "research(entry-intel): EI-RC-1 \u2014 P1.3 trials under within-month demeaning + month-block bootstrap (adjudication pending)",
-      "merged_at": "2026-07-07T13:42:39Z"
-    },
-    {
-      "number": 1865,
-      "title": "feat(china): \u51cf\u6301 pre-disclosure panel + execution-window phase-0 \u2014 PASS",
-      "merged_at": "2026-07-07T13:39:59Z"
-    },
-    {
-      "number": 1864,
-      "title": "research(oracle): ORC-RC-1 \u2014 compound gauntlet time-shift placebo + P3 secondary month-block CI (adjudication pending)",
-      "merged_at": "2026-07-07T13:41:23Z"
-    },
-    {
-      "number": 1863,
-      "title": "fix(stock-personality): R-SP21 v1.1 re-anchor of degenerate chart thresholds",
-      "merged_at": "2026-07-07T13:21:07Z"
-    },
-    {
-      "number": 1862,
-      "title": "feat(long-hold): Winner Autopsy Lab W0 \u2014 breakaway episode census + winner case library + admin Long-Hold Lobe page (WA-R1..R10)",
-      "merged_at": "2026-07-07T13:22:32Z"
-    },
-    {
-      "number": 1861,
-      "title": "fix(cn-export-nowcast): PIT lag + criterion + CNY deseas + ledger + HAC units \u2014 NULL confirmed",
-      "merged_at": "2026-07-07T13:25:26Z"
-    },
-    {
-      "number": 1860,
-      "title": "fix(banks): survivorship correction + deseasonalization + PIT fixes \u2014 w3 bank-stress",
-      "merged_at": "2026-07-07T13:30:26Z"
-    },
-    {
-      "number": 1859,
-      "title": "fix(collect): align duplicate FRED series aliases \u2014 unbreak 8-run fred adapter outage",
-      "merged_at": "2026-07-07T13:06:12Z"
-    },
-    {
-      "number": 1858,
-      "title": "feat(china-intel): politburo_econ + cewc communiqu\u00e9 backfill (W1.1) \u2014 readout filters, archive fast-path, gov.cn mirrors",
-      "merged_at": "2026-07-07T12:42:58Z"
-    },
-    {
-      "number": 1857,
-      "title": "research(stock-personality): W3 compat study harness + trial pre-registration",
-      "merged_at": "2026-07-07T13:38:48Z"
-    },
-    {
-      "number": 1856,
-      "title": "feat(banks): FR Y-9C ingestion + w3 bank-stress phase-0 \u2014 ACCRUE",
-      "merged_at": "2026-07-07T12:28:29Z"
-    },
-    {
-      "number": 1855,
-      "title": "research(oracle): OTA-RC-1 \u2014 W2 member-transmission under macro-episode clustering + period-matched R3 (adjudication pending)",
-      "merged_at": "2026-07-07T13:41:19Z"
-    },
-    {
-      "number": 1854,
-      "title": "feat(stock-personality): W5 Oracle personality_context + NW world_state sub-block + spine adapter + come-back clocks",
-      "merged_at": "2026-07-07T12:50:23Z"
-    },
-    {
-      "number": 1853,
-      "title": "feat(stock-personality): W4 operator surfaces \u2014 stock page panel + board expander chips + theme-detail slice (EN/ZH, display-only)",
-      "merged_at": "2026-07-07T12:27:38Z"
-    },
-    {
-      "number": 1852,
-      "title": "docs(signal-engine): TIERED_CASCADE \u00a710 \u2014 G-T2X in the HTF review section",
-      "merged_at": "2026-07-07T11:58:19Z"
-    },
-    {
-      "number": 1851,
-      "title": "feat(gaming): W4 multi-state gaming tape \u2014 collectors + nowcast phase-0 (DATA-BLOCKED)",
-      "merged_at": "2026-07-07T12:28:49Z"
-    },
-    {
-      "number": 1850,
-      "title": "research(dispersion): HC-RC-1 \u2014 R-1 construction divergence under real co-firing block inference (adjudication pending)",
-      "merged_at": "2026-07-07T13:44:56Z"
     }
   ]
 }
