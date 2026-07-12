@@ -1,0 +1,75 @@
+{
+  "version": "1.0",
+  "registered": "2026-07-12",
+  "masterplan": "research/ROTATION_COMMAND_MASTERPLAN_BY_FABLE.md",
+  "notes": {
+    "tiers": "tier is HAND-DECLARED (primary = cap-share-dominant cohort inside the sector; secondary = everything else). Honest approximation for W1 severity — live cap-share weighting is RC-R8/W2 work, not silently promised here.",
+    "mag7_scope": "mag7 spans GICS sectors (AMZN/TSLA are XLY, GOOGL/META are XLC) but is registered as an XLK leg because it is the operative mega-cap cohort inside the tech tape — same convention as the M7C tech_legs strip.",
+    "membership": "basket legs resolve members from data/baskets/membership.json at read time; membership changes flow through automatically and are never re-curated here."
+  },
+  "sectors": [
+    {
+      "key": "xlk", "etf": "XLK", "name_en": "Technology", "name_zh": "科技",
+      "legs": [
+        {"key": "mag7", "basket": "mag7", "tier": "primary", "name_en": "Mag 7 generals", "name_zh": "七巨头"},
+        {"key": "ai_semis", "basket": "ai_semiconductors", "tier": "primary", "name_en": "AI semiconductors", "name_zh": "AI芯片"},
+        {"key": "memory", "basket": "memory_storage", "tier": "secondary", "name_en": "Memory & storage", "name_zh": "存储芯片"},
+        {"key": "semicap", "basket": "semicap_equipment", "tier": "secondary", "name_en": "Semicap equipment", "name_zh": "半导体设备"},
+        {"key": "ai_software", "basket": "ai_software", "tier": "secondary", "name_en": "AI software", "name_zh": "AI软件"},
+        {"key": "software", "basket": "non_ai_software", "tier": "secondary", "name_en": "Software (non-AI)", "name_zh": "软件（非AI）"},
+        {"key": "legacy_tech", "basket": "non_ai_tech", "tier": "secondary", "name_en": "Non-AI tech & hardware", "name_zh": "非AI科技与硬件"}
+      ]
+    },
+    {
+      "key": "xlc", "etf": "XLC", "name_en": "Communication Services", "name_zh": "通信服务",
+      "legs": [
+        {"key": "interactive_media", "tickers": ["META", "GOOGL"], "tier": "primary", "name_en": "Interactive media", "name_zh": "互动媒体"},
+        {"key": "telecom", "tickers": ["T", "VZ", "TMUS"], "tier": "secondary", "name_en": "Telecom", "name_zh": "电信"},
+        {"key": "entertainment", "tickers": ["DIS", "NFLX", "CMCSA", "WBD"], "tier": "secondary", "name_en": "Entertainment & media", "name_zh": "娱乐与媒体"}
+      ]
+    },
+    {
+      "key": "xly", "etf": "XLY", "name_en": "Consumer Discretionary", "name_zh": "可选消费",
+      "legs": [
+        {"key": "megacap_consumer", "tickers": ["AMZN", "TSLA"], "tier": "primary", "name_en": "Mega-cap consumer", "name_zh": "消费巨头"},
+        {"key": "discretionary_core", "tickers": ["HD", "MCD", "NKE", "SBUX", "LOW", "TJX", "BKNG"], "tier": "secondary", "name_en": "Core discretionary", "name_zh": "核心可选消费"}
+      ]
+    },
+    {
+      "key": "xlv", "etf": "XLV", "name_en": "Health Care", "name_zh": "医疗保健",
+      "legs": [
+        {"key": "big_pharma", "basket": "big_pharma", "tier": "primary", "name_en": "Big pharma", "name_zh": "大型制药"},
+        {"key": "biotech", "tickers": ["AMGN", "GILD", "VRTX", "REGN", "BIIB", "MRNA"], "tier": "secondary", "name_en": "Biotech", "name_zh": "生物科技"},
+        {"key": "managed_care", "basket": "managed_care", "tier": "secondary", "name_en": "Managed care", "name_zh": "管理式医疗"},
+        {"key": "med_devices", "tickers": ["ISRG", "ABT", "MDT", "SYK", "BSX"], "tier": "secondary", "name_en": "Medical devices", "name_zh": "医疗器械"}
+      ]
+    },
+    {
+      "key": "xlf", "etf": "XLF", "name_en": "Financials", "name_zh": "金融",
+      "legs": [
+        {"key": "megabanks", "tickers": ["JPM", "BAC", "WFC", "C", "GS", "MS"], "tier": "primary", "name_en": "Megabanks", "name_zh": "大型银行"},
+        {"key": "regional_banks", "basket": "regional_banks", "tier": "secondary", "name_en": "Regional banks", "name_zh": "区域银行"},
+        {"key": "payments", "basket": "payments_fintech", "tier": "secondary", "name_en": "Payments & fintech", "name_zh": "支付与金融科技"},
+        {"key": "insurance", "basket": "insurance", "tier": "secondary", "name_en": "Insurance", "name_zh": "保险"},
+        {"key": "brokers_asset", "tickers": ["SCHW", "BLK", "BX"], "tier": "secondary", "name_en": "Brokers & asset mgmt", "name_zh": "券商与资管"}
+      ]
+    },
+    {
+      "key": "xle", "etf": "XLE", "name_en": "Energy", "name_zh": "能源",
+      "legs": [
+        {"key": "majors", "tickers": ["XOM", "CVX", "COP"], "tier": "primary", "name_en": "Integrated majors", "name_zh": "综合油气巨头"},
+        {"key": "services", "tickers": ["SLB", "HAL", "BKR"], "tier": "secondary", "name_en": "Oil services", "name_zh": "油服"},
+        {"key": "ep", "tickers": ["EOG", "DVN", "FANG", "OXY"], "tier": "secondary", "name_en": "E&P", "name_zh": "勘探开发"}
+      ]
+    },
+    {
+      "key": "xli", "etf": "XLI", "name_en": "Industrials", "name_zh": "工业",
+      "legs": [
+        {"key": "defense", "basket": "defense", "tier": "primary", "name_en": "Defense & aerospace", "name_zh": "国防军工"},
+        {"key": "machinery", "tickers": ["CAT", "DE", "PH", "ITW"], "tier": "secondary", "name_en": "Machinery", "name_zh": "机械"},
+        {"key": "transports", "tickers": ["UNP", "UPS", "CSX", "FDX", "NSC"], "tier": "secondary", "name_en": "Transports", "name_zh": "运输"},
+        {"key": "electrical", "tickers": ["ETN", "EMR", "GE", "HON"], "tier": "secondary", "name_en": "Electrical & multi-industrials", "name_zh": "电气与多元工业"}
+      ]
+    }
+  ]
+}

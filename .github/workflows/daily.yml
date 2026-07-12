@@ -749,6 +749,8 @@ jobs:
             brun subsector_conf_rut "russell-2000 subsector confluence desk (build_subsector_confluence --russell)" scripts.build_subsector_confluence --russell
             # W0.4 Setup-Species: cohort-context metrics (display-only; reads committed subsector_confluence.json)
             brun cohort_metrics "W0.4 cohort metrics — peer washout/reclaim/MACD-turn + Rubber-Band Score (build_cohort_metrics)" scripts.build_cohort_metrics
+            # Rotation Command W1 (RC-R1/R6): first-class rotation events + sector-fragmentation board (display-only)
+            brun rotation_events "Rotation Command W1 — rotation events + sector fragmentation (build_rotation_events)" scripts.build_rotation_events
             brun news        "news suite (build_news)"                 scripts.build_news
             # output: data/news/event_log.parquet + site/news/calibration.json — both covered by the git add data/ site/ commit step
             brun news_calib  "news event calibration (grade_news_events)" scripts.grade_news_events
@@ -784,7 +786,7 @@ jobs:
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics news methodology nasdaq_internals seasonality reports measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events news methodology nasdaq_internals seasonality reports measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
