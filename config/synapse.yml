@@ -3759,6 +3759,7 @@ artifacts:
     cadence: daily-engine
     storage: git
     asof_field: produced_at
+    staleness_from: produced_at
     freshness_sla_hours: 30
     schema: neuralweb.confluence_strength.v1
     tier: display

@@ -192,6 +192,8 @@ on:
       - "tests/test_spine_query.py"
       - "tests/test_ask_brain.py"
       - "tests/test_world_state.py"
+      # PR-C health builder tests (weekend-aware staleness, cadence exclusion, staleness_from).
+      - "tests/test_neuralweb_health.py"
       - "tests/test_admin_neural_web.py"
       - "tests/test_admin_metabolism.py"
       - "admin/metabolism_panel.py"
@@ -764,6 +766,8 @@ jobs:
     # the five test files (workflow-level on.pull_request.paths covers engine/neuralweb/**).
     # Runs: test_mastermind_context, test_confluence, test_spine_query, test_ask_brain,
     # test_world_state — all 163 tests green on origin/main e0e9f71cc6 (red-team lens 1).
+    # Also: test_neuralweb_health (PR-C health builder — weekend-aware staleness,
+    # collect-cadence as_of exclusion, staleness_from override, placeholder rollup).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -773,7 +777,7 @@ jobs:
       - name: install deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py -q
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py -q
 
   workflow-yaml:
     # Every .github/workflows/* file must load as YAML and carry on: + jobs:.

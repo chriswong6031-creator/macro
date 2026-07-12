@@ -32,7 +32,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -109,6 +109,40 @@ def _iso_hours_ago(ts_str: str | None) -> float | None:
         return round((now - dt).total_seconds() / 3600, 2)
     except Exception:  # noqa: BLE001
         return None
+
+
+def _is_stale_weekend_aware(
+    as_of_str: str | None,
+    sla_hours: float,
+    now: datetime | None = None,
+) -> bool:
+    """Weekend-aware staleness check (mirrors mastermind_context._is_stale semantics).
+
+    Markets don't print new data over the weekend, so a Friday as_of is the
+    freshest possible data through Sunday.  When the date portion of as_of falls
+    on Fri(4)/Sat(5)/Sun(6), the SLA comparison base is advanced to the following
+    Monday before measuring elapsed time against sla_hours.  Weekday as_of
+    behaviour is unchanged.
+
+    `now` is injectable for test determinism; defaults to UTC now.
+
+    Returns True (stale) when as_of_str is None/invalid.
+    """
+    if not as_of_str:
+        return True
+    try:
+        asof_date = datetime.fromisoformat(as_of_str[:10])
+        # Fri(4)/Sat(5)/Sun(6) → advance the SLA base to the following Monday.
+        wd = asof_date.weekday()
+        if wd >= 4:
+            asof_date = asof_date + timedelta(days=7 - wd)
+        if now is None:
+            now = datetime.now(timezone.utc)
+        now_naive = now.replace(tzinfo=None) if now.tzinfo is not None else now
+        age_hours = (now_naive - asof_date).total_seconds() / 3600
+        return age_hours > sla_hours
+    except Exception:  # noqa: BLE001
+        return True
 
 
 def _extract_as_of(obj: dict | None) -> str | None:
@@ -203,6 +237,11 @@ def _lobe_record(art_id: str, art: dict, root: Path) -> dict:
     fmt = (art.get("format") or "").lower()
     storage = art.get("storage", "git")
     sla_h = art.get("freshness_sla_hours")
+    # Optional per-lobe override: which artifact field to use for the STALENESS
+    # threshold comparison (does not change rec['as_of'] display).
+    # E.g. staleness_from: produced_at for event-pinned artifacts whose content
+    # as_of is by design a historical event date (not the last run timestamp).
+    staleness_from = art.get("staleness_from")
     full_path = root / path_rel if path_rel else None
 
     rec: dict[str, Any] = {
@@ -279,8 +318,52 @@ def _lobe_record(art_id: str, art: dict, root: Path) -> dict:
         # Determine status
         if degraded_self:
             rec["status"] = "degraded"
-        elif sla_h is not None and age_h is not None and age_h > sla_h:
-            rec["status"] = "stale"
+        elif sla_h is not None:
+            # --- choose the timestamp for the staleness threshold comparison ---
+            # staleness_from (optional per-lobe synapse.yml key) overrides which
+            # artifact field to compare against the SLA.  Use case: event-pinned
+            # artifacts whose content as_of is BY DESIGN max(event date) of
+            # co-fires (e.g. confluence-strength as_of = 2026-07-02 during a
+            # quiet stretch) while produced_at advances nightly.  Setting
+            # staleness_from: produced_at causes the comparison to use
+            # produced_at instead of as_of.
+            # rec['age_hours'] and rec['as_of'] are UNCHANGED (display-only).
+            #
+            # Weekend-awareness applies ONLY when comparing a DATA as_of (date
+            # representing market data date).  produced_at / wall-clock
+            # timestamps must use plain wall-clock comparison.
+            use_weekend_aware = False
+
+            if staleness_from and obj and isinstance(obj, dict):
+                # Explicit override: use the named field; treat as wall-clock
+                # (the override is typically produced_at, a run timestamp).
+                staleness_ts = obj.get(staleness_from) or as_of
+                use_weekend_aware = False
+            elif path_rel in _SELF_MONITOR_PATHS and produced_at:
+                # Self-monitor: anchor on produced_at (wall-clock); no weekend shift.
+                staleness_ts = produced_at
+                use_weekend_aware = False
+            else:
+                # Default: data as_of → weekend-aware.
+                staleness_ts = as_of
+                use_weekend_aware = staleness_ts is not None
+
+            if staleness_ts is not None:
+                if use_weekend_aware:
+                    is_stale = _is_stale_weekend_aware(staleness_ts, sla_h)
+                else:
+                    stale_age_h = _iso_hours_ago(staleness_ts)
+                    is_stale = stale_age_h is not None and stale_age_h > sla_h
+            else:
+                # No timestamp: fall through to mtime-derived age_h
+                is_stale = age_h is not None and age_h > sla_h
+
+            if is_stale:
+                rec["status"] = "stale"
+            elif gaps:
+                rec["status"] = "fresh_partial"
+            else:
+                rec["status"] = "fresh"
         elif gaps:
             rec["status"] = "fresh_partial"
         else:
@@ -419,7 +502,16 @@ def _overall_status(lobes: list[dict], cortex: dict, world_state_id: str = "worl
     if ws_status in ("missing", "stale"):
         return "degraded"
 
-    any_missing = any(r["status"] == "missing" for r in lobes)
+    # Missing lobes only drive 'degraded' when they have a real SLA (< 8760h).
+    # Declared-but-never-built placeholder lobes use freshness_sla_hours >= 8760
+    # (commonly 9999) to signal "not expected yet"; they still carry status='missing'
+    # in the per-lobe record (nulls printed, not hidden) but must not pull the
+    # overall rollup to 'degraded' since they were never intended to exist yet.
+    any_missing = any(
+        r["status"] == "missing"
+        and (r.get("freshness_sla_hours") or 0) < 8760
+        for r in lobes
+    )
     if any_missing:
         return "degraded"
 
@@ -826,11 +918,15 @@ def build(root: Path | None = None, cortex_source: str = "previous_run") -> dict
     # Self-monitoring lobes (health.json / daily_brief.json + site copies) are
     # excluded: their as_of IS this rollup, so including them re-ingests the
     # previous run's minimum and pins the date forever.
+    # Collect-cadence lobes are also excluded: they are written once (offline /
+    # on-demand) and never advanced by the nightly pipeline, so they would pin
+    # as_of to their one-time build date (e.g. discovery_confluence 2026-07-09).
     fresh_times = [
         r["as_of"] for r in lobes
         if r.get("as_of")
         and r.get("status") in ("fresh", "fresh_partial")
         and r.get("path") not in _SELF_MONITOR_PATHS
+        and r.get("cadence") != "collect"
     ]
     if cortex.get("memo_as_of"):
         fresh_times.append(cortex["memo_as_of"])
