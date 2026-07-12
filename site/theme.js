@@ -4,6 +4,32 @@
 (function () {
   var docEl = document.documentElement;
 
+  /* ---- custom scrollbars for self-contained pages -------------------------
+     theme.css carries the site-wide themed scrollbar (see its --sb-* tokens),
+     but a handful of self-contained pages (the vector / strategy-detail family,
+     narrative_radar, validation_timeline) load this script WITHOUT theme.css.
+     Mirror the same scrollbar here so "our own scrollbars" reach every page.
+     Gated on theme.css being ABSENT to avoid a redundant re-declare on the pages
+     that do link it; --muted falls back to the vector palette's --grid then a
+     hard colour so it styles on every palette. Idempotent by id. */
+  (function injectScrollbarCss() {
+    if (document.querySelector('link[href*="theme.css"]')) return;
+    if (document.getElementById('mdx-sb-css')) return;
+    var rest = 'color-mix(in srgb, var(--muted, var(--grid, #8b93a1)) 34%, transparent)';
+    var hov = 'color-mix(in srgb, var(--muted, var(--grid, #8b93a1)) 60%, transparent)';
+    var s = document.createElement('style');
+    s.id = 'mdx-sb-css';
+    s.textContent =
+        '*{scrollbar-width:thin;scrollbar-color:' + rest + ' transparent}'
+      + '*::-webkit-scrollbar{width:11px;height:11px}'
+      + '*::-webkit-scrollbar-track{background:transparent}'
+      + '*::-webkit-scrollbar-thumb{background:' + rest + ';border-radius:999px;'
+      +   'border:3px solid transparent;background-clip:padding-box}'
+      + '*::-webkit-scrollbar-thumb:hover{background:' + hov + '}'
+      + '*::-webkit-scrollbar-corner{background:transparent}';
+    (document.head || docEl).appendChild(s);
+  })();
+
   /* Supabase account config — BAKED IN at build time (scripts/build_site.py
      replaces the token below with the project URL + public publishable key, or
      `null` for a local-only build). A page that sets window.SUPABASE_CFG inline

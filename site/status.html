@@ -29,6 +29,15 @@
   .err { color:var(--red); }
   .foot { color:var(--dim); font-size:11.5px; margin-top:16px; }
   a { color:var(--blue); text-decoration:none; }
+  /* our own scrollbars — matched to this page's palette */
+  * { scrollbar-width:thin; scrollbar-color:color-mix(in srgb,var(--dim) 42%,transparent) transparent; }
+  *::-webkit-scrollbar { width:11px; height:11px; }
+  *::-webkit-scrollbar-track { background:transparent; }
+  *::-webkit-scrollbar-thumb { background:color-mix(in srgb,var(--dim) 42%,transparent);
+    border-radius:999px; border:3px solid transparent; background-clip:padding-box; }
+  *::-webkit-scrollbar-thumb:hover { background:color-mix(in srgb,var(--dim) 68%,transparent); }
+  *::-webkit-scrollbar-thumb:active { background:color-mix(in srgb,var(--blue) 62%,var(--dim)); }
+  *::-webkit-scrollbar-corner { background:transparent; }
 </style>
 </head>
 <body>

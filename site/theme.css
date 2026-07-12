@@ -40,6 +40,14 @@
   --chart-bg: transparent;
   --card-shadow: 0 1px 0 rgba(255,255,255,.02);
   --popover-shadow: 0 6px 18px rgba(0,0,0,.5);
+  /* ── custom scrollbars ───────────────────────────────────────────────────────
+     Thumb tint derived from --muted so it adapts to dark / light / zh with no
+     per-theme override (--info gives the drag-state a branded accent). Consumed
+     by the global scrollbar rules further down and mirrored (with fallbacks) by
+     theme.js for the self-contained pages that don't link this file. */
+  --sb-thumb: color-mix(in srgb, var(--muted) 34%, transparent);
+  --sb-thumb-hover: color-mix(in srgb, var(--muted) 60%, transparent);
+  --sb-thumb-active: color-mix(in srgb, var(--info) 62%, var(--muted));
   /* ── frosted-glass popover system ───────────────────────────────────────────
      ONE token set shared by every floating menu surface — the top-nav dropdowns,
      the Research mega-menu, the global-search suggestions, the gear settings
@@ -115,6 +123,23 @@ html[data-lang="zh"] body {
 html[data-lang="zh"] h2 { letter-spacing: 0; }
 
 a { color: var(--link); }
+
+/* ---- custom scrollbars ------------------------------------------------------
+   One themed scrollbar for the whole site — the page scroll and every scroll
+   container. The tint derives from --muted (via the --sb-* tokens up top) so it
+   tracks dark / light / zh automatically; a transparent track plus a rounded
+   pill inset by a padding-box border reads as a floating bar, not a heavy gutter.
+   Element-scoped rules (.tbl-scroll, .lst-ovl-body, the mobile chip strips) carry
+   a class and out-specificity these, so their bespoke treatment is preserved.
+   Firefox uses the two standard properties; WebKit / Blink the pseudo-elements. */
+* { scrollbar-width: thin; scrollbar-color: var(--sb-thumb) transparent; }
+*::-webkit-scrollbar { width: 11px; height: 11px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--sb-thumb); border-radius: 999px;
+  border: 3px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-thumb:hover { background: var(--sb-thumb-hover); }
+*::-webkit-scrollbar-thumb:active { background: var(--sb-thumb-active); }
+*::-webkit-scrollbar-corner { background: transparent; }
 
 /* Canonical UI font on every page. The `html body` selector has higher
    specificity than each page's own `body { font: 14px/1.5 -apple-system… }`
