@@ -704,6 +704,60 @@ artifacts:
       cw_r10, generals}. Idempotent — re-running the same date does not
       duplicate. Nightly is the sole advancer.
 
+  # IHM-R1..R4: Index Hybrid Momentum snapshot — display-tier daily snapshot for
+  # 13 index carriers at 1D/2B/3B/W-FRI grids.  Written by engine/index_momentum.py
+  # (called in-process by engine/run.py); no new collectors required.
+  index-momentum-latest:
+    path: data/index_momentum/latest.json
+    format: json
+    producer: engine/index_momentum.py
+    known_extra_writers: []
+    owner_program: ihm
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: index_momentum.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/run.py
+    external_consumers: []
+    notes: >
+      DISPLAY-ONLY / NOT VALIDATED. Ruling IHM-R1..R4. RSI-MACD hybrid (engine.canon)
+      at 1D/2B/3B/W-FRI for 13 roster indices (US/HK/CN/INTL + MAG7 carrier). Fields:
+      macd, signal, hist, hist_vel3, k, d, depth_pctile, fast_reclaim_from_depth,
+      washout_turn/trap_zone/ordinary quality tags, us_confirm, global_washout_turn,
+      turn_breadth.  Forward-graded ledger accrues at data/index_momentum/events.parquet
+      (IHM-R11).  Authority all-false; no K-count, no market_state input.
+
+  # IHM-R11: Index Hybrid Momentum cross-event ledger — append-only, idempotent upsert.
+  index-momentum-events:
+    path: data/index_momentum/events.parquet
+    format: parquet
+    producer: engine/index_momentum.py
+    known_extra_writers: []
+    owner_program: ihm
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Append-only cross-event ledger keyed (index, grid, date, direction).
+      Idempotent: re-running the same date does not duplicate rows.
+      Fields: index, grid, date, direction, depth_at_cross, depth_pctile,
+      hist_vel3, quality_tag, us_confirm, global_washout_turn.
+      Nightly is the sole advancer (house law).
+
   # W7a PR2: risk_radar_review audit trail — registered here so the read-gate doesn't
   # flag it as an unregistered write path.
   risk-radar-review-log:

@@ -674,6 +674,18 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("mag7-regime failed: %s", e)
         latest["mag7_regime"] = None
+    # Index Hybrid Momentum organ (engine/index_momentum.py, IHM-R1..R4): RSI-MACD
+    # hybrid at 1D/2B/3B/W-FRI for 13 index carriers (US/HK/CN/INTL + MAG7 carrier).
+    # Depth percentile, hist_vel3, washout_turn/trap_zone quality tags, and global-turn
+    # confluence tags (us_confirm, global_washout_turn, turn_breadth). DISPLAY-ONLY /
+    # NOT VALIDATED. Writes data/index_momentum/latest.json + events.parquet (idempotent).
+    # Runs after ignition_radar (US lane; no new collectors required). Additive, never fatal.
+    try:
+        from engine import index_momentum as _ihm
+        latest["index_momentum"] = _ihm.snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("index-momentum failed: %s", e)
+        latest["index_momentum"] = None
     # Vol-Shock Risk Predictor (engine/vol_shock_scorecard.py): ONE forward 0-100
     # caution gauge that FUSES the fast/LEADING precursors which flash before a vol
     # shock (cross-asset concentration, dealer short-gamma, VIX term inversion,
