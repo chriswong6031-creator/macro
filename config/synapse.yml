@@ -10629,8 +10629,11 @@ artifacts:
       honest-null artifact (store_present:false printed) — as_of stays current
       but legs are null. Real legs require the theta-ops launchd lane
       (ops/launchd/com.macro.theme-options-witness.plist), NOT yet installed
-      as of 2026-07-12, and that lane still needs a git commit path for its
-      flow-ops-wt writes.
+      as of 2026-07-12; its run_theme_options_witness.sh wrapper commits+pushes
+      the two artifacts from flow-ops-wt. Two-writer coexistence = engine
+      keep-last-real law: a store-less run keeps committed real legs newer
+      than 6d (skips its write) and only null-refreshes past that — so a dead
+      launchd lane is disclosed inside this lobe's 168h SLA.
       Honest null artifact when ThetaData store absent — exit 0 always.
 
   site-options-witness:
@@ -10656,7 +10659,8 @@ artifacts:
       neuralweb-theme-options-witness but member ticker lists and input arrays are
       omitted for bandwidth efficiency. Authority: all may_* false; is_context_only=true.
       Off render path. Wired as a daily.yml collect-lane step 2026-07-12
-      (honest-null nightly on the runner — see neuralweb-theme-options-witness
+      (honest-null nightly on the runner, keep-last-real skip when committed
+      real legs are newer than 6d — see neuralweb-theme-options-witness
       notes for the real-data path).
       Honest null when ThetaData store absent.
 

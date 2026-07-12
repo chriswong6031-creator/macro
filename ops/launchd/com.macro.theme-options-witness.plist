@@ -5,11 +5,18 @@
   com.macro.theme-options-witness.plist — launchd agent for the TIL W11
   per-theme options-tape crowding-hazard witness builder.
 
-  Runs engine.theme_options_witness (build()) on weekdays at 17:15 ET.
-  Scheduled after com.mastermind.optionshub (16:45 ET) to avoid
-  concurrent reads from the ThetaData store.
+  Runs ops/launchd/run_theme_options_witness.sh on weekdays at 17:15 ET:
+  engine.theme_options_witness (build()) + git commit/push tail for the two
+  git-tracked artifacts. Scheduled after com.mastermind.optionshub (16:45 ET)
+  to avoid concurrent reads from the ThetaData store.
 
   INSTALL (as the mac user who runs Theta Terminal — not root):
+    # 1. one-time: bring flow-ops-wt to a main that CONTAINS the wrapper
+    #    script (a stale worktree makes launchd exec a nonexistent path).
+    #    The worktree is detached by convention; --detach keeps it so.
+    git -C /Users/chriswong/flow-ops-wt fetch origin
+    git -C /Users/chriswong/flow-ops-wt checkout --detach origin/main
+    # 2. install the agent
     cp ops/launchd/com.macro.theme-options-witness.plist ~/Library/LaunchAgents/
     launchctl load ~/Library/LaunchAgents/com.macro.theme-options-witness.plist
 
@@ -39,24 +46,29 @@
   OUTPUT:
     data/neuralweb/theme_options_witness.json  (NW artifact)
     site/basketdata/options_witness.json        (compact site projection)
-    Both are git-tracked artifacts. KNOWN GAP (2026-07-12): writes land in the
-    flow-ops-wt working tree and NOTHING commits them — the nightly lanes run on
-    isolated runner checkouts and cannot see this worktree, and the daily.yml
-    collect-lane witness step (which CAN commit) has no ThetaData store and
-    overwrites with the honest-null artifact each night. Before installing this
-    plist, add a commit+push tail here (narrow add of the two artifacts, rebase
-    --autostash + retry, per the daily.yml "commit data" pattern) or the real
-    legs will never reach git.
+    Both are git-tracked. run_theme_options_witness.sh commits exactly these
+    two paths and pushes to main (rebase --autostash + retry, mirroring the
+    daily.yml "commit data" race handling). Two-writer coexistence with the
+    daily.yml collect-lane witness step (which has no ThetaData store) is the
+    engine's keep-last-real law: a store-less run skips its honest-null write
+    while the committed artifact holds real legs newer than 6 days, so the
+    nightly never clobbers what this lane pushed. (This closes the KNOWN GAP
+    of 2026-07-12: writes landed in the worktree and nothing committed them.)
 
   LOG TAILING:
     tail -f /tmp/theme_options_witness.stdout.log /tmp/theme_options_witness.stderr.log
 
-  MANUAL RUN (smoke):
+  MANUAL RUN (engine only, NO commit/push):
     set -a
     source '/Users/chriswong/flow-ops-wt/.env'
     set +a
     cd '/Users/chriswong/flow-ops-wt'
     python -m engine.theme_options_witness --date $(date +%Y-%m-%d)
+
+  MANUAL RUN (full lane, commits + pushes):
+    /Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh \
+      /Users/chriswong/flow-ops-wt/.env \
+      /Users/chriswong/flow-ops-wt/ops/launchd/run_theme_options_witness.sh
 -->
 <plist version="1.0">
 <dict>
@@ -64,16 +76,14 @@
   <string>com.macro.theme-options-witness</string>
 
   <!--
-    run_with_env.sh sources the .env file before executing the builder.
-    Args: <env_file> <python_bin> -m <module>
+    run_with_env.sh sources the .env file before executing the runner script
+    (engine + commit/push tail). Args: <env_file> <script>
   -->
   <key>ProgramArguments</key>
   <array>
     <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh</string>
     <string>/Users/chriswong/flow-ops-wt/.env</string>
-    <string>/opt/homebrew/Caskroom/miniconda/base/bin/python</string>
-    <string>-m</string>
-    <string>engine.theme_options_witness</string>
+    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_theme_options_witness.sh</string>
   </array>
 
   <!-- Working directory: same ops worktree as options hub. -->
