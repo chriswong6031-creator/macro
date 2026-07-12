@@ -445,7 +445,7 @@ class TestMergeLaneTwoKeyRequired:
         assert len(merges) == 0, f"Got unexpected merges: {merges}"
 
     def test_granted_proposal_with_green_ci_eligible_to_merge(self):
-        """A proposal WITH two-key auth AND green CI is eligible for merge (fence still applies)."""
+        """A proposal WITH two-key auth AND green CI AND audit-approve is eligible for merge."""
         d = _tmp_root()
         cycle_id = "cycle-twokey-002"
         docket = _write_docket(d, cycle_id, [_minimal_proposal("p1", ["engine/foo.py"])])
@@ -468,7 +468,17 @@ class TestMergeLaneTwoKeyRequired:
                             with patch.object(mm, "_mark_pr_ready", return_value=True):
                                 with patch.object(mm, "_rebase_merge_pr",
                                                   return_value={"merged": True, "attempts": 1}):
-                                    results = mm.run_merge_lane(cycle_id, docket, root=d, dry_run=False)
+                                    # V7: step 5.5 — mock audit approved + gh head sha call
+                                    with patch.object(mm, "_audit_approved",
+                                                      return_value=(True, "audit approved")):
+                                        with patch("subprocess.run") as mock_run:
+                                            import json as _json
+                                            mock_run.return_value = MagicMock(
+                                                returncode=0,
+                                                stdout=_json.dumps({"headRefOid": "sha-test"}),
+                                                stderr="",
+                                            )
+                                            results = mm.run_merge_lane(cycle_id, docket, root=d, dry_run=False)
 
         # At least one merge should appear
         merges = [r for r in results if r.get("status") == "merged"]

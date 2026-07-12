@@ -373,6 +373,46 @@ def _resolve_proposal_id_for_branch(
         return None
 
 
+# ── Audit gate (R-V7-3) ──────────────────────────────────────────────────────
+
+def _audit_approved(pr_number: int, head_sha: str, root: Path | None = None) -> tuple[bool, str]:
+    """Return (approved, reason) for the V7 audit gate (step 5.5).
+
+    Reads data/metabolism/audit/<pr_number>.json and requires:
+      - verdict == "approve"
+      - record["head_sha"] == head_sha (post-audit push invalidates the record)
+
+    Fail-closed: missing record / reject / SHA mismatch → (False, reason).
+    NEVER raises.
+    """
+    try:
+        r = root or _ROOT
+        audit_path = r / "data" / "metabolism" / "audit" / f"{pr_number}.json"
+        if not audit_path.exists():
+            return False, f"no audit record found for PR #{pr_number}"
+
+        record = json.loads(audit_path.read_text(encoding="utf-8"))
+
+        stored_sha = record.get("head_sha") or ""
+        if stored_sha != head_sha:
+            return False, (
+                f"audit record SHA mismatch for PR #{pr_number}: "
+                f"recorded={stored_sha[:8]!r} current={head_sha[:8]!r} — "
+                "re-audit required (post-audit push detected)"
+            )
+
+        verdict = str(record.get("verdict") or "reject").lower()
+        if verdict != "approve":
+            rationale = str(record.get("rationale") or "")[:200]
+            return False, f"audit verdict={verdict!r} for PR #{pr_number}: {rationale}"
+
+        return True, f"audit approved PR #{pr_number} at sha={head_sha[:8]}"
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_merge._audit_approved: %s — refusing (fail-closed)", exc)
+        return False, f"audit gate error (fail-closed): {exc}"
+
+
 # ── Main merge loop ───────────────────────────────────────────────────────────
 
 def run_merge_lane(
@@ -394,6 +434,7 @@ def run_merge_lane(
       3. Verify two-key grant.
       4. Verify CI is green.
       5. Verify check_self_mod_fence passes (refuse if not).
+      5.5. Verify AUDIT-APPROVE record exists and matches current head SHA (R-V7-3).
       6. Mark PR ready + rebase-merge.
 
     Returns list of per-PR result dicts.  Zero merges while paused.
@@ -496,6 +537,34 @@ def run_merge_lane(
                 per["status"] = "fence_blocked"
                 per["reason"] = fence_msg
                 log.warning("MERGE: PR #%s REFUSED by self-mod fence: %s", pr_number, fence_msg[:200])
+                results.append(per)
+                continue
+
+            # Step 5.5: AUDIT-APPROVE gate (R-V7-3) — require a fresh, SHA-matched
+            # audit record from the V7 adversarial code review stage.
+            # Fail-closed: missing record / reject / SHA mismatch → skip, never merge.
+            if pr_number:
+                pr_head_result = subprocess.run(
+                    ["gh", "pr", "view", str(pr_number), "--json", "headRefOid"],
+                    capture_output=True, text=True, timeout=30,
+                )
+                pr_head_sha = ""
+                if pr_head_result.returncode == 0:
+                    try:
+                        pr_head_sha = json.loads(pr_head_result.stdout or "{}").get("headRefOid") or ""
+                    except Exception:  # noqa: BLE001
+                        pass
+            else:
+                pr_head_sha = ""
+
+            audit_ok, audit_msg = _audit_approved(
+                pr_number, pr_head_sha, root=root
+            ) if pr_number else (False, "no pr_number for audit check")
+            if not audit_ok:
+                per["status"] = "audit_not_approved"
+                per["reason"] = audit_msg
+                log.info("MERGE: PR #%s audit gate not satisfied — skip: %s",
+                         pr_number, audit_msg[:200])
                 results.append(per)
                 continue
 

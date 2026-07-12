@@ -85,6 +85,15 @@ max_probation_lobes: 5            # max simultaneous probation lobes (anti-casca
 # IMMUTABLE: loop PRs cannot modify this.
 genesis_accountability_days: 45   # days before accountability-clock demotion (R-V6-6)
 
+# ── Audit gate config (R-V7-1c — diff-budget sanity check) ──────────────────
+#
+# audit_max_diff_lines: maximum allowed +/- lines in a build-lane PR diff.
+# A PR whose diff exceeds this threshold is REJECTED by the deterministic
+# pre-screen in engine/metabolism/audit.py without calling the LLM auditor.
+# This prevents runaway builds from merging unattended.
+# IMMUTABLE: loop PRs may NOT modify this value (R-V2-8).
+audit_max_diff_lines: 2000   # R-V7-1c
+
 # ── Never-stuck durability (R-V5-1, R-V5-2) ──────────────────────────────────
 #
 # max_build_attempts: maximum times a "failed" dispatch may be re-attempted

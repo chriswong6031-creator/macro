@@ -56,9 +56,11 @@ SCAN_PATHS = [
     "engine/neuralweb/key_pool.py",       # V2-B: multi-key pool (NEVER reads token values)
     "engine/metabolism/propose.py",
     "engine/metabolism/adjudicate.py",
+    "engine/metabolism/audit.py",         # V7: AUDIT stage (reads diff text, never token values)
     "scripts/metabolism_propose.py",
     "scripts/metabolism_adjudicate.py",
     "scripts/metabolism_dispatch.py",     # V2-B: dispatcher (returns cap_id only)
+    "scripts/metabolism_audit.py",        # V7: AUDIT CLI (reads pr/diff, never token values)
 ]
 
 # Git-committed artifacts that must be clean IF present (written at run time,

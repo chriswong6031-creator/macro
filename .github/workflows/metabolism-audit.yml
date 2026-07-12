@@ -1,0 +1,135 @@
+name: metabolism-audit
+# Metabolism V7 (R-V7-1..6) — AUDIT stage: adversarial Opus code review
+# before the MERGE lane runs.  Runs between BUILD (10:45 UTC) and MERGE (12:15 UTC).
+#
+# Each build-lane draft PR is reviewed by:
+#   1. A DETERMINISTIC pre-screen (foreign-file containment, immutable re-check,
+#      diff-budget).
+#   2. An adversarial Opus LLM auditor (metabolism-audit key pool lane), which
+#      defaults to REJECT under any uncertainty.
+#
+# The MERGE lane (run_merge_lane step 5.5) gates on an AUDIT-APPROVE record
+# stamped with the PR's current head SHA.  Missing record / reject / SHA mismatch
+# → PR skipped, never merged.
+#
+# INERTNESS: AUTONOMY_PAUSED double-gated (job if: + in-script exact-'false').
+# When paused this is a clean no-op (exit 0, no records written).
+on:
+  schedule:
+    # 11:45 UTC — after BUILD (10:45) and before MERGE (12:15).
+    - cron: "45 11 * * *"
+  workflow_dispatch:
+    inputs:
+      cycle_id:
+        description: "Cycle ID to audit (leave blank to scan all pending)"
+        type: string
+        required: false
+        default: ""
+      pr_number:
+        description: "Single PR number to audit (requires cycle_id)"
+        type: string
+        required: false
+        default: ""
+      force_run:
+        description: "Force even when AUTONOMY_PAUSED=true (ops verification only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # commit audit records to branch
+  pull-requests: read
+
+concurrency:
+  group: metabolism-audit-${{ github.event_name == 'schedule' && 'scheduled' || github.event.inputs.cycle_id || 'dispatch' }}
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: vars.AUTONOMY_PAUSED != 'true'
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - name: install deps
+        run: pip install --quiet pyyaml anthropic
+
+      - name: AUDIT (deterministic containment + adversarial Opus review)
+        env:
+          AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          FORCE_RUN: ${{ github.event.inputs.force_run }}
+          CYCLE_ID: ${{ github.event.inputs.cycle_id }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN: ${{ secrets.METABOLISM_MERGE_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+
+          AP="$(printf '%s' "${AUTONOMY_PAUSED:-}" | tr '[:upper:]' '[:lower:]')"
+          FR="$(printf '%s' "${FORCE_RUN:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "$AP" != "false" ] && [ "$FR" != "true" ]; then
+            echo "AUTONOMY_PAUSED not 'false' (=${AUTONOMY_PAUSED:-<unset>}) — clean no-op."
+            exit 0
+          fi
+
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Build the invocation args
+          ARGS=""
+          if [ -n "${PR_NUMBER:-}" ] && [ -n "${CYCLE_ID:-}" ]; then
+            ARGS="--pr-number ${PR_NUMBER} --cycle-id ${CYCLE_ID}"
+          elif [ -n "${CYCLE_ID:-}" ]; then
+            ARGS="--scan --cycle-id ${CYCLE_ID}"
+          else
+            ARGS="--scan"
+          fi
+
+          python -m scripts.metabolism_audit $ARGS
+
+          # Commit audit records + governance events (narrow add, rebase-safe)
+          git add data/metabolism/audit/ data/neuralweb/governance.jsonl 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "no new audit records to commit."
+          else
+            git commit -m "metabolism: AUDIT records [V7]" \
+                       -m "Loop-Authored: til run=${GITHUB_RUN_ID:-local}"
+            git fetch origin HEAD 2>/dev/null || true
+            # pre-sync collision sweep (mirrors adjudicate.yml pattern)
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only "origin/HEAD" 2>/dev/null | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            git pull --rebase --autostash origin HEAD 2>/dev/null || true
+            git push origin HEAD:main || echo "push failed — audit records logged locally"
+          fi
+
+      - name: notify on failure
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$TOKEN" ] || exit 0
+          curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            -d chat_id="$CHAT_ID" \
+            -d text="[Metabolism] metabolism-audit run failed: ${RUN_URL}" || true
