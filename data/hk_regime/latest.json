@@ -56,7 +56,7 @@
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 0.24,
+        "z": 0.33,
         "sign": 1.0,
         "risk": "neutral",
         "level": 0.0015
@@ -282,63 +282,63 @@
     "window_d": 5,
     "verdict": "mixed",
     "verdict_zh": "\u6df7\u5408",
-    "primary": "commodity_energy",
-    "primary_label": "Commodity / energy",
-    "primary_label_zh": "\u5927\u5b97/\u80fd\u6e90",
-    "direction": "upstream disinflation \u2014 energy/materials basket & copper lead down",
-    "direction_zh": "\u4e0a\u6e38\u901a\u7f29 \u2014 \u80fd\u6e90/\u6750\u6599\u7bee\u5b50\u4e0e\u94dc\u9886\u8dcc",
-    "dir_sign": -1,
+    "primary": "china_spillover",
+    "primary_label": "China stimulus spillover",
+    "primary_label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
+    "direction": "China bid spilling into HK \u2014 H-shares & southbound lead up",
+    "direction_zh": "\u4e2d\u56fd\u4e70\u76d8\u5916\u6ea2\u81f3\u9999\u6e2f \u2014 H\u80a1\u4e0e\u5357\u5411\u9886\u6da8",
+    "dir_sign": 1,
     "confidence": "low",
     "confidence_zh": "\u4f4e",
-    "strength": 1.4,
-    "dominance_ratio": 1.0,
-    "agreement": 0.74,
-    "runner_up": "china_spillover",
-    "runner_up_label": "China stimulus spillover",
-    "runner_up_label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
-    "headline": "Mixed \u2014 Commodity / energy + China stimulus spillover jointly leading (inflation basket -2.6\u03c3, PPI YoY -0.9\u03c3, copper / gold +0.5\u03c3); no single dominant driver.",
+    "strength": 1.41,
+    "dominance_ratio": 1.02,
+    "agreement": 1.0,
+    "runner_up": "commodity_energy",
+    "runner_up_label": "Commodity / energy",
+    "runner_up_label_zh": "\u5927\u5b97/\u80fd\u6e90",
+    "headline": "Mixed \u2014 China stimulus spillover + Commodity / energy jointly leading (H-shares vs HSI +1.7\u03c3, HSCEI +1.9\u03c3, southbound flow +1.1\u03c3); no single dominant driver.",
     "evidence": [
-      "inflation basket -2.6\u03c3",
-      "PPI YoY -0.9\u03c3",
-      "copper / gold +0.5\u03c3"
+      "H-shares vs HSI +1.7\u03c3",
+      "HSCEI +1.9\u03c3",
+      "southbound flow +1.1\u03c3"
     ],
     "evidence_legs": [
       {
-        "en": "inflation basket",
-        "zh": "\u901a\u80c0\u7bee\u5b50",
-        "z": -2.6
+        "en": "H-shares vs HSI",
+        "zh": "H\u80a1\u5bf9\u6052\u6307",
+        "z": 1.7
       },
       {
-        "en": "PPI YoY",
-        "zh": "PPI\u540c\u6bd4",
-        "z": -0.9
+        "en": "HSCEI",
+        "zh": "\u56fd\u4f01\u6307\u6570",
+        "z": 1.9
       },
       {
-        "en": "copper / gold",
-        "zh": "\u94dc/\u91d1",
-        "z": 0.5
+        "en": "southbound flow",
+        "zh": "\u5357\u5411\u8d44\u91d1",
+        "z": 1.1
       }
     ],
-    "invalidation": "Fades if inflation basket reverses and the rest of the inflation fingerprint stops confirming.",
-    "invalidation_zh": "\u82e5\u901a\u80c0\u7bee\u5b50\u53cd\u8f6c\u3001\u4e14\u901a\u80c0\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
+    "invalidation": "Fades if H-shares vs HSI reverses and the rest of the growth fingerprint stops confirming.",
+    "invalidation_zh": "\u82e5H\u80a1\u5bf9\u6052\u6307\u53cd\u8f6c\u3001\u4e14\u589e\u957f\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
     "scores": [
-      {
-        "driver": "commodity_energy",
-        "label": "Commodity / energy",
-        "label_zh": "\u5927\u5b97/\u80fd\u6e90",
-        "family": "inflation",
-        "projection": -1.4,
-        "strength": 1.4,
-        "direction": "upstream disinflation \u2014 energy/materials basket & copper lead down"
-      },
       {
         "driver": "china_spillover",
         "label": "China stimulus spillover",
         "label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
         "family": "growth",
-        "projection": 1.4,
-        "strength": 1.4,
+        "projection": 1.41,
+        "strength": 1.41,
         "direction": "China bid spilling into HK \u2014 H-shares & southbound lead up"
+      },
+      {
+        "driver": "commodity_energy",
+        "label": "Commodity / energy",
+        "label_zh": "\u5927\u5b97/\u80fd\u6e90",
+        "family": "inflation",
+        "projection": -1.39,
+        "strength": 1.39,
+        "direction": "upstream disinflation \u2014 energy/materials basket & copper lead down"
       },
       {
         "driver": "tech_internet_leadership",
@@ -372,8 +372,8 @@
         "label": "Global risk-on / risk-off",
         "label_zh": "\u5168\u7403\u98ce\u9669\u504f\u597d",
         "family": "risk",
-        "projection": 0.43,
-        "strength": 0.43,
+        "projection": 0.45,
+        "strength": 0.45,
         "direction": "global risk-ON \u2014 S&P up, VIX & dollar down, EM/copper bid (HK's dominant force)"
       },
       {
@@ -399,10 +399,10 @@
   },
   "conditions": {
     "roro": {
-      "roro": -0.274,
-      "roro_raw": -0.281,
+      "roro": -0.269,
+      "roro_raw": -0.275,
       "roro_state": "neutral",
-      "hk_roro_copper_gold": 1.964,
+      "hk_roro_copper_gold": 2.033,
       "hk_roro_spy": 0.159,
       "hk_roro_vix": 0.92,
       "hk_roro_dxy": -0.715,
@@ -419,7 +419,7 @@
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 1.964,
+          "value": 2.033,
           "lean": "risk-on"
         },
         {
@@ -2162,7 +2162,7 @@
           -0.364,
           -0.131,
           -0.207,
-          -0.274
+          -0.269
         ]
       },
       "recession": {
@@ -6902,7 +6902,7 @@
           24.8,
           40.6,
           35.2,
-          31.1
+          31.3
         ]
       }
     },
@@ -6913,14 +6913,14 @@
     "fe_score": 31,
     "band": "Fear",
     "band_zh": "\u6050\u60e7",
-    "roro": -0.274,
+    "roro": -0.269,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.964,
+        "value": 2.033,
         "pct": 99,
         "lean": "risk-on"
       },

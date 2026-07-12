@@ -68,3 +68,6 @@
 {"asof":"2026-07-10","market":"hk","basket":"hk_energy","name":"Energy (H-shares)","ignition_score":0.2055,"state":"fading","alert":false,"logged_at":"2026-07-11T03:02:36+00:00","graded":null}
 {"asof":"2026-07-10","market":"hk","basket":"hk_materials","name":"Materials & Metals","ignition_score":0.1818,"state":"idle","alert":false,"logged_at":"2026-07-11T03:02:36+00:00","graded":null}
 {"asof":"2026-07-10","market":"hk","basket":"hk_ev","name":"China EV & Autos","ignition_score":0.1711,"state":"idle","alert":false,"logged_at":"2026-07-11T03:02:36+00:00","graded":null}
+{"asof":"2026-07-10","market":"hk","basket":"hk_platform_tech","name":"China Platform Megacaps","ignition_score":0.7368,"state":"igniting","alert":true,"logged_at":"2026-07-12T12:28:44+00:00","graded":null}
+{"asof":"2026-07-10","market":"hk","basket":"hk_tech_hardware","name":"Tech Hardware & Semis","ignition_score":0.4003,"state":"running","alert":true,"logged_at":"2026-07-12T12:28:44+00:00","graded":null}
+{"asof":"2026-07-10","market":"hk","basket":"hk_miners","name":"Diversified Miners","ignition_score":0.2788,"state":"fading","alert":false,"logged_at":"2026-07-12T12:28:44+00:00","graded":null}

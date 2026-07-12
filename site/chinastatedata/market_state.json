@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
-  "as_of": "2026-07-11",
-  "generated_utc": "2026-07-11T11:30:17Z",
+  "as_of": "2026-07-12",
+  "generated_utc": "2026-07-12T12:32:06Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -87,7 +87,7 @@
     "names_ref": "site/chinastatedata/microstructure.json#name_packets"
   },
   "policy": {
-    "as_of": "2026-07-11",
+    "as_of": "2026-07-12",
     "policy_impulse": "targeted_support",
     "transmission_channel": [
       "fiscal_or_structural",
@@ -128,15 +128,15 @@
     ],
     "staleness": {
       "per_source_days": {
-        "lpr": 19,
-        "rrr": 430,
-        "fr007": 1,
-        "communiques": 74
+        "lpr": 20,
+        "rrr": 431,
+        "fr007": 2,
+        "communiques": 75
       }
     }
   },
   "rotation": {
-    "as_of": "2026-07-11",
+    "as_of": "2026-07-12",
     "sector_phase_distribution": {
       "Bottoming": 39,
       "Topping": 7,
@@ -160,7 +160,7 @@
       "LAGGARD: Agriculture ranked #29/31 (-26.3%) — among the weakest this leg"
     ],
     "ths_heat": {
-      "as_of": "2026-07-11",
+      "as_of": "2026-07-12",
       "basket_count": 237,
       "above_200d_pct": 70.9,
       "hot_baskets": [
@@ -229,10 +229,10 @@
     ],
     "conditions": {
       "roro": {
-        "roro": -0.099,
-        "roro_raw": -0.1,
+        "roro": -0.091,
+        "roro_raw": -0.091,
         "roro_state": "neutral",
-        "china_roro_copper_gold": 1.964,
+        "china_roro_copper_gold": 2.033,
         "china_roro_breadth": -0.945,
         "china_roro_southbound": -1.048,
         "china_roro_m1_m2": 0.016,
@@ -246,7 +246,7 @@
             "key": "copper_gold",
             "name_en": "Copper / Gold",
             "name_zh": "铜／金 比",
-            "value": 1.964,
+            "value": 2.033,
             "lean": "risk-on"
           },
           {
@@ -373,7 +373,7 @@
         "note_zh": "已用20年A股前瞻数据校准：无前瞻回撤优势（A股均值回归 —— 高读数偏平/逆向）；区间为历史分位锚定。描述性背景，从不计入评分。"
       },
       "drawdown_risk": {
-        "score": 42.7,
+        "score": 40.4,
         "band": "low",
         "uncalibrated": false,
         "calibrated": true,
@@ -389,7 +389,7 @@
   "external": {
     "yield_curve": {
       "as_of": "2026-07-10",
-      "staleness_days": 1,
+      "staleness_days": 2,
       "cn_10y": 1.7398,
       "cn_2y": 1.2615,
       "cn_slope_10_2": 0.47829999999999995,
@@ -397,7 +397,7 @@
     },
     "cgb_curve": {
       "as_of": "2026-07-10",
-      "staleness_days": 1,
+      "staleness_days": 2,
       "m3": 1.08,
       "y1": 1.1097,
       "y5": 1.4436,
@@ -408,7 +408,7 @@
     "usdcnh": {
       "quote": 6.754,
       "chg_pct": -0.2,
-      "as_of": "Jul 11, 2026"
+      "as_of": "Jul 12, 2026"
     },
     "dxy": null
   },

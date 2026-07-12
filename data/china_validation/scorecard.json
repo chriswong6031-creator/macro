@@ -1,7 +1,7 @@
 {
   "schema": "china_validation.v1",
   "is_context_only": true,
-  "generated_utc": "2026-07-11T11:29:25.519737+00:00",
+  "generated_utc": "2026-07-12T12:31:17.613813+00:00",
   "fdr_alpha": 0.1,
   "horizons": [
     5,
@@ -18,7 +18,7 @@
       "n_obs": 0,
       "by_horizon": {},
       "sign_expected": 1,
-      "reason": "only 4 cross-sections (< MIN_DATES 6)",
+      "reason": "only 3 cross-sections (< MIN_DATES 6)",
       "is_context_only": true,
       "q_fdr": null
     },
