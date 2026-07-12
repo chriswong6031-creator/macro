@@ -24,7 +24,9 @@
   .muted { color:var(--muted); } .sm { font-size:12px; }
   .seg button { font-size:12.5px; padding:5px 11px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
-  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { display:block; }
   .seg { display:inline-flex; gap:0; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
   .seg button { border:0; border-radius:0; background:var(--panel); }
@@ -380,7 +382,7 @@
 
   <div class="panel">
     <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: Ken French Data Library (Dartmouth), monthly factor returns, as of 2026-05. Factors mapping to one of our live legs (Value→HML, Profitability→RMW, Investment→CMA) are shown first; Momentum, Size and Market are reference styles we do not rank cross-sectionally. Seasonality is descriptive context only and is deliberately kept out of every calibrated score — see LIMITATIONS.md.</span><span class="l-zh">来源：Ken French Data Library (Dartmouth), monthly factor returns，截至 2026-05。映射到我们在用因子的（价值→HML、盈利→RMW、投资→CMA）排在前面；动量、规模与市场为我们未做横截面排名的参考风格。季节性仅为描述性背景，刻意不纳入任何校准评分 — 参见 LIMITATIONS.md。</span>
-      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-12 07:47 UTC</p>
+      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-12 08:27 UTC</p>
   </div>
 
   <script>

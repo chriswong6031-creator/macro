@@ -571,13 +571,14 @@
                letter-spacing: normal; box-shadow: var(--popover-shadow);
                pointer-events: auto; cursor: auto; white-space: normal;
                max-height: min(60vh, 420px); overflow-y: auto; overscroll-behavior: contain; }
-  /* invisible hover bridge across the gap between the ? icon and the tip box —
+  /* invisible hover pad across the gap between the ? icon and the tip box —
      without it the :hover chain breaks mid-travel and the tip vanishes before
-     the cursor can reach (and scroll) it */
-  .help .tip::after { content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 10px; }
+     the cursor can reach (and scroll) it. Lives on .help, not .tip: the tip
+     is a scroll container (overflow-y:auto), which clips its own pseudos. */
+  .help:hover::before { content: ''; position: absolute; bottom: 100%; left: -30px; right: -30px; height: 10px; }
   .help:hover .tip, .help.tip-open .tip { display: block; }
   th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
-  th .help .tip::after, .help.below .tip::after { top: auto; bottom: 100%; }
+  th .help:hover::before, .help.below:hover::before { bottom: auto; top: 100%; }
   /* keep tooltips on-screen near the right/left viewport edges */
   .help.edge-right .tip { left: auto; right: 0; transform: none; }
   .help.edge-left .tip { left: 0; right: auto; transform: none; }
@@ -2410,7 +2411,7 @@
     <span class="igs-theme igniting"
       data-tip-en="#3 by turn evidence: 69% of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit — evidence, not a price change · relative strength at a 6-month high · above a rising 200-day average"
       data-tip-zh="转折证据第3名：该主题清单（成分推进、相对强度转折、多周期确认）当前亮起69% — 为证据而非涨幅 · 相对强度创6个月新高 · 高于上升中的200日均线">
-      <span class="igs-rank">#3</span> AI Semiconductors 🔺 ↗</span><span class="igs-asof"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-12</span>
+      <span class="igs-rank">#3</span> AI Semiconductors 🔺 ↗</span><span class="igs-asof"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-11</span>
   </div>
 </div>
   
