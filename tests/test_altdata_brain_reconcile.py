@@ -4,18 +4,29 @@ House law: LLMs may only de-escalate calibrated keys — never originate signals
 or escalations.  This suite verifies that _reconcile enforces that constraint on every
 axis (action, conviction, lean) across the full combinatorial clamp matrix.
 
+Key invariant: the ACTION and CONVICTION ceilings are a function of DETERMINISTIC fields
+only (rs_vs_spy_60d, channels, weighted_score, extended) — never of any LLM-proposed
+field (lean, action, conviction).
+
 Tests are PURE UNIT — no network, no LLM, no filesystem.
 """
 from __future__ import annotations
 
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from engine.altdata_brain import _reconcile, _det_baseline, _ACTION_RANK, _CONV_RANK
+from engine.altdata_brain import (
+    _reconcile, _det_baseline, _ACTION_RANK, _CONV_RANK,
+    _BULLISH_WITNESS_CHANNELS,
+)
+
+# A sample bullish channel witness guaranteed to be in _BULLISH_WITNESS_CHANNELS.
+_SAMPLE_BULLISH = next(iter(sorted(_BULLISH_WITNESS_CHANNELS)))
 
 
 # ---------------------------------------------------------------------------
@@ -29,8 +40,13 @@ def _make_t(
     weighted_score: float = 1.2,
     extended: bool = False,
     rs_vs_spy_60d: float | None = 5.0,
+    channels: list | None = None,
 ) -> dict:
-    """Minimal thesis dict that _reconcile expects (cluster fields already merged)."""
+    """Minimal thesis dict that _reconcile expects (cluster fields already merged).
+
+    `channels` is a list of channel names present in the cluster (deterministic).
+    When None, no channels are present (simulates a cluster with no bullish witnesses).
+    """
     return {
         "lean": lean,
         "action": action,
@@ -38,6 +54,7 @@ def _make_t(
         "weighted_score": weighted_score,
         "extended": extended,
         "rs_vs_spy_60d": rs_vs_spy_60d,
+        "channels": channels if channels is not None else [],
     }
 
 
@@ -76,26 +93,58 @@ class TestDetBaseline:
         assert act == "AVOID"   # bearish lean → AVOID ceiling
         assert conv == "low"
 
-    def test_overweight_none_rs_keeps_overweight(self):
-        """None rs_vs_spy_60d (no price series) does not demote lean."""
-        t = _make_t(lean="overweight", weighted_score=1.2, extended=False, rs_vs_spy_60d=None)
+    def test_none_rs_with_bullish_channel_gives_accumulate(self):
+        """rs=None but a bullish channel witness present → deterministic overweight ceiling."""
+        t = _make_t(lean="overweight", weighted_score=1.2, extended=False,
+                    rs_vs_spy_60d=None, channels=[_SAMPLE_BULLISH])
         act, conv, lean = _det_baseline(t, min_weighted=0.9)
         assert lean == "overweight"
         assert act == "ACCUMULATE"
+        assert conv == "medium"
+
+    def test_none_rs_without_bullish_channel_gives_watch(self):
+        """rs=None AND no bullish channel witness → no directional support → WATCH/low ceiling.
+
+        This is the origination-hole fix: the old code (incorrectly) read t.get('lean') and
+        allowed an LLM-proposed overweight to escalate the ceiling to ACCUMULATE when the
+        price series was absent.  The new invariant: ceiling = WATCH, conviction = 'low'
+        when there is no deterministic directional witness (rs OR bullish channel).
+        """
+        t = _make_t(lean="overweight", weighted_score=1.2, extended=False,
+                    rs_vs_spy_60d=None, channels=[])
+        act, conv, lean = _det_baseline(t, min_weighted=0.9)
+        # No directional witness → watch_only → returned lean = "underweight" (canonical)
+        assert lean == "underweight"
+        assert act == "WATCH"
+        assert conv == "low"
+
+    def test_none_rs_without_bullish_channel_underweight_llm_gives_watch(self):
+        """rs=None, no bullish channel, LLM says underweight → ceiling still WATCH (not AVOID).
+
+        The deterministic ceiling action is WATCH regardless of LLM lean when evidence is absent.
+        """
+        t = _make_t(lean="underweight", weighted_score=1.2, extended=False,
+                    rs_vs_spy_60d=None, channels=[])
+        act, conv, lean = _det_baseline(t, min_weighted=0.9)
+        assert act == "WATCH"
+        assert conv == "low"
 
     def test_underweight_lean_gives_avoid_low(self):
+        """rs < 0 → deterministic underweight → AVOID ceiling (price trend is the witness)."""
         t = _make_t(lean="underweight", weighted_score=1.2, extended=False, rs_vs_spy_60d=-5.0)
         act, conv, lean = _det_baseline(t, min_weighted=0.9)
         assert act == "AVOID"
         assert conv == "low"
         assert lean == "underweight"
 
-    def test_avoid_lean_gives_avoid_low(self):
-        t = _make_t(lean="avoid", weighted_score=1.2, extended=False, rs_vs_spy_60d=None)
-        act, conv, lean = _det_baseline(t, min_weighted=0.9)
-        assert act == "AVOID"
-        assert conv == "low"
-        assert lean == "avoid"
+    def test_no_rs_no_channels_give_watch_regardless_of_llm_lean(self):
+        """Deterministic baseline ignores t['lean'] entirely — WATCH ceiling for no-evidence."""
+        for llm_lean in ("overweight", "underweight", "avoid"):
+            t = _make_t(lean=llm_lean, weighted_score=1.2, extended=False,
+                        rs_vs_spy_60d=None, channels=[])
+            act, conv, lean = _det_baseline(t, min_weighted=0.9)
+            assert act == "WATCH", f"lean={llm_lean}: expected WATCH, got {act}"
+            assert conv == "low"
 
 
 # ---------------------------------------------------------------------------
@@ -211,43 +260,201 @@ class TestReconcileDeEscalationRespected:
 # ---------------------------------------------------------------------------
 
 class TestReconcileHardBlocks:
-    """Verify the original extended/bearish-lean hard blocks still fire."""
+    """Verify the original extended/bearish-lean hard blocks still fire as defense-in-depth.
 
-    def test_extended_accumulate_clamped_to_watch(self):
-        """Extended name + ACCUMULATE → WATCH (hard block, unchanged from original)."""
+    The ceiling (_det_baseline) normally fires first and prevents ACCUMULATE reaching the
+    hard blocks. Tests in this class that do NOT monkeypatch _det_baseline exercise the
+    CEILING (and are labeled accordingly). Tests that DO monkeypatch _det_baseline bypass
+    the ceiling to verify the hard blocks fire independently — these have real power over
+    the defense-in-depth layer.
+    """
+
+    def test_extended_action_ceiling_fires_before_hardblock(self):
+        """Extended name → the deterministic ceiling (not the hard block) clamps action to WATCH.
+
+        The ceiling fires first: extended=True means _det_baseline returns det_action=WATCH
+        directly. The hard block is also present for defense-in-depth but is unreachable here
+        because the ceiling already demoted the action.  This test exercises the CEILING.
+        """
         t = _make_t(lean="overweight", action="ACCUMULATE", conviction="medium",
                     weighted_score=1.2, extended=True, rs_vs_spy_60d=40.0)
         out = _reconcile(t, min_weighted=0.9)
         assert out["action"] == "WATCH", out
         assert "clamped" in out
 
-    def test_bearish_lean_accumulate_hard_blocked(self):
-        """Underweight lean + ACCUMULATE → AVOID via hard block."""
-        # Build a thesis where the deterministic action ceiling would normally fire first,
-        # but set rs_vs_spy_60d > 0 so lean doesn't change, and the original hard block
-        # for bearish lean still fires.
+    def test_negative_rs_ceiling_fires_before_hardblock(self):
+        """Negative rs → the deterministic ceiling clamps action to AVOID.
+
+        rs<0 → _det_baseline returns det_lean=underweight, det_action=AVOID. The
+        LLM's ACCUMULATE is clamped to AVOID by the ceiling. This test exercises the CEILING
+        (the hard block for bearish lean is also a defense-in-depth safety net but
+        unreachable here since action is already AVOID after ceiling fires).
+        """
         t = _make_t(lean="underweight", action="ACCUMULATE", conviction="low",
-                    weighted_score=0.3, extended=False, rs_vs_spy_60d=5.0)
-        out = _reconcile(t, min_weighted=0.9)
-        # underweight lean → ceiling AVOID → action clamped to AVOID (baseline); hard block
-        # also confirms it cannot be ACCUMULATE
-        assert out["action"] == "AVOID", out
-
-    def test_avoid_lean_accumulate_hard_blocked(self):
-        """Avoid lean + ACCUMULATE → AVOID."""
-        t = _make_t(lean="avoid", action="ACCUMULATE", conviction="low",
-                    weighted_score=1.5, extended=False, rs_vs_spy_60d=None)
+                    weighted_score=0.3, extended=False, rs_vs_spy_60d=-10.0)
         out = _reconcile(t, min_weighted=0.9)
         assert out["action"] == "AVOID", out
+        assert "clamped" in out
 
-    def test_extended_action_clamped_and_noted(self):
-        """Extended name → deterministic ceiling is WATCH (not ACCUMULATE); action clamped,
-        clamped note is present.  The ceiling fires before the hard block on extended names."""
+    # -----------------------------------------------------------------------
+    # Hard-block bypass tests — these have REAL POWER over the defense-in-depth
+    # layer by monkeypatching _det_baseline to return an ACCUMULATE ceiling.
+    # If the hard blocks were removed, these tests would fail.
+    # -----------------------------------------------------------------------
+
+    def test_hardblock_extended_fires_when_ceiling_bypassed(self):
+        """Defense-in-depth: extended hard block demotes ACCUMULATE→WATCH even when the
+        deterministic ceiling erroneously permits ACCUMULATE.
+
+        Monkeypatch _det_baseline to return ('ACCUMULATE','medium','overweight') — simulating
+        a scenario where the ceiling passes ACCUMULATE for an extended name (e.g. a future
+        regression in _det_baseline).  The hard block must still fire and demote to WATCH.
+        """
         t = _make_t(lean="overweight", action="ACCUMULATE", conviction="medium",
                     weighted_score=1.2, extended=True, rs_vs_spy_60d=40.0)
+        with patch("engine.altdata_brain._det_baseline",
+                   return_value=("ACCUMULATE", "medium", "overweight")):
+            out = _reconcile(t, min_weighted=0.9)
+        assert out["action"] == "WATCH", (
+            "extended hard block must demote ACCUMULATE→WATCH even when ceiling is bypassed; "
+            f"got: {out}"
+        )
+        assert "clamped" in out
+
+    def test_hardblock_bearish_lean_fires_when_ceiling_bypassed(self):
+        """Defense-in-depth: bearish-lean hard block demotes ACCUMULATE→AVOID even when the
+        deterministic ceiling erroneously permits ACCUMULATE.
+
+        Monkeypatch _det_baseline to return ('ACCUMULATE','medium','overweight') on a thesis
+        whose actual lean is 'underweight' after the clamp would run.  The hard block must
+        catch that ACCUMULATE+bearish lean is always forbidden.
+        """
+        t = _make_t(lean="underweight", action="ACCUMULATE", conviction="medium",
+                    weighted_score=1.5, extended=False, rs_vs_spy_60d=-5.0)
+        with patch("engine.altdata_brain._det_baseline",
+                   return_value=("ACCUMULATE", "medium", "overweight")):
+            out = _reconcile(t, min_weighted=0.9)
+        # After monkeypatching: ceiling lean = "overweight" (rank 2), LLM lean = "underweight"
+        # (rank 1) → lean stays "underweight" (de-escalation respected). Hard block fires:
+        # lean=underweight + action=ACCUMULATE → AVOID.
+        assert out["action"] == "AVOID", (
+            "bearish-lean hard block must demote ACCUMULATE→AVOID even when ceiling is bypassed; "
+            f"got: {out}"
+        )
+        assert "clamped" in out
+
+
+# ---------------------------------------------------------------------------
+# rs=None clamp matrix (item 3: extended coverage for the origination-hole fix)
+# Matrix: rs=None × {witness present, absent} × {LLM overweight/underweight} × {extended T/F}
+# ---------------------------------------------------------------------------
+
+class TestRsNoneClampMatrix:
+    """Full combinatorial matrix verifying _reconcile with rs_vs_spy_60d=None.
+
+    When rs is absent the ceiling depends entirely on whether a bullish channel witness
+    is present in the cluster's channels list.
+    """
+
+    # ---- rs=None, bullish witness PRESENT, LLM overweight ----
+
+    def test_rs_none_witness_present_llm_overweight_not_extended(self):
+        """rs=None + witness + LLM overweight + not extended → ceiling ACCUMULATE/medium."""
+        t = _make_t(lean="overweight", action="ACCUMULATE", conviction="high",
+                    weighted_score=1.2, extended=False,
+                    rs_vs_spy_60d=None, channels=[_SAMPLE_BULLISH])
+        out = _reconcile(t, min_weighted=0.9)
+        # ceiling = ACCUMULATE; LLM conviction "high" > ceiling "medium" → clamped to medium
+        assert out["action"] == "ACCUMULATE", out
+        assert out["conviction"] == "medium", out
+        assert out["lean"] == "overweight", out
+
+    def test_rs_none_witness_present_llm_overweight_extended(self):
+        """rs=None + witness + LLM overweight + extended → ceiling WATCH (entry gone)."""
+        t = _make_t(lean="overweight", action="ACCUMULATE", conviction="high",
+                    weighted_score=1.2, extended=True,
+                    rs_vs_spy_60d=None, channels=[_SAMPLE_BULLISH])
         out = _reconcile(t, min_weighted=0.9)
         assert out["action"] == "WATCH", out
-        assert "clamped" in out, out
+        assert out["conviction"] in ("medium", "low"), out
+        assert "clamped" in out
+
+    # ---- rs=None, bullish witness PRESENT, LLM underweight ----
+
+    def test_rs_none_witness_present_llm_underweight_not_extended(self):
+        """rs=None + witness + LLM underweight + not extended → LLM de-escalates lean to
+        underweight; ceiling ACCUMULATE but action de-escalated by LLM."""
+        t = _make_t(lean="underweight", action="WATCH", conviction="low",
+                    weighted_score=1.2, extended=False,
+                    rs_vs_spy_60d=None, channels=[_SAMPLE_BULLISH])
+        out = _reconcile(t, min_weighted=0.9)
+        # ceiling lean = overweight; LLM lean = underweight (rank 1 < 2) → de-escalation kept
+        assert out["lean"] == "underweight", out
+        # ceiling action = ACCUMULATE; LLM action = WATCH (rank 1 < 2) → de-escalation kept
+        assert out["action"] == "WATCH", out
+
+    def test_rs_none_witness_present_llm_underweight_extended(self):
+        """rs=None + witness + LLM underweight + extended → ceiling WATCH; LLM WATCH kept."""
+        t = _make_t(lean="underweight", action="WATCH", conviction="low",
+                    weighted_score=1.2, extended=True,
+                    rs_vs_spy_60d=None, channels=[_SAMPLE_BULLISH])
+        out = _reconcile(t, min_weighted=0.9)
+        assert out["action"] == "WATCH", out
+
+    # ---- rs=None, bullish witness ABSENT, LLM overweight ----
+
+    def test_rs_none_no_witness_llm_overweight_not_extended(self):
+        """rs=None + no witness + LLM overweight + not extended → ceiling WATCH/low (no evidence)."""
+        t = _make_t(lean="overweight", action="ACCUMULATE", conviction="high",
+                    weighted_score=1.2, extended=False,
+                    rs_vs_spy_60d=None, channels=[])
+        out = _reconcile(t, min_weighted=0.9)
+        # No directional witness → ceiling = WATCH; LLM ACCUMULATE (rank 2 > WATCH rank 1) clamped
+        assert out["action"] == "WATCH", out
+        assert out["conviction"] == "low", out
+        assert "clamped" in out
+
+    def test_rs_none_no_witness_llm_overweight_extended(self):
+        """rs=None + no witness + LLM overweight + extended → ceiling still WATCH/low."""
+        t = _make_t(lean="overweight", action="ACCUMULATE", conviction="high",
+                    weighted_score=1.2, extended=True,
+                    rs_vs_spy_60d=None, channels=[])
+        out = _reconcile(t, min_weighted=0.9)
+        assert out["action"] == "WATCH", out
+        assert out["conviction"] == "low", out
+        assert "clamped" in out
+
+    # ---- rs=None, bullish witness ABSENT, LLM underweight ----
+
+    def test_rs_none_no_witness_llm_underweight_not_extended(self):
+        """rs=None + no witness + LLM underweight + not extended → ceiling WATCH; LLM AVOID de-escalates."""
+        t = _make_t(lean="underweight", action="AVOID", conviction="low",
+                    weighted_score=1.2, extended=False,
+                    rs_vs_spy_60d=None, channels=[])
+        out = _reconcile(t, min_weighted=0.9)
+        # Ceiling WATCH (rank 1); LLM AVOID (rank 0) → de-escalation respected
+        assert out["action"] == "AVOID", out
+        assert out["lean"] == "underweight", out  # de-escalation respected; lean not clamped up
+
+    def test_rs_none_no_witness_llm_underweight_extended(self):
+        """rs=None + no witness + LLM underweight + extended → ceiling WATCH; LLM AVOID kept."""
+        t = _make_t(lean="underweight", action="AVOID", conviction="low",
+                    weighted_score=1.2, extended=True,
+                    rs_vs_spy_60d=None, channels=[])
+        out = _reconcile(t, min_weighted=0.9)
+        assert out["action"] == "AVOID", out
+
+    def test_rs_none_no_witness_llm_accumulate_always_clamped_to_watch(self):
+        """ACCUMULATE is always blocked when there is no deterministic directional witness,
+        regardless of LLM lean, weighted_score, or extended flag."""
+        for llm_lean in ("overweight", "underweight", "avoid"):
+            t = _make_t(lean=llm_lean, action="ACCUMULATE", conviction="high",
+                        weighted_score=2.0, extended=False,
+                        rs_vs_spy_60d=None, channels=[])
+            out = _reconcile(t, min_weighted=0.9)
+            assert out["action"] in ("WATCH", "AVOID"), (
+                f"lean={llm_lean}: ACCUMULATE must not pass through with no evidence; got {out['action']}"
+            )
 
 
 # ---------------------------------------------------------------------------
