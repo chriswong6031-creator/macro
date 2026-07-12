@@ -268,6 +268,20 @@ def _audit_pr_for_cycle(
             status["status"] = "diff_fetch_failed"
             return status
 
+        # SHA↔diff consistency (#2377 review residual 1): head_sha and the diff
+        # come from two separate `gh` calls. If a push landed between them, the
+        # recorded SHA would not describe the reviewed diff. Re-read the head
+        # AFTER the diff; on any drift, skip and re-audit next cycle on the new
+        # SHA — never record a verdict bound to a SHA that isn't the diff we saw.
+        head_sha_after = _get_pr_head_sha(pr_number) or ""
+        if not head_sha or head_sha_after != head_sha:
+            log.warning(
+                "metabolism_audit: PR #%d head moved during audit (%s → %s) — "
+                "skip; re-audit next cycle", pr_number,
+                head_sha[:8] or "?", head_sha_after[:8] or "?")
+            status["status"] = "head_moved_during_audit"
+            return status
+
         # Run audit
         record = audit_pr(pr_number, proposal, diff_text, head_sha, root=root)
         status["status"] = "audited"
