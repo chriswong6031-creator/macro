@@ -55,17 +55,22 @@ def validate_row(row: dict, lineno: int) -> list[str]:
     """Return list of error strings for this row (empty = valid)."""
     errors: list[str] = []
 
-    # required field presence
+    # required field presence — must exist AND be a non-empty string
+    # Note: ts_utc and source_url are explicitly nullable (not in _REQUIRED).
     for field in _REQUIRED:
         if field not in row:
             errors.append(f"line {lineno}: missing required field '{field}'")
-        elif not isinstance(row[field], (str, type(None))):
-            # all required fields are strings (or handled below)
-            pass
+        elif not isinstance(row[field], str):
+            errors.append(
+                f"line {lineno}: '{field}' must be a string, got {type(row[field]).__name__}"
+            )
+        elif not row[field].strip():
+            errors.append(f"line {lineno}: '{field}' must be non-empty")
 
-    # date format
-    date_val = row.get("date", "")
-    if date_val and not _DATE_RE.match(str(date_val)):
+    # date format — only checked when the value is present and a string
+    # (the _REQUIRED loop already catches missing/non-string/empty)
+    date_val = row.get("date")
+    if isinstance(date_val, str) and date_val.strip() and not _DATE_RE.match(date_val):
         errors.append(f"line {lineno}: 'date' must be YYYY-MM-DD, got {date_val!r}")
 
     # ts_utc: null or ISO string
@@ -74,34 +79,21 @@ def validate_row(row: dict, lineno: int) -> list[str]:
         if not isinstance(ts, str) or not _check_iso(ts):
             errors.append(f"line {lineno}: 'ts_utc' must be null or ISO 8601, got {ts!r}")
 
-    # speaker non-empty
-    if isinstance(row.get("speaker"), str) and not row["speaker"].strip():
-        errors.append(f"line {lineno}: 'speaker' must be non-empty")
-
-    # venue non-empty
-    if isinstance(row.get("venue"), str) and not row["venue"].strip():
-        errors.append(f"line {lineno}: 'venue' must be non-empty")
-
-    # quote non-empty
-    if isinstance(row.get("quote"), str) and not row["quote"].strip():
-        errors.append(f"line {lineno}: 'quote' must be non-empty")
-
-    # stance_tag enum
-    tag = row.get("stance_tag", "")
-    if tag and tag not in VALID_STANCES:
+    # stance_tag enum — unconditional: empty string is not a valid enum member
+    # (_REQUIRED loop already catches non-string/empty, but we check here too for
+    #  the enum membership so the error is specific)
+    tag = row.get("stance_tag")
+    if isinstance(tag, str) and tag not in VALID_STANCES:
         errors.append(
             f"line {lineno}: 'stance_tag' must be one of {sorted(VALID_STANCES)!r}, "
             f"got {tag!r}"
         )
 
-    # added_at ISO
-    added = row.get("added_at", "")
-    if added and not _check_iso(str(added)):
+    # added_at ISO — unconditional: empty string is not valid ISO 8601
+    # (_REQUIRED loop catches non-string/empty, but we also need format check)
+    added = row.get("added_at")
+    if isinstance(added, str) and added.strip() and not _check_iso(added):
         errors.append(f"line {lineno}: 'added_at' must be ISO 8601, got {added!r}")
-
-    # added_by non-empty
-    if isinstance(row.get("added_by"), str) and not row["added_by"].strip():
-        errors.append(f"line {lineno}: 'added_by' must be non-empty")
 
     # PS-R1 enforcement: no banned key substrings
     for key in row:

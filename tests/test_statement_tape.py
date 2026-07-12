@@ -99,6 +99,46 @@ def test_missing_required_field(field):
     assert any(field in e for e in errors), f"expected error for missing '{field}'"
 
 
+@pytest.mark.parametrize("field", ["date", "speaker", "venue", "quote", "stance_tag", "added_by", "added_at"])
+def test_empty_string_required_field_rejected(field):
+    """Empty-string values on required fields must be caught (was bypass before fix).
+
+    Prior to the fix, fields like date='', stance_tag='', added_at='' all
+    short-circuited via truthy gating and returned zero errors — the guard's
+    sole purpose is to catch curator append mistakes, so this was a correctness
+    defect.
+    """
+    row = _valid_row(**{field: ""})
+    errors = validate_row(row, 1)
+    assert any(field in e for e in errors), (
+        f"empty string for required field '{field}' was not caught — "
+        f"got errors: {errors}"
+    )
+
+
+@pytest.mark.parametrize("field,bad_value", [
+    ("quote", 123),        # int instead of str
+    ("quote", None),       # null instead of str
+    ("speaker", 42),       # int
+    ("venue", []),         # list
+    ("date", 20260711),    # int date
+    ("added_at", None),    # null instead of ISO string
+    ("added_by", False),   # bool
+])
+def test_non_string_required_field_rejected(field, bad_value):
+    """Non-string values on required fields must be caught.
+
+    Prior to the fix, isinstance() gating on quote/speaker/venue allowed
+    non-string values (int, null) to pass silently.
+    """
+    row = _valid_row(**{field: bad_value})
+    errors = validate_row(row, 1)
+    assert any(field in e for e in errors), (
+        f"non-string value {bad_value!r} for required field '{field}' was not caught — "
+        f"got errors: {errors}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # 3. Invalid stance_tag
 # ---------------------------------------------------------------------------
@@ -106,6 +146,15 @@ def test_invalid_stance_tag():
     row = _valid_row(stance_tag="bullish")  # not in VALID_STANCES
     errors = validate_row(row, 1)
     assert any("stance_tag" in e for e in errors)
+
+
+def test_empty_stance_tag_rejected():
+    """Empty string stance_tag must be rejected (was bypass before fix)."""
+    row = _valid_row(stance_tag="")
+    errors = validate_row(row, 1)
+    assert any("stance_tag" in e for e in errors), (
+        f"empty stance_tag was not caught — got: {errors}"
+    )
 
 
 def test_all_valid_stances_accepted():
