@@ -626,10 +626,12 @@ def _brief_status(health: dict | None, brain_run: dict) -> str:
         return "degraded"
     overall = health.get("overall_status", "unknown")
     cs = brain_run.get("cortex_status", "unknown")
-    if cs in ("degraded", "missing") or overall == "degraded":
+    if overall == "degraded":
         return "degraded"
-    # cortex warn (e.g. model_fallback) must surface as at least warn in the brief
-    if overall == "warn" or cs == "warn":
+    # OPERATOR RULING 2026-07-12: cortex deliberation is opportunistic (shared
+    # OAuth quota, no metered key by design) — degraded/missing cortex floors
+    # the brief at 'warn', not 'degraded'; did_the_brain_run still prints it.
+    if overall == "warn" or cs in ("degraded", "missing", "warn"):
         return "warn"
     return "ok"
 

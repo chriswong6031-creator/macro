@@ -4666,6 +4666,8 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
   function renderWebHealth(d) {
     var STATUS_META = {
       fresh:    { en: 'FRESH',    zh: '新鲜', color: 'var(--up)'   },
+      ok:       { en: 'OK',       zh: '正常', color: 'var(--up)'   },
+      warn:     { en: 'WARN',     zh: '警告', color: 'var(--warn)' },
       degraded: { en: 'DEGRADED', zh: '降级', color: 'var(--warn)' }
     };
     var st   = String(d.overall_status || 'unknown');
