@@ -1969,13 +1969,15 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (20): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+READ (25): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
            read_governance, read_artifact,
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
            read_factor_state, list_factor_contradictions, explain_factor_context,
            read_cycle_pattern_state, read_mechanism_pathways,
            read_context_candidates, read_causal_candidates,
+           read_liquidity_plumbing, read_china_decision_packet,
+           read_theme_state, read_theme_thesis, read_theme_pathways,
            read_master_brain_theses, read_master_brain_brief
 WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 

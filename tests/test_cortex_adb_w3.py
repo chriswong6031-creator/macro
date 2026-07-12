@@ -145,7 +145,8 @@ class TestFullWhitelistParity:
             )
 
     def test_every_read_tool_dispatches_without_whitelist_error(self, repo):
-        """Every _READ_TOOLS name must reach a handler (no whitelist refusal)."""
+        """Every _READ_TOOLS name must reach a handler (no whitelist refusal and no
+        forgotten-dispatch-branch: checks 'unhandled', 'unknown tool', 'not allowed')."""
         from engine.neuralweb.cortex import _READ_TOOLS, dispatch_tool
 
         # Tools that need specific params to not crash on path resolution
@@ -155,6 +156,9 @@ class TestFullWhitelistParity:
             "explain_options_context": {"ticker": "AAPL"},
         }
 
+        # ALL dispatcher-origin error substrings that indicate a tool was not routed
+        _DISPATCHER_ERROR_SUBSTRINGS = ("not allowed", "unknown tool", "unhandled")
+
         census: dict = {}
         for tool_name in _READ_TOOLS:
             params = _PARAM_OVERRIDES.get(tool_name, {})
@@ -162,13 +166,12 @@ class TestFullWhitelistParity:
                 tool_name, params, repo, _NOW_STR, _PROBATION, census
             )
             error_msg = str(result.get("error", "")).lower()
-            assert "not allowed" not in error_msg, (
-                f"read tool {tool_name!r} was refused by whitelist — "
-                f"registration missing from _ALLOWED_TOOLS or dispatch_tool"
-            )
-            assert "unknown tool" not in error_msg, (
-                f"read tool {tool_name!r} returned 'unknown tool' from dispatcher"
-            )
+            for bad in _DISPATCHER_ERROR_SUBSTRINGS:
+                assert bad not in error_msg, (
+                    f"read tool {tool_name!r} returned dispatcher error containing "
+                    f"{bad!r} — registration missing from _ALLOWED_TOOLS or "
+                    f"dispatch_tool has an unrouted branch"
+                )
 
     def test_no_duplicate_schema_names(self):
         """_tool_schemas() must not contain duplicate names."""
@@ -179,6 +182,29 @@ class TestFullWhitelistParity:
         for n in names:
             assert n not in seen, f"duplicate schema name: {n!r}"
             seen.add(n)
+
+    def test_prompt_read_count_matches_read_tools(self):
+        """The 'READ (N)' count advertised in the deliberation system prompt must equal
+        len(_READ_TOOLS).  Fails loudly if someone adds a tool without updating the prompt
+        or vice-versa (prompt drift guard)."""
+        import re
+        import inspect
+        from engine.neuralweb.cortex import _READ_TOOLS
+
+        # Import the module to get the source with the prompt constant
+        import engine.neuralweb.cortex as _cortex_mod
+        source = inspect.getsource(_cortex_mod)
+
+        match = re.search(r"READ\s*\((\d+)\)", source)
+        assert match is not None, (
+            "Could not find 'READ (N)' pattern in cortex.py — prompt format changed"
+        )
+        advertised = int(match.group(1))
+        actual = len(_READ_TOOLS)
+        assert advertised == actual, (
+            f"Prompt says 'READ ({advertised})' but _READ_TOOLS has {actual} entries — "
+            f"update the READ count in the deliberation system prompt to match"
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -1541,6 +1541,7 @@ artifacts:
     consumers:
       - engine/master_brain_scorer.py
       - engine/desk_scorer.py
+      - engine/neuralweb/cortex.py
     external_consumers: []
     notes: >
       unfederated — different grain, joins the spine index via adapter;
@@ -1549,6 +1550,7 @@ artifacts:
       Schema=master_brain_track_record.v1. Cross-asset leans; rel_return falsifier.
       Calibration note: tiny sample / accountability-not-validated-edge.
       track_record.json co-located.
+      ADB-R16 (ADB-W3): cortex.py reads via read_master_brain_theses tool.
 
   # --- W2 sweep 9: BTC Override Ledger ---
   btc-override-ledger:
