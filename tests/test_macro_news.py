@@ -422,3 +422,32 @@ def test_macro_synthesis_read_is_bilingual_and_deslugged():
     # empty tape is bilingual too
     empty = mn._synthesis([])
     assert empty["read"] and empty["read_zh"]
+
+
+def test_macro_synthesis_top_channels_carry_bilingual_labels():
+    """top_channels entries ship {name, count, label_en, label_zh} so channel
+    chips render plain words in both languages (doctrine Law 2 — no raw slugs);
+    `name` stays the raw slug for machine consumers."""
+    heads = mn.filter_headlines([{
+        "title": "Federal Reserve rate decision lifts Treasury yields and bank stocks",
+        "domain": "federalreserve.gov",
+        "source": "official",
+        "source_name": "Federal Reserve",
+        "source_tier": "official",
+        "seendate": "2026-06-18T10:00:00+00:00",
+        "url": "https://example.com",
+    }], {"max_show": 5})
+    syn = mn._synthesis(heads)
+    assert syn["top_channels"]
+    for ch in syn["top_channels"]:
+        assert ch["name"]  # machine slug retained
+        assert ch["count"] >= 1
+        assert ch["label_en"] and "_" not in ch["label_en"]
+        assert ch["label_zh"]
+    # mapped slugs get a true ZH twin, not just de-underscored EN
+    mapped = [ch for ch in syn["top_channels"] if ch["name"] in mn.CHANNEL_LABEL]
+    assert mapped
+    assert all(any("一" <= c <= "鿿" for c in ch["label_zh"]) for ch in mapped)
+    # unmapped slugs de-underscore instead of leaking raw
+    en, zh = mn._slug_label("some_new_channel", mn.CHANNEL_LABEL)
+    assert en == "some new channel" and zh == "some new channel"

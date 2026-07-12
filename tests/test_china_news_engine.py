@@ -98,6 +98,34 @@ def test_china_synthesis_summarizes_channels_and_tickers() -> None:
     assert syn["top_tickers"]
 
 
+def test_china_synthesis_top_channels_carry_bilingual_labels() -> None:
+    """top_channels entries ship {name, count, label_en, label_zh} so channel
+    chips render plain words in both languages (doctrine Law 2 — no raw slugs);
+    `name` stays the raw slug for machine consumers."""
+    heads = cn.filter_flashes([{
+        "title": "Chinese stocks rally as PBOC liquidity and yuan support lift CSI 300",
+        "summary": "",
+        "time": "2026-06-20T12:00:00+00:00",
+        "url": "https://example.com",
+        "source": "gdelt",
+        "source_name": "reuters.com",
+        "source_tier": "wire",
+    }], {"max_show": 5})
+    syn = cn._synthesis(heads)
+    assert syn["top_channels"]
+    for ch in syn["top_channels"]:
+        assert ch["name"]  # machine slug retained
+        assert ch["count"] >= 1
+        assert ch["label_en"] and "_" not in ch["label_en"]
+        assert ch["label_zh"]
+    # mapped slugs get a true ZH twin, not just de-underscored EN
+    mapped = [ch for ch in syn["top_channels"] if ch["name"] in cn.CHANNEL_LABEL]
+    assert mapped
+    assert all(any("一" <= c <= "鿿" for c in ch["label_zh"]) for ch in mapped)
+    # unmapped slugs de-underscore instead of leaking raw
+    assert cn._slug_label("some_new_channel") == ("some new channel", "some new channel")
+
+
 def test_chinese_native_story_carries_zh_title_and_priority() -> None:
     items = [{
         "title": "上市公司密集启动增持回购 A股市场情绪回暖",

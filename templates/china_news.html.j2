@@ -186,7 +186,7 @@
       <section class="rail-card">
         <h2>{{ t('Feed intelligence', '新闻情报') }}</h2>
         {% if SYN.read %}<div class="line"><div class="date">{{ t('Read', '读数') }}</div><div class="main">{{ SYN.read }}</div></div>{% endif %}
-        <div class="line"><div class="date">{{ t('Channels', '通道') }}</div><div class="main">{% for c in SYN_CHANNELS[:5] %}<span class="tag">{{ c.name }}</span>{% else %}{{ t('No channel cluster yet', '暂无通道聚类') }}{% endfor %}</div></div>
+        <div class="line"><div class="date">{{ t('Channels', '通道') }}</div><div class="main">{% for c in SYN_CHANNELS[:5] %}<span class="tag">{{ t(c.get('label_en') or c.name|replace('_',' '), c.get('label_zh') or c.get('label_en') or c.name|replace('_',' ')) }}</span>{% else %}{{ t('No channel cluster yet', '暂无通道聚类') }}{% endfor %}</div></div>
         <div class="line"><div class="date">{{ t('Tickers', '标的') }}</div><div class="main">{% for tk in SYN_TICKERS[:7] %}<span class="tag">{{ tk.ticker }}</span>{% else %}{{ t('No proxy tags yet', '暂无代理标的') }}{% endfor %}</div></div>
         <div class="line"><div class="date">{{ t('Sources', '来源') }}</div><div class="main">{% for s in SYN_SOURCES[:4] %}<span class="tag">{{ s.tier }} {{ s.count }}</span>{% else %}{{ t('No source mix yet', '暂无来源结构') }}{% endfor %}</div></div>
       </section>

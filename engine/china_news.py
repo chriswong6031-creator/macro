@@ -155,6 +155,28 @@ CHANNEL_KEYWORDS: dict[str, list[str]] = {
     "commodities": ["铜", "煤", "钢", "原油", "稀土", "commodity", "production materials"],
 }
 
+# channel slug -> (EN plain words, ZH) for user-facing chips — the doctrine bans
+# raw slugs on glance surfaces, so the engine de-slugs at the source. Covers
+# CHANNEL_KEYWORDS keys; unmapped slugs de-underscore via _slug_label.
+CHANNEL_LABEL: dict[str, tuple[str, str]] = {
+    "pboc_liquidity": ("PBOC & liquidity", "央行与流动性"),
+    "credit_impulse": ("credit & financing", "信贷与社融"),
+    "property": ("property", "房地产"),
+    "consumer": ("consumer", "消费"),
+    "industrial": ("industry & manufacturing", "工业与制造业"),
+    "fiscal_trade": ("fiscal & trade", "财政与贸易"),
+    "markets": ("equity market", "股票市场"),
+    "yuan": ("yuan & FX", "人民币与汇率"),
+    "tech_policy": ("tech policy", "科技政策"),
+    "commodities": ("commodities", "大宗商品"),
+}
+
+
+def _slug_label(slug: str) -> tuple[str, str]:
+    """(EN, ZH) display pair for a channel slug; unmapped slugs de-underscore."""
+    return CHANNEL_LABEL.get(slug) or (slug.replace("_", " "), slug.replace("_", " "))
+
+
 TICKER_RULES: list[tuple[str, list[str]]] = [
     ("510300.SS", ["沪深300", "csi 300", "a股", "a-share", "上证", "capital market"]),
     ("ASHR", ["a-share", "a shares", "a股", "沪深"]),
@@ -752,10 +774,16 @@ def _synthesis(headlines: list[dict]) -> dict:
     dom_theme = themes.most_common(1)[0][0] if themes else "macro"
     read = f"{high} high-impact China items; dominant channel {dom_channel or dom_theme}; source mix " \
            + ", ".join(f"{k}:{v}" for k, v in sources.most_common(3))
+    # channel chips carry bilingual labels; `name` stays the raw slug for
+    # machine consumers (additive — templates fall back to name on old artifacts)
+    top_channels = []
+    for k, v in channels.most_common(7):
+        en, zh = _slug_label(k)
+        top_channels.append({"name": k, "count": v, "label_en": en, "label_zh": zh})
     return {
         "high_impact_count": high,
         "avg_importance": round(sum(float(h.get("importance_score", 0) or 0) for h in headlines) / len(headlines), 1),
-        "top_channels": [{"name": k, "count": v} for k, v in channels.most_common(7)],
+        "top_channels": top_channels,
         "top_tickers": [{"ticker": k, "count": v} for k, v in tickers.most_common(9)],
         "top_themes": [{"theme": k, "count": v} for k, v in themes.most_common(7)],
         "source_mix": [{"tier": k, "count": v} for k, v in sources.most_common(5)],

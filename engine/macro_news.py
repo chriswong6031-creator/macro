@@ -706,10 +706,16 @@ def _synthesis(headlines: list[dict]) -> dict:
             + ", ".join(f"{t[0]} {v}" for t, v in mix))
     read_zh = (f"{high} 条高影响信息；主导渠道：{ch_zh}；来源："
                + "、".join(f"{t[1]} {v}" for t, v in mix))
+    # channel chips carry bilingual labels; `name` stays the raw slug for
+    # machine consumers (additive — templates fall back to name on old artifacts)
+    top_channels = []
+    for k, v in channels.most_common(6):
+        en, zh = _slug_label(k, CHANNEL_LABEL)
+        top_channels.append({"name": k, "count": v, "label_en": en, "label_zh": zh})
     return {
         "high_impact_count": high,
         "avg_importance": round(sum(float(h.get("importance_score", 0) or 0) for h in headlines) / len(headlines), 1),
-        "top_channels": [{"name": k, "count": v} for k, v in channels.most_common(6)],
+        "top_channels": top_channels,
         "top_tickers": [{"ticker": k, "count": v} for k, v in tickers.most_common(8)],
         "top_themes": [{"theme": k, "count": v} for k, v in themes.most_common(6)],
         "source_mix": [{"tier": k, "count": v} for k, v in sources.most_common(5)],

@@ -787,7 +787,7 @@
         {% if SYN.read %}<div class="rail-line"><div class="rail-date">{{ t('Read','读数') }}</div><div class="rail-main">{{ t(SYN.read, SYN.get('read_zh') or SYN.read) }}</div></div>{% endif %}
         <div class="rail-line">
           <div class="rail-date">{{ t('Channels','通道') }}</div>
-          <div class="rail-main">{% for c in SYN_CHANNELS[:5] %}<span class="rail-tag">{{ c.name }}</span>{% else %}<span class="mut">{{ t('No channel cluster yet','暂无通道聚类') }}</span>{% endfor %}</div>
+          <div class="rail-main">{% for c in SYN_CHANNELS[:5] %}<span class="rail-tag">{{ t(c.get('label_en') or c.name|replace('_',' '), c.get('label_zh') or c.get('label_en') or c.name|replace('_',' ')) }}</span>{% else %}<span class="mut">{{ t('No channel cluster yet','暂无通道聚类') }}</span>{% endfor %}</div>
         </div>
         <div class="rail-line">
           <div class="rail-date">{{ t('Tickers','标的') }}</div>
