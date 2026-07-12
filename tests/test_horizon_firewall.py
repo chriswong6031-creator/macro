@@ -449,6 +449,9 @@ class TestRealRegistryFirewallClean:
             # LHB-W1 A3 Delivery Waterfall (LHB-R4) — display-only, horizon_role=hold_thesis
             "long-hold-delivery-waterfall",
             "long-hold-delivery-waterfall-panel",
+            # LHB-W3 A1 Falsifier Packet (LHB-R2/R3) — display-only, horizon_role=hold_thesis
+            "long-hold-falsifier-packets",
+            "long-hold-falsifier-packets-manifest",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {

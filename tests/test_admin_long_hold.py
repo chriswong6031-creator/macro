@@ -18,7 +18,8 @@ def test_panel_smoke():
     """panel() never raises and always returns ok=True with the top-level shape."""
     d = long_hold.panel()
     assert d["ok"] is True
-    for key in ("winner_autopsy", "thesis_funnel", "labels", "delivery_waterfall"):
+    for key in ("winner_autopsy", "thesis_funnel", "labels", "delivery_waterfall",
+                "falsifier_packets"):
         assert key in d
         assert isinstance(d[key], dict)
 
@@ -30,6 +31,7 @@ def test_graceful_degradation_all_missing(tmp_path, monkeypatch):
     monkeypatch.setattr(long_hold, "_THESIS_FUNNEL", missing)
     monkeypatch.setattr(long_hold, "_LABELS", missing)
     monkeypatch.setattr(long_hold, "_WATERFALL", missing)
+    monkeypatch.setattr(long_hold, "_FALSIFIER_PACKETS_MANIFEST", missing)
 
     d = long_hold.panel()
     assert d["ok"] is True
@@ -39,6 +41,7 @@ def test_graceful_degradation_all_missing(tmp_path, monkeypatch):
     assert d["thesis_funnel"]["available"] is False
     assert d["labels"]["available"] is False
     assert d["delivery_waterfall"]["available"] is False
+    assert d["falsifier_packets"]["available"] is False
 
 
 def test_synthetic_happy_path(tmp_path, monkeypatch):
@@ -179,6 +182,133 @@ def test_panel_smoke_includes_waterfall():
     assert d["ok"] is True
     assert "delivery_waterfall" in d
     assert isinstance(d["delivery_waterfall"], dict)
+
+
+# ---------------------------------------------------------------------------
+# falsifier_packets sub-block (LHB-W3 A1 packet manifest)
+# ---------------------------------------------------------------------------
+
+def test_panel_smoke_includes_falsifier_packets():
+    """panel() returns falsifier_packets key (fail-open ok)."""
+    d = long_hold.panel()
+    assert d["ok"] is True
+    assert "falsifier_packets" in d
+    assert isinstance(d["falsifier_packets"], dict)
+
+
+def test_falsifier_packets_block_missing_file(tmp_path, monkeypatch):
+    """_falsifier_packets_block() fails open when manifest is missing."""
+    missing = tmp_path / "nope.json"
+    monkeypatch.setattr(long_hold, "_FALSIFIER_PACKETS_MANIFEST", missing)
+
+    d = long_hold.panel()
+    assert d["ok"] is True
+    fp = d["falsifier_packets"]
+    assert fp["available"] is False
+    assert "reason" in fp
+
+
+def test_falsifier_packets_block_happy_path(tmp_path, monkeypatch):
+    """A conforming falsifier_packets_manifest.json is surfaced through the panel."""
+    import json
+    manifest_obj = {
+        "schema": "falsifier_packets_manifest.v1",
+        "generated_at": "2026-07-12T10:00:00+00:00",
+        "_display_only": True,
+        "_horizon_role": "hold_thesis",
+        "_version": "v1",
+        "n_tickers": 1703,
+        "n_with_signal": 842,
+        "n_summary_only": 861,
+        "sensor_status_counts": {
+            "challenged": 1200,
+            "no_break_observed": 900,
+            "not_observed": 400,
+            "unverifiable": 500,
+            "broken": 3,
+        },
+        "a6_item_counts": {
+            "5.02": 420,
+            "1.02": 38,
+            "2.04": 2,
+            "1.03": 3,
+        },
+        "elapsed_seconds": 12.4,
+    }
+    p = tmp_path / "falsifier_packets_manifest.json"
+    p.write_text(json.dumps(manifest_obj))
+    monkeypatch.setattr(long_hold, "_FALSIFIER_PACKETS_MANIFEST", p)
+
+    d = long_hold.panel()
+    assert d["ok"] is True
+    fp = d["falsifier_packets"]
+    assert fp["available"] is True
+    assert fp["generated_at"] == "2026-07-12T10:00:00+00:00"
+    assert fp["n_tickers"] == 1703
+    assert fp["n_with_signal"] == 842
+    assert fp["n_summary_only"] == 861
+    assert "sensor_status_counts" in fp
+    assert fp["sensor_status_counts"]["challenged"] == 1200
+    assert "a6_item_counts" in fp
+    assert fp["a6_item_counts"]["1.03"] == 3
+    assert "ffb_r2_coverage_copy" in fp
+    # Verify FFB-R2 copy is present in the admin block
+    assert "A6 is a hard-stop bus" in fp["ffb_r2_coverage_copy"]
+
+
+def test_falsifier_packets_block_packet_vocab_assertion(tmp_path, monkeypatch):
+    """Packet status values in manifest must not contain values outside the five-word vocab.
+
+    The manifest carries sensor_status_counts whose keys must be in the valid
+    vocabulary (LHB-R3). This test asserts that the panel block exposes those counts
+    and that the test fixture itself only uses valid vocab keys.
+    """
+    import json
+    _VALID_STATUSES = {"not_observed", "no_break_observed", "challenged", "broken", "unverifiable"}
+    manifest_obj = {
+        "schema": "falsifier_packets_manifest.v1",
+        "generated_at": "2026-07-12T10:00:00+00:00",
+        "n_tickers": 10,
+        "n_with_signal": 5,
+        "n_summary_only": 5,
+        "sensor_status_counts": {
+            "challenged": 8,
+            "no_break_observed": 12,
+            "not_observed": 4,
+            "unverifiable": 6,
+            "broken": 1,
+        },
+        "a6_item_counts": {"1.03": 1},
+    }
+    p = tmp_path / "falsifier_packets_manifest.json"
+    p.write_text(json.dumps(manifest_obj))
+    monkeypatch.setattr(long_hold, "_FALSIFIER_PACKETS_MANIFEST", p)
+
+    d = long_hold.panel()
+    fp = d["falsifier_packets"]
+    assert fp["available"] is True
+
+    # Assert all status keys in the surfaced block are in valid vocab
+    for status_key in fp["sensor_status_counts"].keys():
+        assert status_key in _VALID_STATUSES, (
+            f"Invalid status key in sensor_status_counts: {status_key!r}. "
+            f"Valid statuses: {_VALID_STATUSES}"
+        )
+
+
+def test_graceful_degradation_includes_falsifier_packets(tmp_path, monkeypatch):
+    """With all artifacts missing, falsifier_packets fails open."""
+    missing = tmp_path / "nope.json"
+    monkeypatch.setattr(long_hold, "_WINNER_PANEL", missing)
+    monkeypatch.setattr(long_hold, "_THESIS_FUNNEL", missing)
+    monkeypatch.setattr(long_hold, "_LABELS", missing)
+    monkeypatch.setattr(long_hold, "_WATERFALL", missing)
+    monkeypatch.setattr(long_hold, "_FALSIFIER_PACKETS_MANIFEST", missing)
+
+    d = long_hold.panel()
+    assert d["ok"] is True
+    assert "falsifier_packets" in d
+    assert d["falsifier_packets"]["available"] is False
 
 
 def test_watch_top_trimmed_to_15(tmp_path, monkeypatch):

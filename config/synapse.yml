@@ -6193,6 +6193,70 @@ artifacts:
       strata (S&P 1500 / non-S&P US common / FPI-ADR) permanently separate.
       authority.may_rank/gate/size/escalate=false. fdr_family=long_hold (LH-R5).
 
+  # --- Long-Hold LHB-W3: A1 Falsifier Packets (per-ticker, JSON) ---
+  long-hold-falsifier-packets:
+    path: data/research/falsifier_packets.json
+    format: json
+    producer: scripts/research/build_falsifier_packets.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: r2
+    asof_field: generated_at
+    freshness_sla_hours: 8760
+    schema: falsifier_packets.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers: []
+    external_consumers: []
+    notes: >
+      LHB-W3 (A1 Falsifier Packet). Per-ticker evidence freshness packet assembled
+      from thesis_funnel_states.parquet, delivery_waterfall.parquet, material_8k_events.parquet,
+      and statements.parquet. Two axes: business_evidence_axis (per-sensor status from the
+      five-word vocab: not_observed|no_break_observed|challenged|broken|unverifiable) and
+      expectation_burden_axis (EV/sales: ev_sales_current shown; percentile unverifiable
+      in batch build — historical price data required for own-history ranking).
+      A6 hard-stop bus: Item 1.03 → broken (only auto-broken, permanent); 1.02/2.04/3.01/3.02/4.02/5.02
+      → challenged with named review label (staleness-gated: stale challenged events dropped).
+      Archetype-blind in v1.
+      FFB-R2 verbatim coverage copy in every packet header.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert triage,
+      top-setups gates, or push floor (LHB-R2 / LH-R1). fdr_family=long_hold (LH-R5).
+      No scored_path_surfaces. Zero hypothesis slots.
+      storage=r2: artifact is ~15MB (per-ticker JSON); not committed to git.
+      The manifest (long-hold-falsifier-packets-manifest) stays in git and is the
+      in-repo summary; admin/long_hold.py reads the manifest, not the packets file.
+
+  # --- Long-Hold LHB-W3: A1 Falsifier Packets Manifest (build summary) ---
+  long-hold-falsifier-packets-manifest:
+    path: data/research/falsifier_packets_manifest.json
+    format: json
+    producer: scripts/research/build_falsifier_packets.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 8760
+    schema: falsifier_packets_manifest.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - admin/long_hold.py
+    external_consumers: []
+    notes: >
+      LHB-W3 build manifest for long-hold-falsifier-packets. Contains summary counts
+      (n_tickers, n_with_signal, n_summary_only), sensor_status_counts across all tickers,
+      a6_item_counts, and build elapsed_seconds. Read by admin/long_hold.py falsifier_packets
+      sub-block. FIREWALL: horizon_role=hold_thesis. fdr_family=long_hold (LH-R5).
+      No scored_path_surfaces.
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json
