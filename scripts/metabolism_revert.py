@@ -466,6 +466,81 @@ def _remove_revert_worktree(branch: str, wt_path: str | None, root: Path) -> Non
         log.warning("metabolism_revert._remove_revert_worktree: %s", exc)
 
 
+def _revert_already_applied(merge_sha: str, wt_path: str) -> bool:
+    """Return True if a revert of merge_sha is already present on this branch.
+
+    FIX-B2 idempotency: on a retry the revert commit is already on the branch
+    (attempt-1 succeeded at revert+push; only gh pr create failed).  Detect
+    this by scanning git log for a commit whose subject starts with 'Revert '
+    and whose body references merge_sha.
+
+    Falls back to False on any error (conservative: re-attempt the revert,
+    which will then produce a 'nothing to commit' exit-1 that we also handle).
+    NEVER raises.
+    """
+    try:
+        # Search log for a revert commit mentioning the sha
+        short_sha = merge_sha[:12]
+        result = subprocess.run(
+            ["git", "log", "--oneline", "--grep", f"Revert", "-n", "20"],
+            cwd=wt_path, capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            return False
+        # Any line containing the short sha in the revert commits?
+        for line in result.stdout.splitlines():
+            if short_sha in line or merge_sha in line:
+                log.info(
+                    "metabolism_revert._revert_already_applied: found revert "
+                    "commit for sha=%s on branch: %s",
+                    merge_sha, line.strip(),
+                )
+                return True
+        # Also check full log body for the sha
+        result2 = subprocess.run(
+            ["git", "log", "-n", "20", "--format=%H %s %b"],
+            cwd=wt_path, capture_output=True, text=True, timeout=30,
+        )
+        if result2.returncode == 0:
+            if merge_sha in result2.stdout or short_sha in result2.stdout:
+                log.info(
+                    "metabolism_revert._revert_already_applied: sha %s found "
+                    "in recent log body — revert already applied",
+                    merge_sha,
+                )
+                return True
+        return False
+    except Exception as exc:  # noqa: BLE001
+        log.warning(
+            "metabolism_revert._revert_already_applied(%s): %s — "
+            "assuming not yet applied", merge_sha, exc,
+        )
+        return False
+
+
+def _revert_head_exists(wt_path: str) -> bool:
+    """Return True if REVERT_HEAD file exists in the git dir (revert in progress).
+
+    Used to guard 'git revert --abort' — calling --abort when no revert is in
+    progress exits 128 and could leave the worktree in a confusing state.
+    NEVER raises.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--git-dir"],
+            cwd=wt_path, capture_output=True, text=True, timeout=10,
+        )
+        if result.returncode != 0:
+            return False
+        git_dir = Path(result.stdout.strip())
+        if not git_dir.is_absolute():
+            git_dir = Path(wt_path) / git_dir
+        return (git_dir / "REVERT_HEAD").exists()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_revert._revert_head_exists: %s", exc)
+        return False
+
+
 # ── PR opening ──��─────────────────────────────────────────────────────────────
 
 def _push_revert_branch(branch: str, wt_path: str, root: Path) -> bool:
@@ -666,23 +741,58 @@ def _process_one_plan(
                 revert_ok = True
                 log.info("metabolism_revert [dry-run] would git revert %s", merge_sha)
             else:
-                rv = subprocess.run(
-                    ["git", "revert", merge_sha, "--no-edit"],
-                    cwd=wt_path, capture_output=True, text=True, timeout=120,
-                )
-                if rv.returncode == 0:
+                # FIX-B2 idempotency: on a retry the revert commit may already
+                # be on this branch (attempt-1 succeeded at revert+push but
+                # gh pr create failed).  Skip the revert step and proceed
+                # directly to push+PR-open if it's already there.
+                if _revert_already_applied(merge_sha, wt_path):
+                    log.info(
+                        "metabolism_revert: revert of sha=%s already applied "
+                        "on branch — skipping git revert (retry path)",
+                        merge_sha,
+                    )
                     revert_ok = True
                 else:
-                    conflict_detail = (rv.stderr or rv.stdout or "")[:400]
-                    log.warning(
-                        "metabolism_revert: git revert conflict for sha=%s: %s",
-                        merge_sha, conflict_detail,
+                    rv = subprocess.run(
+                        ["git", "revert", merge_sha, "--no-edit"],
+                        cwd=wt_path, capture_output=True, text=True, timeout=120,
                     )
-                    # Abort the conflicted revert — NEVER force
-                    subprocess.run(
-                        ["git", "revert", "--abort"],
-                        cwd=wt_path, capture_output=True, timeout=30,
-                    )
+                    if rv.returncode == 0:
+                        revert_ok = True
+                    else:
+                        conflict_detail = (rv.stderr or rv.stdout or "")[:400]
+                        # FIX-B2: "nothing to commit" means the revert is
+                        # already applied even though _revert_already_applied
+                        # missed it.  Treat as success rather than failure.
+                        nothing_to_commit = (
+                            "nothing to commit" in conflict_detail.lower()
+                            or "nothing added to commit" in conflict_detail.lower()
+                        )
+                        if nothing_to_commit:
+                            log.info(
+                                "metabolism_revert: git revert sha=%s returned "
+                                "'nothing to commit' — revert already applied; "
+                                "treating as success",
+                                merge_sha,
+                            )
+                            revert_ok = True
+                        else:
+                            log.warning(
+                                "metabolism_revert: git revert conflict for sha=%s: %s",
+                                merge_sha, conflict_detail,
+                            )
+                            # Abort ONLY when REVERT_HEAD exists to avoid
+                            # exit-128 on a no-op --abort call.
+                            if _revert_head_exists(wt_path):
+                                subprocess.run(
+                                    ["git", "revert", "--abort"],
+                                    cwd=wt_path, capture_output=True, timeout=30,
+                                )
+                            else:
+                                log.info(
+                                    "metabolism_revert: REVERT_HEAD not present "
+                                    "— skipping git revert --abort"
+                                )
 
             if not revert_ok:
                 msg = (

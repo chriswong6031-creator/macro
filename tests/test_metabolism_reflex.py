@@ -1550,6 +1550,358 @@ class TestRevertWorktreeBranchAlreadyExists:
         )
 
 
+class TestRevertIdempotentRetryPath:
+    """FIX-B2 idempotency: retry where branch already has revert commit does NOT
+    re-run git revert (no 'nothing to commit' infinite-fail loop).
+    """
+
+    def test_retry_skips_revert_when_already_applied(self):
+        """Attempt-1 pushes revert commit + PR-create fails.
+        Attempt-2: _revert_already_applied returns True →
+        git revert is NOT called → PR opened → plan marked revert_pr_opened.
+        """
+        mr = _import_revert()
+        d = _tmp_root()
+        pid = "p_idem_retry"
+
+        # Track whether git revert --no-edit was called
+        revert_cmd_calls: list = []
+        pr_open_calls = [0]
+
+        def fake_open_pr_fail_then_ok(*args, **kwargs):
+            pr_open_calls[0] += 1
+            if pr_open_calls[0] == 1:
+                return {"pr_number": None, "pr_url": None, "opened": False,
+                        "error": "gh: transient error"}
+            return {"pr_number": 300, "pr_url": "https://example.com/300",
+                    "opened": True}
+
+        fake_run_ok = MagicMock()
+        fake_run_ok.returncode = 0
+        fake_run_ok.stdout = ""
+        fake_run_ok.stderr = ""
+
+        env = _armed_env()
+
+        # ── Attempt 1: fresh branch, revert ok, push ok, PR-create fails ──
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mr, "_resolve_pr_number", return_value=55):
+                with patch.object(mr, "_resolve_merge_sha", return_value="sha_idem"):
+                    with patch.object(mr, "_create_revert_worktree",
+                                      return_value={"wt_path": tempfile.mkdtemp(),
+                                                    "error": None}):
+                        with patch.object(mr, "_remove_revert_worktree"):
+                            with patch.object(mr, "_push_revert_branch",
+                                              return_value=True):
+                                with patch.object(mr, "_open_draft_revert_pr",
+                                                  side_effect=fake_open_pr_fail_then_ok):
+                                    # _revert_already_applied returns False on first attempt
+                                    with patch.object(mr, "_revert_already_applied",
+                                                      return_value=False):
+                                        with patch("subprocess.run",
+                                                   return_value=fake_run_ok):
+                                            result1 = mr._process_one_plan(
+                                                {"proposal_id": pid,
+                                                 "cycle_id": "cycle-idem",
+                                                 "verify_path": "/fake",
+                                                 "revert_plan": {"action": "git_revert",
+                                                                 "target": "test"},
+                                                 "do_not_rebuild_row": {}},
+                                                d,
+                                                dry_run=False,
+                                            )
+
+        assert result1.get("status") == "revert_pr_open_failed"
+        assert not mr._is_actioned(pid, d), "Must remain retryable after attempt 1"
+
+        # ── Attempt 2: branch already has revert commit ──
+        # _revert_already_applied returns True → git revert must NOT be called
+        def fake_run_assert_no_revert(cmd, **kwargs):
+            if "revert" in cmd and "--no-edit" in cmd:
+                revert_cmd_calls.append(cmd)
+            return fake_run_ok
+
+        wt2 = tempfile.mkdtemp(prefix="fake_wt_idem_")
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mr, "_resolve_pr_number", return_value=55):
+                with patch.object(mr, "_resolve_merge_sha", return_value="sha_idem"):
+                    with patch.object(mr, "_create_revert_worktree",
+                                      return_value={"wt_path": wt2, "error": None}):
+                        with patch.object(mr, "_remove_revert_worktree"):
+                            with patch.object(mr, "_push_revert_branch",
+                                              return_value=True):
+                                with patch.object(mr, "_open_draft_revert_pr",
+                                                  side_effect=fake_open_pr_fail_then_ok):
+                                    # KEY: revert already applied on this branch
+                                    with patch.object(mr, "_revert_already_applied",
+                                                      return_value=True):
+                                        with patch("subprocess.run",
+                                                   side_effect=fake_run_assert_no_revert):
+                                            result2 = mr._process_one_plan(
+                                                {"proposal_id": pid,
+                                                 "cycle_id": "cycle-idem",
+                                                 "verify_path": "/fake",
+                                                 "revert_plan": {"action": "git_revert",
+                                                                 "target": "test"},
+                                                 "do_not_rebuild_row": {}},
+                                                d,
+                                                dry_run=False,
+                                            )
+
+        # git revert --no-edit must NOT have been called on attempt 2
+        assert len(revert_cmd_calls) == 0, (
+            "FIX-B2: git revert --no-edit must NOT be called when "
+            f"_revert_already_applied returns True; calls={revert_cmd_calls}"
+        )
+        assert result2.get("status") == "revert_pr_opened", (
+            f"FIX-B2: attempt 2 must open the PR successfully, got {result2.get('status')!r}"
+        )
+        assert mr._is_actioned(pid, d), "Plan must be permanently actioned after PR open"
+        marker = json.loads(
+            (d / "data" / "metabolism" / "revert" / f"{pid}.json").read_text()
+        )
+        assert marker.get("status") == "revert_pr_opened"
+
+    def test_nothing_to_commit_treated_as_success(self):
+        """When git revert exits 1 with 'nothing to commit', plan proceeds to
+        PR-open rather than being marked revert_conflict (the fallback path for
+        when _revert_already_applied misses the commit).
+        """
+        mr = _import_revert()
+        d = _tmp_root()
+        pid = "p_ntc"
+
+        # git revert --no-edit returns exit 1 with "nothing to commit"
+        fake_run_nothing = MagicMock()
+        fake_run_nothing.returncode = 1
+        fake_run_nothing.stdout = ""
+        fake_run_nothing.stderr = "nothing to commit, working tree clean"
+
+        fake_run_ok = MagicMock()
+        fake_run_ok.returncode = 0
+        fake_run_ok.stdout = ""
+        fake_run_ok.stderr = ""
+
+        def fake_run_dispatch(cmd, **kwargs):
+            if "revert" in cmd and "--no-edit" in cmd:
+                return fake_run_nothing
+            return fake_run_ok
+
+        env = _armed_env()
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mr, "_resolve_pr_number", return_value=77):
+                with patch.object(mr, "_resolve_merge_sha", return_value="sha_ntc"):
+                    with patch.object(mr, "_create_revert_worktree",
+                                      return_value={"wt_path": tempfile.mkdtemp(),
+                                                    "error": None}):
+                        with patch.object(mr, "_remove_revert_worktree"):
+                            with patch.object(mr, "_push_revert_branch",
+                                              return_value=True):
+                                with patch.object(mr, "_open_draft_revert_pr",
+                                                  return_value={"pr_number": 400,
+                                                                "pr_url": "https://example.com/400",
+                                                                "opened": True}):
+                                    # _revert_already_applied returns False so we fall
+                                    # through to the git revert call
+                                    with patch.object(mr, "_revert_already_applied",
+                                                      return_value=False):
+                                        with patch("subprocess.run",
+                                                   side_effect=fake_run_dispatch):
+                                            result = mr._process_one_plan(
+                                                {"proposal_id": pid,
+                                                 "cycle_id": "cycle-ntc",
+                                                 "verify_path": "/fake",
+                                                 "revert_plan": {"action": "git_revert",
+                                                                 "target": "test"},
+                                                 "do_not_rebuild_row": {}},
+                                                d,
+                                                dry_run=False,
+                                            )
+
+        assert result.get("status") == "revert_pr_opened", (
+            "FIX-B2: 'nothing to commit' must be treated as success "
+            f"(revert already applied), got {result.get('status')!r}"
+        )
+
+    def test_fresh_plan_still_runs_git_revert(self):
+        """Happy path (no existing branch): git revert IS called once and
+        plan is marked revert_pr_opened.
+        """
+        mr = _import_revert()
+        d = _tmp_root()
+        pid = "p_fresh_revert"
+
+        revert_calls: list = []
+
+        fake_run_ok = MagicMock()
+        fake_run_ok.returncode = 0
+        fake_run_ok.stdout = ""
+        fake_run_ok.stderr = ""
+
+        def fake_run_track(cmd, **kwargs):
+            if "revert" in cmd and "--no-edit" in cmd:
+                revert_calls.append(list(cmd))
+            return fake_run_ok
+
+        env = _armed_env()
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mr, "_resolve_pr_number", return_value=88):
+                with patch.object(mr, "_resolve_merge_sha", return_value="sha_fresh"):
+                    with patch.object(mr, "_create_revert_worktree",
+                                      return_value={"wt_path": tempfile.mkdtemp(),
+                                                    "error": None}):
+                        with patch.object(mr, "_remove_revert_worktree"):
+                            with patch.object(mr, "_push_revert_branch",
+                                              return_value=True):
+                                with patch.object(mr, "_open_draft_revert_pr",
+                                                  return_value={"pr_number": 500,
+                                                                "pr_url": "https://example.com/500",
+                                                                "opened": True}):
+                                    # Fresh plan: revert not yet applied
+                                    with patch.object(mr, "_revert_already_applied",
+                                                      return_value=False):
+                                        with patch("subprocess.run",
+                                                   side_effect=fake_run_track):
+                                            result = mr._process_one_plan(
+                                                {"proposal_id": pid,
+                                                 "cycle_id": "cycle-fresh",
+                                                 "verify_path": "/fake",
+                                                 "revert_plan": {"action": "git_revert",
+                                                                 "target": "test"},
+                                                 "do_not_rebuild_row": {}},
+                                                d,
+                                                dry_run=False,
+                                            )
+
+        assert len(revert_calls) == 1, (
+            f"Fresh plan must run git revert exactly once, got {len(revert_calls)} calls"
+        )
+        assert result.get("status") == "revert_pr_opened", (
+            f"Fresh plan happy path must end in revert_pr_opened, got {result.get('status')!r}"
+        )
+
+    def test_conflict_still_aborts_only_when_revert_head_exists(self):
+        """A real conflict (not 'nothing to commit'): --abort is called only
+        when REVERT_HEAD is present; status = revert_conflict.
+        """
+        mr = _import_revert()
+        d = _tmp_root()
+        pid = "p_conflict_guard"
+
+        fake_run_conflict = MagicMock()
+        fake_run_conflict.returncode = 1
+        fake_run_conflict.stdout = ""
+        fake_run_conflict.stderr = "CONFLICT (content): Merge conflict in engine/foo.py"
+
+        fake_run_ok = MagicMock()
+        fake_run_ok.returncode = 0
+        fake_run_ok.stdout = ""
+        fake_run_ok.stderr = ""
+
+        abort_calls: list = []
+
+        def fake_run_dispatch(cmd, **kwargs):
+            if "revert" in cmd and "--no-edit" in cmd:
+                return fake_run_conflict
+            if "revert" in cmd and "--abort" in cmd:
+                abort_calls.append("abort")
+                return fake_run_ok
+            return fake_run_ok
+
+        env = _armed_env()
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mr, "_resolve_pr_number", return_value=99):
+                with patch.object(mr, "_resolve_merge_sha", return_value="sha_conf"):
+                    with patch.object(mr, "_create_revert_worktree",
+                                      return_value={"wt_path": tempfile.mkdtemp(),
+                                                    "error": None}):
+                        with patch.object(mr, "_remove_revert_worktree"):
+                            with patch.object(mr, "_revert_already_applied",
+                                              return_value=False):
+                                # Simulate REVERT_HEAD present
+                                with patch.object(mr, "_revert_head_exists",
+                                                  return_value=True):
+                                    with patch("subprocess.run",
+                                               side_effect=fake_run_dispatch):
+                                        result = mr._process_one_plan(
+                                            {"proposal_id": pid,
+                                             "cycle_id": "cycle-conf-guard",
+                                             "verify_path": "/fake",
+                                             "revert_plan": {"action": "git_revert",
+                                                             "target": "test"},
+                                             "do_not_rebuild_row": {}},
+                                            d,
+                                            dry_run=False,
+                                        )
+
+        assert result.get("status") == "revert_conflict", (
+            f"Real conflict must yield revert_conflict, got {result.get('status')!r}"
+        )
+        assert len(abort_calls) == 1, (
+            "git revert --abort must be called exactly once when REVERT_HEAD present"
+        )
+
+    def test_conflict_no_abort_when_revert_head_absent(self):
+        """When a non-'nothing to commit' failure occurs but REVERT_HEAD is
+        NOT present, --abort must NOT be called (avoids exit-128).
+        """
+        mr = _import_revert()
+        d = _tmp_root()
+        pid = "p_no_abort"
+
+        fake_run_fail = MagicMock()
+        fake_run_fail.returncode = 1
+        fake_run_fail.stdout = ""
+        fake_run_fail.stderr = "error: some other revert error"
+
+        fake_run_ok = MagicMock()
+        fake_run_ok.returncode = 0
+        fake_run_ok.stdout = ""
+        fake_run_ok.stderr = ""
+
+        abort_calls: list = []
+
+        def fake_run_dispatch(cmd, **kwargs):
+            if "revert" in cmd and "--no-edit" in cmd:
+                return fake_run_fail
+            if "revert" in cmd and "--abort" in cmd:
+                abort_calls.append("abort")
+                return fake_run_ok
+            return fake_run_ok
+
+        env = _armed_env()
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mr, "_resolve_pr_number", return_value=101):
+                with patch.object(mr, "_resolve_merge_sha", return_value="sha_noabort"):
+                    with patch.object(mr, "_create_revert_worktree",
+                                      return_value={"wt_path": tempfile.mkdtemp(),
+                                                    "error": None}):
+                        with patch.object(mr, "_remove_revert_worktree"):
+                            with patch.object(mr, "_revert_already_applied",
+                                              return_value=False):
+                                # REVERT_HEAD NOT present
+                                with patch.object(mr, "_revert_head_exists",
+                                                  return_value=False):
+                                    with patch("subprocess.run",
+                                               side_effect=fake_run_dispatch):
+                                        result = mr._process_one_plan(
+                                            {"proposal_id": pid,
+                                             "cycle_id": "cycle-no-abort",
+                                             "verify_path": "/fake",
+                                             "revert_plan": {"action": "git_revert",
+                                                             "target": "test"},
+                                             "do_not_rebuild_row": {}},
+                                            d,
+                                            dry_run=False,
+                                        )
+
+        assert result.get("status") == "revert_conflict"
+        assert len(abort_calls) == 0, (
+            "git revert --abort must NOT be called when REVERT_HEAD is absent "
+            f"(got {len(abort_calls)} abort calls)"
+        )
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # FIX-B3: old expired park + fresh re-park (same pid) → BLOCKED
 # ─────────────────────────────────────────────────────────────────────────────
