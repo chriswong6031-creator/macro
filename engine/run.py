@@ -770,6 +770,49 @@ def run() -> dict:
             raise
         log.error("risk coherence assert failed to run: %s", e)
         latest["risk_coherence"] = None
+    # RC-R11: washout counter-read chip (engine/washout_counter_read.py).
+    # Compute BEFORE latest.json is serialized so market_state.py reads the key
+    # directly from the latest dict (the sibling pattern used by index_momentum
+    # and mag7_regime). Runs AFTER index_momentum so its IHM primary path works.
+    # Fix 1: moved here from scripts/build_rotation_events.py (which read a stale
+    # on-disk latest.json and ran AFTER the site render anyway).
+    # Fix 3: wire SPY closes from the same yahoo store used by ignition-radar
+    # so the 63d-drawdown fallback is live (not dead code).
+    # Additive, never fatal.
+    try:
+        from engine import washout_counter_read as _wcr
+        _wcr_spy_s = None
+        try:
+            import pandas as _pd
+            _wcr_spy_df = store.read("yahoo", "SPY")
+            if _wcr_spy_df is not None and "close" in _wcr_spy_df.columns:
+                _wcr_spy_s = _wcr_spy_df["close"].dropna().sort_index().astype(float)
+                _wcr_spy_s.index = _pd.to_datetime(_wcr_spy_s.index)
+        except Exception:  # noqa: BLE001
+            pass
+        latest["washout_counter_read"] = _wcr.compute(
+            latest.get("risk_radar"),
+            latest.get("index_momentum"),
+            price_fallback=_wcr_spy_s,
+        )
+        _wcr_block = latest["washout_counter_read"]
+        _wcr_dir = config.data_dir() / "washout_counter_read"
+        _wcr_dir.mkdir(parents=True, exist_ok=True)
+        import json as _wcr_json
+        (_wcr_dir / "latest.json").write_text(
+            _wcr_json.dumps(_wcr_block, separators=(",", ":"), ensure_ascii=False)
+        )
+        if _wcr_block.get("fired"):
+            _wcr.append_ledger(_wcr_block, config.data_dir())
+        log.info(
+            "washout_counter_read: fired=%s scare=%.0f depth_basis=%s",
+            _wcr_block.get("fired"),
+            _wcr_block.get("scare_pctile") or 0,
+            _wcr_block.get("depth_basis") or "none",
+        )
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("washout-counter-read failed: %s", e)
+        latest["washout_counter_read"] = None
     with open(p / "latest.json", "w") as fh:
         json.dump(latest, fh, indent=2, default=str)
     log.info("regime %s (%s) conf=%.2f liq=%s cycle=%s transition=%s",

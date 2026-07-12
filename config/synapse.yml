@@ -11608,11 +11608,11 @@ artifacts:
   washout-counter-read-latest:
     path: data/washout_counter_read/latest.json
     format: json
-    producer: scripts/build_rotation_events.py
+    producer: engine/run.py
     known_extra_writers: []
     owner_program: rotation-command
     cadence: daily-engine
-    storage: gitignored-local
+    storage: git
     asof_field: as_of
     freshness_sla_hours: 30
     schema: washout_counter_read.v1
@@ -11634,11 +11634,11 @@ artifacts:
   washout-counter-read-ledger:
     path: data/washout_counter_read/ledger.jsonl
     format: jsonl
-    producer: scripts/build_rotation_events.py
+    producer: engine/run.py
     known_extra_writers: []
     owner_program: rotation-command
     cadence: daily-engine
-    storage: gitignored-local
+    storage: git
     asof_field: as_of
     freshness_sla_hours: 30
     schema: washout_counter_read.v1

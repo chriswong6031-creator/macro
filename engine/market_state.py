@@ -631,7 +631,8 @@ def _calm_radar() -> dict:
             "dd5": None, "dd10": None, "dd21": None, "dd_lift": None,
             "dd_base": {"h5": None, "h10": None, "h21": None}, "is_loud": False,
             "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
-            "severe_gated": False, "ceiling": None, "recovery": None}
+            "severe_gated": False, "ceiling": None, "recovery": None,
+            "washout_counter_read": None}
 
 
 # The default (US) profile — every field reproduces today's hardcoded behaviour, so

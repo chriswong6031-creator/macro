@@ -446,3 +446,86 @@ class TestSchemaFields:
         assert "depth_value" in result
         assert "index" in result
         assert "is_context_only" in result
+
+
+class TestEndToEndTemplateVisible:
+    """End-to-end: fired WCR block placed in fixture regime latest reaches
+    market_state_snapshot(...)['radar']['washout_counter_read'] — the
+    template-visible path.  Verifies Fix 1 producer→consumer wiring."""
+
+    def test_fired_block_reaches_radar_key(self):
+        """A fired WCR block in latest['washout_counter_read'] propagates to
+        market_state_snapshot output at radar['washout_counter_read']."""
+        import engine.market_state as MS
+
+        # Build a fired WCR block (as run.py would set it)
+        fired_wcr = WCR.compute(
+            _risk_radar(growth_score=91.0),
+            _ihm_with_depth(depth_pctile=5.0),
+            as_of="2026-06-26",
+        )
+        assert fired_wcr["fired"] is True  # positive-control: fixture fires
+
+        # Build a minimal latest dict with enough keys to avoid None returns.
+        # The US profile _radar_override reads latest["risk_radar"] and
+        # latest["washout_counter_read"]; we also need latest["conditions"] to
+        # avoid AttributeError inside the confluence amplification path.
+        latest = {
+            "date": "2026-06-26",
+            "risk_radar": _risk_radar(growth_score=91.0),
+            "index_momentum": None,
+            "washout_counter_read": fired_wcr,
+            "conditions": {},
+            "turning_point": None,
+            "quad_name": "Growth", "confidence": 0.7,
+            "liquidity_overlay": "neutral", "cycle_tag": "mid",
+            "transition_state": "STABLE",
+        }
+
+        snap = MS.market_state_snapshot(latest)
+        assert snap is not None, "market_state_snapshot returned None — fixture insufficient"
+        radar = snap.get("radar")
+        assert radar is not None, "radar key missing from snapshot"
+        # The key must be present (Fix 4 — _calm_radar and _radar_to_rd both carry it)
+        assert "washout_counter_read" in radar, (
+            "washout_counter_read key absent from radar — _radar_override or _calm_radar missing it"
+        )
+        # And it must carry the fired block (not None)
+        wcr_out = radar["washout_counter_read"]
+        assert wcr_out is not None, (
+            "washout_counter_read is None in radar — block not propagated from latest"
+        )
+        assert wcr_out.get("fired") is True, (
+            f"fired flag not True in propagated block: {wcr_out}"
+        )
+        assert wcr_out.get("schema") == "washout_counter_read.v1"
+
+    def test_null_wcr_in_latest_carries_key_in_radar(self):
+        """When latest['washout_counter_read'] is None (unfired night), the radar
+        dict still carries the key (Fix 4 invariant) so templates can guard on it."""
+        import engine.market_state as MS
+
+        latest = {
+            "date": "2026-06-26",
+            "risk_radar": _risk_radar(growth_score=40.0),
+            "index_momentum": None,
+            "washout_counter_read": None,
+            "conditions": {},
+            "turning_point": None,
+            "quad_name": "Growth", "confidence": 0.6,
+            "liquidity_overlay": "neutral", "cycle_tag": "mid",
+            "transition_state": "STABLE",
+        }
+
+        snap = MS.market_state_snapshot(latest)
+        if snap is None:
+            # snapshot can return None if components are empty — just check _calm_radar
+            from engine.market_state import _calm_radar
+            assert "washout_counter_read" in _calm_radar(), (
+                "_calm_radar missing washout_counter_read key (Fix 4)"
+            )
+            return
+        radar = snap.get("radar", {})
+        assert "washout_counter_read" in radar, (
+            "washout_counter_read key absent from radar on unfired night"
+        )
