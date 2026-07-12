@@ -10412,6 +10412,11 @@ artifacts:
       Authority: all may_* false; is_context_only=true.
       Requires CENSUS_API_KEY (NOT keyless — verified 2026-07-09). When key
       absent: parquet absent → honest null written, all themes n_codes_with_data=0.
+      UNWIRED as of 2026-07-12: producer runs in NO lane (dag.yml collect-lane
+      divergence stands) — deliberately deferred until CENSUS_API_KEY exists as
+      a repo secret (operator action). Artifact is the honest-null scaffold from
+      the 2026-07-09 merge (0/11 themes); it will flag stale ~2026-10-07 unless
+      the key lands and the census collect steps are wired.
       Off render path (collect-lane step or standalone CLI).
       Data since 2018-01 backfill; Census trade data lags ~6 weeks.
       29 HS codes across 11 themes: rare_earth_critical_min / solar /
@@ -10445,6 +10450,8 @@ artifacts:
       Per-theme (compact): yoy_pct, accel_3m_vs_12m, confirmation, magnitude_band,
       coverage_note EN/ZH. No code_detail in site projection.
       Authority: all may_* false; is_context_only=true.
+      UNWIRED as of 2026-07-12 — see neuralweb-theme-trade-flows notes
+      (deferred on CENSUS_API_KEY repo secret; honest-null scaffold).
       Off render path (collect-lane step or standalone CLI).
       Honest null (all metrics null) when CENSUS_API_KEY not set.
 
@@ -10552,7 +10559,13 @@ artifacts:
       value/value_z252/band/stale/note_en/note_zh/coverage_count/coverage_total.
       Banned constructs: DOI family (dead W-E1), skew-deceleration (unsupported).
       Authority: all may_* false; is_context_only=true.
-      Off render path (launchd ops-wt lane or standalone CLI).
+      Off render path. Wired as a daily.yml collect-lane step 2026-07-12: the
+      runner lacks the ThetaData store, so the nightly write is the designed
+      honest-null artifact (store_present:false printed) — as_of stays current
+      but legs are null. Real legs require the theta-ops launchd lane
+      (ops/launchd/com.macro.theme-options-witness.plist), NOT yet installed
+      as of 2026-07-12, and that lane still needs a git commit path for its
+      flow-ops-wt writes.
       Honest null artifact when ThetaData store absent — exit 0 always.
 
   site-options-witness:
@@ -10577,7 +10590,9 @@ artifacts:
       (compact format). Git-tracked; served to UI. Schema identical to
       neuralweb-theme-options-witness but member ticker lists and input arrays are
       omitted for bandwidth efficiency. Authority: all may_* false; is_context_only=true.
-      Off render path (launchd ops-wt lane or standalone CLI).
+      Off render path. Wired as a daily.yml collect-lane step 2026-07-12
+      (honest-null nightly on the runner — see neuralweb-theme-options-witness
+      notes for the real-data path).
       Honest null when ThetaData store absent.
 
   # ── Metabolism Phase 0 (F3 capability broker) ────────────────────────────

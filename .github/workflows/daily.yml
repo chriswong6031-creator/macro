@@ -243,6 +243,48 @@ jobs:
         run: |
           python scripts/collect_zori.py \
             || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
+      # ── TIL collect-lane organs (W9/W10/W11) ──────────────────────────────
+      # These four steps close the dag.yml collect-lane divergences left open at
+      # the TIL merges (#2056/#2067/#2072): the engines + synapse lobes shipped
+      # 2026-07-09 but the daily.yml wiring never landed, so the artifacts froze
+      # at their merge-day values (the dead-wire class, cf. #2360). Placement and
+      # order follow the declared dag.yml collect lane. W7 (dol_certs) stays
+      # unwired by design (accrual gate); W8 (census_trade) stays unwired until
+      # CENSUS_API_KEY exists as a repo secret — both divergences remain declared.
+      # Measured 2026-07-12 (Mac Studio, warm venv): 6.6s + 0.5s + 0.5s + 1.4s
+      # ≈ 9s total — no material claim on the 150-min job budget.
+      - name: TIL W10 — ClinicalTrials.gov theme pipeline ingest (non-fatal)
+        # Keyless CT.gov v2 full fetch (9 modalities, ~2.5k rows, measured 6.6s).
+        # Writes data/clinical_trials/modality_monthly.parquet (git-stored via
+        # `git add data/` below). Per-modality isolation; always exits 0.
+        run: |
+          python -m collectors.clinicaltrials_themes \
+            || echo "::warning::clinicaltrials_themes ingest failed (non-fatal)"
+      - name: TIL W10 — theme clinical rollup (non-fatal)
+        # Pure in-memory aggregation of the parquet above (measured 0.5s).
+        # Produces data/neuralweb/theme_clinical.json + site/basketdata/clinical_pipeline.json.
+        run: |
+          python -m engine.theme_clinical \
+            || echo "::warning::theme_clinical rollup failed (non-fatal)"
+      - name: TIL W11 — options-tape crowding witness (non-fatal)
+        # ThetaData EOD store is host-local (theta-ops-wt) and NOT visible on the
+        # runner — this is the designed fast no-op path (measured 0.5s): an honest
+        # null artifact (store_present:false printed in coverage_stats) keeps the
+        # lobe's as_of current. Real legs land only when the theta-ops launchd
+        # lane (ops/launchd/com.macro.theme-options-witness.plist) is installed.
+        run: |
+          python -m engine.theme_options_witness \
+            || echo "::warning::theme_options_witness failed (non-fatal)"
+      - name: TIL W9 — discovery-confluence join (non-fatal)
+        # Two-source join (measured 1.4s): EDGAR phrase velocity over the
+        # git-tracked data/edgar/{bottleneck,emergence}_hits.parquet (dripped by
+        # the engine job) × GitHub star velocity over data/github/repo_stars.parquet
+        # (collected earlier in THIS job, so the leg reads today's stars).
+        # Produces site/basketdata/{phrase_velocity,github_adoption}.json +
+        # data/neuralweb/discovery_confluence.json.
+        run: |
+          python -m scripts.build_discovery_confluence \
+            || echo "::warning::discovery confluence join failed (non-fatal)"
       - name: commit data
         run: |
           git config user.name "dashboard-bot"
@@ -255,7 +297,11 @@ jobs:
           # --autostash on the rebase below is the durable guard: it survives ANY
           # stray tracked write collect leaves outside data/+site/qledger/ (e.g.
           # reports/*.md graders), not just the qledger paths we happen to stage here.
-          git add data/ site/qledger/
+          # site/basketdata: the TIL collect-lane steps above write their tracked
+          # site projections there (phrase_velocity/github_adoption/clinical_pipeline/
+          # options_witness .json). Staging the directory only picks up files those
+          # steps actually changed; nothing else in this job writes site/basketdata.
+          git add data/ site/qledger/ site/basketdata/
           # W0b (2026-07-08 stale-HK incident): US collect job must NOT commit asia-owned
           # data that it never produced. The GHA cache restore steps above may lay stale
           # data/hk_stocks (restore-keys: hk-stocks-ohlc-) and breadth caches on top of
