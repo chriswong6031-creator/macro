@@ -536,15 +536,19 @@ def test_run_lane_health_checks_key_pool_fires():
 
     root = _tmp_root()
 
-    # Plant a key_ledger.jsonl with 2 cooling keys whose reset_hint is in the future
+    # Plant a key_ledger.jsonl with 2 cooling keys whose reset_hint is in the future.
+    # Use outcome="rate_limited" so key_pool.is_cooling (and inline fallback) recognises
+    # them as cooling rows (key_pool uses the outcome field, not stage, to classify rows).
     ledger_dir = root / "data" / "metabolism"
     ledger_dir.mkdir(parents=True, exist_ok=True)
     future_reset = (datetime.now(timezone.utc) + timedelta(hours=3)).isoformat()
     ledger_rows = [
         {"schema": "metabolism.key_ledger.v1", "key_id": "claude_code_oauth_1",
-         "stage": "cooling", "reset_hint": future_reset, "ts": datetime.now(timezone.utc).isoformat()},
+         "stage": "cooling", "outcome": "rate_limited", "cool_kind": "window",
+         "reset_hint": future_reset, "ts": datetime.now(timezone.utc).isoformat()},
         {"schema": "metabolism.key_ledger.v1", "key_id": "claude_code_oauth_2",
-         "stage": "cooling", "reset_hint": future_reset, "ts": datetime.now(timezone.utc).isoformat()},
+         "stage": "cooling", "outcome": "rate_limited", "cool_kind": "window",
+         "reset_hint": future_reset, "ts": datetime.now(timezone.utc).isoformat()},
     ]
     (ledger_dir / "key_ledger.jsonl").write_text(
         "\n".join(json.dumps(r) for r in ledger_rows) + "\n", encoding="utf-8"
@@ -574,14 +578,16 @@ def test_run_lane_health_checks_key_pool_no_alert_when_ok():
     ledger_dir = root / "data" / "metabolism"
     ledger_dir.mkdir(parents=True, exist_ok=True)
     future_reset = (datetime.now(timezone.utc) + timedelta(hours=3)).isoformat()
-    # Only 1 of 3 keys cooling → 33% < 50% threshold
+    # Only 1 of 3 keys cooling → 33% < 50% threshold.
+    # Use outcome="rate_limited" so key_pool.is_cooling recognises the cooling row.
     ledger_rows = [
         {"schema": "metabolism.key_ledger.v1", "key_id": "claude_code_oauth_1",
-         "stage": "cooling", "reset_hint": future_reset, "ts": datetime.now(timezone.utc).isoformat()},
+         "stage": "cooling", "outcome": "rate_limited", "cool_kind": "window",
+         "reset_hint": future_reset, "ts": datetime.now(timezone.utc).isoformat()},
         {"schema": "metabolism.key_ledger.v1", "key_id": "claude_code_oauth_2",
-         "stage": "session", "ts": datetime.now(timezone.utc).isoformat()},
+         "stage": "session", "outcome": "ok", "ts": datetime.now(timezone.utc).isoformat()},
         {"schema": "metabolism.key_ledger.v1", "key_id": "claude_code_oauth_3",
-         "stage": "session", "ts": datetime.now(timezone.utc).isoformat()},
+         "stage": "session", "outcome": "ok", "ts": datetime.now(timezone.utc).isoformat()},
     ]
     (ledger_dir / "key_ledger.jsonl").write_text(
         "\n".join(json.dumps(r) for r in ledger_rows) + "\n", encoding="utf-8"
@@ -663,3 +669,349 @@ def test_unknown_red_page_deduped_within_day():
 
     # Second call within same UTC day → already fired → dedup
     assert has_fired_today(journal_key, root=root) is True
+
+
+# ── FIX-A1: NDJSON parsing + sentinel detects red required checks ────────────
+
+def test_gh_json_parses_ndjson_multiline():
+    """FIX-A1: _gh_json must parse multi-line NDJSON output (one object per line).
+
+    With --paginate --jq '.check_runs[]', gh emits one JSON object per line.
+    _gh_json must collect them into a list, not fail on the second line.
+    """
+    from scripts.metabolism_immune import _gh_json
+    from unittest.mock import patch, MagicMock
+
+    obj1 = {"name": "blocklist-drift", "conclusion": "failure", "status": "completed", "html_url": "https://example.com/1"}
+    obj2 = {"name": "other-check", "conclusion": "success", "status": "completed", "html_url": "https://example.com/2"}
+    ndjson_output = json.dumps(obj1) + "\n" + json.dumps(obj2) + "\n"
+
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = ndjson_output
+    mock_result.stderr = ""
+
+    with patch("subprocess.run", return_value=mock_result):
+        result = _gh_json(["api", "/repos/owner/repo/commits/abc/check-runs", "--paginate", "--jq", ".check_runs[]"])
+
+    assert isinstance(result, list), f"expected list, got {type(result)}: {result}"
+    assert len(result) == 2
+    assert result[0]["name"] == "blocklist-drift"
+    assert result[1]["name"] == "other-check"
+
+
+def test_gh_json_parses_single_object():
+    """FIX-A1: _gh_json must still work for single-object (non-NDJSON) output."""
+    from scripts.metabolism_immune import _gh_json
+    from unittest.mock import patch, MagicMock
+
+    obj = {"check_runs": [{"name": "some-check", "conclusion": "success"}], "total_count": 1}
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = json.dumps(obj)
+    mock_result.stderr = ""
+
+    with patch("subprocess.run", return_value=mock_result):
+        result = _gh_json(["api", "/repos/owner/repo/commits/abc/check-runs"])
+
+    assert isinstance(result, dict)
+    assert "check_runs" in result
+
+
+def test_get_required_red_checks_detects_red_from_ndjson():
+    """FIX-A1: _get_required_red_checks must return red checks from NDJSON output.
+
+    Before the fix, '-q ""' overwrote '--jq' → no filter → dict returned → [] reds.
+    After the fix, NDJSON is parsed line-by-line → red checks are detected.
+    """
+    from scripts.metabolism_immune import _get_required_red_checks
+    from unittest.mock import patch, MagicMock
+
+    red_check = {
+        "name": "blocklist-drift",
+        "conclusion": "failure",
+        "status": "completed",
+        "html_url": "https://github.com/example/checks/1",
+    }
+    green_check = {
+        "name": "house-law-docs",
+        "conclusion": "success",
+        "status": "completed",
+        "html_url": "https://github.com/example/checks/2",
+    }
+    ndjson_output = json.dumps(red_check) + "\n" + json.dumps(green_check) + "\n"
+
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = ndjson_output
+    mock_result.stderr = ""
+
+    immune_cfg = {"spurious_checks": []}
+
+    with patch("subprocess.run", return_value=mock_result):
+        with patch("scripts.metabolism_immune._resolve_repo", return_value="owner/repo"):
+            reds = _get_required_red_checks("abc123", immune_cfg=immune_cfg)
+
+    assert len(reds) == 1, f"expected 1 red, got {reds}"
+    assert reds[0]["name"] == "blocklist-drift"
+    assert reds[0]["conclusion"] == "failure"
+
+
+def test_get_required_red_checks_handles_single_dict_fallback():
+    """FIX-A1: _get_required_red_checks falls back gracefully when NDJSON unavailable."""
+    from scripts.metabolism_immune import _get_required_red_checks
+    from unittest.mock import patch, MagicMock
+
+    # First call (paginate+jq) returns None (simulates gh failure)
+    # Second call (plain) returns dict with check_runs
+    red_check = {
+        "name": "grader-manifest",
+        "conclusion": "failure",
+        "status": "completed",
+        "html_url": "https://github.com/example/checks/3",
+    }
+    dict_output = json.dumps({"check_runs": [red_check], "total_count": 1})
+
+    call_count = [0]
+
+    def fake_run(cmd, **kwargs):
+        mock = MagicMock()
+        mock.stderr = ""
+        call_count[0] += 1
+        if call_count[0] == 1:
+            mock.returncode = 1  # paginate call fails
+            mock.stdout = ""
+        else:
+            mock.returncode = 0
+            mock.stdout = dict_output
+        return mock
+
+    immune_cfg = {"spurious_checks": []}
+
+    with patch("subprocess.run", side_effect=fake_run):
+        with patch("scripts.metabolism_immune._resolve_repo", return_value="owner/repo"):
+            reds = _get_required_red_checks("def456", immune_cfg=immune_cfg)
+
+    assert len(reds) == 1
+    assert reds[0]["name"] == "grader-manifest"
+
+
+# ── FIX-A2: pause gate on heal push/PR ───────────────────────────────────────
+
+def test_run_heal_paused_no_push_no_pr():
+    """FIX-A2: when AUTONOMY_PAUSED=true, _run_heal_in_worktree must not push or open a PR.
+
+    ci_status is still written by run_immune_lane (sensing is not gated).
+    """
+    from scripts.metabolism_immune import _run_heal_in_worktree, write_ci_status
+    from unittest.mock import patch
+
+    root = _tmp_root()
+
+    recipe = {
+        "check_name_pattern": "blocklist-drift",
+        "red_class": "blocklist-drift",
+        "heal_cmd": "echo 'heal'",
+        "detector": "",
+        "auto_merge_allowed": True,
+    }
+
+    with patch("scripts.metabolism_immune._is_paused", return_value=True):
+        result = _run_heal_in_worktree(recipe, "abc12345", root=root, dry_run=False)
+
+    assert result["success"] is False
+    assert result["error"] == "paused"
+    assert result["branch"] is not None  # branch name set before pause check
+
+    # ci_status write is independent — it should still succeed when called directly
+    ok = write_ci_status("abc12345", [], root=root)
+    assert ok is True
+    ci_path = root / "data" / "metabolism" / "ci_status.json"
+    assert ci_path.exists()
+
+
+def test_run_heal_not_paused_proceeds():
+    """FIX-A2: when not paused, _run_heal_in_worktree proceeds past the pause check."""
+    from scripts.metabolism_immune import _run_heal_in_worktree
+    from unittest.mock import patch, MagicMock
+
+    root = _tmp_root()
+
+    recipe = {
+        "check_name_pattern": "blocklist-drift",
+        "red_class": "blocklist-drift",
+        "heal_cmd": "echo 'heal'",
+        "detector": "",
+        "auto_merge_allowed": True,
+    }
+
+    # Simulate: not paused → worktree creation fails (we just want to confirm the
+    # pause check is passed and the subsequent steps are reached)
+    mock_result = MagicMock()
+    mock_result.returncode = 1
+    mock_result.stderr = "fetch failed (mocked)"
+    mock_result.stdout = ""
+
+    with patch("scripts.metabolism_immune._is_paused", return_value=False):
+        with patch("subprocess.run", return_value=mock_result):
+            result = _run_heal_in_worktree(recipe, "abc12345", root=root, dry_run=False)
+
+    # Should NOT return 'paused' error — should attempt fetch and fail differently
+    assert result.get("error") != "paused", f"unexpected paused error when not paused: {result}"
+
+
+# ── FIX-A3: key-ledger clear-by-ok logic ─────────────────────────────────────
+
+def test_fetch_key_ledger_ok_row_clears_cooling():
+    """FIX-A3: a 'ok' outcome row after a cooling row must clear the cooling flag.
+
+    Previously _fetch_key_ledger only checked reset_hint > now, missing the
+    clear-by-ok logic in key_pool.is_cooling.  A key that had a cooling row
+    followed by a successful 'ok' row should NOT be counted as cooling.
+    """
+    from scripts.metabolism_immune import _fetch_key_ledger
+    from datetime import datetime, timezone, timedelta
+    from unittest.mock import patch
+
+    root = _tmp_root()
+    ledger_dir = root / "data" / "metabolism"
+    ledger_dir.mkdir(parents=True, exist_ok=True)
+
+    future_reset = (datetime.now(timezone.utc) + timedelta(hours=3)).isoformat()
+    # cooling row first, then a later ok row (clears the window horizon)
+    cooling_ts = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+    ok_ts = datetime.now(timezone.utc).isoformat()
+
+    ledger_rows = [
+        {
+            "key_id": "claude_code_oauth_1",
+            "stage": "cooling",
+            "outcome": "rate_limited",
+            "cool_kind": "window",
+            "reset_hint": future_reset,
+            "ts": cooling_ts,
+        },
+        {
+            "key_id": "claude_code_oauth_1",
+            "stage": "session",
+            "outcome": "ok",
+            "ts": ok_ts,
+        },
+    ]
+    (ledger_dir / "key_ledger.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in ledger_rows) + "\n", encoding="utf-8"
+    )
+
+    # Force the inline fallback by making the key_pool import fail.
+    # The inline fallback must also apply clear-by-ok logic.
+    import builtins
+    real_import = builtins.__import__
+
+    def _mock_import(name, *args, **kwargs):
+        if name == "engine.neuralweb.key_pool":
+            raise ImportError("mocked")
+        return real_import(name, *args, **kwargs)
+
+    with patch("builtins.__import__", side_effect=_mock_import):
+        result = _fetch_key_ledger(root)
+
+    keys = {k["name"]: k["cooling"] for k in result.get("keys", [])}
+    assert "claude_code_oauth_1" in keys, f"key missing from result: {result}"
+    assert keys["claude_code_oauth_1"] is False, (
+        f"key should NOT be cooling after ok row cleared it; got cooling=True. result={result}"
+    )
+
+
+def test_fetch_key_ledger_weekly_not_cleared_by_ok():
+    """FIX-A3: 'weekly' cool_kind is NOT cleared by a later ok row."""
+    from scripts.metabolism_immune import _fetch_key_ledger
+    from datetime import datetime, timezone, timedelta
+    import builtins
+
+    root = _tmp_root()
+    ledger_dir = root / "data" / "metabolism"
+    ledger_dir.mkdir(parents=True, exist_ok=True)
+
+    future_reset = (datetime.now(timezone.utc) + timedelta(hours=48)).isoformat()
+    cooling_ts = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+    ok_ts = datetime.now(timezone.utc).isoformat()
+
+    ledger_rows = [
+        {
+            "key_id": "claude_code_oauth_1",
+            "stage": "cooling",
+            "outcome": "rate_limited",
+            "cool_kind": "weekly",
+            "reset_hint": future_reset,
+            "ts": cooling_ts,
+        },
+        {
+            "key_id": "claude_code_oauth_1",
+            "stage": "session",
+            "outcome": "ok",
+            "ts": ok_ts,
+        },
+    ]
+    (ledger_dir / "key_ledger.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in ledger_rows) + "\n", encoding="utf-8"
+    )
+
+    real_import = builtins.__import__
+
+    def _mock_import(name, *args, **kwargs):
+        if name == "engine.neuralweb.key_pool":
+            raise ImportError("mocked")
+        return real_import(name, *args, **kwargs)
+
+    with patch("builtins.__import__", side_effect=_mock_import):
+        result = _fetch_key_ledger(root)
+
+    keys = {k["name"]: k["cooling"] for k in result.get("keys", [])}
+    assert keys.get("claude_code_oauth_1") is True, (
+        f"weekly cooling must NOT be cleared by ok row; got {keys}"
+    )
+
+
+# ── FIX-A4: spurious check SUBSTRING match ───────────────────────────────────
+
+def test_spurious_filter_substring_match_with_qualifier():
+    """FIX-A4: 'Workers Builds: macro (deploy)' must be filtered when config has 'Workers Builds: macro'.
+
+    Before the fix, exact set membership was used, so 'workers builds: macro (deploy)'
+    was NOT in the set {'workers builds: macro'} → false-positive red detected.
+    After the fix, substring match is used.
+    """
+    from scripts.metabolism_immune import _get_required_red_checks
+    from unittest.mock import patch, MagicMock
+
+    spurious_check = {
+        "name": "Workers Builds: macro (deploy)",
+        "conclusion": "failure",
+        "status": "completed",
+        "html_url": "https://github.com/example/checks/99",
+    }
+    real_red = {
+        "name": "blocklist-drift",
+        "conclusion": "failure",
+        "status": "completed",
+        "html_url": "https://github.com/example/checks/100",
+    }
+    ndjson_output = json.dumps(spurious_check) + "\n" + json.dumps(real_red) + "\n"
+
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = ndjson_output
+    mock_result.stderr = ""
+
+    # Config has 'Workers Builds: macro' (without the qualifier)
+    immune_cfg = {"spurious_checks": ["Workers Builds: macro"]}
+
+    with patch("subprocess.run", return_value=mock_result):
+        with patch("scripts.metabolism_immune._resolve_repo", return_value="owner/repo"):
+            reds = _get_required_red_checks("abc123", immune_cfg=immune_cfg)
+
+    names = [r["name"] for r in reds]
+    assert "Workers Builds: macro (deploy)" not in names, (
+        f"spurious check with qualifier should be filtered; got reds={reds}"
+    )
+    assert "blocklist-drift" in names, f"real red must still be detected; got reds={reds}"

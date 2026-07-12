@@ -66,13 +66,19 @@ following house law) consults claims first: an open claim with a live PR for the
 = skip. Claims expire when their PR closes/merges. This generalizes `data/metabolism/claims.jsonl`
 (build-lane file claims, `metabolism_build.py:128-145`) to environment heals.
 
-**R-V8-3 — Immune auto-merge is allowlist-only and armed-only.** A heal PR may be auto-merged by
-the sentinel ONLY when ALL hold: (a) `AUTONOMY_PAUSED=false` (double-gated, exact-string), (b) the
-red class is in the registry's `auto_merge_allowed` list (byte-deterministic regens only), (c) the
-heal PR's CI is green at a fresh head SHA (same `_pr_ci_green_at_sha` discipline as the v7 merge
-lane), (d) per-day cap `immune_max_automerge_per_day` (default 2, journal-durable counter — the
-R-V5-1 lesson) not exhausted. Otherwise the PR waits for operator/watcher. Paused = sentinel still
-SENSES and opens PRs as drafts + alerts, merges nothing.
+**R-V8-3 — Immune auto-merge is DEFERRED (amended 2026-07-12 after adversarial review of PR #2443).**
+The v8A wave ships SENSING + claimed draft heal PRs + insights ONLY; the sentinel opens a draft
+heal PR and never merges it. Auto-merge was found to be *both* non-functional in the intended
+synchronous path (a PR is created seconds before its CI registers, so a fresh-SHA green-gate can
+never pass on the same run, and there is no re-scan of already-open heal PRs) *and* unfenced (the
+`auto_merge_allowed` allowlist config governing the authority was loop-editable). Shipping a
+non-functional-but-unfenced auto-merge is strictly worse than none. Auto-merge returns as a
+FOLLOW-UP ruling (R-V8-3b, future) with the correct design: run N opens the claimed draft heal PR;
+a LATER run re-scans the lane's OWN open+claimed heal PRs and merges one when it is green at a
+fresh head SHA (mirroring the v7 merge lane's synchronous SHA-pinned discipline), gated by
+`AUTONOMY_PAUSED=false` + allowlist-class + a journal-durable per-day cap that counts ACTUAL
+merges, and only after `config/metabolism_immune.yml` is in the self-mod fence IMMUTABLE set. The
+recipe/allowlist config is fenced NOW (this wave) so the follow-up inherits the guarantee.
 
 **R-V8-4 — Lane-health sensors (the asia-close lesson).** The same sentinel run checks, via
 `gh api`: (a) cron lanes whose latest run concluded `cancelled`/`timed_out` (the silent-death
@@ -128,14 +134,24 @@ computed from THIS ledger (all history), not from live `trial_ledger.jsonl` rows
 pruning the trial ledger no longer lobotomizes the organism. Backfill on first run from whatever
 closed rows still exist.
 
-**R-V8-11 — Deterministic de-rank authority (the prior gets teeth).** After the LLM ranks the
-agenda, a deterministic post-pass in `agenda.py` applies floors from the outcome ledger: a
-`(kind)` or `(lobe, sensor-family)` bucket with `n ≥ 5` and hit-rate `< 0.25` is DEMOTED to the
-bottom of the agenda (never dropped — visibility preserved, nulls printed) with a
-`prior_demoted: true` flag surfaced in the proposal record and admin console. This is
-de-escalation-only authority, mirror-image of R-AUT-1: the deterministic floor may only demote
-what the LLM ranked, never promote. Thresholds live in `config/metabolism_budget.yml`
-(`prior_demote_min_n: 5`, `prior_demote_hit_rate: 0.25`).
+**R-V8-11 — Deterministic de-rank authority (the prior gets teeth). Amended 2026-07-12 after
+review of PR #2441.** After the LLM ranks the agenda, a deterministic post-pass in `agenda.py`
+applies floors from the outcome ledger. The de-rank key is the `(lobe, sensor)` construction ONLY
+— NOT proposal `kind`: `kind` (test/doc/engine/collector/…) is assigned downstream at PROPOSE, is
+absent from agenda items, and cannot be matched at the agenda tier (the review found the kind path
+structurally dead — agenda items carry the LLM's URGENT_FIX/NOVEL_BUILD/DEEP_RESEARCH bucket, never
+a proposal kind). A `(lobe, sensor)` bucket with `n ≥ 5` and hit-rate `< 0.25` demotes an agenda
+item ONLY when that specific sensor is named in the item's title/rationale (construction-specific,
+R-V8-12) — a poor record on sensor X must never demote an item about sensor Y on the same lobe, and
+an item naming no bad sensor is left where the LLM ranked it (conservative: no false demote).
+Demoted items go to the BOTTOM (never dropped — visibility preserved, nulls printed) with a
+`prior_demoted: true` + `prior_bucket` flag surfaced in the record and admin console, and are
+protected from the docket-size cap (at least the flag survives; a demoted item is never the
+silent casualty of a trim). De-escalation-only, mirror of R-AUT-1: the floor may only demote what
+the LLM ranked, never promote, never drop. Hit-rate counts CONFIRMED (with triage=='confirmed')
+as the only hit; UNVERIFIABLE closes are EXCLUDED from both numerator and denominator (an
+un-evaluable falsifier is not evidence the construction is bad). Thresholds in
+`config/metabolism_budget.yml` (`prior_demote_min_n: 5`, `prior_demote_hit_rate: 0.25`).
 
 **R-V8-12 — Per-sensor buckets + agenda recall parity.** The prior buckets extend from `kind`
 to `(lobe, sensor)` so a killed sensor family suppresses lookalike proposals deterministically

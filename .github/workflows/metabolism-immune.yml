@@ -6,15 +6,17 @@ name: metabolism-immune
 #       heal recipes in a fresh worktree, opens DRAFT heal PRs, claims work.
 #   (B) Lane-health sensors: dead cron, queue saturation, offline runners,
 #       key-pool degradation — each fires once per day per condition.
-#   (C) Auto-merge: only when AUTONOMY_PAUSED='false' AND class allowlisted AND
-#       CI green at fresh SHA AND daily cap not exhausted.
+#   (C) Auto-merge: DEFERRED (R-V8-3 amended 2026-07-12).  Returns as R-V8-3b
+#       (future wave).  This wave opens DRAFT PRs only; operator review required.
 #
 # NOTE: NO job-level AUTONOMY_PAUSED gate here — sensing and insight emission
-# must always run.  The merge step is gated IN-SCRIPT (R-V8-3).
+# must always run.  The git-push/PR-open path is gated IN-SCRIPT on _is_paused()
+# (R-V8-1 amended 2026-07-12), mirroring metabolism_build.py's is_paused-first
+# pattern.  ci_status writes and insight emission run regardless of pause state.
 #
 # KILL SWITCH (R-AUT-2):
-#   gh variable set AUTONOMY_PAUSED --body true    # pause merges (sensing always runs)
-#   gh variable set AUTONOMY_PAUSED --body false   # arm merges (operator-only)
+#   gh variable set AUTONOMY_PAUSED --body true    # pause heal push/PR (sensing always runs)
+#   gh variable set AUTONOMY_PAUSED --body false   # arm heal push/PR (operator-only)
 
 on:
   schedule:

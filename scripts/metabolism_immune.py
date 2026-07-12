@@ -96,7 +96,13 @@ def _notify(text: str) -> None:
 # ── gh helpers (subprocess boundary) ──────────────────────────────────────────
 
 def _gh_json(args: list[str], timeout: int = 60) -> Any:
-    """Run a gh command, return parsed JSON, or None on failure.  NEVER raises."""
+    """Run a gh command, return parsed JSON, or None on failure.  NEVER raises.
+
+    When gh emits NDJSON (one JSON object per line, as produced by
+    --paginate --jq '<expr>'), each non-empty line is parsed separately and
+    the results are collected into a list.  Single-object output is returned
+    as-is (dict/list/scalar).
+    """
     try:
         result = subprocess.run(
             ["gh"] + args,
@@ -105,7 +111,18 @@ def _gh_json(args: list[str], timeout: int = 60) -> Any:
         if result.returncode != 0:
             log.warning("immune._gh_json: gh %s failed: %s", " ".join(args[:4]), result.stderr[:200])
             return None
-        return json.loads(result.stdout or "null")
+        text = result.stdout or "null"
+        # Detect NDJSON: multiple non-empty lines, each a valid JSON object.
+        lines = [line for line in text.splitlines() if line.strip()]
+        if len(lines) > 1:
+            parsed = []
+            for line in lines:
+                try:
+                    parsed.append(json.loads(line))
+                except Exception:  # noqa: BLE001
+                    continue
+            return parsed if parsed else None
+        return json.loads(text)
     except Exception as exc:  # noqa: BLE001
         log.warning("immune._gh_json: %s", exc)
         return None
@@ -155,7 +172,6 @@ def _get_required_red_checks(
             f"/repos/{repo}/commits/{main_sha}/check-runs",
             "--paginate",
             "--jq", ".check_runs[]",
-            "-q", "",
         ], timeout=60)
         if data is None:
             # Try non-jq form
@@ -174,8 +190,11 @@ def _get_required_red_checks(
         red = []
         for c in checks:
             name = c.get("name") or ""
-            # Filter known-spurious checks (e.g. 'Workers Builds: macro')
-            if name.lower() in spurious:
+            # Filter known-spurious checks (e.g. 'Workers Builds: macro').
+            # Use SUBSTRING match: a live check name may carry qualifiers like
+            # 'Workers Builds: macro (deploy)' which would NOT hit exact-set membership.
+            name_lower = name.lower()
+            if any(s in name_lower for s in spurious):
                 log.info("IMMUNE: skipping known-spurious check %r", name)
                 continue
             conclusion = str(c.get("conclusion") or "").lower()
@@ -283,6 +302,14 @@ def _run_heal_in_worktree(
         if dry_run:
             log.info("IMMUNE [DRY-RUN]: would heal %s branch=%s", red_class, branch)
             result["success"] = True
+            return result
+
+        # Gate on pause status BEFORE any git-push or PR-open side-effect.
+        # Sensing (ci_status write, insight emission) may still run while paused.
+        # Only git-push / PR-open paths are gated — mirrors metabolism_build.py.
+        if _is_paused():
+            log.info("IMMUNE: AUTONOMY_PAUSED=true — skipping heal push/PR for %s", red_class)
+            result["error"] = "paused"
             return result
 
         # Create worktree off fresh origin/main
@@ -540,9 +567,14 @@ def _fetch_runners_list() -> list[dict]:
 def _fetch_key_ledger(root: Path) -> dict[str, Any]:
     """Read data/metabolism/key_ledger.jsonl and return a summary dict for check_key_pool_degraded.
 
-    Mirrors the ledger format used by engine/neuralweb/key_pool.py (_read_ledger +
-    is_cooling).  Returns {"keys": [{"name": cap_id, "cooling": bool}, ...]} using
-    the most recent cooling row per capability_id to determine current cooling status.
+    Delegates cooling logic to engine.neuralweb.key_pool.is_cooling (single source
+    of truth).  Falls back to local inline logic when the import is unavailable
+    (e.g. test environments that stub the path).
+
+    The inline fallback replicates key_pool.is_cooling exactly:
+      - A key is cooling iff at least one active horizon remains (reset_hint in
+        the future AND not cleared by a later "ok" row for window/auth kinds).
+      - "weekly" cool_kind is NEVER cleared by an "ok" row; only reset_hint passage.
 
     Only capability_id (name) is returned — secret VALUES are never read or returned.
     NEVER raises.
@@ -563,7 +595,6 @@ def _fetch_key_ledger(root: Path) -> dict[str, Any]:
                 continue
 
         from datetime import datetime, timezone  # noqa: PLC0415
-        now = datetime.now(timezone.utc)
 
         # Collect all capability_ids present in the ledger
         all_ids: set[str] = set()
@@ -583,28 +614,71 @@ def _fetch_key_ledger(root: Path) -> dict[str, Any]:
             except Exception:  # noqa: BLE001
                 return None
 
-        keys_summary: list[dict] = []
-        for cap_id in sorted(all_ids):
-            # Find cooling rows for this key
-            cooling_rows = [
-                r for r in rows
-                if (r.get("key_id") or r.get("capability_id")) == cap_id
-                and r.get("stage") == "cooling"
-                and r.get("reset_hint")
-            ]
-            is_cooling = False
-            if cooling_rows:
-                # Use the most recent reset_hint; if still in the future → cooling
-                def _ts_key(r: dict) -> datetime:
-                    t = _parse_dt(r.get("ts") or "")
-                    return t if t else datetime.min.replace(tzinfo=timezone.utc)
+        def _ts_key(r: dict) -> datetime:
+            t = _parse_dt(r.get("ts") or "")
+            return t if t else datetime.min.replace(tzinfo=timezone.utc)
 
-                latest = max(cooling_rows, key=_ts_key)
-                reset = _parse_dt(latest.get("reset_hint") or "")
-                if reset and reset > now:
-                    is_cooling = True
+        # Try to delegate to key_pool.is_cooling (single source of truth).
+        # Guard the import so test environments that don't have the ledger path
+        # wired can still run.
+        _kp_is_cooling = None
+        try:
+            from engine.neuralweb.key_pool import is_cooling as _kp_fn  # noqa: PLC0415
+            _kp_is_cooling = _kp_fn
+        except Exception:  # noqa: BLE001
+            pass
+
+        keys_summary: list[dict] = []
+        now = datetime.now(timezone.utc)
+
+        for cap_id in sorted(all_ids):
+            if _kp_is_cooling is not None:
+                cooling_flag = _kp_is_cooling(cap_id, root)
+            else:
+                # Inline fallback — replicates key_pool.is_cooling clear-by-ok logic.
+                # Cooling rows use outcome in ('rate_limited', 'auth_failed').
+                cooling_rows = [
+                    r for r in rows
+                    if (r.get("key_id") or r.get("capability_id")) == cap_id
+                    and r.get("outcome") in ("rate_limited", "auth_failed")
+                    and r.get("reset_hint")
+                ]
+                # Also accept stage=="cooling" rows that lack an outcome field
+                # (older ledger format written by scripts, not key_pool itself).
+                cooling_rows += [
+                    r for r in rows
+                    if (r.get("key_id") or r.get("capability_id")) == cap_id
+                    and r.get("stage") == "cooling"
+                    and r.get("outcome") not in ("rate_limited", "auth_failed", "ok")
+                    and r.get("reset_hint")
+                ]
+
+                cooling_flag = False
+                if cooling_rows:
+                    ok_ts = [
+                        _ts_key(r) for r in rows
+                        if (r.get("key_id") or r.get("capability_id")) == cap_id
+                        and r.get("outcome") == "ok"
+                    ]
+                    # Group by cool_kind; evaluate each horizon independently
+                    latest_by_kind: dict[str, dict] = {}
+                    for r in sorted(cooling_rows, key=_ts_key):
+                        latest_by_kind[r.get("cool_kind") or "window"] = r
+                    for kind, cool_row in latest_by_kind.items():
+                        reset = _parse_dt(cool_row.get("reset_hint") or "")
+                        if reset is None:
+                            continue  # unparseable hint → resolved
+                        if now >= reset:
+                            continue  # horizon expired by time
+                        if kind != "weekly":
+                            cool_ts = _ts_key(cool_row)
+                            if any(t >= cool_ts for t in ok_ts):
+                                continue  # window/auth cleared by later ok row
+                        cooling_flag = True
+                        break
+
             # Name only — never a value
-            keys_summary.append({"name": cap_id, "cooling": is_cooling})
+            keys_summary.append({"name": cap_id, "cooling": cooling_flag})
 
         return {"keys": keys_summary}
     except Exception as exc:  # noqa: BLE001
