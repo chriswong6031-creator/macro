@@ -1,6 +1,6 @@
 {
-  "built": "2026-07-12T10:28:43.108939+00:00",
-  "timing_sec": 1.52,
+  "built": "2026-07-12T10:48:59.059045+00:00",
+  "timing_sec": 1.16,
   "em_stress": {
     "state": "strained",
     "thermometer": 48.6,
@@ -108,7 +108,7 @@
     },
     "gaps": [],
     "as_of": "2026-07-12",
-    "built": "2026-07-12T10:28:41.700159+00:00",
+    "built": "2026-07-12T10:48:57.985275+00:00",
     "k_of_n_params": {
       "stressed_threshold": 3,
       "strained_threshold": 2,
@@ -399,8 +399,8 @@
       "SPY: OHLC absent — using close-return vol proxy"
     ],
     "as_of": "2026-07-10",
-    "built": "2026-07-12T10:28:41.920814+00:00",
-    "timing_sec": 0.22,
+    "built": "2026-07-12T10:48:58.110807+00:00",
+    "timing_sec": 0.13,
     "params": {
       "window": 150,
       "var_lag": 2,
@@ -431,7 +431,7 @@
     "tightening": false,
     "gaps": [],
     "as_of": "2026-07-10",
-    "built": "2026-07-12T10:28:42.945553+00:00"
+    "built": "2026-07-12T10:48:58.926547+00:00"
   },
   "two_tier": {
     "state": "contained",
@@ -499,7 +499,7 @@
     "safety_bid": true,
     "gaps": [],
     "state_logic": "quiet: tier1 calm | contained: tier1>=strained, 0 tier2 hot | watching: 1 tier2 hot | transmitting: >=2 tier2 hot with tier1>=strained",
-    "built": "2026-07-12T10:28:43.002171+00:00"
+    "built": "2026-07-12T10:48:58.971719+00:00"
   },
   "cb_desk": {
     "cbs": [
@@ -732,7 +732,7 @@
       "RBA: balance-sheet series not available (honest null)"
     ],
     "as_of": "2026-07-10",
-    "built": "2026-07-12T10:28:43.040799+00:00",
+    "built": "2026-07-12T10:48:59.006023+00:00",
     "bs_note": "Balance-sheet impulse available for: FED (WALCL), ECB (ECBASSETSW), BoJ (JPNASSETS). BoE: FRED provides annual-only balance-sheet data — honest null. PBoC: no clean keyless balance-sheet series available — honest null. SNB/BoC/RBA: no balance-sheet series configured — honest null.",
     "irdr7_note": "IRD-R7: This desk is DESCRIPTIVE. It reports realized policy rates, observed changes, and published meeting dates. No policy-intent projection, no forward guidance scoring, no consensus-surprise computation (no free consensus source)."
   },
@@ -779,7 +779,7 @@
       }
     ],
     "synchronized": false,
-    "built": "2026-07-12T10:28:43.097020+00:00"
+    "built": "2026-07-12T10:48:59.050170+00:00"
   },
   "swap_lines_bn": 0.2,
   "top_transmitters_display": [
