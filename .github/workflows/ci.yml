@@ -711,7 +711,7 @@ jobs:
       - name: factor boundary selftest (guard fires on planted violations)
         run: python3 scripts/check_factor_boundaries.py --selftest
       - name: synapse read-gate unit tests
-        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py -q
+        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py tests/test_delivery_waterfall.py -q
       - name: factor deescalation shadow + boundary guard tests
         run: python -m pytest tests/test_factor_deescalation_shadow.py -q
 

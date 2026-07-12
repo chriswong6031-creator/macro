@@ -25,6 +25,7 @@ from .paths import DATA
 _WINNER_PANEL = DATA / "research" / "winner_autopsy_panel.json"
 _THESIS_FUNNEL = DATA / "research" / "thesis_funnel_states_manifest.json"
 _LABELS = DATA / "research" / "long_hold_labels_manifest.json"
+_WATERFALL = DATA / "research" / "delivery_waterfall_panel.json"
 
 
 # ---------------------------------------------------------------------------
@@ -165,6 +166,25 @@ def _labels_block() -> dict:
         return {"available": False, "reason": "parse_error"}
 
 
+def _waterfall_block() -> dict:
+    """Read delivery_waterfall_panel.json. Fail-open (mirrors _thesis_funnel_block pattern)."""
+    raw = _read_json(_WATERFALL)
+    if raw is None:
+        return {"available": False, "reason": "delivery_waterfall_panel.json not found"}
+    try:
+        return {
+            "available":      True,
+            "generated_at":   raw.get("generated_at"),
+            "as_of":          raw.get("as_of"),
+            "counts":         raw.get("counts", {}),
+            "rows":           raw.get("rows", []),
+            "refused_examples": raw.get("refused_examples", []),
+            "notes":          raw.get("coverage_notes"),
+        }
+    except Exception:  # noqa: BLE001
+        return {"available": False, "reason": "parse_error"}
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -190,10 +210,11 @@ def panel() -> dict:
         age_hours = _age_hours(generated_at)
 
     return {
-        "ok":              True,
-        "generated_at":    generated_at,
-        "age_hours":       age_hours,
-        "winner_autopsy":  winner_autopsy,
-        "thesis_funnel":   _thesis_funnel_block(),
-        "labels":          _labels_block(),
+        "ok":                True,
+        "generated_at":      generated_at,
+        "age_hours":         age_hours,
+        "winner_autopsy":    winner_autopsy,
+        "thesis_funnel":     _thesis_funnel_block(),
+        "labels":            _labels_block(),
+        "delivery_waterfall": _waterfall_block(),
     }

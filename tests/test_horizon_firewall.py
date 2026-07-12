@@ -446,6 +446,9 @@ class TestRealRegistryFirewallClean:
             "winner-autopsy-manifest",
             # Pick Lab LH grid site artifact (PL-R6 firewall) — display-only, horizon_role=hold_thesis
             "pick-lab-longhold-ledger",
+            # LHB-W1 A3 Delivery Waterfall (LHB-R4) — display-only, horizon_role=hold_thesis
+            "long-hold-delivery-waterfall",
+            "long-hold-delivery-waterfall-panel",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {

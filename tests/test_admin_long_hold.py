@@ -18,7 +18,7 @@ def test_panel_smoke():
     """panel() never raises and always returns ok=True with the top-level shape."""
     d = long_hold.panel()
     assert d["ok"] is True
-    for key in ("winner_autopsy", "thesis_funnel", "labels"):
+    for key in ("winner_autopsy", "thesis_funnel", "labels", "delivery_waterfall"):
         assert key in d
         assert isinstance(d[key], dict)
 
@@ -29,6 +29,7 @@ def test_graceful_degradation_all_missing(tmp_path, monkeypatch):
     monkeypatch.setattr(long_hold, "_WINNER_PANEL", missing)
     monkeypatch.setattr(long_hold, "_THESIS_FUNNEL", missing)
     monkeypatch.setattr(long_hold, "_LABELS", missing)
+    monkeypatch.setattr(long_hold, "_WATERFALL", missing)
 
     d = long_hold.panel()
     assert d["ok"] is True
@@ -37,6 +38,7 @@ def test_graceful_degradation_all_missing(tmp_path, monkeypatch):
     assert "reason" in d["winner_autopsy"]
     assert d["thesis_funnel"]["available"] is False
     assert d["labels"]["available"] is False
+    assert d["delivery_waterfall"]["available"] is False
 
 
 def test_synthetic_happy_path(tmp_path, monkeypatch):
@@ -106,6 +108,77 @@ def test_synthetic_happy_path(tmp_path, monkeypatch):
     assert "score" not in wa["watch"]["top"][0]
     assert wa["watch"]["top"][0]["ticker"] == "AAA"
     assert wa["clocks"][0]["id"] == "winner-autopsy-watch-ledger"
+
+
+def test_waterfall_block_missing(tmp_path, monkeypatch):
+    """_waterfall_block() fails open when delivery_waterfall_panel.json is missing."""
+    missing = tmp_path / "nope.json"
+    monkeypatch.setattr(long_hold, "_WATERFALL", missing)
+
+    d = long_hold.panel()
+    assert d["ok"] is True
+    assert "delivery_waterfall" in d
+    assert d["delivery_waterfall"]["available"] is False
+    assert "reason" in d["delivery_waterfall"]
+
+
+def test_waterfall_block_happy_path(tmp_path, monkeypatch):
+    """A conforming delivery_waterfall_panel.json is surfaced through the panel."""
+    panel_obj = {
+        "schema": "delivery_waterfall_panel.v1",
+        "generated_at": "2026-07-12T08:00:00+00:00",
+        "as_of": "2026-07-12",
+        "counts": {
+            "n_episodes": 120,
+            "n_ok": 80,
+            "n_refused": 40,
+            "by_refusal_reason": {"no_fundamentals_at_anchor": 20, "share_basis_break": 10},
+            "by_path": {"pe_identity": 60, "ev_revenue": 20},
+        },
+        "coverage_notes": ["display-only"],
+        "rows": [
+            {
+                "ticker": "NVDA",
+                "t0": "2023-06-01",
+                "path": "pe_identity",
+                "dlog_price": 1.2,
+                "legs_pct": {"rev_ps_delivery": 45.0, "valuation_mix_accounting_residual": 55.0},
+                "warnings": [],
+                "price_source": "yahoo",
+                "basis_mismatch": False,
+            }
+        ],
+        "refused_examples": [
+            {"ticker": "XYZ", "t0": "2023-03-01", "refusal_reasons": ["no_fundamentals_at_anchor"]}
+        ],
+        "_display_only": True,
+        "_horizon_role": "hold_thesis",
+        "_version": "v1",
+    }
+    p = tmp_path / "delivery_waterfall_panel.json"
+    p.write_text(json.dumps(panel_obj))
+    monkeypatch.setattr(long_hold, "_WATERFALL", p)
+
+    d = long_hold.panel()
+    assert d["ok"] is True
+    wf = d["delivery_waterfall"]
+    assert wf["available"] is True
+    assert wf["generated_at"] == "2026-07-12T08:00:00+00:00"
+    assert wf["as_of"] == "2026-07-12"
+    assert wf["counts"]["n_episodes"] == 120
+    assert wf["counts"]["n_ok"] == 80
+    assert len(wf["rows"]) == 1
+    assert wf["rows"][0]["ticker"] == "NVDA"
+    assert len(wf["refused_examples"]) == 1
+    assert wf["refused_examples"][0]["ticker"] == "XYZ"
+
+
+def test_panel_smoke_includes_waterfall():
+    """panel() returns delivery_waterfall key (fail-open ok)."""
+    d = long_hold.panel()
+    assert d["ok"] is True
+    assert "delivery_waterfall" in d
+    assert isinstance(d["delivery_waterfall"], dict)
 
 
 def test_watch_top_trimmed_to_15(tmp_path, monkeypatch):
