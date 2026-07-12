@@ -429,14 +429,33 @@ def compute_hk_scoreboard(betas: dict | None = None) -> dict | None:
     if not rows:
         return None
 
+    _total = len(rows)
+    _with_cycle = sum(1 for r in rows if r.get("cycle"))
+    log.info("hk scoreboard: %d/%d names have cycle state", _with_cycle, _total)
+    _COV_LOW_PCT = 60
+    if _total > 0 and (_with_cycle / _total * 100) < _COV_LOW_PCT:
+        log.warning(
+            "hk scoreboard: coverage below %d%% — only %d of %d names have cycle state",
+            _COV_LOW_PCT, _with_cycle, _total,
+        )
+
     def b(r):  # sort key, missing beta to the bottom either way
         return r["beta"] if r["beta"] is not None else -1
     amp = sorted([r for r in rows if r["role"] == "amplifier"], key=b, reverse=True)
     cush = sorted([r for r in rows if r["role"] == "cushion"], key=b)
     allr = sorted(rows, key=b, reverse=True)
-    return {"as_of": (betas or {}).get("as_of"),
-            "risk_state": (betas or {}).get("risk_state"),
-            "modes": {"amplifiers": amp, "cushions": cush, "all": allr}}
+    sb = {"as_of": (betas or {}).get("as_of"),
+          "risk_state": (betas or {}).get("risk_state"),
+          "modes": {"amplifiers": amp, "cushions": cush, "all": allr}}
+    if _total > 0 and (_with_cycle / _total * 100) < _COV_LOW_PCT:
+        sb["coverage_health"] = {
+            "leg": "scoreboard_coverage",
+            "en": (f"HK scoreboard: only {_with_cycle}/{_total} names have cycle state "
+                   f"({_with_cycle * 100 // _total}% < {_COV_LOW_PCT}% threshold)."),
+            "zh": (f"港股评分板：仅 {_with_cycle}/{_total} 个标的有周期状态"
+                   f"（{_with_cycle * 100 // _total}% < {_COV_LOW_PCT}% 阈值）。"),
+        }
+    return sb
 
 
 def _spark_svg(vals: list[float], color: str = "var(--link)",
@@ -1174,6 +1193,16 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     # cheaper A/H value leg) can no longer be sold as a buy. NEAR-aligned names backfill only
     # when too few are fully aligned; aligned names rank by alignment score then conviction.
     elig = [e for e in ranked if _entry_ok(e) and _atier(e)]
+    _pre_health: list[dict] = []
+    if not elig:
+        # No aligned or near-aligned names passed the bottoming gate — the buy strip
+        # will be backfilled from the highest-conviction near-aligned names.  Surface
+        # this as a health entry so the page never renders a buy list in false confidence.
+        _pre_health.append({
+            "leg": "alignment",
+            "en": "No fully-aligned names found — buy strip backfilled from near-aligned names.",
+            "zh": "未找到完全对齐的标的 —— 买入列表已从接近对齐的标的回填。",
+        })
     aligned = sorted([e for e in elig if _atier(e) == "aligned"], key=_ascore, reverse=True)
     near = sorted([e for e in elig if _atier(e) == "near"], key=_ascore, reverse=True)
     buys = (aligned if len(aligned) >= ALIGN_MIN_KEEP
@@ -1281,7 +1310,8 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                                      if e["ticker"] in ext_map])
     # ---- HEALTH SURFACE (§5.5 / §2 principle 6) — every degraded leg this render, so the
     # page never silently fails open. Each item: {leg, en, zh}. Rendered as a banner strip.
-    health: list[dict] = []
+    # _pre_health collects entries raised before this block (e.g. alignment pool empty).
+    health: list[dict] = list(_pre_health)
     _stale_td = _tailwind_staleness_td()
     if _stale_td is not None and _stale_td > FRESHNESS_MAX_STALE_TD:
         health.append({
@@ -1299,12 +1329,16 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     _sb_asof = (out_sb or {}).get("as_of")
     if _sb_asof and as_of:
         try:
-            _gap = int((pd.Timestamp(str(as_of)) - pd.Timestamp(str(_sb_asof))).days)
+            import numpy as np
+            _sb_ts = pd.Timestamp(str(_sb_asof)).date()
+            _as_ts = pd.Timestamp(str(as_of)).date()
+            # Use trading-day count (busday_count) so a Friday→Monday gap = 1 td, not 3 cal days.
+            _gap = int(np.busday_count(_sb_ts, _as_ts)) if _as_ts >= _sb_ts else 0
             if _gap > FRESHNESS_MAX_STALE_TD:
                 health.append({
                     "leg": "southbound",
-                    "en": f"Southbound smart-money store stale — {_gap} days behind the price panel.",
-                    "zh": f"南向资金存储陈旧 —— 落后价格面板 {_gap} 天。",
+                    "en": f"Southbound smart-money store stale — {_gap} trading days behind the price panel.",
+                    "zh": f"南向资金存储陈旧 —— 落后价格面板 {_gap} 个交易日。",
                 })
         except Exception:  # noqa: BLE001
             pass
@@ -1430,6 +1464,28 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     except Exception as _ww_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
         log.warning("hk washout_watch compute failed (%s) — existing board intact", _ww_ex)
         out["washout_watch"] = []
+    # ---- LEADERSHIP PARTICIPATION (additive, fail-open) — cohort-level participation organ.
+    # Operates independently of the washout watch: fixed mega-cap cohort, cohesion metric,
+    # and southbound context.  The existing board dict is UNCHANGED when this block errors.
+    try:
+        from engine import hk_leadership as _ldr
+        # Pass the pre-computed closes matrix so the organ does not reload from disk.
+        # Build a closes_map restricted to the leadership cohort from the wide panel.
+        _ldr_closes: dict = {}
+        if closes is not None:
+            for _lt in _ldr.DEFAULT_COHORT:
+                if _lt in closes.columns:
+                    _ldr_closes[_lt] = closes[_lt]
+        out["leadership"] = _ldr.compute(
+            closes_map=_ldr_closes or None,
+            cohort=_ldr.DEFAULT_COHORT,
+            as_of=str(as_of) if as_of else None,
+        )
+        log.info("hk leadership: state=%s cohesion_now=%s",
+                 out["leadership"].get("state"), out["leadership"].get("cohesion_now"))
+    except Exception as _ldr_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
+        log.warning("hk leadership compute failed (%s) — existing board intact", _ldr_ex)
+        out["leadership"] = None
     # persist the artifact so a transient build failure leaves a stale-but-present board.
     try:
         fdir = site / "factordata"
