@@ -5873,6 +5873,10 @@ yahoo:
   retries: 3
   backoff_base_s: 5
   batch_size: 80
+  upsert_basis_tol: 0.001   # max relative close diff on the 1mo-upsert overlap dates before the
+                            # window is discarded for a period="max" refetch (Yahoo re-adjusts the
+                            # whole series at each fetch — a dividend/split between fetches strands
+                            # stored history on a stale basis; same guard as the odds store)
   # All EOD adjusted closes, one parquet per ticker under data/yahoo/.
   tickers:
     sectors: [XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]

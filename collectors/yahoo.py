@@ -11,6 +11,11 @@ Dual-basis store (W1.3):
                     (ZigZag, detrended osc, DCL/failed-cycle, drawdown-from-ATH).
 For tickers where yfinance supplies no Adj Close (certain FX/index symbols), close_price
 is set equal to close (no dividends → no basis difference) and the fact is logged.
+
+Adjustment-basis guard: both stored bases are re-adjusted by Yahoo at every fetch,
+so a 1mo window pulled after an ex-div/split disagrees with stored history on every
+overlap date. ``store.basis_shifted`` detects that and the name is re-pulled
+period='max' instead of spliced (see ``_rebase_shifted``).
 """
 from __future__ import annotations
 
@@ -21,7 +26,7 @@ import pandas as pd
 import yfinance as yf
 
 from collectors.base import Adapter
-from lib import config
+from lib import config, store
 
 log = logging.getLogger(__name__)
 
@@ -70,51 +75,104 @@ class YahooAdapter(Adapter):
             batch = tickers[i:i + bs]
             df = self._download(batch, period)
             for t in batch:
-                try:
-                    sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
-                    # W1.3 dual-basis rename:
-                    #   Adj Close -> close     (TR, byte-identical to old auto_adjust=True Close)
-                    #   Close     -> close_price (split-adj, div-UNadj — structure-math basis)
-                    # Vol/OHLC group also gets High/Low.
-                    if t in ohlc:
-                        want = ["High", "Low", "Close", "Adj Close", "Volume"]
-                    else:
-                        want = ["Close", "Adj Close", "Volume"]
-                    available = sub[[c for c in want if c in sub.columns]]
-                    if "Adj Close" in available.columns:
-                        renamed = available.rename(columns={
-                            "Adj Close": "close",
-                            "Close":     "close_price",
-                            "Volume":    "volume",
-                            "High":      "high",
-                            "Low":       "low",
-                        })
-                    else:
-                        # FX / indices that yfinance provides no Adj Close for:
-                        # Close ≡ Adj Close (no dividends) → set close_price = close.
-                        no_adj_close.append(t)
-                        renamed = available.rename(columns={
-                            "Close":  "close",
-                            "Volume": "volume",
-                            "High":   "high",
-                            "Low":    "low",
-                        })
-                        if "close" in renamed.columns:
-                            renamed["close_price"] = renamed["close"]
-                    sub_out = renamed.dropna(subset=["close"])
-                    if not sub_out.empty:
-                        frames[t] = sub_out
-                except KeyError:
-                    log.warning("yahoo: no data for %s", t)
+                sub_out = self._extract(df, t, ohlc, no_adj_close)
+                if sub_out is not None:
+                    frames[t] = sub_out
         if no_adj_close:
             log.info("yahoo: %d tickers had no Adj Close (close_price=close, no dividends): %s",
                      len(no_adj_close), no_adj_close)
+        deferred: list[str] = []
+        if not full_history:
+            deferred = self._rebase_shifted(frames, ohlc)
         # Stooq fallback for searchable single stocks Yahoo refused this run.
+        # Basis-deferred names are NOT refilled: Stooq is a different source/basis,
+        # so a refill would splice exactly what the guard just refused.
         extras = config.load().get("stock_search", {}).get("extra_tickers", []) or []
-        self._fill_missing_extras(frames, extras)
+        self._fill_missing_extras(frames, [t for t in extras if t not in deferred])
         if len(frames) < len(tickers) * 0.7:
             raise RuntimeError(f"yahoo returned only {len(frames)}/{len(tickers)} tickers")
         return frames
+
+    def _extract(self, df: pd.DataFrame, t: str, ohlc: set[str],
+                 no_adj_close: list[str]) -> pd.DataFrame | None:
+        """Slice one ticker out of a (possibly MultiIndex) yf.download response and
+        rename to the store schema; None when yfinance returned nothing for it."""
+        try:
+            sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
+            # W1.3 dual-basis rename:
+            #   Adj Close -> close     (TR, byte-identical to old auto_adjust=True Close)
+            #   Close     -> close_price (split-adj, div-UNadj — structure-math basis)
+            # Vol/OHLC group also gets High/Low.
+            if t in ohlc:
+                want = ["High", "Low", "Close", "Adj Close", "Volume"]
+            else:
+                want = ["Close", "Adj Close", "Volume"]
+            available = sub[[c for c in want if c in sub.columns]]
+            if "Adj Close" in available.columns:
+                renamed = available.rename(columns={
+                    "Adj Close": "close",
+                    "Close":     "close_price",
+                    "Volume":    "volume",
+                    "High":      "high",
+                    "Low":       "low",
+                })
+            else:
+                # FX / indices that yfinance provides no Adj Close for:
+                # Close ≡ Adj Close (no dividends) → set close_price = close.
+                no_adj_close.append(t)
+                renamed = available.rename(columns={
+                    "Close":  "close",
+                    "Volume": "volume",
+                    "High":   "high",
+                    "Low":    "low",
+                })
+                if "close" in renamed.columns:
+                    renamed["close_price"] = renamed["close"]
+            sub_out = renamed.dropna(subset=["close"])
+            return sub_out if not sub_out.empty else None
+        except KeyError:
+            log.warning("yahoo: no data for %s", t)
+            return None
+
+    def _rebase_shifted(self, frames: dict[str, pd.DataFrame],
+                        ohlc: set[str]) -> list[str]:
+        """Adjustment-basis guard (the odds-store pattern from scripts/build_odds).
+
+        A name whose 1mo window disagrees with stored closes on the overlap dates
+        was re-adjusted by Yahoo (ex-div/split) since the last pull; splicing the
+        window would strand every pre-window row on the stale basis (measured on
+        SPY: +0.2576% on all rows before 2026-05-18 — one dividend of drift; a
+        missed split would be a 10x step). Flagged names are re-pulled
+        period='max' so the whole store rebases in one shot. A name whose re-pull
+        fails is DROPPED from this run — never spliced — leaving the store
+        untouched so the guard re-flags it the next night. Returns the tickers
+        dropped without a heal (the caller keeps them away from the Stooq refill)."""
+        tol = float(self.cfg.get("upsert_basis_tol", 1e-3))
+        shifted = [t for t, f in frames.items()
+                   if store.basis_shifted(self.group, t, f, tol=tol)]
+        if not shifted:
+            return []
+        log.info("yahoo: %d name(s) on a re-adjusted basis — refetching period='max': %s",
+                 len(shifted), shifted[:12])
+        for t in shifted:
+            frames.pop(t, None)
+        healed: list[str] = []
+        scrap: list[str] = []  # no-Adj-Close names were already logged on the window pass
+        bs = self.cfg["batch_size"]
+        for i in range(0, len(shifted), bs):
+            batch = shifted[i:i + bs]
+            try:
+                df = self._download(batch, "max")
+            except Exception as e:  # noqa: BLE001 — degrade: skip tonight, re-flag next run
+                log.warning("yahoo: basis refetch failed for %d name(s) (%s) — kept out "
+                            "of this run; the guard retries next night", len(batch), e)
+                continue
+            for t in batch:
+                sub_out = self._extract(df, t, ohlc, scrap)
+                if sub_out is not None:
+                    frames[t] = sub_out
+                    healed.append(t)
+        return [t for t in shifted if t not in healed]
 
     def _fill_missing_extras(self, frames: dict[str, pd.DataFrame],
                              extras: list[str]) -> dict[str, pd.DataFrame]:

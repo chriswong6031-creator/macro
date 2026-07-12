@@ -93,10 +93,20 @@ def fetch_ohlc(tickers: list[str], group: str, cfg: dict,
     the confluence/reversal signals use. False is the RAW/nominal price plane needed for
     level, limit-up/gap and honest A/H-premium logic (there is no raw A-share close
     anywhere else in the repo — masterplan §W6-CN fix 3). The raw plane stores to a
-    SEPARATE group so the two planes never mix."""
+    SEPARATE group so the two planes never mix.
+
+    Adjustment-basis guard (``store.basis_shifted``, the odds-store pattern): a deep
+    name whose 1mo window disagrees with its stored closes on the overlap dates was
+    re-adjusted by Yahoo (ex-div/split) since the last pull — splicing would strand
+    every pre-window row on the stale basis. The window is discarded and the name
+    re-pulled period='max'; a failed re-pull just skips the name tonight (store
+    untouched, re-flagged next run). Applies to the raw plane too: raw closes are
+    still split-adjusted, so a split re-bases them the same way."""
     frames: dict[str, pd.DataFrame] = {}
+    rebase: list[str] = []
     bs = int(cfg.get("batch_size", 50))
     sleep_s = float(cfg.get("sleep_s", 2.0))
+    tol = float(cfg.get("upsert_basis_tol", 1e-3))
     for period, tks in _fetch_plan(tickers, group, full_history).items():
         for i in range(0, len(tks), bs):
             batch = tks[i:i + bs]
@@ -109,20 +119,48 @@ def fetch_ohlc(tickers: list[str], group: str, cfg: dict,
                             group, len(batch), e)
                 continue
             for t in batch:
-                try:
-                    sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
-                    # Open is preferred but optional: a yfinance response missing it (rare) must not
-                    # drop the whole name — keep every requested column that is present, require Close.
-                    cols = [c for c in _OHLC if c in sub.columns]
-                    if "Close" not in cols:
-                        raise KeyError("Close")
-                    sub = sub[cols].rename(columns=_REN).dropna(subset=["close"])
-                    if not sub.empty:
-                        frames[t] = sub.astype("float64")
-                except KeyError:
-                    log.warning("stock_ohlc[%s]: no data for %s", group, t)
+                sub = _extract(df, t, group)
+                if sub is None:
+                    continue
+                if period == "1mo" and store.basis_shifted(group, t, sub, tol=tol):
+                    rebase.append(t)  # discard the window; re-pull full history below
+                    continue
+                frames[t] = sub
             if i + bs < len(tks):
+                time.sleep(sleep_s)
+    if rebase:
+        log.info("stock_ohlc[%s]: %d name(s) on a re-adjusted basis — refetching "
+                 "period='max': %s", group, len(rebase), rebase[:12])
+        for i in range(0, len(rebase), bs):
+            batch = rebase[i:i + bs]
+            try:
+                df = _download(batch, "max", cfg, auto_adjust=auto_adjust)
+            except Exception as e:  # noqa: BLE001 — skip tonight; the guard re-flags next run
+                log.warning("stock_ohlc[%s]: basis refetch failed for %d name(s) (%s) — "
+                            "kept out of this run", group, len(batch), e)
+                continue
+            for t in batch:
+                sub = _extract(df, t, group)
+                if sub is not None:
+                    frames[t] = sub
+            if i + bs < len(rebase):
                 time.sleep(sleep_s)
     if not frames:
         raise RuntimeError(f"stock_ohlc[{group}]: 0/{len(tickers)} tickers returned data")
     return frames
+
+
+def _extract(df: pd.DataFrame, t: str, group: str) -> pd.DataFrame | None:
+    """Slice one ticker out of a (possibly MultiIndex) yf.download response into the
+    store schema. Open is preferred but optional: a yfinance response missing it (rare)
+    must not drop the whole name — keep every requested column present, require Close."""
+    try:
+        sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
+        cols = [c for c in _OHLC if c in sub.columns]
+        if "Close" not in cols:
+            raise KeyError("Close")
+        sub = sub[cols].rename(columns=_REN).dropna(subset=["close"])
+        return sub.astype("float64") if not sub.empty else None
+    except KeyError:
+        log.warning("stock_ohlc[%s]: no data for %s", group, t)
+        return None
