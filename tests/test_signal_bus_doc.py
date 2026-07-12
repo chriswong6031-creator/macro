@@ -73,7 +73,7 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 393, (
+    assert len(artifact_ids) == 395, (
         f"Expected 393 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (FL-B flow-cohorts added options-flow-cohorts-parquet,"

@@ -30,6 +30,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
+| ihm | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | intraday-flow-tracker | 3 |
@@ -80,7 +81,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 235 |
+| display | 237 |
 | infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
@@ -89,7 +90,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 376 |
+| git | 378 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -287,6 +288,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | ignition-radar-latest | `data/ignition_radar/latest.json` | json | daily-engine | display | 4 | 0 |
 | ignition-log-us | `data/ignition_log/us_ignition.jsonl` | jsonl | daily-engine | display | 2 | 0 |
+
+### ihm
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| index-momentum-latest | `data/index_momentum/latest.json` | json | daily-engine | display | 1 | 0 |
+| index-momentum-events | `data/index_momentum/events.parquet` | parquet | daily-engine | display | 0 | 0 |
 
 ### institutional-sector-intelligence
 
