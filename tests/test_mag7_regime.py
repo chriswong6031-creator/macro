@@ -100,6 +100,15 @@ def _write_reference(tmp: Path, caps: dict[str, float | None]) -> None:
     df.to_parquet(out)
 
 
+def _write_polygon_reference(tmp: Path, caps: dict[str, float | None]) -> None:
+    """Write data/polygon_universe/reference.parquet (market_cap_usd — the primary source)."""
+    out = _data(tmp) / "polygon_universe" / "reference.parquet"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    records = [{"ticker": sym, "market_cap_usd": v, "asof": str(date.today())} for sym, v in caps.items()]
+    df = pd.DataFrame(records).set_index("ticker")
+    df.to_parquet(out)
+
+
 def _write_mags(tmp: Path, series: pd.Series) -> None:
     """Write data/massive_stock_day/MAGS.parquet."""
     out = _data(tmp) / "massive_stock_day" / "MAGS.parquet"
@@ -516,6 +525,28 @@ class TestMktcapFallback:
         _setup_minimal(tmp_path, caps=caps)
         result = _snapshot(tmp_path)
         assert result["weights_basis"] == "polygon_mktcap"
+
+    def test_polygon_universe_market_cap_usd_is_primary(self, tmp_path, monkeypatch):
+        """data/polygon_universe/reference.parquet (market_cap_usd) is the PRIMARY
+        weights source — the sp500_heatmap shares file never existed in production
+        (post-merge audit 2026-07-11), so this path must work standalone."""
+        _patch_store(monkeypatch, tmp_path)
+        _setup_minimal(tmp_path, caps=None)  # no legacy file at all
+        _write_polygon_reference(tmp_path, {sym: float(i + 1) * 1e12 for i, sym in enumerate(MAG7)})
+        result = _snapshot(tmp_path)
+        assert result["weights_basis"] == "polygon_mktcap"
+
+    def test_polygon_universe_preferred_over_legacy_shares(self, tmp_path, monkeypatch):
+        """When both sources exist, market_cap_usd wins (weights follow polygon caps)."""
+        _patch_store(monkeypatch, tmp_path)
+        caps_legacy = {sym: 1.0e9 for sym in MAG7}          # equal shares → equal weights
+        _setup_minimal(tmp_path, caps=caps_legacy)
+        poly = {sym: (5.0e12 if sym == "AAPL" else 1.0e12) for sym in MAG7}
+        _write_polygon_reference(tmp_path, poly)
+        result = _snapshot(tmp_path)
+        assert result["weights_basis"] == "polygon_mktcap"
+        w = {m["sym"]: m["w"] for m in result["members"]}
+        assert w["AAPL"] > w["MSFT"] * 3  # polygon cap skew visible, not equal legacy
 
     def test_missing_reference_parquet_equal_fallback(self, tmp_path, monkeypatch):
         """No reference.parquet at all → weights_basis equal_fallback (no crash)."""
