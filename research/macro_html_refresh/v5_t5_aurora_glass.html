@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Macro Dashboard — Aurora Glass Theme</title>
+<style>
+/* ============================================================
+   AURORA GLASS — Theme T5
+   Full-bleed aurora field, glass cards, bloom accents
+   ============================================================ */
+
+:root {
+  --accent: #22d97a;
+  --accent-glow: rgba(34,217,122,.32);
+  --accent-dim: rgba(34,217,122,.12);
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --up: #22d97a;
+  --down: #ef4444;
+  --bg: #080c12;
+  --glass: rgba(255,255,255,.04);
+  --glass-border: rgba(255,255,255,.09);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,.55), 0 1.5px 0 rgba(255,255,255,.06) inset;
+  --text: rgba(255,255,255,.92);
+  --text-dim: rgba(255,255,255,.55);
+  --text-muted: rgba(255,255,255,.35);
+  --hairline: rgba(255,255,255,.07);
+  --blur: blur(18px);
+  --radius-card: 18px;
+  --radius-pill: 999px;
+}
+[data-theme="light"] {
+  --accent: #0ea562;
+  --accent-glow: rgba(14,165,98,.22);
+  --accent-dim: rgba(14,165,98,.10);
+  --warn: #d97706;
+  --danger: #dc2626;
+  --up: #0ea562;
+  --down: #dc2626;
+  --bg: #f0f4f8;
+  --glass: rgba(255,255,255,.72);
+  --glass-border: rgba(0,0,0,.08);
+  --glass-shadow: 0 4px 24px rgba(0,0,0,.10), 0 1px 0 rgba(255,255,255,.9) inset;
+  --text: #0d1117;
+  --text-dim: #4b5563;
+  --text-muted: #9ca3af;
+  --hairline: rgba(0,0,0,.07);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, "Inter", "Segoe UI", Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── Aurora field ── */
+.aurora-field {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.aurora-field::before,
+.aurora-field::after,
+.aurora-field .a3 {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+}
+.aurora-field::before {
+  width: 900px; height: 700px;
+  top: -200px; left: -150px;
+  background: radial-gradient(ellipse, rgba(34,217,122,.10) 0%, transparent 70%);
+  animation: drift1 22s ease-in-out infinite alternate;
+}
+.aurora-field::after {
+  width: 700px; height: 600px;
+  bottom: -100px; right: -100px;
+  background: radial-gradient(ellipse, rgba(99,102,241,.09) 0%, transparent 70%);
+  animation: drift2 28s ease-in-out infinite alternate;
+}
+.aurora-field .a3 {
+  width: 600px; height: 500px;
+  top: 40%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, rgba(34,217,122,.06) 0%, transparent 70%);
+  animation: drift3 18s ease-in-out infinite alternate;
+}
+[data-theme="light"] .aurora-field::before { background: radial-gradient(ellipse, rgba(14,165,98,.07) 0%, transparent 70%); }
+[data-theme="light"] .aurora-field::after  { background: radial-gradient(ellipse, rgba(99,102,241,.06) 0%, transparent 70%); }
+[data-theme="light"] .aurora-field .a3     { background: radial-gradient(ellipse, rgba(14,165,98,.04) 0%, transparent 70%); }
+
+@keyframes drift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(80px,60px) scale(1.1); } }
+@keyframes drift2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-60px,-40px) scale(1.08); } }
+@keyframes drift3 { from { transform: translate(-50%,-50%) scale(1); } to { transform: translate(-50%,-50%) scale(1.15); } }
+
+/* ── Layout ── */
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 40px 80px;
+}
+
+/* ── Topbar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 0;
+  margin-bottom: 0;
+}
+.topbar-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 15px; font-weight: 700; letter-spacing: -.01em; color: var(--text);
+}
+.brand-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+.topbar-meta { font-size: 12px; color: var(--text-muted); letter-spacing: .03em; }
+.topbar-controls { display: flex; align-items: center; gap: 8px; }
+
+.btn-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border-radius: var(--radius-pill);
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  color: var(--text-dim);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.btn-pill:hover { color: var(--text); border-color: rgba(255,255,255,.18); }
+.btn-pill.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+/* ── Section rhythm ── */
+.zone { margin-top: 56px; }
+.zone-sm { margin-top: 40px; }
+
+.eyebrow {
+  font-size: 11px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+/* ── Glass card ── */
+.card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+  backdrop-filter: var(--blur);
+  box-shadow: var(--glass-shadow);
+  padding: 24px 28px;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-card);
+  background: linear-gradient(135deg, rgba(255,255,255,.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+.card-sm { padding: 18px 20px; }
+
+/* ── Hero zone ── */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  align-items: stretch;
+}
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Speedometer gauge ── */
+.gauge-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 32px 28px 24px;
+  justify-content: center;
+}
+.gauge-svg { width: 280px; height: 175px; overflow: visible; }
+
+/* ── Stance card ── */
+.stance-card {
+  display: flex; flex-direction: column; justify-content: space-between;
+  min-height: 260px;
+}
+.stance-score-line {
+  display: flex; align-items: baseline; gap: 10px;
+  margin-bottom: 8px;
+}
+.stance-score {
+  font-size: 72px; font-weight: 800; line-height: 1;
+  color: var(--accent);
+  text-shadow: 0 0 40px var(--accent-glow);
+  font-variant-numeric: tabular-nums;
+}
+.stance-label {
+  font-size: 22px; font-weight: 700; color: var(--text);
+}
+.stance-sub {
+  font-size: 13px; color: var(--text-dim); margin-top: 4px;
+}
+.stance-thesis {
+  font-size: 18px; font-weight: 500; line-height: 1.45; color: var(--text);
+  margin: 20px 0 14px;
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+}
+.stance-flip {
+  font-size: 12px; color: var(--text-muted);
+  padding: 10px 14px;
+  background: rgba(245,158,11,.06);
+  border: 1px solid rgba(245,158,11,.18);
+  border-radius: 10px;
+  line-height: 1.5;
+}
+.stance-flip-arrow { color: var(--warn); }
+
+/* ── Regime pill ── */
+.regime-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: var(--radius-pill);
+  border: 1px solid var(--accent);
+  background: var(--accent-dim);
+  font-size: 12px; font-weight: 600; color: var(--accent);
+  letter-spacing: .04em; margin-bottom: 16px;
+}
+.regime-pill .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; transform: scale(1); }
+  50% { opacity:.5; transform: scale(.8); }
+}
+
+/* ── Factors grid ── */
+.factors-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .factors-grid { grid-template-columns: 1fr; }
+}
+.factor-row {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.factor-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.factor-name { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+.factor-score {
+  font-size: 17px; font-weight: 700; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.factor-score.weak { color: var(--warn); }
+.factor-bar-track {
+  height: 8px; border-radius: 4px;
+  background: rgba(255,255,255,.07);
+  overflow: visible; position: relative;
+}
+.factor-bar-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, rgba(34,217,122,.5), var(--accent));
+  position: relative;
+  transition: width .6s cubic-bezier(.23,1,.32,1);
+}
+.factor-bar-fill.weak {
+  background: linear-gradient(90deg, rgba(245,158,11,.5), var(--warn));
+}
+.factor-bar-fill::after {
+  content: "";
+  position: absolute; right: -2px; top: -3px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow), 0 0 20px var(--accent-glow);
+}
+.factor-bar-fill.weak::after {
+  background: var(--warn);
+  box-shadow: 0 0 8px rgba(245,158,11,.5);
+}
+
+/* ── Scare ladder ── */
+.scare-list { display: flex; flex-direction: column; gap: 14px; }
+.scare-row { display: flex; flex-direction: column; gap: 5px; }
+.scare-header { display: flex; justify-content: space-between; align-items: baseline; }
+.scare-name { font-size: 13px; color: var(--text-dim); }
+.scare-val {
+  font-size: 15px; font-weight: 700; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.scare-val.hot { color: var(--warn); }
+.scare-bar-track {
+  height: 6px; border-radius: 3px;
+  background: rgba(255,255,255,.07);
+}
+.scare-bar-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, rgba(239,68,68,.3), var(--danger));
+}
+.scare-bar-fill.top { background: linear-gradient(90deg, rgba(245,158,11,.5), var(--warn)); }
+.scare-caption { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* ── Action board ── */
+.action-list { display: flex; flex-direction: column; gap: 0; }
+.action-item {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.action-item:last-child { border-bottom: none; }
+.action-icon {
+  flex-shrink: 0;
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.action-icon svg { width: 20px; height: 20px; }
+.action-text { flex: 1; }
+.action-label { font-size: 14px; color: var(--text); line-height: 1.4; font-weight: 500; }
+.action-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+/* ── Markets row ── */
+.markets-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 900px) {
+  .markets-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.market-tile {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+  backdrop-filter: var(--blur);
+  box-shadow: var(--glass-shadow);
+  padding: 18px 20px 14px;
+  cursor: pointer;
+  transition: border-color .2s, box-shadow .2s;
+  position: relative; overflow: hidden;
+}
+.market-tile::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: var(--radius-card);
+  background: linear-gradient(135deg, rgba(255,255,255,.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+.market-tile:hover { border-color: rgba(255,255,255,.18); box-shadow: var(--glass-shadow), 0 0 0 1px rgba(255,255,255,.06); }
+.market-tile.up { border-color: rgba(34,217,122,.28); box-shadow: var(--glass-shadow), 0 0 0 1px rgba(34,217,122,.06) inset; }
+.market-tile.down { border-color: rgba(239,68,68,.28); box-shadow: var(--glass-shadow), 0 0 0 1px rgba(239,68,68,.06) inset; }
+.market-ticker { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+.market-price {
+  font-size: 22px; font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--text);
+  margin-bottom: 6px;
+}
+.market-delta {
+  font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.market-delta.up { color: var(--up); }
+.market-delta.down { color: var(--down); }
+.market-spark { margin-top: 10px; }
+.market-spark svg { width: 100%; height: 36px; display: block; }
+
+/* ── Fed meter ── */
+.fed-meter-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 0 4px;
+}
+.fed-arc-svg { width: 200px; height: 112px; overflow: visible; }
+.fed-label { font-size: 13px; color: var(--text-dim); text-align: center; margin-top: 4px; }
+.fed-odds { font-size: 32px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; text-align: center; line-height: 1; }
+.fed-odds-sub { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 2px; }
+
+/* ── Events timeline ── */
+.events-rail {
+  position: relative;
+  padding: 24px 0 8px;
+}
+.events-track {
+  position: relative;
+  height: 3px;
+  background: var(--hairline);
+  border-radius: 2px;
+  margin: 0 20px;
+}
+.events-track-fill {
+  position: absolute;
+  left: 0; top: 0; height: 100%;
+  width: 18%;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  border-radius: 2px;
+}
+.events-items {
+  display: flex;
+  justify-content: space-around;
+  padding: 0 0;
+  position: relative;
+}
+.event-pin {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0;
+  position: relative;
+  flex: 1;
+}
+.event-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid;
+  position: relative;
+  top: -7px;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.event-dot.high {
+  border-color: var(--warn);
+  background: rgba(245,158,11,.2);
+  box-shadow: 0 0 8px rgba(245,158,11,.5);
+}
+.event-dot.med {
+  border-color: var(--text-muted);
+  background: rgba(255,255,255,.05);
+}
+.event-dot.today {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+.event-date { font-size: 10px; color: var(--text-muted); letter-spacing: .04em; margin-top: 6px; font-weight: 500; }
+.event-name { font-size: 12px; color: var(--text-dim); font-weight: 600; text-align: center; line-height: 1.3; max-width: 90px; }
+.event-impact {
+  font-size: 10px; margin-top: 2px; font-weight: 600; letter-spacing: .04em;
+}
+.event-impact.high { color: var(--warn); }
+.event-impact.med { color: var(--text-muted); }
+
+/* ── Sectors ── */
+.sectors-wrap { display: flex; flex-direction: column; gap: 8px; }
+.sector-label { font-size: 11px; color: var(--text-muted); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; }
+.sector-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.sector-chip {
+  padding: 5px 12px; border-radius: var(--radius-pill);
+  font-size: 12px; font-weight: 600;
+}
+.sector-chip.hot {
+  background: rgba(34,217,122,.12);
+  border: 1px solid rgba(34,217,122,.3);
+  color: var(--up);
+}
+.sector-chip.cold {
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.25);
+  color: var(--down);
+}
+
+/* ── Sentiment micro-dial ── */
+.sentiment-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0; }
+.sentiment-dial-svg { width: 240px; height: 80px; overflow: visible; }
+.sentiment-row {
+  display: flex; justify-content: space-between;
+  width: 240px; margin-top: 8px;
+}
+.sentiment-anchor {
+  font-size: 10px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.sentiment-anchor.panic { color: var(--danger); }
+.sentiment-anchor.neutral { color: var(--text-muted); }
+.sentiment-anchor.euphoria { color: var(--warn); }
+.sentiment-score {
+  font-size: 20px; font-weight: 800; color: var(--text);
+  font-variant-numeric: tabular-nums; text-align: center;
+  margin-top: 4px;
+}
+.sentiment-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 1px; }
+
+/* ── Sparkline ── */
+.sparkline-svg { overflow: visible; }
+
+/* ── Score sparkline area ── */
+.score-path-wrap {
+  padding: 8px 0 0;
+}
+.score-path-title { font-size: 11px; color: var(--text-muted); letter-spacing: .05em; text-transform: uppercase; margin-bottom: 8px; }
+
+/* ── Data health ── */
+.health-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid var(--hairline);
+}
+.health-row:last-child { border-bottom: none; }
+.health-num { font-size: 28px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.health-label { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.health-badge {
+  padding: 3px 10px; border-radius: var(--radius-pill);
+  font-size: 11px; font-weight: 600;
+}
+.health-badge.ok { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(34,217,122,.3); }
+.health-badge.warn { background: rgba(245,158,11,.1); color: var(--warn); border: 1px solid rgba(245,158,11,.3); }
+
+/* ── News ── */
+.news-list { display: flex; flex-direction: column; gap: 0; }
+.news-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 0; border-bottom: 1px solid var(--hairline);
+  cursor: pointer; transition: opacity .15s;
+}
+.news-item:last-child { border-bottom: none; }
+.news-item:hover { opacity: .8; }
+.news-impact-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px;
+}
+.news-impact-dot.high { background: var(--warn); box-shadow: 0 0 6px rgba(245,158,11,.5); }
+.news-impact-dot.med { background: var(--text-muted); }
+.news-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: .05em;
+  color: var(--text-muted); text-transform: uppercase; margin-bottom: 3px;
+}
+.news-headline { font-size: 13px; color: var(--text-dim); line-height: 1.4; }
+
+/* ── Policy card ── */
+.policy-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 10px 0; border-bottom: 1px solid var(--hairline);
+  font-size: 13px;
+}
+.policy-row:last-child { border-bottom: none; }
+.policy-key { color: var(--text-muted); }
+.policy-val { color: var(--text); font-weight: 600; }
+
+/* ── AI brief ── */
+.ai-brief-pills {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
+}
+.ai-ticker-pill {
+  padding: 4px 12px; border-radius: var(--radius-pill);
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,217,122,.3);
+  font-size: 11px; font-weight: 700; color: var(--accent);
+  letter-spacing: .03em;
+}
+
+/* ── Two-col layout ── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+}
+.four-col {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+@media (max-width: 1100px) {
+  .three-col { grid-template-columns: 1fr 1fr; }
+  .four-col  { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 900px) {
+  .two-col, .three-col, .four-col { grid-template-columns: 1fr; }
+  .markets-grid { grid-template-columns: repeat(2, 1fr); }
+  .page { padding: 0 16px 60px; }
+  .hero-grid { grid-template-columns: 1fr; }
+  .factors-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .markets-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Card title ── */
+.card-title {
+  font-size: 13px; font-weight: 700; color: var(--text);
+  letter-spacing: -.01em; margin-bottom: 16px;
+}
+.card-title-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.card-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: var(--radius-pill);
+  background: rgba(255,255,255,.07); color: var(--text-muted);
+}
+
+/* ── Footer ── */
+.footer {
+  text-align: center; color: var(--text-muted);
+  font-size: 11px; padding-top: 40px; border-top: 1px solid var(--hairline);
+  margin-top: 64px;
+}
+
+/* ── Action icon colors ── */
+.ai-green  { background: rgba(34,217,122,.12); }
+.ai-yellow { background: rgba(245,158,11,.12); }
+.ai-blue   { background: rgba(99,102,241,.12); }
+.ai-red    { background: rgba(239,68,68,.12); }
+.ai-gray   { background: rgba(255,255,255,.07); }
+</style>
+</head>
+<body>
+<div class="aurora-field"><div class="a3"></div></div>
+
+<div class="page">
+
+  <!-- ── Topbar ── -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-dot"></div>
+      Macro Regime
+    </div>
+    <div class="topbar-meta">As of 2026-07-10 &nbsp;·&nbsp; Nightly update</div>
+    <div class="topbar-controls">
+      <button class="btn-pill" onclick="toggleTheme()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        Theme
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       ZONE 1: HERO — Gauge + Stance
+  ═══════════════════════════════════════ -->
+  <div class="zone">
+    <div class="eyebrow">Market Regime</div>
+    <div class="hero-grid">
+
+      <!-- Speedometer gauge -->
+      <div class="card gauge-wrap">
+        <!--
+          Arc geometry: center=(140,148), r=108, arc spans -180deg to 0deg (left to right on bottom).
+          SVG arc: start = (32,148), end = (248,148).
+          Total arc length for r=108, 180deg: PI*108 = 339.3px
+          Score 77/100 => 77% of 180deg => 138.6deg from left.
+          Needle angle from straight-up (12 o'clock): starts at -90deg left, score 77 => -90 + 138.6 = +48.6deg
+          Partial arc dasharray: total=339.3, score portion = 0.77*339.3 = 261.2, remainder clipped.
+        -->
+        <svg class="gauge-svg" viewBox="0 0 280 170" fill="none">
+          <defs>
+            <!-- Gradient along arc direction (left=danger, right=good) -->
+            <linearGradient id="arcGrad" gradientUnits="userSpaceOnUse" x1="32" y1="148" x2="248" y2="148">
+              <stop offset="0%" stop-color="#ef4444"/>
+              <stop offset="30%" stop-color="#f59e0b"/>
+              <stop offset="70%" stop-color="#22d97a"/>
+              <stop offset="100%" stop-color="#22d97a"/>
+            </linearGradient>
+            <filter id="needleGlow" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="4" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="arcGlowF" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <clipPath id="arcClip77">
+              <!-- clip to left 77% of a 280-wide box -->
+              <rect x="0" y="0" width="215" height="170"/>
+            </clipPath>
+          </defs>
+
+          <!-- Background track -->
+          <path d="M 32 148 A 108 108 0 0 1 248 148"
+                stroke="rgba(255,255,255,.08)" stroke-width="16" stroke-linecap="round" fill="none"/>
+
+          <!-- Colored filled arc clipped to 77% -->
+          <g clip-path="url(#arcClip77)">
+            <path d="M 32 148 A 108 108 0 0 1 248 148"
+                  stroke="url(#arcGrad)" stroke-width="16" stroke-linecap="round" fill="none"
+                  filter="url(#arcGlowF)"/>
+          </g>
+
+          <!-- Tick marks at 0,25,50,75,100 -->
+          <g stroke="rgba(255,255,255,.25)" stroke-width="1.5">
+            <!-- 0% = -90deg from center -->
+            <line x1="140" y1="40" x2="140" y2="52" transform="rotate(-90 140 148)"/>
+            <!-- 25% = -45deg -->
+            <line x1="140" y1="40" x2="140" y2="52" transform="rotate(-45 140 148)"/>
+            <!-- 50% = 0deg (straight up) -->
+            <line x1="140" y1="40" x2="140" y2="52" transform="rotate(0 140 148)"/>
+            <!-- 75% = +45deg -->
+            <line x1="140" y1="40" x2="140" y2="52" transform="rotate(45 140 148)"/>
+            <!-- 100% = +90deg -->
+            <line x1="140" y1="40" x2="140" y2="52" transform="rotate(90 140 148)"/>
+          </g>
+
+          <!-- Scale labels -->
+          <text x="24" y="163" fill="rgba(255,255,255,.28)" font-size="9" text-anchor="middle">0</text>
+          <text x="140" y="36" fill="rgba(255,255,255,.28)" font-size="9" text-anchor="middle">50</text>
+          <text x="256" y="163" fill="rgba(255,255,255,.28)" font-size="9" text-anchor="middle">100</text>
+
+          <!-- Needle: rotated 48.6deg around center (140,148) -->
+          <g transform="rotate(48.6 140 148)" filter="url(#needleGlow)">
+            <!-- needle glow halo -->
+            <line x1="140" y1="148" x2="140" y2="52" stroke="rgba(34,217,122,.35)" stroke-width="8" stroke-linecap="round"/>
+            <!-- needle shaft -->
+            <polygon points="138.5,148 141.5,148 140.8,52 139.2,52" fill="white" opacity=".95"/>
+            <!-- pivot outer glow -->
+            <circle cx="140" cy="148" r="11" fill="rgba(34,217,122,.15)"/>
+            <!-- pivot ring -->
+            <circle cx="140" cy="148" r="7" stroke="#22d97a" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
+            <!-- pivot dot -->
+            <circle cx="140" cy="148" r="3" fill="#22d97a"/>
+            <!-- tip glow -->
+            <circle cx="140" cy="54" r="4" fill="#22d97a" style="filter:drop-shadow(0 0 6px #22d97a)"/>
+          </g>
+
+          <!-- Score center label -->
+          <text x="140" y="126" fill="#22d97a" font-size="38" font-weight="800"
+                text-anchor="middle" font-family="-apple-system,Inter,sans-serif"
+                style="filter:drop-shadow(0 0 16px rgba(34,217,122,.7))">77</text>
+          <text x="140" y="144" fill="rgba(255,255,255,.4)" font-size="11"
+                text-anchor="middle" font-family="-apple-system,Inter,sans-serif">/ 100</text>
+        </svg>
+
+        <div style="text-align:center; margin-top:4px;">
+          <div style="font-size:11px;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;">Composite Score</div>
+        </div>
+
+        <!-- 60-session sparkline with area fill -->
+        <div class="score-path-wrap" style="width:100%;margin-top:18px;">
+          <div class="score-path-title">60-Session Path</div>
+          <svg width="100%" height="56" viewBox="0 0 320 56" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="scoreAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#22d97a" stop-opacity=".35"/>
+                <stop offset="100%" stop-color="#22d97a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- path starts low (score ~42), dips, then climbs to 77 at right end -->
+            <!-- Y=56 is bottom (score 0), Y=0 is top (score 100). Score 77 => y=56*(1-0.77)=12.9 -->
+            <path d="M0,32 C10,35 20,38 30,40 C40,42 48,45 58,43 C68,41 76,37 88,34 C100,31 110,28 120,24 C130,20 138,22 148,19 C158,16 166,20 178,17 C190,14 198,11 210,13 C222,15 228,13 240,10 C252,7 262,5 272,4 C282,3 300,8 310,9 C315,9.5 317,9.2 320,9" fill="url(#scoreAreaGrad)" stroke="none"/>
+            <path d="M0,32 C10,35 20,38 30,40 C40,42 48,45 58,43 C68,41 76,37 88,34 C100,31 110,28 120,24 C130,20 138,22 148,19 C158,16 166,20 178,17 C190,14 198,11 210,13 C222,15 228,13 240,10 C252,7 262,5 272,4 C282,3 300,8 310,9 C315,9.5 317,9.2 320,9" fill="none" stroke="#22d97a" stroke-width="2" opacity=".85"/>
+            <circle cx="320" cy="9" r="4" fill="#22d97a" style="filter:drop-shadow(0 0 8px rgba(34,217,122,.9))"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Stance -->
+      <div class="card stance-card">
+        <div>
+          <div class="regime-pill">
+            <div class="dot"></div>
+            Goldilocks &nbsp;·&nbsp; Shifting
+          </div>
+          <div class="stance-score-line">
+            <span class="stance-score">77</span>
+            <span class="stance-label">Risk-on</span>
+          </div>
+          <div class="stance-sub" style="margin-bottom:4px;color:var(--accent);font-weight:600;">GREEN — Trend-following supported</div>
+        </div>
+
+        <div class="stance-thesis">
+          Risk-on — the tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported.
+        </div>
+
+        <div class="stance-flip">
+          <span class="stance-flip-arrow">&#8594;</span>
+          Mixed if breadth &amp; participation rolls over <span style="color:var(--text-dim);font-weight:600;">(now 59/100, the weakest leg)</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       ZONE 2: Factors + Scare ladder
+  ═══════════════════════════════════════ -->
+  <div class="zone">
+    <div class="two-col">
+
+      <!-- Factors -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">Factor Breakdown</div>
+          <div class="card-badge">6 signals</div>
+        </div>
+        <div class="factors-grid">
+          <!-- Trend & Technicals 90 -->
+          <div class="factor-row">
+            <div class="factor-header">
+              <span class="factor-name">Trend &amp; Technicals</span>
+              <span class="factor-score">90</span>
+            </div>
+            <div class="factor-bar-track">
+              <div class="factor-bar-fill" style="width:90%"></div>
+            </div>
+          </div>
+          <!-- Risk Appetite 70 -->
+          <div class="factor-row">
+            <div class="factor-header">
+              <span class="factor-name">Risk Appetite</span>
+              <span class="factor-score" style="color:rgba(255,255,255,.7)">70</span>
+            </div>
+            <div class="factor-bar-track">
+              <div class="factor-bar-fill" style="width:70%;background:linear-gradient(90deg,rgba(34,217,122,.35),rgba(34,217,122,.7))"></div>
+            </div>
+          </div>
+          <!-- Volatility Regime 76 -->
+          <div class="factor-row">
+            <div class="factor-header">
+              <span class="factor-name">Volatility Regime</span>
+              <span class="factor-score">76</span>
+            </div>
+            <div class="factor-bar-track">
+              <div class="factor-bar-fill" style="width:76%"></div>
+            </div>
+          </div>
+          <!-- Breadth 59 — weak -->
+          <div class="factor-row">
+            <div class="factor-header">
+              <span class="factor-name">Breadth &amp; Participation</span>
+              <span class="factor-score weak">59</span>
+            </div>
+            <div class="factor-bar-track">
+              <div class="factor-bar-fill weak" style="width:59%"></div>
+            </div>
+          </div>
+          <!-- Liquidity 77 -->
+          <div class="factor-row">
+            <div class="factor-header">
+              <span class="factor-name">Liquidity &amp; Credit</span>
+              <span class="factor-score">77</span>
+            </div>
+            <div class="factor-bar-track">
+              <div class="factor-bar-fill" style="width:77%"></div>
+            </div>
+          </div>
+          <!-- Downturn guard 87 -->
+          <div class="factor-row">
+            <div class="factor-header">
+              <span class="factor-name">Downturn-Risk Guard</span>
+              <span class="factor-score">87</span>
+            </div>
+            <div class="factor-bar-track">
+              <div class="factor-bar-fill" style="width:87%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scare ladder -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">Risk Scare Ladder</div>
+          <div class="card-badge">dominant · 62</div>
+        </div>
+        <div class="scare-list">
+          <!-- Bubble/blow-off 62.1 — dominant -->
+          <div class="scare-row">
+            <div class="scare-header">
+              <span class="scare-name">Bubble / Blow-off Unwind</span>
+              <span class="scare-val hot">62.1</span>
+            </div>
+            <div class="scare-bar-track">
+              <div class="scare-bar-fill top" style="width:62.1%"></div>
+            </div>
+            <div class="scare-caption">A risk is building — stay normal, just watch it</div>
+          </div>
+          <!-- Global breadth 50.5 -->
+          <div class="scare-row">
+            <div class="scare-header">
+              <span class="scare-name">Global Breadth Divergence</span>
+              <span class="scare-val">50.5</span>
+            </div>
+            <div class="scare-bar-track">
+              <div class="scare-bar-fill" style="width:50.5%"></div>
+            </div>
+          </div>
+          <!-- Credit 47.4 -->
+          <div class="scare-row">
+            <div class="scare-header">
+              <span class="scare-name">Credit Stress</span>
+              <span class="scare-val">47.4</span>
+            </div>
+            <div class="scare-bar-track">
+              <div class="scare-bar-fill" style="width:47.4%"></div>
+            </div>
+          </div>
+          <!-- Growth 38.3 -->
+          <div class="scare-row">
+            <div class="scare-header">
+              <span class="scare-name">Growth Scare</span>
+              <span class="scare-val">38.3</span>
+            </div>
+            <div class="scare-bar-track">
+              <div class="scare-bar-fill" style="width:38.3%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       ZONE 3: What To Do
+  ═══════════════════════════════════════ -->
+  <div class="zone">
+    <div class="eyebrow">What to do</div>
+    <div class="card">
+      <div class="action-list">
+
+        <div class="action-item">
+          <div class="action-icon ai-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#22d97a" stroke-width="2" stroke-linecap="round">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+            </svg>
+          </div>
+          <div class="action-text">
+            <div class="action-label">Risk-on — Trend-follow. Add on strength.</div>
+            <div class="action-sub">Composite 77 · all major pillars aligned</div>
+          </div>
+        </div>
+
+        <div class="action-item">
+          <div class="action-icon ai-yellow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+          <div class="action-text">
+            <div class="action-label">Watch Breadth &amp; Participation — the weakest leg (59/100).</div>
+            <div class="action-sub">Flip trigger if this rolls further</div>
+          </div>
+        </div>
+
+        <div class="action-item">
+          <div class="action-icon ai-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <div class="action-text">
+            <div class="action-label">Expect noise around CPI (in 3 days) — don't read the first move as trend.</div>
+            <div class="action-sub">CPI Jul 14 · HIGH impact</div>
+          </div>
+        </div>
+
+        <div class="action-item">
+          <div class="action-icon ai-yellow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div class="action-text">
+            <div class="action-label">A risk is building — stay normal, just watch it.</div>
+            <div class="action-sub">Bubble / blow-off unwind radar at 62.1</div>
+          </div>
+        </div>
+
+        <div class="action-item">
+          <div class="action-icon ai-gray">
+            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <div class="action-text">
+            <div class="action-label">Policy is quiet — nothing to position for.</div>
+            <div class="action-sub">No active jawboning · last flip 2026-07-02</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       ZONE 4: Markets + Events
+  ═══════════════════════════════════════ -->
+  <div class="zone">
+    <div class="eyebrow">Markets</div>
+
+    <div class="markets-grid">
+
+      <!-- SPY -->
+      <div class="market-tile up">
+        <div class="market-ticker">SPY</div>
+        <div class="market-price">754.95</div>
+        <div class="market-delta up">+0.85%</div>
+        <div class="market-spark">
+          <svg viewBox="0 0 120 36" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="spkGrad1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#22d97a" stop-opacity=".25"/>
+                <stop offset="100%" stop-color="#22d97a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,22 L6,20 L13,23 L19,21 L26,19 L32,16 L38,18 L45,15 L51,12 L57,14 L64,11 L70,8 L76,10 L83,7 L89,5 L95,8 L101,6 L108,4 L114,3 L120,3"
+                  fill="url(#spkGrad1)" stroke="none"/>
+            <path d="M0,22 L6,20 L13,23 L19,21 L26,19 L32,16 L38,18 L45,15 L51,12 L57,14 L64,11 L70,8 L76,10 L83,7 L89,5 L95,8 L101,6 L108,4 L114,3 L120,3"
+                  fill="none" stroke="#22d97a" stroke-width="1.5"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- QQQ -->
+      <div class="market-tile up">
+        <div class="market-ticker">QQQ</div>
+        <div class="market-price">725.51</div>
+        <div class="market-delta up">+1.86%</div>
+        <div class="market-spark">
+          <svg viewBox="0 0 120 36" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="spkGrad2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#22d97a" stop-opacity=".25"/>
+                <stop offset="100%" stop-color="#22d97a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,28 L6,25 L13,26 L19,22 L26,18 L32,14 L38,16 L45,12 L51,8 L57,10 L64,6 L70,4 L76,6 L83,3 L89,2 L95,4 L101,3 L108,2 L114,2 L120,2"
+                  fill="url(#spkGrad2)" stroke="none"/>
+            <path d="M0,28 L6,25 L13,26 L19,22 L26,18 L32,14 L38,16 L45,12 L51,8 L57,10 L64,6 L70,4 L76,6 L83,3 L89,2 L95,4 L101,3 L108,2 L114,2 L120,2"
+                  fill="none" stroke="#22d97a" stroke-width="1.5"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- DJI -->
+      <div class="market-tile up">
+        <div class="market-ticker">DJI</div>
+        <div class="market-price">52,487</div>
+        <div class="market-delta up">+0.27%</div>
+        <div class="market-spark">
+          <svg viewBox="0 0 120 36" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="spkGrad3" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#22d97a" stop-opacity=".2"/>
+                <stop offset="100%" stop-color="#22d97a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,20 L6,22 L13,20 L19,18 L26,19 L32,17 L38,15 L45,16 L51,14 L57,12 L64,13 L70,11 L76,12 L83,10 L89,8 L95,9 L101,8 L108,7 L114,6 L120,6"
+                  fill="url(#spkGrad3)" stroke="none"/>
+            <path d="M0,20 L6,22 L13,20 L19,18 L26,19 L32,17 L38,15 L45,16 L51,14 L57,12 L64,13 L70,11 L76,12 L83,10 L89,8 L95,9 L101,8 L108,7 L114,6 L120,6"
+                  fill="none" stroke="#22d97a" stroke-width="1.5"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- RUT -->
+      <div class="market-tile up">
+        <div class="market-ticker">RUT</div>
+        <div class="market-price">2,992</div>
+        <div class="market-delta up">+1.22%</div>
+        <div class="market-spark">
+          <svg viewBox="0 0 120 36" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="spkGrad4" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#22d97a" stop-opacity=".22"/>
+                <stop offset="100%" stop-color="#22d97a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,26 L6,28 L13,24 L19,20 L26,22 L32,18 L38,14 L45,16 L51,12 L57,14 L64,10 L70,12 L76,9 L83,6 L89,8 L95,5 L101,7 L108,4 L114,3 L120,4"
+                  fill="url(#spkGrad4)" stroke="none"/>
+            <path d="M0,26 L6,28 L13,24 L19,20 L26,22 L32,18 L38,14 L45,16 L51,12 L57,14 L64,10 L70,12 L76,9 L83,6 L89,8 L95,5 L101,7 L108,4 L114,3 L120,4"
+                  fill="none" stroke="#22d97a" stroke-width="1.5"/>
+          </svg>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       ZONE 5: Events timeline (SVG rail)
+  ═══════════════════════════════════════ -->
+  <div class="zone-sm">
+    <div class="card card-sm">
+      <div class="card-title-row">
+        <div class="card-title">Upcoming Events</div>
+        <div class="card-badge">This week</div>
+      </div>
+      <!--
+        SVG timeline: 5 events evenly spaced.
+        viewBox: 0 0 800 90
+        Track y=38, events at x = 80, 220, 360, 500, 640, 780 — but 5 events, use 5 points.
+        Points: 80, 230, 380, 530, 680 (spacing 150px out of 760 usable width, padded 20px each side)
+        Today=80, CPI=230(high), PPI=380(high), Claims=530(med), OpEx=680(med)
+      -->
+      <svg viewBox="0 0 760 90" width="100%" style="display:block;margin-top:4px;overflow:visible">
+        <!-- Track line -->
+        <line x1="20" y1="38" x2="740" y2="38" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
+        <!-- Filled from today to now (today is first point, just highlight track after) -->
+        <line x1="20" y1="38" x2="80" y2="38" stroke="rgba(34,217,122,.4)" stroke-width="2"/>
+
+        <!-- TODAY dot at x=80 -->
+        <circle cx="80" cy="38" r="7" fill="#22d97a" style="filter:drop-shadow(0 0 8px rgba(34,217,122,.9))"/>
+        <circle cx="80" cy="38" r="12" fill="rgba(34,217,122,.12)"/>
+        <text x="80" y="60" text-anchor="middle" fill="rgba(255,255,255,.35)" font-size="10" font-family="-apple-system,sans-serif">TODAY</text>
+        <text x="80" y="74" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="12" font-weight="600" font-family="-apple-system,sans-serif">Now</text>
+
+        <!-- CPI Jul 14 HIGH at x=230 -->
+        <circle cx="230" cy="38" r="7" fill="rgba(245,158,11,.2)" stroke="#f59e0b" stroke-width="2" style="filter:drop-shadow(0 0 6px rgba(245,158,11,.5))"/>
+        <text x="230" y="22" text-anchor="middle" fill="rgba(255,255,255,.35)" font-size="10" font-family="-apple-system,sans-serif">Jul 14</text>
+        <text x="230" y="60" text-anchor="middle" fill="rgba(255,255,255,.7)" font-size="13" font-weight="700" font-family="-apple-system,sans-serif">CPI</text>
+        <text x="230" y="76" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="700" letter-spacing=".05em" font-family="-apple-system,sans-serif">HIGH</text>
+
+        <!-- PPI Jul 15 HIGH at x=380 -->
+        <circle cx="380" cy="38" r="7" fill="rgba(245,158,11,.2)" stroke="#f59e0b" stroke-width="2" style="filter:drop-shadow(0 0 6px rgba(245,158,11,.5))"/>
+        <text x="380" y="22" text-anchor="middle" fill="rgba(255,255,255,.35)" font-size="10" font-family="-apple-system,sans-serif">Jul 15</text>
+        <text x="380" y="60" text-anchor="middle" fill="rgba(255,255,255,.7)" font-size="13" font-weight="700" font-family="-apple-system,sans-serif">PPI</text>
+        <text x="380" y="76" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="700" letter-spacing=".05em" font-family="-apple-system,sans-serif">HIGH</text>
+
+        <!-- Jobless Claims Jul 16 MED at x=530 -->
+        <circle cx="530" cy="38" r="5" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.3)" stroke-width="2"/>
+        <text x="530" y="22" text-anchor="middle" fill="rgba(255,255,255,.35)" font-size="10" font-family="-apple-system,sans-serif">Jul 16</text>
+        <text x="530" y="60" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="11" font-weight="600" font-family="-apple-system,sans-serif">Jobless Claims</text>
+        <text x="530" y="76" text-anchor="middle" fill="rgba(255,255,255,.3)" font-size="10" font-weight="600" letter-spacing=".05em" font-family="-apple-system,sans-serif">MED</text>
+
+        <!-- Options Exp Jul 17 MED at x=680 -->
+        <circle cx="680" cy="38" r="5" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.3)" stroke-width="2"/>
+        <text x="680" y="22" text-anchor="middle" fill="rgba(255,255,255,.35)" font-size="10" font-family="-apple-system,sans-serif">Jul 17</text>
+        <text x="680" y="60" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="11" font-weight="600" font-family="-apple-system,sans-serif">Options Exp</text>
+        <text x="680" y="76" text-anchor="middle" fill="rgba(255,255,255,.3)" font-size="10" font-weight="600" letter-spacing=".05em" font-family="-apple-system,sans-serif">MED</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       ZONE 6: Fed + Sentiment + Sectors
+  ═══════════════════════════════════════ -->
+  <div class="zone">
+    <div class="three-col">
+
+      <!-- Fed meter -->
+      <div class="card">
+        <div class="card-title">Fed Odds — No Change</div>
+        <div class="fed-meter-wrap">
+          <!--
+            Arc: center=(100,100), r=78, 180deg from left(22,100) to right(178,100)
+            Arc length = PI*78 = 245.0px
+            84.5% => dashoffset = 245*(1-0.845) = 37.975 ≈ 38
+            Needle endpoint at 84.5%: angle from -90 = -90 + 0.845*180 = 62.1 deg
+            x = 100 + 78*sin(62.1*PI/180) = 100 + 78*0.8829 = 168.9
+            y = 100 - 78*cos(62.1*PI/180) = 100 - 78*0.4695 = 63.4
+          -->
+          <svg class="fed-arc-svg" viewBox="0 0 200 108" fill="none">
+            <defs>
+              <clipPath id="fedClip">
+                <rect x="0" y="0" width="169" height="108"/>
+              </clipPath>
+            </defs>
+            <!-- Track -->
+            <path d="M 22 100 A 78 78 0 0 1 178 100"
+                  stroke="rgba(255,255,255,.08)" stroke-width="12" stroke-linecap="round" fill="none"/>
+            <!-- Colored fill to 84.5% via clip -->
+            <g clip-path="url(#fedClip)">
+              <path d="M 22 100 A 78 78 0 0 1 178 100"
+                    stroke="#22d97a" stroke-width="12" stroke-linecap="round" fill="none"
+                    style="filter:drop-shadow(0 0 6px rgba(34,217,122,.5))"/>
+            </g>
+            <!-- Glowing dot at 84.5% position (168.9, 63.4) -->
+            <circle cx="168.9" cy="63.4" r="7" fill="#22d97a"
+                    style="filter:drop-shadow(0 0 10px rgba(34,217,122,.9))"/>
+            <!-- Scale labels -->
+            <text x="14" y="104" fill="rgba(255,255,255,.3)" font-size="10" text-anchor="middle">Cut</text>
+            <text x="186" y="104" fill="rgba(255,255,255,.3)" font-size="10" text-anchor="middle">Hike</text>
+            <text x="100" y="90" fill="rgba(255,255,255,.2)" font-size="10" text-anchor="middle">Hold</text>
+          </svg>
+          <div class="fed-odds" style="font-size:36px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;text-shadow:0 0 20px var(--accent-glow);text-align:center;margin-top:2px;">84.5%</div>
+          <div class="fed-odds-sub" style="margin-top:4px;">No change priced · Neutral stance</div>
+        </div>
+      </div>
+
+      <!-- Sentiment micro-dial -->
+      <div class="card">
+        <div class="card-title">Market Sentiment</div>
+        <div class="sentiment-wrap">
+          <!-- Simple half-circle sentiment dial -->
+          <svg class="sentiment-dial-svg" viewBox="0 0 240 80" fill="none">
+            <defs>
+              <linearGradient id="sentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#ef4444"/>
+                <stop offset="50%" stop-color="rgba(255,255,255,.25)"/>
+                <stop offset="100%" stop-color="#f59e0b"/>
+              </linearGradient>
+            </defs>
+            <!-- Track -->
+            <path d="M 16 72 A 104 104 0 0 1 224 72"
+                  stroke="rgba(255,255,255,.07)" stroke-width="10" stroke-linecap="round" fill="none"/>
+            <!-- Colored gradient track -->
+            <path d="M 16 72 A 104 104 0 0 1 224 72"
+                  stroke="url(#sentGrad)" stroke-width="10" stroke-linecap="round" fill="none" opacity=".6"/>
+            <!-- Needle — Risk-on ~72 sentiment → angle -90 + (72/100*180) = 39.6 deg -->
+            <g transform="rotate(39.6 120 72)">
+              <line x1="120" y1="72" x2="120" y2="0"
+                    stroke="white" stroke-width="2.5" stroke-linecap="round" opacity=".9"/>
+              <circle cx="120" cy="72" r="5" fill="white" opacity=".9"/>
+              <circle cx="120" cy="72" r="8" fill="rgba(255,255,255,.12)"/>
+            </g>
+          </svg>
+          <div class="sentiment-row">
+            <div class="sentiment-anchor panic">Panic</div>
+            <div class="sentiment-anchor neutral">Neutral</div>
+            <div class="sentiment-anchor euphoria">Euphoria</div>
+          </div>
+          <div class="sentiment-score">72</div>
+          <div class="sentiment-label">Risk-on confidence</div>
+        </div>
+      </div>
+
+      <!-- Sectors -->
+      <div class="card">
+        <div class="card-title">Sector Rotation</div>
+        <div class="sectors-wrap">
+          <div>
+            <div class="sector-label">Hot</div>
+            <div class="sector-chips">
+              <span class="sector-chip hot">Cybersecurity</span>
+              <span class="sector-chip hot">Insurance &amp; Brokers</span>
+            </div>
+          </div>
+          <div style="margin-top:16px;">
+            <div class="sector-label">Cold</div>
+            <div class="sector-chips">
+              <span class="sector-chip cold">Memory &amp; Storage</span>
+              <span class="sector-chip cold">Regional Banks</span>
+            </div>
+          </div>
+          <div style="margin-top:16px; padding-top:16px; border-top: 1px solid var(--hairline);">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:.05em;text-transform:uppercase;">11-Sector Heat</div>
+            <div style="display:flex;gap:3px;align-items:flex-end;">
+              <div style="flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;">
+                <div style="height:28px;width:100%;background:rgba(34,217,122,.75);border-radius:3px;box-shadow:0 0 6px rgba(34,217,122,.3);"></div>
+                <div style="font-size:8px;color:var(--text-muted);">CYB</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;">
+                <div style="height:22px;width:100%;background:rgba(34,217,122,.55);border-radius:3px;"></div>
+                <div style="font-size:8px;color:var(--text-muted);">INS</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;">
+                <div style="height:18px;width:100%;background:rgba(34,217,122,.35);border-radius:3px;"></div>
+                <div style="font-size:8px;color:var(--text-muted);">XLF</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;">
+                <div style="height:14px;width:100%;background:rgba(255,255,255,.12);border-radius:3px;"></div>
+                <div style="font-size:8px;color:var(--text-muted);">XLV</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;">
+                <div style="height:12px;width:100%;background:rgba(255,255,255,.10);border-radius:3px;"></div>
+                <div style="font-size:8px;color:var(--text-muted);">UTL</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;">
+                <div style="height:12px;width:100%;background:rgba(255,255,255,.10);border-radius:3px;"></div>
+                <div style="font-size:8px;color:var(--text-muted);">XLE</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;">
+                <div style="height:14px;width:100%;background:rgba(239,68,68,.25);border-radius:3px;"></div>
+                <div style="font-size:8px;color:var(--text-muted);">XLI</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;">
+                <div style="height:18px;width:100%;background:rgba(239,68,68,.4);border-radius:3px;"></div>
+                <div style="font-size:8px;color:var(--text-muted);">KRE</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;">
+                <div style="height:24px;width:100%;background:rgba(239,68,68,.65);border-radius:3px;box-shadow:0 0 5px rgba(239,68,68,.25);"></div>
+                <div style="font-size:8px;color:var(--text-muted);">MEM</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       ZONE 7: Policy + AI Brief + News
+  ═══════════════════════════════════════ -->
+  <div class="zone">
+    <div class="three-col">
+
+      <!-- Policy -->
+      <div class="card">
+        <div class="card-title">Policy Monitor</div>
+        <div>
+          <div class="policy-row">
+            <span class="policy-key">Signal</span>
+            <span class="policy-val">Quiet</span>
+          </div>
+          <div class="policy-row">
+            <span class="policy-key">Description</span>
+            <span class="policy-val" style="font-size:12px;color:var(--text-dim);">No active jawboning</span>
+          </div>
+          <div class="policy-row">
+            <span class="policy-key">Last flip</span>
+            <span class="policy-val">2026-07-02</span>
+          </div>
+          <div class="policy-row">
+            <span class="policy-key">Fed stance</span>
+            <span class="policy-val">Neutral / Hold</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Brief -->
+      <div class="card">
+        <div class="card-title">AI Signal Brief</div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Top tickers</div>
+          <div class="ai-brief-pills">
+            <span class="ai-ticker-pill">XLF</span>
+            <span class="ai-ticker-pill">XLK</span>
+            <span class="ai-ticker-pill">KRE</span>
+          </div>
+        </div>
+        <div class="policy-row">
+          <span class="policy-key">High-impact items</span>
+          <span class="policy-val" style="color:var(--accent);">5</span>
+        </div>
+        <div class="policy-row">
+          <span class="policy-key">Dominant channel</span>
+          <span class="policy-val">Rates</span>
+        </div>
+        <div style="margin-top:12px;padding:10px;background:var(--accent-dim);border:1px solid rgba(34,217,122,.15);border-radius:10px;font-size:12px;color:var(--text-dim);">
+          5 high-impact AI signals across rates and financials this session
+        </div>
+      </div>
+
+      <!-- Data health -->
+      <div class="card">
+        <div class="card-title">Data Health</div>
+        <div>
+          <div class="health-row">
+            <div>
+              <div class="health-num">153</div>
+              <div class="health-label">Sources monitored</div>
+            </div>
+            <div class="health-badge ok">OK</div>
+          </div>
+          <div class="health-row">
+            <div>
+              <div class="health-num" style="color:var(--warn);">7</div>
+              <div class="health-label">Need attention</div>
+            </div>
+            <div class="health-badge warn">Review</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       ZONE 8: News
+  ═══════════════════════════════════════ -->
+  <div class="zone">
+    <div class="eyebrow">Market News</div>
+    <div class="card">
+      <div class="news-list">
+
+        <div class="news-item">
+          <div class="news-impact-dot high"></div>
+          <div>
+            <div class="news-tag">Earnings · High</div>
+            <div class="news-headline">As bank earnings approach, a market anomaly emerges</div>
+          </div>
+        </div>
+
+        <div class="news-item">
+          <div class="news-impact-dot med"></div>
+          <div>
+            <div class="news-tag">Stocks · Med</div>
+            <div class="news-headline">Chip rally, Fed task forces, Delta earnings and a fintech IPO</div>
+          </div>
+        </div>
+
+        <div class="news-item">
+          <div class="news-impact-dot med"></div>
+          <div>
+            <div class="news-tag">Earnings · Med</div>
+            <div class="news-headline">PepsiCo earnings miss estimates as U.S. consumers tighten budgets</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Macro Regime Dashboard &nbsp;·&nbsp; As of 2026-07-10 &nbsp;·&nbsp; Nightly pipeline
+  </div>
+
+</div><!-- /page -->
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+}
+</script>
+</body>
+</html>

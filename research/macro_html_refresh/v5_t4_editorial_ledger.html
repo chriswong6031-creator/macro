@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Macro Regime — Editorial Ledger</title>
+<style>
+/* ======================================================
+   EDITORIAL LEDGER — Theme 4 of 5
+   ZetCrypto / FT DNA: pure white, ink #111, thin rules,
+   folio-numbered sections, serif thesis, tabular numerals
+   ====================================================== */
+
+:root {
+  --ink:   #111111;
+  --ink2:  #333333;
+  --muted: #666666;
+  --faint: #999999;
+  --rule:  #e5e5e5;
+  --bg:    #ffffff;
+  --bg2:   #f8f8f8;
+
+  /* semantic */
+  --green:  #1a7a3d;
+  --green-l:#e8f5ee;
+  --red:    #c0392b;
+  --red-l:  #fdf0ee;
+  --amber:  #c27d12;
+  --amber-l:#fdf5e6;
+  --blue:   #1d4ed8;
+  --blue-l: #eff4ff;
+
+  /* chart tint (6% fill) */
+  --tint-green: rgba(26,122,61,0.06);
+  --tint-ink:   rgba(17,17,17,0.06);
+
+  /* accent brand — deep ink-blue */
+  --accent: #1d3a6b;
+
+  font-feature-settings: "tnum" 1;
+}
+
+[data-theme="dark"] {
+  --ink:   #f0f0f0;
+  --ink2:  #cccccc;
+  --muted: #888888;
+  --faint: #555555;
+  --rule:  #2a2a2a;
+  --bg:    #0d0d0d;
+  --bg2:   #161616;
+  --green:  #3ecf7a;
+  --green-l:rgba(62,207,122,0.08);
+  --red:    #f26b5b;
+  --red-l:  rgba(242,107,91,0.08);
+  --amber:  #f5b942;
+  --amber-l:rgba(245,185,66,0.08);
+  --blue:   #6ea3f7;
+  --blue-l: rgba(110,163,247,0.08);
+  --tint-green: rgba(62,207,122,0.07);
+  --tint-ink:   rgba(240,240,240,0.04);
+  --accent: #7aa3e0;
+}
+
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout shell ── */
+.page {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  grid-template-rows: auto 1fr;
+  gap: 0;
+  min-height: 100vh;
+}
+
+/* ── Masthead ── */
+.masthead {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 28px 48px 20px;
+  border-bottom: 1.5px solid var(--ink);
+}
+
+.masthead-brand {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.masthead-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: .01em;
+  color: var(--ink);
+}
+
+.masthead-meta {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: .03em;
+}
+
+.masthead-meta .toggle-btn {
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 3px 10px;
+  font: 11px/1.4 inherit;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.masthead-meta .toggle-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ── Main column ── */
+.main-col {
+  grid-column: 1;
+  padding: 0 48px 64px;
+  border-right: 1px solid var(--rule);
+}
+
+/* ── Meta column ── */
+.meta-col {
+  grid-column: 2;
+  padding: 0 32px 64px;
+  font-size: 12px;
+}
+
+/* ── Section folio structure ── */
+.folio-section {
+  margin-top: 56px;
+}
+
+.folio-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.folio-num {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  min-width: 24px;
+}
+
+.folio-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.folio-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+/* ── Hero verdict ── */
+.verdict-hero {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 40px;
+  align-items: start;
+}
+
+.verdict-score-block {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+}
+
+.verdict-numeral {
+  font-size: 148px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--green);
+  letter-spacing: -.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.verdict-denom {
+  font-size: 38px;
+  font-weight: 300;
+  color: var(--faint);
+  align-self: flex-end;
+  margin-left: 4px;
+  margin-bottom: 18px;
+  letter-spacing: 0;
+}
+
+.verdict-right {
+  padding-top: 12px;
+}
+
+.verdict-state-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 10px;
+}
+
+.verdict-thesis {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ink);
+  font-style: italic;
+  max-width: 520px;
+}
+
+.verdict-flipline {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--muted);
+  border-left: 2px solid var(--rule);
+  padding-left: 12px;
+  max-width: 480px;
+}
+
+/* Score sparkline — 60-session path */
+.score-sparkline {
+  margin-top: 24px;
+  position: relative;
+}
+.score-sparkline-label {
+  font-size: 11px;
+  color: var(--faint);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* ── Factor array ── */
+.factor-array {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.factor-row {
+  display: grid;
+  grid-template-columns: 200px 40px 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 2px 0;
+}
+
+.factor-name {
+  font-size: 13px;
+  color: var(--ink2);
+}
+
+.factor-name.weakest {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.factor-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.factor-track {
+  height: 6px;
+  background: var(--rule);
+  border-radius: 1px;
+  overflow: hidden;
+  position: relative;
+}
+
+.factor-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .3s;
+}
+
+/* ── Scare ladder ── */
+.scare-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.scare-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  align-items: center;
+  gap: 14px;
+}
+
+.scare-label {
+  font-size: 13px;
+  color: var(--ink2);
+}
+
+.scare-label.dominant {
+  font-weight: 600;
+  color: var(--amber);
+}
+
+.scare-bar-wrap {
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  align-items: center;
+  gap: 10px;
+}
+
+.scare-bar-track {
+  height: 5px;
+  background: var(--rule);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.scare-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--amber);
+}
+
+.scare-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.scare-caption {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--muted);
+  padding-left: 0;
+  margin-top: -4px;
+  border-left: 2px solid var(--amber);
+  padding-left: 10px;
+}
+
+/* ── What to do ── */
+.action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.action-item {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.action-item:first-child { border-top: 1px solid var(--rule); }
+
+.action-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+}
+
+.action-dot.primary { background: var(--green); }
+.action-dot.watch   { background: var(--amber); }
+.action-dot.neutral { background: var(--faint); }
+.action-dot.caution { background: var(--red); opacity:.6; }
+
+.action-text {
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.5;
+}
+
+/* ── Events timeline ── */
+.events-timeline {
+  position: relative;
+  padding-bottom: 20px;
+}
+
+.timeline-rail {
+  position: absolute;
+  left: 0;
+  top: 22px;
+  right: 0;
+  height: 1px;
+  background: var(--rule);
+}
+
+.timeline-items {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  padding-top: 0;
+}
+
+.timeline-event {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid;
+  background: var(--bg);
+  z-index: 1;
+  position: relative;
+  margin-top: 17px;
+}
+
+.timeline-dot.high   { border-color: var(--red);   background: var(--red); }
+.timeline-dot.medium { border-color: var(--amber); background: var(--bg); }
+.timeline-dot.low    { border-color: var(--faint); background: var(--bg); }
+
+.timeline-date {
+  font-size: 11px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.timeline-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink2);
+  text-align: center;
+  max-width: 90px;
+  line-height: 1.3;
+}
+
+.timeline-impact {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.timeline-impact.high   { color: var(--red); }
+.timeline-impact.medium { color: var(--amber); }
+
+/* ── Market tiles ── */
+.market-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+
+.market-tile {
+  background: var(--bg);
+  padding: 18px 20px 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.market-tile-ticker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.market-tile-price {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.03em;
+  line-height: 1.1;
+}
+
+.market-tile-delta {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.delta-up   { color: var(--green); }
+.delta-down { color: var(--red); }
+
+.market-tile svg { display: block; margin-top: 8px; }
+
+/* ── Fed odds meter ── */
+.fed-meter-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.fed-meter-label {
+  font-size: 11px;
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.fed-pct {
+  font-size: 40px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.fed-sublabel {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: -4px;
+}
+
+.fed-arc-wrap {
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* ── Sector heat strip ── */
+.sector-heat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sector-strip {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sector-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border: 1px solid;
+  border-radius: 2px;
+  letter-spacing: .03em;
+}
+
+.sector-chip.hot  {
+  background: var(--green-l);
+  border-color: rgba(26,122,61,.2);
+  color: var(--green);
+}
+.sector-chip.cold {
+  background: var(--red-l);
+  border-color: rgba(192,57,43,.2);
+  color: var(--red);
+}
+
+.sector-heat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--faint);
+  margin-bottom: 2px;
+}
+
+/* ── Sentiment dial ── */
+.sentiment-dial-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.sentiment-anchors {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 10px;
+  color: var(--faint);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* ── News rows ── */
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.news-row {
+  display: grid;
+  grid-template-columns: 8px auto 1fr auto;
+  align-items: start;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.news-row:first-child { border-top: 1px solid var(--rule); }
+
+.news-impact-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 4px;
+}
+.news-impact-dot.high   { background: var(--red); }
+.news-impact-dot.medium { background: var(--amber); }
+.news-impact-dot.low    { background: var(--faint); }
+
+.news-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.news-headline {
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.4;
+}
+
+/* ── Meta column styles ── */
+.meta-section {
+  margin-top: 32px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+
+.meta-section:first-of-type { margin-top: 32px; }
+
+.meta-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 10px;
+}
+
+.meta-kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+}
+
+.meta-kv:last-child { border-bottom: none; }
+.meta-kv .mk { color: var(--muted); }
+.meta-kv .mv {
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-health-bar {
+  margin-top: 10px;
+}
+
+.data-health-track {
+  height: 3px;
+  background: var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.data-health-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--green);
+}
+
+.data-health-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── Regime badge ── */
+.regime-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--blue);
+  background: var(--blue-l);
+  border: 1px solid rgba(29,78,216,.15);
+  border-radius: 2px;
+  padding: 4px 10px;
+  margin-top: 16px;
+}
+
+.regime-shift {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--faint);
+  text-transform: lowercase;
+  letter-spacing: 0;
+}
+
+/* ── AI brief ── */
+.ai-brief {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.ai-brief-tickers {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.ai-ticker {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--bg2);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 2px 7px;
+}
+
+/* ── Two-col sub-grid ── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+@media (max-width: 900px) {
+  .two-col { grid-template-columns: 1fr; gap: 0; }
+}
+
+/* ── Inline SVG styles ── */
+svg text { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; }
+
+/* SVG element theme adaptation */
+[data-theme="dark"] .market-tiles { background: var(--rule); }
+[data-theme="dark"] .market-tile  { background: var(--bg); }
+/* In dark mode, flip hardcoded green to brighter variant */
+[data-theme="dark"] .factor-fill  { filter: brightness(1.4); }
+[data-theme="dark"] .scare-bar-fill { filter: brightness(1.3); }
+/* Data health fill */
+[data-theme="dark"] .data-health-fill { background: var(--green); }
+/* Sentiment SVG in dark mode */
+[data-theme="dark"] .sent-svg circle[fill="#1a7a3d"] { fill: #3ecf7a; }
+[data-theme="dark"] .sent-svg text[fill="#1a7a3d"] { fill: #3ecf7a; }
+
+/* ── Footer ── */
+.page-footer {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--rule);
+  padding: 20px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--faint);
+  letter-spacing: .04em;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .page { grid-template-columns: 1fr; }
+  .main-col { padding: 0 20px 48px; border-right: none; }
+  .meta-col {
+    grid-column: 1;
+    padding: 0 20px 48px;
+    border-top: 1px solid var(--rule);
+  }
+  .masthead { padding: 20px 20px 16px; flex-wrap: wrap; gap: 10px; }
+  .verdict-numeral { font-size: 80px; }
+  .verdict-thesis { font-size: 16px; }
+  .market-tiles { grid-template-columns: 1fr 1fr; }
+  .page-footer { padding: 16px 20px; flex-direction: column; gap: 6px; }
+}
+
+@media (max-width: 480px) {
+  .verdict-hero { grid-template-columns: 1fr; }
+  .verdict-numeral { font-size: 72px; }
+  .market-tiles { grid-template-columns: 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+  .masthead-title { font-size: 15px; }
+}
+
+/* hover states */
+.market-tile { transition: background .15s; }
+.market-tile:hover { background: var(--bg2); }
+
+.news-row:hover .news-headline { color: var(--ink); }
+.news-row { transition: background .1s; cursor: default; }
+.news-row:hover { background: var(--bg2); }
+
+.action-item:hover { background: var(--bg2); }
+
+.factor-row:hover .factor-name { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ── Masthead ── -->
+  <header class="masthead">
+    <div>
+      <div class="masthead-brand">Mastermind · Macro Intelligence</div>
+      <div class="masthead-title">US Market Regime Dashboard</div>
+    </div>
+    <div class="masthead-meta">
+      <span>As of 2026-07-10</span>
+      <button class="toggle-btn" onclick="toggleTheme()" id="theme-btn">Dark</button>
+    </div>
+  </header>
+
+  <!-- ── Main content column ── -->
+  <main class="main-col">
+
+    <!-- §0 Hero verdict -->
+    <div class="folio-section" style="margin-top:32px;">
+      <div class="folio-eyebrow">
+        <span class="folio-num">00</span>
+        <span class="folio-label">Verdict</span>
+        <div class="folio-rule"></div>
+      </div>
+
+      <div class="verdict-hero">
+        <div>
+          <div class="verdict-score-block">
+            <span class="verdict-numeral">77</span>
+            <span class="verdict-denom">/100</span>
+          </div>
+          <!-- 60-session sparkline area chart -->
+          <div class="score-sparkline">
+            <div class="score-sparkline-label">60-session path</div>
+            <svg width="220" height="72" viewBox="0 0 220 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="spkGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#1a7a3d" stop-opacity="0.16"/>
+                  <stop offset="100%" stop-color="#1a7a3d" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- y-axis hairlines -->
+              <line x1="20" y1="8"  x2="220" y2="8"  stroke="#e5e5e5" stroke-width="0.5"/>
+              <line x1="20" y1="36" x2="220" y2="36" stroke="#e5e5e5" stroke-width="0.5"/>
+              <line x1="20" y1="64" x2="220" y2="64" stroke="#e5e5e5" stroke-width="0.5"/>
+              <!-- plausible 60-session path ending at 77 (maps to y≈14 in range 8-64 for score 100-0) -->
+              <!-- score range 20-85; at y=8=score85, y=64=score20; score 77 → y = 8+(85-77)/(85-20)*56 = 8+6.9 = ~15 -->
+              <path d="M20,48 C30,46 38,52 48,48 C58,44 62,52 72,50 C82,48 88,54 98,56 C108,58 112,62 122,60 C132,58 136,52 146,48 C156,44 160,38 170,32 C180,26 184,28 194,24 C204,20 208,18 220,14 L220,72 L20,72 Z"
+                    fill="url(#spkGrad)"/>
+              <path d="M20,48 C30,46 38,52 48,48 C58,44 62,52 72,50 C82,48 88,54 98,56 C108,58 112,62 122,60 C132,58 136,52 146,48 C156,44 160,38 170,32 C180,26 184,28 194,24 C204,20 208,18 220,14"
+                    fill="none" stroke="#1a7a3d" stroke-width="1.5"/>
+              <!-- end dot -->
+              <circle cx="220" cy="14" r="3.5" fill="#1a7a3d"/>
+              <!-- y-axis labels -->
+              <text x="2" y="68" font-size="9" fill="#999" dominant-baseline="middle">20</text>
+              <text x="2" y="40" font-size="9" fill="#999" dominant-baseline="middle">50</text>
+              <text x="2" y="12" font-size="9" fill="#999" dominant-baseline="middle">85</text>
+            </svg>
+          </div>
+        </div>
+
+        <div class="verdict-right">
+          <div class="verdict-state-label">Risk-on</div>
+          <div class="verdict-thesis">"Risk-on — the tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported."</div>
+          <div class="verdict-flipline">→ Mixed if breadth &amp; participation rolls over (now 59/100, the weakest leg)</div>
+
+          <div class="regime-pill">
+            Goldilocks
+            <span class="regime-shift">· shifting</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- §01 Evidence — factor bar array -->
+    <div class="folio-section">
+      <div class="folio-eyebrow">
+        <span class="folio-num">01</span>
+        <span class="folio-label">Evidence</span>
+        <div class="folio-rule"></div>
+      </div>
+
+      <div class="factor-array">
+
+        <div class="factor-row">
+          <span class="factor-name">Trend &amp; technicals</span>
+          <span class="factor-val">90</span>
+          <div class="factor-track">
+            <div class="factor-fill" style="width:90%;background:var(--green);"></div>
+          </div>
+        </div>
+
+        <div class="factor-row">
+          <span class="factor-name">Risk appetite</span>
+          <span class="factor-val">70</span>
+          <div class="factor-track">
+            <div class="factor-fill" style="width:70%;background:var(--green);opacity:.8;"></div>
+          </div>
+        </div>
+
+        <div class="factor-row">
+          <span class="factor-name">Volatility regime</span>
+          <span class="factor-val">76</span>
+          <div class="factor-track">
+            <div class="factor-fill" style="width:76%;background:var(--green);opacity:.8;"></div>
+          </div>
+        </div>
+
+        <div class="factor-row">
+          <span class="factor-name weakest">Breadth &amp; participation</span>
+          <span class="factor-val" style="color:var(--amber);">59</span>
+          <div class="factor-track">
+            <div class="factor-fill" style="width:59%;background:var(--amber);"></div>
+          </div>
+        </div>
+
+        <div class="factor-row">
+          <span class="factor-name">Liquidity &amp; credit</span>
+          <span class="factor-val">77</span>
+          <div class="factor-track">
+            <div class="factor-fill" style="width:77%;background:var(--green);opacity:.8;"></div>
+          </div>
+        </div>
+
+        <div class="factor-row">
+          <span class="factor-name">Downturn-risk guard</span>
+          <span class="factor-val">87</span>
+          <div class="factor-track">
+            <div class="factor-fill" style="width:87%;background:var(--green);"></div>
+          </div>
+        </div>
+
+        <!-- inline legend -->
+        <div style="margin-top:6px;display:flex;gap:20px;font-size:11px;color:var(--faint);">
+          <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:10px;height:3px;background:var(--green);border-radius:2px;"></span> Supportive</span>
+          <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:10px;height:3px;background:var(--amber);border-radius:2px;"></span> Lagging</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- §02 Risk — scare ladder -->
+    <div class="folio-section">
+      <div class="folio-eyebrow">
+        <span class="folio-num">02</span>
+        <span class="folio-label">Risk Radar</span>
+        <div class="folio-rule"></div>
+      </div>
+
+      <div class="scare-ladder">
+
+        <div class="scare-row">
+          <span class="scare-label dominant">Bubble / blow-off unwind</span>
+          <div class="scare-bar-wrap">
+            <div class="scare-bar-track">
+              <div class="scare-bar-fill" style="width:62.1%;background:var(--amber);"></div>
+            </div>
+            <span class="scare-val">62.1</span>
+          </div>
+        </div>
+        <div class="scare-caption">A risk is building — stay normal, just watch it.</div>
+
+        <div class="scare-row">
+          <span class="scare-label">Global breadth divergence</span>
+          <div class="scare-bar-wrap">
+            <div class="scare-bar-track">
+              <div class="scare-bar-fill" style="width:50.5%;background:var(--faint);opacity:.6;"></div>
+            </div>
+            <span class="scare-val">50.5</span>
+          </div>
+        </div>
+
+        <div class="scare-row">
+          <span class="scare-label">Credit stress</span>
+          <div class="scare-bar-wrap">
+            <div class="scare-bar-track">
+              <div class="scare-bar-fill" style="width:47.4%;background:var(--faint);opacity:.5;"></div>
+            </div>
+            <span class="scare-val">47.4</span>
+          </div>
+        </div>
+
+        <div class="scare-row">
+          <span class="scare-label">Growth scare</span>
+          <div class="scare-bar-wrap">
+            <div class="scare-bar-track">
+              <div class="scare-bar-fill" style="width:38.3%;background:var(--faint);opacity:.4;"></div>
+            </div>
+            <span class="scare-val">38.3</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- §03 Action — what to do -->
+    <div class="folio-section">
+      <div class="folio-eyebrow">
+        <span class="folio-num">03</span>
+        <span class="folio-label">What to Do</span>
+        <div class="folio-rule"></div>
+      </div>
+
+      <div class="action-list">
+        <div class="action-item">
+          <div class="action-dot primary"></div>
+          <div class="action-text">Risk-on — Trend-follow. Add on strength.</div>
+        </div>
+        <div class="action-item">
+          <div class="action-dot watch"></div>
+          <div class="action-text">Watch Breadth &amp; participation — the weakest leg (59/100).</div>
+        </div>
+        <div class="action-item">
+          <div class="action-dot neutral"></div>
+          <div class="action-text">Expect noise around CPI (in 3 days) — don't read the first move as trend.</div>
+        </div>
+        <div class="action-item">
+          <div class="action-dot caution"></div>
+          <div class="action-text">A risk is building — stay normal, just watch it.</div>
+        </div>
+        <div class="action-item">
+          <div class="action-dot neutral"></div>
+          <div class="action-text">Policy is quiet — nothing to position for.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- §04 Events — week timeline rail -->
+    <div class="folio-section">
+      <div class="folio-eyebrow">
+        <span class="folio-num">04</span>
+        <span class="folio-label">Events This Week</span>
+        <div class="folio-rule"></div>
+      </div>
+
+      <div class="events-timeline">
+        <div class="timeline-rail"></div>
+        <div class="timeline-items">
+
+          <div class="timeline-event">
+            <div class="timeline-date">Jul 14</div>
+            <div class="timeline-dot high"></div>
+            <div class="timeline-name">CPI</div>
+            <div class="timeline-impact high">High</div>
+          </div>
+
+          <div class="timeline-event">
+            <div class="timeline-date">Jul 15</div>
+            <div class="timeline-dot high"></div>
+            <div class="timeline-name">PPI</div>
+            <div class="timeline-impact high">High</div>
+          </div>
+
+          <div class="timeline-event">
+            <div class="timeline-date">Jul 16</div>
+            <div class="timeline-dot medium"></div>
+            <div class="timeline-name">Initial Jobless Claims</div>
+            <div class="timeline-impact medium">Med</div>
+          </div>
+
+          <div class="timeline-event">
+            <div class="timeline-date">Jul 17</div>
+            <div class="timeline-dot medium"></div>
+            <div class="timeline-name">Options Expiration</div>
+            <div class="timeline-impact medium">Med</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- §05 Markets — tiles with sparklines + sector heat -->
+    <div class="folio-section">
+      <div class="folio-eyebrow">
+        <span class="folio-num">05</span>
+        <span class="folio-label">Markets</span>
+        <div class="folio-rule"></div>
+      </div>
+
+      <!-- 4-across row for richer sparkline presence -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);">
+
+        <!-- SPY -->
+        <div class="market-tile">
+          <div class="market-tile-ticker">SPY</div>
+          <div class="market-tile-price">754.95</div>
+          <div class="market-tile-delta delta-up">+0.85%</div>
+          <svg width="100%" height="52" viewBox="0 0 160 52" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1a7a3d" stop-opacity=".15"/>
+                <stop offset="100%" stop-color="#1a7a3d" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,36 L10,34 L20,38 L30,32 L40,34 L50,28 L60,26 L70,28 L80,22 L90,20 L100,16 L110,14 L120,12 L130,10 L140,7 L150,5 L160,3 L160,52 L0,52 Z" fill="url(#g1)"/>
+            <path d="M0,36 L10,34 L20,38 L30,32 L40,34 L50,28 L60,26 L70,28 L80,22 L90,20 L100,16 L110,14 L120,12 L130,10 L140,7 L150,5 L160,3" fill="none" stroke="#1a7a3d" stroke-width="1.5"/>
+          </svg>
+        </div>
+
+        <!-- QQQ -->
+        <div class="market-tile">
+          <div class="market-tile-ticker">QQQ</div>
+          <div class="market-tile-price">725.51</div>
+          <div class="market-tile-delta delta-up">+1.86%</div>
+          <svg width="100%" height="52" viewBox="0 0 160 52" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1a7a3d" stop-opacity=".15"/>
+                <stop offset="100%" stop-color="#1a7a3d" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,40 L10,38 L20,42 L30,36 L40,38 L50,30 L60,26 L70,28 L80,20 L90,16 L100,13 L110,10 L120,8 L130,6 L140,4 L150,3 L160,1 L160,52 L0,52 Z" fill="url(#g2)"/>
+            <path d="M0,40 L10,38 L20,42 L30,36 L40,38 L50,30 L60,26 L70,28 L80,20 L90,16 L100,13 L110,10 L120,8 L130,6 L140,4 L150,3 L160,1" fill="none" stroke="#1a7a3d" stroke-width="1.5"/>
+          </svg>
+        </div>
+
+        <!-- DJI -->
+        <div class="market-tile">
+          <div class="market-tile-ticker">DJI</div>
+          <div class="market-tile-price">52,487</div>
+          <div class="market-tile-delta delta-up">+0.27%</div>
+          <svg width="100%" height="52" viewBox="0 0 160 52" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1a7a3d" stop-opacity=".10"/>
+                <stop offset="100%" stop-color="#1a7a3d" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,30 L10,28 L20,32 L30,30 L40,34 L50,30 L60,28 L70,26 L80,28 L90,26 L100,22 L110,20 L120,18 L130,16 L140,14 L150,13 L160,11 L160,52 L0,52 Z" fill="url(#g3)"/>
+            <path d="M0,30 L10,28 L20,32 L30,30 L40,34 L50,30 L60,28 L70,26 L80,28 L90,26 L100,22 L110,20 L120,18 L130,16 L140,14 L150,13 L160,11" fill="none" stroke="#1a7a3d" stroke-width="1.5"/>
+          </svg>
+        </div>
+
+        <!-- RUT -->
+        <div class="market-tile">
+          <div class="market-tile-ticker">RUT</div>
+          <div class="market-tile-price">2,992.54</div>
+          <div class="market-tile-delta delta-up">+1.22%</div>
+          <svg width="100%" height="52" viewBox="0 0 160 52" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g4" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1a7a3d" stop-opacity=".15"/>
+                <stop offset="100%" stop-color="#1a7a3d" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,38 L10,40 L20,36 L30,38 L40,32 L50,34 L60,28 L70,24 L80,26 L90,22 L100,18 L110,14 L120,11 L130,9 L140,7 L150,5 L160,3 L160,52 L0,52 Z" fill="url(#g4)"/>
+            <path d="M0,38 L10,40 L20,36 L30,38 L40,32 L50,34 L60,28 L70,24 L80,26 L90,22 L100,18 L110,14 L120,11 L130,9 L140,7 L150,5 L160,3" fill="none" stroke="#1a7a3d" stroke-width="1.5"/>
+          </svg>
+        </div>
+
+      </div>
+
+      <!-- Sectors -->
+      <div style="margin-top:28px;">
+        <div class="sector-heat">
+          <div>
+            <div class="sector-heat-label">Hot</div>
+            <div class="sector-strip">
+              <span class="sector-chip hot">Cybersecurity</span>
+              <span class="sector-chip hot">Insurance &amp; Brokers</span>
+            </div>
+          </div>
+          <div>
+            <div class="sector-heat-label">Cold</div>
+            <div class="sector-strip">
+              <span class="sector-chip cold">Memory &amp; Storage</span>
+              <span class="sector-chip cold">Regional Banks</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- §06 Sentiment dial -->
+    <div class="folio-section">
+      <div class="folio-eyebrow">
+        <span class="folio-num">06</span>
+        <span class="folio-label">Sentiment Position</span>
+        <div class="folio-rule"></div>
+      </div>
+
+      <div class="sentiment-dial-wrap">
+        <svg width="320" height="180" viewBox="0 0 320 180" class="sent-svg">
+          <defs>
+            <linearGradient id="sentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stop-color="#c0392b"/>
+              <stop offset="42%"  stop-color="#c27d12"/>
+              <stop offset="100%" stop-color="#1a7a3d"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Track: full semicircle (cx=160, cy=160, r=120) -->
+          <path d="M 40,160 A 120,120 0 0,1 280,160"
+                fill="none" stroke="var(--rule)" stroke-width="12" stroke-linecap="round"/>
+
+          <!-- Gradient overlay (decorative) -->
+          <path d="M 40,160 A 120,120 0 0,1 280,160"
+                fill="none" stroke="url(#sentGrad)" stroke-width="12" stroke-linecap="round" opacity="0.15"/>
+
+          <!-- Active arc: 65% of 180° = 117° from left end -->
+          <!-- End point: angle from +x axis = 180° - 117° = 63° above horizontal right -->
+          <!-- x = 160 + 120*cos(63°) = 160 + 120*0.454 = 214.5 ≈ 215 -->
+          <!-- y = 160 - 120*sin(63°) = 160 - 120*0.891 = 160 - 106.9 ≈ 53 -->
+          <path d="M 40,160 A 120,120 0 0,1 215,53"
+                fill="none" stroke="url(#sentGrad)" stroke-width="12" stroke-linecap="round"/>
+
+          <!-- Needle -->
+          <line x1="160" y1="160" x2="215" y2="53"
+                stroke="var(--ink2)" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+          <circle cx="160" cy="160" r="5" fill="var(--ink)" opacity="0.65"/>
+          <circle cx="215" cy="53"  r="3.5" fill="#1a7a3d"/>
+
+          <!-- Axis labels (using currentColor via class) -->
+          <text x="30"  y="176" font-size="10" fill="var(--faint)" text-anchor="middle">Panic</text>
+          <text x="160" y="22"  font-size="10" fill="var(--faint)" text-anchor="middle">Neutral</text>
+          <text x="290" y="176" font-size="10" fill="var(--faint)" text-anchor="middle">Euphoria</text>
+
+          <!-- State label -->
+          <text x="160" y="132" font-size="14" font-weight="700" fill="#1a7a3d" text-anchor="middle">Risk-on</text>
+          <text x="160" y="150" font-size="10" fill="var(--muted)" text-anchor="middle">score 77 · leaning bullish</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- §07 News -->
+    <div class="folio-section">
+      <div class="folio-eyebrow">
+        <span class="folio-num">07</span>
+        <span class="folio-label">News Signal</span>
+        <div class="folio-rule"></div>
+      </div>
+
+      <div class="news-list">
+        <div class="news-row">
+          <div class="news-impact-dot high"></div>
+          <div class="news-tag">Earnings</div>
+          <div class="news-headline">As bank earnings approach, a market anomaly emerges</div>
+          <div style="font-size:11px;color:var(--faint);white-space:nowrap;">Today</div>
+        </div>
+        <div class="news-row">
+          <div class="news-impact-dot medium"></div>
+          <div class="news-tag">Stocks</div>
+          <div class="news-headline">Chip rally, Fed task forces, Delta earnings and a fintech IPO</div>
+          <div style="font-size:11px;color:var(--faint);white-space:nowrap;">Today</div>
+        </div>
+        <div class="news-row">
+          <div class="news-impact-dot medium"></div>
+          <div class="news-tag">Earnings</div>
+          <div class="news-headline">PepsiCo earnings miss estimates as U.S. consumers tighten budgets</div>
+          <div style="font-size:11px;color:var(--faint);white-space:nowrap;">Today</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;font-size:12px;color:var(--muted);">
+        5 high-impact items · dominant channel <strong style="color:var(--ink);">rates</strong> · top tickers
+        <span style="font-weight:600;color:var(--ink);">XLF, XLK, KRE</span>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Meta / right column ── -->
+  <aside class="meta-col">
+
+    <!-- Policy -->
+    <div class="meta-section" style="margin-top:32px;">
+      <div class="meta-eyebrow">Policy</div>
+      <div class="meta-kv">
+        <span class="mk">Stance</span>
+        <span class="mv">Quiet</span>
+      </div>
+      <div class="meta-kv">
+        <span class="mk">Fed stance</span>
+        <span class="mv">Neutral / hold</span>
+      </div>
+      <div class="meta-kv">
+        <span class="mk">Last flip</span>
+        <span class="mv">2026-07-02</span>
+      </div>
+
+      <!-- Fed odds meter -->
+      <div class="fed-meter-wrap">
+        <div class="fed-meter-label">No-change odds</div>
+        <div class="fed-pct">84.5%</div>
+        <div class="fed-sublabel">implied by market pricing</div>
+
+        <div class="fed-arc-wrap">
+          <svg width="100%" height="60" viewBox="0 0 200 60">
+            <defs>
+              <linearGradient id="fedGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#e5e5e5"/>
+                <stop offset="84.5%" stop-color="#e5e5e5"/>
+                <stop offset="84.5%" stop-color="#1a7a3d"/>
+                <stop offset="100%" stop-color="#1a7a3d" stop-opacity="0.3"/>
+              </linearGradient>
+            </defs>
+            <!-- track -->
+            <rect x="0" y="24" width="200" height="4" rx="2" fill="#e5e5e5"/>
+            <!-- fill -->
+            <rect x="0" y="24" width="169" height="4" rx="2" fill="#1a7a3d" opacity=".85"/>
+            <!-- tick labels -->
+            <text x="0"   y="18" font-size="9" fill="#999">0%</text>
+            <text x="169" y="18" font-size="9" fill="#1a7a3d" font-weight="600" text-anchor="middle">84.5%</text>
+            <text x="200" y="18" font-size="9" fill="#999" text-anchor="end">100%</text>
+            <!-- threshold line -->
+            <line x1="169" y1="16" x2="169" y2="32" stroke="#1a7a3d" stroke-width="1.5" stroke-dasharray="2,2"/>
+            <text x="0" y="44" font-size="9" fill="#999">Cut</text>
+            <text x="200" y="44" font-size="9" fill="#999" text-anchor="end">Hold</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Brief -->
+    <div class="meta-section">
+      <div class="meta-eyebrow">AI Brief</div>
+      <div class="ai-brief">
+        5 high-impact items · dominant channel <strong style="color:var(--ink2);">rates</strong>
+      </div>
+      <div class="ai-brief-tickers">
+        <span class="ai-ticker">XLF</span>
+        <span class="ai-ticker">XLK</span>
+        <span class="ai-ticker">KRE</span>
+      </div>
+    </div>
+
+    <!-- Data Health -->
+    <div class="meta-section">
+      <div class="meta-eyebrow">Data Health</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+        <span style="font-size:28px;font-weight:700;color:var(--ink);letter-spacing:-.03em;font-variant-numeric:tabular-nums;">153</span>
+        <span style="font-size:11px;color:var(--amber);font-weight:600;">7 need attention</span>
+      </div>
+      <div class="data-health-bar">
+        <div class="data-health-track">
+          <!-- 146/153 sources healthy = 95.4% -->
+          <div class="data-health-fill" style="width:95.4%;"></div>
+        </div>
+        <div class="data-health-label" style="margin-top:4px;">sources tracked · 95% healthy</div>
+      </div>
+    </div>
+
+    <!-- Regime detail -->
+    <div class="meta-section">
+      <div class="meta-eyebrow">Regime</div>
+      <div class="meta-kv">
+        <span class="mk">Label</span>
+        <span class="mv">Goldilocks</span>
+      </div>
+      <div class="meta-kv">
+        <span class="mk">Momentum</span>
+        <span class="mv">Shifting</span>
+      </div>
+      <div class="meta-kv">
+        <span class="mk">Score</span>
+        <span class="mv" style="color:var(--green);">77 / 100</span>
+      </div>
+      <div class="meta-kv">
+        <span class="mk">State</span>
+        <span class="mv" style="color:var(--green);">Risk-on</span>
+      </div>
+    </div>
+
+    <!-- Score guide -->
+    <div class="meta-section">
+      <div class="meta-eyebrow">Score Guide</div>
+      <!-- mini heat gradient legend -->
+      <svg width="100%" height="32" viewBox="0 0 196 32">
+        <defs>
+          <linearGradient id="lgd" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#c0392b"/>
+            <stop offset="45%"  stop-color="#c27d12"/>
+            <stop offset="100%" stop-color="#1a7a3d"/>
+          </linearGradient>
+        </defs>
+        <rect x="0" y="12" width="196" height="6" rx="3" fill="url(#lgd)"/>
+        <text x="0"   y="8"  font-size="9" fill="#999">0</text>
+        <text x="88"  y="8"  font-size="9" fill="#999" text-anchor="middle">50</text>
+        <text x="196" y="8"  font-size="9" fill="#999" text-anchor="end">100</text>
+        <text x="0"   y="30" font-size="9" fill="#c0392b">Risk-off</text>
+        <text x="196" y="30" font-size="9" fill="#1a7a3d" text-anchor="end">Risk-on</text>
+        <!-- marker for 77 -->
+        <line x1="151" y1="10" x2="151" y2="20" stroke="#111" stroke-width="1.5"/>
+        <circle cx="151" cy="15" r="3" fill="#111"/>
+      </svg>
+    </div>
+
+  </aside>
+
+  <!-- ── Footer ── -->
+  <footer class="page-footer">
+    <span>Mastermind · Macro Intelligence Desk · 2026 MastermindX Inc.</span>
+    <span>Data as of 2026-07-10 · Updated nightly</span>
+  </footer>
+
+</div>
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('theme-btn').textContent = isDark ? 'Dark' : 'Light';
+}
+</script>
+</body>
+</html>

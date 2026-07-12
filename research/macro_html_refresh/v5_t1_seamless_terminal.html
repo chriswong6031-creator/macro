@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Macro Regime — Seamless Terminal</title>
+<style>
+/* ============================================================
+   SEAMLESS TERMINAL — Theme T1 for macro.html v5 competition
+   DNA: Perplexity Finance × Bloomberg terminal
+   Canvas: #0a0c10 (near-black), ZERO card borders,
+   zones by whitespace + 1px #ffffff0d hairlines only.
+   Accent palette: green/red data, desaturated blue for links.
+   ============================================================ */
+
+:root {
+  --bg: #0a0c10;
+  --bg2: #0f1116;
+  --bg3: #141720;
+  --hair: rgba(255,255,255,0.055);
+  --hair2: rgba(255,255,255,0.035);
+  --text: #e8eaed;
+  --text2: #9ca3af;
+  --text3: #6b7280;
+  --mono: "SF Mono", "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+  --sans: Inter, "Helvetica Neue", -apple-system, BlinkMacSystemFont, sans-serif;
+  --green: #22c55e;
+  --green2: #16a34a;
+  --green-dim: rgba(34,197,94,0.12);
+  --green-dim2: rgba(34,197,94,0.06);
+  --red: #ef4444;
+  --red-dim: rgba(239,68,68,0.12);
+  --amber: #f59e0b;
+  --blue: #3b82f6;
+  --blue-dim: rgba(59,130,246,0.12);
+  --link: #6366f1;
+}
+[data-theme="light"] {
+  --bg: #f8f9fb;
+  --bg2: #ffffff;
+  --bg3: #f1f3f6;
+  --hair: rgba(0,0,0,0.07);
+  --hair2: rgba(0,0,0,0.04);
+  --text: #111827;
+  --text2: #4b5563;
+  --text3: #9ca3af;
+  --green: #16a34a;
+  --green2: #15803d;
+  --green-dim: rgba(22,163,74,0.1);
+  --green-dim2: rgba(22,163,74,0.05);
+  --red: #dc2626;
+  --red-dim: rgba(220,38,38,0.1);
+  --amber: #d97706;
+  --blue: #2563eb;
+  --blue-dim: rgba(37,99,235,0.1);
+  --link: #4f46e5;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 14px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── TOP NAV ───────────────────────────────────────────── */
+.t-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 48px;
+  height: 48px;
+  border-bottom: 1px solid var(--hair);
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg);
+  backdrop-filter: blur(12px);
+}
+.t-nav-brand {
+  font-size: 12px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text3);
+}
+.t-nav-tabs {
+  display: flex; gap: 0; list-style: none;
+  border: 1px solid var(--hair);
+  border-radius: 7px; overflow: hidden;
+}
+.t-nav-tabs li a {
+  display: block; padding: 5px 14px;
+  font-size: 11.5px; font-weight: 500; color: var(--text3);
+  text-decoration: none;
+  border-right: 1px solid var(--hair);
+  transition: color .15s, background .15s;
+}
+.t-nav-tabs li:last-child a { border-right: none; }
+.t-nav-tabs li a:hover { color: var(--text); }
+.t-nav-tabs li.active a { color: var(--text); background: var(--bg3); }
+.t-nav-right {
+  display: flex; align-items: center; gap: 16px;
+}
+.t-nav-asof {
+  font-size: 11px; color: var(--text3);
+  font-family: var(--mono); letter-spacing: .02em;
+}
+/* theme toggle */
+.t-toggle {
+  width: 32px; height: 18px; border-radius: 9px;
+  border: 1px solid var(--hair);
+  background: var(--bg3);
+  cursor: pointer; position: relative;
+  transition: background .2s;
+}
+.t-toggle::after {
+  content: '';
+  position: absolute; top: 2px; left: 2px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--text3); transition: transform .2s, background .2s;
+}
+[data-theme="light"] .t-toggle::after { transform: translateX(14px); background: var(--text2); }
+
+/* ─── PAGE SHELL ─────────────────────────────────────────── */
+.t-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 48px 80px;
+}
+
+/* ─── EYEBROW LABEL ──────────────────────────────────────── */
+.eyebrow {
+  font-size: 10px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--text3);
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--hair);
+}
+
+/* ─── HAIRLINE DIVIDER ───────────────────────────────────── */
+.hairline {
+  height: 1px; background: var(--hair2);
+  margin: 0; border: none;
+}
+
+/* ─── HERO SECTION ───────────────────────────────────────── */
+.t-hero {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 56px;
+  padding: 40px 0 48px;
+  border-bottom: 1px solid var(--hair2);
+}
+
+/* ─── LEFT: VERDICT COLUMN ───────────────────────────────── */
+.verdict-col {
+  position: relative;
+}
+/* subtle radial glow behind the score numeral */
+.verdict-col::before {
+  content: '';
+  position: absolute;
+  top: -20px; left: -30px;
+  width: 320px; height: 200px;
+  background: radial-gradient(ellipse at 30% 40%, rgba(34,197,94,0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+.verdict-col > * { position: relative; z-index: 1; }
+
+/* Regime label */
+.regime-label {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 32px;
+}
+.regime-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+.regime-name {
+  font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--green);
+}
+.regime-arrow { color: var(--text3); font-size: 11px; }
+.regime-sub {
+  font-size: 11px; color: var(--text3); letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+/* Score + meter hero */
+.score-hero {
+  display: flex; align-items: flex-end; gap: 32px;
+  margin-bottom: 20px;
+}
+.score-numeral {
+  font-family: var(--mono);
+  font-size: 128px;
+  font-weight: 800;
+  line-height: .80;
+  color: var(--green);
+  letter-spacing: -.05em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 80px rgba(34,197,94,0.2);
+}
+.score-denom {
+  font-family: var(--mono);
+  font-size: 28px;
+  color: var(--text3);
+  margin-bottom: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.score-verdict-label {
+  font-size: 12px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--green);
+  margin-bottom: 8px;
+}
+.score-verdict-text {
+  font-size: 13.5px; color: var(--text); max-width: 400px; line-height: 1.65;
+}
+
+/* Horizontal score meter */
+.score-meter-wrap {
+  margin-bottom: 28px;
+}
+.score-meter-track {
+  position: relative; height: 8px;
+  background: var(--bg3);
+  border-radius: 4px; overflow: visible;
+  margin-bottom: 10px;
+}
+.score-meter-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 77%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(34,197,94,0.3) 0%, var(--green2) 50%, var(--green) 100%);
+}
+.score-meter-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  left: 77%;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 4px rgba(34,197,94,0.2), 0 0 12px rgba(34,197,94,0.4);
+}
+.score-meter-labels {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--text3);
+  font-family: var(--mono);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* Flip line */
+.flip-line {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--hair);
+  margin-bottom: 32px;
+}
+.flip-arrow {
+  font-size: 10px; color: var(--amber); margin-top: 2px; flex: none;
+}
+.flip-text { font-size: 12px; color: var(--text2); line-height: 1.55; }
+.flip-text strong { color: var(--amber); }
+
+/* Factor bar array */
+.factors-section {}
+.factors-grid {
+  display: grid; gap: 10px;
+}
+.factor-row {
+  display: grid;
+  grid-template-columns: 175px 1fr 36px;
+  align-items: center; gap: 12px;
+}
+.factor-name {
+  font-size: 11.5px; color: var(--text2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.factor-weakest .factor-name { color: var(--amber); }
+.factor-bar-track {
+  height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px;
+  position: relative; overflow: hidden;
+}
+.factor-bar-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--green2), var(--green));
+  transition: width .4s ease;
+}
+.factor-weakest .factor-bar-fill { background: var(--amber); }
+.factor-score {
+  font-family: var(--mono); font-size: 11.5px;
+  color: var(--text2); text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.factor-weakest .factor-score { color: var(--amber); }
+
+/* ─── RIGHT: DATA RAIL ───────────────────────────────────── */
+.data-rail {
+  display: flex; flex-direction: column; gap: 0;
+  border-left: 1px solid var(--hair);
+  padding-left: 40px;
+}
+.rail-section {
+  padding: 0 0 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--hair2);
+}
+.rail-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.rail-eyebrow {
+  font-size: 10px; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text3);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hair2);
+}
+
+/* Market tiles */
+.market-tiles {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+  border-radius: 8px; overflow: hidden;
+}
+.market-tile {
+  background: var(--bg);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.market-tile:hover { background: var(--bg3); }
+.market-tile-name {
+  font-size: 10px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--text3);
+  margin-bottom: 4px;
+}
+.market-tile-price {
+  font-family: var(--mono); font-size: 16px; font-weight: 700;
+  color: var(--text); font-variant-numeric: tabular-nums;
+  margin-bottom: 2px; letter-spacing: -.01em;
+}
+.market-tile-delta {
+  font-family: var(--mono); font-size: 11.5px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.market-tile-delta.pos { color: var(--green); }
+.market-tile-delta.neg { color: var(--red); }
+.market-sparkline { margin-top: 8px; }
+
+/* Fed odds */
+.fed-section {}
+.fed-label {
+  font-size: 12px; color: var(--text2); margin-bottom: 10px;
+}
+.fed-bar-track {
+  height: 8px; background: var(--bg3); border-radius: 4px;
+  position: relative; overflow: hidden; margin-bottom: 6px;
+}
+.fed-bar-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 84.5%; border-radius: 4px;
+  background: linear-gradient(90deg, #6366f1, #818cf8);
+}
+.fed-pct {
+  font-family: var(--mono); font-size: 22px; font-weight: 700;
+  color: var(--text); font-variant-numeric: tabular-nums;
+  margin-bottom: 2px;
+}
+.fed-pct-label { font-size: 11px; color: var(--text3); }
+.fed-stance { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+/* Sentiment dial */
+.sentiment-wrap {
+  display: flex; align-items: center; gap: 20px;
+}
+.sentiment-labels {
+  flex: 1;
+}
+.sentiment-label-row {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--text3);
+  margin-bottom: 4px;
+  letter-spacing: .05em;
+}
+.sentiment-score-label {
+  font-size: 11px; color: var(--text2); margin-top: 6px;
+}
+.sentiment-score-label strong { color: var(--green); font-family: var(--mono); }
+
+/* Events timeline */
+.events-timeline {}
+.event-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--hair2);
+}
+.event-row:last-child { border-bottom: none; }
+.event-date-col {
+  flex: none; width: 52px;
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text3); line-height: 1.2;
+  text-align: center;
+}
+.event-date-month { color: var(--text3); font-size: 9px; text-transform: uppercase; letter-spacing: .06em; }
+.event-date-day {
+  font-size: 18px; font-weight: 700; color: var(--text);
+  font-variant-numeric: tabular-nums; line-height: 1.1;
+}
+.event-body {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.event-name { font-size: 12px; color: var(--text2); font-weight: 500; }
+.event-impact {
+  display: inline-block; flex: none;
+  font-size: 9px; font-weight: 800; letter-spacing: .07em;
+  text-transform: uppercase; border-radius: 3px;
+  padding: 2px 6px;
+}
+.event-impact.high { color: var(--red); background: var(--red-dim); }
+.event-impact.med { color: var(--amber); background: rgba(245,158,11,0.12); }
+
+/* ─── INSTRUMENTS SECTION ────────────────────────────────── */
+.t-instruments {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  padding: 48px 0;
+  border-bottom: 1px solid var(--hair2);
+}
+.instrument-col {
+  padding-right: 48px;
+  border-right: 1px solid var(--hair);
+}
+.instrument-col:last-child { padding-right: 0; border-right: none; }
+.instrument-col + .instrument-col { padding-left: 48px; }
+
+/* ─── WHAT TO DO ─────────────────────────────────────────── */
+.wtd-list {
+  display: flex; flex-direction: column; gap: 0;
+}
+.wtd-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hair2);
+}
+.wtd-item:last-child { border-bottom: none; }
+.wtd-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex: none; margin-top: 5px;
+}
+.wtd-dot.action { background: var(--green); box-shadow: 0 0 8px rgba(34,197,94,0.6); }
+.wtd-dot.watch  { background: var(--amber); }
+.wtd-dot.noise  { background: var(--text3); }
+.wtd-dot.risk   { background: var(--red); }
+.wtd-dot.quiet  { background: var(--text3); opacity: .5; }
+.wtd-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.wtd-text strong { color: var(--text); font-weight: 600; }
+
+/* ─── RISK LADDER ────────────────────────────────────────── */
+.risk-ladder {}
+.risk-item {
+  display: grid;
+  grid-template-columns: 1fr 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hair2);
+}
+.risk-item:last-child { border-bottom: none; }
+.risk-name { font-size: 11.5px; color: var(--text2); }
+.risk-name.dominant { color: var(--red); font-weight: 600; }
+.risk-bar-wrap { }
+.risk-bar-track {
+  height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px;
+  position: relative; margin-top: 6px;
+}
+.risk-bar-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(239,68,68,0.5), var(--red));
+}
+.risk-item:not(.top) .risk-bar-fill { background: linear-gradient(90deg, rgba(107,114,128,0.3), rgba(107,114,128,0.5)); }
+.risk-score {
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  color: var(--text3); text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.risk-item.top .risk-score { color: var(--red); }
+.risk-alert {
+  margin-top: 14px; padding: 10px 14px;
+  border-left: 2px solid var(--red);
+  background: rgba(239,68,68,0.04);
+  border-radius: 0 4px 4px 0;
+}
+.risk-alert-text { font-size: 11.5px; color: var(--text2); line-height: 1.5; }
+.risk-alert-text strong { color: var(--red); }
+
+/* ─── SECTOR + POLICY + NEWS ─────────────────────────────── */
+.sector-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.sector-chip {
+  padding: 5px 12px; border-radius: 5px;
+  font-size: 11.5px; font-weight: 600;
+  letter-spacing: .02em;
+}
+.sector-hot { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+.sector-cold { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+.sector-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--text3); margin-bottom: 6px; margin-top: 12px;
+}
+.sector-label:first-child { margin-top: 0; }
+
+/* Policy */
+.policy-rows { display: flex; flex-direction: column; gap: 6px; }
+.policy-row {
+  display: flex; align-items: baseline; gap: 8px;
+}
+.policy-key {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--text3); flex: none; width: 56px;
+}
+.policy-val { font-size: 12px; color: var(--text2); }
+.policy-val strong { color: var(--text); }
+.policy-status-chip {
+  display: inline-block;
+  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; border-radius: 3px;
+  padding: 1px 6px; margin-bottom: 8px;
+}
+.policy-quiet { background: var(--blue-dim); color: var(--blue); }
+
+/* News */
+.news-list { display: flex; flex-direction: column; gap: 0; }
+.news-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hair2);
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.news-item:last-child { border-bottom: none; }
+.news-item:hover { opacity: .75; }
+.news-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex: none; margin-top: 5px;
+}
+.news-dot.high { background: var(--green); }
+.news-dot.med  { background: var(--amber); }
+.news-body { flex: 1; min-width: 0; }
+.news-title {
+  font-size: 12px; color: var(--text); line-height: 1.45;
+  margin-bottom: 3px;
+}
+.news-meta {
+  font-size: 10.5px; color: var(--text3);
+  display: flex; gap: 6px;
+}
+.news-tag {
+  font-weight: 700; color: var(--text3);
+  font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+}
+
+/* Score path area chart */
+.score-path-wrap {
+  margin-bottom: 24px;
+  border-top: 1px solid var(--hair2);
+  padding-top: 20px;
+}
+.score-path-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--text3);
+  margin-bottom: 10px;
+}
+
+/* ─── DATA HEALTH FOOTER ─────────────────────────────────── */
+.t-footer {
+  padding: 20px 0 0;
+  border-top: 1px solid var(--hair);
+  display: flex; align-items: center; gap: 10px;
+}
+.footer-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
+.footer-text { font-size: 11px; color: var(--text3); }
+.footer-text strong { color: var(--text2); }
+.footer-right { margin-left: auto; font-size: 11px; color: var(--text3); font-family: var(--mono); }
+
+/* ─── AI BRIEF CHIP ──────────────────────────────────────── */
+.ai-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 20px;
+  border: 1px solid var(--hair);
+  background: var(--bg3);
+  font-size: 11px; color: var(--text2);
+  margin-bottom: 10px;
+}
+.ai-count {
+  font-family: var(--mono); font-weight: 700; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── INLINE SVG HELPERS ─────────────────────────────────── */
+svg text { font-family: var(--mono); }
+
+/* ─── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .t-hero { grid-template-columns: 1fr; gap: 40px; }
+  .data-rail { border-left: none; padding-left: 0; border-top: 1px solid var(--hair); padding-top: 32px; }
+  .market-tiles { grid-template-columns: repeat(4, 1fr); }
+  .t-instruments { grid-template-columns: 1fr 1fr; }
+  .instrument-col:nth-child(3) { grid-column: span 2; border-right: none; padding-left: 0; }
+  .t-page { padding: 0 24px 60px; }
+  .t-nav { padding: 0 24px; }
+}
+@media (max-width: 680px) {
+  .score-numeral { font-size: 72px; }
+  .t-instruments { grid-template-columns: 1fr; }
+  .instrument-col { padding-left: 0 !important; padding-right: 0 !important; border: none !important; }
+  .instrument-col { padding-bottom: 28px; border-bottom: 1px solid var(--hair2) !important; }
+  .market-tiles { grid-template-columns: 1fr 1fr; }
+  .factor-row { grid-template-columns: 130px 1fr 32px; }
+  .t-page { padding: 0 16px 48px; }
+  .t-nav { padding: 0 16px; }
+  .t-hero { padding: 32px 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     TOP NAV
+     ══════════════════════════════════════════════════════════ -->
+<nav class="t-nav">
+  <span class="t-nav-brand">Mastermind</span>
+  <ul class="t-nav-tabs">
+    <li><a href="#">US</a></li>
+    <li class="active"><a href="#">Macro</a></li>
+    <li><a href="#">China</a></li>
+    <li><a href="#">HK</a></li>
+    <li><a href="#">Terminal</a></li>
+  </ul>
+  <div class="t-nav-right">
+    <span class="t-nav-asof">2026-07-10 EOD</span>
+    <button class="t-toggle" id="themeBtn" aria-label="Toggle theme"></button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE SHELL
+     ══════════════════════════════════════════════════════════ -->
+<div class="t-page">
+
+  <!-- ── HERO: VERDICT TRIPTYCH ──────────────────────────── -->
+  <section class="t-hero">
+
+    <!-- LEFT: REGIME STORY ─────────────────────────────── -->
+    <div class="verdict-col">
+
+      <!-- Regime identifier -->
+      <div class="regime-label">
+        <div class="regime-dot"></div>
+        <span class="regime-name">Goldilocks</span>
+        <span class="regime-arrow">→</span>
+        <span class="regime-sub">Shifting</span>
+      </div>
+
+      <!-- Score hero -->
+      <div class="score-hero">
+        <div>
+          <div style="display:flex; align-items:baseline; gap:4px; margin-bottom:16px;">
+            <span class="score-numeral">77</span>
+            <span class="score-denom">/100</span>
+          </div>
+          <div class="score-verdict-label">Risk-on</div>
+          <div class="score-verdict-text">The tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported.</div>
+        </div>
+      </div>
+
+      <!-- Horizontal score meter -->
+      <div class="score-meter-wrap">
+        <div class="score-meter-track">
+          <div class="score-meter-fill"></div>
+          <div class="score-meter-thumb"></div>
+        </div>
+        <div class="score-meter-labels">
+          <span>Risk-off</span>
+          <span>Mixed</span>
+          <span>Risk-on</span>
+        </div>
+      </div>
+
+      <!-- 60-session score area chart -->
+      <div class="score-path-wrap">
+        <div class="score-path-label">60-session path</div>
+        <svg viewBox="0 0 460 72" xmlns="http://www.w3.org/2000/svg" width="100%" height="72">
+          <defs>
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#22c55e" stop-opacity=".45"/>
+              <stop offset="70%" stop-color="#22c55e" stop-opacity=".08"/>
+              <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#16a34a"/>
+              <stop offset="100%" stop-color="#22c55e"/>
+            </linearGradient>
+          </defs>
+          <!-- chart bg -->
+          <rect x="0" y="0" width="460" height="72" fill="rgba(34,197,94,0.025)" rx="2"/>
+          <!-- plausible 60-session path ending at 77 -->
+          <path d="M0,54 L7.7,58 L15.3,55 L23,60 L30.7,56 L38.3,62 L46,59 L53.7,63 L61.3,65 L69,61 L76.7,58 L84.3,54 L92,50 L99.7,48 L107.3,44 L115,47 L122.7,43 L130.3,40 L138,36 L145.7,38 L153.3,35 L161,32 L168.7,36 L176.3,40 L184,44 L191.7,48 L199.3,46 L207,50 L214.7,47 L222.3,44 L230,46 L237.7,43 L245.3,40 L253,38 L260.7,36 L268.3,34 L276,30 L283.7,28 L291.3,24 L299,22 L306.7,20 L314.3,22 L322,18 L329.7,16 L337.3,14 L345,12 L352.7,16 L360.3,14 L368,12 L375.7,10 L383.3,12 L391,14 L398.7,13 L406.3,11 L414,12 L421.7,11 L429.3,10 L437,11 L444.7,11.5 L452.3,11 L460,11"
+                fill="none" stroke="url(#lineGrad)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+          <path d="M0,54 L7.7,58 L15.3,55 L23,60 L30.7,56 L38.3,62 L46,59 L53.7,63 L61.3,65 L69,61 L76.7,58 L84.3,54 L92,50 L99.7,48 L107.3,44 L115,47 L122.7,43 L130.3,40 L138,36 L145.7,38 L153.3,35 L161,32 L168.7,36 L176.3,40 L184,44 L191.7,48 L199.3,46 L207,50 L214.7,47 L222.3,44 L230,46 L237.7,43 L245.3,40 L253,38 L260.7,36 L268.3,34 L276,30 L283.7,28 L291.3,24 L299,22 L306.7,20 L314.3,22 L322,18 L329.7,16 L337.3,14 L345,12 L352.7,16 L360.3,14 L368,12 L375.7,10 L383.3,12 L391,14 L398.7,13 L406.3,11 L414,12 L421.7,11 L429.3,10 L437,11 L444.7,11.5 L452.3,11 L460,11 L460,72 L0,72 Z"
+                fill="url(#areaGrad)" stroke="none"/>
+          <!-- today marker -->
+          <line x1="460" y1="0" x2="460" y2="72" stroke="#22c55e" stroke-width="1" stroke-dasharray="2,3" opacity=".5"/>
+          <!-- 50 midline -->
+          <line x1="0" y1="36" x2="460" y2="36" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="4,4"/>
+          <text x="4" y="34" font-size="9" fill="rgba(255,255,255,0.2)">50</text>
+          <text x="440" y="9" font-size="9" fill="#22c55e">77</text>
+        </svg>
+      </div>
+
+      <!-- Flip line -->
+      <div class="flip-line">
+        <span class="flip-arrow">→</span>
+        <span class="flip-text">Mixed if <strong>breadth &amp; participation rolls over</strong> (now 59/100, the weakest leg)</span>
+      </div>
+
+      <!-- Factor bars -->
+      <div class="factors-section">
+        <div class="eyebrow" style="margin-bottom:14px;">Six-factor breakdown</div>
+        <div class="factors-grid">
+          <div class="factor-row">
+            <span class="factor-name">Trend &amp; technicals</span>
+            <div class="factor-bar-track"><div class="factor-bar-fill" style="width:90%"></div></div>
+            <span class="factor-score">90</span>
+          </div>
+          <div class="factor-row">
+            <span class="factor-name">Risk appetite</span>
+            <div class="factor-bar-track"><div class="factor-bar-fill" style="width:70%"></div></div>
+            <span class="factor-score">70</span>
+          </div>
+          <div class="factor-row">
+            <span class="factor-name">Volatility regime</span>
+            <div class="factor-bar-track"><div class="factor-bar-fill" style="width:76%"></div></div>
+            <span class="factor-score">76</span>
+          </div>
+          <div class="factor-row factor-weakest">
+            <span class="factor-name">Breadth &amp; participation</span>
+            <div class="factor-bar-track"><div class="factor-bar-fill" style="width:59%"></div></div>
+            <span class="factor-score">59</span>
+          </div>
+          <div class="factor-row">
+            <span class="factor-name">Liquidity &amp; credit</span>
+            <div class="factor-bar-track"><div class="factor-bar-fill" style="width:77%"></div></div>
+            <span class="factor-score">77</span>
+          </div>
+          <div class="factor-row">
+            <span class="factor-name">Downturn-risk guard</span>
+            <div class="factor-bar-track"><div class="factor-bar-fill" style="width:87%"></div></div>
+            <span class="factor-score">87</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: DATA RAIL ─────────────────────────────────── -->
+    <div class="data-rail">
+
+      <!-- Markets -->
+      <div class="rail-section">
+        <div class="rail-eyebrow">Markets</div>
+        <div class="market-tiles">
+          <div class="market-tile">
+            <div class="market-tile-name">SPY</div>
+            <div class="market-tile-price">754.95</div>
+            <div class="market-tile-delta pos">+0.85%</div>
+            <div class="market-sparkline">
+              <svg viewBox="0 0 80 28" width="80" height="28" preserveAspectRatio="none">
+                <polyline points="0,22 6.7,20 13.3,18 20,19 26.7,17 33.3,16 40,14 46.7,15 53.3,13 60,11 66.7,10 73.3,9 80,8"
+                  fill="none" stroke="#22c55e" stroke-width="1.5"/>
+              </svg>
+            </div>
+          </div>
+          <div class="market-tile">
+            <div class="market-tile-name">QQQ</div>
+            <div class="market-tile-price">725.51</div>
+            <div class="market-tile-delta pos">+1.86%</div>
+            <div class="market-sparkline">
+              <svg viewBox="0 0 80 28" width="80" height="28" preserveAspectRatio="none">
+                <polyline points="0,24 6.7,22 13.3,20 20,18 26.7,20 33.3,16 40,14 46.7,12 53.3,10 60,8 66.7,7 73.3,6 80,5"
+                  fill="none" stroke="#22c55e" stroke-width="1.5"/>
+              </svg>
+            </div>
+          </div>
+          <div class="market-tile">
+            <div class="market-tile-name">DJI</div>
+            <div class="market-tile-price">52,487</div>
+            <div class="market-tile-delta pos">+0.27%</div>
+            <div class="market-sparkline">
+              <svg viewBox="0 0 80 28" width="80" height="28" preserveAspectRatio="none">
+                <polyline points="0,18 6.7,17 13.3,16 20,18 26.7,19 33.3,17 40,16 46.7,17 53.3,16 60,15 66.7,14 73.3,15 80,14"
+                  fill="none" stroke="#22c55e" stroke-width="1.5"/>
+              </svg>
+            </div>
+          </div>
+          <div class="market-tile">
+            <div class="market-tile-name">RUT</div>
+            <div class="market-tile-price">2,992</div>
+            <div class="market-tile-delta pos">+1.22%</div>
+            <div class="market-sparkline">
+              <svg viewBox="0 0 80 28" width="80" height="28" preserveAspectRatio="none">
+                <polyline points="0,22 6.7,21 13.3,20 20,22 26.7,20 33.3,18 40,16 46.7,17 53.3,15 60,14 66.7,12 73.3,11 80,10"
+                  fill="none" stroke="#22c55e" stroke-width="1.5"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fed odds -->
+      <div class="rail-section">
+        <div class="rail-eyebrow">Fed — Jul 30</div>
+        <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:6px;">
+          <div class="fed-pct">84.5<span style="font-size:14px; font-weight:400; color:var(--text3);">%</span></div>
+          <div class="fed-pct-label">no-change priced</div>
+        </div>
+        <div class="fed-bar-track" style="margin-bottom:6px;">
+          <div class="fed-bar-fill"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text3); font-family:var(--mono); margin-bottom:6px;">
+          <span>Cut</span><span>Hold</span><span>Hike</span>
+        </div>
+        <div class="fed-stance">Stance: <strong style="color:var(--text2);">Neutral / hold</strong> · last flip 2026-07-02</div>
+      </div>
+
+      <!-- Sentiment dial -->
+      <div class="rail-section">
+        <div class="rail-eyebrow">Sentiment</div>
+        <div style="position:relative;">
+          <svg viewBox="0 0 240 90" width="100%" height="70">
+            <defs>
+              <linearGradient id="dialGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#ef4444" stop-opacity=".7"/>
+                <stop offset="40%" stop-color="#f59e0b" stop-opacity=".8"/>
+                <stop offset="100%" stop-color="#22c55e"/>
+              </linearGradient>
+            </defs>
+            <!-- arc track bg -->
+            <path d="M18,85 A102,102 0 0,1 222,85" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8" stroke-linecap="round"/>
+            <!-- filled arc (full spectrum for context) -->
+            <path d="M18,85 A102,102 0 0,1 222,85" fill="none" stroke="url(#dialGrad)" stroke-width="8" stroke-linecap="round" opacity=".7"/>
+            <!-- active position indicator line — at ~68% toward euphoria -->
+            <!-- needle from center (120,85) to ~68% of arc = roughly (195, 28) -->
+            <line x1="120" y1="85" x2="196" y2="25" stroke="var(--text2)" stroke-width="1.5" stroke-linecap="round" opacity=".8"/>
+            <!-- needle tip glow dot -->
+            <circle cx="196" cy="25" r="3" fill="var(--green)" opacity=".9"/>
+            <!-- pivot -->
+            <circle cx="120" cy="85" r="4" fill="var(--bg3)" stroke="var(--text3)" stroke-width="1.5"/>
+            <!-- labels -->
+            <text x="6" y="90" font-size="8.5" fill="var(--text3)" text-anchor="start">Panic</text>
+            <text x="120" y="12" font-size="8.5" fill="var(--text3)" text-anchor="middle">Neutral</text>
+            <text x="234" y="90" font-size="8.5" fill="var(--text3)" text-anchor="end">Euphoria</text>
+          </svg>
+        </div>
+        <div style="text-align:center; font-size:11px; color:var(--text2); margin-top:-4px;">
+          Slightly elevated · <span style="color:var(--green); font-family:var(--mono); font-weight:700;">77 / 100</span>
+        </div>
+      </div>
+
+      <!-- Events -->
+      <div class="rail-section">
+        <div class="rail-eyebrow">Upcoming events</div>
+        <div class="events-timeline">
+          <div class="event-row">
+            <div class="event-date-col">
+              <div class="event-date-month">Jul</div>
+              <div class="event-date-day">14</div>
+            </div>
+            <div class="event-body">
+              <div class="event-name">CPI</div>
+              <span class="event-impact high">HIGH</span>
+            </div>
+          </div>
+          <div class="event-row">
+            <div class="event-date-col">
+              <div class="event-date-month">Jul</div>
+              <div class="event-date-day">15</div>
+            </div>
+            <div class="event-body">
+              <div class="event-name">PPI</div>
+              <span class="event-impact high">HIGH</span>
+            </div>
+          </div>
+          <div class="event-row">
+            <div class="event-date-col">
+              <div class="event-date-month">Jul</div>
+              <div class="event-date-day">16</div>
+            </div>
+            <div class="event-body">
+              <div class="event-name">Initial Jobless Claims</div>
+              <span class="event-impact med">MED</span>
+            </div>
+          </div>
+          <div class="event-row">
+            <div class="event-date-col">
+              <div class="event-date-month">Jul</div>
+              <div class="event-date-day">17</div>
+            </div>
+            <div class="event-body">
+              <div class="event-name">Options Expiration</div>
+              <span class="event-impact med">MED</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       INSTRUMENT RACK
+       ═══════════════════════════════════════════════════════ -->
+  <section class="t-instruments">
+
+    <!-- COL 1: WHAT TO DO -->
+    <div class="instrument-col">
+      <div class="eyebrow">What to do</div>
+      <div class="wtd-list">
+        <div class="wtd-item">
+          <div class="wtd-dot action"></div>
+          <div class="wtd-text"><strong>Risk-on — Trend-follow.</strong> Add on strength.</div>
+        </div>
+        <div class="wtd-item">
+          <div class="wtd-dot watch"></div>
+          <div class="wtd-text">Watch <strong>Breadth &amp; participation</strong> — the weakest leg (59/100).</div>
+        </div>
+        <div class="wtd-item">
+          <div class="wtd-dot noise"></div>
+          <div class="wtd-text">Expect noise around <strong>CPI (in 3 days)</strong> — don't read the first move as trend.</div>
+        </div>
+        <div class="wtd-item">
+          <div class="wtd-dot risk"></div>
+          <div class="wtd-text"><strong>A risk is building</strong> — stay normal, just watch it.</div>
+        </div>
+        <div class="wtd-item">
+          <div class="wtd-dot quiet"></div>
+          <div class="wtd-text">Policy is quiet — nothing to position for.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COL 2: DOMINANT RISK -->
+    <div class="instrument-col">
+      <div class="eyebrow">Dominant risk</div>
+      <div class="risk-ladder">
+        <div class="risk-item top">
+          <div>
+            <div class="risk-name dominant">Bubble / blow-off unwind</div>
+            <div class="risk-bar-track"><div class="risk-bar-fill" style="width:62.1%"></div></div>
+          </div>
+          <div class="risk-score">62.1</div>
+        </div>
+        <div class="risk-item">
+          <div>
+            <div class="risk-name">Global breadth divergence</div>
+            <div class="risk-bar-track"><div class="risk-bar-fill" style="width:50.5%"></div></div>
+          </div>
+          <div class="risk-score">50.5</div>
+        </div>
+        <div class="risk-item">
+          <div>
+            <div class="risk-name">Credit stress</div>
+            <div class="risk-bar-track"><div class="risk-bar-fill" style="width:47.4%"></div></div>
+          </div>
+          <div class="risk-score">47.4</div>
+        </div>
+        <div class="risk-item">
+          <div>
+            <div class="risk-name">Growth scare</div>
+            <div class="risk-bar-track"><div class="risk-bar-fill" style="width:38.3%"></div></div>
+          </div>
+          <div class="risk-score">38.3</div>
+        </div>
+      </div>
+      <div class="risk-alert">
+        <div class="risk-alert-text"><strong>A risk is building</strong> — stay normal, just watch it.</div>
+      </div>
+    </div>
+
+    <!-- COL 3: SECTORS + POLICY + NEWS -->
+    <div class="instrument-col">
+      <div style="margin-bottom:32px;">
+        <div class="eyebrow">Sector heat</div>
+        <div class="sector-label">Hot</div>
+        <div class="sector-strip">
+          <span class="sector-chip sector-hot">Cybersecurity</span>
+          <span class="sector-chip sector-hot">Insurance &amp; Brokers</span>
+        </div>
+        <div class="sector-label">Cold</div>
+        <div class="sector-strip">
+          <span class="sector-chip sector-cold">Memory &amp; Storage</span>
+          <span class="sector-chip sector-cold">Regional Banks</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:32px;">
+        <div class="eyebrow">Policy</div>
+        <span class="policy-status-chip policy-quiet">Quiet</span>
+        <div class="policy-rows">
+          <div class="policy-row">
+            <span class="policy-key">Status</span>
+            <span class="policy-val">No active jawboning</span>
+          </div>
+          <div class="policy-row">
+            <span class="policy-key">Last flip</span>
+            <span class="policy-val"><strong>2026-07-02</strong></span>
+          </div>
+          <div class="policy-row">
+            <span class="policy-key">Stance</span>
+            <span class="policy-val"><strong>Neutral / hold</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="eyebrow">AI brief</div>
+        <div class="ai-chip">
+          <span class="ai-count">5</span>
+          <span>high-impact items · dominant channel: rates · tickers XLF, XLK, KRE</span>
+        </div>
+        <div class="news-list">
+          <div class="news-item">
+            <div class="news-dot high"></div>
+            <div class="news-body">
+              <div class="news-title">As bank earnings approach, a market anomaly emerges</div>
+              <div class="news-meta">
+                <span class="news-tag">Earnings</span>
+                <span>·</span>
+                <span>high impact</span>
+              </div>
+            </div>
+          </div>
+          <div class="news-item">
+            <div class="news-dot med"></div>
+            <div class="news-body">
+              <div class="news-title">Chip rally, Fed task forces, Delta earnings and a fintech IPO</div>
+              <div class="news-meta">
+                <span class="news-tag">Stocks</span>
+                <span>·</span>
+                <span>med impact</span>
+              </div>
+            </div>
+          </div>
+          <div class="news-item">
+            <div class="news-dot med"></div>
+            <div class="news-body">
+              <div class="news-title">PepsiCo earnings miss estimates as U.S. consumers tighten budgets</div>
+              <div class="news-meta">
+                <span class="news-tag">Earnings</span>
+                <span>·</span>
+                <span>med impact</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── DATA HEALTH FOOTER ─────────────────────────────── -->
+  <footer class="t-footer">
+    <div class="footer-dot"></div>
+    <span class="footer-text"><strong>7 sources need attention</strong> · 153 total · updated 2026-07-10 EOD</span>
+    <span class="footer-right">153 sources</span>
+  </footer>
+
+</div><!-- .t-page -->
+
+<script>
+// Theme toggle
+document.getElementById('themeBtn').addEventListener('click', function() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+});
+</script>
+</body>
+</html>
