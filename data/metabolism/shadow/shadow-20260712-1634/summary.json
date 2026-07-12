@@ -1,0 +1,87 @@
+{
+  "schema": "metabolism.shadow_cycle.v1",
+  "cycle_id": "shadow-20260712-1634",
+  "ts": "2026-07-12T16:34:25+00:00",
+  "stages": {
+    "sense_fitness": {
+      "status": "ok",
+      "artifact": "/var/folders/sb/h3rq5rvj1b3_r18p6w9swyp80000gn/T/metabolism_shadow_1dsixa98/shadow_root/data/metabolism/fitness/til.json",
+      "note": "fitness card written to shadow root"
+    },
+    "sense_generic_fitness": {
+      "status": "ok",
+      "artifact": null,
+      "note": "generic fitness cards written to shadow root: 2 \u2014 ['/var/folders/sb/h3rq5rvj1b3_r18p6w9swyp80000gn/T/metabolism_shadow_1dsixa98/shadow_root/data/metabolism/fitness/site-us-standouts.json', '/var/folders/sb/h3rq5rvj1b3_r18p6w9swyp80000gn/T/metabolism_shadow_1dsixa98/shadow_root/data/metabolism/fitness/site-china-standouts.json']"
+    },
+    "sense_organism_state": {
+      "status": "ok",
+      "artifact": "/var/folders/sb/h3rq5rvj1b3_r18p6w9swyp80000gn/T/metabolism_shadow_1dsixa98/shadow_root/data/metabolism/organism_state.json",
+      "note": "organism_state written to shadow root"
+    },
+    "sense_insight_bus": {
+      "status": "ok",
+      "artifact": "/var/folders/sb/h3rq5rvj1b3_r18p6w9swyp80000gn/T/metabolism_shadow_1dsixa98/shadow_root/data/metabolism/insight_bus.jsonl",
+      "note": "0 insight_bus rows emitted to shadow root"
+    },
+    "sense_scout": {
+      "status": "ok",
+      "artifact": "/var/folders/sb/h3rq5rvj1b3_r18p6w9swyp80000gn/T/metabolism_shadow_1dsixa98/shadow_root/data/metabolism/scout/observations.jsonl",
+      "note": "scout: 0 accruing, 0 charter proposal(s) emitted, 10 covered"
+    },
+    "genesis_probe": {
+      "status": "ok",
+      "artifact": "/var/folders/sb/h3rq5rvj1b3_r18p6w9swyp80000gn/T/metabolism_shadow_1dsixa98/shadow_root/data/metabolism/charter_proposals/shadow-genesis-probe.json",
+      "note": "genesis probe: proposal written to shadow root; applier ran: n_plans=0 consumed=0; plan_files=0; tier_fence=exercised; real_stores=untouched (verified by harness snapshot)",
+      "probe_written": true,
+      "plan_record_count": 0,
+      "n_consumed": 0
+    },
+    "agenda": {
+      "status": "ok",
+      "artifact": "/var/folders/sb/h3rq5rvj1b3_r18p6w9swyp80000gn/T/metabolism_shadow_1dsixa98/shadow_root/data/metabolism/agenda/shadow-20260712-1634.json",
+      "note": "agenda: 0 items; provider=None"
+    },
+    "propose": {
+      "status": "ok",
+      "artifact": "/var/folders/sb/h3rq5rvj1b3_r18p6w9swyp80000gn/T/metabolism_shadow_1dsixa98/shadow_root/data/metabolism/dockets/shadow-20260712-1634.json",
+      "note": "docket: 1 proposals; provider=None; degraded=None"
+    },
+    "adjudicate": {
+      "status": "ok",
+      "artifact": null,
+      "note": "orch=1 adversary=1 resolve: 1/1 authorized"
+    },
+    "build": {
+      "status": "ok",
+      "artifact": "/var/folders/sb/h3rq5rvj1b3_r18p6w9swyp80000gn/T/metabolism_shadow_1dsixa98/shadow_root/data/metabolism/build/would_dispatch.json",
+      "note": "dry_run BUILD: 1 proposals processed; 0 would_dispatch records"
+    },
+    "verify": {
+      "status": "ok",
+      "artifact": "/var/folders/sb/h3rq5rvj1b3_r18p6w9swyp80000gn/T/metabolism_shadow_1dsixa98/shadow_root/data/metabolism/verify/shadow-20260712-1634-verify-seed.json",
+      "note": "verify: outcome=UNVERIFIABLE classification=unverifiable action=operator_tap; honest_null=True (seeded contract has empty falsifier_spec \u2192 UNVERIFIABLE by design)"
+    },
+    "audit_due_probe": {
+      "status": "ok",
+      "artifact": null,
+      "note": "audit_due probe: us_due=False cn_due=False bus_rows_emitted=0; us={'due': False, 'reason': 'not due: 0 newly matured rows (hard threshold 15); unknown days since last postmortem (soft threshold requires 5 rows + 14 days)', 'newly_matured_rows': 0, 'days_since_postmortem': None}; cn={'due': False, 'reason': 'not due: 0 newly matured rows (hard threshold 15); unknown days since last postmortem (soft threshold requires 5 rows + 14 days)', 'newly_matured_rows': 0, 'days_since_postmortem': None}"
+    },
+    "dream": {
+      "status": "ok",
+      "artifact": null,
+      "note": "dream: status=paused n_closed=? not_gate_altering=True"
+    },
+    "artifact_collection": {
+      "status": "ok",
+      "artifact": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/sa-w6-verify/data/metabolism/shadow/shadow-20260712-1634",
+      "note": "18 artifacts collected"
+    }
+  },
+  "stubbed_stages": [
+    "agenda",
+    "propose",
+    "adjudicate"
+  ],
+  "real_stores_untouched": true,
+  "wall_seconds": 2.33
+}
