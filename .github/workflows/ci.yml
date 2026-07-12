@@ -1594,3 +1594,22 @@ jobs:
         run: pip install pytest pandas numpy pyyaml
       - name: dt_contra_state + subsector membership test suites
         run: python -m pytest tests/test_dt_contra_state.py tests/test_build_subsector_membership.py -q
+
+  sa-w4-improvement-lanes:
+    # SA-W4: standout improvement lanes — clamped review engine + Tier-0 replay +
+    # lab come-back alerts.
+    # Covers: whitelist/step/disjointness enforcement, dormant-reject on null baseline,
+    # UNEVALUABLE=>reject, governance event schema, shadow book spec completeness,
+    # replay data-gap honesty, never-raise on corrupt proposals,
+    # registry_seed picklab entries (27 US + 20 CN + 20 HK).
+    # Network-free: all synthetic fixtures via tmp_path.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pyyaml pandas numpy pyarrow
+      - name: SA-W4 standout review test suite
+        run: python -m pytest tests/test_standout_review.py -v

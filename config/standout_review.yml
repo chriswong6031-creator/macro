@@ -1,0 +1,261 @@
+# config/standout_review.yml — Standout-board improvement lane config (SA-W4).
+#
+# IMMUTABLE: loop-authored PRs may NOT modify this file.
+# All changes require an operator tap (human PR or T2 tap-gated PR).
+# This mirrors config/metabolism_budget.yml's authorship contract.
+#
+# Authoring: Claude Fable 5 (SA-W4, 2026-07-12). Schema: standout_review.v1.
+#
+# DISJOINTNESS (SA-R2 invariant) — TWO EFFECT CLASSES:
+#
+#   RULER EFFECTS (forbidden in whitelist):
+#     A param that feeds an ATTRIBUTION THRESHOLD or fitness-SENSOR DEFINITION is a
+#     ruler effect and is prohibited from the whitelist (SA-R2). Changing a ruler
+#     changes the measurement tool itself, invalidating the accrued evidence base.
+#     Example of a forbidden param: EXT_SCORE_LATE_PCT (feeds the signaled_too_late
+#     sensor fallback clause in china_standout_audit.py) — forbidden.
+#
+#   SELECTION EFFECTS (expected, not a violation):
+#     A ranking/bonus/penalty param that changes which names SURFACE on the board
+#     changes the sensor composition over time. This is expected and desired behavior
+#     for any improvement lane — the sensors exist to measure exactly this change.
+#     Selection effects are documented as expected behavior; they are NOT a violation
+#     of SA-R2.
+#
+#   WORKED EXAMPLE — cn.ext_penalty:
+#     ext_penalty is a ranking weight that demotes extended names in blend_sorted().
+#     It does NOT feed the ext_score VALUE that signaled_too_late's fallback reads
+#     (that reads extension.score directly, independently of ext_penalty).
+#     Confirmed in scripts/build_china_library.py: ext_penalty × ext_score feeds
+#     _cn_bonus() → blend_sorted() ranking only. This is a SELECTION effect, not
+#     a ruler effect. cn.ext_penalty is whitelist-eligible.
+#
+#   BOARD_RANK → signaled_too_late CHANNEL: CLOSED
+#     The legacy board_rank clause in CN signaled_too_late was REMOVED by W2's fix
+#     (commit 0562ef126be, origin/claude/sa-w2-cn-audit). CN signaled_too_late now
+#     uses ticks > FRESH_TICKS (primary) with ext_score >= EXT_SCORE_LATE_PCT
+#     (fallback when ticks is null). No board_rank term remains. Verified 2026-07-12.
+#
+#   DISJOINTNESS STATUS (name-level and definitional-input-level):
+#     Verified against W1 (engine/standout_audit.py) and W2
+#     (engine/china_standout_audit.py) constants as of 2026-07-12.
+#     No whitelist param name appears in the attribution/sensor constant sets.
+#     No whitelist param feeds a measurement DEFINITION (only ranking weights).
+#     SELECTION effects from ranking params are documented and expected.
+#
+#   Actual attribution/sensor constants (verified from W1 + W2 source):
+#     W1 (engine/standout_audit.py — module_constant):
+#       A1_IDIO_BREAK_THRESHOLD, A1_SECTOR_ROTATED_SECTOR_THRESH,
+#       A1_SECTOR_ROTATED_IDIO_BAND, A1_MACRO_SPY_THRESH, A1_MACRO_IDIO_BAND,
+#       A1_IDIO_ALPHA_THRESHOLD, A1_BETA_TAILWIND_IDIO_BAND,
+#       A2_SIGNALED_TOO_LATE_TENURE, A2_PREMATURE_STOP_MFE_THRESH,
+#       A2_PREMATURE_STOP_SESSIONS, A2_GATE_SUPPRESSED_EXCESS_THRESH,
+#       SENSOR_MIN_MATURED_ROWS, SENSOR_MIN_ENTRY_DATES,
+#       SENSOR_MIN_NONOVERLAPPING_WINDOWS, SENSOR_MIN_CALENDAR_MONTHS,
+#       MISSED_MOVER_EPISODE_EXCESS_THRESH, MISSED_MOVER_EPISODE_WINDOW,
+#       MISSED_MOVER_BUY_WINDOW
+#     W2 (engine/china_standout_audit.py _TAXONOMY_CONSTANTS — module_constant):
+#       IDIO_BREAK_PP, IDIO_ALPHA_PP, IDIO_BAND_PP, SECTOR_OUT_PP, MACRO_FALL_PCT,
+#       BETA_STRONG_PCT, FRESH_TICKS, EXT_SCORE_LATE_PCT, PREMATURE_STOP_MFE_PP
+#
+#   None of the whitelist params (below) appear in the above lists.
+#   Re-sync this comment when W1/W2 merge to main.
+#
+schema: standout_review.v1
+
+# ── Whitelist: tunable ranking parameters ─────────────────────────────────────
+#
+# Format per param:
+#   min:           hard floor (clamped; proposal below this is rejected)
+#   max:           hard ceiling (clamped; proposal above this is rejected)
+#   step:          unit of a "one step" delta; proposals must be an integer
+#                  multiple of step
+#   current_source: module path and constant/variable name where the current
+#                   production value lives (informational; do NOT read this file
+#                   at runtime to get the production value — read the source)
+#   source_kind:   "module_constant" | "function_local"
+#                  module_constant: top-level name, importable directly (e.g. TIER_FRAC)
+#                  function_local: defined inside a function body; NOT importable without
+#                    refactoring. These params are proposal-able and shadow-book eligible;
+#                    the shadow lane does not require the constant to be importable.
+#                    NOTE: any future codemod apply-path (live-apply) will need extraction
+#                    to module-level before it can apply the value automatically.
+#
+# SA-R4 clamp law: max_params_per_cycle: 1, max_step_per_cycle: 1 step.
+# A proposal touching more than one param, or moving by more than one step,
+# is rejected before any evaluation.
+#
+whitelist:
+  us.tier_frac:
+    min: 0.25
+    max: 0.65
+    step: 0.05
+    current_source: "engine/signal_gate.py:TIER_FRAC"
+    source_kind: module_constant
+    description: >
+      US board blend weight: fraction of score attributable to cascade tier
+      (1 - tier_frac goes to conviction percentile). Used in
+      signal_gate.blend_sorted().
+
+  us.coiled_bonus:
+    min: 0.10
+    max: 0.50
+    step: 0.05
+    current_source: "engine/coiled.py:COILED_BONUS"
+    source_kind: module_constant
+    description: >
+      Ranking bonus applied to COILED-confirmed names on the US board.
+      Lifts a COILED name roughly half a cascade tier. Additive over the
+      tier×conviction blend in build_stock_library.py _combine_key.
+
+  us.star_extra:
+    min: 0.05
+    max: 0.30
+    step: 0.05
+    current_source: "engine/coiled.py:STAR_EXTRA"
+    source_kind: module_constant
+    description: >
+      Additional bonus on top of coiled_bonus for STAR names (COILED +
+      bull_div). Additive; stacks with coiled_bonus.
+
+  us.per_sector_cap:
+    min: 3
+    max: 10
+    step: 1
+    current_source: "scripts/build_stock_library.py:_WIDE_PER_SECTOR"
+    source_kind: module_constant
+    description: >
+      Soft per-sector cap on the wide US board: names beyond this count per
+      sector overflow to the watch strip. Guards against sector concentration.
+
+  cn.tier_frac:
+    min: 0.15
+    max: 0.50
+    step: 0.05
+    current_source: "scripts/build_china_library.py:CN_TIER_FRAC"
+    source_kind: function_local
+    description: >
+      CN board tier fraction in signal_gate.blend_sorted(). CN uses 0.30
+      (vs US 0.45) for mild near-parity flattening within confirmed tiers.
+      NOTE: function_local — extract to module level before any codemod apply.
+
+  cn.wn_floor:
+    min: 0.40
+    max: 0.80
+    step: 0.05
+    current_source: "scripts/build_china_library.py:CN_WN_FLOOR"
+    source_kind: function_local
+    description: >
+      CN board wn_floor (weight-normalization floor). Guards against a high-
+      confidence T1 verdict fully swamping conviction. Currently 0.60.
+      NOTE: function_local — extract to module level before any codemod apply.
+
+  cn.washout_bonus:
+    min: 0.20
+    max: 0.80
+    step: 0.10
+    current_source: "scripts/build_china_library.py:WASHOUT_BONUS"
+    source_kind: function_local
+    description: >
+      Additive bonus for CN names with washout_2w flag (2W StochRSI reclaim).
+      ~one cascade tier lift. Defined locally inside build_china_library.py's
+      cn_ranking block. CHEAPLY REPLAYABLE: board.parquet stores washout_2w,
+      tier, board_rank, ext_score — sufficient for ordering-delta evaluation.
+      NOTE: function_local — extract to module level before any codemod apply.
+
+  cn.ext_penalty:
+    min: 0.20
+    max: 0.80
+    step: 0.10
+    current_source: "scripts/build_china_library.py:EXT_PENALTY"
+    source_kind: function_local
+    description: >
+      Symmetric anti-chase penalty for CN extended names (score field from
+      extension.score). Demotes a fully-extended name ~one cascade tier.
+      Feeds blend_sorted() ranking ONLY — does NOT feed the ext_score VALUE
+      used by signaled_too_late's fallback clause (selection effect, not ruler).
+      NOTE: function_local — extract to module level before any codemod apply.
+
+  cn.per_sector_cap:
+    min: 3
+    max: 10
+    step: 1
+    current_source: "scripts/build_china_library.py:(inline per-sector cap)"
+    source_kind: function_local
+    description: >
+      Per-sector soft cap on CN board. Not yet a named constant (inline in
+      build_china_library.py); a future refactor will extract it. Proposals
+      touching this param are UNEVALUABLE until the constant is extracted
+      (the evaluator returns UNEVALUABLE, which routes to rejection per SA-R5).
+      NOTE: function_local — extract to module level before any codemod apply.
+
+# ── Per-cycle delta caps (SA-R4) ─────────────────────────────────────────────
+max_params_per_cycle: 1
+max_step_per_cycle: 1   # integer steps; one step = one step unit from whitelist
+
+# ── Coverage floors / clamp set (SA-R4) ───────────────────────────────────────
+#
+# All clamps reference the FROZEN baseline (median of 8 weeks ending at first
+# sensor-maturity date). Until baselines exist, frozen_baseline fields are null
+# and ALL deltas are auto-REJECTED with reason "no_frozen_baseline" — the honest
+# dormant state. This is correct: there is nothing to regress against yet.
+#
+clamps:
+  # (a) trailing 4-week buy-lane count vs frozen baseline
+  trailing_4w_vs_frozen_baseline_max_drop_pct: 15   # >15% drop = auto-reject
+
+  # (b) cumulative drift check: total decline vs frozen baseline
+  cumulative_vs_frozen_baseline_max_drop_pct: 25    # >25% at any horizon = hard trip
+
+  # (c) absolute floor: buy-lane names per day median must stay >= 5
+  abs_floor_buy_names_per_day_median: 5
+
+  # (d) upside_capture band — null until frozen baseline exists
+  upside_capture_band:
+    max_drop_pct: 15    # trailing relative drop vs frozen baseline
+    frozen_baseline: null
+
+  # (e) missed_mover_rate band — null until frozen baseline exists
+  missed_mover_band:
+    max_rise_pct: 20    # trailing relative rise vs frozen baseline (higher = worse)
+    frozen_baseline: null
+
+  # Frozen baselines (set by the first sensor-maturity read; null = dormant)
+  frozen_baselines:
+    us:
+      buy_names_per_day_median: null   # set at US sensor maturity ~2026-09-15
+      upside_capture: null
+      missed_mover_rate: null
+    cn:
+      buy_names_per_day_median: null   # set at CN sensor maturity ~2026-10-15
+      upside_capture: null
+      missed_mover_rate: null
+
+# ── Do-no-harm gate config (SA-R5, §6) ───────────────────────────────────────
+do_no_harm:
+  # Leave-newest-out temporal split: hold out the most recent non-overlapping
+  # calendar month from the hypothesis-selection set; the gate must hold on
+  # that held-out newest month.
+  holdout: leave_newest_nonoverlapping_month
+
+  # Trial-count haircut: Bonferroni correction over the whitelist × steps grid.
+  # The grid size is (n_whitelist_params × max_steps_per_param); each proposal
+  # logs its trial count to governance.jsonl.
+  trial_haircut: bonferroni_over_grid
+
+  # Noise band: "no regression beyond noise" is the within-month permutation
+  # null of the metric delta (DT-R14 per masterplan §6, item 3).
+  noise_band: within_month_permutation
+
+  # Number of permutation draws for the null distribution.
+  n_permutations: 1000
+
+  # Minimum effective N required before the gate can pass anything.
+  # At this n the permutation null will authorize almost nothing — that is the
+  # honest DORMANT state described in SA-W4 masterplan §6.
+  min_effective_n: 6
+
+# ── Arming precondition ────────────────────────────────────────────────────────
+# engine/standout_review.py refuses to run unless this file parses successfully.
+# The presence and validity of this file is the arming precondition.
+# No live-apply exists in v1; only shadow_apply (draft Pick Lab book spec).
