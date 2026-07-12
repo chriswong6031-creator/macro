@@ -1,11 +1,16 @@
 {# ============================================================================
-   Odds Desk — Historical Base-Rate Analyzer + Factor Match screener.
+   Odds Desk — Historical Base-Rate Analyzer + Factor Match screener (UI v2).
    Static skeleton only: everything data-driven is rendered client-side by
    site/odds.js from site/oddsdata/catalog.json (git/Pages), per-ticker
-   matrices on R2 via (window.DATA_BASE||'') + 'oddsmatrix/<T>.json', and
-   site/oddsdata/factor_match.json. Rendered to site/odds.html by
-   scripts/build_odds.py through lib/pages.write_page (data_base shim comes
-   free). The template requires NO context variables — safe to render bare.
+   matrices on R2 via (window.DATA_BASE||'') + 'oddsmatrix/<T>.json'
+   (odds_matrix.v1 / v1.1 both tolerated), and site/oddsdata/factor_match.json.
+   Rendered to site/odds.html by scripts/build_odds.py through
+   lib/pages.write_page (data_base shim comes free). The template requires NO
+   context variables — safe to render bare.
+   v2 look: institutional dark chrome (odds-scoped CSS custom props with light
+   -theme overrides in odds.css), hero with Wilson CI band, condition cards
+   with iOS toggles, chip controls, sliding tabs, volume substrip, onboarding
+   card, share-card export.
    ========================================================================== #}
 {% extends "report_base.html.j2" %}
 {% macro t(en, zh='') -%}
@@ -15,26 +20,26 @@
 {% block title %}{{ t('Odds Desk — Historical Base Rates', '胜率台 — 历史基础概率') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="odds.css?v=1">
+<link rel="stylesheet" href="odds.css?v=2">
 {% endblock %}
 
 {% block base_css %}
   /* page-scoped: widen the reading column for the screener table */
-  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1336px)/2)); padding-right:max(18px,calc((100vw - 1336px)/2)); } }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1356px)/2)); padding-right:max(18px,calc((100vw - 1356px)/2)); } }
 {% endblock %}
 
 {% block content %}
 <section class="od-hero">
-  <p class="eyebrow">🎲 {{ t('Historical Odds Desk', '历史胜率台') }}</p>
+  <p class="od-eyebrow">{{ t('Historical Odds Desk', '历史胜率台') }}</p>
   <h1>{{ t('Odds — what happened next on days like today', '胜率 — 历史上像今天这样的日子，后来怎么走') }}</h1>
   <p class="od-sub">{{ t(
-     'Pick a ticker. Today\'s market fingerprint — move size, VIX regime, market trend, macro quad and more — becomes a set of toggleable conditions. Every active condition filters up to 35 years of history down to the days that looked like today; the verdict is the empirical base rate of what happened next. No prediction, no model — just counted history, with the unconditional base rate shown alongside so the edge is honest.',
-     '选择一个标的。今天的市场指纹——涨跌幅度、VIX 区间、大盘趋势、宏观象限等——变成一组可开关的条件。每个激活的条件把最长 35 年的历史过滤到与今天相似的交易日；结论就是随后走势的经验概率。不预测、不建模——只统计历史，并同时展示无条件基础概率，让优势诚实可见。') }}</p>
+     'Today\'s market fingerprint — move size, VIX regime, market trend, macro quad and more — becomes a set of toggleable conditions. Every active condition filters up to 35 years of history down to the days that looked like today; the verdict is the empirical base rate of what happened next. No prediction, no model — counted history, with the unconditional base rate alongside so the edge is honest.',
+     '今天的市场指纹——涨跌幅度、VIX 区间、大盘趋势、宏观象限等——变成一组可开关的条件。每个激活的条件把最长 35 年的历史过滤到与今天相似的交易日；结论就是随后走势的经验概率。不预测、不建模——只统计历史，并同时展示无条件基础概率，让优势诚实可见。') }}</p>
   <div class="od-meta">
-    <span class="chip" id="od-asof-chip"><span class="l-en">As of —</span><span class="l-zh">截至 —</span></span>
-    <span class="chip">{{ t('Returns: open-to-close', '收益口径：开盘→收盘') }}</span>
-    <span class="chip" id="od-uni-chip" hidden></span>
-    <span class="chip tag-macro">{{ t('Macro Quad conditions — unique to this desk', '宏观象限条件 — 本台独有') }}</span>
+    <span class="od-mchip" id="od-asof-chip"><span class="l-en">As of —</span><span class="l-zh">截至 —</span></span>
+    <span class="od-mchip">{{ t('Returns: open-to-close', '收益口径：开盘→收盘') }}</span>
+    <span class="od-mchip" id="od-uni-chip" hidden></span>
+    <span class="od-mchip quad">{{ t('Macro Quad conditions — unique to this desk', '宏观象限条件 — 本台独有') }}</span>
   </div>
 </section>
 
@@ -48,51 +53,91 @@
 
 <div id="od-app" hidden>
 
-  {# ---------------- top bar: ticker + outcome / range / tolerance ---------------- #}
+  {# ---------------- first-visit onboarding (dismissible, localStorage) ---------------- #}
+  <div id="od-onboard" class="od-onboard" hidden>
+    <div class="od-ob-head">
+      <span class="od-eyebrow">{{ t('How this desk works', '本台使用方法') }}</span>
+      <button id="od-onboard-x" class="od-ob-x" type="button" aria-label="Dismiss">&times;</button>
+    </div>
+    <div class="od-ob-steps">
+      <div class="od-ob-step"><span class="od-ob-n">1</span><div>{{ t('<b>Pick an asset.</b> Search any ticker in the odds universe — ETFs and liquid megacaps.',
+        '<b>选择标的。</b>在胜率标的池中搜索任意代码——ETF 与高流动性大盘股。') }}</div></div>
+      <div class="od-ob-step"><span class="od-ob-n">2</span><div>{{ t('<b>Toggle conditions.</b> Each card is one thing that is true today; active cards filter history to similar days.',
+        '<b>开关条件。</b>每张卡片代表今天成立的一个条件；激活的卡片把历史过滤到相似交易日。') }}</div></div>
+      <div class="od-ob-step"><span class="od-ob-n">3</span><div>{{ t('<b>Read the verdict.</b> The big number is the historical win rate; the band is its 95% confidence interval vs the 50% coin flip.',
+        '<b>阅读结论。</b>大数字是历史胜率；区间带是其 95% 置信区间，并标出 50% 的抛硬币基准。') }}</div></div>
+    </div>
+    <button id="od-onboard-ok" class="od-ob-ok" type="button">{{ t('Got it', '知道了') }}</button>
+  </div>
+
+  {# ---------------- top bar: ticker identity + chip controls ---------------- #}
   <div class="od-top" id="od-top">
-    <div class="od-tk">
-      <img id="od-logo" class="od-logo lg" alt="" loading="eager" hidden>
-      <div class="od-tk-box">
-        <input id="od-tk-input" type="text" autocomplete="off" spellcheck="false"
-               aria-label="Ticker search"
-               placeholder="Search ticker — SPY, NVDA, XLK…"
-               data-ph-zh="搜索标的 — SPY、NVDA、XLK…">
-        <div id="od-tk-sugg" class="od-sugg" hidden></div>
+    <div class="od-ident">
+      <span class="od-logo-ring"><img id="od-logo" class="od-logo" alt="" loading="eager" hidden></span>
+      <div class="od-ident-txt">
+        <div class="od-ident-l1">
+          <span id="od-ident-tk" class="od-ident-tk">—</span>
+          <span id="od-ident-name" class="od-ident-name"></span>
+          <span id="od-move-chip" class="od-move" hidden></span>
+        </div>
+        <div class="od-ident-l2" id="od-ident-sub"></div>
       </div>
-      <span id="od-move-chip" class="od-move" hidden></span>
     </div>
     <div class="od-ctrls">
-      <div class="od-ctrl">
-        <span class="od-ctrl-k">{{ t('Outcome', '观察期') }}</span>
-        <div class="od-seg" id="od-seg-horizon" role="group" aria-label="Outcome horizon">
-          <button class="segbtn" data-v="1d">{{ t('Next Day', '次日') }}</button>
-          <button class="segbtn" data-v="5d">{{ t('Next Week · 5d', '下周 · 5日') }}</button>
-          <button class="segbtn" data-v="20d">{{ t('Next Month · 20d', '下月 · 20日') }}</button>
+      <div class="od-ctrl od-search">
+        <span class="od-ctrl-k">{{ t('Ticker', '标的') }}</span>
+        <div class="od-tk-box">
+          <svg class="od-tk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="od-tk-input" type="text" autocomplete="off" spellcheck="false"
+                 aria-label="Ticker search"
+                 placeholder="SPY, NVDA, XLK…"
+                 data-ph-zh="SPY、NVDA、XLK…">
+          <div id="od-tk-sugg" class="od-sugg" hidden></div>
         </div>
       </div>
-      <div class="od-ctrl">
-        <span class="od-ctrl-k">{{ t('Range', '数据范围') }}</span>
-        <div class="od-seg" id="od-seg-range" role="group" aria-label="Data range">
-          <button class="segbtn" data-v="5y">5y</button>
-          <button class="segbtn" data-v="10y">10y</button>
-          <button class="segbtn" data-v="20y">20y</button>
-          <button class="segbtn" data-v="max">{{ t('Max', '全部') }}</button>
+      <div class="od-ctrl" id="od-ctl-horizon">
+        <button class="od-chipbtn" type="button" aria-haspopup="true" aria-expanded="false">
+          <span class="od-ctrl-k">{{ t('Outcome', '观察期') }}</span>
+          <span class="od-ctrl-v"></span>
+          <svg class="od-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="od-menu" hidden>
+          <button class="od-opt" type="button" data-v="1d">{{ t('Next Day', '次日') }}</button>
+          <button class="od-opt" type="button" data-v="5d">{{ t('Next Week · 5d', '下周 · 5日') }}</button>
+          <button class="od-opt" type="button" data-v="20d">{{ t('Next Month · 20d', '下月 · 20日') }}</button>
         </div>
       </div>
-      <div class="od-ctrl">
-        <span class="od-ctrl-k">{{ t('Tolerance', '容差') }}</span>
-        <div class="od-seg" id="od-seg-tol" role="group" aria-label="Bucket tolerance">
-          <button class="segbtn" data-v="0">{{ t('Exact', '精确') }}</button>
-          <button class="segbtn" data-v="1">±1</button>
-          <button class="segbtn" data-v="2">±2</button>
+      <div class="od-ctrl" id="od-ctl-range">
+        <button class="od-chipbtn" type="button" aria-haspopup="true" aria-expanded="false">
+          <span class="od-ctrl-k">{{ t('Range', '数据范围') }}</span>
+          <span class="od-ctrl-v"></span>
+          <svg class="od-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="od-menu" hidden>
+          <button class="od-opt" type="button" data-v="5y">{{ t('5 years', '5年') }}</button>
+          <button class="od-opt" type="button" data-v="10y">{{ t('10 years', '10年') }}</button>
+          <button class="od-opt" type="button" data-v="20y">{{ t('20 years', '20年') }}</button>
+          <button class="od-opt" type="button" data-v="max">{{ t('Max history', '全部历史') }}</button>
+        </div>
+      </div>
+      <div class="od-ctrl" id="od-ctl-tol">
+        <button class="od-chipbtn" type="button" aria-haspopup="true" aria-expanded="false">
+          <span class="od-ctrl-k">{{ t('Match', '匹配') }}</span>
+          <span class="od-ctrl-v"></span>
+          <svg class="od-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="od-menu" hidden>
+          <button class="od-opt" type="button" data-v="0">{{ t('Exact', '精确') }}</button>
+          <button class="od-opt" type="button" data-v="1">{{ t('±1 bucket', '±1 档') }}</button>
+          <button class="od-opt" type="button" data-v="2">{{ t('±2 buckets', '±2 档') }}</button>
         </div>
       </div>
       <div class="od-ctrl od-soon">
-        <span class="od-ctrl-k">{{ t('Pattern', '形态') }}</span>
-        <div class="od-seg">
-          <button class="segbtn" disabled>{{ t('Single day', '单日') }}</button>
-        </div>
-        <span class="od-soon-tag">{{ t('multi-day — soon', '多日形态 — 即将推出') }}</span>
+        <button class="od-chipbtn" type="button" disabled>
+          <span class="od-ctrl-k">{{ t('Pattern', '形态') }}</span>
+          <span class="od-ctrl-v">{{ t('Single day', '单日') }}</span>
+          <span class="od-soon-tag">{{ t('soon', '即将推出') }}</span>
+        </button>
       </div>
     </div>
   </div>
@@ -101,33 +146,35 @@
   <div class="od-layout" id="od-layout">
     <aside class="od-rail" id="od-rail">
       <div class="od-rail-h">
-        <span class="od-rail-title">{{ t('Market Context', '市场环境') }}</span>
-        <span class="chip" id="od-active-count"></span>
+        <span class="od-eyebrow">{{ t('Market Context', '市场环境') }}</span>
+        <span class="od-pill" id="od-active-count"></span>
       </div>
       <div class="od-matchline" id="od-match-count"></div>
       <div id="od-rail-body"></div>
-      <p class="od-rail-note">{{ t('Tolerance applies to ordered factors only; categorical factors (trend state, month, quad) always match exactly. A condition with no value today cannot be activated.',
-                                   '容差仅适用于有序因子；分类因子（趋势状态、月份、象限）始终精确匹配。今日无数据的条件无法激活。') }}</p>
+      <p class="od-rail-note">{{ t('Match tolerance applies to ordered factors only; categorical factors (trend state, month, quad) always match exactly. A condition with no value today cannot be activated.',
+                                   '匹配容差仅适用于有序因子；分类因子（趋势状态、月份、象限）始终精确匹配。今日无数据的条件无法激活。') }}</p>
     </aside>
 
     <main class="od-main">
       <section id="od-verdict" class="od-verdict" aria-live="polite"></section>
 
       <nav class="od-tabs" id="od-tabs" role="tablist">
-        <button class="tabbtn" data-tab="days" role="tab">{{ t('Matching Days', '匹配交易日') }}</button>
-        <button class="tabbtn" data-tab="path" role="tab">{{ t('Price Path', '价格路径') }}</button>
+        <button class="tabbtn" data-tab="days" role="tab">{{ t('Matching days', '匹配交易日') }}</button>
+        <button class="tabbtn" data-tab="path" role="tab">{{ t('Price path', '价格路径') }}</button>
         <button class="tabbtn" data-tab="returns" role="tab">{{ t('Returns', '收益分布') }}</button>
-        <button class="tabbtn" data-tab="fm" role="tab">{{ t('Factor Match', '因子共振筛选') }}</button>
+        <button class="tabbtn" data-tab="fm" role="tab">{{ t('Factor match', '因子共振') }}</button>
+        <span class="od-tab-ink" id="od-tab-ink" aria-hidden="true"></span>
+        <button id="od-csv" class="od-csvbtn" type="button" hidden>⬇ {{ t('Export CSV', '导出 CSV') }}</button>
       </nav>
 
       <section id="od-pane-days" class="od-pane" role="tabpanel" hidden>
         <div class="od-pane-h">
           <h3>{{ t('Where the matching days sit on the chart', '匹配交易日在走势中的位置') }}</h3>
-          <button id="od-csv" class="navbtn" type="button">⬇ {{ t('Export CSV', '导出 CSV') }}</button>
         </div>
         <div id="od-price-chart" class="od-chart" data-h="300"></div>
+        <div id="od-vol-strip" class="od-vstrip" hidden></div>
         <div id="od-days-note" class="od-note"></div>
-        <div class="tbl-scroll"><table class="od-tbl" id="od-days-table"></table></div>
+        <div class="tbl-scroll od-tblwrap"><table class="od-tbl" id="od-days-table"></table></div>
       </section>
 
       <section id="od-pane-path" class="od-pane" role="tabpanel" hidden>
@@ -166,7 +213,7 @@
           </div>
         </div>
         <div id="od-fm-market" class="od-note"></div>
-        <div class="tbl-scroll"><table class="od-tbl od-fm-tbl" id="od-fm-table"></table></div>
+        <div class="tbl-scroll od-tblwrap fm"><table class="od-tbl od-fm-tbl" id="od-fm-table"></table></div>
         <div id="od-fm-note" class="od-note"></div>
       </section>
     </main>
@@ -183,6 +230,6 @@
 {% endblock %}
 
 {% block body_scripts %}
-<script src="mm_charts.js?v=2"></script>
-<script src="odds.js?v=1"></script>
+<script src="mm_charts.js?v=3"></script>
+<script src="odds.js?v=2"></script>
 {% endblock %}

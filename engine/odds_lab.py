@@ -1,7 +1,7 @@
 """Odds Lab — pure, vectorized factor/forward engine for the Odds Desk.
 
 Computes per-ticker daily "market fingerprint" bucket matrices + open-to-close
-forward returns from OHLCV frames, publishes the columnar ``odds_matrix.v1``
+forward returns from OHLCV frames, publishes the columnar ``odds_matrix.v1.1``
 contract, and mirrors the client-side matching + stats (Wilson CI, base rate)
 so the browser math is pytest-proven here.
 
@@ -27,13 +27,15 @@ from typing import Mapping, Sequence
 import numpy as np
 import pandas as pd
 
-SCHEMA_MATRIX = "odds_matrix.v1"
+SCHEMA_MATRIX = "odds_matrix.v1.1"
 SCHEMA_FACTOR_MATCH = "odds_factor_match.v1"
 
 MARKET_FACTORS = ["mkt_trend", "vix_level", "vix_move", "month", "quad"]
 ASSET_FACTORS = ["pct_move", "magnitude", "rsi_zone", "rsi_slope", "rel_vol",
                  "trend_structure", "streak", "vol_streak", "gap", "dist_52w"]
 OUTCOME_COLS = ["ret_bp", "gap_bp", "fwd1_bp", "fwd5_bp", "fwd20_bp"]
+#: v1.1 additive display-only columns — NOT factors, never matched on
+EXTRA_COLS = ["vol_rel"]
 ALL_FACTORS = MARKET_FACTORS + ASSET_FACTORS
 
 #: categorical factors match with tolerance 0 always (spec: matching semantics)
@@ -47,6 +49,7 @@ HORIZON_COL = {"1d": "fwd1_bp", "5d": "fwd5_bp", "20d": "fwd20_bp"}
 ATR_PERIOD = 14
 RSI_PERIOD = 14
 VOL_SMA = 20
+VOL_REL_CAP = 999
 HI_52W_WINDOW = 252
 
 _QUAD_MAP = {"Q1": 1, "Q2": 2, "Q3": 3, "Q4": 4, "1": 1, "2": 2, "3": 3, "4": 4}
@@ -311,6 +314,9 @@ def compute_asset_factors(ohlcv: pd.DataFrame) -> pd.DataFrame:
     ratio = v / vsma_prev.where(vsma_prev > 0)
     out["rel_vol"] = bucket_rel_vol(ratio)
     out["vol_streak"] = _signed_run(np.sign(ratio - 1.0), 8)
+    # vol_rel (v1.1, display-only): the SAME t−1 ratio × 100, capped at 999.
+    # Null while the SMA20 window is incomplete (ratio is NaN there).
+    out["vol_rel"] = (ratio * 100.0).clip(upper=float(VOL_REL_CAP))
 
     ema9 = c.ewm(span=9, adjust=False).mean()
     ema21 = c.ewm(span=21, adjust=False).mean()
@@ -321,7 +327,7 @@ def compute_asset_factors(ohlcv: pd.DataFrame) -> pd.DataFrame:
 
     rmax = c.rolling(HI_52W_WINDOW, min_periods=HI_52W_WINDOW).max()
     out["dist_52w"] = bucket_dist_52w((c / rmax - 1.0) * 100.0)
-    return out[ASSET_FACTORS]
+    return out[ASSET_FACTORS + EXTRA_COLS]
 
 
 def compute_forward(ohlcv: pd.DataFrame) -> pd.DataFrame:
@@ -353,11 +359,12 @@ def _int_list(s: pd.Series) -> list[int | None]:
 def build_matrix(ticker: str, ohlcv: pd.DataFrame,
                  market: pd.DataFrame | None = None,
                  asof: str | None = None) -> dict:
-    """Assemble the ``odds_matrix.v1`` columnar dict for one ticker.
+    """Assemble the ``odds_matrix.v1.1`` columnar dict for one ticker.
 
     dates = epoch days (ints, ascending); close = floats (4dp); every entry in
     ``cols`` is int-or-null. Market factors are joined onto the ticker's own
-    trading dates (missing market coverage → nulls, never a raise)."""
+    trading dates (missing market coverage → nulls, never a raise). v1.1 adds
+    the display-only ``vol_rel`` column (vol ÷ SMA20 thru t−1 × 100, cap 999)."""
     df = ohlcv[ohlcv["close"].notna()].sort_index()
     idx = df.index
     factors = compute_asset_factors(df)
@@ -373,6 +380,8 @@ def build_matrix(ticker: str, ohlcv: pd.DataFrame,
         cols[f] = _int_list(factors[f])
     for f in OUTCOME_COLS:
         cols[f] = _int_list(fwd[f])
+    for f in EXTRA_COLS:
+        cols[f] = _int_list(factors[f])
     days = idx.values.astype("datetime64[D]").astype(np.int64)
     return {
         "schema": SCHEMA_MATRIX,
@@ -389,7 +398,7 @@ def build_matrix(ticker: str, ohlcv: pd.DataFrame,
 # ---------------------------------------------------------------------------
 
 def matrix_frame(matrix: Mapping) -> pd.DataFrame:
-    """odds_matrix.v1 dict → float DataFrame (null → NaN), epoch-day index."""
+    """odds_matrix (v1/v1.1) dict → float DataFrame (null → NaN), epoch-day index."""
     data = {k: np.array([np.nan if v is None else float(v) for v in vals])
             for k, vals in matrix["cols"].items()}
     return pd.DataFrame(data, index=pd.Index(matrix["dates"], dtype=np.int64))
