@@ -68,6 +68,20 @@ budget_ledger_path: data/metabolism/budget_ledger.json
 max_active_nonscored_lobes: 66    # 63 current + 3 headroom (operator-ratified 2026-07-10)
 max_probation_lobes: 5            # max simultaneous probation lobes (anti-cascade)
 
+# ── Genesis-specific caps (R-V6-3 — W2 genesis gauntlet) ─────────────────────
+#
+# max_genesis_per_cycle: at most this many new-lobe charters may be granted in
+# a single metabolism cycle.  Set to 1 — one unproven newborn at a time.
+# Enforced by _genesis_screen in engine/metabolism/adjudicate.py.
+# IMMUTABLE: loop PRs cannot modify this.
+max_genesis_per_cycle: 1          # one new lobe per cycle maximum (R-V6-3b)
+
+# genesis_accountability_days: a genesis lobe that produces ZERO matured
+# (graded) contracts within this many days triggers a demotion docket from the
+# lifecycle machine (R-V6-6, W3).  45 days = one probation window.
+# IMMUTABLE: loop PRs cannot modify this.
+genesis_accountability_days: 45   # days before accountability-clock demotion (R-V6-6)
+
 # ── Never-stuck durability (R-V5-1, R-V5-2) ──────────────────────────────────
 #
 # max_build_attempts: maximum times a "failed" dispatch may be re-attempted

@@ -340,6 +340,211 @@ def _ux_simplicity_screen(
         }
 
 
+# ── Genesis deterministic screen (R-V6-3 — deny-only, kind=="charter") ──────
+
+# CHF-family token patterns (case-insensitive substring match on any single
+# distinctive token from this list).  DO_NOT_REBUILD §4 line ~111.
+_CHF_DENY_TOKENS: tuple[str, ...] = (
+    "causal",
+    "chf",
+    "hypothesis-factory",
+    "machine-registration",
+)
+
+# CHF deferral enforced while today < this date (R-V6-3c).
+_CHF_DEFER_UNTIL = "2026-10-15"
+
+# Verbatim case-law for the adversary charter block (R-V6-3e).
+_CHARTER_CASE_LAW_BLOCK = (
+    "NARR-NWC (verbatim): \"Claim Reliability / Narrative Truth is NOT a lobe. "
+    "It decomposes into: already-built (QI's track_record.json), an R2-rail wave (W-A), "
+    "a bridge wave (W-B), and two accrual-gated future experiments (NARR-2/NARR-3). "
+    "Misfiling waves as lobes is how program sprawl happens.\"\n"
+    "NEXT3-U5 (verbatim): \"Codex's 'lobes 4/5/6' are respectively an operating "
+    "chartered lobe (L1 short-side), a program's connective tissue (options->NW), and "
+    "a rail-consumer (DQ instrumentation). None constitutes a new lobe. All upgrades "
+    "on these organs are waves on existing tissue. Connective tissue and rail-consumers "
+    "are not lobes.\"\n"
+    "INSTRUCTION: For every charter-kind proposal, VETO if the proposed entity is a "
+    "wave, rail-consumer, or connective tissue rather than a genuinely new information-"
+    "domain lobe. 'Is it actually a lobe?' is your primary question."
+)
+
+
+def _genesis_screen(
+    proposal: dict[str, Any],
+    *,
+    cycle_id: str,
+    docket: dict[str, Any],
+    root: Path | None = None,
+    _today_override: str | None = None,
+) -> dict[str, Any]:
+    """Deterministic genesis screen for kind=='charter' proposals (R-V6-3).
+
+    Deny-only — the LLM may only further de-escalate (R-AUT-1).
+    Returns {allow: bool, reason: str}.  NEVER raises.
+
+    Checks (in order):
+      (d) Triple tier fence — proposed_tier must be 'display' AND
+          proposed_lifecycle_state must be 'proposed'.
+      (a) Roster cap hard deny — active_nonscored_count() >= max_active_nonscored_lobes
+          unless a co-pending demotion/retire is in the same cycle docket.
+      (b) Genesis rate limit — at most max_genesis_per_cycle charter grants in this cycle.
+      (c) CHF-family deferral — until 2026-10-15 (DO_NOT_REBUILD §4 ~line 111).
+    """
+    try:
+        # (d) Triple tier fence: proposed_tier must be 'display' AND
+        #     proposed_lifecycle_state must be 'proposed' (scout constants + applier
+        #     fence + this screen = three independent enforcement points).
+        proposed_tier = str(proposal.get("proposed_tier") or "").strip().lower()
+        proposed_lifecycle_state = str(proposal.get("proposed_lifecycle_state") or "").strip().lower()
+        if proposed_tier != "display" or proposed_lifecycle_state != "proposed":
+            return {
+                "allow": False,
+                "reason": (
+                    f"genesis screen: tier fence — proposed_tier={proposed_tier!r} "
+                    f"proposed_lifecycle_state={proposed_lifecycle_state!r}; "
+                    "both must be 'display'/'proposed' for genesis (R-V6-3d)"
+                ),
+            }
+
+        # Load budget config (fail-closed on read errors)
+        budget = _load_genesis_budget(root)
+
+        # (a) Roster cap hard deny
+        try:
+            from engine.metabolism.lobe_registry import active_nonscored_count  # noqa: PLC0415
+            current_active = active_nonscored_count(root)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("genesis_screen: lobe_registry unavailable — deny (fail-closed): %s", exc)
+            return {
+                "allow": False,
+                "reason": "genesis screen: roster cap check failed — deny fail-closed (R-V6-3a)",
+            }
+
+        max_active = int(budget.get("max_active_nonscored_lobes", 66))
+        if current_active >= max_active:
+            # Allow if a co-pending demotion/retire is in the SAME cycle docket
+            has_swap = _has_copending_demotion(docket)
+            if not has_swap:
+                return {
+                    "allow": False,
+                    "reason": (
+                        f"genesis screen: roster cap {max_active} reached "
+                        f"(current_active={current_active}), no co-pending demotion — "
+                        "R-V6-3a"
+                    ),
+                }
+
+        # (b) Genesis rate limit: count prior charter grants in this cycle
+        prior_grants = _count_charter_grants_this_cycle(cycle_id, root)
+        max_genesis = int(budget.get("max_genesis_per_cycle", 1))
+        if prior_grants >= max_genesis:
+            return {
+                "allow": False,
+                "reason": (
+                    f"genesis screen: rate limit — {prior_grants} charter grant(s) already "
+                    f"authorized this cycle (max_genesis_per_cycle={max_genesis}) — R-V6-3b"
+                ),
+            }
+
+        # (c) CHF-family deferral — enforced only while today < 2026-10-15
+        try:
+            from datetime import date  # noqa: PLC0415
+            today_str = _today_override or date.today().isoformat()
+            if today_str < _CHF_DEFER_UNTIL:
+                surface = " ".join([
+                    str(proposal.get("title") or ""),
+                    str(proposal.get("rationale") or ""),
+                    str(proposal.get("domain_id") or ""),
+                ]).lower()
+                for token in _CHF_DENY_TOKENS:
+                    if token in surface:
+                        return {
+                            "allow": False,
+                            "reason": (
+                                f"genesis screen: CHF-family deferral — token {token!r} "
+                                f"matched; DO_NOT_REBUILD §4 line ~111 defers until "
+                                f"{_CHF_DEFER_UNTIL} (R-V6-3c)"
+                            ),
+                        }
+        except Exception as exc:  # noqa: BLE001
+            log.warning("genesis_screen: CHF date check failed — denying (fail-closed): %s", exc)
+            return {
+                "allow": False,
+                "reason": f"genesis screen: CHF date check error — deny fail-closed (R-V6-3c): {exc}",
+            }
+
+        return {"allow": True, "reason": "genesis screen: all checks passed"}
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("adjudicate._genesis_screen: unexpected error — deny (fail-closed): %s", exc)
+        return {
+            "allow": False,
+            "reason": f"genesis screen: internal error — deny fail-closed: {exc}",
+        }
+
+
+def _load_genesis_budget(root: Path | None) -> dict[str, Any]:
+    """Load metabolism_budget.yml for genesis-screen keys.  Returns {} on error (NEVER-RAISE)."""
+    try:
+        import yaml  # noqa: PLC0415
+        p = _repo_root(root) / "config" / "metabolism_budget.yml"
+        raw = yaml.safe_load(p.read_text(encoding="utf-8"))
+        return raw or {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("adjudicate._load_genesis_budget: %s", exc)
+        return {}
+
+
+def _has_copending_demotion(docket: dict[str, Any]) -> bool:
+    """Return True if the docket contains any proposal with kind or lifecycle intent
+    matching 'demote' or 'retire' (the swap pattern for R-V6-3a).  NEVER raises.
+    """
+    try:
+        for prop in (docket.get("proposals") or []):
+            kind = str(prop.get("kind") or "").lower()
+            title = str(prop.get("title") or "").lower()
+            rationale = str(prop.get("rationale") or "").lower()
+            surface = f"{kind} {title} {rationale}"
+            if "demot" in surface or "retir" in surface:
+                return True
+        return False
+    except Exception as exc:  # noqa: BLE001
+        log.warning("adjudicate._has_copending_demotion: %s", exc)
+        return False
+
+
+def _count_charter_grants_this_cycle(cycle_id: str, root: Path | None) -> int:
+    """Count prior charter-kind grants already written to the governance log for
+    this cycle.  Returns 0 on any read error (fail-closed = deny if count >=cap).
+
+    NEVER raises.
+    """
+    try:
+        rows = _events_for_target(root, _cycle_prefix(cycle_id))
+        count = 0
+        for ev in rows:
+            if ev.get("event_type") != EVT_ADJUDICATION:
+                continue
+            after = ev.get("after") or {}
+            if after.get("role") != ROLE_ORCH:
+                continue
+            if after.get("decision") != "grant":
+                continue
+            # Check that the original proposal was a charter kind.
+            # after.kind is written by the updated governance row (W2+).
+            # Fallback: check the note field for older rows.
+            kind_field = str(after.get("kind") or "").lower()
+            note = str(ev.get("note") or "").lower()
+            if kind_field == "charter" or "charter" in note:
+                count += 1
+        return count
+    except Exception as exc:  # noqa: BLE001
+        log.warning("adjudicate._count_charter_grants_this_cycle: %s", exc)
+        return 0
+
+
 # ── LLM role invocation ───────────────────────────────────────────────────────
 
 _ORCH_SYSTEM = (
@@ -379,7 +584,7 @@ def _build_role_user(role: str, docket: dict[str, Any], case_law: dict[str, str]
         }
         for p in (docket.get("proposals") or [])
     ]
-    return "\n".join([
+    parts = [
         f"CYCLE: {docket.get('cycle_id')}  LOBE: {docket.get('lobe')}",
         "",
         "PROPOSALS TO RULE ON:",
@@ -391,8 +596,23 @@ def _build_role_user(role: str, docket: dict[str, Any], case_law: dict[str, str]
         "ACTIVE_BUILD_MAP (open lanes — collisions are duplicative):",
         (_read_case_law_raw(case_law, "active"))[:4000],
         "",
-        f"Rule on every proposal by its proposal_id. Reply as a JSON array only.",
-    ])
+        "Rule on every proposal by its proposal_id. Reply as a JSON array only.",
+    ]
+    # R-V6-3e: when the docket contains charter-kind proposals, append the
+    # "is it actually a lobe?" case-law block (NARR-NWC + NEXT3-U5).
+    # Applies to both roles: the orchestrator needs it to grant responsibly;
+    # the adversary needs it to veto misfiled waves/rails/connective tissue.
+    has_charter = any(
+        str(p.get("kind") or "").lower() == "charter"
+        for p in (docket.get("proposals") or [])
+    )
+    if has_charter:
+        parts += [
+            "",
+            "CHARTER CASE LAW — 'IS IT ACTUALLY A LOBE?' (applies to kind=charter proposals):",
+            _CHARTER_CASE_LAW_BLOCK,
+        ]
+    return "\n".join(parts)
 
 
 def _read_case_law_raw(case_law: dict[str, str], key: str) -> str:
@@ -606,12 +826,24 @@ def adjudicate_role(
             screen = _deterministic_screen(prop, case_law)
             # Screen 3: UX-simplicity gate (fires only on front-page asset diffs)
             ux_screen = _ux_simplicity_screen(prop, root)
-            # Combined screen: both must allow for the proposal to proceed
-            combined_allow = screen["allow"] and ux_screen["allow"]
+            # Screen 4: Genesis screen (deny-only, fires only for kind=="charter", R-V6-3)
+            prop_kind = str(prop.get("kind") or "").strip().lower()
+            if prop_kind == "charter":
+                genesis_screen = _genesis_screen(
+                    prop,
+                    cycle_id=cycle_id,
+                    docket=docket,
+                    root=root,
+                )
+            else:
+                genesis_screen = {"allow": True, "reason": "not a charter proposal"}
+            # Combined screen: all must allow for the proposal to proceed
+            combined_allow = screen["allow"] and ux_screen["allow"] and genesis_screen["allow"]
             combined_reason = (
                 screen["reason"] if not screen["allow"]
                 else (ux_screen["reason"] if not ux_screen["allow"]
-                      else screen["reason"])
+                      else (genesis_screen["reason"] if not genesis_screen["allow"]
+                            else screen["reason"]))
             )
             j = (judgments or {}).get(pid, {})
             has_opinion = (judgments is not None) and (pid in judgments)
@@ -667,13 +899,15 @@ def adjudicate_role(
                     "case_law_allow": screen["allow"],
                     "ux_allow": ux_screen["allow"],
                     "ux_surface_tier": ux_screen.get("surface_tier", "unknown"),
+                    "genesis_allow": genesis_screen["allow"],
+                    "kind": prop_kind,
                     "llm_opinion": has_opinion,
                 }
                 if not dry_run and not _ruled_in(existing, target, EVT_ADJUDICATION, ROLE_ORCH):
                     _append_governance(
                         EVT_ADJUDICATION, target, authored_by="metabolism_adjudicate:orchestrator",
                         after=after, evidence={"rationale": str(j.get("rationale") or "")},
-                        note=f"orchestrator {decision} for {tier} proposal", root=root,
+                        note=f"orchestrator {decision} for {tier} {prop_kind} proposal", root=root,
                     )
                 results.append({"proposal_id": pid, "tier": tier, "decision": decision,
                                 "screen_allow": combined_allow,

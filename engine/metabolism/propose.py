@@ -438,9 +438,11 @@ _SYSTEM_PROMPT_TEMPLATE = (
     "Reply with ONLY a JSON array (no prose, no code fence) of at most {{max_n}} "
     "proposals. Each element:\n"
     '{{"title": str, "tier": "T0"|"T1", "kind": "test"|"doc"|"context_organ"|'
-    '"engine"|"collector"|"ui", "targets_sensor": str, "rationale": str, '
+    '"engine"|"collector"|"ui"|"charter", "targets_sensor": str, "rationale": str, '
     '"fitness_contract": {{"sensor": str, "expected_sign": "+"|"-", "band": str, '
-    '"check_by": "YYYY-MM-DD", "placebo_to_beat": str}}}}'
+    '"check_by": "YYYY-MM-DD", "placebo_to_beat": str}}}}\n\n'
+    'Kind guidance: charter = new-lobe genesis; only ever injected from scout '
+    'evidence, never invent one.'
 )
 
 # Fallback for lobes without charter sensors (kept for import compat)

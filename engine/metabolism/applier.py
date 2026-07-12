@@ -212,9 +212,17 @@ def _item_to_proposal(item: dict[str, Any]) -> dict[str, Any] | None:
             tier = "T1"
 
         # Kind
-        kind = str(item.get("kind") or "engine").strip()
-        if kind not in ("test", "doc", "context_organ", "engine", "collector", "ui"):
-            kind = "engine"
+        # R-V6-2: charter proposals (schema metabolism.charter_proposal.v1) get
+        # kind="charter" so the adjudicate genesis screen can apply lobe-specific
+        # law.  Lifecycle docket items keep their existing mapping.
+        item_schema = str(item.get("schema") or "")
+        is_charter_proposal = "charter_proposal" in item_schema and "lifecycle" not in item_schema
+        if is_charter_proposal:
+            kind = "charter"
+        else:
+            kind = str(item.get("kind") or "engine").strip()
+            if kind not in ("test", "doc", "context_organ", "engine", "collector", "ui"):
+                kind = "engine"
 
         # Sensor
         sensor = str(item.get("targets_sensor") or item.get("sensor") or "liveness").strip()
@@ -235,8 +243,6 @@ def _item_to_proposal(item: dict[str, Any]) -> dict[str, Any] | None:
         if not isinstance(fc_raw, dict):
             fc_raw = {}
 
-        item_schema = str(item.get("schema") or "")
-        is_charter_proposal = "charter_proposal" in item_schema and "lifecycle" not in item_schema
         if is_charter_proposal and not fc_raw.get("sensor"):
             sensor = "liveness"
 
@@ -251,6 +257,20 @@ def _item_to_proposal(item: dict[str, Any]) -> dict[str, Any] | None:
             ),
         }
 
+        # R-V6-2: carry charter artifact fields onto the proposal dict so the
+        # adjudicate genesis screen has the full context without re-reading the
+        # source file.  These fields are advisory / screening inputs only.
+        charter_fields: dict[str, Any] = {}
+        if is_charter_proposal:
+            charter_fields = {
+                "domain_id": str(item.get("domain_id") or ""),
+                "evidence_refs": list(item.get("evidence_refs") or []),
+                "uncovered_for_cycles": item.get("uncovered_for_cycles"),
+                "roster_budget": item.get("roster_budget"),
+                "proposed_tier": str(item.get("proposed_tier") or "display"),
+                "proposed_lifecycle_state": str(item.get("proposed_lifecycle_state") or "proposed"),
+            }
+
         return {
             "title": title,
             "tier": tier,
@@ -260,6 +280,7 @@ def _item_to_proposal(item: dict[str, Any]) -> dict[str, Any] | None:
             "fitness_contract": fc,
             "_from_applier": True,
             "_source_file": item.get("_source_file"),
+            **charter_fields,
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("applier._item_to_proposal: %s", exc)

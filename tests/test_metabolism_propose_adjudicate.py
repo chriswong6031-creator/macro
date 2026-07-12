@@ -665,3 +665,599 @@ class TestLobeThreading:
                 f"strategic memory block filtered out the row for lobe={lobe!r}. "
                 f"Block was: {block!r}"
             )
+
+
+# ===========================================================================
+# R-V6-2 — applier stamps charter kind + carries fields
+# ===========================================================================
+
+def _sample_charter_item(
+    domain_id="macro-credit",
+    proposed_tier="display",
+    proposed_lifecycle_state="proposed",
+    extra=None,
+):
+    """Return a minimal charter_proposal.v1 dict as the scout would emit."""
+    item = {
+        "schema": "metabolism.charter_proposal.v1",
+        "domain_id": domain_id,
+        "label": "Macro Credit",
+        "description": "Macro credit spreads intelligence",
+        "proposed_tier": proposed_tier,
+        "proposed_lifecycle_state": proposed_lifecycle_state,
+        "uncovered_for_cycles": 4,
+        "evidence_refs": ["insight-abc"],
+        "roster_budget": {"current_active": 10, "max_active": 66},
+        "rationale": f"Domain {domain_id} uncovered for 4 cycles",
+        "generated_by": "metabolism_scout",
+    }
+    if extra:
+        item.update(extra)
+    return item
+
+
+class TestApplierCharterKind:
+    """R-V6-2: applier stamps kind='charter' and carries charter fields."""
+
+    def test_charter_item_gets_charter_kind(self, tmp_path):
+        from engine.metabolism.applier import _item_to_proposal
+        item = _sample_charter_item()
+        proposal = _item_to_proposal(item)
+        assert proposal is not None
+        assert proposal["kind"] == "charter", f"expected kind='charter', got {proposal['kind']!r}"
+
+    def test_charter_fields_carried(self, tmp_path):
+        from engine.metabolism.applier import _item_to_proposal
+        item = _sample_charter_item(domain_id="fixed-income")
+        proposal = _item_to_proposal(item)
+        assert proposal is not None
+        assert proposal["domain_id"] == "fixed-income"
+        assert proposal["proposed_tier"] == "display"
+        assert proposal["proposed_lifecycle_state"] == "proposed"
+        assert proposal["uncovered_for_cycles"] == 4
+        assert proposal["evidence_refs"] == ["insight-abc"]
+
+    def test_lifecycle_docket_item_is_not_charter(self, tmp_path):
+        from engine.metabolism.applier import _item_to_proposal
+        item = {
+            "schema": "metabolism.lifecycle_docket.v1",
+            "lobe_id": "til",
+            "from_state": "active",
+            "to_state": "probation",
+            "description": "TIL health degraded",
+            "kind": "engine",
+        }
+        proposal = _item_to_proposal(item)
+        assert proposal is not None
+        assert proposal["kind"] != "charter", "lifecycle docket items must not get charter kind"
+
+    def test_charter_liveness_sensor_defaulted(self, tmp_path):
+        """Charter proposals without an explicit fitness_contract get liveness sensor."""
+        from engine.metabolism.applier import _item_to_proposal
+        item = _sample_charter_item()
+        assert "fitness_contract" not in item
+        proposal = _item_to_proposal(item)
+        assert proposal is not None
+        assert proposal["targets_sensor"] == "liveness"
+        assert proposal["fitness_contract"]["contract_source"] == "applier_default_charter_liveness"
+
+    def test_consume_charter_proposals_emits_charter_kind(self, tmp_path):
+        """consume_charter_proposals() returns charter-kind proposal in shadow mode."""
+        from engine.metabolism.applier import consume_charter_proposals
+        cp_dir = tmp_path / "data" / "metabolism" / "charter_proposals"
+        cp_dir.mkdir(parents=True, exist_ok=True)
+        (cp_dir / "macro_credit.json").write_text(
+            json.dumps(_sample_charter_item()), encoding="utf-8"
+        )
+        # shadow mode (dry_run=True) — no injection, but verifies _item_to_proposal runs
+        result = consume_charter_proposals(root=tmp_path, dry_run=True)
+        assert result == []  # shadow → not injected
+        # armed mode
+        result_armed = consume_charter_proposals(root=tmp_path, dry_run=False, armed=True)
+        assert len(result_armed) == 1
+        assert result_armed[0]["kind"] == "charter"
+
+
+# ===========================================================================
+# R-V6-2 — propose.py kind vocabulary contains "charter"
+# ===========================================================================
+
+class TestProposeKindVocabulary:
+
+    def test_system_prompt_contains_charter_kind(self):
+        import engine.metabolism.propose as propose
+        # The template string must include "charter" in the kind vocabulary
+        template = propose._SYSTEM_PROMPT_TEMPLATE
+        assert '"charter"' in template or "'charter'" in template or "charter" in template, (
+            "propose._SYSTEM_PROMPT_TEMPLATE does not mention charter kind"
+        )
+
+    def test_system_prompt_has_charter_guidance(self):
+        import engine.metabolism.propose as propose
+        template = propose._SYSTEM_PROMPT_TEMPLATE
+        assert "scout" in template.lower() or "genesis" in template.lower(), (
+            "propose._SYSTEM_PROMPT_TEMPLATE has no charter guidance text"
+        )
+
+
+# ===========================================================================
+# R-V6-3 — genesis deterministic screen
+# ===========================================================================
+
+def _make_minimal_budget_yml(tmp_path: Path, max_active: int = 66, max_genesis: int = 1) -> None:
+    """Write a minimal metabolism_budget.yml for genesis screen tests."""
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    content = (
+        "schema: metabolism_budget.v1\n"
+        f"max_active_nonscored_lobes: {max_active}\n"
+        f"max_probation_lobes: 5\n"
+        f"max_genesis_per_cycle: {max_genesis}\n"
+        "genesis_accountability_days: 45\n"
+    )
+    (config_dir / "metabolism_budget.yml").write_text(content, encoding="utf-8")
+
+
+def _make_lobe_charters(tmp_path: Path, n_active: int = 0) -> None:
+    """Write lobe_charters.yml with n_active display-tier active lobes."""
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    charters = {}
+    for i in range(n_active):
+        charters[f"lobe_{i:03d}"] = {
+            "lobe_id": f"lobe_{i:03d}",
+            "tier": "display",
+            "lifecycle_state": "active",
+        }
+    data = {
+        "schema": "lobe_charters.v1",
+        "charters": charters,
+    }
+    try:
+        import yaml
+        (config_dir / "lobe_charters.yml").write_text(
+            yaml.dump(data, default_flow_style=False), encoding="utf-8"
+        )
+    except ImportError:
+        (config_dir / "lobe_charters.yml").write_text(
+            json.dumps(data), encoding="utf-8"
+        )
+
+
+def _charter_proposal_dict(
+    proposed_tier="display",
+    proposed_lifecycle_state="proposed",
+    title="New macro credit lobe",
+    domain_id="macro-credit",
+    rationale="uncovered domain needs a lobe",
+):
+    """Return a minimal charter proposal suitable for _genesis_screen input."""
+    return {
+        "kind": "charter",
+        "title": title,
+        "tier": "T0",
+        "rationale": rationale,
+        "proposed_tier": proposed_tier,
+        "proposed_lifecycle_state": proposed_lifecycle_state,
+        "domain_id": domain_id,
+    }
+
+
+def _empty_docket() -> dict:
+    return {"proposals": []}
+
+
+def _docket_with_demotion() -> dict:
+    """A docket with a co-pending demotion proposal."""
+    return {
+        "proposals": [
+            {
+                "proposal_id": "demote-123",
+                "kind": "lifecycle",
+                "title": "demote til from active to probation",
+                "tier": "T0",
+                "rationale": "health degraded",
+            }
+        ]
+    }
+
+
+class TestGenesisScreen:
+    """R-V6-3: genesis deterministic screen correctness."""
+
+    # (d) Triple tier fence
+
+    def test_tier_fence_denies_non_display(self):
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict(proposed_tier="shadow", proposed_lifecycle_state="proposed")
+        r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=None)
+        assert r["allow"] is False
+        assert "tier fence" in r["reason"]
+
+    def test_tier_fence_denies_wrong_lifecycle_state(self):
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict(proposed_tier="display", proposed_lifecycle_state="confirmer")
+        r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=None)
+        assert r["allow"] is False
+        assert "tier fence" in r["reason"]
+
+    def test_tier_fence_allows_display_proposed(self, tmp_path):
+        """display + proposed passes the tier fence (other screens may still deny)."""
+        from engine.metabolism.adjudicate import _genesis_screen
+        _make_minimal_budget_yml(tmp_path, max_active=66)
+        _make_lobe_charters(tmp_path, n_active=0)
+        prop = _charter_proposal_dict()
+        r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is True, f"Expected allow=True for clean charter; got: {r['reason']}"
+
+    # (a) Roster cap
+
+    def test_cap_deny_when_at_max(self, tmp_path):
+        """R-V6-3a: deny when active_nonscored_count >= cap."""
+        _make_minimal_budget_yml(tmp_path, max_active=3)
+        _make_lobe_charters(tmp_path, n_active=3)  # exactly at cap
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict()
+        r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is False
+        assert "roster cap" in r["reason"]
+        assert "R-V6-3a" in r["reason"]
+
+    def test_cap_deny_above_max(self, tmp_path):
+        """Cap deny also fires when above max (regression guard)."""
+        _make_minimal_budget_yml(tmp_path, max_active=3)
+        _make_lobe_charters(tmp_path, n_active=5)
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict()
+        r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is False
+        assert "roster cap" in r["reason"]
+
+    def test_cap_allow_with_copending_demotion(self, tmp_path):
+        """R-V6-3a swap: allow when cap is full but a demotion is co-pending."""
+        _make_minimal_budget_yml(tmp_path, max_active=3)
+        _make_lobe_charters(tmp_path, n_active=3)
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict()
+        r = _genesis_screen(
+            prop, cycle_id="c1", docket=_docket_with_demotion(), root=tmp_path
+        )
+        # The demotion swap means cap is not a blocker — other checks must pass too
+        # (rate-limit check: no prior grants, passes; CHF: no token match, passes)
+        assert r["allow"] is True, f"Expected allow=True with swap; got: {r['reason']}"
+
+    def test_cap_below_max_allows(self, tmp_path):
+        """Allow when well below the cap."""
+        _make_minimal_budget_yml(tmp_path, max_active=66)
+        _make_lobe_charters(tmp_path, n_active=10)
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict()
+        r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is True, f"Expected allow=True; got: {r['reason']}"
+
+    # (b) Rate limit
+
+    def test_rate_limit_deny_second_charter(self, tmp_path):
+        """R-V6-3b: deny a second charter grant in the same cycle."""
+        _make_minimal_budget_yml(tmp_path, max_active=66, max_genesis=1)
+        _make_lobe_charters(tmp_path, n_active=0)
+        # Plant a prior charter grant in the governance log
+        (tmp_path / "data" / "neuralweb").mkdir(parents=True, exist_ok=True)
+        gov_row = {
+            "event_type": "metabolism_adjudication",
+            "target": "metabolism_proposal:cyc-rl:pid-first",
+            "after": {
+                "role": "orchestrator",
+                "decision": "grant",
+                "kind": "charter",
+                "tier": "T0",
+            },
+            "note": "orchestrator grant for T0 charter proposal",
+        }
+        gov_path = tmp_path / "data" / "neuralweb" / "governance.jsonl"
+        gov_path.write_text(json.dumps(gov_row) + "\n", encoding="utf-8")
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict()
+        r = _genesis_screen(prop, cycle_id="cyc-rl", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is False
+        assert "rate limit" in r["reason"]
+        assert "R-V6-3b" in r["reason"]
+
+    def test_rate_limit_allow_first_charter_in_cycle(self, tmp_path):
+        """First charter in a cycle passes the rate-limit gate."""
+        _make_minimal_budget_yml(tmp_path, max_active=66, max_genesis=1)
+        _make_lobe_charters(tmp_path, n_active=0)
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict()
+        r = _genesis_screen(prop, cycle_id="cyc-fresh", docket=_empty_docket(), root=tmp_path)
+        assert r["allow"] is True, f"Expected allow=True for first charter; got: {r['reason']}"
+
+    # (c) CHF-family deferral
+
+    def test_chf_token_deny_before_deadline(self, tmp_path):
+        """R-V6-3c: deny CHF-family token match when today < 2026-10-15."""
+        _make_minimal_budget_yml(tmp_path, max_active=66)
+        _make_lobe_charters(tmp_path, n_active=0)
+        from engine.metabolism.adjudicate import _genesis_screen
+        for token in ("causal", "chf", "hypothesis-factory", "machine-registration"):
+            prop = _charter_proposal_dict(
+                title=f"New {token} lobe for neural web",
+                domain_id=token,
+            )
+            r = _genesis_screen(
+                prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path,
+                _today_override="2026-09-01",
+            )
+            assert r["allow"] is False, (
+                f"CHF token {token!r} should be denied before 2026-10-15; got allow=True"
+            )
+            assert "CHF" in r["reason"] or "chf" in r["reason"].lower() or token in r["reason"]
+            assert "R-V6-3c" in r["reason"]
+
+    def test_chf_token_allow_after_deadline(self, tmp_path):
+        """R-V6-3c: CHF deferral lifted after 2026-10-15."""
+        _make_minimal_budget_yml(tmp_path, max_active=66)
+        _make_lobe_charters(tmp_path, n_active=0)
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict(title="New causal lobe", domain_id="causal")
+        r = _genesis_screen(
+            prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path,
+            _today_override="2026-10-15",  # boundary: not < deadline, so NOT enforced
+        )
+        # 2026-10-15 is NOT before 2026-10-15 (< comparison), so CHF is allowed
+        assert r["allow"] is True, (
+            f"CHF deferral should be lifted on/after 2026-10-15; got: {r['reason']}"
+        )
+
+    def test_non_chf_charter_allowed(self, tmp_path):
+        """A clean, non-CHF charter proposal passes all genesis screens."""
+        _make_minimal_budget_yml(tmp_path, max_active=66)
+        _make_lobe_charters(tmp_path, n_active=0)
+        from engine.metabolism.adjudicate import _genesis_screen
+        prop = _charter_proposal_dict(
+            title="New macro credit spread intelligence lobe",
+            domain_id="macro-credit",
+        )
+        r = _genesis_screen(
+            prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path,
+            _today_override="2026-09-01",
+        )
+        assert r["allow"] is True, f"Expected clean charter to pass; got: {r['reason']}"
+
+
+# ===========================================================================
+# R-V6-3 — genesis screen integration with adjudicate_role
+# ===========================================================================
+
+class TestGenesisScreenIntegration:
+    """Charter-kind proposals go through the genesis screen in adjudicate_role."""
+
+    def _write_minimal_infra(self, root: Path, max_active: int = 66) -> None:
+        _make_minimal_budget_yml(root, max_active=max_active)
+        _make_lobe_charters(root, n_active=0)
+        # Required dirs for adjudicate_role
+        for sub in ("data/metabolism/journal", "data/metabolism/fitness",
+                    "data/metabolism/dockets", "data/neuralweb", "config", "docs", "research"):
+            (root / sub).mkdir(parents=True, exist_ok=True)
+
+    def _make_charter_docket(self, root: Path, cycle_id: str,
+                              title="New macro credit lobe",
+                              proposed_tier="display",
+                              proposed_lifecycle_state="proposed"):
+        """Write a docket with a single charter proposal."""
+        from engine.metabolism.propose import write_docket, AUTHORITY_BLOCK
+        import hashlib
+        pid = hashlib.sha256(title.encode()).hexdigest()[:16]
+        docket = {
+            "schema": "metabolism.docket.v1",
+            "cycle_id": cycle_id,
+            "lobe": "til",
+            "authority": AUTHORITY_BLOCK,
+            "proposals": [{
+                "proposal_id": pid,
+                "content_hash": pid,
+                "title": title,
+                "tier": "T0",
+                "kind": "charter",
+                "targets_sensor": "liveness",
+                "rationale": "uncovered domain for 4 cycles",
+                "proposed_tier": proposed_tier,
+                "proposed_lifecycle_state": proposed_lifecycle_state,
+                "domain_id": "macro-credit",
+                "fitness_contract": {
+                    "sensor": "liveness",
+                    "expected_sign": "+",
+                    "band": "unspecified",
+                    "check_by": "2026-10-15",
+                    "placebo_to_beat": "shadow placebo tape",
+                },
+            }],
+        }
+        p = write_docket(docket, root=root)
+        return p, pid
+
+    def test_clean_charter_passes_genesis_screen(self, tmp_path):
+        """A well-formed charter proposal passes the genesis screen and can be granted."""
+        from engine.metabolism.adjudicate import adjudicate_role
+        self._write_minimal_infra(tmp_path)
+        p, pid = self._make_charter_docket(tmp_path, "cyc-clean")
+        injected = {pid: {"grant": True, "rationale": "genesis looks legitimate"}}
+        res = adjudicate_role("orchestrator", "cyc-clean", p, run_id="r1",
+                              root=tmp_path, injected=injected)
+        assert len(res) == 1
+        result = res[0]
+        assert result["decision"] == "grant", (
+            f"Expected grant for clean charter; got deny. screen_allow={result.get('screen_allow')} "
+            f"reason not available in result dict directly"
+        )
+
+    def test_tier_fence_deny_in_adjudicate_role(self, tmp_path):
+        """Wrong tier/lifecycle in charter proposal is denied by genesis screen."""
+        from engine.metabolism.adjudicate import adjudicate_role
+        self._write_minimal_infra(tmp_path)
+        p, pid = self._make_charter_docket(
+            tmp_path, "cyc-tier",
+            proposed_tier="shadow",  # wrong — must be 'display'
+            proposed_lifecycle_state="proposed",
+        )
+        injected = {pid: {"grant": True, "rationale": "looks fine"}}
+        res = adjudicate_role("orchestrator", "cyc-tier", p, run_id="r1",
+                              root=tmp_path, injected=injected)
+        assert res[0]["decision"] == "deny"
+        assert res[0]["screen_allow"] is False
+
+    def test_roster_cap_deny_in_adjudicate_role(self, tmp_path):
+        """Roster cap exceeded → genesis screen denies the charter."""
+        from engine.metabolism.adjudicate import adjudicate_role
+        _make_minimal_budget_yml(tmp_path, max_active=2)
+        _make_lobe_charters(tmp_path, n_active=2)  # at cap
+        for sub in ("data/metabolism/journal", "data/metabolism/dockets",
+                    "data/neuralweb", "docs", "research"):
+            (tmp_path / sub).mkdir(parents=True, exist_ok=True)
+        p, pid = self._make_charter_docket(tmp_path, "cyc-cap")
+        injected = {pid: {"grant": True, "rationale": "new lobe"}}
+        res = adjudicate_role("orchestrator", "cyc-cap", p, run_id="r1",
+                              root=tmp_path, injected=injected)
+        assert res[0]["decision"] == "deny"
+        assert res[0]["screen_allow"] is False
+
+    def test_non_charter_proposal_unaffected(self, tmp_path):
+        """Non-charter proposals skip the genesis screen entirely."""
+        from engine.metabolism.adjudicate import adjudicate_role
+        self._write_minimal_infra(tmp_path)
+        # Even with max_active=0 (everything at cap), a non-charter proposal passes
+        # the genesis screen (it's not a charter kind)
+        _make_minimal_budget_yml(tmp_path, max_active=0)  # would deny any charter
+        _make_lobe_charters(tmp_path, n_active=100)
+        p = _docket_on_disk(tmp_path, "cyc-nonchart", [_sample_proposal()])
+        pid = json.loads(p.read_text())["proposals"][0]["proposal_id"]
+        injected = {pid: {"grant": True, "rationale": "normal proposal"}}
+        res = adjudicate_role("orchestrator", "cyc-nonchart", p, run_id="r1",
+                              root=tmp_path, injected=injected)
+        assert res[0]["decision"] == "grant"
+
+    def test_governance_row_contains_kind_field(self, tmp_path):
+        """Governance row written for a charter proposal carries kind='charter'."""
+        from engine.metabolism.adjudicate import adjudicate_role
+        from engine.neuralweb.governance import load_events
+        self._write_minimal_infra(tmp_path)
+        p, pid = self._make_charter_docket(tmp_path, "cyc-kind")
+        injected = {pid: {"grant": True, "rationale": "ok"}}
+        adjudicate_role("orchestrator", "cyc-kind", p, run_id="r1",
+                        root=tmp_path, injected=injected)
+        evs = load_events(root=tmp_path, event_type="metabolism_adjudication")
+        orch_rows = [e for e in evs if (e.get("after") or {}).get("role") == "orchestrator"]
+        assert orch_rows, "No orchestrator governance row written"
+        assert (orch_rows[0].get("after") or {}).get("kind") == "charter"
+
+
+# ===========================================================================
+# R-V6-3e — adversary prompt contains charter case-law block
+# ===========================================================================
+
+class TestAdversaryChartercaseLaw:
+    """R-V6-3e: adversary (and orchestrator) user prompt includes NARR-NWC + NEXT3-U5
+    only when the docket contains charter-kind proposals."""
+
+    def _make_charter_docket_dict(self, cycle_id="cyc-adv-charter"):
+        import hashlib
+        pid = hashlib.sha256(cycle_id.encode()).hexdigest()[:16]
+        return {
+            "schema": "metabolism.docket.v1",
+            "cycle_id": cycle_id,
+            "lobe": "til",
+            "authority": {},
+            "proposals": [{
+                "proposal_id": pid,
+                "kind": "charter",
+                "title": "New macro credit lobe",
+                "tier": "T0",
+                "rationale": "uncovered domain",
+            }],
+        }
+
+    def _make_engine_docket_dict(self, cycle_id="cyc-adv-engine"):
+        import hashlib
+        pid = hashlib.sha256(cycle_id.encode()).hexdigest()[:16]
+        return {
+            "schema": "metabolism.docket.v1",
+            "cycle_id": cycle_id,
+            "lobe": "til",
+            "authority": {},
+            "proposals": [{
+                "proposal_id": pid,
+                "kind": "engine",
+                "title": "Add a new sensor collector",
+                "tier": "T1",
+                "rationale": "improve coverage",
+            }],
+        }
+
+    def test_charter_docket_includes_caselaw_block(self):
+        from engine.metabolism.adjudicate import _build_role_user, _CHARTER_CASE_LAW_BLOCK
+        docket = self._make_charter_docket_dict()
+        user = _build_role_user("adversary", docket, {"killed": "", "active": ""})
+        assert "NARR-NWC" in user, "adversary prompt missing NARR-NWC for charter docket"
+        assert "NEXT3-U5" in user, "adversary prompt missing NEXT3-U5 for charter docket"
+        assert "Misfiling waves as lobes" in user, "adversary prompt missing sprawl-warning"
+        assert "VETO" in user or "veto" in user.lower(), "adversary prompt missing veto instruction"
+
+    def test_engine_docket_excludes_caselaw_block(self):
+        from engine.metabolism.adjudicate import _build_role_user
+        docket = self._make_engine_docket_dict()
+        user = _build_role_user("adversary", docket, {"killed": "", "active": ""})
+        assert "NARR-NWC" not in user, "non-charter docket should not include NARR-NWC"
+        assert "NEXT3-U5" not in user, "non-charter docket should not include NEXT3-U5"
+
+    def test_orchestrator_also_gets_caselaw_for_charter_docket(self):
+        from engine.metabolism.adjudicate import _build_role_user
+        docket = self._make_charter_docket_dict()
+        user = _build_role_user("orchestrator", docket, {"killed": "", "active": ""})
+        assert "NARR-NWC" in user
+
+
+# ===========================================================================
+# R-V6-3 — budget keys in metabolism_budget.yml
+# ===========================================================================
+
+class TestBudgetKeys:
+    """Verify the new genesis budget keys are present and correctly typed."""
+
+    def test_budget_has_max_genesis_per_cycle(self, tmp_path):
+        from engine.metabolism.adjudicate import _load_genesis_budget
+        _make_minimal_budget_yml(tmp_path, max_genesis=1)
+        budget = _load_genesis_budget(tmp_path)
+        assert "max_genesis_per_cycle" in budget
+        assert int(budget["max_genesis_per_cycle"]) == 1
+
+    def test_budget_has_genesis_accountability_days(self, tmp_path):
+        config_dir = tmp_path / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        content = (
+            "schema: metabolism_budget.v1\n"
+            "max_active_nonscored_lobes: 66\n"
+            "max_probation_lobes: 5\n"
+            "max_genesis_per_cycle: 1\n"
+            "genesis_accountability_days: 45\n"
+        )
+        (config_dir / "metabolism_budget.yml").write_text(content, encoding="utf-8")
+        from engine.metabolism.adjudicate import _load_genesis_budget
+        budget = _load_genesis_budget(tmp_path)
+        assert "genesis_accountability_days" in budget
+        assert int(budget["genesis_accountability_days"]) == 45
+
+    def test_real_budget_file_has_new_keys(self):
+        """The actual committed config/metabolism_budget.yml contains the new keys."""
+        import yaml
+        root = Path(__file__).resolve().parent.parent
+        path = root / "config" / "metabolism_budget.yml"
+        assert path.exists(), "config/metabolism_budget.yml not found"
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        assert "max_genesis_per_cycle" in data, (
+            "config/metabolism_budget.yml missing max_genesis_per_cycle"
+        )
+        assert "genesis_accountability_days" in data, (
+            "config/metabolism_budget.yml missing genesis_accountability_days"
+        )
+        assert int(data["max_genesis_per_cycle"]) == 1
+        assert int(data["genesis_accountability_days"]) == 45
