@@ -133,8 +133,11 @@ _LOBBY_FLOOR = 100_000.0      # absolute $ floor for a lobbying "spike"
 # =========================================================================== #
 def app_ratings_momentum(top: int = 15) -> list[dict]:
     """App-store demand proxy: review-weighted rating + total review base per ticker,
-    plus review VELOCITY when >=2 snapshots exist. The freshest, highest-volume Quiver
-    feed — a near-real-time read on consumer demand for app-driven names."""
+    plus review_velocity (delta/prior) as a DISPLAY-ONLY field when >=2 snapshots exist.
+    The app_demand convergence channel fires on `lean == "strong"` (rating >= 4.3 AND
+    reviews >= 1000) — it never reads review_velocity, so this field has no impact on
+    convergence scoring. The freshest, highest-volume Quiver feed — a near-real-time
+    read on consumer demand for app-driven names."""
     df = _read("appratings")
     if df is None or df.empty:
         return []
@@ -353,7 +356,11 @@ def retail_attention(wsb: list[dict] | None, top: int = 15) -> list[dict]:
 # =========================================================================== #
 # THE WEIGHTED-CONVERGENCE KERNEL — single source for display + by_ticker
 # =========================================================================== #
-_DPI_Z_MIN_DATES = 20   # minimum distinct dates required for z-score path
+_DPI_Z_MIN_DATES = 20   # minimum distinct dates required for z-score path (ddof=1 is
+# statistically defensible). The off-exchange store had 6 distinct dates at launch
+# (collection started mid-June 2026, ~2 dates/week); the z-path will self-activate
+# once the store reaches 20 dates (~late-September 2026). Until then every ticker
+# falls to basis='threshold', which is disclosed in the payload.
 
 def _dpi_z_lookup() -> dict[str, dict]:
     """Per-ticker DPI z-score vs the ticker's own off-exchange history, so 'accumulation'
@@ -414,9 +421,9 @@ def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str
         if r is None:
             return
         # Upgrade channels (drops non-empty) always displace their base targets exactly once.
-        # Base channels (drops empty) are first-seen only — a second base firing from a
-        # different source does not overwrite the first (preserves PIT semantics and prevents
-        # a later base call from undoing an upgrade that already displaced it).
+        # Base channels (drops empty) are first-seen only: if the same channel key fires
+        # a second time, only the FIRST detail string is kept; channel set, weighted_score,
+        # and count are unaffected by the repeated call.
         if drops or channel not in r["channels"]:
             for d in drops:                  # displace base only when upgrade is accepted
                 r["channels"].pop(d, None)

@@ -20,6 +20,7 @@ import pytest
 
 from engine import altdata, altdata_models as models
 from collectors import quiver
+from collectors.base import run_adapter
 
 
 # --------------------------------------------------------------------------- helpers
@@ -241,43 +242,75 @@ class TestAppVelocity:
 
 
 # ===========================================================================
-# C10: 13F time window
+# C10: 13F time window — filter on ReportPeriod (filing quarter-end), NOT Date (ingest)
 # ===========================================================================
 class TestInst13FWindow:
-    """inst_13f_changes must filter to filings within window_days."""
+    """inst_13f_changes must filter on ReportPeriod (actual filing period), not Date.
+
+    The `Date` column in sec13f_changes.parquet is the Quiver ingest timestamp (~24d
+    span across the full table), so filtering on it is a no-op against stale positions.
+    The fix filters on `ReportPeriod` (the filing's quarter-end date) with a 200-day
+    window to always cover the two most recent report periods.
+    """
 
     def _make_df(self):
         now = _now_ts()
         return pd.DataFrame([
-            # Recent filing — within 120 days
-            {"Ticker": "NVDA", "Fund": "Citadel", "ReportPeriod": "2026-03-31",
-             "Date": (now - pd.Timedelta(days=30)).strftime("%Y-%m-%d"),
+            # Recent report period — 2026-03-31 is within 200 days
+            {"Ticker": "NVDA", "Fund": "Citadel",
+             "ReportPeriod": "2026-03-31",
+             "Date": now.strftime("%Y-%m-%d"),   # ingest date is today for all
              "Change": 1_000_000, "Change_Share": 5000},
-            # Old filing — more than 120 days ago
-            {"Ticker": "META", "Fund": "Scion", "ReportPeriod": "2025-09-30",
-             "Date": (now - pd.Timedelta(days=200)).strftime("%Y-%m-%d"),
+            # Old report period — 2020-12-31 must be filtered out by ReportPeriod window
+            {"Ticker": "STALE2020", "Fund": "OldFund",
+             "ReportPeriod": "2020-12-31",
+             "Date": now.strftime("%Y-%m-%d"),   # ingest date also today — proves Date is NOT the filter
              "Change": 2_000_000, "Change_Share": 3000},
+            # Pre-2023 report period — also outside 200-day window
+            {"Ticker": "META", "Fund": "Scion",
+             "ReportPeriod": "2022-09-30",
+             "Date": now.strftime("%Y-%m-%d"),
+             "Change": 1_500_000, "Change_Share": 4000},
         ])
 
-    def test_old_filing_excluded(self, monkeypatch):
+    def test_old_report_period_excluded(self, monkeypatch):
+        """Positions with old ReportPeriod must be filtered even when ingest Date is recent."""
         df = self._make_df()
         monkeypatch.setattr(altdata, "_read", lambda ds: df if ds == "sec13f_changes" else None)
-        result = altdata.inst_13f_changes(window_days=120)
+        result = altdata.inst_13f_changes(window_days=200)
         tickers = {r["ticker"] for r in result["adds"]}
-        assert "NVDA" in tickers, "recent filing should be included"
-        assert "META" not in tickers, "old filing (>120d) should be excluded"
+        assert "NVDA" in tickers, "recent ReportPeriod should be included"
+        assert "STALE2020" not in tickers, "2020 ReportPeriod must be excluded even though Date is today"
+        assert "META" not in tickers, "2022 ReportPeriod must be excluded"
 
-    def test_no_date_column_passes_through(self, monkeypatch):
-        """When Date column has no valid values, rows should still pass through
-        (the filter uses `isna() | in-window`, so NaT rows survive)."""
+    def test_date_column_not_the_filter(self, monkeypatch):
+        """Confirm the fix targets ReportPeriod: a row with a 2020 ReportPeriod but
+        today's ingest Date must still be EXCLUDED (Date is NOT the filter column)."""
+        now = _now_ts()
         df = pd.DataFrame([
-            {"Ticker": "GOOG", "Fund": "Bridgewater", "ReportPeriod": "2026-03-31",
-             "Date": None, "Change": 500_000, "Change_Share": 1000},
+            {"Ticker": "OLD", "Fund": "F1",
+             "ReportPeriod": "2020-12-31",       # ancient quarter
+             "Date": now.strftime("%Y-%m-%d"),   # ingest today — would pass a Date-based filter
+             "Change": 999_000, "Change_Share": 100},
         ])
         monkeypatch.setattr(altdata, "_read", lambda ds: df if ds == "sec13f_changes" else None)
-        result = altdata.inst_13f_changes(window_days=120)
+        result = altdata.inst_13f_changes(window_days=200)
         tickers = {r["ticker"] for r in result["adds"]}
-        assert "GOOG" in tickers, "rows with no date should survive the filter"
+        assert "OLD" not in tickers, "2020 ReportPeriod must be excluded despite today's ingest Date"
+
+    def test_no_report_period_passes_through(self, monkeypatch):
+        """When ReportPeriod has no valid values, rows survive the filter
+        (the filter uses `isna() | in-window`, so NaT rows are not dropped)."""
+        df = pd.DataFrame([
+            {"Ticker": "GOOG", "Fund": "Bridgewater",
+             "ReportPeriod": None,              # no ReportPeriod — NaT after coercion
+             "Date": None,
+             "Change": 500_000, "Change_Share": 1000},
+        ])
+        monkeypatch.setattr(altdata, "_read", lambda ds: df if ds == "sec13f_changes" else None)
+        result = altdata.inst_13f_changes(window_days=200)
+        tickers = {r["ticker"] for r in result["adds"]}
+        assert "GOOG" in tickers, "rows with no ReportPeriod should survive the filter"
 
 
 # ===========================================================================
@@ -401,28 +434,42 @@ class TestPaginatedFetch:
 
 
 # ===========================================================================
-# Tombstone: dead adapters return empty dict
+# Tombstone: dead adapters report status='blocked', not ok/rows=0
 # ===========================================================================
 class TestTombstonedAdapters:
-    """Tombstoned adapters (Twitter, Spacs, Flights) must return {} from fetch()."""
+    """Tombstoned adapters (Twitter, Spacs, Flights) use the expected_failure/blocked
+    idiom so the health surface shows an honest 'blocked' state, not a green zero-row ok.
+
+    The pattern: set `expected_failure` on the class + raise RuntimeError from fetch().
+    run_adapter() catches the exception, sees expected_failure is set, and returns
+    FetchResult(status='blocked') which clears the circuit breaker (no spurious dead-open).
+    """
 
     def _adapter(self, cls, tmp_path, monkeypatch):
         monkeypatch.setattr(quiver.config, "data_dir", lambda: tmp_path)
         a = cls()
-        a.api_key = "fake_key"  # set so we don't fail on "not set"
+        a.api_key = "fake_key"  # set so QUIVER_API_KEY branch doesn't shadow expected_failure
         return a
 
-    def test_twitter_fetch_returns_empty(self, tmp_path, monkeypatch):
-        a = self._adapter(quiver.TwitterAdapter, tmp_path, monkeypatch)
-        result = a.fetch()
-        assert result == {}, f"expected empty dict, got {result!r}"
+    def _assert_blocked(self, cls, tmp_path, monkeypatch):
+        a = self._adapter(cls, tmp_path, monkeypatch)
+        # 1. expected_failure must be set so run_adapter knows it is an expected outcome
+        assert a.expected_failure, f"{cls.__name__} must set expected_failure"
+        # 2. fetch() must raise (not return {}) so run_adapter captures it as 'blocked'
+        with pytest.raises(Exception):
+            a.fetch()
+        # 3. run_adapter must return status='blocked'
+        result = run_adapter(a)
+        assert result.status == "blocked", (
+            f"{cls.__name__}: expected status='blocked', got {result.status!r}. "
+            "Returning {{}} produces ok/rows=0 — set expected_failure + raise instead."
+        )
 
-    def test_spacs_fetch_returns_empty(self, tmp_path, monkeypatch):
-        a = self._adapter(quiver.SpacsAdapter, tmp_path, monkeypatch)
-        result = a.fetch()
-        assert result == {}, f"expected empty dict, got {result!r}"
+    def test_twitter_reports_blocked(self, tmp_path, monkeypatch):
+        self._assert_blocked(quiver.TwitterAdapter, tmp_path, monkeypatch)
 
-    def test_flights_fetch_returns_empty(self, tmp_path, monkeypatch):
-        a = self._adapter(quiver.FlightsAdapter, tmp_path, monkeypatch)
-        result = a.fetch()
-        assert result == {}, f"expected empty dict, got {result!r}"
+    def test_spacs_reports_blocked(self, tmp_path, monkeypatch):
+        self._assert_blocked(quiver.SpacsAdapter, tmp_path, monkeypatch)
+
+    def test_flights_reports_blocked(self, tmp_path, monkeypatch):
+        self._assert_blocked(quiver.FlightsAdapter, tmp_path, monkeypatch)

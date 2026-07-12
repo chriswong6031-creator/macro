@@ -702,7 +702,9 @@ def offexchange_flow(top: int = 15, stale_bdays: int = 10) -> list[dict]:
         return []
     latest = d["date"].max()
     d = d[d["date"] == latest]
-    # Freshness guard: flag when latest date exceeds FINRA publication lag
+    # Freshness guard: flag when latest date exceeds FINRA publication lag.
+    # `stale` is produced here as a data-first field; the display layer does not yet
+    # consume it — wiring is deferred to Wave-2 (template work out of scope for this PR).
     stale = bool(pd.notna(latest) and _business_days_since(latest) > stale_bdays)
     rows = []
     for _, r in d.iterrows():
@@ -759,10 +761,13 @@ def insider_netflow(window_days: int = 90, top: int = 15) -> dict:
 
 
 # --------------------------------------------------------------------------- 13F
-def inst_13f_changes(top: int = 15, window_days: int = 120) -> dict:
-    """13F position changes. `window_days` filters filings with a Date within the last
-    `window_days` so multi-year-old adds cannot anchor channels indefinitely. 13F filings
-    have a 45-day reporting lag, so 120 days covers the most recent two filing periods."""
+def inst_13f_changes(top: int = 15, window_days: int = 200) -> dict:
+    """13F position changes. `window_days` filters on the filing's ReportPeriod (the
+    actual reporting quarter-end date) so multi-year-old positions cannot anchor channels
+    indefinitely. 13Fs are quarterly with a 45-day filing deadline, so 200 days always
+    covers the two most recent report periods even across a cycle gap. Note: the `Date`
+    column in sec13f_changes.parquet is the Quiver ingest timestamp (span ~24 days across
+    the full table), NOT the filing period — filtering on `Date` is a no-op vs stale data."""
     df = _read("sec13f_changes")
     if df is None or df.empty:
         return {"adds": [], "trims": []}
@@ -770,17 +775,18 @@ def inst_13f_changes(top: int = 15, window_days: int = 120) -> dict:
         "ticker": df.get("Ticker", pd.Series(dtype=object)).map(_s),
         "fund": df.get("Fund", pd.Series(dtype=object)).map(_s),
         "period": df.get("ReportPeriod", pd.Series(dtype=object)).map(lambda v: (_s(v) or "")[:10]),
-        "date": _dt(df.get("Date")),
+        "report_period": _dt(df.get("ReportPeriod")),
         "chg_usd": df.get("Change", pd.Series(dtype=object)).map(_f),
         "chg_shares": df.get("Change_Share", pd.Series(dtype=object)).map(_f),
     })
     d = d[d["ticker"].notna() & d["chg_usd"].notna()]
     if d.empty:
         return {"adds": [], "trims": []}
-    # Filter to filings within the time window to prevent stale adds anchoring channels.
+    # Filter to positions whose ReportPeriod is within the last `window_days`.
+    # ReportPeriod is the filing's quarter-end date (e.g. 2026-03-31), NOT the ingest date.
     cutoff = _now() - pd.Timedelta(days=window_days)
-    if d["date"].notna().any():
-        d = d[d["date"].isna() | (d["date"] >= cutoff)]
+    if d["report_period"].notna().any():
+        d = d[d["report_period"].isna() | (d["report_period"] >= cutoff)]
     if d.empty:
         return {"adds": [], "trims": []}
 

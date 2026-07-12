@@ -203,10 +203,10 @@ class FlightsAdapter(QuiverAdapter):
     endpoint = "/beta/live/flights"
     stale_after_days = 60  # corporate-jet feed runs well behind real time
     key_cols = ("Ticker", "Date", "DepartureCity", "ArrivalCity")
+    expected_failure = "tombstone: plan-limited feed, last event 2025-07-23"
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
-        log.info("quiver/flights: fetch disabled (tombstone 2026-07-12 — plan-limited feed, last event 2025-07-23)")
-        return {}
+        raise RuntimeError("quiver/flights disabled (tombstone 2026-07-12 — plan-limited feed, last event 2025-07-23)")
 
 
 class PatentsAdapter(QuiverAdapter):
@@ -229,10 +229,10 @@ class TwitterAdapter(QuiverAdapter):
     name = "quiver_twitter"; dataset = "twitter"
     endpoint = "/beta/live/twitter"
     key_cols = ("Ticker", "Date")
+    expected_failure = "tombstone: API discontinued (Twitter/X shut down free API 2023)"
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
-        log.info("quiver/twitter: fetch disabled (tombstone 2026-07-12 — API discontinued, last data 2023-08-11)")
-        return {}
+        raise RuntimeError("quiver/twitter disabled (tombstone 2026-07-12 — API discontinued, last data 2023-08-11)")
 
 
 class Sec13FAdapter(QuiverAdapter):
@@ -260,10 +260,10 @@ class SpacsAdapter(QuiverAdapter):
     name = "quiver_spacs"; dataset = "spacs"
     endpoint = "/beta/live/spacs"
     key_cols = ("Ticker", "Time")
+    expected_failure = "tombstone: dead feed, last data 2023-12-18"
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
-        log.info("quiver/spacs: fetch disabled (tombstone 2026-07-12 — dead feed, last data 2023-12-18)")
-        return {}
+        raise RuntimeError("quiver/spacs disabled (tombstone 2026-07-12 — dead feed, last data 2023-12-18)")
 
 
 class TrumpTradesAdapter(QuiverAdapter):
