@@ -256,6 +256,7 @@ def _lobe_record(art_id: str, art: dict, root: Path) -> dict:
         "produced_at": None,
         "age_hours": None,
         "freshness_sla_hours": sla_h,
+        "staleness_from": staleness_from,
         "status": "unknown",
         "row_count": None,
         "byte_size": None,
@@ -329,9 +330,11 @@ def _lobe_record(art_id: str, art: dict, root: Path) -> dict:
             # produced_at instead of as_of.
             # rec['age_hours'] and rec['as_of'] are UNCHANGED (display-only).
             #
-            # Weekend-awareness applies ONLY when comparing a DATA as_of (date
-            # representing market data date).  produced_at / wall-clock
-            # timestamps must use plain wall-clock comparison.
+            # Weekend-awareness applies ONLY when comparing a DATA as_of — a
+            # date-only string naming a market-data date.  produced_at /
+            # full-timestamp values are wall-clock run stamps and must use the
+            # plain wall-clock comparison (truncating them to midnight would
+            # silently grant up to +24h of extra SLA grace).
             use_weekend_aware = False
 
             if staleness_from and obj and isinstance(obj, dict):
@@ -344,9 +347,13 @@ def _lobe_record(art_id: str, art: dict, root: Path) -> dict:
                 staleness_ts = produced_at
                 use_weekend_aware = False
             else:
-                # Default: data as_of → weekend-aware.
+                # Default: data as_of → weekend-aware, but only for date-only
+                # strings (e.g. "2026-07-10"); full timestamps stay wall-clock.
                 staleness_ts = as_of
-                use_weekend_aware = staleness_ts is not None
+                use_weekend_aware = (
+                    isinstance(staleness_ts, str)
+                    and len(staleness_ts.strip()) <= 10
+                )
 
             if staleness_ts is not None:
                 if use_weekend_aware:
@@ -921,12 +928,17 @@ def build(root: Path | None = None, cortex_source: str = "previous_run") -> dict
     # Collect-cadence lobes are also excluded: they are written once (offline /
     # on-demand) and never advanced by the nightly pipeline, so they would pin
     # as_of to their one-time build date (e.g. discovery_confluence 2026-07-09).
+    # staleness_from-override lobes are excluded too: their display as_of is an
+    # event date decoupled from freshness by design (e.g. confluence-strength
+    # as_of = newest co-fire, 2026-07-02 during a quiet stretch) and would drag
+    # the rollup backward the moment produced_at makes them read fresh.
     fresh_times = [
         r["as_of"] for r in lobes
         if r.get("as_of")
         and r.get("status") in ("fresh", "fresh_partial")
         and r.get("path") not in _SELF_MONITOR_PATHS
         and r.get("cadence") != "collect"
+        and not r.get("staleness_from")
     ]
     if cortex.get("memo_as_of"):
         fresh_times.append(cortex["memo_as_of"])

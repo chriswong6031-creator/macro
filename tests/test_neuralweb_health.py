@@ -1033,6 +1033,55 @@ def test_staleness_from_produced_at_overrides_event_asof(tmp_path, monkeypatch):
         f"staleness_from=produced_at must yield fresh when produced_at < SLA; "
         f"got {cs['status']!r}"
     )
+    # The now-fresh lobe's event as_of must NOT drag the top-level rollup
+    # backward: staleness_from lobes are excluded from the as_of minimum.
+    assert result["as_of"] == recent_ts, (
+        f"staleness_from lobe's event as_of must not pin the as_of rollup; "
+        f"expected {recent_ts!r}, got {result['as_of']!r}"
+    )
+
+
+def test_full_timestamp_asof_stays_wallclock(tmp_path, monkeypatch):
+    """CHANGE 1 guard: weekend-awareness applies only to date-only as_of strings.
+
+    A full-timestamp as_of (a run stamp, not a market-data date) must keep the
+    plain wall-clock comparison — truncating it to midnight would grant up to
+    +24h of extra SLA grace, and a Friday-dated run stamp would dodge its SLA
+    all weekend.
+    """
+    from datetime import datetime, timezone
+    import engine.neuralweb.health as _health
+
+    # Friday full timestamp — 54h old at the frozen Sunday 06:00 UTC below.
+    friday_ts = "2026-07-10T00:00:00+00:00"
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {"as_of": friday_ts})
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json", freshness_sla_hours=30.0),
+    })
+
+    frozen_now = datetime(2026, 7, 12, 6, 0, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr(_health, "_iso_hours_ago", lambda ts: (
+        (frozen_now - datetime.fromisoformat(
+            (ts or "").replace("Z", "+00:00")
+        ).replace(tzinfo=timezone.utc)).total_seconds() / 3600
+        if ts else None
+    ))
+
+    original_is_stale = _health._is_stale_weekend_aware
+
+    def _frozen_is_stale(as_of_str, sla_hours, now=None):
+        return original_is_stale(as_of_str, sla_hours, now=frozen_now)
+
+    monkeypatch.setattr(_health, "_is_stale_weekend_aware", _frozen_is_stale)
+
+    result = build(root=root)
+    lobes = {r["id"]: r for r in result["lobes"]}
+    ws = lobes["world-state"]
+    # 54h wall-clock > 30h SLA → stale; the Friday date must NOT buy weekend grace.
+    assert ws["status"] == "stale", (
+        f"full-timestamp as_of must use wall-clock staleness (54h > 30h SLA); "
+        f"got {ws['status']!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
