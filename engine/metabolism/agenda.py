@@ -13,6 +13,18 @@ DETERMINISTIC SEVERITY FLOOR (enforced after every LLM call):
     it may never DROP a high-severity finding.  This floor is enforced in
     code — the LLM output is post-processed before writing.
 
+DETERMINISTIC DE-RANK (R-V8-11):
+    After the LLM pass and severity-floor, a deterministic post-pass demotes
+    items whose (kind) or (lobe, sensor) bucket has n >= prior_demote_min_n
+    AND hit_rate < prior_demote_hit_rate to the bottom of the agenda.
+    Demoted items are NEVER dropped — they stay visible with prior_demoted:true
+    and prior_bucket set.  The prior NEVER promotes items (de-escalation only,
+    mirror of R-AUT-1).
+
+RECALL PARITY (R-V8-12):
+    agenda.py calls recall.recall_lessons() directly (mirror of propose.py)
+    and threads the result into the user prompt context.
+
 DEDUP:
     A content_hash (sha256[:12] of normalized title) is checked against
     DO_NOT_REBUILD.md and ACTIVE_BUILD_MAP.  Killed or in-flight topics
@@ -232,6 +244,77 @@ def _enforce_severity_floor(
     return items, forced
 
 
+# ── Deterministic prior de-rank (R-V8-11 / R-V8-12) ──────────────────────────
+
+def _demote_prior_buckets(
+    items: list[dict],
+    calibration: dict[str, Any],
+    demote_min_n: int = 5,
+    demote_hit_rate: float = 0.25,
+) -> list[dict]:
+    """Post-LLM deterministic de-rank: demote items whose prior bucket is weak.
+
+    Rules (R-V8-11):
+      - A bucket fires when n >= demote_min_n AND hit_rate < demote_hit_rate.
+      - Two bucket types checked independently: (kind) and (lobe, sensor-family).
+      - Matching items are moved to the BOTTOM of the agenda (stable order among
+        demoted items is preserved — original relative order kept).
+      - NEVER drops an item; NEVER promotes an item.
+      - Sets prior_demoted:true and prior_bucket on the matching item.
+
+    Returns a new list (original list is not mutated).  NEVER raises.
+    """
+    try:
+        by_kind = (calibration.get("by_kind") or {}) if calibration else {}
+        by_lobe_sensor = (calibration.get("by_lobe_sensor") or {}) if calibration else {}
+
+        def _bucket_fires(stats: dict) -> bool:
+            total = stats.get("total") or 0
+            hr = stats.get("hit_rate")
+            if hr is None:
+                return False
+            return total >= demote_min_n and hr < demote_hit_rate
+
+        non_demoted: list[dict] = []
+        demoted: list[dict] = []
+
+        for item in items:
+            item = dict(item)  # shallow copy — don't mutate caller's dict
+            kind = str(item.get("bucket") or item.get("kind") or "")
+            lobe = str(item.get("target_lobe") or "")
+            # sensor family: use the item's rationale or title to extract a sensor hint
+            # We check all lobe:sensor combinations from the calibration
+            fired_bucket: str | None = None
+
+            # Check kind bucket
+            kind_stats = by_kind.get(kind) or {}
+            if kind_stats and _bucket_fires(kind_stats):
+                fired_bucket = f"kind:{kind}"
+
+            # Check (lobe, sensor) buckets if kind didn't already fire
+            if fired_bucket is None and lobe:
+                for key, stats in by_lobe_sensor.items():
+                    # key is "{lobe}:{sensor}"
+                    parts = key.split(":", 1)
+                    if len(parts) == 2 and parts[0] == lobe:
+                        if _bucket_fires(stats):
+                            fired_bucket = f"lobe_sensor:{key}"
+                            break
+
+            if fired_bucket is not None:
+                item["prior_demoted"] = True
+                item["prior_bucket"] = fired_bucket
+                demoted.append(item)
+            else:
+                non_demoted.append(item)
+
+        return non_demoted + demoted
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("agenda._demote_prior_buckets: %s — returning items unchanged", exc)
+        return list(items)
+
+
 # ── LLM agenda call ───────────────────────────────────────────────────────────
 
 _AGENDA_PROMPT_TEMPLATE = """\
@@ -374,7 +457,9 @@ def _build_agenda_inner(
     """Inner builder — allowed to raise; wrapped by build_agenda."""
     repo = _repo_root(root)
 
-    # 1. Load budget config for max_docket_size
+    # 1. Load budget config for max_docket_size + prior de-rank thresholds (R-V8-11)
+    prior_demote_min_n: int = 5
+    prior_demote_hit_rate: float = 0.25
     if max_docket_size is None:
         try:
             import yaml  # noqa: PLC0415
@@ -382,6 +467,12 @@ def _build_agenda_inner(
             if budget_path.exists():
                 budget_cfg = yaml.safe_load(budget_path.read_text(encoding="utf-8")) or {}
                 max_docket_size = budget_cfg.get("max_docket_size") or 5
+                prior_demote_min_n = int(
+                    budget_cfg.get("prior_demote_min_n") or prior_demote_min_n
+                )
+                prior_demote_hit_rate = float(
+                    budget_cfg.get("prior_demote_hit_rate") or prior_demote_hit_rate
+                )
         except Exception as exc:  # noqa: BLE001
             log.warning("agenda: cannot load budget config — %s", exc)
         max_docket_size = max_docket_size or 5
@@ -419,13 +510,31 @@ def _build_agenda_inner(
         organism_state=organism_state,
     )
 
-    # 6. Build user prompt (include open rows)
+    # 6. Build user prompt (include open rows + recall parity, R-V8-12)
     open_rows_text = json.dumps(open_rows[:20], ensure_ascii=False)  # Cap at 20
     user_prompt = _AGENDA_PROMPT_TEMPLATE.format(max_docket_size=max_docket_size)
     user_prompt += (
         f"\n\n## Open Insight Bus Rows (high-severity MUST appear in URGENT_FIX)\n"
         f"```json\n{open_rows_text}\n```"
     )
+
+    # R-V8-12: recall parity with propose.py — thread top-scored lessons into agenda prompt
+    try:
+        from engine.metabolism import recall as _recall  # noqa: PLC0415
+        recall_text = _recall.recall_lessons(
+            lobe=None,
+            construction_terms=None,
+            sensors=None,
+            byte_budget=2000,
+            root=repo,
+        )
+        if recall_text and not recall_text.startswith("("):
+            user_prompt += (
+                f"\n\n## Relevant Lessons (FAIL-floor lessons inform ranking)\n"
+                f"{recall_text}"
+            )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("agenda: recall_lessons failed (non-fatal) — %s", exc)
 
     # 7. LLM call
     provider_used: str | None = None
@@ -469,6 +578,21 @@ def _build_agenda_inner(
 
     # 9. DETERMINISTIC SEVERITY FLOOR — enforce AFTER LLM processing
     items, forced = _enforce_severity_floor(items, high_rows)
+
+    # 9b. DETERMINISTIC PRIOR DE-RANK (R-V8-11) — demote weak-prior buckets to bottom
+    # Load calibration from durable outcome_priors ledger; NEVER promotes, NEVER drops.
+    try:
+        from engine.metabolism import dream as _dream  # noqa: PLC0415
+        calibration = _dream.get_calibration_from_priors(root=repo)
+        if calibration:
+            items = _demote_prior_buckets(
+                items,
+                calibration=calibration,
+                demote_min_n=prior_demote_min_n,
+                demote_hit_rate=prior_demote_hit_rate,
+            )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("agenda: prior de-rank failed (non-fatal) — %s", exc)
 
     # 10. Cap at max_docket_size (floor items count first)
     if len(items) > max_docket_size:

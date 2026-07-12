@@ -125,3 +125,16 @@ stale_running_ttl_hours: 3
 # draft PR is left for operator review and never silently dropped.
 # IMMUTABLE: loop PRs may NOT modify this value (R-V2-8).
 max_audit_rebuild_attempts: 2   # R-V7-7
+
+# ── Meta-learning prior de-rank thresholds (R-V8-11) ─────────────────────────
+#
+# prior_demote_min_n: minimum number of closed contracts in a bucket before the
+#   de-rank floor can fire.  Below this count the sample is too small to trust.
+#   IMMUTABLE: loop PRs may NOT modify this value.
+prior_demote_min_n: 5
+
+# prior_demote_hit_rate: buckets with hit_rate STRICTLY BELOW this value AND
+#   n >= prior_demote_min_n are demoted to the bottom of the agenda.
+#   Demoted items remain visible with prior_demoted:true.
+#   IMMUTABLE: loop PRs may NOT modify this value.
+prior_demote_hit_rate: 0.25
