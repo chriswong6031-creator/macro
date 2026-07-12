@@ -75,3 +75,27 @@ list, and the 52-finding v3 audit fix list live in **`V4_IMPLEMENTATION_SPEC.md`
 - Grid = default view; `[Grid | Ledger]` segmented toggle in the topbar persisted to
   localStorage `mx4_view`; ledger view stays pixel-faithful to v3 (only audit fixes land there).
 - v2/v3 rulings above remain binding for the ledger view and the island idiom.
+
+## OPERATOR RULING — 2026-07-11 (v5 VISUAL LANGUAGE — aurora-glass hybrid; supersedes v4's skin, keeps its IA)
+Operator vetoed the v4 grid's visual execution ("really ugly … cheap … so much text and no
+illustrations") and, from a judged 5-theme competition (T1 seamless-terminal · T2 observatory ·
+T3 instrument-cluster · T4 editorial-ledger · T5 aurora-glass), ruled a HYBRID — overriding the
+judges' T1/T4 preference: **T5 Aurora Glass is the base language** (static aurora field ≤12%,
+glass cards, verdict-color accent, gauge hero), grafting T5's hero/factor-breakdown/scare-ladder
+(ladder upgraded to T3's dominant-risk anatomy: big driver numeral + graded value meters),
+T1's 60-session score path, T2's card treatments for What-to-do / Risk-radar / Events, and
+T3's fed probability instrument (donut + histogram) / catalysts week-rail / sentiment dial /
+action-directive rows / news delta.
+BINDING = `v5_final.html` (composed + adversarially reviewed 2026-07-11; "reads like a
+billion-dollar product"). Hard laws baked into it, binding for production wiring:
+- No outer container panels — content composes on the canvas; glass cards are ONE elevation.
+- Every metric is a STATIC declarative SVG/CSS instrument (JS may only toggle theme/views —
+  a verdict gauge must never blank on a script failure). No emoji, no icon fonts, no sub-11px
+  text, tabular numerals, one as-of stamp, bloom restraint (one text-glow max), no decorative
+  motion (`prefers-reduced-motion` kills the rest).
+- No invented numbers: every printed value must exist in engine output (the sentiment dial
+  shows the zone word keyed to real data, never a fabricated score).
+- Production wiring notes: replace `background-attachment:fixed` aurora with a fixed-position
+  pseudo-element (mobile-Safari + full-page-screenshot artifact); drop the sector-chip
+  duplication between the Events card and Sector Temperature card; refresh the as-of from real
+  state; both themes + EN/ZH; v4's expansion trays and [Grid|Ledger] toggle remain.

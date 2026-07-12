@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Macro Dashboard — Instrument Cluster</title>
+<style>
+/* ─── TOKENS ───────────────────────────────────────────────────────────── */
+:root {
+  --c-bg:        #0f1216;
+  --c-layer:     #141920;
+  --c-layer2:    #1a2030;
+  --c-seam:      rgba(255,255,255,.07);
+  --c-seam2:     rgba(255,255,255,.12);
+  --c-text:      #e8ecf0;
+  --c-muted:     #6b7d8f;
+  --c-dim:       #3d4f60;
+  --c-accent:    #00d4c8;        /* cyan-teal */
+  --c-accent2:   #00a8a0;
+  --c-green:     #22c55e;
+  --c-green-dim: rgba(34,197,94,.18);
+  --c-amber:     #f59e0b;
+  --c-amber-dim: rgba(245,158,11,.18);
+  --c-red:       #ef4444;
+  --c-red-dim:   rgba(239,68,68,.15);
+  --c-blue:      #3b82f6;
+  --c-glow:      rgba(0,212,200,.35);
+  --radius:      4px;
+  --radius-lg:   8px;
+  --font:        "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+[data-theme="light"] {
+  --c-bg:        #f0f4f8;
+  --c-layer:     #ffffff;
+  --c-layer2:    #e8edf3;
+  --c-seam:      rgba(0,0,0,.07);
+  --c-seam2:     rgba(0,0,0,.12);
+  --c-text:      #0f1216;
+  --c-muted:     #5a6878;
+  --c-dim:       #9eaab8;
+  --c-accent:    #008f88;
+  --c-accent2:   #007570;
+  --c-green:     #16a34a;
+  --c-green-dim: rgba(22,163,74,.15);
+  --c-amber:     #d97706;
+  --c-amber-dim: rgba(217,119,6,.15);
+  --c-red:       #dc2626;
+  --c-red-dim:   rgba(220,38,38,.12);
+  --c-glow:      rgba(0,143,136,.25);
+}
+
+/* ─── RESET ─────────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;font-family:var(--font);background:var(--c-bg);color:var(--c-text);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;padding-bottom:80px}
+
+/* ─── LAYOUT ─────────────────────────────────────────────────────────────── */
+.page-wrap{max-width:1440px;margin:0 auto;padding:0 40px}
+@media(max-width:900px){.page-wrap{padding:0 20px}}
+
+/* ─── EYEBROW ─────────────────────────────────────────────────────────────── */
+.eyebrow{
+  font-size:10px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--c-muted);
+  display:flex;align-items:center;gap:8px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--c-seam)}
+
+/* ─── INSTRUMENT CARD ─────────────────────────────────────────────────────── */
+.card{
+  background:var(--c-layer);
+  border:1px solid var(--c-seam);
+  border-radius:var(--radius-lg);
+  position:relative;overflow:hidden;
+}
+.card::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(0,212,200,.03) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+/* ─── TOPBAR ──────────────────────────────────────────────────────────────── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;border-bottom:1px solid var(--c-seam);
+  position:sticky;top:0;z-index:100;
+  background:var(--c-bg);backdrop-filter:blur(12px);
+}
+.topbar-brand{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--c-accent)}
+.topbar-brand svg{width:22px;height:22px}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.theme-toggle{
+  background:var(--c-layer);border:1px solid var(--c-seam2);
+  border-radius:20px;padding:5px 12px;
+  font-size:11px;color:var(--c-muted);cursor:pointer;
+  display:flex;align-items:center;gap:6px;transition:border-color .2s;
+}
+.theme-toggle:hover{border-color:var(--c-accent);color:var(--c-accent)}
+.asof-badge{font-size:10px;color:var(--c-muted);font-variant-numeric:tabular-nums}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--c-green);box-shadow:0 0 6px var(--c-green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ─── HERO ZONE ───────────────────────────────────────────────────────────── */
+.hero-zone{
+  display:grid;
+  grid-template-columns:380px 1fr 320px;
+  gap:0;
+  padding:40px 0 0;
+  min-height:380px;
+}
+@media(max-width:1100px){.hero-zone{grid-template-columns:1fr 1fr;grid-template-rows:auto auto}}
+@media(max-width:700px){.hero-zone{grid-template-columns:1fr}}
+
+/* ─── ARC GAUGE ─────────────────────────────────────────────────────────── */
+.gauge-panel{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;padding:32px 24px 24px;
+  border-right:1px solid var(--c-seam);
+}
+.gauge-label-top{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--c-muted);margin-bottom:20px;align-self:flex-start}
+.gauge-wrap{position:relative;width:300px;height:240px}
+.gauge-score-callout{
+  text-align:center;
+  margin-top:8px;
+}
+.gauge-numeral{
+  font-size:80px;font-weight:800;line-height:1;
+  font-variant-numeric:tabular-nums;
+  color:var(--c-text);
+  text-shadow:0 0 40px var(--c-glow);
+  letter-spacing:-.03em;
+}
+.gauge-denom{font-size:22px;font-weight:400;color:var(--c-muted)}
+.gauge-verdict{
+  margin-top:4px;
+  font-size:18px;font-weight:700;color:var(--c-green);
+  letter-spacing:.02em;
+}
+.gauge-tagline{
+  margin-top:16px;align-self:stretch;
+  font-size:13px;line-height:1.6;color:var(--c-text);
+  border-left:2px solid var(--c-accent);
+  padding-left:12px;
+}
+.flip-line{
+  margin-top:10px;align-self:stretch;
+  font-size:11px;color:var(--c-muted);
+  padding-left:14px;
+  display:flex;align-items:flex-start;gap:6px;
+}
+.flip-arrow{color:var(--c-amber);font-size:13px}
+
+/* ─── AREA CHART ─────────────────────────────────────────────────────────── */
+.chart-panel{
+  border-right:1px solid var(--c-seam);
+  display:flex;flex-direction:column;
+}
+.chart-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 24px 12px;
+}
+.chart-title{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--c-muted)}
+.chart-meta{font-size:11px;color:var(--c-dim)}
+.chart-body{flex:1;position:relative;padding:0 24px 20px}
+.chart-tooltip-frozen{
+  position:absolute;top:8px;
+  background:var(--c-layer2);
+  border:1px solid var(--c-accent);
+  border-radius:6px;padding:10px 14px;
+  font-size:11px;line-height:1.7;
+  box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(0,212,200,.15);
+  pointer-events:none;z-index:10;
+  /* left is set by JS to align with frozen hover dot */
+}
+.tooltip-date{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--c-accent);text-transform:uppercase;margin-bottom:4px}
+.tooltip-score-row{display:flex;align-items:center;gap:8px}
+.tooltip-big{font-size:24px;font-weight:800;color:var(--c-text);font-variant-numeric:tabular-nums}
+.tooltip-dev{
+  background:var(--c-green-dim);border:1px solid rgba(34,197,94,.3);
+  border-radius:3px;padding:2px 6px;font-size:10px;color:var(--c-green);font-weight:600;
+}
+.tooltip-label{font-size:10px;color:var(--c-muted)}
+.tooltip-regime{font-size:10px;color:var(--c-accent);margin-top:2px}
+
+/* ─── FACTOR PANEL ───────────────────────────────────────────────────────── */
+.factor-panel{
+  padding:20px 24px;
+  display:flex;flex-direction:column;gap:0;
+}
+.factor-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:18px;
+}
+.factor-title{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--c-muted)}
+.factor-row{
+  display:flex;flex-direction:column;gap:5px;
+  padding:9px 0;border-bottom:1px solid var(--c-seam);
+}
+.factor-row:last-child{border-bottom:none}
+.factor-top{display:flex;align-items:center;justify-content:space-between}
+.factor-name{font-size:12px;color:var(--c-text);font-weight:500}
+.factor-val{font-size:13px;font-weight:700;color:var(--c-text);font-variant-numeric:tabular-nums;min-width:28px;text-align:right}
+.factor-val.weakest{color:var(--c-amber)}
+.led-bar{display:flex;gap:2px;align-items:center}
+.led-seg{
+  flex:1;height:6px;border-radius:1px;
+  background:var(--c-seam2);transition:background .3s;
+  min-width:0;
+}
+.led-seg.lit-green{background:var(--c-green);box-shadow:0 0 4px rgba(34,197,94,.6)}
+.led-seg.lit-amber{background:var(--c-amber);box-shadow:0 0 4px rgba(245,158,11,.5)}
+.factor-row.weakest-row .led-seg.lit-amber{background:var(--c-amber)}
+
+/* ─── SECTION DIVIDER ─────────────────────────────────────────────────────── */
+.section-gap{height:44px;position:relative;display:flex;align-items:center}
+
+/* ─── INSTRUMENT ROW ─────────────────────────────────────────────────────── */
+.instrument-row{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr;
+  gap:1px;background:var(--c-seam);
+  border:1px solid var(--c-seam);border-radius:var(--radius-lg);overflow:hidden;
+}
+@media(max-width:900px){.instrument-row{grid-template-columns:1fr 1fr}}
+@media(max-width:500px){.instrument-row{grid-template-columns:1fr}}
+
+.instrument-cell{
+  background:var(--c-layer);padding:20px 20px 16px;
+  display:flex;flex-direction:column;gap:4px;
+  transition:background .2s;position:relative;
+}
+.instrument-cell:hover{background:var(--c-layer2)}
+.inst-eyebrow{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--c-muted)}
+.inst-ticker{font-size:20px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.inst-price{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--c-text)}
+.inst-delta{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.delta-pos{color:var(--c-green)}
+.delta-neg{color:var(--c-red)}
+.inst-spark{margin-top:6px}
+
+/* ─── TRIPTYCH SECOND ROW ─────────────────────────────────────────────────── */
+.triptych{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:1px;background:var(--c-seam);
+  border:1px solid var(--c-seam);border-radius:var(--radius-lg);overflow:hidden;
+}
+@media(max-width:900px){.triptych{grid-template-columns:1fr}}
+
+.tri-cell{background:var(--c-layer);padding:24px;transition:background .2s}
+.tri-cell:hover{background:var(--c-layer2)}
+.tri-ey{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--c-muted);margin-bottom:16px}
+
+/* ─── SCARE LADDER ────────────────────────────────────────────────────────── */
+.scare-row{
+  display:flex;flex-direction:column;gap:3px;
+  padding:8px 0;border-bottom:1px solid var(--c-seam);
+}
+.scare-row:last-child{border-bottom:none}
+.scare-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.scare-name{font-size:11px;color:var(--c-text);font-weight:500}
+.scare-val{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.scare-meter{height:4px;background:var(--c-seam2);border-radius:2px;overflow:hidden;position:relative}
+.scare-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.scare-fill.hi{background:linear-gradient(90deg,var(--c-amber),#f97316)}
+.scare-fill.mid{background:var(--c-amber);opacity:.7}
+.scare-fill.lo{background:var(--c-amber);opacity:.4}
+.scare-label{font-size:10px;color:var(--c-amber);margin-top:4px}
+
+/* ─── FED ODDS INSTRUMENT ────────────────────────────────────────────────── */
+.fed-instrument{display:flex;flex-direction:column;gap:16px}
+.fed-main-row{display:flex;align-items:center;gap:20px}
+.fed-donut-wrap{position:relative;width:80px;height:80px;flex-shrink:0}
+.fed-pct{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:18px;font-weight:800;color:var(--c-text);font-variant-numeric:tabular-nums;
+  text-align:center;line-height:1.1;
+}
+.fed-pct small{font-size:9px;font-weight:500;color:var(--c-muted);display:block;margin-top:1px}
+.fed-verdict{font-size:20px;font-weight:800;color:var(--c-green)}
+.fed-sub{font-size:11px;color:var(--c-muted);margin-top:2px;line-height:1.4}
+.fed-bar-row{display:flex;gap:3px;align-items:flex-end;height:40px}
+.fed-bar-seg{width:100%;border-radius:2px 2px 0 0;transition:height .4s}
+.fed-bar-labels{display:flex;gap:3px;margin-top:4px}
+.fed-bar-label{font-size:8px;color:var(--c-muted);text-align:center;flex:1;letter-spacing:.05em}
+
+/* ─── EVENTS TIMELINE ────────────────────────────────────────────────────── */
+.timeline{position:relative;padding:8px 0 0;margin-top:4px}
+.timeline-rail{
+  position:absolute;top:16px;left:0;right:0;
+  height:1px;background:linear-gradient(90deg,var(--c-seam),var(--c-seam2),var(--c-seam));
+}
+.timeline-items{
+  display:flex;justify-content:space-around;
+  position:relative;padding-top:0;
+}
+.timeline-item{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  flex:1;
+}
+.timeline-dot{
+  width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--c-layer);
+  position:relative;z-index:1;flex-shrink:0;
+  margin-top:10px;
+}
+.dot-high{background:var(--c-red);box-shadow:0 0 8px var(--c-red)}
+.dot-med{background:var(--c-amber);box-shadow:0 0 6px var(--c-amber)}
+.tl-name{font-size:11px;font-weight:600;color:var(--c-text);text-align:center;margin-top:4px}
+.tl-date{font-size:9px;color:var(--c-muted);font-variant-numeric:tabular-nums;text-align:center}
+.tl-badge{font-size:9px;font-weight:600;padding:1px 5px;border-radius:2px;letter-spacing:.05em;text-align:center}
+.tl-badge.high{color:var(--c-red);background:var(--c-red-dim)}
+.tl-badge.med{color:var(--c-amber);background:var(--c-amber-dim)}
+
+/* ─── CHECKLIST / WHAT-TO-DO ─────────────────────────────────────────────── */
+.checklist{display:flex;flex-direction:column;gap:0}
+.check-row{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 0;border-bottom:1px solid var(--c-seam);
+  transition:background .2s;cursor:default;
+}
+.check-row:last-child{border-bottom:none}
+.check-row:hover{background:rgba(0,212,200,.04)}
+.check-icon{
+  width:20px;height:20px;border-radius:50%;
+  flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;
+}
+.check-icon.go{background:var(--c-green-dim);border:1px solid rgba(34,197,94,.3)}
+.check-icon.watch{background:var(--c-amber-dim);border:1px solid rgba(245,158,11,.3)}
+.check-icon.info{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25)}
+.check-icon.neutral{background:var(--c-seam);border:1px solid var(--c-seam2)}
+.check-text{font-size:13px;color:var(--c-text);line-height:1.5}
+
+/* ─── SECTOR HEAT ────────────────────────────────────────────────────────── */
+.sector-strip{display:flex;gap:4px;flex-wrap:wrap;margin-top:12px}
+.sector-tile{
+  padding:5px 10px;border-radius:3px;
+  font-size:11px;font-weight:500;
+  cursor:default;transition:opacity .2s;
+}
+.sector-tile:hover{opacity:.85}
+.tile-hot{background:rgba(34,197,94,.18);color:var(--c-green);border:1px solid rgba(34,197,94,.25)}
+.tile-cold{background:var(--c-red-dim);color:var(--c-red);border:1px solid rgba(239,68,68,.2)}
+.tile-neutral{background:var(--c-seam);color:var(--c-muted);border:1px solid var(--c-seam2)}
+.sector-legend{display:flex;gap:16px;margin-top:10px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--c-muted)}
+.legend-dot{width:6px;height:6px;border-radius:50%}
+
+/* ─── SENTIMENT DIAL ────────────────────────────────────────────────────── */
+.dial-wrap{position:relative;width:200px;height:110px;margin:0 auto}
+
+/* ─── REGIME CHIPS ───────────────────────────────────────────────────────── */
+.regime-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.regime-chip{
+  padding:4px 10px;border-radius:20px;
+  font-size:11px;font-weight:600;letter-spacing:.03em;
+}
+.chip-active{background:rgba(0,212,200,.15);color:var(--c-accent);border:1px solid rgba(0,212,200,.3)}
+.chip-shifting{background:var(--c-amber-dim);color:var(--c-amber);border:1px solid rgba(245,158,11,.3)}
+
+/* ─── NEWS ROWS ──────────────────────────────────────────────────────────── */
+.news-rows{display:flex;flex-direction:column;gap:0}
+.news-row{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:11px 0;border-bottom:1px solid var(--c-seam);
+  transition:background .2s;
+}
+.news-row:last-child{border-bottom:none}
+.news-row:hover{background:rgba(255,255,255,.03)}
+.news-impact{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.news-impact.high{background:var(--c-green);box-shadow:0 0 5px var(--c-green)}
+.news-impact.med{background:var(--c-amber)}
+.news-tag{font-size:9px;font-weight:600;letter-spacing:.08em;color:var(--c-muted);padding:2px 6px;background:var(--c-seam);border-radius:2px;flex-shrink:0;margin-top:2px}
+.news-body{font-size:12px;color:var(--c-text);line-height:1.5}
+
+/* ─── DATA HEALTH BAR ────────────────────────────────────────────────────── */
+.health-bar{
+  margin-top:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px;
+  background:var(--c-layer);
+  border:1px solid var(--c-seam);border-radius:var(--radius-lg);
+  font-size:12px;
+}
+.health-left{display:flex;align-items:center;gap:12px;color:var(--c-muted)}
+.health-indicator{display:flex;align-items:center;gap:6px}
+.health-dot{width:8px;height:8px;border-radius:50%;background:var(--c-green);box-shadow:0 0 6px var(--c-green)}
+.health-warn{color:var(--c-amber);font-weight:600}
+.health-right{font-size:11px;color:var(--c-dim)}
+
+/* ─── RESPONSIVE ──────────────────────────────────────────────────────────── */
+@media(max-width:390px){
+  .page-wrap{padding:0 12px}
+  .gauge-numeral{font-size:60px}
+  .instrument-row{grid-template-columns:1fr 1fr}
+  .triptych{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ TOPBAR ═══════════════════════════════════════════ -->
+<div class="page-wrap">
+<nav class="topbar">
+  <div class="topbar-brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/>
+      <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
+    </svg>
+    MASTERMIND
+  </div>
+  <div class="topbar-right">
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="status-dot"></div>
+      <span class="asof-badge">AS OF 2026-07-10 · LIVE</span>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>
+      </svg>
+      THEME
+    </button>
+  </div>
+</nav>
+
+<!-- ══════════════════ HERO ZONE — VERDICT + CHART + FACTORS ═══════════ -->
+<div class="hero-zone">
+
+  <!-- ARC GAUGE PANEL -->
+  <div class="gauge-panel">
+    <div class="gauge-label-top eyebrow" style="width:100%">Market State Score</div>
+    <div class="gauge-wrap">
+      <!-- Segmented arc SVG: 28 segments, green fill to 77% -->
+      <!-- viewBox 0 0 300 240 — extra height fits the arc bottom endpoints -->
+      <svg viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg" style="width:300px;height:240px">
+        <defs>
+          <filter id="glow-green">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow-accent">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Tick labels at arc endpoints and midpoint -->
+        <!-- arc center is at (150,220), r=130. Start at 190°, end at 390°=30° -->
+        <!-- 0% endpoint: (150+130*cos190°,220+130*sin190°) = (150-128,220-23) ≈ (22,197) -->
+        <!-- 50% midpoint: (150+130*cos290°,220+130*sin290°) = (150+44,220-122) ≈ (194,98)→sym→(150,90) -->
+        <!-- Actually 50% is at 290°: cos290=0.342,sin290=-0.940 → not midpoint -->
+        <!-- 50% = startDeg+50%*200=190+100=290°: x=150+130*cos(290)=150+44.5=194.5,y=220+130*sin(290)=220-122=98 -->
+        <!-- But tick should be at TOP center by symmetry; midpoint 290° is right side: use label at apex -->
+        <!-- Tick labels: 0% at 200°, 50% at 280°, 100% at 360° -->
+        <!-- 0% start: x=150+110*cos(200°)=47, y=200+110*sin(200°)=162 → label near (38,175) -->
+        <!-- 50% mid:  x=150+110*cos(280°)=169, y=200+110*sin(280°)=92 → label near (168,85) -->
+        <!-- 100% end: x=150+110*cos(360°)=260, y=200+110*sin(360°)=200 → label near (258,215) -->
+        <text x="20" y="178" fill="#3d4f60" font-size="10" font-family="Inter,sans-serif" font-weight="600">0</text>
+        <text x="150" y="80" fill="#3d4f60" font-size="10" font-family="Inter,sans-serif" font-weight="600" text-anchor="middle">50</text>
+        <text x="266" y="215" fill="#3d4f60" font-size="10" font-family="Inter,sans-serif" font-weight="600" text-anchor="middle">100</text>
+
+        <!-- Segments drawn by JS (cx=150,cy=200,r=110,rInner=90, startDeg=200, sweep=160) -->
+        <g id="arc-segs"></g>
+        <!-- Needle drawn by JS -->
+        <g id="needle-g"></g>
+
+        <!-- Center pivot ring -->
+        <circle cx="150" cy="200" r="9" fill="var(--c-bg)" stroke="rgba(0,212,200,.5)" stroke-width="2"/>
+        <circle cx="150" cy="200" r="3.5" fill="#00d4c8"/>
+      </svg>
+    </div>
+
+    <!-- Score callout sits below the gauge arc, not overlapping it -->
+    <div class="gauge-score-callout">
+      <div class="gauge-numeral">77<span class="gauge-denom">/100</span></div>
+      <div class="gauge-verdict">RISK-ON</div>
+    </div>
+
+    <div class="gauge-tagline">
+      Risk-on — the tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported.
+    </div>
+    <div class="flip-line">
+      <span class="flip-arrow">&#8594;</span>
+      <span>Mixed if breadth &amp; participation rolls over (now 59/100, the weakest leg)</span>
+    </div>
+    <div class="regime-chips">
+      <span class="regime-chip chip-active">Goldilocks</span>
+      <span class="regime-chip chip-shifting">Shifting</span>
+    </div>
+  </div>
+
+  <!-- 60-SESSION CHART PANEL -->
+  <div class="chart-panel">
+    <div class="chart-header">
+      <span class="chart-title eyebrow" style="font-size:9px">60-Session Score Path</span>
+      <span class="chart-meta">Score vs time · Macro Engine v4</span>
+    </div>
+    <div class="chart-body">
+      <!-- Frozen hover tooltip (designed, always visible as reference) -->
+      <div class="chart-tooltip-frozen">
+        <div class="tooltip-date">Jul 10, 2026</div>
+        <div class="tooltip-score-row">
+          <span class="tooltip-big">77</span>
+          <span class="tooltip-dev">+4 above 30d avg</span>
+        </div>
+        <div class="tooltip-label">Risk Score · /100</div>
+        <div class="tooltip-regime">Goldilocks · shifting</div>
+      </div>
+
+      <!-- Area chart SVG -->
+      <svg id="area-chart" viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+        <defs>
+          <linearGradient id="area-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00d4c8" stop-opacity=".25"/>
+            <stop offset="100%" stop-color="#00d4c8" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="line-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#3b82f6"/>
+            <stop offset="60%" stop-color="#00d4c8"/>
+            <stop offset="100%" stop-color="#22c55e"/>
+          </linearGradient>
+          <filter id="chart-glow">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Grid lines -->
+        <line x1="0" y1="50" x2="560" y2="50" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+        <line x1="0" y1="100" x2="560" y2="100" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+        <line x1="0" y1="150" x2="560" y2="150" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+
+        <!-- Grid labels -->
+        <text x="4" y="54" fill="#3d4f60" font-size="9" font-family="Inter,sans-serif">75</text>
+        <text x="4" y="104" fill="#3d4f60" font-size="9" font-family="Inter,sans-serif">50</text>
+        <text x="4" y="154" fill="#3d4f60" font-size="9" font-family="Inter,sans-serif">25</text>
+
+        <!-- Neutral 50 line (dashed) -->
+        <line x1="24" y1="100" x2="560" y2="100" stroke="rgba(255,255,255,.08)" stroke-width="1" stroke-dasharray="4,4"/>
+
+        <!-- Area fill + line - data computed by JS -->
+        <path id="chart-area" fill="url(#area-fill)"/>
+        <path id="chart-line" fill="none" stroke="url(#line-grad)" stroke-width="2" filter="url(#chart-glow)"/>
+
+        <!-- Current value dot -->
+        <circle id="chart-dot" r="4" fill="#22c55e" stroke="var(--c-layer)" stroke-width="2" filter="url(#chart-glow)"/>
+
+        <!-- Tooltip callout line -->
+        <line id="tooltip-line" stroke="var(--c-accent)" stroke-width="1" stroke-dasharray="3,3" opacity=".6"/>
+        <circle id="tooltip-dot" r="5" fill="var(--c-accent)" stroke="var(--c-layer)" stroke-width="2"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- FACTOR LED BARS PANEL -->
+  <div class="factor-panel">
+    <div class="factor-header">
+      <span class="factor-title eyebrow" style="font-size:9px">Signal Factors</span>
+      <span style="font-size:10px;color:var(--c-muted)">/ 100</span>
+    </div>
+    <!-- 10 LED segs per bar; lit count = round(score/10) -->
+    <div class="factor-row">
+      <div class="factor-top">
+        <span class="factor-name">Trend &amp; Technicals</span>
+        <span class="factor-val">90</span>
+      </div>
+      <div class="led-bar" id="led-trend"></div>
+    </div>
+    <div class="factor-row">
+      <div class="factor-top">
+        <span class="factor-name">Risk Appetite</span>
+        <span class="factor-val">70</span>
+      </div>
+      <div class="led-bar" id="led-risk"></div>
+    </div>
+    <div class="factor-row">
+      <div class="factor-top">
+        <span class="factor-name">Volatility Regime</span>
+        <span class="factor-val">76</span>
+      </div>
+      <div class="led-bar" id="led-vol"></div>
+    </div>
+    <div class="factor-row weakest-row">
+      <div class="factor-top">
+        <span class="factor-name" style="color:var(--c-amber)">Breadth &amp; Participation</span>
+        <span class="factor-val weakest">59</span>
+      </div>
+      <div class="led-bar" id="led-breadth"></div>
+      <div style="font-size:9px;color:var(--c-amber);margin-top:2px;font-weight:600;letter-spacing:.04em">&#9650; WEAKEST LEG — MONITOR</div>
+    </div>
+    <div class="factor-row">
+      <div class="factor-top">
+        <span class="factor-name">Liquidity &amp; Credit</span>
+        <span class="factor-val">77</span>
+      </div>
+      <div class="led-bar" id="led-liq"></div>
+    </div>
+    <div class="factor-row">
+      <div class="factor-top">
+        <span class="factor-name">Downturn-Risk Guard</span>
+        <span class="factor-val">87</span>
+      </div>
+      <div class="led-bar" id="led-guard"></div>
+    </div>
+  </div>
+
+</div><!-- /hero-zone -->
+
+<!-- ══════════════════ MARKETS + SCARE + FED + EVENTS ROW ══════════════ -->
+<div class="section-gap">
+  <div class="eyebrow" style="width:100%">Instruments</div>
+</div>
+
+<!-- MARKET TILES -->
+<div class="instrument-row">
+  <div class="instrument-cell">
+    <div class="inst-eyebrow">US Equities</div>
+    <div class="inst-ticker" style="color:var(--c-green)">SPY</div>
+    <div class="inst-price">754.95</div>
+    <div class="inst-delta delta-pos">+0.85%</div>
+    <svg class="inst-spark" viewBox="0 0 120 36" style="width:100%;height:36px">
+      <defs><linearGradient id="spk-spy" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22c55e" stop-opacity=".25"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>
+      <path id="spy-area" fill="url(#spk-spy)"/>
+      <path id="spy-line" fill="none" stroke="#22c55e" stroke-width="1.5"/>
+    </svg>
+  </div>
+  <div class="instrument-cell">
+    <div class="inst-eyebrow">Nasdaq</div>
+    <div class="inst-ticker" style="color:var(--c-green)">QQQ</div>
+    <div class="inst-price">725.51</div>
+    <div class="inst-delta delta-pos">+1.86%</div>
+    <svg class="inst-spark" viewBox="0 0 120 36" style="width:100%;height:36px">
+      <defs><linearGradient id="spk-qqq" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22c55e" stop-opacity=".25"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>
+      <path id="qqq-area" fill="url(#spk-qqq)"/>
+      <path id="qqq-line" fill="none" stroke="#22c55e" stroke-width="1.5"/>
+    </svg>
+  </div>
+  <div class="instrument-cell">
+    <div class="inst-eyebrow">Dow Jones</div>
+    <div class="inst-ticker" style="color:var(--c-green)">DJI</div>
+    <div class="inst-price">52,487.41</div>
+    <div class="inst-delta delta-pos">+0.27%</div>
+    <svg class="inst-spark" viewBox="0 0 120 36" style="width:100%;height:36px">
+      <defs><linearGradient id="spk-dji" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22c55e" stop-opacity=".25"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>
+      <path id="dji-area" fill="url(#spk-dji)"/>
+      <path id="dji-line" fill="none" stroke="#22c55e" stroke-width="1.5"/>
+    </svg>
+  </div>
+  <div class="instrument-cell">
+    <div class="inst-eyebrow">Small Cap</div>
+    <div class="inst-ticker" style="color:var(--c-green)">RUT</div>
+    <div class="inst-price">2,992.54</div>
+    <div class="inst-delta delta-pos">+1.22%</div>
+    <svg class="inst-spark" viewBox="0 0 120 36" style="width:100%;height:36px">
+      <defs><linearGradient id="spk-rut" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22c55e" stop-opacity=".25"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>
+      <path id="rut-area" fill="url(#spk-rut)"/>
+      <path id="rut-line" fill="none" stroke="#22c55e" stroke-width="1.5"/>
+    </svg>
+  </div>
+</div>
+
+<!-- ══════════════════ TRIPTYCH: SCARE / FED / EVENTS ══════════════════ -->
+<div style="height:24px"></div>
+<div class="triptych">
+
+  <!-- SCARE LADDER -->
+  <div class="tri-cell">
+    <div class="tri-ey eyebrow" style="font-size:9px">Dominant Risk Ladder</div>
+
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">
+      <span style="font-size:36px;font-weight:800;color:var(--c-amber);font-variant-numeric:tabular-nums;letter-spacing:-.02em">62</span>
+      <span style="font-size:14px;font-weight:600;color:var(--c-amber)">Bubble / Blow-off</span>
+    </div>
+    <p style="font-size:11px;color:var(--c-muted);margin-bottom:16px;line-height:1.5">A risk is building — stay normal, just watch it.</p>
+
+    <div class="scare-row">
+      <div class="scare-top">
+        <span class="scare-name">Bubble / Blow-off unwind</span>
+        <span class="scare-val" style="color:var(--c-amber)">62.1</span>
+      </div>
+      <div class="scare-meter"><div class="scare-fill hi" style="width:62.1%"></div></div>
+      <div class="scare-label">ELEVATED</div>
+    </div>
+    <div class="scare-row">
+      <div class="scare-top">
+        <span class="scare-name">Global breadth divergence</span>
+        <span class="scare-val" style="color:var(--c-amber);opacity:.8">50.5</span>
+      </div>
+      <div class="scare-meter"><div class="scare-fill mid" style="width:50.5%"></div></div>
+    </div>
+    <div class="scare-row">
+      <div class="scare-top">
+        <span class="scare-name">Credit stress</span>
+        <span class="scare-val" style="color:var(--c-muted)">47.4</span>
+      </div>
+      <div class="scare-meter"><div class="scare-fill lo" style="width:47.4%"></div></div>
+    </div>
+    <div class="scare-row">
+      <div class="scare-top">
+        <span class="scare-name">Growth scare</span>
+        <span class="scare-val" style="color:var(--c-muted)">38.3</span>
+      </div>
+      <div class="scare-meter"><div class="scare-fill lo" style="width:38.3%;opacity:.6"></div></div>
+    </div>
+  </div>
+
+  <!-- FED ODDS INSTRUMENT -->
+  <div class="tri-cell" style="border-left:1px solid var(--c-seam)">
+    <div class="tri-ey eyebrow" style="font-size:9px">Fed Probability Instrument</div>
+
+    <div class="fed-instrument">
+      <div class="fed-main-row">
+        <div class="fed-donut-wrap">
+          <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" style="width:80px;height:80px">
+            <defs>
+              <filter id="donut-glow">
+                <feGaussianBlur stdDeviation="2" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <!-- Track circle -->
+            <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="8"/>
+            <!-- Fill arc: 84.5% = 84.5/100 * 360 = 304.2 deg -->
+            <!-- circumference = 2*PI*32 = 201.06 -->
+            <!-- 84.5% = 169.9; dashoffset = 201.06 - 169.9 = 31.16 -->
+            <circle cx="40" cy="40" r="32" fill="none"
+              stroke="url(#fed-arc-grad)" stroke-width="8"
+              stroke-dasharray="169.9 31.16"
+              stroke-linecap="round"
+              transform="rotate(-90 40 40)"
+              filter="url(#donut-glow)"/>
+            <defs>
+              <linearGradient id="fed-arc-grad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#22c55e"/>
+                <stop offset="100%" stop-color="#00d4c8"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="fed-pct">84.5<small>%</small></div>
+        </div>
+        <div>
+          <div class="fed-verdict">No Change</div>
+          <div class="fed-sub">Priced in — market<br>consensus is a HOLD</div>
+        </div>
+      </div>
+
+      <!-- Mini probability bars -->
+      <div style="margin-top:16px">
+        <div style="font-size:9px;color:var(--c-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Outcome Probability Distribution</div>
+        <div style="display:flex;gap:3px;align-items:flex-end;height:48px">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <div style="width:100%;background:var(--c-red-dim);border:1px solid rgba(239,68,68,.2);border-radius:2px 2px 0 0;height:4px"></div>
+            <div style="font-size:8px;color:var(--c-dim);text-align:center">-50</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <div style="width:100%;background:var(--c-red-dim);border:1px solid rgba(239,68,68,.2);border-radius:2px 2px 0 0;height:8px"></div>
+            <div style="font-size:8px;color:var(--c-dim);text-align:center">-25</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <div style="width:100%;border-radius:2px 2px 0 0;height:48px;background:linear-gradient(180deg,rgba(0,212,200,.5) 0%,rgba(0,212,200,.2) 100%);border:1px solid rgba(0,212,200,.3);box-shadow:0 0 12px rgba(0,212,200,.2)"></div>
+            <div style="font-size:8px;color:var(--c-accent);text-align:center;font-weight:700">HOLD</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <div style="width:100%;background:var(--c-green-dim);border:1px solid rgba(34,197,94,.2);border-radius:2px 2px 0 0;height:10px"></div>
+            <div style="font-size:8px;color:var(--c-dim);text-align:center">+25</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--c-muted);margin-top:10px;border-top:1px solid var(--c-seam);padding-top:8px">
+          <span style="color:var(--c-text);font-weight:600">Policy</span> — Quiet · No active jawboning<br>
+          <span style="color:var(--c-dim)">Last flip 2026-07-02 · Fed stance Neutral/hold</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVENTS TIMELINE -->
+  <div class="tri-cell" style="border-left:1px solid var(--c-seam)">
+    <div class="tri-ey eyebrow" style="font-size:9px">Upcoming Catalysts</div>
+
+    <div style="font-size:11px;color:var(--c-muted);margin-bottom:20px">Next 5 trading days</div>
+
+    <div class="timeline">
+      <div class="timeline-rail"></div>
+      <div class="timeline-items">
+        <div class="timeline-item">
+          <div class="timeline-dot dot-high"></div>
+          <div class="tl-name">CPI</div>
+          <div class="tl-date">Jul 14</div>
+          <div class="tl-badge high">HIGH</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot dot-high"></div>
+          <div class="tl-name">PPI</div>
+          <div class="tl-date">Jul 15</div>
+          <div class="tl-badge high">HIGH</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot dot-med"></div>
+          <div class="tl-name">Claims</div>
+          <div class="tl-date">Jul 16</div>
+          <div class="tl-badge med">MED</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot dot-med"></div>
+          <div class="tl-name">OpEx</div>
+          <div class="tl-date">Jul 17</div>
+          <div class="tl-badge med">MED</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px">
+      <div style="font-size:9px;color:var(--c-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">Sector Positioning</div>
+      <div class="sector-strip">
+        <span class="sector-tile tile-hot">Cybersecurity</span>
+        <span class="sector-tile tile-hot">Insurance &amp; Brokers</span>
+        <span class="sector-tile tile-cold">Memory &amp; Storage</span>
+        <span class="sector-tile tile-cold">Regional Banks</span>
+      </div>
+      <div class="sector-legend" style="margin-top:8px">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--c-green)"></div>Hot</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--c-red)"></div>Cold</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /triptych -->
+
+<!-- ══════════════════ WHAT TO DO + SENTIMENT + NEWS ══════════════════ -->
+<div style="height:24px"></div>
+<div class="triptych">
+
+  <!-- WHAT TO DO CHECKLIST -->
+  <div class="tri-cell">
+    <div class="tri-ey eyebrow" style="font-size:9px">Action Directives</div>
+    <div class="checklist">
+      <div class="check-row">
+        <div class="check-icon go">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M2 5l2 2 4-4" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="check-text">Risk-on — Trend-follow. Add on strength.</span>
+      </div>
+      <div class="check-row">
+        <div class="check-icon watch">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <circle cx="5" cy="5" r="4" stroke="#f59e0b" stroke-width="1.5"/>
+            <path d="M5 3v2.5" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="5" cy="7" r=".6" fill="#f59e0b"/>
+          </svg>
+        </div>
+        <span class="check-text">Watch Breadth &amp; participation — the weakest leg (59/100).</span>
+      </div>
+      <div class="check-row">
+        <div class="check-icon info">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <circle cx="5" cy="5" r="4" stroke="#3b82f6" stroke-width="1.5"/>
+            <path d="M5 4.5v3" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="5" cy="3" r=".6" fill="#3b82f6"/>
+          </svg>
+        </div>
+        <span class="check-text">Expect noise around CPI (in 3 days) — don't read the first move as trend.</span>
+      </div>
+      <div class="check-row">
+        <div class="check-icon watch">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <circle cx="5" cy="5" r="4" stroke="#f59e0b" stroke-width="1.5"/>
+            <path d="M5 3v2.5" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="5" cy="7" r=".6" fill="#f59e0b"/>
+          </svg>
+        </div>
+        <span class="check-text">A risk is building — stay normal, just watch it.</span>
+      </div>
+      <div class="check-row">
+        <div class="check-icon neutral">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M3 5h4" stroke="#6b7d8f" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="check-text">Policy is quiet — nothing to position for.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SENTIMENT MICRO-DIAL + AI BRIEF -->
+  <div class="tri-cell" style="border-left:1px solid var(--c-seam)">
+    <div class="tri-ey eyebrow" style="font-size:9px">Sentiment Dial · AI Brief</div>
+
+    <!-- Sentiment micro-dial SVG -->
+    <div style="text-align:center;margin-bottom:4px">
+      <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" style="width:200px;height:120px;display:inline-block">
+        <defs>
+          <linearGradient id="sent-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#ef4444"/>
+            <stop offset="33%" stop-color="#f59e0b"/>
+            <stop offset="66%" stop-color="#22c55e"/>
+            <stop offset="100%" stop-color="#00d4c8"/>
+          </linearGradient>
+          <filter id="dial-glow">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Track -->
+        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="10" stroke-linecap="round"/>
+        <!-- Colored fill: risk-on = ~70% = positive-neutral zone -->
+        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#sent-grad)" stroke-width="10" stroke-linecap="round" opacity=".8"/>
+
+        <!-- Needle at ~75% of arc (risk-on / positive zone) -->
+        <!-- Arc in SVG: path from M20,100 A80,80 0 0 1 180,100 is a semicircle sweeping LEFT=PANIC→RIGHT=EUPHORIA -->
+        <!-- Center=(100,100), r=80. Left endpoint angle=180°, right=0°. -->
+        <!-- 75% of arc (risk-on): angle = 180 - 75%*180 = 45° from East in SVG (upper-right quadrant) -->
+        <!-- Tip: x=100+70*cos(45°)=149.5, y=100-70*sin(45°)=50.5 -->
+        <line x1="100" y1="100" x2="149.5" y2="50.5" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" filter="url(#dial-glow)"/>
+        <circle cx="100" cy="100" r="5" fill="var(--c-bg)" stroke="#22c55e" stroke-width="2"/>
+        <circle cx="100" cy="100" r="2" fill="#22c55e"/>
+
+        <!-- Labels -->
+        <text x="10" y="116" fill="#ef4444" font-size="9" font-family="Inter,sans-serif" font-weight="600">PANIC</text>
+        <text x="100" y="18" fill="#6b7d8f" font-size="9" font-family="Inter,sans-serif" text-anchor="middle">NEUTRAL</text>
+        <text x="190" y="116" fill="#00d4c8" font-size="9" font-family="Inter,sans-serif" text-anchor="end" font-weight="600">EUPHORIA</text>
+
+        <!-- Current state label inside arc -->
+        <text x="100" y="84" fill="#22c55e" font-size="11" font-family="Inter,sans-serif" font-weight="700" text-anchor="middle">RISK-ON</text>
+      </svg>
+    </div>
+
+    <!-- AI Brief -->
+    <div style="background:rgba(0,212,200,.05);border:1px solid rgba(0,212,200,.12);border-radius:6px;padding:12px;margin-top:4px">
+      <div style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--c-accent);margin-bottom:8px">AI Brief — 5 High-Impact Items</div>
+      <div style="font-size:11px;color:var(--c-text);line-height:1.6">
+        Dominant channel: <span style="color:var(--c-accent);font-weight:600">Rates</span><br>
+        Top tickers: <span style="font-weight:600;font-variant-numeric:tabular-nums">XLF · XLK · KRE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEWS FEED -->
+  <div class="tri-cell" style="border-left:1px solid var(--c-seam)">
+    <div class="tri-ey eyebrow" style="font-size:9px">News Delta</div>
+    <div class="news-rows">
+      <div class="news-row">
+        <div class="news-impact high"></div>
+        <span class="news-tag">EARNINGS</span>
+        <div class="news-body">As bank earnings approach, a market anomaly emerges</div>
+      </div>
+      <div class="news-row">
+        <div class="news-impact med"></div>
+        <span class="news-tag">STOCKS</span>
+        <div class="news-body">Chip rally, Fed task forces, Delta earnings and a fintech IPO</div>
+      </div>
+      <div class="news-row">
+        <div class="news-impact med"></div>
+        <span class="news-tag">EARNINGS</span>
+        <div class="news-body">PepsiCo earnings miss estimates as U.S. consumers tighten budgets</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--c-seam)">
+      <div style="font-size:9px;color:var(--c-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Deep Context</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--c-accent);cursor:pointer">Neural Web</span>
+        <span style="color:var(--c-seam2)">·</span>
+        <span style="font-size:11px;color:var(--c-accent);cursor:pointer">AI Brief</span>
+        <span style="color:var(--c-seam2)">·</span>
+        <span style="font-size:11px;color:var(--c-accent);cursor:pointer">Sector Central</span>
+        <span style="color:var(--c-seam2)">·</span>
+        <span style="font-size:11px;color:var(--c-accent);cursor:pointer">Signal Lab</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /triptych row 2 -->
+
+<!-- ══════════════════ DATA HEALTH ═══════════════════════════════════════ -->
+<div class="health-bar">
+  <div class="health-left">
+    <div class="health-indicator">
+      <div class="health-dot"></div>
+      <span>153 sources active</span>
+    </div>
+    <span style="color:var(--c-seam2)">|</span>
+    <span class="health-warn">7 need attention</span>
+  </div>
+  <div class="health-right">Nightly pipeline · as of 2026-07-10</div>
+</div>
+
+</div><!-- /page-wrap -->
+
+<script>
+/* ── THEME TOGGLE ─────────────────────────────────────────────────────── */
+function toggleTheme(){
+  const h=document.documentElement;
+  h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark');
+}
+
+/* ── ARC GAUGE SEGMENTS ───────────────────────────────────────────────── */
+(function(){
+  const g=document.getElementById('arc-segs');
+  const ng=document.getElementById('needle-g');
+  if(!g)return;
+  // SVG viewBox 0 0 300 240; center pivot at lower-center (150,220)
+  // r=130 so bottom endpoints at 190°/30° stay within y<240: y=220+130*sin(30°)=220+65=285>240 still clips
+  // Use r=110 for full clearance: endpoints at y=220+110*sin(30°)=220+55=275 — still clips
+  // Actually startDeg=190°, endpoint y = 220+110*sin(190°) = 220-19 = 201 ✓ (starts at lower-left)
+  // End at 30°: y=220+110*sin(30°)=220+55=275 — CLIPS.
+  // The END (100%, 30°) goes below the viewBox. Fix: restrict clip with overflow:hidden on SVG, or use startDeg=200
+  // Better: Use a 220-deg arc instead (symmetric), starting at 200°, ending at 340° (20° before East)
+  // Actually let's use the standard semicircle+extra: start=210°, sweep=180° — no, too flat
+  // Best: start at 205°, sweep 210°: end at 205+210=415=55°; y=220+110*sin(55°)=220+90=310 — still clips
+  // ROOT FIX: move cy to 230, r=100: 0% at (150+100*cos190°,230+100*sin190°)=(150-98,230-17)=(52,213)✓
+  // end at 30°: (150+100*cos30°,230+100*sin30°)=(150+87,230+50)=(237,280) — clips at 240
+  // Use r=80: end=(150+80*cos30°,230+80*sin30°)=(150+69,230+40)=(219,270) — still clips
+  // The issue: 30° from East in SVG goes DOWN-RIGHT; sin(30°)=0.5 is positive.
+  // Fix the arc to end at a NEGATIVE y end: use endDeg that stays above the baseline
+  // Use startDeg=200°(lower-left), sweep=160° → endDeg=360°(right horizontal)
+  // end at 0°: y=cy+r*sin(0)=cy ✓ (stays at y=cy level)
+  // Better! Start 200° to 360° = 160° sweep. Or use 215° to 325° (110° sweep = too narrow)
+  // FINAL DECISION: startDeg=200, sweep=160, center at (150,200) in viewBox 300x240, r=110
+  // 0% at 200°: x=150+110*cos200°=-103+150=47, y=200+110*sin200°=-37.6+200=162 ✓
+  // 100% at 360°: x=150+110*cos360°=150+110=260, y=200+110*sin360°=200+0=200 ✓
+  // 50% at 280°: x=150+110*cos280°=150+19=169, y=200+110*sin280°=200-108=92 ✓ (near top)
+  // All within viewBox! Perfect.
+  const cx=150,cy=200,r=110,rInner=90;
+  const totalSegs=28, score=77;
+  const litCount=Math.round(score/100*totalSegs); // 22 segments lit
+  // Arc: startDeg=200°, sweep=160° — all points fit in viewBox 300x240
+  const startDeg=200, sweep=160;
+  const segAngle=sweep/totalSegs;
+  const gap=1.8;
+
+  function polar(cx,cy,r,deg){
+    const rad=deg*Math.PI/180;
+    return[cx+r*Math.cos(rad),cy+r*Math.sin(rad)];
+  }
+  function arcPath(r1,r2,a1,a2){
+    const p1=polar(cx,cy,r1,a1),p2=polar(cx,cy,r1,a2);
+    const p3=polar(cx,cy,r2,a2),p4=polar(cx,cy,r2,a1);
+    const lg=Math.abs(a2-a1)>180?1:0;
+    return`M${p1[0].toFixed(2)},${p1[1].toFixed(2)} A${r1},${r1},0,${lg},1,${p2[0].toFixed(2)},${p2[1].toFixed(2)} L${p3[0].toFixed(2)},${p3[1].toFixed(2)} A${r2},${r2},0,${lg},0,${p4[0].toFixed(2)},${p4[1].toFixed(2)} Z`;
+  }
+
+  for(let i=0;i<totalSegs;i++){
+    const a1=startDeg+(i*segAngle)+gap/2;
+    const a2=startDeg+(i+1)*segAngle-gap/2;
+    const lit=i<litCount;
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',arcPath(r,rInner,a1,a2));
+    if(lit){
+      if(i<litCount-3){
+        path.setAttribute('fill','#22c55e');
+        path.setAttribute('filter','url(#glow-green)');
+        path.setAttribute('opacity','0.85');
+      } else {
+        path.setAttribute('fill','#00d4c8');
+        path.setAttribute('filter','url(#glow-accent)');
+        path.setAttribute('opacity','0.95');
+      }
+    } else {
+      path.setAttribute('fill','rgba(255,255,255,0.04)');
+      path.setAttribute('stroke','rgba(255,255,255,0.06)');
+      path.setAttribute('stroke-width','0.5');
+    }
+    g.appendChild(path);
+  }
+
+  // Needle at 77%
+  const needleAngle=startDeg+(77/100*sweep);
+  const np=polar(cx,cy,r-2,needleAngle);
+  const needle=document.createElementNS('http://www.w3.org/2000/svg','line');
+  needle.setAttribute('x1',cx); needle.setAttribute('y1',cy);
+  needle.setAttribute('x2',np[0].toFixed(2)); needle.setAttribute('y2',np[1].toFixed(2));
+  needle.setAttribute('stroke','#00d4c8');
+  needle.setAttribute('stroke-width','2.5');
+  needle.setAttribute('stroke-linecap','round');
+  needle.setAttribute('filter','url(#glow-accent)');
+  ng.appendChild(needle);
+})();
+
+/* ── 60-SESSION AREA CHART ────────────────────────────────────────────── */
+(function(){
+  // Plausible 60-session path ending at 77
+  const scores=[42,45,48,52,50,47,53,58,62,60,55,58,63,66,64,60,57,55,60,65,68,70,67,65,63,68,72,70,68,65,63,67,70,72,69,66,64,70,73,75,72,70,68,72,75,74,71,69,73,76,74,70,72,74,76,75,73,75,76,77];
+  const W=560,H=200,PAD_L=28,PAD_R=4,PAD_T=15,PAD_B=20;
+  const plotW=W-PAD_L-PAD_R, plotH=H-PAD_T-PAD_B;
+  const minS=30,maxS=90;
+  function px(i){return PAD_L+i/(scores.length-1)*plotW}
+  function py(v){return PAD_T+plotH-(v-minS)/(maxS-minS)*plotH}
+
+  let linePts=[],areaPts=[];
+  scores.forEach((s,i)=>{
+    const x=px(i),y=py(s);
+    linePts.push(`${i===0?'M':'L'}${x.toFixed(1)},${y.toFixed(1)}`);
+    areaPts.push(`${i===0?'M':'L'}${x.toFixed(1)},${y.toFixed(1)}`);
+  });
+  const lastX=px(scores.length-1);
+  areaPts.push(`L${lastX.toFixed(1)},${(PAD_T+plotH).toFixed(1)} L${PAD_L},${(PAD_T+plotH).toFixed(1)} Z`);
+
+  const aEl=document.getElementById('chart-area');
+  const lEl=document.getElementById('chart-line');
+  const dEl=document.getElementById('chart-dot');
+  const tlEl=document.getElementById('tooltip-line');
+  const tdEl=document.getElementById('tooltip-dot');
+  if(aEl){aEl.setAttribute('d',areaPts.join(' '))}
+  if(lEl){lEl.setAttribute('d',linePts.join(' '))}
+  // Current value dot at end
+  const endX=px(scores.length-1),endY=py(77);
+  if(dEl){dEl.setAttribute('cx',endX);dEl.setAttribute('cy',endY)}
+  // Frozen tooltip dot at session 55
+  const tipIdx=55,tipX=px(tipIdx),tipY=py(scores[tipIdx]);
+  if(tlEl){tlEl.setAttribute('x1',tipX);tlEl.setAttribute('y1',PAD_T);tlEl.setAttribute('x2',tipX);tlEl.setAttribute('y2',tipY-6)}
+  if(tdEl){tdEl.setAttribute('cx',tipX);tdEl.setAttribute('cy',tipY)}
+  // Position tooltip: pin it to the left-center of the chart area
+  // The frozen dot is at ~session 55 (85%); the tooltip floats left of it
+  const ttEl=document.querySelector('.chart-tooltip-frozen');
+  if(ttEl){
+    const chartBody=document.querySelector('.chart-body');
+    const cbW=chartBody?chartBody.offsetWidth-48:560;
+    const scaledX=(tipX/560)*cbW+24; // dot x in CSS px from chart-body left
+    // Place tooltip so its right edge is ~16px left of dot
+    const ttW=172; // approximate tooltip width
+    const leftPx=Math.max(24,Math.min(scaledX-ttW-20,cbW-ttW-24));
+    ttEl.style.left=leftPx+'px';
+    ttEl.style.top='6px';
+  }
+})();
+
+/* ── LED BARS ─────────────────────────────────────────────────────────── */
+function makeLED(id, score, isAmber){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const lit=Math.round(score/10);
+  for(let i=0;i<10;i++){
+    const s=document.createElement('div');
+    s.className='led-seg';
+    if(i<lit){
+      s.classList.add(isAmber?'lit-amber':'lit-green');
+    }
+    el.appendChild(s);
+  }
+}
+makeLED('led-trend',90,false);
+makeLED('led-risk',70,false);
+makeLED('led-vol',76,false);
+makeLED('led-breadth',59,true);
+makeLED('led-liq',77,false);
+makeLED('led-guard',87,false);
+
+/* ── MARKET SPARKLINES ────────────────────────────────────────────────── */
+function makeSpark(areaId, lineId, sparkData, color){
+  const area=document.getElementById(areaId);
+  const line=document.getElementById(lineId);
+  if(!area||!line)return;
+  const W=120,H=34;
+  const mn=Math.min(...sparkData),mx=Math.max(...sparkData);
+  const range=Math.max(mx-mn,0.01);
+  function x(i){return(i/(sparkData.length-1)*W).toFixed(1)}
+  function y(v){return(H-(v-mn)/range*(H-6)-3).toFixed(1)}
+  let lp=[],ap=[];
+  sparkData.forEach((v,i)=>{
+    const pt=`${i===0?'M':'L'}${x(i)},${y(v)}`;
+    lp.push(pt);ap.push(pt);
+  });
+  ap.push(`L${W},${H} L0,${H} Z`);
+  area.setAttribute('d',ap.join(' '));
+  line.setAttribute('d',lp.join(' '));
+}
+// Sparklines: ~18-point plausible intraday paths; end point = today's close (up)
+makeSpark('spy-area','spy-line',[748,749,750,748,751,752,750,753,754,752,754,753,755,754,756,754,755,754.95],'#22c55e');
+makeSpark('qqq-area','qqq-line',[710,712,714,711,716,718,714,718,720,718,720,721,722,721,724,722,724,725.51],'#22c55e');
+makeSpark('dji-area','dji-line',[52320,52350,52370,52330,52380,52390,52370,52400,52420,52410,52430,52440,52450,52460,52470,52480,52487,52487.41],'#22c55e');
+makeSpark('rut-area','rut-line',[2950,2958,2965,2955,2970,2975,2968,2978,2982,2979,2984,2982,2986,2988,2990,2988,2991,2992.54],'#22c55e');
+</script>
+</body>
+</html>
