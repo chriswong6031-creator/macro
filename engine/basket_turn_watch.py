@@ -65,6 +65,23 @@ from lib.nyse_calendar import session_date as _session_date
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Cohort flow context (FC-R5 / FL-D) — display-only, NOT a leg, NOT in K
+# ---------------------------------------------------------------------------
+
+# Basket ids that map to cohort_id keys in data/options_flow/cohorts.parquet.
+# Only these baskets get a cohort_flow context field; others get no field.
+_COHORT_BASKET_IDS: dict[str, str] = {
+    "mag7":             "mag7",
+    "memory_storage":   "memory_storage",
+    "ai_semiconductors":"ai_semiconductors",
+    "ai_software":      "ai_software",
+}
+
+# P/C ratio thresholds (volume-based; mirrors mag7_regime._pc_word)
+_FLOW_CALL_TILTED = 0.75
+_FLOW_PUT_TILTED  = 1.25
+
+# ---------------------------------------------------------------------------
 # Authority block (invariant — matches synapse registration)
 # ---------------------------------------------------------------------------
 
@@ -814,6 +831,70 @@ def _load_market_drivers(data_root: Path | None = None) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# Cohort flow tilt loader (FC-R5 / FL-D) — fail-open
+# ---------------------------------------------------------------------------
+
+def _load_cohort_flow_tilt(
+    cohort_id: str,
+    data_root: Path | None = None,
+) -> dict | None:
+    """Load the latest tilt context for a cohort from data/options_flow/cohorts.parquet.
+
+    Returns None when the parquet file is absent (fail-open: row unchanged).
+    Returns a dict {pc_word, pc_ratio} when data is available.
+
+    DOCTRINE: display-only; NOT a leg; NOT counted in K. NO direction language
+    beyond tilt words. (FC-R5 / FL-D)
+    """
+    try:
+        from lib import config as _cfg
+        root = data_root if data_root is not None else _cfg.data_dir()
+        p = root / "options_flow" / "cohorts.parquet"
+        if not p.exists():
+            return None
+
+        import pandas as _pd
+        import math as _math
+
+        df = _pd.read_parquet(p)
+        if df.empty or "cohort_id" not in df.columns or "date" not in df.columns:
+            return None
+
+        rows = df[df["cohort_id"] == cohort_id]
+        if rows.empty:
+            return None
+
+        rows = rows.copy()
+        rows["date"] = _pd.to_datetime(rows["date"])
+        latest = rows.sort_values("date").iloc[-1]
+
+        pc_ratio: float | None = None
+        try:
+            raw = latest.get("pc_ratio")
+            if raw is not None and not (isinstance(raw, float) and _math.isnan(raw)):
+                pc_ratio = float(raw)
+        except Exception:  # noqa: BLE001
+            pass
+
+        pc_word: str | None = None
+        if pc_ratio is not None:
+            if pc_ratio <= _FLOW_CALL_TILTED:
+                pc_word = "call_tilted"
+            elif pc_ratio >= _FLOW_PUT_TILTED:
+                pc_word = "put_tilted"
+            else:
+                pc_word = "balanced"
+
+        return {
+            "pc_word": pc_word,
+            "pc_ratio": round(pc_ratio, 4) if pc_ratio is not None else None,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("basket_turn_watch: cohort flow load failed (%s): %s", cohort_id, e)
+        return None
+
+
+# ---------------------------------------------------------------------------
 # Main public API
 # ---------------------------------------------------------------------------
 
@@ -1025,6 +1106,24 @@ def _compute_inner(
     if run_backscan and spy_closes is not None:
         backscan = _backscan(
             us_baskets, closes_map, price_data, spy_closes, market_drivers)
+
+    # Enrich cohort baskets with flow tilt context (FC-R5 / FL-D).
+    # Loaded once per cohort; fail-open (absent file → field absent on row).
+    # NOT a leg; NOT counted in K; display-only hover context only.
+    try:
+        _cohort_flow_cache: dict[str, dict | None] = {}
+        for _row in basket_states:
+            _bid = _row.get("basket_id", "")
+            if _bid not in _COHORT_BASKET_IDS:
+                continue
+            _cid = _COHORT_BASKET_IDS[_bid]
+            if _cid not in _cohort_flow_cache:
+                _cohort_flow_cache[_cid] = _load_cohort_flow_tilt(_cid, data_root)
+            _tilt = _cohort_flow_cache[_cid]
+            if _tilt is not None:
+                _row["cohort_flow"] = _tilt
+    except Exception as _ex:  # noqa: BLE001 — enrichment is additive, never fatal
+        log.debug("basket_turn_watch: cohort_flow enrichment failed: %s", _ex)
 
     # Enrich basket rows with slow_reco + reco_as_of from sector_pulse.json.
     # The disagreement gate (JS strip) requires these to filter WATCH/IGNITION

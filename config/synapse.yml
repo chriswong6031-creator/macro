@@ -2689,6 +2689,39 @@ artifacts:
       time-shifted sampler when qledger placebo extension is available; R-TIL-6 pattern).
       Gated on COLLECT_LANE=nightly. No backfill. authority.may_rank/gate/size/escalate=false.
 
+  # FL-D FC-R5 — cohort_flow.v1 expected-null forward ledger
+  cohort-flow-ledger:
+    path: data/cohort_flow_ledger/ledger.jsonl
+    format: jsonl
+    producer: engine/mag7_regime.py
+    known_extra_writers: []
+    owner_program: flow-continuity
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      FL-D FC-R5. cohort_flow.v1 expected-null forward ledger — one row per
+      (date, cohort) per session for four cohorts: mag7, memory_storage,
+      ai_semiconductors, ai_software. Schema: {date, cohort, tilt, pc_ratio,
+      gross_mn}. Tilt words: call_tilted (pc_ratio <= 0.75), put_tilted
+      (pc_ratio >= 1.25), balanced (else). Volume-based P/C ratio; NO signed
+      direction; NO score. Accrual only — grades nothing yet (FC-R5). Fail-open:
+      rows omitted when data/options_flow/cohorts.parquet absent (FL-B not yet
+      merged). Gated on COLLECT_LANE=nightly (house law). Keep-first per
+      (date, cohort). DISCLOSURE (verbatim FT-R9 pattern): cohort flow direction
+      is soft everywhere — buy-vs-sell direction is approximate; size and
+      call/put mix are the solid reads. NO gate/rank/score/composite authority.
+      Forward ledger accrues as expected-NULL; first descriptive read 2026-08-15.
+      authority.may_rank/gate/size/escalate=false.
+
   # --- 4 consumers ---
   site-radar-ticker:
     path: site/basketdata/radar_ticker.json
