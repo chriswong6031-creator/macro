@@ -147,3 +147,32 @@ def test_cap_high_enough_for_full_scraped_universe(tmp_path):
     uni_set = set(uni)
     missing = [s for s in syms if s not in uni_set]
     assert not missing, f"{len(missing)} scraped symbols truncated: {missing[:5]}..."
+
+
+def test_universe_includes_basket_members(tmp_path, monkeypatch):
+    """The membership leg (GAP-3 HK pulse): every active US + HK basket member
+    joins the universe even when no built page emits its data-sym."""
+    import json as _json
+
+    data_dir = tmp_path / "data"
+    (data_dir / "baskets").mkdir(parents=True)
+    (data_dir / "baskets_hk").mkdir(parents=True)
+    (data_dir / "baskets" / "membership.json").write_text(_json.dumps({"baskets": {
+        "us_a": {"members": [{"ticker": "FAKEUS1", "removed": None},
+                             {"ticker": "GONE", "removed": "2026-01-01"}]},
+    }}))
+    (data_dir / "baskets_hk" / "membership.json").write_text(_json.dumps({"baskets": {
+        "hk_a": {"members": [{"ticker": "0700.HK", "removed": None},
+                             {"ticker": "9988.HK", "removed": None}]},
+    }}))
+    monkeypatch.setattr(blq.config, "data_dir", lambda: data_dir)
+
+    site = tmp_path / "site"
+    site.mkdir()
+    uni = blq.build_universe(site)
+
+    assert "FAKEUS1" in uni
+    assert "0700.HK" in uni and "9988.HK" in uni
+    assert "GONE" not in uni, "removed members must not be fetched"
+    # members outrank the scrape: they sit immediately after CORE
+    assert uni.index("FAKEUS1") >= len(blq.CORE_SYMBOLS) - 1

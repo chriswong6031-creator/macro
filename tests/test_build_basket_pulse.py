@@ -331,7 +331,7 @@ class TestBuild:
         }}))
         mem_path = self._synthetic_membership(tmp_path)
         # monkeypatch cum_2d to avoid reading parquet
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(
             quotes_path=qs_path,
@@ -360,7 +360,7 @@ class TestBuild:
             "BD": _make_quote(-1.0, now=now),
         }}))
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
         baskets = {b["id"]: b for b in result["baskets"]}
@@ -384,7 +384,7 @@ class TestBuild:
         mem = {"version": "t", "baskets": _make_membership({"big_basket": tickers_10})}
         mem_path = tmp_path / "membership.json"
         mem_path.write_text(json.dumps(mem))
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
         b = result["baskets"][0]
@@ -397,7 +397,7 @@ class TestBuild:
         qs_path = tmp_path / "quotes.json"
         qs_path.write_text('{"quotes":{}}')
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
         assert result["session"] == "pre"
@@ -416,7 +416,7 @@ class TestBuild:
         drivers_path = tmp_path / "market_drivers.json"
         drivers_path.write_text(json.dumps(drivers))
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(
             quotes_path=qs_path,
@@ -446,7 +446,7 @@ class TestBuild:
         drivers_path = tmp_path / "market_drivers.json"
         drivers_path.write_text(json.dumps({"primary": "oil_shock", "family": "inflation"}))
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(
             quotes_path=qs_path,
@@ -462,7 +462,7 @@ class TestBuild:
         qs_path = tmp_path / "quotes.json"
         qs_path.write_text('{"quotes":{}}')
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
         # JSON serializable (allow_nan=False contract)
@@ -477,7 +477,7 @@ class TestBuild:
         qs_path = tmp_path / "quotes.json"
         qs_path.write_text('{"quotes":{}}')
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
         # Must not raise
@@ -493,7 +493,7 @@ class TestBuild:
             "AC": _make_quote(1.0, now=now),
         }}))
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
         assert "mode" in result
@@ -535,7 +535,7 @@ class TestGradedModes:
             "BB": _make_quote(-1.0, now=now),
         }}))
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
         assert result["mode"] == bp.MODE_LIVE
@@ -560,7 +560,7 @@ class TestGradedModes:
             "BB": _make_quote(-2.0, age_min=238.0, now=now),
         }}))
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
         assert result["mode"] == bp.MODE_DELAYED, (
@@ -582,7 +582,7 @@ class TestGradedModes:
         qs_path = tmp_path / "quotes.json"
         qs_path.write_text('{"quotes":{}}')
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
         # No parquet files → eod_basket_chg returns None gracefully
         monkeypatch.setattr(bp, "_eod_basket_chg", lambda bid, mems: (None, None))
 
@@ -629,7 +629,7 @@ class TestGradedModes:
         qs_path = tmp_path / "quotes.json"
         qs_path.write_text('{"quotes":{}}')
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(
             quotes_path=qs_path, membership_path=mem_path, now=now,
@@ -656,7 +656,7 @@ class TestGradedModes:
             "BB": _make_quote(-1.0, now=now),
         }}))
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(
             quotes_path=qs_path, membership_path=mem_path, now=now,
@@ -681,7 +681,7 @@ class TestGradedModes:
             "BB": _make_quote(-1.0, age_min=155.0, now=now),
         }}))
         mem_path = self._synthetic_membership(tmp_path)
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(quotes_path=qs_path, membership_path=mem_path, now=now)
         assert result["mode"] == bp.MODE_DELAYED
@@ -692,7 +692,7 @@ class TestGradedModes:
     # NaN-safe output for all modes
     def test_all_modes_nan_safe(self, tmp_path, monkeypatch):
         """All build paths produce allow_nan=False safe JSON."""
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
         monkeypatch.setattr(bp, "_eod_basket_chg", lambda bid, mems: (None, None))
         mem_path = self._synthetic_membership(tmp_path)
 
@@ -788,7 +788,7 @@ class TestSidecarDurability:
         qs_path.write_text('{"quotes":{}}')
         mem_path = self._synthetic_membership(tmp_path)
 
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
         monkeypatch.setattr(bp, "_eod_basket_chg", lambda bid, mems: (None, None))
 
         result = bp.build(
@@ -834,7 +834,7 @@ class TestSidecarDurability:
         qs_path.write_text('{"quotes":{}}')
         mem_path = self._synthetic_membership(tmp_path)
 
-        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
 
         result = bp.build(
             quotes_path=qs_path, membership_path=mem_path, now=now,
@@ -844,3 +844,159 @@ class TestSidecarDurability:
             f"expected mode=last_rth for fresh same-day sidecar, got {result['mode']!r}"
         )
         assert result["baskets"][0]["live_ew_chg_pct"] == pytest.approx(2.5, abs=0.01)
+
+
+class TestHKMarket:
+    """GAP-3 HK extension: per-market session detection, separate artifact/sidecar
+    names, US-organ gating, and the levels-based EOD fallback."""
+
+    def _hk_membership(self, tmp_path: Path) -> Path:
+        mem = {"baskets": {
+            "hk_a": {"members": [
+                {"ticker": "0700.HK", "removed": None},
+                {"ticker": "9988.HK", "removed": None},
+                {"ticker": "3690.HK", "removed": None},
+            ]},
+            "hk_b": {"members": [
+                {"ticker": "1398.HK", "removed": None},
+                {"ticker": "0939.HK", "removed": None},
+            ]},
+        }}
+        p = tmp_path / "membership_hk.json"
+        p.write_text(json.dumps(mem))
+        return p
+
+    # ── session detection ────────────────────────────────────────────────────
+
+    @pytest.mark.parametrize("utc_hm,expected", [
+        ((0, 30), "closed"),   # 08:30 HKT — before pre-auction
+        ((1, 0), "pre"),       # 09:00 HKT — pre-opening auction
+        ((1, 29), "pre"),      # 09:29 HKT
+        ((1, 45), "rth"),      # 09:45 HKT
+        ((4, 30), "rth"),      # 12:30 HKT — lunch folds into rth (delayed-mode honesty)
+        ((7, 59), "rth"),      # 15:59 HKT
+        ((8, 10), "post"),     # 16:10 HKT — closing auction / settle window
+        ((8, 35), "closed"),   # 16:35 HKT
+    ])
+    def test_hk_session_windows(self, utc_hm, expected):
+        h, m = utc_hm
+        now = datetime(2026, 7, 8, h, m, tzinfo=timezone.utc)  # Wednesday, HKEX session day
+        assert bp._hk_session(now) == expected
+
+    def test_hk_session_closed_on_weekend_and_holiday(self):
+        # Saturday
+        assert bp._hk_session(datetime(2026, 7, 11, 3, 0, tzinfo=timezone.utc)) == "closed"
+        # HKSAR Establishment Day (2026-07-01, a Wednesday) — HK holiday, NYSE open
+        assert bp._hk_session(datetime(2026, 7, 1, 3, 0, tzinfo=timezone.utc)) == "closed"
+
+    def test_market_session_dispatch(self):
+        # 14:00 UTC on a Wednesday: US rth, HK closed (22:00 HKT)
+        now = datetime(2026, 7, 8, 14, 0, tzinfo=timezone.utc)
+        assert bp._market_session(now, "us") == "rth"
+        assert bp._market_session(now, "hk") == "closed"
+
+    # ── live compute ─────────────────────────────────────────────────────────
+
+    def test_hk_live_mode_and_us_organ_gating(self, tmp_path, monkeypatch):
+        now = datetime(2026, 7, 8, 2, 0, tzinfo=timezone.utc)  # 10:00 HKT = HK RTH
+        qs_path = tmp_path / "quotes.json"
+        qs_path.write_text(json.dumps({"quotes": {
+            "0700.HK": _make_quote(2.0, now=now),
+            "9988.HK": _make_quote(1.0, now=now),
+            "3690.HK": _make_quote(3.0, now=now),
+            "1398.HK": _make_quote(-1.0, now=now),
+            "0939.HK": _make_quote(-2.0, now=now),
+            # US ETFs present in the shared snapshot must NOT produce an od spread for hk
+            "XLP": _make_quote(0.5, now=now), "XLU": _make_quote(0.5, now=now),
+            "XLV": _make_quote(0.5, now=now), "SMH": _make_quote(-0.5, now=now),
+            "XLK": _make_quote(-0.5, now=now), "SPY": _make_quote(-1.0, now=now),
+        }}))
+        mem_path = self._hk_membership(tmp_path)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
+
+        result = bp.build(quotes_path=qs_path, membership_path=mem_path,
+                          now=now, out_dir=tmp_path, market="hk")
+
+        assert result["market"] == "hk"
+        assert result["session"] == "rth"
+        assert result["mode"] == bp.MODE_LIVE
+        by_id = {b["id"]: b for b in result["baskets"]}
+        assert by_id["hk_a"]["live_ew_chg_pct"] == pytest.approx(2.0, abs=0.01)
+        assert by_id["hk_b"]["live_ew_chg_pct"] == pytest.approx(-1.5, abs=0.01)
+        # US organs stay dark for hk
+        assert result["od_spread_print"] is None
+        assert result["shock_day_relative_bid"] is None
+        assert result["complexes"] == []
+
+    def test_hk_sidecar_uses_market_name(self, tmp_path, monkeypatch):
+        now = datetime(2026, 7, 8, 2, 0, tzinfo=timezone.utc)
+        qs_path = tmp_path / "quotes.json"
+        qs_path.write_text(json.dumps({"quotes": {
+            "0700.HK": _make_quote(2.0, now=now),
+            "9988.HK": _make_quote(1.0, now=now),
+            "3690.HK": _make_quote(3.0, now=now),
+            "1398.HK": _make_quote(-1.0, now=now),
+            "0939.HK": _make_quote(-2.0, now=now),
+        }}))
+        mem_path = self._hk_membership(tmp_path)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
+
+        bp.build(quotes_path=qs_path, membership_path=mem_path,
+                 now=now, out_dir=tmp_path, market="hk")
+
+        assert (tmp_path / bp.MARKETS["hk"]["lastgood_name"]).exists()
+        assert not (tmp_path / bp.LASTGOOD_FILENAME).exists(), (
+            "hk build must never write the US sidecar name"
+        )
+
+    # ── EOD fallback ─────────────────────────────────────────────────────────
+
+    def test_hk_eod_fallback_reads_levels(self, tmp_path, monkeypatch):
+        now = datetime(2026, 7, 11, 3, 0, tzinfo=timezone.utc)  # Saturday — closed
+        qs_path = tmp_path / "quotes.json"
+        qs_path.write_text('{"quotes":{}}')
+        mem_path = self._hk_membership(tmp_path)
+        monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
+
+        levels_called: list[str] = []
+
+        def fake_levels(bid, market):
+            assert market == "hk"
+            levels_called.append(bid)
+            return (1.5, "2026-07-10") if bid == "hk_a" else (None, None)
+
+        def fail_ohlcv(bid, members):  # pragma: no cover — must not be reached
+            raise AssertionError("hk eod must use the levels path, not member OHLCV")
+
+        monkeypatch.setattr(bp, "_eod_basket_chg_levels", fake_levels)
+        monkeypatch.setattr(bp, "_eod_basket_chg", fail_ohlcv)
+
+        result = bp.build(quotes_path=qs_path, membership_path=mem_path,
+                          now=now, out_dir=tmp_path, market="hk")
+
+        assert result["mode"] == bp.MODE_EOD
+        assert result["market"] == "hk"
+        assert sorted(levels_called) == ["hk_a", "hk_b"]
+        by_id = {b["id"]: b for b in result["baskets"]}
+        assert by_id["hk_a"]["live_ew_chg_pct"] == pytest.approx(1.5, abs=0.01)
+        assert by_id["hk_a"]["bar_date"] == "2026-07-10"
+        assert by_id["hk_b"]["live_ew_chg_pct"] is None  # honest null (levels absent)
+
+    def test_eod_levels_real_parquet_shape(self, tmp_path, monkeypatch):
+        """_eod_basket_chg_levels against a real (synthetic) parquet file."""
+        import pandas as pd
+
+        levels_dir = tmp_path / "basket_levels"
+        levels_dir.mkdir(parents=True)
+        idx = pd.to_datetime(["2026-07-09", "2026-07-10"])
+        pd.DataFrame({"hk_a__level_price": [100.0, 102.0]}, index=idx).to_parquet(
+            levels_dir / "hk.parquet")
+
+        from lib import config
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+
+        chg, bar_date = bp._eod_basket_chg_levels("hk_a", "hk")
+        assert chg == pytest.approx(2.0, abs=0.001)
+        assert bar_date == "2026-07-10"
+        # absent column → honest null
+        assert bp._eod_basket_chg_levels("hk_missing", "hk") == (None, None)

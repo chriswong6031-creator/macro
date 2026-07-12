@@ -4,6 +4,18 @@ Consumes the ALREADY-FETCHED live-quotes snapshot from site/live/quotes.json
 (written there by the intraday-fastpath workflow's quotes step, or fetched from
 the live-data branch by git fetch) and produces site/live/basket_pulse.json.
 
+MARKETS (GAP-3 HK extension): ``--market us`` (default) builds the US pulse
+exactly as before; ``--market hk`` builds site/live/basket_pulse_hk.json from
+data/baskets_hk/membership.json with HKEX session detection (09:30–16:00 HKT,
+pre-opening auction 09:00–09:30, lib.hk_calendar holidays). The HKEX lunch
+break (12:00–13:00 HKT) is folded into rth: quotes age past the stale bound
+during lunch, so the mode machine degrades to 'delayed' with the true age —
+honest by construction. HK quotes ride the same live-quotes snapshot (Yahoo
+path resolves .HK symbols, ~15-min delayed); the US-only organs (offense/
+defense spread, AI-capex complex, shock-day relative bid) stay null/empty for
+HK. HK EOD fallback reads data/basket_levels/hk.parquet levels (there is no
+per-symbol HK OHLCV store on the render path).
+
 QUOTES SOURCE DECISION:
   The canonical live-quotes snapshot is force-pushed to the `live-data` branch by
   live-quotes.yml (runs on ubuntu-latest every 10 min, all day). The intraday-fastpath
@@ -62,8 +74,34 @@ LIVE_STALE_MIN: int = 20
 # Below this threshold live_ew_chg_pct is set to None (honest null).
 MIN_COVERAGE: float = 0.30
 
-# Sidecar file name for last-good pulse
+# Sidecar file name for last-good pulse (US; per-market name in MARKETS)
 LASTGOOD_FILENAME: str = "basket_pulse_lastgood.json"
+
+# Per-market wiring. us_features gates the US-only organs (od spread, AI-capex
+# complex, shock-day relative bid, market_drivers read); eod_source picks the
+# closed-market fallback (per-symbol OHLCV for US, basket levels for HK).
+MARKETS: dict[str, dict[str, Any]] = {
+    "us": {
+        "membership_parts": ("baskets", "membership.json"),
+        "levels_parquet": "us.parquet",
+        "tz": "America/New_York",
+        "out_name": "basket_pulse.json",
+        "lastgood_name": LASTGOOD_FILENAME,
+        "names_dir": "basketdata",
+        "us_features": True,
+        "eod_source": "ohlcv",
+    },
+    "hk": {
+        "membership_parts": ("baskets_hk", "membership.json"),
+        "levels_parquet": "hk.parquet",
+        "tz": "Asia/Hong_Kong",
+        "out_name": "basket_pulse_hk.json",
+        "lastgood_name": "basket_pulse_hk_lastgood.json",
+        "names_dir": "hkbasketdata",
+        "us_features": False,
+        "eod_source": "levels",
+    },
+}
 
 # Mode literals (TS-R1)
 MODE_LIVE: str = "live"
@@ -103,6 +141,49 @@ _T1_FADE_NOTE: str = "in 26 past cases about 6 in 10 sharp flips faded within a 
 
 
 # ── session detection ──────────────────────────────────────────────────────────
+
+def _market_calendar(market: str):
+    """The trading-day calendar module for a market (same API surface:
+    is_session, expected_last_session)."""
+    if market == "hk":
+        from lib import hk_calendar
+        return hk_calendar
+    from lib import nyse_calendar
+    return nyse_calendar
+
+
+def _market_session(now_utc: datetime, market: str) -> str:
+    """Per-market session state (pre|rth|post|closed) from the UTC clock."""
+    return _hk_session(now_utc) if market == "hk" else _et_session(now_utc)
+
+
+def _hk_session(now_utc: datetime) -> str:
+    """HKEX session from the UTC clock (Asia/Hong_Kong has no DST).
+
+    pre  09:00–09:30 HKT (pre-opening auction)
+    rth  09:30–16:00 HKT — the lunch break (12:00–13:00) is NOT special-cased:
+         quotes freeze, their age grows past the stale bound, and the mode
+         machine reports 'delayed' with the true age (honest degrade).
+    post 16:00–16:30 HKT (closing auction ~16:08 + the settle tick window)
+    """
+    from zoneinfo import ZoneInfo
+    from lib import hk_calendar
+
+    hkt = now_utc.astimezone(ZoneInfo("Asia/Hong_Kong"))
+    if not hk_calendar.is_session(hkt.date()):
+        return "closed"
+
+    h, m = hkt.hour, hkt.minute
+    if h < 9:
+        return "closed"
+    if h == 9 and m < 30:
+        return "pre"
+    if h < 16:
+        return "rth"
+    if h == 16 and m < 30:
+        return "post"
+    return "closed"
+
 
 def _et_session(now_utc: datetime) -> str:
     """Return pre|rth|post|closed from the UTC clock.
@@ -174,11 +255,11 @@ def _load_quotes(quotes_path: Path | None) -> tuple[dict[str, Any], Path | None]
 
 # ── membership loading ─────────────────────────────────────────────────────────
 
-def _load_membership(membership_path: Path | None) -> dict[str, Any]:
-    """Load data/baskets/membership.json. Returns the baskets dict."""
+def _load_membership(membership_path: Path | None, market: str = "us") -> dict[str, Any]:
+    """Load the market's membership.json. Returns the baskets dict."""
     from lib import config
 
-    p = membership_path or (config.data_dir() / "baskets" / "membership.json")
+    p = membership_path or config.data_dir().joinpath(*MARKETS[market]["membership_parts"])
     try:
         data = json.loads(p.read_text())
     except Exception as e:
@@ -289,10 +370,11 @@ def _ew_chg(tickers: list[str], quotes: dict[str, Any], now_ms: int,
 
 # ── cum_2d computation ─────────────────────────────────────────────────────────
 
-def _cum_2d(basket_id: str, live_ew_chg_pct: float | None) -> float | None:
+def _cum_2d(basket_id: str, live_ew_chg_pct: float | None,
+            market: str = "us") -> float | None:
     """Yesterday close-to-close + today's live move.
 
-    Uses data/basket_levels/us.parquet `{id}__level_price` column.
+    Uses data/basket_levels/<market>.parquet `{id}__level_price` column.
     The 2d pct change is (yesterday_close / 2_days_ago_close - 1) + live_chg_pct/100,
     expressed as percentage.
 
@@ -304,7 +386,7 @@ def _cum_2d(basket_id: str, live_ew_chg_pct: float | None) -> float | None:
         import pandas as pd
         from lib import config
 
-        p = config.data_dir() / "basket_levels" / "us.parquet"
+        p = config.data_dir() / "basket_levels" / MARKETS[market]["levels_parquet"]
         col = f"{basket_id}__level_price"
         df = pd.read_parquet(p, columns=[col])
         if df.empty or len(df) < 2:
@@ -421,11 +503,41 @@ def _eod_basket_chg(basket_id: str, members: list[str]) -> tuple[float | None, s
         return None, None
 
 
+def _eod_basket_chg_levels(basket_id: str, market: str) -> tuple[float | None, str | None]:
+    """1d % change from the last two rows of the market's basket-levels parquet.
+
+    The EOD fallback for markets without a per-symbol OHLCV store on the render
+    path (HK). The level series IS the EW-chained basket, so its 1d change is
+    the same quantity the member-OHLCV path computes for US. A basket absent
+    from the levels file (e.g. a freshly seeded split whose levels have not
+    accrued yet) returns (None, None) — honest null.
+    """
+    try:
+        import pandas as pd
+        from lib import config
+
+        p = config.data_dir() / "basket_levels" / MARKETS[market]["levels_parquet"]
+        col = f"{basket_id}__level_price"
+        vals = pd.read_parquet(p, columns=[col])[col].dropna()
+        if len(vals) < 2:
+            return None, None
+        prev, last = float(vals.iloc[-2]), float(vals.iloc[-1])
+        if prev == 0:
+            return None, None
+        bar_date = vals.index[-1]
+        bar_date_out = (str(bar_date.date()) if hasattr(bar_date, "date")
+                        else str(bar_date)[:10])
+        return round((last / prev - 1) * 100, 3), bar_date_out
+    except Exception as e:  # noqa: BLE001 — missing column/file → honest null
+        log.debug("_eod_basket_chg_levels failed for %s: %s", basket_id, e)
+        return None, None
+
+
 # ── lastgood sidecar ──────────────────────────────────────────────────────────
 
-def _load_lastgood(out_dir: Path) -> dict[str, Any] | None:
-    """Load basket_pulse_lastgood.json from out_dir. Returns None if absent."""
-    p = out_dir / LASTGOOD_FILENAME
+def _load_lastgood(out_dir: Path, name: str = LASTGOOD_FILENAME) -> dict[str, Any] | None:
+    """Load the lastgood sidecar from out_dir. Returns None if absent."""
+    p = out_dir / name
     if not p.exists():
         return None
     try:
@@ -435,9 +547,10 @@ def _load_lastgood(out_dir: Path) -> dict[str, Any] | None:
         return None
 
 
-def _save_lastgood(result: dict[str, Any], out_dir: Path) -> None:
+def _save_lastgood(result: dict[str, Any], out_dir: Path,
+                   name: str = LASTGOOD_FILENAME) -> None:
     """Persist a live/delayed pulse result as the lastgood sidecar."""
-    p = out_dir / LASTGOOD_FILENAME
+    p = out_dir / name
     try:
         p.write_text(json.dumps(result, separators=(",", ":"), allow_nan=False) + "\n")
         log.info("saved lastgood sidecar → %s", p)
@@ -623,21 +736,23 @@ def _detect_mode(quotes: dict[str, Any], session: str, now_ms: int,
 
 # ── main build ─────────────────────────────────────────────────────────────────
 
-def _session_close_utc(now: datetime) -> datetime | None:
-    """16:00 ET of the current ET date as UTC, if it is a NYSE session day.
+def _session_close_utc(now: datetime, market: str = "us") -> datetime | None:
+    """16:00 local of the current market date as UTC, if it is a session day.
 
-    Half-day sessions close 13:00 ET; their settle stamps then never reach the
-    16:00 gate, so the settled recompute simply declines and the sidecar serve
-    (which by then already holds the 13:00 close) stands — honest degrade.
+    Both NYSE and HKEX close the regular session at 16:00 local. Half-day
+    sessions close earlier (13:00 ET / 12:00 HKT); their settle stamps then
+    never reach the 16:00 gate, so the settled recompute simply declines and
+    the sidecar serve (which by then already holds the early close) stands —
+    honest degrade.
     """
     from zoneinfo import ZoneInfo
-    from lib import nyse_calendar
 
-    et = now.astimezone(ZoneInfo("America/New_York"))
-    if not nyse_calendar.is_session(et.date()):
+    cal = _market_calendar(market)
+    local = now.astimezone(ZoneInfo(MARKETS[market]["tz"]))
+    if not cal.is_session(local.date()):
         return None
-    close_et = et.replace(hour=16, minute=0, second=0, microsecond=0)
-    return close_et.astimezone(timezone.utc)
+    close_local = local.replace(hour=16, minute=0, second=0, microsecond=0)
+    return close_local.astimezone(timezone.utc)
 
 
 def _settle_quote_ok(q: dict[str, Any], close_ms: int) -> bool:
@@ -684,7 +799,8 @@ def _settled_ew_chg(members: list[str], quotes: dict[str, Any],
 
 def _settled_build(now: datetime, session: str, quotes: dict[str, Any],
                    resolved_path: Path | None, baskets_meta: dict[str, Any],
-                   stale_min: int, now_ms: int) -> dict[str, Any] | None:
+                   stale_min: int, now_ms: int,
+                   market: str = "us") -> dict[str, Any] | None:
     """Recompute the completed session's EW basket moves from settle-clean quotes.
 
     Returns the full result dict (mode=last_rth + settled_close=True +
@@ -692,7 +808,7 @@ def _settled_build(now: datetime, session: str, quotes: dict[str, Any],
     close — too few settle-basis records (e.g. the feed's US records still carry
     extended-hours prints) or not a session day.
     """
-    close_dt = _session_close_utc(now)
+    close_dt = _session_close_utc(now, market)
     if close_dt is None:
         return None
     close_ms = int(close_dt.timestamp() * 1000)
@@ -712,7 +828,7 @@ def _settled_build(now: datetime, session: str, quotes: dict[str, Any],
             "n_members": len(members),
             "n_quoted": n_quoted,
             "live_ew_chg_pct": ew,
-            "cum_2d_pct": _cum_2d(basket_id, ew),
+            "cum_2d_pct": _cum_2d(basket_id, ew, market),
             "tape_rank": None,
             "stale": False,
             "delay_min": None,
@@ -729,12 +845,14 @@ def _settled_build(now: datetime, session: str, quotes: dict[str, Any],
         b["tape_rank"] = rank_map.get(b["id"])
 
     from zoneinfo import ZoneInfo
-    session_date = now.astimezone(ZoneInfo("America/New_York")).date().isoformat()
+    session_date = now.astimezone(ZoneInfo(MARKETS[market]["tz"])).date().isoformat()
     n_non_null = sum(1 for b in baskets_data if b["live_ew_chg_pct"] is not None)
     log.info("settled-close recompute: %d baskets, %d/%d settle-basis quotes",
              len(baskets_data), n_settled_total, n_quoted_total)
+    us_features = MARKETS[market]["us_features"]
     return {
         "schema": "basket_pulse.v1",
+        "market": market,
         "as_of_utc": now.isoformat(),
         "as_of_quotes": close_dt.isoformat(),
         "built": now.strftime("%Y-%m-%d %H:%M:%S UTC"),
@@ -750,22 +868,25 @@ def _settled_build(now: datetime, session: str, quotes: dict[str, Any],
         "baskets": baskets_data,
         "od_spread_print": None,
         "shock_day_relative_bid": None,
-        "complexes": _compute_complexes(baskets_data, {}, now_ms, stale_min),
+        "complexes": (_compute_complexes(baskets_data, {}, now_ms, stale_min)
+                      if us_features else []),
     }
 
 
-def _load_theme_flow(path: Path | None = None) -> tuple[dict[str, dict], str | None]:
-    """Per-basket nightly stock-flow context from site/basketdata/baskets.json.
+def _load_theme_flow(path: Path | None = None,
+                     market: str = "us") -> tuple[dict[str, dict], str | None]:
+    """Per-basket nightly stock-flow context from site/<names_dir>/baskets.json.
 
     Plucks theme_intel.themes[].tape.flow (engine/basket_tape — dollar-volume
     surge + CMF; directional:false, DT-W1a: descriptive only). ({}, None) on any
-    failure — additive, degrade-never-raise.
+    failure — additive, degrade-never-raise. (HK theme_intel carries no tape.flow
+    today, so the HK attach is a natural no-op until that organ accrues.)
     """
     try:
         if path is None:
             from lib import config
             path = (config.ROOT / config.load()["storage"]["site_dir"]
-                    / "basketdata" / "baskets.json")
+                    / MARKETS[market]["names_dir"] / "baskets.json")
         data = json.loads(Path(path).read_text())
     except Exception as e:  # noqa: BLE001
         log.debug("theme flow unavailable: %s", e)
@@ -787,13 +908,13 @@ def _load_theme_flow(path: Path | None = None) -> tuple[dict[str, dict], str | N
     return out, (ti.get("as_of") or data.get("as_of"))
 
 
-def _attach_day_flow(result: dict[str, Any]) -> None:
+def _attach_day_flow(result: dict[str, Any], market: str = "us") -> None:
     """Attach nightly stock-flow context to a post/closed pulse (rows gain
     day_flow; top level gains day_flow_as_of). Descriptive only — the consuming
     band prints the as-of stamp and the no-forward-edge note. Additive: absent
     or malformed data leaves the result untouched."""
     try:
-        flow_map, flow_as_of = _load_theme_flow()
+        flow_map, flow_as_of = _load_theme_flow(market=market)
         if not flow_map:
             return
         for b in result.get("baskets") or []:
@@ -813,13 +934,15 @@ def build(
     stale_min: int = LIVE_STALE_MIN,
     now: datetime | None = None,
     out_dir: Path | None = None,
+    market: str = "us",
 ) -> dict[str, Any]:
     """Build the basket pulse JSON. Returns the full output dict.
 
     Implements graded modes (TS-R1 honest-delay law):
       live/delayed — compute from quotes; save lastgood sidecar.
       last_rth     — load lastgood sidecar; stamp mode=last_rth.
-      eod          — compute 1d EW from OHLCV closes; stamp mode=eod + bar date.
+      eod          — compute 1d EW from OHLCV closes (US) / basket levels (HK);
+                     stamp mode=eod + bar date.
 
     Exit-0-always contract: any unexpected exception is caught; the caller will
     emit ::warning:: and write a degraded output (see main()).
@@ -828,10 +951,16 @@ def build(
         now = datetime.now(timezone.utc)
     now_ms = int(now.timestamp() * 1000)
 
-    session = _et_session(now)
+    mcfg = MARKETS[market]
+    us_features = mcfg["us_features"]
+    lastgood_name = mcfg["lastgood_name"]
+
+    session = _market_session(now, market)
     quotes, resolved_path = _load_quotes(quotes_path)
-    baskets_meta = _load_membership(membership_path)
-    market_drivers = _load_market_drivers(drivers_path)
+    baskets_meta = _load_membership(membership_path, market)
+    # market_drivers is a US-session artifact (shock/driver detection) — never
+    # gate another market's tape on it.
+    market_drivers = _load_market_drivers(drivers_path) if us_features else None
 
     # Collect all active members for global delay median
     all_members: list[str] = []
@@ -851,16 +980,16 @@ def build(
         # evening (session == "post"): later runs risk vendor prevClose rolls.
         if session == "post" and quotes:
             settled = _settled_build(now, session, quotes, resolved_path,
-                                     baskets_meta, stale_min, now_ms)
+                                     baskets_meta, stale_min, now_ms, market)
             if settled is not None:
                 if out_dir is not None:
-                    _save_lastgood(settled, out_dir)
-                _attach_day_flow(settled)
+                    _save_lastgood(settled, out_dir, lastgood_name)
+                _attach_day_flow(settled, market)
                 return settled
 
         # Try to load the lastgood sidecar
         if out_dir is not None:
-            lastgood = _load_lastgood(out_dir)
+            lastgood = _load_lastgood(out_dir, lastgood_name)
         else:
             lastgood = None
 
@@ -870,11 +999,11 @@ def build(
             # to eod so we don't serve a multi-day-old read stamped "LAST SESSION".
             sidecar_ok = False
             try:
-                from lib import nyse_calendar  # lazy, avoids circular at module level
+                cal = _market_calendar(market)  # lazy, avoids circular at module level
                 as_of_str = lastgood.get("as_of_utc") or lastgood.get("as_of_quotes")
                 if as_of_str:
                     sidecar_date = datetime.fromisoformat(as_of_str).date()
-                    last_completed = nyse_calendar.expected_last_session(now)
+                    last_completed = cal.expected_last_session(now)
                     sidecar_ok = (sidecar_date >= last_completed)
                     if not sidecar_ok:
                         log.info(
@@ -895,20 +1024,23 @@ def build(
                 # Preserve original as_of_quotes from lastgood; add a served_utc stamp
                 lastgood["served_utc"] = now.isoformat()
                 lastgood["session"] = session
-                _attach_day_flow(lastgood)
+                _attach_day_flow(lastgood, market)
                 log.info("serving lastgood sidecar (mode=last_rth) from %s",
                          lastgood.get("as_of_utc", "?"))
                 return lastgood
 
         # No sidecar → EOD fallback
         log.info("no lastgood sidecar — attempting EOD fallback (mode=eod)")
+        from_levels = mcfg["eod_source"] == "levels"
         baskets_data: list[dict[str, Any]] = []
         bar_dates: list[str] = []
         for basket_id, basket in baskets_meta.items():
             members = _active_members(basket)
             if not members:
                 continue
-            eod_chg, bar_date = _eod_basket_chg(basket_id, members)
+            eod_chg, bar_date = (_eod_basket_chg_levels(basket_id, market)
+                                 if from_levels
+                                 else _eod_basket_chg(basket_id, members))
             baskets_data.append({
                 "id": basket_id,
                 "n_members": len(members),
@@ -932,6 +1064,7 @@ def build(
                         if bar_dates else None)
         eod_result: dict[str, Any] = {
             "schema": "basket_pulse.v1",
+            "market": market,
             "as_of_utc": now.isoformat(),
             "as_of_quotes": eod_bar_date,
             "built": now.strftime("%Y-%m-%d %H:%M:%S UTC"),
@@ -945,9 +1078,10 @@ def build(
             "baskets": baskets_data,
             "od_spread_print": None,
             "shock_day_relative_bid": None,
-            "complexes": _compute_complexes(baskets_data, {}, now_ms, stale_min),
+            "complexes": (_compute_complexes(baskets_data, {}, now_ms, stale_min)
+                          if us_features else []),
         }
-        _attach_day_flow(eod_result)
+        _attach_day_flow(eod_result, market)
         return eod_result
 
     # ── live / delayed branch ─────────────────────────────────────────────────
@@ -977,7 +1111,7 @@ def build(
         coverage_sum += coverage_frac
         coverage_count += 1
 
-        cum_2d = _cum_2d(basket_id, live_ew)
+        cum_2d = _cum_2d(basket_id, live_ew, market)
 
         baskets_data_live.append({
             "id": basket_id,
@@ -995,22 +1129,25 @@ def build(
     for b in baskets_data_live:
         b["tape_rank"] = rank_map.get(b["id"])
 
-    # ── offense/defense spread (fresh-gated: only in live mode) ───────────────
-    od_spread = _od_spread(quotes, now_ms, stale_min) if mode == MODE_LIVE else None
+    # ── offense/defense spread (fresh-gated: only in live mode; US organ) ─────
+    od_spread = (_od_spread(quotes, now_ms, stale_min)
+                 if (mode == MODE_LIVE and us_features) else None)
 
-    # ── shock-day relative bid ─────────────────────────────────────────────────
+    # ── shock-day relative bid (US organ — market_drivers is None otherwise) ──
     shock_bid = _shock_day_relative_bid(
         market_drivers, baskets_data_live, quotes, now_ms, stale_min)
 
     # ── coverage summary ───────────────────────────────────────────────────────
     coverage_pct = round(coverage_sum / coverage_count * 100, 1) if coverage_count else 0.0
 
-    # ── W5: AI-capex complex rollup ────────────────────────────────────────────
-    complexes = _compute_complexes(baskets_data_live, quotes, now_ms, stale_min)
+    # ── W5: AI-capex complex rollup (US organ) ─────────────────────────────────
+    complexes = (_compute_complexes(baskets_data_live, quotes, now_ms, stale_min)
+                 if us_features else [])
 
     # ── assemble output ────────────────────────────────────────────────────────
     result: dict[str, Any] = {
         "schema": "basket_pulse.v1",
+        "market": market,
         "as_of_utc": now.isoformat(),
         "as_of_quotes": now.isoformat(),
         "built": now.strftime("%Y-%m-%d %H:%M:%S UTC"),
@@ -1029,7 +1166,7 @@ def build(
 
     # Persist lastgood sidecar whenever we have a live or delayed compute
     if out_dir is not None:
-        _save_lastgood(result, out_dir)
+        _save_lastgood(result, out_dir, lastgood_name)
 
     return result
 
@@ -1040,14 +1177,17 @@ def main() -> None:
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
     ap = argparse.ArgumentParser(description="Build site/live/basket_pulse.json.")
-    ap.add_argument("--out", default=None, help="output path (default: site/live/basket_pulse.json)")
+    ap.add_argument("--out", default=None, help="output path (default: site/live/<market pulse name>)")
     ap.add_argument("--quotes", default=None, help="path to quotes.json snapshot")
     ap.add_argument("--drivers", default=None, help="path to market_drivers.json")
     ap.add_argument("--stale-min", type=int, default=LIVE_STALE_MIN)
+    ap.add_argument("--market", default="us", choices=sorted(MARKETS),
+                    help="which market's baskets to pulse (default: us)")
     args = ap.parse_args()
 
     site_dir = config.ROOT / config.load()["storage"]["site_dir"]
-    out_path = Path(args.out) if args.out else (site_dir / "live" / "basket_pulse.json")
+    out_path = (Path(args.out) if args.out
+                else site_dir / "live" / MARKETS[args.market]["out_name"])
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_dir = out_path.parent
 
@@ -1057,6 +1197,7 @@ def main() -> None:
             drivers_path=Path(args.drivers) if args.drivers else None,
             stale_min=args.stale_min,
             out_dir=out_dir,
+            market=args.market,
         )
     except Exception as exc:
         log.error("::warning::basket_pulse build failed: %s", exc)
@@ -1064,6 +1205,7 @@ def main() -> None:
         now = datetime.now(timezone.utc)
         result = {
             "schema": "basket_pulse.v1",
+            "market": args.market,
             "as_of_utc": now.isoformat(),
             "as_of_quotes": None,
             "built": now.strftime("%Y-%m-%d %H:%M:%S UTC"),
