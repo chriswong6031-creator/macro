@@ -83,6 +83,34 @@ _SCHEMA_TAIL = (
     "  confidence: one of \"low\",\"medium\",\"high\"."
 )
 
+# Forward-watch tail — ONLY appended to the macro lens when forward_calendar is in state.
+# (ADB-W2) Generates forward_watch rows + optional forward_read narrative.
+_FORWARD_TAIL = (
+    "\n\nIf `forward_calendar` is present in the state, also emit these two OPTIONAL keys "
+    "(omit both if forward_calendar is absent or all sub-blocks are absent):\n"
+    "  forward_watch: array of objects, one per notable upcoming event or release, with keys:\n"
+    "    date: the date string VERBATIM from forward_calendar (e.g. \"2026-07-14\").\n"
+    "    label: the event label VERBATIM from forward_calendar (e.g. \"CPI\", \"FOMC\").\n"
+    "    kind: the kind/type string VERBATIM from forward_calendar.\n"
+    "    note: <=20 words of plain-word framing — context for the trader, NO new numbers.\n"
+    "  forward_read: optional string, <=3 sentences of narrative context for the forward "
+    "picture. HARD RULES that are ABSOLUTE — violating any makes the field INVALID:\n"
+    "  (a) Every digit-sequence in forward_watch rows and in forward_read MUST exist "
+    "VERBATIM in the forward_calendar state block — no arithmetic, no rounding, no derived "
+    "composites.\n"
+    "  (b) Each forward_watch row cites exactly ONE source artifact (one event, one release, "
+    "or one hazard — never combine two source numbers in one row).\n"
+    "  (c) Model-emitted confidence fields (confidence_v2 etc.) are QUOTED from the state — "
+    "never originated by you.\n"
+    "  (d) If a sub-block has absent:true, say it is not available or omit the row — never "
+    "synthesise as if data were present.\n"
+    "  (e) Claims has model_status='benchmark_only' — only quote its benchmark values, "
+    "never a projection band.\n"
+    "  (f) Hazard numbers include their horizon exactly as given (e.g. '1m').\n"
+    "  (g) Never add policy-timing or policy-intent predictions (these are conditions-framed "
+    "calendar entries, never 'will fire' claims)."
+)
+
 # Producer tail — ONLY appended to the macro lens. Lets the brain stake its OWN falsifiable
 # cross-asset leans (graded by master_brain_scorer), turning it from a read-only loop into a
 # full closed loop. Subjects are restricted to instruments that are actually in the price
@@ -185,7 +213,7 @@ MASTER_SYSTEM_TMPL = (
     "When present, weigh what_fired and deserves_operator as attention flags — "
     "never as primary signals.\n\n"
     "Working rotation thesis to test:\n{thesis}\n\n"
-    + _SCHEMA_TAIL + _MACRO_THESES_TAIL
+    + _SCHEMA_TAIL + _MACRO_THESES_TAIL + _FORWARD_TAIL
 )
 
 CHINA_SYSTEM_TMPL = (
@@ -1035,6 +1063,13 @@ def gather_state(root: Path | None = None) -> dict:
         state["neural_web"] = brief_context.macro_slice(root)
     except Exception:  # noqa: BLE001 — additive, never fatal
         pass
+    # ADB-W2: forward-calendar state block (events, releases, rebalance, cycle hazards,
+    # odds fingerprint, hypothesis clocks).  Fail-open: any failure → absent markers.
+    try:
+        from engine import forward_calendar_context as _fcc  # noqa: PLC0415
+        state["forward_calendar"] = _fcc.gather_forward_calendar(root)
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
     return state
 
 
@@ -1334,6 +1369,29 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
     for k in _BRIEF_FIELDS:
         if k in parsed:
             brief[k] = parsed[k]
+    # ADB-W2: forward_watch and forward_read (macro lens only).  Parsed defensively:
+    # - forward_watch: must be a list of dicts; any malformed row is dropped.
+    # - forward_read: must be a string; missing → omitted.
+    if lens == "macro":
+        try:
+            raw_fw = parsed.get("forward_watch")
+            if isinstance(raw_fw, list):
+                valid_rows = []
+                for row in raw_fw:
+                    if isinstance(row, dict) and row.get("date") and row.get("label"):
+                        valid_rows.append({
+                            "date": str(row["date"]),
+                            "label": str(row["label"]),
+                            "kind": str(row.get("kind", "")),
+                            "note": str(row.get("note", ""))[:120],  # guard runaway notes
+                        })
+                if valid_rows:
+                    brief["forward_watch"] = valid_rows
+            raw_fr = parsed.get("forward_read")
+            if isinstance(raw_fr, str) and raw_fr.strip():
+                brief["forward_read"] = raw_fr.strip()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.debug("master_brain: forward_watch/read parse failed: %s", e)
     # macro-lens producer: stake the brain's OWN falsifiable leans. Wrapped in its own try so
     # a theses bug can NEVER discard the free-text already copied above (the schema tail is
     # placed last, so a truncated reply drops the trailing theses array first, not the narrative).

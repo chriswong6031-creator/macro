@@ -216,6 +216,9 @@ on:
       - "tests/test_law_dates.py"
       # ADB-W1: NW context packet composer (brief_context.py + test)
       - "tests/test_brief_context.py"
+      # ADB-W2: forward-calendar state block (forward_calendar_context.py + test)
+      - "engine/forward_calendar_context.py"
+      - "tests/test_forward_calendar.py"
       # Wave B2 ETM registry: builder, integrity gate, config, and both test files must
       # re-run together so a schema drift or authority violation fails RED before merging.
       # engine/neuralweb/** above already covers engine/neuralweb/entity_thesis_mechanism_registry.py.
@@ -878,8 +881,8 @@ jobs:
           python-version: "3.12"
       - name: install deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2
-      - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py -q
+      - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar)
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py -q
 
   cn-standout-audit:
     # SA-W2: CN PIT regime store + species_id + two-axis attribution + fitness card.
