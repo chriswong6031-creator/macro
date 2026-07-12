@@ -1541,6 +1541,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest
+        # pandas/numpy/pyyaml: both suites import their producers at collection time
+        # (build_dt_contra_state → engine.dannytrades_chip → numpy/pandas;
+        # build_subsector_membership → engine.basket_index → lib.config → yaml).
+        run: pip install pytest pandas numpy pyyaml
       - name: dt_contra_state + subsector membership test suites
         run: python -m pytest tests/test_dt_contra_state.py tests/test_build_subsector_membership.py -q

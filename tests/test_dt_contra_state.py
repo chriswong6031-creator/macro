@@ -267,7 +267,7 @@ def test_list_root_json_skipped(tmp_path):
     with mock.patch("scripts.build_dt_contra_state._REPO_ROOT", tmp_path):
         result = build(stockdata_dir=stockdata)
 
-    # index.json and fund_flows.json counted in universe_n but not with_chip.
-    assert result["universe_n"] == 3
+    # index.json and fund_flows.json are excluded from universe_n entirely.
+    assert result["universe_n"] == 1
     assert result["n_with_chip"] == 1
     assert result["states"][0]["ticker"] == "AAPL"

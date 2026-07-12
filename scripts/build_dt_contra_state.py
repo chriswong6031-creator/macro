@@ -93,7 +93,7 @@ def build(stockdata_dir: Path | None = None) -> dict:
 
     # ---------- scan per-ticker JSON files -------------------------------------
     json_files = sorted(stockdata_dir.glob("*.json"))
-    universe_n = len(json_files)
+    universe_n = 0
 
     states_list: list[dict] = []
     state_counter: Counter = Counter()
@@ -113,6 +113,7 @@ def build(stockdata_dir: Path | None = None) -> dict:
             log.debug("skipping non-dict JSON root in %s", jf.name)
             continue
 
+        universe_n += 1
         chip = data.get("dt_contra")
         if not chip:
             continue
