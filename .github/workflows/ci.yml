@@ -315,6 +315,11 @@ on:
       # basket-staleness-warn test job — belt-and-suspenders, per reviewer nit.
       - "scripts/build_baskets.py"
       - "tests/test_basket_staleness_warn.py"
+      # altdata hygiene sweep (PR-C): collector rot + signal-construction fixes.
+      - "collectors/quiver.py"
+      - "engine/altdata.py"
+      - "engine/altdata_models.py"
+      - "tests/test_altdata_hygiene.py"
       # FL-B cohort flow aggregation (flow-continuity-program):
       # engine module, desk builder, template, and test file.
       - "engine/flow_cohorts.py"
@@ -653,7 +658,8 @@ jobs:
           tests/test_rlt_sector_stance_enrich.py
           tests/test_t0_indicator.py
           tests/test_intraday_flow.py
-          tests/test_intraday_flow_stance.py -q
+          tests/test_intraday_flow_stance.py
+          tests/test_altdata_hygiene.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)
