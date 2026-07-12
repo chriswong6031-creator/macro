@@ -1,65 +1,45 @@
 {
   "activate": true,
-  "importance": 88,
-  "banner_days": 6,
+  "importance": 90,
+  "banner_days": 5,
   "tone": "tailwind",
-  "banner_title": "Treasury injects $175bn of quarter-end cash into exhausted RRP — a monster reserves boost backstops the tape",
-  "banner_title_zh": "财政部在季度末向枯竭的逆回购中注入1750亿美元——巨额准备金注入支撑市场",
-  "summary": "The ~$175bn TGA drawdown since June 30—landing into a near-zero RRP buffer—directly balloons bank reserves, unleashing a powerful mechanical liquidity tailwind for risk assets in a Goldilocks regime.",
-  "summary_zh": "自6月30日以来，约1750亿美元的TGA下降——在几乎为零的逆回购缓冲下——直接膨胀了银行准备金，在“金发姑娘”格局下释放出强大的机械流动性顺风。",
-  "analysis": "Mechanically, the Treasury spent its cash balance at the Fed, sending $175bn into private bank deposits and reserve balances. With the overnight RRP facility drained to just $0.5bn, the entire flow hits reserves—the highest-impact channel—amplifying an already-expanding liquidity backdrop. This injects fresh, high-powered money straight into the banking system, lowering the marginal cost of leverage and easing funding pressures just as quarter-end positioning resets.\n\nThe injection lands when the macro regime is Goldilocks and net liquidity is expanding, reinforcing the bid for risk. It acts as a backstop against any nascent drawdown, particularly benefiting rate-sensitive and long-duration assets. The move is multi-day (7 business days and counting), not a fleeting tax-date whipsaw; its durability gives it the heft to condition the near-term tape.\n\nThe complexion favors the megacap-growth complex: lower reserve scarcity and easier financial conditions reduce the discount rate on future cash flows, lifting valuations for high-duration equities and government bonds alike. Defensive and value sectors, less sensitive to liquidity, see relative underperformance. The key falsification: a rapid, unexpected TGA rebuild (e.g., a sudden coupon settlement or tax receipt surge) could reverse the impulse and flip the regime to a drain, turning the tailwind into a headwind.",
+  "banner_title": "Treasury injects $175bn quarter-end cash, RRP exhausted — reserves flood banks, backstopping the tape",
+  "banner_title_zh": "财政部季度末释放1750亿美元现金，RRP枯竭，准备金注入为市场提供支撑",
+  "summary": "Treasury spent down $175bn from its TGA account since June 30, directly injecting reserves into the banking system with the overnight RRP facility exhausted. This mechanical liquidity boost provides a strong short-term tailwind for risk assets, particularly rate-sensitive and growth sectors.",
+  "summary_zh": "自6月30日以来，财政部从TGA账户中释放了1750亿美元，由于隔夜逆回购工具枯竭，这笔资金直接注入银行准备金。这一机械式流动性增加为风险资产提供了强劲的短期顺风，尤其是对利率敏感的成长型板块。",
+  "analysis": "The TGA drawdown from $919bn to $745bn over seven business days represents a classic quarter-end cash release. With the RRP facility virtually empty ($0.5bn), the entire $175bn flowed straight into bank reserve balances, mechanically expanding the most potent form of system liquidity. This is the highest-impact scenario for TGA flows.\n\nThe injection arrives in a Goldilocks macro regime with already-expanding net liquidity, amplifying the easing effect. It acts as a backstop to any incipient market drawdown, reducing the perceived scarcity of reserves and easing funding pressure that magnifies equity duration. The move favors long-duration, rate-sensitive assets that benefit most when marginal discount-rate fears recede.\n\nThe key confirm would be a sustained bid in megacap growth and bond proxies as the reserves settle. A falsifying signal would be a rapid reversal—if Treasury rebuilds the TGA aggressively via heavy coupon issuance that drains the same reserves within days, the tailwind would be short-circuited. But current path shows no sign of immediate rebuild.",
   "sectors": [
     {
       "name": "Megacap Growth",
       "impact": "tailwind",
-      "rationale": "Reserves injection eases discount-rate pressure, directly lifting long-duration, high-multiple names."
+      "rationale": "Reserves injection eases discount-rate pressure, directly supporting equity duration and growth multiples."
     },
     {
-      "name": "Long-Duration Treasuries",
+      "name": "Long-duration Treasuries",
       "impact": "tailwind",
-      "rationale": "Abundant reserves and lower funding stress support bond prices, especially at the long end."
+      "rationale": "Flush reserves lower the marginal cost of funding, lifting bond prices as liquidity conditions improve."
     },
     {
-      "name": "High-Beta Cyclicals",
+      "name": "Rate-sensitive Small Caps",
       "impact": "tailwind",
-      "rationale": "Liquidity-driven risk appetite spills into economically sensitive sectors."
-    },
-    {
-      "name": "Defensive Staples",
-      "impact": "headwind",
-      "rationale": "Relative underperformance as liquidity chases growth and cyclicality over safety."
+      "rationale": "Liquidity tailwind reduces financing stress and boosts risk appetite for more cyclical, leveraged small caps."
     }
   ],
   "tickers": [
     {
       "symbol": "QQQ",
       "direction": "benefit",
-      "rationale": "Nasdaq-100 ETF, concentrated in rate-sensitive megacap tech that reaps the largest valuation boost from lower discount rates."
+      "rationale": "Invesco QQQ ETF tracks Nasdaq-100, heavy in megacap growth that rallies when reserve injections compress the discount rate."
     },
     {
       "symbol": "TLT",
       "direction": "benefit",
-      "rationale": "20+ year Treasury ETF; direct beneficiary of eased reserves and lower long-end yield pressure."
-    },
-    {
-      "symbol": "AAPL",
-      "direction": "benefit",
-      "rationale": "A $3tn megacap with long-duration equity characteristics; a pure play on the liquidity impulse."
-    },
-    {
-      "symbol": "MSFT",
-      "direction": "benefit",
-      "rationale": "Deeply embedded in the growth complex, highly sensitive to financial conditions."
-    },
-    {
-      "symbol": "NVDA",
-      "direction": "benefit",
-      "rationale": "AI bellwether with extreme duration; amplified gains when liquidity floods into the system."
+      "rationale": "iShares 20+ Year Treasury Bond ETF directly gains from improved funding conditions and easing liquidity premium."
     },
     {
       "symbol": "IWM",
       "direction": "benefit",
-      "rationale": "Small-cap ETF; lower-quality, rate-sensitive names benefit from easy money, though less than pure duration plays."
+      "rationale": "iShares Russell 2000 ETF lifts as liquidity-driven risk appetite favors smaller, domestic-oriented companies."
     }
   ],
   "confidence": "high"
