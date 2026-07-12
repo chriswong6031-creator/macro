@@ -126,3 +126,16 @@ files:
       clocks in YAML. Injected into every orchestrator-tier PROPOSE prompt.
       IMMUTABLE — the loop may read it but never edit it; a loop PR that rewrites
       this file rewrites the loop's own purpose (highest-privilege attack path).
+
+  # --- V8-A IMMUTABLE config (R-V8-3) ---
+
+  - path: config/metabolism_immune.yml
+    sha256: 650e0ffd7ea120ed24e855de8020e692925c66a2b609df42f58f5ca93f48615d
+    role: immune_recipe_registry
+    notes: >
+      V8-A immune system recipe registry + spurious-checks allowlist (R-V8-1,
+      R-V8-3). Operator-ratified heal recipes (check → heal_cmd → detector),
+      known-spurious CI check filter, and lane-health thresholds. Fenced here so
+      R-V8-3b auto-merge inherits the guarantee that the loop cannot expand its
+      own auto-merge allowlist or remove spurious-check filters. IMMUTABLE —
+      loop PRs may not modify.

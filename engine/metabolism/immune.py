@@ -147,9 +147,12 @@ def live_claims(
     root: Path | None = None,
     gh_pr_state_fn: Callable[[int], str] | None = None,
 ) -> list[dict]:
-    """Return claims whose PR is still OPEN.
+    """Return claims whose PR is still live.
 
-    A claim is LIVE while its PR is open; it expires when the PR closes or merges.
+    A claim is LIVE unless its PR state is definitively CLOSED or MERGED.
+    Any other state — including 'OPEN', 'unknown', or transient gh-API blips —
+    keeps the claim live (fail-closed: never open a duplicate heal PR because
+    of a transient gh response).
 
     gh_pr_state_fn(pr_number) -> state string ('OPEN'|'CLOSED'|'MERGED'|'unknown').
     If gh_pr_state_fn is None, all claims with a pr_number > 0 are assumed live
@@ -157,6 +160,10 @@ def live_claims(
 
     NEVER-RAISE.
     """
+    # States that definitively expire a claim.  Any other state (OPEN, unknown,
+    # transient error) keeps the claim live — fail-closed contract.
+    _EXPIRED_STATES = {"CLOSED", "MERGED"}
+
     try:
         r = _repo_root(root)
         rows = _load_raw_claims(r)
@@ -170,8 +177,9 @@ def live_claims(
                 live.append(row)
                 continue
             try:
-                state = gh_pr_state_fn(int(pr_num))
-                if str(state).upper() == "OPEN":
+                state = str(gh_pr_state_fn(int(pr_num))).upper()
+                if state not in _EXPIRED_STATES:
+                    # Includes OPEN, unknown, empty, or any transient state
                     live.append(row)
             except Exception as exc:  # noqa: BLE001
                 log.warning("immune.live_claims: gh_pr_state_fn(%s) failed: %s — treating as live",

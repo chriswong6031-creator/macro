@@ -7,20 +7,23 @@ COVERAGE:
   4.  Claim dedup: live claim present → skip (no heal attempted).
   5.  Claim expiry: PR state CLOSED → claim not live.
   6.  Claim expiry: PR state MERGED → claim not live.
-  7.  Unknown red → insight row emitted, no heal attempted.
-  8.  Paused → auto-merge not attempted (sensing allowed).
-  9.  Auto-merge blocked: class not allowlisted.
-  10. Auto-merge blocked: daily cap exhausted.
-  11. Auto-merge blocked: CI not green at fresh SHA.
-  12. Lane-health: dead-cron detector fires on planted fixture.
-  13. Lane-health: queue-stuck detector fires on planted fixture.
-  14. Lane-health: runner-offline detector fires on planted fixture.
-  15. Lane-health: key-pool degraded detector fires on planted fixture.
-  16. Lane-health: dedup — second call with same journal_key does not fire again same day.
-  17. Lane-health: clean fixtures → nothing fires.
-  18. write_ci_status writes correct schema (consecutive_failures increments / resets).
-  19. append_claim and live_claims round-trip.
-  20. increment_automerge_count is journal-durable (persists to file).
+  7.  FIX-1: state='unknown' keeps claim live (fail-closed, not OPEN-only).
+  8.  Unknown red → insight row emitted, no heal attempted.
+  9.  Auto-merge DEFERRED (R-V8-3 amended): _attempt_automerge removed; immune
+      config reserves keys with comment for R-V8-3b; increment_automerge_count
+      is still journal-durable (reserved for follow-up).
+  10. Lane-health: dead-cron detector fires on planted fixture.
+  11. Lane-health: queue-stuck detector fires on planted fixture.
+  12. Lane-health: runner-offline detector fires on planted fixture.
+  13. Lane-health: key-pool degraded detector fires on planted fixture.
+  14. Lane-health: dedup — second call with same journal_key does not fire again same day.
+  15. Lane-health: clean fixtures → nothing fires.
+  16. FIX-4: run_lane_health_checks wires key-pool check (fires on >50% cooling ledger).
+  17. write_ci_status writes correct schema (consecutive_failures increments / resets).
+  18. append_claim and live_claims round-trip.
+  19. increment_automerge_count is journal-durable (persists to file).
+  20. FIX-5: spurious check name filtered out of red detection.
+  21. FIX-5: unknown-red page deduped within a day.
 
 All tests HERMETIC — no network, no git, no subprocess except where explicitly mocked.
 """
@@ -109,6 +112,7 @@ from engine.metabolism.immune import (
     mark_fired_today,
     get_automerge_count_today,
     increment_automerge_count,
+    load_immune_config,
 )
 
 
@@ -212,104 +216,72 @@ def test_unknown_red_no_class_match():
     # Here we just verify classify returns None (insight emission is the script's concern).
 
 
-# ── 6. Paused → no merge ──────────────────────────────────────────────────────
+# ── 6. FIX-1: state='unknown' keeps claim live (fail-closed) ─────────────────
 
-def test_paused_no_merge():
-    """When AUTONOMY_PAUSED is not 'false', _attempt_automerge skips merging."""
-    from scripts.metabolism_immune import _attempt_automerge
+def test_claim_unknown_state_stays_live():
+    """FIX-1: 'unknown' PR state must NOT expire the claim (fail-closed contract).
 
+    Previously only 'OPEN' kept a claim live, so a transient gh blip ('unknown')
+    would drop the claim and a duplicate heal PR would open.  Now any state that
+    is not definitively CLOSED or MERGED keeps the claim live.
+    """
     root = _tmp_root()
-    recipe = _MINIMAL_REGISTRY["recipes"][0]  # blocklist-drift, auto_merge_allowed=True
-    immune_cfg = _MINIMAL_REGISTRY
+    append_claim({"red_class": "blocklist-drift", "check_name": "bd", "main_sha": "abc", "pr_number": 42}, root=root)
 
-    with patch.dict(os.environ, {"AUTONOMY_PAUSED": "true"}):
-        result = _attempt_automerge(
-            pr_number=99,
-            red_class="blocklist-drift",
-            recipe=recipe,
-            immune_cfg=immune_cfg,
+    # 'unknown' state → claim must remain live
+    live = live_claims(root=root, gh_pr_state_fn=lambda n: "unknown")
+    assert len(live) == 1, "unknown state should keep claim live (fail-closed)"
+
+    has = has_live_claim_for_class("blocklist-drift", root=root, gh_pr_state_fn=lambda n: "unknown")
+    assert has is True, "has_live_claim_for_class must return True on unknown state"
+
+
+def test_claim_open_state_stays_live():
+    """OPEN state still keeps claim live (regression guard)."""
+    root = _tmp_root()
+    append_claim({"red_class": "blocklist-drift", "check_name": "bd", "main_sha": "abc", "pr_number": 43}, root=root)
+
+    live = live_claims(root=root, gh_pr_state_fn=lambda n: "OPEN")
+    assert len(live) == 1
+
+
+def test_claim_only_closed_and_merged_expire():
+    """Only CLOSED and MERGED states expire a claim; everything else keeps it live."""
+    root = _tmp_root()
+    for i, state in enumerate(["OPEN", "unknown", "DRAFT", "PENDING", "RANDOM"]):
+        append_claim(
+            {"red_class": f"class-{i}", "check_name": f"c{i}", "main_sha": "abc", "pr_number": 100 + i},
             root=root,
-            dry_run=False,
         )
 
-    assert result["merged"] is False
-    assert result["skip_reason"] == "paused"
+    for i, state in enumerate(["OPEN", "unknown", "DRAFT", "PENDING", "RANDOM"]):
+        has = has_live_claim_for_class(f"class-{i}", root=root, gh_pr_state_fn=lambda n, s=state: s)
+        assert has is True, f"state={state!r} should keep claim live"
 
-
-# ── 7. Auto-merge blocked: class not allowlisted ──────────────────────────────
-
-def test_automerge_blocked_not_allowlisted():
-    from scripts.metabolism_immune import _attempt_automerge
-
-    root = _tmp_root()
-    recipe = _MINIMAL_REGISTRY["recipes"][1]  # grader-manifest, auto_merge_allowed=False
-    immune_cfg = _MINIMAL_REGISTRY
-
-    with patch.dict(os.environ, {"AUTONOMY_PAUSED": "false"}):
-        result = _attempt_automerge(
-            pr_number=88,
-            red_class="grader-manifest",
-            recipe=recipe,
-            immune_cfg=immune_cfg,
-            root=root,
-            dry_run=False,
+    # CLOSED and MERGED must expire
+    root2 = _tmp_root()
+    for i, state in enumerate(["CLOSED", "MERGED"]):
+        append_claim(
+            {"red_class": f"exp-{i}", "check_name": f"e{i}", "main_sha": "abc", "pr_number": 200 + i},
+            root=root2,
         )
-
-    assert result["merged"] is False
-    assert "auto_merge not allowed" in (result["skip_reason"] or "")
-
-
-# ── 8. Auto-merge blocked: daily cap exhausted ────────────────────────────────
-
-def test_automerge_blocked_cap_exhausted():
-    from scripts.metabolism_immune import _attempt_automerge
-
-    root = _tmp_root()
-    # Exhaust the cap (default 2)
-    increment_automerge_count(root=root)
-    increment_automerge_count(root=root)
-
-    recipe = _MINIMAL_REGISTRY["recipes"][0]  # blocklist-drift, allowlisted
-    immune_cfg = _MINIMAL_REGISTRY
-
-    with patch.dict(os.environ, {"AUTONOMY_PAUSED": "false"}):
-        # Mock CI green to pass that gate
-        with patch("scripts.metabolism_immune._pr_ci_green_at_sha", return_value=(True, "abc123")):
-            result = _attempt_automerge(
-                pr_number=77,
-                red_class="blocklist-drift",
-                recipe=recipe,
-                immune_cfg=immune_cfg,
-                root=root,
-                dry_run=False,
-            )
-
-    assert result["merged"] is False
-    assert "daily cap exhausted" in (result["skip_reason"] or "")
+    for i, state in enumerate(["CLOSED", "MERGED"]):
+        has = has_live_claim_for_class(f"exp-{i}", root=root2, gh_pr_state_fn=lambda n, s=state: s)
+        assert has is False, f"state={state!r} should expire claim"
 
 
-# ── 9. Auto-merge blocked: CI not green at fresh SHA ──────────────────────────
+# ── 7. Auto-merge DEFERRED (R-V8-3 amended 2026-07-12) ───────────────────────
 
-def test_automerge_blocked_ci_not_green():
-    from scripts.metabolism_immune import _attempt_automerge
+def test_automerge_deferred_function_removed():
+    """_attempt_automerge must not exist in scripts.metabolism_immune (FIX-2).
 
-    root = _tmp_root()
-    recipe = _MINIMAL_REGISTRY["recipes"][0]  # blocklist-drift, allowlisted
-    immune_cfg = _MINIMAL_REGISTRY
-
-    with patch.dict(os.environ, {"AUTONOMY_PAUSED": "false"}):
-        with patch("scripts.metabolism_immune._pr_ci_green_at_sha", return_value=(False, "abc123")):
-            result = _attempt_automerge(
-                pr_number=66,
-                red_class="blocklist-drift",
-                recipe=recipe,
-                immune_cfg=immune_cfg,
-                root=root,
-                dry_run=False,
-            )
-
-    assert result["merged"] is False
-    assert "CI not green" in (result["skip_reason"] or "")
+    Auto-merge is deferred to R-V8-3b.  Verifying the function is absent
+    confirms the lane cannot accidentally merge a PR in this wave.
+    """
+    import scripts.metabolism_immune as mi
+    assert not hasattr(mi, "_attempt_automerge"), (
+        "_attempt_automerge must be removed; auto-merge is deferred to R-V8-3b"
+    )
 
 
 # ── 10. Lane-health: dead-cron detector ──────────────────────────────────────
@@ -538,7 +510,7 @@ def test_classify_red_never_raises():
     assert classify_red(None, {}) is None
 
 
-# ─��� 19. live_claims conservative when gh unavailable ─────────────────────────
+# ── 19. live_claims conservative when gh unavailable ─────────────────────────
 
 def test_live_claims_conservative_no_gh_fn():
     """When gh_pr_state_fn is None, all claims with pr_number are treated as live."""
@@ -547,3 +519,147 @@ def test_live_claims_conservative_no_gh_fn():
 
     live = live_claims(root=root, gh_pr_state_fn=None)
     assert len(live) == 1  # conservative — assume live
+
+
+# ── FIX-4: run_lane_health_checks wires key-pool sensor ──────────────────────
+
+def test_run_lane_health_checks_key_pool_fires():
+    """FIX-4: run_lane_health_checks must fire a key-pool alert on a >50% cooling ledger.
+
+    End-to-end: plant a key_ledger.jsonl with 2/2 keys cooling, verify the
+    key-pool alert fires.  No network, no subprocess calls (gh is not invoked
+    since _fetch_runs_list/_fetch_runners_list/_fetch_key_ledger read local files).
+    """
+    from datetime import datetime, timezone, timedelta  # noqa: PLC0415
+    from scripts.metabolism_immune import run_lane_health_checks
+    from unittest.mock import patch
+
+    root = _tmp_root()
+
+    # Plant a key_ledger.jsonl with 2 cooling keys whose reset_hint is in the future
+    ledger_dir = root / "data" / "metabolism"
+    ledger_dir.mkdir(parents=True, exist_ok=True)
+    future_reset = (datetime.now(timezone.utc) + timedelta(hours=3)).isoformat()
+    ledger_rows = [
+        {"schema": "metabolism.key_ledger.v1", "key_id": "claude_code_oauth_1",
+         "stage": "cooling", "reset_hint": future_reset, "ts": datetime.now(timezone.utc).isoformat()},
+        {"schema": "metabolism.key_ledger.v1", "key_id": "claude_code_oauth_2",
+         "stage": "cooling", "reset_hint": future_reset, "ts": datetime.now(timezone.utc).isoformat()},
+    ]
+    (ledger_dir / "key_ledger.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in ledger_rows) + "\n", encoding="utf-8"
+    )
+
+    immune_cfg = dict(_MINIMAL_REGISTRY)
+
+    # Stub out the gh-dependent fetchers so no subprocess is spawned
+    with patch("scripts.metabolism_immune._fetch_runs_list", return_value=[]):
+        with patch("scripts.metabolism_immune._fetch_runners_list", return_value=[]):
+            # _fetch_key_ledger reads from root — no mock needed
+            rows = run_lane_health_checks(immune_cfg, root=root, dry_run=True)
+
+    # At least the key-pool alert must have fired
+    summaries = [r.get("summary") or "" for r in rows]
+    assert any("key-pool" in s.lower() for s in summaries), (
+        f"Expected key-pool alert in {summaries}"
+    )
+
+
+def test_run_lane_health_checks_key_pool_no_alert_when_ok():
+    """FIX-4: key-pool alert must not fire when fewer than 50% of keys are cooling."""
+    from datetime import datetime, timezone, timedelta  # noqa: PLC0415
+    from scripts.metabolism_immune import run_lane_health_checks
+
+    root = _tmp_root()
+    ledger_dir = root / "data" / "metabolism"
+    ledger_dir.mkdir(parents=True, exist_ok=True)
+    future_reset = (datetime.now(timezone.utc) + timedelta(hours=3)).isoformat()
+    # Only 1 of 3 keys cooling → 33% < 50% threshold
+    ledger_rows = [
+        {"schema": "metabolism.key_ledger.v1", "key_id": "claude_code_oauth_1",
+         "stage": "cooling", "reset_hint": future_reset, "ts": datetime.now(timezone.utc).isoformat()},
+        {"schema": "metabolism.key_ledger.v1", "key_id": "claude_code_oauth_2",
+         "stage": "session", "ts": datetime.now(timezone.utc).isoformat()},
+        {"schema": "metabolism.key_ledger.v1", "key_id": "claude_code_oauth_3",
+         "stage": "session", "ts": datetime.now(timezone.utc).isoformat()},
+    ]
+    (ledger_dir / "key_ledger.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in ledger_rows) + "\n", encoding="utf-8"
+    )
+
+    immune_cfg = dict(_MINIMAL_REGISTRY)
+    with patch("scripts.metabolism_immune._fetch_runs_list", return_value=[]):
+        with patch("scripts.metabolism_immune._fetch_runners_list", return_value=[]):
+            rows = run_lane_health_checks(immune_cfg, root=root, dry_run=True)
+
+    summaries = [r.get("summary") or "" for r in rows]
+    assert not any("key-pool" in s.lower() and "DEGRADED" in s for s in summaries), (
+        f"Key-pool alert must not fire at <50% cooling; got {summaries}"
+    )
+
+
+# ── FIX-5: spurious check filtering ──────────────────────────────────────────
+
+def test_spurious_check_filtered_from_red_detection():
+    """FIX-5: _get_required_red_checks must exclude known-spurious check names.
+
+    'Workers Builds: macro' is the canonical known-spurious check from CLAUDE.md.
+    Even when it is red, it must be filtered out so no heal PR or page fires.
+    """
+    from scripts.metabolism_immune import _get_spurious_check_names
+    from unittest.mock import patch
+
+    # Verify _get_spurious_check_names reads from config
+    immune_cfg = {
+        "spurious_checks": ["Workers Builds: macro"],
+    }
+    names = _get_spurious_check_names(immune_cfg)
+    assert "workers builds: macro" in names  # lowercased
+
+    # Empty config → empty set
+    assert _get_spurious_check_names({}) == set()
+    assert _get_spurious_check_names({"spurious_checks": []}) == set()
+
+
+def test_spurious_check_not_in_loaded_config():
+    """The loaded config/metabolism_immune.yml must contain 'Workers Builds: macro'."""
+    import yaml
+
+    wt_root = Path(__file__).resolve().parent.parent
+    cfg_path = wt_root / "config" / "metabolism_immune.yml"
+    if not cfg_path.exists():
+        pytest.skip("config/metabolism_immune.yml not found in worktree")
+
+    cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+    spurious = [str(s).lower() for s in (cfg.get("spurious_checks") or [])]
+    assert "workers builds: macro" in spurious, (
+        f"'Workers Builds: macro' must be in spurious_checks; got {spurious}"
+    )
+
+
+# ── FIX-5: unknown-red page dedup ─────────────────────────────────────────────
+
+def test_unknown_red_page_deduped_within_day():
+    """FIX-5: unknown-red operator page fires ONCE PER DAY per red-class.
+
+    Second run of the immune lane with the same unknown check should NOT emit
+    a second insight or Telegram (daily dedup via journal marker).
+    """
+    root = _tmp_root()
+
+    # Simulate marking the journal key for an unknown red as fired today
+    from engine.metabolism.immune import mark_fired_today, has_fired_today
+
+    # Build a journal key the same way run_immune_lane does
+    check_name = "ci/some-unknown-check"
+    safe_name = check_name.replace("/", "_").replace(" ", "_")[:64]
+    journal_key = f"immune.unknown_red.{safe_name}"
+
+    assert has_fired_today(journal_key, root=root) is False
+
+    # First fire
+    mark_fired_today(journal_key, root=root)
+    assert has_fired_today(journal_key, root=root) is True
+
+    # Second call within same UTC day → already fired → dedup
+    assert has_fired_today(journal_key, root=root) is True

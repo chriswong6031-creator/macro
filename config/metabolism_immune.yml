@@ -50,7 +50,7 @@ lane_health:
   # Minutes a run can stay queued before flagging Actions queue saturation
   queue_stuck_min: 40
 
-  # Maximum heal PRs auto-merged per calendar day (UTC); journal-durable counter
+  # reserved for R-V8-3b auto-merge follow-up
   immune_max_automerge_per_day: 2
 
   # Days a self-hosted runner can be offline before flagging (0 = any offline = flag)
@@ -64,10 +64,21 @@ lane_health:
     - "cancelled"
     - "timed_out"
 
+# ── Known-spurious CI checks (FIX-5) ─────────────────────────────────────────
+# These checks are known to produce false reds (non-required, ignorable).
+# See CLAUDE.md 'known-spurious CI: "Workers Builds: macro" red X is ignorable'.
+# The immune lane filters them OUT of both red-detection and ci_status green computation.
+# Operator-only list: never edited by loop PRs (config is in IMMUTABLE set).
+spurious_checks:
+  - "Workers Builds: macro"
+
 # ── Cooldown / dedup keys ─────────────────────────────────────────────────────
 # Each lane-health sensor fires AT MOST ONCE per day per key (journal-durable).
+# Unknown-red operator pages also dedup once per day per red-class (FIX-5).
 cooldown:
   dead_cron_journal_key: "immune.lane_health.dead_cron"
   queue_stuck_journal_key: "immune.lane_health.queue_stuck"
   runner_offline_journal_key: "immune.lane_health.runner_offline"
   key_pool_degraded_journal_key: "immune.lane_health.key_pool_degraded"
+  # Journal key prefix for unknown-red operator pages; red_class is appended
+  unknown_red_journal_prefix: "immune.unknown_red"

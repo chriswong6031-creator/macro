@@ -17,12 +17,12 @@ Runs every 2h (cron '15 */2 * * *').  Three independent responsibilities:
      - Key-pool partial degradation (>50% cooling)
      Each fires once per day per condition (dedup via journal markers).
 
-  C. AUTO-MERGE (R-V8-3 — ONLY when explicitly armed)
-     Merges a heal PR only when ALL hold:
-       AUTONOMY_PAUSED == 'false'     (exact string; double-gated)
-       class auto_merge_allowed       (registry allowlist)
-       heal PR CI green at fresh SHA  (re-fetched head SHA)
-       daily cap not exhausted        (journal-durable counter)
+  C. AUTO-MERGE — DEFERRED (R-V8-3, amended 2026-07-12).
+     Auto-merge is NOT implemented in this wave (v8A).  The lane opens a claimed
+     DRAFT heal PR and stops.  Auto-merge returns as R-V8-3b (future wave) with
+     the correct re-scan design (a later run merges an already-open PR when it is
+     green at a fresh head SHA) and requires config/metabolism_immune.yml to be in
+     the self-mod fence IMMUTABLE set (done this wave).
 
   D. CI-STATUS ARTIFACT (R-V8-5)
      Writes data/metabolism/ci_status.json after every run so
@@ -31,7 +31,6 @@ Runs every 2h (cron '15 */2 * * *').  Three independent responsibilities:
 INERTNESS GUARANTEES
 --------------------
 * Sensing (A + B + D) runs even when AUTONOMY_PAUSED.
-* Merge step is gated BOTH by is_paused() AND the env-var double-check.
 * NEVER-RAISE: all public functions catch exceptions and return safe fallbacks.
 
 Usage (CLI):
@@ -126,14 +125,30 @@ def _get_main_sha() -> str:
     return ""
 
 
-def _get_required_red_checks(main_sha: str) -> list[dict[str, Any]]:
-    """Return red REQUIRED check-runs on main at main_sha.  NEVER raises.
+def _get_spurious_check_names(immune_cfg: dict[str, Any]) -> set[str]:
+    """Return the set of known-spurious check names from config.  NEVER raises."""
+    try:
+        raw = immune_cfg.get("spurious_checks") or []
+        return {str(s).lower() for s in raw if s}
+    except Exception:  # noqa: BLE001
+        return set()
 
-    Uses gh api to get the combined check-runs for the commit.
+
+def _get_required_red_checks(
+    main_sha: str,
+    immune_cfg: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Return red REQUIRED check-runs on main at main_sha.
+
+    Known-spurious check names (from config spurious_checks) are excluded so
+    the immune lane never opens a heal PR or emits a page for a known false red.
+
+    Uses gh api to get the combined check-runs for the commit.  NEVER raises.
     """
     try:
         if not main_sha:
             return []
+        spurious = _get_spurious_check_names(immune_cfg or {})
         repo = _resolve_repo()
         data = _gh_json([
             "api",
@@ -158,11 +173,16 @@ def _get_required_red_checks(main_sha: str) -> list[dict[str, Any]]:
 
         red = []
         for c in checks:
+            name = c.get("name") or ""
+            # Filter known-spurious checks (e.g. 'Workers Builds: macro')
+            if name.lower() in spurious:
+                log.info("IMMUNE: skipping known-spurious check %r", name)
+                continue
             conclusion = str(c.get("conclusion") or "").lower()
             status = str(c.get("status") or "").lower()
             if conclusion in {"failure", "timed_out", "cancelled", "action_required"}:
                 red.append({
-                    "name": c.get("name") or "",
+                    "name": name,
                     "conclusion": conclusion,
                     "status": status,
                     "url": c.get("html_url") or "",
@@ -368,7 +388,9 @@ def _run_heal_in_worktree(
             f"- `heal_cmd`: `{heal_cmd}`\n"
             f"- `detector`: `{detector}`\n\n"
             f"This PR was opened automatically after the detector confirmed the heal.\n"
-            f"Auto-merge is {'allowed' if recipe.get('auto_merge_allowed') else 'NOT allowed — operator review required'} for this class.\n"
+            f"**Auto-merge is DEFERRED this wave (R-V8-3 amended 2026-07-12).**\n"
+            f"Operator review and manual merge required.\n"
+            f"Auto-merge returns as R-V8-3b (future wave) with the correct re-scan design.\n"
         )
         pr_r = subprocess.run(
             [
@@ -423,84 +445,6 @@ def _cleanup_worktree(root: Path, wt_dir: str) -> None:
     except Exception:  # noqa: BLE001
         pass
 
-
-# ── Auto-merge a heal PR (R-V8-3) ─────────────────────────────────────────────
-
-def _attempt_automerge(
-    pr_number: int,
-    red_class: str,
-    recipe: dict[str, Any],
-    immune_cfg: dict[str, Any],
-    *,
-    root: Path,
-    dry_run: bool = False,
-) -> dict[str, Any]:
-    """Attempt auto-merge for a heal PR — only when ALL conditions hold.
-
-    Conditions (R-V8-3):
-      (a) AUTONOMY_PAUSED == 'false'  (double-gated; caller must pre-check)
-      (b) class auto_merge_allowed    (registry)
-      (c) PR CI green at fresh head SHA
-      (d) daily cap not exhausted
-
-    NEVER raises.
-    """
-    from engine.metabolism.immune import (  # noqa: PLC0415
-        get_automerge_count_today, increment_automerge_count,
-    )
-    result: dict[str, Any] = {"merged": False, "skip_reason": None}
-
-    try:
-        # (a) Second in-script pause check (merge step only)
-        if _is_paused():
-            result["skip_reason"] = "paused"
-            return result
-
-        # (b) Class allowlist
-        if not recipe.get("auto_merge_allowed"):
-            result["skip_reason"] = f"auto_merge not allowed for {red_class}"
-            return result
-
-        # (c) CI green at fresh SHA
-        green, head_sha = _pr_ci_green_at_sha(pr_number)
-        if not green:
-            result["skip_reason"] = f"CI not green at sha={head_sha[:8] if head_sha else 'unknown'}"
-            return result
-
-        # (d) Daily cap
-        lane_health = immune_cfg.get("lane_health") or {}
-        cap = int(lane_health.get("immune_max_automerge_per_day") or 2)
-        count = get_automerge_count_today(root=root)
-        if count >= cap:
-            result["skip_reason"] = f"daily cap exhausted ({count}/{cap})"
-            return result
-
-        if dry_run:
-            log.info("IMMUNE [DRY-RUN]: would auto-merge PR #%d (%s)", pr_number, red_class)
-            result["merged"] = True
-            return result
-
-        # Mark ready then merge via squash
-        subprocess.run(
-            ["gh", "pr", "ready", str(pr_number)],
-            capture_output=True, timeout=30,
-        )
-        merge_r = subprocess.run(
-            ["gh", "pr", "merge", str(pr_number), "--squash", "--auto"],
-            capture_output=True, text=True, timeout=60,
-        )
-        if merge_r.returncode == 0:
-            increment_automerge_count(root=root)
-            result["merged"] = True
-            log.info("IMMUNE: auto-merged PR #%d (%s)", pr_number, red_class)
-        else:
-            result["skip_reason"] = f"merge failed: {merge_r.stderr[:200]}"
-
-    except Exception as exc:  # noqa: BLE001
-        log.warning("immune._attempt_automerge: %s", exc)
-        result["skip_reason"] = str(exc)
-
-    return result
 
 
 # ── CI-status artifact (R-V8-5) ───────────────────────────────────────────────
@@ -593,6 +537,81 @@ def _fetch_runners_list() -> list[dict]:
     return []
 
 
+def _fetch_key_ledger(root: Path) -> dict[str, Any]:
+    """Read data/metabolism/key_ledger.jsonl and return a summary dict for check_key_pool_degraded.
+
+    Mirrors the ledger format used by engine/neuralweb/key_pool.py (_read_ledger +
+    is_cooling).  Returns {"keys": [{"name": cap_id, "cooling": bool}, ...]} using
+    the most recent cooling row per capability_id to determine current cooling status.
+
+    Only capability_id (name) is returned — secret VALUES are never read or returned.
+    NEVER raises.
+    """
+    try:
+        ledger_path = root / "data" / "metabolism" / "key_ledger.jsonl"
+        if not ledger_path.exists():
+            return {"keys": []}
+
+        rows: list[dict] = []
+        for line in ledger_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except Exception:  # noqa: BLE001
+                continue
+
+        from datetime import datetime, timezone  # noqa: PLC0415
+        now = datetime.now(timezone.utc)
+
+        # Collect all capability_ids present in the ledger
+        all_ids: set[str] = set()
+        for row in rows:
+            cap_id = row.get("key_id") or row.get("capability_id")
+            if cap_id:
+                all_ids.add(str(cap_id))
+
+        if not all_ids:
+            return {"keys": []}
+
+        def _parse_dt(ts: str) -> datetime | None:
+            try:
+                if ts.endswith("Z"):
+                    ts = ts[:-1] + "+00:00"
+                return datetime.fromisoformat(ts).astimezone(timezone.utc)
+            except Exception:  # noqa: BLE001
+                return None
+
+        keys_summary: list[dict] = []
+        for cap_id in sorted(all_ids):
+            # Find cooling rows for this key
+            cooling_rows = [
+                r for r in rows
+                if (r.get("key_id") or r.get("capability_id")) == cap_id
+                and r.get("stage") == "cooling"
+                and r.get("reset_hint")
+            ]
+            is_cooling = False
+            if cooling_rows:
+                # Use the most recent reset_hint; if still in the future → cooling
+                def _ts_key(r: dict) -> datetime:
+                    t = _parse_dt(r.get("ts") or "")
+                    return t if t else datetime.min.replace(tzinfo=timezone.utc)
+
+                latest = max(cooling_rows, key=_ts_key)
+                reset = _parse_dt(latest.get("reset_hint") or "")
+                if reset and reset > now:
+                    is_cooling = True
+            # Name only — never a value
+            keys_summary.append({"name": cap_id, "cooling": is_cooling})
+
+        return {"keys": keys_summary}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("immune._fetch_key_ledger: %s", exc)
+        return {"keys": []}
+
+
 def run_lane_health_checks(
     immune_cfg: dict[str, Any],
     *,
@@ -617,6 +636,7 @@ def run_lane_health_checks(
     try:
         runs = _fetch_runs_list()
         runners = _fetch_runners_list()
+        key_ledger = _fetch_key_ledger(root)
 
         checks: list[tuple[str, dict, str]] = [
             (
@@ -633,6 +653,11 @@ def run_lane_health_checks(
                 cooldown.get("runner_offline_journal_key") or "immune.lane_health.runner_offline",
                 check_runner_offline(runners, lane_cfg),
                 "self-hosted runner offline",
+            ),
+            (
+                cooldown.get("key_pool_degraded_journal_key") or "immune.lane_health.key_pool_degraded",
+                check_key_pool_degraded(key_ledger, lane_cfg),
+                "key-pool partial degradation detected",
             ),
         ]
 
@@ -677,6 +702,7 @@ def run_immune_lane(
     from engine.metabolism.immune import (  # noqa: PLC0415
         load_immune_config, classify_red,
         has_live_claim_for_class, append_claim,
+        has_fired_today, mark_fired_today,
     )
     from engine.metabolism.insight_bus import build_row, append_row  # noqa: PLC0415
 
@@ -701,7 +727,7 @@ def run_immune_lane(
             log.warning("IMMUNE: could not get main SHA — aborting sentinel")
             summary["errors"].append("could not get main SHA")
         else:
-            red_checks = _get_required_red_checks(main_sha)
+            red_checks = _get_required_red_checks(main_sha, immune_cfg=immune_cfg)
             log.info("IMMUNE: main_sha=%s red_required=%d", main_sha[:8], len(red_checks))
 
             # Step 2: write CI-status artifact (R-V8-5) — always, even if no reds
@@ -714,7 +740,17 @@ def run_immune_lane(
                 recipe = classify_red(check_name, immune_cfg)
 
                 if recipe is None:
-                    # Unknown red → insight + Telegram
+                    # Unknown red → insight + Telegram, deduped ONCE PER DAY per red-class
+                    # (FIX-5: 2h cron must not page the operator on every run for the same red)
+                    cooldown = immune_cfg.get("cooldown") or {}
+                    unknown_prefix = cooldown.get("unknown_red_journal_prefix") or "immune.unknown_red"
+                    # Sanitise check_name for use as a journal-key component
+                    safe_name = (check_name or "unknown").replace("/", "_").replace(" ", "_")[:64]
+                    journal_key = f"{unknown_prefix}.{safe_name}"
+                    if has_fired_today(journal_key, root=r):
+                        log.info("IMMUNE: unknown-red page for %r already fired today — dedup", check_name)
+                        summary["unknown_reds"].append(check_name)
+                        continue
                     row = build_row(
                         emitter="metabolism_immune.sentinel",
                         kind="ci_red_unknown",
@@ -725,6 +761,7 @@ def run_immune_lane(
                     )
                     if not dry_run:
                         append_row(row, root=r)
+                        mark_fired_today(journal_key, root=r)
                         _notify(
                             f"[Metabolism/Immune] Unknown CI red on main: {check_name!r} "
                             f"({check.get('conclusion')}) — operator action required"
@@ -761,12 +798,10 @@ def run_immune_lane(
                         "main_sha": main_sha,
                         "pr_number": pr_number,
                     }, root=r)
-
-                    # Attempt auto-merge (R-V8-3) — gated in-script
-                    merge_result = _attempt_automerge(
-                        pr_number, red_class, recipe, immune_cfg, root=r, dry_run=dry_run,
-                    )
-                    log.info("IMMUNE: automerge result for %s: %s", red_class, merge_result)
+                    # Auto-merge is DEFERRED (R-V8-3 amended 2026-07-12).
+                    # The lane opens the claimed DRAFT heal PR and stops here.
+                    # Auto-merge returns as R-V8-3b (future wave).
+                    log.info("IMMUNE: heal PR #%s claimed for %s — operator review required", pr_number, red_class)
 
                 summary["healed"].append({
                     "red_class": red_class,
