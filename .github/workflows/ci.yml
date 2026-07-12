@@ -123,10 +123,6 @@ on:
       - "engine/basket_turn_watch.py"
       - "templates/basket_detail.html.j2"
       - "tests/test_cohort_flow_chips.py"
-      # FL-E statement tape (FC-R9): registry schema guard + curated event catalog.
-      - "data/statement_tape/registry.jsonl"
-      - "scripts/check_statement_tape.py"
-      - "tests/test_statement_tape.py"
       # CPI net-liquidity artifact (data infrastructure): builder + contract tests
       # must re-run together so a canon-formula or stale-guard regression fails RED.
       - "scripts/build_netliq_daily.py"

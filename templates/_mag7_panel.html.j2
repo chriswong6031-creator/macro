@@ -291,7 +291,7 @@
   {# ── FLOW CHIP (FC-R5 / FL-D) — absent when FL-B artifact not yet present ── #}
   {%- if flow and flow.pc_word %}
   {%- set flow_word = flow.pc_word %}
-  {%- set flow_tilt = flow.tilt_sessions if flow.tilt_sessions is defined and flow.tilt_sessions != none else 0 %}
+  {%- set flow_tilt = flow.match_sessions if flow.match_sessions is defined and flow.match_sessions != none else (flow.tilt_sessions if flow.tilt_sessions is defined and flow.tilt_sessions != none else 0) %}
   {%- set flow_gross = flow.gross_mn if flow.gross_mn is defined and flow.gross_mn != none else none %}
   {%- set flow_pc = flow.pc_ratio if flow.pc_ratio is defined and flow.pc_ratio != none else none %}
   {%- set flow_zdt = flow.zerodte_share if flow.zerodte_share is defined and flow.zerodte_share != none else none %}
