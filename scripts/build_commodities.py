@@ -595,6 +595,19 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never break the page
         log.warning("commodity index build failed (%s)", e)
 
+    # --- Structural-clock bridge (P3 inbound): cycle → commodity cycle_positions.json ---
+    # Writes data/commodity/cycle_positions.json consumed by commodity_confluence below.
+    _cycle_positions: dict = {}
+    try:
+        import time as _time
+        from engine import commodity_cycle_state
+        _tcc0 = _time.time()
+        _cycle_positions = commodity_cycle_state.write_cycle_positions()
+        log.info("[timing] commodity cycle_positions (%d members) in %.1fs",
+                 len(_cycle_positions), _time.time() - _tcc0)
+    except Exception as _cce:  # noqa: BLE001 — additive, never break the page
+        log.warning("commodity cycle_positions build failed (%s)", _cce)
+
     # --- Durable-bottom / Euphoric-top Confluence Organ (display-tier) ---------
     # engine/commodity_confluence.py — deterministic, no scored authority.
     # Emitted to both complex_latest.json and latest.json for hub consumption.
@@ -680,7 +693,8 @@ def main() -> int:
                       "index": index_snap.get("index", {}),
                       "breadth": index_snap.get("breadth", {}),
                       "members": index_snap.get("members", []),
-                      "confluence": conf}
+                      "confluence": conf,
+                      "cycle_positions": _cycle_positions}
     (outdir / "complex_latest.json").write_text(json.dumps(complex_latest, indent=2, default=str))
     return 0
 

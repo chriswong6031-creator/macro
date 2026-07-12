@@ -161,6 +161,23 @@ def _read_business_cycle() -> dict[str, Any]:
         return {}
 
 
+def _read_commodity_complex(data_dir: Path) -> dict[str, Any]:
+    """Read data/commodity/complex_latest.json.  Returns {} on any failure.
+
+    Keys expected: complex_regime, dollar_dir, growth_dir, index, breadth, confluence, asof.
+    Display-only cross-check — not a model input.
+    """
+    try:
+        p = data_dir / "commodity" / "complex_latest.json"
+        if not p.exists():
+            log.debug("regime_prior: data/commodity/complex_latest.json not found")
+            return {}
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001
+        log.warning("regime_prior: commodity complex_latest.json read failed: %s", e)
+        return {}
+
+
 # ---------------------------------------------------------------------------
 # Main composer
 
@@ -204,6 +221,11 @@ def regime_prior(
     bc_asof = bc.get("asof")
     bc_status = _source_status(bc_asof) if bc else "unavailable"
 
+    # --- 5. Commodity complex (display-only cross-check, P3 bridge) ---
+    cc = _read_commodity_complex(data_dir)
+    cc_asof = cc.get("asof")
+    cc_status = _source_status(cc_asof) if cc else "unavailable"
+
     phase_block = bc.get("phase") or {}
     bc_phase_label = phase_block.get("label")
     bc_phase_zh = phase_block.get("label_zh")
@@ -214,6 +236,9 @@ def regime_prior(
     rec_label_zh = rec_sig.get("label_zh")
 
     # --- Merged staleness ---
+    # NB: cc_status (commodity complex) is a display-only cross-check (not_a_model_input)
+    # and deliberately does NOT enter merged_status — a commodity-data lag must not
+    # downgrade the shared regime banner's staleness on the cycle pages.
     source_statuses = [reg_status, ms_status, vol_status, bc_status]
     if all(s == "unavailable" for s in source_statuses):
         merged_status = "unavailable"
@@ -267,12 +292,37 @@ def regime_prior(
         # --- vol-regime block (display-only) ---
         "vol_regime": vol_regime_label,
         "vol_regime_honesty": "Display-only: US-index-only (VIX/VIX3M/MOVE); no cross-family vol equivalent.",
+        # --- commodity-complex block (display-only cross-check, P3 bridge) ---
+        "commodity_complex": {
+            "regime": cc.get("complex_regime"),
+            "dollar_dir": cc.get("dollar_dir"),
+            "growth_dir": cc.get("growth_dir"),
+            "breadth_pct_up": (cc.get("breadth") or {}).get("pct_up_trend"),
+            "n_up": (cc.get("breadth") or {}).get("n_up"),
+            "n_members": (cc.get("breadth") or {}).get("n_members"),
+            "index_state": ((cc.get("confluence") or {}).get("index") or {}).get("state"),
+            "asof": cc_asof,
+            "status": cc_status,
+            "not_a_model_input": True,
+            "honesty_note": (
+                "Display-only cross-check: commodity-complex regime from build_commodities. "
+                "No PIT history; cannot enter the regime model until archiving runs ≥250 days."
+            ),
+        } if cc else {
+            "not_a_model_input": True,
+            "status": "unavailable",
+            "honesty_note": (
+                "Display-only cross-check: commodity-complex regime from build_commodities. "
+                "No PIT history; cannot enter the regime model until archiving runs ≥250 days."
+            ),
+        },
         # --- per-source as_of / freshness ---
         "sources": {
             "regime": {"asof": reg_asof, "status": reg_status},
             "market_state": {"asof": ms_asof, "status": ms_status},
             "vol_regime": {"asof": vol_asof, "status": vol_status},
             "business_cycle": {"asof": bc_asof, "status": bc_status},
+            "commodity_complex": {"asof": cc_asof, "status": cc_status},
         },
     }
 
