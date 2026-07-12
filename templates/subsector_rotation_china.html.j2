@@ -57,6 +57,141 @@
 
   <div id="rotation-app"></div>
 
+  <!-- ── RC-R14: China Rotation Events rail ─────────────────────────────────────── -->
+  <!-- Fetched from marketdata/rotation_events_china.json. Absent file = graceful note. -->
+  <!-- DISPLAY/CONTEXT TIER only — no rank, gate, size, or stance change.              -->
+  <section id="rc-events-cn" aria-label="China rotation events">
+<style>
+  #rc-events-cn { margin:18px 2px 22px; }
+  #rc-events-cn h2 { font-size:17px; font-weight:800; letter-spacing:-.015em; margin:0 0 4px; }
+  .rc-sub-cn { color:var(--muted); font-size:12px; margin:0 0 10px; max-width:84ch; line-height:1.5; }
+  .rc-grid-cn { display:flex; flex-wrap:wrap; gap:10px; }
+  .rc-card-cn { flex:1 1 300px; min-width:260px; border-radius:12px; border:1px solid var(--line);
+    background:var(--panel); padding:12px 14px; }
+  .rc-card-cn.rc-major { border-left:4px solid var(--warn); }
+  .rc-hd-cn { display:flex; align-items:baseline; gap:7px; margin-bottom:5px; flex-wrap:wrap; }
+  .rc-title-cn { font-weight:800; font-size:13.5px; }
+  .rc-sev-cn { font-size:9.5px; font-weight:700; text-transform:uppercase; padding:2px 7px; border-radius:6px;
+    background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); letter-spacing:.04em; }
+  .rc-sev-cn.major { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }
+  .rc-sev-cn.notable { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  .rc-day-cn { font-size:11px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; }
+  .rc-copy-cn { font-size:12.5px; line-height:1.55; }
+  .rc-receipts-cn { margin-top:6px; font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .rc-stale-cn { font-style:italic; }
+  .rc-quiet-cn { color:var(--muted); font-size:12.5px; padding:8px 0; }
+  .rc-connect { margin-top:10px; font-size:11px; color:var(--muted); line-height:1.6; }
+  .rc-connect b { color:var(--text); }
+  .rc-connect .rc-nb-disc { font-style:italic; }
+  .rc-caveat-cn { margin-top:10px; font-size:10.5px; color:var(--muted); line-height:1.55; }
+</style>
+    <h2>⟲ {{ t('China Rotation Events', '中国轮动事件') }}</h2>
+    <p class="rc-sub-cn">{{ t(
+      'First-class leadership handoffs across curated A-share baskets: blowoff-crash on one basket leg + fresh-low turn on a peer leg + pair ratio confirming. Port of the US Rotation Command detector (RC-R14). Display-tier context with receipts — ledgered, expected-NULL, never a buy list. Binding kills: no cycle-position confluence, no A-share reversal gating by rotation state, no Connect flow as a detector input.',
+      '精选A股篮子间的领导权交接事件：某篮子冲顶崩落 + 同类篮子自新低回升 + 两者比值确认。美国 Rotation Command 检测器的 A 股移植（RC-R14）。展示层上下文（含依据）——已入账、预期无效应声明，绝非买入清单。约束条款：不做周期位置叠加，不以轮动状态门控A股反转信号，沪深港通资金不作为检测器输入。') }}</p>
+    <div id="rc-events-cn-content"><p class="rc-quiet-cn">
+      <span class="l-en">Loading…</span><span class="l-zh">加载中…</span></p></div>
+<script>
+(function(){
+'use strict';
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+function t(en,zh){return isZh()&&zh?zh:en;}
+function pc(v,dp){return v==null?'—':((v>0?'+':'')+(v*100).toFixed(dp==null?1:dp)+'%');}
+
+function renderCn(ev, partJson){
+  var el=document.getElementById('rc-events-cn-content');
+  if(!el) return;
+  var html='';
+  var active=(ev&&ev.active)||[];
+  if(!active.length){
+    html+='<p class="rc-quiet-cn">'+t('No active China rotation events — quiet state is a valid state.',
+      '当前无活跃中国轮动事件——安静状态是有效状态。')+'</p>';
+  }else{
+    var sevRank={major:0,notable:1,standard:2};
+    active=active.slice().sort(function(a,b){
+      var d=(sevRank[a.severity]!=null?sevRank[a.severity]:9)-(sevRank[b.severity]!=null?sevRank[b.severity]:9);
+      return d!==0?d:String(b.started||'').localeCompare(String(a.started||''));
+    });
+    html+='<div class="lst-wrap"><div class="rc-grid-cn lst-collapse lst-cap4 is-collapsed">';
+    active.forEach(function(e){
+      var sev=e.severity||'standard';
+      var title=isZh()
+        ? esc(e.from_leg.name_zh)+' → '+esc(e.to_leg.name_zh)+'（'+esc(e.sector_name_zh)+'）'
+        : esc(e.from_leg.name_en)+' → '+esc(e.to_leg.name_en)+' ('+esc(e.sector_name_en)+')';
+      var r=e.receipts||{};
+      var rec='';
+      if(r.blowoff&&r.turn&&r.ratio){
+        rec=t('blowoff ','冲顶回落 ')+'−'+(r.blowoff.drawdown_pct*100).toFixed(0)+'%'
+          +' · '+t('off low ','低点回升 ')+pc(r.turn.off_low_pct)
+          +' · '+t('ratio ','比值 ')+pc(r.ratio.ratio_chg_10s)+'/10s';
+        if(!e.confirmed_tonight){
+          rec+=' <span class="rc-stale-cn">'+t('(as of last confirmation)','（截至最近一次确认）')+'</span>';
+        }
+      }
+      html+='<div class="rc-card-cn rc-'+esc(sev)+'">'
+        +'<div class="rc-hd-cn"><span class="rc-sev-cn '+esc(sev)+'">'+esc(sev)+'</span>'
+        +'<span class="rc-title-cn">'+title+'</span>'
+        +'<span class="rc-day-cn">'+t('day ','第')+esc(e.day_n)+t('',' 天')+' · '+esc(e.started)+'</span></div>'
+        +'<div class="rc-copy-cn">'+esc(isZh()?e.copy_zh:e.copy_en)+'</div>'
+        +(rec?'<div class="rc-receipts-cn">'+rec+'</div>':'')
+        +'</div>';
+    });
+    html+='</div>';
+    if(active.length>4){
+      html+='<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">'
+        +t('Show more','显示更多')+' ▾</span><span class="lm-hide">'+t('Show less','收起')+' ▴</span></button>';
+    }
+    html+='</div>';
+  }
+
+  // ── Connect flows context line (display/receipt only — not a detector input) ──
+  // Southbound net z from participation.json (already loaded by build_china for other panels).
+  var sbz = partJson && partJson.southbound_z != null ? partJson.southbound_z : null;
+  var connectHtml = '<div class="rc-connect">';
+  if(sbz!=null){
+    var sbStr = (sbz>=0?'+':'')+sbz.toFixed(2)+'σ';
+    connectHtml += '<b>'+t('Southbound net z','南向净买入z')+': '+esc(sbStr)+'</b>';
+    var mood = sbz>1?t(' (elevated inflow)',' （流入偏强）'):sbz<-1?t(' (elevated outflow)',' （流出偏强）'):'';
+    connectHtml += esc(mood)+' · ';
+  }else{
+    connectHtml += t('Southbound flow: —','南向资金：—')+' · ';
+  }
+  // Honest northbound disclosure
+  connectHtml += '<span class="rc-nb-disc">'
+    +t('Northbound daily flow disclosure ended Aug 2024 — turnover still shown / proxy probationary',
+       '北向每日净买入披露已于2024年8月停止——换手额仍有公布，代理指标为试用状态')
+    +'</span>';
+  connectHtml += '</div>';
+  html += connectHtml;
+
+  html+='<div class="rc-caveat-cn">'
+    +t('Display/context tier — no rank, gate, or size anywhere. Events + outcomes accrue to an append-only ledger (expected-NULL until RC-R9 studies mature). Connect flows shown as context receipts only — never a detector input, confirmation criterion, or gate. as-of: ',
+       '仅展示/上下文层——不排名、不设门控、不调仓位。事件与结果计入只增账本（在RC-R9研究成熟前为预期无效应声明）。沪深港通资金仅作上下文凭据展示——从不作为检测器输入、确认标准或门控条件。截至：')
+    +esc((ev&&ev.as_of)||'—')+'</div>';
+  el.innerHTML=html;
+}
+
+function loadCn(){
+  Promise.all([
+    fetch('marketdata/rotation_events_china.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetch('chinastatedata/participation.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+  ]).then(function(res){
+    if(!res[0]){
+      var el=document.getElementById('rc-events-cn-content');
+      if(el) el.innerHTML='<p class="rc-quiet-cn"><span class="l-en">China rotation-event data unavailable.</span><span class="l-zh">中国轮动事件数据暂不可用。</span></p>';
+      return;
+    }
+    renderCn(res[0],res[1]);
+  });
+}
+loadCn();
+var _rcCnObs=new MutationObserver(loadCn);
+_rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['data-lang','data-theme']});
+})();
+</script>
+  </section>
+
   <div class="sr-foot">
     {{ t('Subsectors are the 同花顺 concept boards (reliable set ≥ 6 priced members); Themes are our curated A-share thematic baskets — both equal-weighted, refreshed nightly. Relative strength is measured cross-sectionally vs the median basket. On the rotation map the horizontal axis is strength vs. the market (right = stronger) and the vertical axis is whether that strength is heating up or cooling (up = heating); each trail traces where a basket has been and the arrow points where it is heading, so a longer trail is a faster mover. Click a quadrant to zoom in. Benchmark context is CSI 300. Research context only — not investment advice.',
           '「子行业」为同花顺概念板块（可靠集 ≥ 6 只可定价成分）；「主题」为我们精选的 A 股主题篮子——均为等权，每晚刷新。相对强度以横截面方式相对中位数篮子衡量。轮动图中，横轴为相对大盘的强弱（越靠右越强），纵轴为该强度在升温还是降温（越靠上越热）；每条轨迹描绘篮子的来路，箭头指向去向，轨迹越长移动越快。点击象限可放大。基准参考为沪深300。仅供研究参考，非投资建议。') }}

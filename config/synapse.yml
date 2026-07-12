@@ -3338,6 +3338,58 @@ artifacts:
     external_consumers: []
     notes: "Producer: scripts/build_subsector_rotation.py:63 write_text."
 
+  # --- 0 consumers (display rail only) ---
+  site-marketdata-rotation-events-china:
+    path: site/marketdata/rotation_events_china.json
+    format: json
+    producer: scripts/build_rotation_events_china.py
+    known_extra_writers: []
+    owner_program: rotation-command
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - templates/subsector_rotation_china.html.j2
+      - templates/sector_cycles_china.html.j2
+    notes: >
+      RC-R14 China rotation-event detector port (operator pull-forward 2026-07-12).
+      Active A-share basket handoff events (blowoff-crash / fresh-low turn / ratio confirm)
+      across 7 curated complexes, 20 legs, sourced from site/chinabasketdata/baskets.json
+      level series. Append-only ledger at data/rotation_events_china/events.jsonl (RC-R2 law).
+      Display/context tier only — no rank, gate, size, or stance change.
+      authority.may_rank/gate/size/escalate=false. Connect flows shown as context receipts
+      only (Southbound net z from participation.json). Alerts intentionally skipped —
+      alert_triage has no China routing for rotation_event type.
+
+  data-rotation-events-china-ledger:
+    path: data/rotation_events_china/events.jsonl
+    format: jsonl
+    producer: scripts/build_rotation_events_china.py
+    known_extra_writers: []
+    owner_program: rotation-command
+    cadence: daily-engine
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      RC-R14 China rotation-event append-only ledger (RC-R2 law: rows may be superseded
+      by new rows, never re-dated or deleted). Events flagged replayed=true are cold-start
+      replay rows — no retro credit. Expected-NULL until RC-R9 pre-registered studies mature.
+
   # --- 2 consumers ---
   site-foresight-cascade:
     path: site/basketdata/foresight_cascade.json

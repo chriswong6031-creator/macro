@@ -266,6 +266,29 @@ not a validation.
 - **RC-R14 — Cross-region reuse.** Same detector + leg registries for China/HK desks
   (sector_cycles_china, subsector_rotation_china) where basket stores exist; explicitly
   out of W1/W2 scope.
+
+  **2026-07-12 — Pulled forward to NOW by operator order.** China ships display-tier
+  with connect-flow context as receipts. Implementation: `engine/sector_legs_china.py`
+  (basket-level close series from `site/chinabasketdata/baskets.json` chart data),
+  `config/sector_legs_china.json` (7 complexes, 20 legs from the 22 curated baskets;
+  `cn_gold` and `cn_rare_earth` excluded — no true rotation peers in the basket set),
+  `scripts/build_rotation_events_china.py` (nightly builder, asia-close lane),
+  `engine/rotation_events.run_nightly` parameterized with `data_subdir` (zero US change).
+  Surfaces: rotation-events rail on `subsector_rotation_china.html.j2` (collapsed,
+  View-all modal, southbound net z receipt + honest northbound disclosure);
+  handoff chips on `sector_cycles_china.html.j2` basket cards (injected post-render).
+
+  **Binding kills restated for this region port:**
+  1. Rotation × cycle-position entry-confluence = DO NOT TEST (research/DO_NOT_REBUILD.md).
+  2. Gating A-share reversal by subsector rotation state = FALSIFIED.
+  3. Connect flows (southbound/northbound) as detector input, confirmation criterion, or
+     gate = REJECTED. Southbound net z shown as a one-line context receipt only.
+
+  **Alerts intentionally skipped:** `alert_triage.py` has no China routing for
+  `rotation_event` type; half-wiring would be a footgun. China rotation alerts deferred
+  to a future PR that adds the routing.
+
+  HK port remains out of scope (no curated HK basket close series available at this time).
 - **RC-R15 — Self-grading.** Rotation-event family registered in the FDR registry
   (`rotation_events_v1`); quarterly census note auto-appended to the field guide;
   the 2026-06-25 memory→mag7 event is **case zero** in the ledger, graded prospectively

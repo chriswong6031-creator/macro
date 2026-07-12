@@ -120,5 +120,67 @@
 <script src="sector_cycles.js"></script>
 <script>try{document.getElementById('sc-asof').textContent=(window.SECTOR_CYCLES&&window.SECTOR_CYCLES.meta||{}).asOf||'';}catch(e){}</script>
 <script src="theme.js"></script>
+<!-- RC-R14: rotation-event chips on basket cards (display-only context) -->
+<style>
+  .rc-cn-chip { display:inline-block; font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--link) 35%,transparent);
+    background:color-mix(in srgb,var(--link) 8%,transparent); color:var(--link);
+    margin-top:5px; text-decoration:none; cursor:pointer; white-space:nowrap; }
+  .rc-cn-chip:hover { background:color-mix(in srgb,var(--link) 16%,transparent); }
+</style>
+<script>
+(function(){
+'use strict';
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+// Inject rotation-event handoff chips onto matching basket cards.
+// basket cards in sector_cycles have data-id = "b-" + basket_cn_key (e.g. "b-cn_semis").
+function injectChipsCn(payload){
+  if(!payload||!payload.active||!payload.active.length) return;
+  // Map leg key → event(s) it participates in
+  var byLeg={};
+  payload.active.forEach(function(ev){
+    [ev.from_leg,ev.to_leg].forEach(function(leg){
+      if(!leg) return;
+      if(!byLeg[leg.key]) byLeg[leg.key]=[];
+      byLeg[leg.key].push(ev);
+    });
+  });
+  Object.keys(byLeg).forEach(function(legKey){
+    var card=document.querySelector('[data-id="b-'+legKey+'"]');
+    if(!card) return;
+    var ev=byLeg[legKey][0];
+    var role=ev.from_leg.key===legKey?'from':'to';
+    var label=role==='from'
+      ?(isZh()?'⟲ 轮出 → '+(ev.to_leg.name_zh||ev.to_leg.name_en)+' 第'+ev.day_n+'天'
+                :'⟲ out→'+(ev.to_leg.name_en)+' day '+ev.day_n)
+      :(isZh()?'⟲ 轮入自 '+(ev.from_leg.name_zh||ev.from_leg.name_en)+' 第'+ev.day_n+'天'
+                :'⟲ in from '+(ev.from_leg.name_en)+' day '+ev.day_n);
+    var chip=document.createElement('a');
+    chip.className='rc-cn-chip';
+    chip.href='subsector_rotation_china.html#rc-events-cn';
+    chip.textContent=label;
+    card.appendChild(chip);
+  });
+}
+// Cards are rendered after sector_cycles.js mounts. Poll once after a brief delay
+// then re-run on lang/theme change.
+function tryInject(){
+  fetch('marketdata/rotation_events_china.json',{cache:'no-cache'})
+    .then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+    .then(function(data){if(data) injectChipsCn(data);});
+}
+// Wait for cards to be DOM-present before first inject
+var _injTries=0;
+function waitAndInject(){
+  var cards=document.querySelectorAll('#sc-cards .cyc-card[data-id^="b-"]');
+  if(cards.length>0){tryInject();return;}
+  if(_injTries++<20) setTimeout(waitAndInject,300);
+}
+waitAndInject();
+document.documentElement.addEventListener('data-lang-changed',tryInject);
+var _obs=new MutationObserver(function(){tryInject();});
+_obs.observe(document.documentElement,{attributes:true,attributeFilter:['data-lang']});
+})();
+</script>
 </body>
 </html>
