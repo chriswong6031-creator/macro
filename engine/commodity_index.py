@@ -131,6 +131,70 @@ def build_index(
         return {}
 
 
+def composite_series(
+    member_results: dict[str, pd.DataFrame],
+    cfg: dict,
+) -> dict:
+    """Extract the composite index series from member frames.
+
+    Returns a dict with keys:
+        "idx_ew"       : equal-weight chain-linked composite (pd.Series, rebased to 100).
+        "idx_vw"       : vol-weight chain-linked composite (pd.Series, rebased to 100).
+        "first_mature" : pd.Timestamp — first date where >= rebase_min_members present.
+
+    Returns {} if member data is insufficient (fewer than rebase_min_members).
+    Never raises.
+    """
+    try:
+        return _composite_series_inner(member_results, cfg)
+    except Exception:  # noqa: BLE001
+        log.warning("commodity_index.composite_series failed", exc_info=True)
+        return {}
+
+
+def _composite_series_inner(
+    member_results: dict[str, pd.DataFrame],
+    cfg: dict,
+) -> dict:
+    icfg = cfg["index"]
+    min_members: int = int(icfg["rebase_min_members"])
+
+    all_closes: dict[str, pd.Series] = {}
+    for name, df in member_results.items():
+        if "close" in df.columns and df["close"].notna().any():
+            all_closes[name] = df["close"].dropna()
+
+    if len(all_closes) < min_members:
+        return {}
+
+    union_idx = pd.DatetimeIndex(
+        sorted(set().union(*[c.index for c in all_closes.values()]))
+    )
+    ret_df = pd.DataFrame({name: c.reindex(union_idx).pct_change()
+                           for name, c in all_closes.items()})
+    present_df = pd.DataFrame({name: c.reindex(union_idx).notna()
+                                for name, c in all_closes.items()})
+    present_count = present_df.sum(axis=1)
+    mask_ok = present_count >= min_members
+    first_mature = mask_ok.idxmax() if bool(mask_ok.any()) else union_idx[0]
+
+    def _chain(ret: pd.Series) -> pd.Series:
+        lvl = (1.0 + ret.fillna(0.0)).cumprod()
+        lvl = lvl.where(lvl.index >= first_mature)
+        base = lvl.loc[first_mature] if first_mature in lvl.index else np.nan
+        return (lvl / base * 100.0) if (pd.notna(base) and base != 0) else lvl
+
+    idx_ew = _chain(ret_df.mean(axis=1, skipna=True))
+
+    vol_df = pd.DataFrame({name: ret_df[name].rolling(60, min_periods=20).std()
+                           for name in ret_df.columns})
+    inv_vol = (1.0 / vol_df.replace(0, np.nan)).where(present_df)
+    weights_vw = inv_vol.div(inv_vol.sum(axis=1, min_count=1), axis=0)
+    idx_vw = _chain((ret_df * weights_vw).sum(axis=1, min_count=1))
+
+    return {"idx_ew": idx_ew, "idx_vw": idx_vw, "first_mature": first_mature}
+
+
 def _build_index_inner(
     member_results: dict[str, pd.DataFrame],
     benchmarks: dict[str, pd.Series],
@@ -153,7 +217,18 @@ def _build_index_inner(
 
     # ------------------------------------------------------------------ #
     # 1. Union daily index + per-member rebased close
+    #    (uses composite_series to avoid duplicating the chain-link logic)
     # ------------------------------------------------------------------ #
+    cs = _composite_series_inner(member_results, cfg)
+    if not cs:
+        log.warning("commodity_index: composite_series returned empty (too few members)")
+        return {}
+
+    idx_ew      = cs["idx_ew"]
+    idx_vw      = cs["idx_vw"]
+    first_mature = cs["first_mature"]
+
+    # re-derive helpers needed for breadth (present_masks, ret_df, union_idx)
     all_closes: dict[str, pd.Series] = {}
     for name, df in member_results.items():
         if "close" in df.columns and df["close"].notna().any():
@@ -167,40 +242,11 @@ def _build_index_inner(
     union_idx = pd.DatetimeIndex(
         sorted(set().union(*[c.index for c in all_closes.values()]))
     )
-
-    # Per-member DAILY RETURNS on the union index. A member contributes only its
-    # RETURNS from its entry date forward — never its rebased LEVEL — so a member
-    # joining mid-history cannot step the composite level by pure roster composition
-    # (the staggered-entry artifact). This is the standard chain-linked index.
     ret_df = pd.DataFrame({name: c.reindex(union_idx).pct_change()
                            for name, c in all_closes.items()})
     present_masks = {name: c.reindex(union_idx).notna()
                      for name, c in all_closes.items()}
     present_df = pd.DataFrame(present_masks)
-
-    # how many members have PRICE coverage that date; roster is "mature" once
-    # >= min_members are present. The composite is published (rebased to 100) only
-    # from the first mature date, so thin early-coverage history is not shown and
-    # the technical read never spans a low-coverage gap.
-    present_count = present_df.sum(axis=1)
-    mask_ok = present_count >= min_members
-    first_mature = mask_ok.idxmax() if bool(mask_ok.any()) else union_idx[0]
-
-    def _chain(ret: pd.Series) -> pd.Series:
-        lvl = (1.0 + ret.fillna(0.0)).cumprod()
-        lvl = lvl.where(lvl.index >= first_mature)
-        base = lvl.loc[first_mature] if first_mature in lvl.index else np.nan
-        return (lvl / base * 100.0) if (pd.notna(base) and base != 0) else lvl
-
-    # equal-weight: mean of member returns each date, chain-linked to a level
-    idx_ew = _chain(ret_df.mean(axis=1, skipna=True))
-
-    # vol-weight: inverse trailing-60d-vol weights over PRESENT members, chain-linked
-    vol_df = pd.DataFrame({name: ret_df[name].rolling(60, min_periods=20).std()
-                           for name in ret_df.columns})
-    inv_vol = (1.0 / vol_df.replace(0, np.nan)).where(present_df)
-    weights_vw = inv_vol.div(inv_vol.sum(axis=1, min_count=1), axis=0)
-    idx_vw = _chain((ret_df * weights_vw).sum(axis=1, min_count=1))
 
     # ------------------------------------------------------------------ #
     # 2. Index technical read (MTF + ts_momentum + price_shock)

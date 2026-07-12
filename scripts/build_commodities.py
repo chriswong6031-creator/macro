@@ -595,6 +595,26 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never break the page
         log.warning("commodity index build failed (%s)", e)
 
+    # --- Durable-bottom / Euphoric-top Confluence Organ (display-tier) ---------
+    # engine/commodity_confluence.py — deterministic, no scored authority.
+    # Emitted to both complex_latest.json and latest.json for hub consumption.
+    conf: dict = {}
+    try:
+        import time as _time
+        from engine import commodity_confluence
+        _tc0 = _time.time()
+        _idx_ew_series = commodity_index.composite_series(member_results, cfg_com).get("idx_ew")
+        conf = commodity_confluence.build_confluence(
+            member_results,
+            cfg_com,
+            index_close=_idx_ew_series,
+            breadth=index_snap.get("breadth"),
+        )
+        log.info("[timing] commodity confluence (%d members) in %.1fs",
+                 len(member_results), _time.time() - _tc0)
+    except Exception as _ce:  # noqa: BLE001 — display-tier, never break the page
+        log.warning("commodity confluence build failed (%s)", _ce)
+
     recent_events = commodity_alerts.recent(all_events, acfg["timeline_days"])
     timeline = _group_timeline(recent_events)
 
@@ -642,6 +662,7 @@ def main() -> int:
     latest = {"date": as_of, "asof": _asof_raw.strftime("%Y-%m-%d"),
               "regime": cx["regime"], "favored": cx["favored"],
               "index": index_snap.get("index", {}), "breadth": index_snap.get("breadth", {}),
+              "confluence": conf,
               "assets": {a["key"]: {"label": a["label"], "price": a["price"], "chg": a["chg"],
                                     "alloc": a["alloc_pct"], "risk": a["risk_word"],
                                     "trend": a["ts_trend"],
@@ -658,7 +679,8 @@ def main() -> int:
                       "dollar_dir": cx["dollar_dir"], "growth_dir": cx["growth_dir"],
                       "index": index_snap.get("index", {}),
                       "breadth": index_snap.get("breadth", {}),
-                      "members": index_snap.get("members", [])}
+                      "members": index_snap.get("members", []),
+                      "confluence": conf}
     (outdir / "complex_latest.json").write_text(json.dumps(complex_latest, indent=2, default=str))
     return 0
 
