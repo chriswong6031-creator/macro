@@ -1231,3 +1231,172 @@ def test_rulnw2_artifact_display_only_false_is_coerced(tmp_path):
     # Confirm we did take the canonical path (not fallback).
     assert result.get("factor_state_as_of") == "2026-07-06"
     assert result.get("style_regime") == "growth"
+
+
+# ---------------------------------------------------------------------------
+# Tests 25–27: rotation_events world_state lobe (RC deep-integration)
+# ---------------------------------------------------------------------------
+
+def _write_rotation_events_artifact(tmp_path: Path, n_active: int = 3) -> None:
+    """Write a minimal rotation_events.json fixture to tmp_path."""
+    site_md = tmp_path / "site" / "marketdata"
+    site_md.mkdir(parents=True, exist_ok=True)
+
+    def _evt(idx: int, severity: str = "major", started: str = "2026-07-01") -> dict:
+        return {
+            "id": f"xlk:a{idx}->b{idx}",
+            "sector": f"xlk{idx}",
+            "sector_name_en": "Technology",
+            "sector_name_zh": "科技",
+            "from_leg": {"key": f"from_{idx}", "name_en": f"From Leg {idx}", "name_zh": "", "tier": "secondary"},
+            "to_leg": {"key": f"to_{idx}", "name_en": f"To Leg {idx}", "name_zh": "", "tier": "primary"},
+            "started": started,
+            "day_n": 5 + idx,
+            "asof": "2026-07-10",
+            "severity": severity,
+            "receipts": {},
+            "confirmed_tonight": True,
+            "copy_en": "rotation copy",
+            "copy_zh": "",
+        }
+
+    active = [_evt(i, severity="major") for i in range(n_active)]
+    payload = {
+        "schema": "rotation_events.v1",
+        "ok": True,
+        "as_of": "2026-07-10",
+        "generated_utc": "2026-07-10 08:00 UTC",
+        "authority": {
+            "tier": "display",
+            "may_rank": False,
+            "may_gate": False,
+            "may_size": False,
+            "may_escalate": False,
+        },
+        "params": {},
+        "n_pairs_scanned": 50,
+        "active": active,
+        "created_tonight": [],
+        "closed_tonight": [],
+        "coldstart": False,
+        "fragmented_sectors": [],
+        "ruler": {
+            "schema": "rotation_ruler.v1",
+            "watermark": "2000-01-01",
+            "all": {},
+            "modern": {
+                "n": 8,
+                "run_pct": {"p25": 3.0, "median": 7.5, "p75": 11.0},
+                "sessions_to_peak": {"median": 9, "p75": 17},
+            },
+            "reconstructed": {},
+        },
+    }
+    (site_md / "rotation_events.json").write_text(
+        json.dumps(payload), encoding="utf-8"
+    )
+
+
+def test_compose_rotation_events_absent(tmp_path):
+    """Test 25: missing artifact returns null-filled lobe, display_only always True."""
+    from engine.neuralweb.world_state import _compose_rotation_events
+    lobe = _compose_rotation_events(root=tmp_path)
+    assert lobe["display_only"] is True
+    assert lobe["n_active"] is None
+    assert lobe["events"] is None
+    assert lobe["as_of"] is None
+    assert "note" in lobe
+
+
+def test_compose_rotation_events_happy_path(tmp_path):
+    """Test 26: populated artifact produces correct lobe (happy path)."""
+    _write_rotation_events_artifact(tmp_path, n_active=3)
+    from engine.neuralweb.world_state import _compose_rotation_events
+    lobe = _compose_rotation_events(root=tmp_path)
+    assert lobe["display_only"] is True
+    assert lobe["as_of"] == "2026-07-10"
+    assert lobe["n_active"] == 3
+    assert isinstance(lobe["events"], list)
+    assert len(lobe["events"]) == 3
+    assert lobe["n_truncated"] == 0
+    # Ruler passthrough
+    assert lobe["ruler"] is not None
+    assert lobe["ruler"]["n"] == 8
+    assert lobe["ruler"]["run_pct_median"] == 7.5
+    assert lobe["ruler"]["sessions_to_peak_median"] == 9
+    # Event structure: compact (no full leg objects)
+    evt = lobe["events"][0]
+    assert "sector" in evt
+    assert "from_leg" in evt and isinstance(evt["from_leg"], dict)
+    assert "key" in evt["from_leg"] and "name_en" in evt["from_leg"]
+    assert "severity" in evt
+    assert "day_n" in evt
+    assert "started" in evt
+    assert "confirmed_tonight" in evt
+
+
+def test_compose_rotation_events_truncation(tmp_path):
+    """Test 27: more than 6 active events → capped at 6, n_truncated correct."""
+    _write_rotation_events_artifact(tmp_path, n_active=9)
+    from engine.neuralweb.world_state import _compose_rotation_events
+    lobe = _compose_rotation_events(root=tmp_path)
+    assert lobe["display_only"] is True
+    assert lobe["n_active"] == 9
+    assert len(lobe["events"]) == 6
+    assert lobe["n_truncated"] == 3
+
+
+def test_compose_rotation_events_severity_sort(tmp_path):
+    """Test 28: events sorted worst-first (major before notable before standard)."""
+    site_md = tmp_path / "site" / "marketdata"
+    site_md.mkdir(parents=True, exist_ok=True)
+
+    # Create events: one standard, one notable, one major — out of severity order
+    events = [
+        {"id": "s1", "sector": "s1", "sector_name_en": "", "sector_name_zh": "",
+         "from_leg": {"key": "a", "name_en": "A", "name_zh": "", "tier": "p"},
+         "to_leg": {"key": "b", "name_en": "B", "name_zh": "", "tier": "s"},
+         "started": "2026-07-01", "day_n": 1, "asof": "2026-07-10",
+         "severity": "standard", "receipts": {}, "confirmed_tonight": False,
+         "copy_en": "", "copy_zh": ""},
+        {"id": "s2", "sector": "s2", "sector_name_en": "", "sector_name_zh": "",
+         "from_leg": {"key": "c", "name_en": "C", "name_zh": "", "tier": "p"},
+         "to_leg": {"key": "d", "name_en": "D", "name_zh": "", "tier": "s"},
+         "started": "2026-07-05", "day_n": 2, "asof": "2026-07-10",
+         "severity": "notable", "receipts": {}, "confirmed_tonight": False,
+         "copy_en": "", "copy_zh": ""},
+        {"id": "s3", "sector": "s3", "sector_name_en": "", "sector_name_zh": "",
+         "from_leg": {"key": "e", "name_en": "E", "name_zh": "", "tier": "p"},
+         "to_leg": {"key": "f", "name_en": "F", "name_zh": "", "tier": "s"},
+         "started": "2026-07-03", "day_n": 3, "asof": "2026-07-10",
+         "severity": "major", "receipts": {}, "confirmed_tonight": True,
+         "copy_en": "", "copy_zh": ""},
+    ]
+    payload = {
+        "schema": "rotation_events.v1", "ok": True, "as_of": "2026-07-10",
+        "generated_utc": "", "authority": {}, "params": {}, "n_pairs_scanned": 10,
+        "active": events, "created_tonight": [], "closed_tonight": [],
+        "coldstart": False, "fragmented_sectors": [], "ruler": None,
+    }
+    (site_md / "rotation_events.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    from engine.neuralweb.world_state import _compose_rotation_events
+    lobe = _compose_rotation_events(root=tmp_path)
+    assert lobe["display_only"] is True
+    assert lobe["n_active"] == 3
+    assert len(lobe["events"]) == 3
+    # First event must be the major one (worst severity first)
+    assert lobe["events"][0]["severity"] == "major"
+    assert lobe["events"][1]["severity"] == "notable"
+    assert lobe["events"][2]["severity"] == "standard"
+
+
+def test_rotation_events_in_build_world_state_payload(tmp_path):
+    """Test 29: rotation_events key present in build_world_state payload, display_only=True."""
+    # build_world_state with an empty tmp_path → all lobes null-filled but no raise
+    payload = build_world_state(root=tmp_path)
+    assert "rotation_events" in payload, "rotation_events key missing from world_state payload"
+    lobe = payload["rotation_events"]
+    assert lobe.get("display_only") is True, (
+        f"rotation_events lobe missing display_only=True, got: {lobe!r}"
+    )
