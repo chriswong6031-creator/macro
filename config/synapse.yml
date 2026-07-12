@@ -12073,3 +12073,162 @@ artifacts:
       rows_attributed_total, schema}. Written every successful run of engine/standout_audit.py.
       Heartbeat / organism-state freshness sensor reads this path to detect a persistently-
       failing audit (SA-R16 silent-death immunity).
+
+  # ---------------------------------------------------------------------------
+
+  china-regime-pit-daily:
+    path: data/china_regime/regime_daily.parquet
+    format: parquet
+    producer: engine/china_regime_store.py
+    known_extra_writers:
+      - "scripts/build_china_library.py — calls china_regime_store.append() in asia lane"
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_standout_track.py
+      - engine/china_standout_audit.py
+    external_consumers: []
+    notes: >
+      SA-W2 (SA-R7): PIT daily-append CN regime store. Keep-first per date — once a
+      row is written for a given night, re-runs never overwrite it. Fail-closed:
+      only the asia lane (CN_LANE=asia) may write. Schema: date, quad, quad_name,
+      liquidity, cycle, growth_score, inflation_score, regime_confidence,
+      schema_version, written_at. Pre-store rows in china_standout_track carry
+      own_market_regime=null (us_proxy stratum — never pooled with own-market cells).
+
+  china-standout-cn-attribution:
+    path: data/standout_audit/cn_attribution.parquet
+    format: parquet
+    producer: engine/china_standout_audit.py
+    known_extra_writers:
+      - "scripts/build_china_library.py — calls china_standout_audit.run_attribution()"
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_standout_audit.py
+    external_consumers: []
+    notes: >
+      SA-W2: CN two-axis attribution sidecar. Key: (date, ticker, horizon,
+      taxonomy_version). Keep-first per key. Axis-1 outcome_cause + Axis-2
+      process_fault; taxonomy_version=v2; loop-IMMUTABLE thresholds per SA-R2.
+      Fail-closed: asia lane only. SA-R10 cluster-unit stats applied at scoreboard
+      build time (not stored per-row). Pre-store rows carry regime_stratum=us_proxy.
+
+  china-standout-cn-evidence:
+    path: data/standout_audit/cn_evidence.jsonl
+    format: jsonl
+    producer: engine/china_standout_audit.py
+    known_extra_writers:
+      - "scripts/build_china_library.py — calls china_standout_audit.run_attribution()"
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/metabolism/standout_auditor.py
+    external_consumers: []
+    notes: >
+      SA-W2: per-pick evidence packs for newly matured CN board rows. Per-run
+      append (never overwrite). Fields: identity stamps (species_id, own_market_regime,
+      regime_stratum), outcome numbers, both attribution axes. Future consumer:
+      standout_auditor context assembler (SA-W3).
+
+  china-standout-cn-audit-scoreboard:
+    path: site/factordata/cn_audit_scoreboard.json
+    format: json
+    producer: engine/china_standout_audit.py
+    known_extra_writers:
+      - "scripts/build_china_library.py — calls china_standout_audit.run_attribution()"
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: cn_audit_scoreboard.v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/china_stocks_lab.html.j2
+    external_consumers: []
+    notes: >
+      SA-W2: stratified CN audit scoreboard. Cells: regime_stratum × (accruing/reported).
+      us_proxy stratum is always a separate cell, never pooled with own-market cells (SA-R7).
+      SA-R10 cluster-unit stats: raw_n + effective_n + Wilson CI on the cluster unit.
+      Future consumer: SA-W5 lab page Accountability section.
+
+  china-standout-cn-audit-state:
+    path: data/standout_audit/cn_audit_state.json
+    format: json
+    producer: engine/china_standout_audit.py
+    known_extra_writers:
+      - "engine/china_regime_store.py — updates regime_store_last_date"
+      - "scripts/build_china_library.py — triggers via chain"
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: attribution_last_run
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_standout_audit.py
+      - engine/china_regime_store.py
+    external_consumers: []
+    notes: >
+      SA-W2: freshness stamp for CN attribution lane. Fields: regime_store_last_date,
+      regime_store_updated_at, attribution_last_run. SA-R16: a persistently failing audit
+      shows up as a stale-store breach rather than riding silently green.
+
+  china-standout-cn-fitness:
+    path: data/metabolism/fitness/standouts_cn.json
+    format: json
+    producer: engine/china_standout_audit.py
+    known_extra_writers:
+      - "scripts/build_china_library.py — calls china_standout_audit.run_attribution()"
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: metabolism.standouts_cn.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/metabolism_digest.py
+    external_consumers: []
+    notes: >
+      SA-W2: CN standout fitness card (6 sensors: hit_quality, upside_capture,
+      coverage_health, missed_mover_rate, timing_quality, process_integrity).
+      Follows til.json format (metabolism.standouts_cn.v1). All sensors accruing
+      until SA-R10 floors met (~2026-10-15). SA-R3 balanced-fitness law: each
+      precision sensor is paired with a recall/coverage sensor. Authority block:
+      is_context_only=True, display_only=True. No 'validated' claim ever printed.
