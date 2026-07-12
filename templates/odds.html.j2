@@ -1,0 +1,188 @@
+{# ============================================================================
+   Odds Desk — Historical Base-Rate Analyzer + Factor Match screener.
+   Static skeleton only: everything data-driven is rendered client-side by
+   site/odds.js from site/oddsdata/catalog.json (git/Pages), per-ticker
+   matrices on R2 via (window.DATA_BASE||'') + 'oddsmatrix/<T>.json', and
+   site/oddsdata/factor_match.json. Rendered to site/odds.html by
+   scripts/build_odds.py through lib/pages.write_page (data_base shim comes
+   free). The template requires NO context variables — safe to render bare.
+   ========================================================================== #}
+{% extends "report_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+
+{% block title %}{{ t('Odds Desk — Historical Base Rates', '胜率台 — 历史基础概率') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="odds.css?v=1">
+{% endblock %}
+
+{% block base_css %}
+  /* page-scoped: widen the reading column for the screener table */
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1336px)/2)); padding-right:max(18px,calc((100vw - 1336px)/2)); } }
+{% endblock %}
+
+{% block content %}
+<section class="od-hero">
+  <p class="eyebrow">🎲 {{ t('Historical Odds Desk', '历史胜率台') }}</p>
+  <h1>{{ t('Odds — what happened next on days like today', '胜率 — 历史上像今天这样的日子，后来怎么走') }}</h1>
+  <p class="od-sub">{{ t(
+     'Pick a ticker. Today\'s market fingerprint — move size, VIX regime, market trend, macro quad and more — becomes a set of toggleable conditions. Every active condition filters up to 35 years of history down to the days that looked like today; the verdict is the empirical base rate of what happened next. No prediction, no model — just counted history, with the unconditional base rate shown alongside so the edge is honest.',
+     '选择一个标的。今天的市场指纹——涨跌幅度、VIX 区间、大盘趋势、宏观象限等——变成一组可开关的条件。每个激活的条件把最长 35 年的历史过滤到与今天相似的交易日；结论就是随后走势的经验概率。不预测、不建模——只统计历史，并同时展示无条件基础概率，让优势诚实可见。') }}</p>
+  <div class="od-meta">
+    <span class="chip" id="od-asof-chip"><span class="l-en">As of —</span><span class="l-zh">截至 —</span></span>
+    <span class="chip">{{ t('Returns: open-to-close', '收益口径：开盘→收盘') }}</span>
+    <span class="chip" id="od-uni-chip" hidden></span>
+    <span class="chip tag-macro">{{ t('Macro Quad conditions — unique to this desk', '宏观象限条件 — 本台独有') }}</span>
+  </div>
+</section>
+
+<div id="od-stale" class="od-stale" hidden></div>
+
+<div id="od-error" class="od-empty" hidden>
+  <div class="od-empty-ico">◦◦◦</div>
+  <p>{{ t('Odds data is unavailable right now. The nightly build will refresh it — check back later.',
+          '胜率数据暂不可用。夜间构建会自动刷新——请稍后再来。') }}</p>
+</div>
+
+<div id="od-app" hidden>
+
+  {# ---------------- top bar: ticker + outcome / range / tolerance ---------------- #}
+  <div class="od-top" id="od-top">
+    <div class="od-tk">
+      <img id="od-logo" class="od-logo lg" alt="" loading="eager" hidden>
+      <div class="od-tk-box">
+        <input id="od-tk-input" type="text" autocomplete="off" spellcheck="false"
+               aria-label="Ticker search"
+               placeholder="Search ticker — SPY, NVDA, XLK…"
+               data-ph-zh="搜索标的 — SPY、NVDA、XLK…">
+        <div id="od-tk-sugg" class="od-sugg" hidden></div>
+      </div>
+      <span id="od-move-chip" class="od-move" hidden></span>
+    </div>
+    <div class="od-ctrls">
+      <div class="od-ctrl">
+        <span class="od-ctrl-k">{{ t('Outcome', '观察期') }}</span>
+        <div class="od-seg" id="od-seg-horizon" role="group" aria-label="Outcome horizon">
+          <button class="segbtn" data-v="1d">{{ t('Next Day', '次日') }}</button>
+          <button class="segbtn" data-v="5d">{{ t('Next Week · 5d', '下周 · 5日') }}</button>
+          <button class="segbtn" data-v="20d">{{ t('Next Month · 20d', '下月 · 20日') }}</button>
+        </div>
+      </div>
+      <div class="od-ctrl">
+        <span class="od-ctrl-k">{{ t('Range', '数据范围') }}</span>
+        <div class="od-seg" id="od-seg-range" role="group" aria-label="Data range">
+          <button class="segbtn" data-v="5y">5y</button>
+          <button class="segbtn" data-v="10y">10y</button>
+          <button class="segbtn" data-v="20y">20y</button>
+          <button class="segbtn" data-v="max">{{ t('Max', '全部') }}</button>
+        </div>
+      </div>
+      <div class="od-ctrl">
+        <span class="od-ctrl-k">{{ t('Tolerance', '容差') }}</span>
+        <div class="od-seg" id="od-seg-tol" role="group" aria-label="Bucket tolerance">
+          <button class="segbtn" data-v="0">{{ t('Exact', '精确') }}</button>
+          <button class="segbtn" data-v="1">±1</button>
+          <button class="segbtn" data-v="2">±2</button>
+        </div>
+      </div>
+      <div class="od-ctrl od-soon">
+        <span class="od-ctrl-k">{{ t('Pattern', '形态') }}</span>
+        <div class="od-seg">
+          <button class="segbtn" disabled>{{ t('Single day', '单日') }}</button>
+        </div>
+        <span class="od-soon-tag">{{ t('multi-day — soon', '多日形态 — 即将推出') }}</span>
+      </div>
+    </div>
+  </div>
+
+  {# ---------------- analyzer layout: condition rail + verdict + tabs ---------------- #}
+  <div class="od-layout" id="od-layout">
+    <aside class="od-rail" id="od-rail">
+      <div class="od-rail-h">
+        <span class="od-rail-title">{{ t('Market Context', '市场环境') }}</span>
+        <span class="chip" id="od-active-count"></span>
+      </div>
+      <div class="od-matchline" id="od-match-count"></div>
+      <div id="od-rail-body"></div>
+      <p class="od-rail-note">{{ t('Tolerance applies to ordered factors only; categorical factors (trend state, month, quad) always match exactly. A condition with no value today cannot be activated.',
+                                   '容差仅适用于有序因子；分类因子（趋势状态、月份、象限）始终精确匹配。今日无数据的条件无法激活。') }}</p>
+    </aside>
+
+    <main class="od-main">
+      <section id="od-verdict" class="od-verdict" aria-live="polite"></section>
+
+      <nav class="od-tabs" id="od-tabs" role="tablist">
+        <button class="tabbtn" data-tab="days" role="tab">{{ t('Matching Days', '匹配交易日') }}</button>
+        <button class="tabbtn" data-tab="path" role="tab">{{ t('Price Path', '价格路径') }}</button>
+        <button class="tabbtn" data-tab="returns" role="tab">{{ t('Returns', '收益分布') }}</button>
+        <button class="tabbtn" data-tab="fm" role="tab">{{ t('Factor Match', '因子共振筛选') }}</button>
+      </nav>
+
+      <section id="od-pane-days" class="od-pane" role="tabpanel" hidden>
+        <div class="od-pane-h">
+          <h3>{{ t('Where the matching days sit on the chart', '匹配交易日在走势中的位置') }}</h3>
+          <button id="od-csv" class="navbtn" type="button">⬇ {{ t('Export CSV', '导出 CSV') }}</button>
+        </div>
+        <div id="od-price-chart" class="od-chart" data-h="300"></div>
+        <div id="od-days-note" class="od-note"></div>
+        <div class="tbl-scroll"><table class="od-tbl" id="od-days-table"></table></div>
+      </section>
+
+      <section id="od-pane-path" class="od-pane" role="tabpanel" hidden>
+        <div class="od-pane-h">
+          <h3>{{ t('Median forward path of the matched days', '匹配交易日的前瞻价格路径') }}</h3>
+          <span class="od-pane-sub">{{ t('cumulative return from the next open, 20 trading days out · band = 25th–75th percentile',
+                                          '自次日开盘起的累计收益，前瞻 20 个交易日 · 区间带 = 第 25–75 百分位') }}</span>
+        </div>
+        <div id="od-path-chart" class="od-chart" data-h="280"></div>
+        <div id="od-path-note" class="od-note"></div>
+      </section>
+
+      <section id="od-pane-returns" class="od-pane" role="tabpanel" hidden>
+        <div class="od-pane-h">
+          <h3>{{ t('Distribution of what happened next', '随后收益的分布') }}</h3>
+          <span class="od-pane-sub">{{ t('one tick per instance below the histogram', '直方图下方每条竖线代表一个历史实例') }}</span>
+        </div>
+        <div id="od-hist-chart" class="od-chart" data-h="250"></div>
+        <div id="od-strip-chart" class="od-strip"></div>
+        <div id="od-ret-note" class="od-note"></div>
+      </section>
+
+      <section id="od-pane-fm" class="od-pane" role="tabpanel" hidden>
+        <div class="od-pane-h">
+          <h3>{{ t('Factor Match — today\'s conditions across the whole universe', '因子共振 — 今日条件在全市场的共振') }}</h3>
+          <span class="od-pane-sub">{{ t('each symbol vs its OWN history under a shared market context · precomputed nightly',
+                                          '每个标的与其自身历史比较，共享今日市场环境 · 每夜预计算') }}</span>
+        </div>
+        <div class="od-fm-head">
+          <div id="od-fm-templates" class="od-fm-tpls"></div>
+          <div class="od-fm-controls">
+            <label class="od-fm-ctl">{{ t('Min sample', '最小样本') }}
+              <input id="od-fm-minn" type="number" min="0" step="1" inputmode="numeric"></label>
+            <label class="od-fm-ctl">{{ t('Sector', '板块') }}
+              <select id="od-fm-sector"></select></label>
+          </div>
+        </div>
+        <div id="od-fm-market" class="od-note"></div>
+        <div class="tbl-scroll"><table class="od-tbl od-fm-tbl" id="od-fm-table"></table></div>
+        <div id="od-fm-note" class="od-note"></div>
+      </section>
+    </main>
+  </div>
+
+  {# ---------------- method + roadmap footnote ---------------- #}
+  <div class="od-foot">
+    <p>{{ t('<b>Method.</b> Returns are measured open-to-close: from the NEXT open to the close of the horizon end — what a trader could actually execute, never same-day hindsight. Buckets are computed with no look-ahead (ATR and volume baselines use only prior-day data). The verdict is colored by the edge versus the unconditional base rate over the same range and horizon — never by the raw win rate. Small samples are flagged, not hidden.',
+          '<b>方法。</b>收益按开盘至收盘计量：从下一个开盘价到观察期末的收盘价——这是交易者真正可执行的口径，绝无当日后视。分桶计算无前视偏差（ATR 与成交量基线仅用前一日数据）。结论颜色由相对同范围、同观察期的无条件基础概率的优势决定——绝不按原始胜率着色。小样本会被标注，而不是被隐藏。') }}</p>
+    <p class="mut">{{ t('Roadmap (v2): earnings proximity &amp; analyst-trend conditions, multi-day observed patterns, crypto symbols, arbitrary-combo universe scans. Historical base rates are descriptive statistics, not investment advice — the future is under no obligation to rhyme.',
+          '路线图（v2）：财报临近与分析师趋势条件、多日形态、加密资产、任意组合的全市场扫描。历史基础概率只是描述性统计，不构成投资建议——未来并无义务重复历史。') }}</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script src="mm_charts.js?v=2"></script>
+<script src="odds.js?v=1"></script>
+{% endblock %}

@@ -361,3 +361,16 @@ data/dol_certs/
 # Only the site projections (site/basketdata/phrase_velocity.json,
 # site/basketdata/github_adoption.json, data/neuralweb/discovery_confluence.json) are git-tracked.
 data/edgar_phrase_velocity/
+
+# Odds Desk (research/ODDS_DESK.md) — heavy per-ticker stores, R2-plane only.
+# site/oddsmatrix/<T>.json factor matrices are served from Cloudflare R2 via
+# scripts/publish_r2 --dirs oddsmatrix, never committed/deployed. The small
+# site/oddsdata/*.json artifacts (catalog.json, factor_match.json) stay git-tracked
+# like other sitedata — intentionally NOT listed here.
+site/oddsmatrix/
+# data/odds_ohlcv/<T>.parquet OHLCV backfill store (yfinance deep history,
+# auto-adjusted) — R2-backed via publish_r2 --dirs odds_ohlcv; runner-local
+# between runs. Mirrors pattern: data/massive_stock_day/*.parquet above.
+# The negation keeps the small _meta.json manifest tracked.
+data/odds_ohlcv/*.parquet
+!data/odds_ohlcv/_meta.json

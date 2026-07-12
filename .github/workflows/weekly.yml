@@ -221,7 +221,7 @@ jobs:
       - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
         if: always()
         run: |
-          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/subsectorohlc_nasdaq site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday 2>/dev/null || true
+          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/subsectorohlc_nasdaq site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday site/oddsmatrix 2>/dev/null || true
       - name: upload pages artifact
         if: always()   # deploy must not hinge on the commit-push above succeeding
         uses: actions/upload-pages-artifact@v3

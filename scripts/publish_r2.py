@@ -70,12 +70,21 @@ DEFAULT_DIRS = [
     "stock_personality",  # Stock-personality panel monthly partitions — gitignored-local,
                           # published to R2 via this script (stock-personality program).
                           # Source: data/stock_personality/panel/YYYY-MM/panel.parquet
+    "oddsmatrix",  # Odds Desk per-ticker factor matrices (site/oddsmatrix/<T>.json,
+                   # gitignored) — heavy columnar JSON (~130 names × 35y history);
+                   # the light catalog/factor_match JSON under site/oddsdata/ stays
+                   # git-tracked on Pages. See research/ODDS_DESK.md.
 ]
 
 # Dirs whose source lives under data/ rather than site/ (per-ticker parquet stores
 # that are never rendered into site/ — published straight from the data plane).
 _DATA_DIRS = {
     "hk_stocks_ext", "massive_stock_day", "thetadata_eod", "stock_personality",
+    "odds_ohlcv",  # Odds Desk OHLCV backfill store (data/odds_ohlcv/<T>.parquet,
+                   # gitignored): yfinance deep history materialised by
+                   # scripts/build_odds.py on the macstudio runners (kept on disk
+                   # between runs); R2 is the cold-start hydration. Mirrors the
+                   # massive_stock_day pattern. See research/ODDS_DESK.md.
     "attention",  # SLF-048 Wikipedia pageview store (data/attention/*.parquet,
                   # gitignored since 2026-07-06): deep history 2015-07→ lives on R2,
                   # kept CURRENT by daily.yml's collect job (fetch_r2 restore ->
