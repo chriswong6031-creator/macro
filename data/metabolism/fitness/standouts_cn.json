@@ -1,0 +1,89 @@
+{
+  "schema": "metabolism.standout_fitness.v1",
+  "as_of": "2026-07-12",
+  "lobe": "site-china-standouts",
+  "status": "pre_accrual",
+  "maturity": "accruing",
+  "sensors": {
+    "hit_quality": {
+      "id": "hit_quality",
+      "value": null,
+      "raw_n": 0,
+      "effective_n": 0,
+      "maturity": "accruing",
+      "note": "accruing: sensors accumulating from 2026-10-15",
+      "store": "data/standout_audit/cn_attribution.parquet"
+    },
+    "upside_capture": {
+      "id": "upside_capture",
+      "value": null,
+      "raw_n": 0,
+      "effective_n": 0,
+      "maturity": "accruing",
+      "note": "accruing: sensors accumulating from 2026-10-15",
+      "store": "data/standout_audit/cn_attribution.parquet"
+    },
+    "coverage_health": {
+      "id": "coverage_health",
+      "value": null,
+      "raw_n": 0,
+      "effective_n": 0,
+      "maturity": "accruing",
+      "note": "accruing: value=null until frozen_baseline anchored (SA-R4). Scoreboard coverage_monitor carries pre-maturity all-horizon diagnostic count.",
+      "store": "data/standout_audit/cn_attribution.parquet",
+      "reading": null,
+      "trailing_4wk_buy_count": null,
+      "frozen_baseline": null
+    },
+    "missed_mover_rate": {
+      "id": "missed_mover_rate",
+      "value": null,
+      "raw_n": 0,
+      "effective_n": 0,
+      "maturity": "accruing",
+      "note": "accruing: no_21d_rows_yet",
+      "store": "data/standout_audit/cn_attribution.parquet",
+      "n_episodes": null,
+      "n_missed": null,
+      "pipeline_recall": null,
+      "raw_miss_rate": null
+    },
+    "timing_quality": {
+      "id": "timing_quality",
+      "value": null,
+      "raw_n": 0,
+      "effective_n": 0,
+      "maturity": "accruing",
+      "note": "accruing: sensors accumulating from 2026-10-15",
+      "store": "data/standout_audit/cn_attribution.parquet"
+    },
+    "process_integrity": {
+      "id": "process_integrity",
+      "value": null,
+      "raw_n": 0,
+      "effective_n": 0,
+      "maturity": "accruing",
+      "note": "accruing: sensors accumulating from 2026-10-15",
+      "store": "data/standout_audit/cn_attribution.parquet"
+    }
+  },
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path"
+    ]
+  },
+  "notes": "CN standout board fitness card — pre-accrual stub. Producer: engine/china_standout_audit.py (accruing from 2026-10-15). All sensors null; accumulation begins at CN board maturity date. Schema mirrors standouts_us.json exactly."
+}

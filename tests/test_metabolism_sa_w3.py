@@ -424,7 +424,10 @@ class TestBuildContext:
 
 class TestProposalHandoff:
     def _make_postmortem_with_proposal(self) -> dict:
-        """Build a synthetic postmortem containing a standout_review hypothesis."""
+        """Build a synthetic postmortem containing a standout_review hypothesis.
+
+        F3 FIX: uses a whitelisted param ('us.tier_frac') so param validation passes.
+        """
         return {
             "schema": "standout_auditor.postmortem.v1",
             "market": "us",
@@ -437,7 +440,7 @@ class TestProposalHandoff:
                     "description": "Test proposal for coverage_health sensor",
                     "lane": "standout_review",
                     "market": "us",
-                    "param": "STRONG_BUY_THRESHOLD",
+                    "param": "us.tier_frac",  # valid whitelisted param (SA-R2)
                     "delta_steps": -1,
                     "rationale_ref": "data/standout_audit/postmortems/us-test-2026-07-12.json",
                     "proposer": "standout_auditor",
@@ -447,7 +450,7 @@ class TestProposalHandoff:
                         "band": "accruing",
                         "check_by": "2026-09-15",
                     },
-                    "falsifiable_claim": "If threshold lowered by 1 step, coverage_health increases.",
+                    "falsifiable_claim": "If tier_frac lowered by 1 step, coverage_health increases.",
                 },
                 {
                     "rank": 2,
@@ -479,7 +482,7 @@ class TestProposalHandoff:
 
             # Validate values
             assert data["market"] == "us"
-            assert data["param"] == "STRONG_BUY_THRESHOLD"
+            assert data["param"] == "us.tier_frac"
             assert data["proposer"] == "standout_auditor"
             assert data["delta_steps"] == -1
 
@@ -765,10 +768,10 @@ class TestRunAudit:
             "hypotheses": [
                 {
                     "rank": 1,
-                    "description": "Lower STRONG_BUY_THRESHOLD to improve coverage.",
+                    "description": "Lower us.tier_frac to improve coverage.",
                     "lane": "standout_review",
                     "market": "us",
-                    "param": "STRONG_BUY_THRESHOLD",
+                    "param": "us.tier_frac",  # valid whitelisted param (SA-R2)
                     "delta_steps": -1,
                     "rationale_ref": "data/standout_audit/postmortems/us-test-cycle.json",
                     "proposer": "standout_auditor",
@@ -807,20 +810,27 @@ class TestRunAudit:
             f"unexpected status: {result}"
         )
 
-    def test_run_audit_dry_run_never_raises(self, tmp_path: Path) -> None:
-        """run_audit(dry_run=True) must never raise even with no LLM provider."""
+    def test_run_audit_dry_run_none_caller_refused(self, tmp_path: Path) -> None:
+        """run_audit(dry_run=True, model_caller=None) must return status='refused'.
+
+        F1 fix: dry_run with None model_caller cannot reach the real LLM waterfall.
+        """
         from engine.metabolism.standout_auditor import run_audit  # type: ignore[import]
 
-        # No model_caller, no real LLM — should return gracefully
         result = run_audit(
             market="us",
-            cycle_id="no-llm-cycle",
+            cycle_id="refused-cycle",
             model_caller=None,
             root=tmp_path,
             dry_run=True,
         )
         assert isinstance(result, dict)
-        assert "schema" in result
+        assert result.get("status") == "refused", (
+            f"expected status='refused' for dry_run + None model_caller, got: {result}"
+        )
+        assert "dry_run requires injected model_caller" in str(result.get("note") or ""), (
+            f"expected refusal message in 'note', got: {result.get('note')}"
+        )
 
     def test_run_audit_paused_returns_paused(self, tmp_path: Path) -> None:
         """run_audit with AUTONOMY_PAUSED set returns status='paused'."""
@@ -842,9 +852,10 @@ class TestRunAudit:
         assert isinstance(result, dict)
 
     def test_run_audit_proposal_file_written(self, tmp_path: Path) -> None:
-        """run_audit with standout_review hypothesis must write a proposal file."""
+        """run_audit(dry_run=True) must write proposal files to the shadow dir, not real proposals/."""
         from engine.metabolism.standout_auditor import run_audit  # type: ignore[import]
 
+        cycle_id = "test-cycle-prop"
         stub_pm = self._make_stub_postmortem()
         stub_reply = json.dumps(stub_pm)
 
@@ -853,18 +864,271 @@ class TestRunAudit:
 
         run_audit(
             market="us",
-            cycle_id="test-cycle-prop",
+            cycle_id=cycle_id,
             model_caller=mock_caller,
             root=tmp_path,
             dry_run=True,
         )
 
-        # Check proposal file was written
-        props_dir = tmp_path / "data" / "standout_review" / "proposals"
-        if props_dir.exists():
-            prop_files = list(props_dir.glob("us-test-cycle-prop-*.json"))
+        # F1: proposals must be in shadow dir, never in real data/standout_review/proposals/
+        real_props_dir = tmp_path / "data" / "standout_review" / "proposals"
+        assert not real_props_dir.exists() or not list(real_props_dir.iterdir()), (
+            f"dry_run wrote to REAL proposals dir: {list(real_props_dir.iterdir())}"
+        )
+
+        # Proposals go to shadow dir
+        shadow_props_dir = (
+            tmp_path / "data" / "metabolism" / "shadow" / cycle_id /
+            "standout_audit" / "proposals"
+        )
+        if shadow_props_dir.exists():
+            prop_files = list(shadow_props_dir.glob("us-*.json"))
             if prop_files:
                 data = json.loads(prop_files[0].read_text(encoding="utf-8"))
                 required = {"market", "param", "delta_steps", "rationale_ref", "proposer", "cycle_id"}
                 missing = required - set(data.keys())
                 assert not missing, f"proposal file missing fields: {missing}"
+
+
+# ---------------------------------------------------------------------------
+# 12. R-V4-1 dry_run shadow isolation — real stores NEVER touched
+# ---------------------------------------------------------------------------
+
+class TestDryRunShadowIsolation:
+    """F1: dry_run=True must write ZERO files outside data/metabolism/shadow/."""
+
+    def _make_stub_caller(self) -> Any:
+        stub_pm = {
+            "market": "us",
+            "cycle_id": "shadow-dryrun-001",
+            "per_cohort_postmortems": [],
+            "hypotheses": [
+                {
+                    "rank": 1,
+                    "description": "dry_run shadow isolation test",
+                    "lane": "standout_review",
+                    "market": "us",
+                    "param": "us.tier_frac",
+                    "delta_steps": -1,
+                    "rationale_ref": "data/standout_audit/postmortems/us-shadow-dryrun-001.json",
+                    "proposer": "standout_auditor",
+                    "fitness_contract": {
+                        "sensor": "coverage_health",
+                        "check_by": "2026-09-15",
+                    },
+                    "falsifiable_claim": "coverage_health improves",
+                },
+                {
+                    "rank": 2,
+                    "description": "code fix hypothesis",
+                    "lane": "code fix",
+                    "fitness_contract": {"sensor": "timing_quality", "check_by": "2026-09-15"},
+                },
+            ],
+            "honesty_notes": "shadow isolation test — no real data",
+        }
+        stub_reply = json.dumps(stub_pm)
+
+        def mock_caller(system: str, user: str) -> str:
+            return stub_reply
+
+        return mock_caller
+
+    def test_dry_run_zero_files_outside_shadow(self, tmp_path: Path) -> None:
+        """R-V4-1: run_audit(dry_run=True) must write ZERO files outside data/metabolism/shadow/.
+
+        This test FAILS on the pre-fix code (which wrote to real postmortems dir)
+        and PASSES on the fix (all writes go under shadow/).
+        """
+        from engine.metabolism.standout_auditor import run_audit  # type: ignore[import]
+
+        real_root = tmp_path / "real_root"
+        real_root.mkdir()
+
+        # Snapshot all files in real_root before
+        def snapshot(base: Path) -> set[str]:
+            return {str(p.relative_to(base)) for p in base.rglob("*") if p.is_file()}
+
+        before = snapshot(real_root)
+
+        cycle_id = "shadow-dryrun-001"
+        result = run_audit(
+            market="us",
+            cycle_id=cycle_id,
+            model_caller=self._make_stub_caller(),
+            root=real_root,
+            dry_run=True,
+        )
+
+        after = snapshot(real_root)
+        new_files = after - before
+
+        shadow_prefix = f"data/metabolism/shadow/{cycle_id}/"
+        non_shadow_new = {f for f in new_files if not f.startswith(shadow_prefix)}
+
+        assert not non_shadow_new, (
+            f"dry_run=True wrote files OUTSIDE shadow dir: {sorted(non_shadow_new)}\n"
+            f"All new files: {sorted(new_files)}\n"
+            f"run_audit result: {result}"
+        )
+        # Confirm the run actually succeeded (not just an early return)
+        assert result.get("status") == "ok", (
+            f"expected status='ok', got: {result}"
+        )
+
+    def test_dry_run_none_caller_refused_no_files(self, tmp_path: Path) -> None:
+        """dry_run=True + model_caller=None must return 'refused' and write nothing."""
+        from engine.metabolism.standout_auditor import run_audit  # type: ignore[import]
+
+        real_root = tmp_path / "refused_root"
+        real_root.mkdir()
+
+        result = run_audit(
+            market="us",
+            cycle_id="refused-none",
+            model_caller=None,
+            root=real_root,
+            dry_run=True,
+        )
+
+        assert result.get("status") == "refused"
+        # No files should have been written
+        written = list(real_root.rglob("*"))
+        assert not written, f"refused dry_run wrote files: {written}"
+
+
+# ---------------------------------------------------------------------------
+# 13. F2: audit_due_emitter dedup — stable insight_id same day
+# ---------------------------------------------------------------------------
+
+class TestAuditDueEmitterDedup:
+    """F2: two consecutive emitter calls same day must produce the same insight_id."""
+
+    def _make_attribution_parquet(self, tmp_path: Path, market: str, as_of_dates: list[str]) -> None:
+        import pandas as pd
+        p = tmp_path / "data" / "standout_audit" / f"{market}_attribution.parquet"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        df = pd.DataFrame({"as_of": pd.to_datetime(as_of_dates)})
+        df.to_parquet(str(p))
+
+    def test_same_day_same_insight_id(self, tmp_path: Path) -> None:
+        """Two consecutive audit_due_emitter calls same day → same insight_id (stable ts)."""
+        from engine.metabolism.standout_auditor import audit_due_emitter  # type: ignore[import]
+
+        from datetime import datetime, timezone, timedelta
+        last_graded = "2026-01-01"
+        dates = [(datetime(2026, 1, 2) + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(15)]
+        self._make_attribution_parquet(tmp_path, "us", dates)
+        (tmp_path / "data" / "standout_audit" / "us_audit_state.json").write_text(
+            json.dumps({"last_audit_graded_as_of": last_graded}), encoding="utf-8"
+        )
+
+        rows1 = audit_due_emitter(root=tmp_path, cycle_id="c1")
+        rows2 = audit_due_emitter(root=tmp_path, cycle_id="c1")
+
+        assert rows1, "first call produced no rows"
+        assert rows2, "second call produced no rows"
+
+        ids1 = {r["insight_id"] for r in rows1}
+        ids2 = {r["insight_id"] for r in rows2}
+        assert ids1 == ids2, (
+            f"insight_ids differ between calls on the same day: {ids1} vs {ids2}"
+        )
+
+    def test_run_all_emitters_dedup(self, tmp_path: Path) -> None:
+        """Two consecutive run_all_emitters calls same day → only one row appended."""
+        from engine.metabolism.insight_bus import run_all_emitters  # type: ignore[import]
+        from engine.metabolism.standout_auditor import audit_due_emitter as _  # noqa
+
+        from datetime import datetime, timezone, timedelta
+        last_graded = "2026-01-01"
+        dates = [(datetime(2026, 1, 2) + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(15)]
+        p = tmp_path / "data" / "standout_audit" / "us_attribution.parquet"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        import pandas as pd
+        pd.DataFrame({"as_of": pd.to_datetime(dates)}).to_parquet(str(p))
+        (tmp_path / "data" / "standout_audit" / "us_audit_state.json").write_text(
+            json.dumps({"last_audit_graded_as_of": last_graded}), encoding="utf-8"
+        )
+
+        run1 = run_all_emitters(root=tmp_path, cycle_id="dedup-c1")
+        run2 = run_all_emitters(root=tmp_path, cycle_id="dedup-c1")
+
+        # Count audit_due rows for 'us' across both runs
+        audit_due_rows_run1 = [r for r in run1 if r.get("kind") == "audit_due" and "site-us-standouts" in r.get("entities", [])]
+        audit_due_rows_run2 = [r for r in run2 if r.get("kind") == "audit_due" and "site-us-standouts" in r.get("entities", [])]
+
+        # Second run should produce 0 new rows for same market (already in bus)
+        assert len(audit_due_rows_run2) == 0, (
+            f"expected 0 new audit_due rows on second call, got {len(audit_due_rows_run2)}: "
+            f"{audit_due_rows_run2}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 14. F4: W-4 fires on market-shape proposals (no lobe key)
+# ---------------------------------------------------------------------------
+
+class TestW4MarketShape:
+    """F4: W-4 must fire when proposal has 'market' instead of 'lobe' key."""
+
+    def _run_check(self, packet: dict) -> list[dict]:
+        from scripts.check_adjudication_packet import (  # type: ignore[import]
+            validate_packet, load_rubrics, _build_class_tier_map, _build_invariant_set,
+        )
+        rubrics_path = _REPO / "config" / "adjudication_rubrics.yml"
+        rubrics = load_rubrics(rubrics_path)
+        class_tier_map = _build_class_tier_map(rubrics)
+        invariant_set = _build_invariant_set(rubrics)
+        return validate_packet(packet, rubrics, class_tier_map, invariant_set, as_of=None)
+
+    def test_w4_fires_on_market_only_proposal(self) -> None:
+        """W-4 must fire on auditor-shaped proposal with 'market' not 'lobe'."""
+        packet = {
+            "schema": "adjudication.v1",
+            "packet_id": "test-f4-market-shape",
+            "tier": 0,
+            "created_at": "2026-07-12T00:00:00Z",
+            "created_by": "test",
+            "request": {"title": "market-shape W-4 test", "decision_class": "display_only_change"},
+            "decision": {"outcome": "approve", "decided_by": "test"},
+            "proposals": [
+                {
+                    # Auditor shape: market not lobe
+                    "market": "us",
+                    "fitness_contract": {"sensor": "hit_quality"},
+                    "targets_sensor": "hit_quality",
+                    "param": "us.tier_frac",
+                    "delta_steps": -1,
+                }
+            ],
+        }
+        findings = self._run_check(packet)
+        w4 = [f for f in findings if f.get("rule") == "W-4"]
+        assert w4, (
+            f"W-4 must fire when market-shape proposal targets hit_quality without coverage; "
+            f"findings: {findings}"
+        )
+
+    def test_w4_no_false_positive_on_til(self) -> None:
+        """W-4 must NOT fire on a non-standout-lobe proposal (no false positive on TIL)."""
+        packet = {
+            "schema": "adjudication.v1",
+            "packet_id": "test-til-no-w4",
+            "tier": 0,
+            "created_at": "2026-07-12T00:00:00Z",
+            "created_by": "test",
+            "request": {"title": "TIL proposal no W-4", "decision_class": "display_only_change"},
+            "decision": {"outcome": "approve", "decided_by": "test"},
+            "proposals": [
+                {
+                    "lobe": "til",
+                    "fitness_contract": {"sensor": "hit_quality"},
+                    "targets_sensor": "hit_quality",
+                    "title": "TIL hit quality improvement",
+                }
+            ],
+        }
+        findings = self._run_check(packet)
+        w4 = [f for f in findings if f.get("rule") == "W-4"]
+        assert not w4, f"W-4 must not fire for non-standout lobe 'til': {w4}"

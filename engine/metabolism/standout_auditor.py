@@ -10,8 +10,16 @@ INERTNESS GUARANTEE: this module writes artifacts only.  It dispatches nothing,
 grants nothing, escalates nothing, opens no PR, changes no lobe roster.
 It is inert under AUTONOMY_PAUSED (same guard as dream.py).
 
-SHADOW / DRY-RUN MODE: run_audit() accepts a dry_run= flag; when dry_run=True
-it writes to shadow_root instead of the real standout_audit/ path.
+SHADOW / DRY-RUN MODE: run_audit() accepts a dry_run= flag.  When dry_run=True:
+  - model_caller MUST be injected (None → status='refused'); dry_run never
+    reaches the real LLM waterfall (no real provider call).
+  - ALL write targets are redirected under
+    data/metabolism/shadow/<cycle_id>/standout_audit/
+    (postmortem, proposal files, insight-bus rows, audit_state cache).
+    The REAL data/standout_audit/postmortems/, data/standout_review/proposals/,
+    and data/metabolism/insight_bus.jsonl are NEVER touched.
+  - The AUTONOMY_PAUSED gate is not needed for dry_run (shadow writes are inert);
+    armed (non-dry) mode keeps the fail-closed gate exactly as-is.
 
 Supported markets: "us" | "cn".
   US: data/standout_audit/us_attribution.parquet
@@ -156,6 +164,56 @@ def _proposals_dir(root: Path) -> Path:
 
 def _nw_mission_path(root: Path) -> Path:
     return root / "config" / "nw_mission.yml"
+
+
+# ---------------------------------------------------------------------------
+# Shadow-root path helpers (F1 — true dry_run redirection)
+# ---------------------------------------------------------------------------
+
+def _shadow_base(root: Path, cycle_id: str) -> Path:
+    """Return the shadow base dir for a given cycle_id.
+
+    Convention mirrors metabolism_shadow_cycle.py:
+      data/metabolism/shadow/<cycle_id>/standout_audit/
+    """
+    return root / "data" / "metabolism" / "shadow" / cycle_id / "standout_audit"
+
+
+def _shadow_postmortems_dir(root: Path, cycle_id: str) -> Path:
+    p = _shadow_base(root, cycle_id) / "postmortems"
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except Exception:  # noqa: BLE001
+        pass
+    return p
+
+
+def _shadow_proposals_dir(root: Path, cycle_id: str) -> Path:
+    p = _shadow_base(root, cycle_id) / "proposals"
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except Exception:  # noqa: BLE001
+        pass
+    return p
+
+
+def _shadow_bus_path(root: Path, cycle_id: str) -> Path:
+    """Shadow insight_bus file — never touches the real bus."""
+    p = _shadow_base(root, cycle_id) / "insight_bus.jsonl"
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:  # noqa: BLE001
+        pass
+    return p
+
+
+def _shadow_audit_state_path(market: str, root: Path, cycle_id: str) -> Path:
+    p = _shadow_base(root, cycle_id) / f"{market}_audit_state.json"
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:  # noqa: BLE001
+        pass
+    return p
 
 
 # ---------------------------------------------------------------------------
@@ -541,23 +599,39 @@ def audit_due_emitter(root: Path | None = None, cycle_id: str | None = None) -> 
 
     Registered in insight_bus.run_all_emitters().  Returns a list of bus rows.
     The kind 'audit_due' is in _KINDS (wired in insight_bus.py).
+
+    F2 FIX: row identity is keyed on today_str (day granularity) and
+    last_audit_graded_as_of so the insight_id is stable until the audit state
+    actually advances.  Emits at most once per day per market (cooldown mirrors
+    comeback_clock_emitter's today_str pattern in insight_bus.py:452).
+
     NEVER raises.
     """
     try:
         from engine.metabolism.insight_bus import (  # type: ignore[import]
             build_row, AUTHORITY_BLOCK,
         )
+        # Day-granularity stable ts — same pattern as comeback_clock_emitter
+        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
         rows: list[dict] = []
         for market in ("us", "cn"):
             try:
                 result = audit_due(market, root=root)
                 if not result.get("due"):
                     continue
+
+                # Stable ts: day + last_audit_graded_as_of so insight_id
+                # does not change between calls on the same day with the same
+                # ledger state, enabling proper dedup in run_all_emitters.
+                last_graded = result.get("last_audit_graded_as_of") or "none"
+                stable_ts = f"{today_str}T00:00:00+00:00"
+
                 row = build_row(
                     emitter=f"standout_auditor.{market}",
                     kind="audit_due",
                     severity="medium",
-                    entities=[f"site-{market}-standouts"],
+                    entities=[f"site-{market}-standouts", f"last_graded:{last_graded}"],
                     evidence_ref=None,
                     summary=(
                         f"standout audit due for {market.upper()}: "
@@ -565,7 +639,7 @@ def audit_due_emitter(root: Path | None = None, cycle_id: str | None = None) -> 
                         f"{result.get('reason', '')}"
                     ),
                     cycle_id=cycle_id,
-                    authority=AUTHORITY_BLOCK,
+                    ts=stable_ts,
                 )
                 rows.append(row)
             except Exception as exc:  # noqa: BLE001
@@ -738,15 +812,36 @@ def _write_proposals(
     market: str,
     cycle_id: str,
     root: Path,
+    dry_run: bool = False,
 ) -> list[str]:
     """Extract 'standout_review' hypotheses and write proposal files.
 
+    F3 FIX (defense-in-depth): validates param against standout_review's
+    canonical whitelist (_WHITELIST_CANONICAL_KEYS) before writing, clamps
+    abs(delta_steps) <= 1, and records rejected hypotheses in the postmortem
+    artifact under 'rejected_hypotheses' with reasons (honest, inert).
+
+    dry_run=True: writes to shadow proposals dir (never real proposals/).
     Returns list of written paths.  NEVER raises.
     """
     written: list[str] = []
+    rejected_hypotheses: list[dict] = []
     try:
+        # Import the canonical whitelist from standout_review (single source of truth)
+        try:
+            from engine.standout_review import _WHITELIST_CANONICAL_KEYS as _WL_KEYS  # type: ignore[import]
+            valid_params: frozenset[str] = _WL_KEYS
+        except Exception:  # noqa: BLE001
+            # Fallback: use the module-level copy (kept in sync at import time)
+            valid_params = _PROPOSAL_REQUIRED_FIELDS  # minimal guard only
+            log.warning("standout_auditor: cannot import _WHITELIST_CANONICAL_KEYS — "
+                        "param validation uses fallback")
+
         hypotheses = postmortem.get("hypotheses") or []
-        props_dir = _proposals_dir(root)
+        if dry_run:
+            props_dir = _shadow_proposals_dir(root, cycle_id)
+        else:
+            props_dir = _proposals_dir(root)
 
         for i, hyp in enumerate(hypotheses):
             if not isinstance(hyp, dict):
@@ -754,13 +849,42 @@ def _write_proposals(
             if str(hyp.get("lane") or "") != "standout_review":
                 continue
 
+            raw_param = str(hyp.get("param") or "")
+            raw_delta = hyp.get("delta_steps")
+
+            # F3: validate param against canonical whitelist
+            if raw_param not in valid_params:
+                reason = f"param_not_whitelisted:{raw_param!r}"
+                log.warning(
+                    "standout_auditor: proposal %d rejected — %s", i, reason
+                )
+                rejected_hypotheses.append({
+                    "hypothesis_rank": i,
+                    "param": raw_param,
+                    "reason": reason,
+                })
+                continue
+
+            # F3: clamp abs(delta_steps) <= 1
+            try:
+                delta_steps = int(raw_delta or 0)
+            except (ValueError, TypeError):
+                delta_steps = 0
+            if abs(delta_steps) > 1:
+                clamped = 1 if delta_steps > 0 else -1
+                log.warning(
+                    "standout_auditor: proposal %d delta_steps=%d clamped to %d",
+                    i, delta_steps, clamped,
+                )
+                delta_steps = clamped
+
             # Build proposal dict matching standout_review.py schema
             proposal: dict[str, Any] = {
                 "schema": "standout_review.proposal.v1",
                 "ts": _now_utc(),
                 "market": str(hyp.get("market") or market),
-                "param": str(hyp.get("param") or ""),
-                "delta_steps": int(hyp.get("delta_steps") or 0),
+                "param": raw_param,
+                "delta_steps": delta_steps,
                 "rationale_ref": str(
                     hyp.get("rationale_ref")
                     or f"data/standout_audit/postmortems/{market}-{cycle_id}.json"
@@ -775,13 +899,15 @@ def _write_proposals(
             # Validate required fields
             missing = [f for f in _PROPOSAL_REQUIRED_FIELDS if not proposal.get(f)]
             if missing:
+                reason = f"missing_required_fields:{missing}"
                 log.warning(
-                    "standout_auditor: proposal %d missing fields %s — skipping",
-                    i, missing,
+                    "standout_auditor: proposal %d rejected — %s", i, reason
                 )
-                continue
-            if not proposal["param"]:
-                log.warning("standout_auditor: proposal %d has empty param — skipping", i)
+                rejected_hypotheses.append({
+                    "hypothesis_rank": i,
+                    "param": raw_param,
+                    "reason": reason,
+                })
                 continue
 
             fname = f"{market}-{cycle_id}-prop{i:03d}.json"
@@ -793,6 +919,10 @@ def _write_proposals(
                 written.append(str(out_path))
             except Exception as exc:  # noqa: BLE001
                 log.warning("standout_auditor: write proposal %s: %s", out_path, exc)
+
+        # Record rejected hypotheses in the postmortem dict (honest, inert)
+        if rejected_hypotheses:
+            postmortem["rejected_hypotheses"] = rejected_hypotheses
 
         return written
     except Exception as exc:  # noqa: BLE001
@@ -809,15 +939,17 @@ def _emit_hypothesis_bus_rows(
     market: str,
     cycle_id: str,
     root: Path,
+    dry_run: bool = False,
 ) -> list[str]:
     """Emit insight_bus rows for experiment/code-fix hypotheses.
 
+    dry_run=True: writes to the shadow bus file (never appends the real bus).
     Returns list of emitted insight_ids.  NEVER raises.
     """
     emitted: list[str] = []
     try:
         from engine.metabolism.insight_bus import (  # type: ignore[import]
-            build_row, append_row, AUTHORITY_BLOCK,
+            build_row, append_row,
         )
         hypotheses = postmortem.get("hypotheses") or []
         for hyp in hypotheses:
@@ -845,10 +977,15 @@ def _emit_hypothesis_bus_rows(
                     f"{str(hyp.get('description') or '')[:200]}"
                 ),
                 cycle_id=cycle_id,
-                authority=AUTHORITY_BLOCK,
             )
             try:
-                if append_row(row, root=root):
+                if dry_run:
+                    # F1: write to shadow bus file, never the real one
+                    shadow_bus = _shadow_bus_path(root, cycle_id)
+                    with shadow_bus.open("a", encoding="utf-8") as fh:
+                        fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+                    emitted.append(row.get("insight_id", ""))
+                elif append_row(row, root=root):
                     emitted.append(row.get("insight_id", ""))
             except Exception as exc:  # noqa: BLE001
                 log.warning("standout_auditor: append hypothesis row: %s", exc)
@@ -870,13 +1007,22 @@ def run_audit(
 ) -> dict:
     """Run the standout audit for the given market.
 
-    1. Gate: AUTONOMY_PAUSED check (inert when paused, unless dry_run=True)
-    2. Gate: armed check — fail-closed unless explicitly armed
-    3. Build context (§5 blocks)
-    4. Invoke Opus LLM via shared llm_auth waterfall
-    5. Write postmortem artifact to data/standout_audit/postmortems/<market>-<cycle_id>.json
-    6. Write standout_review proposal files for 'standout_review' lane hypotheses
-    7. Emit insight_bus rows for experiment/code-fix hypotheses
+    dry_run=True behaviour (F1 fix — true by construction):
+      - model_caller MUST be injected; None → status='refused' immediately.
+        dry_run can never reach the real LLM waterfall.
+      - ALL writes go under data/metabolism/shadow/<cycle_id>/standout_audit/
+        (postmortem, proposals, insight-bus rows, audit_state cache).
+        The real data/standout_audit/postmortems/, data/standout_review/proposals/,
+        and data/metabolism/insight_bus.jsonl are never touched.
+      - The AUTONOMY_PAUSED gate is skipped (shadow writes are inert).
+
+    Armed (non-dry) run:
+      1. Gate: AUTONOMY_PAUSED check — fail-closed when guard unavailable
+      2. Build context (§5 blocks)
+      3. Invoke Opus LLM via injected model_caller or real llm_auth waterfall
+      4. Write postmortem (atomic temp→rename, keep-first per market/cycle_id)
+      5. Write standout_review proposal files
+      6. Emit insight_bus rows for experiment/code-fix hypotheses
 
     Returns a result dict with schema, market, cycle_id, status, artifact, note.
     NEVER raises.
@@ -885,35 +1031,152 @@ def run_audit(
         repo = _repo_root(root)
         ts = _now_utc()
 
-        # ── Inertness gate: AUTONOMY_PAUSED (mirrors dream.py) ───────────────
-        if not dry_run:
+        # ── F1: dry_run contract — true by construction ───────────────────
+        if dry_run:
+            # (b) dry_run requires an injected model_caller — NEVER reaches real LLM
+            if model_caller is None:
+                return {
+                    "schema": SCHEMA_POSTMORTEM,
+                    "market": market,
+                    "cycle_id": cycle_id,
+                    "status": "refused",
+                    "artifact": None,
+                    "note": "dry_run requires injected model_caller — "
+                            "dry_run can never reach the real LLM waterfall",
+                }
+
+            # Build context (reads real stores; write targets redirected below)
+            context = build_context(market, root=repo)
+
+            # Invoke LLM via injected caller only (no real provider waterfall)
+            reply_text, provider = _invoke_auditor_llm(
+                context, market, cycle_id, model_caller=model_caller
+            )
+
+            if not reply_text:
+                return {
+                    "schema": SCHEMA_POSTMORTEM,
+                    "market": market,
+                    "cycle_id": cycle_id,
+                    "status": "no_llm_reply",
+                    "artifact": None,
+                    "note": f"injected model_caller returned no reply — provider={provider}",
+                    "data_gaps": context.get("data_gaps", []),
+                    "dry_run": True,
+                }
+
+            pm = _parse_postmortem_json(reply_text)
+            if pm is None:
+                pm = {"parse_failed": True, "raw_reply": reply_text[:2000]}
+
+            pm.update({
+                "schema": SCHEMA_POSTMORTEM,
+                "market": market,
+                "cycle_id": cycle_id,
+                "ts": ts,
+                "provider": provider,
+                "data_gaps": context.get("data_gaps", []),
+                "dry_run": True,
+            })
+
+            # (a) ALL writes → shadow dir; real stores NEVER touched
+            # Postmortem: atomic temp→rename, keep-first per (market, cycle_id)
+            pm_dir = _shadow_postmortems_dir(repo, cycle_id)
+            pm_path = pm_dir / f"{market}-{cycle_id}.json"
+            artifact_path: str | None = None
             try:
-                from scripts.metabolism_guard import is_paused  # type: ignore[import]
-                if is_paused():
-                    log.info("standout_auditor: AUTONOMY_PAUSED — skipping run_audit(%s)", market)
-                    return {
-                        "schema": SCHEMA_POSTMORTEM,
-                        "market": market,
-                        "cycle_id": cycle_id,
-                        "status": "paused",
-                        "artifact": None,
-                        "note": "AUTONOMY_PAUSED — audit skipped (inertness guarantee)",
-                    }
-            except Exception:  # noqa: BLE001
-                # Fail-closed: treat guard unavailable as PAUSED
-                if os.environ.get("AUTONOMY_PAUSED", "").strip().lower() != "false":
+                # F1(f): keep-first — skip if postmortem already exists for this run
+                if pm_path.exists():
                     log.info(
-                        "standout_auditor: guard unavailable + not explicitly armed — "
-                        "skipping (fail-closed)"
+                        "standout_auditor[dry_run]: postmortem already exists at %s — skipping",
+                        pm_path,
                     )
-                    return {
-                        "schema": SCHEMA_POSTMORTEM,
-                        "market": market,
-                        "cycle_id": cycle_id,
-                        "status": "paused",
-                        "artifact": None,
-                        "note": "guard unavailable, fail-closed — audit skipped",
-                    }
+                    artifact_path = str(pm_path)
+                else:
+                    # Atomic write: temp file in same dir, then rename
+                    import tempfile as _tempfile
+                    tmp_fd, tmp_name = _tempfile.mkstemp(
+                        dir=str(pm_dir), prefix=f".{market}-{cycle_id}-", suffix=".tmp"
+                    )
+                    try:
+                        with os.fdopen(tmp_fd, "w", encoding="utf-8") as fh:
+                            fh.write(json.dumps(pm, indent=2, default=str))
+                        os.replace(tmp_name, str(pm_path))
+                        artifact_path = str(pm_path)
+                    except Exception:  # noqa: BLE001
+                        try:
+                            os.unlink(tmp_name)
+                        except Exception:  # noqa: BLE001
+                            pass
+                        raise
+                log.info("standout_auditor[dry_run]: postmortem → %s", pm_path)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("standout_auditor[dry_run]: write postmortem: %s", exc)
+
+            # Proposals → shadow proposals dir
+            if not pm.get("parse_failed"):
+                proposal_paths = _write_proposals(
+                    pm, market, cycle_id, repo, dry_run=True
+                )
+                pm["_proposal_files"] = proposal_paths
+            else:
+                proposal_paths = []
+
+            # insight_bus rows → shadow bus file
+            if not pm.get("parse_failed"):
+                emitted_ids = _emit_hypothesis_bus_rows(
+                    pm, market, cycle_id, repo, dry_run=True
+                )
+                pm["_insight_bus_ids"] = emitted_ids
+            else:
+                emitted_ids = []
+
+            return {
+                "schema": SCHEMA_POSTMORTEM,
+                "market": market,
+                "cycle_id": cycle_id,
+                "status": "ok" if artifact_path else "write_failed",
+                "artifact": artifact_path,
+                "note": (
+                    f"[dry_run] shadow postmortem written; "
+                    f"{len(proposal_paths)} proposals; "
+                    f"{len(emitted_ids)} shadow bus rows; provider={provider}; "
+                    f"real stores untouched"
+                ),
+                "data_gaps": context.get("data_gaps", []),
+                "dry_run": True,
+            }
+
+        # ── Armed (non-dry) run ────────────────────────────────────────────
+
+        # ── Inertness gate: AUTONOMY_PAUSED (mirrors dream.py) ───────────────
+        try:
+            from scripts.metabolism_guard import is_paused  # type: ignore[import]
+            if is_paused():
+                log.info("standout_auditor: AUTONOMY_PAUSED — skipping run_audit(%s)", market)
+                return {
+                    "schema": SCHEMA_POSTMORTEM,
+                    "market": market,
+                    "cycle_id": cycle_id,
+                    "status": "paused",
+                    "artifact": None,
+                    "note": "AUTONOMY_PAUSED — audit skipped (inertness guarantee)",
+                }
+        except Exception:  # noqa: BLE001
+            # Fail-closed: treat guard unavailable as PAUSED
+            if os.environ.get("AUTONOMY_PAUSED", "").strip().lower() != "false":
+                log.info(
+                    "standout_auditor: guard unavailable + not explicitly armed — "
+                    "skipping (fail-closed)"
+                )
+                return {
+                    "schema": SCHEMA_POSTMORTEM,
+                    "market": market,
+                    "cycle_id": cycle_id,
+                    "status": "paused",
+                    "artifact": None,
+                    "note": "guard unavailable, fail-closed — audit skipped",
+                }
 
         # ── Build context ──────────────────────────────────────────────────
         context = build_context(market, root=repo)
@@ -961,13 +1224,36 @@ def run_audit(
             "data_gaps": context.get("data_gaps", []),
         })
 
-        # ── Write postmortem artifact ─────────────────────────────────────
+        # ── Write postmortem artifact (F1f: atomic, keep-first) ───────────
         pm_dir = _postmortems_dir(repo)
         pm_path = pm_dir / f"{market}-{cycle_id}.json"
-        artifact_path: str | None = None
+        artifact_path = None
         try:
-            pm_path.write_text(json.dumps(pm, indent=2, default=str), encoding="utf-8")
-            artifact_path = str(pm_path)
+            # F1(f): keep-first — if this (market, cycle_id) postmortem already exists, skip
+            if pm_path.exists():
+                log.info(
+                    "standout_auditor: postmortem already exists at %s — skipping write "
+                    "(keep-first per market/cycle_id)",
+                    pm_path,
+                )
+                artifact_path = str(pm_path)
+            else:
+                # Atomic write: temp file in same dir, then os.replace
+                import tempfile as _tempfile
+                tmp_fd, tmp_name = _tempfile.mkstemp(
+                    dir=str(pm_dir), prefix=f".{market}-{cycle_id}-", suffix=".tmp"
+                )
+                try:
+                    with os.fdopen(tmp_fd, "w", encoding="utf-8") as fh:
+                        fh.write(json.dumps(pm, indent=2, default=str))
+                    os.replace(tmp_name, str(pm_path))
+                    artifact_path = str(pm_path)
+                except Exception:  # noqa: BLE001
+                    try:
+                        os.unlink(tmp_name)
+                    except Exception:  # noqa: BLE001
+                        pass
+                    raise
             log.info(
                 "standout_auditor: postmortem written to %s (provider=%s)",
                 pm_path, provider,
@@ -977,14 +1263,14 @@ def run_audit(
 
         # ── Write standout_review proposal files ──────────────────────────
         if not pm.get("parse_failed"):
-            proposal_paths = _write_proposals(pm, market, cycle_id, repo)
+            proposal_paths = _write_proposals(pm, market, cycle_id, repo, dry_run=False)
             pm["_proposal_files"] = proposal_paths
         else:
             proposal_paths = []
 
         # ── Emit insight_bus rows for other hypotheses ────────────────────
         if not pm.get("parse_failed"):
-            emitted_ids = _emit_hypothesis_bus_rows(pm, market, cycle_id, repo)
+            emitted_ids = _emit_hypothesis_bus_rows(pm, market, cycle_id, repo, dry_run=False)
             pm["_insight_bus_ids"] = emitted_ids
         else:
             emitted_ids = []

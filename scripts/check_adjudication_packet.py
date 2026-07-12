@@ -471,16 +471,27 @@ def validate_packet(
     # ── W-4: standout-lobe precision-only fitness contract (SA-R4) ──────────
     # Fires when a fitness_contract.sensor is 'hit_quality' (precision sensor)
     # on a standout lobe without a paired coverage sensor in the same packet.
+    #
+    # F4 FIX: auditor proposals carry 'market' not 'lobe'; derive lobe from
+    # market when 'lobe' is absent.
     _COVERAGE_SENSORS = frozenset({
         "coverage_health", "missed_mover_rate", "upside_capture",
     })
     _PRECISION_SENSORS = frozenset({"hit_quality"})
+    _MARKET_TO_LOBE: dict[str, str] = {
+        "us": "site-us-standouts",
+        "cn": "site-china-standouts",
+    }
     try:
         proposals = packet.get("proposals") or []
         for prop in proposals:
             fc = prop.get("fitness_contract") or {}
             sensor = str(fc.get("sensor") or prop.get("targets_sensor") or "").strip()
             lobe = str(prop.get("lobe") or "").strip()
+            # F4: derive lobe from 'market' when 'lobe' is absent
+            if not lobe:
+                market_val = str(prop.get("market") or "").strip().lower()
+                lobe = _MARKET_TO_LOBE.get(market_val, "")
             # Only fire for standout lobes
             if lobe not in ("site-us-standouts", "site-china-standouts"):
                 continue
