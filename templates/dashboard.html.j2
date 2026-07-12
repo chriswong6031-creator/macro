@@ -343,9 +343,12 @@
   .act-score-hi  { color: var(--up); }
   .act-score-mid { color: var(--warn); }
   .act-score-lo  { color: var(--down); }
-  /* V2 stat line — muted grey, no color tokens; last line of the row; hidden on mobile */
+  /* V2 stat line — last line of the row; muted label, china-anv2-style colored value
+     (var(--up)/var(--down) so the zh red/green flip rides along); hidden on mobile */
   .act-row-stat { display: block; font-size: 10.5px; color: var(--muted); line-height: 1.35; margin-top: 3px;
                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .act-row-stat .up { color: var(--up); font-weight: 600; }
+  .act-row-stat .dn { color: var(--down); font-weight: 600; }
   @media (max-width: 560px) { .act-row-stat { display: none; } }
   .act-row-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 4px; }
   /* V2 action chip — anv2-chip idiom (uppercase 10px, 4px radius) */
@@ -7209,21 +7212,24 @@ body.page-macro .isle-deep-health{font-size:10.5px;color:var(--muted);padding:10
       {{ ab_sector_pop(x) }}
     </a>
     {%- endmacro -%}
-    {#- V2 theme (narrative basket) row macro — composite score rides the name row -#}
+    {#- V2 theme (narrative basket) row macro — composite score rides the name row;
+        provenance glyphs (★ book / ✓ gate / ≈ lens / ⟳ run-reason) sit inline after
+        the name instead of an orphan chips line; china-style 20d-vs-market stat. -#}
     {%- macro ab_theme_row(x) -%}
     <a class="actitem ai-theme" data-rpop href="{{ x.href }}">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
         <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
+        {%- if x.get('book_wt') %}<span class="ai-book" data-tip-en="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过经回测的绝对趋势门槛">&#9733;{{ '%.0f'|format(x.book_wt*100) }}%</span>{%- endif %}
+        {%- if x.validated %}<span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>{%- else %}<span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>{%- endif %}
+        {%- if x.get('run_reason_en') %}<span class="ai-lens" data-tip-en="{{ x.run_reason_en }}" data-tip-zh="{{ x.get('run_reason_zh', x.run_reason_en) }}">&#8635;</span>{%- endif %}
         {%- if x.get('score') is not none and x.get('score') is defined %}{%- set _sc = x.score -%}
         <span class="act-row-score{% if _sc >= 60 %} act-score-hi{% elif _sc >= 40 %} act-score-mid{% else %} act-score-lo{% endif %}">{{ '%.0f'|format(_sc) }}</span>
         {%- endif %}
       </span>
-      <span class="act-row-chips">
-        {%- if x.get('book_wt') %}<span class="ai-book" data-tip-en="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过经回测的绝对趋势门槛">&#9733;{{ '%.0f'|format(x.book_wt*100) }}%</span>{%- endif %}
-        {%- if x.validated %}<span class="ai-val" data-tip-en="Backtested risk side — absolute-trend / fading-deteriorating drawdown gate" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">&#10003;</span>{%- else %}<span class="ai-lens" data-tip-en="Leadership LENS — descriptive; cross-sectional momentum rank-IC &asymp;0" data-tip-zh="领先度透镜 — 描述性；横截面动量 rank-IC&asymp;0">&asymp;</span>{%- endif %}
-        {%- if x.get('run_reason_en') %}<span class="ai-lens" data-tip-en="{{ x.run_reason_en }}" data-tip-zh="{{ x.get('run_reason_zh', x.run_reason_en) }}">&#8635;</span>{%- endif %}
-      </span>
+      {%- if x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined %}
+      <span class="act-row-stat"><span class="{{ 'up' if x.perf_20d_rel >= 0 else 'dn' }}">{{ '%+.1f'|format(x.perf_20d_rel * 100) }}%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
+      {%- endif %}
       {{ ab_theme_pop(x) }}
     </a>
     {%- endmacro -%}
