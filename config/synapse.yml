@@ -412,6 +412,67 @@ artifacts:
     external_consumers: []
     notes: "Producer: scripts/grade_us_board.py:11 append-only per as_of, lane, ticker, horizon."
 
+  # SA-W5: v2 parallel grader lane artifacts (isolated from main lane)
+  us-board-ledger-snapshots-v2:
+    path: data/us_board_ledger/snapshots_v2.jsonl
+    format: jsonl
+    producer: scripts/grade_us_board.py
+    known_extra_writers: []
+    owner_program: standout-accountability
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/grade_us_board.py
+    external_consumers: []
+    notes: "SA-W5 v2 parallel snapshot lane. Written by grade_us_board.py snapshot_v2_today(). Sibling to snapshots.jsonl; NEVER co-tenanted with main lane rows. Feeds retro_grades_v2.parquet only."
+
+  us-board-ledger-retro-grades-v2:
+    path: data/us_board_ledger/retro_grades_v2.parquet
+    format: parquet
+    producer: scripts/grade_us_board.py
+    known_extra_writers: []
+    owner_program: standout-accountability
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/grade_us_board.py
+    external_consumers: []
+    notes: "SA-W5 v2 parallel grade store. Written by grade_us_board.py run_v2_lane(). NEVER read by standout_audit.py (which reads retro_grades.parquet only). Isolation invariant: v2 rows never touch main retro_grades.parquet."
+
+  us-board-track-v2:
+    path: site/factordata/us_board_track_v2.json
+    format: json
+    producer: scripts/grade_us_board.py
+    known_extra_writers: []
+    owner_program: standout-accountability
+    cadence: daily-engine
+    storage: git
+    asof_field: generated
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/calibration_hub.py
+    external_consumers: []
+    notes: "SA-W5 v2 track summary. NEVER included in us_board_track.json aggregates. board_version=v2 field distinguishes from main track. Lanes: v2_entry_open, v2_setting_up."
+
   # --- 6 consumers ---
   signal-archive-mtf:
     path: data/signal_archive/mtf_signals_latest.json

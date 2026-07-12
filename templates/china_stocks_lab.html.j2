@@ -139,6 +139,33 @@
     margin:12px 0;font-size:13px;color:var(--muted)}
   .method-body .kill-law b{color:var(--down)}
 
+  /* ── accountability tab (SA-W5) ── */
+  .acct-header{padding:0 0 16px;border-bottom:1px solid var(--line);margin-bottom:20px}
+  .acct-title{font-size:18px;font-weight:700;margin:0 0 4px}
+  .acct-sub{font-size:13px;color:var(--muted);max-width:72ch;margin:0 0 8px}
+  .acct-clock{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:7px;
+    border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));
+    color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
+  .acct-card{border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+    background:var(--panel);margin:0 0 16px;position:relative;overflow:hidden}
+  .acct-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--link),color-mix(in srgb,var(--link) 40%,transparent))}
+  .acct-card-title{font-size:13px;font-weight:700;margin:0 0 10px;color:var(--text)}
+  .acct-empty-state{text-align:center;padding:32px 16px;color:var(--muted);font-size:13px}
+  .acct-tbl{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+  .acct-tbl th{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);
+    color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .acct-tbl td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
+  .acct-tbl th:first-child,.acct-tbl td:first-child{text-align:left}
+  .acct-muted{color:var(--muted)}
+  .acct-gap-note{font-size:11.5px;color:var(--muted);font-style:italic;padding:6px 0}
+  .acct-cov-row{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0}
+  .acct-cov-chip{font-size:12px;padding:3px 9px;border-radius:7px;border:1px solid var(--line);
+    color:var(--muted);background:var(--panel)}
+  .acct-cov-chip b{color:var(--text)}
+  .acct-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 16px}
+  @media(max-width:600px){.acct-row-grid{grid-template-columns:1fr}}
+
   /* ── responsive ── */
   @media(max-width:700px){
     .pl-wrap{padding:0 12px 60px}
@@ -164,6 +191,7 @@
     <button class="tabbtn on" data-tab="scoreboard" role="tab">{{ t('Scoreboard', '记分板') }}</button>
     <button class="tabbtn" data-tab="velocity" role="tab">{{ t('1D Velocity CN', '1日速度A股') }}</button>
     <button class="tabbtn" data-tab="allbooks" role="tab">{{ t('All Books', '全部书本') }}</button>
+    <button class="tabbtn" data-tab="accountability" role="tab">{{ t('Record', '记录') }}</button>
     <button class="tabbtn" data-tab="method" role="tab">{{ t('Method', '方法') }}</button>
   </div>
 
@@ -491,6 +519,148 @@
     </div>
     {% endfor %}
     {% endif %}
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- TAB: ACCOUNTABILITY (SA-W5)                                      -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="accountability" style="display:none">
+    <div class="acct-header">
+      <div class="acct-title">
+        <span class="l-en">Board Record</span>
+        <span class="l-zh">选板记录</span>
+      </div>
+      <p class="acct-sub">
+        <span class="l-en">How well has the CN Buy Board identified winners before they moved? Record is measuring — first read expected ~Oct 15 2026 when cluster-unit floors are met (SA-R10).</span>
+        <span class="l-zh">中国买入板过去是否提前识别到赢家？记录正在累积中——首次读取预计2026年10月15日（集群单元下限达到，SA-R10）。</span>
+      </p>
+      <span class="acct-clock">
+        <span class="l-en">ACCRUING — first read ~Oct 15 2026</span>
+        <span class="l-zh">累积中 — 首次读取约2026年10月15日</span>
+      </span>
+    </div>
+
+    {% set acct = accountability %}
+
+    <!-- ── Stratified scoreboard ── -->
+    <div class="acct-card">
+      <div class="acct-card-title">
+        <span class="l-en">Stratified Scoreboard</span>
+        <span class="l-zh">分层记分板</span>
+      </div>
+      {% if acct.get('present') and acct.get('buy_lane_rows', 0) > 0 %}
+      <div class="tbl-scroll">
+        <table class="acct-tbl">
+          <thead><tr>
+            <th class="l-en">Stratum</th><th class="l-zh">层</th>
+            <th data-tip-en="Raw row count" data-tip-zh="原始行数">
+              <span class="l-en">Raw n</span><span class="l-zh">原始n</span>
+            </th>
+            <th data-tip-en="Cluster-unit effective sample (entry-date-collapsed, 21d windows)" data-tip-zh="集群单元有效样本（入场日折叠，21日窗口）">
+              <span class="l-en">Eff. n</span><span class="l-zh">有效n</span>
+            </th>
+            <th><span class="l-en">State</span><span class="l-zh">状态</span></th>
+          </tr></thead>
+          <tbody>
+            {% for key, cell in (acct.get('strata') or {}).items() %}
+            <tr>
+              <td colspan="2" style="text-align:left">{{ key }}</td>
+              <td>{{ cell.get('raw_n') if cell.get('raw_n') is not none else '—' }}</td>
+              <td>{{ cell.get('effective_n') if cell.get('effective_n') is not none else '—' }}</td>
+              <td>
+                {% if cell.get('state') == 'ACCRUING' %}
+                <span class="badge-accruing">
+                  <span class="l-en">ACCRUING</span><span class="l-zh">累积中</span>
+                </span>
+                {% else %}
+                {{ cell.get('state') or '—' }}
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="acct-empty-state">
+        <div style="font-size:32px;margin-bottom:8px">📊</div>
+        <p>
+          <span class="l-en">No matured rows yet. Rows accrue as 21d windows close — first read ~Oct 15 2026.</span>
+          <span class="l-zh">暂无成熟行。行随21日窗口关闭而累积——首次读取约2026年10月15日。</span>
+        </p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Two-axis failure-mode mix ── -->
+    <div class="acct-row-grid">
+      <div class="acct-card">
+        <div class="acct-card-title">
+          <span class="l-en">Outcome Causes</span>
+          <span class="l-zh">结果原因</span>
+        </div>
+        <div class="acct-empty-state" style="padding:20px 12px">
+          <span class="l-en">Measuring — outcome-cause breakdown available once attribution rows mature.</span>
+          <span class="l-zh">测量中——结果原因分解在归因行成熟后可用。</span>
+        </div>
+      </div>
+      <div class="acct-card">
+        <div class="acct-card-title">
+          <span class="l-en">Process Faults</span>
+          <span class="l-zh">流程缺陷</span>
+        </div>
+        <div class="acct-empty-state" style="padding:20px 12px">
+          <span class="l-en">Measuring — process-fault breakdown available once attribution rows mature.</span>
+          <span class="l-zh">测量中——流程缺陷分解在归因行成熟后可用。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Coverage monitor ── -->
+    <div class="acct-card">
+      <div class="acct-card-title">
+        <span class="l-en">Coverage Monitor</span>
+        <span class="l-zh">覆盖率监控</span>
+      </div>
+      {% set cov = acct.get('coverage_monitor') or {} %}
+      <div class="acct-cov-row">
+        <div class="acct-cov-chip">
+          <b>{{ cov.get('trailing_4wk_buy_count') if cov.get('trailing_4wk_buy_count') is not none else '—' }}</b>
+          <span class="l-en"> unique tickers surfaced (trailing 4wk)</span>
+          <span class="l-zh"> 个独特代码（近4周）</span>
+        </div>
+        <div class="acct-cov-chip">
+          <span class="l-en">Frozen baseline: </span>
+          <span class="l-zh">冻结基准：</span>
+          <b>{{ cov.get('frozen_baseline') if cov.get('frozen_baseline') is not none else '—' }}</b>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Upstream concordance ── -->
+    <div class="acct-card">
+      <div class="acct-card-title">
+        <span class="l-en">Upstream Concordance</span>
+        <span class="l-zh">上游一致性</span>
+      </div>
+      {% set gs = acct.get('gate_suppressed') or {} %}
+      {% if gs.get('state') == 'data_gap' %}
+      <p class="acct-gap-note">
+        <span class="l-en">Gate suppressed: {{ gs.get('reason', '') }}</span>
+        <span class="l-zh">门控被抑制：{{ gs.get('reason', '') }}</span>
+      </p>
+      {% endif %}
+      <div class="acct-empty-state" style="padding:16px 12px">
+        <span class="l-en">Concordance data accruing — available once CN attribution rows mature.</span>
+        <span class="l-zh">一致性数据累积中——CN归因行成熟后可用。</span>
+      </div>
+    </div>
+
+    <p style="margin-top:16px;font-size:11.5px;color:var(--muted)">
+      <span class="l-en">Authority: display_only. All numbers from committed CN audit artifacts (SA-W2). Cluster-unit CIs per SA-R10. No verdict language before floor.</span>
+      <span class="l-zh">授权：仅展示。所有数字来自已提交CN审计工件（SA-W2）。集群单元置信区间按SA-R10。下限前无结论语言。</span>
+      {% if acct.get('as_of') %}· <span class="l-en">As of</span><span class="l-zh">截至</span> {{ acct.as_of }}{% endif %}
+    </p>
   </section>
 
   <!-- ================================================================ -->

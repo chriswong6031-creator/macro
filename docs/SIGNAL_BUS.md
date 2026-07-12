@@ -69,7 +69,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | short-side | 1 |
 | signal-commons | 8 |
 | signal-foundry | 4 |
-| standout-accountability | 5 |
+| standout-accountability | 8 |
 | stock-personality | 5 |
 | tech-internals | 1 |
 | thematic-intelligence | 12 |
@@ -87,15 +87,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 260 |
-| infrastructure | 93 |
+| infrastructure | 95 |
 | scored | 4 |
-| shadow | 68 |
+| shadow | 69 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 408 |
+| git | 411 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -786,6 +786,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| us-board-ledger-retro-grades-v2 | `data/us_board_ledger/retro_grades_v2.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| us-board-ledger-snapshots-v2 | `data/us_board_ledger/snapshots_v2.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
+| us-board-track-v2 | `site/factordata/us_board_track_v2.json` | json | daily-engine | shadow | 1 | 0 |
 | us-standout-attribution | `data/standout_audit/us_attribution.parquet` | parquet | daily-engine | display | 1 | 0 |
 | us-standout-evidence | `data/standout_audit/us_evidence.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | us-standout-fitness-card | `data/metabolism/fitness/standouts_us.json` | json | daily-engine | display | 1 | 0 |

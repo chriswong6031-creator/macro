@@ -99,6 +99,18 @@ SNAPSHOTS_JSONL = LEDGER_DIR / "snapshots.jsonl"
 TRACK_JSON = ROOT / "site" / "factordata" / "us_board_track.json"
 OUTCOMES_JSON = ROOT / "site" / "factordata" / "us_board_outcomes.json"
 
+# SA-W5: v2 parallel lane (sibling files, ISOLATED from main lane)
+# These files NEVER touch retro_grades.parquet / us_board_track.json.
+# Decision: sibling files (not co-tenancy) because the v2 board schema diverges
+# (dual-gate+rotation, different lanes/fields) and polluting the main store would
+# corrupt the main lane's stratifications.
+V2_BOARD_PATH = "site/factordata/us_standouts_v2.json"
+V2_SNAPSHOTS_JSONL = LEDGER_DIR / "snapshots_v2.jsonl"
+V2_RETRO_PARQUET = LEDGER_DIR / "retro_grades_v2.parquet"
+V2_TRACK_JSON = ROOT / "site" / "factordata" / "us_board_track_v2.json"
+# lane names in the v2 board artifact
+V2_LANES = ["entry_open", "setting_up"]
+
 # Number of board dates (not calendar days) to look back for the outcomes strip.
 OUTCOMES_LOOKBACK_BOARDS = 21
 # How many exited names to render in the track-record table. The summary counts
@@ -1325,6 +1337,178 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# SA-W5: v2 parallel grader lane
+# ISOLATION INVARIANT: all v2 functions write ONLY to V2_* paths.
+# They NEVER read or write retro_grades.parquet / snapshots.jsonl /
+# us_board_track.json — those are the main lane's exclusive files.
+# standout_audit.py reads retro_grades.parquet only; v2 rows are invisible to it.
+# --------------------------------------------------------------------------- #
+
+def _v2_board_to_record(d: dict) -> dict | None:
+    """Parse us_standouts_v2.json into a board record for grading.
+
+    v2 board uses lane names 'entry_open' / 'setting_up' (V2_LANES).
+    Applies the same _row_features extraction used by the main lane.
+    Returns None when as_of is absent or no rows parse.
+    """
+    as_of = d.get("as_of")
+    if not as_of:
+        return None
+    rows = []
+    for lane in V2_LANES:
+        lst = d.get("lanes", {}).get(lane) or []
+        for pos, r in enumerate(lst):
+            if not isinstance(r, dict):
+                continue
+            feat = _row_features(r)
+            if not feat.get("ticker"):
+                continue
+            feat["lane"] = f"v2_{lane}"  # prefix keeps v2 lanes distinct from main
+            feat["position"] = pos
+            feat["dispersion_state"] = _dig(d, ("dispersion_regime", "state"), default=None)
+            rows.append(feat)
+    if not rows:
+        return None
+    return {"as_of": as_of, "dispersion_state": None, "rank_by": d.get("rank_by"), "rows": rows}
+
+
+def snapshot_v2_today() -> str | None:
+    """Append today's committed v2 board to the v2 snapshot JSONL.
+
+    Idempotent per as_of. Writes V2_SNAPSHOTS_JSONL ONLY.
+    Never reads or writes the main snapshots.jsonl.
+    Returns as_of on success, None when artifact absent or empty.
+    """
+    p = ROOT / V2_BOARD_PATH
+    if not p.exists():
+        return None
+    try:
+        d = json.loads(p.read_text())
+    except Exception:
+        return None
+    as_of = d.get("as_of")
+    if not as_of:
+        return None
+
+    LEDGER_DIR.mkdir(parents=True, exist_ok=True)
+    existing = set()
+    if V2_SNAPSHOTS_JSONL.exists():
+        for line in V2_SNAPSHOTS_JSONL.read_text().splitlines():
+            try:
+                existing.add(json.loads(line).get("as_of"))
+            except json.JSONDecodeError:
+                pass
+    if as_of in existing:
+        return as_of  # already snapshotted
+
+    # trim to just the grader-relevant fields
+    trimmed = {"as_of": as_of, "rank_by": d.get("rank_by"),
+               "lanes": d.get("lanes") or {}}
+    with V2_SNAPSHOTS_JSONL.open("a") as f:
+        f.write(json.dumps(trimmed, separators=(",", ":")) + "\n")
+    return as_of
+
+
+def collect_v2_boards() -> list[dict]:
+    """Load v2 boards from V2_SNAPSHOTS_JSONL only (no git-archaeology for v2).
+
+    The v2 board started after SA-W5 merged, so there is no git history to mine.
+    Returns list of board records (may be empty).
+    """
+    boards: dict[str, dict] = {}
+    if not V2_SNAPSHOTS_JSONL.exists():
+        return []
+    for line in V2_SNAPSHOTS_JSONL.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            snap = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        b = _v2_board_to_record(snap)
+        if b:
+            boards[b["as_of"]] = b
+    return sorted(boards.values(), key=lambda x: x["as_of"])
+
+
+def _merge_v2_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
+    """Merge v2 grades into V2_RETRO_PARQUET. Never touches main RETRO_PARQUET.
+
+    Same keep-fresh logic as _merge_into_store but isolated to v2 paths.
+    """
+    LEDGER_DIR.mkdir(parents=True, exist_ok=True)
+    if V2_RETRO_PARQUET.exists():
+        stored = pd.read_parquet(V2_RETRO_PARQUET)
+    else:
+        stored = pd.DataFrame()
+
+    if fresh.empty:
+        return stored
+
+    if stored.empty:
+        merged = fresh.copy()
+    else:
+        for col in fresh.columns:
+            if col not in stored.columns:
+                stored[col] = None
+        key_cols = [c for c in _DEDUP_KEYS if c in fresh.columns and c in stored.columns]
+        fresh_keys = set(map(tuple, fresh[key_cols].values.tolist()))
+        mask = stored.apply(lambda r: tuple(r[k] for k in key_cols) not in fresh_keys, axis=1)
+        merged = pd.concat([stored[mask], fresh], ignore_index=True)
+
+    merged.to_parquet(V2_RETRO_PARQUET, index=False)
+    return merged
+
+
+def run_v2_lane(names: pd.DataFrame, etfs: pd.DataFrame, quiet: bool = False) -> None:
+    """Run the v2 parallel grader lane.
+
+    ISOLATION: reads V2_SNAPSHOTS_JSONL, writes V2_RETRO_PARQUET + V2_TRACK_JSON.
+    NEVER touches retro_grades.parquet / snapshots.jsonl / us_board_track.json.
+    The standout_audit organ ignores v2 rows (reads retro_grades.parquet only).
+    Runtime: O(v2 board rows × horizons) — comparable to the main lane.
+    """
+    import time
+    _t0 = time.monotonic()
+
+    v2_boards = collect_v2_boards()
+    if not v2_boards:
+        if not quiet:
+            print("[v2_lane] no v2 boards found — snapshot may not have fired yet")
+        return
+
+    if not quiet:
+        print(f"[v2_lane] {len(v2_boards)} v2 board dates "
+              f"({v2_boards[0]['as_of']}..{v2_boards[-1]['as_of']})")
+
+    _pre_existing = pd.read_parquet(V2_RETRO_PARQUET) if V2_RETRO_PARQUET.exists() else None
+    df = grade_boards(v2_boards, names, etfs, _stored_df=_pre_existing)
+    full_df = _merge_v2_into_store(df)
+
+    if not quiet:
+        new_rows = len(df) if not df.empty else 0
+        print(f"[v2_lane] {new_rows} new matured v2 rows; "
+              f"store total -> {len(full_df)} rows in {V2_RETRO_PARQUET.name}")
+
+    # Build a v2-specific track summary (separate JSON, never merged into us_board_track.json)
+    track_v2 = build_track(full_df, v2_boards, names)
+    # Label this as the v2 board track so consumers can distinguish
+    track_v2["board_version"] = "v2"
+    track_v2["note"] = (
+        "SA-W5 v2 parallel lane (dual-gate+rotation-priority board). "
+        "Lanes: v2_entry_open, v2_setting_up. "
+        "ISOLATED from main board track — never included in us_board_track.json aggregates."
+    )
+    V2_TRACK_JSON.parent.mkdir(parents=True, exist_ok=True)
+    V2_TRACK_JSON.write_text(json.dumps(track_v2, indent=1, default=str))
+
+    elapsed = time.monotonic() - _t0
+    if not quiet:
+        print(f"[v2_lane] [timing] v2 lane complete in {elapsed:.1f}s → {V2_TRACK_JSON.name}")
+
+
+# --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
 def main() -> None:
@@ -1338,6 +1522,10 @@ def main() -> None:
         snap = snapshot_today()
         if not args.quiet:
             print(f"[snapshot] as_of={snap} appended to {SNAPSHOTS_JSONL.name}")
+        # SA-W5: v2 snapshot (parallel lane, isolated files)
+        snap_v2 = snapshot_v2_today()
+        if not args.quiet:
+            print(f"[v2_snapshot] as_of={snap_v2} → {V2_SNAPSHOTS_JSONL.name}")
 
     names, etfs = _load_prices()
     boards = collect_boards()
@@ -1417,6 +1605,13 @@ def main() -> None:
     except Exception as _oe:  # noqa: BLE001 — outcomes strip is additive; never fatal
         if not args.quiet:
             print(f"[outcomes] skipped ({_oe})")
+
+    # SA-W5: v2 parallel grader lane — additive, never fatal, never touches main stores
+    try:
+        run_v2_lane(names, etfs, quiet=args.quiet)
+    except Exception as _v2e:  # noqa: BLE001
+        if not args.quiet:
+            print(f"[v2_lane] skipped ({_v2e})")
 
 
 if __name__ == "__main__":

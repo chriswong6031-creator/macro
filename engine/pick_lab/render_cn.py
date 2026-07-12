@@ -150,12 +150,42 @@ _CN_VELOCITY_BOOK_IDS = [
 _DATA_GAP_BOOKS = {"cnlab_block_discount", "cnlab_lhb_inst"}
 
 
-def build_vm(cn_pick_lab_dict: dict | None) -> dict:
+def _build_cn_accountability_vm(scoreboard: dict | None) -> dict:
+    """Normalise a cn_audit_scoreboard.v1 artifact into a template-safe dict.
+
+    Always returns a dict with at least {"present": bool}.
+    Never raises; absent or corrupt JSON → {"present": False}.
+    """
+    if not scoreboard:
+        return {"present": False}
+    try:
+        cov = scoreboard.get("coverage_monitor") or {}
+        return {
+            "present": True,
+            "as_of": scoreboard.get("as_of"),
+            "note": scoreboard.get("note") or "",
+            "buy_lane_rows": scoreboard.get("buy_lane_rows") or 0,
+            "all_lanes_rows": scoreboard.get("all_lanes_rows") or 0,
+            "strata": scoreboard.get("strata") or {},
+            "coverage_monitor": {
+                "frozen_baseline": cov.get("frozen_baseline"),
+                "trailing_4wk_buy_count": cov.get("trailing_4wk_buy_count"),
+                "weekly_history": cov.get("weekly_history") or [],
+                "data_gap": cov.get("data_gap"),
+            },
+            "gate_suppressed": scoreboard.get("gate_suppressed") or {},
+        }
+    except Exception:  # noqa: BLE001
+        return {"present": False}
+
+
+def build_vm(cn_pick_lab_dict: dict | None, audit_scoreboard: dict | None = None) -> dict:
     """Build the Jinja2 view-model for china_stocks_lab.html.
 
     Dict can be None (empty state) or fully populated per spec §5 schema.
     Returns a vm dict safe to pass directly to the template.
 
+    audit_scoreboard: optional cn_audit_scoreboard.v1 artifact (SA-W5 Accountability section).
     Authority: display_only throughout (CNPL-R1).
     No Long-Hold tab (CNPL-R10).
     """
@@ -235,6 +265,8 @@ def build_vm(cn_pick_lab_dict: dict | None) -> dict:
         "all_books": all_books,
         "total_skipped_unfillable": total_skipped,
         "method_note": method_note,
+        # SA-W5: Accountability section data (display-only; absent → empty state)
+        "accountability": _build_cn_accountability_vm(audit_scoreboard),
         # Display-only invariant — never drives selection / scoring
         "authority": "display_only",
     }
@@ -244,9 +276,29 @@ def build_vm(cn_pick_lab_dict: dict | None) -> dict:
 #  Page renderer                                                               #
 # --------------------------------------------------------------------------- #
 
+def _load_cn_audit_scoreboard(site: Path) -> dict | None:
+    """Load site/factordata/cn_audit_scoreboard.json; never raises."""
+    try:
+        import json as _json
+        p = site / "factordata" / "cn_audit_scoreboard.json"
+        if p.exists():
+            return _json.loads(p.read_text())
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
 def render_page(vm: dict, site: Path | None = None) -> None:
-    """Render site/china_stocks_lab.html from vm (output of build_vm)."""
+    """Render site/china_stocks_lab.html from vm (output of build_vm).
+
+    SA-W5: if vm does not already contain 'accountability', loads
+    site/factordata/cn_audit_scoreboard.json and injects it.
+    """
     site = site or (config.ROOT / "site")
+    # Inject accountability if the caller did not pre-load it
+    if "accountability" not in vm:
+        vm = dict(vm)
+        vm["accountability"] = _build_cn_accountability_vm(_load_cn_audit_scoreboard(site))
     env = Environment(
         loader=FileSystemLoader(str(config.ROOT / "templates")),
         autoescape=True,

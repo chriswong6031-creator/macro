@@ -459,17 +459,17 @@ class TestTemplateRender:
         assert "validated" not in html.lower()
 
     def test_five_tab_panels_present(self):
-        """Exactly 6 data-tab-panel section elements (scoreboard/velocity/allbooks/beta/longhold/method).
-        We count only <section ...> tags, not JS querySelector strings."""
+        """Exactly 7 data-tab-panel section elements (scoreboard/velocity/allbooks/beta/longhold/accountability/method).
+        SA-W5 added the Accountability tab. We count only <section ...> tags, not JS querySelector strings."""
         html = self._render_full()
         # match only <section ...> opening tags that carry data-tab-panel
         panels = re.findall(r'<section[^>]+data-tab-panel="[^"]+"', html)
-        assert len(panels) == 6, f"Expected 6 tab panels, got {len(panels)}"
+        assert len(panels) == 7, f"Expected 7 tab panels, got {len(panels)}"
 
     def test_five_tab_buttons(self):
         html = self._render_full()
         btns = re.findall(r'data-tab="[^"]+"', html)
-        assert len(btns) == 6
+        assert len(btns) == 7  # SA-W5: +1 for Accountability tab
 
     def test_bilingual_spans_present(self):
         html = self._render_full()
