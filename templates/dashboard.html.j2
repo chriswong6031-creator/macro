@@ -2267,7 +2267,7 @@ body.page-macro .mx2-topbar-right{display:flex;align-items:center;gap:10px}
 body.page-macro .mx2-topbar-date{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 body.page-macro .mx2-expand-btn{
   display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;
-  padding:6px 15px;border-radius:999px;
+  padding:6px 15px;border-radius:999px;min-height:0;
   background:linear-gradient(135deg,color-mix(in srgb,var(--info) 16%,var(--panel)),color-mix(in srgb,var(--up) 11%,var(--panel)));
   border:1px solid color-mix(in srgb,var(--info) 38%,var(--line));
   color:var(--text);font-size:11px;font-weight:700;letter-spacing:.05em;
@@ -2837,14 +2837,19 @@ body.page-macro .isle-heatmap-chrome-head{font-size:10px;font-weight:700;text-tr
    where X can be 4–5px on a 281px canvas at 390px viewport.
    Target via CSS attr substring matching on the inline style; silence text ≤7px while preserving ≥8px. */
 @media(max-width:560px){
-  body.page-macro #heatmap-scorecard [style*="font-size:4"],
-  body.page-macro #heatmap-scorecard [style*="font-size: 4"],
-  body.page-macro #heatmap-scorecard [style*="font-size:5"],
-  body.page-macro #heatmap-scorecard [style*="font-size: 5"],
-  body.page-macro #heatmap-scorecard [style*="font-size:6"],
-  body.page-macro #heatmap-scorecard [style*="font-size: 6"],
-  body.page-macro #heatmap-scorecard [style*="font-size:7"],
-  body.page-macro #heatmap-scorecard [style*="font-size: 7"]{color:transparent!important}
+  /* px-anchored so 40-79px labels never match the substring (verify F6) */
+  body.page-macro #heatmap-scorecard [style*="font-size:4px"],
+  body.page-macro #heatmap-scorecard [style*="font-size: 4px"],
+  body.page-macro #heatmap-scorecard [style*="font-size:5px"],
+  body.page-macro #heatmap-scorecard [style*="font-size: 5px"],
+  body.page-macro #heatmap-scorecard [style*="font-size:6px"],
+  body.page-macro #heatmap-scorecard [style*="font-size: 6px"],
+  body.page-macro #heatmap-scorecard [style*="font-size:7px"],
+  body.page-macro #heatmap-scorecard [style*="font-size: 7px"],
+  body.page-macro #heatmap-scorecard [style*="font-size:4."],
+  body.page-macro #heatmap-scorecard [style*="font-size:5."],
+  body.page-macro #heatmap-scorecard [style*="font-size:6."],
+  body.page-macro #heatmap-scorecard [style*="font-size:7."]{color:transparent!important}
 }
 body.page-macro .mx2-tray-stamp{font-size:10px;color:var(--muted);padding:8px 0 4px;text-align:right;font-variant-numeric:tabular-nums}
 
@@ -2905,8 +2910,7 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
    inside sx-deep-context; use v2-retired-macro class instead (added to old link-out div). */
 body.page-macro details#sentiment-regime.panel{display:none!important}
 body.page-macro .panel#now-board.span6{display:none!important}
-body.page-macro .panel#now-board-legacy.span6{display:none!important}
-body.page-macro .v2-retired-macro{display:none!important}
+/* now-board-legacy + v2-retired-macro rules removed — the blocks no longer render (INT-07/09dt) */
 
 /* ── Responsive ── */
 @media(max-width:900px){
@@ -3076,10 +3080,14 @@ body.page-macro .isle-deep-health{font-size:11px;color:var(--muted);padding:10px
 /* VIS-06: light-theme — darken small-text green/amber to ≥4.5:1 on near-white bg.
    The global --up (rgb 31,154,85) = 3.19:1 on #f7f8fa; --warn = 3.19:1.
    These local overrides apply ONLY to small (<14px) stat/change text in the macro section. */
+/* Evidence tone classes (inline colors removed so these can theme — VIS-06) */
+body.page-macro .evs-good{color:var(--up)}
+body.page-macro .evs-bad{color:var(--down)}
+body.page-macro .evs-flat{color:var(--warn)}
+[data-theme="light"] body.page-macro .evs-good{color:#157a42}
+[data-theme="light"] body.page-macro .evs-flat{color:#7a4500}
 [data-theme="light"] body.page-macro .mx2-mkt-chg.up,
-[data-theme="light"] body.page-macro .sxg-mkt-chg.up,
-[data-theme="light"] body.page-macro .isle-ev-score[style*="up"],
-[data-theme="light"] body.page-macro .sxg-ev-score{color:#157a42}
+[data-theme="light"] body.page-macro .sxg-mkt-chg.up{color:#157a42}
 [data-theme="light"] body.page-macro .mx2-mkt-chg.up{color:#157a42}
 [data-theme="light"] body.page-macro .idx-stat.ok{color:#157a42}
 [data-theme="light"] body.page-macro .idx-card-chg.up{color:#157a42}
@@ -3115,6 +3123,7 @@ body.page-macro .mx4-seg-btn:hover:not([aria-pressed="true"]){
 }
 @media(max-width:700px){
   body.page-macro .mx4-seg-btn{min-height:44px;padding:5px 16px;}
+  body.page-macro .mx2-expand-btn{min-height:44px;} /* MOB-04: touch target */
 }
 
 /* ── LEDGER VIEW — unchanged look (no .mx4-grid = ledger) ──── */
@@ -3617,8 +3626,9 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
              COPY-07: date removed from visible hero-sub (topbar is the canonical page stamp).
              #regime-asof id KEPT for risk_state_live.js but hidden with display:none. #}
           {% set _ts = latest.transition_state if (latest.transition_state is defined and latest.transition_state) else '' %}
-          <span class="l-en">{{ td(latest.quad_name) }} &nbsp;·&nbsp; {% if _ts == 'TRANSITIONING' %}shifting{% else %}{{ _ts }}{% endif %}</span>
-          <span class="l-zh">{{ td(latest.quad_name) }} &nbsp;·&nbsp; {% if _ts == 'TRANSITIONING' %}转换中{% else %}{{ _ts }}{% endif %}</span>
+          {% set _ts_en = {'TRANSITIONING':'shifting','STABLE':'stable','WEAKENING':'weakening','NEW_REGIME':'new regime'}.get(_ts, _ts|lower) %}
+          <span class="l-en">{{ td(latest.quad_name) }} &nbsp;·&nbsp; {{ _ts_en }}</span>
+          <span class="l-zh">{{ td(latest.quad_name) }} &nbsp;·&nbsp; {{ tr(_ts) }}</span>
           <span id="regime-asof" style="display:none">{{ latest.date }}</span>
         </div>
 
@@ -3649,16 +3659,12 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
               <span class="l-en">Risk-on 100</span><span class="l-zh">偏好 100</span>
             </div>
           </div>
-          {# Graft 1: flip-tick caption (grid view only) — terse; the v-flip line right
-             below carries the full flip condition, so the caption never repeats it. #}
+          {# Bar caption (grid view only) — the tick marks TODAY'S score (ms-tick is
+             positioned at MS.score); the v-flip line right below carries the flip
+             condition. Never label the tick as a trigger — that would be false. #}
           <div class="mx4-bzone-flip-caption mx4-grid-only">
-            {% if MS.flip_en %}
-            <span class="l-en">tick = flip trigger</span>
-            <span class="l-zh">标记 = 翻转触发点</span>
-            {% else %}
-            <span class="l-en">tick = current score ({{ MS.score }}/100)</span>
-            <span class="l-zh">标记 = 当前得分（{{ MS.score }}/100）</span>
-            {% endif %}
+            <span class="l-en">tick = today's score</span>
+            <span class="l-zh">标记 = 今日得分</span>
           </div>
         </div>
 
@@ -3697,8 +3703,11 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
                   </a>
                   {% endif %}
                   {% if alerts %}{% for a in alerts %}
-                  <a class="ms-sig sev-{{ a.severity }}"{% if a.anchor %} data-ms-jump href="#{{ a.anchor }}"{% endif %}>
-                    <div class="ms-sig-head"><span class="ms-sig-ico">{{ a.icon }}</span><span class="ms-sig-title"><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></span>{% if a.anchor %}<span class="ms-sig-jump">{{ t('View ↓','查看 ↓') }}</span>{% endif %}</div>
+                  {# C-01: these panels render on us_stocks only — an in-page jump on
+                     macro would be a dead anchor, so route cross-page instead. #}
+                  {% set _a_href = ('us_stocks.html#' + a.anchor) if (a.anchor in ('holdings','accumulation','flows') and mode != 'stocks') else ('#' + a.anchor if a.anchor else '') %}
+                  <a class="ms-sig sev-{{ a.severity }}"{% if _a_href %}{% if _a_href.startswith('#') %} data-ms-jump{% endif %} href="{{ _a_href }}"{% endif %}>
+                    <div class="ms-sig-head"><span class="ms-sig-ico">{{ a.icon }}</span><span class="ms-sig-title"><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></span>{% if _a_href %}<span class="ms-sig-jump">{% if _a_href.startswith('#') %}{{ t('View ↓','查看 ↓') }}{% else %}{{ t('View →','查看 →') }}{% endif %}</span>{% endif %}</div>
                     <div class="ms-sig-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
                     {% if a.what_en %}<div class="ms-sig-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh }}</span></div>{% endif %}
                     {% if a.edge_en %}<div class="ms-sig-edge"><b>{{ t('Conviction:','可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
@@ -3774,19 +3783,9 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
           {% endfor %}
         </div>
         {% endif %}
-        {# What faded: de-escalation chips from risk tray — reuse latest.risk_radar.deescalated #}
-        {% if latest.risk_radar is defined and latest.risk_radar and latest.risk_radar.get('deescalated') %}
-        <div class="mx4-bzone-risk-faded">
-          <span class="l-en" style="color:var(--ink-3);margin-right:2px">Faded:</span>
-          <span class="l-zh" style="color:var(--ink-3);margin-right:2px">已消退：</span>
-          {% for d in latest.risk_radar.deescalated[:3] %}
-          <span class="v2chip c-muted" style="font-size:9px;padding:1px 5px">
-            <span class="l-en">{{ d.label_en if d.label_en is defined else d.name }}</span>
-            <span class="l-zh">{{ d.label_zh if d.label_zh is defined else d.name }}</span>
-          </span>
-          {% endfor %}
-        </div>
-        {% endif %}
+        {# "What faded" chips removed (verify F5): the engine emits `deescalation` (a
+           status dict), never a `deescalated` chip list — the block could never render.
+           If de-escalation chips are wanted, build the list engine-side first. #}
         <div class="sxg-face-sub" style="color:var(--ink-3);font-size:10px">
           <span class="l-en">Tap for full risk breakdown</span>
           <span class="l-zh">点击查看完整风险分析</span>
@@ -3828,13 +3827,19 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             </span>
           </div>
           {% endif %}
-          {# Row 3: event risk if near-dated #}
+          {# Row 3: event risk if near-dated — engine emits when_en/when_zh (no bare
+             `when`) and no label_zh; ZH label maps from the release-type enum. #}
           {% if event_risk is defined and event_risk and event_risk.get('show') %}
+          {% set _evr_zh_lbl = {
+            'CPI':'消费者物价指数（CPI）','PPI':'生产者物价指数（PPI）','FOMC':'美联储议息会议',
+            'NFP':'非农就业报告','CLAIMS':'初请失业金','GDP':'GDP 数据','PCE':'PCE 物价指数',
+            'RETAIL':'零售销售','OPEX':'期权到期日','AUCTION':'国债拍卖',
+          }.get(event_risk.get('type',''), event_risk.get('label','待发事件')) %}
           <div class="mx4-todo-row">
             <span class="mx4-todo-dot" style="--todo-dot-color:var(--warn)"></span>
             <span class="mx4-todo-text">
-              <span class="l-en">Expect noise around <b>{{ event_risk.get('label','upcoming event') }}</b>{% if event_risk.get('when') %} ({{ event_risk.when }}){% endif %} — don't read the first move as trend.</span>
-              <span class="l-zh"><b>{{ event_risk.get('label_zh') or event_risk.get('label','待发事件') }}</b>{% if event_risk.get('when') %}（{{ event_risk.when }}）{% endif %}前后波动加大 — 首个走势未必是趋势。</span>
+              <span class="l-en">Expect noise around <b>{{ event_risk.get('label','upcoming event') }}</b>{% if event_risk.get('when_en') %} ({{ event_risk.when_en }}){% endif %} — don't read the first move as trend.</span>
+              <span class="l-zh"><b>{{ _evr_zh_lbl }}</b>{% if event_risk.get('when_zh') %}（{{ event_risk.when_zh }}）{% endif %}前后波动加大 — 首个走势未必是趋势。</span>
             </span>
           </div>
           {% endif %}
@@ -3873,18 +3878,24 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
     </div>{# /mx4-verdict-band #}
     {% endif %}{# /market_state verdict band #}
 
-    {# alerts toggle script — touch path #}
+    {# alerts toggle script — touch path. The checkbox is `hidden`, so native
+       label-for activation does NOT fire on tap (MOB-02): toggle it in JS. #}
     <script>
     (function(){
       var cb=document.getElementById('ms-alerts-toggle');
       if(!cb) return;
       document.addEventListener('click',function(e){
         if(e.target.closest('[data-ms-jump]')){ cb.checked=false; return; }
+        var pill=e.target.closest('.ms-alerts');
+        if(pill){ e.preventDefault(); cb.checked=!cb.checked; return; }
         var wrap=e.target.closest('.ms-alerts-wrap');
         if(cb.checked && !wrap) cb.checked=false;
       });
       document.addEventListener('keydown',function(e){
-        if(e.key==='Escape'&&cb.checked) cb.checked=false;
+        if(e.key==='Escape'&&cb.checked){ cb.checked=false; return; }
+        if((e.key==='Enter'||e.key===' ')&&e.target.closest&&e.target.closest('.ms-alerts')){
+          e.preventDefault(); cb.checked=!cb.checked;
+        }
       });
     })();
     </script>
@@ -3954,11 +3965,12 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       <div class="sxg-ev-rows">
         {% for c in MS2.components %}
         {% set _ec2 = 'var(--up)' if c.tone == 'good' else ('var(--down)' if c.tone == 'bad' else 'var(--warn)') %}
+        {% set _et2 = 'evs-good' if c.tone == 'good' else ('evs-bad' if c.tone == 'bad' else 'evs-flat') %}
         <div class="sxg-ev-row">
-          <span class="sxg-ev-arrow" style="color:{{ _ec2 }}">{{ c.arrow }}</span>
+          <span class="sxg-ev-arrow {{ _et2 }}">{{ c.arrow }}</span>
           <span class="sxg-ev-name">{{ t(c.label_en, c.label_zh) }}</span>
           <div class="sxg-ev-bar-track"><div class="sxg-ev-bar-fill" style="width:{{ c.score }}%;background:{{ _ec2 }}"></div></div>
-          <span class="sxg-ev-score" style="color:{{ _ec2 }}">{{ c.score }}</span>
+          <span class="sxg-ev-score {{ _et2 }}">{{ c.score }}</span>
         </div>
         {% endfor %}
       </div>
@@ -3984,10 +3996,11 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
         {% set _ev_stags = ['isle-s1','isle-s2','isle-s3','isle-s4','isle-s5','isle-s6'] %}
         {% for c in (MS2.components if MS2 and MS2.components else []) %}
         {% set _ec = 'var(--up)' if c.tone == 'good' else ('var(--down)' if c.tone == 'bad' else 'var(--warn)') %}
+        {% set _et = 'evs-good' if c.tone == 'good' else ('evs-bad' if c.tone == 'bad' else 'evs-flat') %}
         {% set _is_weakest = (_weakest and c.label_en == _weakest.label_en) %}
         {% set _stag = _ev_stags[loop.index0] if loop.index0 < _ev_stags|length else 'isle-s6' %}
         <div class="isle-ev-row isle-stagger {{ _stag }}{{ ' ev-weakest' if _is_weakest }}" style="--factor-color:{{ _ec }}">
-          <span class="isle-ev-dir" style="color:{{ _ec }}">{{ c.arrow }}</span>
+          <span class="isle-ev-dir {{ _et }}">{{ c.arrow }}</span>
           <div class="isle-ev-name-wrap">
             <span class="isle-ev-name" style="{{ 'color:var(--warn)' if _is_weakest }}">
               {{ t(c.label_en, c.label_zh) }}
@@ -3999,7 +4012,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <div class="isle-ev-bar-label-row"><span>0</span><span>50</span><span>100</span></div>
             <div class="isle-ev-bar-track"><div class="isle-ev-bar-fill" style="width:{{ c.score }}%;background:{{ _ec }}"></div></div>
           </div>
-          <span class="isle-ev-score" style="color:{{ _ec }}">{{ c.score }}</span>
+          <span class="isle-ev-score {{ _et }}">{{ c.score }}</span>
         </div>
         {% endfor %}
       </div>
@@ -4076,12 +4089,15 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
     <div class="sxg-face" role="button" tabindex="0" aria-expanded="false" onclick="mx2Toggle('sx-events-v2')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-events-v2');}">
       <div class="sxg-face-eyebrow"><span class="l-en">Events</span><span class="l-zh">事件</span></div>
       <div class="sxg-face-stance">
-        {% if macro_catalysts %}
-        <span class="l-en">{{ macro_catalysts|length }} high-impact print{{ 's' if macro_catalysts|length != 1 }} this week</span>
-        <span class="l-zh">本周 {{ macro_catalysts|length }} 项重大数据</span>
+        {% if _ev_hi_cnt %}
+        <span class="l-en">{{ _ev_hi_cnt }} high-impact print{{ 's' if _ev_hi_cnt != 1 }} this week</span>
+        <span class="l-zh">本周 {{ _ev_hi_cnt }} 项高影响数据</span>
+        {% elif macro_catalysts %}
+        <span class="l-en">{{ macro_catalysts|length }} print{{ 's' if macro_catalysts|length != 1 }} this week — none high-impact</span>
+        <span class="l-zh">本周 {{ macro_catalysts|length }} 项数据 — 无高影响项</span>
         {% else %}
-        <span class="l-en">No high-impact prints this week</span>
-        <span class="l-zh">本周无重大数据</span>
+        <span class="l-en">No prints this week</span>
+        <span class="l-zh">本周无数据发布</span>
         {% endif %}
       </div>
       {# Up to 4 calendar rows: date chip · label · impact chip #}
@@ -5904,7 +5920,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <span class="mx2-mkt-name">{{ _ixsym }}</span>
             <span class="mx2-mkt-chg {{ 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</span>
           </div>
-          <div class="mx2-mkt-px nb-px" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%.2f'|format(ix.price) }}</div>
+          <div class="mx2-mkt-px nb-px" data-sym="{{ _ixsym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
         </div>
         {% endfor %}
       </div>
@@ -5919,7 +5935,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
         {% set _ixsym = ix.ticker | replace('_','') %}
         <div class="sxg-mkt-tile nb-tile" data-sym="{{ _ixsym }}" data-mkt="us">
           <span class="sxg-mkt-sym">{{ _ixsym }}</span>
-          <span class="sxg-mkt-price nb-px" data-sym="{{ _ixsym }}" data-mkt="us">{{ '{:,.2f}'.format(ix.price) }}</span>
+          <span class="sxg-mkt-price nb-px" data-sym="{{ _ixsym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</span>
           <span class="sxg-mkt-chg {{ 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</span>
         </div>
         {% endfor %}
@@ -5965,7 +5981,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <span class="idx-card-ticker">{{ _ixsym }}</span>
             <span class="idx-card-name">{{ _ix_names.get(ix.ticker, ix.label if ix.label is defined else _ixsym) }}</span>
           </div>
-          <div class="idx-card-px nb-px" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%.2f'|format(ix.price) }}</div>
+          <div class="idx-card-px nb-px" data-sym="{{ _ixsym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
           <div class="idx-card-chg {{ 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</div>
           <div class="idx-card-chips">
             <span class="idx-stat {{ 'ok' if ix.dd >= -1 else ('wn' if ix.dd >= -10 else 'mt') }}">{{ '%+.1f'|format(ix.dd) }}%</span>
@@ -6671,7 +6687,11 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       <div class="sx-glance">
         <span class="v2chip c-info" style="font-size:10px;padding:2px 7px">{{ t('display-only synthesis','仅展示层综合') }}</span>
         {% if macro_news and macro_news.synthesis and macro_news.synthesis.get('read') %}
-        <span class="mx2-aibrief-glance">{{ macro_news.synthesis.read[:80] }}{% if macro_news.synthesis.read|length > 80 %}…{% endif %}</span>
+        {# structured glance, not the raw read string (it leaks internal source slugs) #}
+        {% set _gl_syn = macro_news.synthesis %}
+        {% set _gl_ch_en = {'capital_return':'buybacks','fiscal_trade':'fiscal & trade','stock_wire':'stock wire','monetary':'Fed & rates'} %}
+        {% set _gl_ch_zh = {'monetary':'美联储与利率','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','fiscal_trade':'财政与贸易','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股快讯'} %}
+        <span class="mx2-aibrief-glance"><span class="l-en">{{ _gl_syn.get('high_impact_count', 0) }} high-impact item{{ 's' if _gl_syn.get('high_impact_count', 0) != 1 }}{% if _gl_syn.get('dominant_channel') %} · dominant: {{ _gl_ch_en.get(_gl_syn.dominant_channel, _gl_syn.dominant_channel|replace('_',' ')) }}{% endif %}</span><span class="l-zh">{{ _gl_syn.get('high_impact_count', 0) }} 条高影响信息{% if _gl_syn.get('dominant_channel') %} · 主导：{{ _gl_ch_zh.get(_gl_syn.dominant_channel, _gl_syn.dominant_channel) }}{% endif %}</span></span>
         {% endif %}
       </div>
       <div class="sx-chev">&#8964;</div>
@@ -6750,16 +6770,18 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
               <span class="isle-aibrief-badge">{{ t('display-only synthesis of existing signals — not a signal source','仅展示层综合读数 — 非信号来源') }}</span>
             </div>
             {% if macro_news and macro_news.synthesis and macro_news.synthesis.get('read') %}
+            {# BIL-01/COPY-03: body built from the STRUCTURED synthesis fields — the raw
+               `read` string leaks internal slugs (stock_wire) and has no ZH twin. #}
+            {% set _syn = macro_news.synthesis %}
+            {% set _syn_ch_zh = {'monetary':'美联储与利率','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','fiscal_trade':'财政与贸易','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股快讯'} %}
+            {% set _syn_ch_en = {'capital_return':'buybacks','fiscal_trade':'fiscal & trade','stock_wire':'stock wire','monetary':'Fed & rates'} %}
+            {% set _tier_en = {'stock_wire':'stock wire','official':'official releases','tier1':'tier-1 press','quality':'quality press'} %}
+            {% set _tier_zh = {'stock_wire':'个股快讯','official':'官方发布','tier1':'一线媒体','quality':'优质媒体'} %}
             <div class="isle-aibrief-body">
-              <span class="l-en">{{ macro_news.synthesis.read }}</span>
-              <span class="l-zh">{{ macro_news.synthesis.read }}</span>
-              {# BIL-05: translate dominant_channel to ZH; top_channels also need ZH labels #}
-              {% set _syn_ch_zh = {'monetary':'美联储与利率','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股快讯'} %}
-              {% if macro_news.synthesis.get('dominant_channel') %}
-               · <span class="l-en">Dominant: <strong>{{ macro_news.synthesis.dominant_channel }}</strong></span><span class="l-zh">主导：<strong>{{ _syn_ch_zh.get(macro_news.synthesis.dominant_channel, macro_news.synthesis.dominant_channel) }}</strong></span>
-              {% endif %}
-              {% if macro_news.synthesis.get('top_tickers') %}
-               · <span class="l-en">Top tickers: {% for tk in macro_news.synthesis.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}, {% endif %}{% endfor %}</span><span class="l-zh">主要标的：{% for tk in macro_news.synthesis.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}、{% endif %}{% endfor %}</span>
+              <span class="l-en">{{ _syn.get('high_impact_count', 0) }} high-impact item{{ 's' if _syn.get('high_impact_count', 0) != 1 }} today{% if _syn.get('dominant_channel') %} · dominant channel: <strong>{{ _syn_ch_en.get(_syn.dominant_channel, _syn.dominant_channel|replace('_',' ')) }}</strong>{% endif %}{% if _syn.get('source_mix') %} · sources: {% for s in _syn.source_mix[:4] %}{{ _tier_en.get(s.tier, s.tier|replace('_',' ')) }} {{ s.count }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>
+              <span class="l-zh">今日 {{ _syn.get('high_impact_count', 0) }} 条高影响信息{% if _syn.get('dominant_channel') %} · 主导渠道：<strong>{{ _syn_ch_zh.get(_syn.dominant_channel, _syn.dominant_channel) }}</strong>{% endif %}{% if _syn.get('source_mix') %} · 来源：{% for s in _syn.source_mix[:4] %}{{ _tier_zh.get(s.tier, s.tier) }} {{ s.count }}{% if not loop.last %}、{% endif %}{% endfor %}{% endif %}</span>
+              {% if _syn.get('top_tickers') %}
+               · <span class="l-en">Top tickers: {% for tk in _syn.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}, {% endif %}{% endfor %}</span><span class="l-zh">主要标的：{% for tk in _syn.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}、{% endif %}{% endfor %}</span>
               {% endif %}
             </div>
             <div class="isle-aibrief-footer">
@@ -6768,7 +6790,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
                 <span class="mx-chip mx-c-warn">{{ macro_news.synthesis.high_impact_count }} {{ t('high-impact','高影响') }}</span>
                 {% endif %}
                 {% for ch in (macro_news.synthesis.get('top_channels') or [])[:3] %}
-                <span class="mx-chip mx-c-muted"><span class="l-en">{{ ch.name }}</span><span class="l-zh">{{ _syn_ch_zh.get(ch.name, ch.name) }}</span> {{ ch.count }}</span>
+                <span class="mx-chip mx-c-muted"><span class="l-en">{{ _syn_ch_en.get(ch.name, ch.name|replace('_',' ')) }}</span><span class="l-zh">{{ _syn_ch_zh.get(ch.name, ch.name) }}</span> {{ ch.count }}</span>
                 {% endfor %}
               </div>
               <span class="isle-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span>
@@ -6878,11 +6900,11 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
               </summary>
               <div class="nb-body">
                 <p class="nb-sumtext">
-                  <span class="l-en">A <b>{{ h.importance }}</b>-impact <b>{{ tl_nb[0] }}</b> headline{% if h.tickers %} in focus on {{ h.tickers[:3]|join(', ') }}{% endif %}{% if h.channels %}, touching {{ (h.channels[:3]|map('replace','_',' ')|list)|join(', ') }}{% endif %}.{% if h.importance_reasons %} Flagged: {{ h.importance_reasons[:2]|join('; ') }}.{% endif %} — {{ h.source_name or h.domain }}</span>
+                  <span class="l-en">A <b>{{ h.importance }}</b>-impact <b>{{ tl_nb[0] }}</b> headline{% if h.tickers %} in focus on {{ h.tickers[:3]|join(', ') }}{% endif %}{% if h.channels %}, touching {{ (h.channels[:3]|map('replace','_',' ')|list)|join(', ') }}{% endif %}. — {{ h.source_name or h.domain }}</span>
                   {# BIL-02: translate EN importance + channel slugs in ZH body #}
                   {% set _imp_zh = {'high':'高','critical':'极高','medium':'中','low':'低'} %}
                   {% set _ch_zh_nb = {'monetary':'利率政策','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股'} %}
-                  <span class="l-zh">一条<b>{{ _imp_zh.get(h.importance, h.importance) }}</b>影响级的<b>{{ tl_nb[1] }}</b>新闻{% if h.tickers %}，聚焦 {{ h.tickers[:3]|join('、') }}{% endif %}{% if h.channels %}，涉及 {{ (h.channels[:3]|map(attribute='__str__')|list|map('replace','_',' ')|list)|join('、') }}{% endif %}。{% if h.importance_reasons %} 入选原因：{{ h.importance_reasons[:2]|join('；') }}。{% endif %} — {{ h.source_name or h.domain }}</span>
+                  <span class="l-zh">一条<b>{{ _imp_zh.get(h.importance, h.importance) }}</b>影响级的<b>{{ tl_nb[1] }}</b>新闻{% if h.tickers %}，聚焦 {{ h.tickers[:3]|join('、') }}{% endif %}{% if h.channels %}，涉及 {% for _ch in h.channels[:3] %}{{ _ch_zh_nb.get(_ch, _ch|replace('_',' ')) }}{% if not loop.last %}、{% endif %}{% endfor %}{% endif %}。 — {{ h.source_name or h.domain }}</span>
                 </p>
                 {% if h.channels or h.tickers %}
                 <div class="nb-tags">
@@ -7400,52 +7422,9 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
      Kept here ONLY for stocks mode fallback (heatmap.js no-ops if element absent). #}
   {# heatmap-scorecard standalone suppressed: present in sx-markets-v2 tray for macro mode #}
 
-  {# AI Daily Brief — upgraded mx card with synthesis read from macro_news.synthesis.read (if present).
-     The `aibrief-card` a-link is superseded by sx-aibrief-v2 tray for macro mode; the class kept for CSS compat.
-     v2-retired-macro = CSS display:none on page-macro (tray handles it). #}
-  {% if mode != 'stocks' %}
-  <a class="panel span12 aibrief-card mx-aibrief v2-retired-macro" href="aibrief.html">
-    <div class="mx-aibrief-hdr">
-      <div class="mx-aibrief-icon">AI</div>
-      <div>
-        <div class="mx-aibrief-title">{{ t('AI Daily Brief · cross-asset synthesis', 'AI 每日简报 · 跨资产综合') }}</div>
-        <div class="mx-aibrief-date num">{{ latest.date if latest.date else generated_utc[:10] }}</div>
-      </div>
-      <span class="mx-aibrief-badge">{{ t('display-only synthesis of existing signals — not a signal source','仅展示层综合读数 — 非信号来源') }}</span>
-    </div>
-    {% if macro_news and macro_news.synthesis and macro_news.synthesis.get('read') %}
-    <div class="mx-aibrief-body">
-      <span class="l-en">{{ macro_news.synthesis.read }}</span>
-      <span class="l-zh">{{ macro_news.synthesis.read }}</span>
-      {# BIL-05: translate dominant_channel to ZH #}
-      {% set _v2ret_ch_zh = {'monetary':'美联储与利率','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股快讯'} %}
-      {% if macro_news.synthesis.get('dominant_channel') %}
-       · <span class="l-en">Dominant: <strong>{{ macro_news.synthesis.dominant_channel }}</strong></span><span class="l-zh">主导：<strong>{{ _v2ret_ch_zh.get(macro_news.synthesis.dominant_channel, macro_news.synthesis.dominant_channel) }}</strong></span>
-      {% endif %}
-      {% if macro_news.synthesis.get('top_tickers') %}
-       · <span class="l-en">Top tickers: {% for tk in macro_news.synthesis.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}, {% endif %}{% endfor %}</span><span class="l-zh">主要标的：{% for tk in macro_news.synthesis.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}、{% endif %}{% endfor %}</span>
-      {% endif %}
-    </div>
-    <div class="mx-aibrief-footer">
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        {% if macro_news.synthesis.get('high_impact_count') is not none %}
-        <span class="mx-chip mx-c-warn">{{ macro_news.synthesis.high_impact_count }} {{ t('high-impact','高影响') }}</span>
-        {% endif %}
-        {% for ch in (macro_news.synthesis.get('top_channels') or [])[:3] %}
-        <span class="mx-chip mx-c-muted"><span class="l-en">{{ ch.name }}</span><span class="l-zh">{{ _v2ret_ch_zh.get(ch.name, ch.name) }}</span> {{ ch.count }}</span>
-        {% endfor %}
-      </div>
-      <span class="mx-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span>
-    </div>
-    {% else %}
-    <div class="mx-aibrief-body">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假设与后续关注。仅供研究参考，绝非交易信号。') }}</div>
-    <div class="mx-aibrief-footer">
-      <span></span>
-      <span class="mx-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span>
-    </div>
-    {% endif %}
-  </a>
-  {% else %}
+  {# AI Daily Brief: macro mode renders it inside the sx-aibrief-v2 tray; the old
+     standalone card (v2-retired-macro) was deleted outright per audit INT-07dt. #}
+  {% if mode == 'stocks' %}
   {# Stocks mode: keep original simple link card #}
   <a class="panel span12 aibrief-card" href="aibrief.html">
     <span class="abc-ic">🧠</span>
@@ -8009,6 +7988,9 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
 
 
 
+  {% if False %}{# INT-07/09dt: legacy news & catalysts board RETIRED — the sx-news-v2
+     island owns news for macro mode and stocks mode never rendered this panel.
+     False-gated (not deleted) to keep inner Jinja balanced; remove on next cleanup. #}
   {% set TL = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
   <style id="nb-css">
   body.page-macro #now-board .nb-strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 14px;font-size:11px}
@@ -8101,6 +8083,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
     {% endif %}
   </div>
   {% endif %}{# /mode != stocks — news & catalysts board #}
+  {% endif %}{# /INT-07dt False-gate — retired legacy news board #}
 
   <!-- Fear ↔ Euphoria synthesis merged into the #sentiment-regime scorecard near the top of the board -->
 
@@ -9509,39 +9492,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
   {% endif %}{# /mode != macro — accumulation + holdings/flows #}
 
   {% if mode != 'stocks' %}
-  <!-- ======================= LINK-OUT STRIP (macro bottom) ======================= -->
-  {# v2-retired-macro: moved to sx-deep-context tray; CSS-hidden for macro mode #}
-  <div class="panel span12 v2-retired-macro">
-    <div class="mx-panel-hdr" style="margin-bottom:12px">
-      <span class="mx-panel-eyebrow">{{ t('Quick Links','快速导航') }}</span>
-    </div>
-    <div class="mx-linkout-strip">
-      <a class="mx-linkout-card" href="macro_context.html">
-        <span class="mx-lc-icon">🌐</span>
-        <div><div class="mx-lc-title">{{ t('Macro Context','宏观背景') }}</div><div class="mx-lc-sub">{{ t('Regime &amp; transmission','周期与传导') }}</div></div>
-      </a>
-      <a class="mx-linkout-card" href="aibrief.html">
-        <span class="mx-lc-icon">🤖</span>
-        <div><div class="mx-lc-title">{{ t('AI Daily Brief','AI日报') }}</div><div class="mx-lc-sub">{{ t('Synthesis read','综合解读') }}</div></div>
-      </a>
-      <a class="mx-linkout-card" href="sector_central.html">
-        <span class="mx-lc-icon">📊</span>
-        <div><div class="mx-lc-title">{{ t('Sector Central','行业中枢') }}</div><div class="mx-lc-sub">{{ t('Rotation &amp; flows','轮动与资金流') }}</div></div>
-      </a>
-      <a class="mx-linkout-card" href="news.html">
-        <span class="mx-lc-icon">📰</span>
-        <div><div class="mx-lc-title">{{ t('News Feed','新闻流') }}</div><div class="mx-lc-sub">{{ t('Headlines &amp; catalysts','头条与催化剂') }}</div></div>
-      </a>
-      <a class="mx-linkout-card" href="committee.html">
-        <span class="mx-lc-icon">🧠</span>
-        <div><div class="mx-lc-title">{{ t('Neural Web','神经网络') }}</div><div class="mx-lc-sub">{{ t('Signals &amp; consensus','信号与共识') }}</div></div>
-      </a>
-      <a class="mx-linkout-card" href="macro_signals.html">
-        <span class="mx-lc-icon">⚡</span>
-        <div><div class="mx-lc-title">{{ t('Signal Lab','信号实验室') }}</div><div class="mx-lc-sub">{{ t('All indicators','全部指标') }}</div></div>
-      </a>
-    </div>
-  </div>
+  {# Link-out strip deleted per audit INT-07dt — the sx-deep-context tray carries these links. #}
 
   <!-- ======================= HEALTH ======================= -->
   <details class="panel span12 fold" id="health" style="position:relative">

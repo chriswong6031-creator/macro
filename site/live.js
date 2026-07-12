@@ -163,7 +163,11 @@
       var mkt = el.getAttribute("data-mkt") || "us";
       var p = pick(sym);
       if (p.price != null) {
-        el.textContent = fmtPrice(p.price, mkt);
+        // data-bare: panel opts out of the "$" prefix (e.g. macro MARKETS tiles mix
+        // ETF quotes with index levels — a $ on half the row reads as an error).
+        el.textContent = el.hasAttribute("data-bare")
+          ? fmtPrice(p.price, mkt).replace(/^\$/, "")
+          : fmtPrice(p.price, mkt);
         var sess = sessions[regionOf(sym)];
         var closed = sess && sess.open === false;
         var stale = isStale(mkt, p.ageMin, p.stale);

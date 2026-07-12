@@ -15,6 +15,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -435,6 +436,7 @@
   .igs .igs-k { font-size: 10px; color: var(--muted); font-weight: 700;
          text-transform: uppercase; letter-spacing: .07em; white-space: nowrap; }
   .igs .igs-dots { display: inline-flex; align-items: center; gap: 5px; }
+  .igs .igs-dotsep { width: 7px; flex: none; }   /* thrust | participation family gap */
   .igs .igs-dot { width: 10px; height: 10px; border-radius: 50%; cursor: help;
          background: var(--panel2); border: 1px solid var(--line); }
   .igs .igs-dot.lit { background: var(--ok);
@@ -455,12 +457,102 @@
   .igs .igs-theme.fading { color: var(--muted); }
   .igs .igs-xref { font-size: 10.5px; color: var(--muted); cursor: help; white-space: nowrap;
          padding: 2px 8px; border-radius: 99px; border: 1px dashed var(--line); margin-left: auto; }
-  /* one merged footer */
+  /* one merged footer: stance token · engine do-line + track record · as-of right */
   .igs .igs-ft { margin-top: 9px; padding-top: 8px; font-size: 11px; color: var(--muted);
-         border-top: 1px solid color-mix(in srgb, var(--ic-col) 18%, var(--line)); }
+         border-top: 1px solid color-mix(in srgb, var(--ic-col) 18%, var(--line));
+         display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
+  .igs .igs-stance { font-weight: 800; color: var(--text); text-transform: uppercase;
+         letter-spacing: .04em; font-size: 10.5px; white-space: nowrap; flex: none; }
+  .igs .igs-ft-body { flex: 1 1 320px; min-width: 0; }
+  .igs .igs-asof { flex: none; margin-left: auto; font-size: 10px; opacity: .75;
+         font-variant-numeric: tabular-nums; white-space: nowrap; }
   @media (max-width: 560px) {
     .igs .igs-glance { flex-basis: 100%; }
     .igs .igs-xref { margin-left: 0; }
+  }
+  /* ============================================================================
+     MAG 7 PANEL (.m7p) — cap-weighted Mag 7 context read.
+     Blue-info accent. Class prefix: .m7p (no collision with .igx/.rrx).
+     Included by dashboard.html.j2 (stocks mode only, adjacent to ignition radar).
+     ============================================================================ */
+  .m7p { --m7-col: var(--info);
+         display: grid; gap: 11px; margin: 12px 0 2px; padding: 15px 18px;
+         border-radius: 12px; background: var(--panel); border: 1px solid var(--line);
+         border-left: 4px solid var(--m7-col); font-size: 12.5px; line-height: 1.4;
+         box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
+  /* state-based accent overrides */
+  .m7p.m7p-running_broad   { --m7-col: var(--ok); }
+  .m7p.m7p-running_narrow  { --m7-col: var(--info); }
+  .m7p.m7p-turning_up      { --m7-col: var(--ok); }
+  .m7p.m7p-cooling         { --m7-col: var(--warn); }
+  .m7p.m7p-rolling_over    { --m7-col: var(--warn); }
+  .m7p.m7p-down            { --m7-col: var(--act); }
+
+  /* header */
+  .m7p .m7p-hd  { display: flex; align-items: flex-start; gap: 10px; }
+  .m7p .m7p-meta { flex: 1; min-width: 0; }
+  .m7p .m7p-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+  .m7p .m7p-h2  { margin: 0; font-weight: 700; font-size: 13px; color: var(--text); }
+  .m7p .m7p-badge { font-weight: 800; letter-spacing: .03em; color: var(--m7-col);
+         font-size: 11px; font-variant-numeric: tabular-nums; padding: 1px 7px;
+         border-radius: 5px;
+         background: color-mix(in srgb, var(--m7-col) 14%, transparent);
+         border: 1px solid color-mix(in srgb, var(--m7-col) 35%, transparent); }
+  .m7p .m7p-help { display: inline-flex; align-items: center; justify-content: center;
+         width: 14px; height: 14px; border-radius: 50%;
+         background: var(--panel2); border: 1px solid var(--line);
+         color: var(--muted); font-size: 9px; font-weight: 700; cursor: help; }
+  /* state + stance lines */
+  .m7p .m7p-state  { font-size: 12.5px; color: var(--text); font-weight: 600; margin-top: 3px; }
+  .m7p .m7p-stance { font-size: 12px; color: var(--m7-col); font-weight: 700; margin-top: 1px; }
+
+  /* 7-dot member bar */
+  .m7p .m7p-dots { display: flex; gap: 10px 12px; flex-wrap: wrap; align-items: flex-end; }
+  .m7p .m7p-dot-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px;
+         cursor: help; }
+  .m7p .m7p-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+  .m7p .m7p-dot.m7p-dot-green { background: var(--up); }
+  .m7p .m7p-dot.m7p-dot-amber { background: var(--warn); }
+  .m7p .m7p-dot.m7p-dot-grey  { background: color-mix(in srgb, var(--muted) 40%, var(--panel2)); }
+  .m7p .m7p-dot-lbl { font-size: 9px; font-weight: 700; color: var(--muted);
+         letter-spacing: .03em; font-variant-numeric: tabular-nums; }
+
+  /* generals */
+  .m7p .m7p-generals { font-size: 12px; color: var(--text); }
+  .m7p .m7p-generals b { color: var(--up); }
+  .m7p .m7p-joining { color: var(--warn); }
+
+  /* structure chip */
+  .m7p .m7p-structure { display: inline-flex; align-items: center; gap: 4px;
+         background: color-mix(in srgb, var(--warn) 10%, var(--panel2));
+         border: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+         border-radius: 6px; padding: 3px 9px; font-size: 11px; font-weight: 600;
+         color: var(--warn); }
+
+  /* tech-legs strip */
+  .m7p .m7p-legs { display: flex; flex-wrap: wrap; gap: 5px; }
+  .m7p .m7p-leg { display: inline-flex; align-items: center; gap: 5px;
+         padding: 3px 9px; border-radius: 6px; font-size: 11px; cursor: help;
+         background: var(--panel2); border: 1px solid var(--line); color: var(--text); }
+  .m7p .m7p-leg-name { font-weight: 600; }
+  .m7p .m7p-leg-word { color: var(--muted); }
+  .m7p .m7p-leg.up  .m7p-leg-word { color: var(--up); font-weight: 700; }
+  .m7p .m7p-leg.up2 .m7p-leg-word { color: var(--up); font-weight: 800; }
+  .m7p .m7p-leg.dn  .m7p-leg-word { color: var(--down); font-weight: 700; }
+  .m7p .m7p-leg.dn2 .m7p-leg-word { color: var(--down); font-weight: 800; }
+
+  /* footer + as-of */
+  .m7p .m7p-foot { font-size: 11px; color: var(--muted);
+         border-top: 1px solid color-mix(in srgb, var(--m7-col) 18%, var(--line));
+         padding-top: 9px; }
+  .m7p .m7p-asof { display: inline; font-size: 10.5px; color: var(--muted);
+         margin-left: 6px; font-variant-numeric: tabular-nums; }
+
+  /* responsive */
+  @media (max-width: 560px) {
+    .m7p { padding: 13px 14px; gap: 9px; }
+    .m7p .m7p-legs .m7p-leg-name.l-zh,
+    .m7p .m7p-legs .m7p-leg-name.l-en { font-size: 10.5px; }
   }
 
   .help { display: inline-flex; align-items: center; justify-content: center;
@@ -590,9 +682,12 @@
   .act-score-hi  { color: var(--up); }
   .act-score-mid { color: var(--warn); }
   .act-score-lo  { color: var(--down); }
-  /* V2 stat line — muted grey, no color tokens; last line of the row; hidden on mobile */
+  /* V2 stat line — last line of the row; muted label, china-anv2-style colored value
+     (var(--up)/var(--down) so the zh red/green flip rides along); hidden on mobile */
   .act-row-stat { display: block; font-size: 10.5px; color: var(--muted); line-height: 1.35; margin-top: 3px;
                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .act-row-stat .up { color: var(--up); font-weight: 600; }
+  .act-row-stat .dn { color: var(--down); font-weight: 600; }
   @media (max-width: 560px) { .act-row-stat { display: none; } }
   .act-row-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 4px; }
   /* V2 action chip — anv2-chip idiom (uppercase 10px, 4px radius) */
@@ -2751,7 +2846,7 @@ body.page-macro .mx2-topbar-right{display:flex;align-items:center;gap:10px}
 body.page-macro .mx2-topbar-date{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 body.page-macro .mx2-expand-btn{
   display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;
-  padding:6px 15px;border-radius:999px;
+  padding:6px 15px;border-radius:999px;min-height:0;
   background:linear-gradient(135deg,color-mix(in srgb,var(--info) 16%,var(--panel)),color-mix(in srgb,var(--up) 11%,var(--panel)));
   border:1px solid color-mix(in srgb,var(--info) 38%,var(--line));
   color:var(--text);font-size:11px;font-weight:700;letter-spacing:.05em;
@@ -3321,14 +3416,19 @@ body.page-macro .isle-heatmap-chrome-head{font-size:10px;font-weight:700;text-tr
    where X can be 4–5px on a 281px canvas at 390px viewport.
    Target via CSS attr substring matching on the inline style; silence text ≤7px while preserving ≥8px. */
 @media(max-width:560px){
-  body.page-macro #heatmap-scorecard [style*="font-size:4"],
-  body.page-macro #heatmap-scorecard [style*="font-size: 4"],
-  body.page-macro #heatmap-scorecard [style*="font-size:5"],
-  body.page-macro #heatmap-scorecard [style*="font-size: 5"],
-  body.page-macro #heatmap-scorecard [style*="font-size:6"],
-  body.page-macro #heatmap-scorecard [style*="font-size: 6"],
-  body.page-macro #heatmap-scorecard [style*="font-size:7"],
-  body.page-macro #heatmap-scorecard [style*="font-size: 7"]{color:transparent!important}
+  /* px-anchored so 40-79px labels never match the substring (verify F6) */
+  body.page-macro #heatmap-scorecard [style*="font-size:4px"],
+  body.page-macro #heatmap-scorecard [style*="font-size: 4px"],
+  body.page-macro #heatmap-scorecard [style*="font-size:5px"],
+  body.page-macro #heatmap-scorecard [style*="font-size: 5px"],
+  body.page-macro #heatmap-scorecard [style*="font-size:6px"],
+  body.page-macro #heatmap-scorecard [style*="font-size: 6px"],
+  body.page-macro #heatmap-scorecard [style*="font-size:7px"],
+  body.page-macro #heatmap-scorecard [style*="font-size: 7px"],
+  body.page-macro #heatmap-scorecard [style*="font-size:4."],
+  body.page-macro #heatmap-scorecard [style*="font-size:5."],
+  body.page-macro #heatmap-scorecard [style*="font-size:6."],
+  body.page-macro #heatmap-scorecard [style*="font-size:7."]{color:transparent!important}
 }
 body.page-macro .mx2-tray-stamp{font-size:10px;color:var(--muted);padding:8px 0 4px;text-align:right;font-variant-numeric:tabular-nums}
 
@@ -3389,8 +3489,7 @@ body.page-macro .idx-grid.mx2-hidden{display:none}
    inside sx-deep-context; use v2-retired-macro class instead (added to old link-out div). */
 body.page-macro details#sentiment-regime.panel{display:none!important}
 body.page-macro .panel#now-board.span6{display:none!important}
-body.page-macro .panel#now-board-legacy.span6{display:none!important}
-body.page-macro .v2-retired-macro{display:none!important}
+/* now-board-legacy + v2-retired-macro rules removed — the blocks no longer render (INT-07/09dt) */
 
 /* ── Responsive ── */
 @media(max-width:900px){
@@ -3560,10 +3659,14 @@ body.page-macro .isle-deep-health{font-size:11px;color:var(--muted);padding:10px
 /* VIS-06: light-theme — darken small-text green/amber to ≥4.5:1 on near-white bg.
    The global --up (rgb 31,154,85) = 3.19:1 on #f7f8fa; --warn = 3.19:1.
    These local overrides apply ONLY to small (<14px) stat/change text in the macro section. */
+/* Evidence tone classes (inline colors removed so these can theme — VIS-06) */
+body.page-macro .evs-good{color:var(--up)}
+body.page-macro .evs-bad{color:var(--down)}
+body.page-macro .evs-flat{color:var(--warn)}
+[data-theme="light"] body.page-macro .evs-good{color:#157a42}
+[data-theme="light"] body.page-macro .evs-flat{color:#7a4500}
 [data-theme="light"] body.page-macro .mx2-mkt-chg.up,
-[data-theme="light"] body.page-macro .sxg-mkt-chg.up,
-[data-theme="light"] body.page-macro .isle-ev-score[style*="up"],
-[data-theme="light"] body.page-macro .sxg-ev-score{color:#157a42}
+[data-theme="light"] body.page-macro .sxg-mkt-chg.up{color:#157a42}
 [data-theme="light"] body.page-macro .mx2-mkt-chg.up{color:#157a42}
 [data-theme="light"] body.page-macro .idx-stat.ok{color:#157a42}
 [data-theme="light"] body.page-macro .idx-card-chg.up{color:#157a42}
@@ -3599,6 +3702,7 @@ body.page-macro .mx4-seg-btn:hover:not([aria-pressed="true"]){
 }
 @media(max-width:700px){
   body.page-macro .mx4-seg-btn{min-height:44px;padding:5px 16px;}
+  body.page-macro .mx2-expand-btn{min-height:44px;} /* MOB-04: touch target */
 }
 
 /* ── LEDGER VIEW — unchanged look (no .mx4-grid = ledger) ──── */
@@ -4090,6 +4194,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
         <div class="hero-sub mx2-hero-sub">
           
           
+          
           <span class="l-en"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span> &nbsp;·&nbsp; shifting</span>
           <span class="l-zh"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span> &nbsp;·&nbsp; 转换中</span>
           <span id="regime-asof" style="display:none">2026-07-10</span>
@@ -4124,10 +4229,8 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
           </div>
           
           <div class="mx4-bzone-flip-caption mx4-grid-only">
-            
-            <span class="l-en">tick = flip trigger</span>
-            <span class="l-zh">标记 = 翻转触发点</span>
-            
+            <span class="l-en">tick = today's score</span>
+            <span class="l-zh">标记 = 今日得分</span>
           </div>
         </div>
 
@@ -4158,33 +4261,43 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
                 <div class="ms-pop-body">
                   
                   
-                  <a class="ms-sig sev-info" data-ms-jump href="#holdings">
-                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
                     <div class="ms-sig-detail"><span class="l-en">ARKK: manager added META by +22% of position (2026-06-30..2026-07-10, flow-normalized)</span><span class="l-zh">ARKK：经理 added META 仓位 +22%（2026-06-30..2026-07-10，已按资金流标准化）</span></div>
                     <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
                   </a>
                   
-                  <a class="ms-sig sev-info" data-ms-jump href="#holdings">
-                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
                     <div class="ms-sig-detail"><span class="l-en">ARKK: manager added XE by +27% of position (2026-06-30..2026-07-10, flow-normalized)</span><span class="l-zh">ARKK：经理 added XE 仓位 +27%（2026-06-30..2026-07-10，已按资金流标准化）</span></div>
                     <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
                   </a>
                   
-                  <a class="ms-sig sev-info" data-ms-jump href="#holdings">
-                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
                     <div class="ms-sig-detail"><span class="l-en">ARKW: manager cut ROKU by -80% of position (2026-06-30..2026-07-10, flow-normalized)</span><span class="l-zh">ARKW：经理 cut ROKU 仓位 -80%（2026-06-30..2026-07-10，已按资金流标准化）</span></div>
                     <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
                   </a>
                   
-                  <a class="ms-sig sev-info" data-ms-jump href="#holdings">
-                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
                     <div class="ms-sig-detail"><span class="l-en">ARKW: manager added CRWD by +296% of position (2026-06-30..2026-07-10, flow-normalized)</span><span class="l-zh">ARKW：经理 added CRWD 仓位 +296%（2026-06-30..2026-07-10，已按资金流标准化）</span></div>
                     <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
                   </a>
+                  
+                  
                   
                   <a class="ms-sig sev-warn">
                     <div class="ms-sig-head"><span class="ms-sig-ico">🔔</span><span class="ms-sig-title"><span class="l-en">Macro signal fired</span><span class="l-zh">宏观信号触发</span></span></div>
@@ -4276,7 +4389,6 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
         </div>
         
         
-        
         <div class="sxg-face-sub" style="color:var(--ink-3);font-size:10px">
           <span class="l-en">Tap for full risk breakdown</span>
           <span class="l-zh">点击查看完整风险分析</span>
@@ -4311,11 +4423,12 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
           
           
           
+          
           <div class="mx4-todo-row">
             <span class="mx4-todo-dot" style="--todo-dot-color:var(--warn)"></span>
             <span class="mx4-todo-text">
-              <span class="l-en">Expect noise around <b>CPI (consumer prices)</b> — don't read the first move as trend.</span>
-              <span class="l-zh"><b>CPI (consumer prices)</b>前后波动加大 — 首个走势未必是趋势。</span>
+              <span class="l-en">Expect noise around <b>CPI (consumer prices)</b> (in 3 days) — don't read the first move as trend.</span>
+              <span class="l-zh"><b>消费者物价指数（CPI）</b>（3 天后）前后波动加大 — 首个走势未必是趋势。</span>
             </span>
           </div>
           
@@ -4355,11 +4468,16 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       if(!cb) return;
       document.addEventListener('click',function(e){
         if(e.target.closest('[data-ms-jump]')){ cb.checked=false; return; }
+        var pill=e.target.closest('.ms-alerts');
+        if(pill){ e.preventDefault(); cb.checked=!cb.checked; return; }
         var wrap=e.target.closest('.ms-alerts-wrap');
         if(cb.checked && !wrap) cb.checked=false;
       });
       document.addEventListener('keydown',function(e){
-        if(e.key==='Escape'&&cb.checked) cb.checked=false;
+        if(e.key==='Escape'&&cb.checked){ cb.checked=false; return; }
+        if((e.key==='Enter'||e.key===' ')&&e.target.closest&&e.target.closest('.ms-alerts')){
+          e.preventDefault(); cb.checked=!cb.checked;
+        }
       });
     })();
     </script>
@@ -4427,51 +4545,57 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       <div class="sxg-ev-rows">
         
         
+        
         <div class="sxg-ev-row">
-          <span class="sxg-ev-arrow" style="color:var(--up)">▲</span>
+          <span class="sxg-ev-arrow evs-good">▲</span>
           <span class="sxg-ev-name"><span class="l-en">Trend & technicals</span><span class="l-zh">趋势与技术</span></span>
           <div class="sxg-ev-bar-track"><div class="sxg-ev-bar-fill" style="width:90%;background:var(--up)"></div></div>
-          <span class="sxg-ev-score" style="color:var(--up)">90</span>
+          <span class="sxg-ev-score evs-good">90</span>
         </div>
         
         
+        
         <div class="sxg-ev-row">
-          <span class="sxg-ev-arrow" style="color:var(--up)">▲</span>
+          <span class="sxg-ev-arrow evs-good">▲</span>
           <span class="sxg-ev-name"><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span>
           <div class="sxg-ev-bar-track"><div class="sxg-ev-bar-fill" style="width:70%;background:var(--up)"></div></div>
-          <span class="sxg-ev-score" style="color:var(--up)">70</span>
+          <span class="sxg-ev-score evs-good">70</span>
         </div>
         
         
+        
         <div class="sxg-ev-row">
-          <span class="sxg-ev-arrow" style="color:var(--up)">▲</span>
+          <span class="sxg-ev-arrow evs-good">▲</span>
           <span class="sxg-ev-name"><span class="l-en">Volatility regime</span><span class="l-zh">波动率环境</span></span>
           <div class="sxg-ev-bar-track"><div class="sxg-ev-bar-fill" style="width:86%;background:var(--up)"></div></div>
-          <span class="sxg-ev-score" style="color:var(--up)">86</span>
+          <span class="sxg-ev-score evs-good">86</span>
         </div>
         
         
+        
         <div class="sxg-ev-row">
-          <span class="sxg-ev-arrow" style="color:var(--warn)">▲</span>
+          <span class="sxg-ev-arrow evs-flat">▲</span>
           <span class="sxg-ev-name"><span class="l-en">Breadth & participation</span><span class="l-zh">广度与参与</span></span>
           <div class="sxg-ev-bar-track"><div class="sxg-ev-bar-fill" style="width:59%;background:var(--warn)"></div></div>
-          <span class="sxg-ev-score" style="color:var(--warn)">59</span>
+          <span class="sxg-ev-score evs-flat">59</span>
         </div>
         
         
+        
         <div class="sxg-ev-row">
-          <span class="sxg-ev-arrow" style="color:var(--up)">▲</span>
+          <span class="sxg-ev-arrow evs-good">▲</span>
           <span class="sxg-ev-name"><span class="l-en">Liquidity & credit</span><span class="l-zh">流动性与信用</span></span>
           <div class="sxg-ev-bar-track"><div class="sxg-ev-bar-fill" style="width:77%;background:var(--up)"></div></div>
-          <span class="sxg-ev-score" style="color:var(--up)">77</span>
+          <span class="sxg-ev-score evs-good">77</span>
         </div>
         
         
+        
         <div class="sxg-ev-row">
-          <span class="sxg-ev-arrow" style="color:var(--up)">▲</span>
+          <span class="sxg-ev-arrow evs-good">▲</span>
           <span class="sxg-ev-name"><span class="l-en">Downturn-risk guard</span><span class="l-zh">下行风险护栏</span></span>
           <div class="sxg-ev-bar-track"><div class="sxg-ev-bar-fill" style="width:87%;background:var(--up)"></div></div>
-          <span class="sxg-ev-score" style="color:var(--up)">87</span>
+          <span class="sxg-ev-score evs-good">87</span>
         </div>
         
       </div>
@@ -4499,8 +4623,9 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
         
         
         
+        
         <div class="isle-ev-row isle-stagger isle-s1" style="--factor-color:var(--up)">
-          <span class="isle-ev-dir" style="color:var(--up)">▲</span>
+          <span class="isle-ev-dir evs-good">▲</span>
           <div class="isle-ev-name-wrap">
             <span class="isle-ev-name" style="">
               <span class="l-en">Trend & technicals</span><span class="l-zh">趋势与技术</span>
@@ -4512,14 +4637,15 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <div class="isle-ev-bar-label-row"><span>0</span><span>50</span><span>100</span></div>
             <div class="isle-ev-bar-track"><div class="isle-ev-bar-fill" style="width:90%;background:var(--up)"></div></div>
           </div>
-          <span class="isle-ev-score" style="color:var(--up)">90</span>
+          <span class="isle-ev-score evs-good">90</span>
         </div>
         
         
         
         
+        
         <div class="isle-ev-row isle-stagger isle-s2" style="--factor-color:var(--up)">
-          <span class="isle-ev-dir" style="color:var(--up)">▲</span>
+          <span class="isle-ev-dir evs-good">▲</span>
           <div class="isle-ev-name-wrap">
             <span class="isle-ev-name" style="">
               <span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span>
@@ -4531,14 +4657,15 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <div class="isle-ev-bar-label-row"><span>0</span><span>50</span><span>100</span></div>
             <div class="isle-ev-bar-track"><div class="isle-ev-bar-fill" style="width:70%;background:var(--up)"></div></div>
           </div>
-          <span class="isle-ev-score" style="color:var(--up)">70</span>
+          <span class="isle-ev-score evs-good">70</span>
         </div>
         
         
         
         
+        
         <div class="isle-ev-row isle-stagger isle-s3" style="--factor-color:var(--up)">
-          <span class="isle-ev-dir" style="color:var(--up)">▲</span>
+          <span class="isle-ev-dir evs-good">▲</span>
           <div class="isle-ev-name-wrap">
             <span class="isle-ev-name" style="">
               <span class="l-en">Volatility regime</span><span class="l-zh">波动率环境</span>
@@ -4550,14 +4677,15 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <div class="isle-ev-bar-label-row"><span>0</span><span>50</span><span>100</span></div>
             <div class="isle-ev-bar-track"><div class="isle-ev-bar-fill" style="width:86%;background:var(--up)"></div></div>
           </div>
-          <span class="isle-ev-score" style="color:var(--up)">86</span>
+          <span class="isle-ev-score evs-good">86</span>
         </div>
         
         
         
         
+        
         <div class="isle-ev-row isle-stagger isle-s4 ev-weakest" style="--factor-color:var(--warn)">
-          <span class="isle-ev-dir" style="color:var(--warn)">▲</span>
+          <span class="isle-ev-dir evs-flat">▲</span>
           <div class="isle-ev-name-wrap">
             <span class="isle-ev-name" style="color:var(--warn)">
               <span class="l-en">Breadth & participation</span><span class="l-zh">广度与参与</span>
@@ -4569,14 +4697,15 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <div class="isle-ev-bar-label-row"><span>0</span><span>50</span><span>100</span></div>
             <div class="isle-ev-bar-track"><div class="isle-ev-bar-fill" style="width:59%;background:var(--warn)"></div></div>
           </div>
-          <span class="isle-ev-score" style="color:var(--warn)">59</span>
+          <span class="isle-ev-score evs-flat">59</span>
         </div>
         
         
         
         
+        
         <div class="isle-ev-row isle-stagger isle-s5" style="--factor-color:var(--up)">
-          <span class="isle-ev-dir" style="color:var(--up)">▲</span>
+          <span class="isle-ev-dir evs-good">▲</span>
           <div class="isle-ev-name-wrap">
             <span class="isle-ev-name" style="">
               <span class="l-en">Liquidity & credit</span><span class="l-zh">流动性与信用</span>
@@ -4588,14 +4717,15 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <div class="isle-ev-bar-label-row"><span>0</span><span>50</span><span>100</span></div>
             <div class="isle-ev-bar-track"><div class="isle-ev-bar-fill" style="width:77%;background:var(--up)"></div></div>
           </div>
-          <span class="isle-ev-score" style="color:var(--up)">77</span>
+          <span class="isle-ev-score evs-good">77</span>
         </div>
         
         
         
         
+        
         <div class="isle-ev-row isle-stagger isle-s6" style="--factor-color:var(--up)">
-          <span class="isle-ev-dir" style="color:var(--up)">▲</span>
+          <span class="isle-ev-dir evs-good">▲</span>
           <div class="isle-ev-name-wrap">
             <span class="isle-ev-name" style="">
               <span class="l-en">Downturn-risk guard</span><span class="l-zh">下行风险护栏</span>
@@ -4607,7 +4737,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <div class="isle-ev-bar-label-row"><span>0</span><span>50</span><span>100</span></div>
             <div class="isle-ev-bar-track"><div class="isle-ev-bar-fill" style="width:87%;background:var(--up)"></div></div>
           </div>
-          <span class="isle-ev-score" style="color:var(--up)">87</span>
+          <span class="isle-ev-score evs-good">87</span>
         </div>
         
       </div>
@@ -4721,8 +4851,8 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       <div class="sxg-face-eyebrow"><span class="l-en">Events</span><span class="l-zh">事件</span></div>
       <div class="sxg-face-stance">
         
-        <span class="l-en">7 high-impact prints this week</span>
-        <span class="l-zh">本周 7 项重大数据</span>
+        <span class="l-en">2 high-impact prints this week</span>
+        <span class="l-zh">本周 2 项高影响数据</span>
         
       </div>
       
@@ -6631,7 +6761,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <span class="mx2-mkt-name">SPY</span>
             <span class="mx2-mkt-chg up nb-chg" data-sym="SPY" data-mkt="us">+0.85%</span>
           </div>
-          <div class="mx2-mkt-px nb-px" data-sym="SPY" data-mkt="us">751.71</div>
+          <div class="mx2-mkt-px nb-px" data-sym="SPY" data-mkt="us" data-bare>751.71</div>
         </div>
         
         
@@ -6640,7 +6770,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <span class="mx2-mkt-name">QQQ</span>
             <span class="mx2-mkt-chg up nb-chg" data-sym="QQQ" data-mkt="us">+1.66%</span>
           </div>
-          <div class="mx2-mkt-px nb-px" data-sym="QQQ" data-mkt="us">723.28</div>
+          <div class="mx2-mkt-px nb-px" data-sym="QQQ" data-mkt="us" data-bare>723.28</div>
         </div>
         
         
@@ -6649,7 +6779,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <span class="mx2-mkt-name">DJI</span>
             <span class="mx2-mkt-chg up nb-chg" data-sym="DJI" data-mkt="us">+0.27%</span>
           </div>
-          <div class="mx2-mkt-px nb-px" data-sym="DJI" data-mkt="us">52487.41</div>
+          <div class="mx2-mkt-px nb-px" data-sym="DJI" data-mkt="us" data-bare>52,487.41</div>
         </div>
         
         
@@ -6658,7 +6788,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <span class="mx2-mkt-name">RUT</span>
             <span class="mx2-mkt-chg up nb-chg" data-sym="RUT" data-mkt="us">+1.22%</span>
           </div>
-          <div class="mx2-mkt-px nb-px" data-sym="RUT" data-mkt="us">2992.54</div>
+          <div class="mx2-mkt-px nb-px" data-sym="RUT" data-mkt="us" data-bare>2,992.54</div>
         </div>
         
       </div>
@@ -6673,28 +6803,28 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
         
         <div class="sxg-mkt-tile nb-tile" data-sym="SPY" data-mkt="us">
           <span class="sxg-mkt-sym">SPY</span>
-          <span class="sxg-mkt-price nb-px" data-sym="SPY" data-mkt="us">751.71</span>
+          <span class="sxg-mkt-price nb-px" data-sym="SPY" data-mkt="us" data-bare>751.71</span>
           <span class="sxg-mkt-chg up nb-chg" data-sym="SPY" data-mkt="us">+0.85%</span>
         </div>
         
         
         <div class="sxg-mkt-tile nb-tile" data-sym="QQQ" data-mkt="us">
           <span class="sxg-mkt-sym">QQQ</span>
-          <span class="sxg-mkt-price nb-px" data-sym="QQQ" data-mkt="us">723.28</span>
+          <span class="sxg-mkt-price nb-px" data-sym="QQQ" data-mkt="us" data-bare>723.28</span>
           <span class="sxg-mkt-chg up nb-chg" data-sym="QQQ" data-mkt="us">+1.66%</span>
         </div>
         
         
         <div class="sxg-mkt-tile nb-tile" data-sym="DJI" data-mkt="us">
           <span class="sxg-mkt-sym">DJI</span>
-          <span class="sxg-mkt-price nb-px" data-sym="DJI" data-mkt="us">52,487.41</span>
+          <span class="sxg-mkt-price nb-px" data-sym="DJI" data-mkt="us" data-bare>52,487.41</span>
           <span class="sxg-mkt-chg up nb-chg" data-sym="DJI" data-mkt="us">+0.27%</span>
         </div>
         
         
         <div class="sxg-mkt-tile nb-tile" data-sym="RUT" data-mkt="us">
           <span class="sxg-mkt-sym">RUT</span>
-          <span class="sxg-mkt-price nb-px" data-sym="RUT" data-mkt="us">2,992.54</span>
+          <span class="sxg-mkt-price nb-px" data-sym="RUT" data-mkt="us" data-bare>2,992.54</span>
           <span class="sxg-mkt-chg up nb-chg" data-sym="RUT" data-mkt="us">+1.22%</span>
         </div>
         
@@ -6740,7 +6870,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <span class="idx-card-ticker">SPY</span>
             <span class="idx-card-name">S&P 500</span>
           </div>
-          <div class="idx-card-px nb-px" data-sym="SPY" data-mkt="us">751.71</div>
+          <div class="idx-card-px nb-px" data-sym="SPY" data-mkt="us" data-bare>751.71</div>
           <div class="idx-card-chg up nb-chg" data-sym="SPY" data-mkt="us">+0.85%</div>
           <div class="idx-card-chips">
             <span class="idx-stat ok">-0.8%</span>
@@ -6757,7 +6887,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <span class="idx-card-ticker">QQQ</span>
             <span class="idx-card-name">Nasdaq 100</span>
           </div>
-          <div class="idx-card-px nb-px" data-sym="QQQ" data-mkt="us">723.28</div>
+          <div class="idx-card-px nb-px" data-sym="QQQ" data-mkt="us" data-bare>723.28</div>
           <div class="idx-card-chg up nb-chg" data-sym="QQQ" data-mkt="us">+1.66%</div>
           <div class="idx-card-chips">
             <span class="idx-stat wn">-3.0%</span>
@@ -6774,7 +6904,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <span class="idx-card-ticker">DJI</span>
             <span class="idx-card-name">Dow Jones</span>
           </div>
-          <div class="idx-card-px nb-px" data-sym="DJI" data-mkt="us">52487.41</div>
+          <div class="idx-card-px nb-px" data-sym="DJI" data-mkt="us" data-bare>52,487.41</div>
           <div class="idx-card-chg up nb-chg" data-sym="DJI" data-mkt="us">+0.27%</div>
           <div class="idx-card-chips">
             <span class="idx-stat wn">-1.1%</span>
@@ -6791,7 +6921,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
             <span class="idx-card-ticker">RUT</span>
             <span class="idx-card-name">Russell 2000</span>
           </div>
-          <div class="idx-card-px nb-px" data-sym="RUT" data-mkt="us">2992.54</div>
+          <div class="idx-card-px nb-px" data-sym="RUT" data-mkt="us" data-bare>2,992.54</div>
           <div class="idx-card-chg up nb-chg" data-sym="RUT" data-mkt="us">+1.22%</div>
           <div class="idx-card-chips">
             <span class="idx-stat wn">-1.1%</span>
@@ -7745,7 +7875,11 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       <div class="sx-glance">
         <span class="v2chip c-info" style="font-size:10px;padding:2px 7px"><span class="l-en">display-only synthesis</span><span class="l-zh">仅展示层综合</span></span>
         
-        <span class="mx2-aibrief-glance">5 high-impact items; dominant channel rates; source mix stock_wire:6, official:5…</span>
+        
+        
+        
+        
+        <span class="mx2-aibrief-glance"><span class="l-en">5 high-impact items · dominant: rates</span><span class="l-zh">5 条高影响信息 · 主导：利率</span></span>
         
       </div>
       <div class="sx-chev">&#8964;</div>
@@ -7804,14 +7938,15 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
               <span class="isle-aibrief-badge"><span class="l-en">display-only synthesis of existing signals — not a signal source</span><span class="l-zh">仅展示层综合读数 — 非信号来源</span></span>
             </div>
             
+            
+            
+            
+            
+            
+            
             <div class="isle-aibrief-body">
-              <span class="l-en">5 high-impact items; dominant channel rates; source mix stock_wire:6, official:5, tier1:4</span>
-              <span class="l-zh">5 high-impact items; dominant channel rates; source mix stock_wire:6, official:5, tier1:4</span>
-              
-              
-              
-               · <span class="l-en">Dominant: <strong>rates</strong></span><span class="l-zh">主导：<strong>利率</strong></span>
-              
+              <span class="l-en">5 high-impact items today · dominant channel: <strong>rates</strong> · sources: stock wire 6, official releases 5, tier-1 press 4, quality press 3</span>
+              <span class="l-zh">今日 5 条高影响信息 · 主导渠道：<strong>利率</strong> · 来源：个股快讯 6、官方发布 5、一线媒体 4、优质媒体 3</span>
               
                · <span class="l-en">Top tickers: XLF, XLK, KRE</span><span class="l-zh">主要标的：XLF、XLK、KRE</span>
               
@@ -7959,11 +8094,11 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
               </summary>
               <div class="nb-body">
                 <p class="nb-sumtext">
-                  <span class="l-en">A <b>high</b>-impact <b>Earnings</b> headline in focus on XLF, touching credit, earnings. Flagged: stock-focused news source; tier-1 macro term. — CNBC - Investing</span>
+                  <span class="l-en">A <b>high</b>-impact <b>Earnings</b> headline in focus on XLF, touching credit, earnings. — CNBC - Investing</span>
                   
                   
                   
-                  <span class="l-zh">一条<b>高</b>影响级的<b>业绩</b>新闻，聚焦 XLF，涉及 <method-wrapper '  str  ' of str object at 0x103af4d20>、<method-wrapper '  str  ' of str object at 0x1051c76f0>。 入选原因：stock-focused news source；tier-1 macro term。 — CNBC - Investing</span>
+                  <span class="l-zh">一条<b>高</b>影响级的<b>业绩</b>新闻，聚焦 XLF，涉及 信贷、业绩。 — CNBC - Investing</span>
                 </p>
                 
                 <div class="nb-tags">
@@ -7984,11 +8119,11 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
               </summary>
               <div class="nb-body">
                 <p class="nb-sumtext">
-                  <span class="l-en">A <b>high</b>-impact <b>Earnings</b> headline in focus on XLK, touching rates, earnings. Flagged: stock-focused news source; tier-1 macro term. — CNBC - Tech</span>
+                  <span class="l-en">A <b>high</b>-impact <b>Earnings</b> headline in focus on XLK, touching rates, earnings. — CNBC - Tech</span>
                   
                   
                   
-                  <span class="l-zh">一条<b>高</b>影响级的<b>业绩</b>新闻，聚焦 XLK，涉及 <method-wrapper '  str  ' of str object at 0x103af4ed0>、<method-wrapper '  str  ' of str object at 0x1051c76f0>。 入选原因：stock-focused news source；tier-1 macro term。 — CNBC - Tech</span>
+                  <span class="l-zh">一条<b>高</b>影响级的<b>业绩</b>新闻，聚焦 XLK，涉及 利率、业绩。 — CNBC - Tech</span>
                 </p>
                 
                 <div class="nb-tags">
@@ -8009,11 +8144,11 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
               </summary>
               <div class="nb-body">
                 <p class="nb-sumtext">
-                  <span class="l-en">A <b>high</b>-impact <b>Earnings</b> headline, touching fiscal trade, earnings. Flagged: tier-1 news source; tier-1 macro term. — CNBC - Markets</span>
+                  <span class="l-en">A <b>high</b>-impact <b>Earnings</b> headline, touching fiscal trade, earnings. — CNBC - Markets</span>
                   
                   
                   
-                  <span class="l-zh">一条<b>高</b>影响级的<b>业绩</b>新闻，涉及 <method-wrapper '  str  ' of str object at 0x1052182f0>、<method-wrapper '  str  ' of str object at 0x1051c76f0>。 入选原因：tier-1 news source；tier-1 macro term。 — CNBC - Markets</span>
+                  <span class="l-zh">一条<b>高</b>影响级的<b>业绩</b>新闻，涉及 fiscal trade、业绩。 — CNBC - Markets</span>
                 </p>
                 
                 <div class="nb-tags">
@@ -8034,11 +8169,11 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
               </summary>
               <div class="nb-body">
                 <p class="nb-sumtext">
-                  <span class="l-en">A <b>high</b>-impact <b>Guidance</b> headline, touching guidance, capital return. Flagged: tier-1 news source; tier-1 macro term. — CNBC - Markets</span>
+                  <span class="l-en">A <b>high</b>-impact <b>Guidance</b> headline, touching guidance, capital return. — CNBC - Markets</span>
                   
                   
                   
-                  <span class="l-zh">一条<b>高</b>影响级的<b>指引</b>新闻，涉及 <method-wrapper '  str  ' of str object at 0x105218ab0>、<method-wrapper '  str  ' of str object at 0x105218af0>。 入选原因：tier-1 news source；tier-1 macro term。 — CNBC - Markets</span>
+                  <span class="l-zh">一条<b>高</b>影响级的<b>指引</b>新闻，涉及 指引、回购。 — CNBC - Markets</span>
                 </p>
                 
                 <div class="nb-tags">
@@ -8059,11 +8194,11 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
               </summary>
               <div class="nb-body">
                 <p class="nb-sumtext">
-                  <span class="l-en">A <b>high</b>-impact <b>Fed</b> headline in focus on KRE, XLF, touching growth, credit. Flagged: first-party macro release; tier-1 macro term. — Federal Reserve - All Press</span>
+                  <span class="l-en">A <b>high</b>-impact <b>Fed</b> headline in focus on KRE, XLF, touching growth, credit. — Federal Reserve - All Press</span>
                   
                   
                   
-                  <span class="l-zh">一条<b>高</b>影响级的<b>美联储</b>新闻，聚焦 KRE、XLF，涉及 <method-wrapper '  str  ' of str object at 0x103af5200>、<method-wrapper '  str  ' of str object at 0x103af4d20>。 入选原因：first-party macro release；tier-1 macro term。 — Federal Reserve - All Press</span>
+                  <span class="l-zh">一条<b>高</b>影响级的<b>美联储</b>新闻，聚焦 KRE、XLF，涉及 增长、信贷。 — Federal Reserve - All Press</span>
                 </p>
                 
                 <div class="nb-tags">
@@ -8084,11 +8219,11 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
               </summary>
               <div class="nb-body">
                 <p class="nb-sumtext">
-                  <span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline in focus on META, touching credit. Flagged: stock-focused news source; market-sensitive term. — Seeking Alpha - Market Currents</span>
+                  <span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline in focus on META, touching credit. — Seeking Alpha - Market Currents</span>
                   
                   
                   
-                  <span class="l-zh">一条<b>中</b>影响级的<b>个股</b>新闻，聚焦 META，涉及 <method-wrapper '  str  ' of str object at 0x103af4d20>。 入选原因：stock-focused news source；market-sensitive term。 — Seeking Alpha - Market Currents</span>
+                  <span class="l-zh">一条<b>中</b>影响级的<b>个股</b>新闻，聚焦 META，涉及 信贷。 — Seeking Alpha - Market Currents</span>
                 </p>
                 
                 <div class="nb-tags">
@@ -8394,46 +8529,6 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
 
   
   
-  <a class="panel span12 aibrief-card mx-aibrief v2-retired-macro" href="aibrief.html">
-    <div class="mx-aibrief-hdr">
-      <div class="mx-aibrief-icon">AI</div>
-      <div>
-        <div class="mx-aibrief-title"><span class="l-en">AI Daily Brief · cross-asset synthesis</span><span class="l-zh">AI 每日简报 · 跨资产综合</span></div>
-        <div class="mx-aibrief-date num">2026-07-10</div>
-      </div>
-      <span class="mx-aibrief-badge"><span class="l-en">display-only synthesis of existing signals — not a signal source</span><span class="l-zh">仅展示层综合读数 — 非信号来源</span></span>
-    </div>
-    
-    <div class="mx-aibrief-body">
-      <span class="l-en">5 high-impact items; dominant channel rates; source mix stock_wire:6, official:5, tier1:4</span>
-      <span class="l-zh">5 high-impact items; dominant channel rates; source mix stock_wire:6, official:5, tier1:4</span>
-      
-      
-      
-       · <span class="l-en">Dominant: <strong>rates</strong></span><span class="l-zh">主导：<strong>利率</strong></span>
-      
-      
-       · <span class="l-en">Top tickers: XLF, XLK, KRE</span><span class="l-zh">主要标的：XLF、XLK、KRE</span>
-      
-    </div>
-    <div class="mx-aibrief-footer">
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        
-        <span class="mx-chip mx-c-warn">5 <span class="l-en">high-impact</span><span class="l-zh">高影响</span></span>
-        
-        
-        <span class="mx-chip mx-c-muted"><span class="l-en">rates</span><span class="l-zh">利率</span> 7</span>
-        
-        <span class="mx-chip mx-c-muted"><span class="l-en">credit</span><span class="l-zh">信贷</span> 4</span>
-        
-        <span class="mx-chip mx-c-muted"><span class="l-en">earnings</span><span class="l-zh">业绩</span> 4</span>
-        
-      </div>
-      <span class="mx-aibrief-link"><span class="l-en">Full AI brief →</span><span class="l-zh">完整 AI 简报 →</span></span>
-    </div>
-    
-  </a>
-  
 
 
   
@@ -8482,199 +8577,6 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
 
 
   
-  <style id="nb-css">
-  body.page-macro #now-board .nb-strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 14px;font-size:11px}
-  body.page-macro #now-board .nb-strip-h{font-family:var(--num);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-right:4px}
-  body.page-macro #now-board .nb-ev{display:inline-flex;align-items:center;gap:5px;border:var(--rule) solid var(--hair);border-radius:7px;padding:3px 8px;background:var(--tile);color:var(--ink-2)}
-  body.page-macro #now-board .nb-ev b{color:var(--ink-1);font-family:var(--num);font-size:10px}
-  body.page-macro #now-board .nb-relief{display:flex;align-items:center;gap:8px;border-radius:9px;padding:9px 12px;margin:0 0 12px;font-size:12.5px;font-weight:600;border:var(--rule) solid color-mix(in srgb,var(--rc,var(--ink-3)) 40%,var(--hair));background:color-mix(in srgb,var(--rc,var(--ink-3)) 10%,var(--tile));color:var(--ink-1)}
-  body.page-macro #now-board .nb-relief.firing{--rc:var(--up)}
-  body.page-macro #now-board .nb-relief.building{--rc:var(--warn)}
-  body.page-macro #now-board .nb-acc{display:grid;gap:0;border:var(--rule) solid var(--hair);border-radius:11px;overflow:hidden;background:var(--tile)}
-  body.page-macro #now-board .nb-item{border-bottom:var(--rule) solid var(--hair)}
-  body.page-macro #now-board .nb-item:last-child{border-bottom:0}
-  body.page-macro #now-board .nb-item[open]{background:color-mix(in srgb,var(--link) 5%,transparent)}
-  body.page-macro #now-board .nb-sum{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:11px 14px}
-  body.page-macro #now-board .nb-sum::-webkit-details-marker{display:none}
-  body.page-macro #now-board .nb-sum:hover{background:color-mix(in srgb,var(--link) 6%,transparent)}
-  body.page-macro #now-board .nb-theme{font-family:var(--num);font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap;color:var(--ink-2);border:var(--rule) solid var(--hair);background:var(--panel)}
-  body.page-macro #now-board .nb-htitle{font-size:13.5px;font-weight:650;color:var(--ink-1);line-height:1.3;min-width:0}
-  body.page-macro #now-board .nb-item[open] .nb-htitle{color:var(--link)}
-  body.page-macro #now-board .nb-meta{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink-3);font-size:11px;font-family:var(--num)}
-  body.page-macro #now-board .nb-chev{transition:transform .2s}
-  body.page-macro #now-board .nb-item[open] .nb-chev{transform:rotate(180deg)}
-  body.page-macro #now-board .nb-body{padding:0 14px 13px;display:grid;gap:9px}
-  body.page-macro #now-board .nb-sumtext{font-size:12.5px;line-height:1.5;color:var(--ink-2);margin:0}
-  body.page-macro #now-board .nb-sumtext b{color:var(--ink-1);font-weight:700}
-  body.page-macro #now-board .nb-tags{display:flex;flex-wrap:wrap;gap:5px}
-  body.page-macro #now-board .nb-pill{font-size:10px;border:var(--rule) solid var(--hair);border-radius:6px;padding:2px 7px;color:var(--ink-3);background:var(--panel)}
-  body.page-macro #now-board .nb-pill.tk{color:var(--link);border-color:color-mix(in srgb,var(--link) 38%,var(--hair))}
-  body.page-macro #now-board .nb-read{color:var(--link);font-size:12px;font-weight:700}
-  body.page-macro #now-board .nb-foot{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-top:12px;font-size:11.5px;color:var(--ink-3)}
-  body.page-macro #now-board .nb-cat b{color:var(--ink-2);font-family:var(--num);font-size:10.5px}
-  html[data-lang="zh"] body.page-macro #now-board .nb-strip-h{letter-spacing:0}
-  </style>
-  <div class="panel span6" id="now-board-legacy">
-    <div class="mx-panel-hdr">
-      <span class="mx-panel-eyebrow"><span class="l-en">News & Catalysts</span><span class="l-zh">新闻与日程</span></span>
-      <a href="news.html" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--link)"><span class="l-en">Full feed →</span><span class="l-zh">完整新闻 →</span></a>
-    </div>
-    <h2 style="margin-top:0"><span class="l-en">Market news &amp; catalysts</span><span class="l-zh">市场新闻与日程</span>
-      <span class="help">?<span class="tip"><span class="l-en">Reputable, macro-relevant headlines — filtered, theme-tagged and ranked by impact. Press a story to open a condensed read. Plus the US high-impact event window and any active relief-radar snap. All CONTEXT — never scored; the mechanical model never reads it.</span><span class="l-zh">可靠、与宏观相关的头条 — 经筛选、标注主题并按影响排序。点按展开精简解读。另含美国高影响事件窗口与正在触发的反弹雷达。全部为背景 — 从不评分，机械模型从不读取。</span></span></span>
-    </h2>
-
-    <div class="nb-strip">
-      <span class="nb-strip-h"><span class="l-en">Next 14d</span><span class="l-zh">未来14天</span></span>
-      <span class="nb-ev" title="CPI (consumer prices) · 08:30 ET"><b>CPI</b> Tue Jul 14</span>
-      <span class="nb-ev" title="PPI (producer prices) · 08:30 ET"><b>PPI</b> Wed Jul 15</span>
-      
-    </div>
-
-    
-
-    
-    <div class="nb-acc">
-      
-      
-      <details class="nb-item" open>
-        <summary class="nb-sum">
-          <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-          <span class="nb-htitle"><span class="l-en">As bank earnings approach, a market anomaly emerges</span><span class="l-zh">As bank earnings approach, a market anomaly emerges</span></span>
-          <span class="nb-meta"><span class="mx-ni-impact high"><span class="l-en">HIGH</span><span class="l-zh">高</span></span> CNBC - Investing · 74 <span class="nb-chev">▾</span></span>
-        </summary>
-        <div class="nb-body">
-          <p class="nb-sumtext">
-            <span class="l-en">A <b>high</b>-impact <b>Earnings</b> headline in focus on XLF, touching credit, earnings. Flagged: stock-focused news source; tier-1 macro term. — CNBC - Investing</span>
-            <span class="l-zh">一条<b>high</b>影响级的<b>业绩</b>新闻，聚焦 XLF，涉及 credit、earnings。 入选：stock-focused news source；tier-1 macro term。 — CNBC - Investing</span>
-          </p>
-          
-          <div class="nb-tags">
-            <span class="nb-pill">credit</span><span class="nb-pill">earnings</span>
-            <span class="nb-pill tk">XLF</span>
-          </div>
-          
-          <a class="nb-read" href="https://www.cnbc.com/2026/07/10/as-bank-earnings-approach-a-market-anomaly-emerges.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-        </div>
-      </details>
-      
-      
-      <details class="nb-item">
-        <summary class="nb-sum">
-          <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-          <span class="nb-htitle"><span class="l-en">Chip rally, Fed task forces, Delta earnings and more in Morning Squawk</span><span class="l-zh">Chip rally, Fed task forces, Delta earnings and more in Morning Squawk</span></span>
-          <span class="nb-meta"><span class="mx-ni-impact high"><span class="l-en">HIGH</span><span class="l-zh">高</span></span> CNBC - Tech · 74 <span class="nb-chev">▾</span></span>
-        </summary>
-        <div class="nb-body">
-          <p class="nb-sumtext">
-            <span class="l-en">A <b>high</b>-impact <b>Earnings</b> headline in focus on XLK, touching rates, earnings. Flagged: stock-focused news source; tier-1 macro term. — CNBC - Tech</span>
-            <span class="l-zh">一条<b>high</b>影响级的<b>业绩</b>新闻，聚焦 XLK，涉及 rates、earnings。 入选：stock-focused news source；tier-1 macro term。 — CNBC - Tech</span>
-          </p>
-          
-          <div class="nb-tags">
-            <span class="nb-pill">rates</span><span class="nb-pill">earnings</span>
-            <span class="nb-pill tk">XLK</span>
-          </div>
-          
-          <a class="nb-read" href="https://www.cnbc.com/2026/07/10/5-things-to-know-before-the-stock-market-opens.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-        </div>
-      </details>
-      
-      
-      <details class="nb-item">
-        <summary class="nb-sum">
-          <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-          <span class="nb-htitle"><span class="l-en">PepsiCo earnings miss estimates as U.S. consumers tighten their budgets</span><span class="l-zh">百事可乐财报不及预期，因美国消费者收紧预算</span></span>
-          <span class="nb-meta"><span class="mx-ni-impact high"><span class="l-en">HIGH</span><span class="l-zh">高</span></span> CNBC - Markets · 78 <span class="nb-chev">▾</span></span>
-        </summary>
-        <div class="nb-body">
-          <p class="nb-sumtext">
-            <span class="l-en">A <b>high</b>-impact <b>Earnings</b> headline, touching fiscal trade, earnings. Flagged: tier-1 news source; tier-1 macro term. — CNBC - Markets</span>
-            <span class="l-zh">一条<b>high</b>影响级的<b>业绩</b>新闻，涉及 fiscal trade、earnings。 入选：tier-1 news source；tier-1 macro term。 — CNBC - Markets</span>
-          </p>
-          
-          <div class="nb-tags">
-            <span class="nb-pill">fiscal trade</span><span class="nb-pill">earnings</span>
-            
-          </div>
-          
-          <a class="nb-read" href="https://www.cnbc.com/2026/07/09/pepsico-pep-q2-2026-earnings.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-        </div>
-      </details>
-      
-      
-      <details class="nb-item">
-        <summary class="nb-sum">
-          <span class="nb-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-          <span class="nb-htitle"><span class="l-en">Levi Strauss beats quarterly expectations, raises guidance and dividend</span><span class="l-zh">李维斯季度业绩超预期，上调指引并增加股息</span></span>
-          <span class="nb-meta"><span class="mx-ni-impact high"><span class="l-en">HIGH</span><span class="l-zh">高</span></span> CNBC - Markets · 78 <span class="nb-chev">▾</span></span>
-        </summary>
-        <div class="nb-body">
-          <p class="nb-sumtext">
-            <span class="l-en">A <b>high</b>-impact <b>Guidance</b> headline, touching guidance, capital return. Flagged: tier-1 news source; tier-1 macro term. — CNBC - Markets</span>
-            <span class="l-zh">一条<b>high</b>影响级的<b>指引</b>新闻，涉及 guidance、capital return。 入选：tier-1 news source；tier-1 macro term。 — CNBC - Markets</span>
-          </p>
-          
-          <div class="nb-tags">
-            <span class="nb-pill">guidance</span><span class="nb-pill">capital return</span>
-            
-          </div>
-          
-          <a class="nb-read" href="https://www.cnbc.com/2026/07/08/levi-strauss-levi-q2-2026-earnings.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-        </div>
-      </details>
-      
-      
-      <details class="nb-item">
-        <summary class="nb-sum">
-          <span class="nb-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-          <span class="nb-htitle"><span class="l-en">Federal Reserve Board's annual bank stress test confirms that large banks are well positioned to weather a severe recession and able to continue to lend to households and businesses</span><span class="l-zh">Federal Reserve Board's annual bank stress test confirms that large banks are well positioned to weather a severe recession and able to continue to lend to households and businesses</span></span>
-          <span class="nb-meta"><span class="mx-ni-impact high"><span class="l-en">HIGH</span><span class="l-zh">高</span></span> Federal Reserve - All Press · 80 <span class="nb-chev">▾</span></span>
-        </summary>
-        <div class="nb-body">
-          <p class="nb-sumtext">
-            <span class="l-en">A <b>high</b>-impact <b>Fed</b> headline in focus on KRE, XLF, touching growth, credit. Flagged: first-party macro release; tier-1 macro term. — Federal Reserve - All Press</span>
-            <span class="l-zh">一条<b>high</b>影响级的<b>美联储</b>新闻，聚焦 KRE、XLF，涉及 growth、credit。 入选：first-party macro release；tier-1 macro term。 — Federal Reserve - All Press</span>
-          </p>
-          
-          <div class="nb-tags">
-            <span class="nb-pill">growth</span><span class="nb-pill">credit</span>
-            <span class="nb-pill tk">KRE</span><span class="nb-pill tk">XLF</span>
-          </div>
-          
-          <a class="nb-read" href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260624a.htm" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-        </div>
-      </details>
-      
-      
-      <details class="nb-item">
-        <summary class="nb-sum">
-          <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-          <span class="nb-htitle"><span class="l-en">Metaplanet launches "Project NOVA" to build Bitcoin-backed digital credit products</span><span class="l-zh">Metaplanet launches "Project NOVA" to build Bitcoin-backed digital credit products</span></span>
-          <span class="nb-meta"><span class="mx-ni-impact med"><span class="l-en">MED</span><span class="l-zh">中</span></span> Seeking Alpha - Market Currents · 67 <span class="nb-chev">▾</span></span>
-        </summary>
-        <div class="nb-body">
-          <p class="nb-sumtext">
-            <span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline in focus on META, touching credit. Flagged: stock-focused news source; market-sensitive term. — Seeking Alpha - Market Currents</span>
-            <span class="l-zh">一条<b>medium</b>影响级的<b>个股</b>新闻，聚焦 META，涉及 credit。 入选：stock-focused news source；market-sensitive term。 — Seeking Alpha - Market Currents</span>
-          </p>
-          
-          <div class="nb-tags">
-            <span class="nb-pill">credit</span>
-            <span class="nb-pill tk">META</span>
-          </div>
-          
-          <a class="nb-read" href="https://seekingalpha.com/news/4613032-metaplanet-launches-project-nova-to-build-bitcoin-backed-digital-credit-products?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-        </div>
-      </details>
-      
-    </div>
-    <div class="nb-foot">
-      <a href="news.html" style="color:var(--link);font-weight:700"><span class="l-en">Open the full news feed</span><span class="l-zh">打开完整新闻流</span> →</a>
-      <span>18 <span class="l-en">stories kept</span><span class="l-zh">保留条目</span> · 258 <span class="l-en">scanned</span><span class="l-zh">已扫描</span></span>
-      <span class="nb-cat" style="margin-left:auto"><span class="l-en">Next catalyst</span><span class="l-zh">下个催化</span>: <b>2026-07-14</b> CPI CPI (consumer prices)</span>
-    </div>
-    
-  </div>
   
 
   <!-- Fear ↔ Euphoria synthesis merged into the #sentiment-regime scorecard near the top of the board -->
@@ -8689,39 +8591,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
   
 
   
-  <!-- ======================= LINK-OUT STRIP (macro bottom) ======================= -->
   
-  <div class="panel span12 v2-retired-macro">
-    <div class="mx-panel-hdr" style="margin-bottom:12px">
-      <span class="mx-panel-eyebrow"><span class="l-en">Quick Links</span><span class="l-zh">快速导航</span></span>
-    </div>
-    <div class="mx-linkout-strip">
-      <a class="mx-linkout-card" href="macro_context.html">
-        <span class="mx-lc-icon">🌐</span>
-        <div><div class="mx-lc-title"><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></div><div class="mx-lc-sub"><span class="l-en">Regime &amp; transmission</span><span class="l-zh">周期与传导</span></div></div>
-      </a>
-      <a class="mx-linkout-card" href="aibrief.html">
-        <span class="mx-lc-icon">🤖</span>
-        <div><div class="mx-lc-title"><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></div><div class="mx-lc-sub"><span class="l-en">Synthesis read</span><span class="l-zh">综合解读</span></div></div>
-      </a>
-      <a class="mx-linkout-card" href="sector_central.html">
-        <span class="mx-lc-icon">📊</span>
-        <div><div class="mx-lc-title"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></div><div class="mx-lc-sub"><span class="l-en">Rotation &amp; flows</span><span class="l-zh">轮动与资金流</span></div></div>
-      </a>
-      <a class="mx-linkout-card" href="news.html">
-        <span class="mx-lc-icon">📰</span>
-        <div><div class="mx-lc-title"><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></div><div class="mx-lc-sub"><span class="l-en">Headlines &amp; catalysts</span><span class="l-zh">头条与催化剂</span></div></div>
-      </a>
-      <a class="mx-linkout-card" href="committee.html">
-        <span class="mx-lc-icon">🧠</span>
-        <div><div class="mx-lc-title"><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></div><div class="mx-lc-sub"><span class="l-en">Signals &amp; consensus</span><span class="l-zh">信号与共识</span></div></div>
-      </a>
-      <a class="mx-linkout-card" href="macro_signals.html">
-        <span class="mx-lc-icon">⚡</span>
-        <div><div class="mx-lc-title"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></div><div class="mx-lc-sub"><span class="l-en">All indicators</span><span class="l-zh">全部指标</span></div></div>
-      </a>
-    </div>
-  </div>
 
   <!-- ======================= HEALTH ======================= -->
   <details class="panel span12 fold" id="health" style="position:relative">
