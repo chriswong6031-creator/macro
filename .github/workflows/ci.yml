@@ -1184,6 +1184,94 @@ jobs:
       - name: ratio lens test suite
         run: python -m pytest tests/test_oracle_ratio_lens.py -q
 
+  hk-confirming-turn:
+    # HKRV-W1: evidence-witness bypass in engine/cycles.py — CONFIRMING TURN state.
+    # Tests: confirm=None byte-identity, V-recovery+witnesses→CONFIRMING TURN,
+    # hard_fail wins, flat/no-witnesses unchanged, ontology crosswalk resolves.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: hk confirming turn tests
+        run: python -m pytest tests/test_hk_confirming_turn.py -q
+
+  hk-cycle-ontology:
+    # HKRV-W1: cycle_ontology completeness — CONFIRMING TURN present in all required
+    # sets (SIMPLE_CROSSWALK, LADDER, fallbacks). 5 conformance tests that W4 reviewer
+    # found red must pass.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: cycle ontology tests
+        run: python -m pytest tests/test_cycle_ontology.py -q
+
+  hk-leadership:
+    # HKRV-W2: HK leadership participation organ — cohort cohesion, thrust detection,
+    # southbound context, ledger gating (CN_LANE=asia). Display-only authority fence.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: hk leadership tests
+        run: python -m pytest tests/test_hk_leadership.py -q
+
+  hk-context-chips:
+    # HKRV-W4: factor/EM context chips — 9 pure fail-open chip functions.
+    # Tests: fail-open on absent store, rate_path state mapping, vhsi_pctile sanity,
+    # compute_all no-None-values, authority fence (display_only=True) across all chips.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: hk context chips tests
+        run: python -m pytest tests/test_hk_context_chips.py -q
+
+  hk-robustness-w5:
+    # HKRV-W5: robustness fixes — alignment health banner, southbound trading-day
+    # staleness, freshness sentinel 7th check (southbound holdings), universe coverage
+    # logging. Includes tests/test_hk_freshness.py (updated) + test_hk_robustness_w5.py.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: hk robustness w5 tests
+        run: python -m pytest tests/test_hk_robustness_w5.py tests/test_hk_freshness.py -q
+
+  hk-integration-seams:
+    # HKRV-F6: integration seam tests — sb_persist_map ticker-key seam guards
+    # silent all-False reindex; _apply_hk_confirm ladder bypass unit tests.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: hk integration seam tests
+        run: python -m pytest tests/test_hk_integration_seams.py -q
+
   basket-staleness-warn:
     # M7C-R8: basket store staleness warning in scripts/build_baskets.py —
     # fires a ::warning annotation and ops alert when collect timed out upstream.
