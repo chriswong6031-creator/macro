@@ -604,6 +604,17 @@ def _block_cortex(memo: dict | None) -> dict:
             "memo_as_of": data_asof,
             "age_hours": age_hours,
         }
+    # Memo strings are model-authored and unbounded; clip them so a verbose
+    # memo can never blow the byte cap (cortex is undroppable by design —
+    # an oversized packet would otherwise discard the whole slice).
+    def _clip(s, n=600):
+        return s[:n] if isinstance(s, str) else s
+
+    def _clip_list(v, items=5, each=200):
+        if not isinstance(v, list):
+            return v
+        return [_clip(x, each) if isinstance(x, str) else x for x in v[:items]]
+
     return {
         "display_only": True,
         "_tape_family": "ops",
@@ -611,10 +622,10 @@ def _block_cortex(memo: dict | None) -> dict:
         "as_of": data_asof,
         "stale": _is_stale(data_asof, "cortex_memo"),
         "is_context_only": True,
-        "summary": memo.get("summary"),
-        "what_fired": memo.get("what_fired"),
-        "deserves_operator": memo.get("deserves_operator"),
-        "decaying_families": memo.get("decaying_families"),
+        "summary": _clip(memo.get("summary")),
+        "what_fired": _clip_list(memo.get("what_fired")),
+        "deserves_operator": _clip_list(memo.get("deserves_operator")),
+        "decaying_families": _clip_list(memo.get("decaying_families")),
         "memo_as_of": data_asof,
         "age_hours": age_hours,
     }

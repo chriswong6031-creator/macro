@@ -378,6 +378,30 @@ def test_degraded_memo(tmp_path):
     assert "summary" not in cortex
 
 
+def test_verbose_memo_clipped_not_blanked(tmp_path):
+    """A non-degraded memo with unbounded strings is clipped in-packet — it
+    must never blow the byte cap and blank the whole slice (cortex is
+    undroppable by design)."""
+    import json as _json
+    from engine.neuralweb.brief_context import china_slice, macro_slice
+    nw = _make_nw_dir(tmp_path)
+    _write_json(nw / "cortex" / "memo.json", {
+        "as_of": "2026-07-12T10:00:00+00:00",
+        "summary": "x" * 8000,
+        "what_fired": ["y" * 500] * 30,
+        "deserves_operator": ["z" * 500] * 30,
+        "decaying_families": ["w" * 500] * 30,
+        "run_status": {"status": "ok", "degraded": False},
+    })
+    for slicer, cap in ((china_slice, 6144), (macro_slice, 10240)):
+        result = slicer(root=tmp_path)
+        assert not result.get("absent"), "verbose memo blanked the slice"
+        cortex = result.get("cortex", {})
+        assert 0 < len(cortex.get("summary", "")) <= 600
+        assert len(cortex.get("what_fired", [])) <= 5
+        assert len(_json.dumps(result)) <= cap
+
+
 # ---------------------------------------------------------------------------
 # Tests 10-11: _tape_family on every block
 # ---------------------------------------------------------------------------
