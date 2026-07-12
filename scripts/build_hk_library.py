@@ -429,14 +429,33 @@ def compute_hk_scoreboard(betas: dict | None = None) -> dict | None:
     if not rows:
         return None
 
+    _total = len(rows)
+    _with_cycle = sum(1 for r in rows if r.get("cycle"))
+    log.info("hk scoreboard: %d/%d names have cycle state", _with_cycle, _total)
+    _COV_LOW_PCT = 60
+    if _total > 0 and (_with_cycle / _total * 100) < _COV_LOW_PCT:
+        log.warning(
+            "hk scoreboard: coverage below %d%% — only %d of %d names have cycle state",
+            _COV_LOW_PCT, _with_cycle, _total,
+        )
+
     def b(r):  # sort key, missing beta to the bottom either way
         return r["beta"] if r["beta"] is not None else -1
     amp = sorted([r for r in rows if r["role"] == "amplifier"], key=b, reverse=True)
     cush = sorted([r for r in rows if r["role"] == "cushion"], key=b)
     allr = sorted(rows, key=b, reverse=True)
-    return {"as_of": (betas or {}).get("as_of"),
-            "risk_state": (betas or {}).get("risk_state"),
-            "modes": {"amplifiers": amp, "cushions": cush, "all": allr}}
+    sb = {"as_of": (betas or {}).get("as_of"),
+          "risk_state": (betas or {}).get("risk_state"),
+          "modes": {"amplifiers": amp, "cushions": cush, "all": allr}}
+    if _total > 0 and (_with_cycle / _total * 100) < _COV_LOW_PCT:
+        sb["coverage_health"] = {
+            "leg": "scoreboard_coverage",
+            "en": (f"HK scoreboard: only {_with_cycle}/{_total} names have cycle state "
+                   f"({_with_cycle * 100 // _total}% < {_COV_LOW_PCT}% threshold)."),
+            "zh": (f"港股评分板：仅 {_with_cycle}/{_total} 个标的有周期状态"
+                   f"（{_with_cycle * 100 // _total}% < {_COV_LOW_PCT}% 阈值）。"),
+        }
+    return sb
 
 
 def _spark_svg(vals: list[float], color: str = "var(--link)",
@@ -814,6 +833,24 @@ def _fund_priors_map() -> dict[str, float]:
     return {t: (v - mu) / sd for t, v in scores.items()}
 
 
+# Module-level helpers for alignment gating (also used in tests/test_hk_robustness_w5.py).
+# These mirror the local _entry_ok / _atier closures inside compute_hk_standouts exactly;
+# having them at module level allows tests to call the PRODUCTION logic (F5-b fix).
+def hk_entry_ok(e: dict) -> bool:
+    """True when the enriched entry is not cycle-blocked and entry axis z > -0.1."""
+    c = e.get("conviction") or {}
+    if c.get("cycle_blocked"):
+        return False
+    ez = (c.get("axes") or {}).get("entry", {}).get("z")
+    return ez is None or ez > -0.1
+
+
+def hk_atier(e: dict) -> str | None:
+    """Alignment tier: 'aligned' | 'near' | None."""
+    a = (e.get("conviction") or {}).get("alignment") or {}
+    return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
+
+
 def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 6) -> dict | None:
     """The HK Stock Desk — names ranked by a UNIFIED, regime-conditioned conviction that
     fuses HK's three honest structural edges (engine/hk_stock_signals): southbound
@@ -1151,16 +1188,9 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         z = c.get("composite_z")
         return z if z is not None else -9.0
 
-    def _entry_ok(e: dict) -> bool:
-        c = e.get("conviction") or {}
-        if c.get("cycle_blocked"):
-            return False
-        ez = (c.get("axes") or {}).get("entry", {}).get("z")
-        return ez is None or ez > -0.1
-
-    def _atier(e: dict):
-        a = (e.get("conviction") or {}).get("alignment") or {}
-        return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
+    # Delegate to module-level production helpers (F5-b: tests can import and call these).
+    _entry_ok = hk_entry_ok
+    _atier = hk_atier
 
     def _ascore(e: dict):
         a = (e.get("conviction") or {}).get("alignment") or {}
@@ -1174,6 +1204,16 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     # cheaper A/H value leg) can no longer be sold as a buy. NEAR-aligned names backfill only
     # when too few are fully aligned; aligned names rank by alignment score then conviction.
     elig = [e for e in ranked if _entry_ok(e) and _atier(e)]
+    _pre_health: list[dict] = []
+    if not elig:
+        # No aligned or near-aligned names passed the bottoming gate — the buy strip
+        # will be backfilled from the highest-conviction near-aligned names.  Surface
+        # this as a health entry so the page never renders a buy list in false confidence.
+        _pre_health.append({
+            "leg": "alignment",
+            "en": "No fully-aligned names found — buy strip backfilled from near-aligned names.",
+            "zh": "未找到完全对齐的标的 —— 买入列表已从接近对齐的标的回填。",
+        })
     aligned = sorted([e for e in elig if _atier(e) == "aligned"], key=_ascore, reverse=True)
     near = sorted([e for e in elig if _atier(e) == "near"], key=_ascore, reverse=True)
     buys = (aligned if len(aligned) >= ALIGN_MIN_KEEP
@@ -1281,7 +1321,14 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                                      if e["ticker"] in ext_map])
     # ---- HEALTH SURFACE (§5.5 / §2 principle 6) — every degraded leg this render, so the
     # page never silently fails open. Each item: {leg, en, zh}. Rendered as a banner strip.
-    health: list[dict] = []
+    # _pre_health collects entries raised before this block (e.g. alignment pool empty).
+    health: list[dict] = list(_pre_health)
+    # W5 F5(a): thread coverage_health from scoreboard into the standout board health[].
+    # compute_hk_scoreboard computes this when <60% of names have cycle state — previously
+    # orphaned (computed but never surfaced to the render path).
+    _cov_health = (scoreboard or {}).get("coverage_health")
+    if _cov_health:
+        health.append(_cov_health)
     _stale_td = _tailwind_staleness_td()
     if _stale_td is not None and _stale_td > FRESHNESS_MAX_STALE_TD:
         health.append({
@@ -1299,12 +1346,17 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     _sb_asof = (out_sb or {}).get("as_of")
     if _sb_asof and as_of:
         try:
-            _gap = int((pd.Timestamp(str(as_of)) - pd.Timestamp(str(_sb_asof))).days)
+            import numpy as _np_sb
+            _sb_ts = pd.Timestamp(str(_sb_asof)).date()
+            _as_ts = pd.Timestamp(str(as_of)).date()
+            # Use trading-day count (busday_count) so a Friday→Monday gap = 1 td, not 3 cal days.
+            # busday_count excludes weekends only (HK public holidays not modeled; errs conservative — flags stale early).
+            _gap = int(_np_sb.busday_count(_sb_ts, _as_ts)) if _as_ts >= _sb_ts else 0
             if _gap > FRESHNESS_MAX_STALE_TD:
                 health.append({
                     "leg": "southbound",
-                    "en": f"Southbound smart-money store stale — {_gap} days behind the price panel.",
-                    "zh": f"南向资金存储陈旧 —— 落后价格面板 {_gap} 天。",
+                    "en": f"Southbound smart-money store stale — {_gap} trading days behind the price panel.",
+                    "zh": f"南向资金存储陈旧 —— 落后价格面板 {_gap} 个交易日。",
                 })
         except Exception:  # noqa: BLE001
             pass
@@ -1430,6 +1482,40 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     except Exception as _ww_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
         log.warning("hk washout_watch compute failed (%s) — existing board intact", _ww_ex)
         out["washout_watch"] = []
+    # ---- LEADERSHIP PARTICIPATION (additive, fail-open) — cohort-level participation organ.
+    # Operates independently of the washout watch: fixed mega-cap cohort, cohesion metric,
+    # and southbound context.  The existing board dict is UNCHANGED when this block errors.
+    try:
+        from engine import hk_leadership as _ldr
+        # Pass the pre-computed closes matrix so the organ does not reload from disk.
+        # Build a closes_map restricted to the leadership cohort from the wide panel.
+        _ldr_closes: dict = {}
+        if closes is not None:
+            for _lt in _ldr.DEFAULT_COHORT:
+                if _lt in closes.columns:
+                    _ldr_closes[_lt] = closes[_lt]
+        out["leadership"] = _ldr.compute(
+            closes_map=_ldr_closes or None,
+            cohort=_ldr.DEFAULT_COHORT,
+            as_of=str(as_of) if as_of else None,
+        )
+        log.info("hk leadership: state=%s cohesion_now=%s",
+                 out["leadership"].get("state"), out["leadership"].get("cohesion_now"))
+    except Exception as _ldr_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
+        log.warning("hk leadership compute failed (%s) — existing board intact", _ldr_ex)
+        out["leadership"] = None
+    # ---- CONTEXT CHIPS (HKRV-W4, additive, fail-open) — display-tier macro chips.
+    # Reads EXISTING committed stores; never feeds rank/size/gate (AUTHORITY FENCE HKRV-R5).
+    # An error here must not disturb the standout board.
+    try:
+        from engine import hk_context_chips as _hkcc
+        _chips = _hkcc.compute_all()
+        out["context_chips"] = _chips
+        log.info("hk context_chips: %d chips computed (%s)",
+                 len(_chips), ", ".join(_chips.keys()))
+    except Exception as _cc_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
+        log.warning("hk context_chips compute failed (%s) — existing board intact", _cc_ex)
+        out["context_chips"] = {}
     # persist the artifact so a transient build failure leaves a stale-but-present board.
     try:
         fdir = site / "factordata"
@@ -1750,10 +1836,114 @@ def main(betas: dict | None = None) -> dict | None:
     price_by: dict[str, float] = {}
     uni = universe()
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
+
+    # ── HK Confirming-Turn witness bypass (W1 HKRV spec §6) ─────────────────
+    # Compute the per-ticker `confirm` dict ONCE in serial (southbound history is a
+    # shared store; RSI and MA10 witnesses are computed from the close series).
+    # Used to upgrade COUNTERTREND BOUNCE → CONFIRMING TURN for names that have all
+    # three evidence witnesses present. Computed here (not in the parallel pool) because
+    # hk_southbound_stocks.sb_persist_map reads the shared holdings parquet.
+    _hk_sb_persist: dict[str, bool] = {}
+    try:
+        from engine import hk_southbound_stocks as _hk_sb
+        _all_tickers = [t for (t, *_) in uni]
+        _hk_sb_persist = _hk_sb.sb_persist_map(tickers=_all_tickers, min_sessions=3)
+        log.info("hk confirm witnesses: sb_persist_map computed for %d tickers", len(_hk_sb_persist))
+    except Exception as _sbpe:  # noqa: BLE001 — additive, never fatal
+        log.warning("hk sb_persist_map skipped (%s); confirm bypass disabled", _sbpe)
+
+    def _hk_confirm(ticker: str, close: "pd.Series") -> dict | None:
+        """Build the per-name evidence witness dict for ladder_state(confirm=...).
+        Returns None when witnesses are missing / series too short."""
+        try:
+            import numpy as _np
+            c = close.dropna()
+            if len(c) < 20:
+                return None
+            # rsi_reclaim: RSI(14) was <=32 within 15 sessions AND now in [40,60]
+            close_arr = c.values.astype(float)
+            n = len(close_arr)
+            if n < 15:
+                return None
+            # compute RSI(14) via EWM (standard Wilder smoothing)
+            delta = _np.diff(close_arr[-30:] if n >= 30 else close_arr)
+            gains = _np.where(delta > 0, delta, 0.0)
+            losses = _np.where(delta < 0, -delta, 0.0)
+            # Wilder smoothing: first period = simple average, then EWM
+            if len(gains) < 14:
+                return None
+            avg_gain = _np.mean(gains[:14])
+            avg_loss = _np.mean(losses[:14])
+            for g, l in zip(gains[14:], losses[14:]):
+                avg_gain = (avg_gain * 13 + g) / 14
+                avg_loss = (avg_loss * 13 + l) / 14
+            rsi_now = 100.0 - 100.0 / (1.0 + avg_gain / avg_loss) if avg_loss > 0 else 100.0
+            # look back 15 sessions for RSI <= 32 (using a rolling RSI approximation)
+            oversold_recent = False
+            lookback = min(n, 30)
+            sub = close_arr[-lookback:]
+            if len(sub) >= 15:
+                sub_delta = _np.diff(sub)
+                sub_gains = _np.where(sub_delta > 0, sub_delta, 0.0)
+                sub_losses = _np.where(sub_delta < 0, -sub_delta, 0.0)
+                if len(sub_gains) >= 14:
+                    sg = _np.mean(sub_gains[:14])
+                    sl = _np.mean(sub_losses[:14])
+                    rsi_hist = []
+                    for g, l in zip(sub_gains[14:], sub_losses[14:]):
+                        sg = (sg * 13 + g) / 14
+                        sl = (sl * 13 + l) / 14
+                        rsi_h = 100.0 - 100.0 / (1.0 + sg / sl) if sl > 0 else 100.0
+                        rsi_hist.append(rsi_h)
+                    rsi_window = rsi_hist[-15:] if rsi_hist else []
+                    oversold_recent = any(r <= 32 for r in rsi_window)
+            rsi_reclaim = oversold_recent and 40 <= rsi_now <= 60
+            # above_rising_ma10: price above MA10 and MA10 is rising
+            if len(c) < 11:
+                return None
+            ma10_now = float(c.iloc[-10:].mean())
+            ma10_prev = float(c.iloc[-11:-1].mean())
+            above_rising_ma10 = bool(float(c.iloc[-1]) > ma10_now and ma10_now > ma10_prev)
+            # sb_persist: from the pre-computed map
+            sb_persist = bool(_hk_sb_persist.get(ticker, False))
+            return {"sb_persist": sb_persist, "rsi_reclaim": rsi_reclaim,
+                    "above_rising_ma10": above_rising_ma10}
+        except Exception:  # noqa: BLE001 — additive witness; never fatal
+            return None
+
+    def _apply_hk_confirm(rec: dict, ticker: str, close: "pd.Series") -> dict:
+        """If this ticker's ladder state is COUNTERTREND BOUNCE, recompute ladder_state
+        with the HK confirm dict to potentially upgrade to CONFIRMING TURN."""
+        lad = rec.get("ladder") or {}
+        if lad.get("state") != "COUNTERTREND BOUNCE":
+            return rec
+        cfm = _hk_confirm(ticker, close)
+        if not cfm:
+            return rec
+        # Only re-run if all three witnesses are true (saves compute for the common case)
+        if not (cfm.get("sb_persist") and cfm.get("rsi_reclaim") and cfm.get("above_rising_ma10")):
+            return rec
+        try:
+            from engine.cycles import ladder_state as _ladder_state
+            cyc = rec.get("cycle") or {}
+            mtf = rec.get("mtf") or {}
+            early = rec.get("early") or {}
+            new_lad = _ladder_state(cyc, mtf, early, liquidity=liq, confirm=cfm)
+            if new_lad and new_lad.get("state") == "CONFIRMING TURN":
+                rec = {**rec, "ladder": new_lad}
+                log.debug("hk confirm: %s upgraded COUNTERTREND BOUNCE → CONFIRMING TURN", ticker)
+        except Exception as _cfe:  # noqa: BLE001 — additive, never fatal
+            log.debug("hk confirm ladder recompute failed for %s (%s)", ticker, _cfe)
+        return rec
+
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
             continue
+        # HK Confirming-Turn witness bypass: upgrade COUNTERTREND BOUNCE when
+        # all three evidence witnesses are present (sb_persist, rsi_reclaim,
+        # above_rising_ma10). Best-effort: never fatal, original rec kept on error.
+        rec = _apply_hk_confirm(rec, ticker, close)
         if beta_pt.get(ticker):             # additive: absent => no global-beta panel
             rec["global_beta"] = beta_pt[ticker]
         # forward anticipation cone (close-only) — feeds the risk-shape entry tilt + favourable-cone

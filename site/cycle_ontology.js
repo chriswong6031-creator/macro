@@ -130,7 +130,8 @@
     "RALLY ON",
     "TOP WATCH",
     "ROLLING OVER",
-    "COUNTERTREND BOUNCE"
+    "COUNTERTREND BOUNCE",
+    "CONFIRMING TURN"
   ],
   "ladder_dir": {
     "DECLINE": -1,
@@ -140,7 +141,8 @@
     "RALLY ON": 1,
     "TOP WATCH": 0,
     "ROLLING OVER": -1,
-    "COUNTERTREND BOUNCE": 0
+    "COUNTERTREND BOUNCE": 0,
+    "CONFIRMING TURN": 0
   },
   "crosswalk": {
     "Trough|DECLINE": {
@@ -477,6 +479,51 @@
       "note_zh": ""
     },
     "Downturn|COUNTERTREND BOUNCE": {
+      "stance": "HIGH-RISK BOUNCE",
+      "divergence": false,
+      "tone": "caution",
+      "en": "High-Risk Bounce",
+      "zh": "高风险反弹",
+      "note_en": "",
+      "note_zh": ""
+    },
+    "Trough|CONFIRMING TURN": {
+      "stance": "HIGH-RISK BOUNCE",
+      "divergence": false,
+      "tone": "caution",
+      "en": "High-Risk Bounce",
+      "zh": "高风险反弹",
+      "note_en": "",
+      "note_zh": ""
+    },
+    "Recovery|CONFIRMING TURN": {
+      "stance": "HIGH-RISK BOUNCE",
+      "divergence": false,
+      "tone": "caution",
+      "en": "High-Risk Bounce",
+      "zh": "高风险反弹",
+      "note_en": "",
+      "note_zh": ""
+    },
+    "Expansion|CONFIRMING TURN": {
+      "stance": "HIGH-RISK BOUNCE",
+      "divergence": false,
+      "tone": "caution",
+      "en": "High-Risk Bounce",
+      "zh": "高风险反弹",
+      "note_en": "",
+      "note_zh": ""
+    },
+    "Peak|CONFIRMING TURN": {
+      "stance": "HIGH-RISK BOUNCE",
+      "divergence": false,
+      "tone": "caution",
+      "en": "High-Risk Bounce",
+      "zh": "高风险反弹",
+      "note_en": "",
+      "note_zh": ""
+    },
+    "Downturn|CONFIRMING TURN": {
       "stance": "HIGH-RISK BOUNCE",
       "divergence": false,
       "tone": "caution",

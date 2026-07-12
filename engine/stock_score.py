@@ -212,6 +212,10 @@ _WEIGHT_PRIOR = {
 }
 
 # cycle states that BLOCK a buy verb + cap the entry axis (research §6.3).
+# Cross-ref: engine/cycles.py _ALIGN_BAD_STATES gates the bottoming-alignment strip.
+# The two sets intentionally diverge on COUNTERTREND BOUNCE: _ALIGN_BAD_STATES includes it
+# (no alignment signal), while _CYCLE_BLOCK_STATES does NOT (the name is scoreable but cannot
+# enter the buy strip).  Update both sets together whenever the cycle ontology changes.
 _CYCLE_BLOCK_STATES = {"DECLINE", "ROLLING OVER", "TOP WATCH"}
 _BLOCK_URGENCY = {"exit", "avoid"}
 
@@ -1061,6 +1065,9 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
                 return _v("Basing near a low — reversal setting up",
                           "底部区域 — 反转酝酿", drivers, cautions)
             return _v("Basing near a low — get ready", "底部区域 — 准备就绪", drivers, cautions)
+        if state == "CONFIRMING TURN":
+            return _v("Turn in progress — evidence building; watch, don't chase",
+                      "转向进行中 — 证据积累中；观察，勿追高", drivers, cautions)
         if state == "COUNTERTREND BOUNCE":
             return _v("Countertrend bounce — not a base yet", "反弹 — 尚未筑底", drivers, cautions)
         if rev_strong:                                   # no clear cycle state, but reversal likes it
@@ -1088,6 +1095,15 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
         if sel_t in ("mid", "flat"):
             return _v("Hold off — timing against you", "暂缓 — 时机不利", drivers, cautions)
         return _v("Avoid — downtrend", "回避 — 下行趋势", drivers, cautions)
+
+    # ---- CONFIRMING TURN: watch/don't-chase — same caution tier as COUNTERTREND BOUNCE.
+    # Must appear BEFORE the constructive cases so it never falls through to 'Reversal
+    # candidate — selection edge'. NOTE: HK market paths return early via the
+    # exposure-language branch above and never reach this block; this branch serves
+    # non-HK markets whose ladder emits CONFIRMING TURN.
+    if state == "CONFIRMING TURN":
+        return _v("Turn in progress — evidence building; watch, don't chase",
+                  "转向进行中 — 证据积累中；观察，勿追高", drivers, cautions)
 
     # ---- accounting / extension overrides on otherwise-constructive names ----
     if acct == "warn" and sel_t in ("high", "mid"):

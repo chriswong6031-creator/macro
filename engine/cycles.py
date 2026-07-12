@@ -525,11 +525,15 @@ def early_signals(close: pd.Series, cyc: dict, mtf: dict) -> dict:
 # ----------------------------------------------------------- signal ladder ----
 
 LADDER = ["DECLINE", "BOTTOM WATCH", "TURN SIGNALED", "FRESH BUY",
-          "RALLY ON", "TOP WATCH", "ROLLING OVER", "COUNTERTREND BOUNCE"]
+          "RALLY ON", "TOP WATCH", "ROLLING OVER", "COUNTERTREND BOUNCE",
+          "CONFIRMING TURN"]
 
 LADDER_SCORE = {"DECLINE": -80, "ROLLING OVER": -40, "TOP WATCH": -10,
                 "BOTTOM WATCH": 10, "TURN SIGNALED": 45, "FRESH BUY": 80,
-                "RALLY ON": 55, "COUNTERTREND BOUNCE": -25}
+                "RALLY ON": 55, "COUNTERTREND BOUNCE": -25,
+                # -15: softening reroute from COUNTERTREND BOUNCE (-25) — softer than its parent,
+                # still caution-tier/weekly-unconfirmed, so strictly negative.
+                "CONFIRMING TURN": -15}
 
 # Liquidity conviction modifier — the US net-liquidity regime (engine.regime.
 # liquidity_overlay) is the repo's strongest adversarially-validated ORTHOGONAL
@@ -579,6 +583,14 @@ STATE_DISPLAY = {
     "COUNTERTREND BOUNCE": {"label": "UNCONFIRMED TURN",
                             "action": "HIGH-RISK · NIMBLE ONLY", "dir": "caution",
                             "label_zh": "未确认转向", "action_zh": "高风险 · 仅限灵活操作"},
+    # HK-specific: daily bottoming setup with three evidence witnesses (southbound
+    # persistence, RSI reclaim from oversold, above rising MA10) — a PARTIAL turn
+    # supported by on-the-ground context. Weekly hasn't confirmed; caution dir is
+    # honest. NOT a confirmed buy; NOT in _ALIGN_BAD_STATES so it enters the near
+    # backfill strip for screen visibility.
+    "CONFIRMING TURN": {"label": "TURN IN PROGRESS",
+                        "action": "WATCH — DON'T CHASE", "dir": "caution",
+                        "label_zh": "转向进行中", "action_zh": "观察 — 勿追高"},
 }
 
 # Daily-cycle phase -> plain-language descriptor (answers "are we overextended?")
@@ -855,7 +867,8 @@ def regime_state(cyc: dict, mtf: dict) -> dict:
 def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                  liquidity: str | None = None,
                  macro_drag: float | None = None, macro_beta: float = 0.0,
-                 vol_regime: dict | None = None, family: str | None = None) -> dict:
+                 vol_regime: dict | None = None, family: str | None = None,
+                 confirm: dict | None = None) -> dict:
     """Combine cycle position + multi-timeframe indicators into one state,
     with a plain next-step line. The higher-timeframe regime (weekly + 3-day +
     investor cycle) gates and can RE-LABEL the daily signal: a daily buy setup
@@ -864,7 +877,15 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     `liquidity` is the live US net-liquidity regime
     ("expanding"/"contracting"/"neutral"; from engine.regime.liquidity_overlay) —
     an orthogonal macro tailwind/headwind that surfaces as context on every state
-    and nudges the conviction score on buy setups only (see LIQ_TAILWIND)."""
+    and nudges the conviction score on buy setups only (see LIQ_TAILWIND).
+
+    `confirm` (optional, HK path only) is a per-name evidence dict:
+        {sb_persist: bool, rsi_reclaim: bool, above_rising_ma10: bool}
+    When all three are True AND the tactical state resolved to FRESH BUY or TURN
+    SIGNALED before the regime gate would reroute to COUNTERTREND BOUNCE AND
+    hard_fail is False, the reroute resolves to "CONFIRMING TURN" instead.
+    hard_fail always wins. Callers that omit confirm (default None) are
+    byte-identical to before — no behavior change."""
     if not cyc or not mtf.get("D"):
         return {}
     early = early or {}
@@ -1033,37 +1054,72 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     # counter-trend bounce, not a buy. A failed daily cycle AND a failed
     # investor cycle hard-caps it regardless of the regime score — a failed
     # cycle can produce a bounce, never an investment buy.
+    #
+    # HK evidence bypass: when the caller supplies a `confirm` dict with three
+    # per-name witnesses (sb_persist, rsi_reclaim, above_rising_ma10) AND all
+    # three are True AND hard_fail is False, the reroute resolves to the softer
+    # "CONFIRMING TURN" instead of "COUNTERTREND BOUNCE". hard_fail always wins.
     bullish_tactical = state in ("FRESH BUY", "TURN SIGNALED")
     hard_fail = bool(cyc.get("failed_cycle") and cyc.get("ic_failed"))
+    _confirm = confirm or {}
+    evidence_ok = bool(
+        not hard_fail
+        and bullish_tactical
+        and _confirm.get("sb_persist")
+        and _confirm.get("rsi_reclaim")
+        and _confirm.get("above_rising_ma10")
+    )
     if bullish_tactical and (regime["regime"] == "bear" or hard_fail):
         inval = cyc.get("cand_price") or cyc.get("dcl_price")
-        state = "COUNTERTREND BOUNCE"
-        why = ("A daily bottoming setup is forming (swing low in, momentum turned up) — but the "
-               "higher timeframes haven't confirmed it: the bigger picture is still bearish ("
-               + (regime["why"] or "weekly / investor timeframe pointing down")
-               + "). This is an UNCONFIRMED TURN, not a confirmed buy. Weekly confirmation lags "
-                 "price, so this exact reading covers BOTH bounces that fail AND the first leg of "
-                 "a genuine new cycle — you can't tell which in real time, so treat it as a "
-                 "risk/size signal, not a direction call. Measured: weekly-unconfirmed bottoming "
-                 "setups held the low ~49% of the time vs ~68% once the weekly turns up."
-               + (" The daily cycle has also failed (broke its own start low), which tilts the "
-                  "odds toward failure here." if cyc.get("failed_cycle") else ""))
-        why_zh = ("正在形成日线筑底形态（摆动低点已现、动量转向上行）——但更高周期尚未确认："
-                  "大局仍偏空（"
-                  + (regime["why_zh"] or regime["why"] or "周线 / 投资者周期向下")
-                  + "）。这是「未确认转向」，并非已确认的买入。周线确认滞后于价格，因此同样的"
-                    "读数既涵盖最终失败的反弹，也涵盖真正新周期的第一段——实时无法判定属于哪一种，"
-                    "故应将其视为风险/仓位信号，而非方向判断。实测：周线未确认的筑底形态约 49% 守住"
-                    "低点，周线转向后升至约 68%。"
-                  + ("日线周期同样已经失败（跌破其自身起始低点），此处概率更偏向失败。"
-                     if cyc.get("failed_cycle") else ""))
-        nxt = ("Nimble traders only — small size, defined stop below "
-               f"{inval}. Not an investment buy yet. What would upgrade it: weekly momentum "
-               "turning up, a reclaim of the investor-cycle low, or the first daily cycle "
-               "right-translating — add on confirmation, not ahead of it.")
-        nxt_zh = ("仅限灵活交易者——小仓位、止损设于 "
-                  f"{inval} 下方。暂非投资性买入。何种情形会升级：周线动量转为向上、"
-                  "收复投资者周期低点、或首个日线周期呈右移结构——在确认之后加仓，而非提前。")
+        if evidence_ok:
+            # Three witnesses present + no hard fail → softer CONFIRMING TURN
+            state = "CONFIRMING TURN"
+            why = ("A daily bottoming setup is forming and three on-the-ground witnesses are "
+                   "present: southbound flow has been persistently positive (mainland buyers "
+                   "are adding), RSI(14) washed out below 32 and has recovered into the "
+                   "40–60 range, and price is back above a rising 10-day average. The weekly "
+                   "timeframe has not yet confirmed ("
+                   + (regime["why"] or "weekly / investor timeframe still pointing down")
+                   + "). Southbound persistence is context — who the marginal buyer is — "
+                     "not a confirmer. The weekly hasn't turned; watch, don't chase.")
+            why_zh = ("日线筑底形态正在形成，且三项实地证据指标同时具备：南向资金持续净买入（内地"
+                      "买家持续加仓）、RSI(14) 已从超卖区（低于 32）回升至 40–60 区间、价格重新"
+                      "站上向上的 10 日均线。周线周期尚未确认（"
+                      + (regime["why_zh"] or regime["why"] or "周线 / 投资者周期仍指向下方")
+                      + "）。南向资金流向是背景信息——显示边际买家是谁——而非确认信号；"
+                        "周线尚未转向，观察勿追高。")
+            nxt = ("Watch, don't chase. The weekly hasn't turned — size small and wait for "
+                   f"the weekly to confirm before adding. Invalidation = a close below {inval}.")
+            nxt_zh = ("观察，勿追高。周线尚未转向——保持小仓位，等待周线确认后再加仓。"
+                      f"失效点 = 收盘跌破 {inval}。")
+        else:
+            state = "COUNTERTREND BOUNCE"
+            why = ("A daily bottoming setup is forming (swing low in, momentum turned up) — but the "
+                   "higher timeframes haven't confirmed it: the bigger picture is still bearish ("
+                   + (regime["why"] or "weekly / investor timeframe pointing down")
+                   + "). This is an UNCONFIRMED TURN, not a confirmed buy. Weekly confirmation lags "
+                     "price, so this exact reading covers BOTH bounces that fail AND the first leg of "
+                     "a genuine new cycle — you can't tell which in real time, so treat it as a "
+                     "risk/size signal, not a direction call. Measured: weekly-unconfirmed bottoming "
+                     "setups held the low ~49% of the time vs ~68% once the weekly turns up."
+                   + (" The daily cycle has also failed (broke its own start low), which tilts the "
+                      "odds toward failure here." if cyc.get("failed_cycle") else ""))
+            why_zh = ("正在形成日线筑底形态（摆动低点已现、动量转向上行）——但更高周期尚未确认："
+                      "大局仍偏空（"
+                      + (regime["why_zh"] or regime["why"] or "周线 / 投资者周期向下")
+                      + "）。这是「未确认转向」，并非已确认的买入。周线确认滞后于价格，因此同样的"
+                        "读数既涵盖最终失败的反弹，也涵盖真正新周期的第一段——实时无法判定属于哪一种，"
+                        "故应将其视为风险/仓位信号，而非方向判断。实测：周线未确认的筑底形态约 49% 守住"
+                        "低点，周线转向后升至约 68%。"
+                      + ("日线周期同样已经失败（跌破其自身起始低点），此处概率更偏向失败。"
+                         if cyc.get("failed_cycle") else ""))
+            nxt = ("Nimble traders only — small size, defined stop below "
+                   f"{inval}. Not an investment buy yet. What would upgrade it: weekly momentum "
+                   "turning up, a reclaim of the investor-cycle low, or the first daily cycle "
+                   "right-translating — add on confirmation, not ahead of it.")
+            nxt_zh = ("仅限灵活交易者——小仓位、止损设于 "
+                      f"{inval} 下方。暂非投资性买入。何种情形会升级：周线动量转为向上、"
+                      "收复投资者周期低点、或首个日线周期呈右移结构——在确认之后加仓，而非提前。")
 
     # ── Extension / late-cross gate ──────────────────────────────────────────
     # A daily buy setup is only a BOTTOMING entry while price is still near the
@@ -1082,7 +1138,7 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     rsi_3 = t3.get("rsi14") or 50
     rsi_w = w.get("rsi14") or 50
     overbought_late = rsi_d > 70 or (rsi_3 > 70 and rsi_w > 70)
-    if state in ("FRESH BUY", "TURN SIGNALED") and cyc.get("above_ma10") \
+    if state in ("FRESH BUY", "TURN SIGNALED", "CONFIRMING TURN") and cyc.get("above_ma10") \
             and (overbought_late or rollover_veto):
         extended_gate = True
         state = "TOP WATCH"
@@ -1170,7 +1226,8 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     early_note = ""
     early_note_zh = ""
     if early.get("dir") == "up" and state in ("BOTTOM WATCH", "TURN SIGNALED",
-                                              "DECLINE", "COUNTERTREND BOUNCE"):
+                                              "DECLINE", "COUNTERTREND BOUNCE",
+                                              "CONFIRMING TURN"):
         score += 12 if early.get("tier") == "anticipated" else 6
         early_note = ("⚡ Early reversal building (" + early["tier"] + "): "
                       + "; ".join(early["signals"]) + ". These anticipate a low BEFORE "
@@ -1730,7 +1787,7 @@ def _eq_momentum(d: dict, up: bool) -> float:
 # the ladder owns DIRECTION; entry_quality only scores how good that entry is —
 # so its sign is anchored to the state, never allowed to flip against it.
 _EQ_BULLISH = {"FRESH BUY", "TURN SIGNALED", "RALLY ON", "BOTTOM WATCH",
-               "COUNTERTREND BOUNCE"}
+               "COUNTERTREND BOUNCE", "CONFIRMING TURN"}
 _EQ_BEARISH = {"TOP WATCH", "ROLLING OVER", "DECLINE"}
 
 
@@ -1936,6 +1993,11 @@ _WEEKLY_PRIME = {"bear_recovering", "basing", "turning"}            # early-enou
 _WEEKLY_OK = {"bear_recovering", "basing", "turning", "rising"}     # eligible at all (not falling/topping)
 # ladder states that are structurally NOT a bottoming entry (a falling knife or a top)
 # — excluded from alignment regardless of a one-bar daily up-tick.
+# Cross-ref: engine/stock_score.py _CYCLE_BLOCK_STATES gates the buy verb / entry-axis cap.
+# The two sets intentionally diverge on COUNTERTREND BOUNCE: _ALIGN_BAD_STATES includes it
+# (no alignment signal — the bounce is noise-level), while _CYCLE_BLOCK_STATES does NOT
+# (the stock is scoreable; the name just can't be ranked into the buy strip).  Update both
+# sets together whenever the cycle ontology changes.
 _ALIGN_BAD_STATES = {"DECLINE", "ROLLING OVER", "TOP WATCH", "COUNTERTREND BOUNCE"}
 _ALIGN_KNIFE_BLOCK = 0.7        # washout knife severity that HARD-excludes a name
 _ALIGN_DAILY_MAX_DAYS = 2       # "daily about to cross in 1-2 days"
@@ -2093,6 +2155,10 @@ def mtf_alignment(mtf: dict, cyc: dict | None = None, lad: dict | None = None,
             tier = "PRIME" if wph in _WEEKLY_PRIME else "ARMED"
         elif weekly_ok and (t3_fresh or daily_ok):
             tier = "APPROACHING"
+    # CONFIRMING TURN is capped at APPROACHING (near) — weekly unconfirmed, so
+    # it should not surface as a PRIME/ARMED (aligned) entry on the strip.
+    if state == "CONFIRMING TURN" and tier in ("PRIME", "ARMED"):
+        tier = "APPROACHING"
     aligned = tier in ("PRIME", "ARMED")
     near = tier == "APPROACHING"
 

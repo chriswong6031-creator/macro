@@ -96,10 +96,12 @@ try:
 except ImportError:
     # Fallback for standalone testing / import isolation
     LADDER = ["DECLINE", "BOTTOM WATCH", "TURN SIGNALED", "FRESH BUY",
-              "RALLY ON", "TOP WATCH", "ROLLING OVER", "COUNTERTREND BOUNCE"]
+              "RALLY ON", "TOP WATCH", "ROLLING OVER", "COUNTERTREND BOUNCE",
+              "CONFIRMING TURN"]
     LADDER_DIR = {
         "DECLINE": -1, "BOTTOM WATCH": -1, "TURN SIGNALED": 1, "FRESH BUY": 1,
         "RALLY ON": 1, "TOP WATCH": 0, "ROLLING OVER": -1, "COUNTERTREND BOUNCE": 0,
+        "CONFIRMING TURN": 0,
     }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -201,6 +203,14 @@ _SIMPLE_CROSSWALK: dict[tuple[str, str], dict] = {
     ("Expansion", "COUNTERTREND BOUNCE"): {"stance": _HR,         "divergence": False},
     ("Peak",      "COUNTERTREND BOUNCE"): {"stance": _HR,         "divergence": False},
     ("Downturn",  "COUNTERTREND BOUNCE"): {"stance": _HR,         "divergence": False},
+
+    # CONFIRMING TURN — HK-specific: evidence witnesses present but weekly unconfirmed.
+    # Softer than COUNTERTREND BOUNCE (watch/context); caution stance across all phases.
+    ("Trough",    "CONFIRMING TURN"):     {"stance": _HR,         "divergence": False},
+    ("Recovery",  "CONFIRMING TURN"):     {"stance": _HR,         "divergence": False},
+    ("Expansion", "CONFIRMING TURN"):     {"stance": _HR,         "divergence": False},
+    ("Peak",      "CONFIRMING TURN"):     {"stance": _HR,         "divergence": False},
+    ("Downturn",  "CONFIRMING TURN"):     {"stance": _HR,         "divergence": False},
 }
 
 # Divergence notes in EN/ZH (keyed by note_key above)

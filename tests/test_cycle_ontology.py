@@ -122,14 +122,19 @@ def test_crosswalk_all_cells_resolve():
 
 
 def test_crosswalk_cell_count():
-    """Payload crosswalk covers all 40 simple cells + pos-gated variants."""
+    """Payload crosswalk covers all simple cells + pos-gated variants.
+
+    Original count: 8 ladder states × 5 phases = 40, minus 2 pos-gated
+    Downturn×TURN SIGNALED/FRESH BUY = 38 simple cells.
+    HKRV-W1 adds CONFIRMING TURN (5 simple cells, no pos-gating) → 43 simple cells.
+    """
     payload = export_payload()
     cw = payload["crosswalk"]
-    # 38 simple cells (40 total minus 2 pos-gated Downturn×TURN SIGNALED/FRESH BUY)
-    # plus 4 pos-gated entries (2 ladders × 2 pos-gates)
+    # 43 simple cells: original 38 + 5 CONFIRMING TURN cells (one per phase)
+    # plus 4 pos-gated entries (2 ladders × 2 pos-gates, unchanged)
     simple_keys = [k for k in cw if "|pos" not in k]
     gated_keys  = [k for k in cw if "|pos" in k]
-    assert len(simple_keys) == 38, f"Expected 38 simple cells, got {len(simple_keys)}"
+    assert len(simple_keys) == 43, f"Expected 43 simple cells, got {len(simple_keys)}"
     assert len(gated_keys) == 4,   f"Expected 4 pos-gated cells, got {len(gated_keys)}"
 
 
@@ -886,9 +891,9 @@ def test_write_stance_matrix(tmp_path):
 
     assert artifact["version"] == ONTOLOGY_VERSION
     assert "matrix" in artifact
-    # 38 simple + 4 pos-gated = 42 total cells
-    assert len(artifact["matrix"]) == 42, (
-        f"Expected 42 matrix cells (38 simple + 4 pos-gated), got {len(artifact['matrix'])}"
+    # 43 simple (38 original + 5 CONFIRMING TURN) + 4 pos-gated = 47 total cells
+    assert len(artifact["matrix"]) == 47, (
+        f"Expected 47 matrix cells (43 simple + 4 pos-gated), got {len(artifact['matrix'])}"
     )
 
 

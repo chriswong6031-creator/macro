@@ -13,7 +13,7 @@ FAIL-OPEN DESIGN: every check is wrapped in a try/except. A sentinel crash yield
 an "error" per-check and page state "degraded" — the render proceeds WITH a banner.
 The sentinel NEVER raises, NEVER blocks the nightly render.
 
-Six checks against `lib.hk_calendar.expected_last_session()`:
+Seven checks against `lib.hk_calendar.expected_last_session()`:
     1. Cache index.max() <= 2 calendar days behind expected (PRIMARY data source).
     2. Bellwether spot-check: data/hk_stocks/9988.HK.parquet index.max() <= 2 cal days.
     3. Standouts artifact: site/factordata/hk_standouts.json `.as_of` <= 2 cal days.
@@ -21,6 +21,7 @@ Six checks against `lib.hk_calendar.expected_last_session()`:
     5. Coherence: standouts.as_of == regime.date (divergence = incoherent snapshot).
     6. Regression: cache index.max() must never DECREASE run-over-run (detects the
        `-X theirs` clobber that caused the incident).
+    7. Southbound holdings: data/hk_southbound/holdings.parquet index.max() <= 2 cal days.
 
 State thresholds:
     lag <= 2 cal days -> "fresh"
@@ -162,6 +163,7 @@ def hk_freshness_sentinel(now: datetime | None = None) -> dict:
             "bellwether": {...},
             "standouts": {...},
             "regime": {...},
+            "southbound": {...},
         },
         "coherence": {"ok": bool, "standouts_asof": ..., "regime_date": ..., "note": ...},
         "regression": {"ok": bool, "prev_cache_max": ..., "curr_cache_max": ..., "note": ...},
@@ -248,6 +250,15 @@ def hk_freshness_sentinel(now: datetime | None = None) -> dict:
         log.error("hk_freshness check 5 (coherence) crashed: %s", e)
         coherence = {"ok": False, "note": f"coherence check error: {e}"}
 
+    # Check 7: Southbound holdings store freshness (data/hk_southbound/holdings.parquet)
+    try:
+        sb_path = data_root / "hk_southbound" / "holdings.parquet"
+        sb_max = _parquet_index_max(sb_path)
+        checks["southbound"] = _badge(sb_max, expected)
+    except Exception as e:  # noqa: BLE001
+        log.error("hk_freshness check 7 (southbound) crashed: %s", e)
+        checks["southbound"] = {"asof": None, "lag_days": None, "state": "error"}
+
     # Check 6: Regression — cache index.max() must not decrease run-over-run
     try:
         prev_state = _load_state(state_path)
@@ -290,7 +301,7 @@ def hk_freshness_sentinel(now: datetime | None = None) -> dict:
     # Any secondary stores stale/dead (non-cache)?
     secondary_bad = any(
         checks.get(k, {}).get("state") in ("stale", "dead", "error")
-        for k in ("bellwether", "standouts", "regime")
+        for k in ("bellwether", "standouts", "regime", "southbound")
     )
 
     if cache_primary_bad or coherence_bad or regression_bad:
@@ -333,7 +344,7 @@ def hk_freshness_sentinel(now: datetime | None = None) -> dict:
         # De-dup: when coherence fires it already names standouts and regime inline;
         # skip those two in the per-store loop so each store appears at most once.
         skip_in_store_loop: set[str] = {"standouts", "regime"} if coherence_bad else set()
-        for k in ("bellwether", "standouts", "regime"):
+        for k in ("bellwether", "standouts", "regime", "southbound"):
             if k in skip_in_store_loop:
                 continue
             info = checks.get(k, {})
