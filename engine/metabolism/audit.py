@@ -341,6 +341,7 @@ def _append_governance_event(record: dict[str, Any], root: Path | None = None) -
         rationale = str(record.get("rationale") or "")[:200]
         evidence: dict[str, Any] = {
             "head_sha": record.get("head_sha"),
+            "proposal_id": record.get("proposal_id"),
             "verdict": record.get("verdict"),
             "deterministic_ok": record.get("deterministic_ok"),
             "llm_verdict": record.get("llm_verdict"),
@@ -368,6 +369,8 @@ def audit_pr(
     diff_text: str,
     head_sha: str,
     root: Path | None = None,
+    *,
+    proposal_id: str | None = None,
 ) -> dict[str, Any]:
     """Audit a build-lane PR.
 
@@ -385,20 +388,31 @@ def audit_pr(
         merge lane can detect post-audit pushes).
     root : Path | None
         Repo root for file I/O (None = auto-detect).
+    proposal_id : str | None
+        The proposal identifier.  When provided (or derivable from proposal),
+        stamped into the record so the remediation lane can map
+        reject-record → proposal WITHOUT a network call (R-V7-7).
 
     Returns
     -------
     dict with keys:
-        pr_number, head_sha, verdict ("approve"|"reject"),
+        pr_number, proposal_id, head_sha, verdict ("approve"|"reject"),
         deterministic_ok (bool), llm_verdict (str|None),
         confidence (float|None), findings (list[str]),
         rationale (str), ts (ISO string).
 
     NEVER raises — any exception → reject record.
     """
+    # Resolve proposal_id: prefer explicit param, then proposal dict.
+    _proposal_id: str = str(
+        proposal_id if proposal_id is not None
+        else (proposal.get("proposal_id") or "")
+    ) if isinstance(proposal, dict) else (str(proposal_id) if proposal_id else "")
+
     record: dict[str, Any] = {
         "schema": "metabolism.audit.v1",
         "pr_number": pr_number,
+        "proposal_id": _proposal_id,
         "head_sha": head_sha,
         "verdict": "reject",
         "deterministic_ok": False,

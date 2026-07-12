@@ -549,6 +549,40 @@ def _journal_dispatch(
         if record_status in ("dispatched", "would_dispatch", "immutable_refusal"):
             terminal_status = "done"
             note_record = record
+
+        # Audit-reject remediation dispatch (R-V7-7): journal as "audit_remediation"
+        # so _is_dispatch_done blocks the normal build path but run_build_lane
+        # can still advance the remediation counter.
+        elif record_status == "audit_remediation":
+            terminal_status = "audit_remediation"
+            # Read the prior remediation count and increment it.
+            prior_rem_count = 0
+            try:
+                prior_j = _read_journal(cycle_id, root)
+                prior_note = prior_j.get("stages", {}).get(stage, {}).get("note", "")
+                if prior_note and prior_note.startswith("{"):
+                    prior_data = json.loads(prior_note)
+                    prior_rem_count = int(prior_data.get("_remediation_attempts", 0))
+            except Exception:  # noqa: BLE001
+                pass
+            note_record = {**record, "_remediation_attempts": prior_rem_count + 1}
+
+            # Emit the exhausted insight exactly ONCE, at the threshold CROSSING.
+            try:
+                budget = _load_budget_config(root)
+                max_rem = int(budget.get("max_audit_rebuild_attempts", 2))
+                new_rem_count = prior_rem_count + 1
+                if new_rem_count >= max_rem and prior_rem_count < max_rem:
+                    _emit_audit_rebuild_exhausted_insight(
+                        cycle_id, proposal_id,
+                        pr_number=record.get("pr_number"),
+                        findings=record.get("findings") or [],
+                        remediation_attempts=new_rem_count,
+                        root=root,
+                    )
+            except Exception as exc:  # noqa: BLE001
+                log.warning("BUILD: audit-exhausted-insight emit failed (%s) — continuing", exc)
+
         else:
             # All error classes (session_error, invalid_wt_path, diff_error,
             # foreign_file_abort) are "failed" so the proposal is re-attemptable
@@ -631,12 +665,166 @@ def _emit_parked_insight(
         log.warning("BUILD: _emit_parked_insight(%s/%s): %s", cycle_id, proposal_id, exc)
 
 
+# ── Audit-reject remediation helpers (R-V7-7) ────────────────────────────────
+
+def _find_reject_for_proposal(
+    proposal_id: str,
+    root: Path | None = None,
+) -> dict[str, Any] | None:
+    """Scan data/metabolism/audit/*.json for the most-recent reject record for this proposal.
+
+    Returns the record dict if verdict=="reject" AND proposal_id matches, else None.
+    Disk-only — no network call.  NEVER raises.
+    """
+    try:
+        r = root or _ROOT
+        audit_dir = r / "data" / "metabolism" / "audit"
+        if not audit_dir.exists():
+            return None
+        candidates: list[tuple[str, dict[str, Any]]] = []
+        for p in audit_dir.glob("*.json"):
+            try:
+                rec = json.loads(p.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001
+                continue
+            if not isinstance(rec, dict):
+                continue
+            if rec.get("proposal_id") != proposal_id:
+                continue
+            if rec.get("verdict") != "reject":
+                continue
+            candidates.append((rec.get("ts", ""), rec))
+        if not candidates:
+            return None
+        # Return the most-recent reject record (by ISO timestamp sort)
+        candidates.sort(key=lambda x: x[0], reverse=True)
+        return candidates[0][1]
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _find_reject_for_proposal(%s): %s", proposal_id, exc)
+        return None
+
+
+def _emit_audit_rebuild_exhausted_insight(
+    cycle_id: str,
+    proposal_id: str,
+    pr_number: int | None,
+    findings: list[str],
+    remediation_attempts: int,
+    *,
+    root: Path | None = None,
+) -> None:
+    """Emit an insight-bus row when audit-reject rebuild cap is exhausted (R-V7-7).
+
+    NEVER raises.
+    """
+    try:
+        from engine.metabolism.insight_bus import append_row, build_row
+        findings_str = "; ".join(findings[:5]) if findings else "(see audit record)"
+        row = build_row(
+            emitter="metabolism_build._emit_audit_rebuild_exhausted_insight",
+            kind="audit_rebuild_exhausted",
+            severity="high",
+            entities=[proposal_id, cycle_id],
+            summary=(
+                f"Proposal {proposal_id} (cycle {cycle_id}) exhausted "
+                f"{remediation_attempts} audit-reject rebuild attempt(s). "
+                f"Draft PR #{pr_number} left for operator review. "
+                f"Persistent findings: {findings_str}"
+            ),
+            evidence_ref=(
+                f"data/metabolism/audit/{pr_number}.json" if pr_number else None
+            ),
+            cycle_id=cycle_id,
+        )
+        append_row(row, root=root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning(
+            "BUILD: _emit_audit_rebuild_exhausted_insight(%s/%s): %s",
+            cycle_id, proposal_id, exc,
+        )
+
+
+def _read_remediation_attempts(
+    cycle_id: str,
+    proposal_id: str,
+    root: Path | None = None,
+) -> int:
+    """Read the current _remediation_attempts counter from the journal. NEVER raises."""
+    try:
+        from scripts.metabolism_journal import _read_journal  # type: ignore[attr-defined]
+        stage = f"{_DISPATCH_STAGE_PREFIX}{proposal_id}"
+        j = _read_journal(cycle_id, root)
+        note = j.get("stages", {}).get(stage, {}).get("note", "")
+        if note and note.startswith("{"):
+            note_data = json.loads(note)
+            return int(note_data.get("_remediation_attempts", 0))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _read_remediation_attempts(%s/%s): %s", cycle_id, proposal_id, exc)
+    return 0
+
+
+def _read_last_remediated_sha(
+    cycle_id: str,
+    proposal_id: str,
+    root: Path | None = None,
+) -> str | None:
+    """Read the last-remediated head SHA from the journal note. NEVER raises.
+
+    Returns None if no remediation has been recorded or on any error.
+    """
+    try:
+        from scripts.metabolism_journal import _read_journal  # type: ignore[attr-defined]
+        stage = f"{_DISPATCH_STAGE_PREFIX}{proposal_id}"
+        j = _read_journal(cycle_id, root)
+        note = j.get("stages", {}).get(stage, {}).get("note", "")
+        if note and note.startswith("{"):
+            note_data = json.loads(note)
+            sha = note_data.get("_last_remediated_sha")
+            return str(sha) if sha else None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _read_last_remediated_sha(%s/%s): %s", cycle_id, proposal_id, exc)
+    return None
+
+
+def _write_last_remediated_sha(
+    cycle_id: str,
+    proposal_id: str,
+    head_sha: str,
+    *,
+    root: Path | None = None,
+) -> None:
+    """Persist the last-remediated head SHA into the journal note. NEVER raises.
+
+    This enables the idempotency guard in run_build_lane without a network call:
+    after a remediation fix is dispatched, the reject record's head SHA is stored
+    here.  On the next cycle, if _find_reject_for_proposal returns the same SHA,
+    we know it was already remediated (fix pushed → SHA changes → no match → clean).
+    """
+    try:
+        from scripts.metabolism_journal import _read_journal, finish_stage  # type: ignore[attr-defined]
+        stage = f"{_DISPATCH_STAGE_PREFIX}{proposal_id}"
+        j = _read_journal(cycle_id, root)
+        note = j.get("stages", {}).get(stage, {}).get("note", "")
+        try:
+            note_data = json.loads(note) if (note and note.startswith("{")) else {}
+        except Exception:  # noqa: BLE001
+            note_data = {}
+        note_data["_last_remediated_sha"] = head_sha
+        finish_stage(
+            cycle_id, stage, "audit_remediation",
+            note=json.dumps(note_data, separators=(",", ":"), default=str)[:600],
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _write_last_remediated_sha(%s/%s): %s", cycle_id, proposal_id, exc)
+
+
 def _is_dispatch_done(cycle_id: str, proposal_id: str, root: Path | None = None) -> bool:
     """Return True if this proposal has already been dispatched (or is in-flight) this cycle.
 
     Idempotency check — prevents double-dispatch on retry.
 
-    Logic (R-V5-1 + R-V5-2):
+    Logic (R-V5-1 + R-V5-2 + R-V7-7):
       - "done": permanently claimed.  Old schema "done" rows still claim (backward-compat).
       - "running": claimed IF the started_at is fresh (within stale_running_ttl_hours);
         a stale "running" marker (crashed runner) is treated as NOT claimed.
@@ -646,6 +834,8 @@ def _is_dispatch_done(cycle_id: str, proposal_id: str, root: Path | None = None)
       - "immutable_refusal" journaled as "done" → permanently claimed already.
       - "foreign_file_abort" journaled as "failed" → parks after ONE "failed" row
         (the note encodes "foreign_file_abort"; a single failed foreign-abort → parked).
+      - "audit_remediation": an audit-reject rebuild was dispatched — re-dispatchable
+        if remediation_attempts < max_audit_rebuild_attempts; parks when exhausted.
 
     NEVER raises.
     """
@@ -730,6 +920,13 @@ def _is_dispatch_done(cycle_id: str, proposal_id: str, root: Path | None = None)
             )
             return False
 
+        # --- "audit_remediation": audit-reject rebuild was dispatched (R-V7-7) ---
+        # This status is journaled each time a remediation rebuild is dispatched.
+        # We treat it as done (claimed) so the normal build path doesn't double-dispatch.
+        # run_build_lane handles the remediation path BEFORE calling _is_dispatch_done.
+        if status == "audit_remediation":
+            return True
+
         # No journal entry or unknown status → not claimed
         return False
 
@@ -744,6 +941,7 @@ def _build_session_task_prompt(
     branch: str,
     cycle_id: str,
     target_files: list[str] | None = None,
+    remediation: dict[str, Any] | None = None,
 ) -> str:
     """Build the task prompt injected into the headless build session.
 
@@ -751,6 +949,11 @@ def _build_session_task_prompt(
     target_files, when given, is the RESOLVED allow-list that the foreign-file
     containment check enforces — the prompt must describe the same list the
     diff check will apply, so they cannot silently diverge.
+
+    remediation, when given, must contain {findings: list[str], rationale: str}.
+    A PRIOR AUDIT REJECTION block is prepended to the prompt so the build
+    session fixes the auditor's findings (R-V7-7).
+
     NEVER raises.
     """
     pid = proposal.get("proposal_id", "unknown")
@@ -772,7 +975,30 @@ def _build_session_task_prompt(
         _immutable_patterns = []
     immutable_list = "\n".join(f"    {p}" for p in _immutable_patterns) or "    (see check_self_mod_fence.py)"
 
+    # Build the optional prior-audit-rejection block (R-V7-7).
+    # Prepended so the build session sees it before the proposal spec.
+    remediation_block = ""
+    if remediation and isinstance(remediation, dict):
+        try:
+            rem_rationale = str(remediation.get("rationale") or "").strip()
+            rem_findings = [str(f) for f in (remediation.get("findings") or [])]
+            findings_lines = (
+                "\n".join(f"  - {f}" for f in rem_findings) or "  (see audit record)"
+            )
+            remediation_block = (
+                f"PRIOR AUDIT REJECTION — you MUST fix these before this can merge:\n"
+                f"{rem_rationale}\n"
+                f"FINDINGS:\n"
+                f"{findings_lines}\n"
+                f"Fix EXACTLY these issues. Stay within the same target_files. "
+                f"Do not expand scope.\n\n"
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("BUILD: _build_session_task_prompt remediation block failed: %s", exc)
+            remediation_block = ""
+
     return (
+        f"{remediation_block}"
         f"You are a BUILD session for the Macro Dashboard Metabolism loop (R-V4-2).\n\n"
         f"CYCLE:    {cycle_id}\n"
         f"PROPOSAL: {pid}\n"
@@ -855,6 +1081,7 @@ def _dispatch_build_session(
     target_files: list[str] | None = None,
     root: Path | None = None,
     dry_run: bool = False,
+    remediation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Dispatch the headless Sonnet build session for a granted proposal (R-V4-2).
 
@@ -882,6 +1109,10 @@ def _dispatch_build_session(
         MUST pass the resolved list because the placeholder computed at claim time
         is never written back into the proposal row.  Falls back to
         proposal.get('target_files') for callers that embed it.
+    remediation : dict | None
+        When set, carries {findings: list[str], rationale: str} from the most-recent
+        audit reject record.  Passed into _build_session_task_prompt so the
+        build session receives a PRIOR AUDIT REJECTION preamble (R-V7-7).
 
     Returns
     -------
@@ -1003,6 +1234,7 @@ def _dispatch_build_session(
         task_prompt = _build_session_task_prompt(
             proposal, wt_path, branch, cycle_id,
             target_files=target_files_resolved,
+            remediation=remediation,
         )
         cmd = _build_session_cmd(task_prompt)
 
@@ -1333,6 +1565,131 @@ def run_build_lane(
                 results.append(per)
                 continue
 
+            # Step 1b: Audit-reject remediation check (R-V7-7).
+            # Before the normal build path, check if the proposal has an open
+            # unremediated audit reject.  If so, this cycle should fix it, not
+            # re-run from scratch.
+            reject_rec = _find_reject_for_proposal(pid, root=root)
+            if reject_rec is not None:
+                reject_head_sha = str(reject_rec.get("head_sha") or "")
+                # Idempotency: has this reject already been remediated?
+                # We detect that by comparing the reject record's head_sha against
+                # the last-remediated SHA stored in the journal note.
+                last_rem_sha = _read_last_remediated_sha(cycle_id, pid, root=root)
+                already_remediated = (
+                    last_rem_sha is not None and last_rem_sha == reject_head_sha
+                )
+                if already_remediated:
+                    # Reject head SHA was already remediated (fix pushed, new SHA
+                    # expected next cycle from audit re-run). Normal build path.
+                    log.info(
+                        "BUILD: proposal=%s audit-reject already remediated (sha=%s) — normal path",
+                        pid, reject_head_sha,
+                    )
+                    reject_rec = None
+                else:
+                    # Live audit reject — read remediation_attempts counter.
+                    rem_attempts = _read_remediation_attempts(cycle_id, pid, root=root)
+                    budget = _load_budget_config(root)
+                    max_rem = int(budget.get("max_audit_rebuild_attempts", 2))
+
+                    if rem_attempts >= max_rem:
+                        # Exhausted — park the proposal.
+                        log.warning(
+                            "BUILD: proposal=%s audit-reject remediation exhausted "
+                            "(%d/%d) — parking, leaving PR for operator",
+                            pid, rem_attempts, max_rem,
+                        )
+                        per["status"] = "audit_rebuild_exhausted"
+                        per["reason"] = (
+                            f"audit-reject remediation exhausted after {rem_attempts} attempts; "
+                            f"PR left for operator review"
+                        )
+                        per["reject_record"] = reject_rec
+                        # Insight already emitted at threshold crossing in _journal_dispatch;
+                        # journal a terminal "done" so the proposal is not re-attempted.
+                        _journal_dispatch(
+                            cycle_id, pid,
+                            {
+                                "status": "audit_remediation",
+                                "action": "exhausted",
+                                "remediation_attempts": rem_attempts,
+                                "pr_number": reject_rec.get("pr_number"),
+                                "findings": reject_rec.get("findings") or [],
+                            },
+                            root=root,
+                        )
+                        results.append(per)
+                        continue
+
+                    # Attempts remaining — dispatch a remediation rebuild.
+                    log.info(
+                        "BUILD: proposal=%s dispatching audit-reject remediation "
+                        "(attempt %d/%d, reject_sha=%s)",
+                        pid, rem_attempts + 1, max_rem, reject_head_sha,
+                    )
+                    per["remediation_attempt"] = rem_attempts + 1
+                    per["reject_record"] = reject_rec
+
+                    # Re-use the SAME branch so the fix commits to the existing open PR.
+                    branch = _build_branch_name(lobe, cycle_id, proposal_id=pid)
+                    # For the worktree: try to use the existing one if it already exists,
+                    # else create a new one off origin/main (the session will see the
+                    # existing PR branch code by checking it out).
+                    wt_result = _create_build_worktree(branch, root=root, dry_run=dry_run)
+                    per["worktree"] = wt_result
+                    wt_path = wt_result.get("wt_path") or ""
+
+                    # Claim target_files (self-claim exclusion prevents blocking own retry).
+                    prop_target_files = [str(f) for f in (prop.get("target_files") or [])]
+                    if not prop_target_files:
+                        prop_target_files = [f"data/metabolism/build/{pid}"]
+                    claim = claim_proposal(
+                        cycle_id, pid, lobe, prop_target_files, root=root, dry_run=dry_run,
+                    )
+                    per["claim"] = claim
+
+                    remediation_directive = {
+                        "findings": reject_rec.get("findings") or [],
+                        "rationale": str(reject_rec.get("rationale") or ""),
+                    }
+                    cap_id = _pick_build_key(root=root)
+                    session = _dispatch_build_session(
+                        prop, wt_path, branch, cap_id,
+                        cycle_id=cycle_id, target_files=prop_target_files,
+                        root=root, dry_run=dry_run,
+                        remediation=remediation_directive,
+                    )
+                    per["session"] = session
+
+                    # Journal the remediation dispatch (increments counter, may emit
+                    # exhausted insight at threshold crossing).
+                    _journal_dispatch(
+                        cycle_id, pid,
+                        {
+                            "status": "audit_remediation",
+                            "action": "dispatched",
+                            "remediation_attempts": rem_attempts + 1,
+                            "pr_number": reject_rec.get("pr_number"),
+                            "reject_head_sha": reject_head_sha,
+                            "findings": reject_rec.get("findings") or [],
+                        },
+                        root=root,
+                    )
+                    # Record the last-remediated SHA so next cycle won't re-fire for
+                    # the same reject record (idempotency guard, no network call).
+                    _write_last_remediated_sha(
+                        cycle_id, pid, reject_head_sha, root=root,
+                    )
+
+                    # No new draft PR needed — we committed to the existing PR branch.
+                    per["pr"] = {"stub": True, "reason": "remediation_fix_to_existing_pr"}
+                    per["status"] = "audit_remediation_dispatched"
+                    results.append(per)
+                    _gc_worktree(branch, root=root)
+                    continue
+
+            # ── Normal (non-remediation) build path ─────────────────────────────
             # Step 2: claim target_files
             prop_target_files = [str(f) for f in (prop.get("target_files") or [])]
             if not prop_target_files:

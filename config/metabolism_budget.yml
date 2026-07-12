@@ -105,3 +105,11 @@ max_build_attempts: 2
 # as stale (crashed runner / OOM) and NOT counted as claimed.  Default = 3h ≈ 2×
 # the 90-minute build timeout.
 stale_running_ttl_hours: 3
+
+# ── Audit-reject remediation cap (R-V7-7) ────────────────────────────────────
+#
+# max_audit_rebuild_attempts: after this many audit-reject rebuild dispatches,
+# the proposal PARKS with an audit_rebuild_exhausted insight; the rejected
+# draft PR is left for operator review and never silently dropped.
+# IMMUTABLE: loop PRs may NOT modify this value (R-V2-8).
+max_audit_rebuild_attempts: 2   # R-V7-7

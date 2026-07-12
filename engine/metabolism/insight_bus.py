@@ -73,6 +73,8 @@ _KINDS = frozenset({
     "revamp_recommendation",
     # R-V5-1: permanently parked dispatch (exceeded max_build_attempts)
     "dispatched_build_parked",
+    # R-V7-7: audit-reject rebuild cap exhausted — proposal parked for operator review
+    "audit_rebuild_exhausted",
 })
 
 
