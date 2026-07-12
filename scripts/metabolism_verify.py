@@ -161,9 +161,34 @@ def main(argv: list[str] | None = None) -> int:
         pending = _scan_pending_cycles(root, args.today)
         if not pending:
             log.info("metabolism_verify scan: no cycles ready to verify today")
-            return 0
-        for cycle_id, contract in pending:
-            _run_single(cycle_id, contract, root, args.today, args.dry_run)
+        else:
+            for cycle_id, contract in pending:
+                _run_single(cycle_id, contract, root, args.today, args.dry_run)
+
+        # ── Genesis accountability sweep (R-V6-6) ─────────────────────────
+        # Always runs after the normal verify scan, regardless of pending count.
+        # NEVER-RAISE: the sweep must not break verify.
+        try:
+            from engine.metabolism.lifecycle import sweep_genesis_accountability  # type: ignore[import]
+            sweep_results = sweep_genesis_accountability(root=root, today=args.today)
+            demoted = [r for r in sweep_results if r.get("action") in (
+                "demotion_proposed", "demotion_docket_direct"
+            )]
+            if demoted:
+                log.warning(
+                    "metabolism_verify scan: genesis accountability sweep: %d demotion(s) proposed: %s",
+                    len(demoted),
+                    [r.get("lobe_id") for r in demoted],
+                )
+            else:
+                log.info(
+                    "metabolism_verify scan: genesis accountability sweep: %d lobe(s) checked, "
+                    "no demotions triggered",
+                    len(sweep_results),
+                )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("metabolism_verify scan: genesis accountability sweep failed: %s", exc)
+
         return 0
 
     # ── Single-cycle mode ─────────────────────────────────────────────────

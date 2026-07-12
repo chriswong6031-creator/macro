@@ -445,3 +445,292 @@ def is_de_escalation(from_state: str, to_state: str) -> bool:
         return bool(meta.get("de_escalation", False))
     except Exception:  # noqa: BLE001
         return False
+
+
+# ── Genesis accountability clock ─────────────────────────────────────────────
+
+def _load_genesis_accountability_days(root: Path) -> int:
+    """Load genesis_accountability_days from config/metabolism_budget.yml.
+
+    Defaults to 45 if the key is absent (W2 may not have landed yet).
+    NEVER raises.
+    """
+    default = 45
+    try:
+        import yaml  # noqa: PLC0415
+        p = root / "config" / "metabolism_budget.yml"
+        if not p.exists():
+            return default
+        data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+        return int(data.get("genesis_accountability_days", default))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("lifecycle._load_genesis_accountability_days: %s — default %d", exc, default)
+        return default
+
+
+def _find_probation_start(lobe_id: str, root: Path) -> "datetime | None":
+    """Find when a lobe entered probation from the governance ledger.
+
+    Scans data/neuralweb/governance.jsonl for metabolism_adjudication events
+    where target == lobe_id and evidence.to_state == "probation".
+    Returns the earliest such event's ts as a datetime, or None if not found.
+
+    NEVER raises.
+    """
+    try:
+        from engine.neuralweb.governance import load_events  # noqa: PLC0415
+        events = load_events(root=root, event_type="metabolism_adjudication", target=lobe_id)
+        candidates: list[datetime] = []
+        for ev in events:
+            ev_target = str(ev.get("target") or "")
+            if ev_target != lobe_id:
+                continue
+            evidence = ev.get("evidence") or {}
+            if str(evidence.get("to_state") or "") == "probation":
+                ts_raw = str(ev.get("ts") or "")
+                try:
+                    dt = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
+                    candidates.append(dt)
+                except Exception:  # noqa: BLE001
+                    pass
+        if candidates:
+            return min(candidates)  # earliest probation entry
+        return None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("lifecycle._find_probation_start(%s): %s", lobe_id, exc)
+        return None
+
+
+def _has_matured_contracts(lobe_id: str, root: Path) -> bool:
+    """Return True if the lobe has at least one matured (graded) verify record.
+
+    Scans data/metabolism/verify/*.json for records naming this lobe.
+    A graded NULL counts as matured (context-accrual law — only SILENCE trips
+    the clock, not honest nulls).  UNVERIFIABLE counts too — it is a graded
+    outcome (the result was checked; the answer was unverifiable, which is
+    honest; it is NOT silence).
+
+    NEVER raises.
+    """
+    try:
+        verify_dir = root / "data" / "metabolism" / "verify"
+        if not verify_dir.exists():
+            return False
+        for vf in sorted(verify_dir.glob("*.json")):
+            try:
+                record = json.loads(vf.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001
+                continue
+            # A PENDING record is NOT matured — the contract was registered but
+            # not yet graded. Counting it as matured would let a lobe dodge the
+            # accountability clock forever (#2341 review). Only a graded record
+            # (any outcome incl. honest UNVERIFIABLE/null) counts.
+            outcome = str((record.get("realized") or {}).get("outcome") or "").upper()
+            classification = str((record.get("triage") or {}).get("classification") or "").lower()
+            if outcome == "PENDING" or classification == "pending":
+                continue
+            # Match this lobe: record.lobe, nested contract.lobe (the shape real
+            # verify records actually emit), then a cycle_id EXACT-suffix guard
+            # (avoid a substring false-positive across unrelated cycle ids).
+            record_lobe = str(record.get("lobe") or "").strip()
+            contract_lobe = str(
+                (record.get("contract") or {}).get("lobe") or ""
+            ).strip()
+            if lobe_id in (record_lobe, contract_lobe):
+                return True
+            cycle_field = str(record.get("cycle_id") or "")
+            if cycle_field == lobe_id or cycle_field.endswith(f"-{lobe_id}"):
+                return True
+        return False
+    except Exception as exc:  # noqa: BLE001
+        log.warning("lifecycle._has_matured_contracts(%s): %s", lobe_id, exc)
+        return False
+
+
+def sweep_genesis_accountability(
+    root: "str | Path | None" = None,
+    today: "str | None" = None,
+) -> list[dict[str, Any]]:
+    """Sweep probation lobes against the genesis accountability clock (R-V6-6).
+
+    For each charter with lifecycle_state=="probation":
+      - If (today - probation_start) > genesis_accountability_days AND
+        the lobe has ZERO matured contracts → emit a demotion docket item
+        (probation → demoted) if that edge is allowed, otherwise emit the
+        docket item directly.
+      - Honest nulls DO NOT trip the clock; only silence does.
+      - Probation start = earliest governance event for proposed→probation.
+        If unrecoverable, fail-open (no demotion) with a logged warning.
+
+    Returns a list of result dicts (one per checked lobe).
+    NEVER raises.  The sweep must not break verify.
+    """
+    results: list[dict[str, Any]] = []
+
+    try:
+        r = Path(root) if root is not None else Path(__file__).resolve().parent.parent.parent
+        today_date: "datetime.date | None" = None
+        try:
+            from datetime import date as date_cls  # noqa: PLC0415
+            if today:
+                today_date = datetime.fromisoformat(today).date()
+            else:
+                today_date = datetime.now(timezone.utc).date()
+        except Exception as exc:  # noqa: BLE001
+            log.warning("lifecycle.sweep_genesis_accountability: bad today=%r: %s — skip", today, exc)
+            return results
+
+        accountability_days = _load_genesis_accountability_days(r)
+
+        # Load charters
+        try:
+            import yaml  # noqa: PLC0415
+            charters_path = r / "config" / "lobe_charters.yml"
+            if not charters_path.exists():
+                log.info("lifecycle.sweep_genesis_accountability: no lobe_charters.yml — skip")
+                return results
+            data = yaml.safe_load(charters_path.read_text(encoding="utf-8")) or {}
+            charters = data.get("charters") or {}
+        except Exception as exc:  # noqa: BLE001
+            log.warning("lifecycle.sweep_genesis_accountability: cannot load charters: %s", exc)
+            return results
+
+        for lobe_id, charter in charters.items():
+            lobe_result: dict[str, Any] = {
+                "lobe_id": lobe_id,
+                "action": "skipped",
+                "reason": "",
+            }
+            try:
+                lc_state = (charter or {}).get("lifecycle_state") or ""
+                if lc_state != "probation":
+                    continue
+
+                # Find probation start
+                start_dt = _find_probation_start(lobe_id, r)
+                if start_dt is None:
+                    lobe_result.update({
+                        "action": "skipped_no_start",
+                        "reason": (
+                            f"lobe {lobe_id!r}: no governance record of probation start — "
+                            "fail-open (no demotion). Add a governance event when probation "
+                            "is conferred."
+                        ),
+                    })
+                    log.warning("lifecycle.sweep_genesis_accountability: %s", lobe_result["reason"])
+                    results.append(lobe_result)
+                    continue
+
+                start_date = start_dt.date() if hasattr(start_dt, "date") else today_date
+                days_elapsed = (today_date - start_date).days
+
+                if days_elapsed <= accountability_days:
+                    lobe_result.update({
+                        "action": "within_deadline",
+                        "reason": (
+                            f"{days_elapsed}/{accountability_days} days since probation "
+                            f"(started {start_date})"
+                        ),
+                        "days_elapsed": days_elapsed,
+                        "days_remaining": accountability_days - days_elapsed,
+                    })
+                    results.append(lobe_result)
+                    continue
+
+                # Past deadline — check for matured contracts
+                has_contracts = _has_matured_contracts(lobe_id, r)
+                if has_contracts:
+                    lobe_result.update({
+                        "action": "has_contracts_no_demotion",
+                        "reason": (
+                            f"{lobe_id!r}: {days_elapsed} days since probation "
+                            f"(>{accountability_days}) but has matured contracts — "
+                            "context-accrual law: graded nulls are not silence; clock holds."
+                        ),
+                        "days_elapsed": days_elapsed,
+                    })
+                    results.append(lobe_result)
+                    continue
+
+                # Zero matured contracts + past deadline → demotion docket
+                reason_str = (
+                    f"genesis accountability clock tripped: {days_elapsed} days since "
+                    f"probation start ({start_date}) exceeds limit of "
+                    f"{accountability_days} days with zero matured contracts. "
+                    f"Only SILENCE trips the clock — honest nulls would have been accepted. "
+                    f"Operator-visible demotion proposal emitted (R-V6-6)."
+                )
+
+                # Check if probation→demoted is an allowed edge
+                edge_allowed = ("probation", "demoted") in _ALLOWED_EDGES
+
+                if edge_allowed:
+                    tr = transition(
+                        from_state="probation",
+                        to_state="demoted",
+                        lobe_id=lobe_id,
+                        reason=reason_str,
+                        tier="display",
+                        root=r,
+                        emit=True,
+                    )
+                    lobe_result.update({
+                        "action": "demotion_proposed",
+                        "reason": reason_str,
+                        "transition_allowed": tr.get("allowed"),
+                        "transition_result": tr,
+                        "days_elapsed": days_elapsed,
+                    })
+                    if tr.get("allowed"):
+                        log.warning(
+                            "lifecycle.sweep_genesis_accountability: DEMOTION PROPOSED for %r "
+                            "(%d days, 0 matured contracts)",
+                            lobe_id, days_elapsed,
+                        )
+                    else:
+                        log.warning(
+                            "lifecycle.sweep_genesis_accountability: demotion edge refused for %r: %s",
+                            lobe_id, tr.get("reason"),
+                        )
+                else:
+                    # Edge not in table — emit docket directly (never silent)
+                    docket_written = _write_docket_item(
+                        lobe_id=lobe_id,
+                        from_state="probation",
+                        to_state="demoted",
+                        edge_meta={
+                            "t_level": "T1",
+                            "de_escalation": True,
+                            "description": (
+                                "Genesis accountability clock: probation→demoted docket "
+                                "(edge added by sweep when not in main table)"
+                            ),
+                        },
+                        reason=reason_str,
+                        root=r,
+                    )
+                    lobe_result.update({
+                        "action": "demotion_docket_direct",
+                        "reason": reason_str,
+                        "docket_written": docket_written,
+                        "days_elapsed": days_elapsed,
+                    })
+                    log.warning(
+                        "lifecycle.sweep_genesis_accountability: direct docket for %r "
+                        "(%d days, 0 matured contracts, edge not in table)",
+                        lobe_id, days_elapsed,
+                    )
+
+            except Exception as exc:  # noqa: BLE001
+                lobe_result.update({
+                    "action": "error",
+                    "reason": f"per-lobe error: {exc}",
+                })
+                log.warning("lifecycle.sweep_genesis_accountability[%s]: %s", lobe_id, exc)
+
+            results.append(lobe_result)
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("lifecycle.sweep_genesis_accountability: outer error: %s", exc)
+
+    return results

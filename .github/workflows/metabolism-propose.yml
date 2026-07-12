@@ -104,8 +104,11 @@ jobs:
           # SENSE (A3): refresh the TIL fitness card the proposer reads. Best-effort.
           python -m scripts.build_til_fitness || echo "SENSE fitness build degraded (continuing)"
 
-          # PROPOSE (A4): writes data/metabolism/dockets/<cycle>.json + registers contracts.
-          DOCKET="$(python -m scripts.metabolism_propose --cycle-id "$CYCLE_ID" | tail -n 1 || true)"
+          # PROPOSE (A4, R-V6-5): iterates ALL loop-managed lobes (--all-lobes).
+          # Today that set is exactly {til}, so behavior is byte-identical to --lobe til
+          # until the first genesis lobe matures. Per-lobe failures isolate (continue).
+          # The first lobe (til) keeps the bare cycle_id for backward compat.
+          DOCKET="$(python -m scripts.metabolism_propose --all-lobes --cycle-id "$CYCLE_ID" | tail -n 1 || true)"
           echo "docket=$DOCKET"
 
           # Only open a DRAFT PR when the docket carries at least one proposal.
