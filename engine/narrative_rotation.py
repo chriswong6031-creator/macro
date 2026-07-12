@@ -816,9 +816,14 @@ def compute_narrative_rotation(region: str = "us") -> dict | None:
         rows = []
         for bid, rk in sorted(ranks.items(), key=lambda kv: kv[1].get("rank", 99)):
             p = byid[bid]
+            # fast-tape read: 10d equal-weight basket return with NO skip — exactly the
+            # recent window the strategic ensemble excludes by construction (SKIP_D).
+            # Built here, after allocate(), so it cannot feed rank/score/eligible/weights.
+            r10 = _cum_ret(p["lvl"], 10, skip=0)
             rows.append({
                 "id": bid, "name": p["name"], "name_zh": p["name_zh"],
                 "category": p["category"], "thesis": p["thesis"], "n_live": p["n_live"],
+                "r10": round(r10, 4) if r10 is not None else None,
                 "rank": rk["rank"], "score": rk["score"], "eligible": rk["eligible"],
                 "z_resid_mom": rk["z_resid_mom"], "z_mom_13612w": rk["z_mom_13612w"],
                 "z_accel": rk["z_accel"], "gate": rk["gate"],
