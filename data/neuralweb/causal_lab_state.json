@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.causal_lab_state.v1",
-  "asof": "2026-07-11T09:01:47Z",
+  "asof": "2026-07-12T05:05:59Z",
   "heartbeat": {
     "program": "CHF",
     "wave": "W3",
@@ -45,9 +45,9 @@
   },
   "drift_events": [],
   "llm_lane": {
-    "status": "awaiting_phase_a",
-    "asof": "2026-07-09T19:44:10+00:00",
-    "description": "auto_loop disabled \u2014 pack-only mode"
+    "status": "armed",
+    "asof": "2026-07-11T19:13:14+00:00",
+    "description": "auto_loop armed (operator ruling 2026-07-09); scheduled OAuth LLM run fires on the Tuesday nightly"
   },
   "data_absent_notes": [
     "entry_quality target family unavailable: replay_boarded.parquet not found (set REPLAY_BOARDED_PATH env var to runner-local path)"
