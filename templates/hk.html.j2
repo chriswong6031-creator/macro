@@ -1842,11 +1842,115 @@
   .act-now h3 { color: var(--up); } .act-soon h3 { color: var(--info); }
   .act-run h3 { color: #8b5cf6; }   /* neutral violet — NOT green/buy */
   .act-tp h3 { color: var(--warn); } .act-avoid h3 { color: var(--down); } .act-hold h3 { color: var(--muted); }
+  /* ---- HKRV-W3: leadership banner + turn chip ---- */
+  .hkrv-banner { margin: 0 0 10px; padding: 13px 16px; border-radius: 10px;
+    border-left: 4px solid var(--warn);
+    background: color-mix(in srgb, var(--warn) 9%, var(--panel));
+    border-top: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+    border-right: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+    border-bottom: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+    display: flex; flex-direction: column; gap: 6px; }
+  .hkrv-banner-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .hkrv-banner-icon { font-size: 18px; flex: none; }
+  .hkrv-banner-title { font-size: 14px; font-weight: 800;
+    color: color-mix(in srgb, var(--warn) 90%, var(--text)); }
+  .hkrv-banner-line { font-size: 12.5px; color: var(--text); line-height: 1.5;
+    flex: 1; min-width: 200px; }
+  .hkrv-stance-chip { display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 800;
+    letter-spacing: .02em;
+    background: color-mix(in srgb, var(--warn) 20%, var(--panel));
+    color: color-mix(in srgb, var(--warn) 92%, var(--text));
+    border: 1px solid color-mix(in srgb, var(--warn) 46%, var(--line));
+    margin-left: auto; white-space: nowrap; flex: none; }
+  .hkrv-why-toggle { font-size: 11.5px; color: var(--link); cursor: pointer;
+    background: none; border: none; padding: 0; font: inherit;
+    text-decoration: underline; text-decoration-style: dotted; }
+  .hkrv-pop { display: none; margin-top: 6px; padding: 11px 14px;
+    background: var(--panel2);
+    border: 1px solid color-mix(in srgb, var(--warn) 30%, var(--line));
+    border-radius: 9px; font-size: 12px; line-height: 1.6; color: var(--text); }
+  .hkrv-pop.hkrv-pop-open { display: block; }
+  .hkrv-pop-row { padding: 3px 0; border-bottom: 1px solid var(--line); }
+  .hkrv-pop-row:last-child { border-bottom: none; }
+  .hkrv-pop-lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted); display: block; margin-bottom: 1px; }
+  .hkrv-history-note { display: inline-block; margin-top: 5px; font-size: 11.5px;
+    font-weight: 600; color: var(--muted); padding: 4px 9px; border-radius: 7px;
+    background: color-mix(in srgb, var(--muted) 8%, var(--panel2));
+    border: 1px solid var(--line); }
+  .act-turn-chip { display: inline-block; font-size: 9.5px; font-weight: 800;
+    padding: 1px 6px; border-radius: 7px; margin-left: 5px; vertical-align: middle;
+    color: var(--warn);
+    background: color-mix(in srgb, var(--warn) 16%, var(--panel2));
+    border: 1px solid color-mix(in srgb, var(--warn) 36%, var(--line));
+    letter-spacing: .03em; }
   </style>
   <div class="panel span12" id="act-now">
     <h2>⚡ {{ t('What to act on now — sectors', '当前可操作 — 板块') }}
-      {{ help("The HK sector groups bucketed by the cycle ladder’s entry-timing call — the same engine as the US action board. A structure / risk map, not an allocation rule: ON THE RUN = in favour but extended (do not chase; add on a pullback); the reduce side (take profits / avoid) is the risk read. HK has no validated single-stock edge — this is sector positioning.", "香港板块按周期阶梯的入场时机分桶 — 与美国操作板同一引擎。这是结构／风险图，而非配置规则：顺势运行 = 看好但已延伸（勿追高；回调加仓）；减仓侧（止盈／回避）是风险判读。香港无经验证的个股优势 — 这是板块定位。") }}
+      {{ help("The HK sector groups bucketed by the cycle ladder's entry-timing call — the same engine as the US action board. A structure / risk map, not an allocation rule: ON THE RUN = in favour but extended (do not chase; add on a pullback); the reduce side (take profits / avoid) is the risk read. HK has no validated single-stock edge — this is sector positioning.", "香港板块按周期阶梯的入场时机分桶 — 与美国操作板同一引擎。这是结构／风险图，而非配置规则：顺势运行 = 看好但已延伸（勿追高；回调加仓）；减仓侧（止盈／回避）是风险判读。香港无经验证的个股优势 — 这是板块定位。") }}
     </h2>
+    {# ===== HKRV-W3: leadership banner — rendered ONLY when leaders are participating ===== #}
+    {%- set _ldr = setups.get('leadership') if setups else none -%}
+    {%- if _ldr and _ldr.get('state') == 'leaders_participating' -%}
+    {%- set _ldr_members = _ldr.get('members') or [] -%}
+    {%- set _ldr_n_above = (_ldr_members | selectattr('above_rising_ma10', 'equalto', true) | list | length) -%}
+    {%- set _ldr_n_total = _ldr_members | length -%}
+    {%- set _ldr_breadth = _ldr.get('broad_breadth_pct') -%}
+    {%- set _ldr_study_n = _ldr.get('study_n') -%}
+    {%- set _ldr_fwd = _ldr.get('study_hsi_fwd40_mean') -%}
+    <div class="hkrv-banner" id="hkrv-banner-a">
+      <div class="hkrv-banner-top">
+        <span class="hkrv-banner-icon">⚡</span>
+        <div>
+          <div class="hkrv-banner-title">
+            <span class="l-en">Leaders moving first</span><span class="l-zh">龙头先行</span>
+          </div>
+          <div class="hkrv-banner-line">
+            <span class="l-en">Mega-caps are participating; the broad market hasn't confirmed yet.</span>
+            <span class="l-zh">大型龙头正在参与，大盘尚未确认。</span>
+          </div>
+        </div>
+        <div class="hkrv-stance-chip">
+          <span class="l-en">Watch — don't chase</span><span class="l-zh">观察，勿追高</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="hkrv-why-toggle" type="button" onclick="(function(b){var p=document.getElementById('hkrv-pop-a');p.classList.toggle('hkrv-pop-open');b.textContent=p.classList.contains('hkrv-pop-open')?'▴ Why — close':'▾ Why — details';})(this)">&#9662; Why &#8212; details</button>
+        <span style="font-size:11px;color:var(--muted)">
+          <span class="l-en">{{ _ldr_n_above }} of {{ _ldr_n_total }} mega-caps above rising 10-day MA{% if _ldr_breadth is not none %} · {{ _ldr_breadth | round | int }}% broad breadth{% endif %}</span>
+          <span class="l-zh">{{ _ldr_n_total }}只龙头中{{ _ldr_n_above }}只高于上升10日均线{% if _ldr_breadth is not none %} · 大盘广度{{ _ldr_breadth | round | int }}%{% endif %}</span>
+        </span>
+      </div>
+      <div class="hkrv-pop" id="hkrv-pop-a">
+        <div class="hkrv-pop-row">
+          <span class="hkrv-pop-lbl"><span class="l-en">What fired</span><span class="l-zh">触发依据</span></span>
+          <span class="l-en">{{ _ldr_n_above }} of {{ _ldr_n_total }} mega-caps above a rising 10-day average (cohesion up from {{ ((_ldr.get('cohesion_10d_ago') or 0) * 100) | round | int }}% ten sessions ago).</span>
+          <span class="l-zh">{{ _ldr_n_total }}只龙头中{{ _ldr_n_above }}只高于上升10日均线（10日前占比{{ ((_ldr.get('cohesion_10d_ago') or 0) * 100) | round | int }}%）。</span>
+        </div>
+        {%- if _ldr_breadth is not none -%}
+        <div class="hkrv-pop-row">
+          <span class="hkrv-pop-lbl"><span class="l-en">Broad market</span><span class="l-zh">大盘情况</span></span>
+          <span class="l-en">{{ _ldr_breadth | round | int }}% of stocks above their 50-day average — not confirmed.</span>
+          <span class="l-zh">{{ _ldr_breadth | round | int }}%个股高于其50日均线 — 尚未确认。</span>
+        </div>
+        {%- endif -%}
+        {%- if _ldr_study_n and _ldr_fwd is not none -%}
+        <div class="hkrv-pop-row">
+          <span class="hkrv-pop-lbl"><span class="l-en">History</span><span class="l-zh">历史参考</span></span>
+          <span class="l-en">{{ _ldr_study_n }} similar episodes since 2016: the broad index did not follow — the leaders themselves gained while the index moved ~{{ '%+.1f' | format(_ldr_fwd) }}% over 40 sessions.</span>
+          <span class="l-zh">2016年以来{{ _ldr_study_n }}次类似情形：大盘指数并未跟进 — 指数40日均回报约{{ '%+.1f' | format(_ldr_fwd) }}%。</span>
+        </div>
+        {%- endif -%}
+        <div class="hkrv-pop-row">
+          <span class="hkrv-pop-lbl"><span class="l-en">Calibration</span><span class="l-zh">定标</span></span>
+          <span class="l-en">A heads-up, not a buy signal.</span>
+          <span class="l-zh">这是预警，不是买入信号。</span>
+        </div>
+      </div>
+    </div>
+    {%- endif -%}
+    {# ===== END HKRV-W3 banner ===== #}
     <div class="act-grid">
       {% macro sactcol(cls, title_en, title_zh, items) %}
       {% if items %}
@@ -1908,6 +2012,9 @@
             <div class="row-pop-ft"><span></span></div>
           </span>
           <a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
+          {%- if it.get('label') == 'TURN IN PROGRESS' -%}
+          <span class="act-turn-chip"><span class="l-en">turn in progress</span><span class="l-zh">转向进行中</span></span>
+          {%- endif -%}
           <div class="at">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %}</div>
         </div>
         {% endfor %}
