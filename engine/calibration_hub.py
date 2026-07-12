@@ -160,7 +160,14 @@ h1{{font-size:22px;font-weight:500}}h2{{font-size:16px;font-weight:500;margin-to
 th,td{{padding:8px 10px;border-bottom:1px solid #ececec;text-align:left;vertical-align:top}}
 th{{color:#8B8D98;font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.04em}}
 .chips{{display:flex;gap:1.5rem;margin:1rem 0}}.chip b{{font-size:24px;font-weight:500}}
-@media(prefers-color-scheme:dark){{body{{background:#16171a;color:#e8e8e8}}th,td{{border-color:#2a2b2f}}}}
+/* our own scrollbars */
+*{{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,#8B8D98 50%,transparent) transparent}}
+*::-webkit-scrollbar{{width:11px;height:11px}}
+*::-webkit-scrollbar-track{{background:transparent}}
+*::-webkit-scrollbar-thumb{{background:color-mix(in srgb,#8B8D98 50%,transparent);border-radius:999px;border:3px solid transparent;background-clip:padding-box}}
+*::-webkit-scrollbar-thumb:hover{{background:color-mix(in srgb,#8B8D98 78%,transparent)}}
+*::-webkit-scrollbar-corner{{background:transparent}}
+@media(prefers-color-scheme:dark){{body{{background:#16171a;color:#e8e8e8}}th,td{{border-color:#2a2b2f}}*{{scrollbar-color:color-mix(in srgb,#c8ccd6 30%,transparent) transparent}}*::-webkit-scrollbar-thumb{{background:color-mix(in srgb,#c8ccd6 30%,transparent)}}}}
 /* phone: the multi-column tables are wider than the screen — let each scroll
    horizontally within the page instead of pushing the whole page sideways. */
 @media(max-width:700px){{table{{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}}.chips{{flex-wrap:wrap;gap:1rem}}}}
