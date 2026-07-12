@@ -2012,6 +2012,16 @@ def main(alpha: dict | None = None) -> dict | None:
                 "session_note": _sess.get("reason"), "lane": _lane,
             }
             _bn = china_standout_track.append_board(wide["buy"], asof=as_of, lane=_lane)
+            # SA-W2: append today's CN regime row to the PIT daily store (fail-closed: asia lane only).
+            # Must run AFTER build_china.py has produced regime_history.parquet for today.
+            # Placed here because: (a) the CN_LANE gate is already confirmed above, (b) this is the
+            # only commit-writing step in the lane, (c) [timing] tick below measures the impact.
+            try:
+                from engine import china_regime_store as _cn_rs  # noqa: PLC0415
+                _rstore_ok = _cn_rs.append(asof=str(as_of))
+                log.info("[timing] cn_regime_store.append (%s)", "OK" if _rstore_ok else "skip/fail")
+            except Exception as _rs_e:  # noqa: BLE001 — SA-R16: never suppress grade()
+                log.warning("china_regime_store.append failed (%s) — board track continues", _rs_e)
             _bt = china_standout_track.grade()
             if _bt.get("available"):
                 # Interim (unrealized) mark-to-latest-close read — shown while the forward ledger
@@ -2027,8 +2037,20 @@ def main(alpha: dict | None = None) -> dict | None:
             log.info("china standout board-track: logged top-%d (ledger=%d, graded=%s, lane=%s, partial=%s)",
                      min(60, len(wide["buy"])), _bn, _bt.get("n_graded"), _lane,
                      wide["coverage"]["partial_session"])
+            # SA-W2: CN two-axis attribution + fitness card (fail-closed: asia lane only; SA-R16).
+            # Reads the committed board.parquet + bench close; never raises; never suppresses grade().
+            # [timing] tick after this block measures runtime impact on the asia lane.
+            try:
+                from engine import china_standout_audit as _cn_audit  # noqa: PLC0415
+                from engine.china_standout_track import _bench_close as _cn_bench  # noqa: PLC0415,SLF001
+                _bench = _cn_bench()
+                _audit_result = _cn_audit.run_attribution(bench_close=_bench, lane=_lane)
+                log.info("china standout attribution: %s", _audit_result)
+            except Exception as _audit_e:  # noqa: BLE001 — SA-R16: attribution never fatal
+                log.warning("china standout attribution failed (%s) — grade output unaffected", _audit_e)
         except Exception as e:  # noqa: BLE001 — telemetry, never fatal
             log.warning("china standout board-track failed (%s)", e)
+        _tick("standout board-track + SA-W2 attribution")
         # Validated sleeve-size chip (W6-CN Fix 1) — thread the risk_radar_intl gross_factor
         # into the board header as a DISPLAY chip. Regime sizes sleeves, never vetoes names.
         # Passport: basis=measured, validation=cn_forward_log.jsonl (the repo's only closed loop).

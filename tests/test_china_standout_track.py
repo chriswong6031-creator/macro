@@ -557,7 +557,12 @@ def test_grade_unstamped_count_reported(cn_store, monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_stratifier_cols_present_and_nullable(cn_store):
-    """species_id and archetype are present in the parquet after append_board and are null."""
+    """species_id and archetype are present in the parquet after append_board.
+
+    SA-W2 (2026-07-12): species_id is now derived from row flags at append time
+    (washout_2w=True -> 'cn_washout'; coiled=True -> 'cn_coiled'; else -> 'cn_tier').
+    archetype remains null (CN callers don't pass it).
+    """
     tmp_path, dates = cn_store
     rows = [{"ticker": "699030.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
              "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
@@ -565,10 +570,13 @@ def test_stratifier_cols_present_and_nullable(cn_store):
     df = pd.read_parquet(t._store_path())
     assert "species_id" in df.columns, "species_id column missing"
     assert "archetype" in df.columns, "archetype column missing"
-    # Must be null (documented constraint — multiple species bind this ledger)
+    # SA-W2: species_id is derived from flags. Row has washout_2w=False, coiled=False
+    # -> species_id = 'cn_tier' (default tier-cascade value).
     val_sid = df.iloc[0]["species_id"]
     val_arch = df.iloc[0]["archetype"]
-    assert val_sid is None or pd.isna(val_sid), f"species_id must be null, got {val_sid!r}"
+    assert val_sid == "cn_tier", (
+        f"SA-W2: species_id should be 'cn_tier' for a plain T1 row, got {val_sid!r}"
+    )
     assert val_arch is None or pd.isna(val_arch), f"archetype must be null, got {val_arch!r}"
 
 

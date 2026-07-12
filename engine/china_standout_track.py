@@ -154,6 +154,9 @@ _OBJECT_COLS_CN = (
 
 # Own-market regime constraint note (documented null — see module docstring §3a)
 # china_run.py L41: store_df.to_parquet(p / "regime_history.parquet") — full overwrite, non-PIT.
+# SA-W2: from store birth (2026-07-12+) forward, own_market_regime is stamped from the new
+# PIT store (data/china_regime/regime_daily.parquet) created by engine/china_regime_store.py.
+# Pre-store rows keep this null note; post-store rows use the stamped-from note below.
 _OWN_REGIME_NOTE_CN = (
     "null: data/china_regime/regime_history.parquet is recomputed from scratch on each "
     "run (china_run.py: store_df.to_parquet full overwrite — NOT PIT append-only). "
@@ -161,15 +164,51 @@ _OWN_REGIME_NOTE_CN = (
     "PIT file to enable own-market stamps. CN single-macro-regime caveat applies until "
     "a second regime accrues in the forward ledger."
 )
+# Note used when own_market_regime IS stamped from the PIT store (SA-W2 forward-only).
+_OWN_REGIME_NOTE_PIT = (
+    "stamped from data/china_regime/regime_daily.parquet (SA-W2 PIT store, "
+    "engine/china_regime_store.py). PIT keep-first; forward-only from store birth."
+)
 
 # Species binding note: multiple species bind this ledger; board rows don't disambiguate.
 # CN-WASHOUT and CN-REVERSAL both bind 'china_standout_track'; T1-T4 and S1 bind
 # 'us_board_ledger + china_standout_track'. A row's tier/marker doesn't map unambiguously
-# to one species — therefore species_id=null. archetype: CN callers don't pass it → null.
+# to one species — therefore species_id=null for ambiguous rows.
+# SA-W2: species_id IS derived from the row's own flags at append_board time going forward:
+#   washout_2w=True  → 'cn_washout'
+#   coiled=True      → 'cn_coiled'
+#   else tier-cascade→ 'cn_tier'
+# (CN-REVERSAL rows are not currently routed through append_board; document if they are.)
 _SPECIES_NOTE = (
     "null: CN-WASHOUT, CN-REVERSAL, T1-T4, and S1 all bind 'china_standout_track'; "
     "board rows do not carry a field that disambiguates which species fired."
 )
+
+# ---------------------------------------------------------------------------
+# SA-W2: species_id derivation from row flags (forward-only from 2026-07-12).
+# Mapping is documented here; taxonomy_version='v2'; loop-IMMUTABLE per SA-R2.
+# ---------------------------------------------------------------------------
+
+def _derive_species_id(row: dict) -> str:
+    """Derive species_id from a board row's own flags at append time.
+
+    Precedence (most-specific first):
+      washout_2w=True  → 'cn_washout'  (2W StochRSI washout-reclaim pattern)
+      coiled=True      → 'cn_coiled'   (coiled cohort-washout pattern)
+      else             → 'cn_tier'     (tier-cascade board row, T1/T2/T3/T4)
+
+    CN-REVERSAL rows are not currently routed through append_board (they use a
+    separate pipeline); if they are added, extend this mapping.
+
+    This function is called at append_board time for NEW rows only (SA-W2 forward).
+    Old rows in the parquet are NOT backfilled — they retain species_id=null.
+    """
+    if bool(row.get("washout_2w")):
+        return "cn_washout"
+    if bool((row.get("coiled") or {}).get("coiled") if isinstance(row.get("coiled"), dict)
+            else row.get("coiled")):
+        return "cn_coiled"
+    return "cn_tier"
 
 
 def _coerce_object_cols(df: pd.DataFrame) -> pd.DataFrame:
@@ -538,6 +577,18 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
     # W0 Stage B-d: stamp the US regime vector once per append call (same asof for all rows)
     rv_stamp = _regime_stamp_for_date(str(asof))
 
+    # SA-W2: stamp own_market_regime from the PIT store (engine/china_regime_store.py).
+    # Forward-only from store birth; pre-store dates keep null + _OWN_REGIME_NOTE_CN.
+    _cn_regime_row: dict | None = None
+    _cn_regime_note: str = _OWN_REGIME_NOTE_CN
+    try:
+        from engine import china_regime_store as _crs  # noqa: PLC0415
+        _cn_regime_row = _crs.get_regime_for_date(str(asof))
+        if _cn_regime_row is not None:
+            _cn_regime_note = _OWN_REGIME_NOTE_PIT
+    except Exception as _crs_exc:  # noqa: BLE001
+        log.debug("china_standout_track: cn_regime_store lookup failed for %s: %s", asof, _crs_exc)
+
     out = []
     for i, r in enumerate(rows[:top_n]):
         tk = r.get("ticker")
@@ -599,13 +650,18 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             "narr_rel20":   (r.get("narrative") or {}).get("rel20"),
             "narr_breadth": (r.get("narrative") or {}).get("breadth"),
             "ab_tier":      r.get("ab_tier"),
-            # W0 Stage B-d: species/archetype — always null (documented in _SPECIES_NOTE above).
-            # Multiple species bind this ledger; board rows don't disambiguate which fired.
-            "species_id": None,
+            # SA-W2: species_id derived from row flags at append time (forward-only from store birth).
+            # Precedence: washout_2w=True → 'cn_washout'; coiled=True → 'cn_coiled'; else → 'cn_tier'.
+            # Old rows already in the parquet are NOT backfilled — they retain species_id=null.
+            # See _derive_species_id for mapping documentation.
+            "species_id": _derive_species_id(r),
             "archetype": None,
-            # W0 Stage B-d: own-market regime — always null (documented in _OWN_REGIME_NOTE_CN).
-            "own_market_regime": None,
-            "own_market_regime_note": _OWN_REGIME_NOTE_CN,
+            # SA-W2: own_market_regime stamped from the PIT store (engine/china_regime_store.py)
+            # when available (forward-only from store birth date ~2026-07-12).
+            # Pre-store rows: null + _OWN_REGIME_NOTE_CN.
+            # Post-store rows: stamped quad + _OWN_REGIME_NOTE_PIT.
+            "own_market_regime": _cn_regime_row.get("quad") if _cn_regime_row else None,
+            "own_market_regime_note": _cn_regime_note,
             # W0 Stage B-d: US context regime stamp (Asia-lane rule §3.4).
             **rv_stamp,
             # W0 Stage B-d: CN-native spine placeholders (null at birth; matured by grade()).
