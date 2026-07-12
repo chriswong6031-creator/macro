@@ -3736,6 +3736,14 @@ body.page-macro.mx4-grid .mx5-path-svg{
 @media(max-width:700px){
   body.page-macro.mx4-grid .mx5-sc-right{display:none;}
 }
+/* D4: prevent horizontal scroll at narrow viewports — reduce padding, gauge, score */
+@media(max-width:560px){
+  body.page-macro.mx4-grid .mx5-sc-left{padding:16px 12px 14px;}
+  body.page-macro.mx4-grid .mx5-sc-gauge-row{gap:10px;margin-bottom:10px;}
+  body.page-macro.mx4-grid .mx5-gauge-svg{width:90px;height:58px;}
+  body.page-macro.mx4-grid .mx5-big-score{font-size:34px;}
+  body.page-macro.mx4-grid .mx5-verdict-word{font-size:13px;}
+}
 
 /* ── Popover system ─────────────────────────────────────────────── */
 /* Fixed dim backdrop (z-90) */
@@ -3790,7 +3798,7 @@ body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
     position:fixed!important;
     left:12px!important;right:12px!important;
     bottom:0!important;top:auto!important;
-    max-width:none;width:auto;
+    max-width:none;width:auto;min-width:0!important; /* D3: override 320px base min-width so left/right:12px fully constrains at ≤344px */
     max-height:70vh;overflow-y:auto;
     border-radius:var(--mx5-radius-card) var(--mx5-radius-card) 0 0;
     transform-origin:bottom center;
@@ -3978,6 +3986,9 @@ body.page-macro.mx4-grid .sx-v5-static{
 body.page-macro:not(.mx4-grid) .sx-v5-static{
   display:none; /* hidden in ledger view — these are grid-only surfaces */
 }
+/* D1: command scorecard (left+right) must be hidden in ledger view, mirroring .sx-v5-static */
+body.page-macro:not(.mx4-grid) .mx5-sc-left,
+body.page-macro:not(.mx4-grid) .mx5-sc-right{display:none;}
 
 /* ── MARKETS tiles (v5: four-col strip inside the sxg-face) ────── */
 body.page-macro.mx4-grid #sx-markets-v2 .sxg-face.mx5-card-face{
@@ -4757,7 +4768,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <text x="8" y="96"  fill="rgba(255,255,255,.20)" font-size="11" font-family="-apple-system,sans-serif">50</text>
         <text x="8" y="44"  fill="rgba(255,255,255,.16)" font-size="11" font-family="-apple-system,sans-serif">75</text>
         {# Area fill #}
-        <path d="{{ _ph_pts_line | join(' L') }} L1000,200 L0,200 Z" fill="url(#mx5PathAreaGrad)" stroke="none"/>
+        <path d="M{{ _ph_pts_line | join(' L') }} L1000,200 L0,200 Z" fill="url(#mx5PathAreaGrad)" stroke="none"/>
         {# Line #}
         <polyline points="{{ _ph_pts_line | join(' ') }}" fill="none" stroke="{{ _mx5_sc_col }}" stroke-width="2" vector-effect="non-scaling-stroke" opacity=".9"/>
         {# Today dot #}
@@ -7059,7 +7070,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       </div>
       {% endfor %}
     </div>
-    {# Policy note from policy_lever #}
+    {# Policy note from policy_lever — A3: define PL here (before first use) so the note actually renders #}
+    {% if PL is not defined %}{% set PL = policy_lever if policy_lever is defined else none %}{% endif %}
     {% if PL %}
     <div class="mx5-fed-policy-note">
       <strong><span class="l-en">Policy</span><span class="l-zh">政策</span></strong> &mdash;
@@ -7262,7 +7274,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
                 </linearGradient>
               </defs>
               <path class="mx5-spark-area"
-                d="{{ _spk_pts | join(' L') }} L120,34 L0,34 Z"
+                d="M{{ _spk_pts | join(' L') }} L120,34 L0,34 Z"
                 fill="url(#spkGrad_{{ _ixsym }})" stroke="none"/>
               <polyline class="mx5-spark-line"
                 points="{{ _spk_pts | join(' ') }}"
