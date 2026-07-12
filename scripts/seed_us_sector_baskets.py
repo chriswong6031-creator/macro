@@ -32,6 +32,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from lib import config  # noqa: E402
 
 # GICS sector (as stored in constituents.parquet) -> (id slug, SPDR ETF, en, zh)
+# COPY SYNC: the generated name/name_zh/theme/thesis/etf_proxy_note strings below must match
+# the live us_sector_* entries in data/baskets/membership.json — re-running replaces those
+# entries wholesale, so copy edits made directly to the live file must be mirrored here.
 SECTORS: dict[str, tuple[str, str, str, str]] = {
     "Information Technology": ("tech", "XLK", "Technology", "信息技术"),
     "Financials": ("financials", "XLF", "Financials", "金融"),
@@ -77,10 +80,8 @@ def build_sector_baskets() -> dict[str, dict]:
             "created": CREATED,
             "weighting": "equal",
             "thesis": (
-                f"Every S&P 500 {en} name, equal-weighted, versus the cap-weighted "
-                f"{etf}. When this equal-weight line lags {etf} the sector's move is "
-                f"carried by its largest names (narrow); when it leads, participation "
-                f"is broad. A breadth/dispersion gauge for the sector, not a buy list."
+                f"Equal-weight S&P 500 {en} members versus {etf}. "
+                f"Sector participation gauge, not a buy list."
             ),
             "members": [
                 {"ticker": t, "added": MEMBER_ADDED, "removed": None,

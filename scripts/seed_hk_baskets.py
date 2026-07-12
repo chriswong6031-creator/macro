@@ -13,11 +13,10 @@ Hang Seng Index (HSI). Re-runnable: `python -m scripts.seed_hk_baskets`.
 HONEST BY CONSTRUCTION: membership is curated today with knowledge of the period, so the
 ~5y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest, not a buy list.
 
-WARNING (2026-07-12): data/baskets_hk/membership.json carries LIVE hand/bot edits this script
-does not know about (the copy-simplification lane rewrote name/thesis fields on 2026-07-05,
-commit 9a31b78ad0f). Re-running this script CLOBBERS that copy. For additive curation, splice
-new baskets into the live file instead of regenerating it wholesale (see PR adding
-SPLIT_BASKETS for the pattern), or first reconcile the dicts below with the live file.
+COPY CONTRACT: this script regenerates the live file WHOLESALE, so edits made directly to
+data/baskets_hk/membership.json (copy lanes, spliced baskets) survive a re-run only if they
+are mirrored in the dicts below. Reconciled 2026-07-12 (2026-07-05 copy-simplification pass
+backported); verify with a regen + diff before shipping seeder changes.
 """
 from __future__ import annotations
 
@@ -36,14 +35,17 @@ log = logging.getLogger("seed_hk_baskets")
 
 SEED = "2021-06-15"
 
+# COPY SYNC: name/thesis/*_zh here and CONSTRUCTION/HISTORY_NOTE/NOTE below must match the
+# live data/baskets_hk/membership.json — this seeder regenerates it WHOLESALE, so copy edits
+# made directly to the live file are clobbered on the next run unless mirrored here.
 BASKETS: dict[str, dict] = {
     # ───────────────────────── Tech & Internet · 科技与互联网 ─────────────────────────
     "hk_china_tech": {
         "name": "China Tech & Internet", "name_zh": "中资科技与互联网",
         "category": "Tech & Internet", "category_zh": "科技与互联网",
         "etf_proxy": "3033.HK", "etf_proxy_note": "HS TECH ETF",
-        "thesis": "The mega-cap China internet & hardware complex that dominates the Hang Seng — platforms, e-commerce, devices and the domestic foundry. The single biggest driver of HK index returns and the core southbound-flow target; levered to China consumption, AI capex and regulatory sentiment.",
-        "thesis_zh": "主导恒指的中资互联网与硬件巨头 — 平台、电商、终端与本土代工。香港指数回报的最大驱动力，也是南向资金的核心标的；受中国消费、AI 资本开支与监管情绪牵动。",
+        "thesis": "HK-listed China internet, platform and hardware leaders. Core read on index growth and southbound tech flows.",
+        "thesis_zh": "香港上市的中国互联网、平台和硬件龙头。观察指数成长股和南向科技资金。",
         "members": [
             ("0700.HK", "Tencent — gaming + WeChat super-app + cloud"),
             ("9988.HK", "Alibaba — e-commerce + cloud + AI"),
@@ -61,8 +63,8 @@ BASKETS: dict[str, dict] = {
         "name": "China Consumer Brands", "name_zh": "中资消费品牌",
         "category": "Consumer & Healthcare", "category_zh": "消费与医药",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "HK-listed China consumer champions — sportswear, catering, jewellery, beer, dairy and packaged food. A direct read on mainland discretionary demand and premiumisation, and a favourite southbound consumption basket.",
-        "thesis_zh": "港股中资消费龙头 — 运动服饰、餐饮、珠宝、啤酒、乳业与包装食品。直接反映内地可选消费需求与升级趋势，也是南向资金偏好的消费篮子。",
+        "thesis": "Sportswear, catering, jewellery, beer, dairy and packaged food names. Tracks mainland consumer demand.",
+        "thesis_zh": "运动服饰、餐饮、珠宝、啤酒、乳制品和食品公司。跟踪内地消费需求。",
         "members": [
             ("2020.HK", "Anta Sports — #1 China sportswear group"),
             ("2331.HK", "Li Ning — premium domestic sportswear"),
@@ -78,8 +80,8 @@ BASKETS: dict[str, dict] = {
         "name": "Biotech, Pharma & CXO", "name_zh": "生物医药与CXO",
         "category": "Consumer & Healthcare", "category_zh": "消费与医药",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The HK healthcare complex — innovative-drug developers, the CRO/CDMO outsourcing chain and the big distributors. The R&D-and-out-licensing growth engine, levered to biotech funding cycles, overseas BD deals and the 18A pipeline.",
-        "thesis_zh": "港股医药板块 — 创新药企、CRO/CDMO 外包链与大型流通商。研发与对外授权的成长引擎，受生物科技融资周期、海外 BD 交易与 18A 管线驱动。",
+        "thesis": "Innovative drug, CRO/CDMO and healthcare distributors. Tracks biotech funding and licensing momentum.",
+        "thesis_zh": "创新药、CRO/CDMO 和医药分销商。跟踪生物科技融资和授权交易。",
         "members": [
             ("1093.HK", "CSPC Pharma — branded generics + innovation"),
             ("1177.HK", "Sino Biopharm — large innovative-drug pipeline"),
@@ -94,8 +96,8 @@ BASKETS: dict[str, dict] = {
         "name": "China EV & Autos", "name_zh": "中资电动车",
         "category": "Autos & EV", "category_zh": "汽车",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The HK-listed China auto transition — the NEV scale leader, the smart-EV start-ups and the legacy OEMs reinventing for electrification and export. A high-beta play on EV penetration, price competition and the overseas push.",
-        "thesis_zh": "港股中资汽车电动化 — 新能源车规模龙头、智能电动车新势力与转型出海的传统车企。受电动化渗透、价格战与出海驱动的高弹性主题。",
+        "thesis": "China NEV makers, smart-EV startups and auto suppliers listed in Hong Kong.",
+        "thesis_zh": "在港上市的中国新能源车、智能电动车和汽车供应链公司。",
         "members": [
             ("1211.HK", "BYD — the NEV scale + export leader"),
             ("2015.HK", "Li Auto — EREV premium SUVs"),
@@ -109,8 +111,8 @@ BASKETS: dict[str, dict] = {
         "name": "Banks (H + HK)", "name_zh": "银行",
         "category": "Financials", "category_zh": "金融",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The banking complex listed in HK — the big mainland state lenders (H-shares) alongside HSBC and BOC Hong Kong. The core of the southbound high-dividend trade and a direct read on China credit, net-interest-margin and HK rates.",
-        "thesis_zh": "在港上市的银行 — 内地国有大行（H 股）加汇丰与中银香港。南向高股息交易的核心，也是中国信用、净息差与香港利率的直接读数。",
+        "thesis": "Mainland state banks plus HSBC and BOCHK. Core southbound dividend and credit sleeve.",
+        "thesis_zh": "内地国有银行加汇丰和中银香港。南向高股息和信贷核心板块。",
         "members": [
             ("1398.HK", "ICBC — largest state bank (H)"),
             ("0939.HK", "China Construction Bank (H)"),
@@ -125,8 +127,8 @@ BASKETS: dict[str, dict] = {
         "name": "Insurers", "name_zh": "保险",
         "category": "Financials", "category_zh": "金融",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The big HK-listed insurers — AIA's pan-Asian life franchise plus the mainland life & P&C majors. Earnings and embedded value swing on equity markets, long-bond yields and new-business value; a leveraged play on an Asia risk-on turn.",
-        "thesis_zh": "港股大型险企 — 友邦的泛亚寿险特许经营加内地寿险与财险龙头。利润与内含价值随权益市场、长债收益率与新业务价值波动；对亚洲风险偏好回升的杠杆化表达。",
+        "thesis": "AIA and mainland life/P&C insurers. Sensitive to markets, yields and new-business value.",
+        "thesis_zh": "友邦和内地寿险/财险公司。受市场、利率和新业务价值影响。",
         "members": [
             ("2318.HK", "Ping An — integrated insurance + fintech"),
             ("1299.HK", "AIA — pan-Asian life champion"),
@@ -139,8 +141,8 @@ BASKETS: dict[str, dict] = {
         "name": "Conglomerates & Exchange", "name_zh": "综合企业与交易所",
         "category": "Financials", "category_zh": "金融",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The old-economy HK hongs and the exchange operator — sprawling ports/retail/aviation conglomerates plus HKEX, whose earnings track market turnover, listings and southbound activity. A barometer of HK as a financial hub.",
-        "thesis_zh": "香港老牌综合企业与交易所 — 横跨港口/零售/航空的多元集团，加上盈利挂钩成交、上市与南向活动的港交所。香港金融中心地位的晴雨表。",
+        "thesis": "HK conglomerates and HKEX. Barometer for local financial-hub activity and market turnover.",
+        "thesis_zh": "香港综合企业和港交所。观察本地金融中心活跃度和市场成交。",
         "members": [
             ("0001.HK", "CK Hutchison — ports / retail / telecom / infra"),
             ("0019.HK", "Swire Pacific — property / aviation / beverages"),
@@ -152,8 +154,8 @@ BASKETS: dict[str, dict] = {
         "name": "Property & REITs", "name_zh": "地产与REITs",
         "category": "Property", "category_zh": "地产",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "HK & China property — the big HK developers, the mainland SOE landlords and Link REIT. Levered to HK rates and physical-market sentiment plus the China property cycle; a high-beta, rate-sensitive value sleeve.",
-        "thesis_zh": "香港与内地地产 — 香港大型发展商、内地国有地产商与领展。受香港利率与楼市情绪及内地地产周期驱动；高弹性、对利率敏感的价值板块。",
+        "thesis": "HK developers, mainland landlords and Link REIT. Rate-sensitive property cycle exposure.",
+        "thesis_zh": "香港地产商、内地物业公司和领展。利率敏感的地产周期敞口。",
         "members": [
             ("0016.HK", "Sun Hung Kai — the premier HK developer"),
             ("1109.HK", "China Resources Land — SOE landlord (H)"),
@@ -170,8 +172,8 @@ BASKETS: dict[str, dict] = {
         "name": "Macau Gaming", "name_zh": "澳门博彩",
         "category": "Gaming & Tourism", "category_zh": "博彩旅游",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The Macau casino concessionaires — pure-play exposure to gross gaming revenue, mass-market recovery and Chinese outbound travel. A high-beta consumption-reopening basket distinct from the rest of HK.",
-        "thesis_zh": "澳门博彩特许经营商 — 纯粹押注博彩毛收入、中场复苏与中国出境游。区别于其余港股的高弹性消费复苏篮子。",
+        "thesis": "Macau casino concessionaires. High-beta read on gaming revenue and outbound travel.",
+        "thesis_zh": "澳门博彩牌照公司。高贝塔反映博彩收入和出境旅游。",
         "members": [
             ("0027.HK", "Galaxy Entertainment — mass-market leader"),
             ("1928.HK", "Sands China — Cotai integrated resorts"),
@@ -184,8 +186,8 @@ BASKETS: dict[str, dict] = {
         "name": "Energy (H-shares)", "name_zh": "能源",
         "category": "Energy & Resources", "category_zh": "能源与资源",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The H-share energy majors — the three oil & gas giants plus the top thermal-coal producer. Heavy free-cash-flow, high payout SOEs at the centre of the southbound dividend trade; levered to oil, gas and power demand.",
-        "thesis_zh": "H 股能源龙头 — 三桶油加动力煤龙头。现金流充沛、高分红的央企，处于南向红利交易核心；受油、气与电力需求驱动。",
+        "thesis": "H-share oil, gas and coal majors. Dividend-heavy SOE exposure to energy prices and demand.",
+        "thesis_zh": "H 股石油、天然气和煤炭龙头。高股息央企，受能源价格和需求影响。",
         "members": [
             ("0883.HK", "CNOOC — low-cost offshore E&P"),
             ("0857.HK", "PetroChina — integrated oil & gas (H)"),
@@ -198,8 +200,8 @@ BASKETS: dict[str, dict] = {
         "name": "Materials & Metals", "name_zh": "有色金属",
         "category": "Energy & Resources", "category_zh": "能源与资源",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The H-share base & industrial-metals producers — aluminium, copper and molybdenum. A China-listed read on the global growth cycle, green-capex demand and supply discipline; a cyclical commodity beta sleeve.",
-        "thesis_zh": "H 股基本金属与工业金属生产商 — 铝、铜与钼。表达全球增长周期、绿色资本开支需求与供给约束的中资读数；周期性大宗 Beta 板块。",
+        "thesis": "H-share aluminium, copper and molybdenum producers. Cyclical commodity beta.",
+        "thesis_zh": "H 股铝、铜和钼生产商。周期性商品贝塔。",
         "members": [
             ("2600.HK", "Aluminum Corp of China (Chalco)"),
             ("0358.HK", "Jiangxi Copper — copper leader"),
@@ -213,8 +215,8 @@ BASKETS: dict[str, dict] = {
         "name": "Telecom & Utilities", "name_zh": "电信与公用事业",
         "category": "Telecom, Utilities & Income", "category_zh": "电信公用与收息",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The defensive carriers and HK utilities/infrastructure — the three mainland telecoms plus power, gas, infra and the mass-transit operator. Stable cash flows and high payouts; a low-beta, rate-sensitive defensive anchor.",
-        "thesis_zh": "防御性运营商与香港公用/基建 — 三大内地电信加电力、燃气、基建与地铁运营商。现金流稳定、分红高；低 Beta、对利率敏感的防御锚。",
+        "thesis": "Mainland telecoms plus HK utilities and infrastructure. Defensive, high-payout cash flows.",
+        "thesis_zh": "内地电信加香港公用事业和基建。防御性、高派息现金流。",
         "members": [
             ("0941.HK", "China Mobile — carrier + dividend anchor"),
             ("0762.HK", "China Unicom"),
@@ -230,8 +232,8 @@ BASKETS: dict[str, dict] = {
         "name": "High-Dividend Blue Chips", "name_zh": "高股息蓝筹",
         "category": "Telecom, Utilities & Income", "category_zh": "电信公用与收息",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "A southbound-income blend — the highest-yielding HK mega-caps across banks, telecom, energy and utilities. Built to express the dividend/value factor that has led HK leadership; income with cyclical tail risk, overlaps the sector baskets by design.",
-        "thesis_zh": "南向收息组合 — 横跨银行、电信、能源与公用事业的高股息超大盘。用于表达引领港股的红利/价值因子；高股息但有周期尾部风险，与行业篮子刻意重叠。",
+        "thesis": "High-yield HK mega-caps across banks, telecom, energy and utilities.",
+        "thesis_zh": "银行、电信、能源和公用事业中的高息港股大盘股。",
         "members": [
             ("0005.HK", "HSBC — global bank, high payout"),
             ("0941.HK", "China Mobile — carrier dividend"),
@@ -347,8 +349,8 @@ NEW_BASKETS: dict[str, dict] = {
         "name": "Industrials & Infrastructure", "name_zh": "工业与基建",
         "category": "Industrials & Transport", "category_zh": "工业与运输",
         "etf_proxy": None, "etf_proxy_note": "",
-        "thesis": "The HK-listed industrial & infrastructure complex — power tools, rail-equipment and rolling stock, heavy machinery, the construction SOEs, ports and express logistics. A capex- and China-growth-cyclical sleeve geared to infrastructure spend, the export machine and global tool demand.",
-        "thesis_zh": "港股工业与基建集群 — 电动工具、轨交装备与机车、重型机械、建筑央企、港口与快递物流。受基建投资、出口机器与全球工具需求驱动、对中国增长敏感的周期性板块。",
+        "thesis": "Industrial, infrastructure, rail, machinery and logistics names tied to capex and China growth.",
+        "thesis_zh": "工业、基建、铁路、机械和物流公司，受资本开支和中国增长影响。",
         "members": [
             ("0669.HK", "Techtronic — global power tools (Milwaukee/Ryobi)"),
             ("1766.HK", "CRRC — the rolling-stock / rail-equipment giant (H)"),
@@ -423,13 +425,10 @@ SPLIT_BASKETS: dict[str, dict] = {
     },
 }
 
-CONSTRUCTION = ("Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated "
-                "membership changes take effect same-day. Benchmark = Hang Seng Index (HSI).")
-HISTORY_NOTE = ("Series before a basket's creation date are a backtest of the membership as of "
-                "creation; live tracking starts at creation. Universe = the HK search deep cache "
-                "(HSI/HSCEI names), trimmed to a ~5y window.")
-NOTE = ("Curated HK thematic baskets — hindsight-curated and descriptive, not an out-of-sample "
-        "backtest and not a buy list.")
+CONSTRUCTION = "Equal-weight baskets, rebalanced monthly, measured against the Hang Seng Index."
+HISTORY_NOTE = ("Available history comes from the hk_search cache. Pre-launch series use the "
+                "basket's starting membership.")
+NOTE = "Curated HK theme baskets for monitoring rotation. Descriptive only, not a buy list."
 
 
 def main() -> int:
