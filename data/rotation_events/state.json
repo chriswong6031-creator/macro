@@ -1,0 +1,343 @@
+{
+ "active": {
+  "xlk:ai_semis->mag7": {
+   "pair_id": "xlk:ai_semis->mag7",
+   "sector": "xlk",
+   "from_leg": "ai_semis",
+   "to_leg": "mag7",
+   "started": "2026-07-02",
+   "lapse_count": 2,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-02",
+     "runup_pct": 0.4488,
+     "runup_z": 2.27,
+     "drawdown_pct": 0.1197,
+     "qualified_by": "z"
+    },
+    "turn": {
+     "low_date": "2026-06-25",
+     "off_low_pct": 0.0817,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.1066,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-07-08"
+   }
+  },
+  "xlk:ai_semis->ai_software": {
+   "pair_id": "xlk:ai_semis->ai_software",
+   "sector": "xlk",
+   "from_leg": "ai_semis",
+   "to_leg": "ai_software",
+   "started": "2026-07-06",
+   "lapse_count": 3,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-02",
+     "runup_pct": 0.4488,
+     "runup_z": 2.27,
+     "drawdown_pct": 0.1357,
+     "qualified_by": "z"
+    },
+    "turn": {
+     "low_date": "2026-06-25",
+     "off_low_pct": 0.1244,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.2719,
+     "inflected": false,
+     "ratio_20s_high": true
+    },
+    "asof": "2026-07-07"
+   }
+  },
+  "xlk:ai_semis->software": {
+   "pair_id": "xlk:ai_semis->software",
+   "sector": "xlk",
+   "from_leg": "ai_semis",
+   "to_leg": "software",
+   "started": "2026-06-26",
+   "lapse_count": 4,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-02",
+     "runup_pct": 0.4488,
+     "runup_z": 2.27,
+     "drawdown_pct": 0.1005,
+     "qualified_by": "z"
+    },
+    "turn": {
+     "low_date": "2026-06-25",
+     "off_low_pct": 0.1011,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.1703,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-07-06"
+   }
+  },
+  "xlk:memory->mag7": {
+   "pair_id": "xlk:memory->mag7",
+   "sector": "xlk",
+   "from_leg": "memory",
+   "to_leg": "mag7",
+   "started": "2026-07-01",
+   "lapse_count": 1,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-22",
+     "runup_pct": 0.6086,
+     "runup_z": 1.6,
+     "drawdown_pct": 0.1839,
+     "qualified_by": "abs_runup"
+    },
+    "turn": {
+     "low_date": "2026-06-25",
+     "off_low_pct": 0.0955,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.1441,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-07-09"
+   }
+  },
+  "xlk:memory->ai_software": {
+   "pair_id": "xlk:memory->ai_software",
+   "sector": "xlk",
+   "from_leg": "memory",
+   "to_leg": "ai_software",
+   "started": "2026-07-06",
+   "lapse_count": 1,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-22",
+     "runup_pct": 0.6086,
+     "runup_z": 1.6,
+     "drawdown_pct": 0.1839,
+     "qualified_by": "abs_runup"
+    },
+    "turn": {
+     "low_date": "2026-06-25",
+     "off_low_pct": 0.1214,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.1796,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-07-09"
+   }
+  },
+  "xlk:memory->software": {
+   "pair_id": "xlk:memory->software",
+   "sector": "xlk",
+   "from_leg": "memory",
+   "to_leg": "software",
+   "started": "2026-07-01",
+   "lapse_count": 1,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-22",
+     "runup_pct": 0.6086,
+     "runup_z": 1.6,
+     "drawdown_pct": 0.1839,
+     "qualified_by": "abs_runup"
+    },
+    "turn": {
+     "low_date": "2026-06-25",
+     "off_low_pct": 0.108,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.1527,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-07-09"
+   }
+  },
+  "xlk:semicap->mag7": {
+   "pair_id": "xlk:semicap->mag7",
+   "sector": "xlk",
+   "from_leg": "semicap",
+   "to_leg": "mag7",
+   "started": "2026-07-02",
+   "lapse_count": 0,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-30",
+     "runup_pct": 0.39,
+     "runup_z": 2.1,
+     "drawdown_pct": 0.1425,
+     "qualified_by": "z"
+    },
+    "turn": {
+     "low_date": "2026-06-25",
+     "off_low_pct": 0.1097,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.2301,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-07-10"
+   }
+  },
+  "xlk:semicap->ai_software": {
+   "pair_id": "xlk:semicap->ai_software",
+   "sector": "xlk",
+   "from_leg": "semicap",
+   "to_leg": "ai_software",
+   "started": "2026-07-06",
+   "lapse_count": 0,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-30",
+     "runup_pct": 0.39,
+     "runup_z": 2.1,
+     "drawdown_pct": 0.1425,
+     "qualified_by": "z"
+    },
+    "turn": {
+     "low_date": "2026-06-25",
+     "off_low_pct": 0.1143,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.2353,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-07-10"
+   }
+  },
+  "xlk:semicap->software": {
+   "pair_id": "xlk:semicap->software",
+   "sector": "xlk",
+   "from_leg": "semicap",
+   "to_leg": "software",
+   "started": "2026-07-02",
+   "lapse_count": 0,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-30",
+     "runup_pct": 0.39,
+     "runup_z": 2.1,
+     "drawdown_pct": 0.1425,
+     "qualified_by": "z"
+    },
+    "turn": {
+     "low_date": "2026-06-25",
+     "off_low_pct": 0.1058,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.2258,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-07-10"
+   }
+  },
+  "xlk:ai_software->software": {
+   "pair_id": "xlk:ai_software->software",
+   "sector": "xlk",
+   "from_leg": "ai_software",
+   "to_leg": "software",
+   "started": "2026-06-26",
+   "lapse_count": 2,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-02",
+     "runup_pct": 0.3179,
+     "runup_z": 3.02,
+     "drawdown_pct": 0.1105,
+     "qualified_by": "z"
+    },
+    "turn": {
+     "low_date": "2026-06-25",
+     "off_low_pct": 0.104,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.0001,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-07-08"
+   }
+  },
+  "xlk:software->mag7": {
+   "pair_id": "xlk:software->mag7",
+   "sector": "xlk",
+   "from_leg": "software",
+   "to_leg": "mag7",
+   "started": "2026-07-10",
+   "lapse_count": 0,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-04",
+     "runup_pct": 0.213,
+     "runup_z": 2.12,
+     "drawdown_pct": 0.1002,
+     "qualified_by": "z"
+    },
+    "turn": {
+     "low_date": "2026-06-25",
+     "off_low_pct": 0.1097,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.0035,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-07-10"
+   }
+  },
+  "xlk:software->ai_software": {
+   "pair_id": "xlk:software->ai_software",
+   "sector": "xlk",
+   "from_leg": "software",
+   "to_leg": "ai_software",
+   "started": "2026-07-06",
+   "lapse_count": 0,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-04",
+     "runup_pct": 0.213,
+     "runup_z": 2.12,
+     "drawdown_pct": 0.1002,
+     "qualified_by": "z"
+    },
+    "turn": {
+     "low_date": "2026-06-25",
+     "off_low_pct": 0.1143,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.0077,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-07-10"
+   }
+  }
+ },
+ "closed": {
+  "xlk:legacy_tech->software": "2026-07-06"
+ }
+}
