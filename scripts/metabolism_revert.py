@@ -467,48 +467,49 @@ def _remove_revert_worktree(branch: str, wt_path: str | None, root: Path) -> Non
 
 
 def _revert_already_applied(merge_sha: str, wt_path: str) -> bool:
-    """Return True if a revert of merge_sha is already present on this branch.
+    """Return True if a revert of merge_sha is already present on THIS branch
+    (i.e. ahead of origin/main), NOT anywhere in full history.
 
     FIX-B2 idempotency: on a retry the revert commit is already on the branch
     (attempt-1 succeeded at revert+push; only gh pr create failed).  Detect
-    this by scanning git log for a commit whose subject starts with 'Revert '
-    and whose body references merge_sha.
+    this by scanning commits ahead of origin/main for the canonical revert-body
+    line that 'git revert' writes:
+
+        This reverts commit <FULL_40_char_sha>.
+
+    SCOPE: uses 'git log origin/main..HEAD' so that main's own history —
+    which contains merge_sha as a raw %H — is EXCLUDED.  A fresh branch that
+    equals main has an EMPTY range → returns False → revert RUNS.
+
+    MATCH: checks the canonical literal phrase only (never a bare hash
+    substring in %H), so a fresh branch whose HEAD IS merge_sha is never
+    falsely treated as "already reverted".
 
     Falls back to False on any error (conservative: re-attempt the revert,
     which will then produce a 'nothing to commit' exit-1 that we also handle).
     NEVER raises.
     """
     try:
-        # Search log for a revert commit mentioning the sha
-        short_sha = merge_sha[:12]
+        # Canonical phrase written by 'git revert <sha> --no-edit'
+        canonical_phrase = f"This reverts commit {merge_sha}."
+
+        # Scan only commits on THIS branch ahead of origin/main.
+        # %b = commit body; we include %n%b to get the full body on each entry.
         result = subprocess.run(
-            ["git", "log", "--oneline", "--grep", f"Revert", "-n", "20"],
+            ["git", "log", "origin/main..HEAD", "--format=%b"],
             cwd=wt_path, capture_output=True, text=True, timeout=30,
         )
         if result.returncode != 0:
             return False
-        # Any line containing the short sha in the revert commits?
-        for line in result.stdout.splitlines():
-            if short_sha in line or merge_sha in line:
-                log.info(
-                    "metabolism_revert._revert_already_applied: found revert "
-                    "commit for sha=%s on branch: %s",
-                    merge_sha, line.strip(),
-                )
-                return True
-        # Also check full log body for the sha
-        result2 = subprocess.run(
-            ["git", "log", "-n", "20", "--format=%H %s %b"],
-            cwd=wt_path, capture_output=True, text=True, timeout=30,
-        )
-        if result2.returncode == 0:
-            if merge_sha in result2.stdout or short_sha in result2.stdout:
-                log.info(
-                    "metabolism_revert._revert_already_applied: sha %s found "
-                    "in recent log body — revert already applied",
-                    merge_sha,
-                )
-                return True
+
+        if canonical_phrase in result.stdout:
+            log.info(
+                "metabolism_revert._revert_already_applied: canonical revert "
+                "phrase found for sha=%s on branch (ahead of origin/main)",
+                merge_sha,
+            )
+            return True
+
         return False
     except Exception as exc:  # noqa: BLE001
         log.warning(

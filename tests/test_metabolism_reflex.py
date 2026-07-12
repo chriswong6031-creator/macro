@@ -1903,6 +1903,215 @@ class TestRevertIdempotentRetryPath:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# REGRESSION FIX: _revert_already_applied scope + phrase match (real-git tests)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _init_real_git_repo(tmp_path: Path) -> str:
+    """Initialise a real bare-minimum git repo with one commit.
+
+    Returns the full 40-char SHA of HEAD (which will be used as merge_sha in
+    the tests — simulating a squash-merge that landed on main).
+    NEVER raises; will throw on git setup errors (test infra).
+    """
+    import subprocess as _sp
+    env = {**os.environ, "GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "t@t",
+           "GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "t@t",
+           "GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z",
+           "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"}
+
+    def git(*args: str, cwd: str | None = None) -> str:
+        r = _sp.run(["git"] + list(args), cwd=cwd or str(tmp_path),
+                    capture_output=True, text=True, env=env, timeout=30)
+        if r.returncode != 0:
+            raise RuntimeError(f"git {args[0]} failed: {r.stderr.strip()[:300]}")
+        return r.stdout.strip()
+
+    git("init", "-b", "main")
+    git("config", "user.email", "t@t")
+    git("config", "user.name", "test")
+    (tmp_path / "README.md").write_text("hello\n")
+    git("add", "README.md")
+    git("commit", "-m", "initial commit")
+    merge_sha = git("rev-parse", "HEAD")
+    return merge_sha
+
+
+class TestRevertAlreadyAppliedRealGit:
+    """Real-git tests for _revert_already_applied scope fix.
+
+    These drive actual git processes in a tmp repo so the origin/main..HEAD
+    scoping is exercised for real (mocking git was the root cause of the prior
+    test suite missing this regression).
+    """
+
+    def test_fresh_branch_returns_false(self, tmp_path):
+        """(a) FRESH path: branch off main with NO revert commit → returns False.
+
+        A fresh branch that is identical to main has an EMPTY origin/main..HEAD
+        range.  merge_sha (= HEAD of main) must NOT be detected as already
+        reverted.
+        """
+        import subprocess as _sp
+        mr = _import_revert()
+
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        merge_sha = _init_real_git_repo(repo)
+
+        env = {**os.environ, "GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "t@t",
+               "GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "t@t",
+               "GIT_AUTHOR_DATE": "2026-01-01T01:00:00Z",
+               "GIT_COMMITTER_DATE": "2026-01-01T01:00:00Z"}
+
+        def git(*args):
+            r = _sp.run(["git"] + list(args), cwd=str(repo),
+                        capture_output=True, text=True, env=env, timeout=30)
+            if r.returncode != 0:
+                raise RuntimeError(f"git {args[0]} failed: {r.stderr.strip()[:300]}")
+            return r.stdout.strip()
+
+        # Create a revert branch off main (simulates what the lane does)
+        git("checkout", "-b", "metabolism/revert-test")
+        # Branch is identical to main — origin/main..HEAD is EMPTY
+
+        # _revert_already_applied must return False (fresh path → revert RUNS)
+        result = mr._revert_already_applied(merge_sha, str(repo))
+        assert result is False, (
+            "FRESH path: branch equals main → origin/main..HEAD is empty → "
+            f"must return False, got {result!r}"
+        )
+
+    def test_retry_branch_with_revert_commit_returns_true(self, tmp_path):
+        """(b) RETRY path: branch DOES contain 'git revert <merge_sha>' → True.
+
+        Simulates attempt-1 that already ran git revert and pushed.  The
+        canonical phrase 'This reverts commit <sha>.' must be found in the
+        body of the commit ahead of main → returns True → revert skipped.
+        """
+        import subprocess as _sp
+        mr = _import_revert()
+
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        merge_sha = _init_real_git_repo(repo)
+
+        env = {**os.environ, "GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "t@t",
+               "GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "t@t",
+               "GIT_AUTHOR_DATE": "2026-01-01T02:00:00Z",
+               "GIT_COMMITTER_DATE": "2026-01-01T02:00:00Z"}
+
+        def git(*args):
+            r = _sp.run(["git"] + list(args), cwd=str(repo),
+                        capture_output=True, text=True, env=env, timeout=30)
+            if r.returncode != 0:
+                raise RuntimeError(f"git {args[0]} failed: {r.stderr.strip()[:300]}")
+            return r.stdout.strip()
+
+        # Fake "origin/main" by creating a local ref so origin/main..HEAD works
+        git("update-ref", "refs/remotes/origin/main", "HEAD")
+
+        git("checkout", "-b", "metabolism/revert-retry")
+
+        # Write a commit whose body contains the canonical revert phrase
+        (repo / "dummy.txt").write_text("revert\n")
+        git("add", "dummy.txt")
+        revert_body = (
+            f'Revert "some feature"\n\n'
+            f"This reverts commit {merge_sha}.\n"
+        )
+        git("commit", "-m", revert_body)
+
+        result = mr._revert_already_applied(merge_sha, str(repo))
+        assert result is True, (
+            "RETRY path: branch has revert commit with canonical phrase → "
+            f"must return True, got {result!r}"
+        )
+
+    def test_end_to_end_fresh_path_produces_nonempty_diff(self, tmp_path):
+        """(c) End-to-end: _process_one_plan on a fresh path opens a NON-empty
+        revert branch (the branch differs from main after git revert runs).
+
+        Uses a real git repo where we can actually run git revert and verify
+        that the resulting branch has a commit ahead of main.
+        """
+        import subprocess as _sp
+        mr = _import_revert()
+
+        # ── Set up a real repo with a "merge commit" to revert ──
+        repo = tmp_path / "repo"
+        repo.mkdir()
+
+        env_git = {**os.environ,
+                   "GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "t@t",
+                   "GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "t@t",
+                   "GIT_AUTHOR_DATE": "2026-01-01T03:00:00Z",
+                   "GIT_COMMITTER_DATE": "2026-01-01T03:00:00Z"}
+
+        def git(*args, cwd=None):
+            r = _sp.run(["git"] + list(args), cwd=cwd or str(repo),
+                        capture_output=True, text=True, env=env_git, timeout=30)
+            if r.returncode != 0:
+                raise RuntimeError(f"git {args[0]} failed: {r.stderr.strip()[:300]}")
+            return r.stdout.strip()
+
+        git("init", "-b", "main")
+        git("config", "user.email", "t@t")
+        git("config", "user.name", "test")
+
+        # Commit 1: baseline file
+        (repo / "feature.py").write_text("# baseline\n")
+        git("add", "feature.py")
+        git("commit", "-m", "baseline")
+
+        # Commit 2: the "feature" that will be reverted (this is merge_sha)
+        (repo / "feature.py").write_text("# baseline\n# feature\n")
+        git("add", "feature.py")
+        git("commit", "-m", "add feature")
+        merge_sha = git("rev-parse", "HEAD")
+
+        # Set up origin/main ref so origin/main..HEAD works in the worktree
+        git("update-ref", "refs/remotes/origin/main", "HEAD")
+
+        # ── Create revert worktree off main ──
+        wt_path = tmp_path / "revert_wt"
+        wt_path.mkdir()
+        git("worktree", "add", str(wt_path), "-b", "metabolism/revert-e2e",
+            "origin/main")
+
+        # ── Verify _revert_already_applied returns False on fresh branch ──
+        assert mr._revert_already_applied(merge_sha, str(wt_path)) is False, (
+            "End-to-end: fresh branch must return False from _revert_already_applied"
+        )
+
+        # ── Run git revert inside the worktree ──
+        rv = _sp.run(
+            ["git", "revert", merge_sha, "--no-edit"],
+            cwd=str(wt_path), capture_output=True, text=True,
+            env=env_git, timeout=30,
+        )
+        assert rv.returncode == 0, (
+            f"git revert must succeed on a fresh branch: {rv.stderr.strip()[:300]}"
+        )
+
+        # ── Branch must now differ from main (non-empty diff) ──
+        diff = _sp.run(
+            ["git", "diff", "origin/main..HEAD"],
+            cwd=str(wt_path), capture_output=True, text=True,
+            env=env_git, timeout=30,
+        )
+        assert diff.stdout.strip() != "", (
+            "End-to-end: after git revert, branch must differ from main "
+            "(non-empty diff) — empty diff means revert was skipped"
+        )
+
+        # ── _revert_already_applied must now return True ──
+        assert mr._revert_already_applied(merge_sha, str(wt_path)) is True, (
+            "After git revert runs, _revert_already_applied must return True "
+            "so a second attempt skips the revert"
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # FIX-B3: old expired park + fresh re-park (same pid) → BLOCKED
 # ─────────────────────────────────────────────────────────────────────────────
 
