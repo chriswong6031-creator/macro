@@ -1,20 +1,515 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-12T07:01:29.115728+00:00",
+  "generated_at": "2026-07-12T09:40:51.079325+00:00",
   "base": {
-    "sha": "8d9759f1fc863e6f401f1bfe0921a00004e645f4"
+    "sha": "cb33e2f54711a28377d660cf3edf3c974ae01ea6"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
+    {
+      "number": 2390,
+      "title": "test(nw): filter rebalance_pulse fixture-absence gap \u2014 heal main-red test_full_composition_shape",
+      "head_ref": "claude/heal-ws-fixture",
+      "updated_at": "2026-07-12T09:40:30Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "tests/test_world_state.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2389,
+      "title": "feat(ird-w2): International Risk Desk engines \u2014 EM stress, DY contagion, CB desk, DXY smile, velocity boards",
+      "head_ref": "claude/ird-w2-engines",
+      "updated_at": "2026-07-12T09:40:28Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 20,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md",
+        "engine/cb_desk.py",
+        "engine/contagion.py",
+        "engine/forex_dollar.py",
+        "engine/intl_bonds.py",
+        "engine/intl_rates.py",
+        "engine/intl_risk.py",
+        "engine/ird_velocity.py",
+        "engine/neuralweb/world_state.py",
+        "research/INTL_RISK_DESK_MASTERPLAN_BY_FABLE.md",
+        "scripts/build_bonds.py",
+        "scripts/build_intl.py",
+        "tests/test_cb_desk.py",
+        "tests/test_contagion.py",
+        "tests/test_intl_risk.py",
+        "tests/test_ird_velocity.py",
+        "tests/test_ird_wiring.py",
+        "tests/test_signal_bus_doc.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md",
+        "engine/neuralweb/world_state.py"
+      ]
+    },
+    {
+      "number": 2387,
+      "title": "fix(til): wire W9/W10/W11 collect-lane organs \u2014 close 3 dead-wire dag divergences",
+      "head_ref": "feat/til-collect-lane-wiring",
+      "updated_at": "2026-07-12T09:39:00Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "ops/launchd/com.macro.theme-options-witness.plist"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ]
+    },
+    {
+      "number": 2386,
+      "title": "feat(rotation): RC-R14 China \u2014 rotation-event detector port + connect-flow context (display-tier, operator pull-forward)",
+      "head_ref": "claude/rc-cn-rotation",
+      "updated_at": "2026-07-12T09:38:04Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 13,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/asia-close.yml",
+        ".github/workflows/ci.yml",
+        "config/dag.yml",
+        "config/sector_legs_china.json",
+        "config/synapse.yml",
+        "engine/rotation_events.py",
+        "engine/sector_legs_china.py",
+        "research/ROTATION_COMMAND_MASTERPLAN_BY_FABLE.md",
+        "scripts/build_rotation_events_china.py",
+        "site/marketdata/rotation_events_china.json",
+        "templates/sector_cycles_china.html.j2",
+        "templates/subsector_rotation_china.html.j2",
+        "tests/test_rotation_events_china.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/asia-close.yml",
+        ".github/workflows/ci.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ]
+    },
+    {
+      "number": 2385,
+      "title": "fix(ci): filter expected rebalance_pulse gap in test_full_composition_shape (unbreaks neural-web-core on all PRs)",
+      "head_ref": "fix/world-state-rebalance-pulse-gap",
+      "updated_at": "2026-07-12T09:36:59Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "tests/test_world_state.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2384,
+      "title": "feat(hk-baskets): factor-split lenses \u2014 platforms / tech hardware / miners [RATIFICATION PENDING]",
+      "head_ref": "claude/hk-basket-factor-splits",
+      "updated_at": "2026-07-12T09:36:26Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "data/baskets_hk/membership.json",
+        "scripts/seed_hk_baskets.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2383,
+      "title": "feat(metabolism): v7 R-V7-7 \u2014 audit-reject remediation loop, bounded then parked",
+      "head_ref": "claude/metabolism-audit-remediation",
+      "updated_at": "2026-07-12T09:33:42Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 16,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/metabolism-audit.yml",
+        "config/capability_manifest.yml",
+        "config/metabolism_budget.yml",
+        "docs/METABOLISM_ARMING_CHECKLIST.md",
+        "engine/metabolism/audit.py",
+        "engine/metabolism/insight_bus.py",
+        "engine/neuralweb/governance.py",
+        "research/METABOLISM_V7_PR_AUDIT_BY_FABLE.md",
+        "scripts/check_capability_redline.py",
+        "scripts/metabolism_audit.py",
+        "scripts/metabolism_build.py",
+        "scripts/metabolism_merge.py",
+        "tests/test_metabolism_audit.py",
+        "tests/test_metabolism_buildlane.py",
+        "tests/test_metabolism_remediation.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/metabolism-audit.yml",
+        "engine/neuralweb/governance.py",
+        "scripts/check_capability_redline.py"
+      ]
+    },
+    {
+      "number": 2382,
+      "title": "fix(nw): declare dormant-armed lobes honestly \u2014 park review-log + contradictions-ledger SLAs at 9999",
+      "head_ref": "fix/nw-dormant-lobe-slas",
+      "updated_at": "2026-07-12T09:31:08Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "config/synapse.yml",
+        "engine/risk_radar_review.py"
+      ],
+      "protected_paths_touched": [
+        "config/synapse.yml"
+      ]
+    },
+    {
+      "number": 2381,
+      "title": "feat(nw): rotation-events world_state lobe + synapse registration for the rotation family (RC deep-integration)",
+      "head_ref": "claude/rc-nw-wiring",
+      "updated_at": "2026-07-12T09:30:57Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "config/synapse.yml",
+        "engine/neuralweb/world_state.py",
+        "tests/test_world_state.py"
+      ],
+      "protected_paths_touched": [
+        "config/synapse.yml",
+        "engine/neuralweb/world_state.py"
+      ]
+    },
+    {
+      "number": 2380,
+      "title": "fix(allocation): region-aware playbook links + basket-name map (HK/CN/CA 404s)",
+      "head_ref": "claude/alloc-region-links-fix",
+      "updated_at": "2026-07-12T09:29:54Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "templates/allocation.html.j2"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2379,
+      "title": "fix(nw-health): weekend-aware SLA, as_of rollup unpinning, staleness_from override, placeholder rollup",
+      "head_ref": "fix/nw-health-staleness-semantics",
+      "updated_at": "2026-07-12T09:26:28Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml",
+        "engine/neuralweb/health.py",
+        "tests/test_neuralweb_health.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml",
+        "engine/neuralweb/health.py"
+      ]
+    },
+    {
+      "number": 2378,
+      "title": "fix(deploy): terminal-data-setup installs wrapper from vendored terminal-refresh.sh (stop heredoc clobber of live nightly refresh)",
+      "head_ref": "claude/nice-lalande-c56dd8",
+      "updated_at": "2026-07-12T09:17:18Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "app/deploy/terminal-data-setup.sh",
+        "app/deploy/terminal-refresh.sh"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2377,
+      "title": "feat(metabolism): v7 PR audit \u2014 adversarial code review gate before autonomous merge (R-V7-1..6)",
+      "head_ref": "claude/metabolism-pr-audit",
+      "updated_at": "2026-07-12T09:27:48Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 13,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/metabolism-audit.yml",
+        "config/capability_manifest.yml",
+        "config/metabolism_budget.yml",
+        "docs/METABOLISM_ARMING_CHECKLIST.md",
+        "engine/metabolism/audit.py",
+        "engine/neuralweb/governance.py",
+        "research/METABOLISM_V7_PR_AUDIT_BY_FABLE.md",
+        "scripts/check_capability_redline.py",
+        "scripts/metabolism_audit.py",
+        "scripts/metabolism_merge.py",
+        "tests/test_metabolism_audit.py",
+        "tests/test_metabolism_buildlane.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/metabolism-audit.yml",
+        "engine/neuralweb/governance.py",
+        "scripts/check_capability_redline.py"
+      ]
+    },
+    {
+      "number": 2376,
+      "title": "feat(rlt): RLT-R13 \u2014 liquidity quality-state truthfulness: v1.1 lobe mapping, flag-accurate summaries, weekly-aware WALCL stale badge",
+      "head_ref": "claude/focused-meitner-f55ac5",
+      "updated_at": "2026-07-12T09:15:50Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/neuralweb/liquidity_plumbing.py",
+        "engine/regime.py",
+        "research/REBALANCE_LIQUIDITY_TRANSMISSION_MASTERPLAN_BY_FABLE.md",
+        "templates/committee.html.j2",
+        "tests/test_liquidity_plumbing.py"
+      ],
+      "protected_paths_touched": [
+        "engine/neuralweb/liquidity_plumbing.py"
+      ]
+    },
+    {
+      "number": 2375,
+      "title": "fix(rotation): collapse the Rotation Events rail \u2014 severity-sorted, 4 visible + View-all overlay",
+      "head_ref": "claude/rc-events-collapse",
+      "updated_at": "2026-07-12T09:15:45Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "site/subsector_rotation.html",
+        "templates/subsector_rotation.html.j2"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2373,
+      "title": "fix(altdata): collector rot + signal-construction hygiene sweep (dead feeds, pagination, smart-money list, z-score floors, windows)",
+      "head_ref": "claude/altdata-signal-hygiene",
+      "updated_at": "2026-07-12T09:31:51Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "collectors/quiver.py",
+        "engine/altdata.py",
+        "engine/altdata_models.py",
+        "tests/test_altdata_hygiene.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 2372,
+      "title": "fix(altdata-brain): enforce LLM de-escalation-only law + correct false Wilson de-dup comments",
+      "head_ref": "claude/altdata-brain-govern",
+      "updated_at": "2026-07-12T09:27:03Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "engine/altdata_brain.py",
+        "tests/test_altdata_brain_reconcile.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 2371,
+      "title": "feat(altdata): earnings-call transcript + StockTwits sentiment collectors (data accrual, display wiring deferred)",
+      "head_ref": "claude/altdata-sources-w1",
+      "updated_at": "2026-07-12T09:38:01Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 6,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "collectors/finnhub_transcripts.py",
+        "collectors/stocktwits.py",
+        "scripts/collect.py",
+        "tests/test_finnhub_transcripts.py",
+        "tests/test_stocktwits.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 2370,
+      "title": "feat(ui): flow_velocity upgrade \u2014 Terminal stock links, quiet anchors, glance pulse strip",
+      "head_ref": "claude/interesting-yalow-95570c",
+      "updated_at": "2026-07-12T09:12:44Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "site/flow_velocity.html",
+        "templates/flow_velocity.html.j2"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2368,
+      "title": "feat(macro): v5 aurora-glass grid \u2014 command scorecard + popovers, instrument cards, alerts centre (operator-ratified)",
+      "head_ref": "claude/macro-v5-wiring",
+      "updated_at": "2026-07-12T09:09:49Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 7,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".claude/launch.json",
+        "research/macro_html_refresh/V5_WIRING_SPEC.md",
+        "scripts/build_site.py",
+        "site/macro.html",
+        "site/risk_state_live.js",
+        "templates/dashboard.html.j2",
+        "templates/risk_state_live.js"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2365,
+      "title": "fix(nw): unfreeze dt_contra_state + nasdaq-internals lobes (frozen since 07-06/07-07)",
+      "head_ref": "fix/nw-unfreeze-dtcontra-nasdaq",
+      "updated_at": "2026-07-12T09:15:25Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 6,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/ci.yml",
+        "data/baskets_nasdaq/membership.json",
+        "scripts/build_dt_contra_state.py",
+        "scripts/build_subsector_membership.py",
+        "tests/test_build_subsector_membership.py",
+        "tests/test_dt_contra_state.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 2349,
+      "title": "feat(lrv-w3): Leader Radar page complete redesign \u2014 aurora-glass UI, early-entry board, pipeline, receipts",
+      "head_ref": "claude/lrv-w3-ui",
+      "updated_at": "2026-07-12T09:15:04Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "site/leader_radar.html",
+        "site/leaderradar/radar.json",
+        "templates/leader_radar.html.j2",
+        "tests/test_build_leader_radar.py"
+      ],
+      "protected_paths_touched": []
+    },
     {
       "number": 2317,
       "title": "feat(bilingual): china synthesis read/read_zh \u2014 de-slug the feed-intelligence read line at the source",
       "head_ref": "claude/eloquent-goldberg-55b461",
       "updated_at": "2026-07-12T05:39:31Z",
       "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
       "files_count": 4,
       "files_truncated": false,
       "files_error": false,
@@ -133,8 +628,751 @@
       "protected_paths_touched": []
     }
   ],
-  "collisions": [],
+  "collisions": [
+    {
+      "pr_a": 2383,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/metabolism-audit.yml",
+        "config/capability_manifest.yml",
+        "config/metabolism_budget.yml",
+        "docs/METABOLISM_ARMING_CHECKLIST.md",
+        "engine/metabolism/audit.py",
+        "engine/neuralweb/governance.py",
+        "research/METABOLISM_V7_PR_AUDIT_BY_FABLE.md",
+        "scripts/check_capability_redline.py",
+        "scripts/metabolism_audit.py",
+        "scripts/metabolism_merge.py",
+        "tests/test_metabolism_audit.py",
+        "tests/test_metabolism_buildlane.py"
+      ],
+      "shared_count": 13,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2386,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2381,
+      "shared_files": [
+        "config/synapse.yml",
+        "engine/neuralweb/world_state.py"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2387,
+      "pr_b": 2386,
+      "shared_files": [
+        "config/dag.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2386,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml",
+        "config/synapse.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2390,
+      "pr_b": 2385,
+      "shared_files": [
+        "tests/test_world_state.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2390,
+      "pr_b": 2381,
+      "shared_files": [
+        "tests/test_world_state.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2387,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2382,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2371,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2389,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2387,
+      "pr_b": 2382,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2387,
+      "pr_b": 2381,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2387,
+      "pr_b": 2379,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2386,
+      "pr_b": 2383,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2386,
+      "pr_b": 2382,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2386,
+      "pr_b": 2381,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2386,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2386,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2386,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2386,
+      "pr_b": 2371,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2386,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2386,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2385,
+      "pr_b": 2381,
+      "shared_files": [
+        "tests/test_world_state.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 2383,
+      "pr_b": 2379,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2383,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2383,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2383,
+      "pr_b": 2371,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2383,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2383,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2382,
+      "pr_b": 2381,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2382,
+      "pr_b": 2379,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2381,
+      "pr_b": 2379,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2379,
+      "pr_b": 2377,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2379,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2379,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2379,
+      "pr_b": 2371,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2379,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2379,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2377,
+      "pr_b": 2373,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2377,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2377,
+      "pr_b": 2371,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2377,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2377,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2373,
+      "pr_b": 2372,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2373,
+      "pr_b": 2371,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2373,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2373,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2372,
+      "pr_b": 2371,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2372,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2372,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2371,
+      "pr_b": 2365,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2371,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 2365,
+      "pr_b": 2317,
+      "shared_files": [
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    }
+  ],
   "recent_merged": [
+    {
+      "number": 2388,
+      "title": "research(long-hold): Long-Hold Lobe brainstorm \u2014 paper as-received + adjudication (LHB-R1..R11)",
+      "merged_at": "2026-07-12T09:39:09Z"
+    },
+    {
+      "number": 2374,
+      "title": "research(species): land stranded W5 S10 phase-0 pre-registration (Margin-Inflection Reclaim)",
+      "merged_at": "2026-07-12T09:20:48Z"
+    },
+    {
+      "number": 2369,
+      "title": "fix(qledger): cluster-honest Wilson CI \u2014 compute LB on independent date clusters, not correlated obs",
+      "merged_at": "2026-07-12T09:35:33Z"
+    },
+    {
+      "number": 2367,
+      "title": "feat(tech-lab): combo miner \u2014 multi-signal cross-timeframe backtests, Combos tab, working builder",
+      "merged_at": "2026-07-12T09:30:12Z"
+    },
+    {
+      "number": 2366,
+      "title": "feat(cortex): try metered CORTEX_ANTHROPIC_API_KEY rung before shared OAuth when present",
+      "merged_at": "2026-07-12T09:29:10Z"
+    },
+    {
+      "number": 2364,
+      "title": "feat(causal): W28 operator cycle \u2014 entry_quality family live, CHF-R5 per-date collapse, pack renderer fixes + battery/brainstorm artifacts",
+      "merged_at": "2026-07-12T09:22:49Z"
+    },
+    {
+      "number": 2363,
+      "title": "feat(rlt): W1 PR-B \u2014 named TGA impulse + liquidity salience on recovery panel (RLT-R4/R5)",
+      "merged_at": "2026-07-12T09:06:58Z"
+    },
+    {
+      "number": 2362,
+      "title": "feat(rlt): W1 PR-A \u2014 US rebalance calendar + Rebalance Pulse organ (RLT-R1/R2)",
+      "merged_at": "2026-07-12T09:06:13Z"
+    },
+    {
+      "number": 2361,
+      "title": "fix(rlt-r6): drop dead watch-lane enrich, sector_score field, add ordering dep comment",
+      "merged_at": "2026-07-12T09:06:26Z"
+    },
+    {
+      "number": 2360,
+      "title": "feat(rlt): W1 PR-C \u2014 broad index ETF primary-flow proxy (RLT-R3)",
+      "merged_at": "2026-07-12T09:06:54Z"
+    },
+    {
+      "number": 2359,
+      "title": "feat(ui): port top-accent state idiom to per-stock detail pages (#2347 follow-up)",
+      "merged_at": "2026-07-12T09:09:36Z"
+    },
+    {
+      "number": 2358,
+      "title": "feat(rotation): Rotation Command W2 \u2014 replay census, S1/S2 verdicts (ACCRUE), honest late-ruler (RC-R8/R9/R10)",
+      "merged_at": "2026-07-12T08:57:38Z"
+    },
+    {
+      "number": 2356,
+      "title": "ops(vps): run terminal-data nightly under a low-priority systemd scope",
+      "merged_at": "2026-07-12T09:01:56Z"
+    },
+    {
+      "number": 2355,
+      "title": "fix(experiments): come-back sweep 2026-07-12 \u2014 clear 7 ready flags + measuring false-ready + dead forward-ledger stamper",
+      "merged_at": "2026-07-12T09:03:56Z"
+    },
+    {
+      "number": 2354,
+      "title": "feat(t0): T0 beta turn indicator on congress + pick-lab; fix pick-lab snapshot producer NameError",
+      "merged_at": "2026-07-12T09:11:38Z"
+    },
+    {
+      "number": 2353,
+      "title": "feat(rlt): W1 PR-C \u2014 broad index ETF primary-flow proxy (RLT-R3)",
+      "merged_at": "2026-07-12T08:55:37Z"
+    },
+    {
+      "number": 2352,
+      "title": "feat(rlt): W1 PR-D \u2014 standout board sector-stance honesty chips (RLT-R6)",
+      "merged_at": "2026-07-12T08:55:41Z"
+    },
+    {
+      "number": 2351,
+      "title": "prereg(rotation): S1/S2 frozen rulers \u2014 RC-R9 pre-registration (before any outcome is computed)",
+      "merged_at": "2026-07-12T08:36:24Z"
+    },
+    {
+      "number": 2350,
+      "title": "docs(rlt): intake regime-shift postmortem memo + RLT-R4b TGA rebuild watch",
+      "merged_at": "2026-07-12T08:27:49Z"
+    },
+    {
+      "number": 2348,
+      "title": "docs(rlt): Rebalance & Liquidity Transmission masterplan (W0) \u2014 RLT-R1..R12",
+      "merged_at": "2026-07-12T08:21:03Z"
+    },
+    {
+      "number": 2347,
+      "title": "feat(ui): scorecard state accents move to top gradient stripes (rip-card idiom)",
+      "merged_at": "2026-07-12T08:25:56Z"
+    },
+    {
+      "number": 2346,
+      "title": "feat(settings): remove Contrast toggle, default soft palette for everyone",
+      "merged_at": "2026-07-12T08:13:32Z"
+    },
+    {
+      "number": 2345,
+      "title": "feat(lrv-r1e): wire analyst_saturated from finnhub recommendation-trends \u2014 analyst-targets rejected (no rating counts)",
+      "merged_at": "2026-07-12T08:35:20Z"
+    },
+    {
+      "number": 2344,
+      "title": "feat(commodities): sector index + breadth engine + broad commodity roster (P0+P1, data-tier)",
+      "merged_at": "2026-07-12T09:12:14Z"
+    },
+    {
+      "number": 2343,
+      "title": "feat(ird-w1): International Risk Desk substrate \u2014 EM OAS ladder, swap lines, IMF WEO, BIS expansion, CB calendar",
+      "merged_at": "2026-07-12T08:15:17Z"
+    },
+    {
+      "number": 2342,
+      "title": "feat(odds): UI overhaul to approved mockup \u2014 hero CI band, condition cards, motion, richer chart, onboarding, share card (matrix v1.1 vol_rel)",
+      "merged_at": "2026-07-12T07:38:21Z"
+    },
+    {
+      "number": 2341,
+      "title": "feat(metabolism): v6-W3 newborn metabolism \u2014 generic fitness, multi-lobe propose, accountability clock, shadow genesis (R-V6-4..7)",
+      "merged_at": "2026-07-12T07:55:57Z"
+    },
+    {
+      "number": 2340,
+      "title": "fix(tests): w5b integration \u2014 exempt data-*-zh carrier attrs from CJK scan; retire china.html sleeve-link assertion",
+      "merged_at": "2026-07-12T07:35:43Z"
+    },
+    {
+      "number": 2339,
+      "title": "feat(metabolism): v6-W2 genesis gauntlet \u2014 charter kind + deterministic genesis screen (R-V6-2/3)",
+      "merged_at": "2026-07-12T08:03:49Z"
+    },
+    {
+      "number": 2338,
+      "title": "feat(ui): site-wide themed custom scrollbars",
+      "merged_at": "2026-07-12T07:34:47Z"
+    },
+    {
+      "number": 2337,
+      "title": "fix(ui): scroll-safe help tips everywhere \u2014 port #2329 to all 33 .help pages, replace the overflow-clipped hover bridge",
+      "merged_at": "2026-07-12T07:24:09Z"
+    },
+    {
+      "number": 2336,
+      "title": "feat(lrv-w1): LRV-W1 systems wave \u2014 wire RS-rank, insider, skew, basket-corr + early_entry + handoff_context",
+      "merged_at": "2026-07-12T07:52:23Z"
+    },
+    {
+      "number": 2335,
+      "title": "fix(collectors): port adjustment-basis guard to regional ETF/index price stores (china/hk/canada/intl/intl_etf)",
+      "merged_at": "2026-07-12T07:18:56Z"
+    },
+    {
+      "number": 2334,
+      "title": "feat(metabolism): v6 lobe genesis \u2014 masterplan + W1 wake the scout (R-V6-1..8)",
+      "merged_at": "2026-07-12T07:25:28Z"
+    },
+    {
+      "number": 2333,
+      "title": "docs(intl-risk-desk): International Risk Desk masterplan (W0) \u2014 IRD-R1..R13",
+      "merged_at": "2026-07-12T07:20:55Z"
+    },
+    {
+      "number": 2332,
+      "title": "fix(intel-hub): chip bleed, China Lens removal, View-all lists, scorecard decrowd, posture removal",
+      "merged_at": "2026-07-12T07:17:48Z"
+    },
+    {
+      "number": 2331,
+      "title": "ops(key-pool-probe): dirs-only sparse checkout \u2014 cone mode rejects file paths",
+      "merged_at": "2026-07-12T07:15:31Z"
+    },
     {
       "number": 2330,
       "title": "ops(key-pool-probe): sparse checkout + 30m timeout for the self-hosted runner",
@@ -2449,191 +3687,6 @@
       "number": 1850,
       "title": "research(dispersion): HC-RC-1 \u2014 R-1 construction divergence under real co-firing block inference (adjudication pending)",
       "merged_at": "2026-07-07T13:44:56Z"
-    },
-    {
-      "number": 1849,
-      "title": "fix(mri): anchor gasoline_mom on the CPI reference month, not asof's month",
-      "merged_at": "2026-07-07T11:56:09Z"
-    },
-    {
-      "number": 1848,
-      "title": "data(china): block-trade tape archiver + SW-L1 mapping \u2014 F5-01 accrual infra",
-      "merged_at": "2026-07-07T13:34:23Z"
-    },
-    {
-      "number": 1847,
-      "title": "test(legal): ITC-337 exclusion-risk phase-0 \u2014 NULL (parser contamination fix)",
-      "merged_at": "2026-07-07T13:19:57Z"
-    },
-    {
-      "number": 1845,
-      "title": "data(options): W5-B signed-tape pilot + resumable backfill state machine (20 names x 60d)",
-      "merged_at": "2026-07-07T13:42:28Z"
-    },
-    {
-      "number": 1844,
-      "title": "data(consumer): TSA daily throughput collector + display product (2019->)",
-      "merged_at": "2026-07-07T13:51:55Z"
-    },
-    {
-      "number": 1841,
-      "title": "research: time-confound re-check queue Phase A \u2014 gate amendments (R1-A1, L3-A1) + citation guards",
-      "merged_at": "2026-07-07T11:15:57Z"
-    },
-    {
-      "number": 1839,
-      "title": "research(cycle): CN-HAR-2 prereg \u2014 cn_sector analog calibration + forward confirmation",
-      "merged_at": "2026-07-07T10:49:36Z"
-    },
-    {
-      "number": 1838,
-      "title": "research(cycle): HAR-1 analog-retrieval evaluation \u2014 promoted_null (Wave 1)",
-      "merged_at": "2026-07-07T10:46:55Z"
-    },
-    {
-      "number": 1837,
-      "title": "research(cycle): FT-OSC-2 prereg \u2014 down-only oscillator re-test on post-2026-07 accrual",
-      "merged_at": "2026-07-07T10:09:06Z"
-    },
-    {
-      "number": 1836,
-      "title": "feat(cycle): phase-clock engine + PHASE-CLOCK-1 evaluation (Wave 1, promoted_null)",
-      "merged_at": "2026-07-07T10:07:20Z"
-    },
-    {
-      "number": 1835,
-      "title": "research(cycle-w1): FALS-OSC kill-switch trial \u2014 oscillator covariate family NULL",
-      "merged_at": "2026-07-07T10:06:48Z"
-    },
-    {
-      "number": 1834,
-      "title": "fix(heartbeat): wire a working alert channel (dead-man's switch was ringing into a void)",
-      "merged_at": "2026-07-07T09:08:41Z"
-    },
-    {
-      "number": 1833,
-      "title": "feat(stock): flow-to-price on the per-stock page \u2014 13F since-filing + short-flow z-score",
-      "merged_at": "2026-07-07T09:37:35Z"
-    },
-    {
-      "number": 1832,
-      "title": "feat(mri): Package D \u2014 Release Radar UI on the macro page",
-      "merged_at": "2026-07-07T08:56:10Z"
-    },
-    {
-      "number": 1831,
-      "title": "feat(mri): Package C \u2014 nightly release-forecast producer + forward ledger + NW registration",
-      "merged_at": "2026-07-07T08:55:05Z"
-    },
-    {
-      "number": 1830,
-      "title": "feat(heartbeat): committed-data-freeze tripwire (catch silent stale-data freezes)",
-      "merged_at": "2026-07-07T08:36:25Z"
-    },
-    {
-      "number": 1829,
-      "title": "feat(cycle): honest headline \u2014 hazard-first P(turn\u22646m), overdue past-tense ref, fired-falsifier demotion",
-      "merged_at": "2026-07-07T09:37:40Z"
-    },
-    {
-      "number": 1828,
-      "title": "research(mri): Package E \u2014 release playbook: descriptive surprise\u2192market transmission study",
-      "merged_at": "2026-07-07T08:32:04Z"
-    },
-    {
-      "number": 1827,
-      "title": "chore(experiments): stock-top-hazard arm \u2014 conditional come-back clock 2026-10-07",
-      "merged_at": "2026-07-07T09:37:32Z"
-    },
-    {
-      "number": 1826,
-      "title": "feat(prophet): W1 \u2014 management engine + origination bridge + display artifacts (display-only)",
-      "merged_at": "2026-07-07T08:41:47Z"
-    },
-    {
-      "number": 1825,
-      "title": "feat(mri): Package B \u2014 release_forecast engine (CPI/NFP pre-print models) + PIT backtest",
-      "merged_at": "2026-07-07T08:26:45Z"
-    },
-    {
-      "number": 1824,
-      "title": "feat(cpi-lake): monthly oscillator PIT columns + Wave 0 preregistration",
-      "merged_at": "2026-07-07T09:37:37Z"
-    },
-    {
-      "number": 1823,
-      "title": "fix(pipeline): --autostash rebase-pushes so collected data can't be stranded (China/US data freeze)",
-      "merged_at": "2026-07-07T08:15:43Z"
-    },
-    {
-      "number": 1822,
-      "title": "feat(mri): Package A \u2014 Macro Release Intelligence masterplan + data spine",
-      "merged_at": "2026-07-07T08:07:36Z"
-    },
-    {
-      "number": 1821,
-      "title": "fix(measurement): replace hardcoded stamp count with derived grand total",
-      "merged_at": "2026-07-07T09:38:55Z"
-    },
-    {
-      "number": 1820,
-      "title": "feat(options): Package E \u2014 strike\u00d7expiry matrix engine + one-shot publisher",
-      "merged_at": "2026-07-07T07:30:17Z"
-    },
-    {
-      "number": 1819,
-      "title": "feat(committee): translate the dense-web small nodes to Chinese",
-      "merged_at": "2026-07-07T07:08:52Z"
-    },
-    {
-      "number": 1818,
-      "title": "fix(alerts): watchlist sentinel \u2014 adapt fetch to live two-table Supabase schema, require operator UUID",
-      "merged_at": "2026-07-07T07:26:04Z"
-    },
-    {
-      "number": 1817,
-      "title": "fix(neural-web): heal registry-count drift 226->232 (momoedge Package A)",
-      "merged_at": "2026-07-07T06:37:02Z"
-    },
-    {
-      "number": 1816,
-      "title": "feat(gex): Package C \u2014 gex_structure_state emitter (6-state regime, display-only)",
-      "merged_at": "2026-07-07T06:47:45Z"
-    },
-    {
-      "number": 1815,
-      "title": "feat(options): Package A \u2014 options sensor contract (schemas + chain-heat aggregator)",
-      "merged_at": "2026-07-07T06:10:42Z"
-    },
-    {
-      "number": 1814,
-      "title": "feat(committee): new settings-gear menu + Chinese node labels + reconcile MDXAuth",
-      "merged_at": "2026-07-07T06:22:33Z"
-    },
-    {
-      "number": 1813,
-      "title": "feat(neural-web): 'all nodes' toggle restores the full dense synapse web",
-      "merged_at": "2026-07-07T05:49:38Z"
-    },
-    {
-      "number": 1812,
-      "title": "ops(live-flow): pin liveflow launchd lane to dedicated deploy worktree",
-      "merged_at": "2026-07-07T05:30:29Z"
-    },
-    {
-      "number": 1811,
-      "title": "research(momoedge): competitive RE + master build docket (options terminal + Oracle)",
-      "merged_at": "2026-07-07T05:29:22Z"
-    },
-    {
-      "number": 1810,
-      "title": "feat(alerts): watchlist buy-zone sentinel \u2014 Supabase watchlist x buy-zone enter-detection -> alert center + Discord (B6)",
-      "merged_at": "2026-07-07T05:38:49Z"
-    },
-    {
-      "number": 1809,
-      "title": "feat(nasdaq-internals): archetype-group taxonomy + descriptive internals artifact (TI-R2/R3/R5)",
-      "merged_at": "2026-07-07T05:00:22Z"
     }
   ]
 }
