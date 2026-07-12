@@ -452,6 +452,10 @@ class TestRealRegistryFirewallClean:
             # LHB-W3 A1 Falsifier Packet (LHB-R2/R3) — display-only, horizon_role=hold_thesis
             "long-hold-falsifier-packets",
             "long-hold-falsifier-packets-manifest",
+            # LHB-W3 A2 Pricing-Power Monitor (gross-margin leg pilot) — display-only
+            "edgar-statements-quarterly",
+            "pricing-power-states",
+            "pricing-power-manifest",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {

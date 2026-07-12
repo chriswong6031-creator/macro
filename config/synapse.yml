@@ -6169,6 +6169,116 @@ artifacts:
       annualised return estimates — PR-N stays W3-locked behind G1 retest.
       fdr_family=long_hold (LH-R5).
 
+  # ---------------------------------------------------------------------------
+  # LHB-W3 A2: Pricing-Power Monitor — input store + output artifacts
+  # Gross-margin leg only (receivables leg waits for LHB-R6 backfill).
+  # Adjudication: LONG_HOLD_LOBE_BRAINSTORM_ADJUDICATION_BY_FABLE.md §A2
+  #               FALSIFIER_FIELD_BOOK_ADJUDICATION_BY_FABLE.md FFB-R7/R8/R9
+  # ---------------------------------------------------------------------------
+
+  # --- LHB-W3 A2: Input store (first consumer registration) ---
+  edgar-statements-quarterly:
+    path: data/edgar/statements_quarterly.parquet
+    format: parquet
+    producer: scripts/backfill_edgar_quarterly.py
+    known_extra_writers:
+      - "scripts/research/build_pricing_power_monitor.py — reads (first consumer)"
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: filed
+    freshness_sla_hours: 8760
+    schema: statements_quarterly.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - scripts/research/build_pricing_power_monitor.py
+    external_consumers: []
+    notes: >
+      Quarterly EDGAR financial statement data (~62k rows, ~1,507 tickers as of 2026-07).
+      Schema: ticker, fiscal_year (int), fiscal_quarter (int 1-4), period_end (date str),
+      filed (date str — real SEC filed date), as_of, revenue, cogs, gross_profit,
+      op_income, ni, cfo, capex, shares, repurchases, long_term_debt, current_debt,
+      cash, net_debt, receivables, inventory, payables, contract_liabilities.
+      Producer: scripts/backfill_edgar_quarterly.py (on-demand backfill).
+      LHB-R6 enrichment (receivables/inventory/payables/contract_liabilities) uses
+      real XBRL tag chains; these columns exist in the store but coverage is partial.
+      First consumer: scripts/research/build_pricing_power_monitor.py (LHB-W3 A2).
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert triage,
+      top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+
+  # --- LHB-W3 A2: Output — per-ticker pricing-power states parquet ---
+  pricing-power-states:
+    path: data/research/pricing_power_states.parquet
+    format: parquet
+    producer: scripts/research/build_pricing_power_monitor.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: asof_date
+    freshness_sla_hours: 8760
+    schema: pricing_power_states.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - scripts/research/build_pricing_power_monitor.py
+    external_consumers: []
+    notes: >
+      LHB-W3 A2 (Quarterly Double-Confirmation Pricing-Power Monitor). Per-ticker
+      gross-margin deterioration state, gross-margin leg only (receivables leg waits
+      for LHB-R6 quarterly enrichment). One row per ticker.
+      Fields: ticker, asof_date, state (not_observed|challenged|unverifiable),
+      trigger_quarters (JSON — up to 2 filing dicts with fiscal_year, fiscal_quarter,
+      filed, gm_change_bp, gm_cur_pct, gm_prior_pct, rev_yoy_pct, peer_n,
+      peer_median_change_bp, peer_gate), peer_n, peer_median_change_bp,
+      coverage_n_quarters, _display_only, _horizon_role, _version, _schema.
+      Fire condition (review-opener per FFB-R7 — magnitude alone does not separate;
+      peer gate is the discriminator per FFB-R9): TWO consecutive filed quarters with
+      (a) revenue YoY > 0, (b) gm YoY change <= -100bp, (c) same-sector peer median
+      gm change > company change + 50bp (company-specific deterioration).
+      PIT: quarters visible only from their real SEC filed date.
+      Fiscal alignment: Q2 vs Q2 prior year only (never calendar-adjacent).
+      Peer coverage: min 15 same-sector names; below threshold → unverifiable.
+      NEVER state=broken (LHB-R3). Thresholds are review-openers only (FFB-R7).
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert triage,
+      top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+
+  # --- LHB-W3 A2: Output — manifest JSON ---
+  pricing-power-manifest:
+    path: data/research/pricing_power_manifest.json
+    format: json
+    producer: scripts/research/build_pricing_power_monitor.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 8760
+    schema: pricing_power_manifest.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - scripts/research/build_pricing_power_monitor.py
+    external_consumers: []
+    notes: >
+      Companion manifest for pricing_power_states.parquet. Contains state distribution
+      counts (n_tickers, n_challenged, n_not_observed, n_unverifiable, n_with_2plus_quarters),
+      per-sector peer_n summary table (median/min/max peer_n per sector), elapsed seconds,
+      as_of timestamp, and firewall annotation.
+      NO outcome-conditioned aggregates of any kind (WA-R7 fence).
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert triage,
+      top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+
   # --- Long-Hold LHB-W2c: C1 symbol-directory archival (LHB-R8) ---
   long-hold-symbol-directory:
     path: data/symbol_directory/manifest.json

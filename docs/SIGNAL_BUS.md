@@ -36,7 +36,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | intraday-flow-tracker | 3 |
 | ird | 5 |
 | leader-radar | 5 |
-| long-hold | 33 |
+| long-hold | 36 |
 | macro-context-rail | 15 |
 | macro-release-intel | 6 |
 | mag7-regime | 3 |
@@ -86,7 +86,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 262 |
+| display | 265 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -95,7 +95,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 412 |
+| git | 415 |
 | gitignored-local | 11 |
 | r2 | 7 |
 
@@ -356,6 +356,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold-delivery-waterfall-panel | `data/research/delivery_waterfall_panel.json` | json | on-demand | display | 2 | 0 |
 | breakaway-watch-states | `data/research/breakaway_watch.parquet` | parquet | daily-engine | display | 1 | 0 |
 | capital-allocation-delta | `embedded: capital_allocation block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+| edgar-statements-quarterly | `data/edgar/statements_quarterly.parquet` | parquet | on-demand | display | 1 | 0 |
 | expect-drift-ruler-p-results | `data/research/expect_drift_ruler_p_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | great-company-trap | `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | insider-lh-panel | `data/research/insider_lh_panel.parquet` | parquet | on-demand | display | 1 | 0 |
@@ -379,6 +380,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold-thesis-funnel-states-manifest | `data/research/thesis_funnel_states_manifest.json` | json | on-demand | display | 1 | 0 |
 | moat-falsifier-sensors | `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | per-fire-sector-benchmark | `data/research/per_fire_sector_benchmark.parquet` | parquet | on-demand | display | 1 | 0 |
+| pricing-power-manifest | `data/research/pricing_power_manifest.json` | json | on-demand | display | 1 | 0 |
+| pricing-power-states | `data/research/pricing_power_states.parquet` | parquet | on-demand | display | 1 | 0 |
 | ticker-sectors | `data/breadth/ticker_sectors.parquet` | parquet | on-demand | display | 1 | 0 |
 | winner-autopsy-panel | `data/research/winner_autopsy_panel.json` | json | daily-engine | display | 1 | 0 |
 | winner-episodes | `data/research/winner_episodes.parquet` | parquet | on-demand | display | 1 | 0 |
@@ -1224,6 +1227,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/neuralweb/confluence_sequence.py`
 - **extra writers:**
   - scripts/build_confluence_strength.py — invokes confluence_sequence.append_tape_and_build_sequence
+
+### edgar-statements-quarterly
+
+- **path:** `data/edgar/statements_quarterly.parquet`
+- **declared producer:** `scripts/backfill_edgar_quarterly.py`
+- **extra writers:**
+  - scripts/research/build_pricing_power_monitor.py — reads (first consumer)
 
 ### event-windows
 

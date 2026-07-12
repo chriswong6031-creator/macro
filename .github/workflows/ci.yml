@@ -186,6 +186,10 @@ on:
       - "data/neuralweb/read_gate_baseline.json"
       - "tests/test_synapse_read_gate.py"
       - "tests/test_horizon_firewall.py"
+      # LHB-W3 A2 pricing-power pilot: engine + builder + test must all trigger the gate.
+      - "engine/pricing_power_monitor.py"
+      - "scripts/research/build_pricing_power_monitor.py"
+      - "tests/test_pricing_power_monitor.py"
       # neural-web program (W0): synapse.yml registry, gen_signal_bus_doc generator,
       # committed SIGNAL_BUS.md, and the three test files must all trigger the gate so a
       # config edit that produces a stale doc — or an envelope refactor that breaks
@@ -838,7 +842,7 @@ jobs:
       - name: factor boundary selftest (guard fires on planted violations)
         run: python3 scripts/check_factor_boundaries.py --selftest
       - name: synapse read-gate unit tests
-        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py tests/test_delivery_waterfall.py -q
+        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py tests/test_delivery_waterfall.py tests/test_pricing_power_monitor.py -q
       - name: factor deescalation shadow + boundary guard tests
         run: python -m pytest tests/test_factor_deescalation_shadow.py -q
       - name: edgar 8-K item-code expansion unit tests (LHB-R7)
