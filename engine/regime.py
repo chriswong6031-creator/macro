@@ -190,10 +190,14 @@ def liquidity_quality(f: pd.DataFrame, overlay: str | None = None,
         if nv > 0 and rising:  # tighter than average AND tightening
             stress["confirming_stress"] = True
 
-    # surfaced ffill staleness (a flat walcl was masking the 07-01 base effect)
+    # Data staleness on the raw (unshifted) WALCL store series — H.4.1 is weekly
+    # so a flat read of 0-4 business days is normal cadence (5 with a holiday);
+    # >5 means a missed print. This measures data latency, not the lagged
+    # classifier view used for quality labelling above.
     walcl_stale_days = None
-    if walcl is not None and walcl.notna().sum() > 1:
-        w = walcl.dropna()
+    w_raw = sub.get("walcl_bn")
+    if w_raw is not None and w_raw.notna().sum() > 1:
+        w = w_raw.dropna()
         changed = w.ne(w.shift())
         last_chg = changed[changed].index[-1] if changed.any() else w.index[0]
         walcl_stale_days = int((w.index > last_chg).sum())

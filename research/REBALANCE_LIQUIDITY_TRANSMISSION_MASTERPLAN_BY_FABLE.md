@@ -246,6 +246,34 @@ user-facing string (no translated `title=`); design-doctrine read required befor
 surface work; existing chip idioms only in W1 (no new surface idiom without
 mockup ratification).
 
+**RLT-R13 — Quality-state truthfulness amendment (operator-ratified 2026-07-12; lobe contract v1.1).**
+Postmortem addendum: with RRP structurally below the (unverified-prior) $100bn
+floor since 2025-12-31, `rrp_exhausted` became a regime constant — making
+`benign_liquidity_tailwind`, `neutral_with_buffer` and
+`mechanical_liquidity_tailwind` unreachable, so every 2026 expansion rendered
+"Stress Expansion" even with `confirming_stress=false` (2026-07-10: HY-OAS z
+0.03, NFCI −0.515 loose), and the committee card asserted stress its own gauges
+denied. Amended lobe mapping (`_derive_headline_state`; the H3 regime label in
+`engine/regime.py` / PERCEPTION_CONTRACTS is UNCHANGED — this is a
+lobe-translation amendment only): stress-expansion & confirming_stress →
+`stress_liquidity_expansion`; & !confirming_stress & mechanical (fed_share<0.5)
+→ `mechanical_liquidity_tailwind` (RRP exhaustion no longer forces stress); &
+!confirming_stress & fed_share≥0.5 → `benign_liquidity_tailwind`; fed_share
+unknown → conservative `stress_liquidity_expansion`. RRP exhaustion becomes an
+explicit plain-word caveat appended to every summary it colors ("RRP buffer is
+empty — the next liquidity drain hits bank reserves directly"): a forward
+hazard, never a present-stress assertion. Headline summaries are flag-accurate —
+never print an OR-disjunction the engine has already resolved. WALCL staleness:
+`walcl_stale_days` now measures the raw store series (data staleness, not the
+3-bd-lagged classifier view); the committee chip flags only >5 business days (a
+missed weekly H.4.1 cycle), ending the false amber shown on ~40% of on-schedule
+days. Authority unchanged: `entry_effect` mapping and `score_raise=false` stay
+constant; the only entry-tailwind wire remains the cycle-ladder 21d nudge.
+Non-collision with RLT-R4: R4 bars the *impulse* from upgrading quality; R13
+corrects the quality machinery itself by ruling. The 2026-07-02 incident lesson
+is preserved: a TGA-drawdown expansion never reads "benign" — it reads
+Mechanical Tailwind (amber, low-quality, transient).
+
 ---
 
 ## §2 What RLT will NOT build (standing kills honored)
@@ -276,6 +304,8 @@ mockup ratification).
   WRESBAL phase-label fix.
 - PR-C: RLT-R3 broad ETF flow proxy extension.
 - PR-D: RLT-R6 standout sector-stance/disagreement chips.
+- PR-E: RLT-R13 quality-state truthfulness — lobe mapping amendment +
+  flag-accurate summaries + weekly-aware WALCL stale chip (ruling + code, same PR).
 
 **W2 (next):** RLT-R7 prereg doc + execution on historical PIT data; RLT-R4b
 Treasury financing-estimates parser (TGA rebuild watch); RLT-R8 RC contribution
