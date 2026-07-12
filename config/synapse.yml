@@ -3755,6 +3755,7 @@ artifacts:
       - engine/neuralweb/cortex.py
       - engine/neuralweb/mastermind_context.py
       - scripts/build_macro_context.py
+      - engine/neuralweb/brief_context.py
     external_consumers:
       - mastermind:context
     notes: >
@@ -3878,7 +3879,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/brief_context.py
     notes: >
       DISPLAY-ONLY. R-V4-7: per-subject persistence_streak, strength_slope (Theil-Sen
       robust slope over trailing K sessions), and state machine
@@ -4238,6 +4240,7 @@ artifacts:
     consumers:
       - engine/neuralweb/mastermind_context.py
       - engine/neuralweb/daily_brief.py
+      - engine/neuralweb/brief_context.py
     external_consumers:
       - mastermind:context
     notes: >
@@ -6624,6 +6627,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/evidence_clock.py
+      - engine/neuralweb/brief_context.py
     external_consumers:
       - mastermind:anchor
     notes: >
@@ -7308,6 +7312,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - templates/committee.html.j2
+      - engine/neuralweb/brief_context.py
     external_consumers: []
     notes: >
       PR-4 M2 deterministic attention surface. Zero LLM — all items are template-filled
@@ -7440,6 +7445,7 @@ artifacts:
       - engine/neuralweb/ask_brain.py
       - engine/neuralweb/mastermind_context.py
       - engine/neuralweb/daily_brief.py
+      - engine/neuralweb/brief_context.py
     external_consumers: []
     notes: >
       TIL W0 (PR-A) thematic state composition organ. Tolerant-read composition over
@@ -8004,6 +8010,7 @@ artifacts:
       - engine/neuralweb/ask_brain.py
       - engine/neuralweb/contradictions.py
       - engine/neuralweb/causal_inventory.py
+      - engine/neuralweb/brief_context.py
     external_consumers: []
     notes: >
       DISPLAY/DE-ESCALATION ONLY — no score raise, no ranking authority.
@@ -8467,6 +8474,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/confluence.py  # R-ORTH PR-4: reads lobes block to embed independence summary in confluence_graph.json (display-only)
+      - engine/neuralweb/brief_context.py
     external_consumers: []
     notes: >
       R-ORTH PR-3 (RUL-ORTH-1..11) — covariance spine rail (not a lobe).
@@ -8650,6 +8658,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/check_evidence_clock.py
+      - engine/neuralweb/brief_context.py
     external_consumers: []
     notes: >
       Global Evidence Clock v1 (EC-R1..R8) — read-only display-only aggregator.
@@ -10227,7 +10236,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/brief_context.py
     external_consumers: []
     notes: >
       CHF W3 lab heartbeat: schema=neuralweb.causal_lab_state.v1. Heartbeat +
