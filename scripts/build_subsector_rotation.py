@@ -27,10 +27,44 @@ def _data(*parts: str) -> Path:
     return config.data_dir().joinpath(*parts)
 
 
+def _inject_megacap_node(tree: list, snap: dict) -> None:
+    """RC-R4 (Rotation Command): the mega-cap generals cohort has no Finviz group, so
+    the 06-25 rotate-IN had no home in this taxonomy — semis' breakdown ranked 255-268
+    while the Mag-7 bid could only surface via adjacent proxies. Inject ONE synthetic
+    node whose perf comes from the local equal-weight Mag-7 composite (members from
+    data/baskets/membership.json — never re-curated here). Quadrant math unchanged;
+    the node rides the same cross-sectional metrics as every Finviz group. In-memory
+    only; the committed snapshot files are not touched. Degrade-safe."""
+    from engine import sector_legs
+    members = (sector_legs.load_membership().get("mag7") or {}).get("members") or []
+    tickers = [m["ticker"] for m in members if m.get("ticker")]
+    if not tickers:
+        raise ValueError("mag7 membership empty")
+    close, meta = sector_legs._ew_close(tickers)
+    if close is None:
+        raise ValueError(f"mag7 composite unavailable ({meta})")
+    perf = sr.perf_from_close(close, asof=snap.get("asof") or None)
+    if not perf:
+        raise ValueError("mag7 composite too thin for horizon returns")
+    tree.append({"theme": "Mega-Cap", "key": "megacap", "subsectors": [
+        {"key": "megacapgenerals", "name": "Mag 7 Generals",
+         "description": "Local equal-weight Mag-7 composite (Rotation Command RC-R4) — "
+                        "our own store, not a Finviz group",
+         "members": tickers}]})
+    snap.setdefault("subsector_perf", {})["megacapgenerals"] = perf
+
+
 def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict:
     site = site or (config.ROOT / config.load()["storage"]["site_dir"])
     tree = json.loads(_data("themes_heatmap", "themes_tree.json").read_text())
     snap = json.loads(_data("themes_heatmap", "perf_snapshot.json").read_text())
+
+    # RC-R4: synthetic mega-cap node (additive, never fatal — a failed injection
+    # leaves the desk exactly as it was before Rotation Command).
+    try:
+        _inject_megacap_node(tree, snap)
+    except Exception as e:  # noqa: BLE001
+        log.warning("mega-cap node injection failed: %s", e)
 
     generated_utc = generated_utc or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     payload = sr.compute_rotation(

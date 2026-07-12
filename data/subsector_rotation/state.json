@@ -1067,6 +1067,12 @@
     "quadrant": "leading",
     "theme": "Aging Population & Longevity"
   },
+  "megacapgenerals": {
+    "emerging": true,
+    "name": "Mag 7 Generals",
+    "quadrant": "leading",
+    "theme": "Mega-Cap"
+  },
   "nanotechelectronics": {
     "emerging": false,
     "name": "Electronics",
@@ -1176,7 +1182,7 @@
     "theme": "Real Estate & REITs"
   },
   "realestateittelecom": {
-    "emerging": true,
+    "emerging": false,
     "name": "IT & Telecom",
     "quadrant": "improving",
     "theme": "Real Estate & REITs"
@@ -1602,7 +1608,7 @@
     "theme": "Wearables"
   },
   "wearablessport": {
-    "emerging": true,
+    "emerging": false,
     "name": "Sport",
     "quadrant": "improving",
     "theme": "Wearables"

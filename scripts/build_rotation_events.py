@@ -70,6 +70,26 @@ def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict
                                           generated_utc=generated_utc)
     payload["fragmented_sectors"] = [r["key"] for r in frag["sectors"] if r["fragmented"]]
     _write_json(site / "marketdata" / "rotation_events.json", payload)
+
+    # RC-R5: creation alerts into the shared rotation alert store (same schema the
+    # triage already reads; dedup by id, prune like subsector_rotation_alerts.rebuild).
+    try:
+        from engine import subsector_rotation_alerts as sra
+        new_alerts = rotation_events.to_alerts(payload)
+        if new_alerts:
+            import pandas as pd
+            by_id = {e["id"]: e for e in sra.load_events()}
+            for e in new_alerts:
+                by_id.setdefault(e["id"], e)
+            merged = list(by_id.values())
+            ref = max(pd.Timestamp(e["ts"]) for e in merged)
+            merged = [e for e in merged if pd.Timestamp(e["ts"]) >= ref - pd.Timedelta(days=sra.KEEP_DAYS)]
+            merged.sort(key=lambda e: e["ts"])
+            sra.write_events(merged)
+            log.info("rotation-event alerts: %d fired (%s)", len(new_alerts),
+                     ", ".join(a["asset"] for a in new_alerts[:4]))
+    except Exception as e:  # noqa: BLE001 — alerts are additive, never fatal
+        log.warning("rotation-event alerts failed: %s", e)
     log.info("rotation events: %d active (%s), %d created, %d closed — as_of %s",
              len(payload["active"]),
              ", ".join(e["id"] for e in payload["active"][:4]) or "none",

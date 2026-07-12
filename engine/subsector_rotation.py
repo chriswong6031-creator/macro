@@ -126,6 +126,31 @@ def _rotation_metrics(perf_by_key: Mapping[str, Mapping[str, float]]) -> dict[st
     return out
 
 
+def perf_from_close(close, asof: str | None = None) -> dict | None:
+    """Finviz-convention horizon returns (PERCENT) from a daily close series — the feed
+    for SYNTHETIC rotation nodes computed from local stores (Rotation Command RC-R4: the
+    mega-cap generals cohort has no Finviz group, so its rotate-IN flows had no home in
+    this taxonomy). Sessions for 1W/1M/3M/6M/1Y; calendar anchors for MTD/YTD (last close
+    of the prior month/year). None when the series is too thin."""
+    import pandas as pd
+    s = close.dropna()
+    if asof:
+        s = s.loc[:asof]
+    if len(s) < 260:
+        return None
+    last = float(s.iloc[-1])
+    out: dict = {}
+    for h, n in (("1D", 1), ("1W", 5), ("1M", 21), ("3M", 63), ("6M", 126), ("1Y", 252)):
+        prev = float(s.iloc[-(n + 1)])
+        out[h] = round((last / prev - 1.0) * 100.0, 2) if prev else None
+    end = s.index[-1]
+    for h, anchor in (("MTD", pd.Timestamp(end.year, end.month, 1)),
+                      ("YTD", pd.Timestamp(end.year, 1, 1))):
+        prior = s.loc[:anchor - pd.Timedelta(days=1)]
+        out[h] = round((last / float(prior.iloc[-1]) - 1.0) * 100.0, 2) if len(prior) else None
+    return out
+
+
 def compute_rotation(
     tree: Sequence[Mapping],
     subsector_perf: Mapping[str, Mapping[str, float]],

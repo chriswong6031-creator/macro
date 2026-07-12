@@ -225,6 +225,23 @@ def test_coldstart_replay_equals_incremental_stepping():
         assert ra["started"] == ia["started"]
 
 
+def test_to_alerts_only_announces_tonights_creations():
+    a, b = _aligned_pair()
+    state, active, created, _ = re_.step_pairs(_sectors(a, b), {})
+    payload = {"as_of": "2026-07-10", "generated_utc": "2026-07-10 05:00 UTC",
+               "active": active, "created_tonight": created}
+    alerts = re_.to_alerts(payload)
+    assert len(alerts) == len(created) > 0
+    al = alerts[0]
+    assert al["type"] == "rotation_event" and al["source"] == "rotation"
+    assert al["severity"] in ("high", "minor")
+    assert "Rotation event" in al["headline"] and "轮动事件" in al["headline_zh"]
+    assert al["context"]["started"]
+    # an active-but-not-new event must NOT re-alert
+    payload["created_tonight"] = []
+    assert re_.to_alerts(payload) == []
+
+
 def test_run_nightly_persists_state_ledger_and_payload(tmp_path):
     a, b = _aligned_pair()
     payload = re_.run_nightly(_sectors(a, b), tmp_path, generated_utc="test")
