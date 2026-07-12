@@ -11603,3 +11603,53 @@ artifacts:
       IRD-W1 Phase-5: Fed liquidity and credit facility loans outstanding (WLCFLL, $M weekly).
       Declared in config.yml fred.series.swap_lines. Context complement to SWPT.
       authority.may_rank/gate/size/escalate=false.
+
+  # --- RC-R11: washout counter-read chip (JSON artifact) ---
+  washout-counter-read-latest:
+    path: data/washout_counter_read/latest.json
+    format: json
+    producer: scripts/build_rotation_events.py
+    known_extra_writers: []
+    owner_program: rotation-command
+    cadence: daily-engine
+    storage: gitignored-local
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: washout_counter_read.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/market_state.py
+    external_consumers: []
+    notes: >
+      RC-R11 washout counter-read chip. Fired when growth-scare score >=90 AND SPY
+      at depth extreme (IHM washout_turn when live; 63d drawdown percentile >=p90
+      fallback). Display/context only — no rank/gate/size/stance change. The 06-26
+      growth-scare-91-on-the-low is the labeled pattern this chip names.
+      authority.may_rank/gate/size/escalate=false.
+
+  # --- RC-R11: washout counter-read ledger (append-only, fire-only rows) ---
+  washout-counter-read-ledger:
+    path: data/washout_counter_read/ledger.jsonl
+    format: jsonl
+    producer: scripts/build_rotation_events.py
+    known_extra_writers: []
+    owner_program: rotation-command
+    cadence: daily-engine
+    storage: gitignored-local
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: washout_counter_read.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      RC-R11 append-only fire ledger. Only rows where fired=true are appended (RC-R2
+      law: rows append, supersede by reference, never re-dated/deleted). Expected-NULL
+      on most nights. Sized for grading; not exposed to users.
+      authority.may_rank/gate/size/escalate=false.

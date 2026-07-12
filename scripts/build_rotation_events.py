@@ -102,11 +102,34 @@ def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict
              ", ".join(e["id"] for e in payload["active"][:4]) or "none",
              len(payload["created_tonight"]), len(payload["closed_tonight"]),
              payload["as_of"])
+
+    # RC-R11: washout counter-read chip — capitulation-zone context (display-only, ledgered)
+    _wcr_block: dict = {}
+    try:
+        from engine import washout_counter_read as _wcr
+        import json as _json
+        _latest_path = config.data_dir() / "regime" / "latest.json"
+        _latest = _json.loads(_latest_path.read_text()) if _latest_path.exists() else {}
+        _rr = _latest.get("risk_radar")
+        _ihm = _latest.get("index_momentum")
+        _wcr_block = _wcr.compute(_rr, _ihm)
+        _wcr_dir = config.data_dir() / "washout_counter_read"
+        _wcr_dir.mkdir(parents=True, exist_ok=True)
+        (_wcr_dir / "latest.json").write_text(_json.dumps(_wcr_block, separators=(",", ":"), ensure_ascii=False))
+        if _wcr_block.get("fired"):
+            _wcr.append_ledger(_wcr_block, config.data_dir())
+        log.info("washout_counter_read: fired=%s scare=%.0f depth_basis=%s",
+                 _wcr_block.get("fired"), _wcr_block.get("scare_pctile") or 0,
+                 _wcr_block.get("depth_basis") or "none")
+    except Exception as _e:  # noqa: BLE001 — additive, never fatal
+        log.warning("washout_counter_read failed: %s", _e)
+
     return {"sectors": len(sectors), "legs": n_legs,
             "fragmented": frag["n_fragmented"],
             "active_events": len(payload["active"]),
             "created": payload["created_tonight"],
-            "as_of": payload["as_of"]}
+            "as_of": payload["as_of"],
+            "washout_counter_read": _wcr_block.get("fired", False)}
 
 
 def main(argv: list[str] | None = None) -> int:

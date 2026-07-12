@@ -474,6 +474,9 @@ def _radar_to_rd(rr: dict) -> dict:
         # below from the radar trajectory + the liquidity tide. Stays None on the intl radars and
         # the no-source calm radar, so the card's {% if rd.recovery %} guard simply skips it.
         "recovery": None,
+        # RC-R11: washout counter-read chip — capitulation-zone context (display-only).
+        # Populated by _radar_override() (US radar only). None on the intl radar and calm.
+        "washout_counter_read": None,
     }
 
 
@@ -551,6 +554,16 @@ def _radar_override(latest: dict, overrides: list) -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("risk_radar recovery assess failed: %s", e)
         out["recovery"] = None
+
+    # RC-R11: washout counter-read chip — capitulation-zone context signal
+    try:
+        _wcr = latest.get("washout_counter_read")
+        if isinstance(_wcr, dict) and _wcr.get("fired"):
+            out["washout_counter_read"] = _wcr
+        else:
+            out["washout_counter_read"] = None
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        out["washout_counter_read"] = None
 
     if state not in ("caution", "elevated", "risk-off"):
         return out

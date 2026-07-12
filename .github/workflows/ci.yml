@@ -1445,3 +1445,18 @@ jobs:
         run: pip install pytest pandas numpy pyyaml pyarrow requests
       - name: IRD-W1 substrate test suite
         run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py -q
+
+  rc-r11-washout-counter-read:
+    # RC-R11: washout counter-read chip — capitulation-zone context on the risk banner.
+    # Network-free: synthetic fixtures only. Tests: fire boundary, IHM path, fallback,
+    # quiet state, append-only ledger, display_only stamps.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: washout counter-read tests
+        run: python -m pytest tests/test_washout_counter_read.py -q

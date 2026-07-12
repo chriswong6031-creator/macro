@@ -227,6 +227,25 @@
   {% endif %}{% endfor %}
   {% endif %}
 
+  {# RC-R11 — Washout counter-read chip (rotation-command, display-only, ledgered).
+     Fires when the growth-scare gauge is extreme (≥p90) while the market is already
+     at a deep low. Context that the risk stack and price disagree — historically
+     outcomes are two-sided. NO stance change. #}
+  {% if rd.washout_counter_read and rd.washout_counter_read.fired %}{% set _wcr = rd.washout_counter_read %}
+  <div class="rrx-wcr">
+    <span class="rrx-wcr-ic">⇅</span>
+    <span class="rrx-wcr-txt">{{ t('capitulation-zone reading — historically two-sided','恐慌区读数——历史上双向皆有') }}{{ help(
+      'Risk gauge is at an extreme (' ~ (_wcr.scare_pctile|round|int|string) ~ '/100) while the market is already at a deep low'
+      ~ (' (depth: ' ~ (_wcr.depth_value|round(1)|string) ~ 'th pctile)' if _wcr.depth_value is not none else '')
+      ~ '. "Two-sided" means deep lows under growth scares have historically resolved both as further decline and as sharp snap-back rallies — the stack is not predictive in either direction here.'
+      ,
+      '风险指标处于极端水平（' ~ (_wcr.scare_pctile|round|int|string) ~ '/100），而市场已处于深度低位'
+      ~ ('（深度：' ~ (_wcr.depth_value|round(1)|string) ~ '百分位）' if _wcr.depth_value is not none else '')
+      ~ '。"双向"意指增长恐慌下的深度低位历史上既有进一步下跌，也有剧烈反弹——此处系统无法预判方向。'
+    ) }}</span>
+  </div>
+  {% endif %}
+
   {% if rd.is_loud and rd.do_en %}
   <div class="rrx-do"><span class="rrx-do-k">{{ t('Do','应对') }}</span>{{ t(rd.do_en, rd.do_zh) }}</div>
   {% endif %}
