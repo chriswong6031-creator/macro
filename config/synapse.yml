@@ -11419,3 +11419,105 @@ artifacts:
       (asof, ticker). Provides historical revisions context for rerating watch and
       revision_positive chip. git-tracked to avoid untracked-store false-null hazard.
       Single writer (build_leader_radar). authority.may_rank/gate/size/escalate=false.
+
+  # --- IRD-W1: IMF WEO store (annual fiscal/CA fundamentals, vulnerability map) ---
+  imf-weo-store:
+    path: data/imf_weo/
+    format: parquet
+    producer: collectors/imf_weo.py
+    known_extra_writers: []
+    owner_program: ird
+    cadence: collect
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 4800  # annual data; WEO updates ~April + October (~200 days)
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/intl_risk.py
+    external_consumers: []
+    notes: >
+      IRD-W1 vulnerability map substrate. Per-(indicator, iso3) parquet files under
+      data/imf_weo/<INDICATOR>_<ISO3>.parquet. Three indicators: GGXWDG_NGDP
+      (gross debt %GDP), GGXCNL_NGDP (overall fiscal balance %GDP; GGXONLB not exposed by DataMapper v1), BCA_NGDPD (current
+      account %GDP). 25 countries. Annual data from IMF DataMapper API (keyless).
+      Display-only; never scored. IRD-R8 Berg-Pattillo caveat applies on all
+      on-surface fragility reads. authority.may_rank/gate/size/escalate=false.
+
+  # --- IRD-W1: CB meeting calendar (static display-only date table) ---
+  ird-cb-calendar:
+    path: data/intl_risk/cb_calendar.yml
+    format: other
+    producer: <MANUAL>
+    known_extra_writers: []
+    owner_program: ird
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760  # hand-curated yearly; no SLA
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/cb_desk.py
+    external_consumers: []
+    notes: >
+      IRD-W1 static CB meeting calendar. Remaining-2026 published policy-decision
+      dates for FOMC, ECB, BoJ, BoE, SNB, BoC, RBA. Display-only date table.
+      No intent prediction (IRD-R7). SNB Sep/Dec 2026 dates are tentative.
+      Update from official sources when SNB publishes Q3/Q4 2026 schedule.
+      authority.may_rank/gate/size/escalate=false.
+
+  # --- IRD-W1: liquidity-plumbing Phase-5 swap lines (SWPT + WLCFLL) ---
+  fred-swpt:
+    path: data/fred/SWPT.parquet
+    format: parquet
+    producer: collectors/fred.py
+    known_extra_writers: []
+    owner_program: ird
+    cadence: collect
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 240  # weekly series (Wednesday H.4.1 publication)
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/liquidity_plumbing.py
+    external_consumers: []
+    notes: >
+      IRD-W1 Phase-5: central bank liquidity swaps outstanding (SWPT, H.4.1 weekly Wed, $M).
+      Declared in config.yml fred.series.swap_lines. IRD-R5: confirmation tier only —
+      swap-line levels grade severity after price signals fire; no alert keys off them.
+      Consumed by liquidity_plumbing.snapshot() fail-open (swap_lines_bn null + gaps[]
+      entry until the store exists). authority.may_rank/gate/size/escalate=false.
+
+  fred-wlcfll:
+    path: data/fred/WLCFLL.parquet
+    format: parquet
+    producer: collectors/fred.py
+    known_extra_writers: []
+    owner_program: ird
+    cadence: collect
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 240  # weekly series
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/liquidity_plumbing.py
+    external_consumers: []
+    notes: >
+      IRD-W1 Phase-5: Fed liquidity and credit facility loans outstanding (WLCFLL, $M weekly).
+      Declared in config.yml fred.series.swap_lines. Context complement to SWPT.
+      authority.may_rank/gate/size/escalate=false.

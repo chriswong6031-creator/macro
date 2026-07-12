@@ -552,33 +552,43 @@ class TestFundingBlockNull:
 
 
 # ---------------------------------------------------------------------------
-# 13. Foreign dollar block — all fields null (Phase 1)
+# 13. Foreign dollar block — Phase-5 integrated (IRD-W1); swap_frames absent
+#     path → state=data_unavailable; swap_frames present path tested in #30.
 # ---------------------------------------------------------------------------
 
 class TestForeignDollarBlockNull:
-    def test_swap_lines_null(self):
-        """foreign_dollar.swap_lines_bn must be null in Phase 1."""
+    """When swap_frames=None (absent), swap_lines_bn and facility_loans_bn must be
+    null and state must reflect the absence.  fima_repo_bn is permanently null
+    (no free per-facility breakout — IRD-R5)."""
+
+    def test_swap_lines_null_when_no_frames(self):
+        """foreign_dollar.swap_lines_bn must be null when swap_frames absent."""
         result = _full_compute()
         assert result["foreign_dollar"]["swap_lines_bn"] is None
 
-    def test_fima_repo_null(self):
-        """foreign_dollar.fima_repo_bn must be null in Phase 1."""
+    def test_facility_loans_null_when_no_frames(self):
+        """foreign_dollar.facility_loans_bn must be null when swap_frames absent."""
+        result = _full_compute()
+        assert result["foreign_dollar"]["facility_loans_bn"] is None
+
+    def test_fima_repo_permanently_null(self):
+        """foreign_dollar.fima_repo_bn must be null (no free per-facility breakout)."""
         result = _full_compute()
         assert result["foreign_dollar"]["fima_repo_bn"] is None
 
-    def test_foreign_dollar_state(self):
-        """foreign_dollar.state must equal 'not_integrated_yet'."""
+    def test_foreign_dollar_state_data_unavailable(self):
+        """foreign_dollar.state must equal 'data_unavailable' when swap_frames absent."""
         result = _full_compute()
-        assert result["foreign_dollar"]["state"] == "not_integrated_yet"
+        assert result["foreign_dollar"]["state"] == "data_unavailable"
 
-    def test_gaps_mentions_foreign_dollar(self):
-        """gaps[] must include a note about H.4.1 swap/FIMA not being integrated."""
+    def test_gaps_mentions_swap(self):
+        """gaps[] must include a note about SWPT parquet missing when no frames given."""
         result = _full_compute()
         gaps_text = " ".join(str(g) for g in result["gaps"]).lower()
         assert any(
-            term in gaps_text for term in ("swap", "fima", "h.4.1", "foreign", "phase 5")
+            term in gaps_text for term in ("swpt", "swap", "swap_lines_bn")
         ), (
-            f"gaps must mention H.4.1 swap/FIMA not integrated; got: {result['gaps']}"
+            f"gaps must mention SWPT/swap unavailable; got: {result['gaps']}"
         )
 
 
@@ -1182,9 +1192,140 @@ class TestPhaseStatus:
         ps = result["phase_status"]
         assert ps["p3_funding_spreads"] == "integrated"
         assert ps["p3_srf_discount_window"] == "pending_collection"
-        assert ps["p5_swap_fima"] == "pending"
+        # Phase-5: p5_swap_fima renamed to two keys after IRD-W1 integration
+        assert ps["p5_swap_lines"] == "integrated_ird_w1"
+        assert ps["p5_fima_repo"] == "pending_no_free_breakout"
 
     def test_schema_still_v1(self):
         """phase_status is additive — schema string must NOT bump."""
         result = _full_compute()
         assert result["schema"] == "neuralweb.liquidity_plumbing.v1"
+
+
+# ---------------------------------------------------------------------------
+# 30. Swap-lines integration (IRD-W1 Phase-5) — synthetic SWPT/WLCFLL frames
+# ---------------------------------------------------------------------------
+
+def _swap_frame(vals_millions: list[float], label: str) -> pd.DataFrame:
+    """Build a minimal SWPT/WLCFLL-shaped frame (weekly, $M column matching alias)."""
+    dates = pd.bdate_range("2026-06-01", periods=len(vals_millions), freq="W-FRI")
+    return pd.DataFrame({label: vals_millions}, index=dates)
+
+
+class TestSwapLinesIntegration:
+    """compute() with swap_frames provided should populate foreign_dollar fields.
+
+    IRD-R5: swap-line levels are CONFIRMATION tier only — state label is
+    informational, never triggers alerts.  fima_repo_bn is permanently null.
+    """
+
+    def test_elevated_draw_state(self):
+        """swap_lines_bn > 100 → state == 'elevated_draw'."""
+        swpt = _swap_frame([150_000.0], "swap_lines_tot")   # $150B in $M units
+        result = compute(
+            _regime_latest(),
+            _netliq_frame(),
+            _treasury_frames(),
+            _auction_snapshot(),
+            _config(),
+            swap_frames={"swap_lines_tot": swpt},
+        )
+        fd = result["foreign_dollar"]
+        assert fd["swap_lines_bn"] == pytest.approx(150.0, abs=1e-2)
+        assert fd["state"] == "elevated_draw"
+        assert fd["fima_repo_bn"] is None
+
+    def test_low_draw_state(self):
+        """1 < swap_lines_bn <= 100 → state == 'low_draw'."""
+        swpt = _swap_frame([50_000.0], "swap_lines_tot")    # $50B
+        result = compute(
+            _regime_latest(),
+            _netliq_frame(),
+            _treasury_frames(),
+            _auction_snapshot(),
+            _config(),
+            swap_frames={"swap_lines_tot": swpt},
+        )
+        fd = result["foreign_dollar"]
+        assert fd["swap_lines_bn"] == pytest.approx(50.0, abs=1e-2)
+        assert fd["state"] == "low_draw"
+
+    def test_quiescent_state(self):
+        """swap_lines_bn == 0 → state == 'quiescent'."""
+        swpt = _swap_frame([0.0], "swap_lines_tot")
+        result = compute(
+            _regime_latest(),
+            _netliq_frame(),
+            _treasury_frames(),
+            _auction_snapshot(),
+            _config(),
+            swap_frames={"swap_lines_tot": swpt},
+        )
+        fd = result["foreign_dollar"]
+        assert fd["swap_lines_bn"] == pytest.approx(0.0, abs=1e-3)
+        assert fd["state"] == "quiescent"
+
+    def test_quiescent_standing_residual(self):
+        """Sub-$1bn standing balance (routine FX ops, e.g. SWPT=$170M live
+        2026-07-12) is quiescent, not a draw — IRD-R5 no-cry-wolf floor."""
+        swpt = _swap_frame([170.0], "swap_lines_tot")   # $170M
+        result = compute(
+            _regime_latest(),
+            _netliq_frame(),
+            _treasury_frames(),
+            _auction_snapshot(),
+            _config(),
+            swap_frames={"swap_lines_tot": swpt},
+        )
+        fd = result["foreign_dollar"]
+        assert fd["swap_lines_bn"] == pytest.approx(0.17, abs=1e-2)
+        assert fd["state"] == "quiescent"
+
+    def test_facility_loans_populated(self):
+        """facility_loans_bn set when WLCFLL frame present."""
+        swpt = _swap_frame([20_000.0], "swap_lines_tot")
+        wlcfll = _swap_frame([5_000.0], "fed_facility_loans")
+        result = compute(
+            _regime_latest(),
+            _netliq_frame(),
+            _treasury_frames(),
+            _auction_snapshot(),
+            _config(),
+            swap_frames={"swap_lines_tot": swpt, "fed_facility_loans": wlcfll},
+        )
+        fd = result["foreign_dollar"]
+        assert fd["facility_loans_bn"] == pytest.approx(5.0, abs=1e-2)
+        assert fd["fima_repo_bn"] is None
+
+    def test_swpt_present_wlcfll_absent_gap(self):
+        """When only SWPT provided, facility_loans_bn null and gap logged."""
+        swpt = _swap_frame([30_000.0], "swap_lines_tot")
+        result = compute(
+            _regime_latest(),
+            _netliq_frame(),
+            _treasury_frames(),
+            _auction_snapshot(),
+            _config(),
+            swap_frames={"swap_lines_tot": swpt},
+        )
+        fd = result["foreign_dollar"]
+        assert fd["facility_loans_bn"] is None
+        gaps_text = " ".join(str(g) for g in result["gaps"]).lower()
+        assert "wlcfll" in gaps_text or "facility_loans" in gaps_text, (
+            f"gaps must mention WLCFLL absent; got: {result['gaps']}"
+        )
+
+    def test_no_alert_trigger(self):
+        """Elevated swap lines must NOT change headline to a forbidden state."""
+        swpt = _swap_frame([500_000.0], "swap_lines_tot")   # extreme value
+        result = compute(
+            _regime_latest(),
+            _netliq_frame(),
+            _treasury_frames(),
+            _auction_snapshot(),
+            _config(),
+            swap_frames={"swap_lines_tot": swpt},
+        )
+        # IRD-R5: swap lines are confirmation only — headline driven by regime
+        assert result["headline"]["state"] not in ("foreign_dollar_stress",)
+        assert result["authority"]["score_raise"] is False

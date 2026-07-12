@@ -1,0 +1,123 @@
+# Central-bank policy meeting calendar — remaining 2026 scheduled dates.
+# Display-only: IRD-W1 §2 SLOW tier. No intent prediction (IRD-R7).
+# Dates = decision/announcement date. All confirmed from official sources unless noted.
+# Schema: bank: {dates: [YYYY-MM-DD, ...], source: URL}
+
+banks:
+
+  # Source: https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+  # (verified 2026-07-12; 8 meetings/year; dates are the two-day meeting end date
+  #  / press conference date)
+  FOMC:
+    name_en: Federal Open Market Committee
+    name_zh: 美联储公开市场委员会
+    country: US
+    dates:
+      - 2026-01-28  # Jan 27-28
+      - 2026-03-18  # Mar 17-18 (press conference 2nd day implied by 8-meeting cycle)
+      - 2026-04-29  # Apr 28-29
+      - 2026-06-17  # Jun 16-17
+      - 2026-07-29  # Jul 28-29
+      - 2026-09-16  # Sep 15-16
+      - 2026-10-28  # Oct 27-28
+      - 2026-12-09  # Dec 8-9
+    source: "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+
+  # Source: https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html
+  # (verified 2026-07-12; two-day meetings; date here = second day / press conf day)
+  ECB:
+    name_en: European Central Bank Governing Council
+    name_zh: 欧洲央行管理委员会
+    country: XM
+    dates:
+      - 2026-01-29  # Jan 28-29 (already passed; included for completeness)
+      - 2026-03-06  # Mar 5-6
+      - 2026-04-17  # Apr 16-17 (non-MPR meeting)
+      - 2026-06-11  # Jun 10-11
+      - 2026-07-23  # Jul 22-23
+      - 2026-09-10  # Sep 9-10
+      - 2026-10-29  # Oct 28-29
+      - 2026-12-17  # Dec 16-17
+    source: "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html"
+
+  # Source: https://www.boj.or.jp/en/mopo/mpmsche_minu/m_ref/mref250731a.pdf
+  # (verified via web search 2026-07-12; dates are 2nd day of each two-day meeting)
+  BoJ:
+    name_en: Bank of Japan Monetary Policy Meeting
+    name_zh: 日本银行货币政策会议
+    country: JP
+    dates:
+      - 2026-01-23  # Jan 22-23
+      - 2026-03-19  # Mar 18-19
+      - 2026-04-28  # Apr 27-28
+      - 2026-06-16  # Jun 15-16
+      - 2026-07-31  # Jul 30-31
+      - 2026-09-18  # Sep 17-18
+      - 2026-10-30  # Oct 29-30
+      - 2026-12-18  # Dec 17-18
+    source: "https://www.boj.or.jp/en/mopo/mpmsche_minu/m_ref/mref250731a.pdf"
+
+  # Source: https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates
+  # (decision announcement day; MPC vote ends Wednesday, published Thursday at noon)
+  BoE:
+    name_en: Bank of England Monetary Policy Committee
+    name_zh: 英格兰银行货币政策委员会
+    country: GB
+    dates:
+      - 2026-02-05
+      - 2026-03-19
+      - 2026-04-30
+      - 2026-06-18
+      - 2026-07-30
+      - 2026-09-17
+      - 2026-11-05
+      - 2026-12-17
+    source: "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+
+  # Source: https://www.snb.ch/en/the-snb/mandates-goals/monetary-policy/decisions
+  # SNB meets quarterly (Mar/Jun/Sep/Dec). Mar + Jun confirmed 2026-07-12.
+  # Sep and Dec dates are tentative (typical pattern: third Thu); update when SNB publishes.
+  SNB:
+    name_en: Swiss National Bank Monetary Policy Assessment
+    name_zh: 瑞士国家银行货币政策评估
+    country: CH
+    dates:
+      - 2026-03-19  # confirmed
+      - 2026-06-18  # confirmed
+      - 2026-09-17  # tentative — SNB not yet published; typical pattern third Thu Sep
+      - 2026-12-10  # tentative — SNB not yet published; typical pattern second Thu Dec
+    source: "https://www.snb.ch/en/the-snb/mandates-goals/monetary-policy/decisions"
+
+  # Source: https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/
+  # (verified 2026-07-12; Fixed Announcement Dates)
+  BoC:
+    name_en: Bank of Canada Fixed Announcement Date
+    name_zh: 加拿大央行固定公告日
+    country: CA
+    dates:
+      - 2026-01-29  # already passed; included for completeness
+      - 2026-03-12
+      - 2026-04-23  # (from standard BoC calendar; confirm at source)
+      - 2026-06-04  # (from standard BoC calendar; confirm at source)
+      - 2026-07-15
+      - 2026-09-02  # confirmed
+      - 2026-10-28  # confirmed
+      - 2026-12-09  # confirmed
+    source: "https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/"
+
+  # Source: https://www.rba.gov.au/media-releases/2025/mr-25-02.html
+  # (verified 2026-07-12; 8 meetings/year; date = decision announcement day, 2:30pm AEDT)
+  RBA:
+    name_en: Reserve Bank of Australia Monetary Policy Board
+    name_zh: 澳大利亚储备银行货币政策委员会
+    country: AU
+    dates:
+      - 2026-02-03  # already passed
+      - 2026-03-17
+      - 2026-05-05
+      - 2026-06-16
+      - 2026-08-11
+      - 2026-09-29
+      - 2026-11-03
+      - 2026-12-08
+    source: "https://www.rba.gov.au/media-releases/2025/mr-25-02.html"

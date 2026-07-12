@@ -315,6 +315,16 @@ on:
       - "scripts/build_leader_radar.py"
       - "tests/test_leader_lifecycle.py"
       - "tests/test_build_leader_radar.py"
+      # IRD-W1 International Risk Desk substrate: IMF WEO adapter, CB calendar,
+      # FRED alias-collision lint, and liquidity_plumbing swap-lines Phase-5.
+      - "collectors/imf_weo.py"
+      - "data/intl_risk/cb_calendar.yml"
+      - "config/synapse.yml"
+      - "engine/neuralweb/liquidity_plumbing.py"
+      - "tests/test_imf_weo.py"
+      - "tests/test_fred_alias_collision.py"
+      - "tests/test_cb_calendar.py"
+      - "tests/test_liquidity_plumbing.py"
   workflow_dispatch:
 
 permissions:
@@ -1346,3 +1356,21 @@ jobs:
         run: pip install pytest pandas numpy pyyaml pyarrow
       - name: live flow ops test suite
         run: python -m pytest tests/test_live_flow_tiering.py -v
+
+  ird-w1-substrate:
+    # IRD-W1 International Risk Desk substrate tests:
+    #   - IMF WEO adapter (hermetic, canned fixture, no network)
+    #   - FRED alias-collision lint (config integrity)
+    #   - CB meeting calendar schema sanity
+    #   - liquidity_plumbing swap-lines Phase-5 integration tests
+    # Zero network calls; all inputs are synthetic.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyyaml pyarrow requests
+      - name: IRD-W1 substrate test suite
+        run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py -q
