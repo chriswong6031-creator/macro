@@ -235,6 +235,18 @@
   </div>
   {% endif %}
 
+  {# RC-R11 washout counter-read (engine/oracle/washout_counterread.py) — a display-tier CONTEXT
+     chip beside the banner, never an alert originator and never a banner suppressor. Appears only
+     when a growth-scare extreme co-occurs with an index/cohort depth extreme (the growth scare
+     peaked on the exact 2026-06-26 Mag-7 bottom). The honest two-sided caveat + the depth detail
+     live in the tooltip so the chip can't overclaim. #}
+  {% if rd.counterread and rd.counterread.show %}{% set wc = rd.counterread %}
+  <div class="rrx-cyc rrx-washout">
+    <span class="rrx-cyc-k">🌀 {{ t('Capitulation-zone reading — two-sided','投降区读数 — 双向') }}</span>{{ help(wc.message_en, wc.message_zh) }}
+    <span class="rrx-cyc-tag">{{ t('context only','仅上下文') }}</span>
+  </div>
+  {% endif %}
+
   {# self-audit line — only on the international radars (rd.forward_log set by
      engine/risk_radar_intl_audit). Every call is logged + graded vs the realized index path;
      the radar earns the right to move the verdict only once its own record clears the bar. #}

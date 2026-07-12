@@ -1997,6 +1997,10 @@ jobs:
         env:
           COLLECT_LANE: nightly
         run: python -m scripts.build_oracle_ratio_lens || echo "::warning::ratio_lens build failed (non-fatal — surface keeps last artifact)"
+      - name: rebuild washout counter-read feed (RC-R11 — off-render, non-fatal)
+        env:
+          COLLECT_LANE: nightly
+        run: python -m scripts.build_oracle_washout_counterread || echo "::warning::washout_counterread build failed (non-fatal — surface keeps last artifact)"
       - name: publish oracle panels to R2 (refreshes render-path sponsorship inputs)
         if: always()
         env:
@@ -2028,7 +2032,7 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add site/oracledata/ data/oracle/ratio_lens_ledger.jsonl
+          git add site/oracledata/ data/oracle/ratio_lens_ledger.jsonl data/oracle/washout_counterread_ledger.jsonl
           if git diff --cached --quiet; then echo "no oracle Time Machine or ratio lens changes"; exit 0; fi
           git commit -m "oracle-tm: nightly Time Machine feed + ratio lens refresh $(date -u +%F)"
           # best-effort push (own files -> rebases clean; no other job writes site/oracledata/)

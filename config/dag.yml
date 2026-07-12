@@ -792,6 +792,23 @@ lanes:
                    data/baskets/ohlcv/*.parquet, data/baskets/membership.json]
           outputs: [site/oracledata/ratio_lens.json,
                     data/oracle/ratio_lens_ledger.jsonl]
+      - id: build_oracle_washout_counterread
+        module: scripts.build_oracle_washout_counterread
+        note: >
+          RC-R11 — rebuild the washout counter-read feed
+          (site/oracledata/washout_counterread.json +
+          data/oracle/washout_counterread_ledger.jsonl) off the render path.
+          Display-only, authority all-false; a growth-scare extreme co-occurring
+          with an index/cohort depth extreme = a two-sided capitulation-zone
+          reading. Reads data/regime/latest.json (growth scare) +
+          data/index_momentum/latest.json (IHM depth) + data/yahoo/{SPY,QQQ,XLK}
+          (63d drawdown). Non-fatal (::warning:: on error). COLLECT_LANE=nightly
+          gates ledger writes (keep-first per firing day; expected-null accrual).
+          Registration: research/ORACLE_WASHOUT_COUNTERREAD_REGISTRATION.md.
+          inputs: [data/regime/latest.json, data/index_momentum/latest.json,
+                   data/yahoo/SPY.parquet, data/yahoo/QQQ.parquet, data/yahoo/XLK.parquet]
+          outputs: [site/oracledata/washout_counterread.json,
+                    data/oracle/washout_counterread_ledger.jsonl]
       - id: publish_oracle_panels
         module: scripts.publish_oracle_panels
         note: >
