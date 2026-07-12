@@ -88,10 +88,31 @@ def _cik_map(universe: list[str]) -> dict[str, int]:
                 break
     return out
 # material item codes worth a signal (activity, not routine housekeeping):
-#   1.01 material definitive agreement · 2.01 completion of acquisition ·
-#   2.03 creation of a direct financial obligation · 5.02 director/officer change ·
+#   1.01 material definitive agreement · 1.02 termination of material agreement ·
+#   1.03 bankruptcy/receivership · 2.01 completion of acquisition ·
+#   2.03 creation of a direct financial obligation ·
+#   2.04 triggering of direct financial obligation (default/acceleration) ·
+#   3.01 delisting notice / listing-standard failure ·
+#   3.02 unregistered equity sales · 4.02 non-reliance on prior financials
+#   (restatement/material weakness) · 5.02 director/officer change ·
 #   7.01 Reg-FD disclosure · 8.01 other material event (where FDA/major news lands)
-MATERIAL_ITEMS = {"1.01", "2.01", "2.03", "5.02", "7.01", "8.01"}
+# LHB-R7 expansion for long-hold A6 hard-stop routing + B1 hardening ladder
+# (research/LONG_HOLD_LOBE_BRAINSTORM_ADJUDICATION_BY_FABLE.md)
+MATERIAL_ITEMS = {
+    "1.01", "1.02", "1.03",
+    "2.01", "2.03", "2.04",
+    "3.01", "3.02",
+    "4.02",
+    "5.02",
+    "7.01", "8.01",
+}
+
+# Velocity radar leg pinned to the original six codes — the per-basket velocity feeds
+# the live theme Divergence-Radar leg (engine.theme_activity); the LHB-R7 expansion
+# must not silently shift that signal, so velocity stays pinned to the original six
+# codes.  Expanded codes are for downstream long-hold consumers of
+# material_8k_events.parquet only.
+LEGACY_VELOCITY_ITEMS = frozenset({"1.01", "2.01", "2.03", "5.02", "7.01", "8.01"})
 _ITEM_RE = re.compile(r"\d\.\d{2}")
 RECENT_D = 60
 PRIOR_D = 60
@@ -155,20 +176,79 @@ class Edgar8KAdapter(Adapter):
 
     def _merge_events(self, new: pd.DataFrame) -> pd.DataFrame:
         new = new.copy()
-        new["_first_seen"] = datetime.now(timezone.utc).isoformat()
+        now_ts = datetime.now(timezone.utc).isoformat()
+        # Only stamp rows that are genuinely new (will not exist in the stored file yet).
+        new["_first_seen"] = now_ts
         path = self._events_path()
         if path.exists():
             old = pd.read_parquet(path)
             combined = pd.concat([old, new], ignore_index=True)
         else:
             combined = new
-        combined = combined.drop_duplicates(subset=["accession"], keep="first").reset_index(drop=True)
+
+        # Groupby-accession merge: for each accession that appears more than once
+        # (e.g. an accession already stored with truncated items before the LHB-R7
+        # expansion, or a re-scan after back-fill), produce exactly one output row:
+        #   items        — comma-joined sorted union of all codes seen across all rows
+        #   _first_seen  — earliest (minimum) _first_seen stamp (preserves PIT)
+        #   other cols   — values from the earliest-_first_seen row; for optional
+        #                  LLM-extraction fields (amount_usd, counterparty,
+        #                  extraction_ok) take the first non-null across duplicates so
+        #                  enrichment results survive the merge
+        def _agg_accession(grp: pd.DataFrame) -> pd.Series:
+            # Sort so the earliest _first_seen row comes first
+            grp = grp.sort_values("_first_seen")
+            base = grp.iloc[0].copy()
+            # Union of items codes
+            all_codes: set[str] = set()
+            for raw in grp["items"].dropna():
+                for code in str(raw).split(","):
+                    code = code.strip()
+                    if code:
+                        all_codes.add(code)
+            base["items"] = ",".join(sorted(all_codes))
+            # First non-null for optional enrichment columns
+            for col in ("amount_usd", "counterparty", "extraction_ok"):
+                if col in grp.columns:
+                    non_null = grp[col].dropna()
+                    base[col] = non_null.iloc[0] if not non_null.empty else None
+            return base
+
+        if combined.duplicated(subset=["accession"]).any():
+            # groupby(as_index=False) keeps the key column in the result so we never
+            # lose the accession column after apply() consumes it as the group key.
+            combined = (
+                combined.groupby("accession", sort=False, as_index=False)
+                .apply(_agg_accession, include_groups=False)
+                .reset_index(drop=True)
+            )
+            # Restore column order: mandatory cols first, then any extras
+            mandatory = ["ticker", "cik", "form", "filing_date", "items", "accession", "_first_seen"]
+            extras = [c for c in combined.columns if c not in mandatory]
+            combined = combined[mandatory + extras]
+        else:
+            combined = combined.reset_index(drop=True)
+
         combined.to_parquet(path)
         return combined
 
     def _velocity(self, events: pd.DataFrame, mem: dict) -> pd.DataFrame:
-        """Per-basket material-8K counts: recent RECENT_D days vs the prior PRIOR_D."""
+        """Per-basket material-8K counts: recent RECENT_D days vs the prior PRIOR_D.
+
+        Only events whose items field intersects LEGACY_VELOCITY_ITEMS are counted here.
+        The LHB-R7 expansion added six new codes to MATERIAL_ITEMS; those codes must not
+        silently shift the Divergence-Radar signal — velocity is pinned to the original
+        six codes that the live theme_activity engine was calibrated against.
+        """
         ev = events.copy()
+        # Filter to LEGACY_VELOCITY_ITEMS: keep rows where at least one code in the
+        # comma-joined items string is a member of the original six-code set.
+        def _intersects_legacy(items_str: str) -> bool:
+            if not items_str:
+                return False
+            return bool({c.strip() for c in str(items_str).split(",")} & LEGACY_VELOCITY_ITEMS)
+
+        ev = ev[ev["items"].fillna("").apply(_intersects_legacy)]
         ev["d"] = pd.to_datetime(ev["filing_date"], errors="coerce")
         ev = ev[ev["d"].notna()]
         t0 = ev["d"].max() if not ev.empty else pd.Timestamp(datetime.now(timezone.utc).replace(tzinfo=None))
