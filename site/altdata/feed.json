@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-12T05:27:05.963065+00:00",
+  "generated_utc": "2026-07-12T07:18:50.642571+00:00",
   "as_of": "2026-07-12",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -3658,258 +3658,258 @@
       "emoji": "\ud83d\udd2c",
       "label_en": "US patents",
       "label_zh": "\u7f8e\u56fd\u4e13\u5229",
-      "rows": 3581,
-      "last_seen": "2026-06-30",
+      "rows": 4341,
+      "last_seen": "2026-07-07",
       "recent": [
         {
-          "Date": "2026-06-30",
-          "IPC": "g09b029/00",
-          "Title": "progressive display in multi-zoom digital map",
-          "Claims": "18.0",
-          "Abstract": "the present application relates to devices and components including apparatus, systems, and methods to determine information to be displayed within a display of a map. for example, the apparatus, systems, and methods \u2026",
+          "Date": "2026-07-07",
+          "IPC": "h04m001/02",
+          "Title": "handheld electronic device",
+          "Claims": "20.0",
+          "Abstract": "a mobile phone may include a connector module configured to couple to a charging cable, antenna circuitry conductively coupled to a first housing component and a second housing component, and a processing system confi\u2026",
           "Ticker": "AAPL",
-          "PatentNumber": "12670814",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
+          "PatentNumber": "12676924",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
         },
         {
-          "Date": "2026-06-30",
-          "IPC": "d21h027/02",
-          "Title": "fibrous structures and methods for making same",
-          "Claims": "18.0",
-          "Abstract": "fibrous structures having a surface pattern of a continuous knuckle region and a plurality of discrete pillow regions such that the fibrous structures that retain sufficient surface void volume as measured according t\u2026",
-          "Ticker": "PG",
-          "PatentNumber": "12668926",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "g06f003/06",
-          "Title": "implementing guardrails for non-disruptive migration of workloads",
-          "Claims": "20.0",
-          "Abstract": "implementing guardrails for non-disruptive migration of workloads between storage arrays, the method comprising: initiating a non-disruptive migration of one or more workloads from a source storage array to a target s\u2026",
-          "Ticker": "P",
-          "PatentNumber": "12669950",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "h04l009/40",
-          "Title": "mode-based user activity monitoring in web browser",
-          "Claims": "20.0",
-          "Abstract": "user activity is monitored in a web browser according to a continuous monitoring mode or a duty cycle monitoring mode. the duty cycle monitoring mode is a temporal configuration wherein monitoring occurs during sampli\u2026",
-          "Ticker": "PANW",
-          "PatentNumber": "12671691",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "h04l009/40",
-          "Title": "fast policy matching with runtime signature update",
-          "Claims": "20.0",
-          "Abstract": "techniques for fast policy matching with runtime signature update are disclosed. in some embodiments, a system/process/computer program product for fast policy matching with runtime signature update includes receiving\u2026",
-          "Ticker": "PANW",
-          "PatentNumber": "12671676",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "g06f021/57",
-          "Title": "large language model-based vulnerability remediation action descriptions",
-          "Claims": "20.0",
-          "Abstract": "a vulnerability documentation system detects vulnerabilities having outdated or undocumented formatted descriptions for corresponding remediation actions. a web crawler crawls the internet for configuration data for s\u2026",
-          "Ticker": "PANW",
-          "PatentNumber": "12670263",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "g06f021/56",
-          "Title": "structuring ipv6 addresses into bit fields to embed language localization and services",
-          "Claims": "26.0",
-          "Abstract": "techniques for structuring ip version 6 (ipv6) addresses into bit fields to embed language localization and services information (e.g., and/or other attributes/information) are disclosed. in some embodiments, a system\u2026",
-          "Ticker": "PANW",
-          "PatentNumber": "12670251",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "a61b017/22",
-          "Title": "aspiration thrombectomy system and methods for dynamic system state detection",
-          "Claims": "22.0",
-          "Abstract": "an aspiration thrombectomy system includes a vacuum source, a catheter having a proximal end and a distal end, a junction fluidically connected to the proximal end of the catheter, a sensor to detect flow through the \u2026",
-          "Ticker": "PEN",
-          "PatentNumber": "12667376",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "b67d001/00",
-          "Title": "beverage dispenser consumable systems and methods",
-          "Claims": "6.0",
-          "Abstract": "aspects of the present disclosure include a water filter mount for a beverage dispenser. the water filter mount releasably mounts a water filter to the beverage dispenser using a rotating motion that does not require \u2026",
-          "Ticker": "PEP",
-          "PatentNumber": "12668478",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "a61m005/315",
-          "Title": "system and method for information management in computerized injectors",
-          "Claims": "17.0",
-          "Abstract": "the invention relates to a computer-controlled injector, comprising: a housing configured to receive a medicament cartridge; an injection drive mechanism comprising a computer-controlled motor for driving a piston wit\u2026",
-          "Ticker": "PFE",
-          "PatentNumber": "12667671",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "a61f013/15",
-          "Title": "absorbent article with waist gasketing element and leg cuffs",
-          "Claims": "15.0",
-          "Abstract": "a disposable absorbent article may include a chassis that includes a topsheet, a backsheet, and an absorbent core disposed between the topsheet and the backsheet; and a leg gasketing system and a waist gasketing eleme\u2026",
-          "Ticker": "PG",
-          "PatentNumber": "12667501",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "b29c049/22",
-          "Title": "multilayer thermoplastic article with unique visual effects and a core containing recycled thermoplastic material",
-          "Claims": "19.0",
-          "Abstract": "a blow molded multilayer article with a hollow body and a wall being formed by at least three layers including a first skin layer, a second skin layer and a core sandwiched between the first and second skin layers. th\u2026",
-          "Ticker": "PG",
-          "PatentNumber": "12668014",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "h04s007/00",
-          "Title": "audio apparatus and method therefor",
+          "Date": "2026-07-07",
+          "IPC": "h04b007/04",
+          "Title": "managing conflicting configurations for configuring a reflective surface",
           "Claims": "30.0",
-          "Abstract": "a first audio apparatus generates a data signal comprising data for an audio scene, the data comprising input audio source data for at least a first audio source and acoustic object data for at least one acoustic obje\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12671954",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
+          "Abstract": "methods, systems, and devices for wireless communications are described. a surface used to reflect radio frequency signals may receive requests from multiple devices to configure a set of reflection coefficients. each\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12676645",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
         },
         {
-          "Date": "2026-06-30",
-          "IPC": "a61m005/168",
-          "Title": "smart medication delivery devices for providing users with delivery infomatics and methods of using same",
+          "Date": "2026-07-07",
+          "IPC": "h02m001/088",
+          "Title": "detecting signals from cascode power devices",
+          "Claims": "21.0",
+          "Abstract": "detecting signals from cascode power devices is described herein. by sensing a gate signal from the high-voltage device, drain waveform characteristics may be monitored. in this manner a power switch may be controlled\u2026",
+          "Ticker": "POWI",
+          "PatentNumber": "12676545",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "a61k038/00",
+          "Title": "oral peptide inhibitors of interleukin-23 receptor and their use to treat inflammatory bowel diseases",
+          "Claims": "32.0",
+          "Abstract": "peptide inhibitors of the interleukin-23 receptor, and related compositions and methods of using these peptide inhibitors to treat or prevent a variety of diseases and disorders, including inflammatory bowel disease, \u2026",
+          "Ticker": "PTGX",
+          "PatentNumber": "12673974",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "g06q020/20",
+          "Title": "correlating messages from asynchronous message queues using polling with exponential backoff and jitter",
           "Claims": "20.0",
-          "Abstract": "a medication delivery device (mdd) (e.g., injection pen, wearable pump) is paired with an external device (e.g., smart phone, ipad, computer) via wireless link or wireline connection. the mdd provides to the external \u2026",
-          "Ticker": "PODD",
-          "PatentNumber": "12667662",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
+          "Abstract": "there are provided systems and methods for correlating messages from asynchronous message queues using polling with exponential backoff and jitter. a service provider, such as an electronic transaction processor for d\u2026",
+          "Ticker": "PYPL",
+          "PatentNumber": "12675783",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
         },
         {
-          "Date": "2026-06-30",
-          "IPC": "a61b005/00",
-          "Title": "system and method for tissue analysis using remote ppg",
+          "Date": "2026-07-07",
+          "IPC": "h04l009/32",
+          "Title": "universally trusted bridges for heterogenous blockchain networks",
+          "Claims": "20.0",
+          "Abstract": "different communication and software protocols may be used by different blockchain networks. cross-chain communication is provided via a software bridge configured to enable specific operations. an event request may b\u2026",
+          "Ticker": "PYPL",
+          "PatentNumber": "12676756",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "g06q020/38",
+          "Title": "interface widget tool for automatic qr code generation and display without application launching",
+          "Claims": "20.0",
+          "Abstract": "there are provided systems and methods for an interface widget tool for automatic qr code\u00ae generation and display without application launching. a user may engage in a transaction with another user, such as a purchase\u2026",
+          "Ticker": "PYPL",
+          "PatentNumber": "12675787",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "g06k019/06",
+          "Title": "adaptable qr codes to launch customized experiences",
+          "Claims": "20.0",
+          "Abstract": "systems, computer-implemented methods, apparatus, and/or computer program products that can facilitate adaptable qr codes to launch customized experiences are provided. in various embodiments, a system can receive, fr\u2026",
+          "Ticker": "PYPL",
+          "PatentNumber": "12675658",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "g06n003/08",
+          "Title": "multi-domain feature enhancement for transfer learning (ftl)",
+          "Claims": "20.0",
+          "Abstract": "methods and systems are presented for configuring and training a machine learning model using transfer learning techniques that can transfer knowledge among multiple domains that do not share an identical feature set.\u2026",
+          "Ticker": "PYPL",
+          "PatentNumber": "12675689",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "h04l009/40",
+          "Title": "predicting online electronic attacks based on other attacks",
+          "Claims": "20.0",
+          "Abstract": "an indication is received that a first online platform has undergone/is undergoing a first electronic attack made by one or more actors engaged in online malicious actions with the first online platform. responsive to\u2026",
+          "Ticker": "PYPL",
+          "PatentNumber": "12676881",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "g06f016/951",
+          "Title": "guided web crawler for automated identification and verification of webpage resources",
+          "Claims": "20.0",
+          "Abstract": "there are provided systems and methods for a guided web crawler for automated identification and verification of webpage resources. a service provider, such as an online transaction processor, may provide a guided web\u2026",
+          "Ticker": "PYPL",
+          "PatentNumber": "12675538",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "h04b007/06",
+          "Title": "selection of adaptive beam weights for hybrid beamforming at millimeter wave and beyond frequencies",
+          "Claims": "29.0",
+          "Abstract": "certain aspects of the present disclosure provide techniques for wireless communications by a wireless device. the method generally includes determining a classification of electric field behavior of one or more anten\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12676659",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "b32b015/04",
+          "Title": "high-strength steel sheet having excellent surface quality and manufacturing method therefor",
           "Claims": "14.0",
-          "Abstract": "a tissue analysis system and method process images to derive a remote ppg perfusion map from ppg amplitude levels obtained from the images as well as a ppg delay map from ppg relative delays between the ppg signals fo\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12667259",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "a61b005/145",
-          "Title": "sensor unit, body fluid monitoring device and method for detecting an analyte",
-          "Claims": "20.0",
-          "Abstract": "provided is a sensor unit ( 104 ) for detecting an analyte ( 128 ) in an aqueous medium. the sensor unit comprises a surface ( 124 ) for receiving the aqueous medium thereon. capture species ( 126 ) immobilized on the\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12667283",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "g16h030/20",
-          "Title": "providing scan progress indications during medical imaging",
-          "Claims": "15.0",
-          "Abstract": "there is a need for techniques to avoid or reduce motion artifacts in medical images. according to the invention, there is provided control circuitry for a medical imaging system. the control circuitry is configured t\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12667316",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "a61b017/86",
-          "Title": "orthopedic pin for optically analyzing a bone region",
-          "Claims": "15.0",
-          "Abstract": "an orthopedic pin is for optically analyzing a bone region. an optical fiber arrangement extends within an elongate shaft from a distal end to a proximal end. there is a coupling at an intermediate position along the \u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12667401",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "g06f021/00",
-          "Title": "data de-identification",
-          "Claims": "15.0",
-          "Abstract": "a system ( 100 ) for transferring data ( 110 ) generated by a medical imaging system over a communication network ( 120 ), is provided. the system includes a processing arrangement ( 130, 140 ) configured to identify \u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12670295",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "g06t005/94",
-          "Title": "enhancing angiograms",
-          "Claims": "20.0",
-          "Abstract": "the present invention relates to image processing of angiograms. a device for enhancing angiograms is provided. the device comprises a data input, a data processor, and an output interface. the data input provides at \u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12670566",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "g06k009/00",
-          "Title": "system and method for evaluating a pulmonary ventilation and perfusion gradient",
-          "Claims": "13.0",
-          "Abstract": "a system and method for quantifying a pulmonary ventilation and perfusion gradient of a lung of a subject. local hounsfield density histograms are generated from computed tomography imaging data and each local histogr\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12670594",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "IPC": "c21d009/52",
-          "Title": "non-heat treated wire rod having excellent drawability and impact toughness and method for manufacturing same",
-          "Claims": "6.0",
-          "Abstract": "provided are a non-heat treated wire rod having high drawability and impact toughness, and a method for manufacturing the non-heat treated wire rod. the non-heat treated wire rod includes, by wt %, c: 0.02% to 0.30%, \u2026",
+          "Abstract": "the present invention relates to a high-strength steel sheet having excellent surface quality due to improved coatability thereof and a method for manufacturing same.",
           "Ticker": "PKX",
-          "PatentNumber": "12668853",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
+          "PatentNumber": "12674245",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
         },
         {
-          "Date": "2026-06-30",
-          "IPC": "a61b018/14",
-          "Title": "mapping and ablation applicators and methods of their use",
-          "Claims": "31.0",
-          "Abstract": "devices and methods for mapping tissue, such as cardiac tissue, and applying electrical energy to ablate the tissue may include an applicator region comprising two or more wire electrodes that extend between the arms \u2026",
-          "Ticker": "PLSE",
-          "PatentNumber": "12667404",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
+          "Date": "2026-07-07",
+          "IPC": "h04b007/185",
+          "Title": "resource allocation for an ntn with beam hopping",
+          "Claims": "30.0",
+          "Abstract": "a method of wireless communication at a ue is disclosed herein. the method includes receiving, via a satellite and over a first bandwidth and a first beam, at least one of an ssb or a sib for a cell. the method includ\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12676666",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
         },
         {
-          "Date": "2026-06-30",
-          "IPC": "a61n001/04",
-          "Title": "electrical applicators for applying energy to tissue surfaces or regions superficial to the surface",
-          "Claims": "34.0",
-          "Abstract": "treatment applicators and methods including treatment applicators for delivering electrical energy to a target tissue that are configured to reduce or eliminate arcing as well as provide enhance targeting to tissue su\u2026",
-          "Ticker": "PLSE",
-          "PatentNumber": "12667717",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
+          "Date": "2026-07-07",
+          "IPC": "h04b017/00",
+          "Title": "transceiver built-in self-test",
+          "Claims": "18.0",
+          "Abstract": "a method of self-testing a transceiver integrated circuit substrate includes: providing a test signal to a transmission line that is communicatively coupled, or selectively communicatively coupled, to an input of a po\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12676681",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
         },
         {
-          "Date": "2026-06-30",
-          "IPC": "g06f003/06",
-          "Title": "utilizing generative artificial intelligence to improve storage system management",
+          "Date": "2026-07-07",
+          "IPC": "h04k003/00",
+          "Title": "multi-tone jammer mitigation",
+          "Claims": "16.0",
+          "Abstract": "a multi-tone jammer mitigation method includes: obtaining, wirelessly at an apparatus, a first jammer signal with a first frequency; obtaining, wirelessly at the apparatus, a second jammer signal with a second frequen\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12676692",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "h04l001/00",
+          "Title": "effectiveness of application forward error correction",
+          "Claims": "25.0",
+          "Abstract": "aspects presented herein may enable a ue to limit the number of transport blocks (tbs) per protocol data unit (pdu) set to a specified minimum number, such that the ue may not be specified to receive or transmit a lar\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12676698",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "h01l029/06",
+          "Title": "deeply recessed top metal gate for gate-all-around field effect transistor",
+          "Claims": "14.0",
+          "Abstract": "a field effect transistor (fet) structure and method for making the same is disclosed. in an aspect, a fet structure comprises a vertical metal gate disposed between a first and second source/drain (s/d) epitaxial (ep\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12677466",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "h10w042/00",
+          "Title": "die edge protection to eliminate die chipping",
+          "Claims": "14.0",
+          "Abstract": "disclosed is a device that includes a die and a protection layer surrounding the die. the protection layer is applied at a backend process prior to dicing a wafer to individual dies. the protection layer protects the \u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12677666",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "h03l007/093",
+          "Title": "signal oscillation circuit with adaptive tuning for tail filters",
           "Claims": "20.0",
-          "Abstract": "content including information describing an issue with a storage system is received. the content is analyzed by a generative artificial intelligence (ai) model to identify the issue described by the content. a solutio\u2026",
-          "Ticker": "P",
-          "PatentNumber": "12669965",
-          "_first_seen": "2026-07-05T06:24:50.377568+00:00"
+          "Abstract": "techniques and apparatus for oscillating signal generation using a signal oscillation circuit capable of adaptively tuning one or more tail filters. an example signal oscillation circuit generally includes a voltage-c\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12676621",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "h04b007/06",
+          "Title": "nr air-to-ground signaling enhancement to support multiple numerologies",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may receive, from a base station, a channel state information (csi) report configuration inc\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12676658",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "h04w074/0833",
+          "Title": "timing advance acquisition in layer 1/layer 2-triggered mobility",
+          "Claims": "20.0",
+          "Abstract": "methods, systems, and devices for wireless communications are described. a user equipment (ue) may transmit a random access channel (rach) message to a first distributed unit (du) via a cell supported by the first du \u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12677326",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "g06f021/62",
+          "Title": "secure wireless communications between a glucose monitor and other devices",
+          "Claims": "20.0",
+          "Abstract": "the exemplary embodiments may provide a secure framework for devices in a drug delivery system to wirelessly communicate. the secure framework may use encrypted keys to carry credentials and to specify the rights of t\u2026",
+          "Ticker": "PODD",
+          "PatentNumber": "12673160",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "b22d041/26",
+          "Title": "melt transportation apparatus and melt transportation method",
+          "Claims": "13.0",
+          "Abstract": "a melt transportation apparatus according to an embodiment of the present invention comprises: a container having an internal space in which melt can be accommodated and an opening through which the melt can be input/\u2026",
+          "Ticker": "PKX",
+          "PatentNumber": "12673360",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
+        },
+        {
+          "Date": "2026-07-07",
+          "IPC": "h04w074/0808",
+          "Title": "rules for resolving channel aware tone reservation contention",
+          "Claims": "29.0",
+          "Abstract": "methods, systems, and devices for wireless communications are described. a user equipment (ue) may receive, from a network entity, control information indicating a first set of resource elements (res) allocated for a \u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12677316",
+          "_first_seen": "2026-07-12T05:53:20.691756+00:00"
         }
       ]
     },
@@ -4101,48 +4101,34 @@
       "emoji": "\ud83d\udcb8",
       "label_en": "Corporate donors",
       "label_zh": "\u4f01\u4e1a\u6350\u8d60",
-      "rows": 1422,
+      "rows": 1423,
       "last_seen": "2026-07-05",
       "recent": [
         {
-          "BioGuideID": "S001225",
-          "CandidateName": "SORENSEN, ERIC",
-          "CompanyCMTENM": "MOLINA HEALTHCARE, INC. PAC",
+          "BioGuideID": "H001058",
+          "CandidateName": "HUIZENGA, WILLIAM P",
+          "CompanyCMTENM": "CITIGROUP INC. PAC - FEDERAL (CITI PAC - FEDERAL)",
           "TransactionDate": "2026-05-21",
+          "TransactionAmount": "2500",
+          "Ticker": "C",
+          "CommitteeName": "BILL HUIZENGA FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00008474",
+          "Uploaded": "2026-07-05 23:33:39.981559",
+          "_first_seen": "2026-07-12T05:53:33.158331+00:00"
+        },
+        {
+          "BioGuideID": "S001198",
+          "CandidateName": "SULLIVAN, DAN",
+          "CompanyCMTENM": "SCHNEIDER NATIONAL INC., TRANSPAC",
+          "TransactionDate": "2026-05-28",
           "TransactionAmount": "1000",
-          "Ticker": "MOH",
-          "CommitteeName": "ERIC SORENSEN FOR ILLINOIS",
+          "Ticker": "SNDR",
+          "CommitteeName": "ALASKANS FOR DAN SULLIVAN",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00430256",
-          "Uploaded": "2026-07-05 23:33:39.981559",
-          "_first_seen": "2026-07-10T06:26:12.365596+00:00"
-        },
-        {
-          "BioGuideID": "E000071",
-          "CandidateName": "ELLZEY, JOHN KEVIN SR.",
-          "CompanyCMTENM": "PHILLIPS 66 PAC",
-          "TransactionDate": "2026-05-28",
-          "TransactionAmount": "2500",
-          "Ticker": "PSX",
-          "CommitteeName": "JAKE ELLZEY FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00513549",
-          "Uploaded": "2026-07-05 23:33:39.981559",
-          "_first_seen": "2026-07-07T12:04:37.873514+00:00"
-        },
-        {
-          "BioGuideID": "E000294",
-          "CandidateName": "EMMER, THOMAS EARL JR.",
-          "CompanyCMTENM": "PHILLIPS 66 PAC",
-          "TransactionDate": "2026-05-28",
-          "TransactionAmount": "2500",
-          "Ticker": "PSX",
-          "CommitteeName": "EMMER FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00513549",
+          "CompanyCMTEID": "C00563924",
           "Uploaded": "2026-07-05 23:33:39.981559",
           "_first_seen": "2026-07-07T12:04:37.873514+00:00"
         },
@@ -4399,16 +4385,58 @@
           "_first_seen": "2026-07-07T12:04:37.873514+00:00"
         },
         {
-          "BioGuideID": "S001198",
-          "CandidateName": "SULLIVAN, DAN",
-          "CompanyCMTENM": "SCHNEIDER NATIONAL INC., TRANSPAC",
+          "BioGuideID": "W000805",
+          "CandidateName": "WARNER, MARK ROBERT",
+          "CompanyCMTENM": "PHILLIPS 66 PAC",
           "TransactionDate": "2026-05-28",
-          "TransactionAmount": "1000",
-          "Ticker": "SNDR",
-          "CommitteeName": "ALASKANS FOR DAN SULLIVAN",
+          "TransactionAmount": "3500",
+          "Ticker": "PSX",
+          "CommitteeName": "FRIENDS OF MARK WARNER",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00563924",
+          "CompanyCMTEID": "C00513549",
+          "Uploaded": "2026-07-05 23:33:39.981559",
+          "_first_seen": "2026-07-07T12:04:37.873514+00:00"
+        },
+        {
+          "BioGuideID": "E000294",
+          "CandidateName": "EMMER, THOMAS EARL JR.",
+          "CompanyCMTENM": "PHILLIPS 66 PAC",
+          "TransactionDate": "2026-05-28",
+          "TransactionAmount": "2500",
+          "Ticker": "PSX",
+          "CommitteeName": "EMMER FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00513549",
+          "Uploaded": "2026-07-05 23:33:39.981559",
+          "_first_seen": "2026-07-07T12:04:37.873514+00:00"
+        },
+        {
+          "BioGuideID": "E000071",
+          "CandidateName": "ELLZEY, JOHN KEVIN SR.",
+          "CompanyCMTENM": "PHILLIPS 66 PAC",
+          "TransactionDate": "2026-05-28",
+          "TransactionAmount": "2500",
+          "Ticker": "PSX",
+          "CommitteeName": "JAKE ELLZEY FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00513549",
+          "Uploaded": "2026-07-05 23:33:39.981559",
+          "_first_seen": "2026-07-07T12:04:37.873514+00:00"
+        },
+        {
+          "BioGuideID": "L000599",
+          "CandidateName": "LAWLER, MICHAEL VINCENT",
+          "CompanyCMTENM": "U.S. BANCORP FEDERAL POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-28",
+          "TransactionAmount": "500",
+          "Ticker": "TBBK",
+          "CommitteeName": "LAWLER FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00488882",
           "Uploaded": "2026-07-05 23:33:39.981559",
           "_first_seen": "2026-07-07T12:04:37.873514+00:00"
         },
@@ -4425,34 +4453,6 @@
           "CompanyCMTEID": "C00542365",
           "Uploaded": "2026-07-05 23:33:39.981559",
           "_first_seen": "2026-07-07T12:04:37.873514+00:00"
-        },
-        {
-          "BioGuideID": "F000478",
-          "CandidateName": "FRY, RUSSELL",
-          "CompanyCMTENM": "THE BOEING COMPANY PAC",
-          "TransactionDate": "2026-05-27",
-          "TransactionAmount": "1000",
-          "Ticker": "BA",
-          "CommitteeName": "FRY FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00142711",
-          "Uploaded": "2026-07-05 23:33:39.981559",
-          "_first_seen": "2026-07-07T12:04:37.873514+00:00"
-        },
-        {
-          "BioGuideID": "H001091",
-          "CandidateName": "ARENHOLZ, ASHLEY HINSON",
-          "CompanyCMTENM": "TOYOTA MOTOR NORTH AMERICA, INC POLITICAL ACTION COMMITTEE (TOYOTA/LEXUS PAC)",
-          "TransactionDate": "2026-05-28",
-          "TransactionAmount": "1000",
-          "Ticker": "TM",
-          "CommitteeName": "ASHLEY FOR IOWA",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00542365",
-          "Uploaded": "2026-07-05 23:33:39.981559",
-          "_first_seen": "2026-07-07T12:04:37.873514+00:00"
         }
       ]
     },
@@ -4460,26 +4460,107 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 811,
-      "last_seen": "2026-07-11",
+      "rows": 822,
+      "last_seen": "2026-07-12",
       "recent": [
         {
-          "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+DIGITAL+REALTY+TRUST+INC.+lobbying+was+just+disclosed",
-          "time": "2026-07-11 23:08:37",
-          "headline": "Lobbying Update: $30,000 of DIGITAL REALTY TRUST INC. lobbying was just disclosed",
-          "category": "lobbying_automated",
-          "summary": "<p>$30,000 of DIGITAL REALTY TRUST INC. lobbying was just disclosed, from Q2 of 2026, in a new Lobbying Disclosure Act filing.</p><p>This included lobbying on issues like:</p><p>\"Issues related to data centers\"</p><p>\u2026",
-          "image": "https://www.quiverquant.com/images/dlr_rect_new.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Scott+H.+Peters+Made+an+Estimated+%24640.0K+in+the+Stock+Market+Last+Month",
+          "time": "2026-07-12 03:01:08",
+          "headline": "Net Worth Update: Representative Scott H. Peters Made an Estimated $640.0K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Scott H. Peters</strong> made <strong>$640.0K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Scott H. Peters Net Worth</h2>\u2026",
+          "image": "https://www.quiverquant.com/images/P000608_congress.png",
+          "_first_seen": "2026-07-12T05:53:33.777830+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+INTERDIGITAL+lobbying+was+just+disclosed",
-          "time": "2026-07-11 23:08:37",
-          "headline": "Lobbying Update: $30,000 of INTERDIGITAL lobbying was just disclosed",
-          "category": "lobbying_automated",
-          "summary": "<p>$30,000 of INTERDIGITAL lobbying was just disclosed, from Q2 of 2026, in a new Lobbying Disclosure Act filing.</p><p>This included lobbying on issues like:</p><p>\"Patent infringement\"</p><p>You can find more data o\u2026",
-          "image": "https://www.quiverquant.com/images/idcc_rect_new.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Neal+P.+Dunn+Made+an+Estimated+%24182.8K+in+the+Stock+Market+Last+Month",
+          "time": "2026-07-12 03:01:08",
+          "headline": "Net Worth Update: Representative Neal P. Dunn Made an Estimated $182.8K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Neal P. Dunn</strong> made <strong>$182.8K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Neal P. Dunn Net Worth</h2><p>Qui\u2026",
+          "image": "https://www.quiverquant.com/images/D000628_congress.png",
+          "_first_seen": "2026-07-12T05:53:33.777830+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Markwayne+Mullin+Made+an+Estimated+%24530.4K+in+the+Stock+Market+Last+Month",
+          "time": "2026-07-12 03:01:08",
+          "headline": "Net Worth Update: Senator Markwayne Mullin Made an Estimated $530.4K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Markwayne Mullin</strong> made <strong>$530.4K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Markwayne Mullin Net Worth</h2><p>Quiver Qu\u2026",
+          "image": "https://www.quiverquant.com/images/M001190_congress.png",
+          "_first_seen": "2026-07-12T05:53:33.777830+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Julie+Johnson+Made+an+Estimated+%24154.3K+in+the+Stock+Market+Last+Month",
+          "time": "2026-07-12 03:01:08",
+          "headline": "Net Worth Update: Representative Julie Johnson Made an Estimated $154.3K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Julie Johnson</strong> made <strong>$154.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Julie Johnson Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/J000310_congress.png",
+          "_first_seen": "2026-07-12T05:53:33.777830+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Thomas+H.+Kean%2C+Jr.+Made+an+Estimated+%24105.7K+in+the+Stock+Market+Last+Month",
+          "time": "2026-07-12 03:01:08",
+          "headline": "Net Worth Update: Representative Thomas H. Kean, Jr. Made an Estimated $105.7K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Thomas H. Kean, Jr.</strong> made <strong>$105.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Thomas H. Kean, Jr. Net Wo\u2026",
+          "image": "https://www.quiverquant.com/images/K000398_congress.png",
+          "_first_seen": "2026-07-12T05:53:33.777830+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Bill+Hagerty+Made+an+Estimated+%24549.1K+in+the+Stock+Market+Last+Month",
+          "time": "2026-07-12 03:01:08",
+          "headline": "Net Worth Update: Senator Bill Hagerty Made an Estimated $549.1K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Bill Hagerty</strong> made <strong>$549.1K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Bill Hagerty Net Worth</h2><p>Quiver Quantitati\u2026",
+          "image": "https://www.quiverquant.com/images/H000601_congress.png",
+          "_first_seen": "2026-07-12T05:53:33.777830+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Kelly+Morrison+Made+an+Estimated+%24209.5K+in+the+Stock+Market+Last+Month",
+          "time": "2026-07-12 03:01:08",
+          "headline": "Net Worth Update: Representative Kelly Morrison Made an Estimated $209.5K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Kelly Morrison</strong> made <strong>$209.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Kelly Morrison Net Worth</h2><p\u2026",
+          "image": "https://www.quiverquant.com/images/M001234_congress.png",
+          "_first_seen": "2026-07-12T05:53:33.777830+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Jared+Moskowitz+Made+an+Estimated+%24133.3K+in+the+Stock+Market+Last+Month",
+          "time": "2026-07-12 03:01:08",
+          "headline": "Net Worth Update: Representative Jared Moskowitz Made an Estimated $133.3K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Jared Moskowitz</strong> made <strong>$133.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Jared Moskowitz Net Worth</h2>\u2026",
+          "image": "https://www.quiverquant.com/images/M001217_congress.png",
+          "_first_seen": "2026-07-12T05:53:33.777830+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Susan+M.+Collins+Made+an+Estimated+%24104.0K+in+the+Stock+Market+Last+Month",
+          "time": "2026-07-12 03:01:08",
+          "headline": "Net Worth Update: Senator Susan M. Collins Made an Estimated $104.0K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Susan M. Collins</strong> made <strong>$104.0K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Susan M. Collins Net Worth</h2><p>Quiver Qu\u2026",
+          "image": "https://www.quiverquant.com/images/C001035_congress.png",
+          "_first_seen": "2026-07-12T05:53:33.777830+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Max+L.+Miller+Made+an+Estimated+%24104.3K+in+the+Stock+Market+Last+Month",
+          "time": "2026-07-12 03:01:08",
+          "headline": "Net Worth Update: Representative Max L. Miller Made an Estimated $104.3K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Max L. Miller</strong> made <strong>$104.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Max L. Miller Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/M001222_congress.png",
+          "_first_seen": "2026-07-12T05:53:33.777830+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Lloyd+Doggett+Made+an+Estimated+%24347.6K+in+the+Stock+Market+Last+Month",
+          "time": "2026-07-12 03:01:08",
+          "headline": "Net Worth Update: Representative Lloyd Doggett Made an Estimated $347.6K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Lloyd Doggett</strong> made <strong>$347.6K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Lloyd Doggett Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/D000399_congress.png",
+          "_first_seen": "2026-07-12T05:53:33.777830+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2420%2C000+of+STATE+STREET+BANK+AND+TRUST+COMPANY+lobbying+was+just+disclosed",
@@ -4488,15 +4569,6 @@
           "category": "lobbying_automated",
           "summary": "<p>$20,000 of STATE STREET BANK AND TRUST COMPANY lobbying was just disclosed, from Q2 of 2026, in a new Lobbying Disclosure Act filing.</p><p>This included lobbying on issues like:</p><p>\"Financial legislation \n Fede\u2026",
           "image": "https://www.quiverquant.com/images/stt_rect_new.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2450%2C000+of+AAR+CORP+lobbying+was+just+disclosed",
-          "time": "2026-07-11 23:08:37",
-          "headline": "Lobbying Update: $50,000 of AAR CORP lobbying was just disclosed",
-          "category": "lobbying_automated",
-          "summary": "<p>$50,000 of AAR CORP lobbying was just disclosed, from Q2 of 2026, in a new Lobbying Disclosure Act filing.</p><p>This included lobbying on issues like:</p><p>\"NDAA Reauthorization \n State Aviation\"</p><p>You can fi\u2026",
-          "image": "https://www.quiverquant.com/images/air_rect_new.png",
           "_first_seen": "2026-07-12T02:04:31.889430+00:00"
         },
         {
@@ -4509,12 +4581,30 @@
           "_first_seen": "2026-07-12T02:04:31.889430+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/FB+FINANCIAL+Q2+2026+Earnings+Preview%3A+Recent+%24FBK+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More",
-          "time": "2026-07-11 21:05:10",
-          "headline": "FB FINANCIAL Q2 2026 Earnings Preview: Recent $FBK Insider Trading, Hedge Fund Activity, and More",
-          "category": "earnings_automated",
-          "summary": "<p>FB FINANCIAL (<a href=\"https://www.quiverquant.com/stock/FBK/\">$FBK</a>) is expected to release its quarterly earnings data on Monday, July 13th after market close, per Finnhub. Analysts are expecting revenue of $1\u2026",
-          "image": "https://www.quiverquant.com/images/fbk_rect_new.png",
+          "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2450%2C000+of+AAR+CORP+lobbying+was+just+disclosed",
+          "time": "2026-07-11 23:08:37",
+          "headline": "Lobbying Update: $50,000 of AAR CORP lobbying was just disclosed",
+          "category": "lobbying_automated",
+          "summary": "<p>$50,000 of AAR CORP lobbying was just disclosed, from Q2 of 2026, in a new Lobbying Disclosure Act filing.</p><p>This included lobbying on issues like:</p><p>\"NDAA Reauthorization \n State Aviation\"</p><p>You can fi\u2026",
+          "image": "https://www.quiverquant.com/images/air_rect_new.png",
+          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+INTERDIGITAL+lobbying+was+just+disclosed",
+          "time": "2026-07-11 23:08:37",
+          "headline": "Lobbying Update: $30,000 of INTERDIGITAL lobbying was just disclosed",
+          "category": "lobbying_automated",
+          "summary": "<p>$30,000 of INTERDIGITAL lobbying was just disclosed, from Q2 of 2026, in a new Lobbying Disclosure Act filing.</p><p>This included lobbying on issues like:</p><p>\"Patent infringement\"</p><p>You can find more data o\u2026",
+          "image": "https://www.quiverquant.com/images/idcc_rect_new.png",
+          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+DIGITAL+REALTY+TRUST+INC.+lobbying+was+just+disclosed",
+          "time": "2026-07-11 23:08:37",
+          "headline": "Lobbying Update: $30,000 of DIGITAL REALTY TRUST INC. lobbying was just disclosed",
+          "category": "lobbying_automated",
+          "summary": "<p>$30,000 of DIGITAL REALTY TRUST INC. lobbying was just disclosed, from Q2 of 2026, in a new Lobbying Disclosure Act filing.</p><p>This included lobbying on issues like:</p><p>\"Issues related to data centers\"</p><p>\u2026",
+          "image": "https://www.quiverquant.com/images/dlr_rect_new.png",
           "_first_seen": "2026-07-12T02:04:31.889430+00:00"
         },
         {
@@ -4524,6 +4614,15 @@
           "category": "earnings_automated",
           "summary": "<p>$BTCY (<a href=\"https://www.quiverquant.com/stock/BTCY/\">$BTCY</a>) is expected to release its quarterly earnings data on Monday, July 13th after market close, per Finnhub. Analysts are expecting revenue of $4,182,\u2026",
           "image": "https://www.quiverquant.com/images/btcy_rect_new.png",
+          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/FB+FINANCIAL+Q2+2026+Earnings+Preview%3A+Recent+%24FBK+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More",
+          "time": "2026-07-11 21:05:10",
+          "headline": "FB FINANCIAL Q2 2026 Earnings Preview: Recent $FBK Insider Trading, Hedge Fund Activity, and More",
+          "category": "earnings_automated",
+          "summary": "<p>FB FINANCIAL (<a href=\"https://www.quiverquant.com/stock/FBK/\">$FBK</a>) is expected to release its quarterly earnings data on Monday, July 13th after market close, per Finnhub. Analysts are expecting revenue of $1\u2026",
+          "image": "https://www.quiverquant.com/images/fbk_rect_new.png",
           "_first_seen": "2026-07-12T02:04:31.889430+00:00"
         },
         {
@@ -4563,33 +4662,6 @@
           "_first_seen": "2026-07-12T02:04:31.889430+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Cipher+Mining+Stock+%28CIFR%29+Opinions+on+AI+Data+Center+Expansion",
-          "time": "2026-07-11 17:33:23",
-          "headline": "Cipher Mining Stock (CIFR) Opinions on AI Data Center Expansion",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI Data Center Focus:</strong> Social media discussions center on Cipher Mining's efforts to secure large-scale power capacity amid rising demand from hyperscalers. Analysts n\u2026",
-          "image": "https://www.quiverquant.com/images/cifr_rect_new.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/DFTX+Inc.+Stock+%28DFTX%29+Opinions+on+Phase+3+Results+and+Offering",
-          "time": "2026-07-11 17:33:23",
-          "headline": "DFTX Inc. Stock (DFTX) Opinions on Phase 3 Results and Offering",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Phase 3 Momentum:</strong> Recent social media chatter highlights the resilience of DFTX shares following positive phase 3 trial outcomes. Observers note the stock's ability t\u2026",
-          "image": "https://www.quiverquant.com/images/dftx_rect_new.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Qualcomm+Stock+%28QCOM%29+Opinions+on+AI+Pivot+and+Recent+Analyst+Commentary",
-          "time": "2026-07-11 17:33:23",
-          "headline": "Qualcomm Stock (QCOM) Opinions on AI Pivot and Recent Analyst Commentary",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI Strategy Focus:</strong> Social media chatter highlights Qualcomm's push into artificial intelligence infrastructure, including advanced talks for acquiring software firm M\u2026",
-          "image": "https://www.quiverquant.com/images/qcom_rect_new.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+AI-Driven+Memory+Demand",
           "time": "2026-07-11 17:33:23",
           "headline": "Micron Technology Stock (MU) Opinions on AI-Driven Memory Demand",
@@ -4608,84 +4680,12 @@
           "_first_seen": "2026-07-12T02:04:31.889430+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Zenta+Group+Stock+%28ZTG%29+Opinions+on+Recent+IPO",
+          "url": "https://www.quiverquant.com/news/DFTX+Inc.+Stock+%28DFTX%29+Opinions+on+Phase+3+Results+and+Offering",
           "time": "2026-07-11 17:33:23",
-          "headline": "Zenta Group Stock (ZTG) Opinions on Recent IPO",
+          "headline": "DFTX Inc. Stock (DFTX) Opinions on Phase 3 Results and Offering",
           "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">IPO Raises Funds:</strong> Discussions on social media highlighted Zenta Group's recent IPO and over-allotment that secured $6.9 million in proceeds. Traders noted the company\u2026",
-          "image": "https://www.quiverquant.com/images/ztg_rect_new.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Amazon+Stock+%28AMZN%29+Opinions+on+AWS+Momentum+and+AI+Investments",
-          "time": "2026-07-11 17:33:23",
-          "headline": "Amazon Stock (AMZN) Opinions on AWS Momentum and AI Investments",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">AWS Momentum Spurs Upgrade:</strong> Recent analyst commentary highlights accelerating growth in Amazon's cloud division, fueled by artificial intelligence demand and expanded\u2026",
-          "image": "https://www.quiverquant.com/images/amzn_rect_new.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Cerebras+Stock+%28CBRS%29+Opinions+on+Recent+Earnings+and+Nordic+Expansion+Plans",
-          "time": "2026-07-11 17:33:23",
-          "headline": "Cerebras Stock (CBRS) Opinions on Recent Earnings and Nordic Expansion Plans",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Report Sparks Debate:</strong> Social media chatter intensified following Cerebras' first post-IPO quarterly results, which showed robust revenue growth but highlight\u2026",
-          "image": "https://www.quiverquant.com/images/cbrs_rect_new.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Mary+Gay+Scanlon+introduces+H.R.+9638%3A+Sunshine+for+Our+Kids+Act+of+2026",
-          "time": "2026-07-11 15:38:47",
-          "headline": "New Bill: Representative Mary Gay Scanlon introduces H.R. 9638: Sunshine for Our Kids Act of 2026",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9638: Sunshine for Our Kids Act of 2026. This bill was received on 2026-07-09, and currently has 1 cosponsor.</p><p>Here is a short summary of the bill:</p><p>\n This bill would end t\u2026",
-          "image": "https://www.quiverquant.com/images/S001205_congress.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Marie+Gluesenkamp+Perez+introduces+H.R.+9637%3A+Protecting+Columbia+River+Salmon+Act+of+2026",
-          "time": "2026-07-11 15:38:47",
-          "headline": "New Bill: Representative Marie Gluesenkamp Perez introduces H.R. 9637: Protecting Columbia River Salmon Act of 2026",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9637: Protecting Columbia River Salmon Act of 2026. This bill was received on 2026-07-09, and currently has no cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bil\u2026",
-          "image": "https://www.quiverquant.com/images/G000600_congress.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Robert+J.+Wittman+introduces+H.R.+9640%3A+Earth+MRI+Reauthorization+Act+of+2026",
-          "time": "2026-07-11 15:38:47",
-          "headline": "New Bill: Representative Robert J. Wittman introduces H.R. 9640: Earth MRI Reauthorization Act of 2026",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9640: Earth MRI Reauthorization Act of 2026. This bill was received on 2026-07-09, and currently has 1 cosponsor.</p><p>Here is a short summary of the bill:</p><p>\n This bill would e\u2026",
-          "image": "https://www.quiverquant.com/images/W000804_congress.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Kevin+Mullin+introduces+H.R.+9635%3A+Getting+Innovations+to+Patients+During+Shutdowns+Act",
-          "time": "2026-07-11 15:38:47",
-          "headline": "New Bill: Representative Kevin Mullin introduces H.R. 9635: Getting Innovations to Patients During Shutdowns Act",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9635: Getting Innovations to Patients During Shutdowns Act. This bill was received on 2026-07-09, and currently has no cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n \u2026",
-          "image": "https://www.quiverquant.com/images/M001225_congress.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Kelly+Morrison+introduces+H.R.+9634%3A+Voter+Choice+Act",
-          "time": "2026-07-11 15:38:47",
-          "headline": "New Bill: Representative Kelly Morrison introduces H.R. 9634: Voter Choice Act",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9634: Voter Choice Act. This bill was received on 2026-07-09, and currently has 7 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would create a new federal \u2026",
-          "image": "https://www.quiverquant.com/images/M001234_congress.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2475%2C000+of+NANO+NUCLEAR+ENERGY+INC.+lobbying+was+just+disclosed",
-          "time": "2026-07-11 14:08:11",
-          "headline": "Lobbying Update: $75,000 of NANO NUCLEAR ENERGY INC. lobbying was just disclosed",
-          "category": "lobbying_automated",
-          "summary": "<p>$75,000 of NANO NUCLEAR ENERGY INC. lobbying was just disclosed, from Q2 of 2026, in a new Lobbying Disclosure Act filing.</p><p>This included lobbying on issues like:</p><p>\"Advocate for Department of Energy suppo\u2026",
-          "image": "https://www.quiverquant.com/images/nne_rect_new.png",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Phase 3 Momentum:</strong> Recent social media chatter highlights the resilience of DFTX shares following positive phase 3 trial outcomes. Observers note the stock's ability t\u2026",
+          "image": "https://www.quiverquant.com/images/dftx_rect_new.png",
           "_first_seen": "2026-07-12T02:04:31.889430+00:00"
         }
       ]
@@ -5471,182 +5471,182 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 98253,
+      "rows": 98677,
       "last_seen": "2026-07-12",
       "recent": [
         {
-          "ticker": "CCI",
-          "owner_name": "Mirae Asset Global Investments Co., Ltd.",
+          "ticker": "BMY",
+          "owner_name": "TORONTO DOMINION BANK",
           "owner_title": "Institution",
-          "shares": "97464",
+          "shares": "903512",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
+          "ticker": "AMGN",
+          "owner_name": "RAYMOND JAMES FINANCIAL INC",
           "owner_title": "Institution",
-          "shares": "1299711",
+          "shares": "1620353",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
+          "ticker": "AMGN",
+          "owner_name": "Fisher Asset Management, LLC",
+          "owner_title": "Institution",
+          "shares": "1577866",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "STIFEL FINANCIAL CORP",
+          "owner_title": "Institution",
+          "shares": "1540435",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Sumitomo Mitsui Trust Group, Inc.",
+          "owner_title": "Institution",
+          "shares": "1537964",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "FRANKLIN RESOURCES INC",
+          "owner_title": "Institution",
+          "shares": "1500535",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Capital Wealth Planning, LLC",
+          "owner_title": "Institution",
+          "shares": "1447173",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "HSBC HOLDINGS PLC",
+          "owner_title": "Institution",
+          "shares": "1351347",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Mitsubishi UFJ Asset Management Co., Ltd.",
+          "owner_title": "Institution",
+          "shares": "1295157",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AMGN",
           "owner_name": "MANUFACTURERS LIFE INSURANCE COMPANY, THE",
           "owner_title": "Institution",
-          "shares": "1390861",
+          "shares": "1258043",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Quadrature Capital Ltd",
+          "ticker": "AMGN",
+          "owner_name": "National Pension Service",
           "owner_title": "Institution",
-          "shares": "1384898",
+          "shares": "1239549",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "TWO SIGMA INVESTMENTS, LP",
+          "ticker": "AMGN",
+          "owner_name": "LPL Financial LLC",
           "owner_title": "Institution",
-          "shares": "1372004",
+          "shares": "1163976",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "TD ASSET MANAGEMENT INC",
+          "ticker": "AMGN",
+          "owner_name": "VICTORY CAPITAL MANAGEMENT INC",
           "owner_title": "Institution",
-          "shares": "1360086",
+          "shares": "1137313",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "WILLIAM BLAIR INVESTMENT MANAGEMENT, LLC",
+          "ticker": "AMGN",
+          "owner_name": "BNP PARIBAS FINANCIAL MARKETS",
           "owner_title": "Institution",
-          "shares": "1339546",
+          "shares": "1119920",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "ADAGE CAPITAL PARTNERS GP, L.L.C.",
+          "ticker": "AMGN",
+          "owner_name": "JANUS HENDERSON GROUP PLC",
           "owner_title": "Institution",
-          "shares": "1325594",
+          "shares": "1107159",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Tidal Investments LLC",
+          "ticker": "AMGN",
+          "owner_name": "Mariner, LLC",
           "owner_title": "Institution",
-          "shares": "1315796",
+          "shares": "1076357",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "NATIXIS ADVISORS, LLC",
+          "ticker": "AMGN",
+          "owner_name": "ProShare Advisors LLC",
           "owner_title": "Institution",
-          "shares": "1288724",
+          "shares": "1073105",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Bridgewater Associates, LP",
+          "ticker": "AMGN",
+          "owner_name": "PNC FINANCIAL SERVICES GROUP, INC.",
           "owner_title": "Institution",
-          "shares": "1794801",
+          "shares": "1055842",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Korea Investment CORP",
+          "ticker": "AMGN",
+          "owner_name": "RAYMOND JAMES & ASSOCIATES",
           "owner_title": "Institution",
-          "shares": "1270788",
+          "shares": "989504",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "CAXTON ASSOCIATES LLP",
+          "ticker": "AMGN",
+          "owner_name": "Swiss National Bank",
           "owner_title": "Institution",
-          "shares": "1243700",
+          "shares": "1580353",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "COATUE MANAGEMENT LLC",
+          "ticker": "AMGN",
+          "owner_name": "ENVESTNET ASSET MANAGEMENT INC",
           "owner_title": "Institution",
-          "shares": "1239043",
+          "shares": "1697306",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Raymond James Financial Services Advisors, Inc.",
+          "ticker": "AMGN",
+          "owner_name": "RHUMBLINE ADVISERS",
           "owner_title": "Institution",
-          "shares": "1230972",
+          "shares": "931065",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "LOS ANGELES CAPITAL MANAGEMENT LLC",
+          "ticker": "AMGN",
+          "owner_name": "FEDERATED HERMES, INC.",
           "owner_title": "Institution",
-          "shares": "1192012",
+          "shares": "1799440",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "FIRST TRUST ADVISORS LP",
+          "ticker": "AMGN",
+          "owner_name": "GOLDMAN SACHS GROUP INC",
           "owner_title": "Institution",
-          "shares": "1186116",
+          "shares": "4219989",
           "_collected": "2026-07-12"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "SRS Investment Management, LLC",
+          "ticker": "AMGN",
+          "owner_name": "Legal & General Group Plc",
           "owner_title": "Institution",
-          "shares": "1151405",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Russell Investments Group, Ltd.",
-          "owner_title": "Institution",
-          "shares": "1394462",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "AVIVA PLC",
-          "owner_title": "Institution",
-          "shares": "1396327",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "CANADA LIFE ASSURANCE Co",
-          "owner_title": "Institution",
-          "shares": "1411518",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Point72 Asset Management, L.P.",
-          "owner_title": "Institution",
-          "shares": "1414656",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Waverton Investment Management Ltd",
-          "owner_title": "Institution",
-          "shares": "1736942",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Capital Research Global Investors",
-          "owner_title": "Institution",
-          "shares": "1730633",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Alecta Tjanstepension Omsesidigt",
-          "owner_title": "Institution",
-          "shares": "1725500",
+          "shares": "3870863",
           "_collected": "2026-07-12"
         }
       ]
@@ -5655,16 +5655,76 @@
       "emoji": "\ud83d\udcb0",
       "label_en": "Executive comp",
       "label_zh": "\u9ad8\u7ba1\u85aa\u916c",
-      "rows": 1163,
+      "rows": 1179,
       "last_seen": "2026-07-12",
       "recent": [
+        {
+          "ticker": "ACM",
+          "name": "David Gan",
+          "role": "CLO",
+          "year": "2022",
+          "total_comp": "2530918.0",
+          "salary": "589424.0",
+          "bonus": "607885.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AVO",
+          "name": "Bryan E. Giles",
+          "role": "CFO",
+          "year": "2023",
+          "total_comp": "1195874.0",
+          "salary": "467354.0",
+          "bonus": "70875.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AVO",
+          "name": "Juan A. Wiesner",
+          "role": "President of Central and South America",
+          "year": "2024",
+          "total_comp": "778419.0",
+          "salary": "445737.0",
+          "bonus": "108750.0",
+          "_collected": "2026-07-12"
+        },
         {
           "ticker": "AVO",
           "name": "Joanne C. Wu",
           "role": "General Counsel and Secretary",
+          "year": "2024",
+          "total_comp": "1567347.0",
+          "salary": "444804.0",
+          "bonus": "67501.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AVO",
+          "name": "John M. Pawlowski",
+          "role": "President and COO",
+          "year": "2024",
+          "total_comp": "2058429.0",
+          "salary": "346155.0",
+          "bonus": "475002.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AVO",
+          "name": "Stephen J. Barnard",
+          "role": "CEO",
+          "year": "2024",
+          "total_comp": "3500819.0",
+          "salary": "795210.0",
+          "bonus": null,
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "ALGN",
+          "name": "Stuart Hockridge",
+          "role": "Executive Vice President, Global Human Resources",
           "year": "2022",
-          "total_comp": "769872.0",
-          "salary": "383870.0",
+          "total_comp": "2610441.0",
+          "salary": "478462.0",
           "bonus": null,
           "_collected": "2026-07-12"
         },
@@ -5680,101 +5740,11 @@
         },
         {
           "ticker": "ALGN",
-          "name": "John F. Morici",
-          "role": "CFO",
-          "year": "2024",
-          "total_comp": "6436387.0",
-          "salary": "675385.0",
-          "bonus": "500000.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "ALGN",
-          "name": "Julie Coletti",
-          "role": "Executive Vice President, Chief Legal and Regulatory Officer",
-          "year": "2024",
-          "total_comp": "4799215.0",
-          "salary": "597692.0",
-          "bonus": "441000.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "ALGN",
           "name": "Emory Wright",
           "role": "Executive Vice President, Direct Fabrication Platform Operations",
-          "year": "2024",
-          "total_comp": "4373420.0",
-          "salary": "568462.0",
-          "bonus": "419000.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "ALGN",
-          "name": "Stuart Hockridge",
-          "role": "Executive Vice President, Global Human Resources",
-          "year": "2024",
-          "total_comp": "3543577.0",
-          "salary": "518462.0",
-          "bonus": "382000.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "ALGN",
-          "name": "Joseph M. Hogan",
-          "role": "CEO",
-          "year": "2023",
-          "total_comp": "28952411.0",
-          "salary": "1354769.0",
-          "bonus": "1346200.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "ALGN",
-          "name": "John F. Morici",
-          "role": "CFO",
-          "year": "2023",
-          "total_comp": "5562881.0",
-          "salary": "618461.0",
-          "bonus": "286000.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "ALGN",
-          "name": "Julie Coletti",
-          "role": "Executive Vice President, Chief Legal and Regulatory Officer",
-          "year": "2023",
-          "total_comp": "4275928.0",
-          "salary": "566154.0",
-          "bonus": "263000.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "ALGN",
-          "name": "Emory Wright",
-          "role": "Executive Vice President, Direct Fabrication Platform Operations",
-          "year": "2023",
-          "total_comp": "4249197.0",
-          "salary": "548462.0",
-          "bonus": "254000.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "ALGN",
-          "name": "Stuart Hockridge",
-          "role": "Executive Vice President, Global Human Resources",
-          "year": "2023",
-          "total_comp": "3412491.0",
-          "salary": "498462.0",
-          "bonus": "231000.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "ALGN",
-          "name": "Joseph M. Hogan",
-          "role": "CEO",
           "year": "2022",
-          "total_comp": "18684044.0",
-          "salary": "1290385.0",
+          "total_comp": "3408364.0",
+          "salary": "527692.0",
           "bonus": null,
           "_collected": "2026-07-12"
         },
@@ -5790,12 +5760,102 @@
         },
         {
           "ticker": "ALGN",
+          "name": "Joseph M. Hogan",
+          "role": "CEO",
+          "year": "2022",
+          "total_comp": "18684044.0",
+          "salary": "1290385.0",
+          "bonus": null,
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "ALGN",
+          "name": "Stuart Hockridge",
+          "role": "Executive Vice President, Global Human Resources",
+          "year": "2023",
+          "total_comp": "3412491.0",
+          "salary": "498462.0",
+          "bonus": "231000.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "ALGN",
           "name": "Emory Wright",
           "role": "Executive Vice President, Direct Fabrication Platform Operations",
-          "year": "2022",
-          "total_comp": "3408364.0",
-          "salary": "527692.0",
-          "bonus": null,
+          "year": "2023",
+          "total_comp": "4249197.0",
+          "salary": "548462.0",
+          "bonus": "254000.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "ALGN",
+          "name": "Julie Coletti",
+          "role": "Executive Vice President, Chief Legal and Regulatory Officer",
+          "year": "2023",
+          "total_comp": "4275928.0",
+          "salary": "566154.0",
+          "bonus": "263000.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "ALGN",
+          "name": "John F. Morici",
+          "role": "CFO",
+          "year": "2023",
+          "total_comp": "5562881.0",
+          "salary": "618461.0",
+          "bonus": "286000.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "ALGN",
+          "name": "Joseph M. Hogan",
+          "role": "CEO",
+          "year": "2023",
+          "total_comp": "28952411.0",
+          "salary": "1354769.0",
+          "bonus": "1346200.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "ALGN",
+          "name": "Stuart Hockridge",
+          "role": "Executive Vice President, Global Human Resources",
+          "year": "2024",
+          "total_comp": "3543577.0",
+          "salary": "518462.0",
+          "bonus": "382000.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "ALGN",
+          "name": "Emory Wright",
+          "role": "Executive Vice President, Direct Fabrication Platform Operations",
+          "year": "2024",
+          "total_comp": "4373420.0",
+          "salary": "568462.0",
+          "bonus": "419000.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "ALGN",
+          "name": "Julie Coletti",
+          "role": "Executive Vice President, Chief Legal and Regulatory Officer",
+          "year": "2024",
+          "total_comp": "4799215.0",
+          "salary": "597692.0",
+          "bonus": "441000.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "ALGN",
+          "name": "John F. Morici",
+          "role": "CFO",
+          "year": "2024",
+          "total_comp": "6436387.0",
+          "salary": "675385.0",
+          "bonus": "500000.0",
           "_collected": "2026-07-12"
         },
         {
@@ -5806,86 +5866,6 @@
           "total_comp": "27321179.0",
           "salary": "1396904.0",
           "bonus": "2058000.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "ALGN",
-          "name": "Stuart Hockridge",
-          "role": "Executive Vice President, Global Human Resources",
-          "year": "2022",
-          "total_comp": "2610441.0",
-          "salary": "478462.0",
-          "bonus": null,
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AVO",
-          "name": "Bryan E. Giles",
-          "role": "CFO",
-          "year": "2023",
-          "total_comp": "1195874.0",
-          "salary": "467354.0",
-          "bonus": "70875.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AVO",
-          "name": "Stephen J. Barnard",
-          "role": "CEO",
-          "year": "2024",
-          "total_comp": "3500819.0",
-          "salary": "795210.0",
-          "bonus": null,
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AVO",
-          "name": "Bryan E. Giles",
-          "role": "CFO",
-          "year": "2022",
-          "total_comp": "963589.0",
-          "salary": "442338.0",
-          "bonus": null,
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AVO",
-          "name": "Stephen J. Barnard",
-          "role": "CEO",
-          "year": "2022",
-          "total_comp": "2670018.0",
-          "salary": "771164.0",
-          "bonus": null,
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AVO",
-          "name": "Juan A. Wiesner",
-          "role": "President of Central and South America",
-          "year": "2023",
-          "total_comp": "933924.0",
-          "salary": "465910.0",
-          "bonus": "21750.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AVO",
-          "name": "Joanne C. Wu",
-          "role": "General Counsel and Secretary",
-          "year": "2023",
-          "total_comp": "972799.0",
-          "salary": "410146.0",
-          "bonus": "62400.0",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AVO",
-          "name": "Juan A. Wiesner",
-          "role": "President of Central and South America",
-          "year": "2022",
-          "total_comp": "954985.0",
-          "salary": "453345.0",
-          "bonus": null,
           "_collected": "2026-07-12"
         },
         {
@@ -5900,12 +5880,32 @@
         },
         {
           "ticker": "AVO",
-          "name": "Juan A. Wiesner",
-          "role": "President of Central and South America",
+          "name": "Bryan E. Giles",
+          "role": "CFO",
           "year": "2024",
-          "total_comp": "778419.0",
-          "salary": "445737.0",
-          "bonus": "108750.0",
+          "total_comp": "1838746.0",
+          "salary": "484782.0",
+          "bonus": "73051.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AVO",
+          "name": "Joanne C. Wu",
+          "role": "General Counsel and Secretary",
+          "year": "2023",
+          "total_comp": "972799.0",
+          "salary": "410146.0",
+          "bonus": "62400.0",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "ACM",
+          "name": "Lara Poloni",
+          "role": "President",
+          "year": "2024",
+          "total_comp": "5535371.0",
+          "salary": "829320.0",
+          "bonus": null,
           "_collected": "2026-07-12"
         }
       ]
@@ -43641,7 +43641,7 @@
       },
       {
         "ticker": "GTLB",
-        "stars": 24571,
+        "stars": 24572,
         "wow_pct": 0.4,
         "hot": true
       },
@@ -43659,8 +43659,8 @@
       },
       {
         "ticker": "NVDA",
-        "stars": 17760,
-        "wow_pct": 0.24,
+        "stars": 17762,
+        "wow_pct": 0.25,
         "hot": true
       },
       {
@@ -43671,8 +43671,8 @@
       },
       {
         "ticker": "MSFT",
-        "stars": 187463,
-        "wow_pct": 0.22,
+        "stars": 187466,
+        "wow_pct": 0.23,
         "hot": true
       },
       {
@@ -43683,25 +43683,25 @@
       },
       {
         "ticker": "GOOGL",
-        "stars": 196318,
+        "stars": 196321,
         "wow_pct": 0.14,
         "hot": false
       },
       {
         "ticker": "PLTR",
-        "stars": 21910,
-        "wow_pct": 0.11,
+        "stars": 21911,
+        "wow_pct": 0.12,
         "hot": false
       },
       {
         "ticker": "U",
-        "stars": 19550,
-        "wow_pct": 0.1,
+        "stars": 19551,
+        "wow_pct": 0.11,
         "hot": false
       },
       {
         "ticker": "META",
-        "stars": 246428,
+        "stars": 246431,
         "wow_pct": 0.08,
         "hot": false
       },
@@ -45168,18 +45168,81 @@
     ],
     "news": [
       {
-        "headline": "Lobbying Update: $30,000 of DIGITAL REALTY TRUST INC. lobbying was just disclosed",
+        "headline": "Net Worth Update: Representative Scott H. Peters Made an Estimated $640.0K in the Stock Market Last Month",
         "ticker": null,
-        "category": "lobbying_automated",
-        "time": "2026-07-11 23:08:37",
-        "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+DIGITAL+REALTY+TRUST+INC.+lobbying+was+just+disclosed"
+        "category": "congress_trades_automated",
+        "time": "2026-07-12 03:01:08",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Scott+H.+Peters+Made+an+Estimated+%24640.0K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Lobbying Update: $30,000 of INTERDIGITAL lobbying was just disclosed",
+        "headline": "Net Worth Update: Representative Neal P. Dunn Made an Estimated $182.8K in the Stock Market Last Month",
         "ticker": null,
-        "category": "lobbying_automated",
-        "time": "2026-07-11 23:08:37",
-        "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+INTERDIGITAL+lobbying+was+just+disclosed"
+        "category": "congress_trades_automated",
+        "time": "2026-07-12 03:01:08",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Neal+P.+Dunn+Made+an+Estimated+%24182.8K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Senator Markwayne Mullin Made an Estimated $530.4K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-07-12 03:01:08",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Markwayne+Mullin+Made+an+Estimated+%24530.4K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Representative Julie Johnson Made an Estimated $154.3K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-07-12 03:01:08",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Julie+Johnson+Made+an+Estimated+%24154.3K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Representative Thomas H. Kean, Jr. Made an Estimated $105.7K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-07-12 03:01:08",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Thomas+H.+Kean%2C+Jr.+Made+an+Estimated+%24105.7K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Senator Bill Hagerty Made an Estimated $549.1K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-07-12 03:01:08",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Bill+Hagerty+Made+an+Estimated+%24549.1K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Representative Kelly Morrison Made an Estimated $209.5K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-07-12 03:01:08",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Kelly+Morrison+Made+an+Estimated+%24209.5K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Representative Jared Moskowitz Made an Estimated $133.3K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-07-12 03:01:08",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Jared+Moskowitz+Made+an+Estimated+%24133.3K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Senator Susan M. Collins Made an Estimated $104.0K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-07-12 03:01:08",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Susan+M.+Collins+Made+an+Estimated+%24104.0K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Representative Max L. Miller Made an Estimated $104.3K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-07-12 03:01:08",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Max+L.+Miller+Made+an+Estimated+%24104.3K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Representative Lloyd Doggett Made an Estimated $347.6K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-07-12 03:01:08",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Lloyd+Doggett+Made+an+Estimated+%24347.6K+in+the+Stock+Market+Last+Month"
       },
       {
         "headline": "Lobbying Update: $20,000 of STATE STREET BANK AND TRUST COMPANY lobbying was just disclosed",
@@ -45189,13 +45252,6 @@
         "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2420%2C000+of+STATE+STREET+BANK+AND+TRUST+COMPANY+lobbying+was+just+disclosed"
       },
       {
-        "headline": "Lobbying Update: $50,000 of AAR CORP lobbying was just disclosed",
-        "ticker": null,
-        "category": "lobbying_automated",
-        "time": "2026-07-11 23:08:37",
-        "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2450%2C000+of+AAR+CORP+lobbying+was+just+disclosed"
-      },
-      {
         "headline": "Lobbying Update: $30,000 of REGIONS FINANCIAL CORPORATION lobbying was just disclosed",
         "ticker": null,
         "category": "lobbying_automated",
@@ -45203,11 +45259,25 @@
         "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+REGIONS+FINANCIAL+CORPORATION+lobbying+was+just+disclosed"
       },
       {
-        "headline": "FB FINANCIAL Q2 2026 Earnings Preview: Recent $FBK Insider Trading, Hedge Fund Activity, and More",
+        "headline": "Lobbying Update: $50,000 of AAR CORP lobbying was just disclosed",
         "ticker": null,
-        "category": "earnings_automated",
-        "time": "2026-07-11 21:05:10",
-        "url": "https://www.quiverquant.com/news/FB+FINANCIAL+Q2+2026+Earnings+Preview%3A+Recent+%24FBK+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More"
+        "category": "lobbying_automated",
+        "time": "2026-07-11 23:08:37",
+        "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2450%2C000+of+AAR+CORP+lobbying+was+just+disclosed"
+      },
+      {
+        "headline": "Lobbying Update: $30,000 of INTERDIGITAL lobbying was just disclosed",
+        "ticker": null,
+        "category": "lobbying_automated",
+        "time": "2026-07-11 23:08:37",
+        "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+INTERDIGITAL+lobbying+was+just+disclosed"
+      },
+      {
+        "headline": "Lobbying Update: $30,000 of DIGITAL REALTY TRUST INC. lobbying was just disclosed",
+        "ticker": null,
+        "category": "lobbying_automated",
+        "time": "2026-07-11 23:08:37",
+        "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+DIGITAL+REALTY+TRUST+INC.+lobbying+was+just+disclosed"
       },
       {
         "headline": "$BTCY Q4 2026 Earnings Preview: Recent $BTCY Insider Trading, Hedge Fund Activity, and More",
@@ -45215,6 +45285,13 @@
         "category": "earnings_automated",
         "time": "2026-07-11 21:05:10",
         "url": "https://www.quiverquant.com/news/%24BTCY+Q4+2026+Earnings+Preview%3A+Recent+%24BTCY+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More"
+      },
+      {
+        "headline": "FB FINANCIAL Q2 2026 Earnings Preview: Recent $FBK Insider Trading, Hedge Fund Activity, and More",
+        "ticker": null,
+        "category": "earnings_automated",
+        "time": "2026-07-11 21:05:10",
+        "url": "https://www.quiverquant.com/news/FB+FINANCIAL+Q2+2026+Earnings+Preview%3A+Recent+%24FBK+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More"
       },
       {
         "headline": "HII Christen's Future USS George M. Neal (DDG 131) at Ingalls Shipbuilding",
@@ -45229,83 +45306,6 @@
         "category": "legislation_automated",
         "time": "2026-07-11 18:24:07",
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Troy+Downing%E2%80%99s+Whole-Home+Repairs+Act+Included+in+Housing+Legislation+That+Becomes+Law"
-      },
-      {
-        "headline": "Press Release: Rep. French Hill Marks Housing Bill Becoming Law",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-07-11 18:24:07",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+French+Hill+Marks+Housing+Bill+Becoming+Law"
-      },
-      {
-        "headline": "Press Release: Rep. Mike Flood Cites New Housing Law and Bipartisan Housing Legislation Efforts",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-07-11 18:24:07",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Mike+Flood+Cites+New+Housing+Law+and+Bipartisan+Housing+Legislation+Efforts"
-      },
-      {
-        "headline": "Cipher Mining Stock (CIFR) Opinions on AI Data Center Expansion",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-07-11 17:33:23",
-        "url": "https://www.quiverquant.com/news/Cipher+Mining+Stock+%28CIFR%29+Opinions+on+AI+Data+Center+Expansion"
-      },
-      {
-        "headline": "DFTX Inc. Stock (DFTX) Opinions on Phase 3 Results and Offering",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-07-11 17:33:23",
-        "url": "https://www.quiverquant.com/news/DFTX+Inc.+Stock+%28DFTX%29+Opinions+on+Phase+3+Results+and+Offering"
-      },
-      {
-        "headline": "Qualcomm Stock (QCOM) Opinions on AI Pivot and Recent Analyst Commentary",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-07-11 17:33:23",
-        "url": "https://www.quiverquant.com/news/Qualcomm+Stock+%28QCOM%29+Opinions+on+AI+Pivot+and+Recent+Analyst+Commentary"
-      },
-      {
-        "headline": "Micron Technology Stock (MU) Opinions on AI-Driven Memory Demand",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-07-11 17:33:23",
-        "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+AI-Driven+Memory+Demand"
-      },
-      {
-        "headline": "Adobe Stock (ADBE) Opinions on Bank of America Analyst Downgrade",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-07-11 17:33:23",
-        "url": "https://www.quiverquant.com/news/Adobe+Stock+%28ADBE%29+Opinions+on+Bank+of+America+Analyst+Downgrade"
-      },
-      {
-        "headline": "Zenta Group Stock (ZTG) Opinions on Recent IPO",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-07-11 17:33:23",
-        "url": "https://www.quiverquant.com/news/Zenta+Group+Stock+%28ZTG%29+Opinions+on+Recent+IPO"
-      },
-      {
-        "headline": "Amazon Stock (AMZN) Opinions on AWS Momentum and AI Investments",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-07-11 17:33:23",
-        "url": "https://www.quiverquant.com/news/Amazon+Stock+%28AMZN%29+Opinions+on+AWS+Momentum+and+AI+Investments"
-      },
-      {
-        "headline": "Cerebras Stock (CBRS) Opinions on Recent Earnings and Nordic Expansion Plans",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-07-11 17:33:23",
-        "url": "https://www.quiverquant.com/news/Cerebras+Stock+%28CBRS%29+Opinions+on+Recent+Earnings+and+Nordic+Expansion+Plans"
-      },
-      {
-        "headline": "New Bill: Representative Mary Gay Scanlon introduces H.R. 9638: Sunshine for Our Kids Act of 2026",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-07-11 15:38:47",
-        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Mary+Gay+Scanlon+introduces+H.R.+9638%3A+Sunshine+for+Our+Kids+Act+of+2026"
       }
     ],
     "wsb": [
@@ -45777,92 +45777,92 @@
     "patents": [
       {
         "ticker": "QCOM",
-        "patents": 330,
-        "ipc_classes": 32,
+        "patents": 397,
+        "ipc_classes": 35,
         "sample_title": "modulation and coding scheme table change based on constellation and code rate"
       },
       {
         "ticker": "TSM",
-        "patents": 277,
-        "ipc_classes": 36,
+        "patents": 320,
+        "ipc_classes": 39,
         "sample_title": "backside contact"
       },
       {
         "ticker": "IBM",
-        "patents": 192,
-        "ipc_classes": 33,
+        "patents": 244,
+        "ipc_classes": 36,
         "sample_title": "double-sided integrated circuit with electrostatic guard ring"
       },
       {
         "ticker": "AAPL",
-        "patents": 178,
-        "ipc_classes": 48,
+        "patents": 222,
+        "ipc_classes": 52,
         "sample_title": "method and system for generating at least one image of a real environment"
       },
       {
         "ticker": "INTC",
-        "patents": 153,
-        "ipc_classes": 32,
+        "patents": 175,
+        "ipc_classes": 33,
         "sample_title": "viewport switch latency reduction in live streaming"
       },
       {
-        "ticker": "MSFT",
-        "patents": 119,
-        "ipc_classes": 21,
-        "sample_title": "cryogenic removal of carbon dioxide from the atmosphere"
-      },
-      {
         "ticker": "MU",
-        "patents": 118,
-        "ipc_classes": 16,
+        "patents": 150,
+        "ipc_classes": 17,
         "sample_title": "advanced interconnection for wafer on wafer packaging"
       },
       {
+        "ticker": "MSFT",
+        "patents": 149,
+        "ipc_classes": 23,
+        "sample_title": "cryogenic removal of carbon dioxide from the atmosphere"
+      },
+      {
         "ticker": "LPL",
-        "patents": 90,
-        "ipc_classes": 11,
+        "patents": 114,
+        "ipc_classes": 13,
         "sample_title": "display apparatus having a light-emitting device"
       },
       {
         "ticker": "NVDA",
-        "patents": 76,
+        "patents": 90,
         "ipc_classes": 15,
         "sample_title": "highlight determination using one or more neural networks"
       },
       {
         "ticker": "SONY",
-        "patents": 70,
-        "ipc_classes": 29,
+        "patents": 87,
+        "ipc_classes": 31,
         "sample_title": "information processing apparatus and information processing method for users at remote locations to communicate naturally"
       },
       {
         "ticker": "HMC",
-        "patents": 61,
-        "ipc_classes": 28,
+        "patents": 79,
+        "ipc_classes": 34,
         "sample_title": "courteous mode for adjusting vehicle functions"
       },
       {
         "ticker": "TXN",
-        "patents": 61,
+        "patents": 75,
         "ipc_classes": 27,
         "sample_title": "high band-gap devices with a doped high band-gap gate electrode extension"
       },
       {
-        "ticker": "BA",
-        "patents": 56,
-        "ipc_classes": 40,
-        "sample_title": "wind tunnel turbulent airflow laser sensor system"
-      },
-      {
         "ticker": "SLB",
-        "patents": 55,
-        "ipc_classes": 13,
+        "patents": 71,
+        "ipc_classes": 14,
         "sample_title": "monitoring an industrial facilty employing industrial internet of things (iiot) sensors using a tactical compute application"
       },
       {
+        "ticker": "BA",
+        "patents": 69,
+        "ipc_classes": 46,
+        "sample_title": "wind tunnel turbulent airflow laser sensor system"
+      },
+      {
         "ticker": "AMAT",
-        "patents": 50,
-        "ipc_classes": 16,
+        "patents": 64,
+        "ipc_classes": 20,
         "sample_title": "patterning layer modification using directional radical ribbon beam"
       }
     ],
@@ -47163,7 +47163,7 @@
           "hf_model_momentum",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,753,746 reviews \u00b7 cnbc_pick: Rob Sechan \u00b7 github_momentum: +0.22% stars \u00b7 gov_contract: $22,858,532 awarded \u00b7 hf_model_momentum: +7.0% model downloads \u00b7 patent_cluster: 119 grants, 21 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,753,746 reviews \u00b7 cnbc_pick: Rob Sechan \u00b7 github_momentum: +0.23% stars \u00b7 gov_contract: $22,858,532 awarded \u00b7 hf_model_momentum: +7.0% model downloads \u00b7 patent_cluster: 149 grants, 23 IPC classes"
       },
       {
         "ticker": "NVDA",
@@ -47178,7 +47178,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 cnbc_pick: Joe Terranova \u00b7 github_momentum: +0.24% stars \u00b7 hf_model_momentum: +12.3% model downloads \u00b7 patent_cluster: 76 grants, 15 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 cnbc_pick: Joe Terranova \u00b7 github_momentum: +0.25% stars \u00b7 hf_model_momentum: +12.3% model downloads \u00b7 patent_cluster: 90 grants, 15 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "MRK",
@@ -47202,7 +47202,7 @@
           "patent_cluster",
           "special_situation"
         ],
-        "why": "darkpool_accum: DPI z -1.55 \u00b7 gov_grant: $7,937,735 federal grant/loan \u00b7 patent_cluster: 153 grants, 32 IPC classes \u00b7 special_situation: Other Situations"
+        "why": "darkpool_accum: DPI z -1.55 \u00b7 gov_grant: $7,937,735 federal grant/loan \u00b7 patent_cluster: 175 grants, 33 IPC classes \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "AMD",
@@ -47404,7 +47404,7 @@
           "hf_model_momentum",
           "patent_cluster"
         ],
-        "why": "github_momentum: +0.37% stars \u00b7 hf_model_momentum: +12.4% model downloads \u00b7 patent_cluster: 192 grants, 33 IPC classes"
+        "why": "github_momentum: +0.37% stars \u00b7 hf_model_momentum: +12.4% model downloads \u00b7 patent_cluster: 244 grants, 36 IPC classes"
       },
       {
         "ticker": "PLTR",

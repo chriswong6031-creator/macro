@@ -325,6 +325,12 @@ on:
       - "tests/test_fred_alias_collision.py"
       - "tests/test_cb_calendar.py"
       - "tests/test_liquidity_plumbing.py"
+      # RLT-R3 broad-market index ETF creation/redemption proxy (belt-and-suspenders):
+      # a future PR touching engine/etf_flows.py or collectors/sponsors.py alone
+      # (without ci.yml) must still retrigger the broad-etf-flows job.
+      - "engine/etf_flows.py"
+      - "collectors/sponsors.py"
+      - "tests/test_broad_etf_flows.py"
   workflow_dispatch:
 
 permissions:
@@ -604,7 +610,8 @@ jobs:
           tests/test_index_momentum.py
           tests/test_cohort_flow_chips.py
           tests/test_statement_tape.py
-          tests/test_backfill_options_flow.py -q
+          tests/test_backfill_options_flow.py
+          tests/test_rlt_sector_stance_enrich.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)
@@ -951,6 +958,23 @@ jobs:
       - name: flow-cohorts unit tests
         run: python -m pytest tests/test_flow_cohorts.py -q
 
+  broad-etf-flows:
+    # RLT-R3: broad-market index ETF creation/redemption proxy.
+    # Tests: proxy math + SO-jump guard (>25% clamped to NaN), causal z60 (no
+    # lookahead, min_periods=2), schema of broad_flow_proxy.parquet, upsert
+    # idempotency, partial-ticker robustness.
+    # Triggers on engine/etf_flows.py, collectors/sponsors.py, test file.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow
+      - name: broad ETF flow proxy unit tests
+        run: python -m pytest tests/test_broad_etf_flows.py -q
+
   house-law-registry:
     # Meta-guard: verifies config/house_law_checks.yml is complete and honest.
     # Three checks in sequence:
@@ -988,7 +1012,8 @@ jobs:
     # Engine (test_leader_lifecycle.py): state machine, hysteresis, tri-state Kleene,
     # rs_line_gap_pct, count_k_true_n_avail, display chip fence.
     # Builder (test_build_leader_radar.py): RS rank history, insider cluster,
-    # options skew, basket corr, early_entry sort, artifact schema additive.
+    # options skew, basket corr, early_entry sort, artifact schema additive,
+    # analyst buy-share loader + chip wiring + banner render (LRV-R1e; jinja2 needed).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -996,7 +1021,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: leader lifecycle engine tests
         run: python -m pytest tests/test_leader_lifecycle.py -q
       - name: leader radar builder tests

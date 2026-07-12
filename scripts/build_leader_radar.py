@@ -15,6 +15,18 @@ Stores written (COLLECT_LANE=nightly gate on all data/ writes):
   data/leader_radar/revisions_history.parquet   — dedup append of revisions/latest.parquet
   data/leader_radar/fire_log.parquet            — (date, ticker, book, fire_type) fire events
 
+Analyst buy-share feed (LR-R2 CROWDED chip e, `analyst_saturated`):
+  data/finnhub/recommendation.parquet (collectors/finnhub_altdata.py; monthly
+  strongBuy/buy/hold/sell/strongSell counts, ~120-name basket watchlist) read via
+  engine/analyst_revisions.revision_map — consensus_pct = (strongBuy+buy)/total×100
+  is the buy-share LEVEL the chip compares to CROWDED_ANALYST_BUY_PCT.
+  The synapse `analyst-targets` store (yfinance .info) was evaluated 2026-07-12 and
+  REJECTED for this chip: it carries only the consensus recommendationKey string +
+  num_analysts — no rating-category counts, so no buy-share is derivable from it.
+  Null-honest: store absent / ticker uncovered / latest period older than
+  _ANALYST_MAX_AGE_DAYS → analyst_buy_pct=None → chip null (never False).
+  Store born 2026-06-20 → young-data tag per LR-R14 (coverage.analyst_note + page banner).
+
 Output artifact:
   site/leaderradar/radar.json         — schema leader_radar.v1
 
@@ -567,6 +579,64 @@ def _extract_mktcap(sd: dict) -> float | None:
     return None
 
 
+# ── Analyst buy-share (LR-R2 CROWDED chip e) ──────────────────────────────────
+
+# Latest finnhub recommendation-trends period must be within this window;
+# periods are monthly, so 45d = current or previous month. Older → null-honest drop.
+_ANALYST_MAX_AGE_DAYS = 45
+
+
+def _load_analyst_buy_share(data_root: Path, today: date) -> dict[str, dict]:
+    """Per-ticker analyst buy-share map from finnhub recommendation-trends.
+
+    Reads data/finnhub/recommendation.parquet through
+    engine/analyst_revisions.revision_map (LR-R13: consume, never re-implement);
+    consensus_pct = (strongBuy+buy)/total×100 is the LEVEL the analyst_saturated
+    chip compares to CROWDED_ANALYST_BUY_PCT. Returns {} when the store is
+    absent/unreadable; tickers whose latest period is older than
+    _ANALYST_MAX_AGE_DAYS are dropped (stale rating counts must not fire a
+    crowding chip). Values: {consensus_pct, n_analysts, n_periods, latest_period}.
+    """
+    p = data_root / "finnhub" / "recommendation.parquet"
+    if not p.exists():
+        log.info("build_leader_radar: finnhub/recommendation.parquet absent — analyst chip null")
+        return {}
+    try:
+        recs = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_leader_radar: finnhub/recommendation.parquet unreadable: %s", e)
+        return {}
+    try:
+        from engine.analyst_revisions import revision_map
+        full = revision_map(recs)
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_leader_radar: revision_map failed: %s", e)
+        return {}
+
+    out: dict[str, dict] = {}
+    for ticker, row in full.items():
+        pct = row.get("consensus_pct")
+        if pct is None:
+            continue
+        try:
+            period_age = (today - pd.Timestamp(row.get("latest_period")).date()).days
+        except Exception:  # noqa: BLE001
+            continue
+        if period_age > _ANALYST_MAX_AGE_DAYS:
+            log.debug(
+                "build_leader_radar: %s analyst period %s stale (%dd) — dropped",
+                ticker, row.get("latest_period"), period_age,
+            )
+            continue
+        out[ticker] = {
+            "consensus_pct": float(pct),
+            "n_analysts": row.get("n_analysts"),
+            "n_periods": row.get("n_periods"),
+            "latest_period": row.get("latest_period"),
+        }
+    return out
+
+
 # ── Regime inputs ─────────────────────────────────────────────────────────────
 
 def _load_regime_inputs(data_root: Path) -> dict:
@@ -1116,6 +1186,7 @@ def _build_ticker_assessment(
     revisions_row: dict,
     valuation_row: dict,
     earnings_row: dict,
+    analyst_row: dict,
     raw_history: list[tuple[date, str]],
     confirmed_history: list[tuple[date, str]],
     stale: bool,
@@ -1162,9 +1233,11 @@ def _build_ticker_assessment(
                 break
         days_in_state = count
 
-    # analyst_buy_pct: gap — per-transaction Form-4 PIT panel not yet in nightly lane;
-    # quarterly SEC aggregate (insider_cluster) is the available source (LRV-R1b).
-    # analyst_buy_pct stays None until a per-transaction feed is integrated.
+    # analyst_buy_pct (LRV-R1e): buy-share LEVEL from finnhub recommendation-trends
+    # (data/finnhub/recommendation.parquet via engine/analyst_revisions.consensus_pct =
+    # (strongBuy+buy)/total×100). The synapse `analyst-targets` store (yfinance .info)
+    # was evaluated and rejected — consensus recommendationKey only, no rating counts.
+    # Null-honest: uncovered/stale-period names arrive here with an empty analyst_row.
 
     inp = LifecycleInputs(
         close=close,
@@ -1177,6 +1250,7 @@ def _build_ticker_assessment(
         fwd_pe=valuation_row.get("fwd_pe"),
         sector_median_fwd_pe=valuation_row.get("sector_median_fwd_pe"),
         valuation_pctile_5y=valuation_row.get("valuation_pctile_5y"),
+        analyst_buy_pct=analyst_row.get("consensus_pct"),
         high=high,
         low=low,
         volume=volume,
@@ -1552,6 +1626,15 @@ def build(
     except Exception as e:  # noqa: BLE001
         log.warning("build_leader_radar: options_skew load failed: %s", e)
 
+    # LRV-R1e — analyst buy-share: {ticker: {consensus_pct, n_analysts, ...}}
+    analyst_store: dict[str, dict] = {}
+    try:
+        analyst_store = _load_analyst_buy_share(data_root, date.today())
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_leader_radar: analyst buy-share load failed: %s", e)
+    analyst_covered = [t for t in universe if t in analyst_store]
+    analyst_uncovered = [t for t in universe if t not in analyst_store]
+
     # RS rank history: {ticker: DataFrame(rs_rank) | None}  (vectorized)
     rs_rank_history_map: dict[str, Any] = {}
     if rs_map:
@@ -1637,6 +1720,7 @@ def build(
                 revisions_row=revisions_store.get(ticker) or {},
                 valuation_row=valuation_store.get(ticker) or {},
                 earnings_row=earnings_store.get(ticker) or {},
+                analyst_row=analyst_store.get(ticker) or {},
                 raw_history=raw_history,
                 confirmed_history=confirmed_history,
                 stale=stale,
@@ -1764,6 +1848,9 @@ def build(
                     "peer_median_rs_63d": peer_median_map.get(ticker),
                     "rs_accel_leader": rs_accel_map.get(ticker),
                     "insider_cluster": insider_map.get(ticker),
+                    # LRV-R1e context: buy-share level + analyst count behind analyst_saturated
+                    "analyst_buy_pct": (analyst_store.get(ticker) or {}).get("consensus_pct"),
+                    "analyst_n": (analyst_store.get(ticker) or {}).get("n_analysts"),
                 },
                 "breakaway_watch_state": watch_states_map.get(ticker),
             })
@@ -1973,6 +2060,15 @@ def build(
             "mktcap_n_covered": sum(1 for v in mktcap_map.values() if v is not None),
             "tape_note": "4H data available for select core names only; null-honest elsewhere",
             "rs_depth_note": "rs_series full-history backfill on first run (rs_series depth == ohlcv depth)",
+            # LRV-R1e: analyst buy-share coverage (finnhub recommendation-trends,
+            # ~120-name basket watchlist ⊂ universe; store born 2026-06-20 → young data)
+            "analyst_covered": len(analyst_covered),
+            "analyst_uncovered": analyst_uncovered[:50],  # cap list
+            "analyst_note": (
+                "analyst buy-share from finnhub recommendation-trends "
+                "(monthly rating counts, ~120-name watchlist; young data — store live since 2026-06-20); "
+                "uncovered or stale-period names carry a null chip"
+            ),
         },
         "regime": regime,
         "rows": rows,

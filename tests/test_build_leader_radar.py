@@ -11,6 +11,9 @@ Coverage:
   - pd.NA JSON safety
   - consumption-not-recomputation for plab_leader_precipice / plab_leader_onset
   - registry 27 books + unique config_hashes
+  - LRV-R1(e): analyst buy-share loader (finnhub rating counts → consensus_pct level,
+    stale-period drop, absent-store null) + analyst_saturated chip wiring + coverage
+    keys + banner render (incl. old-shape payload missing-key safety)
 """
 from __future__ import annotations
 
@@ -122,6 +125,16 @@ def _write_revisions(root: Path, tickers: list[str]) -> None:
     }, index=tickers)
     df.index.name = "ticker"
     p = root / "data" / "revisions" / "latest.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(p)
+
+
+def _write_finnhub_reco(root: Path, rows: list[dict]) -> None:
+    """Write data/finnhub/recommendation.parquet in the collectors/finnhub_altdata.py shape."""
+    df = pd.DataFrame(rows, columns=[
+        "ticker", "period", "strongBuy", "buy", "hold", "sell", "strongSell", "prev_buy",
+    ])
+    p = root / "data" / "finnhub" / "recommendation.parquet"
     p.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(p)
 
@@ -1211,3 +1224,176 @@ class TestBasketExtensionPctile:
             assert val is None or (isinstance(val, float) and 0.0 <= val <= 100.0), (
                 f"extension_pctile_vs_200d must be None or float 0-100; got {val!r}"
             )
+
+
+class TestLoadAnalystBuyShare:
+    """LRV-R1(e): _load_analyst_buy_share — buy-share LEVEL from finnhub rating counts."""
+
+    def _mk(self, tmp_path: Path, rows: list[dict]) -> Path:
+        df = pd.DataFrame(rows)
+        p = tmp_path / "finnhub" / "recommendation.parquet"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        df.to_parquet(p)
+        return tmp_path
+
+    def test_buy_share_level_computed(self, tmp_path):
+        """(strongBuy+buy)/total×100: 18 of 20 → 90.0; n_analysts = total."""
+        from scripts.build_leader_radar import _load_analyst_buy_share
+        root = self._mk(tmp_path, [
+            {"ticker": "AAA", "period": "2026-07-01", "strongBuy": 10, "buy": 8,
+             "hold": 1, "sell": 1, "strongSell": 0, "prev_buy": 17},
+        ])
+        result = _load_analyst_buy_share(root, date(2026, 7, 12))
+        assert result["AAA"]["consensus_pct"] == 90.0
+        assert result["AAA"]["n_analysts"] == 20
+
+    def test_below_saturation_level(self, tmp_path):
+        """12 of 20 → 60.0 (available but below the 85 threshold)."""
+        from scripts.build_leader_radar import _load_analyst_buy_share
+        root = self._mk(tmp_path, [
+            {"ticker": "BBB", "period": "2026-07-01", "strongBuy": 4, "buy": 8,
+             "hold": 6, "sell": 1, "strongSell": 1, "prev_buy": 12},
+        ])
+        result = _load_analyst_buy_share(root, date(2026, 7, 12))
+        assert result["BBB"]["consensus_pct"] == 60.0
+
+    def test_stale_period_dropped(self, tmp_path):
+        """Latest period older than _ANALYST_MAX_AGE_DAYS → ticker absent (null-honest)."""
+        from scripts.build_leader_radar import _load_analyst_buy_share
+        root = self._mk(tmp_path, [
+            {"ticker": "CCC", "period": "2026-01-01", "strongBuy": 10, "buy": 8,
+             "hold": 1, "sell": 1, "strongSell": 0, "prev_buy": 18},
+        ])
+        result = _load_analyst_buy_share(root, date(2026, 7, 12))
+        assert "CCC" not in result
+
+    def test_absent_store_returns_empty(self, tmp_path):
+        """No finnhub/recommendation.parquet → {} (chip stays null everywhere)."""
+        from scripts.build_leader_radar import _load_analyst_buy_share
+        assert _load_analyst_buy_share(tmp_path, date(2026, 7, 12)) == {}
+
+    def test_zero_counts_dropped(self, tmp_path):
+        """All rating counts zero → no buy-share derivable → ticker absent."""
+        from scripts.build_leader_radar import _load_analyst_buy_share
+        root = self._mk(tmp_path, [
+            {"ticker": "DDD", "period": "2026-07-01", "strongBuy": 0, "buy": 0,
+             "hold": 0, "sell": 0, "strongSell": 0, "prev_buy": None},
+        ])
+        result = _load_analyst_buy_share(root, date(2026, 7, 12))
+        assert "DDD" not in result
+
+    def test_latest_period_wins(self, tmp_path):
+        """Multiple monthly periods → the most recent one supplies the level."""
+        from scripts.build_leader_radar import _load_analyst_buy_share
+        recent = date.today().replace(day=1).isoformat()
+        root = self._mk(tmp_path, [
+            {"ticker": "EEE", "period": "2026-05-01", "strongBuy": 1, "buy": 1,
+             "hold": 8, "sell": 0, "strongSell": 0, "prev_buy": 2},
+            {"ticker": "EEE", "period": recent, "strongBuy": 9, "buy": 9,
+             "hold": 2, "sell": 0, "strongSell": 0, "prev_buy": 2},
+        ])
+        result = _load_analyst_buy_share(root, date.today())
+        assert result["EEE"]["consensus_pct"] == 90.0
+
+
+class TestAnalystSaturatedChip:
+    """LRV-R1(e): analyst_buy_pct wired through build() to the analyst_saturated chip."""
+
+    def _run_build(self, root: Path):
+        from scripts.build_leader_radar import build
+        with patch("lib.config.ROOT", root), \
+             patch("lib.config.data_dir", lambda: root / "data"), \
+             patch("lib.config.load", lambda: {
+                 "storage": {"data_dir": "data", "site_dir": "site"},
+                 "leader_radar": {"enabled": True, "basket_keys": ["mag7"], "dow30": []},
+             }):
+            return build(data_root=root / "data", site_root=root / "site")
+
+    def test_chip_fires_at_saturation_and_nulls_when_uncovered(self, tmp_path):
+        tickers = ["AAPL", "MSFT"]
+        root = _build_fixture_root(tmp_path, tickers)
+        recent = date.today().replace(day=1).isoformat()
+        # AAPL: 18/20 buy-or-better = 90% ≥ 85 → chip True. MSFT: uncovered → chip None.
+        _write_finnhub_reco(root, [
+            {"ticker": "AAPL", "period": recent, "strongBuy": 10, "buy": 8,
+             "hold": 1, "sell": 1, "strongSell": 0, "prev_buy": 17},
+        ])
+        payload = self._run_build(root)
+        rows = {r["ticker"]: r for r in payload["rows"]}
+        assert rows["AAPL"]["chips"].get("analyst_saturated") is True
+        assert rows["AAPL"]["context"]["analyst_buy_pct"] == 90.0
+        assert rows["AAPL"]["context"]["analyst_n"] == 20
+        assert rows["MSFT"]["chips"].get("analyst_saturated") is None
+        assert rows["MSFT"]["context"]["analyst_buy_pct"] is None
+        cov = payload["coverage"]
+        assert cov["analyst_covered"] == 1
+        assert "MSFT" in cov["analyst_uncovered"]
+        assert "young data" in cov["analyst_note"]
+
+    def test_chip_false_below_threshold(self, tmp_path):
+        """Covered but below 85% → chip False (available, not fired) — not None."""
+        tickers = ["AAPL"]
+        root = _build_fixture_root(tmp_path, tickers)
+        recent = date.today().replace(day=1).isoformat()
+        _write_finnhub_reco(root, [
+            {"ticker": "AAPL", "period": recent, "strongBuy": 4, "buy": 8,
+             "hold": 6, "sell": 1, "strongSell": 1, "prev_buy": 12},
+        ])
+        payload = self._run_build(root)
+        rows = {r["ticker"]: r for r in payload["rows"]}
+        assert rows["AAPL"]["chips"].get("analyst_saturated") is False
+        assert rows["AAPL"]["context"]["analyst_buy_pct"] == 60.0
+
+    def test_absent_store_all_null(self, tmp_path):
+        """Default fixture (no finnhub store) → chip None on every row, coverage zero."""
+        tickers = ["AAPL"]
+        root = _build_fixture_root(tmp_path, tickers)
+        payload = self._run_build(root)
+        rows = {r["ticker"]: r for r in payload["rows"]}
+        assert rows["AAPL"]["chips"].get("analyst_saturated") is None
+        cov = payload["coverage"]
+        assert cov["analyst_covered"] == 0
+        assert "AAPL" in cov["analyst_uncovered"]
+
+
+class TestAnalystBannerRender:
+    """Coverage banner renders analyst line; old-shape payload stays missing-key safe."""
+
+    def _render(self, payload: dict) -> str:
+        from jinja2 import Environment, FileSystemLoader
+        tpl_root = Path(__file__).resolve().parent.parent / "templates"
+        env = Environment(loader=FileSystemLoader(str(tpl_root)), autoescape=False)
+        return env.get_template("leader_radar.html.j2").render(leader_radar=payload)
+
+    def _base_payload(self, coverage: dict) -> dict:
+        return {
+            "schema": "leader_radar.v1", "as_of": "2026-07-12T00:00:00+00:00",
+            "stale": False, "coverage": coverage, "regime": {}, "rows": [],
+            "handoff_pairs": [], "rerating_watch": [],
+            "early_entry": [], "handoff_context": [],
+        }
+
+    def test_banner_shows_analyst_coverage(self):
+        html = self._render(self._base_payload({
+            "n_universe": 2, "revisions_uncovered": [], "mktcap_n_covered": 2,
+            "analyst_covered": 1, "analyst_uncovered": ["MSFT"],
+            "analyst_note": "analyst buy-share ... young data",
+        }))
+        assert "names with analyst rating data" in html
+        assert "young data" in html
+
+    def test_banner_absent_store_line(self):
+        html = self._render(self._base_payload({
+            "n_universe": 2, "revisions_uncovered": [], "mktcap_n_covered": 2,
+            "analyst_covered": 0, "analyst_uncovered": ["AAPL", "MSFT"],
+            "analyst_note": "n/a",
+        }))
+        assert "analyst rating data unavailable" in html
+
+    def test_old_shape_payload_missing_key_safe(self):
+        """Pre-LRV-R1e artifact (no analyst keys) must still render — no banner line."""
+        html = self._render(self._base_payload({
+            "n_universe": 2, "revisions_uncovered": [], "mktcap_n_covered": 2,
+        }))
+        assert "names with analyst rating data" not in html
+        assert "analyst rating data unavailable" not in html

@@ -1,6 +1,6 @@
 {
   "date": "2026-07-10",
-  "generated_utc": "2026-07-12 05:27",
+  "generated_utc": "2026-07-12 07:19",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -4114,7 +4114,7 @@
       "skew_pctile": 0.3898809523809524,
       "stock_bond_corr": 0.5643800997722926,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.62425189311833,
+      "roro": 0.6357075706469727,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.8982896637391486,
       "news_sentiment": 0.09985840320587158,
@@ -4223,9 +4223,9 @@
     }
   },
   "fear_euphoria": {
-    "fe_score": 93,
+    "fe_score": 94,
     "band": "Euphoria",
-    "roro": 0.62425189311833,
+    "roro": 0.6357075706469727,
     "roro_state": "risk-on",
     "legs": [
       {
@@ -4272,7 +4272,7 @@
         "key": "copper_gold",
         "name_en": "Copper/Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.964,
+        "value": 2.033,
         "pct": 99,
         "lean": "risk-on"
       },
@@ -4507,7 +4507,7 @@
     ],
     "n_legs_qualifying": 11,
     "as_of": "2026-07-12",
-    "generated_utc": "2026-07-12T03:49:36Z",
+    "generated_utc": "2026-07-12T05:57:59Z",
     "disclaimer_en": "Sentiment context only \u2014 display-only composite of public market indicators. Never scored, never feeds the regime engine, no forward claim. Greed/fear readings are not contrarian signals without regime context.",
     "disclaimer_zh": "\u4ec5\u4e3a\u60c5\u7eea\u53c2\u8003 \u2014 \u516c\u5f00\u5e02\u573a\u6307\u6807\u7684\u4ec5\u5c55\u793a\u5408\u6210\u3002\u4e0d\u8ba1\u5206\uff0c\u4e0d\u8fdb\u5165\u5468\u671f\u5f15\u64ce\uff0c\u65e0\u524d\u77bb\u6027\u5224\u65ad\u3002\u8d2a\u5a6a/\u6050\u60e7\u8bfb\u6570\u82e5\u65e0\u5468\u671f\u80cc\u666f\uff0c\u4e0d\u6784\u6210\u53cd\u5411\u4fe1\u53f7\u3002"
   },
@@ -4531,17 +4531,17 @@
     {
       "ticker": "GC=F",
       "name": "Gold",
-      "price": 4104.1,
+      "price": 4113.7,
       "above50": false,
       "above200": false,
-      "pct_vs_50dma": -5.6,
-      "pct_vs_200dma": -8.3,
+      "pct_vs_50dma": -5.3,
+      "pct_vs_200dma": -8.1,
       "rsi14": 44.0,
       "macd_pos": true,
-      "off_52w_high_pct": -22.8,
+      "off_52w_high_pct": -22.7,
       "season_this": "Jul: +1.0% avg, up 58% of years (n=26)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.0%\uff0c58% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -14.6
+      "mom_60d_pct": -14.4
     },
     {
       "ticker": "CL=F",
@@ -4561,17 +4561,17 @@
     {
       "ticker": "HG=F",
       "name": "Copper",
-      "price": 6.23,
+      "price": 6.28,
       "above50": false,
       "above200": true,
-      "pct_vs_50dma": -1.0,
-      "pct_vs_200dma": 9.1,
-      "rsi14": 51.0,
+      "pct_vs_50dma": -0.3,
+      "pct_vs_200dma": 9.9,
+      "rsi14": 53.0,
       "macd_pos": true,
-      "off_52w_high_pct": -6.3,
-      "season_this": "Jul: +1.4% avg, up 62% of years (n=26)",
-      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.4%\uff0c62% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": 3.3
+      "off_52w_high_pct": -5.5,
+      "season_this": "Jul: +1.5% avg, up 62% of years (n=26)",
+      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.5%\uff0c62% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+      "mom_60d_pct": 4.1
     },
     {
       "ticker": "DX-Y.NYB",

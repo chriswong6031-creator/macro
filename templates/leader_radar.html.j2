@@ -140,6 +140,14 @@
     {% elif mktcap_n is not none and mktcap_n > 0 %}
     · {{ t('top-5 share coverage', '前5强覆盖度') }}: {{ mktcap_n }}
     {% endif %}
+    {% if cov.analyst_covered is defined and cov.analyst_covered is not none %}
+      {% set ana_unc = cov.analyst_uncovered if cov.analyst_uncovered is defined and cov.analyst_uncovered is not none else [] %}
+      {% if cov.analyst_covered > 0 %}
+    · {{ cov.analyst_covered }} {{ t('names with analyst rating data', '个标的有分析师评级数据') }}{% if ana_unc | length > 0 %} ({{ ana_unc | length }} {{ t('without', '个缺少') }}){% endif %}<span class="young-tag">{{ t('young data', '数据较新') }}</span>
+      {% else %}
+    · {{ t('analyst rating data unavailable — crowding chip stays blank', '分析师评级数据不可用 — 拥挤指标留空') }}
+      {% endif %}
+    {% endif %}
     {% if cov.tape_note is defined and cov.tape_note is not none %}
     · <span class="muted xs">{{ cov.tape_note }}</span>
     {% endif %}
