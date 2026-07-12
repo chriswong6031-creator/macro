@@ -381,10 +381,6 @@ ARCHETYPE_CARDS: list[dict[str, Any]] = [
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-def _today() -> date:
-    return datetime.now(timezone.utc).date()
-
-
 def _evidence_age_days(last_observation_date: str | None) -> int | None:
     """Return calendar days since last_observation_date (ISO YYYY-MM-DD), or None."""
     if not last_observation_date:
@@ -711,9 +707,21 @@ def _route_8k_items(
             routing = _A6_ITEM_ROUTING.get(code)
             if routing is None:
                 continue  # item not in the A6 routing table
+
+            status = routing["status"]
+
+            # Apply staleness gate to non-terminal (challenged) items only.
+            # Item 1.03 (bankruptcy) is terminal and permanent — its status never
+            # expires.  All other routable items emit "challenged", which is a
+            # time-sensitive review trigger; a years-old event is no longer an
+            # active challenge and must not pollute the current-period signal.
+            # Stale challenged events are silently dropped (>_STALE_EVIDENCE_DAYS).
+            if status != "broken" and _is_stale(age):
+                continue
+
             results.append({
                 "item_code": code,
-                "status": routing["status"],
+                "status": status,
                 "review_label": routing["review_label"],
                 "accession": accession,
                 "filing_date": filing_date,
@@ -763,7 +771,6 @@ def _compute_ev_sales_percentile(
         }
 
     try:
-        import numpy as np
         import pandas as pd
 
         df = statements_df.copy()
@@ -823,54 +830,25 @@ def _compute_ev_sales_percentile(
 
         ev_sales_current = ev / latest_rev
 
-        # Historical EV/sales: for each annual row, approximate EV using filed financials only
-        # We only have period-end data; we cannot reconstruct historical price here.
-        # Use current EV/sales vs filed revenue range as proxy (documented limitation).
-        # Compare current ratio to the distribution of revenue values normalized to current EV —
-        # this is descriptive only, not a peer or forecast comparison.
-        # Since we don't have historical prices, report vs own revenue history shape.
-        rev_hist = df["revenue"].dropna().astype(float).tolist()
-        n = len(rev_hist)
-        if n < 3:
-            return {
-                "ev_sales_current": round(ev_sales_current, 2),
-                "own_history_n": n,
-                "percentile": None,
-                "burden_label": "unverifiable",
-                "note": f"Fewer than 3 revenue datapoints (n={n}); cannot compute percentile",
-            }
-
-        # Compute EV/sales at each historical revenue using current EV as a constant
-        # This is an approximation: EV shifts with price; we only have current price.
-        # The note must disclose this is current-EV vs own revenue range.
-        ev_sales_history = [ev / r for r in rev_hist if r > 0]
-        if len(ev_sales_history) < 3:
-            return {
-                "ev_sales_current": round(ev_sales_current, 2),
-                "own_history_n": n,
-                "percentile": None,
-                "burden_label": "unverifiable",
-                "note": "Fewer than 3 positive revenue rows for percentile",
-            }
-
-        pct = float(np.mean(np.array(ev_sales_history) <= ev_sales_current) * 100)
-
-        if pct >= _BURDEN_EXTREME_PCT:
-            burden_label = "extreme"
-        elif pct >= _BURDEN_STRETCHED_PCT:
-            burden_label = "stretched"
-        else:
-            burden_label = "ordinary"
-
+        # A percentile rank requires EV/sales at EACH historical period, which requires
+        # historical price data.  The batch build only has current price; using current EV
+        # across all history makes the percentile a pure function of the revenue trajectory
+        # (ev/r <= ev/latest_rev  ⟺  r >= latest_rev), not of valuation.  That is
+        # actively misleading (a shrinking-cheap name scores "extreme"; a growing-expensive
+        # name scores "ordinary").  Return the current ratio for display and mark the
+        # percentile unverifiable until a per-stock historical-price series is available.
+        n_rows = int(df["revenue"].notna().sum())
         return {
             "ev_sales_current": round(ev_sales_current, 2),
-            "own_history_n": len(ev_sales_history),
-            "percentile": round(pct, 1),
-            "burden_label": burden_label,
+            "own_history_n": n_rows,
+            "percentile": None,
+            "burden_label": "unverifiable",
             "note": (
-                "Approximation: current EV vs own filed revenue range (no historical prices). "
-                "Descriptive only — no implied growth, no target, no CAGR (LHB-R4 W3 lock). "
-                "No peer comparison."
+                "EV/sales percentile requires historical price data to reconstruct EV at each "
+                "period; batch build has only current price.  Ranking against revenue history "
+                "alone is valuation-blind and is not reported.  Current EV/sales shown for "
+                "reference only.  Descriptive only — no implied growth, no target, no CAGR "
+                "(LHB-R4 W3 lock).  No peer comparison."
             ),
         }
     except Exception as exc:  # noqa: BLE001

@@ -294,6 +294,50 @@ class TestA6Routing:
         assert events[0]["accession"] == "0001234567-24-000099"
         assert events[0]["filing_date"] == _fresh_date()
 
+    def test_stale_challenged_item_dropped(self) -> None:
+        """A6 staleness gate: challenged items older than STALE_EVIDENCE_DAYS are dropped."""
+        events = _route_8k_items([{
+            "items": "5.02",
+            "filing_date": _stale_date(),
+            "accession": "0001234567-21-000010",
+        }])
+        assert len(events) == 0, (
+            "Stale challenged 5.02 must be dropped; it is a time-sensitive review trigger"
+        )
+
+    def test_stale_broken_item_103_kept(self) -> None:
+        """Item 1.03 is terminal/permanent — staleness gate does NOT apply."""
+        events = _route_8k_items([{
+            "items": "1.03",
+            "filing_date": _stale_date(),
+            "accession": "0001234567-20-000011",
+        }])
+        assert len(events) == 1
+        assert events[0]["status"] == "broken"
+
+    def test_mixed_fresh_challenged_and_stale_challenged(self) -> None:
+        """Only fresh challenged items pass; stale ones are silently dropped."""
+        events = _route_8k_items([
+            {"items": "5.02", "filing_date": _fresh_date(), "accession": "fresh-001"},
+            {"items": "3.01", "filing_date": _stale_date(), "accession": "stale-002"},
+        ])
+        codes = [e["item_code"] for e in events]
+        assert "5.02" in codes
+        assert "3.01" not in codes
+
+    def test_stale_all_challenged_items_dropped(self) -> None:
+        """All non-1.03 routable items respect the staleness gate."""
+        challenged_codes = ["1.02", "2.04", "3.01", "3.02", "4.02", "5.02"]
+        for code in challenged_codes:
+            events = _route_8k_items([{
+                "items": code,
+                "filing_date": _stale_date(),
+                "accession": f"0001-{code}",
+            }])
+            assert len(events) == 0, (
+                f"Stale {code} (challenged) must be dropped by staleness gate"
+            )
+
 
 # ---------------------------------------------------------------------------
 # 3. Stale evidence → unverifiable (never no_break_observed)
@@ -445,34 +489,42 @@ class TestExpectationBurden:
             "revenue": revenues,
         })
 
-    def test_ordinary_below_80th_pct(self) -> None:
-        # 10 revenue values; current price makes EV/sales rank at the lowest
-        revenues = [100e6 * i for i in range(1, 11)]  # 100M to 1B
+    def test_ev_sales_current_computed_correctly(self) -> None:
+        # Verify ev_sales_current is computed from current price/shares/net_debt
+        # and the latest revenue row.  price=10, shares=1M, net_debt=0 → EV=10M.
+        # Latest revenue = 1B → EV/sales = 0.01.
+        revenues = [100e6 * i for i in range(1, 11)]  # 100M to 1B, latest = 1B
         df = self._make_statements_df(revenues)
-        # Use a low price → low EV → ordinary ranking
         result = _compute_ev_sales_percentile(
             statements_df=df,
-            price=1.0,
+            price=10.0,
             shares=1_000_000,
             net_debt=0.0,
         )
-        # EV = 1.0 * 1M + 0 = 1M; vs revenue 100M-1B → EV/sales very small everywhere
-        assert result["burden_label"] == "ordinary"
+        assert result["ev_sales_current"] == pytest.approx(0.01, rel=1e-3)
+        # Percentile is always unverifiable without historical price data
+        assert result["burden_label"] == "unverifiable"
+        assert result["percentile"] is None
 
-    def test_extreme_above_95th_pct(self) -> None:
-        # 10 revenue values; current price makes EV very large
-        revenues = [1e6] * 10  # all revenue = 1M
+    def test_burden_unverifiable_without_historical_prices(self) -> None:
+        # Batch build has only current price; percentile ranking against revenue history
+        # alone is valuation-blind (r >= latest_rev, not EV/sales rank) and is NOT
+        # reported.  Confirm the axis always returns unverifiable for the percentile
+        # and never returns ordinary/stretched/extreme from a misleading revenue rank.
+        revenues = [1e6] * 10
         df = self._make_statements_df(revenues)
-        # Use a very large EV → EV/sales always extremely high
-        result = _compute_ev_sales_percentile(
-            statements_df=df,
-            price=1000.0,
-            shares=1_000_000,
-            net_debt=0.0,
-        )
-        # EV = 1000 * 1M = 1B; revenue = 1M → EV/sales = 1000 always
-        # All history has EV/sales = 1000 (same current EV) → 100th pct → extreme
-        assert result["burden_label"] == "extreme"
+        for price in [1.0, 100.0, 10_000.0]:
+            result = _compute_ev_sales_percentile(
+                statements_df=df,
+                price=price,
+                shares=1_000_000,
+                net_debt=0.0,
+            )
+            assert result["burden_label"] == "unverifiable", (
+                f"price={price} produced label={result['burden_label']}; "
+                "percentile must be unverifiable in batch build (no historical prices)"
+            )
+            assert result["percentile"] is None
 
     def test_insufficient_data_unverifiable(self) -> None:
         # Only 2 revenue rows — below the 3-row minimum
