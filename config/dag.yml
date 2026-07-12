@@ -769,6 +769,25 @@ lanes:
           data/stocks/ parquets (committed, ~219 tickers). Non-fatal: exits 0
           on script error, commits only if artifacts changed.
 
+  # ── daily.yml / standout_audit_us ───────────────────────────────────────
+  # SA-W1: US two-axis attribution organ. Off-render, reads committed
+  # retro_grades.parquet from the engine job. Writes evidence packs, scoreboard,
+  # fitness card. Non-fatal; always exits 0.
+  - workflow: .github/workflows/daily.yml
+    job: standout_audit_us
+    steps:
+      - id: standout_audit_us
+        module: engine.standout_audit
+        note: >
+          SA-W1 US attribution + fitness card. Reads data/us_board_ledger/
+          retro_grades.parquet (committed by engine job). Writes
+          data/standout_audit/us_attribution.parquet,
+          data/standout_audit/us_evidence.jsonl,
+          data/standout_audit/us_audit_state.json,
+          site/factordata/us_audit_scoreboard.json,
+          data/metabolism/fitness/standouts_us.json.
+          Non-fatal (exits 0 on error; writes data_gap sentinels).
+
   # ── daily.yml / oracle_offrender ────────────────────────────────────────
   # Oracle off-render job: panel rebuild + episodes + Time Machine + Ratio Lens.
   # Declared here to satisfy DAG conformance; non-fatal throughout.

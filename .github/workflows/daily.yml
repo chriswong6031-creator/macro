@@ -1739,6 +1739,13 @@ jobs:
           # SENTINEL STAGING LAW: all three per-lane JSONL paths are synapse-registered
           # (ops-push-basket-freeze, ops-push-signal-sanity, ops-push-healthcheck).
           git add data/alert_triage/ 2>/dev/null || true
+          # SA-R15: US pick-lab ledgers — fires.jsonl, grades.jsonl, monthly snapshot
+          # parquets. These are runner-local today (CN's equivalents are committed).
+          # Force-add so they ride the engine commit and are visible to the off-render
+          # standout_audit_us job (which reads committed stores only, SA-R15).
+          git add data/pick_lab/fires.jsonl 2>/dev/null || true
+          git add data/pick_lab/grades.jsonl 2>/dev/null || true
+          git add data/pick_lab/snapshots/ 2>/dev/null || true
           # LLM stock briefs (site/stockbrief) are gitignored for local-dev cleanliness
           # but must be TRACKED on main so the committed-tree deploy (pages.yml) ships
           # them — same as the force-tracked stock-search libraries. -f overrides the
@@ -2227,6 +2234,62 @@ jobs:
             echo "tech-lab push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push tech-lab artifacts after 5 attempts (non-fatal)"
+
+  # SA-W1 — US standout attribution organ (off-render, ~40 min budget)
+  # Reads the committed retro_grades.parquet produced by the engine job, runs
+  # deterministic two-axis attribution, writes evidence packs, stratified scoreboard,
+  # coverage monitor, missed-mover census, upstream concordance, and the US fitness
+  # card. Never touches asia-owned paths. Must NOT gate publish.
+  # Pattern: oracle_offrender / tech_lab_offrender (needs: engine, if: always()).
+  standout_audit_us:
+    needs: engine
+    if: always()
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: SA-W1 — US standout attribution + fitness card
+        run: |
+          set +e
+          python -m engine.standout_audit --us; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=standout_audit_us::rc=$rc (attribution artifacts may be stale)"
+          fi
+          exit 0
+      - name: commit standout audit US artifacts
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/standout_audit/us_attribution.parquet 2>/dev/null || true
+          git add data/standout_audit/us_evidence.jsonl 2>/dev/null || true
+          git add data/standout_audit/us_audit_state.json 2>/dev/null || true
+          git add site/factordata/us_audit_scoreboard.json 2>/dev/null || true
+          git add data/metabolism/fitness/standouts_us.json 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
+          git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
+          # best-effort rebase-push (own files — no other job writes these paths)
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash -X theirs origin main && git push; then
+              echo "pushed standout audit US artifacts on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "standout-audit-us push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push standout audit US artifacts after 5 attempts (non-fatal)"
 
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site

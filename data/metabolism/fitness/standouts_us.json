@@ -1,0 +1,86 @@
+{
+  "schema": "metabolism.standout_fitness.v1",
+  "as_of": "2026-07-12",
+  "lobe": "site-us-standouts",
+  "maturity": "accruing",
+  "sensors": {
+    "hit_quality": {
+      "id": "hit_quality",
+      "value": null,
+      "raw_n": 0,
+      "effective_n": 0,
+      "maturity": "accruing",
+      "note": "accruing: 0/25 matured rows",
+      "store": "data/standout_audit/us_attribution.parquet"
+    },
+    "upside_capture": {
+      "id": "upside_capture",
+      "value": null,
+      "raw_n": 0,
+      "effective_n": 0,
+      "maturity": "accruing",
+      "note": "accruing: 0/25 matured rows",
+      "store": "data/standout_audit/us_attribution.parquet"
+    },
+    "coverage_health": {
+      "id": "coverage_health",
+      "value": 365.0,
+      "raw_n": 0,
+      "effective_n": 0,
+      "maturity": "accruing",
+      "note": null,
+      "store": "data/standout_audit/us_attribution.parquet",
+      "trailing_4wk_buy_count": 365,
+      "frozen_baseline": null
+    },
+    "missed_mover_rate": {
+      "id": "missed_mover_rate",
+      "value": null,
+      "raw_n": 0,
+      "effective_n": 0,
+      "maturity": "accruing",
+      "note": "no_21d_rows_yet",
+      "store": "data/standout_audit/us_attribution.parquet",
+      "n_episodes": null,
+      "n_missed": null,
+      "pipeline_recall": null
+    },
+    "timing_quality": {
+      "id": "timing_quality",
+      "value": null,
+      "raw_n": 0,
+      "effective_n": 0,
+      "maturity": "accruing",
+      "note": "accruing: 0/25 matured rows",
+      "store": "data/standout_audit/us_attribution.parquet"
+    },
+    "process_integrity": {
+      "id": "process_integrity",
+      "value": null,
+      "raw_n": 0,
+      "effective_n": 0,
+      "maturity": "accruing",
+      "note": "accruing: 0/25 matured rows",
+      "store": "data/standout_audit/us_attribution.parquet"
+    }
+  },
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path"
+    ]
+  },
+  "notes": "US standout board fitness card. 0/25 matured 21d rows. Floors require 25 rows + 10 entry dates + 3 non-overlapping windows spanning 3 calendar months. Expected first-maturity read: ~2026-09-15. All sensors display-context only; no signal-path authority."
+}
