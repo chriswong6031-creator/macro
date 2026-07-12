@@ -16,6 +16,12 @@ Design choices:
   intl_prices).
 - overwrite_overlap=True because auto_adjust=True histories are coherent total-
   return series; fresh pulls correctly re-adjust prior bars after ex-dividends.
+- store.basis_shifted guard on the incremental window (same contract as
+  collectors/yahoo.py): overwrite_overlap only makes the fresh pull own its OWN
+  date span — an ex-div/split between fetches re-bases the WHOLE series, which
+  strands every pre-window row on the stale basis. A flagged ticker is re-pulled
+  period='max'; a failed re-pull drops it for the run (store untouched,
+  re-flagged next run).
 - stale_after_days=8: weekly cadence, so 8 days is fine.
 
 Run directly for a dry-run check:
@@ -31,7 +37,7 @@ import pandas as pd
 import yfinance as yf
 
 from collectors.base import Adapter
-from lib import config
+from lib import config, store
 
 log = logging.getLogger(__name__)
 
@@ -95,6 +101,7 @@ class IntlEtfAdapter(Adapter):
         self._batch_size: int = int(ycfg.get("batch_size", 40))
         self._retries: int = int(ycfg.get("retries", 3))
         self._backoff_base: float = float(ycfg.get("backoff_base_s", 5.0))
+        self._basis_tol: float = float(ycfg.get("upsert_basis_tol", 1e-3))
 
     # ------------------------------------------------------------------ #
     # Public interface
@@ -122,11 +129,22 @@ class IntlEtfAdapter(Adapter):
                      len(new), ",".join(new))
 
         frames: dict[str, pd.DataFrame] = {}
-        self._collect(TICKERS, period, frames)
+        rebase: list[str] = []
+        self._collect(TICKERS, period, frames,
+                      rebase=rebase if period == INCREMENTAL_PERIOD else None)
 
         # Deep-seed any new tickers (overwrite the shallow incremental fetch).
         if new:
             self._collect(new, "max", frames)
+
+        # Adjustment-basis guard heal: re-pull flagged tickers period='max' so the
+        # whole store rebases in one upsert. A failed batch just leaves the tickers
+        # out (store untouched, re-flagged next run) — never spliced; the coverage
+        # gate below then decides whether the run still stands.
+        if rebase:
+            log.info("intl_etf: %d ticker(s) on a re-adjusted basis — refetching "
+                     "period='max': %s", len(rebase), rebase)
+            self._collect(rebase, "max", frames)
 
         # ---- Coverage gate (fail-closed) --------------------------------
         got = len(frames)
@@ -147,8 +165,16 @@ class IntlEtfAdapter(Adapter):
     # Internals
     # ------------------------------------------------------------------ #
     def _collect(self, tickers: list[str], period: str,
-                 frames: dict[str, pd.DataFrame]) -> None:
-        """Batch-download tickers and extract full OHLCV into frames."""
+                 frames: dict[str, pd.DataFrame],
+                 rebase: list[str] | None = None) -> None:
+        """Batch-download tickers and extract full OHLCV into frames.
+
+        With a `rebase` list (the incremental pass only), a ticker whose window
+        disagrees with stored closes on the overlap dates (store.basis_shifted —
+        Yahoo re-adjusted the series after an ex-div/split since the last pull) is
+        appended there and kept OUT of frames: even with overwrite_overlap the
+        splice would strand every pre-window row on the stale basis. The caller
+        re-pulls it period='max'."""
         for i in range(0, len(tickers), self._batch_size):
             batch = tickers[i : i + self._batch_size]
             df = self._download(batch, period)
@@ -167,6 +193,10 @@ class IntlEtfAdapter(Adapter):
                     sub = sub.dropna(subset=["close"])
                     if sub.empty:
                         log.warning("intl_etf: no usable rows for %s", t)
+                        continue
+                    if rebase is not None and store.basis_shifted(
+                            self.group, t, sub, tol=self._basis_tol):
+                        rebase.append(t)  # discard the window; the caller re-pulls 'max'
                         continue
                     frames[t] = sub
                 except KeyError:

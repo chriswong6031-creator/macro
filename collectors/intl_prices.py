@@ -20,7 +20,7 @@ import pandas as pd
 import yfinance as yf
 
 from collectors.base import Adapter
-from lib import config
+from lib import config, store
 
 log = logging.getLogger(__name__)
 
@@ -82,9 +82,18 @@ class IntlPriceAdapter(Adapter):
                      len(new), ",".join(new))
 
         frames: dict[str, pd.DataFrame] = {}
-        self._collect(tickers, period, frames)
+        rebase: list[str] = []
+        self._collect(tickers, period, frames,
+                      rebase=rebase if period == "1mo" else None)
         if new:                       # re-fetch the new series deep, overwriting the shallow window
             self._collect(new, "max", frames)
+        if rebase:
+            # Adjustment-basis guard heal: re-pull flagged names period='max' so the
+            # whole store rebases in one upsert. A failed batch just leaves the names
+            # out tonight (store untouched, re-flagged next run) — never spliced.
+            log.info("intl_prices: %d name(s) on a re-adjusted basis — refetching "
+                     "period='max': %s", len(rebase), rebase[:12])
+            self._collect(rebase, "max", frames)
         got_core = sum(1 for t in core if t in frames)
         if got_core < len(core) * 0.7:
             raise RuntimeError(f"intl_prices: core coverage too low {got_core}/{len(core)}")
@@ -93,8 +102,16 @@ class IntlPriceAdapter(Adapter):
         return frames
 
     def _collect(self, tickers: list[str], period: str,
-                 frames: dict[str, pd.DataFrame]) -> None:
-        """Batch-download `tickers` for `period` and merge close/volume into frames."""
+                 frames: dict[str, pd.DataFrame],
+                 rebase: list[str] | None = None) -> None:
+        """Batch-download `tickers` for `period` and merge close/volume into frames.
+
+        With a `rebase` list (the incremental 1mo pass only), a name whose window
+        disagrees with stored closes on the overlap dates (store.basis_shifted —
+        Yahoo re-adjusted the series after an ex-div/split since the last pull) is
+        appended there and kept OUT of frames: splicing would strand every
+        pre-window row on the stale basis. The caller re-pulls it period='max'."""
+        tol = float(self.ycfg.get("upsert_basis_tol", 1e-3))
         bs = self.ycfg["batch_size"]
         for i in range(0, len(tickers), bs):
             batch = tickers[i:i + bs]
@@ -106,8 +123,12 @@ class IntlPriceAdapter(Adapter):
                     sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
                     sub = sub[["Close", "Volume"]].rename(
                         columns={"Close": "close", "Volume": "volume"}).dropna(subset=["close"])
-                    if not sub.empty:
-                        frames[t] = sub
+                    if sub.empty:
+                        continue
+                    if rebase is not None and store.basis_shifted(self.group, t, sub, tol=tol):
+                        rebase.append(t)  # discard the window; the caller re-pulls period='max'
+                        continue
+                    frames[t] = sub
                 except KeyError:
                     log.warning("intl_prices: no data for %s", t)
 

@@ -4836,6 +4836,9 @@ china:
     retries: 3
     backoff_base_s: 5
     batch_size: 60
+    upsert_basis_tol: 0.001         # max relative close diff on the 1mo-upsert overlap dates before
+                                    # the window is discarded for a period="max" refetch (same
+                                    # adjustment-basis guard as the yahoo block / odds store)
     benchmark: "510300.SS"          # CSI 300 ETF — sector RS benchmark (ETF-to-ETF, same ~5y basis)
     market_index: "000001.SS"       # Shanghai Composite — deep-history (1997->) ladder-calibration anchor
     indices:                        # ticker: display name
@@ -5070,6 +5073,9 @@ hk:
     retries: 3
     backoff_base_s: 5
     batch_size: 60
+    upsert_basis_tol: 0.001         # max relative close diff on the 1mo-upsert overlap dates before
+                                    # the window is discarded for a period="max" refetch (same
+                                    # adjustment-basis guard as the yahoo block / odds store)
     benchmark: "^HSI"               # Hang Seng Index — sector-RS benchmark + market anchor (1986->)
     market_index: "^HSI"            # deep-history ladder-calibration anchor
     indices:                        # ticker: display name
@@ -5409,6 +5415,9 @@ canada:
     retries: 3
     backoff_base_s: 5
     batch_size: 60
+    upsert_basis_tol: 0.001         # max relative close diff on the 1mo-upsert overlap dates before
+                                    # the window is discarded for a period="max" refetch (same
+                                    # adjustment-basis guard as the yahoo block / odds store)
     benchmark: "^GSPTSE"            # S&P/TSX Composite — sector-RS benchmark + market anchor (deep history)
     market_index: "^GSPTSE"        # ladder-calibration anchor
     indices:                       # ticker: display name
@@ -5612,6 +5621,9 @@ intl:
     retries: 3
     backoff_base_s: 5
     batch_size: 40
+    upsert_basis_tol: 0.001         # max relative close diff on the 1mo-upsert overlap dates before
+                                    # the window is discarded for a period="max" refetch (same
+                                    # adjustment-basis guard as the yahoo block / odds store)
 
   # -- Plane B: macro — FRED OECD CSV + ECB (group=intl_macro) ----------------
   # Per-series degrade (one bad id can't kill the plane); FRED CSV is keyless.
