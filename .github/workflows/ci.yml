@@ -1254,7 +1254,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        # full heavy profile — these tests import through scripts/build_hk.py
+        # (jinja2 -> markupsafe, plotly, pillow, requests); verified in a scratch
+        # venv against exactly this set.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests
       - name: hk robustness w5 tests
         run: python -m pytest tests/test_hk_robustness_w5.py tests/test_hk_freshness.py -q
 
