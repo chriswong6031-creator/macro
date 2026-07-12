@@ -485,6 +485,100 @@ class TestPerCodeFailureIsolation:
 
 
 # ---------------------------------------------------------------------------
+# Per-run request cap (collect-lane runtime + 500 req/day/key API limit guard)
+# ---------------------------------------------------------------------------
+
+class TestRequestCap:
+    """
+    The 2018-01 first-run backfill needs ~2,900 requests but the Census API is
+    documented at 500 requests/day/key and the collect job has ~15 min slack —
+    collect(max_requests=N) must stop cleanly at the cap with state saved so
+    the backfill self-chunks across nightly runs.
+    """
+
+    _CODE = {
+        "hs_code": "854231",
+        "label_en": "Processors",
+        "label_zh": "处理器",
+        "theme_id": "ai_semiconductors",
+        "expected_direction": "rising_imports_confirms",
+        "rationale": "test",
+    }
+
+    @staticmethod
+    def _fake_get(url, params=None, timeout=None):
+        month = (params or {}).get("time", "")
+        resp = mock.Mock()
+        resp.status_code = 200
+        resp.json.return_value = [
+            ["GEN_VAL_MO", "GEN_QY1_MO", "UNIT_QY1", "I_COMMODITY", "time"],
+            ["5000000", "10000", "KG", "854231", month],
+        ]
+        resp.raise_for_status = mock.Mock()
+        return resp
+
+    def _run(self, census_trade, monkeypatch, tmp_path, max_requests):
+        monkeypatch.setenv("CENSUS_API_KEY", "testkey123")
+        monkeypatch.setenv("TRADE_FLOWS_STORE", str(tmp_path))
+        # Real _month_range + state-resume logic; small 4-month window, no pacing delay
+        monkeypatch.setattr(census_trade, "_BACKFILL_START", "2024-01")
+        monkeypatch.setattr(census_trade, "_INTER_REQUEST_DELAY", 0)
+        with (
+            mock.patch.object(census_trade, "_load_codes", return_value=[self._CODE]),
+            mock.patch.object(census_trade, "_current_month", return_value="2024-04"),
+            mock.patch("requests.Session") as MockSession,
+        ):
+            mock_sess = mock.Mock()
+            mock_sess.get.side_effect = self._fake_get
+            mock_sess.headers = mock.MagicMock()
+            MockSession.return_value = mock_sess
+            return census_trade.collect(full_history=False, max_requests=max_requests)
+
+    def test_cap_stops_cleanly_and_saves_state(self, monkeypatch, tmp_path):
+        from collectors import census_trade
+
+        result = self._run(census_trade, monkeypatch, tmp_path, max_requests=2)
+
+        assert result["capped"] is True
+        assert result["requests_made"] == 2
+        assert result["months_fetched"] == 2
+        assert result["rows_added"] == 2
+        # State must record the last fetched month so the next run resumes there
+        state = json.loads((tmp_path / "census_state.json").read_text())
+        assert state["854231"] == "2024-02"
+
+    def test_resume_after_cap_completes_backfill(self, monkeypatch, tmp_path):
+        from collectors import census_trade
+
+        first = self._run(census_trade, monkeypatch, tmp_path, max_requests=2)
+        assert first["capped"] is True
+
+        second = self._run(census_trade, monkeypatch, tmp_path, max_requests=0)
+        assert second["capped"] is False
+        # Resumes from state (re-checks 2024-02, then 03, 04) — dedup keeps totals right
+        df = pd.read_parquet(tmp_path / "imports_monthly.parquet")
+        assert sorted(df["stat_month"]) == ["2024-01", "2024-02", "2024-03", "2024-04"]
+
+    def test_cap_zero_means_uncapped(self, monkeypatch, tmp_path):
+        from collectors import census_trade
+
+        result = self._run(census_trade, monkeypatch, tmp_path, max_requests=0)
+
+        assert result["capped"] is False
+        assert result["requests_made"] == 4
+        assert result["months_fetched"] == 4
+
+    def test_no_key_summary_includes_cap_keys(self, monkeypatch):
+        """Summary dict shape is stable across the no-key honest-null path."""
+        from collectors.census_trade import collect
+
+        monkeypatch.delenv("CENSUS_API_KEY", raising=False)
+        result = collect()
+        assert result["requests_made"] == 0
+        assert result["capped"] is False
+
+
+# ---------------------------------------------------------------------------
 # Parquet upsert / PIT dedup
 # ---------------------------------------------------------------------------
 

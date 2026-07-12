@@ -47,8 +47,11 @@ FAILURE ISOLATION:
 
 PACING:
   0.5s inter-request delay (polite). Census API rate limits are documented as
-  "500 requests per day per key" — 29 codes × 1 request per code per run is
-  well within limits.
+  "500 requests per day per key". Steady state is ~29 codes × 1-2 requests per
+  run — well within limits. The first-run 2018-01 backfill would need ~2,900
+  requests, so collect() enforces a per-run request cap (_MAX_REQUESTS_PER_RUN,
+  450) and census_state.json resumes the remainder on the next run: the
+  backfill self-chunks across ~7 nightly runs, each bounded to ~6-8 min.
 
 MISSING-MONTH SAFETY (regression: 2026-07-09 DOL 404-break incident):
   Census trade data lags ~6 weeks. The most-recent statistical month is often
@@ -61,6 +64,7 @@ Usage:
   python -m collectors.census_trade                 # incremental (default)
   python -m collectors.census_trade --full-history  # backfill all since 2018-01
   python -m collectors.census_trade --dry-run       # no writes; logs what would run
+  python -m collectors.census_trade --max-requests 0  # uncapped (manual runs; mind 500/day/key)
 """
 from __future__ import annotations
 
@@ -88,6 +92,13 @@ _CENSUS_BASE = (
 _BACKFILL_START = "2018-01"   # first stat_month to attempt on first run
 _COMM_LVL = "HS6"             # 6-digit aggregation (WCO standard; avoids HTS-10 fragility)
 _INTER_REQUEST_DELAY = 0.5    # seconds between requests (polite pacing)
+# Per-run request cap. The Census API is documented at 500 requests/day/key,
+# so the 2018-01 first-run backfill (~29 codes × ~100 months ≈ 2,900 requests)
+# can NEVER fit one run. 450 keeps a run under the daily key limit AND bounds
+# the collect-lane step to ~6-8 min (0.5s pacing + latency); census_state.json
+# resumes the remainder next run, so the backfill self-chunks across nights.
+# 0 disables the cap (deliberate manual runs only).
+_MAX_REQUESTS_PER_RUN = 450
 
 _CODES_PATH = Path(__file__).resolve().parent.parent / "config" / "trade_flow_codes.yml"
 _DEFAULT_STORE = Path(__file__).resolve().parent.parent / "data" / "trade_flows"
@@ -313,13 +324,19 @@ def _upsert_parquet(store: Path, new_rows: list[dict]) -> int:
 def collect(
     full_history: bool = False,
     dry_run: bool = False,
+    max_requests: int = _MAX_REQUESTS_PER_RUN,
 ) -> dict:
     """
     Collect Census HS-code import data.
 
     Returns a summary dict:
-      {codes_attempted, months_fetched, rows_added, codes_failed, no_op, error}
+      {codes_attempted, months_fetched, rows_added, codes_failed,
+       requests_made, capped, no_op, error}
     Always returns (never raises) — per house law (tolerant; exits 0).
+
+    max_requests bounds API requests per run (0 = uncapped): the run stops
+    cleanly at the cap with state saved, so the next run resumes where this
+    one stopped (documented API limit: 500 requests/day/key).
     """
     api_key = os.environ.get("CENSUS_API_KEY", "").strip()
     if not api_key:
@@ -335,6 +352,8 @@ def collect(
             "months_fetched": 0,
             "rows_added": 0,
             "codes_failed": 0,
+            "requests_made": 0,
+            "capped": False,
             "no_op": True,
             "error": "CENSUS_API_KEY not set — collector no-op (honest null)",
         }
@@ -348,6 +367,8 @@ def collect(
             "months_fetched": 0,
             "rows_added": 0,
             "codes_failed": 0,
+            "requests_made": 0,
+            "capped": False,
             "no_op": True,
             "error": f"config load error: {exc}",
         }
@@ -361,6 +382,8 @@ def collect(
     codes_attempted = 0
     codes_failed = 0
     months_fetched = 0
+    requests_made = 0
+    capped = False
 
     session = requests.Session()
     # Polite User-Agent
@@ -394,6 +417,10 @@ def collect(
         last_ok_month: Optional[str] = state.get(hs_code)
 
         for stat_month in months:
+            if max_requests and requests_made >= max_requests:
+                capped = True
+                break
+            requests_made += 1
             if dry_run:
                 log.info("[dry-run] would fetch code=%s month=%s", hs_code, stat_month)
                 continue
@@ -430,6 +457,14 @@ def collect(
         if not code_failed and last_ok_month:
             state[hs_code] = last_ok_month
 
+        if capped:
+            log.info(
+                "census_trade: request cap (%d/run) reached at code=%s — stopping "
+                "cleanly; state saved, next run resumes the remaining backfill",
+                max_requests, hs_code,
+            )
+            break
+
     # Write parquet and state
     rows_added = 0
     if not dry_run:
@@ -449,6 +484,8 @@ def collect(
         "months_fetched": months_fetched,
         "rows_added": rows_added,
         "codes_failed": codes_failed,
+        "requests_made": requests_made,
+        "capped": capped,
         "no_op": no_op,
         "error": None,
     }
@@ -465,9 +502,14 @@ def _main() -> None:
                         help=f"Backfill all months since {_BACKFILL_START}")
     parser.add_argument("--dry-run", action="store_true",
                         help="Log what would run without writing")
+    parser.add_argument("--max-requests", type=int, default=_MAX_REQUESTS_PER_RUN,
+                        help="Per-run API request cap (default: %(default)s; 0 = uncapped). "
+                             "Keeps one run under the documented 500 req/day/key limit; "
+                             "census_state.json resumes the backfill on the next run.")
     args = parser.parse_args()
 
-    result = collect(full_history=args.full_history, dry_run=args.dry_run)
+    result = collect(full_history=args.full_history, dry_run=args.dry_run,
+                     max_requests=args.max_requests)
     if result.get("error"):
         print(f"census_trade: {result['error']}")
     elif result.get("no_op"):
@@ -477,6 +519,11 @@ def _main() -> None:
             f"census_trade: ingested {result['months_fetched']} month-code rows, "
             f"added {result['rows_added']} new rows, "
             f"{result['codes_failed']} code(s) failed"
+        )
+    if result.get("capped"):
+        print(
+            f"census_trade: per-run request cap reached "
+            f"({result['requests_made']} requests) — backfill resumes next run"
         )
 
 
