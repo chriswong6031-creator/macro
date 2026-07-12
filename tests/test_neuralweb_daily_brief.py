@@ -28,6 +28,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 from engine.neuralweb.daily_brief import (  # noqa: E402
     TRADING_VERBS,
+    _brief_status,
     _build_brain_run,
     _contradiction_delta,
     _detect_changes,
@@ -713,6 +714,32 @@ def test_brain_run_no_health():
     br = _build_brain_run(None, None)
     assert br["cortex_status"] == "unknown"
     assert br["summary"] is not None
+
+
+# ---------------------------------------------------------------------------
+# _brief_status: cortex-degraded floors at warn (OPERATOR RULING 2026-07-12 —
+# deliberation is opportunistic under the shared-OAuth-quota design)
+# ---------------------------------------------------------------------------
+
+def test_brief_status_no_health_degraded():
+    assert _brief_status(None, {}) == "degraded"
+
+
+def test_brief_status_overall_degraded_wins():
+    health = {"overall_status": "degraded"}
+    assert _brief_status(health, {"cortex_status": "ok"}) == "degraded"
+
+
+def test_brief_status_cortex_degraded_floors_at_warn():
+    health = {"overall_status": "ok"}
+    assert _brief_status(health, {"cortex_status": "degraded"}) == "warn"
+    assert _brief_status(health, {"cortex_status": "missing"}) == "warn"
+    assert _brief_status(health, {"cortex_status": "warn"}) == "warn"
+
+
+def test_brief_status_all_ok():
+    health = {"overall_status": "ok"}
+    assert _brief_status(health, {"cortex_status": "ok"}) == "ok"
 
 
 # ---------------------------------------------------------------------------

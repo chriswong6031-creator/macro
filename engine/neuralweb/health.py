@@ -495,13 +495,17 @@ def _workflow_conformance(in_scope: list[dict], root: Path) -> list[dict]:
 
 def _overall_status(lobes: list[dict], cortex: dict, world_state_id: str = "world-state") -> str:
     """
-    ok       — no stale/missing/degraded
-    warn     — stale or fresh_partial present, cortex not degraded
-    degraded — cortex degraded OR world_state missing/stale OR any core lobe missing
+    ok       — no stale/missing/degraded, cortex ok
+    warn     — stale or fresh_partial present, OR cortex degraded/warn
+    degraded — world_state missing/stale OR any real-SLA lobe missing
     """
+    # OPERATOR RULING 2026-07-12: nightly deliberation is opportunistic (shared
+    # OAuth quota pool, no metered key by design) — a degraded cortex is the
+    # accepted steady state and must not permanently redline the lobe-freshness
+    # headline.  Cortex degradation floors the rollup at 'warn' (see the end of
+    # this function); the cortex block, summary_counts.cortex_status, and the
+    # attention_deterministic cortex_degraded item all still print it in full.
     cortex_status = cortex.get("status", "unknown")
-    if cortex_status == "degraded":
-        return "degraded"
 
     lobe_map = {r["id"]: r for r in lobes}
     ws = lobe_map.get(world_state_id, {})
@@ -522,8 +526,9 @@ def _overall_status(lobes: list[dict], cortex: dict, world_state_id: str = "worl
     if any_missing:
         return "degraded"
 
-    # cortex status='warn' (model_fallback, context_stale, budget) elevates overall to warn
-    if cortex_status == "warn":
+    # cortex degraded (steady state under the OAuth-only ruling) or warn
+    # (model_fallback, context_stale, budget) elevates overall to warn.
+    if cortex_status in ("degraded", "warn"):
         return "warn"
 
     any_bad = any(r["status"] in ("stale", "fresh_partial", "degraded") for r in lobes)

@@ -201,7 +201,9 @@ def test_parquet_count_via_envelope_sidecar(tmp_path):
 # ---- test 5: cortex degraded → overall degraded -----------------------------
 
 def test_cortex_degraded_run_status_propagates(tmp_path):
-    """Degraded run_status in cortex memo → cortex section degraded + overall degraded."""
+    """Degraded run_status in cortex memo → cortex section degraded, overall floored
+    at warn (OPERATOR RULING 2026-07-12: cortex degradation is the accepted steady
+    state under the shared-OAuth-quota design and must not redline the headline)."""
     degraded_memo = {
         "schema": "neuralweb.cortex_memo.v1",
         "as_of": "2026-07-06T00:00:00+00:00",
@@ -224,12 +226,61 @@ def test_cortex_degraded_run_status_propagates(tmp_path):
     (tmp_path / "data" / "neuralweb" / "cortex" / "memo.json").write_text(
         json.dumps(degraded_memo), encoding="utf-8"
     )
-    # Also create a fresh world_state so degraded comes only from cortex
+    # Also create a genuinely fresh world_state so overall reflects only cortex
+    from datetime import datetime, timezone, timedelta
+    recent_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(
+        "%Y-%m-%dT%H:%M:%S+00:00"
+    )
     _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {
-        "as_of": "2026-07-06T00:00:00+00:00",
+        "as_of": recent_ts,
     })
     root = _make_repo(tmp_path, {
         "world-state": _art("data/neuralweb/world_state.json"),
+    })
+    result = build(root=root)
+    assert result["cortex"]["status"] == "degraded"
+    # Cortex degradation floors the headline at warn — never ok, never degraded
+    # on its own (real lobe breaches still drive degraded, tested below).
+    assert result["overall_status"] == "warn"
+
+
+def test_cortex_degraded_plus_real_missing_lobe_is_degraded(tmp_path):
+    """Cortex degraded AND a real-SLA lobe missing → overall stays degraded
+    (the warn floor must not mask genuine pipeline breaches)."""
+    degraded_memo = {
+        "schema": "neuralweb.cortex_memo.v1",
+        "as_of": "2026-07-06T00:00:00+00:00",
+        "summary": "budget exhausted",
+        "what_fired": [],
+        "run_status": {
+            "status": "degraded",
+            "degraded": True,
+            "degradation_reason": "model_unavailable",
+            "provider_attempts": [],
+            "tool_call_batches": 0,
+            "individual_tool_calls": 0,
+            "expected_min_tool_calls": 1,
+            "context_stale": False,
+            "context_as_of": None,
+        },
+        "probation": {"granted": False, "reason": "n=0", "attention_track_record": {"n": 0, "hits": 0}},
+    }
+    (tmp_path / "data" / "neuralweb" / "cortex").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "data" / "neuralweb" / "cortex" / "memo.json").write_text(
+        json.dumps(degraded_memo), encoding="utf-8"
+    )
+    from datetime import datetime, timezone, timedelta
+    recent_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(
+        "%Y-%m-%dT%H:%M:%S+00:00"
+    )
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {"as_of": recent_ts})
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json"),
+        # Declared with a real SLA but never written → missing, degraded-driving.
+        "factor-contradictions-ledger": _art(
+            "data/neuralweb/factor_contradictions.jsonl",
+            freshness_sla_hours=30.0,
+        ),
     })
     result = build(root=root)
     assert result["cortex"]["status"] == "degraded"
