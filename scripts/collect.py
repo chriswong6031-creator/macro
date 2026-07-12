@@ -154,7 +154,7 @@ def all_adapters() -> dict:
         ("clinicaltrials", "collectors.clinicaltrials", "ClinicalTrialsAdapter"),  # keyless ClinicalTrials.gov Phase-3 starts/halts -> clinical_phase3_start channel
         ("finnhub_altdata", "collectors.finnhub_altdata", "FinnhubAltdataAdapter"),  # analyst trends + insider MSPR + earnings surprises (existing FINNHUB key) -> 3 convergence channels
         ("finra_short_volume", "collectors.finra_short_volume", "FinraShortVolumeAdapter"),  # keyless daily consolidated short-VOLUME (fresher than bi-monthly short interest) -> stock-page short_flow confirmer
-        ("finra_ats_transparency", "collectors.finra_ats_transparency", "FinraAtsTransparencyAdapter"),  # keyless FINRA OTC Transparency weekly per-ATS venue breakdown (T2e; 2-4wk lag) -> darkpool.html venue table
+        ("finra_ats_transparency", "collectors.finra_ats_transparency", "FinraAtsTransparencyAdapter"),  # keyless FINRA OTC Transparency weekly per-ATS venue breakdown (T2e; 2-4wk lag; partition-aware POST fetch, 2026-07 repair) -> darkpool.html venue table
         ("polygon_news", "collectors.polygon_news", "PolygonNewsAdapter"),  # Polygon news-sentiment roll-up (existing POLYGON key) -> news_sentiment channel
         ("github_repos", "collectors.github_repos", "GithubReposAdapter"),  # GitHub star velocity (optional GITHUB_TOKEN) -> github_momentum channel
         ("sam_gov", "collectors.sam_gov", "SamGovAdapter"),               # SAM.gov pre-award solicitations by NAICS (theme_event radar leg); GATED on SAM_API_KEY -> 'blocked' without it
@@ -174,7 +174,7 @@ def all_adapters() -> dict:
         ("china_connect", "collectors.china_connect", "ChinaConnectAdapter"),  # 沪深港通 flows (repairs connect_flow)
         ("china_flows", "collectors.china_flows", "ChinaFlowsAdapter"),        # AH premium / limit-up / ETF shares
         ("china_qvix", "collectors.china_qvix", "ChinaQvixAdapter"),           # 300/50ETF option-implied vol ("China VIX") — fear/euphoria + drawdown
-        ("china_credit", "collectors.china_credit", "ChinaCreditAdapter"),     # 社融 TSF (mofcom, legacy-SSL)
+        ("china_credit", "collectors.china_credit", "ChinaCreditAdapter"),     # 社融 TSF (PBoC direct; mofcom mirror froze at 2026-04 — 2026-07 repair)
         ("china_tushare", "collectors.china_tushare", "ChinaTushareAdapter"),  # gated Tushare plane (mktcap/moneyflow/margin/chips) — never CI-invoked before, froze 2026-06-21
         ("china_property", "collectors.china_property", "ChinaPropertyAdapter"),  # 70-city price breadth + climate + CGB + rebar/iron-ore
         ("china_pboc", "collectors.china_pboc", "ChinaPbocAdapter"),           # PBoC corridor legs: FX reserves+gold / repo fixings FR007 / USD-CNY ref (engine/china_policy_watch.py)
