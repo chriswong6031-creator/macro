@@ -703,6 +703,21 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
     except Exception as e:  # noqa: BLE001 — knob read must never break the radar
         log.warning("risk_radar cap_leadership knob read failed: %s", e)
 
+    # RC-R11 WASHOUT COUNTER-READ (engine/oracle/washout_counterread.py) — a display-tier
+    # CONTEXT chip beside the banner: a growth-scare extreme co-occurring with an index/cohort
+    # depth extreme is a historically TWO-SIDED capitulation-zone reading (the growth scare
+    # peaked 90.8 on the exact 2026-06-26 Mag-7 bottom). It NEVER suppresses the banner or
+    # touches state/bands — pure context, like the election-cycle modulator. Additive, never fatal.
+    counterread = None
+    try:
+        from engine.oracle import washout_counterread as _wc
+        gs = next((s for s in scares if s.get("scare") == "growth"), None)
+        counterread = _wc.compute(growth_score=(gs or {}).get("score"),
+                                  growth_band=(gs or {}).get("band"),
+                                  as_of=str(pd.Timestamp(ts).date()))
+    except Exception as e:  # noqa: BLE001 — context organ, never fatal
+        log.warning("risk_radar washout counter-read failed: %s", e)
+
     return {
         "schema": "risk_radar.v2",
         "asof": str(pd.Timestamp(ts).date()),
@@ -730,6 +745,7 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         # with — the recovery panel renders green only when eligible=true.
         "deescalation": deesc,
         "cycle_context": cyc,   # election-cycle MODULATOR (display + sizing; never originates an alert)
+        "counterread": counterread,  # RC-R11 washout counter-read (display context; never suppresses)
         "favor_entries": _STATE_ORDER.index(state) >= _STATE_ORDER.index("caution"),
         "cap_leadership": bool(cap_leadership),
         "reader_contract": _READER[state],

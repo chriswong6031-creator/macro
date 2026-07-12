@@ -186,6 +186,21 @@ html[data-theme="light"] .sc-page .cyc-gchip.on { color: #fff; }
 .cc-diverge-row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-top: 8px; }
 .cc-diverge-note { font-size: 12px; color: var(--muted); line-height: 1.4; flex: 1 1 200px; min-width: 0; }
 
+/* ---- Rotation Command RC-R3: rotation-event + fragmentation card chips ---- */
+/* "⟲ handoff active" — a live first-class rotation event inside this sector. Link-toned
+   by default; amber (warn) when the event is MAJOR (a cap-share-dominant leg). */
+.cc-rot { font-size: 10.5px; font-weight: 750; letter-spacing: .03em; padding: 2px 8px;
+  border-radius: 6px; line-height: 1.45; white-space: nowrap; color: var(--link, #38bdf8);
+  background: color-mix(in srgb, var(--link, #38bdf8) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--link, #38bdf8) 45%, var(--line)); }
+.cc-rot.cc-rot-major { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent);
+  border-color: color-mix(in srgb, var(--warn) 48%, var(--line)); }
+/* "aggregate not representative" — the sector's legs disagree hard (fragmentation flag). */
+.cc-frag { font-size: 10.5px; font-weight: 750; letter-spacing: .03em; padding: 2px 8px;
+  border-radius: 6px; line-height: 1.45; white-space: nowrap; color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--muted) 45%, var(--line)); }
+
 /* ---- W3.9: FX-decomposition chips + drawer (INTL/country page only) ------ */
 /* currency-driven card chip: a cyan "FX-driven" pill when the latest turn was
    >60% currency — the one-glance "don't read this USD move as an equity turn" flag. */

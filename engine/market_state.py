@@ -468,6 +468,8 @@ def _radar_to_rd(rr: dict) -> dict:
         # election-cycle MODULATOR (engine/election_cycle.py) — display chip + sizing prior; only
         # set on the US radar (the intl radars carry no midterm prior — the backtest refuted it).
         "cycle": rr.get("cycle_context"),
+        # RC-R11 washout counter-read — display-tier context chip beside the banner (US radar only).
+        "counterread": rr.get("counterread"),
         "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
         "severe_gated": False, "ceiling": None,
         # display-only DE-ESCALATION read ("risk-off may be ending"); the US override fills it in

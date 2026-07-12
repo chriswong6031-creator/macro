@@ -126,12 +126,39 @@
   }
 
   /* ----- sections ----- */
+  // RC-R7: dual-membership "behaves-as" chip. On THIS basket's card, flag members that
+  // (a) sit in >1 basket, (b) whose homes give opposite reads, and (c) actually track a
+  // DIFFERENT home than this card — e.g. on the mag7 (avoid) card, "NVDA behaves-as AI
+  // Semis" (the buy-read home). Silent otherwise. Detail (per-name corr) in the title.
+  function behavesAsChip(g) {
+    var bid = g.basket_id;
+    var out = (g.members || []).filter(function (m) {
+      var b = m.behaves_as;
+      return b && b.conflict && b.home_id && b.home_id !== bid;
+    });
+    if (!out.length) return '';
+    var title = out.map(function (m) {
+      var b = m.behaves_as, h = (b.homes || []).filter(function (x) { return x.id === b.home_id; })[0];
+      return m.ticker + ' → ' + (b.home_label || b.home_id) + (h && h.corr20 != null ? ' (r20 ' + h.corr20.toFixed(2) + ')' : '');
+    }).join('; ');
+    var en, zh;
+    if (out.length === 1) {
+      var b = out[0].behaves_as;
+      en = esc(out[0].ticker) + ' behaves-as ' + esc(b.home_label || b.home_id);
+      zh = esc(out[0].ticker) + ' 表现类同 ' + esc(b.home_label_zh || b.home_label || b.home_id);
+    } else {
+      en = out.length + ' names behave-as a peer basket';
+      zh = out.length + ' 只成分表现类同对应篮子';
+    }
+    return '<span class="pill behavesas" title="' + esc(title) + '">↔ ' + L(en, zh) + '</span>';
+  }
+
   function cardHTML(g, ds) {
     var e = g.entry || {}, r = g.regime || {};
     var col = (g['class'] === 'headwind') ? 'var(--down)' : (g['class'] === 'entry_now') ? 'var(--up)' : (g['class'] === 'forming') ? 'var(--info)' : (g['class'] === 'tailwind') ? 'var(--ok)' : (g['class'] === 'late') ? 'var(--orange)' : 'var(--line)';
     return '<a class="card" style="border-left-color:' + col + '" href="' + (g.chart_key ? detailHref(ds, g.key) : '#') + '">'
       + '<div class="top"><div><div class="nm">' + esc(g.label) + '</div><div class="sct">' + esc(g.sector) + ' · ' + (g.n_priced || g.n_members) + ' ' + L('names', '只') + '</div></div>' + tierBadge(e.tier) + '</div>'
-      + '<div class="row2">' + regimePill(r) + (e.tier ? '<span class="pill buy">' + L('ENTRY', '入场') + '</span>' : '') + '<span style="color:var(--muted);font-size:11px">' + freshTxt(e) + '</span></div>'
+      + '<div class="row2">' + regimePill(r) + (e.tier ? '<span class="pill buy">' + L('ENTRY', '入场') + '</span>' : '') + behavesAsChip(g) + '<span style="color:var(--muted);font-size:11px">' + freshTxt(e) + '</span></div>'
       + '<div class="meta">' + (r.rsi_3d != null ? '3D RSI ' + num(r.rsi_3d) + ' · StochRSI ' + num(r.stoch_3d) : '') + (r.rs_60d != null ? ' · RS60 ' + signed(r.rs_60d) : '') + '</div>'
       + '</a>';
   }
