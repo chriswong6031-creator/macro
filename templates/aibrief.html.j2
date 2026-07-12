@@ -34,7 +34,6 @@
                font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
                box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto;
                max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
-  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
   .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { display:block; }
   /* market toggle tabs */
@@ -44,10 +43,9 @@
                    font-family:inherit; transition:background .15s,color .15s,border-color .15s; }
   .brief-tab-btn:hover { color:var(--text); border-color:var(--muted); }
   .brief-tab-btn.active { background:var(--link); border-color:var(--link); color:#fff; }
-  /* class-driven panel visibility — coexists with aibrief.js setting style.display="" */
   .brief-tab { display:none; }
   .brief-tab.active { display:block; }
-  /* shared AI-brief body styling (one rule for all three panels) */
+  /* shared AI-brief body styling */
   .ai-brief .mb-sum { font-size:15px; font-weight:600; margin:0 0 10px; }
   .ai-brief .mb-sec { margin:10px 0; }
   .ai-brief .mb-h { font-weight:600; color:var(--link); margin:0 0 4px; }
@@ -55,6 +53,36 @@
   .ai-brief .mb-list li { margin:3px 0; }
   .ai-brief .mb-foot { margin-top:12px; color:var(--muted); font-size:12px; }
   .ai-brief .mb-deg { color:var(--muted); font-size:12px; font-style:italic; margin:4px 0; }
+  /* ── Panel A: context strip ────────────────────────────────────────────────── */
+  .ctx-strip { display:flex; flex-wrap:wrap; gap:10px 20px; align-items:flex-start; }
+  .ctx-chip { display:inline-flex; align-items:center; gap:5px; background:var(--panel);
+              border:1px solid var(--line); border-radius:6px; padding:5px 10px;
+              font-size:13px; font-weight:600; }
+  .ctx-chip.regime { border-color:var(--link); color:var(--link); }
+  .ctx-chip.cortex-ok { border-color:#22c55e; color:#22c55e; }
+  .ctx-chip.cortex-deg { border-color:var(--muted); color:var(--muted); }
+  .ctx-row { display:flex; align-items:center; gap:6px; font-size:13px; line-height:1.4; }
+  .ctx-label { color:var(--muted); font-size:11px; font-weight:600; text-transform:uppercase;
+               letter-spacing:.05em; white-space:nowrap; }
+  /* ── Panel B: What's ahead ─────────────────────────────────────────────────── */
+  .fwd-list { list-style:none; margin:8px 0 0; padding:0; }
+  .fwd-list li { display:flex; align-items:baseline; gap:8px; padding:5px 0;
+                 border-bottom:1px solid var(--line); font-size:13px; }
+  .fwd-list li:last-child { border-bottom:none; }
+  .fwd-date { color:var(--muted); font-size:12px; white-space:nowrap; min-width:70px; }
+  /* ── Panel C: Brief's own record ───────────────────────────────────────────── */
+  .record-cal { color:var(--muted); font-size:12px; margin:4px 0 10px; font-style:italic; }
+  .open-lean { padding:6px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .open-lean:last-child { border-bottom:none; }
+  /* ── Panel D: Cortex deliberation (client-side) ─────────────────────────────── */
+  #cortex-panel { display:none; }
+  .cortex-label { display:inline-block; background:var(--panel); border:1px solid var(--line);
+                  border-radius:4px; font-size:11px; font-weight:600; color:var(--muted);
+                  padding:1px 6px; margin-bottom:6px; letter-spacing:.04em; }
+  .cortex-section { margin:8px 0; }
+  .cortex-h { font-weight:600; color:var(--link); margin:0 0 3px; font-size:13px; }
+  .cortex-list { margin:3px 0 0 16px; padding:0; font-size:13px; }
+  .cortex-list li { margin:2px 0; }
 </style>
 </head>
 <body>
@@ -91,15 +119,100 @@
     '以下为对各看板的 AI（大模型）综合解读 — 解读周期、标注信号冲突、检验当前假设，并以美国宏观、美元、全球流动性与商品为共同背景。仅供研究参考：此处内容不参与任何评分、信号或仓位，且简报可能出错或过度自信 — 请始终对照底层面板核实。每个交易日收盘后自动更新。') }}</p>
 </div>
 
+{# ── Panel A: Context strip (server-side, fail-open) ──────────────────────────── #}
+{% if ctx_strip is defined and not ctx_strip.get('absent', True) %}
+<div class="panel" style="padding:10px 16px">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <h2 style="margin:0">{{ t('Right now', '当前状态') }}</h2>
+    {% if ctx_strip.get('strip_asof') %}
+    <span class="muted" style="font-size:11px">{{ t('as of', '数据截至') }} {{ ctx_strip.strip_asof }}</span>
+    {% endif %}
+    {{ help(
+      'Snapshot of the deterministic dashboards at build time — regime, any signals pointing in different directions, and what liquidity is doing. Research context only.',
+      '构建时的确定性看板快照 — 周期状态、有无方向分歧信号，以及流动性动向。仅供研究参考。'
+    ) }}
+  </div>
+  <div class="ctx-strip">
+    {% if ctx_strip.get('regime_label_en') %}
+    <div class="ctx-row">
+      <span class="ctx-label">{{ t('Regime', '市场格局') }}</span>
+      <span class="ctx-chip regime">
+        <span class="l-en">{{ ctx_strip.regime_label_en }}</span>
+        <span class="l-zh">{{ ctx_strip.regime_label_zh or ctx_strip.regime_label_en }}</span>
+      </span>
+    </div>
+    {% endif %}
+    {% if ctx_strip.get('contradiction_line_en') %}
+    <div class="ctx-row">
+      <span class="ctx-label">{{ t('Signals', '信号') }}</span>
+      <span data-tip-en="{{ ctx_strip.contradiction_tip_en or '' }}" data-tip-zh="{{ ctx_strip.contradiction_tip_zh or ctx_strip.contradiction_tip_en or '' }}">
+        <span class="l-en">{{ ctx_strip.contradiction_line_en }}</span>
+        <span class="l-zh">{{ ctx_strip.contradiction_line_zh or ctx_strip.contradiction_line_en }}</span>
+      </span>
+    </div>
+    {% endif %}
+    {% if ctx_strip.get('liquidity_en') %}
+    <div class="ctx-row">
+      <span class="ctx-label">{{ t('Money', '流动性') }}</span>
+      <span>
+        <span class="l-en">{{ ctx_strip.liquidity_en }}</span>
+        <span class="l-zh">{{ ctx_strip.liquidity_zh or ctx_strip.liquidity_en }}</span>
+      </span>
+    </div>
+    {% endif %}
+    {% if ctx_strip.get('cortex_status') %}
+    <div class="ctx-row">
+      <span class="ctx-label">{{ t('AI review', 'AI复盘') }}</span>
+      <span class="ctx-chip {{ 'cortex-ok' if ctx_strip.cortex_status == 'ok' else 'cortex-deg' }}">
+        <span class="l-en">{{ ctx_strip.cortex_en or 'Rate-limited overnight' }}</span>
+        <span class="l-zh">{{ ctx_strip.cortex_zh or '隔夜遭速率限制' }}</span>
+      </span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{# ── Panel B: What's ahead (server-side, deterministic) ──────────────────────── #}
+{% if fwd_panel is defined and not fwd_panel.get('absent', True) and (fwd_panel.get('events') or fwd_panel.get('rebal_note_en')) %}
+<div class="panel">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+    <h2 style="margin:0">{{ t("What's ahead", '近期日程') }}</h2>
+    {{ help(
+      'Scheduled macro events and data releases in the next two weeks. Dates are deterministic — no forecasts on the visible tier. Hover any row for model leans and market-implied reads; all annotated with no accuracy record yet while the scoreboard is empty.',
+      '未来两周的宏观事件与数据发布。日期为确定性信息，可见层不含预测。悬停行可查看模型倾向与市场隐含读数，评分板为空时注明尚无记录。'
+    ) }}
+  </div>
+  {% if fwd_panel.get('rebal_note_en') %}
+  <p class="muted sm" style="margin:6px 0 8px">
+    <span class="l-en">{{ fwd_panel.rebal_note_en }}</span>
+    <span class="l-zh">{{ fwd_panel.rebal_note_zh or fwd_panel.rebal_note_en }}</span>
+  </p>
+  {% endif %}
+  {% if fwd_panel.get('events') %}
+  <ul class="fwd-list">
+    {% for ev in fwd_panel.events %}
+    <li>
+      <span class="fwd-date">{{ ev.date }}</span>
+      <span data-tip-en="{{ ev.tip_en or '' }}" data-tip-zh="{{ ev.tip_zh or ev.tip_en or '' }}">
+        <span class="l-en">{{ ev.label_en }}</span>
+        <span class="l-zh">{{ ev.label_zh or ev.label_en }}</span>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ── Brief tabs ───────────────────────────────────────────────────────────────── #}
 <div class="brief-tabs" role="tablist" aria-label="Market · 市场">
   <button class="brief-tab-btn active" data-lens="macro" role="tab" aria-selected="true">🇺🇸 {{ t('Macro', '宏观') }}</button>
   <button class="brief-tab-btn" data-lens="china" role="tab" aria-selected="false">🇨🇳 {{ t('China & Hong Kong', '中国与香港') }}</button>
   <button class="brief-tab-btn" data-lens="btc" role="tab" aria-selected="false">₿ {{ t('Bitcoin', '比特币') }}</button>
 </div>
 
-{# Each panel is client-fetched from its lens JSON by aibrief.js (written by
-   engine/master_brain.py); the brief schema is identical across lenses. Visibility
-   is class-driven (.brief-tab[.active]) so it never fights aibrief.js's reveal. #}
+{# Each panel is client-fetched from its lens JSON by aibrief.js #}
 <div class="panel ai-brief brief-tab active" data-lens="macro" data-brief-src="master_brief.json">
   <h2>🇺🇸 {{ t('Macro · cross-asset synthesis', '宏观 · 跨资产综合') }}
     {{ help('AI synthesis of the macro picture as one cross-asset read — US growth/inflation regime, the dollar, global liquidity, rates, commodities and crypto. RESEARCH CONTEXT only: it narrates the regime, flags conflicting signals and tests the liquidity-rotation thesis; it never feeds a score, signal or allocation. Can be wrong — verify against the panels.', 'AI 将宏观图景作为单一跨资产解读 — 美国增长／通胀周期、美元、全球流动性、利率、商品与加密货币。仅供研究参考：它解读周期、标注信号冲突并检验流动性轮动假设，绝不参与任何评分、信号或仓位。可能出错，请对照各面板核实。') }}
@@ -121,6 +234,58 @@
   <div data-brief-body class="muted sm">{{ t('Loading the latest AI brief… it regenerates daily after the close.', '正在加载最新AI简报…每个交易日收盘后更新。') }}</div>
 </div>
 
+{# ── Panel C: The brief's own record (server-side) ────────────────────────────── #}
+{% if record_panel is defined and not record_panel.get('absent', True) %}
+<div class="panel">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+    <h2 style="margin:0">{{ t("The brief's own record", '简报自身记录') }}</h2>
+    {{ help(
+      "The AI brief logs a lean for each major call — subject, direction, horizon, and a falsifier. These are scored against realized prices. Below 20 graded calls the scoreboard shows the artifact's own calibration note, not a hit-rate.",
+      '简报为每次主要判断记录倾向 — 标的、方向、时间窗口与证伪条件，并依据实际价格评分。评分次数不足20次时不显示命中率，仅显示校准说明。'
+    ) }}
+  </div>
+  {# n-floor law (ADB-R12c): calibration_note, not numeric rate, when n < 20 #}
+  {% if record_panel.get('calibration_note_en') %}
+  <p class="record-cal">
+    <span class="l-en">{{ record_panel.calibration_note_en }}</span>
+    <span class="l-zh">{{ record_panel.calibration_note_zh or record_panel.calibration_note_en }}</span>
+  </p>
+  {% endif %}
+  {% if record_panel.get('open_leans') %}
+  <div style="margin-top:6px">
+    <div class="muted sm" style="margin-bottom:4px;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:.05em">
+      {{ t('Open leans', '待验证判断') }}
+    </div>
+    {% for lean in record_panel.open_leans %}
+    <div class="open-lean">
+      <span class="l-en">{{ lean.stance_en }}</span>
+      <span class="l-zh">{{ lean.stance_zh or lean.stance_en }}</span>
+      {% if lean.get('falsifier_en') %}
+      {{ help('Falsifier: ' + lean.falsifier_en + (' · Check by: ' + lean.check_by if lean.get('check_by') else ''),
+              '证伪条件：' + lean.falsifier_en + (' · 截止：' + lean.check_by if lean.get('check_by') else '')) }}
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if not record_panel.get('open_leans') and not record_panel.get('calibration_note_en') %}
+  <p class="muted sm">{{ t('No graded calls yet.', '暂无已评分判断。') }}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ── Panel D: Overnight deliberation (client-side, aibrief.js) ───────────────── #}
+<div class="panel" id="cortex-panel">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+    <h2 style="margin:0">{{ t('Overnight deliberation', '隔夜AI复盘') }}</h2>
+    {{ help(
+      'The overnight AI reviewer reads the dashboards with a set of read-only tools. This is AI-generated deliberation — labelled as such. When rate-limited (the usual state), it shows an honest absent note rather than synthetic content.',
+      '隔夜 AI 审阅者使用一组只读工具读取看板内容。这是 AI 生成的审议结果，已明确标注。遭遇速率限制时（常见状态），显示诚实的缺席提示，不生成合成内容。'
+    ) }}
+  </div>
+  <div id="cortex-body"></div>
+</div>
+
 <div class="panel">
   <p class="muted" style="font-size:12px;margin:0">{{ t('AI research context, not investment advice — generated by an LLM from the day\'s free public data and the dashboards\' own outputs.', 'AI 研究背景，非投资建议 — 由大模型根据当日免费公开数据及各看板自身输出生成。') }}
     {% if as_of %} · {{ t('Page built', '页面生成于') }} {{ as_of }}{% endif %}</p>
@@ -129,9 +294,7 @@
 <script src="theme.js"></script>
 <script src="aibrief.js"></script>
 <script>
-/* Market toggle — flips which .ai-brief panel is visible. Visibility is purely
-   class-based so it never conflicts with aibrief.js (which only fills bodies and
-   clears inline display on load). Supports #macro/#china/#btc deep-links. */
+/* Market toggle — flips which .ai-brief panel is visible. */
 (function () {
   var btns = document.querySelectorAll(".brief-tab-btn");
   var panels = document.querySelectorAll(".ai-brief.brief-tab");

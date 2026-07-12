@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>AI Daily Brief — 2026-07-12 14:18 UTC</title>
+<title>AI Daily Brief — 2026-07-12 11:43 UTC</title>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -31,7 +31,6 @@
                font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
                box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto;
                max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
-  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
   .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { display:block; }
   /* market toggle tabs */
@@ -41,10 +40,9 @@
                    font-family:inherit; transition:background .15s,color .15s,border-color .15s; }
   .brief-tab-btn:hover { color:var(--text); border-color:var(--muted); }
   .brief-tab-btn.active { background:var(--link); border-color:var(--link); color:#fff; }
-  /* class-driven panel visibility — coexists with aibrief.js setting style.display="" */
   .brief-tab { display:none; }
   .brief-tab.active { display:block; }
-  /* shared AI-brief body styling (one rule for all three panels) */
+  /* shared AI-brief body styling */
   .ai-brief .mb-sum { font-size:15px; font-weight:600; margin:0 0 10px; }
   .ai-brief .mb-sec { margin:10px 0; }
   .ai-brief .mb-h { font-weight:600; color:var(--link); margin:0 0 4px; }
@@ -52,6 +50,36 @@
   .ai-brief .mb-list li { margin:3px 0; }
   .ai-brief .mb-foot { margin-top:12px; color:var(--muted); font-size:12px; }
   .ai-brief .mb-deg { color:var(--muted); font-size:12px; font-style:italic; margin:4px 0; }
+  /* ── Panel A: context strip ────────────────────────────────────────────────── */
+  .ctx-strip { display:flex; flex-wrap:wrap; gap:10px 20px; align-items:flex-start; }
+  .ctx-chip { display:inline-flex; align-items:center; gap:5px; background:var(--panel);
+              border:1px solid var(--line); border-radius:6px; padding:5px 10px;
+              font-size:13px; font-weight:600; }
+  .ctx-chip.regime { border-color:var(--link); color:var(--link); }
+  .ctx-chip.cortex-ok { border-color:#22c55e; color:#22c55e; }
+  .ctx-chip.cortex-deg { border-color:var(--muted); color:var(--muted); }
+  .ctx-row { display:flex; align-items:center; gap:6px; font-size:13px; line-height:1.4; }
+  .ctx-label { color:var(--muted); font-size:11px; font-weight:600; text-transform:uppercase;
+               letter-spacing:.05em; white-space:nowrap; }
+  /* ── Panel B: What's ahead ─────────────────────────────────────────────────── */
+  .fwd-list { list-style:none; margin:8px 0 0; padding:0; }
+  .fwd-list li { display:flex; align-items:baseline; gap:8px; padding:5px 0;
+                 border-bottom:1px solid var(--line); font-size:13px; }
+  .fwd-list li:last-child { border-bottom:none; }
+  .fwd-date { color:var(--muted); font-size:12px; white-space:nowrap; min-width:70px; }
+  /* ── Panel C: Brief's own record ───────────────────────────────────────────── */
+  .record-cal { color:var(--muted); font-size:12px; margin:4px 0 10px; font-style:italic; }
+  .open-lean { padding:6px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .open-lean:last-child { border-bottom:none; }
+  /* ── Panel D: Cortex deliberation (client-side) ─────────────────────────────── */
+  #cortex-panel { display:none; }
+  .cortex-label { display:inline-block; background:var(--panel); border:1px solid var(--line);
+                  border-radius:4px; font-size:11px; font-weight:600; color:var(--muted);
+                  padding:1px 6px; margin-bottom:6px; letter-spacing:.04em; }
+  .cortex-section { margin:8px 0; }
+  .cortex-h { font-weight:600; color:var(--link); margin:0 0 3px; font-size:13px; }
+  .cortex-list { margin:3px 0 0 16px; padding:0; font-size:13px; }
+  .cortex-list li { margin:2px 0; }
 </style>
 </head>
 <body>
@@ -351,6 +379,114 @@
   <p class="muted sm" style="margin:10px 0 0"><span class="l-en">These are AI (LLM) syntheses of the dashboards — they narrate the regime, flag where signals conflict and test the working thesis, with US macro, the dollar, global liquidity and commodities as shared backdrop. RESEARCH CONTEXT ONLY: nothing here feeds a score, signal or allocation, and a brief can be wrong or overconfident — always verify against the underlying panels. Regenerated automatically each day after the close.</span><span class="l-zh">以下为对各看板的 AI（大模型）综合解读 — 解读周期、标注信号冲突、检验当前假设，并以美国宏观、美元、全球流动性与商品为共同背景。仅供研究参考：此处内容不参与任何评分、信号或仓位，且简报可能出错或过度自信 — 请始终对照底层面板核实。每个交易日收盘后自动更新。</span></p>
 </div>
 
+
+
+<div class="panel" style="padding:10px 16px">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <h2 style="margin:0"><span class="l-en">Right now</span><span class="l-zh">当前状态</span></h2>
+    
+    <span class="muted" style="font-size:11px"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-10</span>
+    
+    <span class="help">?<span class="tip"><span class="l-en">Snapshot of the deterministic dashboards at build time — regime, any signals pointing in different directions, and what liquidity is doing. Research context only.</span><span class="l-zh">构建时的确定性看板快照 — 周期状态、有无方向分歧信号，以及流动性动向。仅供研究参考。</span></span></span>
+  </div>
+  <div class="ctx-strip">
+    
+    <div class="ctx-row">
+      <span class="ctx-label"><span class="l-en">Regime</span><span class="l-zh">市场格局</span></span>
+      <span class="ctx-chip regime">
+        <span class="l-en">Risk-on</span>
+        <span class="l-zh">风险偏好</span>
+      </span>
+    </div>
+    
+    
+    <div class="ctx-row">
+      <span class="ctx-label"><span class="l-en">Signals</span><span class="l-zh">信号</span></span>
+      <span data-tip-en="Contradiction count: 2. By severity: note: 1, tension: 1. Technical note: W4 contradiction detector: 9 typed pairs (regime-vs-market_state, regime_vector-vs-risk_radar, oracle-vs-sector_central, vol_regime-vs-market_state, briefing-divergences, cross_asset_confirm-diverge," data-tip-zh="Contradiction count: 2. By severity: note: 1, tension: 1. Technical note: W4 contradiction detector: 9 typed pairs (regime-vs-market_state, regime_vector-vs-risk_radar, oracle-vs-sector_central, vol_regime-vs-market_state, briefing-divergences, cross_asset_confirm-diverge,">
+        <span class="l-en">One tension worth knowing: bonds and stocks are telling different stories.</span>
+        <span class="l-zh">值得关注的一处矛盾：债券与股票传递出不同信号。</span>
+      </span>
+    </div>
+    
+    
+    <div class="ctx-row">
+      <span class="ctx-label"><span class="l-en">Money</span><span class="l-zh">流动性</span></span>
+      <span>
+        <span class="l-en">Money is technically expanding but conditions are stressed — treat cautiously</span>
+        <span class="l-zh">流动性技术上扩张但压力较大，谨慎对待</span>
+      </span>
+    </div>
+    
+    
+    <div class="ctx-row">
+      <span class="ctx-label"><span class="l-en">AI review</span><span class="l-zh">AI复盘</span></span>
+      <span class="ctx-chip cortex-deg">
+        <span class="l-en">Rate-limited overnight — ran on dashboards alone</span>
+        <span class="l-zh">隔夜遭速率限制，仅依靠看板运行</span>
+      </span>
+    </div>
+    
+  </div>
+</div>
+
+
+
+
+<div class="panel">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+    <h2 style="margin:0"><span class="l-en">What's ahead</span><span class="l-zh">近期日程</span></h2>
+    <span class="help">?<span class="tip"><span class="l-en">Scheduled macro events and data releases in the next two weeks. Dates are deterministic — no forecasts on the visible tier. Hover any row for model leans and market-implied reads; all annotated with no accuracy record yet while the scoreboard is empty.</span><span class="l-zh">未来两周的宏观事件与数据发布。日期为确定性信息，可见层不含预测。悬停行可查看模型倾向与市场隐含读数，评分板为空时注明尚无记录。</span></span></span>
+  </div>
+  
+  
+  <ul class="fwd-list">
+    
+    <li>
+      <span class="fwd-date">2026-07-14</span>
+      <span data-tip-en="Time: 08:30 ET · Source: static" data-tip-zh="时间：08:30 东部时间">
+        <span class="l-en">CPI (consumer prices)</span>
+        <span class="l-zh">消费者物价指数（CPI）</span>
+      </span>
+    </li>
+    
+    <li>
+      <span class="fwd-date">2026-07-14</span>
+      <span data-tip-en="In 3 day(s). No accuracy record yet. model leans cool. Market implied: 0.2%." data-tip-zh="距今 3 天。No accuracy record yet。 模型偏向低于预期。">
+        <span class="l-en">CPI</span>
+        <span class="l-zh">CPI</span>
+      </span>
+    </li>
+    
+    <li>
+      <span class="fwd-date">2026-07-15</span>
+      <span data-tip-en="Time: 08:30 ET · Source: static" data-tip-zh="时间：08:30 东部时间">
+        <span class="l-en">PPI (producer prices)</span>
+        <span class="l-zh">生产者物价指数（PPI）</span>
+      </span>
+    </li>
+    
+    <li>
+      <span class="fwd-date">2026-07-15</span>
+      <span data-tip-en="In 4 day(s). No accuracy record yet. model leans cool." data-tip-zh="距今 4 天。No accuracy record yet。 模型偏向低于预期。">
+        <span class="l-en">PPI</span>
+        <span class="l-zh">PPI</span>
+      </span>
+    </li>
+    
+    <li>
+      <span class="fwd-date">2026-07-30</span>
+      <span data-tip-en="In 19 day(s). No accuracy record yet. model leans in-line." data-tip-zh="距今 19 天。No accuracy record yet。 模型偏向符合预期。">
+        <span class="l-en">PCE</span>
+        <span class="l-zh">PCE</span>
+      </span>
+    </li>
+    
+  </ul>
+  
+</div>
+
+
+
 <div class="brief-tabs" role="tablist" aria-label="Market · 市场">
   <button class="brief-tab-btn active" data-lens="macro" role="tab" aria-selected="true">🇺🇸 <span class="l-en">Macro</span><span class="l-zh">宏观</span></button>
   <button class="brief-tab-btn" data-lens="china" role="tab" aria-selected="false">🇨🇳 <span class="l-en">China & Hong Kong</span><span class="l-zh">中国与香港</span></button>
@@ -379,17 +515,98 @@
   <div data-brief-body class="muted sm"><span class="l-en">Loading the latest AI brief… it regenerates daily after the close.</span><span class="l-zh">正在加载最新AI简报…每个交易日收盘后更新。</span></div>
 </div>
 
+
+
+<div class="panel">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+    <h2 style="margin:0"><span class="l-en">The brief's own record</span><span class="l-zh">简报自身记录</span></h2>
+    <span class="help">?<span class="tip"><span class="l-en">The AI brief logs a lean for each major call — subject, direction, horizon, and a falsifier. These are scored against realized prices. Below 20 graded calls the scoreboard shows the artifact's own calibration note, not a hit-rate.</span><span class="l-zh">简报为每次主要判断记录倾向 — 标的、方向、时间窗口与证伪条件，并依据实际价格评分。评分次数不足20次时不显示命中率，仅显示校准说明。</span></span></span>
+  </div>
+  
+  
+  <p class="record-cal">
+    <span class="l-en">2 leans scored, hit-rate 1.0 (directional accuracy 1.0). Sample is tiny — the brain's leans are accountability, not yet a validated edge.</span>
+    <span class="l-zh">已评分 2 条，命中率 1.0（方向准确率 1.0）。样本极小 —— 大脑的判断是问责，尚非验证过的优势。</span>
+  </p>
+  
+  
+  <div style="margin-top:6px">
+    <div class="muted sm" style="margin-bottom:4px;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:.05em">
+      <span class="l-en">Open leans</span><span class="l-zh">待验证判断</span>
+    </div>
+    
+    <div class="open-lean">
+      <span class="l-en">Leaning toward Long Treasuries over the next 20 days.</span>
+      <span class="l-zh">倾向看好 Long Treasuries，未来 20 天。</span>
+      
+      <span class="help">?<span class="tip"><span class="l-en">Falsifier: HY OAS tightens back below 2.60 and the NTFS steepens above 0.75 — if credit stress recedes and the curve re-steepens on growth, the safety bid in long Treasuries unwinds. · Check by: 2026-07-24</span><span class="l-zh">证伪条件：HY OAS tightens back below 2.60 and the NTFS steepens above 0.75 — if credit stress recedes and the curve re-steepens on growth, the safety bid in long Treasuries unwinds. · 截止：2026-07-24</span></span></span>
+      
+    </div>
+    
+    <div class="open-lean">
+      <span class="l-en">Leaning away from China equities over the next 20 days.</span>
+      <span class="l-zh">倾向回避 China equities，未来 20 天。</span>
+      
+      <span class="help">?<span class="tip"><span class="l-en">Falsifier: HK peg returns to strong-side and China growth score flips positive. · Check by: 2026-07-24</span><span class="l-zh">证伪条件：HK peg returns to strong-side and China growth score flips positive. · 截止：2026-07-24</span></span></span>
+      
+    </div>
+    
+    <div class="open-lean">
+      <span class="l-en">Leaning away from US equities over the next 30 days.</span>
+      <span class="l-zh">倾向回避 US equities，未来 30 天。</span>
+      
+      <span class="help">?<span class="tip"><span class="l-en">Falsifier: HY OAS tightens below 2.7 and EBP turns decisively positive (credit stress abates). · Check by: 2026-08-10</span><span class="l-zh">证伪条件：HY OAS tightens below 2.7 and EBP turns decisively positive (credit stress abates). · 截止：2026-08-10</span></span></span>
+      
+    </div>
+    
+    <div class="open-lean">
+      <span class="l-en">Leaning away from China equities over the next 20 days.</span>
+      <span class="l-zh">倾向回避 China equities，未来 20 天。</span>
+      
+      <span class="help">?<span class="tip"><span class="l-en">Falsifier: China quad shifts to Q1 (Goldilocks) or Q2 (Reflation), and HK peg strengthens with HIBOR-OIS spread narrowing. · Check by: 2026-07-29</span><span class="l-zh">证伪条件：China quad shifts to Q1 (Goldilocks) or Q2 (Reflation), and HK peg strengthens with HIBOR-OIS spread narrowing. · 截止：2026-07-29</span></span></span>
+      
+    </div>
+    
+    <div class="open-lean">
+      <span class="l-en">Leaning toward Long Treasuries over the next 20 days.</span>
+      <span class="l-zh">倾向看好 Long Treasuries，未来 20 天。</span>
+      
+      <span class="help">?<span class="tip"><span class="l-en">Falsifier: 10y real yield rises above 2.5% and the curve bear-steepens (NTFS turns negative), breaking the real-rate-shock driver and signaling that restrictive policy is reinstating tightening pressure. · Check by: 2026-07-29</span><span class="l-zh">证伪条件：10y real yield rises above 2.5% and the curve bear-steepens (NTFS turns negative), breaking the real-rate-shock driver and signaling that restrictive policy is reinstating tightening pressure. · 截止：2026-07-29</span></span></span>
+      
+    </div>
+    
+    <div class="open-lean">
+      <span class="l-en">Leaning toward China equities over the next 20 days.</span>
+      <span class="l-zh">倾向看好 China equities，未来 20 天。</span>
+      
+      <span class="help">?<span class="tip"><span class="l-en">Falsifier: China A-shares reverses and the China fingerprint (HK, copper) stops confirming. · Check by: 2026-08-06</span><span class="l-zh">证伪条件：China A-shares reverses and the China fingerprint (HK, copper) stops confirming. · 截止：2026-08-06</span></span></span>
+      
+    </div>
+    
+  </div>
+  
+  
+</div>
+
+
+
+<div class="panel" id="cortex-panel">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+    <h2 style="margin:0"><span class="l-en">Overnight deliberation</span><span class="l-zh">隔夜AI复盘</span></h2>
+    <span class="help">?<span class="tip"><span class="l-en">The overnight AI reviewer reads the dashboards with a set of read-only tools. This is AI-generated deliberation — labelled as such. When rate-limited (the usual state), it shows an honest absent note rather than synthetic content.</span><span class="l-zh">隔夜 AI 审阅者使用一组只读工具读取看板内容。这是 AI 生成的审议结果，已明确标注。遭遇速率限制时（常见状态），显示诚实的缺席提示，不生成合成内容。</span></span></span>
+  </div>
+  <div id="cortex-body"></div>
+</div>
+
 <div class="panel">
   <p class="muted" style="font-size:12px;margin:0"><span class="l-en">AI research context, not investment advice — generated by an LLM from the day's free public data and the dashboards' own outputs.</span><span class="l-zh">AI 研究背景，非投资建议 — 由大模型根据当日免费公开数据及各看板自身输出生成。</span>
-     · <span class="l-en">Page built</span><span class="l-zh">页面生成于</span> 2026-07-12 14:18 UTC</p>
+     · <span class="l-en">Page built</span><span class="l-zh">页面生成于</span> 2026-07-12 11:43 UTC</p>
 </div>
 
 <script src="theme.js"></script>
 <script src="aibrief.js"></script>
 <script>
-/* Market toggle — flips which .ai-brief panel is visible. Visibility is purely
-   class-based so it never conflicts with aibrief.js (which only fills bodies and
-   clears inline display on load). Supports #macro/#china/#btc deep-links. */
+/* Market toggle — flips which .ai-brief panel is visible. */
 (function () {
   var btns = document.querySelectorAll(".brief-tab-btn");
   var panels = document.querySelectorAll(".ai-brief.brief-tab");
