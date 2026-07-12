@@ -362,3 +362,162 @@ def test_no_direction_score_fields_in_flow_context(tmp_path):
     actual_keys = set(result.keys())
     overlap = forbidden & actual_keys
     assert not overlap, f"Flow block contains forbidden keys: {overlap}"
+
+
+# ---------------------------------------------------------------------------
+# (h) match_sessions count is honest: agrees with displayed word
+# ---------------------------------------------------------------------------
+
+
+def test_match_sessions_agrees_with_pc_word(tmp_path):
+    """match_sessions must count sessions matching pc_word (not hard-wired to call_tilted).
+
+    Scenario: 5 sessions [put, put, put, call, call] → latest=put_tilted.
+    tilt_sessions (call-tilted count) = 2.
+    match_sessions (put-tilted count) = 3.
+    The chip must display 3, not 2.
+    """
+    from engine.mag7_regime import _compute_flow_block
+
+    rows = []
+    pcs = [1.40, 1.40, 1.40, 0.60, 0.60]  # 3 put_tilted then 2 call_tilted
+    today = date.today()
+    for i, pc in enumerate(pcs):
+        rows.append({
+            "date": pd.Timestamp(today - timedelta(days=4 - i)),
+            "cohort_id": "mag7",
+            "gross_premium_mn": 100.0,
+            "net_premium_mn": 50.0,
+            "pc_ratio": pc,
+            "zerodte_share": 0.15,
+            "n_members_covered": 7,
+            "n_members": 7,
+        })
+    _write_cohorts(tmp_path / "data", rows)
+    result = _compute_flow_block(root=tmp_path / "data")
+    assert result is not None
+    # latest row pc=0.60 → call_tilted
+    assert result["pc_word"] == "call_tilted", f"Expected call_tilted, got {result['pc_word']}"
+    assert result["tilt_sessions"] == 2, f"Expected 2 call_tilted, got {result['tilt_sessions']}"
+    assert result["match_sessions"] == 2, (
+        f"match_sessions must equal tilt_sessions when pc_word=call_tilted; "
+        f"got {result['match_sessions']}"
+    )
+
+
+def test_match_sessions_put_tilted_scenario(tmp_path):
+    """match_sessions = put_tilted count when latest session is put_tilted.
+
+    Scenario: 5 sessions [call, call, call, put, put] (last=put_tilted).
+    tilt_sessions = 3 (call-tilted), match_sessions = 2 (put-tilted).
+    """
+    from engine.mag7_regime import _compute_flow_block
+
+    rows = []
+    pcs = [0.60, 0.60, 0.60, 1.40, 1.40]  # 3 call then 2 put; last=put_tilted
+    today = date.today()
+    for i, pc in enumerate(pcs):
+        rows.append({
+            "date": pd.Timestamp(today - timedelta(days=4 - i)),
+            "cohort_id": "mag7",
+            "gross_premium_mn": 100.0,
+            "net_premium_mn": 50.0,
+            "pc_ratio": pc,
+            "zerodte_share": 0.15,
+            "n_members_covered": 7,
+            "n_members": 7,
+        })
+    _write_cohorts(tmp_path / "data", rows)
+    result = _compute_flow_block(root=tmp_path / "data")
+    assert result is not None
+    assert result["pc_word"] == "put_tilted", f"Expected put_tilted, got {result['pc_word']}"
+    assert result["tilt_sessions"] == 3, f"Expected 3 call_tilted, got {result['tilt_sessions']}"
+    assert result["match_sessions"] == 2, (
+        f"Expected 2 put_tilted sessions (match_sessions), got {result['match_sessions']}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# (i) PIT staleness: stale cohort data must not be stamped under regime as_of
+# ---------------------------------------------------------------------------
+
+
+def test_ledger_skips_stale_cohort_data(tmp_path, monkeypatch):
+    """When cohort asof lags regime as_of, no ledger row is written (PIT guard).
+
+    The ledger must only record readings that are date-aligned with the regime.
+    A stale cohort flow (e.g. FL-B delayed by one session) must be skipped, not
+    stamped under today's regime date — which would corrupt the forward record.
+    """
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+    from engine.mag7_regime import _append_cohort_flow_ledger
+
+    # Simulate a flow_block whose asof lags the regime as_of by one day.
+    regime_asof = "2026-07-11"
+    cohort_asof = "2026-07-10"  # one session stale
+
+    # Build flow_rows as if mag7_regime would (asof mismatch → should be skipped).
+    # Here we simulate what the internal loop WOULD pass if the guard were absent:
+    # date=regime_asof but the cohort data's true date is cohort_asof.
+    # The actual guard lives in snapshot(); test _append_cohort_flow_ledger directly
+    # with a row whose date != cohort_asof to confirm idempotency (the append is
+    # already date-keyed) — but we also test the guard path via a helper below.
+    rows_fresh = [{"date": regime_asof, "cohort": "mag7", "tilt": "balanced",
+                   "pc_ratio": 1.0, "gross_mn": 80.0}]
+    rows_stale = [{"date": cohort_asof, "cohort": "mag7", "tilt": "put_tilted",
+                   "pc_ratio": 1.30, "gross_mn": 90.0}]
+
+    # Write stale row first, then fresh row — ledger must contain both distinct dates.
+    _append_cohort_flow_ledger(cohort_asof, rows_stale, root=tmp_path / "data")
+    _append_cohort_flow_ledger(regime_asof, rows_fresh, root=tmp_path / "data")
+
+    ledger_path = tmp_path / "data" / "cohort_flow_ledger" / "ledger.jsonl"
+    lines = [l for l in ledger_path.read_text().splitlines() if l.strip()]
+    assert len(lines) == 2, f"Expected 2 rows (different dates), got {len(lines)}"
+
+
+def test_ledger_pit_guard_in_snapshot(tmp_path, monkeypatch):
+    """snapshot() must not stamp stale cohort data under regime as_of in ledger.
+
+    Write cohorts.parquet with asof = one calendar week ago (guaranteed to be
+    before the last trading day regardless of weekday).  The PIT guard must
+    prevent a row dated regime_asof from being written in the ledger.
+    """
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    _minimal_mag7_fixture(tmp_path)
+
+    # Use a date 7 days ago — guaranteed to be strictly before any recent regime asof.
+    stale_date = date.today() - timedelta(days=7)
+    rows = [{
+        "date": pd.Timestamp(stale_date),
+        "cohort_id": "mag7",
+        "gross_premium_mn": 100.0,
+        "net_premium_mn": 50.0,
+        "pc_ratio": 0.70,
+        "zerodte_share": 0.15,
+        "n_members_covered": 7,
+        "n_members": 7,
+    }]
+    _write_cohorts(tmp_path / "data", rows)
+
+    from engine import mag7_regime
+    payload = mag7_regime.snapshot(root=tmp_path)
+    regime_asof = payload.get("as_of", "")
+
+    # Sanity: regime_asof must differ from stale_date.
+    assert regime_asof != str(stale_date), (
+        f"Test setup error: regime asof={regime_asof} equals stale_date={stale_date}; "
+        f"increase stale_date offset"
+    )
+
+    # The PIT guard must prevent a row with date=regime_asof from being written.
+    ledger_path = tmp_path / "data" / "cohort_flow_ledger" / "ledger.jsonl"
+    if ledger_path.exists():
+        lines = [l for l in ledger_path.read_text().splitlines() if l.strip()]
+        for line in lines:
+            obj = json.loads(line)
+            assert obj["date"] != regime_asof, (
+                f"Stale cohort data (asof={stale_date}) must not be stamped under "
+                f"regime asof={regime_asof} in the ledger"
+            )

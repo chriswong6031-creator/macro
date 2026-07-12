@@ -820,19 +820,28 @@ def _compute_flow_block(
         except Exception:  # noqa: BLE001
             pass
 
-        # tilt_sessions: count call_tilted in last N sessions
+        # tilt_sessions: count call_tilted in last N sessions (fixed definition).
+        # match_sessions: count of sessions whose tilt_word matches the latest
+        # pc_word — used in the glance chip so the count is true to the label.
+        # Example: latest=put_tilted, last 5 = [C,C,P,P,P] → tilt_sessions=2,
+        # match_sessions=3 (the chip reads "put-tilted 3 of last 5 days").
         recent = mag7_rows.tail(_FLOW_TILT_SESSIONS)
         tilt_sessions: int = 0
+        match_sessions: int = 0
         for _, row in recent.iterrows():
             pc = row.get("pc_ratio")
-            if _pc_word(pc) == "call_tilted":
+            word = _pc_word(pc)
+            if word == "call_tilted":
                 tilt_sessions += 1
+            if word == tilt_word:
+                match_sessions += 1
 
         return {
             "asof": asof,
             "gross_mn": gross_mn,
             "pc_word": tilt_word,
             "tilt_sessions": tilt_sessions,
+            "match_sessions": match_sessions,
             "coverage": coverage,
             "zerodte_share": zerodte,
             "pc_ratio": round(pc_ratio_latest, 4) if pc_ratio_latest is not None else None,
@@ -1003,6 +1012,9 @@ def snapshot(root: str | Path | None = None) -> dict:
 
     # --- cohort_flow.v1 forward ledger (FC-R5) — accrual only, nightly-gated ---
     # Build ledger rows for all four cohorts (fail-open: missing rows → skipped).
+    # PIT guard: only stamp a cohort row when the cohort data's own as-of matches
+    # the regime's as_of.  If FL-B's cohorts.parquet lags (routine for intraday-
+    # fed stores), a stale reading must not be recorded under today's regime date.
     try:
         _flow_ledger_rows: list[dict] = []
         for _cid in _COHORT_FLOW_COHORTS:
@@ -1010,6 +1022,14 @@ def snapshot(root: str | Path | None = None) -> dict:
                 cohort_id=_cid, root=_data_root
             )
             if _fb is not None:
+                # PIT date-match guard: skip if cohort data lags the regime.
+                _fb_asof = _fb.get("asof")
+                if _fb_asof is not None and _fb_asof != as_of:
+                    log.debug(
+                        "mag7_regime: cohort_flow ledger skip %s: cohort asof=%s != regime asof=%s",
+                        _cid, _fb_asof, as_of,
+                    )
+                    continue
                 _flow_ledger_rows.append({
                     "date": as_of,
                     "cohort": _cid,
