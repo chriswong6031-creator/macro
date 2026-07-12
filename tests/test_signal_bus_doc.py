@@ -73,11 +73,13 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 406, (
-        f"Expected 406 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 409, (
+        f"Expected 409 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (LHB-W1 A3 Delivery Waterfall added long-hold-delivery-waterfall,"
         " long-hold-delivery-waterfall-panel = 404->406;"
+        "(RC deep-integration added site-marketdata-rotation-events,"
+        " data-rotation-events-ledger, site-marketdata-subsector-confluence = 406->409;"
         " (RLT-R2 added rebalance-pulse-events, rebalance-pulse-latest,"
         " rebalance-pulse-site = 401->404;"
         " (FL-B flow-cohorts added options-flow-cohorts-parquet,"

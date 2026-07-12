@@ -531,6 +531,128 @@ def _compose_cycle_pattern(root: "Path | str | None" = None) -> dict:
     return out
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Rotation Command — rotation_events lobe (RC deep-integration)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_SEVERITY_ORDER = {"major": 0, "notable": 1, "standard": 2}
+
+_ROTATION_EVENTS_NULL: dict = {
+    "as_of": None,
+    "n_active": None,
+    "events": None,
+    "n_truncated": None,
+    "ruler": None,
+    "note": (
+        "Rotation-events lobe (RC deep-integration): active inter-subsector rotation "
+        "events (blowoff_crash × turn_reclaim × ratio-reversal detector). "
+        "Context/display only; may never rank, gate, size, or escalate."
+    ),
+    "display_only": True,
+}
+
+
+def _compose_rotation_events(root: "Path | str | None" = None) -> dict:
+    """Compose the rotation_events sub-block for world_state (RC deep-integration).
+
+    Follows the _compose_cycle_pattern discipline exactly:
+    - All data loading is internal to this function (RULING-B).
+    - Every value passed through _clean().
+    - display_only=True stamped unconditionally on every return path.
+    - Absent or unreadable file returns the null-filled fallback dict.
+    - The wiring site in build_world_state() wraps the call in try/except.
+
+    Reads site/marketdata/rotation_events.json (produced nightly by
+    scripts/build_rotation_events.py / engine/rotation_events.py).
+
+    Returns up to 6 active events sorted worst-first (severity major > notable >
+    standard, then newest started date), plus n_truncated for any not shown.
+    Passes through the modern-era census ruler summary if present.
+    """
+    repo = _repo_root(root)
+    path = repo / "site" / "marketdata" / "rotation_events.json"
+
+    out = dict(_ROTATION_EVENTS_NULL)
+    if not path.exists():
+        return out
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            log.warning("rotation_events: artifact is not a dict — null lobe")
+            return out
+
+        out["as_of"] = _clean(payload.get("as_of"))
+
+        active = payload.get("active") or []
+        if not isinstance(active, list):
+            active = []
+        # Non-dict rows would raise inside the sort key and abort the whole
+        # compose into a self-contradictory n_active>0/events=None state.
+        active = [e for e in active if isinstance(e, dict)]
+        out["n_active"] = _clean(len(active))
+
+        # Sort worst-first: severity major(0) < notable(1) < standard(2),
+        # then newest started date first (ISO strings sort lexicographically).
+        _by_sev: list[dict] = sorted(
+            active,
+            key=lambda e: (
+                _SEVERITY_ORDER.get((e.get("severity") or "standard").lower(), 99),
+                # descending started: negate by inverting the string's sort order
+                # For ISO dates this is safe — all chars are ASCII digits/hyphens.
+                tuple(-(ord(c)) for c in (e.get("started") or "")),
+            ),
+        )
+
+        _MAX_EVENTS = 6
+        shown = _by_sev[:_MAX_EVENTS]
+        n_truncated = max(0, len(active) - _MAX_EVENTS)
+
+        def _leg_compact(leg: Any) -> dict | None:
+            if not isinstance(leg, dict):
+                return None
+            return {
+                "key": _clean(leg.get("key")),
+                "name_en": _clean(leg.get("name_en")),
+            }
+
+        events_out = []
+        for evt in shown:
+            if not isinstance(evt, dict):
+                continue
+            events_out.append({
+                "sector": _clean(evt.get("sector")),
+                "from_leg": _leg_compact(evt.get("from_leg")),
+                "to_leg": _leg_compact(evt.get("to_leg")),
+                "severity": _clean(evt.get("severity")),
+                "day_n": _clean(evt.get("day_n")),
+                "started": _clean(evt.get("started")),
+                "confirmed_tonight": _clean(evt.get("confirmed_tonight")),
+            })
+
+        out["events"] = events_out if events_out else None
+        out["n_truncated"] = _clean(n_truncated)
+
+        # Ruler passthrough — modern-era census summary if present
+        ruler = payload.get("ruler")
+        if isinstance(ruler, dict):
+            modern = ruler.get("modern")
+            if isinstance(modern, dict):
+                run_pct = modern.get("run_pct") or {}
+                sessions_to_peak = modern.get("sessions_to_peak") or {}
+                out["ruler"] = {
+                    "n": _clean(modern.get("n")),
+                    "run_pct_median": _clean(run_pct.get("median")),
+                    "run_pct_p75": _clean(run_pct.get("p75")),
+                    "sessions_to_peak_median": _clean(sessions_to_peak.get("median")),
+                }
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("rotation_events: compose failed — %s", exc)
+    # display_only is ALWAYS True regardless of artifact content.
+    out["display_only"] = True
+    return out
+
+
 def _compose_stock_personality_summary(
     root: "Path | str | None" = None,
 ) -> dict:
@@ -2271,6 +2393,16 @@ def build_world_state(
         gaps.append(f"cycle_pattern: {exc}")
         cycle_pattern_block = dict(_CYCLE_PATTERN_NULL)
 
+    # ── 6c-re. rotation_events lobe (RC deep-integration) — one wiring line ──
+    # Reads site/marketdata/rotation_events.json (nightly, RC-R1/R2).
+    # Display/context only: active rotation events, no ranking/gating/sizing.
+    try:
+        rotation_events_block: dict = _compose_rotation_events(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: rotation_events lobe failed — %s", exc)
+        gaps.append(f"rotation_events: {exc}")
+        rotation_events_block = dict(_ROTATION_EVENTS_NULL)
+
     # ── 6d. stock_personality_summary (R-SP20) — one wiring line, loading inside ──
     try:
         stock_personality_summary_block: dict = _compose_stock_personality_summary(root=repo)
@@ -2564,6 +2696,7 @@ def build_world_state(
         "macro_deltas": macro_deltas_block,
         "cross_asset_flows": cross_asset_flows_block,  # R6 NW Cross-Asset Depth (display-only)
         "cycle_pattern": cycle_pattern_block,  # CPI P6 wave-1 wiring line (display-only)
+        "rotation_events": rotation_events_block,  # RC deep-integration wiring line (display-only)
         "stock_personality_summary": stock_personality_summary_block,  # R-SP20 wiring line
         "context_risk": context_risk_block,  # R-CI7 nw-context-intelligence W3 wiring line
         "liquidity_plumbing": liquidity_plumbing_block,  # neuralweb.liquidity_plumbing.v1 wiring line
