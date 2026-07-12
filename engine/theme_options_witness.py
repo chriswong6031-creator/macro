@@ -1095,3 +1095,6 @@ if __name__ == "__main__":
     parser.add_argument("--date", help="Trade date YYYY-MM-DD (default: today)")
     args = parser.parse_args()
     build(as_of=args.date)
+
+    from lib.procutil import hard_exit  # noqa: PLC0415
+    hard_exit(0)
