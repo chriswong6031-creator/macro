@@ -201,6 +201,7 @@ jobs:
           run_py "china strategy scorecards (build_china_strategies)"              scripts.build_china_strategies             # W9 lane unification
           run_py "china subsector rotation data (build_subsector_rotation_china)"  scripts.build_subsector_rotation_china     # W9 lane unification
           run_py "china subsector rotation pages (build_subsector_rotation_china_pages)"  scripts.build_subsector_rotation_china_pages  # W9 lane unification
+          run_py "china rotation events (build_rotation_events_china)"  scripts.build_rotation_events_china  # RC-R14 display-tier, reads baskets.json in-process
           exit 0
       - name: rebuild China/HK stock-search libraries (resilient — guarantees the analyzers ship)
         # FAILURE-PATH safety net (asia-lane runtime diet, 2026-07-11): build_china

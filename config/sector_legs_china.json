@@ -1,0 +1,94 @@
+{
+  "version": "1.0",
+  "registered": "2026-07-12",
+  "region": "china",
+  "masterplan": "research/ROTATION_COMMAND_MASTERPLAN_BY_FABLE.md",
+  "notes": {
+    "tiers": "tier is HAND-DECLARED (primary = dominant-cap cohort inside the complex; secondary = everything else). Honest approximation for W1 severity.",
+    "source": "Legs derive from the 22 curated A-share thematic baskets in site/chinabasketdata/baskets.json. Close series are reconstructed from the normalized level chart data in that file.",
+    "omitted_baskets": "cn_gold (safe-haven commodity — no true rotation peer in the basket set) and cn_rare_earth (specialty materials — no true peer basket) are intentionally excluded. A smaller honest registry beats a padded one.",
+    "binding_kills": [
+      "Rotation × cycle-position entry-confluence — DO NOT TEST (research/DO_NOT_REBUILD.md)",
+      "Gating A-share reversal by subsector state — FALSIFIED",
+      "Southbound as A-share/HK timing leg — REJECTED"
+    ]
+  },
+  "sectors": [
+    {
+      "key": "cn_tech",
+      "etf": null,
+      "name_en": "Technology & AI",
+      "name_zh": "科技与AI",
+      "legs": [
+        {"key": "cn_semis",        "basket_cn": "cn_semis",        "tier": "primary",   "name_en": "Semiconductors",          "name_zh": "半导体"},
+        {"key": "cn_ai_compute",   "basket_cn": "cn_ai_compute",   "tier": "primary",   "name_en": "AI Compute & Optics",     "name_zh": "AI算力与光模块"},
+        {"key": "cn_software",     "basket_cn": "cn_software",     "tier": "secondary", "name_en": "Software & AI Apps",      "name_zh": "软件与AI应用"},
+        {"key": "cn_consumer_elec","basket_cn": "cn_consumer_elec","tier": "secondary", "name_en": "Consumer Electronics",    "name_zh": "消费电子"}
+      ]
+    },
+    {
+      "key": "cn_healthcare",
+      "etf": null,
+      "name_en": "Healthcare",
+      "name_zh": "医疗",
+      "legs": [
+        {"key": "cn_pharma_cxo",  "basket_cn": "cn_pharma_cxo",  "tier": "primary",   "name_en": "Innovative Pharma & CXO", "name_zh": "创新药与CXO"},
+        {"key": "cn_med_devices", "basket_cn": "cn_med_devices",  "tier": "secondary", "name_en": "Medical Devices & TCM",   "name_zh": "医疗器械与中药"}
+      ]
+    },
+    {
+      "key": "cn_financials",
+      "etf": null,
+      "name_en": "Financials & SOE Value",
+      "name_zh": "金融与中特估",
+      "legs": [
+        {"key": "cn_banks",     "basket_cn": "cn_banks",     "tier": "primary",   "name_en": "Banks",                    "name_zh": "银行"},
+        {"key": "cn_brokers",   "basket_cn": "cn_brokers",   "tier": "secondary", "name_en": "Brokers & Securities",     "name_zh": "券商"},
+        {"key": "cn_soe_value", "basket_cn": "cn_soe_value", "tier": "secondary", "name_en": "SOE Blue Chips (中特估)",  "name_zh": "中特估·央企"},
+        {"key": "cn_insurers",  "basket_cn": "cn_insurers",  "tier": "secondary", "name_en": "Insurers",                 "name_zh": "保险"}
+      ]
+    },
+    {
+      "key": "cn_consumer",
+      "etf": null,
+      "name_en": "Consumer & Brands",
+      "name_zh": "消费与品牌",
+      "legs": [
+        {"key": "cn_food_bev",  "basket_cn": "cn_food_bev",  "tier": "primary",   "name_en": "Food & Beverage",  "name_zh": "食品饮料"},
+        {"key": "cn_baijiu",    "basket_cn": "cn_baijiu",    "tier": "secondary", "name_en": "Baijiu / Liquor",  "name_zh": "白酒"},
+        {"key": "cn_appliances","basket_cn": "cn_appliances","tier": "secondary", "name_en": "Home Appliances",  "name_zh": "家电"}
+      ]
+    },
+    {
+      "key": "cn_adv_mfg",
+      "etf": null,
+      "name_en": "Advanced Manufacturing",
+      "name_zh": "先进制造",
+      "legs": [
+        {"key": "cn_defense",  "basket_cn": "cn_defense",  "tier": "primary",   "name_en": "Defense & Aerospace",    "name_zh": "军工航天"},
+        {"key": "cn_robotics", "basket_cn": "cn_robotics", "tier": "secondary", "name_en": "Robotics & Automation",  "name_zh": "机器人与自动化"}
+      ]
+    },
+    {
+      "key": "cn_new_energy",
+      "etf": null,
+      "name_en": "New Energy & Autos",
+      "name_zh": "新能源与汽车",
+      "legs": [
+        {"key": "cn_autos",   "basket_cn": "cn_autos",   "tier": "primary",   "name_en": "Autos & NEV Makers", "name_zh": "汽车整车"},
+        {"key": "cn_battery", "basket_cn": "cn_battery", "tier": "primary",   "name_en": "Battery & Lithium",  "name_zh": "锂电池"},
+        {"key": "cn_solar",   "basket_cn": "cn_solar",   "tier": "secondary", "name_en": "Solar / PV",         "name_zh": "光伏"}
+      ]
+    },
+    {
+      "key": "cn_resources",
+      "etf": null,
+      "name_en": "Cyclicals & Resources",
+      "name_zh": "周期与资源",
+      "legs": [
+        {"key": "cn_metals", "basket_cn": "cn_metals", "tier": "primary",   "name_en": "Industrial Metals", "name_zh": "有色金属"},
+        {"key": "cn_coal",   "basket_cn": "cn_coal",   "tier": "secondary", "name_en": "Coal",              "name_zh": "煤炭"}
+      ]
+    }
+  ]
+}

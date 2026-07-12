@@ -398,11 +398,15 @@ def coldstart_replay(sectors: dict, p: dict = PARAMS) -> tuple[dict, list, list]
 
 
 def run_nightly(sectors: dict, data_dir, p: dict = PARAMS,
-                generated_utc: str | None = None) -> dict:
+                generated_utc: str | None = None,
+                data_subdir: str = "rotation_events") -> dict:
     """Load state (cold-start: replay the trailing window) → step every pair → persist
-    state + append the ledger → return the display payload for
-    site/marketdata/rotation_events.json."""
-    d = data_dir / "rotation_events"
+    state + append the ledger → return the display payload.
+
+    ``data_subdir`` controls the directory under ``data_dir`` where state.json and
+    events.jsonl live — defaults to ``"rotation_events"`` (US path) so the US builder
+    is unchanged.  Pass ``"rotation_events_china"`` for the China region."""
+    d = data_dir / data_subdir
     d.mkdir(parents=True, exist_ok=True)
     state_p, ledger_p = d / "state.json", d / "events.jsonl"
     replay_created: list = []

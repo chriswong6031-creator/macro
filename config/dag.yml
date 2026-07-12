@@ -1115,6 +1115,9 @@ lanes:
       - id: build_subsector_rotation_china_pages
         module: scripts.build_subsector_rotation_china_pages
         note: non-fatal; W9 lane unification — per-subsector CN detail pages
+      - id: build_rotation_events_china
+        module: scripts.build_rotation_events_china
+        note: non-fatal; RC-R14 display-tier — China rotation-event detector port; reads baskets.json in-process (cheap, few dozen series); no ETF dependency
       # ── W8-R7: CN MTF upturn organ runs INLINE inside build_china_library.main() ──
       # compute_cn() is called at end of build_china_library.main() after board arrays
       # are assembled (see engine/mtf_upturn.py CN lane). No standalone script entry
