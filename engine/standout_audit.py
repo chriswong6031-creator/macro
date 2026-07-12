@@ -28,6 +28,33 @@ The taxonomy_version constant governs keep-first dedup on the sidecar.
 
 Public API:
   build_us(root=None) -> dict   NEVER-RAISE; absent store -> {status:'data_gap'}
+
+Sensor unit contract (SA-R3 — no mixed-unit composites):
+  Every sensor that feeds the fitness card must carry a value in [0, 1] (or null).
+  Sensors whose natural unit is a raw count or days CANNOT be honestly normalized
+  to [0, 1] without an external baseline, so they set value=null and store the raw
+  reading in a 'reading' field.  The metabolism composite reader
+  (organism_state._extract_composite_fitness) skips null-value sensors, so no
+  mixed-unit averaging can occur.
+    hit_quality      — Wilson-LB in [0, 1]          value=float
+    upside_capture   — ratio (can exceed 1)          value=float (clamped to [0, 1] if > 1)
+    coverage_health  — trailing-4wk unique tickers   value=null; reading=count (raw count)
+    missed_mover_rate— miss rate in [0, 1]           value=float (inverted: 1 - rate)
+    timing_quality   — median tenure in days         value=null; reading=days (raw days)
+    process_integrity— data_fault share in [0, 1]    value=float (inverted: 1 - rate)
+
+gate_suppressed data_gap contract (B2):
+  track_record near_miss rows have no excess_spy column (only fwd_ret_20 raw).
+  One-grader law forbids recomputing SPY excess from prices.  When the near_miss
+  store lacks an already-graded excess column, _check_gate_suppressed returns
+  (False, 'data_gap') and the scoreboard/evidence packs emit a visible sentinel
+  rather than a silent all-False.
+
+signaled_too_late timing_basis disclosure (M3):
+  Only board_tenure_days > A2_SIGNALED_TOO_LATE_TENURE is wired.  The spec's
+  extension-percentile and ticks-since-cross clauses require graded extension/
+  freshness columns that do not exist in the current retro_grades schema.  The
+  scoreboard and card carry a 'timing_basis' field listing which clauses are active.
 """
 from __future__ import annotations
 
@@ -141,13 +168,23 @@ def _state_path(root: Path) -> Path:
 # Effective-N computation (SA-R10)
 # ---------------------------------------------------------------------------
 
-def _effective_n(dates: list[str], horizon_days: int = 21) -> int:
-    """Count non-overlapping 21d windows from a list of entry dates.
+def _effective_n(
+    dates: list[str],
+    horizon_days: int = 21,
+    session_dates: list[str] | None = None,
+) -> int:
+    """Count non-overlapping horizon-length windows from a list of entry dates.
+
+    m2 fix: when session_dates is provided, windows are measured in SESSION ORDINALS
+    (rank of date in the ledger's sorted unique trading-date list) rather than
+    calendar days.  21 calendar days ≈ 15 sessions; using calendar days is
+    anti-conservative (over-counts independent windows for overlapping session windows).
 
     Steps:
     1. Collapse to unique entry-dates (deduplicate rows from the same date).
     2. Sort dates ascending.
-    3. Greedily count non-overlapping windows of `horizon_days` calendar days.
+    3. Greedily count non-overlapping windows of `horizon_days` session ordinals
+       (or calendar days when session_dates is None).
 
     This is the 'cluster unit' for Wilson CI computation (SA-R10).
     Returns 0 on empty input or errors.
@@ -162,12 +199,38 @@ def _effective_n(dates: list[str], horizon_days: int = 21) -> int:
         ))
         if not unique_dates:
             return 0
-        count = 1
-        last_start = unique_dates[0]
-        for d in unique_dates[1:]:
-            if (d - last_start).days >= horizon_days:
-                count += 1
-                last_start = d
+
+        if session_dates is not None:
+            # Build session-ordinal index from the full ledger's trading-date list
+            all_sessions = sorted(set(
+                pd.Timestamp(d).normalize()
+                for d in session_dates
+                if pd.notna(d) and str(d).strip()
+            ))
+            session_idx: dict[pd.Timestamp, int] = {d: i for i, d in enumerate(all_sessions)}
+
+            # For dates not in the session index (e.g. non-trading days), find nearest
+            def _to_session_ord(ts: pd.Timestamp) -> int:
+                if ts in session_idx:
+                    return session_idx[ts]
+                # Fall back: count how many session dates are <= ts
+                return sum(1 for s in all_sessions if s <= ts) - 1
+
+            count = 1
+            last_ord = _to_session_ord(unique_dates[0])
+            for d in unique_dates[1:]:
+                ord_ = _to_session_ord(d)
+                if ord_ - last_ord >= horizon_days:
+                    count += 1
+                    last_ord = ord_
+        else:
+            # Legacy: calendar-day window (conservative-enough for short-window tests)
+            count = 1
+            last_start = unique_dates[0]
+            for d in unique_dates[1:]:
+                if (d - last_start).days >= horizon_days:
+                    count += 1
+                    last_start = d
         return count
     except Exception as exc:  # noqa: BLE001
         log.warning("_effective_n: %s", exc)
@@ -283,8 +346,10 @@ def _process_fault(row: dict) -> str:
 
     Precedence (first match wins):
     1. signaled_too_late  — board_tenure_days > 7 at first buy-lane appearance
-    2. premature_stop_noise — terminal_state stopped/cut AND MFE criteria met
-       (this has its OWN maturity requirement; if not computable, skip)
+    2. premature_stop_noise — terminal_state STOPPED AND fwd_mfe_21 shows post-stop recovery
+       grade_us_board.py writes fwd_mfe_{h} only on each row's own horizon, so for 21d
+       rows the relevant column is fwd_mfe_21 (not fwd_mfe_5).  Terminal state values
+       from engine/grading.py are uppercase: STOPPED, DEAD_MONEY, CUSHIONED, CLEAN_LIFTOFF.
     3. data_fault — staleness flag present
     4. clean — default
     """
@@ -293,13 +358,13 @@ def _process_fault(row: dict) -> str:
     if tenure is not None and tenure > A2_SIGNALED_TOO_LATE_TENURE:
         return "signaled_too_late"
 
-    # premature_stop_noise: terminal_state was stopped/cut AND fwd_mfe shows recovery
-    # Uses terminal_state_clean8_21 column (present in retro_grades schema)
+    # premature_stop_noise: terminal_state was STOPPED AND fwd_mfe_21 shows post-stop recovery
+    # Uses terminal_state_clean8_21 (uppercase enum from engine.grading.TerminalState).
+    # Must read fwd_mfe_21 — the column populated by grade_us_board.py for 21d-horizon rows.
+    # fwd_mfe_5 is null on 21d rows (each row carries only its own horizon's MFE column).
     term_state = row.get("terminal_state_clean8_21")
-    if term_state is not None and str(term_state).lower() in ("stopped", "cut"):
-        # Check fwd_mfe_5 as a proxy for post-window MFE (fwd_mfe_21 not present in schema)
-        # If fwd_mfe_5 is high enough it counts as premature stop evidence
-        mfe = _fval(row.get("fwd_mfe_5"))
+    if term_state is not None and str(term_state).upper() == "STOPPED":
+        mfe = _fval(row.get("fwd_mfe_21"))
         if mfe is not None and mfe >= A2_PREMATURE_STOP_MFE_THRESH:
             return "premature_stop_noise"
 
@@ -333,15 +398,30 @@ def _load_near_misses(root: Path) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def _check_gate_suppressed(row: dict, near_miss_df: pd.DataFrame) -> bool:
-    """Return True if this (as_of, ticker) pair has a near-miss row with 21d excess >= +4pp."""
+def _check_gate_suppressed(row: dict, near_miss_df: pd.DataFrame) -> tuple[bool, str | None]:
+    """Check whether this (as_of, ticker) was gate-suppressed.
+
+    Returns (is_suppressed: bool, gap_reason: str | None).
+
+    One-grader law: track_record near_miss rows have no excess_spy column — only raw
+    fwd_ret_20.  Recomputing SPY excess from prices is forbidden (SA-R14).  When the
+    near_miss store lacks an already-graded excess column, the check cannot be performed
+    honestly and returns (False, 'data_gap: near_miss store lacks excess_spy column').
+    The scoreboard and evidence packs expose this sentinel so the gap is NEVER silent.
+    """
     if near_miss_df.empty:
-        return False
+        return False, None
     try:
+        # B2 fix: verify excess_spy column exists in near_miss store before reading it.
+        # track_record.parquet near_miss rows carry fwd_ret_20 (raw) but no excess_spy.
+        # One-grader law (SA-R14): we must NOT recompute excess from prices here.
+        if "excess_spy" not in near_miss_df.columns:
+            return False, "data_gap: near_miss store lacks excess_spy column"
+
         ticker = row.get("ticker")
         asof = row.get("as_of")
         if not ticker or not asof:
-            return False
+            return False, None
 
         # Match near misses: date=as_of (or entry_date), ticker
         mask = near_miss_df["ticker"] == ticker
@@ -350,30 +430,36 @@ def _check_gate_suppressed(row: dict, near_miss_df: pd.DataFrame) -> bool:
 
         nm_rows = near_miss_df[mask]
         if nm_rows.empty:
-            return False
+            return False, None
 
         # Check if any near_miss row has excess_spy >= +4pp at 21d horizon
         for _, nm in nm_rows.iterrows():
-            exc = _fval(nm.get("excess_spy") if "excess_spy" in nm.index else None)
+            exc = _fval(nm.get("excess_spy"))
             if exc is not None and exc >= A2_GATE_SUPPRESSED_EXCESS_THRESH:
-                return True
-        return False
+                return True, None
+        return False, None
     except Exception as exc:  # noqa: BLE001
         log.warning("_check_gate_suppressed: %s", exc)
-        return False
+        return False, None
 
 
 # ---------------------------------------------------------------------------
 # Two-axis attribution on 21d rows
 # ---------------------------------------------------------------------------
 
-def _attribute_rows(df21: pd.DataFrame, near_miss_df: pd.DataFrame) -> list[dict]:
+def _attribute_rows(
+    df21: pd.DataFrame, near_miss_df: pd.DataFrame
+) -> tuple[list[dict], str | None]:
     """Run two-axis attribution on all 21d-horizon rows.
 
-    Returns list of attribution dicts with both axis assignments.
-    process_fault=gate_suppressed is a special case applied from near-miss joins.
+    Returns (attribution_rows, gate_suppressed_gap_reason).
+    gate_suppressed_gap_reason is non-None when the near_miss store lacks the excess_spy
+    column — the gap sentinel must be propagated to the scoreboard and evidence packs
+    so it is never silent (B2 fix).
     """
     results = []
+    gate_suppressed_gap: str | None = None  # B2: capture data_gap from first check
+
     for _, row in df21.iterrows():
         r = row.to_dict()
 
@@ -384,7 +470,10 @@ def _attribute_rows(df21: pd.DataFrame, near_miss_df: pd.DataFrame) -> list[dict
         process_fault = _process_fault(r)
         if process_fault == "clean":
             # Check gate_suppressed from near-miss store
-            if _check_gate_suppressed(r, near_miss_df):
+            suppressed, gap_reason = _check_gate_suppressed(r, near_miss_df)
+            if gap_reason and gate_suppressed_gap is None:
+                gate_suppressed_gap = gap_reason  # record gap once
+            if suppressed:
                 process_fault = "gate_suppressed"
 
         attr = {
@@ -410,7 +499,7 @@ def _attribute_rows(df21: pd.DataFrame, near_miss_df: pd.DataFrame) -> list[dict
             "entry_date": r.get("entry_date"),
         }
         results.append(attr)
-    return results
+    return results, gate_suppressed_gap
 
 
 # ---------------------------------------------------------------------------
@@ -546,14 +635,18 @@ def _entry_date_collapse(rows: list[dict]) -> list[dict]:
     return collapsed
 
 
-def _cell_stats(rows: list[dict]) -> dict:
-    """Compute cell statistics: raw_n, effective_n, hit_rate, wilson_ci."""
+def _cell_stats(rows: list[dict], session_dates: list[str] | None = None) -> dict:
+    """Compute cell statistics: raw_n, effective_n, hit_rate, wilson_ci.
+
+    session_dates: full sorted unique trading-date list from the ledger, used for
+    session-ordinal effective_n (m2 fix — calendar days are anti-conservative).
+    """
     if not rows:
         return {"raw_n": 0, "effective_n": 0, "state": "ACCRUING"}
 
     raw_n = len(rows)
     entry_dates = [str(r.get("entry_date") or r.get("as_of") or "") for r in rows]
-    effective_n = _effective_n(entry_dates, horizon_days=21)
+    effective_n = _effective_n(entry_dates, horizon_days=21, session_dates=session_dates)
 
     if effective_n < 3:
         return {"raw_n": raw_n, "effective_n": effective_n, "state": "ACCRUING"}
@@ -577,12 +670,24 @@ def _cell_stats(rows: list[dict]) -> dict:
     }
 
 
-def _build_scoreboard(attr_rows: list[dict], df_all: pd.DataFrame | None = None) -> dict:
+def _build_scoreboard(
+    attr_rows: list[dict],
+    df_all: pd.DataFrame | None = None,
+    gate_suppressed_gap: str | None = None,
+) -> dict:
     """Build the stratified scoreboard from attribution rows.
 
     Stratifies by: regime cell (quad_hard_label, vol_regime, risk_radar_state),
     lane, outcome_cause, process_fault, sector.
+
+    gate_suppressed_gap: when non-None, the near_miss store lacks the excess_spy column
+    needed to compute gate_suppressed.  This sentinel is emitted in the scoreboard
+    so the data gap is never silent (B2 fix; one-grader law SA-R14).
     """
+    gate_suppressed_note = (
+        {"gate_suppressed": {"state": "data_gap", "reason": gate_suppressed_gap}}
+        if gate_suppressed_gap else {}
+    )
     if not attr_rows:
         return {
             "schema": "standout_audit.scoreboard.v1",
@@ -591,20 +696,31 @@ def _build_scoreboard(attr_rows: list[dict], df_all: pd.DataFrame | None = None)
                 "CIs are cluster-unit (entry-date-collapsed) and descriptive only. "
                 "No significance claims. Cells with effective_n<3 print state='ACCRUING'."
             ),
+            "timing_basis": ["board_tenure"],
+            "timing_basis_note": (
+                "signaled_too_late fires only on board_tenure_days > A2_SIGNALED_TOO_LATE_TENURE. "
+                "Extension-percentile and ticks-since-cross clauses NOT wired (columns absent)."
+            ),
             "buy_lane_rows": 0,
             "all_lanes_rows": 0,
             "strata": {},
             "coverage_monitor": _build_coverage_monitor(df_all),
+            **gate_suppressed_note,
         }
 
     buy_rows = [r for r in attr_rows if r.get("lane") == "buy"]
+
+    # Extract session trading dates from the full ledger for session-ordinal effective_n (m2)
+    _session_dates: list[str] | None = None
+    if df_all is not None and not df_all.empty and "as_of" in df_all.columns:
+        _session_dates = [str(d) for d in df_all["as_of"].dropna().unique().tolist()]
 
     def _stratify(rows: list[dict], key_fn) -> dict:
         from collections import defaultdict
         groups: dict[str, list] = defaultdict(list)
         for r in rows:
             groups[str(key_fn(r))].append(r)
-        return {k: _cell_stats(v) for k, v in sorted(groups.items())}
+        return {k: _cell_stats(v, session_dates=_session_dates) for k, v in sorted(groups.items())}
 
     strata: dict[str, Any] = {}
 
@@ -626,7 +742,7 @@ def _build_scoreboard(attr_rows: list[dict], df_all: pd.DataFrame | None = None)
         buy_rows, lambda r: r.get("sector") or "unknown")
 
     # Upstream concordance: per-column discordance rates
-    strata["upstream_concordance"] = _upstream_concordance(buy_rows)
+    strata["upstream_concordance"] = _upstream_concordance(buy_rows, session_dates=_session_dates)
 
     return {
         "schema": "standout_audit.scoreboard.v1",
@@ -635,14 +751,24 @@ def _build_scoreboard(attr_rows: list[dict], df_all: pd.DataFrame | None = None)
             "CIs are cluster-unit (entry-date-collapsed) and descriptive only. "
             "No significance claims. Cells with effective_n<3 print state='ACCRUING'."
         ),
+        # M3: disclose which timing clauses are wired
+        "timing_basis": ["board_tenure"],
+        "timing_basis_note": (
+            "signaled_too_late fires only on board_tenure_days > A2_SIGNALED_TOO_LATE_TENURE. "
+            "Spec's extension-percentile (>=85th) and ticks-since-cross clauses are NOT wired "
+            "— the required graded extension/freshness columns are absent from retro_grades schema."
+        ),
         "buy_lane_rows": len(buy_rows),
         "all_lanes_rows": len(attr_rows),
         "strata": strata,
         "coverage_monitor": _build_coverage_monitor(df_all),
+        **gate_suppressed_note,
     }
 
 
-def _upstream_concordance(buy_rows: list[dict]) -> dict:
+def _upstream_concordance(
+    buy_rows: list[dict], session_dates: list[str] | None = None
+) -> dict:
     """Per-organ discordance rates (SA-R8).
 
     For each stamped context column, measure: state_at_entry said X,
@@ -670,7 +796,7 @@ def _upstream_concordance(buy_rows: list[dict]) -> dict:
             n_total = len(calm_risk_on)
             n_disc = len(discordant)
             entry_dates = [str(r.get("entry_date") or "") for r in calm_risk_on]
-            eff_n = _effective_n(entry_dates)
+            eff_n = _effective_n(entry_dates, session_dates=session_dates)
             organs["quad_hard_label"] = {
                 "organ": "quad_hard_label",
                 "description": "calm/risk-on stamped but SPY fell >=-3% over horizon",
@@ -693,7 +819,7 @@ def _upstream_concordance(buy_rows: list[dict]) -> dict:
             n_total = len(quiet_rows)
             n_disc = len(discordant)
             entry_dates = [str(r.get("entry_date") or "") for r in quiet_rows]
-            eff_n = _effective_n(entry_dates)
+            eff_n = _effective_n(entry_dates, session_dates=session_dates)
             organs["risk_radar_state"] = {
                 "organ": "risk_radar_state",
                 "description": "no risk-off stamped but outcome was break/macro-headwind",
@@ -851,10 +977,10 @@ def _missed_mover_census(df: pd.DataFrame | None) -> dict:
             n_episodes += 1
 
             # Was ticker on buy lane within MISSED_MOVER_BUY_WINDOW sessions?
-            ep_date = row["_asof_dt"]
+            # m3 fix: use pre-built date_idx dict instead of O(n) list.index()
             window_dates = [
                 d for d in all_dates
-                if 0 <= (all_dates.index(d) - ep_idx) <= MISSED_MOVER_BUY_WINDOW
+                if 0 <= (date_idx[d] - ep_idx) <= MISSED_MOVER_BUY_WINDOW
             ]
             window_date_strs = {d.strftime("%Y-%m-%d") for d in window_dates}
 
@@ -938,29 +1064,49 @@ def _maturity_floors_met(attr_rows: list[dict]) -> bool:
 
 
 def _build_fitness_card(attr_rows: list[dict], scoreboard: dict, df_all: pd.DataFrame | None) -> dict:
-    """Build the US standout fitness card matching the metabolism.til_fitness.v1 shape."""
+    """Build the US standout fitness card matching the metabolism.til_fitness.v1 shape.
+
+    M1 fix — per-sensor maturity stamps and unit-safe values:
+      Every sensor has its own 'maturity' field.  Sensors that cannot be honestly
+      normalized to [0, 1] (coverage_health = raw ticker count; timing_quality = days)
+      set value=null and store the raw reading in a 'reading' field so the metabolism
+      composite reader (_extract_composite_fitness averages the 'value' field of all
+      'ready' sensors) never mixes units.  Only sensors with an honest 0-1 value emit
+      a non-null value.
+
+    M2 fix — coverage_health.value is always null:
+      The frozen_baseline required to normalize the trailing-4wk count has not yet been
+      anchored (SA-R4).  Without a baseline, any raw count would be incoherent as a
+      fitness value.  The raw count rides in 'reading' and a scoreboard diagnostic note.
+    """
     buy_rows = [r for r in attr_rows if r.get("lane") == "buy"]
     raw_n = len(buy_rows)
 
+    # Session trading dates for session-ordinal effective_n (m2 fix)
+    _session_dates: list[str] | None = None
+    if df_all is not None and not df_all.empty and "as_of" in df_all.columns:
+        _session_dates = [str(d) for d in df_all["as_of"].dropna().unique().tolist()]
+
     entry_dates = [str(r.get("entry_date") or r.get("as_of") or "") for r in buy_rows]
-    effective_n = _effective_n(entry_dates, horizon_days=21)
+    effective_n = _effective_n(entry_dates, horizon_days=21, session_dates=_session_dates)
     floors_met = _maturity_floors_met(attr_rows)
-    sensor_maturity = "ready" if floors_met else "accruing"
 
     def _sensor(
         sensor_id: str,
         value: float | None,
         raw_n: int,
         eff_n: int,
+        maturity: str,
         note: str | None = None,
         extra: dict | None = None,
     ) -> dict:
+        """Build a sensor dict.  value must be in [0, 1] or null (M1 contract)."""
         d: dict[str, Any] = {
             "id": sensor_id,
             "value": value,
             "raw_n": raw_n,
             "effective_n": eff_n,
-            "maturity": sensor_maturity,
+            "maturity": maturity,
             "note": note,
             "store": "data/standout_audit/us_attribution.parquet",
         }
@@ -968,9 +1114,12 @@ def _build_fitness_card(attr_rows: list[dict], scoreboard: dict, df_all: pd.Data
             d.update(extra)
         return d
 
-    # Sensor: hit_quality — Wilson-LB of P(excess>0), buy lane, entry-date-collapsed
+    # --- hit_quality ---
+    # Wilson-LB of P(excess_spy>0), buy lane, entry-date-collapsed.
+    # Matures when: floors_met (depends on matured 21d rows). [0, 1] honest.
     hit_quality_val = None
     hit_quality_note = None
+    hit_maturity = "ready" if floors_met and effective_n >= 3 else "accruing"
     if floors_met and effective_n >= 3:
         collapsed = _entry_date_collapse(buy_rows)
         n_c = len(collapsed)
@@ -980,10 +1129,14 @@ def _build_fitness_card(attr_rows: list[dict], scoreboard: dict, df_all: pd.Data
     else:
         hit_quality_note = f"accruing: {raw_n}/{SENSOR_MIN_MATURED_ROWS} matured rows"
 
-    # Sensor: upside_capture — mean surfaced / winsorized top-decile universe
-    # Top-decile denominator from the full df (all lanes)
+    # --- upside_capture ---
+    # mean buy-lane excess / top-decile universe mean. [0, ∞) in principle but
+    # clamped to [0, 1] at emission (reading preserved in 'reading' field if > 1).
+    # Matures when: floors_met + df_all has >=10 universe rows. [0, 1] after clamp.
     upside_capture_val = None
     upside_capture_note = None
+    upside_reading: float | None = None
+    uc_maturity = "accruing"
     if df_all is not None and not df_all.empty and floors_met:
         try:
             all21 = df_all[df_all["horizon"] == 21].copy()
@@ -997,7 +1150,10 @@ def _build_fitness_card(attr_rows: list[dict], scoreboard: dict, df_all: pd.Data
                                       if _fval(r.get("excess_spy")) is not None]
                         if buy_excess:
                             mean_buy = float(np.mean(buy_excess))
-                            upside_capture_val = round(mean_buy / top_decile_mean, 4)
+                            raw_ratio = round(mean_buy / top_decile_mean, 4)
+                            upside_reading = raw_ratio
+                            upside_capture_val = round(min(max(raw_ratio, 0.0), 1.0), 4)
+                            uc_maturity = "ready"
                     else:
                         upside_capture_note = "no_read: top-decile universe excess <= +2pp (flat-tape guard)"
         except Exception as exc:  # noqa: BLE001
@@ -1006,64 +1162,105 @@ def _build_fitness_card(attr_rows: list[dict], scoreboard: dict, df_all: pd.Data
         if not floors_met:
             upside_capture_note = f"accruing: {raw_n}/{SENSOR_MIN_MATURED_ROWS} matured rows"
 
-    # Sensor: coverage_health — from coverage monitor
+    # --- coverage_health ---
+    # M1/M2: trailing-4wk unique tickers is a raw count; cannot normalize to [0, 1]
+    # without a frozen baseline (SA-R4).  value=null, reading=count.  Sensor matures
+    # only when the frozen_baseline is anchored (future SA-R4 PR).
     cov_mon = scoreboard.get("coverage_monitor", {})
-    cov_val = None
-    cov_note = None
     t4wk = cov_mon.get("trailing_4wk_buy_count")
-    if t4wk is not None:
-        cov_val = float(t4wk)
-    else:
-        cov_note = cov_mon.get("data_gap", "no data")
+    cov_note = (
+        "M2: value=null until frozen_baseline anchored (SA-R4). "
+        "Raw trailing-4wk count in 'reading'. "
+        "Scoreboard coverage_monitor carries pre-maturity all-horizon diagnostic count."
+    )
+    if t4wk is None:
+        cov_note = cov_mon.get("data_gap", "no data") or cov_note
+    cov_maturity = "accruing"  # null until baseline frozen
 
-    # Sensor: missed_mover_rate
+    # --- missed_mover_rate ---
+    # miss rate in [0, 1]; inverted to 1-rate so higher = better (orientation consistent).
+    # Matures when: df_all has >=1 21d-horizon row with excess qualifying as episode.
     mmc = _missed_mover_census(df_all)
-    mm_rate = mmc.get("missed_mover_rate")
+    mm_raw_rate = mmc.get("missed_mover_rate")  # higher = worse
+    mm_val: float | None = None
+    mm_maturity = "accruing"
+    if mm_raw_rate is not None:
+        mm_val = round(1.0 - mm_raw_rate, 4)  # invert: higher value = fewer misses = better
+        mm_maturity = "ready"
     mm_note = mmc.get("data_gap") or mmc.get("note")
 
-    # Sensor: timing_quality — median board_tenure_days + share of late-signal rows
+    # --- timing_quality ---
+    # M1: median board_tenure_days is in days (raw count); cannot normalize to [0, 1]
+    # without a reference distribution.  value=null, reading=median_days.
     timing_val = None
+    timing_reading: float | None = None
     timing_note = None
+    timing_maturity = "accruing"
     if floors_met and buy_rows:
         tenures = [_fval(r.get("board_tenure_days")) for r in buy_rows
                    if _fval(r.get("board_tenure_days")) is not None]
-        late_share = sum(1 for r in buy_rows if r.get("process_fault") == "signaled_too_late") / raw_n
+        n_late = sum(1 for r in buy_rows if r.get("process_fault") == "signaled_too_late")
+        late_share = n_late / raw_n if raw_n > 0 else 0.0
         if tenures:
-            timing_val = round(float(np.median(tenures)), 2)
-        timing_note = f"late_share={late_share:.2%} ({sum(1 for r in buy_rows if r.get('process_fault') == 'signaled_too_late')}/{raw_n} rows)"
+            timing_reading = round(float(np.median(tenures)), 2)
+        timing_note = (
+            f"M1: value=null (median tenure in days, not normalizable to [0,1] without "
+            f"reference distribution). Raw reading in 'reading'. "
+            f"late_share={late_share:.2%} ({n_late}/{raw_n} rows). "
+            f"timing_basis: ['board_tenure'] (extension/ticks-since-cross clauses absent "
+            f"from retro_grades schema — see M3 disclosure)."
+        )
+        timing_maturity = "ready"
     else:
-        timing_note = f"accruing: {raw_n}/{SENSOR_MIN_MATURED_ROWS} matured rows"
+        timing_note = (
+            f"accruing: {raw_n}/{SENSOR_MIN_MATURED_ROWS} matured rows. "
+            f"timing_basis: ['board_tenure']."
+        )
 
-    # Sensor: process_integrity — share of data_fault rows + input freshness
+    # --- process_integrity ---
+    # Share of data_fault rows, inverted to (1 - fault_rate) so higher = better.
+    # [0, 1] honest. Matures when: floors_met.
     pi_val = None
     pi_note = None
+    pi_maturity = "accruing"
     if floors_met and raw_n > 0:
         n_data_fault = sum(1 for r in buy_rows if r.get("process_fault") == "data_fault")
-        pi_val = round(n_data_fault / raw_n, 4)
+        fault_rate = n_data_fault / raw_n
+        pi_val = round(1.0 - fault_rate, 4)  # invert: higher = cleaner
+        pi_maturity = "ready"
     else:
         pi_note = f"accruing: {raw_n}/{SENSOR_MIN_MATURED_ROWS} matured rows"
 
     sensors = {
         "hit_quality": _sensor("hit_quality", hit_quality_val, raw_n, effective_n,
-                               note=hit_quality_note),
+                               maturity=hit_maturity, note=hit_quality_note),
         "upside_capture": _sensor("upside_capture", upside_capture_val, raw_n, effective_n,
-                                  note=upside_capture_note),
-        "coverage_health": _sensor("coverage_health", cov_val, raw_n, effective_n,
-                                   note=cov_note,
-                                   extra={"trailing_4wk_buy_count": t4wk,
-                                          "frozen_baseline": cov_mon.get("frozen_baseline")}),
-        "missed_mover_rate": _sensor("missed_mover_rate", mm_rate, raw_n, effective_n,
-                                     note=mm_note,
+                                  maturity=uc_maturity, note=upside_capture_note,
+                                  extra=({"reading": upside_reading} if upside_reading is not None else {})),
+        "coverage_health": _sensor(
+            "coverage_health", None, raw_n, effective_n,
+            maturity=cov_maturity, note=cov_note,
+            extra={"reading": t4wk,  # raw count in reading (M1/M2 unit contract)
+                   "trailing_4wk_buy_count": t4wk,
+                   "frozen_baseline": cov_mon.get("frozen_baseline")}),
+        "missed_mover_rate": _sensor("missed_mover_rate", mm_val, raw_n, effective_n,
+                                     maturity=mm_maturity, note=mm_note,
                                      extra={"n_episodes": mmc.get("n_episodes"),
                                             "n_missed": mmc.get("n_missed"),
-                                            "pipeline_recall": mmc.get("pipeline_recall")}),
-        "timing_quality": _sensor("timing_quality", timing_val, raw_n, effective_n,
-                                  note=timing_note),
+                                            "pipeline_recall": mmc.get("pipeline_recall"),
+                                            "raw_miss_rate": mm_raw_rate}),
+        "timing_quality": _sensor(
+            "timing_quality", None, raw_n, effective_n,
+            maturity=timing_maturity, note=timing_note,
+            extra=({"reading": timing_reading,
+                    "timing_basis": ["board_tenure"]}  # M3: only board_tenure_days wired
+                   if timing_reading is not None else
+                   {"reading": None, "timing_basis": ["board_tenure"]})),
         "process_integrity": _sensor("process_integrity", pi_val, raw_n, effective_n,
-                                     note=pi_note),
+                                     maturity=pi_maturity, note=pi_note),
     }
 
-    # Overall maturity
+    # Overall maturity: derived from per-sensor maturity (M1: each sensor matures independently)
     all_mat = {s["maturity"] for s in sensors.values()}
     if all_mat == {"ready"}:
         overall_maturity = "ready"
@@ -1085,7 +1282,9 @@ def _build_fitness_card(attr_rows: list[dict], scoreboard: dict, df_all: pd.Data
             f"{SENSOR_MIN_NONOVERLAPPING_WINDOWS} non-overlapping windows spanning "
             f"{SENSOR_MIN_CALENDAR_MONTHS} calendar months. "
             f"Expected first-maturity read: ~2026-09-15. "
-            f"All sensors display-context only; no signal-path authority."
+            f"All sensors display-context only; no signal-path authority. "
+            f"M3 timing_basis=['board_tenure']: extension-percentile and ticks-since-cross "
+            f"clauses cannot be computed (columns absent from retro_grades schema)."
         ),
     }
 
@@ -1133,8 +1332,15 @@ def _build_us_impl(root: Path, retro_path: Path) -> dict:
 
     # Two-axis attribution
     new_attr_rows: list[dict] = []
+    gate_suppressed_gap: str | None = None
     if not df21.empty:
-        new_attr_rows = _attribute_rows(df21, near_miss_df)
+        new_attr_rows, gate_suppressed_gap = _attribute_rows(df21, near_miss_df)
+    elif not near_miss_df.empty:
+        # No 21d rows to attribute, but check whether near_miss store has excess_spy
+        # so we can surface the data_gap sentinel even before 21d rows mature (B2).
+        _, gate_suppressed_gap = _check_gate_suppressed(
+            {"ticker": None, "as_of": None}, near_miss_df
+        )
     log.info("build_us: attributed %d rows", len(new_attr_rows))
 
     # Load existing sidecar (keep-first)
@@ -1183,8 +1389,8 @@ def _build_us_impl(root: Path, retro_path: Path) -> dict:
         except Exception as exc:  # noqa: BLE001
             log.warning("build_us: evidence pack write error: %s", exc)
 
-    # Scoreboard
-    scoreboard = _build_scoreboard(all_attr_rows, df_all)
+    # Scoreboard (B2: pass gate_suppressed_gap so sentinel is visible when near_miss store lacks excess_spy)
+    scoreboard = _build_scoreboard(all_attr_rows, df_all, gate_suppressed_gap=gate_suppressed_gap)
     sb_path = _scoreboard_path(root)
     sb_path.write_text(json.dumps(scoreboard, indent=2, default=str), encoding="utf-8")
 

@@ -1745,6 +1745,9 @@ jobs:
           # standout_audit_us job (which reads committed stores only, SA-R15).
           git add data/pick_lab/fires.jsonl 2>/dev/null || true
           git add data/pick_lab/grades.jsonl 2>/dev/null || true
+          # m1 fix: long-hold ledgers written by engine/pick_lab/profile.py:186-190
+          git add data/pick_lab/lh_fires.jsonl 2>/dev/null || true
+          git add data/pick_lab/lh_grades.jsonl 2>/dev/null || true
           git add data/pick_lab/snapshots/ 2>/dev/null || true
           # LLM stock briefs (site/stockbrief) are gitignored for local-dev cleanliness
           # but must be TRACKED on main so the committed-tree deploy (pages.yml) ships

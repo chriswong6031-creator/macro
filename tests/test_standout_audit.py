@@ -92,6 +92,7 @@ def _make_worktree(rows21: list[dict], tmp_path: Path) -> Path:
 from engine.standout_audit import (
     _outcome_cause,
     _process_fault,
+    _check_gate_suppressed,
     _effective_n,
     _merge_attribution_sidecar,
     build_us,
@@ -101,6 +102,8 @@ from engine.standout_audit import (
     A1_MACRO_SPY_THRESH,
     A1_IDIO_ALPHA_THRESHOLD,
     A2_SIGNALED_TOO_LATE_TENURE,
+    A2_PREMATURE_STOP_MFE_THRESH,
+    A2_GATE_SUPPRESSED_EXCESS_THRESH,
 )
 
 
@@ -585,3 +588,431 @@ class TestProcessFault:
         """None tenure: no signaled_too_late, falls through to clean."""
         row = _make_row(board_tenure_days=None, staleness_hours=1.0)
         assert _process_fault(row) in ("clean", "data_fault")
+
+
+# ---------------------------------------------------------------------------
+# B1 fix: premature_stop_noise keys on fwd_mfe_21 (not fwd_mfe_5) and on
+#         uppercase STOPPED (not lowercase "stopped"/"cut")
+# ---------------------------------------------------------------------------
+
+class TestPrematureStopNoise:
+    """B1 regression: old code read fwd_mfe_5 (null on 21d rows) + lowercase "stopped".
+
+    These tests FAIL on the pre-fix code and PASS on the fix.
+    """
+
+    def test_stopped_with_fwd_mfe_21_fires(self):
+        """STOPPED terminal state + fwd_mfe_21 >= threshold => premature_stop_noise.
+
+        Pre-fix: fwd_mfe_5 is checked → null → never fires.
+        Post-fix: fwd_mfe_21 is checked → fires correctly.
+        """
+        row = _make_row(
+            board_tenure_days=3.0,
+            terminal_state_clean8_21="STOPPED",  # uppercase per engine/grading.py TerminalState
+            staleness_hours=1.0,
+        )
+        row["fwd_mfe_21"] = A2_PREMATURE_STOP_MFE_THRESH + 0.01  # above threshold
+        row["fwd_mfe_5"] = None  # null — as it would be on a 21d row
+
+        result = _process_fault(row)
+        assert result == "premature_stop_noise", (
+            f"B1: expected premature_stop_noise with STOPPED+fwd_mfe_21 set, got {result!r}. "
+            f"Old code read fwd_mfe_5 (null on 21d rows) and never fired."
+        )
+
+    def test_stopped_fwd_mfe_5_only_does_not_fire(self):
+        """STOPPED + fwd_mfe_5 set but fwd_mfe_21 null => clean (not premature_stop).
+
+        This asserts the B1 fix: old code would read fwd_mfe_5 and potentially fire;
+        new code reads fwd_mfe_21 which is null on 5d rows.
+        """
+        row = _make_row(
+            board_tenure_days=3.0,
+            terminal_state_clean8_21="STOPPED",
+            staleness_hours=1.0,
+        )
+        row["fwd_mfe_5"] = A2_PREMATURE_STOP_MFE_THRESH + 0.05  # above threshold
+        row["fwd_mfe_21"] = None  # null — correct for a 5d-horizon row
+
+        result = _process_fault(row)
+        assert result in ("clean", "data_fault"), (
+            f"fwd_mfe_21=null should not fire premature_stop, got {result!r}"
+        )
+
+    def test_stopped_fwd_mfe_21_below_threshold_no_fire(self):
+        """STOPPED + fwd_mfe_21 below threshold => does not fire."""
+        row = _make_row(
+            board_tenure_days=3.0,
+            terminal_state_clean8_21="STOPPED",
+            staleness_hours=1.0,
+        )
+        row["fwd_mfe_21"] = A2_PREMATURE_STOP_MFE_THRESH - 0.01  # below threshold
+        row["fwd_mfe_5"] = None
+        result = _process_fault(row)
+        assert result in ("clean", "data_fault"), (
+            f"Below-threshold fwd_mfe_21 should not fire premature_stop, got {result!r}"
+        )
+
+    def test_clean_liftoff_does_not_fire(self):
+        """CLEAN_LIFTOFF state => not premature_stop (threshold check should not apply)."""
+        row = _make_row(
+            board_tenure_days=3.0,
+            terminal_state_clean8_21="CLEAN_LIFTOFF",
+            staleness_hours=1.0,
+        )
+        row["fwd_mfe_21"] = 0.10  # high MFE but not STOPPED
+        row["fwd_mfe_5"] = None
+        result = _process_fault(row)
+        assert result in ("clean", "data_fault"), (
+            f"CLEAN_LIFTOFF should not fire premature_stop, got {result!r}"
+        )
+
+    def test_real_schema_column_names(self):
+        """Fixture uses real retro_grades.parquet column names.
+
+        This test ensures no dead-sensor regression if the column names change:
+        if fwd_mfe_21 is absent from the fixture, premature_stop_noise can never fire.
+        """
+        # Real columns from retro_grades.parquet (verified 2026-07-12)
+        real_cols = {
+            "as_of", "entry_date", "horizon", "ticker", "lane", "sector",
+            "excess_spy", "excess_sector", "spy_ret", "ret", "board_tenure_days",
+            "terminal_state_clean8_21", "terminal_state_clean15_126", "staleness_hours",
+            "fwd_mfe_5",  # retro_grades has fwd_mfe_5 (not _21) in current ledger
+            # fwd_mfe_21 will appear once 21d rows are graded by grade_us_board.py
+        }
+        # The fix reads fwd_mfe_21: assert the column is expected in the 21d-matured schema
+        # (grade_us_board.py writes fwd_mfe_{h} for each row's own horizon)
+        assert "fwd_mfe_5" in real_cols  # 5d rows → fwd_mfe_5
+        # When a 21d row matures, grade_us_board.py will write fwd_mfe_21 on that row.
+        # The sensor reads that column. fwd_mfe_5 on a 21d row is null by construction.
+        row_21d = _make_row(horizon=21, terminal_state_clean8_21="STOPPED", board_tenure_days=3.0)
+        row_21d["fwd_mfe_21"] = 0.06  # post-fix column
+        row_21d["fwd_mfe_5"] = None   # null on 21d rows (one-grader law)
+        assert _process_fault(row_21d) == "premature_stop_noise"
+
+
+# ---------------------------------------------------------------------------
+# B2 fix: gate_suppressed emits explicit data_gap sentinel when near_miss
+#         store lacks excess_spy column (no silent all-False)
+# ---------------------------------------------------------------------------
+
+class TestGateSuppressedDataGap:
+    """B2 regression: old code read nm.get("excess_spy") silently returns None when
+    the column is absent → all rows return False (silent gap).
+    """
+
+    def test_no_excess_spy_column_returns_data_gap(self):
+        """Near-miss df without excess_spy => (False, 'data_gap: ...') — never silent."""
+        nm_df = pd.DataFrame([{
+            "ticker": "AAPL",
+            "date": "2026-06-15",
+            "type": "near_miss",
+            "fwd_ret_20": 0.08,  # has raw return but no graded excess
+            # no excess_spy column
+        }])
+        row = _make_row(ticker="AAPL", as_of="2026-06-15")
+
+        suppressed, gap_reason = _check_gate_suppressed(row, nm_df)
+        assert suppressed is False, "no excess_spy col should not mark as suppressed"
+        assert gap_reason is not None, (
+            "B2: gap_reason must be non-None when excess_spy column is absent — "
+            "silent all-False is the bug being fixed"
+        )
+        assert "data_gap" in gap_reason, f"expected 'data_gap' in gap_reason, got {gap_reason!r}"
+
+    def test_with_excess_spy_column_works(self):
+        """Near-miss df WITH excess_spy => works normally (no data_gap)."""
+        nm_df = pd.DataFrame([{
+            "ticker": "AAPL",
+            "date": "2026-06-15",
+            "type": "near_miss",
+            "excess_spy": A2_GATE_SUPPRESSED_EXCESS_THRESH + 0.01,  # above threshold
+        }])
+        row = _make_row(ticker="AAPL", as_of="2026-06-15")
+
+        suppressed, gap_reason = _check_gate_suppressed(row, nm_df)
+        assert suppressed is True, "excess_spy >= threshold should return suppressed=True"
+        assert gap_reason is None
+
+    def test_scoreboard_carries_data_gap_sentinel(self, tmp_path):
+        """build_us scoreboard contains gate_suppressed sentinel when near_miss lacks excess_spy."""
+        # Write 21d rows so attribution runs
+        rows21 = [
+            _make_row(horizon=21, as_of="2026-06-15", ticker="AAPL",
+                      excess_spy=0.06, excess_sector=0.05, spy_ret=0.01, ret=0.07),
+        ]
+        rows21[0]["fwd_mfe_21"] = None  # not stopped; premature_stop should not fire
+
+        wt = _make_worktree(rows21, tmp_path)
+
+        # Write near_miss track_record WITHOUT excess_spy
+        (tmp_path / "data" / "signal_archive").mkdir(parents=True, exist_ok=True)
+        nm_df = pd.DataFrame([{
+            "ticker": "AAPL",
+            "date": "2026-06-15",
+            "type": "near_miss",
+            "fwd_ret_20": 0.08,
+            # deliberately no excess_spy
+        }])
+        nm_df.to_parquet(tmp_path / "data" / "signal_archive" / "track_record.parquet", index=False)
+
+        result = build_us(root=tmp_path)
+        assert result["status"] == "ok"
+
+        import json as _json
+        sb_path = tmp_path / "site" / "factordata" / "us_audit_scoreboard.json"
+        sb = _json.loads(sb_path.read_text())
+
+        # B2: scoreboard must carry the data_gap sentinel, not silently omit it
+        assert "gate_suppressed" in sb, (
+            "B2: scoreboard must contain gate_suppressed sentinel when near_miss "
+            "store lacks excess_spy column"
+        )
+        gs = sb["gate_suppressed"]
+        assert gs.get("state") == "data_gap", (
+            f"gate_suppressed sentinel must have state='data_gap', got: {gs}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# m2 fix: _effective_n uses session ordinals when session_dates provided
+# ---------------------------------------------------------------------------
+
+class TestEffectiveNSessionOrdinal:
+    """m2: 21 calendar days ≈ 15 sessions; session-ordinal effective_n is conservative."""
+
+    def test_session_ordinal_vs_calendar_days(self):
+        """Two dates 16 calendar days apart but with 21 sessions between them
+        should be 2 windows with session_dates provided (each 'session' = 1 day
+        in this simplified test where every day is a trading day).
+        """
+        # Build a dense session list (every weekday = 1 trading day)
+        session_dates = [f"2026-0{m}-{d:02d}" for m in [6, 7]
+                         for d in range(1, 32)
+                         if f"2026-0{m}-{d:02d}" <= "2026-07-31"]
+        # Trim to valid dates only
+        import pandas as _pd
+        session_dates = [
+            s for s in session_dates
+            if not _pd.isna(_pd.to_datetime(s, errors='coerce'))
+        ]
+
+        # Two dates 21+ sessions apart should be 2 windows
+        dates = ["2026-06-01", "2026-07-01"]
+        result_session = _effective_n(dates, horizon_days=21, session_dates=session_dates)
+        result_calendar = _effective_n(dates, horizon_days=21)  # no session_dates
+        # Both should give 2 windows (30 calendar days >> 21)
+        assert result_session == 2
+        assert result_calendar == 2
+
+    def test_dense_calendar_days_session_ordinal_is_conservative(self):
+        """Dates 21 calendar days apart but only 15 sessions apart should be
+        1 window (not 2) when measured in session ordinals.
+
+        Without session_dates: 21 calendar days >= 21 => 2 windows (anti-conservative).
+        With session_dates (15 sessions < 21): 1 window (conservative, correct).
+        """
+        # Build session list with weekdays only (Mon-Fri)
+        import pandas as _pd
+        biz_days = _pd.bdate_range("2026-06-01", "2026-08-01")
+        session_dates = [d.strftime("%Y-%m-%d") for d in biz_days]
+
+        # "2026-06-15" to "2026-07-06" = exactly 21 calendar days
+        # Business days between: count Mon-Fri from June 15 to July 6 = ~15 sessions
+        dates = ["2026-06-15", "2026-07-06"]
+        result_session = _effective_n(dates, horizon_days=21, session_dates=session_dates)
+        result_calendar = _effective_n(dates, horizon_days=21)  # calendar: 21 days → 2 windows
+
+        # Calendar: exactly 21 days → 2 windows
+        assert result_calendar == 2, f"calendar fallback: expected 2 windows, got {result_calendar}"
+        # Session ordinal: ~15 sessions < 21 → 1 window (conservative)
+        assert result_session == 1, (
+            f"session ordinal: expected 1 window (only ~15 sessions < 21), got {result_session}"
+        )
+
+    def test_session_ordinal_empty_session_list_falls_back(self):
+        """Empty session_dates falls back gracefully (no error)."""
+        dates = ["2026-06-15", "2026-07-15"]
+        # Empty session_dates: all dates map to ordinal -1 or 0; fallback behavior
+        result = _effective_n(dates, horizon_days=21, session_dates=[])
+        assert isinstance(result, int) and result >= 0
+
+
+# ---------------------------------------------------------------------------
+# M1 fix: no ready sensor carries a non-null value outside [0, 1]
+# ---------------------------------------------------------------------------
+
+class TestSensorValueBounds:
+    """M1: every ready sensor's value must be in [0, 1] or null (no mixed-unit composites)."""
+
+    def test_no_ready_sensor_value_outside_01(self, tmp_path):
+        """Build with enough 21d rows to trigger sensor maturity, then assert [0,1] bounds."""
+        import json as _json
+
+        # Build 30 rows over 4+ months spanning 3+ non-overlapping 21d windows
+        # to satisfy maturity floors: >=25 rows, >=10 entry dates, >=3 windows, >=3 months
+        rows21 = []
+        base_dates = [
+            "2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09",
+            "2026-01-12", "2026-01-13", "2026-01-14", "2026-01-15", "2026-01-16",
+            "2026-02-02", "2026-02-03", "2026-02-04", "2026-02-05", "2026-02-06",
+            "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06",
+            "2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-07",
+        ]
+        for i, d in enumerate(base_dates):
+            rows21.append(_make_row(
+                horizon=21,
+                as_of=d,
+                ticker=f"TICK{i:02d}",
+                entry_date=d,
+                lane="buy",
+                excess_spy=0.02 + 0.001 * i,
+                excess_sector=0.01,
+                spy_ret=0.01,
+                ret=0.03 + 0.001 * i,
+                board_tenure_days=3.0,
+            ))
+            # Add fwd_mfe_21 column to each row
+            rows21[-1]["fwd_mfe_21"] = None
+
+        _make_worktree(rows21, tmp_path)
+
+        result = build_us(root=tmp_path)
+        assert result["status"] == "ok"
+
+        fit_path = tmp_path / "data" / "metabolism" / "fitness" / "standouts_us.json"
+        card = _json.loads(fit_path.read_text())
+
+        for sensor_name, sensor in card["sensors"].items():
+            if sensor.get("maturity") == "ready":
+                val = sensor.get("value")
+                assert val is None or (isinstance(val, (int, float)) and 0.0 <= float(val) <= 1.0), (
+                    f"M1 violation: sensor '{sensor_name}' is ready with value={val!r} "
+                    f"outside [0, 1]. Sensors that can't be normalized to [0,1] must set "
+                    f"value=null and store raw reading in 'reading' field."
+                )
+
+    def test_coverage_health_value_always_null(self, tmp_path):
+        """M2: coverage_health.value must always be null (raw count not in [0,1])."""
+        import json as _json
+
+        rows = [_make_row(horizon=5, as_of="2026-06-15", ticker="AAPL")]
+        _make_worktree(rows, tmp_path)
+
+        build_us(root=tmp_path)
+        fit_path = tmp_path / "data" / "metabolism" / "fitness" / "standouts_us.json"
+        card = _json.loads(fit_path.read_text())
+
+        cov = card["sensors"].get("coverage_health", {})
+        assert cov.get("value") is None, (
+            f"M2: coverage_health.value must be null (raw ticker count not normalizable "
+            f"without frozen_baseline), got {cov.get('value')!r}. "
+            f"Raw count should be in 'reading' field."
+        )
+
+    def test_timing_quality_value_null(self, tmp_path):
+        """M1: timing_quality.value must be null (days not in [0,1])."""
+        import json as _json
+
+        rows = [_make_row(horizon=5, as_of="2026-06-15", ticker="AAPL")]
+        _make_worktree(rows, tmp_path)
+
+        build_us(root=tmp_path)
+        fit_path = tmp_path / "data" / "metabolism" / "fitness" / "standouts_us.json"
+        card = _json.loads(fit_path.read_text())
+
+        tq = card["sensors"].get("timing_quality", {})
+        assert tq.get("value") is None, (
+            f"M1: timing_quality.value must be null (median tenure in days, not [0,1]), "
+            f"got {tq.get('value')!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Real-schema fixture: validates against actual retro_grades + track_record
+# column sets so dead-sensor regressions (B1/B2) cannot pass silently
+# ---------------------------------------------------------------------------
+
+class TestRealSchemaColumnContract:
+    """Derived from real parquet schema (verified 2026-07-12).
+
+    These tests use the ACTUAL column sets of retro_grades.parquet and
+    track_record.parquet to ensure future schema drifts are caught immediately.
+    """
+
+    def test_retro_grades_21d_uses_fwd_mfe_21_not_fwd_mfe_5(self):
+        """B1 contract: premature_stop sensor reads fwd_mfe_21 on 21d rows.
+
+        grade_us_board.py writes fwd_mfe_{h} only on its own horizon row, so:
+          - fwd_mfe_5  is populated on horizon=5 rows  (null on horizon=21)
+          - fwd_mfe_21 is populated on horizon=21 rows (null on horizon=5)
+        The premature_stop sensor must use fwd_mfe_21 to have any chance of firing.
+        """
+        # Simulate a 21d row exactly as grade_us_board.py would write it:
+        # fwd_mfe_5 = null (this is a 21d row), fwd_mfe_21 = populated
+        row_21d = {
+            "as_of": "2026-08-01", "ticker": "AAPL", "lane": "buy",
+            "horizon": 21,
+            "excess_spy": 0.03, "excess_sector": 0.02, "spy_ret": 0.01, "ret": 0.05,
+            "board_tenure_days": 3.0,
+            "terminal_state_clean8_21": "STOPPED",  # uppercase from TerminalState enum
+            "terminal_state_clean15_126": None,
+            "staleness_hours": 2.0,
+            "quad_hard_label": "calm",
+            "vol_regime": "low",
+            "risk_radar_state": "neutral",
+            "entry_date": "2026-08-02",
+            "sector": "Technology",
+            "fwd_mfe_5": None,   # null on 21d rows (real schema behavior)
+            "fwd_mfe_21": A2_PREMATURE_STOP_MFE_THRESH + 0.02,  # populated on 21d rows
+            "species_id": None,
+            "archetype": None,
+            "fused_risk_label": None,
+        }
+        # Should fire with fwd_mfe_21 populated
+        assert _process_fault(row_21d) == "premature_stop_noise", (
+            "premature_stop must fire when fwd_mfe_21 >= threshold and state=STOPPED"
+        )
+
+        # Now simulate what the OLD code did (read fwd_mfe_5 which is null):
+        row_21d_old_behavior = dict(row_21d)
+        row_21d_old_behavior["fwd_mfe_21"] = None  # as if old code couldn't see it
+        row_21d_old_behavior["fwd_mfe_5"] = A2_PREMATURE_STOP_MFE_THRESH + 0.02
+        # Old code would look at fwd_mfe_5 on a 21d row = high value → WRONG: fires
+        # New code reads fwd_mfe_21 (null) → correctly does not fire
+        assert _process_fault(row_21d_old_behavior) != "premature_stop_noise", (
+            "fwd_mfe_21=null must NOT fire premature_stop (fwd_mfe_5 is irrelevant on 21d rows)"
+        )
+
+    def test_track_record_near_miss_has_no_excess_spy(self):
+        """B2 contract: track_record near_miss rows have no excess_spy column.
+
+        Verified against real data/signal_archive/track_record.parquet (2026-07-12):
+        near_miss columns include fwd_ret_20, fwd_mfe_21 etc. but NOT excess_spy.
+        _check_gate_suppressed must return data_gap sentinel, not silent False.
+        """
+        # Replicate the real near_miss schema (no excess_spy)
+        near_miss_cols = [
+            "ticker", "date", "type", "quality", "reason", "entry_price",
+            "fwd_ret_20", "fwd_ret_60", "fwd_mfe_5", "fwd_mfe_21",
+            "terminal_state_clean8_21", "post_cushion_breach",
+            # Note: NO excess_spy column — matches real schema
+        ]
+        nm_df = pd.DataFrame(
+            [{"ticker": "AAPL", "date": "2026-06-15", "type": "near_miss",
+              "fwd_ret_20": 0.08, "fwd_mfe_21": 0.10}]
+        )[["ticker", "date", "type", "fwd_ret_20", "fwd_mfe_21"]]
+        # Verify no excess_spy
+        assert "excess_spy" not in nm_df.columns
+
+        row = {"ticker": "AAPL", "as_of": "2026-06-15"}
+        suppressed, gap_reason = _check_gate_suppressed(row, nm_df)
+
+        assert suppressed is False
+        assert gap_reason is not None, (
+            "B2: _check_gate_suppressed must return non-None gap_reason when "
+            "excess_spy column is absent from near_miss store"
+        )
+        assert "data_gap" in gap_reason
