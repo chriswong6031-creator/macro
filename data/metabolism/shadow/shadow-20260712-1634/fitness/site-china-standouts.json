@@ -1,0 +1,76 @@
+{
+  "schema": "metabolism.generic_fitness.v1",
+  "as_of": "2026-07-12",
+  "lobe": "site-china-standouts",
+  "maturity": "accruing",
+  "sensors": {
+    "hit_quality": {
+      "value": null,
+      "maturity": "accruing",
+      "store_present": false,
+      "store_asof": null,
+      "rows_accrued": null,
+      "note": "store absent: data/metabolism/fitness/standouts_cn.json"
+    },
+    "upside_capture": {
+      "value": null,
+      "maturity": "accruing",
+      "store_present": false,
+      "store_asof": null,
+      "rows_accrued": null,
+      "note": "store absent: data/metabolism/fitness/standouts_cn.json"
+    },
+    "coverage_health": {
+      "value": null,
+      "maturity": "accruing",
+      "store_present": false,
+      "store_asof": null,
+      "rows_accrued": null,
+      "note": "store absent: data/metabolism/fitness/standouts_cn.json"
+    },
+    "missed_mover_rate": {
+      "value": null,
+      "maturity": "accruing",
+      "store_present": false,
+      "store_asof": null,
+      "rows_accrued": null,
+      "note": "store absent: data/metabolism/fitness/standouts_cn.json"
+    },
+    "timing_quality": {
+      "value": null,
+      "maturity": "accruing",
+      "store_present": false,
+      "store_asof": null,
+      "rows_accrued": null,
+      "note": "store absent: data/metabolism/fitness/standouts_cn.json"
+    },
+    "process_integrity": {
+      "value": null,
+      "maturity": "accruing",
+      "store_present": false,
+      "store_asof": null,
+      "rows_accrued": null,
+      "note": "store absent: data/metabolism/fitness/standouts_cn.json"
+    }
+  },
+  "composite": null,
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path"
+    ]
+  },
+  "notes": "Generic fitness card for lobe 'site-china-standouts'. Sensors are accruing until their maturity_date. Values are display-context only; no signal-path authority. composite=null while any sensor is accruing — honesty law (R-V6-4). No LLM-originated values anywhere in this card."
+}

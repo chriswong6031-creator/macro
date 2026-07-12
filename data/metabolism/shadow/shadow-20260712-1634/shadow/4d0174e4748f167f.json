@@ -1,0 +1,71 @@
+{
+  "schema": "metabolism.applier_plan.v1",
+  "ts": "2026-07-12T16:34:26+00:00",
+  "plan_id": "4d0174e4748f167f",
+  "shadow": true,
+  "action": "draft_pr_plan",
+  "note": "This is a PLAN record only. The BUILD lane (metabolism_build) is the only code-writer; the applier NEVER edits config/lobe_charters.yml or config/synapse.yml directly.",
+  "proposed_edit": {
+    "target_file": "config/lobe_charters.yml",
+    "lobe_id": "",
+    "from_state": "",
+    "to_state": "",
+    "tier": "",
+    "description": "Synthetic shadow-genesis-probe: zzqx wqxp vvkq exercise for shadow harness R-V6-7 genesis gate. Alien vocabulary; no real domain meaning."
+  },
+  "source_item": {
+    "schema": "metabolism.charter_proposal.v1",
+    "ts": "2026-07-12T16:34:26+00:00",
+    "cycle_id": null,
+    "domain_id": "shadow-genesis-probe",
+    "label": "zzqx-vvkq-genesis-probe",
+    "description": "Synthetic shadow-genesis-probe: zzqx wqxp vvkq exercise for shadow harness R-V6-7 genesis gate. Alien vocabulary; no real domain meaning.",
+    "proposed_tier": "display",
+    "proposed_lifecycle_state": "proposed",
+    "uncovered_for_cycles": 3,
+    "min_uncovered_cycles": 3,
+    "demand_evidence_count": 1,
+    "evidence_refs": [
+      "shadow-probe-evidence-001"
+    ],
+    "roster_budget": {
+      "active_nonscored_count": 0,
+      "max_active_nonscored_lobes": 66,
+      "headroom": 66
+    },
+    "rationale": "Domain 'shadow-genesis-probe' (zzqx-vvkq-genesis-probe) has had ZERO active covering lobes across 3 distinct scout cycles (threshold=3); 1 open insight-bus row(s) reference this domain. Proposing a display-tier lobe charter for the normal gauntlet. [SHADOW PROBE \u2014 synthetic; not a real domain]",
+    "generated_by": "metabolism_shadow_cycle",
+    "authority": {
+      "is_context_only": true,
+      "may_rank": false,
+      "may_gate": false,
+      "may_size": false,
+      "may_escalate": false,
+      "display_only": true,
+      "not_a_signal": true,
+      "tier": "shadow",
+      "_shadow_probe": true
+    },
+    "_source_file": "shadow-genesis-probe.json"
+  },
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path",
+      "auto_merge",
+      "direct_charter_edit"
+    ]
+  }
+}

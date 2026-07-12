@@ -376,8 +376,9 @@ do-no-harm gate is built for honesty at tiny n:
    apply date (true forward evidence) and auto-reverts regressions via the fenced
    revert path.
 Every proposal + verdict appended to `data/neuralweb/governance.jsonl`
-(`a6_llm_proposed` / `a6_auto_apply` / `a6_rejected` events, risk_radar_review
-schema). Applies config, never code. Arms only after its writes are routed through
+(`a6_llm_proposed` / `a6_auto_apply` events — rejection is encoded on
+`a6_llm_proposed` with `applied: false` + `reject_reason`, matching the
+risk_radar_review schema and the governance vocabulary). Applies config, never code. Arms only after its writes are routed through
 lane-(ii) registration and logging (NW-U5 precondition, inherited).
 
 **Experiment books:** the replay harness (US: extend
@@ -467,3 +468,44 @@ closes.
 |---|---|---|
 | 2026-07-12 | v1 taxonomy established (single-primary) | SA-R2 |
 | 2026-07-12 | v2: restructured to two orthogonal axes (outcome-cause × process-fault) per red-team F11–F15; `gate_suppressed` + `mixed` added; precedence order published; per-attribution maturity stamps | SA-R2/SA-R13 |
+
+## 12. W6 closing — verification evidence + follow-up docket (2026-07-12)
+
+All six waves merged same-day: W0 #2410, W1 #2421, W2 #2419, W3 #2451, W4 #2426,
+W5 #2452. Post-merge verification on main: dead-wire grep clean (every new organ
+has a live caller), dag conformance OK, synapse 428 artifacts / 0 violations,
+`_discover_loop_managed_lobes` returns `[til, site-us-standouts,
+site-china-standouts]`, shadow cycle end-to-end OK in 2.3s with
+`real_stores_untouched: true` and the new `audit_due_probe` stage honestly
+not-due (no matured 21d rows yet). Roster 65/66.
+
+Follow-up docket (chartered, not built here):
+
+1. **W4 outcome-proxy swap** — `replay_standout_books` counterfactual uses
+   `fwd_mfe_5`; switch to the 21d CSI300-excess via W2's `fwd_excess_map_21d`
+   (now on main).
+2. **run_audit armed caller** — by design pre-arming, `run_audit` has no armed
+   caller (shadow probe + agenda routing only). The arming-time decision: a
+   dedicated metabolism-audit workflow step vs. PROPOSE-invoked. Requires its
+   own two-key when armed.
+3. **Frozen baselines** — freeze SA-R4 coverage/upside baselines at first
+   sensor maturity (US ~2026-09-15, CN ~2026-10-15); operator-tap config write
+   to `config/standout_review.yml`.
+4. **CN sector leg** — genuine industry grouping for `sector_rotated_out`
+   (currently honest `mixed` + `no_sector_leg`); needs a CN sector store.
+5. **CN premature_stop_noise** — needs a stop-date column + true post-stop
+   window; currently declared unimplemented.
+6. **US missed-mover census price-store path** — verify the off-render job's
+   first nightly run computes the census or degrades to `data_gap`; if
+   data_gap, wire the Winner-Autopsy episode reuse.
+7. **v2 flip-gate read** — surface v2-vs-live precision@k once
+   `us_board_track_v2.json` accrues (unconsumed by design today).
+8. **Stem-vs-id seam** — `organism_state._discover_fitness_cards` keys by file
+   stem (`standouts_us`) vs charter id (`site-us-standouts`); cosmetic display
+   mislabel; align when organism_state is next touched.
+9. **HK/CA extension** (SA-R12) — revisit after the first US+CN audit cycle.
+10. **W-4 rubric escalation** — warn→blocker consideration once real standout
+    packets flow.
+11. **Lane-(i) deterministic tuner** — a genuinely deterministic
+    calibration-from-ledger tuner (market_state_tune pattern) remains
+    chartered, unbuilt.

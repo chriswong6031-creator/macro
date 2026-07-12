@@ -1,0 +1,54 @@
+{
+  "schema": "metabolism.docket.v1",
+  "cycle_id": "shadow-20260712-1634",
+  "lobe": "til",
+  "as_of": "2026-07-12",
+  "run_id": null,
+  "generated_by": "metabolism_propose",
+  "provider": null,
+  "degraded_reason": null,
+  "proposals": [
+    {
+      "proposal_id": "3905491ea8de",
+      "content_hash": "3905491ea8de",
+      "lobe": "til",
+      "title": "zzqx qqzy wqzt vvqk probe row",
+      "tier": "T0",
+      "kind": "test",
+      "targets_sensor": "front_run_lead",
+      "rationale": "zzqx qqzy wqzt vvqk probe row: traversal exercise so the whole cycle touches one concrete item.",
+      "fitness_contract": {
+        "proposal_id": "3905491ea8de",
+        "lobe": "til",
+        "sensor": "front_run_lead",
+        "expected_sign": "+",
+        "band": "accruing",
+        "check_by": "2026-10-15",
+        "placebo_to_beat": "shadow placebo tape",
+        "falsifier_spec": {},
+        "asof": "2026-07-12"
+      }
+    }
+  ],
+  "rejected": [],
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path",
+      "auto_merge"
+    ]
+  },
+  "notes": "1 proposal(s) after dedup/cap; 0 rejected. TIL fitness accrues until 2026-10-15 \u2014 contracts minted now are shadow/display-tier and grade only after their check_by. Nothing here is a runtime signal (R-AUT-1)."
+}
