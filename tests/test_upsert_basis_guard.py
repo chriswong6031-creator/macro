@@ -16,7 +16,11 @@ Pins (network-free — the download layer is stubbed):
    window; a failed re-pull drops the name from the run entirely (never spliced).
 3. collectors/_stock_ohlc.py: the same contract for the china/hk per-stock
    stores (adjusted and raw planes share the machinery).
-4. config: the yahoo block carries upsert_basis_tol, mirroring the odds block.
+4. config: the yahoo block carries upsert_basis_tol, mirroring the odds block;
+   the china/hk/canada/intl yahoo blocks carry it too.
+5. the regional index/ETF planes (china/hk/canada/intl close+volume stores +
+   the intl_etf OHLCV substrate): same discard / re-pull-max / drop-on-failure
+   contract on their incremental windows.
 
 Run: .venv/bin/python -m pytest tests/test_upsert_basis_guard.py -q
 """
@@ -32,6 +36,11 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from collectors import _stock_ohlc as so  # noqa: E402
+from collectors import canada_prices as canada_mod  # noqa: E402
+from collectors import china_prices as china_mod  # noqa: E402
+from collectors import hk_prices as hk_mod  # noqa: E402
+from collectors import intl_etf as etf_mod  # noqa: E402
+from collectors import intl_prices as intl_mod  # noqa: E402
 from collectors import yahoo as yahoo_mod  # noqa: E402
 from lib import config, store  # noqa: E402
 
@@ -269,6 +278,159 @@ def test_stock_ohlc_failed_rebase_skips_the_name(data_dir, monkeypatch):
 
 def test_yahoo_config_carries_upsert_basis_tol():
     assert float(config.load()["yahoo"]["upsert_basis_tol"]) == pytest.approx(1e-3)
+
+
+def test_regional_yahoo_configs_carry_upsert_basis_tol():
+    cfg = config.load()
+    for region in ("china", "hk", "canada", "intl"):
+        assert float(cfg[region]["yahoo"]["upsert_basis_tol"]) == pytest.approx(1e-3), region
+
+
+# ---------------------------------------------------------------------------
+# 5. regional index/ETF planes — same contract for the per-ticker close+volume
+#    stores (china/hk/canada/intl) and the intl_etf OHLCV substrate
+# ---------------------------------------------------------------------------
+
+def _cv_resp(stored: pd.DataFrame, tail: int | None = None, factor: float = 1.0,
+             n_max: int = 420) -> pd.DataFrame:
+    """A close+volume yfinance-shaped response (the regional index/ETF schema)."""
+    if tail is not None:
+        base = stored.tail(tail)
+        close = base["close"].to_numpy() / factor
+        idx = base.index
+    else:
+        idx = pd.bdate_range(end="2026-06-30", periods=n_max)
+        close = np.linspace(100.0, 150.0, n_max) / factor
+    return pd.DataFrame({"Close": close, "Volume": 1e6}, index=idx)
+
+
+REGIONAL = [
+    pytest.param(china_mod.ChinaPriceAdapter, "china", id="china"),
+    pytest.param(hk_mod.HkPriceAdapter, "hk", id="hk"),
+    pytest.param(canada_mod.CanadaPriceAdapter, "canada", id="canada"),
+]
+NAMES = ["AAA", "BBB", "CCC", "DDD"]  # 4 names: dropping 1 stays over the 0.7 gate
+
+
+@pytest.mark.parametrize("cls,group", REGIONAL)
+def test_regional_shifted_name_repulls_max(data_dir, monkeypatch, cls, group):
+    seeds = {t: _seed(group, t, cols=("close",)) for t in NAMES}
+    calls: list = []
+    a = cls()
+    monkeypatch.setattr(a, "all_tickers", lambda: list(NAMES))
+
+    def fake_download(batch, period):
+        calls.append((period, list(batch)))
+        if period == "max":
+            return _yf_multi({"AAA": _cv_resp(seeds["AAA"], factor=DRIFT)})
+        return _yf_multi({t: _cv_resp(seeds[t], tail=20,
+                                      factor=DRIFT if t == "AAA" else 1.0) for t in NAMES})
+
+    monkeypatch.setattr(a, "_download", fake_download)
+    frames = a.fetch(full_history=False)
+    assert [c[0] for c in calls] == ["1mo", "max"]
+    assert calls[1][1] == ["AAA"], "only the shifted name is re-pulled"
+    assert len(frames["AAA"]) == 420, "the max re-pull replaces the 1mo window wholesale"
+    assert all(len(frames[t]) == 20 for t in NAMES[1:]), "clean names keep their windows"
+
+
+@pytest.mark.parametrize("cls,group", REGIONAL)
+def test_regional_failed_repull_drops_the_name(data_dir, monkeypatch, cls, group):
+    seeds = {t: _seed(group, t, cols=("close",)) for t in NAMES}
+    a = cls()
+    monkeypatch.setattr(a, "all_tickers", lambda: list(NAMES))
+
+    def fake_download(batch, period):
+        if period == "max":
+            raise RuntimeError("yahoo down")
+        return _yf_multi({t: _cv_resp(seeds[t], tail=20,
+                                      factor=DRIFT if t == "AAA" else 1.0) for t in NAMES})
+
+    monkeypatch.setattr(a, "_download", fake_download)
+    frames = a.fetch(full_history=False)
+    assert "AAA" not in frames, "a shifted window must never reach the store"
+    assert set(frames) == set(NAMES) - {"AAA"}
+
+
+def test_intl_prices_shifted_name_repulls_max(data_dir, monkeypatch):
+    core = ["^N225", "JPY=X", "^FTSE", "GBPUSD=X"]
+    seeds = {t: _seed("intl", t, cols=("close",)) for t in core}
+    calls: list = []
+    a = intl_mod.IntlPriceAdapter()
+    monkeypatch.setattr(a, "_ticker_sets", lambda: (list(core), []))
+
+    def fake_download(batch, period):
+        calls.append((period, list(batch)))
+        if period == "max":
+            return _yf_multi({"^N225": _cv_resp(seeds["^N225"], factor=DRIFT)})
+        return _yf_multi({t: _cv_resp(seeds[t], tail=20,
+                                      factor=DRIFT if t == "^N225" else 1.0) for t in core})
+
+    monkeypatch.setattr(a, "_download", fake_download)
+    frames = a.fetch(full_history=False)
+    assert [c[0] for c in calls] == ["1mo", "max"]
+    assert calls[1][1] == ["^N225"], "only the shifted name is re-pulled"
+    assert len(frames["^N225"]) == 420
+    assert all(len(frames[t]) == 20 for t in core[1:])
+
+
+def test_intl_prices_failed_repull_drops_the_name(data_dir, monkeypatch):
+    core = ["^N225", "JPY=X", "^FTSE", "GBPUSD=X"]
+    seeds = {t: _seed("intl", t, cols=("close",)) for t in core}
+    a = intl_mod.IntlPriceAdapter()
+    monkeypatch.setattr(a, "_ticker_sets", lambda: (list(core), []))
+
+    def fake_download(batch, period):
+        if period == "max":
+            return None  # intl's _download degrades to None on a dead endpoint
+        return _yf_multi({t: _cv_resp(seeds[t], tail=20,
+                                      factor=DRIFT if t == "^N225" else 1.0) for t in core})
+
+    monkeypatch.setattr(a, "_download", fake_download)
+    frames = a.fetch(full_history=False)
+    assert "^N225" not in frames, "a shifted window must never reach the store"
+    assert set(frames) == set(core) - {"^N225"}
+
+
+ETF_UNIV = ["EWJ", "EWG", "EWQ", "EWU"]  # 4 tickers: dropping 1 meets the 80% gate exactly
+
+
+def test_intl_etf_shifted_ticker_repulls_max(data_dir, monkeypatch):
+    monkeypatch.setattr(etf_mod, "TICKERS", list(ETF_UNIV))
+    seeds = {t: _seed("intl_etf", t, cols=("close",)) for t in ETF_UNIV}
+    calls: list = []
+    a = etf_mod.IntlEtfAdapter()
+
+    def fake_download(batch, period):
+        calls.append((period, list(batch)))
+        if period == "max":
+            return _yf_multi({"EWJ": _cn_resp(seeds["EWJ"], factor=DRIFT)})
+        return _yf_multi({t: _cn_resp(seeds[t], tail=15,
+                                      factor=DRIFT if t == "EWJ" else 1.0) for t in ETF_UNIV})
+
+    monkeypatch.setattr(a, "_download", fake_download)
+    frames = a.fetch(full_history=False)
+    assert [c[0] for c in calls] == [etf_mod.INCREMENTAL_PERIOD, "max"]
+    assert calls[1][1] == ["EWJ"], "only the shifted ticker is re-pulled"
+    assert len(frames["EWJ"]) == 420
+    assert all(len(frames[t]) == 15 for t in ETF_UNIV[1:])
+
+
+def test_intl_etf_failed_repull_drops_the_ticker(data_dir, monkeypatch):
+    monkeypatch.setattr(etf_mod, "TICKERS", list(ETF_UNIV))
+    seeds = {t: _seed("intl_etf", t, cols=("close",)) for t in ETF_UNIV}
+    a = etf_mod.IntlEtfAdapter()
+
+    def fake_download(batch, period):
+        if period == "max":
+            return None  # intl_etf's _download degrades to None after retries
+        return _yf_multi({t: _cn_resp(seeds[t], tail=15,
+                                      factor=DRIFT if t == "EWJ" else 1.0) for t in ETF_UNIV})
+
+    monkeypatch.setattr(a, "_download", fake_download)
+    frames = a.fetch(full_history=False)
+    assert "EWJ" not in frames, "a shifted window must never reach the store"
+    assert set(frames) == set(ETF_UNIV) - {"EWJ"}  # 3/4 clears int(0.8*4)=3 — gate holds
 
 
 if __name__ == "__main__":

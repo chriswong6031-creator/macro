@@ -55,13 +55,18 @@ def _patched_adapter(monkeypatch, tmp_path) -> tuple[ie.IntlEtfAdapter, dict]:
 
 
 def _seed_store(tmp_path: Path, tickers: list[str] | None = None) -> None:
-    """Simulate a warm store: write a minimal parquet for every ticker."""
+    """Simulate a warm store: write a minimal parquet for every ticker.
+
+    Values MUST match _fake_ohlcv's 100.0 closes — the adjustment-basis guard
+    (store.basis_shifted) compares the incremental window against stored closes
+    on the overlap dates, and a mismatched fixture reads as a re-based series
+    (triggering a period='max' re-pull the warm-store assertions don't expect)."""
     tickers = tickers if tickers is not None else TICKERS
     store_dir = tmp_path / "intl_etf"
     store_dir.mkdir(parents=True, exist_ok=True)
     idx = pd.date_range("2000-01-01", periods=10, freq="B")
-    df = pd.DataFrame({"open": 1.0, "high": 1.0, "low": 1.0,
-                        "close": 1.0, "volume": 1.0}, index=idx)
+    df = pd.DataFrame({"open": 100.0, "high": 100.0, "low": 100.0,
+                        "close": 100.0, "volume": 100.0}, index=idx)
     for t in tickers:
         df.to_parquet(store_dir / f"{t}.parquet")
 
