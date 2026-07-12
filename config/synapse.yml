@@ -4420,6 +4420,66 @@ artifacts:
       artifact MUST NOT feed any scored surface or arithmetic weight path until
       signing_gate root is true.
 
+  # --- FL-B: Cohort flow aggregation (flow-continuity-program) ---
+  # --- 1 consumer ---
+  options-flow-cohorts-parquet:
+    path: data/options_flow/cohorts_*.parquet
+    format: parquet
+    producer: engine/flow_cohorts.py
+    known_extra_writers:
+      - "scripts/build_flow_desk.py — calls engine.flow_cohorts.build_cohorts() which writes via store.upsert"
+    owner_program: flow-continuity
+    cadence: collect
+    storage: gitignored-local
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/flow_cohorts.py
+    external_consumers: []
+    notes: >
+      Per-cohort options-flow accrual store: one parquet per cohort key
+      (cohorts_mag7, cohorts_memory_storage, cohorts_ai_semiconductors, cohorts_ai_software).
+      Aggregates gross_premium_mn, net_premium_mn (SOFT direction), volume-weighted pc_ratio,
+      zerodte_share, net_doi, n_members, n_members_covered per trading day.
+      Written via store.upsert (idempotent append). Used to compute percentile context
+      in build_cohorts() when >= 20 obs present (raw-fallback flag otherwise).
+      Display-only: no arithmetic path; direction is SOFT. FL-B deliverable (06-26 lesson:
+      Mag7 call-bid and memory put-hedge invisible inside a single GICS bucket).
+
+  # --- 1 consumer ---
+  options-flow-cohorts-json:
+    path: site/flowdata/cohorts.json
+    format: json
+    producer: engine/flow_cohorts.py
+    known_extra_writers:
+      - "scripts/build_flow_desk.py — calls engine.flow_cohorts.build_cohorts(site_flowdata_dir=...)"
+    owner_program: flow-continuity
+    cadence: collect
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: flow_cohorts.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/flow_desk.html.j2
+    external_consumers: []
+    notes: >
+      Latest-day cohort snapshot + 10-session sparkline arrays for the Cohorts strip
+      in flow_desk.html (rendered by Jinja, not as a standalone JSON fetch).
+      Four cohorts: mag7 / memory_storage / ai_semiconductors / ai_software — cross-GICS
+      groupings that reveal divergences invisible in sector-level rollups.
+      Cohort order is fixed (not sorted by net premium); tile order = COHORTS constant.
+      Display-only: no score or rank path; direction is SOFT (net_premium_mn ~).
+      P/C ratio and gross premium magnitude are solid reads.
+
   # --- 4 consumers ---
   polygon-gex-summaries:
     path: data/polygon_gex/summary_*.parquet

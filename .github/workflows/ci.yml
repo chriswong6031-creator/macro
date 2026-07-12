@@ -290,6 +290,12 @@ on:
       # basket-staleness-warn test job — belt-and-suspenders, per reviewer nit.
       - "scripts/build_baskets.py"
       - "tests/test_basket_staleness_warn.py"
+      # FL-B cohort flow aggregation (flow-continuity-program):
+      # engine module, desk builder, template, and test file.
+      - "engine/flow_cohorts.py"
+      - "scripts/build_flow_desk.py"
+      - "templates/flow_desk.html.j2"
+      - "tests/test_flow_cohorts.py"
   workflow_dispatch:
 
 permissions:
@@ -892,6 +898,22 @@ jobs:
         run: python scripts/check_contract_drift.py --warn-only
       - name: contract drift unit tests
         run: python -m pytest tests/test_contract_drift.py -q
+
+  flow-cohorts:
+    # FL-B cohort flow aggregation (flow-continuity-program): aggregation correctness,
+    # coverage honesty counts, idempotence, JSON schema, no-history raw_fallback.
+    # Triggers on engine/flow_cohorts.py, scripts/build_flow_desk.py,
+    # templates/flow_desk.html.j2, and the test file.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: flow-cohorts unit tests
+        run: python -m pytest tests/test_flow_cohorts.py -q
 
   house-law-registry:
     # Meta-guard: verifies config/house_law_checks.yml is complete and honest.

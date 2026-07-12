@@ -43,6 +43,20 @@
   .spark-wrap { height:64px; position:relative; margin-top:10px; }
   #fd-spark { width:100%; height:64px; }
 
+  /* ── Cohorts Strip (FL-B) ─────────────────────────────────────── */
+  .cohorts-strip { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:0; }
+  .cohort-tile { flex:1 1 150px; min-width:140px; max-width:240px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 14px; }
+  .cohort-tile .c-name { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:var(--muted); margin-bottom:4px; }
+  .cohort-tile .c-gross { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; margin-bottom:3px; }
+  .cohort-tile .c-chips { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:5px; }
+  .cohort-tile .c-detail { font-size:11px; color:var(--muted); line-height:1.4; }
+  .cohort-tile .c-coverage { font-size:10px; color:var(--muted); margin-top:4px; }
+  /* tone chips for cohorts */
+  .ch-call { color:var(--up); border-color:var(--up); }
+  .ch-put  { color:var(--down); border-color:var(--down); }
+  .ch-bal  { color:var(--muted); border-color:var(--muted); }
+  .cohorts-footer { font-size:11px; color:var(--muted); margin-top:7px; font-style:italic; }
+
   /* ── Sector Heatmap ────────────────────────────────────────────── */
   .hm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
   .hm-cell { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; position:relative; }
@@ -114,6 +128,7 @@
 
 {% set fd = flow_desk %}
 {% set tide = fd.market_tide if fd else {} %}
+{% set cohorts = fd.cohorts if fd else [] %}
 {% set heatmap = fd.sector_heatmap if fd else [] %}
 {% set top = fd.top_movers if fd else [] %}
 {% set etf = fd.etf_tile if fd else None %}
@@ -174,6 +189,63 @@
   </div>
   {% endif %}
 </div>
+
+<!-- Section 1b: Cohorts Strip (FL-B) — Mag7 / Memory / AI chips / Software -->
+{% if cohorts %}
+<div class="panel">
+  <h2>{{ t('Cohorts', '主题群组') }}
+    {{ help(
+      'Options flow by thematic cohort — crosses GICS lines. Gross premium is a solid magnitude read. P/C ratio is volume-weighted across covered members. Net tone is SOFT (minute tick-rule direction approx). Percentile vs own cohort history where ≥20 sessions (raw below threshold).',
+      '按主题群组分类的期权资金流 — 跨越GICS行业边界。名义权利金为可靠量级指标。P/C为成交量加权。净向为软性近似（逐分钟打单签名）。有≥20个交易日历史时显示百分位（否则显示原始值）。'
+    ) }}
+  </h2>
+  <div class="cohorts-strip">
+    {% for c in cohorts %}
+    {# P/C tone: call-tilted / put-tilted / balanced (solid magnitude read) #}
+    {% set pc_cls = 'ch-call' if c.pc_tone == 'call-tilted' else ('ch-put' if c.pc_tone == 'put-tilted' else 'ch-bal') %}
+    {% set net_cls = 'tone-pos' if c.net_tone == 'pos~' else ('tone-neg' if c.net_tone == 'neg~' else 'tone-neu') %}
+    <div class="cohort-tile"
+         data-tip-en="{{ c.name_en }} — net premium ~{{ '+' if c.net_premium_mn and c.net_premium_mn > 0 else '' }}{{ '%.0f'|format(c.net_premium_mn) if c.net_premium_mn is not none else '—' }}M (direction approx); 0DTE {{ '%.0f'|format(c.zerodte_share * 100) if c.zerodte_share is not none else '—' }}%; {{ c.coverage_label }}; asof {{ c.asof if c.asof else '—' }}"
+         data-tip-zh="{{ c.name_zh }} — 净权利金~{{ '+' if c.net_premium_mn and c.net_premium_mn > 0 else '' }}{{ '%.0f'|format(c.net_premium_mn) if c.net_premium_mn is not none else '—' }}M（方向近似）；0DTE {{ '%.0f'|format(c.zerodte_share * 100) if c.zerodte_share is not none else '—' }}%；{{ c.coverage_label }}；截至{{ c.asof if c.asof else '—' }}">
+      <div class="c-name">
+        <span class="l-en">{{ c.name_en }}</span><span class="l-zh">{{ c.name_zh }}</span>
+      </div>
+      <div class="c-gross">
+        {% if c.gross_premium_mn is not none %}${{ "%.0f"|format(c.gross_premium_mn) }}M{% else %}<span class="muted">—</span>{% endif %}
+      </div>
+      <div class="c-chips">
+        {# P/C chip — solid read #}
+        <span class="tone-chip {{ pc_cls }}">
+          {% if c.pc_tone == 'call-tilted' %}{{ t('call-tilted', '偏多') }}
+          {% elif c.pc_tone == 'put-tilted' %}{{ t('put-tilted', '偏空') }}
+          {% else %}{{ t('balanced', '均衡') }}{% endif %}
+        </span>
+        {# Net tone chip — soft/approx #}
+        <span class="tone-chip {{ net_cls }}">
+          {% if c.net_tone == 'pos~' %}{{ t('net+~', '净+~') }}
+          {% elif c.net_tone == 'neg~' %}{{ t('net-~', '净-~') }}
+          {% else %}{{ t('net≈0~', '净≈0~') }}{% endif %}
+          <span class="soft-tag">~</span>
+        </span>
+        {# Percentile badge or raw fallback #}
+        {% if c.raw_fallback %}
+          <span class="z-badge z-raw">{{ t('raw', '原始') }}</span>
+        {% elif c.gross_pct is not none %}
+          <span class="z-badge {% if c.gross_pct > 75 %}z-hi{% elif c.gross_pct < 25 %}z-lo{% else %}z-neu{% endif %}">{{ "%.0f"|format(c.gross_pct) }}{{ t('th pct', 'th') }}</span>
+        {% endif %}
+      </div>
+      <div class="c-coverage xs muted">{{ c.coverage_label if c.coverage_label else '' }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="cohorts-footer">
+    {{ t(
+      'Options tape by group — size and call/put mix are solid reads; buy-vs-sell direction is approximate.',
+      '按群组的期权流量 — 规模与看涨/看跌比例为可靠指标；买卖方向为近似值。'
+    ) }}
+  </div>
+</div>
+{% endif %}
 
 <!-- Section 2: Sector Heatmap -->
 <div class="panel">
