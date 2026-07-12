@@ -411,6 +411,8 @@ class TestCopyFields:
         result = LD.compute(closes_map={}, cohort=[], as_of="2026-07-11")
         assert result.get("study_n") == 15
         assert result.get("study_hsi_fwd40_mean") == pytest.approx(-1.73, abs=0.001)
+        # HKRV-R3 honest framing: the cohort's own forward return rides with the null
+        assert result.get("study_cohort_fwd60_mean") == pytest.approx(4.9, abs=0.001)
         assert isinstance(result.get("study_note"), str) and len(result["study_note"]) > 0
 
 

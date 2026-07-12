@@ -33,7 +33,9 @@ def _make_leadership(state: str = "leaders_participating",
                      n_above: int = 8, n_total: int = 10,
                      broad_breadth_pct: float | None = 21.6,
                      study_n: int = 15,
-                     study_hsi_fwd40_mean: float = -1.73) -> dict:
+                     study_hsi_fwd40_mean: float = -1.73,
+                     breadth_confirming: bool = False,
+                     study_cohort_fwd60_mean: float | None = 4.9) -> dict:
     """Build a synthetic leadership dict."""
     members = []
     for i in range(n_total):
@@ -48,15 +50,24 @@ def _make_leadership(state: str = "leaders_participating",
         "cohesion_now": n_above / n_total if n_total > 0 else 0.0,
         "cohesion_10d_ago": 0.0,
         "broad_breadth_pct": broad_breadth_pct,
-        "breadth_confirming": False,
+        "breadth_confirming": breadth_confirming,
         "members": members,
         "display_only": True,
         "copy_en": "Leaders are participating.",
         "copy_zh": "龙头正在参与。",
         "study_n": study_n,
         "study_hsi_fwd40_mean": study_hsi_fwd40_mean,
+        "study_cohort_fwd60_mean": study_cohort_fwd60_mean,
         "study_note": "Study B: test note.",
     }
+
+
+def _banner_block(html: str) -> str:
+    """Slice out the rendered banner block (banner start → action grid)."""
+    start = html.find("hkrv-banner-a")
+    end = html.find("act-grid", start)
+    assert start != -1, "banner block not found in rendered HTML"
+    return html[start:end if end != -1 else None]
 
 
 def _make_actions(with_confirming: bool = False) -> dict:
@@ -354,3 +365,78 @@ def test_template_parses_without_syntax_error():
     env = Environment(autoescape=False)
     # Should not raise
     env.parse(src)
+
+
+# ---------------------------------------------------------------------------
+# (12) Two-tier ladder: breadth-confirmed tier (upgrade fix)
+# ---------------------------------------------------------------------------
+
+def test_confirmed_tier_renders_upgrade_copy():
+    """breadth_confirming=True must swap title, body, and stance to the confirmed tier."""
+    ldr = _make_leadership(breadth_confirming=True, broad_breadth_pct=38.0)
+    html = _render(_make_setups(ldr))
+    block = _banner_block(html)
+    assert "Broad market joining in" in block, "Confirmed-tier title must render"
+    assert "大盘跟进中" in block, "ZH confirmed-tier title must render"
+    assert "broad breadth is now confirming" in block, "Confirmed-tier body must render"
+    assert "Get ready" in block, "Confirmed-tier stance chip must be 'Get ready'"
+    assert "准备就绪" in block, "ZH confirmed-tier stance must render"
+    # Unconfirmed copy must be gone everywhere in the banner
+    assert "hasn't confirmed yet" not in block
+    assert "Leaders moving first" not in block
+    assert "Watch — don't chase" not in block
+    # Pop-over broad-market row flips to confirming
+    assert "— confirming." in block
+    assert "not confirmed" not in block
+
+
+def test_unconfirmed_tier_keeps_ratified_copy():
+    """breadth_confirming=False keeps the original ratified tier untouched."""
+    ldr = _make_leadership(breadth_confirming=False, broad_breadth_pct=22.0)
+    html = _render(_make_setups(ldr))
+    block = _banner_block(html)
+    assert "Leaders moving first" in block
+    assert "hasn't confirmed yet" in block
+    assert "Watch — don't chase" in block
+    assert "Broad market joining in" not in block
+    assert "Get ready" not in block
+
+
+# ---------------------------------------------------------------------------
+# (13) HKRV-R3 honest framing: cohort own-return on Tier 1 + Tier 2
+# ---------------------------------------------------------------------------
+
+def test_cohort_framing_footer_on_unconfirmed_tier():
+    """Unconfirmed tier prints the plain-word Study B line (leaders climbed, index didn't)."""
+    ldr = _make_leadership(breadth_confirming=False)
+    html = _render(_make_setups(ldr))
+    block = _banner_block(html)
+    assert "the leaders themselves kept climbing" in block
+    assert "龙头自身持续上涨" in block
+
+
+def test_cohort_framing_footer_absent_on_confirmed_tier():
+    """Confirmed tier omits the leaders-first footer (episode framing no longer applies)."""
+    ldr = _make_leadership(breadth_confirming=True)
+    html = _render(_make_setups(ldr))
+    block = _banner_block(html)
+    assert "kept climbing while the broad index went nowhere" not in block
+
+
+def test_popover_history_includes_cohort_return():
+    """Tier-2 history row prints the cohort's own +4.9%/60d next to the index null."""
+    ldr = _make_leadership(study_cohort_fwd60_mean=4.9)
+    html = _render(_make_setups(ldr))
+    block = _banner_block(html)
+    assert "+4.9" in block, "cohort own forward return must appear in the history row"
+    assert "-1.7" in block, "index null must still be printed (R3)"
+
+
+def test_graceful_without_cohort_field():
+    """Old artifacts without study_cohort_fwd60_mean render the original history row, no footer."""
+    ldr = _make_leadership(study_cohort_fwd60_mean=None)
+    html = _render(_make_setups(ldr))
+    block = _banner_block(html)
+    assert 'id="hkrv-banner-a"' in html
+    assert "the leaders themselves kept climbing" not in block
+    assert "the broad index did not follow" in block, "fallback history sentence must render"

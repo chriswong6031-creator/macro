@@ -402,10 +402,13 @@ def _empty_result() -> dict[str, Any]:
         "copy_zh":            "龙头股整体参与度偏弱，暂未出现普涨信号。",
         "study_n":            15,
         "study_hsi_fwd40_mean": -1.73,
+        "study_cohort_fwd60_mean": 4.9,
         "study_note": (
             "Study B: 15 prior cohesion-thrust events on the HSI large-cap cohort "
             "(2018–2025); mean HSI forward 40-session return = -1.73% (leaders "
-            "outperformed broad index in 11/15 episodes). Display-only accrual; "
+            "outperformed broad index in 11/15 episodes); cohort's own mean forward "
+            "60-session return = +4.9% — the historical expression is the leaders, "
+            "not the index (HKRV-R3 honest framing). Display-only accrual; "
             "not a validated promotable signal."
         ),
     }
@@ -560,10 +563,13 @@ def _compute_inner(
         "copy_zh":            copy_zh,
         "study_n":            15,
         "study_hsi_fwd40_mean": -1.73,
+        "study_cohort_fwd60_mean": 4.9,
         "study_note": (
             "Study B: 15 prior cohesion-thrust events on the HSI large-cap cohort "
             "(2018–2025); mean HSI forward 40-session return = -1.73% (leaders "
-            "outperformed broad index in 11/15 episodes). Display-only accrual; "
+            "outperformed broad index in 11/15 episodes); cohort's own mean forward "
+            "60-session return = +4.9% — the historical expression is the leaders, "
+            "not the index (HKRV-R3 honest framing). Display-only accrual; "
             "not a validated promotable signal."
         ),
     }
