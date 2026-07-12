@@ -2021,6 +2021,14 @@ def _compose_liquidity_plumbing(root: "Path | str | None" = None) -> dict:
             "tga_chg_20d_bn": _clean(treasury.get("tga_chg_20d_bn")),
             "net_issuance_20d_bn": _clean(treasury.get("net_issuance_20d_bn")),
             "treasury_asof": _clean(treasury.get("asof")),
+            # RLT-R4: TGA impulse forwarding (lean: key fields only, display/context tier)
+            "tga_impulse_active": _clean((treasury.get("tga_impulse") or {}).get("active")),
+            "tga_impulse_direction": _clean((treasury.get("tga_impulse") or {}).get("direction")),
+            "tga_impulse_magnitude_bn": _clean((treasury.get("tga_impulse") or {}).get("magnitude_bn")),
+            "tga_impulse_since": _clean((treasury.get("tga_impulse") or {}).get("since")),
+            "tga_impulse_quarter_end_adjacent": _clean((treasury.get("tga_impulse") or {}).get("quarter_end_adjacent")),
+            "tga_impulse_summary_en": _clean((treasury.get("tga_impulse") or {}).get("summary_en")),
+            "tga_impulse_summary_zh": _clean((treasury.get("tga_impulse") or {}).get("summary_zh")),
             # Entry effect (context/entry-quality authority only)
             "entry_effect_direction": _clean(entry_effect.get("direction")),
             "entry_effect_quality": _clean(entry_effect.get("quality")),
