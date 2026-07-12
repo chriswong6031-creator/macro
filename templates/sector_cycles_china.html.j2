@@ -155,6 +155,8 @@ function injectChipsCn(payload){
                 :'⟲ out→'+(ev.to_leg.name_en)+' day '+ev.day_n)
       :(isZh()?'⟲ 轮入自 '+(ev.from_leg.name_zh||ev.from_leg.name_en)+' 第'+ev.day_n+'天'
                 :'⟲ in from '+(ev.from_leg.name_en)+' day '+ev.day_n);
+    var prev=card.querySelector('.rc-cn-chip');
+    if(prev) prev.remove();
     var chip=document.createElement('a');
     chip.className='rc-cn-chip';
     chip.href='subsector_rotation_china.html#rc-events-cn';
@@ -177,7 +179,6 @@ function waitAndInject(){
   if(_injTries++<20) setTimeout(waitAndInject,300);
 }
 waitAndInject();
-document.documentElement.addEventListener('data-lang-changed',tryInject);
 var _obs=new MutationObserver(function(){tryInject();});
 _obs.observe(document.documentElement,{attributes:true,attributeFilter:['data-lang']});
 })();
