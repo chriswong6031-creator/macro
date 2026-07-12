@@ -558,7 +558,7 @@ def _compose_rotation_events(root: "Path | str | None" = None) -> dict:
     Follows the _compose_cycle_pattern discipline exactly:
     - All data loading is internal to this function (RULING-B).
     - Every value passed through _clean().
-    - Returns _display_only({...}) unconditionally.
+    - display_only=True stamped unconditionally on every return path.
     - Absent or unreadable file returns the null-filled fallback dict.
     - The wiring site in build_world_state() wraps the call in try/except.
 
@@ -586,6 +586,9 @@ def _compose_rotation_events(root: "Path | str | None" = None) -> dict:
         active = payload.get("active") or []
         if not isinstance(active, list):
             active = []
+        # Non-dict rows would raise inside the sort key and abort the whole
+        # compose into a self-contradictory n_active>0/events=None state.
+        active = [e for e in active if isinstance(e, dict)]
         out["n_active"] = _clean(len(active))
 
         # Sort worst-first: severity major(0) < notable(1) < standard(2),

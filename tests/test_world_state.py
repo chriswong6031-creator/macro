@@ -1234,7 +1234,7 @@ def test_rulnw2_artifact_display_only_false_is_coerced(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Tests 25–27: rotation_events world_state lobe (RC deep-integration)
+# Tests 25–31: rotation_events world_state lobe (RC deep-integration)
 # ---------------------------------------------------------------------------
 
 def _write_rotation_events_artifact(tmp_path: Path, n_active: int = 3) -> None:
@@ -1400,3 +1400,49 @@ def test_rotation_events_in_build_world_state_payload(tmp_path):
     assert lobe.get("display_only") is True, (
         f"rotation_events lobe missing display_only=True, got: {lobe!r}"
     )
+
+
+def test_compose_rotation_events_newest_started_within_severity(tmp_path):
+    """Test 30: within one severity tier, newer started dates come first."""
+    import json as _json
+    site_md = tmp_path / "site" / "marketdata"
+    site_md.mkdir(parents=True, exist_ok=True)
+    def _evt(key, started):
+        return {
+            "sector": "xlk", "sector_name_en": "Technology",
+            "from_leg": {"key": key, "name_en": key},
+            "to_leg": {"key": key + "_to", "name_en": key},
+            "started": started, "day_n": 1, "severity": "notable",
+            "confirmed_tonight": True,
+        }
+    payload = {"as_of": "2026-07-10",
+               "active": [_evt("old", "2026-07-01"), _evt("new", "2026-07-09"),
+                          _evt("mid", "2026-07-05")]}
+    (site_md / "rotation_events.json").write_text(_json.dumps(payload))
+
+    from engine.neuralweb.world_state import _compose_rotation_events
+    lobe = _compose_rotation_events(root=tmp_path)
+    assert [e["from_leg"]["key"] for e in lobe["events"]] == ["new", "mid", "old"]
+
+
+def test_compose_rotation_events_non_dict_rows_fail_open(tmp_path):
+    """Test 31: non-dict rows in `active` are dropped, not fatal to the compose."""
+    import json as _json
+    site_md = tmp_path / "site" / "marketdata"
+    site_md.mkdir(parents=True, exist_ok=True)
+    good = {
+        "sector": "xlk", "sector_name_en": "Technology",
+        "from_leg": {"key": "a", "name_en": "A"},
+        "to_leg": {"key": "b", "name_en": "B"},
+        "started": "2026-07-01", "day_n": 2, "severity": "major",
+        "confirmed_tonight": True,
+    }
+    payload = {"as_of": "2026-07-10", "active": [42, good, None, "junk"]}
+    (site_md / "rotation_events.json").write_text(_json.dumps(payload))
+
+    from engine.neuralweb.world_state import _compose_rotation_events
+    lobe = _compose_rotation_events(root=tmp_path)
+    assert lobe["display_only"] is True
+    assert lobe["n_active"] == 1
+    assert len(lobe["events"]) == 1
+    assert lobe["events"][0]["from_leg"]["key"] == "a"
