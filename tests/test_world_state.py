@@ -617,17 +617,20 @@ def test_full_composition_shape(tmp_path):
     # (R5 factor_weather rotation enrichment was withdrawn at rebase — it collided
     # with the factor-intel program's RUL-NW2 canonical-artifact ruling, #1589.)
 
-    # No gaps from a full tree.  Three categories of expected absences are filtered:
+    # No gaps from a full tree.  Four categories of expected absences are filtered:
     # 1. contradictions/ gaps — W4 display-only optional inputs not in this fixture.
     # 2. liquidity_plumbing gap — artifact produced by scripts/build_liquidity_plumbing.py
     #    (ENGINE builder lane); not present in the minimal fixture tree by design.
     # 3. thematic_state gap — artifact produced by scripts/build_thematic_state.py
     #    (ENGINE builder lane); not present in the minimal fixture tree by design.
+    # 4. rebalance_pulse gap — artifact produced by scripts/build_rebalance_pulse.py
+    #    (RLT-R2, nightly cadence); not present in the minimal fixture tree by design.
     non_contra_gaps = [
         g for g in payload["gaps"]
         if not g.startswith("contradictions/")
         and "liquidity_plumbing" not in g
         and "theme_state" not in g
+        and "rebalance_pulse" not in g
     ]
     assert non_contra_gaps == [], f"unexpected non-contradictions gaps: {non_contra_gaps}"
 
