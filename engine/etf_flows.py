@@ -255,7 +255,9 @@ def _z60_causal(s: pd.Series) -> pd.Series:
     roll = s.rolling(window=60, min_periods=2)
     mu = roll.mean()
     sigma = roll.std(ddof=1)
-    return ((s - mu) / sigma.replace(0, pd.NA)).rename("flow_z60")
+    # Use .where() not .replace(0, pd.NA) — the latter forces object dtype
+    # (pd.NA is not a float sentinel); .where keeps the result as float64.
+    return ((s - mu) / sigma.where(sigma != 0)).rename("flow_z60")
 
 
 def broad_flows_wide(tickers: tuple[str, ...] = BROAD_ETFS,
@@ -298,23 +300,25 @@ def rebuild_broad(tickers: tuple[str, ...] = BROAD_ETFS,
     _fdir = flows_dir or _FLOWS_DIR
     _ppath = proxy_path or _BROAD_PROXY_PATH
 
-    wide = broad_flows_wide(tickers, _flows_dir=_fdir)
-    if wide is None:
-        log.warning("etf_flows: no broad SO data found — skipping broad proxy build")
-        return None
-
-    # Melt wide → long and compute per-ticker causal z60
+    # Build per-ticker chunks directly from each ticker's own source index to
+    # avoid the outer-join phantom-NaN problem: pd.DataFrame(cols) aligns all
+    # tickers onto the UNION of their dates, emitting NaN-filled phantom rows
+    # for dates a ticker never reported.  Instead we derive flow+z60 from each
+    # ticker's raw SO frame independently so every emitted row has a real
+    # observation (see review ruling RLT-R3).
     records = []
-    for col in wide.columns:
-        ticker = col.replace("_flow_mn", "")
-        s = wide[col].rename("flow_mn")
+    for t in tickers:
+        df = _load_so(t, flows_dir=_fdir)
+        if df is None or len(df) < 2:
+            continue
+        s = _derive_flow_guarded(df, ticker=t).rename("flow_mn")
         z = _z60_causal(s)
-        chunk = pd.DataFrame({"date": s.index, "ticker": ticker,
+        chunk = pd.DataFrame({"date": s.index, "ticker": t,
                                "flow_mn": s.values, "flow_z60": z.values})
         records.append(chunk)
 
     if not records:
-        log.warning("etf_flows: broad_flows_wide returned empty — skipping")
+        log.warning("etf_flows: no broad SO data found — skipping broad proxy build")
         return None
 
     new_df = pd.concat(records, ignore_index=True)

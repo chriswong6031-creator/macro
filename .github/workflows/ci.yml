@@ -325,6 +325,12 @@ on:
       - "tests/test_fred_alias_collision.py"
       - "tests/test_cb_calendar.py"
       - "tests/test_liquidity_plumbing.py"
+      # RLT-R3 broad-market index ETF creation/redemption proxy (belt-and-suspenders):
+      # a future PR touching engine/etf_flows.py or collectors/sponsors.py alone
+      # (without ci.yml) must still retrigger the broad-etf-flows job.
+      - "engine/etf_flows.py"
+      - "collectors/sponsors.py"
+      - "tests/test_broad_etf_flows.py"
   workflow_dispatch:
 
 permissions:

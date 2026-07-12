@@ -249,6 +249,15 @@ def test_rebuild_broad_schema(tmp_path):
     assert pd.api.types.is_datetime64_any_dtype(df["date"])
     # Both tickers present
     assert set(df["ticker"].unique()) == {"SPY", "QQQ"}
+    # dtype contract: flow_mn and flow_z60 must be float64 (not object).
+    # pd.NA injected via .replace(0, pd.NA) forces object dtype — guard against
+    # regression (review blocking item #2, RLT-R3).
+    assert df["flow_mn"].dtype == np.float64, (
+        f"flow_mn dtype must be float64, got {df['flow_mn'].dtype}"
+    )
+    assert df["flow_z60"].dtype == np.float64, (
+        f"flow_z60 dtype must be float64, got {df['flow_z60'].dtype}"
+    )
 
 
 def test_rebuild_broad_z60_is_causal(tmp_path):
@@ -297,6 +306,47 @@ def test_rebuild_broad_upsert_new_ticker(tmp_path):
     assert set(df["ticker"].unique()) >= {"SPY", "QQQ"}
     spy_rows = df[df["ticker"] == "SPY"]
     assert len(spy_rows) == 3, f"SPY rows should be preserved; got {len(spy_rows)}"
+
+
+def test_rebuild_broad_no_phantom_rows_disjoint_histories(tmp_path):
+    """Disjoint ticker histories must not emit phantom NaN rows for each other.
+
+    Regression test for the outer-join phantom-NaN issue (review blocking #1,
+    RLT-R3): SPY with data on 06-02..06-04 and QQQ with data on 06-10..06-12
+    must NOT produce phantom SPY rows on QQQ dates or vice versa.
+    """
+    spy_rows = [
+        {"date": pd.Timestamp("2026-06-02"), "nav": 400.0, "aum_mn": 40000.0, "so_mn": 100.0},
+        {"date": pd.Timestamp("2026-06-03"), "nav": 400.0, "aum_mn": 40400.0, "so_mn": 101.0},
+        {"date": pd.Timestamp("2026-06-04"), "nav": 400.0, "aum_mn": 40800.0, "so_mn": 102.0},
+    ]
+    qqq_rows = [
+        {"date": pd.Timestamp("2026-06-10"), "nav": 470.0, "aum_mn": 47000.0, "so_mn": 100.0},
+        {"date": pd.Timestamp("2026-06-11"), "nav": 470.0, "aum_mn": 47470.0, "so_mn": 101.0},
+        {"date": pd.Timestamp("2026-06-12"), "nav": 470.0, "aum_mn": 47940.0, "so_mn": 102.0},
+    ]
+    _make_so_file(tmp_path, "SPY", spy_rows)
+    _make_so_file(tmp_path, "QQQ", qqq_rows)
+    proxy_path = tmp_path / "broad_flow_proxy.parquet"
+    rebuild_broad(tickers=("SPY", "QQQ"), flows_dir=tmp_path, proxy_path=proxy_path)
+
+    df = pd.read_parquet(proxy_path)
+    spy_df = df[df["ticker"] == "SPY"]
+    qqq_df = df[df["ticker"] == "QQQ"]
+
+    # SPY must have exactly 3 rows (its own dates only, not QQQ's dates)
+    assert len(spy_df) == 3, (
+        f"SPY must have 3 rows (no phantom rows from QQQ dates); got {len(spy_df)}"
+    )
+    # QQQ must have exactly 3 rows (its own dates only, not SPY's dates)
+    assert len(qqq_df) == 3, (
+        f"QQQ must have 3 rows (no phantom rows from SPY dates); got {len(qqq_df)}"
+    )
+    # SPY dates must only be within its own history
+    spy_dates = set(spy_df["date"].dt.date.astype(str))
+    assert spy_dates <= {"2026-06-02", "2026-06-03", "2026-06-04"}, (
+        f"SPY has dates outside its history: {spy_dates}"
+    )
 
 
 # ── load_broad_proxy ──────────────────────────────────────────────────────────
