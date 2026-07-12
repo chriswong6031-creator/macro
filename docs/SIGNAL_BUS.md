@@ -25,7 +25,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | entry-stack-expansion | 2 |
 | factor-intelligence | 5 |
 | fast-turn | 4 |
-| flow-continuity | 2 |
+| flow-continuity | 3 |
 | flow-leaders-desk | 2 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
@@ -81,7 +81,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 237 |
+| display | 238 |
 | infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
@@ -90,7 +90,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 378 |
+| git | 379 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -259,6 +259,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | options-flow-cohorts-json | `site/flowdata/cohorts.json` | json | collect | display | 1 | 0 |
 | options-flow-cohorts-parquet | `data/options_flow/cohorts_*.parquet` | parquet | collect | display | 1 | 0 |
+| cohort-flow-ledger | `data/cohort_flow_ledger/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
 ### flow-leaders-desk
 

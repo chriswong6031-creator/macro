@@ -8,18 +8,29 @@ thetadata_eod store.  Writes a small git-tracked JSON:
 Format: {ROOT: {mean, std, n_obs, computed_asof}, ...}
 
 This is a DISPLAY-TIER heuristic denominator (labeled "eod252") for the live
-flow feed's unusual-name z-scores.  It is NOT a validated edge.  Roots with
-fewer than MIN_SESSIONS complete sessions produce no entry (z labeled "none" in
-the feed).
+flow feed's unusual-name z-scores.  These are also the "prem baselines" that
+enable prem_z for single names (Mag7, memory-storage, etc.) — not just ETFs.
+It is NOT a validated edge.  Roots with fewer than MIN_SESSIONS complete
+sessions produce no entry (z labeled "none" in the feed).
+
+FC-R7 (FLOW_CONTINUITY_MASTERPLAN): extended from 18 ETF roots to the full
+poll universe (~375 roots) with chunked, bounded-memory processing.
 
 NEVER writes into data/tape_flow — that is a separate, mixed-source store.
 
+Memory safety: each root is processed independently; data is freed after each
+root.  The 46GB-pandas-freeze hazard (see memory notes in CLAUDE.md) is
+avoided because we stream one root at a time.
+
 Usage:
-    # Run for the 21 ETF anchors (default)
+    # Run for the 22 ETF anchors (default — unchanged behaviour)
     python -m scripts.build_live_flow_baselines
 
+    # Run for the full live-poller universe (Mag7 + memory names + long tail)
+    python -m scripts.build_live_flow_baselines --poll-universe
+
     # Run for specific roots
-    python -m scripts.build_live_flow_baselines --roots SPY QQQ KRE
+    python -m scripts.build_live_flow_baselines --roots SPY QQQ KRE NVDA META
 
     # Run for all roots in the thetadata_eod store
     python -m scripts.build_live_flow_baselines --all
@@ -30,6 +41,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import logging
 import sys
@@ -40,6 +52,7 @@ import numpy as np
 import pandas as pd
 
 from lib import config
+from lib.procutil import hard_exit
 
 log = logging.getLogger(__name__)
 
@@ -49,12 +62,41 @@ MIN_SESSIONS = 120
 # Output path (git-tracked)
 BASELINES_PATH = "live_flow_baselines/baselines.json"
 
-# Default ETF anchors (21 from build_tape_flow + DIA)
+# Default ETF anchors (22: 21 from build_tape_flow + DIA)
 DEFAULT_ANCHORS = [
     "SPY", "QQQ", "IWM", "GLD", "SLV", "TLT", "HYG", "XLF", "XLE",
     "XLU", "XLK", "XLV", "XLI", "XLB", "XLY", "XLP", "XLRE",
     "KRE", "SMH", "XBI", "ARKK", "DIA",
 ]
+
+# FC-R7: full live-poller universe (Mag7 + memory-storage + the ETF anchors above).
+# These are the "prem baselines" — enables prem_z for single names, not just ETFs.
+# Use --poll-universe to run for this set.
+POLL_UNIVERSE_ANCHORS = [
+    # ETF anchors (same as DEFAULT_ANCHORS)
+    "SPY", "QQQ", "IWM", "GLD", "SLV", "TLT", "HYG", "XLF", "XLE",
+    "XLU", "XLK", "XLV", "XLI", "XLB", "XLY", "XLP", "XLRE",
+    "KRE", "SMH", "XBI", "ARKK", "DIA",
+    # Mag7 (prem_z previously null for all of these)
+    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA",
+    # Memory-storage (FC-R7 explicit requirement)
+    "MU", "WDC", "STX", "SNDK",
+    # High-premium single names commonly in top-40
+    "AMD", "INTC", "QCOM", "AVGO", "ARM", "AMAT", "LRCX", "KLAC", "MRVL",
+    "PLTR", "COIN", "MSTR", "RBLX", "SNAP", "LYFT", "UBER", "ABNB",
+    "GS", "JPM", "BAC", "MS", "C", "WFC",
+    "XOM", "CVX", "OXY", "SLB",
+    "BA", "CAT", "GE", "RTX",
+    "UNH", "LLY", "PFE", "MRNA", "BNTX",
+    "AMGN", "GILD", "REGN",
+    "NFLX", "DIS", "CMCSA",
+    "SHOP", "SQ", "PYPL",
+    "F", "GM", "RIVN",
+    "BTC-USD",  # will silently skip if absent in store
+]
+
+# Chunk size for bounded-memory processing (roots per batch)
+CHUNK_SIZE = 25
 
 
 def _store_root() -> Path:
@@ -154,8 +196,11 @@ def compute_baseline(root: str) -> dict | None:
     }
 
 
-def run(roots: list[str], dry_run: bool = False) -> dict:
+def run(roots: list[str], dry_run: bool = False, chunk_size: int = CHUNK_SIZE) -> dict:
     """Compute baselines for given roots and write/merge into baselines.json.
+
+    FC-R7: processes roots in chunks of chunk_size to bound memory usage.
+    Each root's DataFrame is freed after processing (gc.collect per chunk).
 
     Returns the full updated baselines dict.
     """
@@ -163,18 +208,27 @@ def run(roots: list[str], dry_run: bool = False) -> dict:
     updated = dict(existing)
 
     n_ok = n_skip = n_err = 0
-    for root in roots:
-        root = root.upper()
-        try:
-            result = compute_baseline(root)
-            if result is None:
-                n_skip += 1
-            else:
-                updated[root] = result
-                n_ok += 1
-        except Exception as e:  # noqa: BLE001
-            log.error("baselines: error for %s: %s", root, e)
-            n_err += 1
+    n_roots = len(roots)
+    log.info("baselines: processing %d roots in chunks of %d", n_roots, chunk_size)
+
+    for chunk_start in range(0, n_roots, chunk_size):
+        chunk = roots[chunk_start: chunk_start + chunk_size]
+        log.info("baselines: chunk %d-%d / %d",
+                 chunk_start + 1, chunk_start + len(chunk), n_roots)
+        for root in chunk:
+            root = root.upper()
+            try:
+                result = compute_baseline(root)
+                if result is None:
+                    n_skip += 1
+                else:
+                    updated[root] = result
+                    n_ok += 1
+            except Exception as e:  # noqa: BLE001
+                log.error("baselines: error for %s: %s", root, e)
+                n_err += 1
+        # Release memory between chunks
+        gc.collect()
 
     log.info("baselines: done — ok=%d skip=%d err=%d, total_roots=%d",
              n_ok, n_skip, n_err, len(updated))
@@ -198,11 +252,20 @@ def main(argv: list[str] | None = None) -> int:
     )
     root_grp = parser.add_mutually_exclusive_group()
     root_grp.add_argument("--roots", nargs="+", metavar="ROOT",
-                          help="Specific roots to compute (e.g. SPY QQQ KRE)")
+                          help="Specific roots to compute (e.g. SPY QQQ KRE NVDA META)")
     root_grp.add_argument("--all", action="store_true",
                           help="All roots present in the thetadata_eod/eod/ store")
+    root_grp.add_argument("--poll-universe", action="store_true",
+                          help=(
+                              "FC-R7: full live-poller universe (ETF anchors + Mag7 + "
+                              "memory-storage names + high-premium singles); enables "
+                              "prem_z for single names, not just ETFs"
+                          ))
     parser.add_argument("--dry-run", action="store_true",
                         help="Print results without writing")
+    parser.add_argument("--chunk-size", type=int, default=CHUNK_SIZE,
+                        help=f"Roots per processing chunk (default {CHUNK_SIZE}); "
+                             "reduce to lower peak memory on large universes")
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args(argv)
 
@@ -215,15 +278,25 @@ def main(argv: list[str] | None = None) -> int:
         roots = _all_roots_in_store()
         if not roots:
             log.error("baselines: no roots found in %s", _store_root() / "eod")
+            hard_exit(1)
             return 1
+    elif args.poll_universe:
+        roots = [r.upper() for r in POLL_UNIVERSE_ANCHORS]
+        log.info("baselines: --poll-universe mode (%d roots, incl. Mag7 + memory names)",
+                 len(roots))
     elif args.roots:
         roots = [r.upper() for r in args.roots]
     else:
         roots = DEFAULT_ANCHORS
 
-    log.info("baselines: computing for %d roots, dry_run=%s", len(roots), args.dry_run)
-    run(roots, dry_run=args.dry_run)
-    return 0
+    log.info("baselines: computing for %d roots, dry_run=%s chunk_size=%d",
+             len(roots), args.dry_run, args.chunk_size)
+    run(roots, dry_run=args.dry_run, chunk_size=args.chunk_size)
+
+    # hard_exit required: parquet reads in _daily_gross_premium via thetadata_store
+    # can trigger PyArrow ThreadPool deadlock at interpreter shutdown.
+    hard_exit(0)
+    return 0  # unreachable but satisfies type checkers
 
 
 if __name__ == "__main__":

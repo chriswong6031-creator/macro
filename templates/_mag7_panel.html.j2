@@ -159,6 +159,7 @@
 {%- set tech_legs = d.tech_legs if d.tech_legs else [] -%}
 {%- set mags = d.mags if d.mags else {} -%}
 {%- set wb = d.weights_basis if d.weights_basis else 'polygon_mktcap' -%}
+{%- set flow = d.flow if d.flow else {} -%}
 
 {# build run descriptor: "day 11 · +9% since Jun 26 vs S&P +2%" #}
 {%- set run_days = run.sessions if run.sessions is defined else none -%}
@@ -284,6 +285,41 @@
       <span class="m7p-leg-word">{{ arr }} {{ wrd }}</span>
     </span>
     {%- endfor %}
+  </div>
+  {%- endif %}
+
+  {# ── FLOW CHIP (FC-R5 / FL-D) — absent when FL-B artifact not yet present ── #}
+  {%- if flow and flow.pc_word %}
+  {%- set flow_word = flow.pc_word %}
+  {%- set flow_tilt = flow.match_sessions if flow.match_sessions is defined and flow.match_sessions != none else (flow.tilt_sessions if flow.tilt_sessions is defined and flow.tilt_sessions != none else 0) %}
+  {%- set flow_gross = flow.gross_mn if flow.gross_mn is defined and flow.gross_mn != none else none %}
+  {%- set flow_pc = flow.pc_ratio if flow.pc_ratio is defined and flow.pc_ratio != none else none %}
+  {%- set flow_zdt = flow.zerodte_share if flow.zerodte_share is defined and flow.zerodte_share != none else none %}
+  {%- set flow_cov = flow.coverage if flow.coverage else '' %}
+  {%- set flow_asof = flow.asof if flow.asof else '' %}
+  {#- Glance-tier tilt label (plain-word only; banned: raw enum slugs) #}
+  {%- if flow_word == 'call_tilted' %}
+    {%- set flow_label_en = 'call-tilted' %}
+    {%- set flow_label_zh = '看涨期权偏重' %}
+  {%- elif flow_word == 'put_tilted' %}
+    {%- set flow_label_en = 'put-tilted' %}
+    {%- set flow_label_zh = '看跌期权偏重' %}
+  {%- else %}
+    {%- set flow_label_en = 'balanced' %}
+    {%- set flow_label_zh = '多空均衡' %}
+  {%- endif %}
+  {#- Hover receipt (Tier 2): gross, P/C, zerodte, coverage, direction disclaimer, as-of #}
+  {%- set flow_gross_str = ('$' ~ (flow_gross | round | int) ~ 'M gross') if flow_gross is not none else '—' %}
+  {%- set flow_pc_str = ('P/C ' ~ (flow_pc | round(2))) if flow_pc is not none else '—' %}
+  {%- set flow_zdt_str = ((flow_zdt * 100) | round(1) ~ '% 0-DTE') if flow_zdt is not none else '—' %}
+  {%- set flow_cov_str = ('coverage ' ~ flow_cov) if flow_cov else '' %}
+  {%- set flow_tip_en %}Options tape: {{ flow_label_en }} {{ flow_tilt }} of last 5 sessions. {{ flow_gross_str }} · {{ flow_pc_str }} · {{ flow_zdt_str }}{% if flow_cov_str %} · {{ flow_cov_str }}{% endif %}. Buy-vs-sell direction is approximate — size and call/put mix are the solid reads.{% if flow_asof %} As of {{ flow_asof }}.{% endif %}{%- endset %}
+  {%- set flow_tip_zh %}期权带状指标：过去5个交易日中{{ flow_tilt }}日{{ flow_label_zh }}。{{ flow_gross_str }} · {{ flow_pc_str }} · {{ flow_zdt_str }}{% if flow_cov_str %} · {{ flow_cov_str }}{% endif %}。买卖方向仅供参考 — 规模与看涨/看跌期权比例是更可靠的读数。{% if flow_asof %} 截至 {{ flow_asof }}。{% endif %}{%- endset %}
+  <div class="m7p-flow-chip">
+    <span class="m7p-flow-inner" data-tip-en="{{ flow_tip_en | e }}" data-tip-zh="{{ flow_tip_zh | e }}">
+      <span class="l-en">Options tape: {{ flow_label_en }} {{ flow_tilt }} of last 5 days ~</span>
+      <span class="l-zh">期权带：{{ flow_label_zh }} {{ flow_tilt }}/5日 ~</span>
+    </span>
   </div>
   {%- endif %}
 
