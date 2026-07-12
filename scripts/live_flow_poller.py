@@ -115,8 +115,17 @@ PINNED_PUBLISH_ROOTS = [
     "MU", "WDC", "STX", "SNDK",
 ]
 
-# Daily summary output dir (FC-R8)
+# FC-R8: daily summary (DEFAULT OFF — new production write, operator must opt-in).
+# Enable via env: LIVE_FLOW_DAILY_SUMMARY=1
+# When enabled: writes data/live_flow_daily/YYYY-MM-DD.json each cycle (idempotent)
+# and uploads to R2 as live_flow_daily/<date>.json (permanent, outside 48h prune scope).
+DAILY_SUMMARY_ENV = "LIVE_FLOW_DAILY_SUMMARY"
 DAILY_SUMMARY_DIR = "live_flow_daily"
+
+
+def _daily_summary_enabled() -> bool:
+    """True iff LIVE_FLOW_DAILY_SUMMARY=1.  Default OFF (production safe)."""
+    return os.environ.get(DAILY_SUMMARY_ENV, "0").strip() == "1"
 
 
 # ── config access ─────────────────────────────────────────────────────────────
@@ -1030,6 +1039,7 @@ def run_cycle(
         "delta_mode":            delta_mode,
         "max_concurrent":        max_w,
         "two_tier":              _two_tier_enabled(),
+        "daily_summary":         _daily_summary_enabled(),
         "notes":                 notes,
     }
 
@@ -1301,6 +1311,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         )
     mc = _max_concurrent(cfg)
     log.info("poller: max_concurrent=%d (env %s)", mc, MAX_CONCURRENT_ENV)
+    # FC-R8: daily summary flag
+    log.info(
+        "poller: FC-R8 daily summary %s (set %s=1 to enable)",
+        "ON" if _daily_summary_enabled() else "OFF",
+        DAILY_SUMMARY_ENV,
+    )
 
     cycle_n = 0
     while True:
@@ -1464,14 +1480,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             log.debug("poller: RSS check failed (non-fatal): %s", _rss_err)
 
         # FC-R8: write end-of-session daily summary (every cycle; nightly-idempotent).
-        # Uploaded to R2 WITHOUT the 48h TTL live_flow/ prefix — permanent storage.
-        daily_summary_path = write_daily_summary(
-            session_date=session_date,
-            day_state=day_state,
-            baselines=baselines,
-            cycle_n=cycle_n,
-            asof=meta.get("asof", ""),
-        )
+        # Gated behind LIVE_FLOW_DAILY_SUMMARY=1 (default OFF — new production write path).
+        # Operator action: set LIVE_FLOW_DAILY_SUMMARY=1 in /etc/macro-api.env to enable.
+        daily_summary_path = None
+        if _daily_summary_enabled():
+            daily_summary_path = write_daily_summary(
+                session_date=session_date,
+                day_state=day_state,
+                baselines=baselines,
+                cycle_n=cycle_n,
+                asof=meta.get("asof", ""),
+            )
 
         # Upload to R2
         if s3:
@@ -1485,6 +1504,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
 
             # FC-R8: upload daily summary to R2 WITHOUT the live_flow/ TTL prefix.
             # Key: live_flow_daily/<date>.json — permanent (no 48h prune).
+            # Only runs when LIVE_FLOW_DAILY_SUMMARY=1 (daily_summary_path is not None).
             if daily_summary_path is not None:
                 r2_daily_key = f"live_flow_daily/{session_date}.json"
                 _upload_r2(s3, bucket, daily_summary_path, r2_daily_key)
