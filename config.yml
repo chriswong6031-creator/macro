@@ -3431,6 +3431,48 @@ commodities:
                                    # test must exceed (macd_rise_min_frac x rolling 60-bar mean |histogram|);
                                    # prevents float jitter on a near-constant negative histogram from firing
 
+  # --- Durable-bottom / Euphoric-top Confluence Organ (display-tier, deterministic) ---
+  # engine/commodity_confluence.py.  Scores two mirrored 0-100 sides (bottom / top)
+  # per complex member AND at the sector-index level.  Nulls printed, no scored
+  # authority.  Future promotion pre-registered in research/COMMODITY_BOTTOM_TOP_PREREG.md.
+  confluence:
+    min_applicable: 3              # fewer applicable conditions -> null (insufficient signal)
+    group_min_applicable: 2        # per sub-group: fewer applicable -> sub-score is None
+    strong_threshold: 60           # score >= -> "forming" state
+    early_threshold: 40            # score >= -> "early / extended" state
+    stoch_oversold: 20
+    stoch_overbought: 80
+    stoch_oversold_3d: 25
+    stoch_overbought_3d: 75
+    rsi_oversold: 35
+    rsi_overbought: 65
+    w_stoch_oversold: 25
+    w_stoch_overbought: 75
+    w_rsi_oversold: 40
+    w_rsi_overbought: 60
+    shock_z_macro: 1.5             # macro residual shock_z magnitude
+    shock_z_price: 1.75            # price-return shock_z magnitude (members w/o macro model)
+    bc_score_min: 40               # ladder bottom-confidence gate (fire threshold)
+    bc_score_min_applicable: 10    # bc_conf not applicable when bc_score < this (avoids denominator inflation when bc is noise-level)
+    cot_crowded_short_pctile: 15
+    cot_crowded_long_pctile: 85
+    stretch_above_200d: 0.25       # close/SMA200 - 1 >= this = melt-up stretch
+    breadth_washout_pctile: 0.10   # index only: breadth_pctile <= this = sector washout
+    breadth_euphoria_pctile: 0.90  # index only: breadth_pctile >= this = sector euphoria
+    weights:
+      shock: 2.0
+      oversold_ltf: 1.0
+      oversold_htf: 1.0
+      curl: 1.5
+      armed: 1.5
+      bc_conf: 2.0
+      cot: 1.0
+      cycle: 1.0
+      stretch: 1.5
+      stretch_below: 1.5            # mirrors stretch weight; deeply below 200d
+      divergence: 2.0
+      breadth: 1.5
+
   # --- Phase 5: alerts (daily state-change events) + intraday shock sentinel ---
   alerts:
     timeline_days: 60               # window shown on the commodities.html timeline
