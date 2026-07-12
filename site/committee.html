@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="theme.css">
 <script>
   window.SUPABASE_CFG = {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"};
-  window.COMMITTEE_GENERATED = "2026-07-12 08:39";
+  window.COMMITTEE_GENERATED = "2026-07-12 09:46";
 </script>
 <style>
 * { box-sizing:border-box; }
@@ -985,6 +985,34 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     </div>
   </div>
 
+  <!-- 8a. REBALANCE PULSE (RLT-R2) -->
+  <div class="panel section-lazy" id="cm_rebalance_pulse_section">
+    <div class="panel-head">
+      <h1><span class="l-en">Rebalance Pulse</span><span class="l-zh">再平衡脉冲</span></h1>
+      <span class="is-context-badge"><span class="l-en">CONTEXT ONLY</span><span class="l-zh">仅供参考</span></span>
+    </div>
+    <div class="plain-eng">
+      <strong><span class="l-en">In plain English:</span><span class="l-zh">用白话说：</span></strong>
+      <span class="l-en">Shows whether today's volume spike aligns with a scheduled calendar event (quarter-end, Russell reconstitution, S&P rebalance). Large mechanical volume on these dates is normal — it tells you WHY volume is elevated, not what price will do. Context only; no rank, gate, or sizing authority.</span><span class="l-zh">显示当日量能放大是否与计划内日历事件同步（季末、罗素重组、标普再平衡）。这些日期出现大量机械性交易量属正常现象——它告诉你量能为何异常，而非价格走向。仅供参考；不具排名、门槛或仓位权限。</span>
+    </div>
+    <div class="cm-loading" id="rbp_loading"><span class="l-en">Loading rebalance pulse…</span><span class="l-zh">加载再平衡脉冲中…</span></div>
+    <div id="cm_rbp_content" style="display:none">
+      <div id="rbp_headline" style="margin-bottom:14px"></div>
+      <div id="rbp_grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:14px"></div>
+      <div id="rbp_calendar" style="margin-bottom:14px"></div>
+      <div id="rbp_megacap" style="display:none;margin-bottom:14px"></div>
+      <div id="rbp_upcoming" style="display:none;margin-bottom:14px"></div>
+      <div id="rbp_recent" style="display:none;margin-bottom:14px"></div>
+      <div id="rbp_asof" style="margin-top:10px;font-size:11px;color:var(--muted)"></div>
+    </div>
+    <div id="rbp_absent" style="display:none">
+      <p class="cm-empty">
+        <span class="l-en">Rebalance pulse data not yet available — accruing from the next nightly build.</span>
+        <span class="l-zh">再平衡脉冲数据尚未生成，将于下次每日构建后可用。</span>
+      </p>
+    </div>
+  </div>
+
   <!-- 8b. CONSTITUTION LEDGER (NW read layer) -->
   <div class="panel section-lazy" id="cm_gov_section" style="display:none">
     <div class="panel-head">
@@ -1089,6 +1117,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     loadMemo();
     loadKernelFamilies();
     loadLiquidityPlumbing();
+    loadRebalancePulse();
     loadMarketPlane();
     loadWebHealth();
     loadContradictions();
@@ -4552,6 +4581,224 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       asofEl.innerHTML = asofVal
         ? '<span class="l-en">As of ' + escT(asofVal) + ' · display-only context · authority: de-escalation only</span>'
           + '<span class="l-zh">截至 ' + escT(asofVal) + ' · 仅供展示 · 权限：仅可降级</span>'
+        : '<span class="l-en">As of date unavailable</span><span class="l-zh">截至日期不可用</span>';
+    }
+  }
+
+  // ── Rebalance Pulse card (RLT-R2) ────────────────────────────────────────
+  // Reads marketdata/rebalance_pulse.json (produced by build_rebalance_pulse.py).
+  // Fails open: absent artifact → "not yet available" notice.
+  // Authority: DISPLAY/CONTEXT ONLY — may_rank=false, may_gate=false, may_size=false.
+  function loadRebalancePulse() {
+    var loadEl    = document.getElementById('rbp_loading');
+    var contentEl = document.getElementById('cm_rbp_content');
+    var absentEl  = document.getElementById('rbp_absent');
+    if (!loadEl) return;
+    loadEl.style.display = 'block';
+
+    fetch('marketdata/rebalance_pulse.json')
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        loadEl.style.display = 'none';
+        renderRebalancePulse(d);
+        contentEl.style.display = '';
+      })
+      .catch(function () {
+        loadEl.style.display = 'none';
+        absentEl.style.display = '';
+      });
+  }
+
+  function renderRebalancePulse(d) {
+    var escT = function (s) {
+      return String(s == null ? '—' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    };
+    var fmtPct = function (v) { return v == null ? '—' : (v * 100).toFixed(1) + '%'; };
+    var fmtRatio = function (v) { return v == null ? '—' : v.toFixed(2) + '×'; };
+
+    var pulse = d.latest_pulse || {};
+
+    // ── Class label map ─────────────────────────────────────────────────────
+    var CLASS_EN = {
+      'mechanical_spike_absorbed':    'Mechanical Spike — Absorbed',
+      'mechanical_spike_distributed': 'Mechanical Spike — Distributed',
+      'mechanical_spike_mixed':       'Mechanical Spike — Mixed',
+      'unscheduled_volume_event':     'Unscheduled Volume Event',
+      'quiet':                        'Quiet'
+    };
+    var CLASS_ZH = {
+      'mechanical_spike_absorbed':    '机械性量能放大 — 买方消化',
+      'mechanical_spike_distributed': '机械性量能放大 — 卖方承压',
+      'mechanical_spike_mixed':       '机械性量能放大 — 方向混合',
+      'unscheduled_volume_event':     '非计划性量能异常',
+      'quiet':                        '平静'
+    };
+    var CLASS_COLOR = {
+      'mechanical_spike_absorbed':    'var(--up)',
+      'mechanical_spike_distributed': 'var(--down)',
+      'mechanical_spike_mixed':       'var(--warn)',
+      'unscheduled_volume_event':     'var(--warn)',
+      'quiet':                        'var(--muted)'
+    };
+
+    var cls = pulse.class || 'quiet';
+    var clsColor = CLASS_COLOR[cls] || 'var(--muted)';
+    var clsEnLabel = CLASS_EN[cls] || escT(cls);
+    var clsZhLabel = CLASS_ZH[cls] || escT(cls);
+
+    // ── Headline row ────────────────────────────────────────────────────────
+    var headEl = document.getElementById('rbp_headline');
+    if (headEl) {
+      headEl.innerHTML =
+        '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+        + '<span style="font-size:15px;font-weight:700;color:' + clsColor + '">'
+        +   '<span class="l-en">' + escT(clsEnLabel) + '</span>'
+        +   '<span class="l-zh">' + escT(clsZhLabel) + '</span>'
+        + '</span>'
+        + '<span style="font-size:12px;color:var(--muted)">'
+        +   escT(pulse.date || '—')
+        + '</span>'
+        + '</div>'
+        + '<div style="font-size:12.5px;color:var(--text);margin-top:6px;line-height:1.5">'
+        +   '<span class="l-en">' + escT(pulse.summary_en || '') + '</span>'
+        +   '<span class="l-zh">' + escT(pulse.summary_zh || '') + '</span>'
+        + '</div>';
+    }
+
+    // ── Metrics mini-grid ───────────────────────────────────────────────────
+    var gridEl = document.getElementById('rbp_grid');
+    if (gridEl) {
+      var items = [
+        { labelEn: 'Volume Ratio', labelZh: '量能倍数', val: fmtRatio(pulse.market_vol_ratio) },
+        { labelEn: 'Up-Volume Share', labelZh: '上涨量比', val: fmtPct(pulse.up_share) },
+        { labelEn: 'Mega-Cap RVOL≥2×', labelZh: '大盘股RVOL≥2×', val: pulse.n_megacap_rvol2 != null ? String(pulse.n_megacap_rvol2) : '—' },
+        { labelEn: 'Basis', labelZh: '数据来源', val: escT(pulse.basis || '—') }
+      ];
+      gridEl.innerHTML = items.map(function (it) {
+        return '<div style="background:var(--panel2);border-radius:8px;padding:10px 12px">'
+          + '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">'
+          +   '<span class="l-en">' + it.labelEn + '</span><span class="l-zh">' + it.labelZh + '</span>'
+          + '</div>'
+          + '<div style="font-size:15px;font-weight:700;color:var(--text)">' + it.val + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    // ── Calendar flags ──────────────────────────────────────────────────────
+    var calEl = document.getElementById('rbp_calendar');
+    if (calEl) {
+      var cal = pulse.calendar || {};
+      var flags = [
+        { key: 'in_qtr_end_window',       en: 'Quarter-End Window',  zh: '季末窗口' },
+        { key: 'is_quarter_end',           en: 'Quarter-End Day',     zh: '季末日' },
+        { key: 'is_russell_recon_session', en: 'Russell Recon Day',   zh: '罗素重组日' },
+        { key: 'in_recon_week',            en: 'Russell Recon Week',  zh: '罗素重组周' },
+        { key: 'is_sp_rebalance_session',  en: 'S&P Rebalance Day',   zh: '标普再平衡日' },
+        { key: 'is_month_end_session',     en: 'Month-End Day',       zh: '月末日' }
+      ];
+      var activeFlags = flags.filter(function (f) { return !!cal[f.key]; });
+      var tdQe = cal.td_to_quarter_end;
+      var tdNote = tdQe != null
+        ? ('<span style="font-size:11px;color:var(--muted)"> · '
+           + (tdQe === 0 ? '<span class="l-en">today</span><span class="l-zh">今日</span>'
+              : tdQe > 0 ? '<span class="l-en">' + tdQe + 'd to QE</span><span class="l-zh">距季末' + tdQe + '日</span>'
+              : '<span class="l-en">' + Math.abs(tdQe) + 'd since QE</span><span class="l-zh">距季末' + Math.abs(tdQe) + '日前</span>')
+           + '</span>')
+        : '';
+
+      if (activeFlags.length > 0) {
+        calEl.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">'
+          + '<span class="l-en">Active Calendar Flags</span><span class="l-zh">当日日历标记</span>'
+          + tdNote
+          + '</div>'
+          + '<div style="display:flex;flex-wrap:wrap;gap:6px">'
+          + activeFlags.map(function (f) {
+              return '<span style="background:color-mix(in srgb,var(--warn) 12%,var(--panel2));border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600;color:var(--warn)">'
+                + '<span class="l-en">' + f.en + '</span><span class="l-zh">' + f.zh + '</span>'
+                + '</span>';
+            }).join('')
+          + '</div>';
+      } else {
+        calEl.innerHTML = '<div style="font-size:12px;color:var(--muted)">'
+          + '<span class="l-en">No active calendar flags</span><span class="l-zh">无当日日历标记</span>'
+          + tdNote
+          + '</div>';
+      }
+    }
+
+    // ── Mega-cap RVOL table (top 8, if any spike) ───────────────────────────
+    var mcEl = document.getElementById('rbp_megacap');
+    var rvol = pulse.megacap_rvol || {};
+    var rvolKeys = Object.keys(rvol).filter(function (k) { return rvol[k] >= 1.5; });
+    if (mcEl && rvolKeys.length > 0) {
+      mcEl.style.display = '';
+      mcEl.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">'
+        + '<span class="l-en">Mega-Cap Volume Spikes (RVOL ≥ 1.5×)</span><span class="l-zh">大盘股量能放大（RVOL ≥ 1.5×）</span>'
+        + '</div>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:6px">'
+        + rvolKeys.map(function (ticker) {
+            var r = rvol[ticker];
+            var col = r >= 2 ? 'var(--warn)' : 'var(--muted)';
+            return '<span style="background:var(--panel2);border-radius:6px;padding:3px 8px;font-size:11.5px;font-weight:700">'
+              + escT(ticker)
+              + ' <span style="color:' + col + '">' + r.toFixed(2) + '×</span></span>';
+          }).join('')
+        + '</div>';
+    }
+
+    // ── Upcoming events ─────────────────────────────────────────────────────
+    var upEl = document.getElementById('rbp_upcoming');
+    var upcoming = d.upcoming_events || [];
+    if (upEl && upcoming.length > 0) {
+      upEl.style.display = '';
+      upEl.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">'
+        + '<span class="l-en">Upcoming Calendar Events</span><span class="l-zh">即将到来的日历事件</span>'
+        + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:5px">'
+        + upcoming.map(function (ev) {
+            var types = (ev.types || []).join(' + ');
+            return '<div style="font-size:12px;display:flex;align-items:center;gap:10px">'
+              + '<span style="font-weight:600;color:var(--text)">' + escT(ev.date) + '</span>'
+              + '<span style="color:var(--muted)">' + escT(types) + '</span>'
+              + (ev.td_to != null ? '<span style="color:var(--info);font-size:11px">+' + ev.td_to + 'd</span>' : '')
+              + '</div>';
+          }).join('')
+        + '</div>';
+    }
+
+    // ── Recent non-quiet events ─────────────────────────────────────────────
+    var recEl = document.getElementById('rbp_recent');
+    var recent = d.recent_events || [];
+    if (recEl && recent.length > 0) {
+      recEl.style.display = '';
+      recEl.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">'
+        + '<span class="l-en">Recent Volume Events</span><span class="l-zh">近期量能事件</span>'
+        + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:5px">'
+        + recent.slice(0, 5).map(function (ev) {
+            var col = CLASS_COLOR[ev.class] || 'var(--muted)';
+            return '<div style="font-size:12px;display:flex;align-items:center;gap:10px">'
+              + '<span style="font-weight:600;color:var(--text)">' + escT(ev.date) + '</span>'
+              + '<span style="color:' + col + ';font-size:11px;font-weight:600">'
+              +   '<span class="l-en">' + escT(CLASS_EN[ev.class] || ev.class) + '</span>'
+              +   '<span class="l-zh">' + escT(CLASS_ZH[ev.class] || ev.class) + '</span>'
+              + '</span>'
+              + (ev.market_vol_ratio != null ? '<span style="color:var(--muted);font-size:11px">' + fmtRatio(ev.market_vol_ratio) + '</span>' : '')
+              + '</div>';
+          }).join('')
+        + '</div>';
+    }
+
+    // ── asof footer ─────────────────────────────────────────────────────────
+    var asofEl = document.getElementById('rbp_asof');
+    if (asofEl) {
+      asofEl.innerHTML = d.as_of
+        ? '<span class="l-en">As of ' + escT(d.as_of) + ' · display/context only · no rank/gate/size authority</span>'
+          + '<span class="l-zh">截至 ' + escT(d.as_of) + ' · 仅供展示 · 不具排名/门槛/仓位权限</span>'
         : '<span class="l-en">As of date unavailable</span><span class="l-zh">截至日期不可用</span>';
     }
   }
