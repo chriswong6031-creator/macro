@@ -63,7 +63,13 @@ concurrency:
 jobs:
   render:
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 75
+    # was 75 — a scope=all render now takes 40-71m when the box is quiet (measured
+    # 2026-07-11: run 29155365959 = 40m, run 29169451233 = 71.4m) and blew straight
+    # through 75m under the evening merge-spree congestion (run 29172926033 CANCELLED
+    # at exactly 75.5m, 2026-07-11 23:57 → 01:12 — all its work wasted, site stayed
+    # stale). Same silent-timeout budget-rot class as daily.yml collect (100→150,
+    # #2271) and asia-close (#2193). 115m ≈ 1.6× the worst quiet-box run.
+    timeout-minutes: 115
     steps:
       - uses: actions/checkout@v4
         with:
