@@ -1379,7 +1379,7 @@ class TestAnalystBannerRender:
             "analyst_covered": 1, "analyst_uncovered": ["MSFT"],
             "analyst_note": "analyst buy-share ... young data",
         }))
-        assert "names with analyst rating data" in html
+        assert "Analyst rating data:" in html and "covered" in html
         assert "young data" in html
 
     def test_banner_absent_store_line(self):
@@ -1388,12 +1388,12 @@ class TestAnalystBannerRender:
             "analyst_covered": 0, "analyst_uncovered": ["AAPL", "MSFT"],
             "analyst_note": "n/a",
         }))
-        assert "analyst rating data unavailable" in html
+        assert "the crowding signal that reads it stays blank" in html
 
     def test_old_shape_payload_missing_key_safe(self):
         """Pre-LRV-R1e artifact (no analyst keys) must still render — no banner line."""
         html = self._render(self._base_payload({
             "n_universe": 2, "revisions_uncovered": [], "mktcap_n_covered": 2,
         }))
-        assert "names with analyst rating data" not in html
-        assert "analyst rating data unavailable" not in html
+        assert "Analyst rating data:" not in html
+        assert "crowding signal that reads it stays blank" not in html
