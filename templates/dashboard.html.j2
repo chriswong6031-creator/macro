@@ -3779,20 +3779,54 @@ body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
 
 /* Mobile bottom-sheet (spec §0 — ≤700px) */
 @media(max-width:700px){
+  /* Remove backdrop-filter from hero card when popover open — backdrop-filter creates a
+     new containing block that traps position:fixed children (CSS spec §9.3.1).
+     Without this the bottom-sheet sticks to the card edge, not the viewport bottom. */
+  body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
   .mx5-popover{
     position:fixed!important;
     left:12px!important;right:12px!important;
-    bottom:0;top:auto!important;
+    bottom:0!important;top:auto!important;
     max-width:none;width:auto;
     max-height:70vh;overflow-y:auto;
     border-radius:var(--mx5-radius-card) var(--mx5-radius-card) 0 0;
     transform-origin:bottom center;
     background:var(--mx5-pop-bg,rgba(13,18,26,.96));
+    padding-top:44px; /* room for the sticky close bar */
   }
+  /* Sticky close bar at top of bottom-sheet */
+  .mx5-pop-close-bar{
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:2;
+    background:var(--mx5-pop-bg,rgba(13,18,26,.96));
+    padding:12px 4px 10px;
+    margin:-44px -24px 14px; /* full-bleed to popover edges */
+  }
+  .mx5-pop-close-handle{
+    width:36px;height:4px;border-radius:2px;
+    background:rgba(255,255,255,.18);margin:0 auto;
+  }
+  .mx5-pop-close-btn{
+    display:flex;align-items:center;justify-content:center;
+    width:32px;height:32px;border-radius:50%;
+    background:rgba(255,255,255,.08);border:none;cursor:pointer;
+    color:var(--ink-2,rgba(255,255,255,.6));font-size:18px;line-height:1;
+    font-family:inherit;flex-shrink:0;
+  }
+  .mx5-pop-close-btn:hover{background:rgba(255,255,255,.14);}
+  /* Touch target ≥44px for popover trigger buttons */
+  body.page-macro.mx4-grid .mx5-sc-btn{min-height:44px;padding-top:10px;padding-bottom:10px;}
   @media(prefers-reduced-motion:no-preference){
     .mx5-popover{opacity:0;transform:translateY(20px);}
     .mx5-popover.open{opacity:1;transform:translateY(0);}
   }
+}
+/* Close bar hidden on desktop (bottom-sheet is mobile-only) */
+@media(min-width:701px){
+  .mx5-pop-close-bar{display:none;}
 }
 
 /* ── Factor breakdown (inside popover) ─────────────────────────── */
@@ -4594,6 +4628,13 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         {# POPOVER: Factor Breakdown #}
         <div class="mx5-popover" id="mx5PopFactors" role="dialog"
              aria-label="Factor Breakdown">
+          {# Mobile close bar — sticky at top of bottom-sheet; hidden on desktop via CSS #}
+          <div class="mx5-pop-close-bar">
+            <div style="width:32px"></div>
+            <div class="mx5-pop-close-handle"></div>
+            <button class="mx5-pop-close-btn" type="button"
+                    onclick="mx5CloseAllPopovers()" aria-label="Close">&#xd7;</button>
+          </div>
           <div class="mx5-popover-title"><span class="l-en">Factor Breakdown &mdash; {{ _mx5_comps | length }} Signals</span><span class="l-zh">因子分析 &mdash; {{ _mx5_comps | length }} 项</span></div>
           <div class="mx5-factors-inner">
             {% for c in _mx5_comps %}
@@ -4625,6 +4666,13 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         {# POPOVER: Dominant Risk Ladder #}
         <div class="mx5-popover mx5-pop-right" id="mx5PopRisk" role="dialog"
              aria-label="Dominant Risk Ladder">
+          {# Mobile close bar — sticky at top of bottom-sheet; hidden on desktop via CSS #}
+          <div class="mx5-pop-close-bar">
+            <div style="width:32px"></div>
+            <div class="mx5-pop-close-handle"></div>
+            <button class="mx5-pop-close-btn" type="button"
+                    onclick="mx5CloseAllPopovers()" aria-label="Close">&#xd7;</button>
+          </div>
           <div class="mx5-popover-title"><span class="l-en">Dominant Risk Ladder</span><span class="l-zh">主导风险阶梯</span></div>
           {% if latest.risk_radar is defined and latest.risk_radar and latest.risk_radar.scares %}
           {% set _mx5_top_sc = latest.risk_radar.scares[0] %}
