@@ -361,6 +361,47 @@ def market_summary(snap: pd.DataFrame | None = None, n: int = 6,
             "buying": rows(buying), "selling": rows(selling)}
 
 
+def sb_persist_map(tickers: list[str] | None = None,
+                   min_sessions: int = 3) -> dict[str, bool]:
+    """Per-ticker boolean: True when the name has had ≥ ``min_sessions`` consecutive
+    positive net-share-flow sessions in the most recent trailing history.
+
+    Uses the accrued ``data/hk_southbound/holdings.parquet`` (per-date, per-ticker
+    hold_shares). Positive session = net share-add vs the prior date.  Returns {}
+    when the store is missing / too thin (< min_sessions + 1 dates).
+
+    Only the positional `tickers` filter is applied; all names are included when
+    None.  Best-effort: returns {} on any read error so callers degrade gracefully."""
+    path = _store_path()
+    if not path.exists():
+        return {}
+    try:
+        hist = pd.read_parquet(path)
+    except Exception:  # noqa: BLE001
+        return {}
+    if not isinstance(hist.index, pd.MultiIndex) or "hold_shares" not in hist.columns:
+        return {}
+    shares = hist["hold_shares"].unstack("ticker").sort_index()
+    if len(shares) < min_sessions + 1:
+        return {}
+    if tickers is not None:
+        shares = shares.reindex(columns=tickers)
+    # daily net share change: positive = adding, negative = distributing
+    daily_chg = shares.diff().tail(min_sessions + 1)
+    if len(daily_chg) < min_sessions:
+        return {}
+    # the LAST min_sessions rows (drop the first which is NaN from diff)
+    last_n = daily_chg.dropna(how="all").tail(min_sessions)
+    out: dict[str, bool] = {}
+    for t in last_n.columns:
+        col = last_n[t].dropna()
+        if len(col) >= min_sessions:
+            out[t] = bool((col > 0).all())
+        else:
+            out[t] = False
+    return out
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     snap = fetch_snapshot()

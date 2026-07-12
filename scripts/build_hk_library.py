@@ -1430,6 +1430,40 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     except Exception as _ww_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
         log.warning("hk washout_watch compute failed (%s) — existing board intact", _ww_ex)
         out["washout_watch"] = []
+    # ---- LEADERSHIP PARTICIPATION (additive, fail-open) — cohort-level participation organ.
+    # Operates independently of the washout watch: fixed mega-cap cohort, cohesion metric,
+    # and southbound context.  The existing board dict is UNCHANGED when this block errors.
+    try:
+        from engine import hk_leadership as _ldr
+        # Pass the pre-computed closes matrix so the organ does not reload from disk.
+        # Build a closes_map restricted to the leadership cohort from the wide panel.
+        _ldr_closes: dict = {}
+        if closes is not None:
+            for _lt in _ldr.DEFAULT_COHORT:
+                if _lt in closes.columns:
+                    _ldr_closes[_lt] = closes[_lt]
+        out["leadership"] = _ldr.compute(
+            closes_map=_ldr_closes or None,
+            cohort=_ldr.DEFAULT_COHORT,
+            as_of=str(as_of) if as_of else None,
+        )
+        log.info("hk leadership: state=%s cohesion_now=%s",
+                 out["leadership"].get("state"), out["leadership"].get("cohesion_now"))
+    except Exception as _ldr_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
+        log.warning("hk leadership compute failed (%s) — existing board intact", _ldr_ex)
+        out["leadership"] = None
+    # ---- CONTEXT CHIPS (HKRV-W4, additive, fail-open) — display-tier macro chips.
+    # Reads EXISTING committed stores; never feeds rank/size/gate (AUTHORITY FENCE HKRV-R5).
+    # An error here must not disturb the standout board.
+    try:
+        from engine import hk_context_chips as _hkcc
+        _chips = _hkcc.compute_all()
+        out["context_chips"] = _chips
+        log.info("hk context_chips: %d chips computed (%s)",
+                 len(_chips), ", ".join(_chips.keys()))
+    except Exception as _cc_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
+        log.warning("hk context_chips compute failed (%s) — existing board intact", _cc_ex)
+        out["context_chips"] = {}
     # persist the artifact so a transient build failure leaves a stale-but-present board.
     try:
         fdir = site / "factordata"
@@ -1750,10 +1784,117 @@ def main(betas: dict | None = None) -> dict | None:
     price_by: dict[str, float] = {}
     uni = universe()
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
+
+    # ── HK Confirming-Turn witness bypass (W1 HKRV spec §6) ─────────────────
+    # Compute the per-ticker `confirm` dict ONCE in serial (southbound history is a
+    # shared store; RSI and MA10 witnesses are computed from the close series).
+    # Used to upgrade COUNTERTREND BOUNCE → CONFIRMING TURN for names that have all
+    # three evidence witnesses present. Computed here (not in the parallel pool) because
+    # hk_southbound_stocks.sb_persist_map reads the shared holdings parquet.
+    _hk_sb_persist: dict[str, bool] = {}
+    try:
+        from engine import hk_southbound_stocks as _hk_sb
+        _all_tickers = [t for (t, *_) in uni]
+        _hk_sb_persist = _hk_sb.sb_persist_map(tickers=_all_tickers, min_sessions=3)
+        log.info("hk confirm witnesses: sb_persist_map computed for %d tickers", len(_hk_sb_persist))
+    except Exception as _sbpe:  # noqa: BLE001 — additive, never fatal
+        log.warning("hk sb_persist_map skipped (%s); confirm bypass disabled", _sbpe)
+
+    def _hk_confirm(ticker: str, close: pd.Series) -> dict | None:
+        """Build the per-name evidence witness dict for ladder_state(confirm=...).
+        Returns None when witnesses are missing / series too short."""
+        try:
+            import numpy as _np
+            c = close.dropna()
+            if len(c) < 20:
+                return None
+            # rsi_reclaim: RSI(14) was <=32 within 15 sessions AND now in [40,60]
+            close_arr = c.values.astype(float)
+            n = len(close_arr)
+            if n < 15:
+                return None
+            # compute RSI(14) via EWM (standard Wilder smoothing)
+            delta = _np.diff(close_arr[-30:] if n >= 30 else close_arr)
+            gains = _np.where(delta > 0, delta, 0.0)
+            losses = _np.where(delta < 0, -delta, 0.0)
+            # Wilder smoothing: first period = simple average, then EWM
+            if len(gains) < 14:
+                return None
+            avg_gain = _np.mean(gains[:14])
+            avg_loss = _np.mean(losses[:14])
+            for g, l in zip(gains[14:], losses[14:]):
+                avg_gain = (avg_gain * 13 + g) / 14
+                avg_loss = (avg_loss * 13 + l) / 14
+            rsi_now = 100.0 - 100.0 / (1.0 + avg_gain / avg_loss) if avg_loss > 0 else 100.0
+            # look back 15 sessions for RSI <= 32 (using a rolling RSI approximation)
+            # We check if any of the last 15 bars' close was in an oversold zone by
+            # re-running RSI on the recent window
+            oversold_recent = False
+            lookback = min(n, 30)
+            sub = close_arr[-lookback:]
+            if len(sub) >= 15:
+                sub_delta = _np.diff(sub)
+                sub_gains = _np.where(sub_delta > 0, sub_delta, 0.0)
+                sub_losses = _np.where(sub_delta < 0, -sub_delta, 0.0)
+                if len(sub_gains) >= 14:
+                    sg = _np.mean(sub_gains[:14])
+                    sl = _np.mean(sub_losses[:14])
+                    rsi_hist = []
+                    for g, l in zip(sub_gains[14:], sub_losses[14:]):
+                        sg = (sg * 13 + g) / 14
+                        sl = (sl * 13 + l) / 14
+                        rsi_h = 100.0 - 100.0 / (1.0 + sg / sl) if sl > 0 else 100.0
+                        rsi_hist.append(rsi_h)
+                    # last 15 sessions of RSI history
+                    rsi_window = rsi_hist[-15:] if rsi_hist else []
+                    oversold_recent = any(r <= 32 for r in rsi_window)
+            rsi_reclaim = oversold_recent and 40 <= rsi_now <= 60
+            # above_rising_ma10: price above MA10 and MA10 is rising
+            if len(c) < 11:
+                return None
+            ma10_now = float(c.iloc[-10:].mean())
+            ma10_prev = float(c.iloc[-11:-1].mean())
+            above_rising_ma10 = bool(float(c.iloc[-1]) > ma10_now and ma10_now > ma10_prev)
+            # sb_persist: from the pre-computed map
+            sb_persist = bool(_hk_sb_persist.get(ticker, False))
+            return {"sb_persist": sb_persist, "rsi_reclaim": rsi_reclaim,
+                    "above_rising_ma10": above_rising_ma10}
+        except Exception:  # noqa: BLE001 — additive witness; never fatal
+            return None
+
+    def _apply_hk_confirm(rec: dict, ticker: str, close: pd.Series) -> dict:
+        """If this ticker's ladder state is COUNTERTREND BOUNCE, recompute ladder_state
+        with the HK confirm dict to potentially upgrade to CONFIRMING TURN."""
+        lad = rec.get("ladder") or {}
+        if lad.get("state") != "COUNTERTREND BOUNCE":
+            return rec
+        cfm = _hk_confirm(ticker, close)
+        if not cfm:
+            return rec
+        # Only re-run if at least sb_persist is true (saves compute for the common case)
+        if not (cfm.get("sb_persist") and cfm.get("rsi_reclaim") and cfm.get("above_rising_ma10")):
+            return rec
+        try:
+            from engine.cycles import ladder_state as _ladder_state
+            cyc = rec.get("cycle") or {}
+            mtf = rec.get("mtf") or {}
+            early = rec.get("early") or {}
+            new_lad = _ladder_state(cyc, mtf, early, liquidity=liq, confirm=cfm)
+            if new_lad and new_lad.get("state") == "CONFIRMING TURN":
+                rec = {**rec, "ladder": new_lad}
+                log.debug("hk confirm: %s upgraded COUNTERTREND BOUNCE → CONFIRMING TURN", ticker)
+        except Exception as _cfe:  # noqa: BLE001 — additive, never fatal
+            log.debug("hk confirm ladder recompute failed for %s (%s)", ticker, _cfe)
+        return rec
+
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
             continue
+        # HK Confirming-Turn witness bypass: upgrade COUNTERTREND BOUNCE when
+        # all three evidence witnesses are present (sb_persist, rsi_reclaim,
+        # above_rising_ma10). Best-effort: never fatal, original rec kept on error.
+        rec = _apply_hk_confirm(rec, ticker, close)
         if beta_pt.get(ticker):             # additive: absent => no global-beta panel
             rec["global_beta"] = beta_pt[ticker]
         # forward anticipation cone (close-only) — feeds the risk-shape entry tilt + favourable-cone

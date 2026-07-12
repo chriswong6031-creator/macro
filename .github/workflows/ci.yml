@@ -1141,6 +1141,21 @@ jobs:
       - name: ratio lens test suite
         run: python -m pytest tests/test_oracle_ratio_lens.py -q
 
+  hk-confirming-turn:
+    # HKRV-W1: evidence-witness bypass in engine/cycles.py — CONFIRMING TURN state.
+    # Tests: confirm=None byte-identity, V-recovery+witnesses→CONFIRMING TURN,
+    # hard_fail wins, flat/no-witnesses unchanged, ontology crosswalk resolves.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: hk confirming turn tests
+        run: python -m pytest tests/test_hk_confirming_turn.py -q
+
   basket-staleness-warn:
     # M7C-R8: basket store staleness warning in scripts/build_baskets.py —
     # fires a ::warning annotation and ops alert when collect timed out upstream.
