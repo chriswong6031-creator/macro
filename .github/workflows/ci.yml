@@ -341,6 +341,13 @@ on:
       # T0 beta turn indicator (display-only): engine module + build wiring + test suite.
       - "engine/t0_indicator.py"
       - "tests/test_t0_indicator.py"
+      # IFT-V2 stance engine (dealer_context + stance in engine/intraday_flow.py):
+      # engine file already covered by engine/**, but test files need explicit paths
+      # so a test-only change still re-runs the guard.
+      - "engine/intraday_flow.py"
+      - "scripts/build_intraday_flow.py"
+      - "tests/test_intraday_flow.py"
+      - "tests/test_intraday_flow_stance.py"
   workflow_dispatch:
 
 permissions:
@@ -623,7 +630,9 @@ jobs:
           tests/test_statement_tape.py
           tests/test_backfill_options_flow.py
           tests/test_rlt_sector_stance_enrich.py
-          tests/test_t0_indicator.py -q
+          tests/test_t0_indicator.py
+          tests/test_intraday_flow.py
+          tests/test_intraday_flow_stance.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)

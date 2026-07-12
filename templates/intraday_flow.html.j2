@@ -14,13 +14,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Intraday Flow Tracker · 盘中资金流追踪</title>
+<title>Intraday Flow · 盘中资金流</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  @media (min-width:1100px){ body{ padding:24px max(40px,calc((100vw - 1360px)/2)); } }
+  @media (min-width:1100px){ body{ padding:24px max(40px,calc((100vw - 1440px)/2)); } }
   a { text-decoration:none; color:inherit; }
   h1 { font-size:20px; margin:0; }
   h2 { font-size:14px; margin:0 0 10px; font-weight:600; letter-spacing:.2px; }
@@ -31,7 +31,7 @@
   .topline { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 14px; }
   .note { margin:8px 0 0; line-height:1.5; }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
-  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; text-align:left; white-space:normal; }
   /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
   .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { display:block; }
@@ -39,16 +39,36 @@
   .lag-tag { display:inline-block; font-size:10px; background:var(--panel2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:var(--muted); vertical-align:middle; margin-left:4px; }
   .soft-tag { display:inline-block; font-size:10px; font-style:italic; color:var(--orange,#f97316); margin-left:3px; }
 
+  /* ── "What's set up now" stance strip ─────────────────────────── */
+  .stance-strip { display:flex; flex-wrap:wrap; gap:8px; }
+  .stance-card { flex:1 1 140px; min-width:130px; border:1px solid var(--line); border-radius:10px; padding:9px 12px; cursor:pointer; user-select:none; background:var(--panel2); transition:border-color .15s, background .15s, transform .1s; position:relative; }
+  .stance-card:hover { border-color:var(--muted); transform:translateY(-1px); }
+  .stance-card.active { border-color:var(--blue,#3b82f6); box-shadow:inset 0 0 0 1px var(--blue,#3b82f6); }
+  .stance-card .sc-top { display:flex; align-items:center; gap:6px; }
+  .stance-card .sc-dot { font-size:14px; line-height:1; }
+  .stance-card .sc-label { font-size:12.5px; font-weight:700; }
+  .stance-card .sc-count { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:2px; line-height:1; }
+  .stance-card .sc-sub { font-size:10.5px; color:var(--muted); margin-top:2px; line-height:1.3; }
+  .stance-card .sc-accent { position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:10px 0 0 10px; }
+  /* lane colors */
+  .lane-act    { --lane:var(--up,#16a34a); }
+  .lane-ready  { --lane:var(--blue,#3b82f6); }
+  .lane-fav    { --lane:#22c55e; }
+  .lane-profit { --lane:var(--orange,#f97316); }
+  .lane-watch  { --lane:#eab308; }
+  .lane-aside  { --lane:var(--muted); }
+  .sc-accent { background:var(--lane); }
+
   /* ── Filter / toolbar ─────────────────────────────────────────── */
-  .toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:2px; }
   .chip { display:inline-block; font-size:11px; padding:3px 9px; border-radius:20px; border:1px solid var(--line); cursor:pointer; user-select:none; background:var(--panel2); color:var(--muted); transition:background .15s,border-color .15s,color .15s; }
   .chip.active { background:var(--blue,#3b82f6); border-color:var(--blue,#3b82f6); color:#fff; }
   .chip:hover:not(.active) { border-color:var(--muted); color:var(--text); }
-  .k-filter { display:flex; align-items:center; gap:4px; font-size:12px; }
-  .k-filter select { background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:3px 8px; font-size:12px; cursor:pointer; }
-  .search-box { flex:1; min-width:120px; max-width:240px; }
+  .search-box { flex:1; min-width:120px; max-width:220px; }
   .search-box input { width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:4px 10px; font-size:12px; outline:none; }
   .search-box input:focus { border-color:var(--blue,#3b82f6); }
+  .toggle-btn { font-size:11px; padding:3px 10px; border-radius:6px; border:1px solid var(--line); cursor:pointer; user-select:none; background:var(--panel2); color:var(--muted); }
+  .toggle-btn.active { color:var(--text); border-color:var(--muted); }
   .stamp-row { margin-left:auto; font-size:11px; color:var(--muted); white-space:nowrap; }
 
   /* ── Leaders table ────────────────────────────────────────────── */
@@ -60,26 +80,33 @@
   table.leaders th.sort-asc .sort-ic::after { content:"↑"; opacity:1; }
   table.leaders th.sort-desc .sort-ic::after { content:"↓"; opacity:1; }
   table.leaders th:not(.sort-asc):not(.sort-desc) .sort-ic::after { content:"↕"; }
-  table.leaders td { padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
-  table.leaders tr:last-child td { border-bottom:none; }
-  table.leaders tr:hover td { background:var(--panel2); }
+  table.leaders td { padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.leaders tr.lead-row:hover td { background:var(--panel2); }
+  table.leaders tr.group-head td { background:var(--panel2); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.3px; color:var(--muted); padding:5px 10px; border-bottom:1px solid var(--line); }
   .tk-link { font-weight:700; font-size:14px; color:var(--blue,#3b82f6); }
   .tk-link:hover { text-decoration:underline; }
+  .tk-baskets { font-size:10px; color:var(--muted); margin-top:1px; }
   .price-cell { white-space:nowrap; }
   .pct-chg { font-size:11px; margin-left:4px; }
+  .expander { cursor:pointer; color:var(--muted); font-size:12px; user-select:none; padding:2px 4px; border-radius:4px; }
+  .expander:hover { color:var(--text); background:var(--panel2); }
 
-  /* ── Gauge / bars ─────────────────────────────────────────────── */
+  /* ── Stance pill + reason ─────────────────────────────────────── */
+  .stance-cell { min-width:210px; }
+  .stance-pill { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:800; padding:3px 9px; border-radius:20px; border:1px solid var(--lane); color:var(--lane); white-space:nowrap; }
+  .stance-reason { font-size:11.5px; color:var(--text); margin-top:3px; line-height:1.35; max-width:320px; }
+  .stance-reason.muted { color:var(--muted); }
+
+  /* ── Plain metric cells ───────────────────────────────────────── */
+  .metric-lead { font-size:12.5px; }
+  .metric-sub { font-size:10.5px; color:var(--muted); margin-top:1px; }
   .gauge-wrap { display:flex; align-items:center; gap:6px; white-space:nowrap; }
-  .gauge-bar { width:52px; height:7px; background:var(--line); border-radius:4px; overflow:hidden; flex-shrink:0; }
-  .gauge-fill { height:100%; border-radius:4px; background:var(--blue,#3b82f6); transition:width .3s; }
-  .gauge-hi { background:var(--up); }
-  .gauge-med { background:var(--orange,#f97316); }
-  .gauge-lo { background:var(--muted); }
-  .gauge-val { font-size:12px; font-variant-numeric:tabular-nums; }
-  .range-pos { color:var(--up); } .range-neg { color:var(--down); }
+  .gauge-bar { width:48px; height:6px; background:var(--line); border-radius:4px; overflow:hidden; flex-shrink:0; }
+  .gauge-fill { height:100%; border-radius:4px; background:var(--blue,#3b82f6); }
+  .gauge-hi { background:var(--up); } .gauge-med { background:var(--orange,#f97316); } .gauge-lo { background:var(--muted); }
 
   /* ── Chips / badges ───────────────────────────────────────────── */
-  .chip-row { display:flex; flex-wrap:wrap; gap:3px; }
+  .chip-row { display:flex; flex-wrap:wrap; gap:3px; margin-top:2px; }
   .badge { display:inline-block; font-size:10px; font-weight:600; padding:2px 6px; border-radius:5px; border:1px solid; white-space:nowrap; }
   .badge-green { color:var(--up); border-color:var(--up); }
   .badge-red { color:var(--down); border-color:var(--down); }
@@ -87,32 +114,28 @@
   .badge-orange { color:var(--orange,#f97316); border-color:var(--orange,#f97316); }
   .badge-muted { color:var(--muted); border-color:var(--line); }
 
-  /* ── Confluence K/7 ──────────────────────────────────────────── */
-  .kbar { display:inline-flex; gap:2px; vertical-align:middle; }
-  .kbar-dot { width:9px; height:9px; border-radius:50%; border:1px solid var(--line); background:var(--panel2); }
-  .kbar-dot.on { background:var(--up); border-color:var(--up); }
-  .k-label { font-size:12px; font-weight:700; margin-right:5px; }
-  .k-expand-btn { font-size:10px; cursor:pointer; color:var(--blue,#3b82f6); margin-left:5px; background:none; border:none; padding:0; }
-  .k-legs-row { display:none; font-size:11px; padding:4px 0 2px; }
-  .k-legs-row.open { display:flex; flex-wrap:wrap; gap:3px 6px; }
-  .leg-chip { display:inline-flex; align-items:center; gap:2px; font-size:10px; padding:1px 5px; border-radius:4px; border:1px solid var(--line); }
-  .leg-on { border-color:var(--up); color:var(--up); }
-  .leg-off { color:var(--muted); }
+  /* ── Dealer map cell ──────────────────────────────────────────── */
+  .dealer-cell { min-width:150px; font-size:11.5px; }
+  .dealer-line { line-height:1.4; }
+  .regime-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; vertical-align:middle; }
+  .rd-long { background:var(--up); } .rd-short { background:var(--down); } .rd-neutral { background:var(--muted); }
+  .dealer-na { color:var(--muted); font-style:italic; }
 
-  /* ── Risk ladder ──────────────────────────────────────────────── */
-  .risk-mini { font-size:11px; color:var(--muted); white-space:nowrap; }
-  .risk-mini .level { display:inline-block; }
-  .risk-mini .level + .level::before { content:"·"; margin:0 4px; }
-
-  /* ── Direction / velocity arrow ──────────────────────────────── */
-  .arrow { display:inline-block; font-size:14px; line-height:1; }
-  .arrow-up { color:var(--up); }
-  .arrow-dn { color:var(--down); }
-  .arrow-flat { color:var(--muted); }
-
-  /* ── Dur bar ─────────────────────────────────────────────────── */
-  .dur-bar { width:42px; height:7px; background:var(--line); border-radius:4px; overflow:hidden; display:inline-block; vertical-align:middle; }
-  .dur-fill { height:100%; border-radius:4px; }
+  /* ── Expanded detail row ──────────────────────────────────────── */
+  tr.detail-row td { background:var(--panel2); padding:0; border-bottom:1px solid var(--line); }
+  .detail-inner { display:none; padding:14px 16px; }
+  tr.detail-row.open .detail-inner { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; }
+  .detail-block h4 { font-size:11px; text-transform:uppercase; letter-spacing:.3px; color:var(--muted); margin:0 0 6px; font-weight:700; }
+  .detail-block .dl { display:grid; grid-template-columns:auto 1fr; gap:2px 10px; font-size:12px; }
+  .detail-block .dl .k { color:var(--muted); }
+  .detail-block .dl .v { text-align:right; font-variant-numeric:tabular-nums; }
+  .posture { font-size:12px; line-height:1.5; margin:6px 0 0; color:var(--text); }
+  .receipt { font-size:10.5px; color:var(--muted); margin-top:6px; font-style:italic; }
+  /* checks (legs) */
+  .checks { display:flex; flex-wrap:wrap; gap:4px 8px; }
+  .check { display:inline-flex; align-items:center; gap:3px; font-size:11px; }
+  .check .ic { font-weight:700; }
+  .check.on { color:var(--up); } .check.off { color:var(--muted); } .check.na { color:var(--muted); opacity:.65; }
 
   /* ── Playbook accordion ──────────────────────────────────────── */
   .playbook-section { border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:8px; }
@@ -125,19 +148,12 @@
   .playbook-body ul { margin:6px 0 0 18px; padding:0; }
   .playbook-body li { margin-bottom:3px; }
 
-  /* ── Options flow block ──────────────────────────────────────── */
-  .flow-ncp { font-size:12px; font-variant-numeric:tabular-nums; }
-  .stale-note { font-size:10px; color:var(--muted); font-style:italic; }
-
-  /* ── Empty / loading states ──────────────────────────────────── */
   .loading-row td { color:var(--muted); font-style:italic; text-align:center; padding:24px; }
-  .no-data { color:var(--muted); padding:20px; text-align:center; }
 
-  @media (max-width:800px) {
+  @media (max-width:820px) {
     table.leaders { font-size:12px; }
     table.leaders th, table.leaders td { padding:6px 7px; }
-    .gauge-bar { width:36px; }
-    .dur-bar { width:30px; }
+    .hide-narrow { display:none; }
   }
 </style>
 </head>
@@ -165,26 +181,65 @@
   </div>
 </nav>
 
-<!-- Header panel -->
+<!-- Header panel — Tier 1: title ≤4 words, subtitle ≤14, one as-of, one footnote -->
 <div class="panel">
   <div class="topline">
-    <h1>📊 {{ t('Intraday Flow Tracker', '盘中资金流追踪') }}</h1>
-    <span class="lag-tag">{{ t('≈15-min delayed bars', '≈15分钟延迟价格') }}</span>
-    <span class="lag-tag soft-tag">{{ t('~options direction soft', '~期权方向软性') }}</span>
+    <h1>📊 {{ t('Intraday Flow', '盘中资金流') }}</h1>
+    <span class="lag-tag">{{ t('≈15-min delayed', '≈15分钟延迟') }}</span>
+    {{ help(
+      'Washed-out leaders reclaiming on real volume. Direction on the options tape is approximate (~soft) — it leans, it does not confirm. Everything here annotates; nothing is trade advice, and the dealer map is a levels-and-timing map, never a forecast.',
+      '经历洗盘后在真实成交量上收复的领涨股。期权带的方向为近似（~软性）——只作倾向，不作确认。所有内容仅为标注，均不构成交易建议；做市商地图仅为价位与择时参考，绝非预测。') }}
   </div>
   <p class="muted sm note">{{ t(
-    "Washout-to-continuation leaders board — volume durability · RVOL vs time-of-day · VWAP context · ~net call premium tape activity &amp; options-flow persistence. All metrics deterministic; no scores; annotates only. Reference levels are not trade advice.",
-    "洗盘-延续型领涨股看板 — 成交量持续性 · RVOL与时段基准对比 · VWAP上下 · ~净看涨权利金资金活跃度与期权流动性持续性。所有指标均为确定性计算；无评分；仅作参考标注。参考价位不构成交易建议。") }}</p>
+    "Which washed-out leaders are being bought back — right now — and what to do about each.",
+    "哪些洗盘后的领涨股正在被重新买入——就在当下——以及每一只该怎么应对。") }}</p>
   <div class="topline" style="margin-top:8px">
-    <span class="xs muted">{{ t('Universe:', '覆盖：') }} <span id="ift-universe-note">{{ ift.n_leaders if ift.n_leaders else 0 }} {{ t('leaders', '只领涨股') }}</span></span>
-    <span class="xs muted" id="ift-built">{{ t('Nightly base:', '夜间基础数据：') }} {{ ift.as_of if ift.as_of else '—' }}</span>
-    <span class="xs muted" id="ift-quotes-stamp">{{ t('Quotes:', '报价：') }} <span class="l-en">loading…</span><span class="l-zh">加载中…</span></span>
-    <span class="xs muted" id="ift-pulse-stamp">{{ t('Pulse:', '脉冲：') }} <span class="l-en">loading…</span><span class="l-zh">加载中…</span></span>
-    <span class="xs muted" id="ift-flow-stamp">{{ t('Options tape:', '期权带：') }} <span class="l-en">off-hours</span><span class="l-zh">非交易时段</span></span>
+    <span class="xs muted">{{ ift.n_leaders if ift.n_leaders else 0 }} {{ t('leaders watched', '只领涨股') }}</span>
+    <span class="xs muted" id="ift-stamp">{{ t('Base:', '基础：') }} {{ ift.as_of if ift.as_of else '—' }} · <span class="l-en">tape loading…</span><span class="l-zh">资金带加载中…</span></span>
   </div>
 </div>
 
-<!-- Toolbar: basket filters + K filter + search -->
+<!-- "What's set up now" stance strip — the glance tier -->
+<div class="panel">
+  <h2>{{ t("What's set up now", '当前布局一览') }}
+    {{ help('Each leader is sorted into one plain-word call from deterministic rules — no score, no black box. Click a card to show only those names. Counts update live as the tape moves.',
+            '每只领涨股按确定性规则归入一个通俗结论——无评分、无黑箱。点击卡片仅显示该类。计数随资金带实时更新。') }}
+  </h2>
+  <div class="stance-strip" id="stance-strip">
+    <div class="stance-card lane-act" data-stance="act"><span class="sc-accent"></span>
+      <div class="sc-top"><span class="sc-dot">🟢</span><span class="sc-label">{{ t('Buy now', '现在买入') }}</span></div>
+      <div class="sc-count" data-count="act">0</div>
+      <div class="sc-sub">{{ t('reclaimed on durable volume', '放量收复') }}</div>
+    </div>
+    <div class="stance-card lane-ready" data-stance="get_ready"><span class="sc-accent"></span>
+      <div class="sc-top"><span class="sc-dot">🔵</span><span class="sc-label">{{ t('Almost ready', '即将就绪') }}</span></div>
+      <div class="sc-count" data-count="get_ready">0</div>
+      <div class="sc-sub">{{ t('base built, awaiting reclaim', '底部已成，待收复') }}</div>
+    </div>
+    <div class="stance-card lane-fav" data-stance="in_favour"><span class="sc-accent"></span>
+      <div class="sc-top"><span class="sc-dot">🏃</span><span class="sc-label">{{ t('In favour', '走势占优') }}</span></div>
+      <div class="sc-count" data-count="in_favour">0</div>
+      <div class="sc-sub">{{ t('trending — ride, no fresh chase', '趋势中——持有不追') }}</div>
+    </div>
+    <div class="stance-card lane-profit" data-stance="take_profits"><span class="sc-accent"></span>
+      <div class="sc-top"><span class="sc-dot">🟠</span><span class="sc-label">{{ t('Take profits', '获利了结') }}</span></div>
+      <div class="sc-count" data-count="take_profits">0</div>
+      <div class="sc-sub">{{ t('stretched into resistance', '冲高至阻力') }}</div>
+    </div>
+    <div class="stance-card lane-watch" data-stance="watch"><span class="sc-accent"></span>
+      <div class="sc-top"><span class="sc-dot">👀</span><span class="sc-label">{{ t("Watch — don't chase", '观望——勿追') }}</span></div>
+      <div class="sc-count" data-count="watch">0</div>
+      <div class="sc-sub">{{ t('moving without a base', '无底部的异动') }}</div>
+    </div>
+    <div class="stance-card lane-aside" data-stance="stand_aside"><span class="sc-accent"></span>
+      <div class="sc-top"><span class="sc-dot">⚪</span><span class="sc-label">{{ t('Stand aside', '暂时观望') }}</span></div>
+      <div class="sc-count" data-count="stand_aside">0</div>
+      <div class="sc-sub">{{ t('quiet — no setup', '平静——无布局') }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Toolbar: basket filters + view toggle + search -->
 <div class="panel" style="padding:10px 16px">
   <div class="toolbar">
     <span class="chip active" data-basket="all">{{ t('All', '全部') }}</span>
@@ -196,23 +251,12 @@
     <span class="chip" data-basket="reshoring">{{ t('Reshoring', '回流') }}</span>
     <span class="chip" data-basket="defense">{{ t('Defense', '国防') }}</span>
     <span class="chip" data-basket="power_grid">{{ t('Power Grid', '电网') }}</span>
-    <div class="k-filter">
-      <label for="k-sel" class="muted xs">K≥</label>
-      <select id="k-sel">
-        <option value="0">{{ t('Any', '任意') }}</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-      </select>
-    </div>
+    <span class="toggle-btn active" id="group-toggle">{{ t('Group by call', '按结论分组') }}</span>
     <div class="search-box">
-      {# Never put dual-language spans inside an attribute — the class="" quotes break
-         the tag (see theme.js nav-search comment). EN in placeholder, ZH in data-ph-zh. #}
+      {# EN in placeholder, ZH in data-ph-zh — never dual-language spans inside an attribute. #}
       <input type="text" id="ift-search" placeholder="Ticker search…" data-ph-zh="搜索代码…" autocomplete="off">
     </div>
-    <span class="stamp-row xs muted" id="sort-label">{{ t('Sorted by RVOL ↓', '按RVOL排序↓') }}</span>
+    <span class="stamp-row xs muted" id="sort-label">{{ t('Most active first', '最活跃优先') }}</span>
   </div>
 </div>
 
@@ -222,20 +266,17 @@
     <table class="leaders" id="leaders-table">
       <thead>
         <tr>
-          <th data-col="ticker" class="col-ticker">{{ t('Ticker', '代码') }}<span class="sort-ic"></span></th>
-          <th data-col="last" class="col-last">{{ t('Last / %Chg', '最新/涨跌') }}<span class="sort-ic"></span></th>
-          <th data-col="rvol" class="sort-desc col-rvol">{{ t('RVOL', 'RVOL时段') }}{{ help('RVOL_tod = cumulative day volume ÷ (ADV20 × expected share at this time of day). ≥1.30 triggers L3.', 'RVOL_tod=当日累计成交量÷(ADV20×当前时段预期占比)。≥1.30触发L3。') }}<span class="sort-ic"></span></th>
-          <th data-col="range_pos" class="col-range">{{ t('Day Range', '日内区间') }}<span class="sort-ic"></span></th>
-          <th data-col="vwap_delta" class="col-vwap">{{ t('vs VWAP', '对VWAP') }}<span class="sort-ic"></span></th>
-          <th data-col="vol_dur" class="col-voldur">{{ t('Vol Dur', '量持续') }}{{ help('Share of today\'s hourly bars closing upper-half with volume ≥ time-of-day baseline. ≥0.60 triggers L4.', '今日小时K收盘在上半段且成交量≥时段基准的比例。≥0.60触发L4。') }}<span class="sort-ic"></span></th>
-          <th data-col="ncp" class="col-ncp">{{ t('~NCP / Flow', '~净看涨权利金/流速') }}{{ help('~net call premium is SOFT direction — approximate (minute tick-rule signing, RUL-F3.12). Flow velocity = slope of cumulative NCP vs session pace.', '~净看涨权利金方向软性近似（逐分钟打单，RUL-F3.12）。流速=累计NCP斜率vs当日均速。') }}<span class="sort-ic"></span></th>
-          <th data-col="setup" class="col-setup">{{ t('Setup / Chips', '布局/标签') }}</th>
-          <th data-col="k" class="col-k">{{ t('K/7', '汇聚K/7') }}{{ help('Boolean confluence count: L1 washout_recent · L2 reclaim · L3 rvol_elevated · L4 vol_durable · L5 flow_bid(~soft) · L6 upturn_organ · L7 leader_quality. No weighted score.', '布尔汇聚计数：L1洗盘近期·L2收复·L3放量·L4量持续·L5资金偏多(~软性)·L6上升器官·L7领涨质量。无加权分数。') }}<span class="sort-ic"></span></th>
-          <th data-col="risk" class="col-risk">{{ t('Ref Levels', '参考价位') }}{{ help('Reference levels only — not trade advice. Entry stop from nightly entry_signal; session VWAP from fastpath; session low from price bars.', '仅供参考，不构成交易建议。入场止损来自夜间entry_signal；VWAP来自实时快速路径；日内低点来自价格数据。') }}</th>
+          <th data-col="ticker" class="col-ticker">{{ t('Name', '代码') }}<span class="sort-ic"></span></th>
+          <th data-col="stance" class="col-stance">{{ t('The call', '结论') }}<span class="sort-ic"></span></th>
+          <th data-col="last" class="col-last hide-narrow">{{ t('Price', '价格') }}<span class="sort-ic"></span></th>
+          <th data-col="rvol" class="sort-desc col-rvol">{{ t('Volume', '成交量') }}{{ help('Today\'s volume vs a normal day at this exact time. “2.4× normal” means 2.4 times the usual pace. “Holding” = buyers keep closing bars in the upper half on above-normal volume.', '今日成交量与该时段正常水平之比。“2.4×正常”即为通常速度的2.4倍。“持稳”=买盘持续将K线收在上半段且量高于正常。') }}<span class="sort-ic"></span></th>
+          <th data-col="tape" class="col-tape hide-narrow">{{ t('Tape', '盘口') }}{{ help('Where price sits vs the session’s average price (VWAP) and whether the options tape is leaning call-heavy or put-heavy. The options lean is approximate (~soft) — a lean, not a confirmation.', '价格相对当日均价（VWAP）的位置，以及期权带偏看涨还是看跌。期权倾向为近似（~软性）——只作倾向，不作确认。') }}</th>
+          <th data-col="dealer" class="col-dealer hide-narrow">{{ t('Dealer map', '做市商地图') }}{{ help('From daily options chains: the nearby ceiling/floor levels dealers defend, the day’s expected move, and whether price is being pinned. A levels-and-timing map for stops — never a direction call, and single-name gamma is a near-constant product trait, not a signal.', '来自每日期权链：做市商防守的上方天花板/下方地板价位、当日预期波动幅度、以及价格是否被钉住。仅为止损用的价位与择时地图——非方向判断；单只标的gamma为近乎恒定的产品属性，非信号。') }}</th>
+          <th data-col="expand" class="col-expand"></th>
         </tr>
       </thead>
       <tbody id="leaders-body">
-        <tr class="loading-row"><td colspan="10"><span class="l-en">Loading leaders…</span><span class="l-zh">加载中…</span></td></tr>
+        <tr class="loading-row"><td colspan="7"><span class="l-en">Loading leaders…</span><span class="l-zh">加载中…</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -244,82 +285,77 @@
 
 <!-- Playbook accordion -->
 <div class="panel">
-  <h2>{{ t('Playbook — Washout to Continuation', '操盘手册 — 洗盘至延续') }}
+  <h2>{{ t('How to read this board', '如何看懂本看板') }}
     <span class="lag-tag">{{ t('field guide', '实战指南') }}</span>
   </h2>
 
   <div class="playbook-section open">
     <div class="playbook-hd">
-      <span>{{ t('1 · Universe &amp; leadership screen', '1 · 覆盖范围与领涨筛选') }}</span>
+      <span>{{ t('1 · The one job of this board', '1 · 本看板的唯一任务') }}</span>
       <span class="caret">▸</span>
     </div>
     <div class="playbook-body">
-      <p class="l-en">This board covers the Mag7, AI infrastructure, AI software, AI semiconductor, semicap equipment, reshoring, defense, and power-grid baskets — names with demonstrated institutional sponsorship and options liquidity. The goal is not to find cheap stocks; it is to find tape-active leaders that have absorbed selling and are showing durable re-accumulation. Only the <em>leader quality</em> universe is relevant — trap-prone names (failed-breakout-trap chip) are deprioritized.</p>
-      <p class="l-zh">本看板覆盖Mag7、AI基础设施、AI软件、AI半导体、半导体设备、回流制造、国防与电网篮子——这些标的具有机构持续性参与和期权流动性。目标不是寻找廉价股，而是寻找经历卖压洗盘后表现出持续吸筹的活跃领涨股。只关注<em>领涨质量</em>标的——回踩陷阱型标的（trap-prone标签）优先级降低。</p>
+      <p class="l-en">This board watches a fixed list of institutional leaders — the Mag 7, AI infrastructure, AI software and semiconductors, semicap equipment, reshoring, defense and power-grid names. It looks for one specific thing: a leader that sold off, absorbed the selling, and is now being <em>bought back on real volume</em>. For every name it gives you a plain call — buy now, almost ready, in favour, take profits, watch, or stand aside — and the reason behind it. It is not a stock screener for cheap stocks; it is a timing board for continuation entries in names that already have sponsorship.</p>
+      <p class="l-zh">本看板跟踪一份固定的机构领涨股名单——Mag 7、AI基础设施、AI软件与半导体、半导体设备、回流制造、国防与电网标的。它只找一件事：某只领涨股经历下跌、消化卖压、如今正被<em>放量重新买入</em>。对每只标的给出一个通俗结论——现在买入、即将就绪、走势占优、获利了结、观望或暂时观望——并附上理由。这不是找廉价股的筛选器，而是为已有机构参与的标的把握延续入场时机的择时看板。</p>
     </div>
   </div>
 
   <div class="playbook-section">
     <div class="playbook-hd">
-      <span>{{ t('2 · Washout context — what makes a setup valid', '2 · 洗盘背景 — 何为有效布局') }}</span>
+      <span>{{ t('2 · What each call means', '2 · 每个结论的含义') }}</span>
       <span class="caret">▸</span>
     </div>
     <div class="playbook-body">
-      <p class="l-en">A valid washout context requires at least one of: a Bollinger-lower-band reclaim within the past {{ washout_lb }} sessions (L1a), or a 21-day max drawdown ≤ −12% with recovery already begun (L1b). Without prior compression or selling, a high RVOL reading is just noise. The washout gives the continuation move its structural floor — the stop goes <em>below</em> the washout structure, not below the current bar.</p>
-      <p class="l-zh">有效的洗盘背景要求满足至少一项：过去{{ washout_lb }}个交易日内收复布林下轨（L1a），或21日最大回撤≤−12%且已开始修复（L1b）。没有前期压缩或卖压，高RVOL读数只是噪声。洗盘为延续走势提供了结构性底部——止损应设在<em>洗盘结构下方</em>，而非当前K线下方。</p>
+      <ul class="l-en">
+        <li><b>🟢 Buy now</b> — sold off recently, reclaimed above the day’s average price on durable (not one-spike) volume, and it is a clean leader. The continuation setup is live; stop goes below the washout base.</li>
+        <li><b>🔵 Almost ready</b> — the base is built but price hasn’t reclaimed yet. Waiting for a push back above the average price on volume.</li>
+        <li><b>🏃 In favour</b> — already trending and holding above the average price, but with no fresh washout. Ride an existing position; not a fresh entry.</li>
+        <li><b>🟠 Take profits</b> — stretched well above the average price, or jammed into a dealer ceiling / expiry pin. Expect a pullback; don’t chase.</li>
+        <li><b>👀 Watch — don’t chase</b> — moving, but without a washout base, or a name with a history of faking breakouts. Wait for structure.</li>
+        <li><b>⚪ Stand aside</b> — quiet tape, no setup right now.</li>
+      </ul>
+      <ul class="l-zh">
+        <li><b>🟢 现在买入</b> —— 近期下跌后，在持续（非单次）放量中收复当日均价，且为干净的领涨股。延续布局已成立；止损设在洗盘底部下方。</li>
+        <li><b>🔵 即将就绪</b> —— 底部已成，但价格尚未收复。等待放量重回均价上方。</li>
+        <li><b>🏃 走势占优</b> —— 已在趋势中并守住均价上方，但无新的洗盘。适合持有已有仓位，非新入场点。</li>
+        <li><b>🟠 获利了结</b> —— 大幅高于均价，或顶到做市商天花板/到期钉价。预期回落，勿追。</li>
+        <li><b>👀 观望——勿追</b> —— 有异动，但无洗盘底部，或该标的有假突破前科。等待结构。</li>
+        <li><b>⚪ 暂时观望</b> —— 盘口平静，当前无布局。</li>
+      </ul>
     </div>
   </div>
 
   <div class="playbook-section">
     <div class="playbook-hd">
-      <span>{{ t('3 · Volume &amp; RVOL — durable accumulation vs noise', '3 · 成交量与RVOL — 持续吸筹vs噪声') }}</span>
+      <span>{{ t('3 · The options tape (approximate direction)', '3 · 期权资金带（方向为近似）') }}</span>
       <span class="caret">▸</span>
     </div>
     <div class="playbook-body">
-      <p class="l-en">RVOL_tod compares today's cumulative volume to ADV20 × the expected time-of-day volume share from trailing 20 sessions. A reading ≥ {{ rvol_confirm }}× (L3) is elevated. Volume durability (L4) requires ≥ {{ (dur_min * 100)|int }}% of today's hourly bars to close in their upper half with above-baseline volume — this distinguishes a sustained bid from a single spike. Higher-lows count confirms price is not giving back each bar's gain. RVOL alone is insufficient; it must arrive with durability.</p>
-      <p class="l-zh">RVOL_tod将今日累计成交量与ADV20×过去20个交易日该时段平均成交占比的乘积对比。读数≥{{ rvol_confirm }}×（L3）为放量。成交量持续性（L4）要求今日≥{{ (dur_min * 100)|int }}%的小时K收盘在上半段且成交量高于时段基准——这区分了持续买盘与单次放量。Higher-lows计数确认价格未在每根K线后回吐涨幅。RVOL单独不够，必须配合持续性。</p>
+      <p class="l-en">The options column shows tape activity and how persistently it leans call-heavy or put-heavy. <em>The direction is approximate</em> — it is signed by a tape rule, not by matching each trade to the bid/offer, so read it as a lean, never a confirmation (that is what the <span class="soft-tag">~soft</span> mark means). Unusual-size flags (big blocks, fresh positions, size-vs-open-interest) are exact counts. It is a supporting input, not a trigger on its own.</p>
+      <p class="l-zh">期权栏展示资金带的活跃度，以及其偏看涨或看跌的持续程度。<em>方向为近似</em>——它由盘口规则定向，而非将每笔交易与买卖报价匹配，故仅作倾向、绝非确认（这正是 <span class="soft-tag">~软性</span> 标记的含义）。异常规模标记（大单、新建仓、规模对比未平仓量）为精确计数。它是辅助输入，不单独作为触发。</p>
     </div>
   </div>
 
   <div class="playbook-section">
     <div class="playbook-hd">
-      <span>{{ t('4 · Options tape — tape activity &amp; flow persistence (~soft)', '4 · 期权带 — 活跃度与流动持续性（~软性）') }}</span>
+      <span>{{ t('4 · The dealer map (levels &amp; stops, not direction)', '4 · 做市商地图（价位与止损，非方向）') }}</span>
       <span class="caret">▸</span>
     </div>
     <div class="playbook-body">
-      <p class="l-en">The options flow block shows tape activity and options-flow persistence. <em>Direction reads are SOFT</em> — ~net call premium (NCP) is signed by minute tick-rule, not NBBO, so the call/put direction is approximate. Flow durability = share of 5-min windows with NCP &gt; 0 + the longest positive streak. This is a confluence input, not a standalone signal, and is not used as an entry trigger in isolation. The bias badge counts (WHALE, FRESH, Z_OUTLIER, etc.) are deterministic; 0DTE is bucket-labeled only, never highlighted.</p>
-      <p class="l-zh">期权资金块展示期权活跃度与流动持续性。<em>方向读数为软性近似</em>——~净看涨权利金（NCP）通过逐分钟打单规则定向，非NBBO，因此看涨/看跌方向为近似值。流动持续性=NCP&gt;0的5分钟窗口占比+最长正向连续条数。这是汇聚输入，非独立信号，不单独用于入场触发。偏好标签计数（WHALE、FRESH、Z_OUTLIER等）为确定性计算；0DTE仅做桶分类标注，不特别强调。</p>
-    </div>
-  </div>
-
-  <div class="playbook-section">
-    <div class="playbook-hd">
-      <span>{{ t('5 · Confluence K/7 &amp; entry timing', '5 · 汇聚K/7与入场时机') }}</span>
-      <span class="caret">▸</span>
-    </div>
-    <div class="playbook-body">
-      <p class="l-en">K is a simple count of 7 independent boolean legs — no weighting, no score. Higher K means more conditions align simultaneously; it does not imply outcome probability. Useful timing: K rises intraday as more legs activate. The ideal sequence is L1 (washout context) + L6 (mtf_upturn) already set from nightly, then L3+L4 (volume) and L2 (reclaim above VWAP &amp; prevClose) confirm intraday, optionally with L5 (~flow bid). Let the runners run — do not tighten stops into natural retracements on a durable leader.</p>
-      <p class="l-zh">K是7个独立布尔腿的简单计数——无加权、无评分。K值越高表示更多条件同时满足；不代表结果概率。实用时机：K值在盘中随更多腿激活而上升。理想顺序：L1（洗盘背景）+L6（多周期上行器官）已由夜间确认，然后L3+L4（成交量）和L2（收复VWAP及前收）盘中确认，可选配L5（~资金偏多）。让盈利跑——不要在持续领涨股的正常回踩中收紧止损。</p>
-    </div>
-  </div>
-
-  <div class="playbook-section">
-    <div class="playbook-hd">
-      <span>{{ t('6 · Reference levels &amp; trap-prone names', '6 · 参考价位与回踩陷阱型标的') }}</span>
-      <span class="caret">▸</span>
-    </div>
-    <div class="playbook-body">
-      <p class="l-en">Reference levels (stop, VWAP, session low + ATR%) are computed from nightly entry_signal and intraday fastpath data — <em>they are reference only, not advice</em>. Stop comes from nightly structure; revisit it if the setup changes materially intraday. Trap-prone names (failed_breakout_trap = true) show a red <strong>trap-prone 回踩陷阱</strong> chip and are deprioritized — these names have a track record of faking breakouts and retesting lows repeatedly. Use them only if the full K/7 is elevated AND washout is recent and deep.</p>
-      <p class="l-zh">参考价位（止损、VWAP、日内低点+ATR%）由夜间entry_signal和盘中快速路径数据计算——<em>仅供参考，不构成交易建议</em>。止损来自夜间结构；若盘中布局出现重大变化应重新评估。回踩陷阱型标的（failed_breakout_trap=true）显示红色<strong>trap-prone 回踩陷阱</strong>标签并降低优先级——这些标的有反复假突破、一再测试低点的历史。只有在K/7完全满足且洗盘近期且幅度深时才考虑。</p>
+      <p class="l-en">Built from daily options chains, the dealer map shows the nearby levels market-makers tend to defend — a <em>ceiling</em> above and a <em>floor</em> below — the day’s expected move, and whether price is being pinned near a big strike into expiry. Use it for timing and stop placement: a hard ceiling just overhead argues against chasing; a strong floor below is a logical stop reference. It is never a direction call, and for a single stock the long/short-gamma label is a near-constant trait of the product, not a live signal — so it is shown as context only.</p>
+      <p class="l-zh">做市商地图由每日期权链构建，展示做市商倾向防守的邻近价位——上方<em>天花板</em>与下方<em>地板</em>——当日预期波动幅度，以及价格是否在到期临近时被钉在某大行权价附近。用于择时与设置止损：头顶紧邻硬天花板则不宜追高；下方有强地板可作止损参考。它绝非方向判断；对单只股票而言，多头/空头gamma标签是产品近乎恒定的属性，而非实时信号——故仅作背景展示。</p>
     </div>
   </div>
 
   <p class="xs muted" style="margin-top:10px">
-    {{ t('~NCP direction is SOFT — approximate (minute tick-rule signing, not NBBO). All metrics deterministic; no LLM. Reference levels are not trade advice. Display-tier only.',
-         '~NCP方向为软性近似（逐分钟打单，非NBBO）。所有指标均为确定性计算；无LLM参与。参考价位不构成交易建议。仅展示层。') }}
+    {{ t('Options-tape direction is approximate (~soft — a tape rule, not bid/offer matching). Every call is a deterministic rule with no score and no black box. Reference levels and the dealer map are context for timing and stops, not trade advice.',
+         '期权带方向为近似（~软性——盘口规则，非买卖报价匹配）。每个结论均为确定性规则，无评分、无黑箱。参考价位与做市商地图仅为择时与止损背景，不构成交易建议。') }}
   </p>
 </div>
 
+<!-- data_base.js sets window.DATA_BASE → routes the live options-flow fetch to the
+     public R2 data plane (present on 171 site pages; v1 omitted it, so R2 flow never loaded). -->
+<script src="data_base.js"></script>
 <!-- Inline JS — data loads, polling, table render -->
 <script>
 (function(){
@@ -330,667 +366,656 @@ var BASE_DATA = {{ intraday_flow | tojson if intraday_flow else '{}' }};
 var RVOL_CONFIRM = BASE_DATA.rvol_confirm || 1.30;
 var DUR_MIN = BASE_DATA.durability_min || 0.60;
 var WASHOUT_LB = BASE_DATA.washout_lookback || 10;
-var LEADERS_BY_TK = {};    // ticker -> leader record (nightly base)
 var leaders = BASE_DATA.leaders || [];
-
-// ── Global live state ──────────────────────────────────────────────────────
-var quoteState = {};        // ticker -> {price, changePct, prevClose, day_volume, day_high, day_low}
-var pulseState = {};        // ticker -> {vwap, vol_durability, higher_lows, cum_vol}
-var flowState = {};         // ticker -> {ncp, flow_dur, vel_arrow, badges, session_tier}
-var flowMeta = {};          // {asof, mode}
-
-// ── Sorting state ─────────────────────────────────────────────────────────
-var sortCol = 'rvol', sortDir = -1;  // default: RVOL desc
-
-// ── Filter state ─────────────────────────────────────────────────────────
-var activeBasket = 'all';
-var kMin = 0;
-var searchQ = '';
-
-// ── Build ticker index ────────────────────────────────────────────────────
+var LEADERS_BY_TK = {};
 leaders.forEach(function(l){ LEADERS_BY_TK[l.ticker] = l; });
 
-// ── URL helpers ───────────────────────────────────────────────────────────
-function snapUrl() {
-  // Mirror live.js: use LIVE_SNAPSHOT_URL (window.LIVE_SNAPSHOT_URL = 'live/quotes.json')
-  return window.LIVE_SNAPSHOT_URL || 'live/quotes.json';
-}
+// ── Live state ─────────────────────────────────────────────────────────────
+var quoteState = {};   // ticker -> {price, changePct, vol, hi, lo}
+var pulseState = {};   // ticker -> {vwap, vol_durability, higher_lows, cum_vol, bars_today, rvol_tod, session_high, session_low}
+var flowState = {};    // ticker -> {ncp(~soft), flow_dur, badges[], session_tier, call_share}
+var flowAsof = null, flowRTH = false;
+
+// ── View state ─────────────────────────────────────────────────────────────
+var sortCol = 'rvol', sortDir = -1;
+var activeBasket = 'all', activeStance = 'all', searchQ = '', groupByStance = true;
+var openRows = {};     // ticker -> true when detail expanded
+
+// ── Stance lane metadata (labels localized; keys deterministic) ────────────
+var STANCE_META = {
+  act:         { dot:'🟢', lane:'lane-act',    en:'Buy now',            zh:'现在买入', order:0 },
+  get_ready:   { dot:'🔵', lane:'lane-ready',  en:'Almost ready',       zh:'即将就绪', order:1 },
+  in_favour:   { dot:'🏃', lane:'lane-fav',    en:'In favour',          zh:'走势占优', order:2 },
+  take_profits:{ dot:'🟠', lane:'lane-profit', en:'Take profits',       zh:'获利了结', order:3 },
+  watch:       { dot:'👀', lane:'lane-watch',  en:"Watch — don't chase",zh:'观望——勿追', order:4 },
+  stand_aside: { dot:'⚪', lane:'lane-aside',  en:'Stand aside',        zh:'暂时观望', order:5 }
+};
+
+// ── URL helpers ────────────────────────────────────────────────────────────
+function snapUrl() { return window.LIVE_SNAPSHOT_URL || 'live/quotes.json'; }
 function pulseUrl() { return 'live/flow_pulse.json'; }
 function r2Url(path) {
   var base = (window.DATA_BASE || '').replace(/\/+$/, '');
-  if (!base) return null;
-  return base + '/' + path;
+  return base ? base + '/' + path : null;
 }
 
-// ── Confluence legs computation ────────────────────────────────────────────
-function computeLegs(leader, quote, pulse, flow) {
-  var ticker = leader.ticker;
-
-  // L1: washout_recent — engine def: bb_lower_reclaim_days <= washout_lookback
-  //     OR (drawdown_21d_pct <= -12% AND recovery_begun).
-  // base.json carries bb_lower_reclaim_days / drawdown_21d_pct / recovery_begun when
-  // the stockdata reader surfaces them; when absent, L1 is null (not counted).
-  var L1 = null;
-  // WASHOUT_LB comes from BASE_DATA.washout_lookback (nightly config) or defaults to 10.
-  if (leader.bb_lower_reclaim_days != null) {
-    L1 = leader.bb_lower_reclaim_days <= WASHOUT_LB;
-  } else if (leader.drawdown_21d_pct != null && leader.recovery_begun != null) {
-    L1 = leader.drawdown_21d_pct <= -0.12 && leader.recovery_begun;
-  }
-  // Fallback proxy when structured fields absent: entry_signal.status keyword or
-  // vol_squeeze.coiled — clearly marked as a proxy so it accrues as confluence input.
-  if (L1 === null) {
-    var hasWashoutProxy = false;
-    if (leader.entry_signal && leader.entry_signal.status) {
-      var st = (leader.entry_signal.status || '').toLowerCase();
-      hasWashoutProxy = st.indexOf('washout') >= 0 || st.indexOf('reclaim') >= 0 ||
-                        st.indexOf('bounce') >= 0 || st.indexOf('buy') >= 0;
-    }
-    if (!hasWashoutProxy && leader.vol_squeeze && leader.vol_squeeze.coiled) {
-      hasWashoutProxy = true;
-    }
-    // Only set to true on proxy — never to false (absent ≠ false per engine semantics).
-    if (hasWashoutProxy) L1 = true;
-  }
-
-  // L2: reclaim — price > VWAP AND price > prevClose
-  var L2 = false;
-  if (quote && quote.price && pulse && pulse.vwap) {
-    L2 = quote.price > pulse.vwap && quote.price > (leader.prev_close || 0);
-  }
-
-  // L3: rvol_elevated
-  var rvol = computeRvol(leader, quote);
-  var L3 = rvol !== null && rvol >= RVOL_CONFIRM;
-
-  // L4: vol_durable
-  var volDur = pulse ? (pulse.vol_durability != null ? pulse.vol_durability : null) : null;
-  var L4 = volDur !== null && volDur >= DUR_MIN;
-
-  // L5: flow_bid (~soft) — cum NCP > 0 AND flow durability >= DUR_MIN
-  var L5 = false;
-  if (flow) {
-    var ncpPos = flow.ncp != null && flow.ncp > 0;
-    var flowDurOk = flow.flow_dur != null && flow.flow_dur >= DUR_MIN;
-    L5 = ncpPos && flowDurOk;
-  }
-
-  // L6: upturn_organ — qualifying mtf_upturn states (UPTURN_WATCH or UPTURN_CONFIRMED).
-  // Mirror engine._UPTURN_QUALIFYING; use state string as primary key.
-  // K >= 2 matches engine.mtf_upturn.STATE_WATCH_K (=2). UPTURN_MOMENTUM is not a
-  // valid mtf_upturn state and is excluded here to match the engine qualifying set.
-  var L6 = false;
-  if (leader.mtf_upturn_state) {
-    var mst = (leader.mtf_upturn_state || '').toUpperCase();
-    L6 = mst === 'UPTURN_WATCH' || mst === 'UPTURN_CONFIRMED';
-  } else if (leader.mtf_upturn_K != null) {
-    L6 = leader.mtf_upturn_K >= 2;  // STATE_WATCH_K = 2 in engine/mtf_upturn.py
-  }
-
-  // L7: leader_quality — NOT failed_breakout_trap.
-  // Mirror engine semantics: null/absent = data unknown → absent (not counted in K).
-  // Only true when field is explicitly false (i.e. confirmed NOT a trap).
-  var L7 = leader.failed_breakout_trap === false ? true : null;
-
-  var legs = [L1, L2, L3, L4, L5, L6, L7];
-  // Mirror engine K semantics: count only true legs; null = absent (not counted).
-  var K = legs.filter(function(v){ return v === true; }).length;
-  return { legs: legs, K: K };
-}
-
-// ── DST-correct ET helper (used by both computeRvol and isMarketHours) ───────
+// ── DST-correct ET helper ──────────────────────────────────────────────────
 function _etMinutes() {
-  var fmt = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', hour12: false, hour: '2-digit', minute: '2-digit'});
-  var parts = fmt.formatToParts(new Date());
-  var h = 0, m = 0;
-  parts.forEach(function(p){ if (p.type === 'hour') h = parseInt(p.value, 10); else if (p.type === 'minute') m = parseInt(p.value, 10); });
-  return h * 60 + m;
+  var fmt = new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York', hour12:false, hour:'2-digit', minute:'2-digit'});
+  var parts = fmt.formatToParts(new Date()), h=0, m=0;
+  parts.forEach(function(p){ if (p.type==='hour') h=parseInt(p.value,10); else if (p.type==='minute') m=parseInt(p.value,10); });
+  return h*60 + m;
 }
+function isMarketHours() { var e=_etMinutes(); return e >= (9*60+25) && e <= (16*60+5); }
 
-// ── RVOL computation ──────────────────────────────────────────────────────
-function computeRvol(leader, quote) {
-  // Keys emitted by build_live_quotes.to_worker_quotes are short: vol/hi/lo.
+// ── Derived metrics ────────────────────────────────────────────────────────
+function computeRvol(leader, quote, pulse) {
+  if (pulse && pulse.rvol_tod != null) return pulse.rvol_tod;   // fastpath-precomputed wins
   if (!quote || !quote.vol || !leader.adv20_shares) return null;
   var curve = leader.vol_share_curve;
   if (!curve || !curve.length) return null;
-
-  // Estimate time-of-day fraction: use hour index = proportional position in curve
-  var mkt_open = 9 * 60 + 30;  // 9:30 ET in minutes
-  var mkt_close = 16 * 60;
-  var etMins = _etMinutes();
-  var elapsed = etMins - mkt_open;
+  var etMins = _etMinutes(), elapsed = etMins - (9*60+30);
   if (elapsed < 0) elapsed = 0;
-  var total = mkt_close - mkt_open;
-  var frac = Math.min(elapsed / total, 1.0);
-
-  // vol_share_curve is CUMULATIVE (each entry = cumulative fraction through end of hour i).
-  // Read the single value at the current index — do NOT sum.
-  var n = curve.length;
-  var cumIdx = Math.min(Math.floor(frac * n), n - 1);
+  var frac = Math.min(elapsed / (6.5*60), 1.0);
+  var cumIdx = Math.min(Math.floor(frac * curve.length), curve.length - 1);
   var cumShare = curve[cumIdx] || 0;
-
   if (cumShare <= 0) return null;
   return quote.vol / (leader.adv20_shares * cumShare);
 }
-
-// ── Day range position computation ────────────────────────────────────────
 function computeRangePos(quote) {
-  if (!quote) return null;
-  // Keys emitted by build_live_quotes.to_worker_quotes are short: vol/hi/lo.
-  var lo = quote.lo, hi = quote.hi, px = quote.price;
-  if (lo == null || hi == null || px == null) return null;
-  var rng = hi - lo;
-  if (rng <= 0) return null;
-  return (px - lo) / rng;
+  if (!quote || quote.lo == null || quote.hi == null || quote.price == null) return null;
+  var rng = quote.hi - quote.lo;
+  return rng > 0 ? (quote.price - quote.lo) / rng : null;
 }
-
-// ── VWAP delta computation ────────────────────────────────────────────────
 function computeVwapDelta(quote, pulse) {
   if (!quote || !quote.price || !pulse || !pulse.vwap) return null;
   return (quote.price - pulse.vwap) / pulse.vwap * 100;
 }
 
-// ── Format helpers ────────────────────────────────────────────────────────
-function fmtNum(v, dec) {
-  if (v == null || isNaN(v)) return '—';
-  return Number(v).toFixed(dec != null ? dec : 2);
-}
-function fmtPct(v) {
-  if (v == null || isNaN(v)) return '—';
-  return (v >= 0 ? '+' : '') + Number(v).toFixed(2) + '%';
-}
-function fmtDollar(v) {
-  if (v == null || isNaN(v)) return '—';
-  return '$' + Number(v).toFixed(2);
-}
-function fmtK(n, suffix) {
-  if (n == null) return '—';
-  n = Number(n);
-  if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(1) + 'M' + (suffix||'');
-  if (Math.abs(n) >= 1e3) return (n/1e3).toFixed(1) + 'K' + (suffix||'');
-  return n.toFixed(0) + (suffix||'');
-}
-function posNeg(v, threshold) {
-  threshold = threshold || 0;
-  if (v == null || isNaN(v)) return '';
-  return v > threshold ? 'pos' : (v < -threshold ? 'neg' : '');
-}
-function durColor(v, min) {
-  if (v == null) return 'gauge-lo';
-  return v >= min ? 'gauge-hi' : (v >= min * 0.7 ? 'gauge-med' : 'gauge-lo');
+// ── Confluence legs (mirror engine/intraday_flow.confluence_legs) ──────────
+function computeLegs(leader, quote, pulse, flow) {
+  var L1 = null;
+  if (leader.bb_lower_reclaim_days != null) L1 = leader.bb_lower_reclaim_days <= WASHOUT_LB;
+  else if (leader.drawdown_21d_pct != null && leader.recovery_begun != null) L1 = leader.drawdown_21d_pct <= -0.12 && leader.recovery_begun;
+  if (L1 === null) {
+    var proxy = false;
+    if (leader.entry_signal && leader.entry_signal.status) {
+      var st = (leader.entry_signal.status || '').toLowerCase();
+      proxy = st.indexOf('washout')>=0 || st.indexOf('reclaim')>=0 || st.indexOf('bounce')>=0 || st.indexOf('buy')>=0;
+    }
+    if (!proxy && leader.vol_squeeze && leader.vol_squeeze.coiled) proxy = true;
+    if (proxy) L1 = true;
+  }
+  var L2 = false;
+  if (quote && quote.price && pulse && pulse.vwap) L2 = quote.price > pulse.vwap && quote.price > (leader.prev_close || 0);
+  var rvol = computeRvol(leader, quote, pulse);
+  var L3 = rvol !== null && rvol >= RVOL_CONFIRM;
+  var volDur = pulse ? (pulse.vol_durability != null ? pulse.vol_durability : null) : null;
+  var L4 = volDur !== null && volDur >= DUR_MIN;
+  var L5 = false;
+  if (flow) {
+    var ncpPos = flow.ncp != null && flow.ncp > 0;
+    var durOk = flow.flow_dur != null ? flow.flow_dur >= DUR_MIN : ncpPos;  // degrade to sign if dur absent
+    L5 = ncpPos && durOk;
+  }
+  var L6 = false;
+  if (leader.mtf_upturn_state) {
+    var mst = (leader.mtf_upturn_state || '').toUpperCase();
+    L6 = mst === 'UPTURN_WATCH' || mst === 'UPTURN_CONFIRMED';
+  } else if (leader.mtf_upturn_K != null) L6 = leader.mtf_upturn_K >= 2;
+  var L7 = leader.failed_breakout_trap === false ? true : null;
+  var legs = [L1, L2, L3, L4, L5, L6, L7];
+  return { legs: legs, K: legs.filter(function(v){ return v === true; }).length };
 }
 
-// ── Build a row ───────────────────────────────────────────────────────────
+// ── Dealer context accessor ────────────────────────────────────────────────
+function dealerOf(leader) {
+  var oe = leader.options_entry || {};
+  return oe.dealer || null;
+}
+
+// ── Stance (mirror engine/intraday_flow.stance — deterministic precedence) ─
+function computeStance(leader, quote, pulse, flow, conf) {
+  var legs = conf.legs;
+  var L1=legs[0], L2=legs[1], L3=legs[2], L4=legs[3], L5=legs[4], L6=legs[5], L7=legs[6];
+  var squeeze = !!(leader.vol_squeeze && leader.vol_squeeze.coiled);
+  var d = dealerOf(leader);
+  var livePresent = isMarketHours() || !!(pulse && pulse.bars_today > 0);
+
+  if (!livePresent) {
+    if (L1 === true && (L6 === true || squeeze)) return { key:'get_ready', reason_en:'Base in place — waiting for the open.', reason_zh:'底部已成——等待开盘。', muted:true };
+    return { key:'stand_aside', reason_en:'Waiting for the open — live tape not flowing yet.', reason_zh:'等待开盘——实时资金带尚未流动。', muted:true };
+  }
+
+  var vwapDelta = computeVwapDelta(quote, pulse);
+  var priceUp = quote && quote.changePct != null ? quote.changePct > 0 : false;
+  var emDaily = d && d.expected_move_daily_pct != null ? d.expected_move_daily_pct : null;
+
+  // derived risk helpers (dealer-derived; None-safe → false)
+  var intoCeiling = !!(d && d.call_wall_hard === true && d.call_wall_dist_sigma != null && d.call_wall_dist_sigma <= 0.5);
+  var extendedUp = false;
+  if (vwapDelta != null && emDaily != null && emDaily > 0 && vwapDelta >= 1.5 * emDaily) extendedUp = true;
+  if (intoCeiling && vwapDelta != null && vwapDelta > 0) extendedUp = true;
+  var pinWatch = false;
+  if (d && d.opex_days != null && d.opex_days <= 5 && d.regime === 'long') {
+    var wu = d.call_wall != null && quote.price ? Math.abs((d.call_wall - quote.price)/quote.price)*100 : null;
+    var wd = d.put_wall != null && quote.price ? Math.abs((d.put_wall - quote.price)/quote.price)*100 : null;
+    var mu = d.magnet_up != null && quote.price ? Math.abs((d.magnet_up - quote.price)/quote.price)*100 : null;
+    var md = d.magnet_down != null && quote.price ? Math.abs((d.magnet_down - quote.price)/quote.price)*100 : null;
+    var near = [wu,wd,mu,md].filter(function(x){ return x != null; });
+    if (near.length && Math.min.apply(null, near) <= 1.0) pinWatch = true;
+  }
+  var aboveVwap = vwapDelta != null ? vwapDelta > 0 : (L2 === true);
+
+  // 1 · Take profits — an up-move stretched into resistance / pin
+  if (aboveVwap && (extendedUp || pinWatch)) {
+    var why = pinWatch ? 'Pinned near a big strike into expiry — expect range-bound; don\'t chase.'
+                       : 'Stretched well above the average price into the dealer ceiling — expect a pullback.';
+    var whyz = pinWatch ? '临近到期被钉在大行权价附近——预期区间震荡，勿追。'
+                        : '大幅高于均价并冲向做市商天花板——预期回落。';
+    return { key:'take_profits', reason_en:why, reason_zh:whyz, muted:false };
+  }
+  // 2 · Buy now — full continuation setup, not into a ceiling.
+  // Quality is a negative filter: only a KNOWN trap (L7===false) blocks; unknown
+  // quality (null) must not (trap flags are sparse). Mirrors engine l7 = "is not False".
+  if (L1===true && L2===true && L4===true && L7!==false && (L3===true || L5===true) && !intoCeiling) {
+    return { key:'act', reason_en:'Reclaimed above the average price on durable volume; structure supports continuation.', reason_zh:'放量收复均价上方；结构支持延续。', muted:false };
+  }
+  // 3 · Almost ready — base built, trigger not yet fired
+  if (L1===true && (L6===true || squeeze) && L7!==false && L2!==true) {
+    return { key:'get_ready', reason_en:'Washout base built; waiting for a reclaim above the average price on volume.', reason_zh:'洗盘底部已成；等待放量收复均价上方。', muted:false };
+  }
+  // 4 · In favour — trending and holding, no fresh washout
+  if (L2===true && L6===true && (L3===true || L4===true) && L7!==false && L1!==true) {
+    return { key:'in_favour', reason_en:'Trending and holding above the average price; ride it, no fresh entry here.', reason_zh:'趋势中并守住均价上方；持有为宜，此处非新入场点。', muted:false };
+  }
+  // 5 · Watch — active without structure, or trap-prone
+  if ((L3===true || priceUp) && (L1!==true || L7===false)) {
+    var wr = L7===false ? 'Moving, but this name has a history of faking breakouts — wait for a clean base.'
+                        : 'Moving without a washout base — wait for structure before acting.';
+    var wrz = L7===false ? '有异动，但该标的有假突破前科——等待干净底部。'
+                         : '异动但无洗盘底部——等待结构再行动。';
+    return { key:'watch', reason_en:wr, reason_zh:wrz, muted:false };
+  }
+  // 6 · Stand aside
+  return { key:'stand_aside', reason_en:'Quiet tape, no setup right now.', reason_zh:'盘口平静，当前无布局。', muted:true };
+}
+
+// ── Format helpers ─────────────────────────────────────────────────────────
+function fmtNum(v, dec){ return (v==null||isNaN(v)) ? '—' : Number(v).toFixed(dec!=null?dec:2); }
+function fmtPct(v){ return (v==null||isNaN(v)) ? '—' : (v>=0?'+':'')+Number(v).toFixed(2)+'%'; }
+function fmtDollar(v){ return (v==null||isNaN(v)) ? '—' : '$'+Number(v).toFixed(2); }
+function fmtK(n){ if(n==null||isNaN(n))return '—'; n=Number(n); if(Math.abs(n)>=1e6)return (n/1e6).toFixed(1)+'M'; if(Math.abs(n)>=1e3)return (n/1e3).toFixed(1)+'K'; return n.toFixed(0); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function lz(en, zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh||en)+'</span>'; }
+
+// ── Plain-word metric phrasing ─────────────────────────────────────────────
+function volumeWords(rvol, volDur) {
+  if (rvol == null) return { en:'—', zh:'—', cls:'gauge-lo', pct:0 };
+  var band = rvol >= RVOL_CONFIRM ? 'gauge-hi' : (rvol >= 0.8 ? 'gauge-med' : 'gauge-lo');
+  var mult = rvol.toFixed(1) + '×';
+  var holdEn = volDur != null ? (volDur >= DUR_MIN ? ' · holding' : (volDur >= DUR_MIN*0.7 ? ' · fading' : ' · not holding')) : '';
+  var holdZh = volDur != null ? (volDur >= DUR_MIN ? ' · 持稳' : (volDur >= DUR_MIN*0.7 ? ' · 转弱' : ' · 未持稳')) : '';
+  return { en: mult + ' normal' + holdEn, zh: mult + '正常' + holdZh, cls: band, pct: Math.min(rvol/3,1)*100 };
+}
+function rangeWords(rp) {
+  if (rp == null) return null;
+  return rp > 0.65 ? lz('near day high','接近日高') : (rp < 0.35 ? lz('near day low','接近日低') : lz('mid-range','区间中部'));
+}
+
+// ── Fetch: quotes (60s) ────────────────────────────────────────────────────
+var quotesInflight = false;
+function fetchQuotes() {
+  if (quotesInflight) return; quotesInflight = true;
+  fetch(snapUrl(), {cache:'no-cache'}).then(function(r){ return r.json(); }).then(function(data){
+    quotesInflight = false;
+    var q = data.quotes || {};
+    Object.keys(q).forEach(function(tk){ quoteState[tk] = q[tk]; });
+    render();
+  }).catch(function(){ quotesInflight = false; });
+}
+
+// ── Fetch: flow pulse (5min) ───────────────────────────────────────────────
+var pulseInflight = false;
+function fetchPulse() {
+  if (pulseInflight) return; pulseInflight = true;
+  fetch(pulseUrl(), {cache:'no-cache'}).then(function(r){ return r.json(); }).then(function(data){
+    pulseInflight = false;
+    (data.tickers || []).forEach(function(t){ pulseState[t.ticker] = t; });
+    render();
+  }).catch(function(){ pulseInflight = false; });
+}
+
+// ── Fetch: live options flow (R2, 2-3min RTH) — FIXED per real schema ──────
+// tide_current.json → top_net_impact[] gives per-root ~net premium lean (soft).
+// enrich_current.json → per-event list; aggregate per root for badges + tier.
+// tickers/<ROOT>.json → per-root minute series for the most active names →
+//   client-computed flow durability (share of positive 5-min windows).
+var flowInflight = false;
+function fetchFlow() {
+  if (flowInflight) return;
+  var tideUrl = r2Url('live_flow/tide_current.json');
+  var enrichUrl = r2Url('live_flow/enrich_current.json');
+  if (!tideUrl) { updateFlowStamp(null); return; }
+  flowInflight = true;
+  Promise.all([
+    fetch(tideUrl, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
+    fetch(enrichUrl, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })
+  ]).then(function(res){
+    flowInflight = false;
+    var tide = res[0], enrich = res[1];
+    var asof = null;
+    // Per-root ~net premium lean from top_net_impact (confirmed schema).
+    if (tide) {
+      asof = (tide.meta && tide.meta.asof) || tide.asof || asof;
+      (tide.top_net_impact || []).forEach(function(it){
+        if (!it || !it.root) return;
+        var ex = flowState[it.root] || {};
+        ex.ncp = it.net_prem_soft != null ? it.net_prem_soft : ex.ncp;
+        ex.gross = it.gross != null ? it.gross : ex.gross;
+        flowState[it.root] = ex;
+      });
+    }
+    // Badges + session tier: aggregate per root from whatever event list enrich exposes.
+    if (enrich) {
+      asof = (enrich.meta && enrich.meta.asof) || asof;
+      var events = enrich.events || enrich.feed || enrich.enriched || [];
+      if (!events.length && enrich.tickers) {   // legacy rollup shape, if present
+        Object.keys(enrich.tickers).forEach(function(root){
+          var te = enrich.tickers[root] || {}, badges = [];
+          var bc = te.badge_counts || {};
+          ['WHALE','FRESH','Z_OUTLIER','SIZE_VS_OI','REPEAT_HITTER'].forEach(function(b){ if (bc[b]>0) badges.push(b+'×'+bc[b]); });
+          var ex = flowState[root] || {}; ex.badges = badges; ex.session_tier = te.session_tier || ex.session_tier; flowState[root] = ex;
+        });
+      } else {
+        var byRoot = {};
+        events.forEach(function(ev){
+          var root = ev.root; if (!root) return;
+          var r = byRoot[root] || { counts:{}, tier:null };
+          (ev.badges || []).forEach(function(b){ r.counts[b] = (r.counts[b]||0)+1; });
+          if (ev.session_tier) r.tier = bestTier(r.tier, ev.session_tier);
+          byRoot[root] = r;
+        });
+        Object.keys(byRoot).forEach(function(root){
+          var r = byRoot[root], badges = [];
+          ['WHALE','FRESH','Z_OUTLIER','SIZE_VS_OI','REPEAT_HITTER'].forEach(function(b){ if (r.counts[b]>0) badges.push(b+'×'+r.counts[b]); });
+          var ex = flowState[root] || {}; ex.badges = badges; ex.session_tier = r.tier || ex.session_tier; flowState[root] = ex;
+        });
+      }
+    }
+    flowAsof = asof; flowRTH = isMarketHours();
+    updateFlowStamp(asof);
+    // Deepen the most active names with a per-root fetch (flow durability).
+    if (tide && tide.top_net_impact) {
+      tide.top_net_impact.slice(0, 12).forEach(function(it){ if (it && it.root) fetchRootFlow(it.root); });
+    }
+    render();
+  }).catch(function(){ flowInflight = false; });
+}
+function bestTier(a, b) {
+  var rank = { below_medium:0, medium:1, high:2, strong:3, elite:4 };
+  if (a == null) return b;
+  return (rank[b]||0) > (rank[a]||0) ? b : a;
+}
+function fetchRootFlow(root) {
+  var url = r2Url('live_flow/tickers/' + encodeURIComponent(root) + '.json');
+  if (!url) return;
+  fetch(url, {cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).then(function(d){
+    if (!d) return;
+    var mins = d.minutes || [];
+    // flow durability = share of 5-min windows whose incremental cumulative NCP > 0
+    var dur = null;
+    if (mins.length >= 6) {
+      var win = 5, p = 0, w = 0;
+      for (var i = win; i < mins.length; i += win) {
+        var inc = (mins[i].ncp || 0) - (mins[i - win].ncp || 0);
+        w++; if (inc > 0) p++;
+      }
+      if (w > 0) dur = p / w;
+    }
+    var ex = flowState[root] || {};
+    if (d.day && d.day.net_soft != null) ex.ncp = d.day.net_soft;
+    if (d.day && d.day.call_share != null) ex.call_share = d.day.call_share;
+    if (dur != null) ex.flow_dur = dur;
+    flowState[root] = ex;
+    render();
+  }).catch(function(){});
+}
+function updateFlowStamp(asof) {
+  var stamp = document.getElementById('ift-stamp');
+  if (!stamp) return;
+  var base = '{{ ift.as_of if ift.as_of else "—" }}';
+  var rth = isMarketHours();
+  var tapeEn = rth ? ('tape ' + (asof ? 'as of '+asof : 'live')) : ('tape off-hours' + (asof ? ' · last '+asof : ''));
+  var tapeZh = rth ? ('资金带 ' + (asof ? '截至 '+asof : '实时')) : ('资金带 非交易时段' + (asof ? ' · 最后 '+asof : ''));
+  stamp.innerHTML = lz('Base: '+base+' · '+tapeEn, '基础：'+base+' · '+tapeZh);
+}
+
+// ── Build one leader row (glance) + detail row (Tier-2) ───────────────────
 function buildRow(leader) {
   var tk = leader.ticker;
-  var quote = quoteState[tk] || null;
-  var pulse = pulseState[tk] || null;
-  var flow = flowState[tk] || null;
-  var rvol = computeRvol(leader, quote);
+  var quote = quoteState[tk] || null, pulse = pulseState[tk] || null, flow = flowState[tk] || null;
+  var conf = computeLegs(leader, quote, pulse, flow);
+  var stance = computeStance(leader, quote, pulse, flow, conf);
+  var meta = STANCE_META[stance.key] || STANCE_META.stand_aside;
+  var rvol = computeRvol(leader, quote, pulse);
   var rangePos = computeRangePos(quote);
   var vwapDelta = computeVwapDelta(quote, pulse);
-  var conf = computeLegs(leader, quote, pulse, flow);
-  var K = conf.K, legs = conf.legs;
-  var entry = leader.entry_signal || {};
-  var opt = leader.options_entry || {};
+  var d = dealerOf(leader);
 
-  // Ticker cell
-  var tkCell = '<td><a class="tk-link" href="stock.html#'+tk+'">'+tk+'</a></td>';
+  // Name cell
+  var bk = (leader.baskets || []).slice(0,1).map(function(b){ return prettyBasket(b); }).join('');
+  var nameCell = '<td><a class="tk-link" href="stock.html#'+tk+'">'+tk+'</a>'
+    + (bk ? '<div class="tk-baskets">'+esc(bk)+'</div>' : '') + '</td>';
+
+  // Stance cell (primary)
+  var pill = '<span class="stance-pill '+meta.lane+'" style="border-color:var(--lane);color:var(--lane)">'
+    + meta.dot + ' ' + lz(meta.en, meta.zh) + '</span>';
+  var reason = '<div class="stance-reason '+(stance.muted?'muted':'')+'">'+lz(stance.reason_en, stance.reason_zh)+'</div>';
+  var stanceCell = '<td class="stance-cell '+meta.lane+'">'+pill+reason+'</td>';
 
   // Price cell
   var px = quote && quote.price != null ? fmtDollar(quote.price) : '—';
   var chg = quote && quote.changePct != null ? fmtPct(quote.changePct) : '';
-  var chgCls = quote && quote.changePct != null ? posNeg(quote.changePct) : '';
-  var priceCell = '<td class="price-cell tabnum"><span class="nb-px" data-sym="'+tk+'" data-mkt="us">'+px+'</span><span class="pct-chg '+chgCls+'">'+chg+'</span></td>';
+  var chgCls = quote && quote.changePct != null ? (quote.changePct>=0?'pos':'neg') : '';
+  var rw = rangeWords(rangePos);
+  var priceCell = '<td class="price-cell tabnum hide-narrow"><span class="nb-px" data-sym="'+tk+'" data-mkt="us">'+px+'</span>'
+    + '<span class="pct-chg '+chgCls+'">'+chg+'</span>'
+    + (rw ? '<div class="metric-sub">'+rw+'</div>' : '') + '</td>';
 
-  // RVOL cell
-  var rvolPct = rvol != null ? Math.min(rvol / 3, 1) * 100 : 0;
-  var rvolCls = rvol != null && rvol >= RVOL_CONFIRM ? 'gauge-hi' : (rvol != null && rvol >= 0.8 ? 'gauge-med' : 'gauge-lo');
-  var rvolStr = rvol != null ? fmtNum(rvol, 2)+'×' : '—';
-  var rvolCell = '<td><div class="gauge-wrap">'
-    + '<div class="gauge-bar"><div class="gauge-fill '+rvolCls+'" style="width:'+rvolPct.toFixed(1)+'%"></div></div>'
-    + '<span class="gauge-val">' + rvolStr + '</span>'
-    + '</div></td>';
-
-  // Day range cell
-  var rpStr = rangePos != null ? (rangePos * 100).toFixed(0) + '%' : '—';
-  var rpCls = rangePos != null ? (rangePos > 0.65 ? 'pos' : (rangePos < 0.35 ? 'neg' : '')) : '';
-  var rangeCell = '<td class="tabnum '+rpCls+'">'+rpStr+'</td>';
-
-  // VWAP delta cell
-  var vdStr = vwapDelta != null ? fmtPct(vwapDelta) : '—';
-  var vdCls = posNeg(vwapDelta);
-  var vwapCell = '<td class="tabnum '+vdCls+'">'+vdStr+'</td>';
-
-  // Vol durability cell
+  // Volume cell
   var volDur = pulse ? pulse.vol_durability : null;
-  var durPct = volDur != null ? Math.min(volDur, 1) * 100 : 0;
-  var durCls = durColor(volDur, DUR_MIN);
-  var durStr = volDur != null ? (volDur * 100).toFixed(0) + '%' : '—';
-  var hlStr = pulse && pulse.higher_lows != null ? ' HL:' + pulse.higher_lows : '';
-  var volDurCell = '<td>'
-    + '<div class="gauge-wrap">'
-    + '<div class="dur-bar"><div class="dur-fill '+durCls+'" style="width:'+durPct.toFixed(1)+'%"></div></div>'
-    + '<span class="gauge-val">'+durStr+'</span>'
-    + '</div>'
-    + (hlStr ? '<div class="xs muted">'+hlStr+'</div>' : '')
+  var vw = volumeWords(rvol, volDur);
+  var volCell = '<td>'
+    + '<div class="gauge-wrap"><div class="gauge-bar"><div class="gauge-fill '+vw.cls+'" style="width:'+vw.pct.toFixed(0)+'%"></div></div>'
+    + '<span class="metric-lead">'+lz(vw.en, vw.zh)+'</span></div>'
+    + (pulse && pulse.higher_lows != null && pulse.higher_lows > 0 ? '<div class="metric-sub">'+lz('higher lows ×'+pulse.higher_lows, '更高低点 ×'+pulse.higher_lows)+'</div>' : '')
     + '</td>';
 
-  // NCP / flow cell (~soft)
-  var ncpVal = flow && flow.ncp != null ? flow.ncp : null;
-  var ncpStr = ncpVal != null ? (ncpVal >= 0 ? '+' : '') + fmtK(ncpVal, '') : '—';
-  var ncpCls = ncpVal != null ? posNeg(ncpVal) : '';
-  var flowDur = flow && flow.flow_dur != null ? flow.flow_dur : null;
-  var velArrow = flow ? (flow.vel_arrow || 'flat') : 'flat';
-  var arrowHtml = velArrow === 'up' ? '<span class="arrow arrow-up">↑</span>'
-    : (velArrow === 'down' ? '<span class="arrow arrow-dn">↓</span>'
-    : '<span class="arrow arrow-flat">→</span>');
-  var flowDurStr = flowDur != null ? (flowDur * 100).toFixed(0) + '%' : '—';
-  var flowDurCls = durColor(flowDur, DUR_MIN);
-  var ncpBadge = flow && flow.session_tier ? '<span class="badge badge-blue" style="margin-left:4px">'+flow.session_tier+'</span>' : '';
-  var ncpCell = '<td class="flow-ncp">'
-    + '<span class="'+ncpCls+'">~'+ncpStr+'</span>'
-    + arrowHtml
-    + '<span class="soft-tag">~soft</span>'
-    + '<br><div class="gauge-wrap" style="margin-top:2px">'
-    + '<div class="dur-bar"><div class="dur-fill '+flowDurCls+'" style="width:'+((flowDur||0)*100).toFixed(1)+'%"></div></div>'
-    + '<span class="gauge-val">'+flowDurStr+'</span>'
-    + '</div>'
-    + ncpBadge
-    + '</td>';
-
-  // Setup chips
-  var chips = [];
-  var squeeze = leader.vol_squeeze || {};
-  if (squeeze.coiled) chips.push('<span class="badge badge-orange">squeeze</span>');
-  if (squeeze.state === 'EXPANSION') chips.push('<span class="badge badge-green">squeeze→expand</span>');
-  if (leader.stair_step_leader === true) chips.push('<span class="badge badge-green"><span class="l-en">clean leader</span><span class="l-zh">稳步领涨</span></span>');
-  if (leader.failed_breakout_trap === true) chips.push('<span class="badge badge-red"><span class="l-en">trap-prone 回踩陷阱</span><span class="l-zh">回踩陷阱</span></span>');
-  if (leader.current_mode) chips.push('<span class="badge badge-muted">'+leader.current_mode+'</span>');
-  if (leader.mtf_upturn_state) chips.push('<span class="badge badge-blue">'+leader.mtf_upturn_state+'</span>');
-  var flowBadges = flow && flow.badges ? flow.badges : [];
-  flowBadges.slice(0, 3).forEach(function(b){
-    chips.push('<span class="badge badge-blue">'+b+'</span>');
-  });
-  if (opt.gamma_regime) {
-    var grc = opt.gamma_regime === 'long' ? 'badge-green' : (opt.gamma_regime === 'short' ? 'badge-red' : 'badge-muted');
-    chips.push('<span class="badge '+grc+'">GEX:'+opt.gamma_regime+'</span>');
+  // Tape cell (VWAP + ~options lean)
+  var vwapWord = vwapDelta != null ? (vwapDelta > 0 ? lz('above avg price','高于均价') : lz('below avg price','低于均价')) : lz('—','—');
+  var vwapCls = vwapDelta != null ? (vwapDelta>0?'pos':'neg') : 'muted';
+  var lean = '';
+  if (flow && flow.ncp != null) {
+    var lp = flow.ncp > 0;
+    lean = '<div class="metric-sub">'+lz((lp?'~call-heavy':'~put-heavy'), (lp?'~偏看涨':'~偏看跌'))+'<span class="soft-tag">~soft</span></div>';
+  } else if (flowRTH) {
+    lean = '<div class="metric-sub muted">'+lz('quiet tape','资金带平静')+'</div>';
+  } else {
+    lean = '<div class="metric-sub muted">'+lz('off-hours','非交易时段')+'</div>';
   }
-  var setupCell = '<td><div class="chip-row">'+chips.join('')+'</div></td>';
+  var badges = flow && flow.badges ? flow.badges : [];
+  var badgeHtml = badges.length ? '<div class="chip-row">'+badges.slice(0,3).map(function(b){ return '<span class="badge badge-blue">'+esc(b)+'</span>'; }).join('')+'</div>' : '';
+  var tapeCell = '<td class="hide-narrow"><span class="metric-lead '+vwapCls+'">'+vwapWord+'</span>'+lean+badgeHtml+'</td>';
 
-  // K/7 cell with expandable legs
-  var legNames = ['L1 washout','L2 reclaim','L3 rvol','L4 vol dur','L5 ~flow bid','L6 upturn','L7 quality'];
-  var legNamesZh = ['L1 洗盘','L2 收复','L3 RVOL','L4 量持续','L5 ~资金偏多','L6 上升','L7 质量'];
-  var kColor = K >= 5 ? 'pos' : (K >= 3 ? '' : 'muted');
-  var dotsHtml = '<div class="kbar">' + legs.map(function(on){
-    return '<div class="kbar-dot '+(on?'on':'')+'"></div>';
-  }).join('') + '</div>';
-  var legHtmlEn = legs.map(function(on, i){
-    return '<span class="leg-chip '+(on?'leg-on':'leg-off')+'" title="'+legNames[i]+'">'
-      +(on?'✓':'✗')+' '+legNames[i]+'</span>';
-  }).join('');
-  // Use English leg names in title= attribute even for ZH chips — localized title=
-  // would render in the wrong language regardless of the active l-en/l-zh toggle
-  // (static check_title_i18n guard; i18n intent is the dual-span label itself).
-  var legHtmlZh = legs.map(function(on, i){
-    return '<span class="leg-chip '+(on?'leg-on':'leg-off')+'" title="'+legNames[i]+'">'
-      +(on?'✓':'✗')+' '+legNamesZh[i]+'</span>';
-  }).join('');
-  var kCell = '<td><span class="k-label '+kColor+'">'+K+'/7</span>'
-    + dotsHtml
-    + '<button class="k-expand-btn" onclick="toggleLegs(this)" title="Expand legs">+</button>'
-    + '<div class="k-legs-row"><span class="l-en">'+legHtmlEn+'</span><span class="l-zh">'+legHtmlZh+'</span></div>'
-    + '</td>';
+  // Dealer map cell (compact)
+  var dealerCell = '<td class="dealer-cell hide-narrow">'+dealerCompact(d, quote)+'</td>';
 
-  // Risk ladder cell
-  var stopPx = entry.stop != null ? fmtDollar(entry.stop) : null;
-  var vwapPx = pulse && pulse.vwap != null ? fmtDollar(pulse.vwap) : null;
-  var loPx = quote && quote.lo != null ? fmtDollar(quote.lo) : null;
-  var atrPct = entry.atr_pct != null ? entry.atr_pct.toFixed(2) + '%' : (leader.atr14_pct != null ? (leader.atr14_pct * 100).toFixed(2) + '%' : null);
-  var riskParts = [];
-  if (stopPx) riskParts.push('<span class="level"><span class="l-en">stop</span><span class="l-zh">止损</span>: <span class="neg">'+stopPx+'</span></span>');
-  if (vwapPx) riskParts.push('<span class="level">VWAP: '+vwapPx+'</span>');
-  if (loPx) riskParts.push('<span class="level"><span class="l-en">low</span><span class="l-zh">低点</span>: '+loPx+'</span>');
-  if (atrPct) riskParts.push('<span class="level">ATR: '+atrPct+'</span>');
-  var riskCell = '<td class="risk-mini">'
-    + (riskParts.length ? riskParts.join('') : '<span class="muted">—</span>')
-    + '</td>';
+  // Expander
+  var expCell = '<td class="col-expand"><span class="expander" data-exp="'+tk+'">'+(openRows[tk]?'▾':'▸')+'</span></td>';
 
-  return '<tr data-ticker="'+tk+'" data-rvol="'+(rvol||0)+'" data-k="'+K+'"'
-    + ' data-last="'+(quote && quote.price||0)+'" data-range-pos="'+(rangePos||0)+'"'
-    + ' data-vwap-delta="'+(vwapDelta||0)+'" data-vol-dur="'+(pulse && pulse.vol_durability||0)+'"'
-    + ' data-ncp="'+(ncpVal||0)+'" data-baskets="'+getBaskets(tk)+'">'
-    + tkCell + priceCell + rvolCell + rangeCell + vwapCell + volDurCell + ncpCell + setupCell + kCell + riskCell
-    + '</tr>';
+  var rowClass = 'lead-row';
+  var tr = '<tr class="'+rowClass+'" data-ticker="'+tk+'" data-stance="'+stance.key+'"'
+    + ' data-rvol="'+(rvol||0)+'" data-k="'+conf.K+'" data-last="'+((quote&&quote.price)||0)+'"'
+    + ' data-stance-order="'+meta.order+'" data-baskets="'+esc((leader.baskets||[]).join(' ')||'all')+'">'
+    + nameCell + stanceCell + priceCell + volCell + tapeCell + dealerCell + expCell + '</tr>';
+
+  var detail = '<tr class="detail-row'+(openRows[tk]?' open':'')+'" data-detail="'+tk+'"><td colspan="7"><div class="detail-inner">'
+    + detailContent(leader, quote, pulse, flow, conf, d) + '</div></td></tr>';
+
+  return tr + detail;
 }
 
-// ── Basket lookup ─────────────────────────────────────────────────────────
-var tkBasketMap = {};
-(function(){
-  // Per-ticker basket membership is written by the nightly builder into each
-  // leader record's "baskets" field.
-  leaders.forEach(function(l){
-    tkBasketMap[l.ticker] = (l.baskets || []).join(' ') || 'all';
-  });
-})();
-
-function getBaskets(tk) {
-  return tkBasketMap[tk] || 'all';
+function prettyBasket(b) {
+  var m = { mag7:'Mag7', ai_infra:'AI Infra', ai_software:'AI Software', ai_semiconductors:'AI Semis',
+    semicap_equipment:'Semicap', reshoring:'Reshoring', defense:'Defense', power_grid:'Power Grid' };
+  return m[b] || b;
 }
 
-// ── Sort helpers ──────────────────────────────────────────────────────────
-var COL_ATTR = {
-  ticker: 'data-ticker', last: 'data-last', rvol: 'data-rvol',
-  range_pos: 'data-range-pos', vwap_delta: 'data-vwap-delta',
-  vol_dur: 'data-vol-dur', ncp: 'data-ncp', k: 'data-k'
-};
+// ── Dealer compact (ceiling / floor / move / hole) ─────────────────────────
+function dealerCompact(d, quote) {
+  if (!d) return '<span class="dealer-na">'+lz('no chain','无期权链')+'</span>';
+  var out = [];
+  var regime = d.regime === 'long' ? 'rd-long' : (d.regime === 'short' ? 'rd-short' : 'rd-neutral');
+  var regimeWord = d.regime === 'long' ? lz('pins / mean-reverts','磁吸/均值回归') : (d.regime === 'short' ? lz('trends / amplifies','趋势/放大') : lz('neutral','中性'));
+  out.push('<div class="dealer-line"><span class="regime-dot '+regime+'"></span>'+regimeWord+'</div>');
+  if (d.call_wall != null) {
+    var hard = d.call_wall_hard ? lz(' (hard)',' (硬)') : '';
+    out.push('<div class="dealer-line">'+lz('ceiling','天花板')+' ~$'+fmtNum(d.call_wall,0)+hard+'</div>');
+  }
+  if (d.put_wall != null) out.push('<div class="dealer-line">'+lz('floor','地板')+' ~$'+fmtNum(d.put_wall,0)+'</div>');
+  if (d.expected_move_daily_pct != null) out.push('<div class="dealer-line muted">'+lz('~'+fmtNum(d.expected_move_daily_pct,1)+'% move today','~今日约'+fmtNum(d.expected_move_daily_pct,1)+'%波动')+'</div>');
+  if (d.vol_hole_state && d.vol_hole_state !== 'NONE') {
+    var vh = { IN_HOLE: lz('pinned between walls','被夹在墙位间'), COILED_UP: lz('coiled — upward','蓄势向上'),
+      COILED_DOWN: lz('coiled — downward','蓄势向下'), EXPANSION: lz('breaking out','正在扩张') }[d.vol_hole_state];
+    if (vh) out.push('<div class="dealer-line" style="color:var(--orange,#f97316)">'+vh+'</div>');
+  }
+  return out.join('');
+}
 
-function sortTable() {
-  var tbody = document.getElementById('leaders-body');
-  if (!tbody) return;
-  var rows = [].slice.call(tbody.querySelectorAll('tr[data-ticker]'));
+// ── Detail (Tier-2 full depth) ─────────────────────────────────────────────
+function detailContent(leader, quote, pulse, flow, conf, d) {
+  var blocks = [];
+
+  // Block: exact tape numbers
+  var rvol = computeRvol(leader, quote, pulse), vwapDelta = computeVwapDelta(quote, pulse);
+  var tapeDl = [];
+  tapeDl.push(dlRow(lz('Relative volume','相对成交量'), rvol!=null ? fmtNum(rvol,2)+'×' : '—'));
+  tapeDl.push(dlRow(lz('Vol durability','量能持续'), pulse&&pulse.vol_durability!=null ? (pulse.vol_durability*100).toFixed(0)+'%' : '—'));
+  tapeDl.push(dlRow(lz('Session VWAP','当日VWAP'), pulse&&pulse.vwap!=null ? fmtDollar(pulse.vwap) : '—'));
+  tapeDl.push(dlRow(lz('Price vs VWAP','价格对VWAP'), vwapDelta!=null ? fmtPct(vwapDelta) : '—'));
+  tapeDl.push(dlRow(lz('Higher lows','更高低点'), pulse&&pulse.higher_lows!=null ? String(pulse.higher_lows) : '—'));
+  tapeDl.push(dlRow(lz('~Net call premium','~净看涨权利金'), flow&&flow.ncp!=null ? '~'+(flow.ncp>=0?'+':'')+fmtK(flow.ncp) : '—'));
+  tapeDl.push(dlRow(lz('Flow durability','资金持续'), flow&&flow.flow_dur!=null ? (flow.flow_dur*100).toFixed(0)+'%' : '—'));
+  blocks.push(detailBlock(lz('Tape &amp; volume','盘口与量能'), '<div class="dl">'+tapeDl.join('')+'</div>'));
+
+  // Block: the seven checks (K/7 demoted here, plain names)
+  var names = [
+    lz('Recent washout','近期洗盘'), lz('Reclaimed above VWAP','收复VWAP上方'), lz('Volume elevated','放量'),
+    lz('Volume holding','量能持稳'), lz('~Options leaning in','~期权偏多'), lz('Trend turning up','趋势转强'), lz('Clean leader (no trap)','干净领涨（无陷阱）')
+  ];
+  var checks = conf.legs.map(function(on, i){
+    var cls = on===true ? 'on' : (on===false ? 'off' : 'na');
+    var ic = on===true ? '✓' : (on===false ? '✗' : '·');
+    return '<span class="check '+cls+'"><span class="ic">'+ic+'</span>'+names[i]+'</span>';
+  }).join('');
+  blocks.push(detailBlock(lz(conf.K+' of 7 checks aligned','7项中'+conf.K+'项一致'), '<div class="checks">'+checks+'</div>'));
+
+  // Block: dealer map full (ported renderGex idiom)
+  blocks.push(detailBlock(lz('Dealer map (options chains)','做市商地图（期权链）'), dealerFull(d, quote)));
+
+  // Block: reference levels
+  var entry = leader.entry_signal || {};
+  var lvl = [];
+  if (entry.stop != null) lvl.push(dlRow(lz('Stop (nightly)','止损（夜间）'), '<span class="neg">'+fmtDollar(entry.stop)+'</span>'));
+  if (pulse && pulse.vwap != null) lvl.push(dlRow(lz('VWAP','均价'), fmtDollar(pulse.vwap)));
+  if (quote && quote.lo != null) lvl.push(dlRow(lz('Session low','日内低点'), fmtDollar(quote.lo)));
+  if (d && d.call_wall != null) lvl.push(dlRow(lz('Dealer ceiling','做市商天花板'), '~$'+fmtNum(d.call_wall,0)));
+  if (d && d.put_wall != null) lvl.push(dlRow(lz('Dealer floor','做市商地板'), '~$'+fmtNum(d.put_wall,0)));
+  var atr = entry.atr_pct != null ? entry.atr_pct.toFixed(2)+'%' : (leader.atr14_pct!=null ? (leader.atr14_pct*100).toFixed(2)+'%' : null);
+  if (atr) lvl.push(dlRow(lz('Daily range (ATR)','日均波幅(ATR)'), atr));
+  if (entry.buy_zone && entry.buy_zone.low != null) lvl.push(dlRow(lz('Buy zone','买入区间'), fmtDollar(entry.buy_zone.low)+'–'+fmtDollar(entry.buy_zone.high)));
+  blocks.push(detailBlock(lz('Reference levels','参考价位'), '<div class="dl">'+lvl.join('')+'</div>'
+    + '<div class="receipt">'+lz('Reference only — not trade advice.','仅供参考——不构成交易建议。')+'</div>'));
+
+  return blocks.join('');
+}
+function detailBlock(title, inner){ return '<div class="detail-block"><h4>'+title+'</h4>'+inner+'</div>'; }
+function dlRow(k, v){ return '<div class="k">'+k+'</div><div class="v">'+v+'</div>'; }
+
+// ── Dealer full panel (ported from Terminal renderGex — display-only) ──────
+function dealerFull(d, quote) {
+  if (!d) return '<div class="dealer-na">'+lz('No options chain for this name.','该标的无期权链。')+'</div>';
+  var dl = [];
+  var regimeWord = d.regime === 'long' ? lz('Long gamma · pins / mean-reverts','多头Gamma · 磁吸/均值回归')
+    : (d.regime === 'short' ? lz('Short gamma · trends / amplifies','空头Gamma · 趋势/放大') : lz('Neutral','中性'));
+  dl.push(dlRow(lz('Dealer regime','做市商体制'), regimeWord));
+  if (d.gamma_flip != null) dl.push(dlRow(lz('Regime line','体制分界'), fmtNum(d.gamma_flip,2) + (d.dist_to_flip_pct!=null?' <span class="muted">('+(d.dist_to_flip_pct>=0?'+':'')+fmtNum(d.dist_to_flip_pct,1)+'%)</span>':'')));
+  if (d.call_wall != null) dl.push(dlRow(lz('Ceiling (call wall)','天花板（看涨墙）'), '~$'+fmtNum(d.call_wall,0) + (d.call_wall_band?' <span class="muted">'+esc(d.call_wall_band)+(d.call_wall_hard?', hard':'')+'</span>':'')));
+  if (d.put_wall != null) dl.push(dlRow(lz('Floor (put wall)','地板（看跌墙）'), '~$'+fmtNum(d.put_wall,0) + (d.put_wall_band?' <span class="muted">'+esc(d.put_wall_band)+'</span>':'')));
+  if (d.max_pain != null) dl.push(dlRow(lz('Max pain','最大痛点'), '~$'+fmtNum(d.max_pain,0)));
+  if (d.expected_move_daily_pct != null) dl.push(dlRow(lz('Expected move (day)','预期波动（日）'), '±'+fmtNum(d.expected_move_daily_pct,1)+'%'));
+  if (d.iv_rank_band) dl.push(dlRow(lz('Implied vol','隐含波动'), ivBandWord(d.iv_rank_band) + (d.iv30!=null?' <span class="muted">('+fmtNum(d.iv30,1)+')</span>':'')));
+  if (d.skew_tone) dl.push(dlRow(lz('Skew tone','偏斜'), skewWord(d.skew_tone)));
+  dl.push(dlRow(lz('Evidence','数据质量'), evidenceWord(d._eq)));
+
+  var posture = d.regime === 'long'
+    ? lz('Long gamma — dealers dampen moves, so price tends to pin / mean-revert toward the nearby levels; fading extremes beats chasing breakouts, and tighter stops are reasonable.', '多头Gamma —— 做市商抑制波动，价格倾向于在邻近价位附近被钉住/均值回归；逢极端回落优于追突破，止损可更紧。')
+    : (d.regime === 'short'
+    ? lz('Short gamma — dealers chase the move, so swings amplify and trend; breakouts can follow through but whipsaws are larger, so give it wider stops.', '空头Gamma —— 做市商追随价格，波动被放大并趋势化；突破可延续但假动作更大，止损宜更宽。')
+    : '');
+  var pin = '';
+  if (d.opex_days != null && d.opex_days <= 7 && d.regime === 'long' && quote && quote.price && d.magnet_up != null && Math.abs(quote.price - d.magnet_up)/quote.price < 0.015) {
+    pin = '<div class="receipt" style="color:var(--orange,#f97316)">📌 '+lz('Pinned into expiry ('+d.opex_days+'d) near '+fmtNum(d.magnet_up,2)+' — expect range-compression; a breakout here may just be a pin.', '临近到期（'+d.opex_days+'天）且贴近 '+fmtNum(d.magnet_up,2)+' —— 预期区间收敛；此处突破可能只是钉住。')+'</div>';
+  }
+  var caveat = '<div class="receipt">'+lz('Daily options chains — a levels + timing map. Context for stops, never a direction call. Single-name regime is a near-constant product trait, not a live signal.', '每日期权链——价位与择时地图。仅作止损背景，非方向判断。单只标的体制为产品近乎恒定的属性，非实时信号。')+'</div>';
+  return '<div class="dl">'+dl.join('')+'</div>'+(posture?'<p class="posture">'+posture+'</p>':'')+pin+caveat;
+}
+function ivBandWord(b){ var m={ very_cheap:lz('very cheap','很便宜'), cheap:lz('cheap','便宜'), normal:lz('normal','正常'), elevated:lz('elevated','偏高'), rich:lz('rich','昂贵') }; return m[b]||esc(b); }
+function skewWord(t){ var m={ fear:lz('downside fear bid','下行恐慌买盘'), greed:lz('upside chased','上行追捧'), balanced:lz('balanced','均衡') }; return m[t]||esc(t); }
+function evidenceWord(q){ var m={ full:lz('full','完整'), partial:lz('partial','部分'), thin:lz('thin','稀薄'), stale:lz('stale','过时') }; return m[q]||lz('—','—'); }
+
+// ── Stance counts + strip ──────────────────────────────────────────────────
+function updateStanceCounts() {
+  var counts = { act:0, get_ready:0, in_favour:0, take_profits:0, watch:0, stand_aside:0 };
+  var rows = document.querySelectorAll('#leaders-body tr.lead-row');
+  rows.forEach(function(r){ var s = r.getAttribute('data-stance'); if (counts[s]!=null) counts[s]++; });
+  Object.keys(counts).forEach(function(k){ var el = document.querySelector('[data-count="'+k+'"]'); if (el) el.textContent = counts[k]; });
+}
+
+// ── Sort / filter / group ──────────────────────────────────────────────────
+var COL_ATTR = { ticker:'data-ticker', last:'data-last', rvol:'data-rvol', stance:'data-stance-order', dealer:'data-rvol' };
+function sortRows(rows) {
   var attr = COL_ATTR[sortCol] || 'data-rvol';
-  rows.sort(function(a, b) {
-    var av = a.getAttribute(attr) || '0';
-    var bv = b.getAttribute(attr) || '0';
-    var aNum = isNaN(av) ? av : Number(av);
-    var bNum = isNaN(bv) ? bv : Number(bv);
-    if (aNum < bNum) return sortDir;
-    if (aNum > bNum) return -sortDir;
-    return 0;
-  });
-  rows.forEach(function(r){ tbody.appendChild(r); });
-  // Update sort indicators
-  var ths = document.querySelectorAll('table.leaders th[data-col]');
-  ths.forEach(function(th){
-    th.classList.remove('sort-asc', 'sort-desc');
-    if (th.getAttribute('data-col') === sortCol) {
-      th.classList.add(sortDir < 0 ? 'sort-desc' : 'sort-asc');
+  rows.sort(function(a,b){
+    if (groupByStance) {
+      var ao = Number(a.getAttribute('data-stance-order')||9), bo = Number(b.getAttribute('data-stance-order')||9);
+      if (ao !== bo) return ao - bo;   // group order fixed; sort within by measured
+      var ar = Number(a.getAttribute('data-rvol')||0), br = Number(b.getAttribute('data-rvol')||0);
+      return br - ar;
     }
+    var av = a.getAttribute(attr)||'0', bv = b.getAttribute(attr)||'0';
+    var an = isNaN(av)?av:Number(av), bn = isNaN(bv)?bv:Number(bv);
+    if (an < bn) return sortDir; if (an > bn) return -sortDir; return 0;
   });
-  document.getElementById('sort-label').textContent = 'Sorted by ' + sortCol + (sortDir < 0 ? ' ↓' : ' ↑');
+  return rows;
 }
-
-// ── Filter / search ───────────────────────────────────────────────────────
-function applyFilter() {
+function applyView() {
   var tbody = document.getElementById('leaders-body');
   if (!tbody) return;
-  var rows = [].slice.call(tbody.querySelectorAll('tr[data-ticker]'));
-  var visible = 0;
-  rows.forEach(function(r){
-    var tk = r.getAttribute('data-ticker') || '';
-    var k = Number(r.getAttribute('data-k') || 0);
-    var baskets = r.getAttribute('data-baskets') || 'all';
+  // drop stale group headers from a prior view (standalone filter/sort re-runs)
+  [].slice.call(tbody.querySelectorAll('tr.group-head')).forEach(function(g){ g.parentNode.removeChild(g); });
+  // pair each lead-row with its detail-row
+  var leadRows = [].slice.call(tbody.querySelectorAll('tr.lead-row'));
+  var detailByTk = {};
+  [].slice.call(tbody.querySelectorAll('tr.detail-row')).forEach(function(d){ detailByTk[d.getAttribute('data-detail')] = d; });
+  sortRows(leadRows);
+  var visible = 0, curGroup = null, frag = document.createDocumentFragment();
+  leadRows.forEach(function(r){
+    var tk = r.getAttribute('data-ticker'), k = Number(r.getAttribute('data-k')||0);
+    var st = r.getAttribute('data-stance'), baskets = r.getAttribute('data-baskets')||'all';
     var show = true;
     if (activeBasket !== 'all' && baskets.indexOf(activeBasket) < 0 && baskets !== 'all') show = false;
-    if (kMin > 0 && k < kMin) show = false;
+    if (activeStance !== 'all' && st !== activeStance) show = false;
     if (searchQ && tk.indexOf(searchQ.toUpperCase()) < 0) show = false;
-    r.style.display = show ? '' : 'none';
-    if (show) visible++;
+    if (!show) { r.style.display='none'; if (detailByTk[tk]) detailByTk[tk].style.display='none'; return; }
+    if (groupByStance && st !== curGroup) {
+      curGroup = st;
+      var meta = STANCE_META[st] || STANCE_META.stand_aside;
+      var gh = document.createElement('tr'); gh.className='group-head';
+      gh.innerHTML = '<td colspan="7">'+meta.dot+' '+lz(meta.en, meta.zh)+'</td>';
+      frag.appendChild(gh);
+    }
+    r.style.display=''; frag.appendChild(r);
+    if (detailByTk[tk]) { detailByTk[tk].style.display=''; frag.appendChild(detailByTk[tk]); }
+    visible++;
   });
+  tbody.appendChild(frag);
   var lbl = document.getElementById('count-label');
-  if (lbl) lbl.textContent = visible + ' shown of ' + rows.length + ' leaders';
+  if (lbl) lbl.innerHTML = lz(visible+' of '+leadRows.length+' leaders shown', '显示 '+visible+' / '+leadRows.length+' 只');
+  var ths = document.querySelectorAll('table.leaders th[data-col]');
+  ths.forEach(function(th){ th.classList.remove('sort-asc','sort-desc'); if (!groupByStance && th.getAttribute('data-col')===sortCol) th.classList.add(sortDir<0?'sort-desc':'sort-asc'); });
 }
 
-// ── Full table render ─────────────────────────────────────────────────────
-function renderTable() {
+// ── Full render ────────────────────────────────────────────────────────────
+var _rendering = false;
+function render() {
+  if (_rendering) return; _rendering = true;
   var tbody = document.getElementById('leaders-body');
-  if (!tbody) return;
+  if (!tbody) { _rendering = false; return; }
+  // cache options_entry for detail (dealer._tk/_eq threading)
   var html = '';
-  leaders.forEach(function(l){ html += buildRow(l); });
-  tbody.innerHTML = html || '<tr class="loading-row"><td colspan="10"><span class="l-en">No data loaded yet</span><span class="l-zh">暂无数据</span></td></tr>';
-  sortTable();
-  applyFilter();
-  // Re-run lang sync (hidden spans)
+  leaders.forEach(function(l){
+    var d = dealerOf(l);
+    if (d) { d._tk = l.ticker; d._eq = (l.options_entry||{}).evidence_quality; }
+    html += buildRow(l);
+  });
+  tbody.innerHTML = html || '<tr class="loading-row"><td colspan="7">'+lz('No data yet','暂无数据')+'</td></tr>';
+  applyView();
+  updateStanceCounts();
   if (window.__mmLang) window.__mmLang();
+  _rendering = false;
 }
 
-// ── Partial update — patch price/gauge cells without full re-render ────────
-function patchPriceCells() {
-  var tbody = document.getElementById('leaders-body');
-  if (!tbody) return;
-  var rows = tbody.querySelectorAll('tr[data-ticker]');
-  rows.forEach(function(tr){
-    var tk = tr.getAttribute('data-ticker');
-    var leader = LEADERS_BY_TK[tk];
-    if (!leader) return;
-    var quote = quoteState[tk];
-    var pulse = pulseState[tk];
-    var flow = flowState[tk];
-    // Price
-    var pxEl = tr.querySelector('.nb-px[data-sym]');
-    if (pxEl && quote && quote.price != null) pxEl.textContent = '$' + Number(quote.price).toFixed(2);
-    var chgEl = tr.querySelector('.pct-chg');
-    if (chgEl && quote && quote.changePct != null) {
-      var chg = Number(quote.changePct);
-      chgEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
-      chgEl.className = 'pct-chg ' + (chg >= 0 ? 'pos' : 'neg');
-    }
-    // Update row data-attrs for sorting
-    if (quote) {
-      if (quote.price != null) tr.setAttribute('data-last', quote.price);
-      var rvol = computeRvol(leader, quote);
-      if (rvol != null) tr.setAttribute('data-rvol', rvol);
-      var rp = computeRangePos(quote);
-      if (rp != null) tr.setAttribute('data-range-pos', rp);
-    }
-    if (pulse) {
-      var vd = computeVwapDelta(quote, pulse);
-      if (vd != null) tr.setAttribute('data-vwap-delta', vd);
-      if (pulse.vol_durability != null) tr.setAttribute('data-vol-dur', pulse.vol_durability);
-    }
-    if (flow) {
-      if (flow.ncp != null) tr.setAttribute('data-ncp', flow.ncp);
-    }
-    // K
-    var conf = computeLegs(leader, quote, pulse, flow);
-    tr.setAttribute('data-k', conf.K);
-  });
-  sortTable();
-  applyFilter();
-}
-
-// ── Quotes fetch ──────────────────────────────────────────────────────────
-var quotesInflight = false;
-function fetchQuotes() {
-  if (quotesInflight) return;
-  quotesInflight = true;
-  var url = snapUrl();
-  fetch(url, {cache: 'no-cache'}).then(function(r){ return r.json(); })
-    .then(function(data){
-      quotesInflight = false;
-      var q = data.quotes || {};
-      Object.keys(q).forEach(function(tk){ quoteState[tk] = q[tk]; });
-      var stamp = document.getElementById('ift-quotes-stamp');
-      if (stamp) {
-        var asof = data.asof || data.ts;
-        var delayMin = (data.meta && data.meta.delayed_min) || 15;
-        stamp.innerHTML = '<span class="l-en">as of '+(asof||'?')+' · '+delayMin+'-min delayed bars</span>'
-          + '<span class="l-zh">截至 '+(asof||'?')+' · '+delayMin+'分钟延迟</span>';
-      }
-      patchPriceCells();
-    }).catch(function(e){
-      quotesInflight = false;
-    });
-}
-
-// ── Flow pulse fetch ──────────────────────────────────────────────────────
-var pulseInflight = false;
-function fetchPulse() {
-  if (pulseInflight) return;
-  pulseInflight = true;
-  fetch(pulseUrl(), {cache: 'no-cache'}).then(function(r){ return r.json(); })
-    .then(function(data){
-      pulseInflight = false;
-      var tickers = data.tickers || [];
-      tickers.forEach(function(t){ pulseState[t.ticker] = t; });
-      var stamp = document.getElementById('ift-pulse-stamp');
-      if (stamp) {
-        var asof = data.as_of || '?';
-        var stale = data.stale ? ' · stale' : '';
-        stamp.innerHTML = '<span class="l-en">as of '+asof+stale+'</span>'
-          + '<span class="l-zh">截至 '+asof+stale+'</span>';
-      }
-      patchPriceCells();
-    }).catch(function(e){
-      pulseInflight = false;
-    });
-}
-
-// ── R2 live flow fetch ────────────────────────────────────────────────────
-var flowInflight = false;
-function fetchFlow() {
-  if (flowInflight) return;
-  var enrichUrl = r2Url('live_flow/enrich_current.json');
-  var tickerUrl = r2Url('live_flow/tide_current.json');
-  if (!enrichUrl) return;
-
-  flowInflight = true;
-  // Fetch enrich_current for per-ticker badges + session tier
-  Promise.all([
-    fetch(enrichUrl, {cache: 'no-cache'}).then(function(r){ return r.json(); }).catch(function(){ return null; }),
-    tickerUrl ? fetch(tickerUrl, {cache: 'no-cache'}).then(function(r){ return r.json(); }).catch(function(){ return null; }) : Promise.resolve(null)
-  ]).then(function(results){
-    flowInflight = false;
-    var enrich = results[0];
-    var tide = results[1];
-
-    // Parse enrich: schema live_flow.enrich/v1 — per-ticker enriched events
-    if (enrich && enrich.tickers) {
-      Object.keys(enrich.tickers).forEach(function(root){
-        var te = enrich.tickers[root] || {};
-        var badges = [];
-        if (te.badge_counts) {
-          var bc = te.badge_counts;
-          ['WHALE','FRESH','Z_OUTLIER','SIZE_VS_OI','REPEAT_HITTER'].forEach(function(b){
-            if (bc[b] && bc[b] > 0) badges.push(b + '×' + bc[b]);
-          });
-        }
-        var existing = flowState[root] || {};
-        flowState[root] = Object.assign(existing, {
-          badges: badges,
-          session_tier: te.session_tier || null
-        });
-      });
-    }
-    // Try per-ticker NCP from tide
-    if (tide && tide.tickers) {
-      Object.keys(tide.tickers).forEach(function(root){
-        var te = tide.tickers[root] || {};
-        var existing = flowState[root] || {};
-        flowState[root] = Object.assign(existing, {
-          ncp: te.cum_ncp != null ? te.cum_ncp : (existing.ncp || null),
-          flow_dur: te.flow_dur != null ? te.flow_dur : (existing.flow_dur || null),
-          vel_arrow: te.vel_arrow || existing.vel_arrow || 'flat'
-        });
-      });
-    }
-
-    // Determine asof from meta
-    var asof = (enrich && enrich.meta && enrich.meta.asof) || (tide && tide.meta && tide.meta.asof) || null;
-    var isRTH = isMarketHours();
-    var stamp = document.getElementById('ift-flow-stamp');
-    if (stamp) {
-      if (!isRTH) {
-        stamp.innerHTML = '<span class="l-en">off-hours · last: '+(asof||'—')+'</span>'
-          + '<span class="l-zh">非交易时段 · 最后: '+(asof||'—')+'</span>';
-      } else {
-        stamp.innerHTML = '<span class="l-en">as of '+(asof||'?')+'</span>'
-          + '<span class="l-zh">截至 '+(asof||'?')+'</span>';
-      }
-    }
-
-    patchPriceCells();
-  }).catch(function(){
-    flowInflight = false;
-  });
-}
-
-function isMarketHours() {
-  var etMins = _etMinutes();
-  // 9:25 - 16:05 ET
-  return etMins >= (9 * 60 + 25) && etMins <= (16 * 60 + 5);
-}
-
-// ── Playbook accordion ────────────────────────────────────────────────────
+// ── Events ─────────────────────────────────────────────────────────────────
 document.querySelectorAll('.playbook-hd').forEach(function(hd){
-  hd.addEventListener('click', function(){
-    var sec = hd.parentElement;
-    sec.classList.toggle('open');
-  });
+  hd.addEventListener('click', function(){ hd.parentElement.classList.toggle('open'); });
 });
-
-// ── Sort click ────────────────────────────────────────────────────────────
 document.querySelectorAll('table.leaders th[data-col]').forEach(function(th){
   th.addEventListener('click', function(){
     var col = th.getAttribute('data-col');
-    if (col === sortCol) { sortDir = -sortDir; }
-    else { sortCol = col; sortDir = -1; }
-    sortTable();
+    if (col === 'expand' || col === 'tape' || col === 'dealer') return;
+    if (groupByStance) { groupByStance = false; setGroupToggle(false); }
+    if (col === sortCol) sortDir = -sortDir; else { sortCol = col; sortDir = -1; }
+    applyView();
+    var sl = document.getElementById('sort-label'); if (sl) sl.textContent = '';
   });
 });
-
-// ── Basket filter chips ───────────────────────────────────────────────────
 document.querySelectorAll('.chip[data-basket]').forEach(function(chip){
   chip.addEventListener('click', function(){
     document.querySelectorAll('.chip[data-basket]').forEach(function(c){ c.classList.remove('active'); });
-    chip.classList.add('active');
-    activeBasket = chip.getAttribute('data-basket');
-    applyFilter();
+    chip.classList.add('active'); activeBasket = chip.getAttribute('data-basket'); applyView();
   });
 });
-
-// ── K filter ──────────────────────────────────────────────────────────────
-var kSel = document.getElementById('k-sel');
-if (kSel) kSel.addEventListener('change', function(){
-  kMin = Number(kSel.value);
-  applyFilter();
+document.querySelectorAll('.stance-card[data-stance]').forEach(function(card){
+  card.addEventListener('click', function(){
+    var s = card.getAttribute('data-stance');
+    if (activeStance === s) { activeStance = 'all'; card.classList.remove('active'); }
+    else { document.querySelectorAll('.stance-card').forEach(function(c){ c.classList.remove('active'); }); activeStance = s; card.classList.add('active'); }
+    applyView();
+  });
 });
-
-// ── Search ────────────────────────────────────────────────────────────────
+var groupToggle = document.getElementById('group-toggle');
+function setGroupToggle(on){ groupByStance = on; if (groupToggle) groupToggle.classList.toggle('active', on); }
+if (groupToggle) groupToggle.addEventListener('click', function(){ setGroupToggle(!groupByStance); applyView(); });
+document.getElementById('leaders-body').addEventListener('click', function(e){
+  var exp = e.target.closest ? e.target.closest('.expander') : null;
+  if (!exp) return;
+  var tk = exp.getAttribute('data-exp');
+  openRows[tk] = !openRows[tk];
+  exp.textContent = openRows[tk] ? '▾' : '▸';
+  var dr = document.querySelector('tr.detail-row[data-detail="'+tk+'"]');
+  if (dr) dr.classList.toggle('open', openRows[tk]);
+});
 var searchEl = document.getElementById('ift-search');
-if (searchEl) searchEl.addEventListener('input', function(){
-  searchQ = searchEl.value.trim();
-  applyFilter();
-});
-// lang-aware placeholder (theme.js handles .nav-search only; page inputs do it themselves)
-if (searchEl) (function(){
-  var en = searchEl.placeholder, zh = searchEl.getAttribute('data-ph-zh') || en;
-  function setPh(){ searchEl.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? zh : en; }
-  setPh();
-  document.addEventListener('langchange', setPh);
-})();
+if (searchEl) {
+  searchEl.addEventListener('input', function(){ searchQ = searchEl.value.trim(); applyView(); });
+  (function(){ var en=searchEl.placeholder, zh=searchEl.getAttribute('data-ph-zh')||en;
+    function setPh(){ searchEl.placeholder = document.documentElement.getAttribute('data-lang')==='zh'?zh:en; }
+    setPh(); document.addEventListener('langchange', setPh); })();
+}
 
-// ── Leg expand/collapse ───────────────────────────────────────────────────
-window.toggleLegs = function(btn) {
-  var row = btn.parentElement.querySelector('.k-legs-row');
-  if (!row) return;
-  row.classList.toggle('open');
-  btn.textContent = row.classList.contains('open') ? '−' : '+';
-};
-
-// ── Polling timers ────────────────────────────────────────────────────────
+// ── Polling ────────────────────────────────────────────────────────────────
 function startPolling() {
-  fetchQuotes();
-  fetchPulse();
-  fetchFlow();
-  setInterval(fetchQuotes, 60 * 1000);   // every 60s
-  setInterval(fetchPulse, 5 * 60 * 1000); // every 5 min
-  // Flow: every 3 min during RTH only
-  setInterval(function(){
-    if (isMarketHours()) fetchFlow();
-  }, 3 * 60 * 1000);
+  fetchQuotes(); fetchPulse(); fetchFlow(); updateFlowStamp(null);
+  setInterval(fetchQuotes, 60*1000);
+  setInterval(fetchPulse, 5*60*1000);
+  setInterval(function(){ if (isMarketHours()) fetchFlow(); }, 3*60*1000);
 }
-
-// ── Init ──────────────────────────────────────────────────────────────────
-renderTable();
-if (typeof window !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startPolling);
-  } else {
-    startPolling();
-  }
-}
+setGroupToggle(true);
+render();
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startPolling);
+else startPolling();
 
 })();
 </script>
