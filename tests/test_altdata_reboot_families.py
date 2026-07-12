@@ -8,6 +8,12 @@ Covers:
   * Attention family: direction=-1 regardless of thesis lean.
   * Legacy regression: existing 'altdata'-family claims are untouched by new routing.
   * backfill_altdata: new-era theses emit 2 placebos; legacy theses emit none.
+  * _load_placebo_universe: parquet load path (MAJOR-1).
+  * _placebo_tickers stable under membership changes (MAJOR-2a).
+  * emit-once guard prevents duplicate placebos (MAJOR-2b).
+  * Fade check semantics graded correctly through desk_scorer (MINOR-1).
+  * Per-(ticker, family) active dedup (MINOR-2).
+  * 6 newly mapped channels (MINOR-3).
 """
 from __future__ import annotations
 
@@ -94,10 +100,16 @@ class TestAssignClaimFamily:
         fam = assign_claim_family(["fda_approval", "congress_cluster"])
         assert fam in ("altdata_event", "altdata_slow")
 
-    def test_unmapped_channel_defaults_to_event(self):
-        # 'cnbc_pick' (weight=0.25) is NOT in any family set → altdata_event
+    def test_cnbc_pick_routes_to_mid(self):
+        # 'cnbc_pick' (weight=0.25) is now explicitly mapped to altdata_mid
+        # (attention-adjacent but altdata_attention is dormant; mid-horizon safer)
         fam = assign_claim_family(["cnbc_pick"])
-        assert fam == "altdata_event"
+        assert fam == "altdata_mid"
+
+    def test_genuinely_unmapped_routes_to_mid(self):
+        # A truly unknown channel routes to altdata_mid (safe mid-horizon fallback)
+        fam = assign_claim_family(["__totally_unknown_channel__"])
+        assert fam == "altdata_mid"
 
     def test_mixed_with_retail_buzz_and_higher_channel(self):
         # special_situation (0.40) > retail_buzz (0.15) → event, not attention
@@ -474,3 +486,377 @@ class TestMixedLegacyAndNewEra:
         first_count = len(q.load_claims(tmp_path))
         backfill_altdata(tmp_path)
         assert len(q.load_claims(tmp_path)) == first_count
+
+
+# ---------------------------------------------------------------------------
+# 8. MAJOR-1: _load_placebo_universe parquet load path
+# ---------------------------------------------------------------------------
+
+class TestLoadPlaceboUniverse:
+    """_load_placebo_universe must load from membership.parquet and select
+    active sp500 members as the liquid subset."""
+
+    def setup_method(self):
+        import scripts.backfill_qledger_us as bq
+        bq._PLACEBO_UNIVERSE = None
+
+    def teardown_method(self):
+        # Restore cache to None so later tests aren't affected by a small fixture universe.
+        import scripts.backfill_qledger_us as bq
+        bq._PLACEBO_UNIVERSE = None
+
+    def _write_parquet(self, path: Path, rows: list[dict]) -> None:
+        import pandas as pd
+        path.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(rows).to_parquet(path, index=False)
+
+    def test_loads_active_sp500_from_parquet(self, tmp_path):
+        from scripts.backfill_qledger_us import _load_placebo_universe
+        import scripts.backfill_qledger_us as bq
+        # Reset module-level cache
+        bq._PLACEBO_UNIVERSE = None
+
+        rows = [
+            {"ticker": "AAPL", "group": "sp500", "name": "Apple", "sector": "IT",
+             "first_seen": "2026-01-01", "last_seen": "2026-07-12", "active": True},
+            {"ticker": "MSFT", "group": "sp500", "name": "Microsoft", "sector": "IT",
+             "first_seen": "2026-01-01", "last_seen": "2026-07-12", "active": True},
+            # sp600 member — should be excluded (not sp500)
+            {"ticker": "SMCAP", "group": "sp600", "name": "Small Co", "sector": "IT",
+             "first_seen": "2026-01-01", "last_seen": "2026-07-12", "active": True},
+            # inactive sp500 — should be excluded
+            {"ticker": "OLD", "group": "sp500", "name": "Old Co", "sector": "IT",
+             "first_seen": "2026-01-01", "last_seen": "2026-06-01", "active": False},
+        ]
+        self._write_parquet(tmp_path / "data" / "universe" / "membership.parquet", rows)
+        universe = _load_placebo_universe(tmp_path)
+        assert "AAPL" in universe
+        assert "MSFT" in universe
+        assert "SMCAP" not in universe, "sp600 must be excluded"
+        assert "OLD" not in universe, "inactive must be excluded"
+
+    def test_fallback_when_parquet_absent(self, tmp_path):
+        from scripts.backfill_qledger_us import _load_placebo_universe, _PLACEBO_UNIVERSE_FALLBACK
+        import scripts.backfill_qledger_us as bq
+        bq._PLACEBO_UNIVERSE = None
+        # No parquet file written
+        universe = _load_placebo_universe(tmp_path)
+        assert universe == _PLACEBO_UNIVERSE_FALLBACK
+
+    def test_parquet_load_cached(self, tmp_path):
+        """Second call returns same object (no re-read)."""
+        from scripts.backfill_qledger_us import _load_placebo_universe
+        import scripts.backfill_qledger_us as bq
+        bq._PLACEBO_UNIVERSE = None
+        rows = [
+            {"ticker": "AAPL", "group": "sp500", "name": "Apple", "sector": "IT",
+             "first_seen": "2026-01-01", "last_seen": "2026-07-12", "active": True},
+        ]
+        import pandas as pd
+        (tmp_path / "data" / "universe").mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(rows).to_parquet(tmp_path / "data" / "universe" / "membership.parquet", index=False)
+        u1 = _load_placebo_universe(tmp_path)
+        u2 = _load_placebo_universe(tmp_path)
+        assert u1 is u2, "universe must be cached (same object on second call)"
+
+
+# ---------------------------------------------------------------------------
+# 9. MAJOR-2a: _placebo_tickers stable under membership changes
+# ---------------------------------------------------------------------------
+
+class TestPlaceboTickerStability:
+    """Draw must be stable per (thesis, k) under unrelated membership changes."""
+
+    def test_stable_under_unrelated_membership_addition(self):
+        from scripts.backfill_qledger_us import _placebo_tickers
+        universe_v1 = ["AAPL", "MSFT", "AMZN", "NVDA", "GOOGL", "META", "TSLA", "JPM"]
+        # v2 adds an unrelated ticker in the middle (alphabetically)
+        universe_v2 = ["AAPL", "BNEW", "MSFT", "AMZN", "NVDA", "GOOGL", "META", "TSLA", "JPM"]
+
+        result_v1 = _placebo_tickers("2026-07-12", "CARR", "altdata_event", {"CARR"}, universe_v1, n=2)
+        result_v2 = _placebo_tickers("2026-07-12", "CARR", "altdata_event", {"CARR"}, universe_v2, n=2)
+        assert result_v1 == result_v2, (
+            f"draw should be stable under membership addition: v1={result_v1} v2={result_v2}"
+        )
+
+    def test_stable_under_unrelated_membership_removal(self):
+        from scripts.backfill_qledger_us import _placebo_tickers
+        universe_full = ["AAPL", "MSFT", "AMZN", "NVDA", "GOOGL", "META", "TSLA", "JPM", "UNH"]
+        universe_minus = ["AAPL", "MSFT", "AMZN", "NVDA", "GOOGL", "META", "TSLA", "UNH"]  # JPM removed
+
+        result_full = _placebo_tickers("2026-07-12", "CARR", "altdata_event", {"CARR"}, universe_full, n=2)
+        result_minus = _placebo_tickers("2026-07-12", "CARR", "altdata_event", {"CARR"}, universe_minus, n=2)
+        # The removed ticker (JPM) shouldn't have been selected — if it wasn't, results should match
+        if "JPM" not in result_full:
+            assert result_full == result_minus, (
+                f"removing an un-selected ticker should not change the draw: "
+                f"full={result_full} minus={result_minus}"
+            )
+
+
+# ---------------------------------------------------------------------------
+# 10. MAJOR-2b: emit-once guard — no duplicate placebos across nightly runs
+# ---------------------------------------------------------------------------
+
+class TestEmitOnceGuard:
+    """Placebos for a thesis must never accumulate across runs."""
+
+    def _make_new_era_thesis(self, ticker="CARR", source_id=None, asof="2026-07-12"):
+        if source_id is None:
+            source_id = f"{asof}-{ticker}-altconv"
+        return {
+            "id": source_id,
+            "ticker": ticker,
+            "state_asof": asof,
+            "lean": "overweight",
+            "conviction": "low",
+            "horizon_d": 21,
+            "claim_family": "altdata_event",
+            "channels": ["special_situation"],
+            "falsifier": {
+                "text": f"{ticker} fails to beat SPY.",
+                "check": {"kind": "rel_return", "subject_ticker": ticker,
+                           "vs": "SPY", "op": "<", "threshold": -0.05, "horizon_d": 21},
+            },
+            "check_by": "2026-08-09",
+            "entry_levels": {ticker: 100.0, "SPY": 700.0},
+            "status": "open",
+        }
+
+    def _reset_universe_cache(self):
+        import scripts.backfill_qledger_us as bq
+        bq._PLACEBO_UNIVERSE = None
+
+    def test_second_run_does_not_add_placebos(self, tmp_path):
+        """After first run (3 claims: 1 real + 2 placebo), second run must not
+        add more placebos — emit-once guard should detect existing placebos."""
+        from scripts.backfill_qledger_us import backfill_altdata
+        self._reset_universe_cache()
+        _write_jsonl(tmp_path / "data" / "altdata" / "theses.jsonl",
+                     [self._make_new_era_thesis()])
+        backfill_altdata(tmp_path)
+        first_total = len(q.load_claims(tmp_path))
+        assert first_total == 3, f"expected 3 claims (1 real + 2 placebo), got {first_total}"
+
+        self._reset_universe_cache()
+        backfill_altdata(tmp_path)
+        second_total = len(q.load_claims(tmp_path))
+        assert second_total == 3, (
+            f"emit-once guard failed: second run grew claims from {first_total} to {second_total}"
+        )
+
+    def test_ten_runs_idempotent_placebo_count(self, tmp_path):
+        """Multiple runs must not accumulate placebos."""
+        from scripts.backfill_qledger_us import backfill_altdata
+        _write_jsonl(tmp_path / "data" / "altdata" / "theses.jsonl",
+                     [self._make_new_era_thesis()])
+        for _ in range(5):
+            self._reset_universe_cache()
+            backfill_altdata(tmp_path)
+        claims = q.load_claims(tmp_path)
+        placebos = [c for c in claims if c.get("is_placebo")]
+        assert len(placebos) == 2, (
+            f"emit-once guard: expected 2 placebos after 5 runs, got {len(placebos)}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 11. MINOR-1: fade-check semantics graded correctly through desk_scorer
+# ---------------------------------------------------------------------------
+
+class TestFadeCheckSemantics:
+    """The attention family emits op='>' with positive threshold.
+    desk_scorer.eval_rel_return must grade a fade claim correctly:
+      - If the stock FALLS vs SPY (realized < 0): fade is CORRECT → hit
+        (realized NOT > +threshold → not falsified)
+      - If the stock RISES vs SPY (realized > +threshold): fade is BROKEN → miss
+        (realized > +threshold → falsified)
+    """
+
+    def test_fade_check_has_correct_op_and_threshold(self, tmp_path):
+        """build_theses with attention family must emit op='>' with positive threshold."""
+        from engine.altdata_ledger import build_theses, FAMILY_DIRECTION_OVERRIDE
+        import scripts.backfill_qledger_us as bq
+        bq._PLACEBO_UNIVERSE = None
+
+        by_ticker = {
+            "tickers": {
+                "GME": {
+                    "convergence_score": 2,
+                    "channels": ["retail_buzz"],
+                    "trump_linked": False,
+                },
+            }
+        }
+
+        import pandas as pd
+        import unittest.mock as mock
+        from engine import ai_desk as _desk
+        from datetime import date
+
+        # Patch price layer so the ticker is scorable
+        def _fake_level(ticker, root, asof):
+            return {"GME": 25.0, "SPY": 700.0}.get(ticker)
+
+        with mock.patch.object(_desk, "_level_asof", side_effect=_fake_level):
+            theses = build_theses(by_ticker, root=tmp_path, today=date(2026, 7, 12))
+
+        assert theses, "expected at least one thesis for GME retail_buzz"
+        thesis = theses[0]
+        check = thesis["falsifier"]["check"]
+        assert check["op"] == ">", (
+            f"attention fade must emit op='>' not '{check['op']}'"
+        )
+        assert check["threshold"] > 0, (
+            f"attention fade threshold must be positive (got {check['threshold']})"
+        )
+
+    def test_fade_check_grades_falling_stock_as_hit(self):
+        """realized < 0 (stock fell vs SPY) → fade is correct → NOT falsified → hit."""
+        from engine.desk_scorer import eval_rel_return
+        import unittest.mock as mock
+        from engine import ai_desk as _desk
+
+        # Fade check: falsified if realized > +0.05
+        check = {"kind": "rel_return", "subject_ticker": "GME", "vs": "SPY",
+                 "op": ">", "threshold": 0.05}
+        # GME drops 10%, SPY flat → realized = -0.10 → NOT > 0.05 → not falsified → hit
+        def _fake_close(ticker, root, check_by):
+            return {"GME": 22.5, "SPY": 700.0}[ticker]  # GME -10%
+
+        with mock.patch("engine.desk_scorer.close_at", side_effect=_fake_close):
+            with mock.patch("engine.desk_scorer.start_level",
+                            side_effect=lambda t, e, r, a: {"GME": 25.0, "SPY": 700.0}.get(t)):
+                result = eval_rel_return(
+                    check,
+                    entry={"GME": 25.0, "SPY": 700.0},
+                    root=None,
+                    asof="2026-07-12",
+                    check_by="2026-07-19",
+                )
+        assert result is not None
+        assert result["outcome"] == "hit", (
+            f"fade: falling stock should be a hit, got '{result['outcome']}'"
+        )
+
+    def test_fade_check_grades_rising_stock_as_miss(self):
+        """realized > +threshold (stock rose vs SPY) → fade broken → miss."""
+        from engine.desk_scorer import eval_rel_return
+        import unittest.mock as mock
+
+        # Fade check: falsified if realized > +0.05
+        check = {"kind": "rel_return", "subject_ticker": "GME", "vs": "SPY",
+                 "op": ">", "threshold": 0.05}
+        # GME +20%, SPY flat → realized = +0.20 → +0.20 > 0.05 → falsified → miss
+        def _fake_close(ticker, root, check_by):
+            return {"GME": 30.0, "SPY": 700.0}[ticker]  # GME +20%
+
+        with mock.patch("engine.desk_scorer.close_at", side_effect=_fake_close):
+            with mock.patch("engine.desk_scorer.start_level",
+                            side_effect=lambda t, e, r, a: {"GME": 25.0, "SPY": 700.0}.get(t)):
+                result = eval_rel_return(
+                    check,
+                    entry={"GME": 25.0, "SPY": 700.0},
+                    root=None,
+                    asof="2026-07-12",
+                    check_by="2026-07-19",
+                )
+        assert result is not None
+        assert result["outcome"] == "miss", (
+            f"fade: rising stock should be a miss (fade broken), got '{result['outcome']}'"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 12. MINOR-2: per-(ticker, family) active dedup
+# ---------------------------------------------------------------------------
+
+class TestPerFamilyActiveDedup:
+    """_active_subjects must return (ticker, family) pairs, not bare tickers.
+    A ticker with an open thesis in one family must NOT block a new thesis
+    in a different family.
+    """
+
+    def test_active_subjects_returns_ticker_family_pairs(self):
+        from engine.altdata_ledger import _active_subjects
+        rows = [
+            {"ticker": "GME", "claim_family": "altdata_event", "check_by": "2026-12-31"},
+            {"ticker": "AAPL", "claim_family": "altdata_slow", "check_by": "2026-12-31"},
+        ]
+        active = _active_subjects(rows, "2026-07-12")
+        assert ("GME", "altdata_event") in active
+        assert ("AAPL", "altdata_slow") in active
+        # Pure ticker (non-tuple) must NOT be in the set
+        assert "GME" not in active
+        assert "AAPL" not in active
+
+    def test_same_ticker_different_family_both_active(self):
+        from engine.altdata_ledger import _active_subjects
+        rows = [
+            {"ticker": "AAPL", "claim_family": "altdata_event", "check_by": "2026-12-31"},
+            {"ticker": "AAPL", "claim_family": "altdata_slow", "check_by": "2026-12-31"},
+        ]
+        active = _active_subjects(rows, "2026-07-12")
+        assert ("AAPL", "altdata_event") in active
+        assert ("AAPL", "altdata_slow") in active
+
+    def test_same_ticker_open_in_one_family_does_not_block_other(self):
+        from engine.altdata_ledger import _active_subjects
+        rows = [
+            {"ticker": "AAPL", "claim_family": "altdata_event", "check_by": "2026-12-31"},
+        ]
+        active = _active_subjects(rows, "2026-07-12")
+        assert ("AAPL", "altdata_event") in active
+        # Not open in slow → should NOT be in active
+        assert ("AAPL", "altdata_slow") not in active
+
+    def test_expired_thesis_not_active(self):
+        from engine.altdata_ledger import _active_subjects
+        rows = [
+            {"ticker": "AAPL", "claim_family": "altdata_event", "check_by": "2026-01-01"},
+        ]
+        active = _active_subjects(rows, "2026-07-12")
+        assert ("AAPL", "altdata_event") not in active
+
+    def test_legacy_family_uses_altdata_default(self):
+        """Rows with no claim_family default to 'altdata' family in the tuple."""
+        from engine.altdata_ledger import _active_subjects
+        rows = [
+            {"ticker": "CARR", "check_by": "2026-12-31"},  # no claim_family
+        ]
+        active = _active_subjects(rows, "2026-07-12")
+        assert ("CARR", "altdata") in active
+
+
+# ---------------------------------------------------------------------------
+# 13. MINOR-3: newly mapped channels route correctly
+# ---------------------------------------------------------------------------
+
+class TestNewlyMappedChannels:
+    """The 6 channels that were previously unmapped must now route correctly."""
+
+    def test_github_momentum_routes_to_event(self):
+        assert assign_claim_family(["github_momentum"]) == "altdata_event"
+
+    def test_hf_model_momentum_routes_to_event(self):
+        assert assign_claim_family(["hf_model_momentum"]) == "altdata_event"
+
+    def test_earnings_beat_routes_to_event(self):
+        assert assign_claim_family(["earnings_beat"]) == "altdata_event"
+
+    def test_cnbc_pick_routes_to_mid(self):
+        assert assign_claim_family(["cnbc_pick"]) == "altdata_mid"
+
+    def test_news_sentiment_routes_to_mid(self):
+        assert assign_claim_family(["news_sentiment"]) == "altdata_mid"
+
+    def test_bill_catalyst_routes_to_slow(self):
+        assert assign_claim_family(["bill_catalyst"]) == "altdata_slow"
+
+    def test_genuinely_unknown_channel_routes_to_mid(self):
+        """Truly unknown channels must route to altdata_mid (not altdata_event)."""
+        result = assign_claim_family(["totally_unknown_channel_xyz"])
+        assert result == "altdata_mid", (
+            f"unknown channels must route to altdata_mid (safer mid-horizon fallback), "
+            f"got '{result}'"
+        )

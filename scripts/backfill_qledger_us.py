@@ -129,33 +129,34 @@ _PLACEBO_UNIVERSE_FALLBACK = [
 
 def _load_placebo_universe(root: Path) -> list[str]:
     """Load the liquid US ticker universe for placebo draws.
-    Falls back to a hardcoded S&P 50 list when the universe file is absent.
+
+    Primary source: data/universe/membership.parquet (schema: ticker, group, name,
+    sector, first_seen, last_seen, active).  Liquid subset = active=True AND
+    group='sp500' (large-cap index members; avoids micro-cap noise from sp600).
+
+    Falls back to a hardcoded S&P 50 list when the parquet is absent.
     """
     global _PLACEBO_UNIVERSE
     if _PLACEBO_UNIVERSE is not None:
         return _PLACEBO_UNIVERSE
-    # Try the membership file (data/universe/membership.parquet or members.jsonl)
-    for cand in [
-        root / "data" / "universe" / "members.jsonl",
-        root / "data" / "universe" / "membership.jsonl",
-    ]:
-        if cand.exists():
-            try:
-                tickers = []
-                for line in cand.read_text(encoding="utf-8").splitlines():
-                    line = line.strip()
-                    if not line:
-                        continue
-                    obj = json.loads(line)
-                    t = obj.get("ticker") or obj.get("symbol") or ""
-                    if t:
-                        tickers.append(t)
-                if tickers:
-                    _PLACEBO_UNIVERSE = tickers
-                    log.debug("placebo universe: %d tickers from %s", len(tickers), cand)
-                    return _PLACEBO_UNIVERSE
-            except Exception:  # noqa: BLE001
-                pass
+
+    parquet_cand = root / "data" / "universe" / "membership.parquet"
+    if parquet_cand.exists():
+        try:
+            df = pd.read_parquet(parquet_cand, columns=["ticker", "group", "active"])
+            # Liquid subset: active S&P 500 members (large-cap; avoids micro/small-cap noise)
+            liquid = df[(df["active"] == True) & (df["group"] == "sp500")]  # noqa: E712
+            tickers = sorted(liquid["ticker"].dropna().unique().tolist())
+            if tickers:
+                _PLACEBO_UNIVERSE = tickers
+                log.debug(
+                    "placebo universe: %d tickers from %s (sp500, active)",
+                    len(tickers), parquet_cand,
+                )
+                return _PLACEBO_UNIVERSE
+        except Exception:  # noqa: BLE001
+            log.warning("placebo universe: failed to read %s — using fallback", parquet_cand)
+
     _PLACEBO_UNIVERSE = _PLACEBO_UNIVERSE_FALLBACK
     log.debug("placebo universe: fallback (%d tickers)", len(_PLACEBO_UNIVERSE))
     return _PLACEBO_UNIVERSE
@@ -167,28 +168,65 @@ def _placebo_tickers(
 ) -> list[str]:
     """Draw n distinct placebo tickers deterministically using hashlib.
 
-    Tickers are drawn from `universe` excluding `converging_tickers` (the set of
-    names that converged on this date, so the placebo is a genuine non-signal draw).
-    The seed is derived from (asof, real_ticker, family) — reproducible across runs.
-    """
-    exclude = set(converging_tickers)
-    candidates = [t for t in universe if t not in exclude and t != real_ticker]
-    if not candidates:
-        candidates = [t for t in universe if t != real_ticker]
+    Stable under universe membership changes: each candidate is ranked by the
+    sha256 digest of (asof|real_ticker|candidate), and the top-n are taken.
+    This means adding or removing an unrelated ticker never reshuffles the draw
+    for an existing (thesis, k) pair — the ranking is candidate-specific.
 
-    result: list[str] = []
+    Tickers are drawn from `universe` excluding `converging_tickers` (any ticker
+    with an active altdata-family claim) and `real_ticker` itself.
+    """
+    exclude = set(converging_tickers) | {real_ticker}
+    candidates = [t for t in universe if t not in exclude]
+    if not candidates:
+        # Last resort: allow any ticker except the real one
+        candidates = [t for t in universe if t != real_ticker]
+    if not candidates:
+        return []
+
+    # Rank candidates by per-candidate digest keyed on (asof, real_ticker, candidate).
+    # This is stable: a new candidate gets its own rank; existing ranks are unchanged.
+    def _rank_key(ticker: str) -> int:
+        raw = f"{asof}|{real_ticker}|{ticker}"
+        return int(hashlib.sha256(raw.encode()).hexdigest(), 16)
+
+    ranked = sorted(candidates, key=_rank_key)
+    return ranked[:n]
+
+
+# ---------------------------------------------------------------------------
+# Emit-once guard for placebo emission
+# ---------------------------------------------------------------------------
+
+def _thesis_ids_with_placebos(root: Path) -> set[str]:
+    """Return the set of real thesis source_ids that already have placebo claims
+    registered in claims.jsonl.  Used to prevent duplicate placebo emission across
+    nightly runs when the same thesis re-appears in theses.jsonl.
+
+    The linkage is stored in each placebo claim's extra dict under key
+    'placebo_real_source_id' — this is a queryable, explicit tie from the
+    placebo back to the real thesis.
+    """
+    claims_path = root / "data" / "qledger" / "claims.jsonl"
+    if not claims_path.exists():
+        return set()
     seen: set[str] = set()
-    i = 0
-    while len(result) < n and i < len(candidates) * 2 + n * 10:
-        raw = f"{asof}|{real_ticker}|{family}|{i}"
-        h = int(hashlib.sha256(raw.encode()).hexdigest(), 16)
-        idx = h % len(candidates)
-        t = candidates[idx]
-        if t not in seen:
-            result.append(t)
-            seen.add(t)
-        i += 1
-    return result
+    for line in claims_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            obj = json.loads(line)
+        except Exception:  # noqa: BLE001
+            continue
+        if not obj.get("is_placebo"):
+            continue
+        real_src = obj.get("placebo_real_source_id") or (obj.get("extra") or {}).get(
+            "placebo_real_source_id"
+        )
+        if real_src:
+            seen.add(str(real_src))
+    return seen
 
 
 # ---------------------------------------------------------------------------
@@ -267,13 +305,23 @@ def backfill_altdata(root: Path, *, dry_run: bool = False) -> int:
         return 0
 
     universe = _load_placebo_universe(root)
-    # Build the set of converging tickers per asof date (for placebo exclusion).
+    # Build the FULL set of altdata tickers (any open real altdata-family claim).
+    # Placebo exclusion must cover ALL convergent altdata names in the corpus, not
+    # just same-day converging tickers, to avoid contaminated counterfactuals.
+    all_altdata_tickers: set[str] = {
+        t for thesis in theses
+        if (t := thesis.get("ticker", "").strip())
+    }
+    # Also build per-asof set for the convergent-that-day subset (for logging clarity).
     converging_by_date: dict[str, set[str]] = {}
     for thesis in theses:
         asof = str(thesis.get("state_asof") or "").strip()
         tk = thesis.get("ticker", "").strip()
         if asof and tk:
             converging_by_date.setdefault(asof, set()).add(tk)
+
+    # Emit-once guard: thesis source_ids that already have placebo claims registered.
+    theses_already_placeod = _thesis_ids_with_placebos(root)
 
     all_claims: list[dict] = []
     registered = 0
@@ -341,9 +389,12 @@ def backfill_altdata(root: Path, *, dry_run: bool = False) -> int:
         registered += 1
 
         # Emit 2 matched placebo claims for new-family real claims (W2 placebo tape).
-        if is_new_family:
-            converging = converging_by_date.get(asof, set())
-            placebo_tks = _placebo_tickers(asof, ticker, family, converging, universe, n=2)
+        # Emit-once guard: skip if placebos for this thesis already exist in claims.jsonl.
+        if is_new_family and source_id not in theses_already_placeod:
+            # Exclude the FULL altdata corpus (not just same-day) as contaminated counterfactuals.
+            placebo_tks = _placebo_tickers(
+                asof, ticker, family, all_altdata_tickers, universe, n=2
+            )
             for i, ptk in enumerate(placebo_tks):
                 pclaim = make_claim(
                     desk="altdata",
@@ -362,6 +413,8 @@ def backfill_altdata(root: Path, *, dry_run: bool = False) -> int:
                         "placebo_real_source_id": source_id,
                     },
                 )
+                # Store linkage at top level for O(1) lookup by _thesis_ids_with_placebos
+                pclaim["placebo_real_source_id"] = source_id
                 pclaim["salt"] = f"{source_id}|placebo|{i}"
                 all_claims.append(pclaim)
 

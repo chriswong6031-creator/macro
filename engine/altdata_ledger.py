@@ -62,6 +62,8 @@ _FAMILY_CHANNELS: list[tuple[str, set]] = [
         "special_situation", "material_8k", "gov_contract", "gov_contract_accel",
         "gov_grant", "gov_grant_accel", "fda_approval", "fda_label_expansion",
         "clinical_phase3_start", "activist_13d",
+        # previously unmapped — event-horizon catalysts (earnings beats, FDA-adjacent)
+        "github_momentum", "hf_model_momentum", "earnings_beat",
     }),
     ("altdata_flow", {
         "darkpool_accum", "unusual_options",
@@ -69,10 +71,14 @@ _FAMILY_CHANNELS: list[tuple[str, set]] = [
     ("altdata_mid", {
         "insider_cluster", "insider_buy", "app_demand",
         "analyst_upgrade_cluster", "insider_mspr",
+        # previously unmapped — mid-horizon, attention-adjacent but attention dormant
+        "cnbc_pick", "news_sentiment",
     }),
     ("altdata_slow", {
         "congress_cluster", "congress_buy", "trump", "lobbying", "lobbying_spike",
         "smart_money_13f", "13f_add", "patent_cluster", "affiliation",
+        # previously unmapped — legislation horizon (multi-month catalyst window)
+        "bill_catalyst",
     }),
     ("altdata_attention", {
         "retail_buzz",
@@ -123,7 +129,11 @@ def assign_claim_family(channels: list[str]) -> str:
     """Return the claim_family for a thesis based on its highest-weight channel.
 
     Deterministic: ties broken by family order in _FAMILY_CHANNELS (highest-weight
-    family wins). Unmapped channels map to 'altdata_event' (safe fallback).
+    family wins). Unmapped channels map to 'altdata_mid' (safer mid-horizon fallback;
+    event family has the narrowest 21d window which is wrong for truly unknown channels).
+    Mapped channels: see _FAMILY_CHANNELS for the complete routing table including
+    github_momentum/hf_model_momentum/earnings_beat → event; cnbc_pick/news_sentiment →
+    mid; bill_catalyst → slow.
     """
     if not channels:
         return "altdata_event"
@@ -131,8 +141,9 @@ def assign_claim_family(channels: list[str]) -> str:
     best_ch = max(channels, key=lambda c: weights.get(c, 0.2))
     family = _CHANNEL_TO_FAMILY.get(best_ch)
     if family is None:
-        log.warning("altdata_ledger: unmapped channel %r → altdata_event", best_ch)
-        return "altdata_event"
+        log.warning("altdata_ledger: unmapped channel %r → altdata_mid (unknown horizon; "
+                    "routes to mid as safer fallback)", best_ch)
+        return "altdata_mid"
     return family
 
 _LEDGER = ("data", "altdata", "theses.jsonl")
@@ -145,10 +156,17 @@ def _p(root, parts):
 
 
 def _active_subjects(ledger_rows: list, asof: str) -> set:
-    """Tickers with a thesis whose window has NOT elapsed yet — vintage dedupe so a
-    persistently-convergent name is logged once per window, not every day."""
-    return {r.get("ticker") for r in ledger_rows
-            if r.get("ticker") and str(r.get("check_by", "")) >= asof}
+    """(ticker, family) pairs with a thesis whose window has NOT elapsed yet.
+
+    Dedup is per-(ticker, family) so a ticker may hold theses in different families
+    simultaneously (required for W3 independent attention emission). Per-family cooldown
+    after expiry is handled separately by _cooldown_blocked.
+    """
+    return {
+        (r.get("ticker"), r.get("claim_family") or "altdata")
+        for r in ledger_rows
+        if r.get("ticker") and str(r.get("check_by", "")) >= asof
+    }
 
 
 def _cooldown_blocked(ledger_rows: list, asof: str) -> set[tuple[str, str]]:
@@ -215,7 +233,7 @@ def build_theses(by_ticker: dict, root=None, today=None) -> list:
     new = []
     for tk, rec in (by_ticker.get("tickers") or {}).items():
         score = int(rec.get("convergence_score", 0) or 0)
-        if score < MIN_SCORE or tk in active:
+        if score < MIN_SCORE:
             continue
         e0 = _desk._level_asof(tk, root, asof)
         b0 = _desk._level_asof(BENCH, root, asof)
@@ -225,6 +243,10 @@ def build_theses(by_ticker: dict, root=None, today=None) -> list:
 
         # ALTDATA_REBOOT W2: assign per-channel family and horizon
         family = assign_claim_family(chans)
+        # Per-(ticker, family) active dedup: skip if already open in this family
+        if (tk, family) in active:
+            log.debug("altdata ledger: %s/%s already active — skipping", tk, family)
+            continue
         if (tk, family) in cooldown_blocked:
             log.debug("altdata ledger: %s/%s in cooldown — skipping", tk, family)
             continue
@@ -242,6 +264,28 @@ def build_theses(by_ticker: dict, root=None, today=None) -> list:
             "underweight" if direction_override == -1 else "overweight"
         )
 
+        # Build falsifier check with correct semantics for direction.
+        # LONG (direction=+1): falsified iff realized < -THRESHOLD (underperforms SPY by >5%)
+        #   → op="<", threshold=THRESHOLD (negative)
+        # FADE (direction=-1): falsified iff realized > +abs(THRESHOLD) (stock RISES vs SPY)
+        #   → op=">", threshold=+abs(THRESHOLD), text updated to fade semantics
+        if direction_override == -1:
+            _check_op = ">"
+            _check_threshold = abs(THRESHOLD)
+            _falsifier_text = (
+                f"{tk} fails to underperform {BENCH} — fade thesis broken "
+                f"(outperforms by >{abs(THRESHOLD) * 100:.0f}% over ~{horizon_d} trading days "
+                f"despite {score}-channel retail-buzz convergence ({', '.join(chans)}))."
+            )
+        else:
+            _check_op = "<"
+            _check_threshold = THRESHOLD
+            _falsifier_text = (
+                f"{tk} fails to beat {BENCH} (underperforms by >{abs(THRESHOLD) * 100:.0f}%) "
+                f"over ~{horizon_d} trading days despite {score}-channel convergence "
+                f"({', '.join(chans)})."
+            )
+
         new.append({
             "id": rid, "ticker": tk, "logged_at": datetime.now(timezone.utc).isoformat(),
             "state_asof": asof,
@@ -251,11 +295,11 @@ def build_theses(by_ticker: dict, root=None, today=None) -> list:
             "convergence_score": score, "channels": chans,
             "trump_linked": bool(rec.get("trump_linked")),
             "falsifier": {
-                "text": f"{tk} fails to beat {BENCH} (underperforms by >{abs(THRESHOLD) * 100:.0f}%) "
-                        f"over ~{horizon_d} trading days despite {score}-channel convergence "
-                        f"({', '.join(chans)}).",
+                "text": _falsifier_text,
+                "text_zh": None,  # future: add Chinese translation
                 "check": {"kind": "rel_return", "subject_ticker": tk, "vs": BENCH,
-                          "op": "<", "threshold": THRESHOLD, "horizon_d": horizon_d},
+                          "op": _check_op, "threshold": _check_threshold,
+                          "horizon_d": horizon_d},
             },
             "check_by": check_by,
             "entry_levels": {tk: e0, BENCH: b0},
