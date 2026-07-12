@@ -49,6 +49,9 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     # SEC EDGAR — fair-access <10 req/s shared across data.sec.gov / www.sec.gov / efts.sec.gov
     "edgar_8k": "sec", "edgar_13f": "sec", "edgar_trumpflow": "sec",
     "beneficial_ownership": "sec", "edgar_dilution": "sec",
+    # LHB-R8: Nasdaq Trader symbol-dir (nasdaqtrader.com) + SEC company_tickers.json;
+    # both GETs are small/fast; grouped under 'sec' to keep out of the serial loop.
+    "symbol_directory": "sec",
     # Quiver — single API host (api.quiverquant.com), no internal pacing
     **{k: "quiver" for k in _QUIVER_KEYS},
     # CFTC — publicreporting.cftc.gov / www.cftc.gov
@@ -147,6 +150,7 @@ def all_adapters() -> dict:
         ("usaspending", "collectors.usaspending", "UsaspendingAdapter"),  # federal contract obligations + ASSISTANCE grants/loans per curated ticker -> Divergence Radar + gov_grant convergence channel
         # Beyond-Quiver alt-data/divergence sources (keyless except grants_gov; all degrade gracefully)
         ("edgar_8k", "collectors.edgar_8k", "Edgar8KAdapter"),     # SEC 8-K material-event velocity (theme_event radar leg) + per-ticker material_8k convergence channel
+        ("symbol_directory", "collectors.symbol_directory", "SymbolDirectoryAdapter"),  # LHB-R8: daily exchange symbol-directory archival (nasdaqlisted+otherlisted) + weekly CIK map -> data/symbol_directory/
         ("beneficial_ownership", "collectors.beneficial_ownership", "BeneficialOwnershipAdapter"),  # keyless SC 13D/13G sweep + filer enrichment -> per-ticker ownership-regime (engine/beneficial_ownership.py)
         ("edgar_dilution", "collectors.edgar_dilution", "EdgarDilutionAdapter"),  # S-3/S-3ASR/424B* daily-index sweep -> data/edgar/dilution_events.parquet (nwqs-c dilution context; display-only)
         ("openfda", "collectors.openfda", "OpenFdaAdapter"),       # Drugs@FDA approvals/label-expansions -> fda_approval/fda_label_expansion channels (healthcare blind spot)
@@ -317,6 +321,7 @@ _SLOW = set(_QUIVER_KEYS) | {
     "stocktwits",            # altdata-W1: public bullish/bearish ratios + watchlist_count (keyless)
     "polygon_news", "github_repos", "sam_gov", "usaspending", "prediction_markets",
     "lbnl_queue", "federal_register",
+    "symbol_directory",  # LHB-R8: US-lane only; nightly exchange-roster archival
 }
 
 

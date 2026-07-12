@@ -6033,6 +6033,43 @@ artifacts:
       annualised return estimates — PR-N stays W3-locked behind G1 retest.
       fdr_family=long_hold (LH-R5).
 
+  # --- Long-Hold LHB-W2c: C1 symbol-directory archival (LHB-R8) ---
+  long-hold-symbol-directory:
+    path: data/symbol_directory/manifest.json
+    format: json
+    producer: collectors/symbol_directory.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: collect
+    storage: git
+    asof_field: last_snapshot_date
+    freshness_sla_hours: 30
+    schema: symbol_directory_manifest.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - collectors/symbol_directory.py
+    external_consumers: []
+    notes: >
+      LHB-R8 accrual infrastructure for the C1 all-listed Detector-D satellite.
+      The manifest (git-tracked, tiny) carries freshness metadata only.
+      The bulk artifacts are gitignored-local runner stores:
+        data/symbol_directory/snapshots/YYYY-MM-DD.parquet — one row per
+        exchange-listed symbol on that date: date, symbol, security_name,
+        exchange, etf (bool), test_issue (bool), source (nasdaqlisted|otherlisted).
+        Written at most once per calendar day (idempotent).
+        data/symbol_directory/cik_map/YYYY-MM-DD.parquet — ticker, cik, title.
+        Written at most once per ISO week (the file changes slowly).
+      Sources: Nasdaq Trader symbol directory (nasdaqlisted.txt + otherlisted.txt,
+      keyless plain-HTTP) + SEC company_tickers.json (fair-access UA).
+      Display-only; no consumers yet. No hypothesis slots spent.
+      POOLED CROSS-STRATA BASE RATES ARE FORBIDDEN downstream (LHB-R8):
+      strata (S&P 1500 / non-S&P US common / FPI-ADR) permanently separate.
+      authority.may_rank/gate/size/escalate=false. fdr_family=long_hold (LH-R5).
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json
