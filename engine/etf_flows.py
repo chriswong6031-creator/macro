@@ -26,9 +26,38 @@ Schema of etf_flow_proxy.parquet:
   index: date (datetime64[ns])
   columns: one per fund, named "<TICKER>_flow_mn"   (float64, NaN on day-0 row)
 
+**RLT-R3 addition: broad-market index ETF proxy**
+
+``rebuild_broad()`` (RLT-R3) produces ``data/flows/broad_flow_proxy.parquet``
+for the 5 broad-market index ETFs (SPY, QQQ, IWM, RSP, DIA).  Schema:
+
+  index: (unnamed integer range)
+  columns: date (datetime64[ns]), ticker (str), flow_mn (float64), flow_z60 (float64)
+
+The long/tall format is chosen because consumers (RLT-R2 classifier, flow-
+continuity cohort surface) iterate over tickers rather than reading wide
+columns; it avoids the sparse-NaN pattern that arises in a wide frame when
+tickers have different history lengths.
+
+``flow_z60``: z-score of ``flow_mn`` versus its trailing 60-session window
+(causal — uses only past data; minimum 2 observations required, else NaN).
+The 60-session window matches the 3-month look-back used in the existing
+flow-continuity cohort engine.
+
+``SO jump guard``: single-day |delta(SO_mn)| > 25 % of the prior-day SO_mn is
+clamped to NaN for ``flow_mn`` (labelled with a WARNING log).  This matches
+the spirit of split-seam self-healing in other stores (breadth-cache-split-
+seam-selfheal memory) and guards against corporate-action SO jumps from the
+yfinance point-in-time feed.  The guard only fires on genuinely implausible
+moves (> 25 % single-day change) — normal large creation events (a few % of
+SO) pass through.
+
+Authority block (all callers must respect):
+  may_rank: false  |  may_gate: false  |  may_size: false
+
 This module is DISPLAY-DATA only — it never feeds a score or allocation path.
-Calling rebuild() is idempotent; re-runs upsert (date wins over existing row).
-Call from scripts/build_site.py or a dedicated cron after the collect lane lands.
+Calling rebuild() / rebuild_broad() is idempotent; re-runs upsert (date wins
+over existing row).
 """
 from __future__ import annotations
 
@@ -41,8 +70,18 @@ log = logging.getLogger(__name__)
 
 _FLOWS_DIR = Path(__file__).parent.parent / "data" / "flows"
 _PROXY_PATH = _FLOWS_DIR / "etf_flow_proxy.parquet"
+_BROAD_PROXY_PATH = _FLOWS_DIR / "broad_flow_proxy.parquet"
 
+# RLT-R3: 5 broad-market index ETFs added alongside the 11 sector SPDRs.
+# Their per-ticker SO parquets live in the same data/flows/ directory and use
+# the same schema (nav, aum_mn, so_mn) written by BroadFlowAdapter.
 SECTOR_TICKERS = ("XLB", "XLC", "XLE", "XLF", "XLI", "XLK", "XLP", "XLRE", "XLU", "XLV", "XLY")
+BROAD_ETFS = ("SPY", "QQQ", "IWM", "RSP", "DIA")
+
+# Single-day SO jump guard threshold (RLT-R3): |delta(SO_mn)| / prior_so_mn.
+# > 25% is almost certainly a data artifact (split, corporate action, or stale
+# point-in-time yfinance snapshot) rather than real creation/redemption.
+_SO_JUMP_GUARD_FRAC = 0.25
 
 
 def _load_so(ticker: str, flows_dir: Path | None = None) -> pd.DataFrame | None:
@@ -178,6 +217,137 @@ def rebuild(tickers: tuple[str, ...] = SECTOR_TICKERS,
 def load_proxy(proxy_path: Path | None = None) -> pd.DataFrame | None:
     """Load the persisted proxy store. Returns None if file absent."""
     p = proxy_path or _PROXY_PATH
+    if not p.exists():
+        return None
+    return pd.read_parquet(p)
+
+
+def _derive_flow_guarded(df: pd.DataFrame, ticker: str = "") -> pd.Series:
+    """delta(so_mn) x nav(t) with SO-jump guard (RLT-R3).
+
+    Entries where |delta(SO_mn)| / prior_so_mn > _SO_JUMP_GUARD_FRAC are
+    clamped to NaN to suppress data-artifact spikes from splits or stale
+    point-in-time SO snapshots.  The underlying SO series is NOT modified.
+    """
+    delta_so = df["so_mn"].diff()
+    flow = (delta_so * df["nav"]).rename("flow_mn")
+    # Guard: flag implausible single-day SO jumps
+    prior_so = df["so_mn"].shift(1)
+    jump_frac = delta_so.abs() / prior_so.abs().replace(0, pd.NA)
+    mask = jump_frac > _SO_JUMP_GUARD_FRAC
+    if mask.any():
+        flagged = df.index[mask].tolist()
+        log.warning(
+            "etf_flows: %s SO jump >%d%% on %s — clamping flow_mn to NaN",
+            ticker or "?", int(_SO_JUMP_GUARD_FRAC * 100), flagged,
+        )
+        flow = flow.where(~mask)
+    return flow
+
+
+def _z60_causal(s: pd.Series) -> pd.Series:
+    """Rolling 60-session z-score of s, using only past observations (causal).
+
+    min_periods=2 so the first non-NaN z is available as soon as we have a
+    mean and std (avoids waiting for 60 full rows).  Returns NaN where std=0
+    (flat series) or where history < 2 rows.
+    """
+    roll = s.rolling(window=60, min_periods=2)
+    mu = roll.mean()
+    sigma = roll.std(ddof=1)
+    # Use .where() not .replace(0, pd.NA) — the latter forces object dtype
+    # (pd.NA is not a float sentinel); .where keeps the result as float64.
+    return ((s - mu) / sigma.where(sigma != 0)).rename("flow_z60")
+
+
+def broad_flows_wide(tickers: tuple[str, ...] = BROAD_ETFS,
+                     _flows_dir: Path | None = None) -> pd.DataFrame | None:
+    """Return wide frame: index=date, columns=<TICKER>_flow_mn (guarded).
+
+    The _flows_dir parameter is accepted for test injection (bypasses live
+    data/flows/ directory).  Production callers rely on the default path.
+    """
+    fdir = _flows_dir or _FLOWS_DIR
+    cols: dict[str, pd.Series] = {}
+    for t in tickers:
+        df = _load_so(t, flows_dir=fdir)
+        if df is None or len(df) < 2:
+            continue
+        s = _derive_flow_guarded(df, ticker=t)
+        cols[f"{t}_flow_mn"] = s
+    if not cols:
+        return None
+    wide = pd.DataFrame(cols)
+    wide.index.name = "date"
+    return wide.sort_index()
+
+
+def rebuild_broad(tickers: tuple[str, ...] = BROAD_ETFS,
+                  flows_dir: Path | None = None,
+                  proxy_path: Path | None = None) -> Path | None:
+    """Rebuild broad_flow_proxy.parquet (RLT-R3).
+
+    Output schema (long/tall):
+      date      datetime64[ns]
+      ticker    str
+      flow_mn   float64   — delta(SO_mn) x NAV; NaN on day-0 or SO-jump rows
+      flow_z60  float64   — causal 60-session z-score of flow_mn; NaN < 2 obs
+
+    Authority block: may_rank=false, may_gate=false, may_size=false.
+    Upserts existing store (last write wins on duplicate dates per ticker).
+    Returns the output path on success, None if no data is available yet.
+    """
+    _fdir = flows_dir or _FLOWS_DIR
+    _ppath = proxy_path or _BROAD_PROXY_PATH
+
+    # Build per-ticker chunks directly from each ticker's own source index to
+    # avoid the outer-join phantom-NaN problem: pd.DataFrame(cols) aligns all
+    # tickers onto the UNION of their dates, emitting NaN-filled phantom rows
+    # for dates a ticker never reported.  Instead we derive flow+z60 from each
+    # ticker's raw SO frame independently so every emitted row has a real
+    # observation (see review ruling RLT-R3).
+    records = []
+    for t in tickers:
+        df = _load_so(t, flows_dir=_fdir)
+        if df is None or len(df) < 2:
+            continue
+        s = _derive_flow_guarded(df, ticker=t).rename("flow_mn")
+        z = _z60_causal(s)
+        chunk = pd.DataFrame({"date": s.index, "ticker": t,
+                               "flow_mn": s.values, "flow_z60": z.values})
+        records.append(chunk)
+
+    if not records:
+        log.warning("etf_flows: no broad SO data found — skipping broad proxy build")
+        return None
+
+    new_df = pd.concat(records, ignore_index=True)
+    new_df["date"] = pd.to_datetime(new_df["date"])
+
+    # Upsert: merge with existing store (last write wins on date+ticker)
+    if _ppath.exists():
+        existing = pd.read_parquet(_ppath)
+        existing["date"] = pd.to_datetime(existing["date"])
+        merged = pd.concat([existing, new_df], ignore_index=True)
+        merged = (merged
+                  .drop_duplicates(subset=["date", "ticker"], keep="last")
+                  .sort_values(["ticker", "date"])
+                  .reset_index(drop=True))
+    else:
+        merged = (new_df
+                  .sort_values(["ticker", "date"])
+                  .reset_index(drop=True))
+
+    _ppath.parent.mkdir(parents=True, exist_ok=True)
+    merged.to_parquet(_ppath, index=False)
+    log.info("etf_flows: wrote %s rows (%s tickers) -> %s",
+             len(merged), merged["ticker"].nunique(), _ppath)
+    return _ppath
+
+
+def load_broad_proxy(proxy_path: Path | None = None) -> pd.DataFrame | None:
+    """Load the persisted broad proxy store. Returns None if file absent."""
+    p = proxy_path or _BROAD_PROXY_PATH
     if not p.exists():
         return None
     return pd.read_parquet(p)

@@ -8,10 +8,19 @@ creation/redemption signal paid vendors sell, at T+1.
 Stored per fund (data/flows/<TICKER>.parquet): nav, aum_mn, so_mn.
 History accumulates one row per trading day from first deployment — there is
 no free historical SO source, so percentile work matures as data accrues.
+
+``BroadFlowAdapter`` (RLT-R3) uses the same schema for the 5 broad-market
+index ETFs (SPY, QQQ, IWM, RSP, DIA).  It fetches AUM/NAV/SO from yfinance
+(``Ticker.info``) which covers all sponsors without bot-blocking — iShares
+direct is Akamai-blocked (project notes) and Invesco's cache API surfaces
+holdings, not fund-level AUM.  The data written is identical in schema to
+the sector-SPDR parquets so ``engine/etf_flows.rebuild_broad()`` can reuse
+``_derive_flow`` unchanged.
 """
 from __future__ import annotations
 
 import logging
+from datetime import date
 
 import pandas as pd
 
@@ -22,6 +31,11 @@ log = logging.getLogger(__name__)
 
 FUNDFINDER = ("https://www.ssga.com/bin/v1/ssmp/fund/fundfinder"
               "?country=us&language=en&role=intermediary&product=etfs&ui=fund-finder")
+
+# RLT-R3: broad-market index ETFs.  One per sponsor; yfinance is the single
+# source because it avoids Akamai blocking (iShares) and returns fund-level
+# AUM/NAV uniformly across SSGA/Invesco/iShares funds.
+BROAD_ETF_TICKERS = ("SPY", "QQQ", "IWM", "RSP", "DIA")
 
 
 class SectorFlowAdapter(Adapter):
@@ -127,3 +141,57 @@ def sector_flow_periods(
         "rows": rows,
         "net": net,
     }
+
+
+class BroadFlowAdapter(Adapter):
+    """RLT-R3: daily AUM/NAV/SO snapshot for broad-market index ETFs.
+
+    Uses yfinance ``Ticker.info`` as the single data source across all five
+    ETF sponsors (SSGA/Invesco/iShares) — avoids iShares Akamai bot-block
+    and provides a uniform interface.  Writes to ``data/flows/<T>.parquet``
+    with the same schema as ``SectorFlowAdapter`` so ``engine/etf_flows``
+    reuses ``_derive_flow`` unchanged.
+
+    Display/context only — never feeds a score or allocation path.
+    """
+    name = "broad_flows"
+    group = "flows"
+
+    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+        try:
+            import yfinance as yf
+        except ImportError as exc:
+            raise RuntimeError("yfinance is required for BroadFlowAdapter") from exc
+
+        asof = pd.Timestamp(date.today())
+        frames: dict[str, pd.DataFrame] = {}
+        errors = []
+        for tick in BROAD_ETF_TICKERS:
+            try:
+                info = yf.Ticker(tick).info
+                # navPrice is the official per-share NAV; fall back to lastPrice
+                nav = info.get("navPrice") or info.get("regularMarketPrice")
+                aum_mn = (info.get("totalAssets") or 0) / 1e6
+                so_shares = info.get("sharesOutstanding") or 0
+                if not nav or nav <= 0:
+                    raise ValueError(f"no valid nav (navPrice={info.get('navPrice')})")
+                if aum_mn <= 0 or so_shares <= 0:
+                    raise ValueError(f"bad aum_mn={aum_mn:.0f} or so={so_shares}")
+                so_mn = so_shares / 1e6
+                frames[tick] = pd.DataFrame(
+                    {"nav": [float(nav)], "aum_mn": [aum_mn], "so_mn": [so_mn]},
+                    index=[asof],
+                )
+            except Exception as e:  # noqa: BLE001
+                log.warning("broad_flows: %s fetch failed: %s", tick, e)
+                errors.append(tick)
+
+        missing = set(BROAD_ETF_TICKERS) - set(frames)
+        if missing:
+            log.warning("broad_flows: missing tickers %s", sorted(missing))
+        if len(frames) < len(BROAD_ETF_TICKERS) * 0.6:
+            raise RuntimeError(
+                f"broad_flows: only {len(frames)}/{len(BROAD_ETF_TICKERS)} tickers "
+                f"succeeded (errors: {errors})"
+            )
+        return frames
