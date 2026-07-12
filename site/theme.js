@@ -298,14 +298,14 @@
   window.toggleTheme = function () { setTheme(curTheme() === 'light' ? 'dark' : 'light'); };
   window.setThemeAuto = setThemeAuto;
 
-  /* ---- soft-contrast mode --------------------------------------------------
+  /* ---- soft-contrast palette (default for everyone) ------------------------
      Injects a <style id="soft-contrast-css"> that adds html.soft-contrast
      overrides: warmer/softer bg + panels in light mode, lifted blacks in dark.
      Measured on the softened light backgrounds: body --text 9.6-10.6:1 (AAA);
      --muted 5.8-6.5:1 (comfortably above the 4.5:1 AA floor).
-     Boot: theme.js loads end-of-body, so soft-mode users can see one standard-
-     palette paint first on cold load; the hub's <head> boot script also sets the
-     class pre-paint, other pages accept the brief swap (delta is subtle). */
+     Applied unconditionally at boot (no user toggle). theme.js loads end-of-
+     body, so pages get one standard-palette paint first on cold load; the hub's
+     <head> boot script also sets the class pre-paint (delta is subtle). */
   var SOFT_CONTRAST_CSS =
     'html.soft-contrast[data-theme="light"]{' +
       '--bg:#eceef1;--panel:#f5f5f7;--panel2:#e8eaed;--text:#2e3950;--muted:#4c5a6c;--line:#d0d4db;' +
@@ -324,36 +324,12 @@
     (document.head || document.documentElement).appendChild(st);
   }
 
-  function curContrast() {
-    try { return localStorage.getItem('contrast') || 'standard'; } catch (e) { return 'standard'; }
-  }
-
-  function setContrast(mode) {
-    // mode: 'standard' | 'soft'
-    try { if (mode === 'soft') { localStorage.setItem('contrast', 'soft'); } else { localStorage.removeItem('contrast'); } } catch (e) {}
-    if (mode === 'soft') {
-      _applySoftContrastCSS();
-      docEl.classList.add('soft-contrast');
-    } else {
-      docEl.classList.remove('soft-contrast');
-    }
-    _syncContrastSegment();
-    document.dispatchEvent(new CustomEvent('contrastchange', { detail: mode }));
-  }
-
-  // Placeholder replaced after initSettings builds the segment
-  function _syncContrastSegment() {}
-
-  // Boot: apply class ASAP (theme.js loads at end of <body> but before DOMContentLoaded)
+  // Boot: apply soft contrast for everyone, ASAP (theme.js loads at end of
+  // <body> but before DOMContentLoaded).
   (function () {
-    try {
-      if (localStorage.getItem('contrast') === 'soft') {
-        _applySoftContrastCSS();
-        docEl.classList.add('soft-contrast');
-      }
-    } catch (e) {}
+    _applySoftContrastCSS();
+    docEl.classList.add('soft-contrast');
   })();
-  window.setContrast = setContrast;
 
   /* ---- language (en default) ----------------------------------------------- */
   function curLang() { return docEl.getAttribute('data-lang') || 'en'; }
@@ -660,8 +636,7 @@
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
     theme: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>',
     lang: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/></svg>',
-    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0z"/></svg>',
-    contrast: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none" opacity=".45"/><circle cx="12" cy="12" r="9"/></svg>'
+    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0z"/></svg>'
   };
 
   /* =======================================================================
@@ -1313,11 +1288,7 @@
     fxOn:    ['On', '开'],
     fxOff:   ['Off', '关'],
     // Feature 7: live prices
-    liveP:   ['Live prices', '实时报价'],
-    // Soft-contrast row
-    contrast:         ['Contrast', '对比度'],
-    contrastStandard: ['Standard', '标准'],
-    contrastSoft:     ['Soft', '柔和']
+    liveP:   ['Live prices', '实时报价']
   };
   var SETTINGS_CSS = [
     /* two-row nav: the menu takes the whole first row on its own line; the global
@@ -1555,17 +1526,6 @@
           '<span class="sr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>' +
           '<span class="sr-main"><span class="sr-lbl" data-set="liveP"></span></span>' +
           '<span class="sr-ctrl"><button type="button" class="set-toggle-btn" id="set-live-toggle" role="switch" aria-checked="true"><span class="set-toggle-knob"></span></button></span>' +
-        '</div>' +
-        // Contrast row — Standard / Soft two-segment (label only, no description per operator ruling)
-        '<div class="settings-row">' +
-          '<span class="sr-ic">' + SET_ICON.contrast + '</span>' +
-          '<span class="sr-main"><span class="sr-lbl" data-set="contrast"></span></span>' +
-          '<span class="sr-ctrl">' +
-            '<div class="set-theme-seg" id="set-contrast-seg" role="group" aria-label="Contrast">' +
-              '<button type="button" class="set-seg-btn" id="set-contrast-standard" data-set="contrastStandard"></button>' +
-              '<button type="button" class="set-seg-btn" id="set-contrast-soft" data-set="contrastSoft"></button>' +
-            '</div>' +
-          '</span>' +
         '</div>' +
       '</div>' +
       '<div class="settings-sec" id="set-acct-sec">' +
@@ -2042,25 +2002,6 @@
     if (_tDark)  _tDark.addEventListener('click', function () { setTheme('dark'); });
     // keep the segment in sync when themechange fires (e.g. from legacy toggleTheme)
     document.addEventListener('themechange', function () { _syncThemeSegNow(); });
-
-    // ---- Contrast segment: Standard / Soft ----------------------------------
-    var _cStd = pop.querySelector('#set-contrast-standard'),
-        _cSft = pop.querySelector('#set-contrast-soft');
-    function _syncContrastSegNow() {
-      var isSoft = curContrast() === 'soft';
-      function _seg(el, on) {
-        if (!el) return;
-        el.classList.toggle('active', on);
-        el.setAttribute('aria-pressed', on ? 'true' : 'false');
-      }
-      _seg(_cStd, !isSoft);
-      _seg(_cSft, isSoft);
-    }
-    _syncContrastSegment = _syncContrastSegNow;
-    _syncContrastSegNow();
-    if (_cStd) _cStd.addEventListener('click', function () { setContrast('standard'); });
-    if (_cSft) _cSft.addEventListener('click', function () { setContrast('soft'); });
-    document.addEventListener('contrastchange', function () { _syncContrastSegNow(); });
 
     // ---- Feature 7: wire the Live-prices toggle (hub-optional) ---------------
     var _liveRow = pop.querySelector('#set-live-row'), _liveToggle = pop.querySelector('#set-live-toggle');
