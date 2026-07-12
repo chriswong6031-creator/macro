@@ -3,8 +3,11 @@
      Blue-info accent. Class prefix: .m7p (no collision with .igx/.rrx).
      Included by dashboard.html.j2 (stocks mode only, adjacent to ignition radar).
      ============================================================================ */
+  /* span12 rides on the root div (dashboard 12-col .grid child — without it the
+     panel collapses to one skinny track, the 2026-07-11 desktop bug). Two compact
+     horizontal rows: .m7p-top (title/state/stance/as-of) + .m7p-ev (evidence). */
   .m7p { --m7-col: var(--info);
-         display: grid; gap: 11px; margin: 12px 0 2px; padding: 15px 18px;
+         display: flex; flex-direction: column; gap: 8px; padding: 11px 16px 12px;
          border-radius: 12px; background: var(--panel); border: 1px solid var(--line);
          border-left: 4px solid var(--m7-col); font-size: 12.5px; line-height: 1.4;
          box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
@@ -16,10 +19,8 @@
   .m7p.m7p-rolling_over    { --m7-col: var(--warn); }
   .m7p.m7p-down            { --m7-col: var(--act); }
 
-  /* header */
-  .m7p .m7p-hd  { display: flex; align-items: flex-start; gap: 10px; }
-  .m7p .m7p-meta { flex: 1; min-width: 0; }
-  .m7p .m7p-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+  /* row 1 — title · badge · ? · run read · stance · as-of */
+  .m7p .m7p-top { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 10px; }
   .m7p .m7p-h2  { margin: 0; font-weight: 700; font-size: 13px; color: var(--text); }
   .m7p .m7p-badge { font-weight: 800; letter-spacing: .03em; color: var(--m7-col);
          font-size: 11px; font-variant-numeric: tabular-nums; padding: 1px 7px;
@@ -30,13 +31,22 @@
          width: 14px; height: 14px; border-radius: 50%;
          background: var(--panel2); border: 1px solid var(--line);
          color: var(--muted); font-size: 9px; font-weight: 700; cursor: help; }
-  /* state + stance lines */
-  .m7p .m7p-state  { font-size: 12.5px; color: var(--text); font-weight: 600; margin-top: 3px; }
-  .m7p .m7p-stance { font-size: 12px; color: var(--m7-col); font-weight: 700; margin-top: 1px; }
+  /* state + stance + as-of (inline in row 1) */
+  .m7p .m7p-state  { font-size: 12.5px; color: var(--text); font-weight: 600; }
+  .m7p .m7p-stance { font-size: 10.5px; color: var(--m7-col); font-weight: 800;
+         text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px;
+         border-radius: 99px;
+         background: color-mix(in srgb, var(--m7-col) 10%, transparent);
+         border: 1px solid color-mix(in srgb, var(--m7-col) 40%, var(--line)); }
+  .m7p .m7p-asof { margin-left: auto; font-size: 10.5px; color: var(--muted);
+         font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-  /* 7-dot member bar */
-  .m7p .m7p-dots { display: flex; gap: 10px 12px; flex-wrap: wrap; align-items: flex-end; }
-  .m7p .m7p-dot-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px;
+  /* row 2 — evidence: dots · generals · structure · legs · flow */
+  .m7p .m7p-ev { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
+
+  /* 7-dot member bar (horizontal dot + ticker pairs) */
+  .m7p .m7p-dots { display: inline-flex; gap: 4px 11px; flex-wrap: wrap; align-items: center; }
+  .m7p .m7p-dot-wrap { display: inline-flex; flex-direction: row; align-items: center; gap: 4px;
          cursor: help; }
   .m7p .m7p-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
   .m7p .m7p-dot.m7p-dot-green { background: var(--up); }
@@ -69,16 +79,10 @@
   .m7p .m7p-leg.dn  .m7p-leg-word { color: var(--down); font-weight: 700; }
   .m7p .m7p-leg.dn2 .m7p-leg-word { color: var(--down); font-weight: 800; }
 
-  /* footer + as-of */
-  .m7p .m7p-foot { font-size: 11px; color: var(--muted);
-         border-top: 1px solid color-mix(in srgb, var(--m7-col) 18%, var(--line));
-         padding-top: 9px; }
-  .m7p .m7p-asof { display: inline; font-size: 10.5px; color: var(--muted);
-         margin-left: 6px; font-variant-numeric: tabular-nums; }
-
   /* responsive */
   @media (max-width: 560px) {
-    .m7p { padding: 13px 14px; gap: 9px; }
+    .m7p { padding: 11px 13px; gap: 8px; }
+    .m7p .m7p-asof { flex-basis: 100%; margin-left: 0; }
     .m7p .m7p-legs .m7p-leg-name.l-zh,
     .m7p .m7p-legs .m7p-leg-name.l-en { font-size: 10.5px; }
   }

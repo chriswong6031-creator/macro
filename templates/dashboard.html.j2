@@ -221,20 +221,25 @@
           color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
           position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
   .help .tip { display: none; position: absolute; bottom: 140%; left: 50%;
-               transform: translateX(-50%); width: 290px;
+               transform: translateX(-50%); width: 330px;
                background: var(--panel); border: 1px solid var(--line);
-               padding: 9px 11px; border-radius: 8px;
-               z-index: 60; font-size: 12px; line-height: 1.45; color: var(--text);
+               padding: 10px 13px; border-radius: 8px;
+               z-index: 60; font-size: 12px; line-height: 1.5; color: var(--text);
                text-align: left; font-weight: 400; text-transform: none;
                letter-spacing: normal; box-shadow: var(--popover-shadow);
-               pointer-events: none; white-space: normal;
-               max-height: min(56vh, 360px); overflow-y: auto; overscroll-behavior: contain; }
+               pointer-events: auto; cursor: auto; white-space: normal;
+               max-height: min(60vh, 420px); overflow-y: auto; overscroll-behavior: contain; }
+  /* invisible hover bridge across the gap between the ? icon and the tip box —
+     without it the :hover chain breaks mid-travel and the tip vanishes before
+     the cursor can reach (and scroll) it */
+  .help .tip::after { content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 10px; }
   .help:hover .tip, .help.tip-open .tip { display: block; }
   th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
+  th .help .tip::after, .help.below .tip::after { top: auto; bottom: 100%; }
   /* keep tooltips on-screen near the right/left viewport edges */
   .help.edge-right .tip { left: auto; right: 0; transform: none; }
   .help.edge-left .tip { left: 0; right: auto; transform: none; }
-  .help .tip.tip-wide { width: min(430px, calc(100vw - 32px)); max-height: none; overflow: visible; }
+  .help .tip.tip-wide { width: min(430px, calc(100vw - 32px)); }
   @media (max-width: 640px) {
     .help .tip.tip-wide { width: calc(100vw - 28px); font-size: 11.5px; line-height: 1.45; }
   }
@@ -380,7 +385,7 @@
   .ew-chip { display: none; }  /* hidden in V2 board; moved to popover */
   .acttag, .actage, .acteta, .eqmini { display: none; }  /* moved to popover in V2 */
   /* action-board rows opt in to the shared row-pop engine via [data-rpop] */
-  .notable { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  /* .notable is its own .panel since 2026-07-11 — panel chrome carries the separation */
   .sm { font-size: 12px; margin: 4px 0; }
   /* keep legacy references alive for non-board code */
   .actitem b { color: var(--text); }
@@ -1584,7 +1589,9 @@
   }
 
   /* ── TS-U3: live basket tape band (dtp-* namespace; stocks page only) ─── */
-  #dash-tape-band { background:var(--panel2); border-bottom:2px solid var(--line); display:none; margin:-16px -16px 14px; }
+  /* own grid panel below the standout stocks (2026-07-11) — id beats .panel
+     specificity so the zero padding wins; the .dtp rows carry their own. */
+  #dash-tape-band { background:var(--panel2); display:none; margin:0; padding:0; overflow:hidden; }
   #dash-tape-band.visible { display:block; }
   .dtp-row { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; padding:9px 16px 8px; }
   .dtp-token { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); flex:none; }
@@ -1665,13 +1672,15 @@
   .dash-tw-badge.member { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 32%,transparent); color:var(--info,var(--link)); }
   .dash-tw-name { font-weight:600; color:var(--text); }
   .dash-tw-slow { font-size:11px; color:var(--muted); }
-  .dash-tw-disc { font-size:10.5px; color:var(--muted); margin-top:6px; border-top:1px solid var(--line); padding-top:5px; }
 
   /* ── TS-U3: salience chip on hold/avoid rows ────────────────────────────── */
   .dash-turn-chip { display:inline-flex; align-items:center; gap:3px; padding:1px 5px; border-radius:5px; font-size:9px; font-weight:800; letter-spacing:.04em; white-space:nowrap; background:color-mix(in srgb,var(--warn) 12%,transparent); border:1px solid color-mix(in srgb,var(--warn) 32%,transparent); color:var(--warn); margin-left:4px; }
 
   /* ── TS-U3: per-stock turn setups table ─────────────────────────────────── */
   .dash-mtf-section { margin-top:14px; }
+  /* rest-state fold: 12 rows visible, the rest behind the JS "Show all" toggle */
+  .dash-mtf-collapse.is-collapsed tbody tr:nth-child(n+13) { display:none; }
+  .dash-mtf-more { margin-top:8px; }
   .dash-mtf-tbl { width:100%; border-collapse:collapse; margin-top:7px; font-size:11.5px; }
   .dash-mtf-tbl th { text-align:left; font-weight:700; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.03em; padding:3px 6px; border-bottom:1px solid var(--line); }
   .dash-mtf-tbl td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); }
@@ -8099,7 +8108,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
   {% if action_board %}
   <div class="panel span12">
     <h2>{{ t('What to act on now', '当前可操作') }}
-      {{ help('Five lanes by cycle position. 🟢 Buy now — entry confirmed today. 🔵 Almost ready — trigger not yet fired, wait. 🏃 In favour — extended, wait for pullback. 🟠 Take profits — late-cycle or topping, protect gains. ⚪ Stand aside — hold what you own, no new buying. 🏛 = cap-weighted GICS sector cycle read (descriptive — no state→return ordering found in backtest; drawdown path is the honest content). 🧩 = narrative basket (finer resolution than the blurry GICS label). ✓ = backtested absolute-trend drawdown-control gate fired — the one measured edge on this board; overrides the cycle lane when it triggers. ★ = in the narrative-rotation model book. Hover any row for full detail.', '五个泳道按周期位置排列。🟢 立即买入 — 今日已确认入场。🔵 接近就绪 — 触发尚未发生，等待。🏃 看好勿追高 — 已延伸，等回调。🟠 止盈 — 周期晚期或做顶，保护利润。⚪ 观望 — 持有勿动，不新开仓。🏛 = 市值加权 GICS 板块周期判读（描述性 — 回测中未发现状态→收益排序关系；回撤路径是诚实的内容）。🧩 = 叙事篮子（比 GICS 标签分辨率更高）。✓ = 经回测的绝对趋势回撤控制门槛触发 — 本板块唯一经实测的优势；触发时覆盖周期泳道判读。★ = 在叙事轮动模型组合中。悬停任意行查看完整详情。') }}
+      {{ help('Every sector and theme is sorted into five lanes by cycle position — the lane name is the action, and each lane explains itself below its title. Hover any row for full detail. Symbols: 🏛 sector fund · 🧩 theme group · ✓ tested sell-discipline gate (overrides the lane read when it fires) · ★ in the model book.', '所有板块与主题按周期位置分入五个泳道 — 泳道名称即操作建议，各泳道标题下有说明。悬停任意行查看完整详情。图例：🏛 板块基金 · 🧩 主题篮子 · ✓ 经回测的卖出纪律门槛（触发时覆盖泳道判读）· ★ 模型组合内。') }}
     </h2>
     {# Policy-shock de-escalation fresh-entry caution chip (PS-R3: display de-escalation only —
        no reordering, no removal. Ranks computed on pre-shock data; this chip is the only change.) #}
@@ -8108,32 +8117,21 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       ⚠ <span class="l-en">SHOCK active — fresh entries carry extra uncertainty; sector ranks computed on pre-shock data. Context only — no ranks have been changed. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">冲击期间 — 新进场具有额外不确定性；板块排名基于冲击前数据计算。仅供参考，排名未作调整，有效期至 {{ shock_state.get('expires', '') }}。</span>
     </div>
     {% endif %}
-    {# TS-U3: Two-speed tape band (mode=stocks only; client-side from live/basket_pulse.json).
-       Clones the FTR W3 operator-ratified idiom (baskets.html.j2 .ftr-tape-*). #}
-    {% if mode == 'stocks' %}
-    <div id="dash-tape-band" aria-label="Live basket tape">
-      <div class="dtp-row" id="dtp-row">
-        <span class="dtp-token closed" id="dtp-token"><span class="dtp-dot"></span><span id="dtp-token-lbl">—</span></span>
-        <span class="dtp-asof" id="dtp-asof"></span>
-      </div>
-      <div class="dtp-body" id="dtp-body"></div>
-      <button class="dtp-more" id="dtp-more" type="button" aria-expanded="false" hidden></button>
-      <div class="dtp-fn" id="dtp-fn"></div>
-    </div>
     {# TS-U3: Turn Watch strip → "Early turn signs" (user-first copy per docs/DESIGN_DOCTRINE.md;
        mode=stocks only; client-side).
        Shown ONLY when data exists: baskets with WATCH/IGNITION or ≥2 UPTURN_CONFIRMED members
-       while slow reco is hold/avoid. Does NOT reorder lanes or change recos. #}
+       while slow reco is hold/avoid. Does NOT reorder lanes or change recos.
+       The fade disclosure (26 past cases, ~6 in 10 faded next day) lives in the ? tip —
+       operator order 2026-07-11; the plain-word sentence IS the receipt. #}
+    {% if mode == 'stocks' %}
     <div id="dash-tw-strip" class="dash-tw-strip">
       <div class="dash-tw-hdr">
         <span class="dash-tw-title">{{ t('&#9889; Early turn signs','&#9889; 早期拐点迹象') }}</span>
+        {{ help('Not a buy signal: in 26 past cases, about 6 in 10 of these early signs faded within a day. If the turn is real, the lanes below upgrade on their own.', '非买入信号：历史26次中约六成的早期迹象在一天内消退。若拐点为真，下方泳道会自行升级。') }}
         <span class="dash-tw-asof" id="dash-tw-asof"></span>
       </div>
       <div class="dash-tw-sub">{{ t("Bounce attempts in groups we still rate Hold / Avoid. Watch — don't chase.","仍评级为「持有／回避」的板块出现反弹尝试。观察为主 — 勿追高。") }}</div>
       <div class="dash-tw-rows" id="dash-tw-rows"></div>
-      <div class="dash-tw-disc">
-        <span class="l-en">Not a buy signal: in 26 past cases, about 6 in 10 of these early signs faded within a day. If the turn is real, the lanes below upgrade on their own.</span><span class="l-zh">非买入信号：历史26次中约六成的早期迹象在一天内消退。若拐点为真，下方泳道会自行升级。</span> <span class="help">?<span class="tip"><span class="l-en">Technical receipt: basket-level multi-timeframe turn meter; backtested edge at basket level = null (Oracle P8; T+1 fade base rate 58%, n=26). Slow reco labels unchanged; display tier only. Sources: turn_watch (basket K-of-N) + mtf_upturn (per-stock confluence).</span><span class="l-zh">技术说明：篮子级多时间框架拐点计量；篮子级回测优势为空值（Oracle P8；T+1消退基础概率58%，n=26）。慢速评级标签未变；仅展示层。数据源：turn_watch（篮子K-of-N）+ mtf_upturn（个股共振）。</span></span></span>
-      </div>
     </div>
     {% endif %}
     {# Unified board: 🧩 narrative baskets (the AI-buildout-vs-rest resolution) lead each
@@ -8428,11 +8426,14 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
         {% endif %}
       </div>
     </div>
+    {# board footer — ONE sentence (Law 4); the epistemics detail lives in row popovers #}
+    <p class="muted" style="font-size:11.5px; margin-top:8px">⚠ {{ t("Cycle timing shows <i>where in the cycle</i> a sector sits — use it for structure and defined exits, not as a return forecast.", "周期择时显示板块<i>处于周期的哪个位置</i> — 用于结构与明确出场，而非收益预测。") }}</p>
+  </div>{# /panel — What to act on now (standouts split into their own panel 2026-07-11) #}
     {% set _su = us_standouts if (us_standouts and us_standouts.buy) else None %}
     {% if _su or action_board.notable %}
-    <div class="notable" id="us-standouts">
+    <div class="panel span12 notable" id="us-standouts">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-        <span style="font-weight:700;font-size:13px">{{ t('Standout individual stocks', '表现突出的个股') }}</span>
+        <h2 style="margin:0">{{ t('Standout individual stocks', '表现突出的个股') }}</h2>
         {# W8-R6: grid/table view toggle (US market) #}
         {% if _su %}
         <span class="st-view-toggle" id="us-st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
@@ -8441,7 +8442,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
         </span>
         {% endif %}
         {% if _su %}<span class="muted" style="font-size:11.5px">{{ _su.buy|length }} {{ t("shown ·", "已显示 ·") }} {{ _su.eligible }} {{ t("setups · green dot = entry open, yellow = wait for pullback.", "个形态 · 绿点＝现在可入场，黄点＝等回调。") }}
-          <span class="help">?<span class="tip tip-wide"><span class="l-en">Cards answer two questions. Conviction asks: is this a name worth owning? Entry asks: is today a good price? A high conviction score can still mean wait. Use the green dot for open entries, the pullback price for patience, and the alpha chip for selection-edge rank. Conviction and entry are separate — a high conviction score can still mean wait for the pullback. Click a card for the full breakdown.</span><span class="l-zh">卡片回答两个问题：信念＝这是不是值得持有的标的；入场＝今天价格是否合适。高信念不等于立刻买。绿点表示入场窗口已开；黄点看回调价；alpha 标记是选股优势排名。信念与入场分开判断 — 高信念分也可能需要等待回调。点击卡片看完整拆解。</span></span></span></span>{% endif %}
+          <span class="help">?<span class="tip tip-wide"><span class="l-en">Each card answers two separate questions. Conviction: is this a name worth owning? Entry: is today a good price? High conviction can still mean wait for the pullback. Green dot = entry open · yellow = wait · the alpha chip ranks selection edge. Click a card for the full breakdown.</span><span class="l-zh">每张卡片回答两个独立问题。信念：是否值得持有；入场：今天价格是否合适。高信念也可能需要等回调。绿点＝入场窗口已开 · 黄点＝等待 · alpha 标记为选股优势排名。点击卡片看完整拆解。</span></span></span></span>{% endif %}
         {% if not _su %}<span class="muted" style="font-size:11.5px">{{ t("Top-10 holdings per sector · grouped by cycle entry, ranked by alpha.", "各板块前十大持仓 · 按周期入场分组，以alpha排序。") }}
           {{ help("Every sector ETF’s top-10 holdings are run through the SAME price-cycle engine as the sectors. A name earns a card only when its cycle signal is decisive — a confirmed buy (BUY ZONE), an imminent turn (BOTTOMING), or a sell (TOPPING). The cycle state GROUPS the cards (it places risk — a defined entry + exit); WITHIN each group they’re ordered by the validated sector-neutral residual momentum (α — market + sector beta stripped). We Phase-0 tested blending the cycle timing INTO the rank (reports/setup-score-phase0.md, survivorship-clean S&P 500, 12y) and it did NOT improve forward returns — it diluted α — so the order rides α and the cycle/pullback is shown as risk-placement CONTEXT, not a return signal. A soft per-sector cap keeps one hot sector from crowding the board. The α / #rank / pullback line and the 👤 insider chip are context inputs, NOT standalone buy signals. Click any card for the full breakdown.", "每个板块 ETF 的前十大持仓都用与板块相同的价格周期引擎分析。只有当个股的周期信号具决定性时才会获得卡片 — 已确认买入（买入区）、即将转向（筑底）或卖出（做顶）。周期状态对卡片进行分组（它摆放风险 — 明确的入场与出场）；在每组内部，按已验证的行业中性残差动量（α — 已剥离大盘与行业 beta）排序。我们做了 Phase-0 检验，把周期择时混入排序（reports/setup-score-phase0.md，无幸存者偏差的标普500，12年），结果并未改善前瞻收益 — 反而稀释了 α — 因此排序以 α 为准，周期/回调作为风险摆位的情境展示，而非收益信号。软性的单一板块上限可避免强势板块挤占整版。卡片上的 α / #排名 / 回调一行以及 👤 内部人买入标记均为情境输入，并非独立买入信号。点击任意卡片查看完整拆解。") }}</span>{% endif %}
       </div>
@@ -8652,9 +8653,9 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
           {% set _show_moving = (_vs_fired or n.get('alpha_entry') == 'extended') and _entry_ok %}
           <div class="nb-chiprow">
             {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
-            {% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}
+            {% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}" data-tip-en="Volatility squeeze: the trading range wound unusually tight — big moves often follow{% if _cf %}; the range just broke upward with force{% endif %}. Context read, not a signal." data-tip-zh="波动挤压：交易区间异常收窄 — 之后常有大幅波动{% if _cf %}；区间刚刚放量向上突破{% endif %}。背景参考，非信号。"><span class="l-en">{% if _cf %}⚡ Breakout fired{% else %}⚡ Coiling up{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}
             {# W6-C HOLD chip — hold STATE at rest (Base Nd / Launched / Broken); detail in expander #}
-            {% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}
+            {% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}
             {# W1.5 earnings-blackout chip — stays at rest (W1.5 contract) #}
             {% set _es_chip = n.get('earnings_soon') %}
             {% if _es_chip and _es_chip.get('days_to') is not none %}
@@ -8800,7 +8801,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
           {# hold detail (days-basing + invalidation price — expander per spec §4) #}
           {% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base {{ _hd.get('days_basing',0) }}d · inv ${{ '%.2f'|format(_hd.get('invalidation',0)) }}{% if _hd.get('provisional') %} · est{% endif %} · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base {{ _hd.get('days_basing',0) }}d · exit below ${{ '%.2f'|format(_hd.get('invalidation',0)) }}{% if _hd.get('provisional') %} · est{% endif %} · display only</span>
             <span class="l-zh">筑底{{ _hd.get('days_basing',0) }}天 · 止损 ${{ '%.2f'|format(_hd.get('invalidation',0)) }}。仅供参考。</span>
           </div>
           {% endif %}
@@ -9093,7 +9094,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       <div class="topsetups">
         <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
           <span style="font-weight:700;font-size:12.5px">⚡ {{ t('Top setups', '顶级布局') }}</span>
-          <span class="muted" style="font-size:11px">{{ t('α-ranked names that have triggered the MACD-2D × StochRSI-3D confluence buy · across the S&P 1500', '已触发 MACD-2D × StochRSI-3D 共振买入、并按 α 排序的标的 · 覆盖标普 1500') }}
+          <span class="muted" style="font-size:11px">{{ t('Stocks with a fresh buy trigger, strongest leaders first · across the S&P 1500', '已触发新买入信号的个股，最强领涨优先 · 覆盖标普 1500') }}
             {{ help("Actionable setups only. A name appears here only once it has TRIGGERED the validated MACD-2D × StochRSI-3D confluence buy (engine/signal_gate): the 2D MACD and 3D StochRSI have crossed within the last ~6 days and momentum is still constructive (Buy zone), OR the 3D StochRSI has crossed and the 2D MACD is about to cross in the next 1-2 bars (About to cross). This is a HARD gate — a high-α leader that is downtrending / topped on the 3D MACD/StochRSI is NOT shown, no matter how strong its momentum (the bug this fixes). Among the names that pass the gate, the board RANKS by α (sector-neutral residual momentum, market + sector beta stripped) so the strongest leaders surface first; the cycle state, trend chip and 'setup' score are risk-placement CONTEXT, and 👤 flags an insider buy-cluster. Click any row for the full breakdown.", "仅显示可操作布局。标的只有在触发了经验证的 MACD-2D × StochRSI-3D 共振买入（engine/signal_gate）后才会出现：2日 MACD 与 3日 StochRSI 已在约近6日内交叉且动量仍具建设性（买入区），或 3日 StochRSI 已上穿、2日 MACD 即将在未来1-2根K线内交叉（即将交叉）。这是硬性门控——无论动量多强，在 3日 MACD/StochRSI 上处于下行/做顶的高 α 领涨股都不会显示（本次修复的问题）。在通过门控的标的中，榜单按 α（行业中性残差动量，剥离大盘与行业 beta）排序，使最强领涨股优先；周期状态、趋势标签与“布局分”为风险摆位情境，👤 表示内部人集群买入。点击任意行查看完整拆解。") }}</span>
           <a class="ts-more" href="discovery.html">{{ t('Top Picks', '精选股') }} →</a>
         </div>
@@ -9101,7 +9102,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
         <div class="tbl-scroll"><table class="ts-tbl">
           <thead><tr>
             <th>{{ t('Stock', '个股') }}</th><th>{{ t('Sector', '板块') }}</th>
-            <th class="r">α</th><th class="r">{{ t('rank', '排名') }}</th>
+            <th class="r" data-tip-en="Selection edge (α): sector-neutral residual momentum, market and sector beta stripped — how strongly this stock outruns its peers" data-tip-zh="选股优势（α）：行业中性残差动量（剥离大盘与行业beta）— 相对同行的领先强度">{{ t('edge (α)', '优势 (α)') }}</th><th class="r">{{ t('rank', '排名') }}</th>
             <th data-tip-en="The validated MACD-2D × StochRSI-3D confluence buy gate (engine/signal_gate): Buy zone = both crossed within ~6 days, still constructive; About to cross = 3D StochRSI crossed, 2D MACD imminent. The board requires this." data-tip-zh="经验证的共振买入门控：买入区=两者约近6日内交叉且建设性；即将交叉=3日StochRSI已上穿、2日MACD即将交叉。榜单以此为准。">{{ t('buy', '买入') }}</th>
             <th>{{ t('cycle', '周期') }}</th><th>{{ t('trend', '趋势') }}</th>
             <th class="r" data-tip-en="Cross-sectional factor composite (value / quality / low-vol …) — a LIGHT quality tiebreaker (crowded, post-publication decayed), not a driver" data-tip-zh="横截面因子综合（价值/质量/低波…）— 轻量质量打破平局，非主导">{{ t('factor', '因子') }}</th>
@@ -9110,7 +9111,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
           <tbody>
           {% for r in top_setups.buy[:10] %}
             <tr class="ts-row" onclick="location.href='stock.html#{{ r.ticker }}'">
-              <td><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" data-tip-en="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer" data-tip-zh="{{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}{% if r.sue_z %} <span class="ts-sue" data-tip-en="Earnings momentum: SUE z {{ '%+.1f'|format(r.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score" data-tip-zh="盈利动量：SUE z {{ '%+.1f'|format(r.sue_z) }}（相对标普1500）— 在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 SUE {{ '%+.1f'|format(r.sue_z) }}</span>{% endif %}</td>
+              <td><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" data-tip-en="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer" data-tip-zh="{{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}{% if r.sue_z %} <span class="ts-sue" data-tip-en="Earnings momentum: SUE z {{ '%+.1f'|format(r.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score" data-tip-zh="盈利动量：SUE z {{ '%+.1f'|format(r.sue_z) }}（相对标普1500）— 在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 {{ t('earnings beat', '盈利超预期') }}</span>{% endif %}</td>
               <td class="muted">{{ td(r.sector) }}</td>
               <td class="r {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
               <td class="r muted">{% if r.sector_rank %}#{{ r.sector_rank }}/{{ r.sector_n }}{% endif %}</td>
@@ -9124,14 +9125,27 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
           </tbody>
         </table></div>{# /tbl-scroll #}
         {% else %}
-        <p class="ts-empty">⚪ {{ t("No names have a fresh MACD-2D × StochRSI-3D confluence buy right now — so there are no actionable setups to recommend today. A strong α leader that is downtrending or topped on the 3D MACD/StochRSI is not a buy; this board only lists names that have actually triggered the entry. See Top Picks for the full conviction board.", "当前没有标的触发新的 MACD-2D × StochRSI-3D 共振买入 — 因此今日没有可推荐的可操作布局。在 3日 MACD/StochRSI 上下行或做顶的强势 α 领涨股不构成买入；本榜单只列出确实已触发入场的标的。完整信念榜见精选股。") }}</p>
+        <p class="ts-empty">⚪ {{ t("No fresh buy triggers today — this board only lists names whose entry has actually fired, so a strong leader that is stretched or rolling over stays off it. New entries appear here when they trigger; see Top Picks for the full conviction board.", "今日无新买入触发 — 本榜单只列出确实已触发入场的标的，过度拉伸或正在回落的强势股不会出现。新入场触发后会在此显示；完整信念榜见精选股。") }}</p>
         {% endif %}
       </div>
       {% endif %}
+    </div>{# /panel span12 notable — standout stocks #}
+    {% endif %}
+    {# TS-U3: Two-speed tape band (mode=stocks only; client-side from live/basket_pulse.json).
+       Self-labeling .dtp idiom; relocated BELOW the standout stocks panel
+       (operator order 2026-07-11). Carries its own panel chrome; stays hidden
+       until the JS marks it .visible. #}
+    {% if mode == 'stocks' %}
+    <div id="dash-tape-band" class="panel span12" aria-label="Live basket tape">
+      <div class="dtp-row" id="dtp-row">
+        <span class="dtp-token closed" id="dtp-token"><span class="dtp-dot"></span><span id="dtp-token-lbl">—</span></span>
+        <span class="dtp-asof" id="dtp-asof"></span>
+      </div>
+      <div class="dtp-body" id="dtp-body"></div>
+      <button class="dtp-more" id="dtp-more" type="button" aria-expanded="false" hidden></button>
+      <div class="dtp-fn" id="dtp-fn"></div>
     </div>
     {% endif %}
-    <p class="muted" style="font-size:11.5px; margin-top:8px">⚠ {{ t("Cycle-timing signals are about <i>where in the price cycle</i> a sector is — most useful combined with the regime read above. Our calibration shows these states don't beat buy-and-hold on average return; their value is structure and risk placement (entry + a defined exit), not certainty.", "周期择时信号关乎一个板块<i>处于价格周期的哪个位置</i> — 与上方的周期判读结合使用最有价值。我们的校准显示这些状态在平均回报上并不能跑赢买入持有；它们的价值在于结构与风险摆位（入场 + 明确的出场），而非确定性。") }}</p>
-  </div>
   {% endif %}
   {% endif %}{# /mode != macro — action board #}
 
@@ -9298,7 +9312,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
   <!-- ============ SECTOR BUY/SELL SETUPS — confluence engine ============ -->
   {% if sector_setups %}
   <div class="panel span12" id="sectors">
-    <h2>{{ t('Sector buy/sell setups — 3-day MACD + StochRSI confluence', '板块买卖配置 — 3 日 MACD + StochRSI 共振') }} <span class="help">?<span class="tip">
+    <h2>{{ t('Sector buy/sell setups — short-term timing', '板块买卖配置 — 短线择时') }} <span class="help">?<span class="tip">
       <span class="l-en">
       The primary sector timing engine: a confluence of MACD + StochRSI crossovers on the
       <b>3-day chart</b> (the daily is the early trigger), gated by the 200-day trend and sorted
@@ -9340,7 +9354,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       </span>
     </span></span></h2>
     <p class="muted" style="font-size:12.5px;margin:6px 0 4px">
-      {% if sector_setups.n_buy or sector_setups.n_avoid %}<b>{{ sector_setups.n_buy }}</b> {{ t('on the buy side', '在买入侧') }} · <b>{{ sector_setups.n_avoid }}</b> {{ t('extended / topping / below trend', '过热／见顶／趋势下方') }}{% if sector_setups.n_tactical %} · <b>{{ sector_setups.n_tactical }}</b> {{ t('tactical oversold bounce', '战术超卖反弹') }}{% endif %}. {% endif %}{{ t('A 3-day MACD + StochRSI confluence engine sorted by actionability — a timing map, not a return forecast.', '3日MACD + StochRSI共振引擎，按可操作性排序——择时地图，非收益预测。') }}
+      {% if sector_setups.n_buy or sector_setups.n_avoid %}<b>{{ sector_setups.n_buy }}</b> {{ t('on the buy side', '在买入侧') }} · <b>{{ sector_setups.n_avoid }}</b> {{ t('extended / topping / below trend', '过热／见顶／趋势下方') }}{% if sector_setups.n_tactical %} · <b>{{ sector_setups.n_tactical }}</b> {{ t('tactical oversold bounce', '战术超卖反弹') }}{% endif %}. {% endif %}{{ t('Sorted most-actionable first — a timing map, not a return forecast.', '按可操作性排序——择时地图，非收益预测。') }}
       <span class="help">?<span class="tip tip-wide"><span class="l-en">Cross-sectionally the buy side has beaten the avoid side by ~0.8%/quarter (1998-2026). Use it to time rotation and to NOT chase extended leaders — never as a return forecast. Hit-rates ~50-56%; the edge is in magnitude and in AVOIDANCE (stops you chasing "confirmed leadership" that institutions distribute into).</span><span class="l-zh">横截面上买入侧每季度约跑赢回避侧 0.8%（1998–2026）。用于把握轮动、避免追逐过热领先股——切勿当作收益预测。胜率约 50–56%；优势在于幅度与「回避」（避免追逐机构派发的「已确认领先」），而非高胜率。</span></span></span>
     </p>
     <div class="tbl-scroll"><table class="act-fold is-collapsed">
@@ -9407,21 +9421,21 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       <span class="help">?<span class="tip tip-wide">
         <span class="l-en">
           A per-stock checklist of early bottoming signs — more filled boxes = more timeframes agreeing.
-          Not a buy list and not a return forecast: the backtested basket-level edge = null (Oracle P8 / DO_NOT_REBUILD §2); tier = display.
-          <b>Legs:</b> D = daily MACD bull cross; 3D = house 3-day confluence (MACD+StochRSI, the primary setup engine);
-          W = weekly MACD (filled = confirmed cross, hollow circle = approaching); 2W = biweekly MACD cross.
-          <b>States:</b> UPTURN_CONFIRMED (K≥3 incl. ≥1 weekly/2W leg) · UPTURN_WATCH (K≥2) · NONE.
-          <b>Monthly phase</b> is anti-trap context only (not a gate). Fade base rate: 58% at T+1 (n=26).
-          Mag7 always shown. Data lands after nightly (~02:00 UTC). Accruing from ship date.
+          Not a buy list and not a return forecast: in 26 past cases about 6 in 10 of these signs faded within a day.
+          <b>The four boxes:</b> D = daily momentum turned up; 3D = the house 3-day entry signal;
+          W = weekly (filled = confirmed, dashed = approaching); 2W = biweekly.
+          <b>TURNING UP</b> = 3+ boxes filled including a weekly one · <b>EARLY SIGN</b> = 2 boxes.
+          <b>Monthly phase</b> is anti-trap context only, not a gate.
+          Mag 7 members always shown. Updates after each nightly run.
         </span>
         <span class="l-zh">
           个股早期筑底迹象检查表 — 实心格越多，代表越多时间框架同向。
-          非买入清单、非收益预测：篮子级回测优势为空值（Oracle P8 / DO_NOT_REBUILD §2）；层级=展示。
-          <b>信号腿：</b>D=日线MACD金叉；3D=本系统3日共振（MACD+StochRSI，主要形态引擎）；
-          W=周线MACD（实心=确认交叉，空心=接近交叉）；2W=双周MACD交叉。
-          <b>状态：</b>UPTURN_CONFIRMED（K≥3含≥1周/双周腿）· UPTURN_WATCH（K≥2）· NONE。
-          <b>月线阶段</b>仅作防陷阱参考（非门控）。T+1翻转消退概率：58%（n=26）。
-          Mag7始终显示。数据在每晚收盘后更新（约UTC 02:00）。从上线日起积累。
+          非买入清单、非收益预测：历史26次中约六成迹象在一天内消退。
+          <b>四个格子：</b>D=日线动能转上；3D=本系统3日入场信号；
+          W=周线（实心=确认，虚线=接近）；2W=双周线。
+          <b>转强确认</b>=3格以上且含周线级 · <b>初步迹象</b>=2格。
+          <b>月线阶段</b>仅作防陷阱参考，非门控。
+          七巨头成分始终显示。每晚更新。
         </span>
       </span></span>
     </h2>
@@ -9446,8 +9460,8 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
         <tr>
           <th class="l">{{ t('sector', '板块') }}</th>
           <th class="l">{{ t('stock', '个股') }}</th>
-          <th>{{ t('raw Δwt', '原始权重Δ') }}</th>
-          <th>{{ t('active Δwt', '主动权重Δ') }}</th>
+          <th>{{ t('weight change', '权重变化') }}</th>
+          <th data-tip-en="Weight gained beyond what the stock's own price move explains — real buying flowed in" data-tip-zh="超出个股自身价格涨幅所能解释的权重增长 — 有真实买盘流入">{{ t('beyond price', '剔除价格后') }}</th>
           <th>{{ t('est. flow', '估算资金流') }}</th>
           <th class="l">{{ t('technical', '技术面') }}</th>
         </tr>
@@ -9642,9 +9656,12 @@ window.__CHART_SWAP__ = {
     if (h) place(h);
   }, true);
 
-  /* MOB-03: tap-to-toggle on touch devices; close on outside tap */
+  /* MOB-03: tap-to-toggle on touch devices; close on outside tap.
+     Clicks INSIDE the open tip body (scrolling, selecting text) must not
+     toggle it closed — only the ? icon itself toggles. */
   var _tipOpen = null;
   document.addEventListener('click', function(e){
+    if(e.target.closest && e.target.closest('.help .tip')) return;
     var h = e.target.closest && e.target.closest('.help');
     if(h){
       e.stopPropagation();
@@ -10181,6 +10198,23 @@ function renderTurnWatch(turnWatch, mtfUpturn){
    PER-STOCK TURN SETUPS TABLE (TS-R3 / TS-R7 / TS-R3)
    ──────────────────────────────────────────────────────────────────────── */
 var MAG7=['AAPL','AMZN','GOOGL','META','MSFT','NVDA','TSLA'];
+function _mtfPhasePlain(raw){
+  /* monthly_phase slugs → plain words (raw slug stays in the hover receipt).
+     Unknown tokens fall through prettified, never raw with underscores. */
+  if(!raw) return '—';
+  var MAP={macd_pos:{en:'above water',zh:'零轴上方'},macd_neg:{en:'below water',zh:'零轴下方'},
+           rising:{en:'rising',zh:'上升'},falling:{en:'falling',zh:'回落'}};
+  var parts=String(raw).split('/');
+  var en=[],zh=[];
+  parts.forEach(function(pt){
+    var m=MAP[pt];
+    en.push(m?m.en:pt.replace(/_/g,' '));
+    zh.push(m?m.zh:pt.replace(/_/g,' '));
+  });
+  return '<span data-tip-en="Monthly momentum: '+esc(raw)+' — anti-trap context only, not a gate" data-tip-zh="月线动能：'+esc(raw)+' — 仅作防陷阱参考，非门控">'
+    +L(esc(en.join(' · ')),esc(zh.join(' · ')))+'</span>';
+}
+
 function renderMtfTable(mtfUpturn){
   var bodyEl=document.getElementById('dash-mtf-body');
   if(!bodyEl) return;
@@ -10268,11 +10302,11 @@ function renderMtfTable(mtfUpturn){
   html+='<div class="tbl-scroll"><table class="dash-mtf-tbl"><thead><tr>'
     +'<th>'+L('ticker','代码')+'</th>'
     +'<th>'+L('state','状态')+'</th>'
-    +'<th class="r">K</th>'
-    +'<th>'+L('legs (D / 3D / W / 2W)','信号腿 (D / 3D / W / 2W)')
+    +'<th class="r">'+L('boxes','格数')+'</th>'
+    +'<th>'+L('checklist (D / 3D / W / 2W)','检查表 (D / 3D / W / 2W)')
       +' <span class="help" style="vertical-align:middle">?<span class="tip">'
-      +'<span class="l-en">Filled = leg fired (recent cross, counts toward K). Ring = histogram positive but no recent cross (running trend, does not count toward K). Empty = histogram negative. D=daily MACD bull cross; 3D=3-day MACD+StochRSI confluence; W=weekly MACD (dashed=approaching); 2W=biweekly MACD. Forward-graded meter; prior sector-level turn printed NULL (Oracle P8). Display context, not a signal.</span>'
-      +'<span class="l-zh">实心=腿触发（近期金叉，计入K值）。空心圆=柱状线为正但无近期金叉（趋势延续，不计入K值）。空心=柱状线为负。D=日线MACD金叉；3D=3日MACD+StochRSI共振；W=周线MACD（虚线=接近）；2W=双周MACD。前瞻计量；板块级别拐点为NULL（Oracle P8）。展示参考，非信号。</span>'
+      +'<span class="l-en">Filled = fired recently (counts toward the box count). Ring = trend still running, no fresh cross (does not count). Empty = negative. D=daily MACD bull cross; 3D=3-day MACD+StochRSI confluence; W=weekly MACD (dashed=approaching); 2W=biweekly MACD. Forward-graded meter; the group-level version of this turn tested as no edge (26 past cases). Display context, not a signal.</span>'
+      +'<span class="l-zh">实心=近期触发（计入格数）。空心圆=趋势延续但无新交叉（不计入）。空=为负。D=日线MACD金叉；3D=3日MACD+StochRSI共振；W=周线MACD（虚线=接近）；2W=双周MACD。前瞻计量；篮子级别的此类拐点经回测无优势（历史26次）。展示参考，非信号。</span>'
       +'</span></span></th>'
     +'<th>'+L('monthly phase','月线阶段')+'</th>'
     +'<th>'+L('since','起始')+'</th>'
@@ -10299,13 +10333,31 @@ function renderMtfTable(mtfUpturn){
         +wMacdEl3(legs.w_macd||'none',trend.w||null)
         +legEl3(!!legs.w2_macd,trend.w2||null,'2W')
       +'</div></td>'
-      +'<td class="dash-mtf-phase">'+esc(t.monthly_phase||'—')+'</td>'
+      +'<td class="dash-mtf-phase">'+_mtfPhasePlain(t.monthly_phase)+'</td>'
       +'<td class="dash-mtf-since">'+esc(t.since||'—')+'</td>'
       +'<td class="dash-mtf-baskets">'+(_bids.length?L(esc(basketEn),esc(basketZh)):'—')+'</td>'
       +'</tr>';
   });
   html+='</tbody></table></div>';
+  /* fold: first 12 rows at rest, the remainder behind a "Show all" toggle
+     (self-wired — theme.js .lst-more handlers only bind inside .lst-wrap) */
+  var FOLD=12;
+  if(rows.length>FOLD){
+    html='<div class="dash-mtf-collapse is-collapsed">'+html+'</div>'
+      +'<button class="lst-more dash-mtf-more" type="button" aria-expanded="false">'
+      +'<span class="lm-show">'+L('Show all '+rows.length+' stocks &#9662;','显示全部 '+rows.length+' 只 &#9662;')+'</span>'
+      +'<span class="lm-hide">'+L('Show less &#9652;','收起 &#9652;')+'</span></button>';
+  }
   bodyEl.innerHTML=html;
+  var _mtfBtn=bodyEl.querySelector('.dash-mtf-more');
+  if(_mtfBtn){
+    _mtfBtn.addEventListener('click',function(){
+      var wrap=bodyEl.querySelector('.dash-mtf-collapse');
+      if(!wrap) return;
+      var nowCollapsed=wrap.classList.toggle('is-collapsed');
+      _mtfBtn.setAttribute('aria-expanded', nowCollapsed?'false':'true');
+    });
+  }
 }
 
 /* ────────────────────────────────────────────────────────────────────────
