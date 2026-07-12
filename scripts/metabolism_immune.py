@@ -98,10 +98,8 @@ def _notify(text: str) -> None:
 def _gh_json(args: list[str], timeout: int = 60) -> Any:
     """Run a gh command, return parsed JSON, or None on failure.  NEVER raises.
 
-    When gh emits NDJSON (one JSON object per line, as produced by
-    --paginate --jq '<expr>'), each non-empty line is parsed separately and
-    the results are collected into a list.  Single-object output is returned
-    as-is (dict/list/scalar).
+    Returns the raw parsed value from stdout — a dict, list, or scalar.
+    Use _gh_json_list when the caller needs a flat list of dicts.
     """
     try:
         result = subprocess.run(
@@ -112,20 +110,55 @@ def _gh_json(args: list[str], timeout: int = 60) -> Any:
             log.warning("immune._gh_json: gh %s failed: %s", " ".join(args[:4]), result.stderr[:200])
             return None
         text = result.stdout or "null"
-        # Detect NDJSON: multiple non-empty lines, each a valid JSON object.
-        lines = [line for line in text.splitlines() if line.strip()]
-        if len(lines) > 1:
-            parsed = []
-            for line in lines:
-                try:
-                    parsed.append(json.loads(line))
-                except Exception:  # noqa: BLE001
-                    continue
-            return parsed if parsed else None
         return json.loads(text)
     except Exception as exc:  # noqa: BLE001
         log.warning("immune._gh_json: %s", exc)
         return None
+
+
+def _gh_json_list(args: list[str], timeout: int = 60) -> list[dict]:
+    """Run a gh command and ALWAYS return a flat list of dicts.  NEVER raises.
+
+    Handles all three output shapes produced by gh:
+
+    1. Single object per line (NDJSON, e.g. --paginate --jq '.check_runs[]'):
+       Each line is a dict → collected into a list.
+
+    2. Array per page (e.g. --paginate --jq '.workflow_runs' where each page
+       emits one JSON array):  Each line is a list → extended into result.
+
+    3. Single line (one object or one array, no --paginate):
+       Treated as a one-element or multi-element flat result.
+
+    Empty output or errors → [].
+    """
+    try:
+        result = subprocess.run(
+            ["gh"] + args,
+            capture_output=True, text=True, timeout=timeout,
+        )
+        if result.returncode != 0:
+            log.warning("immune._gh_json_list: gh %s failed: %s", " ".join(args[:4]), result.stderr[:200])
+            return []
+        text = result.stdout or ""
+        lines = [line for line in text.splitlines() if line.strip()]
+        if not lines:
+            return []
+        flat: list[dict] = []
+        for line in lines:
+            try:
+                obj = json.loads(line)
+            except Exception:  # noqa: BLE001
+                continue
+            if isinstance(obj, list):
+                flat.extend(item for item in obj if isinstance(item, dict))
+            elif isinstance(obj, dict):
+                flat.append(obj)
+            # scalars silently dropped
+        return flat
+    except Exception as exc:  # noqa: BLE001
+        log.warning("immune._gh_json_list: %s", exc)
+        return []
 
 
 def _get_main_sha() -> str:
@@ -167,25 +200,23 @@ def _get_required_red_checks(
             return []
         spurious = _get_spurious_check_names(immune_cfg or {})
         repo = _resolve_repo()
-        data = _gh_json([
+        # .check_runs[] emits one dict per line (NDJSON); _gh_json_list flattens correctly.
+        checks = _gh_json_list([
             "api",
             f"/repos/{repo}/commits/{main_sha}/check-runs",
             "--paginate",
             "--jq", ".check_runs[]",
         ], timeout=60)
-        if data is None:
-            # Try non-jq form
+        if not checks:
+            # Fallback: plain fetch without --jq; extract check_runs array from dict.
             raw = _gh_json([
                 "api",
                 f"/repos/{repo}/commits/{main_sha}/check-runs",
             ], timeout=60)
-            if not isinstance(raw, dict):
-                return []
-            checks = raw.get("check_runs") or []
-        elif isinstance(data, list):
-            checks = data
-        else:
-            return []
+            if isinstance(raw, dict):
+                checks = raw.get("check_runs") or []
+            else:
+                checks = []
 
         red = []
         for c in checks:
@@ -530,17 +561,21 @@ def _now_utc_str() -> str:
 # ── Lane-health sensors (R-V8-4) ──────────────────────────────────────────────
 
 def _fetch_runs_list() -> list[dict]:
-    """Fetch recent workflow runs from gh api.  NEVER raises."""
+    """Fetch recent workflow runs from gh api.  NEVER raises.
+
+    Uses '.workflow_runs[]' selector so gh emits one dict per line (NDJSON),
+    which _gh_json_list always flattens correctly regardless of page count.
+    """
     try:
-        data = _gh_json([
+        runs = _gh_json_list([
             "api",
             "/repos/{owner}/{repo}/actions/runs",
-            "--jq", ".workflow_runs",
+            "--jq", ".workflow_runs[]",
             "--paginate",
         ], timeout=90)
-        if isinstance(data, list):
-            return data
-        # Fallback: non-jq
+        if runs:
+            return runs
+        # Fallback: plain fetch, extract array from dict response.
         raw = _gh_json([
             "api", "/repos/{owner}/{repo}/actions/runs",
         ], timeout=60)

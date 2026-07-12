@@ -673,13 +673,13 @@ def test_unknown_red_page_deduped_within_day():
 
 # ── FIX-A1: NDJSON parsing + sentinel detects red required checks ────────────
 
-def test_gh_json_parses_ndjson_multiline():
-    """FIX-A1: _gh_json must parse multi-line NDJSON output (one object per line).
+def test_gh_json_list_parses_ndjson_multiline():
+    """FIX-A1: _gh_json_list must parse multi-line NDJSON output (one dict per line).
 
     With --paginate --jq '.check_runs[]', gh emits one JSON object per line.
-    _gh_json must collect them into a list, not fail on the second line.
+    _gh_json_list must collect them into a flat list of dicts.
     """
-    from scripts.metabolism_immune import _gh_json
+    from scripts.metabolism_immune import _gh_json_list
     from unittest.mock import patch, MagicMock
 
     obj1 = {"name": "blocklist-drift", "conclusion": "failure", "status": "completed", "html_url": "https://example.com/1"}
@@ -692,7 +692,7 @@ def test_gh_json_parses_ndjson_multiline():
     mock_result.stderr = ""
 
     with patch("subprocess.run", return_value=mock_result):
-        result = _gh_json(["api", "/repos/owner/repo/commits/abc/check-runs", "--paginate", "--jq", ".check_runs[]"])
+        result = _gh_json_list(["api", "/repos/owner/repo/commits/abc/check-runs", "--paginate", "--jq", ".check_runs[]"])
 
     assert isinstance(result, list), f"expected list, got {type(result)}: {result}"
     assert len(result) == 2
@@ -1015,3 +1015,184 @@ def test_spurious_filter_substring_match_with_qualifier():
         f"spurious check with qualifier should be filtered; got reds={reds}"
     )
     assert "blocklist-drift" in names, f"real red must still be detected; got reds={reds}"
+
+
+# ── FIX-A1 Integration: subprocess-boundary tests for _gh_json_list ──────────
+#
+# These tests stub subprocess.run (the real subprocess boundary) and drive
+# _gh_json_list through realistic bytes so the assembly — not just isolated
+# units — is verified.
+#
+# Four canonical output shapes from gh:
+#   (a) single-object NDJSON  → _get_required_red_checks detects the red
+#   (b) multi-object NDJSON   → _get_required_red_checks detects all reds
+#   (c) array-per-page        → _fetch_runs_list returns flat list;
+#                                check_dead_cron / check_queue_stuck sensors fire
+#   (d) empty output          → _gh_json_list returns []
+
+
+def test_gh_json_list_single_object_ndjson_red_detected():
+    """(a) Single-object NDJSON line from .check_runs[] → _get_required_red_checks detects red.
+
+    Before FIX-A1: len(lines)==1 → json.loads → dict, isinstance(data, list) fails → [].
+    After FIX-A1: _gh_json_list appends the single dict → list of 1 → red detected.
+    """
+    from scripts.metabolism_immune import _get_required_red_checks
+    from unittest.mock import patch, MagicMock
+
+    red_check = {
+        "name": "blocklist-drift",
+        "conclusion": "failure",
+        "status": "completed",
+        "html_url": "https://github.com/example/checks/1",
+    }
+    # Exactly one line — the shape gh emits when --jq '.check_runs[]' matches one run
+    single_ndjson = json.dumps(red_check) + "\n"
+
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = single_ndjson
+    mock_result.stderr = ""
+
+    with patch("subprocess.run", return_value=mock_result):
+        with patch("scripts.metabolism_immune._resolve_repo", return_value="owner/repo"):
+            reds = _get_required_red_checks("abc111", immune_cfg={"spurious_checks": []})
+
+    assert len(reds) == 1, f"single-object NDJSON must detect the red; got {reds}"
+    assert reds[0]["name"] == "blocklist-drift"
+
+
+def test_gh_json_list_multi_object_ndjson_all_reds_detected():
+    """(b) Multi-object NDJSON (one dict per line) → _get_required_red_checks detects all reds.
+
+    gh with --paginate --jq '.check_runs[]' emits each check_run as a separate line.
+    _gh_json_list must collect them all into a flat list.
+    """
+    from scripts.metabolism_immune import _get_required_red_checks
+    from unittest.mock import patch, MagicMock
+
+    checks = [
+        {"name": "blocklist-drift", "conclusion": "failure", "status": "completed", "html_url": "u1"},
+        {"name": "grader-manifest", "conclusion": "failure", "status": "completed", "html_url": "u2"},
+        {"name": "house-law-docs", "conclusion": "success", "status": "completed", "html_url": "u3"},
+    ]
+    ndjson_output = "\n".join(json.dumps(c) for c in checks) + "\n"
+
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = ndjson_output
+    mock_result.stderr = ""
+
+    with patch("subprocess.run", return_value=mock_result):
+        with patch("scripts.metabolism_immune._resolve_repo", return_value="owner/repo"):
+            reds = _get_required_red_checks("abc222", immune_cfg={"spurious_checks": []})
+
+    names = {r["name"] for r in reds}
+    assert "blocklist-drift" in names, f"blocklist-drift must be red; got {reds}"
+    assert "grader-manifest" in names, f"grader-manifest must be red; got {reds}"
+    assert "house-law-docs" not in names, f"green check must not appear; got {reds}"
+    assert len(reds) == 2
+
+
+def test_gh_json_list_array_per_page_runs_flat():
+    """(c) Array-per-page output (two lines, each a JSON array) → _fetch_runs_list returns flat list.
+
+    gh with --paginate --jq '.workflow_runs' emits one JSON array per page.
+    Before FIX-A1: _gh_json([...]) with len(lines)>1 parsed each line → list of lists.
+    After FIX-A1: _gh_json_list extends from each array → flat list of run dicts.
+    Additionally verify dead_cron and queue_stuck sensors fire on the flat list.
+    """
+    from scripts.metabolism_immune import _fetch_runs_list
+    from engine.metabolism.immune import check_dead_cron, check_queue_stuck
+    from unittest.mock import patch, MagicMock
+    from datetime import datetime, timezone, timedelta
+
+    long_ago = (datetime.now(timezone.utc) - timedelta(minutes=60)).isoformat()
+
+    page1_runs = [
+        {"name": "nightly-render", "event": "schedule", "conclusion": "cancelled",
+         "status": "completed", "created_at": long_ago},
+    ]
+    page2_runs = [
+        {"name": "slow-job", "event": "push", "conclusion": None,
+         "status": "queued", "created_at": long_ago},
+        {"name": "fast-job", "event": "push", "conclusion": "success",
+         "status": "completed", "created_at": long_ago},
+    ]
+    # Each page emits its array as ONE line (--jq '.workflow_runs' per page)
+    # After FIX-A1, selector is changed to '.workflow_runs[]' (NDJSON), but
+    # we test the _gh_json_list flatten contract directly: if gh still emits
+    # arrays per line (old selector or edge-case), _gh_json_list must still flatten.
+    array_per_page_output = json.dumps(page1_runs) + "\n" + json.dumps(page2_runs) + "\n"
+
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = array_per_page_output
+    mock_result.stderr = ""
+
+    with patch("subprocess.run", return_value=mock_result):
+        runs = _fetch_runs_list()
+
+    assert len(runs) == 3, f"expected 3 flat run dicts from 2 pages; got {runs}"
+
+    # Verify that sensors work on the flat list
+    lane_cfg = {"queue_stuck_min": 40, "dead_cron_conclusions": ["cancelled", "timed_out"]}
+    dc = check_dead_cron(runs, lane_cfg)
+    assert dc["found"] is True, f"dead_cron must fire on cancelled scheduled run; {dc}"
+    assert "nightly-render" in dc["dead_lanes"]
+
+    qs = check_queue_stuck(runs, lane_cfg)
+    assert qs["found"] is True, f"queue_stuck must fire on long-queued run; {qs}"
+    assert qs["stuck_count"] == 1
+
+
+def test_gh_json_list_empty_output_returns_empty():
+    """(d) Empty output → _gh_json_list returns []; callers receive empty list.
+
+    Covers: empty stdout, whitespace-only, and non-zero returncode.
+    """
+    from scripts.metabolism_immune import _gh_json_list, _fetch_runs_list, _get_required_red_checks
+    from unittest.mock import patch, MagicMock
+
+    # Case 1: empty stdout
+    mock_empty = MagicMock()
+    mock_empty.returncode = 0
+    mock_empty.stdout = ""
+    mock_empty.stderr = ""
+
+    with patch("subprocess.run", return_value=mock_empty):
+        assert _gh_json_list(["api", "/some/endpoint"]) == []
+
+    # Case 2: whitespace-only stdout
+    mock_ws = MagicMock()
+    mock_ws.returncode = 0
+    mock_ws.stdout = "   \n  \n"
+    mock_ws.stderr = ""
+
+    with patch("subprocess.run", return_value=mock_ws):
+        assert _gh_json_list(["api", "/some/endpoint"]) == []
+
+    # Case 3: non-zero returncode
+    mock_fail = MagicMock()
+    mock_fail.returncode = 1
+    mock_fail.stdout = '{"name": "should-not-appear"}'
+    mock_fail.stderr = "gh: not found"
+
+    with patch("subprocess.run", return_value=mock_fail):
+        assert _gh_json_list(["api", "/some/endpoint"]) == []
+
+    # Case 4: _fetch_runs_list returns [] when both primary and fallback are empty
+    mock_both_empty = MagicMock()
+    mock_both_empty.returncode = 0
+    mock_both_empty.stdout = ""
+    mock_both_empty.stderr = ""
+
+    with patch("subprocess.run", return_value=mock_both_empty):
+        runs = _fetch_runs_list()
+    assert runs == [], f"_fetch_runs_list must return [] on empty gh response; got {runs}"
+
+    # Case 5: _get_required_red_checks returns [] on empty gh response
+    with patch("subprocess.run", return_value=mock_both_empty):
+        with patch("scripts.metabolism_immune._resolve_repo", return_value="owner/repo"):
+            reds = _get_required_red_checks("abc000", immune_cfg={"spurious_checks": []})
+    assert reds == [], f"_get_required_red_checks must return [] on empty response; got {reds}"
