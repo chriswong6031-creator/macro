@@ -91,6 +91,42 @@
   .wh-pagedisc { max-width:1060px; margin:18px auto 0; font-size:12px; color:var(--muted);
                  border:1px solid var(--line); border-radius:12px; padding:12px 16px; background:var(--panel2); }
 
+  /* Treasury Watch panel — the TGA liquidity read (money-green → gold accent) */
+  .wh-tre { max-width:1060px; margin:22px auto 0; background:var(--panel); border:1px solid var(--line);
+            border-radius:16px; padding:22px 24px; box-shadow:var(--card-shadow); position:relative; overflow:hidden; }
+  .wh-tre::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
+            background:linear-gradient(90deg,#1f7a4e,#2f8f6f 55%,#d9a441); }
+  .wh-tre .tk { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 6px; font-weight:700; }
+  .wh-tre h2 { font-size:19px; line-height:1.2; margin:0 0 4px; letter-spacing:-.01em; }
+  .wh-tre p.sub { font-size:13px; color:var(--text); opacity:.78; margin:0 0 14px; max-width:78ch; }
+  .wh-stats { display:flex; flex-wrap:wrap; gap:10px 12px; margin:0 0 6px; }
+  .wh-stat { flex:1 1 150px; min-width:138px; background:var(--panel2); border:1px solid var(--line);
+             border-radius:12px; padding:10px 13px; }
+  .wh-stat .lab { font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin:0 0 3px; }
+  .wh-stat .val { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.15; }
+  .wh-stat .val .u { font-size:12px; font-weight:600; opacity:.6; }
+  .wh-stat .delta { font-size:12px; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .wh-stat .delta.up { color:#1f9a55; } .wh-stat .delta.dn { color:#d23f3f; }
+  .wh-stat .val.up { color:#1f9a55; } .wh-stat .val.dn { color:#d23f3f; }
+  html[data-theme="dark"] .wh-stat .delta.up, html[data-theme="dark"] .wh-stat .val.up { color:#3fc07e; }
+  html[data-theme="dark"] .wh-stat .delta.dn, html[data-theme="dark"] .wh-stat .val.dn { color:#ef6a6a; }
+  .wh-chip { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.03em;
+             padding:3px 9px; border-radius:999px; border:1px solid var(--line); }
+  .wh-chip.green { color:#1f9a55; border-color:#1f9a5566; }
+  .wh-chip.amber { color:#d9a441; border-color:#d9a44166; }
+  .wh-chip.red   { color:#d23f3f; border-color:#d23f3f66; }
+  .wh-chip.mut   { color:var(--muted); }
+  html[data-theme="dark"] .wh-chip.green { color:#3fc07e; }
+  .wh-tre .impulse { font-size:13.5px; line-height:1.55; margin:12px 0; padding:10px 13px;
+             background:var(--panel2); border-radius:10px; border-left:3px solid #2f8f6f; }
+  .wh-tre .sparkwrap { margin:12px 0 2px; }
+  .wh-tre .sparkcap { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted);
+             margin:0 0 4px; font-variant-numeric:tabular-nums; }
+  .wh-spark { width:100%; height:64px; display:block; }
+  .wh-tre .foot { font-size:11.5px; color:var(--muted); margin:12px 0 0; border-top:1px solid var(--line); padding-top:9px; }
+  .wh-badge.tre { color:#1f7a4e; border-color:#1f7a4e66; }
+  html[data-theme="dark"] .wh-badge.tre { color:#3fc07e; }
+
 </style>
 
 </head>
@@ -389,14 +425,195 @@
 <header class="wh-hero">
   <p class="wh-kick">🏛️ <span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></p>
   <h1><span class="l-en">Policy alerts, market-read</span><span class="l-zh">政策快讯 · 市场解读</span></h1>
-  <p class="sub"><span class="l-en">Every White House announcement is monitored. When one is judged market-moving, Claude Opus writes the read below — implications, sector head/tailwinds, and the names most exposed. Banners surface the live ones across the site.</span><span class="l-zh">持续监控白宫的每一条公告。当某条被判定为可能影响市场时，Claude Opus 在下方给出解读——影响、行业的顺逆风，以及最受影响的标的。横幅会在全站推送仍然有效的快讯。</span></p>
+  <p class="sub"><span class="l-en">Every White House announcement is monitored. When one is judged market-moving, Claude Opus writes the read below — implications, sector head/tailwinds, and the names most exposed. Banners surface the live ones across the site.</span><span class="l-zh">持续监控白宫的每一条公告。当某条被判定为可能影响市场时，Claude Opus 在下方给出解读——影响、行业的顺逆风，以及最受影响的标的。横幅会在全站推送仍然有效的快讯。</span>
+    <span class="l-en">Major Treasury cash-flow moves — the TGA account at the Fed — are tracked the same way.</span><span class="l-zh">财政部的重大现金流动（联储的 TGA 账户）也以同样方式跟踪。</span></p>
 </header>
+
+
+
+
+
+
+
+
+
+<section class="wh-tre" id="treasury-watch">
+  <p class="tk">💵 <span class="l-en">Treasury Watch</span><span class="l-zh">财政部观察</span></p>
+  <h2><span class="l-en">Treasury liquidity — the TGA read</span><span class="l-zh">财政部流动性 · TGA 解读</span></h2>
+  <p class="sub"><span class="l-en">The Treasury General Account (TGA) is Treasury’s cash at the Fed. When it falls, that cash lands in bank reserves — a mechanical liquidity injection; when it rebuilds, reserves drain. Large quarter-end and debt-ceiling swings can backstop or tighten the tape.</span><span class="l-zh">财政部一般账户（TGA）是财政部在美联储的现金余额。余额下降时，现金进入银行准备金——形成机械性的流动性注入；余额回补时，准备金被抽离。季末与债务上限相关的大幅波动可能托底或收紧市场。</span></p>
+
+  
+  <div class="wh-stats">
+    <div class="wh-stat">
+      <div class="lab"><span class="l-en">TGA balance</span><span class="l-zh">TGA 余额</span> · 2026-07-09</div>
+      <div class="val">$745<span class="u">bn</span></div>
+      <div class="delta dn">-4.6 <span class="l-en">1d</span><span class="l-zh">单日</span></div>
+    </div>
+
+    
+    
+    <div class="wh-stat">
+      <div class="lab"><span class="l-en">Δ since quarter-end</span><span class="l-zh">较季末</span> (06-30)</div>
+      <div class="val dn">-175<span class="u">bn</span></div>
+    </div>
+    
+
+    
+    <div class="wh-stat">
+      <div class="lab"><span class="l-en">Net liquidity</span><span class="l-zh">净流动性</span></div>
+      <div class="val">$5990<span class="u">bn</span></div>
+      <div class="delta up">+65 <span class="l-en">20d</span><span class="l-zh">20日</span> · 84<span class="l-en">th pct</span><span class="l-zh">分位</span></div>
+    </div>
+    
+
+    
+    <div class="wh-stat">
+      <div class="lab"><span class="l-en">RRP buffer</span><span class="l-zh">逆回购缓冲</span></div>
+      <div class="val" style="font-size:15px">exhausted</div>
+      <div class="delta"><span class="l-en">reserves</span><span class="l-zh">准备金</span>: normalizing</div>
+    </div>
+    
+
+    
+    <div class="wh-stat">
+      <div class="lab"><span class="l-en">Plumbing state</span><span class="l-zh">流动性状态</span></div>
+      <div class="val" style="font-size:13px;padding-top:3px"><span class="wh-chip amber">stress_liquidity_expansion</span></div>
+    </div>
+    
+  </div>
+  
+
+  
+  <div class="impulse"><span class="l-en">TGA drawdown of $174.5bn over 7 business day(s) since Jun 30 (quarter-end) — cash released into bank reserves.</span><span class="l-zh">自Jun 30（季末）以来，TGA在7个交易日内减少约1745亿美元——现金释放至银行准备金。</span></div>
+  
+
+  
+  <div class="sparkwrap">
+    <div class="sparkcap"><span><span class="l-en">TGA · last 60 sessions</span><span class="l-zh">TGA · 近60个交易日</span></span><span>2026-04-15 → 2026-07-09</span></div>
+    <svg class="wh-spark" viewBox="0 0 560 64" preserveAspectRatio="none" aria-hidden="true">
+      <polyline fill="none" stroke="var(--link)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="0.0,25.7 9.5,16.8 19.0,11.5 28.5,4.0 38.0,5.6 47.5,9.9 56.9,17.0 66.4,16.2 75.9,10.8 85.4,13.1 94.9,13.5 104.4,17.1 113.9,38.5 123.4,34.2 132.9,37.9 142.4,37.5 151.9,40.5 161.4,42.0 170.8,39.0 180.3,41.0 189.8,48.0 199.3,49.0 208.8,57.3 218.3,52.1 227.8,45.2 237.3,52.9 246.8,52.1 256.3,44.6 265.8,33.9 275.3,41.3 284.7,39.9 294.2,29.6 303.7,38.6 313.2,36.8 322.7,40.7 332.2,40.9 341.7,44.6 351.2,41.0 360.7,43.6 370.2,49.2 379.7,49.5 389.2,46.4 398.6,15.1 408.1,14.9 417.6,19.6 427.1,27.5 436.6,22.2 446.1,25.4 455.6,30.0 465.1,35.8 474.6,31.2 484.1,34.7 493.6,26.7 503.1,48.0 512.5,55.0 522.0,53.9 531.5,52.7 541.0,52.3 550.5,59.1 560.0,60.0"></polyline>
+    </svg>
+  </div>
+  
+
+  <p class="foot"><span class="l-en">Regime</span><span class="l-zh">环境</span>: Goldilocks · <span class="l-en">Fed liquidity overlay</span><span class="l-zh">联储流动性</span>: expanding · <span class="l-en">Source: U.S. Treasury Daily Treasury Statement (fiscaldata.treasury.gov). Context only — feeds no score or allocation.</span><span class="l-zh">来源：美国财政部每日报表（fiscaldata.treasury.gov）。仅供参考，不参与任何评分或配置。</span></p>
+</section>
+
 
 
   <div class="wh-list">
   
+    <section class="wh-card live" id="tw-2026-06-30-tga-release">
+      <div class="row1">
+        <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
+        <span class="wh-badge tre">💵 <span class="l-en">Treasury</span><span class="l-zh">财政部</span></span>
+        <span class="wh-badge tone-tailwind">
+          <span class="l-en">Tailwind</span><span class="l-zh">顺风</span>
+          
+        </span>
+        <span class="wh-when">🗓 Jul 9, 2026 · treasury</span>
+        <span class="wh-when">· <span class="l-en">confidence</span><span class="l-zh">置信度</span>: high</span>
+      </div>
+
+      <h2><span class="l-en">Treasury injects $175bn of quarter-end cash into exhausted RRP — a monster reserves boost backstops the tape</span><span class="l-zh">财政部在季度末向枯竭的逆回购中注入1750亿美元——巨额准备金注入支撑市场</span></h2>
+
+      <p class="wh-summary"><span class="l-en">The ~$175bn TGA drawdown since June 30—landing into a near-zero RRP buffer—directly balloons bank reserves, unleashing a powerful mechanical liquidity tailwind for risk assets in a Goldilocks regime.</span><span class="l-zh">自6月30日以来，约1750亿美元的TGA下降——在几乎为零的逆回购缓冲下——直接膨胀了银行准备金，在“金发姑娘”格局下释放出强大的机械流动性顺风。</span></p>
+
+      
+      <div class="wh-meter">
+        <span><span class="l-en">Market significance</span><span class="l-zh">市场重要性</span></span>
+        <span class="bar"><i style="width:88%"></i></span>
+        <span>88/100</span>
+      </div>
+      
+
+      
+      <div class="wh-body"><p>Mechanically, the Treasury spent its cash balance at the Fed, sending $175bn into private bank deposits and reserve balances. With the overnight RRP facility drained to just $0.5bn, the entire flow hits reserves—the highest-impact channel—amplifying an already-expanding liquidity backdrop. This injects fresh, high-powered money straight into the banking system, lowering the marginal cost of leverage and easing funding pressures just as quarter-end positioning resets.</p><p>The injection lands when the macro regime is Goldilocks and net liquidity is expanding, reinforcing the bid for risk. It acts as a backstop against any nascent drawdown, particularly benefiting rate-sensitive and long-duration assets. The move is multi-day (7 business days and counting), not a fleeting tax-date whipsaw; its durability gives it the heft to condition the near-term tape.</p><p>The complexion favors the megacap-growth complex: lower reserve scarcity and easier financial conditions reduce the discount rate on future cash flows, lifting valuations for high-duration equities and government bonds alike. Defensive and value sectors, less sensitive to liquidity, see relative underperformance. The key falsification: a rapid, unexpected TGA rebuild (e.g., a sudden coupon settlement or tax receipt surge) could reverse the impulse and flip the regime to a drain, turning the tailwind into a headwind.</p></div>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Sector impact</span><span class="l-zh">行业影响</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Sector</span><span class="l-zh">行业</span></th><th><span class="l-en">Impact</span><span class="l-zh">影响</span></th><th><span class="l-en">Why</span><span class="l-zh">原因</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td>Megacap Growth</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Reserves injection eases discount-rate pressure, directly lifting long-duration, high-multiple names.</td>
+          </tr>
+        
+          <tr>
+            <td>Long-Duration Treasuries</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Abundant reserves and lower funding stress support bond prices, especially at the long end.</td>
+          </tr>
+        
+          <tr>
+            <td>High-Beta Cyclicals</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Liquidity-driven risk appetite spills into economically sensitive sectors.</td>
+          </tr>
+        
+          <tr>
+            <td>Defensive Staples</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Relative underperformance as liquidity chases growth and cyclicality over safety.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names that benefit</span><span class="l-zh">受益标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">QQQ</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg up">+0.31%</span></td>
+            <td>Nasdaq-100 ETF, concentrated in rate-sensitive megacap tech that reaps the largest valuation boost from lower discount rates.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">AAPL</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg dn">-0.28%</span></td>
+            <td>A $3tn megacap with long-duration equity characteristics; a pure play on the liquidity impulse.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">MSFT</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg up">+0.19%</span></td>
+            <td>Deeply embedded in the growth complex, highly sensitive to financial conditions.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">NVDA</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg up">+4.03%</span></td>
+            <td>AI bellwether with extreme duration; amplified gains when liquidity floods into the system.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">IWM</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg dn">-0.42%</span></td>
+            <td>Small-cap ETF; lower-quality, rate-sensitive names benefit from easy money, though less than pure duration plays.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+
+      <p class="wh-src">🔗 <a href="https://fiscaldata.treasury.gov/datasets/daily-treasury-statement/operating-cash-balance" target="_blank" rel="noopener noreferrer"><span class="l-en">Read the primary White House source</span><span class="l-zh">阅读白宫一手来源</span> →</a></p>
+      <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
+    </section>
+  
     <section class="wh-card" id="wh-2026-06-30-trump-administration-nepa-reforms-a-win-for-all-americans">
       <div class="row1">
+        
         
         <span class="wh-badge tone-tailwind">
           <span class="l-en">Tailwind</span><span class="l-zh">顺风</span>
@@ -529,6 +746,7 @@
     <section class="wh-card" id="wh-2026-06-29-declaration-of-emergency-and-authorization-for-temporary-duty-free-importation-o">
       <div class="row1">
         
+        
         <span class="wh-badge tone-mixed">
           <span class="l-en">Mixed</span><span class="l-zh">涨跌互现</span>
           
@@ -600,6 +818,7 @@
     <section class="wh-card" id="wh-2026-06-29-fact-sheet-president-donald-j-trump-declares-an-emergency-and-authorizes-the-tem">
       <div class="row1">
         
+        
         <span class="wh-badge tone-mixed">
           <span class="l-en">Mixed</span><span class="l-zh">涨跌互现</span>
           
@@ -670,6 +889,7 @@
   
     <section class="wh-card" id="wh-2026-06-29-lowering-the-cost-of-living-by-promoting-the-freedom-to-fix">
       <div class="row1">
+        
         
         <span class="wh-badge tone-tailwind">
           <span class="l-en">Tailwind</span><span class="l-zh">顺风</span>
@@ -773,7 +993,7 @@
 
 
 <div class="wh-pagedisc">
-  <span class="l-en">Source: the White House public RSS feeds (primary). Significance, titles and analysis are generated by</span><span class="l-zh">来源：白宫公开 RSS（一手）。重要性、标题与分析由</span>
+  <span class="l-en">Sources: the White House public RSS feeds and the U.S. Treasury Daily Treasury Statement (fiscaldata.treasury.gov, primary). Significance, titles and analysis are generated by</span><span class="l-zh">来源：白宫公开 RSS 与美国财政部每日报表（fiscaldata.treasury.gov，一手）。重要性、标题与分析由</span>
   Claude claude-opus-4-8 (subscription)
   <span class="l-en">— context only, not investment advice. The tickers named are illustrative of plausible exposure, not recommendations, and feed no score or allocation.</span><span class="l-zh">生成——仅供参考，不构成投资建议。所列标的仅为可能受影响的示例，并非推荐，且不参与任何评分或配置。</span>
 </div>
