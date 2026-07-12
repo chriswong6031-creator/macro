@@ -57,6 +57,15 @@ def _corr(name_close: pd.Series, comp_level: pd.Series, window: int) -> float | 
     return None if not np.isfinite(c) else round(c, 3)
 
 
+def rank_homes(home_rows: list[dict]) -> list[dict]:
+    """Order a name's homes best-first: highest 20d corr, with 60d breaking a round(corr20,2)
+    tie. The None-aware fallback is deliberate — `corr60 or -1` would collapse a LEGITIMATE
+    corr60 of 0.0 (a near-orthogonal home, this module's core case) to the missing-sentinel
+    and pick the wrong home in a tie."""
+    return sorted(home_rows, key=lambda h: (round(h["corr20"], 2),
+                  h["corr60"] if h.get("corr60") is not None else -1.0), reverse=True)
+
+
 def _items(memberships) -> list[tuple]:
     return list(memberships.items()) if isinstance(memberships, dict) \
         else [(b.get("id"), b) for b in memberships]
@@ -108,8 +117,7 @@ def annotate(baskets: list[dict], memberships) -> dict:
                               "side": r.get("side"), **corr})
         if len(home_rows) < 2:
             continue
-        # behaves-as = highest 20d corr; 60d breaks a tie within 0.02
-        home_rows.sort(key=lambda h: (round(h["corr20"], 2), h.get("corr60") or -1), reverse=True)
+        home_rows = rank_homes(home_rows)
         best = home_rows[0]
         fams = {_family(h["class"]) for h in home_rows}
         conflict = len(fams) > 1 and "constructive" in fams

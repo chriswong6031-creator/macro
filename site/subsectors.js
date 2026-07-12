@@ -144,8 +144,8 @@
     var en, zh;
     if (out.length === 1) {
       var b = out[0].behaves_as;
-      en = out[0].ticker + ' behaves-as ' + (b.home_label || b.home_id);
-      zh = out[0].ticker + ' 表现类同 ' + (b.home_label_zh || b.home_label || b.home_id);
+      en = esc(out[0].ticker) + ' behaves-as ' + esc(b.home_label || b.home_id);
+      zh = esc(out[0].ticker) + ' 表现类同 ' + esc(b.home_label_zh || b.home_label || b.home_id);
     } else {
       en = out.length + ' names behave-as a peer basket';
       zh = out.length + ' 只成分表现类同对应篮子';

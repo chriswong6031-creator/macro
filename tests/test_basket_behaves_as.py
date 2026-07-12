@@ -101,6 +101,19 @@ def test_single_membership_names_untouched(synthetic):
     assert "behaves_as" not in baskets[0]["members"][0]
 
 
+def test_rank_homes_tiebreak_treats_zero_corr60_honestly():
+    """Regression (adversarial review): a legitimate 60d correlation of 0.0 (near-orthogonal
+    home) must win a round(corr20,2) tie over a NEGATIVE 60d — it must NOT be collapsed to the
+    missing-sentinel by a truthiness `or`."""
+    rows = [{"id": "A", "corr20": 0.52, "corr60": 0.0},
+            {"id": "B", "corr20": 0.52, "corr60": -0.25}]
+    assert bba.rank_homes(rows)[0]["id"] == "A"          # 0.0 > -0.25 on the 60d confirm
+    # a genuinely-missing corr60 still sorts below any real value
+    rows2 = [{"id": "A", "corr20": 0.52, "corr60": None},
+             {"id": "B", "corr20": 0.52, "corr60": -0.9}]
+    assert bba.rank_homes(rows2)[0]["id"] == "B"
+
+
 def test_thin_history_name_dropped(synthetic, monkeypatch):
     # a name with <21 bars can't state a corr → skipped, never raises
     short = pd.DataFrame({"close": pd.Series(range(10), index=pd.bdate_range("2024-01-02", periods=10), dtype=float)})

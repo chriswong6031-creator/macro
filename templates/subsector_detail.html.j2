@@ -112,7 +112,7 @@ function render() {
       + `<td>${tierB(m.stock_tier)}</td>`
       + `<td>${sgn(m.ret_20d)}</td>`
       + `<td>${sgn(m.vs_basket)}</td>`
-      + `<td style="color:var(--muted);font-size:11px">${esc(m.stock_state || '')}${m.behaves_as && m.behaves_as.home_id !== (g.basket_id || g.key) ? ` · <span class="pill behavesas" title="${esc((m.behaves_as.homes || []).map(h => h.label + ' r20 ' + (h.corr20 == null ? '–' : h.corr20.toFixed(2))).join('; '))}">↔ ${L('behaves-as ' + (m.behaves_as.home_label || ''), '类同 ' + (m.behaves_as.home_label_zh || m.behaves_as.home_label || ''))}</span>` : ''}</td></tr>`).join('');
+      + `<td style="color:var(--muted);font-size:11px">${esc(m.stock_state || '')}${m.behaves_as && m.behaves_as.home_id !== (g.basket_id || g.key) ? ` · <span class="pill behavesas" title="${esc((m.behaves_as.homes || []).map(h => h.label + ' r20 ' + (h.corr20 == null ? '–' : h.corr20.toFixed(2))).join('; '))}">↔ ${L('behaves-as ' + esc(m.behaves_as.home_label || ''), '类同 ' + esc(m.behaves_as.home_label_zh || m.behaves_as.home_label || ''))}</span>` : ''}</td></tr>`).join('');
     h += `</tbody></table>`;
   }
   h += `<div class="foot">${L('Equal-weight, today’s membership (descriptive, survivorship-tinted — not an out-of-sample backtest). EOD daily; calendar 3D buckets. Leak-free cascade. One door — confirm before acting; not alpha.', '等权，当前成分（描述性，含幸存者偏差——非样本外回测）。日终数据；日历三日分桶。无未来函数级联。仅一道门——行动前请确认；非阿尔法。')}</div>`;
