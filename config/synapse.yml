@@ -6599,6 +6599,11 @@ artifacts:
       incremental via --stale-days, graceful 401/429 tolerance). Builder reads
       parquet read-only via engine/neuralweb/mastermind_context.py. Scheduling
       is standalone (not wired into daily.yml engine lane — see PR notes).
+      Evaluated 2026-07-12 as a buy-share source for the Leader Radar
+      analyst_saturated chip (LRV-R1e) and REJECTED: `recommendation` is the
+      consensus recommendationKey label only — no strongBuy/buy/hold/sell
+      rating-category counts, so no buy-share is derivable. That chip is fed
+      by data/finnhub/recommendation.parquet instead.
 
   # --- Mastermind Feedback Contract W2 (FB-R7/R8/R14) ---
   # Reverse bridge: Mastermind → NW counts-only feedback reader.
@@ -11345,6 +11350,11 @@ artifacts:
       fire flags consumed by plab_leader_precipice / plab_leader_onset Pick Lab books.
       Nothing here feeds any authority surface (CONST-ART2).
       authority.may_rank/gate/size/escalate=false.
+      LRV-R1e (2026-07-12): analyst_saturated chip fed by
+      data/finnhub/recommendation.parquet via engine/analyst_revisions
+      consensus_pct (buy-share LEVEL vs frozen 85 threshold); null-honest
+      (uncovered/stale-period names → null chip), coverage.analyst_* keys +
+      young-data tag (finnhub store live since 2026-06-20).
 
   leader-radar-state-history:
     path: data/leader_radar/state_history.parquet

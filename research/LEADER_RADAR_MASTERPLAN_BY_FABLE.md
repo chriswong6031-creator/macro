@@ -78,6 +78,7 @@ _One wave = one branch off fresh origin/main = one PR = same-day squash-merge. S
 |---|---|
 | 2026-07-11 | Census (5 lanes). Masterplan adjudicated. Red-team round 1 (2 Opus critics, both SHIP-WITH-FIXES): WA-R8 unlock claim STRUCK (false — winner_case.v1 library is a separate 11-file set; pairlets routed to WA docket); revision chip renamed to level-honest `revision_positive`; precipice fire rule gains rs_line_nh OR-leg (9 revision-uncovered neocloud names stay eligible); precedence cascade + 2-in/3-out hysteresis + state_history store specified in W1/W2a; RS store = full-history backfill (day-one live); 2D radar-local (no global stockdata bloat); regime chip radar-page-only (macro_context fenced); threshold-provenance clause added; universe-exit + refire-lockout rules pinned; W2 split into W2a/W2b. Waves dispatched. |
 | 2026-07-12 | LRV-W1 systems wave landed. See §7. |
+| 2026-07-12 | LRV-R1(e): `analyst_saturated` (LR-R2 CROWDED chip e) wired from finnhub recommendation-trends via engine/analyst_revisions `consensus_pct`; synapse `analyst-targets` (yfinance .info) investigated and rejected as a buy-share source (consensus key only, no rating counts, zero committed history). LRV-R1(b)'s "same PIT feed" claim for analyst_buy_pct corrected. Coverage keys + banner line + young-data tag added; loader/chip/render tests added to the leader-radar-unit CI job. |
 
 ## §7 LRV-W1 systems wave — rulings of record
 
@@ -95,7 +96,7 @@ Builder implementation: all RS series loaded once into a wide DataFrame; `diff(6
 
 Available nightly-lane source: `data/sec_insider/insider.parquet` (index=ticker, columns: n_buys, n_sells, buy_usd, sell_usd, net_usd, quarter; grain = latest quarter per ticker). Chip definition implemented as: latest quarter-end ≤ 120 calendar days from as_of AND n_buys ≥ 2 → True; quarter present but n_buys < 2 → False; ticker absent or quarter stale → None.
 
-**Gap acknowledged:** the LR-R2 spec calls for "≥2 open-market buys in 90d" at per-transaction grain. The available store is quarterly aggregate. Wired as-is (null-honest; chips that can't fire are None, not False — Kleene); per-transaction Form-4 PIT integration is a separate research path (see `sec_insider.py`). `analyst_buy_pct` stays None (gap documented in builder comment) — depends on the same PIT feed not yet in the nightly lane.
+**Gap acknowledged:** the LR-R2 spec calls for "≥2 open-market buys in 90d" at per-transaction grain. The available store is quarterly aggregate. Wired as-is (null-honest; chips that can't fire are None, not False — Kleene); per-transaction Form-4 PIT integration is a separate research path (see `sec_insider.py`). ~~`analyst_buy_pct` stays None (gap documented in builder comment) — depends on the same PIT feed not yet in the nightly lane.~~ *Corrected by LRV-R1(e): analyst buy-share never depended on the Form-4 feed (that conflated insider transactions with sell-side ratings); it is fed by finnhub rating counts.*
 
 ### LRV-R1(c) — call_skew_rich wired from options snapshots; young-data disclosure
 
@@ -106,6 +107,14 @@ Data reality: `data/options_skew/snapshots.parquet` contains 16 dates as of 2026
 ### LRV-R1(d) — basket_corr_now / basket_corr_then wired
 
 `_compute_basket_correlations()` computes mean pairwise 60-session daily return correlation for each theme basket. Guard: < 3 members with sufficient history → None. `basket_corr_now` = last 60 sessions; `basket_corr_then` = window ending 60 sessions ago. Assigned to all basket members via `ticker_primary_basket` map (largest non-dow30/ndx basket per name). dow30/ndx baskets excluded (large-cap indices do not have a single EW basket in this context).
+
+### LRV-R1(e) — analyst_saturated wired from finnhub recommendation-trends; yfinance analyst-targets rejected
+
+Source investigation (2026-07-12): the synapse `analyst-targets` store (`data/analyst/targets.parquet`, collectors/yf_analyst.py, yfinance `.info`) was evaluated as a buy-share source and **rejected** — it carries only the consensus `recommendationKey` string + `num_analysts` + price targets; no strongBuy/buy/hold/sell rating-category counts, so no buy-share is derivable (a consensus label cannot be converted into "% of analysts at buy-or-better"). The store has also never been committed (zero history in git despite `storage: git`).
+
+The LR-R2 chip-(e) spec already named the correct source: **finnhub** `/stock/recommendation-trends` → `data/finnhub/recommendation.parquet` (collectors/finnhub_altdata.py; monthly strongBuy/buy/hold/sell/strongSell counts, ~120-name basket watchlist, append-only deduped on ticker+period). Wired via `engine/analyst_revisions.revision_map` (LR-R13: consume, never re-implement): `consensus_pct` = (strongBuy+buy)/total×100 is the buy-share LEVEL the engine compares to the frozen `CROWDED_ANALYST_BUY_PCT = 85`. The level-vs-delta doctrine in engine/analyst_revisions (revisions score the DELTA, never the level) is not violated: the crowding chip is exactly the saturation-of-the-LEVEL read the field guide pre-registered as an exit-side marker; no threshold or K-of-N change.
+
+Null-honesty: store absent / ticker outside the finnhub watchlist / latest monthly period older than 45 days (`_ANALYST_MAX_AGE_DAYS`, current-or-previous month) → `analyst_buy_pct = None` → chip null, never False. Coverage disclosed in `coverage.analyst_covered` / `analyst_uncovered` / `analyst_note` and on the page banner; store live since 2026-06-20 → young-data tag per LR-R14. Row context carries `analyst_buy_pct` + `analyst_n` so the displayed chip always has its receipt. Universe-coverage note: the finnhub watchlist (`basket_members(cap=120)`) is a strict subset of the radar universe (~150–190 names) — Dow-30-only names are the main uncovered class; widening the collector cap is a collector-lane decision, not a radar one.
 
 ### LRV-R2 — early_entry artifact added (additive; no state-definition change)
 
