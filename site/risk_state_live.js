@@ -66,6 +66,12 @@
         if (needleEl) needleEl.setAttribute("transform", "rotate(" + needleDeg + " " + cx + " " + cy + ")");
         var numEl = document.getElementById("mx5-score-numeral");
         if (numEl) numEl.textContent = disp.score;
+        /* v5 big-score text block (right of gauge) */
+        var bigSc = document.querySelector(".mx5-big-score");
+        if (bigSc) bigSc.textContent = disp.score;
+        /* v5 verdict word next to big-score */
+        var vw = document.querySelector(".mx5-verdict-word");
+        if (vw) setBL(vw, disp.label_en || disp.verdict, disp.label_zh || disp.label_en || disp.verdict);
       }
     }
     /* VIS-04/COPY-02: also update progress fill width so bar matches live score */
