@@ -96,6 +96,7 @@ on:
       - "research/signal_engine/walk_forward.py"
       - "tests/test_canada_build.py"
       - "tests/test_commodity_signals.py"
+      - "tests/test_commodity_index.py"
       - "tests/test_fear_euphoria.py"
       - "tests/test_froth_fragility.py"
       - "tests/test_missing_tape.py"
@@ -602,6 +603,7 @@ jobs:
         run: >
           python -m pytest
           tests/test_canada_build.py tests/test_commodity_signals.py
+          tests/test_commodity_index.py
           tests/test_fear_euphoria.py tests/test_froth_fragility.py
           tests/test_missing_tape.py tests/test_price_basis_flip.py
           tests/test_risk_lead_lag.py tests/test_anticipation.py
