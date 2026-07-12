@@ -16,6 +16,10 @@ TWO HARD GUARDS so a self-tuning risk engine can't tune itself off a cliff:
 
 Accepted changes are written to data/risk_radar/calibration.json (the overlay risk_radar reads)
 and EVERY proposal+verdict is logged to data/risk_radar/review_log.jsonl (full audit trail).
+Gate-outs BEFORE a proposal (disabled / insufficient_graded / no_client_or_key /
+no_usable_proposal) are NOT logged — review_log.jsonl does not exist until the loop first
+arms and Opus produces a usable proposal (synapse lobe risk-radar-review-log is declared
+dormant until then).
 
 A6 LANE-(ii) GOVERNANCE (W7a PR2):
   Every Opus PROPOSAL appends an a6_llm_proposed governance event (event_type 'a6_llm_proposed')

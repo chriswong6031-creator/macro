@@ -769,7 +769,7 @@ artifacts:
     cadence: weekly
     storage: git
     asof_field: asof
-    freshness_sla_hours: 200
+    freshness_sla_hours: 9999
     schema: risk_radar_review.v1
     tier: display
     horizon_role: context
@@ -781,6 +781,16 @@ artifacts:
       A6 lane-(ii) audit trail: every Opus proposal + do-no-harm backtest verdict.
       Append-only; one row per review run.  Governance events for proposals/applies/rejects
       also land in data/neuralweb/governance.jsonl (neuralweb.governance.v1).
+      DORMANT-ARMED (2026-07-12): the producer IS wired — daily.yml 'Risk Radar
+      self-correction' step runs nightly and never aborts — but run() self-gates
+      before the first append: rows are written only after a usable Opus proposal,
+      which requires risk_radar_review.enabled (true since W7a PR2) AND an API key
+      AND n_graded >= 30 in the radar forward scorecard.  n_graded = 0 as of
+      2026-07-12 (forward_log.jsonl holds 13 ungraded calls), so the artifact
+      cannot exist yet by design.  freshness_sla_hours is parked at 9999 (the
+      declared-dormant idiom: still printed 'missing' in health.json — nulls
+      printed — but not degraded-driving).  RESTORE the real operational SLA
+      (200h, weekly cadence) when the first row lands.
 
   # --- 5 consumers ---
   china-sector-cycles-forward-log:
@@ -6873,7 +6883,7 @@ artifacts:
     cadence: nightly-factor-panel
     storage: git
     asof_field: date
-    freshness_sla_hours: 30
+    freshness_sla_hours: 9999
     schema: neuralweb.factor_contradictions.v1
     tier: display
     horizon_role: context
@@ -6888,6 +6898,15 @@ artifacts:
       keyed (date, ticker). Severity hardcoded to 'note' until H2 GATE-PASSED.
       display_only=true unconditionally. Single-writer: engine/neuralweb/factor_contradictions.py.
       0-20 rows/day; dormant until panel has >= 60 distinct dates.
+      DORMANT-ARMED (2026-07-12): the producer IS wired — daily.yml factor_panel
+      job, 'factor contradictions detector' step, runs nightly — but the detector
+      emits no records below the 60-distinct-panel-dates floor, and the
+      runner-local panel has only 9 dates (factor_intelligence_state.json
+      panel.n_dates=9, history_floor_met=false), so the ledger cannot exist yet
+      by design.  freshness_sla_hours is parked at 9999 (the declared-dormant
+      idiom: still printed 'missing' in health.json — nulls printed — but not
+      degraded-driving).  RESTORE the real operational SLA (30h) when the ledger
+      first appears (~60 trading days of panel accrual unless a backfill runs).
 
   # --- PR-C: NW lobe-status health surface ---
   neuralweb-health:
