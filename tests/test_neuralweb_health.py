@@ -856,3 +856,297 @@ def test_w1_stamper_gap_pre_wire_fires_do_not_flag(tmp_path: Path) -> None:
         f"expected fires_seen_since_wire=0 (all fires pre-wire), got "
         f"{result.get('fires_seen_since_wire')}"
     )
+
+
+# ---------------------------------------------------------------------------
+# CHANGE 1: weekend-aware staleness threshold
+# ---------------------------------------------------------------------------
+
+def test_friday_asof_not_stale_on_saturday(tmp_path, monkeypatch):
+    """CHANGE 1: a Friday as_of must NOT be stale on Saturday or Sunday
+    (within the 30h SLA window when measured from the following Monday).
+
+    Time is frozen at Saturday 06:00 UTC — 30 hours after Friday midnight
+    (wall-clock) but only 6 hours after the following Monday 00:00 base.
+    Without weekend-awareness the Friday artifact would be stale (30h > 30h SLA).
+    With weekend-awareness the clock starts at Monday 00:00 → 6h → fresh.
+    """
+    from datetime import datetime, timezone, timedelta
+    import engine.neuralweb.health as _health
+
+    # Find the most recent Friday relative to an arbitrary anchor
+    # Anchor: pick a known Friday date
+    friday_date = "2026-07-10"  # 2026-07-10 is a Friday
+
+    payload = {
+        "as_of": friday_date,
+        "produced_at": friday_date + "T00:00:00+00:00",
+        "n_rows": 1,
+    }
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", payload)
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json", freshness_sla_hours=30.0),
+    })
+
+    # Freeze time to Saturday 2026-07-11 06:00 UTC.
+    # Wall-clock age = (Sat 06:00 - Fri 00:00) = 30h → would be stale without fix.
+    # Weekend-aware base = Monday 2026-07-13 00:00 UTC; (Sat 06:00 - Mon 00:00) < 0
+    # (now is BEFORE the base) → age_hours negative → not stale.
+    frozen_now = datetime(2026, 7, 11, 6, 0, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr(_health, "_iso_hours_ago", lambda ts: (
+        (frozen_now - datetime.fromisoformat(
+            (ts or "").replace("Z", "+00:00")
+        ).replace(tzinfo=timezone.utc)).total_seconds() / 3600
+        if ts else None
+    ))
+
+    original_is_stale = _health._is_stale_weekend_aware
+
+    def _frozen_is_stale(as_of_str, sla_hours, now=None):
+        return original_is_stale(as_of_str, sla_hours, now=frozen_now)
+
+    monkeypatch.setattr(_health, "_is_stale_weekend_aware", _frozen_is_stale)
+
+    result = build(root=root)
+    lobes = {r["id"]: r for r in result["lobes"]}
+    ws = lobes["world-state"]
+    assert ws["status"] == "fresh", (
+        f"Friday as_of must be fresh on Saturday (weekend-aware): got {ws['status']!r}. "
+        f"age_hours={ws.get('age_hours')}"
+    )
+
+
+def test_friday_asof_stale_after_monday_sla(tmp_path, monkeypatch):
+    """CHANGE 1: Friday as_of must become stale if now > Monday + SLA."""
+    from datetime import datetime, timezone
+    import engine.neuralweb.health as _health
+
+    friday_date = "2026-07-10"
+    payload = {"as_of": friday_date, "produced_at": friday_date + "T00:00:00+00:00"}
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", payload)
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json", freshness_sla_hours=30.0),
+    })
+
+    # Freeze time to Wednesday 2026-07-15 10:00 UTC.
+    # Monday base = 2026-07-13 00:00; elapsed = 58h > 30h SLA → stale.
+    frozen_now = datetime(2026, 7, 15, 10, 0, 0, tzinfo=timezone.utc)
+
+    original_is_stale = _health._is_stale_weekend_aware
+
+    def _frozen_is_stale(as_of_str, sla_hours, now=None):
+        return original_is_stale(as_of_str, sla_hours, now=frozen_now)
+
+    monkeypatch.setattr(_health, "_is_stale_weekend_aware", _frozen_is_stale)
+
+    result = build(root=root)
+    lobes = {r["id"]: r for r in result["lobes"]}
+    ws = lobes["world-state"]
+    assert ws["status"] == "stale", (
+        f"Friday as_of must be stale on Wednesday (beyond SLA from Monday): "
+        f"got {ws['status']!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# CHANGE 2: collect-cadence exclusion from as_of rollup
+# ---------------------------------------------------------------------------
+
+def test_collect_cadence_excluded_from_asof_rollup(tmp_path):
+    """CHANGE 2: lobes with cadence='collect' must not pin the top-level as_of.
+
+    Collect-cadence artifacts are written once (offline) and never advanced by
+    the nightly pipeline; including them would pin as_of to their one-time build
+    date forever.
+    """
+    from datetime import datetime, timezone, timedelta
+
+    fmt = "%Y-%m-%dT%H:%M:%S+00:00"
+    ws_ts = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime(fmt)
+    # Collect artifact pinned to 2026-07-09 (very old relative to ws_ts)
+    collect_ts = "2026-07-09T00:00:00+00:00"
+
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {"as_of": ws_ts})
+    # Collect artifact freshness_sla_hours=2160 → within SLA (still 'fresh')
+    _nw_json_artifact(tmp_path, "data/neuralweb/discovery_confluence.json", {
+        "as_of": collect_ts,
+        "produced_at": collect_ts,
+    })
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json", freshness_sla_hours=30.0),
+        "neuralweb-discovery-confluence": _art(
+            "data/neuralweb/discovery_confluence.json",
+            cadence="collect",
+            freshness_sla_hours=2160.0,
+        ),
+    })
+    result = build(root=root)
+    assert result["as_of"] == ws_ts, (
+        f"collect-cadence lobe must not pin as_of; expected {ws_ts!r}, got {result['as_of']!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# CHANGE 3a: staleness_from override
+# ---------------------------------------------------------------------------
+
+def test_staleness_from_produced_at_overrides_event_asof(tmp_path, monkeypatch):
+    """CHANGE 3a: when staleness_from='produced_at' is set in the synapse entry,
+    the staleness comparison uses produced_at (nightly) not as_of (event date).
+
+    Scenario: confluence-strength whose content as_of = old event date (2026-07-02)
+    but produced_at = recent (1 hour ago). Without staleness_from the lobe would
+    be stale because 2026-07-02 > 30h SLA. With staleness_from=produced_at it
+    is fresh because produced_at < 30h.
+    """
+    from datetime import datetime, timezone, timedelta
+
+    fmt = "%Y-%m-%dT%H:%M:%S+00:00"
+    recent_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(fmt)
+    old_event_ts = "2026-07-02T00:00:00+00:00"  # ancient — would fail 30h SLA
+
+    _nw_json_artifact(tmp_path, "data/neuralweb/confluence_strength.json", {
+        "as_of": old_event_ts,        # event date — displayed but NOT used for staleness
+        "produced_at": recent_ts,     # nightly run — used for staleness
+        "schema": "neuralweb.confluence_strength.v1",
+    })
+    # Build the fake world-state so there's a fresh non-collect anchor for as_of rollup
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {"as_of": recent_ts})
+    art_def = _art(
+        "data/neuralweb/confluence_strength.json",
+        freshness_sla_hours=30.0,
+    )
+    art_def["staleness_from"] = "produced_at"
+    root = _make_repo(tmp_path, {
+        "confluence-strength": art_def,
+        "world-state": _art("data/neuralweb/world_state.json", freshness_sla_hours=30.0),
+    })
+    result = build(root=root)
+    lobes = {r["id"]: r for r in result["lobes"]}
+    cs = lobes["confluence-strength"]
+    # as_of display must still be the event date
+    assert cs["as_of"] == old_event_ts, (
+        f"as_of display must remain the event date; got {cs['as_of']!r}"
+    )
+    # Status must be fresh (produced_at is recent)
+    assert cs["status"] == "fresh", (
+        f"staleness_from=produced_at must yield fresh when produced_at < SLA; "
+        f"got {cs['status']!r}"
+    )
+    # The now-fresh lobe's event as_of must NOT drag the top-level rollup
+    # backward: staleness_from lobes are excluded from the as_of minimum.
+    assert result["as_of"] == recent_ts, (
+        f"staleness_from lobe's event as_of must not pin the as_of rollup; "
+        f"expected {recent_ts!r}, got {result['as_of']!r}"
+    )
+
+
+def test_full_timestamp_asof_stays_wallclock(tmp_path, monkeypatch):
+    """CHANGE 1 guard: weekend-awareness applies only to date-only as_of strings.
+
+    A full-timestamp as_of (a run stamp, not a market-data date) must keep the
+    plain wall-clock comparison — truncating it to midnight would grant up to
+    +24h of extra SLA grace, and a Friday-dated run stamp would dodge its SLA
+    all weekend.
+    """
+    from datetime import datetime, timezone
+    import engine.neuralweb.health as _health
+
+    # Friday full timestamp — 54h old at the frozen Sunday 06:00 UTC below.
+    friday_ts = "2026-07-10T00:00:00+00:00"
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {"as_of": friday_ts})
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json", freshness_sla_hours=30.0),
+    })
+
+    frozen_now = datetime(2026, 7, 12, 6, 0, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr(_health, "_iso_hours_ago", lambda ts: (
+        (frozen_now - datetime.fromisoformat(
+            (ts or "").replace("Z", "+00:00")
+        ).replace(tzinfo=timezone.utc)).total_seconds() / 3600
+        if ts else None
+    ))
+
+    original_is_stale = _health._is_stale_weekend_aware
+
+    def _frozen_is_stale(as_of_str, sla_hours, now=None):
+        return original_is_stale(as_of_str, sla_hours, now=frozen_now)
+
+    monkeypatch.setattr(_health, "_is_stale_weekend_aware", _frozen_is_stale)
+
+    result = build(root=root)
+    lobes = {r["id"]: r for r in result["lobes"]}
+    ws = lobes["world-state"]
+    # 54h wall-clock > 30h SLA → stale; the Friday date must NOT buy weekend grace.
+    assert ws["status"] == "stale", (
+        f"full-timestamp as_of must use wall-clock staleness (54h > 30h SLA); "
+        f"got {ws['status']!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# CHANGE 3b: missing-placeholder rollup
+# ---------------------------------------------------------------------------
+
+def test_missing_placeholder_sla_9999_not_degraded(tmp_path):
+    """CHANGE 3b: a missing lobe with freshness_sla_hours=9999 (placeholder,
+    never-built) must NOT drive overall_status to 'degraded'.
+    Per-lobe status stays 'missing' (nulls printed, not hidden).
+    """
+    from datetime import datetime, timezone, timedelta
+
+    fmt = "%Y-%m-%dT%H:%M:%S+00:00"
+    fresh_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(fmt)
+
+    # world-state: fresh (exists)
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {"as_of": fresh_ts})
+    # placeholder lobe: does NOT exist on disk; sla=9999
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json", freshness_sla_hours=30.0),
+        "placeholder-lobe": _art(
+            "data/neuralweb/placeholder.json",
+            freshness_sla_hours=9999.0,
+        ),
+    })
+    result = build(root=root)
+    lobes = {r["id"]: r for r in result["lobes"]}
+
+    # Per-lobe status must still be 'missing' (honesty)
+    assert lobes["placeholder-lobe"]["status"] == "missing", (
+        f"per-lobe status must be 'missing' regardless of SLA; got "
+        f"{lobes['placeholder-lobe']['status']!r}"
+    )
+    # But overall must NOT be 'degraded' because of this placeholder
+    assert result["overall_status"] != "degraded", (
+        f"SLA=9999 missing placeholder must not drive overall_status to 'degraded'; "
+        f"got {result['overall_status']!r}"
+    )
+
+
+def test_missing_sla_30_drives_degraded(tmp_path):
+    """CHANGE 3b: a missing lobe with real SLA=30 (expected nightly artifact)
+    must still drive overall_status to 'degraded'.
+    """
+    from datetime import datetime, timezone, timedelta
+
+    fmt = "%Y-%m-%dT%H:%M:%S+00:00"
+    fresh_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(fmt)
+
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {"as_of": fresh_ts})
+    # factor-contradictions-ledger analog: SLA=30, actually expected, absent → degraded
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json", freshness_sla_hours=30.0),
+        "expected-lobe": _art(
+            "data/neuralweb/expected_lobe.json",
+            freshness_sla_hours=30.0,
+        ),
+    })
+    # Do NOT create expected_lobe.json
+    result = build(root=root)
+    lobes = {r["id"]: r for r in result["lobes"]}
+
+    assert lobes["expected-lobe"]["status"] == "missing"
+    assert result["overall_status"] == "degraded", (
+        f"SLA=30 missing lobe must drive overall_status to 'degraded'; "
+        f"got {result['overall_status']!r}"
+    )
