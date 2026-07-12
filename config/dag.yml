@@ -346,6 +346,8 @@ lanes:
             - scripts.build_subsector_confluence --nasdaq
             - scripts.build_subsector_confluence --russell
             - scripts.build_cohort_metrics
+            # Rotation Command W1 — declared to match daily.yml:753 (was live-workflow drift)
+            - scripts.build_rotation_events
             - scripts.build_news
             - scripts.grade_news_events
             - scripts.build_methodology
