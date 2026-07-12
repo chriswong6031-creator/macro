@@ -178,9 +178,54 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
 /* HK own-% mini bar */
 .ownbar{display:inline-block;width:46px;height:6px;border-radius:999px;background:var(--grid);position:relative;vertical-align:middle}
 .ownbar i{position:absolute;left:0;top:0;height:100%;border-radius:999px;background:var(--blue)}
+/* ── stock links: quiet by default (no UA blue/underline), Terminal ↗ affordance on hover ── */
+table.board a{color:inherit;text-decoration:none}
+.snm a{transition:color .15s}
+.snm a::after{content:"↗";font-size:10px;font-weight:700;color:var(--blue);opacity:0;margin-left:5px;transition:opacity .15s}
+.snm a:hover{color:var(--blue)}
+.snm a:hover::after{opacity:1}
+.snm a:hover .tk{color:var(--blue)}
+/* ── glance pulse strip: today's answer in four chips ── */
+.pulse{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:16px 0 2px}
+.pchip{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:12px 15px 13px}
+.pchip::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--muted),transparent);opacity:.45;pointer-events:none}
+.pchip.p-in::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent));opacity:1}
+.pchip.p-out::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent));opacity:1}
+html[data-lang="zh"] .pchip.p-in::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent))}
+html[data-lang="zh"] .pchip.p-out::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent))}
+.pchip[data-goto]{cursor:pointer;transition:transform .16s ease,border-color .16s,box-shadow .16s}
+.pchip[data-goto]:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--blue) 45%,var(--grid));box-shadow:0 4px 14px rgba(16,24,40,.08)}
+.pk{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:7px}
+.pnm{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em;line-height:1.3}
+.pm{display:flex;align-items:center;gap:9px;margin-top:8px;flex-wrap:wrap}
+.psub{font-size:11px;color:var(--faint);margin-top:7px;line-height:1.45}
+/* ── panel / channel-card top accent stripes (rip-card idiom) ── */
+.panel{position:relative}
+.panel::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),color-mix(in srgb,var(--blue) 20%,transparent));opacity:.8;pointer-events:none;z-index:1}
+.vcard{overflow:hidden}
+.vcard::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--muted),transparent);opacity:.45;pointer-events:none}
+.vcard.st-in::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent));opacity:1}
+.vcard.st-out::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent));opacity:1}
+.vcard.st-mid::before{background:linear-gradient(90deg,var(--amber),color-mix(in srgb,var(--amber) 30%,transparent));opacity:1}
+html[data-lang="zh"] .vcard.st-in::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent))}
+html[data-lang="zh"] .vcard.st-out::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent))}
+/* ── board affordances: member-row hover, sort-direction arrows, drill flash ── */
+.mrow:hover td{background:color-mix(in srgb,var(--blue) 7%,var(--card))}
+table.board th[data-c]:hover{color:var(--ink)}
+table.board th.s-asc::after{content:" ▲";font-size:8px;color:var(--blue)}
+table.board th.s-desc::after{content:" ▼";font-size:8px;color:var(--blue)}
+@keyframes rowflash{from{background-color:color-mix(in srgb,var(--blue) 22%,transparent)}to{background-color:transparent}}
+tr.flash>td{animation:rowflash 1.5s ease both}
+/* ── ? method tip trigger ── */
+.qm{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--grid);background:var(--card);color:var(--muted);font-size:11px;font-weight:700;cursor:help;flex:none;user-select:none}
+.qm:hover{color:var(--blue);border-color:var(--blue)}
+/* body-appended [data-tip-en] popover (wired in theme.js) — this page doesn't ship
+   theme.css, so its box style is restated here with the page's own tokens */
+[data-tip-en]{cursor:help}
+.i18n-tip-pop{display:none;position:fixed;z-index:12500;max-width:min(320px,calc(100vw - 24px));padding:7px 10px;border-radius:8px;background:var(--card);border:1px solid var(--grid);box-shadow:0 4px 16px rgba(0,0,0,.18);font-size:11px;font-weight:500;line-height:1.5;color:var(--text);text-align:left;white-space:normal}
 .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:1000px}
 .foot b{color:var(--muted)}
-@media (prefers-reduced-motion: reduce){.vbar-fill,.mrow.show td{animation:none}}
+@media (prefers-reduced-motion: reduce){.vbar-fill,.mrow.show td,tr.flash>td,.pchip[data-goto]{animation:none;transition:none}}
 </style>
 </head>
 <body>
@@ -466,19 +511,77 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   </div>
 
   <div class="h1">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span></div>
-  <div class="intro"><span class="l-en">Where China’s big money is rotating — A-share sectors ranked by 主力 (large-order) flow velocity, drilled into the individual names driving each, with the question at every name: <b>does the institution agree?</b> Cross-border Stock-Connect flows sit below, as context.</span><span class="l-zh">中国大资金在向哪里轮动——A股板块按主力（大单）资金流速排序，下钻至驱动它们的个股，并在每只个股追问：<b>机构是否认同？</b> 跨境沪深港通资金作为背景置于下方。</span></div>
-  <div class="note"><span class="l-en">Display-only positioning lens — flow is <b>never</b> scored into an allocation signal. <b>Velocity</b> = standardized net-flow rate (cumulative-flow drift ÷ its own vol); <b>acceleration</b> = its 2nd derivative. <b>Confluence</b> is a binary agree/diverge read where 主力 flow and Dragon-Tiger institutional seats land on the same name — context, not a manufactured score.</span><span class="l-zh">仅供定位参考——资金流向<b>从不</b>计入配置信号。<b>流速</b>＝标准化净流入率（累计流向漂移 ÷ 自身波动）；<b>加速度</b>＝其二阶导。<b>共振</b>＝当主力资金与龙虎榜机构席位落在同一只个股上的二元一致/背离判断——仅为背景，非人造分值。</span></div>
+  <div class="intro"><span class="l-en">Where China’s big money is rotating — sectors ranked by how fast large-order money moves, drilled to the names driving each, with one question per name: <b>does the institution agree?</b></span><span class="l-zh">中国大资金在向哪里轮动——按主力资金流速排序板块，下钻至驱动个股，每只个股追问：<b>机构是否认同？</b></span></div>
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="pulse">
+    
+    <div class="pchip p-in" data-goto="cn_coal" role="button" tabindex="0">
+      <div class="pk">▲ <span class="l-en">Fastest inflow</span><span class="l-zh">流入最快</span></div>
+      <div class="pnm"><span class="l-en">Coal</span><span class="l-zh">煤炭</span></div>
+      <div class="pm"><span class="vbar vbar-md">
+  <span class="vbar-track"><span class="vbar-fill pos" style="width:27.3%;--i:1"></span></span>
+  <span class="vbar-sig">+1.64σ</span>
+</span> 
+<span class="vstate in"><span class="l-en">accelerating in</span><span class="l-zh">加速流入</span></span></div>
+    </div>
+    
+    
+    <div class="pchip p-out" data-goto="cn_ai_compute" role="button" tabindex="0">
+      <div class="pk">▼ <span class="l-en">Fastest outflow</span><span class="l-zh">流出最快</span></div>
+      <div class="pnm"><span class="l-en">AI Compute & Optics</span><span class="l-zh">AI算力与光模块</span></div>
+      <div class="pm"><span class="vbar vbar-md">
+  <span class="vbar-track"><span class="vbar-fill neg" style="width:43.7%;--i:2"></span></span>
+  <span class="vbar-sig">-2.62σ</span>
+</span> 
+<span class="vstate out"><span class="l-en">accelerating out</span><span class="l-zh">加速流出</span></span></div>
+    </div>
+    
+    <div class="pchip">
+      <div class="pk">🏛 <span class="l-en">Do institutions agree?</span><span class="l-zh">机构是否认同？</span></div>
+      <div class="pnm"><span class="l-en">agree on</span><span class="l-zh">一致</span> 2 · <span class="l-en">diverge on</span><span class="l-zh">背离</span> 5</div>
+      <div class="psub"><span class="l-en">board names where flow meets a Dragon-Tiger institutional seat</span><span class="l-zh">榜上资金与龙虎榜机构席位相遇的个股</span></div>
+    </div>
+    
+    
+    <div class="pchip p-in">
+      <div class="pk">🛰 <span class="l-en">Southbound</span><span class="l-zh">南向资金</span></div>
+      <div class="pm" style="margin-top:2px"><span class="vbar vbar-md">
+  <span class="vbar-track"><span class="vbar-fill pos" style="width:14.8%;--i:3"></span></span>
+  <span class="vbar-sig">+0.89σ</span>
+</span> 
+<span class="vstate in"><span class="l-en">accelerating in</span><span class="l-zh">加速流入</span></span></div>
+      <div class="psub"><span class="l-en">mainland money into HK · 1-week rate</span><span class="l-zh">内地资金流入港股 · 1周速率</span></div>
+    </div>
+    
+  </div>
+  
+  
+
+  <div class="note"><span class="l-en">Display-only context — flow is <b>never</b> scored into an allocation signal. How each number is built lives behind the <b>?</b> and in the footer.</span><span class="l-zh">仅供参考背景——资金流向<b>从不</b>计入配置信号。各项指标的构建方法见 <b>?</b> 提示与页脚。</span></div>
   <div class="legend">
     <span class="lg"><span class="vbar vbar-sm"><span class="vbar-track"><span class="vbar-fill pos" style="width:36%"></span></span></span> <b><span class="l-en">inflow</span><span class="l-zh">流入</span></b></span>
     <span class="lg"><span class="vbar vbar-sm"><span class="vbar-track"><span class="vbar-fill neg" style="width:36%"></span></span></span> <b><span class="l-en">outflow</span><span class="l-zh">流出</span></b> <span style="color:var(--faint)"><span class="l-en">· ±3σ fills the half-track</span><span class="l-zh">· ±3σ 填满半轨</span></span></span>
     <span class="lg"><i class="cdot conf-buy"></i><i class="cdot conf-sell"></i> <b><span class="l-en">confluence</span><span class="l-zh">共振</span></b> <span style="color:var(--faint)"><span class="l-en">flow + institutions agree</span><span class="l-zh">资金与机构一致</span></span></span>
     <span class="lg"><i class="cdot conf-diverge"></i> <b><span class="l-en">divergence</span><span class="l-zh">背离</span></b> <span style="color:var(--faint)"><span class="l-en">they disagree</span><span class="l-zh">二者相左</span></span></span>
+    <span class="lg"><b style="color:var(--blue)">↗</b> <span style="color:var(--faint)"><span class="l-en">click a name to open it in the Terminal</span><span class="l-zh">点击个股在终端中打开</span></span></span>
   </div>
 
   
   
-  
   <div class="sec-h"><h2>🧭 <span class="l-en">Flow Map</span><span class="l-zh">资金流向图</span></h2>
+    <span class="qm" data-tip-en="Velocity = standardized net-flow rate: the drift of cumulative net flow divided by its own volatility, so ±3σ fills a half-track. Acceleration = the trailing slope of that velocity. Confluence = a render-time agree/diverge read joining large-order flow direction and Dragon-Tiger institutional-seat direction on the same name — context, never a manufactured score." data-tip-zh="流速＝标准化净流入率：累计净流向的漂移除以自身波动，±3σ 填满半轨。加速度＝该流速的滚动斜率。共振＝渲染期将主力资金方向与龙虎榜机构席位方向相连的一致/背离判断——仅为背景，绝非人造分值。" role="button" tabindex="0" aria-label="method">?</span>
     <span class="sub"><span class="l-en">sector → member names → institutional confluence · weekly · as of</span><span class="l-zh">板块 → 成分个股 → 机构共振 · 周度 · 截至</span> 2026-07-06</span>
     <span style="margin-left:auto" class="mkt-toggle" role="group" aria-label="Market">
       <button data-mkt="a" aria-pressed="true"><span class="l-en">A-Share</span><span class="l-zh">沪深</span></button>
@@ -507,7 +610,6 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
         <tbody>
         
         
-        
         <tr class="sector-row allnames open" data-sector="__all__" aria-expanded="true">
           <td class="snm"><span class="chev">▸</span> 🏆 <span class="l-en">All A-share names</span><span class="l-zh">全市场A股</span></td>
           <td><span class="cat"><span class="l-en">universe</span><span class="l-zh">全域</span></span></td>
@@ -518,7 +620,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
         </tr>
         
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#688498.SS">源杰科技<span class="tk">688498.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688498.SS&amp;from=macro" target="_blank" rel="noopener">源杰科技<span class="tk">688498.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+0.5%</span></td>
@@ -532,7 +634,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#688256.SS">寒武纪<span class="tk">688256.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688256.SS&amp;from=macro" target="_blank" rel="noopener">寒武纪<span class="tk">688256.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+0.5%</span></td>
@@ -546,7 +648,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#688808.SS">联讯仪器<span class="tk">688808.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688808.SS&amp;from=macro" target="_blank" rel="noopener">联讯仪器<span class="tk">688808.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+0.2%</span></td>
@@ -560,7 +662,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#688796.SS">百奥赛图<span class="tk">688796.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688796.SS&amp;from=macro" target="_blank" rel="noopener">百奥赛图<span class="tk">688796.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+8.8%</span></td>
@@ -574,7 +676,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#002966.SZ">苏州银行<span class="tk">002966.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002966.SZ&amp;from=macro" target="_blank" rel="noopener">苏州银行<span class="tk">002966.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+8.3%</span></td>
@@ -588,7 +690,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#603823.SS">百合花<span class="tk">603823.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=603823.SS&amp;from=macro" target="_blank" rel="noopener">百合花<span class="tk">603823.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+7.1%</span></td>
@@ -602,7 +704,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#002840.SZ">华统股份<span class="tk">002840.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002840.SZ&amp;from=macro" target="_blank" rel="noopener">华统股份<span class="tk">002840.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+12.5%</span></td>
@@ -616,7 +718,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#601229.SS">上海银行<span class="tk">601229.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601229.SS&amp;from=macro" target="_blank" rel="noopener">上海银行<span class="tk">601229.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+9.6%</span></td>
@@ -630,7 +732,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#601816.SS">京沪高铁<span class="tk">601816.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601816.SS&amp;from=macro" target="_blank" rel="noopener">京沪高铁<span class="tk">601816.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+7.0%</span></td>
@@ -644,7 +746,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#002714.SZ">牧原股份<span class="tk">002714.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002714.SZ&amp;from=macro" target="_blank" rel="noopener">牧原股份<span class="tk">002714.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+10.3%</span></td>
@@ -658,7 +760,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#002987.SZ">京北方<span class="tk">002987.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002987.SZ&amp;from=macro" target="_blank" rel="noopener">京北方<span class="tk">002987.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-7.0%</span></td>
@@ -672,7 +774,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#300814.SZ">中富电路<span class="tk">300814.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300814.SZ&amp;from=macro" target="_blank" rel="noopener">中富电路<span class="tk">300814.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-10.7%</span></td>
@@ -686,7 +788,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#000981.SZ">山子高科<span class="tk">000981.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000981.SZ&amp;from=macro" target="_blank" rel="noopener">山子高科<span class="tk">000981.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-11.4%</span></td>
@@ -700,7 +802,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#300657.SZ">弘信电子<span class="tk">300657.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300657.SZ&amp;from=macro" target="_blank" rel="noopener">弘信电子<span class="tk">300657.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-7.9%</span></td>
@@ -714,7 +816,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#000555.SZ">神州信息<span class="tk">000555.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000555.SZ&amp;from=macro" target="_blank" rel="noopener">神州信息<span class="tk">000555.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-9.9%</span></td>
@@ -728,7 +830,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#300395.SZ">菲利华<span class="tk">300395.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300395.SZ&amp;from=macro" target="_blank" rel="noopener">菲利华<span class="tk">300395.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-12.9%</span></td>
@@ -742,7 +844,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#300394.SZ">天孚通信<span class="tk">300394.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300394.SZ&amp;from=macro" target="_blank" rel="noopener">天孚通信<span class="tk">300394.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-15.9%</span></td>
@@ -756,7 +858,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#002131.SZ">利欧股份<span class="tk">002131.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002131.SZ&amp;from=macro" target="_blank" rel="noopener">利欧股份<span class="tk">002131.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-7.9%</span></td>
@@ -770,7 +872,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#601778.SS">晶科科技<span class="tk">601778.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601778.SS&amp;from=macro" target="_blank" rel="noopener">晶科科技<span class="tk">601778.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-7.3%</span></td>
@@ -784,7 +886,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow  show" data-sector="__all__">
-  <td class="mname snm"><a href="china_lookup.html#600021.SS">上海电力<span class="tk">600021.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600021.SS&amp;from=macro" target="_blank" rel="noopener">上海电力<span class="tk">600021.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-10.2%</span></td>
@@ -827,7 +929,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_coal">
-  <td class="mname snm"><a href="china_lookup.html#600925.SS">苏能股份<span class="tk">600925.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600925.SS&amp;from=macro" target="_blank" rel="noopener">苏能股份<span class="tk">600925.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-7.9%</span></td>
@@ -841,7 +943,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_coal">
-  <td class="mname snm"><a href="china_lookup.html#601225.SS">陕西煤业<span class="tk">601225.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601225.SS&amp;from=macro" target="_blank" rel="noopener">陕西煤业<span class="tk">601225.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+7.1%</span></td>
@@ -855,7 +957,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_coal">
-  <td class="mname snm"><a href="china_lookup.html#000983.SZ">山西焦煤<span class="tk">000983.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000983.SZ&amp;from=macro" target="_blank" rel="noopener">山西焦煤<span class="tk">000983.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+7.3%</span></td>
@@ -869,7 +971,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_coal">
-  <td class="mname snm"><a href="china_lookup.html#601699.SS">潞安环能<span class="tk">601699.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601699.SS&amp;from=macro" target="_blank" rel="noopener">潞安环能<span class="tk">601699.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.6%</span></td>
@@ -883,7 +985,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_coal">
-  <td class="mname snm"><a href="china_lookup.html#601088.SS">中国神华<span class="tk">601088.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601088.SS&amp;from=macro" target="_blank" rel="noopener">中国神华<span class="tk">601088.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+8.9%</span></td>
@@ -897,7 +999,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_coal">
-  <td class="mname snm"><a href="china_lookup.html#601898.SS">中煤能源<span class="tk">601898.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601898.SS&amp;from=macro" target="_blank" rel="noopener">中煤能源<span class="tk">601898.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.8%</span></td>
@@ -911,7 +1013,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_coal">
-  <td class="mname snm"><a href="china_lookup.html#600188.SS">兖矿能源<span class="tk">600188.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600188.SS&amp;from=macro" target="_blank" rel="noopener">兖矿能源<span class="tk">600188.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+6.8%</span></td>
@@ -925,7 +1027,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_coal">
-  <td class="mname snm"><a href="china_lookup.html#600348.SS">华阳股份<span class="tk">600348.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600348.SS&amp;from=macro" target="_blank" rel="noopener">华阳股份<span class="tk">600348.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.8%</span></td>
@@ -968,7 +1070,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_insurers">
-  <td class="mname snm"><a href="china_lookup.html#601601.SS">中国太保<span class="tk">601601.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601601.SS&amp;from=macro" target="_blank" rel="noopener">中国太保<span class="tk">601601.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.2%</span></td>
@@ -982,7 +1084,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_insurers">
-  <td class="mname snm"><a href="china_lookup.html#601336.SS">新华保险<span class="tk">601336.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601336.SS&amp;from=macro" target="_blank" rel="noopener">新华保险<span class="tk">601336.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.2%</span></td>
@@ -996,7 +1098,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_insurers">
-  <td class="mname snm"><a href="china_lookup.html#601628.SS">中国人寿<span class="tk">601628.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601628.SS&amp;from=macro" target="_blank" rel="noopener">中国人寿<span class="tk">601628.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+6.9%</span></td>
@@ -1010,7 +1112,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_insurers">
-  <td class="mname snm"><a href="china_lookup.html#601319.SS">中国人保<span class="tk">601319.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601319.SS&amp;from=macro" target="_blank" rel="noopener">中国人保<span class="tk">601319.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.6%</span></td>
@@ -1024,7 +1126,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_insurers">
-  <td class="mname snm"><a href="china_lookup.html#601318.SS">中国平安<span class="tk">601318.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601318.SS&amp;from=macro" target="_blank" rel="noopener">中国平安<span class="tk">601318.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.3%</span></td>
@@ -1067,7 +1169,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_pharma_cxo">
-  <td class="mname snm"><a href="china_lookup.html#688506.SS">百利天恒<span class="tk">688506.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688506.SS&amp;from=macro" target="_blank" rel="noopener">百利天恒<span class="tk">688506.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+9.3%</span></td>
@@ -1081,7 +1183,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_pharma_cxo">
-  <td class="mname snm"><a href="china_lookup.html#600276.SS">恒瑞医药<span class="tk">600276.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600276.SS&amp;from=macro" target="_blank" rel="noopener">恒瑞医药<span class="tk">600276.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+6.2%</span></td>
@@ -1095,7 +1197,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_pharma_cxo">
-  <td class="mname snm"><a href="china_lookup.html#600196.SS">复星医药<span class="tk">600196.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600196.SS&amp;from=macro" target="_blank" rel="noopener">复星医药<span class="tk">600196.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.5%</span></td>
@@ -1109,7 +1211,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_pharma_cxo">
-  <td class="mname snm"><a href="china_lookup.html#688235.SS">百济神州<span class="tk">688235.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688235.SS&amp;from=macro" target="_blank" rel="noopener">百济神州<span class="tk">688235.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.4%</span></td>
@@ -1123,7 +1225,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_pharma_cxo">
-  <td class="mname snm"><a href="china_lookup.html#688331.SS">荣昌生物<span class="tk">688331.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688331.SS&amp;from=macro" target="_blank" rel="noopener">荣昌生物<span class="tk">688331.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.1%</span></td>
@@ -1137,7 +1239,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_pharma_cxo">
-  <td class="mname snm"><a href="china_lookup.html#603087.SS">甘李药业<span class="tk">603087.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=603087.SS&amp;from=macro" target="_blank" rel="noopener">甘李药业<span class="tk">603087.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+2.8%</span></td>
@@ -1151,7 +1253,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_pharma_cxo">
-  <td class="mname snm"><a href="china_lookup.html#688180.SS">君实生物<span class="tk">688180.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688180.SS&amp;from=macro" target="_blank" rel="noopener">君实生物<span class="tk">688180.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+2.4%</span></td>
@@ -1165,7 +1267,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_pharma_cxo">
-  <td class="mname snm"><a href="china_lookup.html#002821.SZ">凯莱英<span class="tk">002821.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002821.SZ&amp;from=macro" target="_blank" rel="noopener">凯莱英<span class="tk">002821.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+1.9%</span></td>
@@ -1208,7 +1310,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_banks">
-  <td class="mname snm"><a href="china_lookup.html#601229.SS">上海银行<span class="tk">601229.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601229.SS&amp;from=macro" target="_blank" rel="noopener">上海银行<span class="tk">601229.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+9.6%</span></td>
@@ -1222,7 +1324,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_banks">
-  <td class="mname snm"><a href="china_lookup.html#600000.SS">浦发银行<span class="tk">600000.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600000.SS&amp;from=macro" target="_blank" rel="noopener">浦发银行<span class="tk">600000.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+8.0%</span></td>
@@ -1236,7 +1338,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_banks">
-  <td class="mname snm"><a href="china_lookup.html#600036.SS">招商银行<span class="tk">600036.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600036.SS&amp;from=macro" target="_blank" rel="noopener">招商银行<span class="tk">600036.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+7.1%</span></td>
@@ -1250,7 +1352,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_banks">
-  <td class="mname snm"><a href="china_lookup.html#601939.SS">建设银行<span class="tk">601939.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601939.SS&amp;from=macro" target="_blank" rel="noopener">建设银行<span class="tk">601939.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.0%</span></td>
@@ -1264,7 +1366,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_banks">
-  <td class="mname snm"><a href="china_lookup.html#000001.SZ">平安银行<span class="tk">000001.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000001.SZ&amp;from=macro" target="_blank" rel="noopener">平安银行<span class="tk">000001.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.1%</span></td>
@@ -1278,7 +1380,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_banks">
-  <td class="mname snm"><a href="china_lookup.html#601328.SS">交通银行<span class="tk">601328.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601328.SS&amp;from=macro" target="_blank" rel="noopener">交通银行<span class="tk">601328.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.3%</span></td>
@@ -1292,7 +1394,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_banks">
-  <td class="mname snm"><a href="china_lookup.html#600919.SS">江苏银行<span class="tk">600919.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600919.SS&amp;from=macro" target="_blank" rel="noopener">江苏银行<span class="tk">600919.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.4%</span></td>
@@ -1306,7 +1408,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_banks">
-  <td class="mname snm"><a href="china_lookup.html#601988.SS">中国银行<span class="tk">601988.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601988.SS&amp;from=macro" target="_blank" rel="noopener">中国银行<span class="tk">601988.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.2%</span></td>
@@ -1349,7 +1451,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_gold">
-  <td class="mname snm"><a href="china_lookup.html#000975.SZ">山金国际<span class="tk">000975.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000975.SZ&amp;from=macro" target="_blank" rel="noopener">山金国际<span class="tk">000975.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+6.3%</span></td>
@@ -1363,7 +1465,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_gold">
-  <td class="mname snm"><a href="china_lookup.html#601899.SS">紫金矿业<span class="tk">601899.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601899.SS&amp;from=macro" target="_blank" rel="noopener">紫金矿业<span class="tk">601899.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.5%</span></td>
@@ -1377,7 +1479,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_gold">
-  <td class="mname snm"><a href="china_lookup.html#600988.SS">赤峰黄金<span class="tk">600988.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600988.SS&amp;from=macro" target="_blank" rel="noopener">赤峰黄金<span class="tk">600988.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.2%</span></td>
@@ -1391,7 +1493,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_gold">
-  <td class="mname snm"><a href="china_lookup.html#600547.SS">山东黄金<span class="tk">600547.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600547.SS&amp;from=macro" target="_blank" rel="noopener">山东黄金<span class="tk">600547.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.8%</span></td>
@@ -1405,7 +1507,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_gold">
-  <td class="mname snm"><a href="china_lookup.html#600489.SS">中金黄金<span class="tk">600489.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600489.SS&amp;from=macro" target="_blank" rel="noopener">中金黄金<span class="tk">600489.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.0%</span></td>
@@ -1419,7 +1521,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_gold">
-  <td class="mname snm"><a href="china_lookup.html#002155.SZ">湖南黄金<span class="tk">002155.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002155.SZ&amp;from=macro" target="_blank" rel="noopener">湖南黄金<span class="tk">002155.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-1.3%</span></td>
@@ -1462,7 +1564,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_food_bev">
-  <td class="mname snm"><a href="china_lookup.html#000895.SZ">双汇发展<span class="tk">000895.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000895.SZ&amp;from=macro" target="_blank" rel="noopener">双汇发展<span class="tk">000895.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.7%</span></td>
@@ -1476,7 +1578,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_food_bev">
-  <td class="mname snm"><a href="china_lookup.html#605499.SS">东鹏饮料<span class="tk">605499.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=605499.SS&amp;from=macro" target="_blank" rel="noopener">东鹏饮料<span class="tk">605499.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+6.6%</span></td>
@@ -1490,7 +1592,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_food_bev">
-  <td class="mname snm"><a href="china_lookup.html#300999.SZ">金龙鱼<span class="tk">300999.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300999.SZ&amp;from=macro" target="_blank" rel="noopener">金龙鱼<span class="tk">300999.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.3%</span></td>
@@ -1504,7 +1606,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_food_bev">
-  <td class="mname snm"><a href="china_lookup.html#000729.SZ">燕京啤酒<span class="tk">000729.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000729.SZ&amp;from=macro" target="_blank" rel="noopener">燕京啤酒<span class="tk">000729.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.2%</span></td>
@@ -1518,7 +1620,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_food_bev">
-  <td class="mname snm"><a href="china_lookup.html#603156.SS">养元饮品<span class="tk">603156.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=603156.SS&amp;from=macro" target="_blank" rel="noopener">养元饮品<span class="tk">603156.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-4.5%</span></td>
@@ -1532,7 +1634,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_food_bev">
-  <td class="mname snm"><a href="china_lookup.html#600887.SS">伊利股份<span class="tk">600887.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600887.SS&amp;from=macro" target="_blank" rel="noopener">伊利股份<span class="tk">600887.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.3%</span></td>
@@ -1546,7 +1648,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_food_bev">
-  <td class="mname snm"><a href="china_lookup.html#002311.SZ">海大集团<span class="tk">002311.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002311.SZ&amp;from=macro" target="_blank" rel="noopener">海大集团<span class="tk">002311.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.2%</span></td>
@@ -1560,7 +1662,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_food_bev">
-  <td class="mname snm"><a href="china_lookup.html#603288.SS">海天味业<span class="tk">603288.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=603288.SS&amp;from=macro" target="_blank" rel="noopener">海天味业<span class="tk">603288.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.4%</span></td>
@@ -1603,7 +1705,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_appliances">
-  <td class="mname snm"><a href="china_lookup.html#600060.SS">海信视像<span class="tk">600060.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600060.SS&amp;from=macro" target="_blank" rel="noopener">海信视像<span class="tk">600060.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.8%</span></td>
@@ -1617,7 +1719,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_appliances">
-  <td class="mname snm"><a href="china_lookup.html#000651.SZ">格力电器<span class="tk">000651.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000651.SZ&amp;from=macro" target="_blank" rel="noopener">格力电器<span class="tk">000651.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.7%</span></td>
@@ -1631,7 +1733,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_appliances">
-  <td class="mname snm"><a href="china_lookup.html#600690.SS">海尔智家<span class="tk">600690.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600690.SS&amp;from=macro" target="_blank" rel="noopener">海尔智家<span class="tk">600690.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.1%</span></td>
@@ -1645,7 +1747,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_appliances">
-  <td class="mname snm"><a href="china_lookup.html#603486.SS">科沃斯<span class="tk">603486.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=603486.SS&amp;from=macro" target="_blank" rel="noopener">科沃斯<span class="tk">603486.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-2.8%</span></td>
@@ -1659,7 +1761,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_appliances">
-  <td class="mname snm"><a href="china_lookup.html#600839.SS">四川长虹<span class="tk">600839.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600839.SS&amp;from=macro" target="_blank" rel="noopener">四川长虹<span class="tk">600839.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-4.1%</span></td>
@@ -1673,7 +1775,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_appliances">
-  <td class="mname snm"><a href="china_lookup.html#000333.SZ">美的集团<span class="tk">000333.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000333.SZ&amp;from=macro" target="_blank" rel="noopener">美的集团<span class="tk">000333.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+0.8%</span></td>
@@ -1687,7 +1789,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_appliances">
-  <td class="mname snm"><a href="china_lookup.html#002032.SZ">苏泊尔<span class="tk">002032.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002032.SZ&amp;from=macro" target="_blank" rel="noopener">苏泊尔<span class="tk">002032.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-0.3%</span></td>
@@ -1701,7 +1803,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_appliances">
-  <td class="mname snm"><a href="china_lookup.html#000921.SZ">海信家电<span class="tk">000921.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000921.SZ&amp;from=macro" target="_blank" rel="noopener">海信家电<span class="tk">000921.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+0.3%</span></td>
@@ -1744,7 +1846,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_med_devices">
-  <td class="mname snm"><a href="china_lookup.html#000999.SZ">华润三九<span class="tk">000999.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000999.SZ&amp;from=macro" target="_blank" rel="noopener">华润三九<span class="tk">000999.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.8%</span></td>
@@ -1758,7 +1860,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_med_devices">
-  <td class="mname snm"><a href="china_lookup.html#300015.SZ">爱尔眼科<span class="tk">300015.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300015.SZ&amp;from=macro" target="_blank" rel="noopener">爱尔眼科<span class="tk">300015.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.8%</span></td>
@@ -1772,7 +1874,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_med_devices">
-  <td class="mname snm"><a href="china_lookup.html#688617.SS">惠泰医疗<span class="tk">688617.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688617.SS&amp;from=macro" target="_blank" rel="noopener">惠泰医疗<span class="tk">688617.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-2.7%</span></td>
@@ -1786,7 +1888,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_med_devices">
-  <td class="mname snm"><a href="china_lookup.html#300832.SZ">新产业<span class="tk">300832.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300832.SZ&amp;from=macro" target="_blank" rel="noopener">新产业<span class="tk">300832.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-2.5%</span></td>
@@ -1800,7 +1902,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_med_devices">
-  <td class="mname snm"><a href="china_lookup.html#688301.SS">奕瑞科技<span class="tk">688301.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688301.SS&amp;from=macro" target="_blank" rel="noopener">奕瑞科技<span class="tk">688301.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.9%</span></td>
@@ -1814,7 +1916,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_med_devices">
-  <td class="mname snm"><a href="china_lookup.html#300760.SZ">迈瑞医疗<span class="tk">300760.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300760.SZ&amp;from=macro" target="_blank" rel="noopener">迈瑞医疗<span class="tk">300760.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+2.0%</span></td>
@@ -1828,7 +1930,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_med_devices">
-  <td class="mname snm"><a href="china_lookup.html#300896.SZ">爱美客<span class="tk">300896.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300896.SZ&amp;from=macro" target="_blank" rel="noopener">爱美客<span class="tk">300896.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+1.6%</span></td>
@@ -1842,7 +1944,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_med_devices">
-  <td class="mname snm"><a href="china_lookup.html#000963.SZ">华东医药<span class="tk">000963.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000963.SZ&amp;from=macro" target="_blank" rel="noopener">华东医药<span class="tk">000963.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+1.2%</span></td>
@@ -1885,7 +1987,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_brokers">
-  <td class="mname snm"><a href="china_lookup.html#601211.SS">国泰海通<span class="tk">601211.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601211.SS&amp;from=macro" target="_blank" rel="noopener">国泰海通<span class="tk">601211.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.4%</span></td>
@@ -1899,7 +2001,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_brokers">
-  <td class="mname snm"><a href="china_lookup.html#000776.SZ">广发证券<span class="tk">000776.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000776.SZ&amp;from=macro" target="_blank" rel="noopener">广发证券<span class="tk">000776.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.7%</span></td>
@@ -1913,7 +2015,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_brokers">
-  <td class="mname snm"><a href="china_lookup.html#601788.SS">光大证券<span class="tk">601788.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601788.SS&amp;from=macro" target="_blank" rel="noopener">光大证券<span class="tk">601788.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.4%</span></td>
@@ -1927,7 +2029,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_brokers">
-  <td class="mname snm"><a href="china_lookup.html#000166.SZ">申万宏源<span class="tk">000166.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000166.SZ&amp;from=macro" target="_blank" rel="noopener">申万宏源<span class="tk">000166.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+2.1%</span></td>
@@ -1941,7 +2043,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_brokers">
-  <td class="mname snm"><a href="china_lookup.html#601881.SS">中国银河<span class="tk">601881.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601881.SS&amp;from=macro" target="_blank" rel="noopener">中国银河<span class="tk">601881.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.7%</span></td>
@@ -1955,7 +2057,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_brokers">
-  <td class="mname snm"><a href="china_lookup.html#600999.SS">招商证券<span class="tk">600999.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600999.SS&amp;from=macro" target="_blank" rel="noopener">招商证券<span class="tk">600999.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+2.6%</span></td>
@@ -1969,7 +2071,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_brokers">
-  <td class="mname snm"><a href="china_lookup.html#002736.SZ">国信证券<span class="tk">002736.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002736.SZ&amp;from=macro" target="_blank" rel="noopener">国信证券<span class="tk">002736.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+2.3%</span></td>
@@ -1983,7 +2085,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_brokers">
-  <td class="mname snm"><a href="china_lookup.html#600030.SS">中信证券<span class="tk">600030.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600030.SS&amp;from=macro" target="_blank" rel="noopener">中信证券<span class="tk">600030.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+2.7%</span></td>
@@ -2026,7 +2128,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_autos">
-  <td class="mname snm"><a href="china_lookup.html#601799.SS">星宇股份<span class="tk">601799.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601799.SS&amp;from=macro" target="_blank" rel="noopener">星宇股份<span class="tk">601799.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+6.9%</span></td>
@@ -2040,7 +2142,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_autos">
-  <td class="mname snm"><a href="china_lookup.html#601238.SS">广汽集团<span class="tk">601238.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601238.SS&amp;from=macro" target="_blank" rel="noopener">广汽集团<span class="tk">601238.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-5.0%</span></td>
@@ -2054,7 +2156,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_autos">
-  <td class="mname snm"><a href="china_lookup.html#600660.SS">福耀玻璃<span class="tk">600660.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600660.SS&amp;from=macro" target="_blank" rel="noopener">福耀玻璃<span class="tk">600660.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+8.1%</span></td>
@@ -2068,7 +2170,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_autos">
-  <td class="mname snm"><a href="china_lookup.html#600418.SS">江淮汽车<span class="tk">600418.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600418.SS&amp;from=macro" target="_blank" rel="noopener">江淮汽车<span class="tk">600418.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.7%</span></td>
@@ -2082,7 +2184,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_autos">
-  <td class="mname snm"><a href="china_lookup.html#002594.SZ">比亚迪<span class="tk">002594.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002594.SZ&amp;from=macro" target="_blank" rel="noopener">比亚迪<span class="tk">002594.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.1%</span></td>
@@ -2096,7 +2198,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_autos">
-  <td class="mname snm"><a href="china_lookup.html#000800.SZ">一汽解放<span class="tk">000800.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000800.SZ&amp;from=macro" target="_blank" rel="noopener">一汽解放<span class="tk">000800.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.1%</span></td>
@@ -2110,7 +2212,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_autos">
-  <td class="mname snm"><a href="china_lookup.html#601689.SS">拓普集团<span class="tk">601689.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601689.SS&amp;from=macro" target="_blank" rel="noopener">拓普集团<span class="tk">601689.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-2.7%</span></td>
@@ -2124,7 +2226,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_autos">
-  <td class="mname snm"><a href="china_lookup.html#601127.SS">赛力斯<span class="tk">601127.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601127.SS&amp;from=macro" target="_blank" rel="noopener">赛力斯<span class="tk">601127.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-1.9%</span></td>
@@ -2167,7 +2269,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_metals">
-  <td class="mname snm"><a href="china_lookup.html#002532.SZ">天山铝业<span class="tk">002532.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002532.SZ&amp;from=macro" target="_blank" rel="noopener">天山铝业<span class="tk">002532.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.8%</span></td>
@@ -2181,7 +2283,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_metals">
-  <td class="mname snm"><a href="china_lookup.html#601899.SS">紫金矿业<span class="tk">601899.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601899.SS&amp;from=macro" target="_blank" rel="noopener">紫金矿业<span class="tk">601899.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.5%</span></td>
@@ -2195,7 +2297,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_metals">
-  <td class="mname snm"><a href="china_lookup.html#000630.SZ">铜陵有色<span class="tk">000630.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000630.SZ&amp;from=macro" target="_blank" rel="noopener">铜陵有色<span class="tk">000630.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-4.8%</span></td>
@@ -2209,7 +2311,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_metals">
-  <td class="mname snm"><a href="china_lookup.html#000060.SZ">中金岭南<span class="tk">000060.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000060.SZ&amp;from=macro" target="_blank" rel="noopener">中金岭南<span class="tk">000060.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+2.7%</span></td>
@@ -2223,7 +2325,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_metals">
-  <td class="mname snm"><a href="china_lookup.html#601168.SS">西部矿业<span class="tk">601168.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601168.SS&amp;from=macro" target="_blank" rel="noopener">西部矿业<span class="tk">601168.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+2.4%</span></td>
@@ -2237,7 +2339,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_metals">
-  <td class="mname snm"><a href="china_lookup.html#000807.SZ">云铝股份<span class="tk">000807.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000807.SZ&amp;from=macro" target="_blank" rel="noopener">云铝股份<span class="tk">000807.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+2.0%</span></td>
@@ -2251,7 +2353,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_metals">
-  <td class="mname snm"><a href="china_lookup.html#603993.SS">洛阳钼业<span class="tk">603993.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=603993.SS&amp;from=macro" target="_blank" rel="noopener">洛阳钼业<span class="tk">603993.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+1.7%</span></td>
@@ -2265,7 +2367,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_metals">
-  <td class="mname snm"><a href="china_lookup.html#000960.SZ">锡业股份<span class="tk">000960.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000960.SZ&amp;from=macro" target="_blank" rel="noopener">锡业股份<span class="tk">000960.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-1.3%</span></td>
@@ -2308,7 +2410,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_baijiu">
-  <td class="mname snm"><a href="china_lookup.html#600519.SS">贵州茅台<span class="tk">600519.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600519.SS&amp;from=macro" target="_blank" rel="noopener">贵州茅台<span class="tk">600519.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.3%</span></td>
@@ -2322,7 +2424,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_baijiu">
-  <td class="mname snm"><a href="china_lookup.html#603369.SS">今世缘<span class="tk">603369.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=603369.SS&amp;from=macro" target="_blank" rel="noopener">今世缘<span class="tk">603369.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+2.2%</span></td>
@@ -2336,7 +2438,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_baijiu">
-  <td class="mname snm"><a href="china_lookup.html#600809.SS">山西汾酒<span class="tk">600809.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600809.SS&amp;from=macro" target="_blank" rel="noopener">山西汾酒<span class="tk">600809.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.1%</span></td>
@@ -2350,7 +2452,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_baijiu">
-  <td class="mname snm"><a href="china_lookup.html#002304.SZ">洋河股份<span class="tk">002304.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002304.SZ&amp;from=macro" target="_blank" rel="noopener">洋河股份<span class="tk">002304.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-1.8%</span></td>
@@ -2364,7 +2466,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_baijiu">
-  <td class="mname snm"><a href="china_lookup.html#000596.SZ">古井贡酒<span class="tk">000596.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000596.SZ&amp;from=macro" target="_blank" rel="noopener">古井贡酒<span class="tk">000596.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-0.7%</span></td>
@@ -2378,7 +2480,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_baijiu">
-  <td class="mname snm"><a href="china_lookup.html#000858.SZ">五粮液<span class="tk">000858.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000858.SZ&amp;from=macro" target="_blank" rel="noopener">五粮液<span class="tk">000858.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-0.5%</span></td>
@@ -2392,7 +2494,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_baijiu">
-  <td class="mname snm"><a href="china_lookup.html#000568.SZ">泸州老窖<span class="tk">000568.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000568.SZ&amp;from=macro" target="_blank" rel="noopener">泸州老窖<span class="tk">000568.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-0.1%</span></td>
@@ -2435,7 +2537,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_soe_value">
-  <td class="mname snm"><a href="china_lookup.html#601766.SS">中国中车<span class="tk">601766.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601766.SS&amp;from=macro" target="_blank" rel="noopener">中国中车<span class="tk">601766.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-5.9%</span></td>
@@ -2449,7 +2551,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_soe_value">
-  <td class="mname snm"><a href="china_lookup.html#600900.SS">长江电力<span class="tk">600900.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600900.SS&amp;from=macro" target="_blank" rel="noopener">长江电力<span class="tk">600900.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.3%</span></td>
@@ -2463,7 +2565,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_soe_value">
-  <td class="mname snm"><a href="china_lookup.html#601668.SS">中国建筑<span class="tk">601668.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601668.SS&amp;from=macro" target="_blank" rel="noopener">中国建筑<span class="tk">601668.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.3%</span></td>
@@ -2477,7 +2579,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_soe_value">
-  <td class="mname snm"><a href="china_lookup.html#601800.SS">中国交建<span class="tk">601800.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601800.SS&amp;from=macro" target="_blank" rel="noopener">中国交建<span class="tk">601800.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-4.2%</span></td>
@@ -2491,7 +2593,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_soe_value">
-  <td class="mname snm"><a href="china_lookup.html#601618.SS">中国中冶<span class="tk">601618.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601618.SS&amp;from=macro" target="_blank" rel="noopener">中国中冶<span class="tk">601618.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-4.2%</span></td>
@@ -2505,7 +2607,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_soe_value">
-  <td class="mname snm"><a href="china_lookup.html#601857.SS">中国石油<span class="tk">601857.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601857.SS&amp;from=macro" target="_blank" rel="noopener">中国石油<span class="tk">601857.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-2.6%</span></td>
@@ -2519,7 +2621,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_soe_value">
-  <td class="mname snm"><a href="china_lookup.html#600028.SS">中国石化<span class="tk">600028.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600028.SS&amp;from=macro" target="_blank" rel="noopener">中国石化<span class="tk">600028.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.9%</span></td>
@@ -2533,7 +2635,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_soe_value">
-  <td class="mname snm"><a href="china_lookup.html#601728.SS">中国电信<span class="tk">601728.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601728.SS&amp;from=macro" target="_blank" rel="noopener">中国电信<span class="tk">601728.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.4%</span></td>
@@ -2552,7 +2654,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           <tr class="sector-row" data-sector="cn_software" aria-expanded="false">
             <td class="snm"><span class="chev">▸</span> <span class="l-en">Software & AI Apps</span><span class="l-zh">软件与AI应用</span></td>
             <td><span class="cat"><span class="l-en">Technology &amp; AI</span><span class="l-zh">Technology &amp; AI</span></span></td>
-            <td>15<span class="attn" title="members with institutional-seat activity">1 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
+            <td>15<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股">1 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
             <td><span class="chg neg">-0.1%</span></td>
             <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill neg" style="width:0.7%;--i:14"></span></span>
@@ -2576,7 +2678,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_software">
-  <td class="mname snm"><a href="china_lookup.html#601360.SS">三六零<span class="tk">601360.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601360.SS&amp;from=macro" target="_blank" rel="noopener">三六零<span class="tk">601360.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-5.1%</span></td>
@@ -2590,7 +2692,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_software">
-  <td class="mname snm"><a href="china_lookup.html#600570.SS">恒生电子<span class="tk">600570.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600570.SS&amp;from=macro" target="_blank" rel="noopener">恒生电子<span class="tk">600570.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-5.8%</span></td>
@@ -2604,7 +2706,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_software">
-  <td class="mname snm"><a href="china_lookup.html#300418.SZ">昆仑万维<span class="tk">300418.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300418.SZ&amp;from=macro" target="_blank" rel="noopener">昆仑万维<span class="tk">300418.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+8.6%</span></td>
@@ -2618,7 +2720,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_software">
-  <td class="mname snm"><a href="china_lookup.html#301236.SZ">软通动力<span class="tk">301236.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=301236.SZ&amp;from=macro" target="_blank" rel="noopener">软通动力<span class="tk">301236.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-5.5%</span></td>
@@ -2632,7 +2734,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_software">
-  <td class="mname snm"><a href="china_lookup.html#600845.SS">宝信软件<span class="tk">600845.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600845.SS&amp;from=macro" target="_blank" rel="noopener">宝信软件<span class="tk">600845.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+9.6%</span></td>
@@ -2646,7 +2748,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_software">
-  <td class="mname snm"><a href="china_lookup.html#300339.SZ">润和软件<span class="tk">300339.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300339.SZ&amp;from=macro" target="_blank" rel="noopener">润和软件<span class="tk">300339.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.9%</span></td>
@@ -2660,7 +2762,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_software">
-  <td class="mname snm"><a href="china_lookup.html#300496.SZ">中科创达<span class="tk">300496.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300496.SZ&amp;from=macro" target="_blank" rel="noopener">中科创达<span class="tk">300496.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.2%</span></td>
@@ -2674,7 +2776,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_software">
-  <td class="mname snm"><a href="china_lookup.html#300033.SZ">同花顺<span class="tk">300033.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300033.SZ&amp;from=macro" target="_blank" rel="noopener">同花顺<span class="tk">300033.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.1%</span></td>
@@ -2693,7 +2795,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           <tr class="sector-row" data-sector="cn_defense" aria-expanded="false">
             <td class="snm"><span class="chev">▸</span> <span class="l-en">Defense & Aerospace</span><span class="l-zh">军工航天</span></td>
             <td><span class="cat"><span class="l-en">Advanced Manufacturing</span><span class="l-zh">Advanced Manufacturing</span></span></td>
-            <td>13<span class="attn" title="members with institutional-seat activity">2 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
+            <td>13<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股">2 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
             <td><span class="chg neg">-0.4%</span></td>
             <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill neg" style="width:3.3%;--i:15"></span></span>
@@ -2717,7 +2819,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_defense">
-  <td class="mname snm"><a href="china_lookup.html#688297.SS">中无人机<span class="tk">688297.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688297.SS&amp;from=macro" target="_blank" rel="noopener">中无人机<span class="tk">688297.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-6.3%</span></td>
@@ -2731,7 +2833,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_defense">
-  <td class="mname snm"><a href="china_lookup.html#000733.SZ">振华科技<span class="tk">000733.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000733.SZ&amp;from=macro" target="_blank" rel="noopener">振华科技<span class="tk">000733.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+9.2%</span></td>
@@ -2745,7 +2847,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_defense">
-  <td class="mname snm"><a href="china_lookup.html#600879.SS">航天电子<span class="tk">600879.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600879.SS&amp;from=macro" target="_blank" rel="noopener">航天电子<span class="tk">600879.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-4.1%</span></td>
@@ -2759,7 +2861,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow conf-diverge" data-sector="cn_defense">
-  <td class="mname snm"><i class="cdot conf-diverge"></i> <a href="china_lookup.html#002025.SZ">航天电器<span class="tk">002025.SZ</span></a></td>
+  <td class="mname snm"><i class="cdot conf-diverge"></i> <a href="https://app.mastermind-x.com/terminal?sym=002025.SZ&amp;from=macro" target="_blank" rel="noopener">航天电器<span class="tk">002025.SZ</span></a></td>
   <td><span class="seat sell" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 -0.1亿 <span class="ss">2/3</span></span></td>
   <td></td>
   <td><span class="chg pos">+8.3%</span></td>
@@ -2773,7 +2875,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow conf-diverge" data-sector="cn_defense">
-  <td class="mname snm"><i class="cdot conf-diverge"></i> <a href="china_lookup.html#002414.SZ">高德红外<span class="tk">002414.SZ</span></a></td>
+  <td class="mname snm"><i class="cdot conf-diverge"></i> <a href="https://app.mastermind-x.com/terminal?sym=002414.SZ&amp;from=macro" target="_blank" rel="noopener">高德红外<span class="tk">002414.SZ</span></a></td>
   <td><span class="seat buy" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 +0.9亿 <span class="ss">2/0</span></span></td>
   <td></td>
   <td><span class="chg neg">-5.2%</span></td>
@@ -2787,7 +2889,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_defense">
-  <td class="mname snm"><a href="china_lookup.html#600372.SS">中航机载<span class="tk">600372.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600372.SS&amp;from=macro" target="_blank" rel="noopener">中航机载<span class="tk">600372.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.3%</span></td>
@@ -2801,7 +2903,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_defense">
-  <td class="mname snm"><a href="china_lookup.html#600893.SS">航发动力<span class="tk">600893.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600893.SS&amp;from=macro" target="_blank" rel="noopener">航发动力<span class="tk">600893.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+2.7%</span></td>
@@ -2815,7 +2917,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_defense">
-  <td class="mname snm"><a href="china_lookup.html#600760.SS">中航沈飞<span class="tk">600760.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600760.SS&amp;from=macro" target="_blank" rel="noopener">中航沈飞<span class="tk">600760.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-2.0%</span></td>
@@ -2834,7 +2936,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           <tr class="sector-row" data-sector="cn_battery" aria-expanded="false">
             <td class="snm"><span class="chev">▸</span> <span class="l-en">Battery & Lithium</span><span class="l-zh">锂电池</span></td>
             <td><span class="cat"><span class="l-en">New Energy &amp; Autos</span><span class="l-zh">New Energy &amp; Autos</span></span></td>
-            <td>16<span class="attn" title="members with institutional-seat activity">3 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
+            <td>16<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股">3 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
             <td><span class="chg neg">-1.2%</span></td>
             <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill neg" style="width:6.7%;--i:16"></span></span>
@@ -2858,7 +2960,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_battery">
-  <td class="mname snm"><a href="china_lookup.html#300037.SZ">新宙邦<span class="tk">300037.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300037.SZ&amp;from=macro" target="_blank" rel="noopener">新宙邦<span class="tk">300037.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-4.4%</span></td>
@@ -2872,7 +2974,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_battery">
-  <td class="mname snm"><a href="china_lookup.html#300207.SZ">欣旺达<span class="tk">300207.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300207.SZ&amp;from=macro" target="_blank" rel="noopener">欣旺达<span class="tk">300207.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-5.3%</span></td>
@@ -2886,7 +2988,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_battery">
-  <td class="mname snm"><a href="china_lookup.html#300014.SZ">亿纬锂能<span class="tk">300014.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300014.SZ&amp;from=macro" target="_blank" rel="noopener">亿纬锂能<span class="tk">300014.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-7.9%</span></td>
@@ -2900,7 +3002,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_battery">
-  <td class="mname snm"><a href="china_lookup.html#002074.SZ">国轩高科<span class="tk">002074.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002074.SZ&amp;from=macro" target="_blank" rel="noopener">国轩高科<span class="tk">002074.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-5.3%</span></td>
@@ -2914,7 +3016,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_battery">
-  <td class="mname snm"><a href="china_lookup.html#603659.SS">璞泰来<span class="tk">603659.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=603659.SS&amp;from=macro" target="_blank" rel="noopener">璞泰来<span class="tk">603659.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.5%</span></td>
@@ -2928,7 +3030,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_battery">
-  <td class="mname snm"><a href="china_lookup.html#603799.SS">华友钴业<span class="tk">603799.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=603799.SS&amp;from=macro" target="_blank" rel="noopener">华友钴业<span class="tk">603799.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.8%</span></td>
@@ -2942,7 +3044,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_battery">
-  <td class="mname snm"><a href="china_lookup.html#002594.SZ">比亚迪<span class="tk">002594.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002594.SZ&amp;from=macro" target="_blank" rel="noopener">比亚迪<span class="tk">002594.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+4.1%</span></td>
@@ -2956,7 +3058,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_battery">
-  <td class="mname snm"><a href="china_lookup.html#002850.SZ">科达利<span class="tk">002850.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002850.SZ&amp;from=macro" target="_blank" rel="noopener">科达利<span class="tk">002850.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+1.6%</span></td>
@@ -2975,7 +3077,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           <tr class="sector-row" data-sector="cn_robotics" aria-expanded="false">
             <td class="snm"><span class="chev">▸</span> <span class="l-en">Robotics & Automation</span><span class="l-zh">机器人与自动化</span></td>
             <td><span class="cat"><span class="l-en">Advanced Manufacturing</span><span class="l-zh">Advanced Manufacturing</span></span></td>
-            <td>11<span class="attn" title="members with institutional-seat activity">1 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
+            <td>11<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股">1 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
             <td><span class="chg neg">-0.9%</span></td>
             <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill neg" style="width:8.8%;--i:17"></span></span>
@@ -2999,7 +3101,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_robotics">
-  <td class="mname snm"><a href="china_lookup.html#688017.SS">绿的谐波<span class="tk">688017.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688017.SS&amp;from=macro" target="_blank" rel="noopener">绿的谐波<span class="tk">688017.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-4.2%</span></td>
@@ -3013,7 +3115,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_robotics">
-  <td class="mname snm"><a href="china_lookup.html#300124.SZ">汇川技术<span class="tk">300124.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300124.SZ&amp;from=macro" target="_blank" rel="noopener">汇川技术<span class="tk">300124.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.9%</span></td>
@@ -3027,7 +3129,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_robotics">
-  <td class="mname snm"><a href="china_lookup.html#002851.SZ">麦格米特<span class="tk">002851.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002851.SZ&amp;from=macro" target="_blank" rel="noopener">麦格米特<span class="tk">002851.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.7%</span></td>
@@ -3041,7 +3143,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_robotics">
-  <td class="mname snm"><a href="china_lookup.html#601100.SS">恒立液压<span class="tk">601100.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601100.SS&amp;from=macro" target="_blank" rel="noopener">恒立液压<span class="tk">601100.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.0%</span></td>
@@ -3055,7 +3157,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_robotics">
-  <td class="mname snm"><a href="china_lookup.html#002050.SZ">三花智控<span class="tk">002050.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002050.SZ&amp;from=macro" target="_blank" rel="noopener">三花智控<span class="tk">002050.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.9%</span></td>
@@ -3069,7 +3171,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_robotics">
-  <td class="mname snm"><a href="china_lookup.html#688322.SS">奥比中光<span class="tk">688322.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688322.SS&amp;from=macro" target="_blank" rel="noopener">奥比中光<span class="tk">688322.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-2.7%</span></td>
@@ -3083,7 +3185,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_robotics">
-  <td class="mname snm"><a href="china_lookup.html#002472.SZ">双环传动<span class="tk">002472.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002472.SZ&amp;from=macro" target="_blank" rel="noopener">双环传动<span class="tk">002472.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-1.7%</span></td>
@@ -3097,7 +3199,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_robotics">
-  <td class="mname snm"><a href="china_lookup.html#300024.SZ">机器人<span class="tk">300024.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300024.SZ&amp;from=macro" target="_blank" rel="noopener">机器人<span class="tk">300024.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+3.9%</span></td>
@@ -3116,7 +3218,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           <tr class="sector-row" data-sector="cn_rare_earth" aria-expanded="false">
             <td class="snm"><span class="chev">▸</span> <span class="l-en">Rare Earth & Magnets</span><span class="l-zh">稀土永磁</span></td>
             <td><span class="cat"><span class="l-en">Cyclicals &amp; Resources</span><span class="l-zh">Cyclicals &amp; Resources</span></span></td>
-            <td>9<span class="attn" title="members with institutional-seat activity">1 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
+            <td>9<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股">1 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
             <td><span class="chg neg">-4.9%</span></td>
             <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill neg" style="width:23.5%;--i:18"></span></span>
@@ -3140,7 +3242,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_rare_earth">
-  <td class="mname snm"><a href="china_lookup.html#600549.SS">厦门钨业<span class="tk">600549.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600549.SS&amp;from=macro" target="_blank" rel="noopener">厦门钨业<span class="tk">600549.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-8.8%</span></td>
@@ -3154,7 +3256,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow conf-sell" data-sector="cn_rare_earth">
-  <td class="mname snm"><i class="cdot conf-sell"></i> <a href="china_lookup.html#000657.SZ">中钨高新<span class="tk">000657.SZ</span></a></td>
+  <td class="mname snm"><i class="cdot conf-sell"></i> <a href="https://app.mastermind-x.com/terminal?sym=000657.SZ&amp;from=macro" target="_blank" rel="noopener">中钨高新<span class="tk">000657.SZ</span></a></td>
   <td><span class="seat sell" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 -1.9亿 <span class="ss">3/3</span></span></td>
   <td></td>
   <td><span class="chg neg">-7.7%</span></td>
@@ -3168,7 +3270,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_rare_earth">
-  <td class="mname snm"><a href="china_lookup.html#600111.SS">北方稀土<span class="tk">600111.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600111.SS&amp;from=macro" target="_blank" rel="noopener">北方稀土<span class="tk">600111.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-8.7%</span></td>
@@ -3182,7 +3284,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_rare_earth">
-  <td class="mname snm"><a href="china_lookup.html#600392.SS">盛和资源<span class="tk">600392.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600392.SS&amp;from=macro" target="_blank" rel="noopener">盛和资源<span class="tk">600392.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-7.4%</span></td>
@@ -3196,7 +3298,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_rare_earth">
-  <td class="mname snm"><a href="china_lookup.html#000831.SZ">中国稀土<span class="tk">000831.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000831.SZ&amp;from=macro" target="_blank" rel="noopener">中国稀土<span class="tk">000831.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.5%</span></td>
@@ -3210,7 +3312,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_rare_earth">
-  <td class="mname snm"><a href="china_lookup.html#002378.SZ">章源钨业<span class="tk">002378.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002378.SZ&amp;from=macro" target="_blank" rel="noopener">章源钨业<span class="tk">002378.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-4.8%</span></td>
@@ -3224,7 +3326,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_rare_earth">
-  <td class="mname snm"><a href="china_lookup.html#002056.SZ">横店东磁<span class="tk">002056.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002056.SZ&amp;from=macro" target="_blank" rel="noopener">横店东磁<span class="tk">002056.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.4%</span></td>
@@ -3238,7 +3340,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_rare_earth">
-  <td class="mname snm"><a href="china_lookup.html#300748.SZ">金力永磁<span class="tk">300748.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300748.SZ&amp;from=macro" target="_blank" rel="noopener">金力永磁<span class="tk">300748.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+0.4%</span></td>
@@ -3257,7 +3359,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           <tr class="sector-row" data-sector="cn_semis" aria-expanded="false">
             <td class="snm"><span class="chev">▸</span> <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></td>
             <td><span class="cat"><span class="l-en">Technology &amp; AI</span><span class="l-zh">Technology &amp; AI</span></span></td>
-            <td>22<span class="attn" title="members with institutional-seat activity">2 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
+            <td>22<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股">2 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
             <td><span class="chg neg">-2.6%</span></td>
             <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill neg" style="width:26.8%;--i:19"></span></span>
@@ -3281,7 +3383,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_semis">
-  <td class="mname snm"><a href="china_lookup.html#688256.SS">寒武纪<span class="tk">688256.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688256.SS&amp;from=macro" target="_blank" rel="noopener">寒武纪<span class="tk">688256.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+0.5%</span></td>
@@ -3295,7 +3397,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_semis">
-  <td class="mname snm"><a href="china_lookup.html#603986.SS">兆易创新<span class="tk">603986.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=603986.SS&amp;from=macro" target="_blank" rel="noopener">兆易创新<span class="tk">603986.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-10.6%</span></td>
@@ -3309,7 +3411,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_semis">
-  <td class="mname snm"><a href="china_lookup.html#600460.SS">士兰微<span class="tk">600460.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600460.SS&amp;from=macro" target="_blank" rel="noopener">士兰微<span class="tk">600460.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.5%</span></td>
@@ -3323,7 +3425,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_semis">
-  <td class="mname snm"><a href="china_lookup.html#688126.SS">沪硅产业<span class="tk">688126.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688126.SS&amp;from=macro" target="_blank" rel="noopener">沪硅产业<span class="tk">688126.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-2.8%</span></td>
@@ -3337,7 +3439,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow conf-diverge" data-sector="cn_semis">
-  <td class="mname snm"><i class="cdot conf-diverge"></i> <a href="china_lookup.html#002156.SZ">通富微电<span class="tk">002156.SZ</span></a></td>
+  <td class="mname snm"><i class="cdot conf-diverge"></i> <a href="https://app.mastermind-x.com/terminal?sym=002156.SZ&amp;from=macro" target="_blank" rel="noopener">通富微电<span class="tk">002156.SZ</span></a></td>
   <td><span class="seat buy" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 +6.6亿 <span class="ss">4/4</span></span></td>
   <td></td>
   <td><span class="chg neg">-4.8%</span></td>
@@ -3351,7 +3453,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_semis">
-  <td class="mname snm"><a href="china_lookup.html#688347.SS">华虹宏力<span class="tk">688347.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688347.SS&amp;from=macro" target="_blank" rel="noopener">华虹宏力<span class="tk">688347.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-6.6%</span></td>
@@ -3365,7 +3467,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_semis">
-  <td class="mname snm"><a href="china_lookup.html#688981.SS">中芯国际<span class="tk">688981.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688981.SS&amp;from=macro" target="_blank" rel="noopener">中芯国际<span class="tk">688981.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-4.4%</span></td>
@@ -3379,7 +3481,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_semis">
-  <td class="mname snm"><a href="china_lookup.html#600584.SS">长电科技<span class="tk">600584.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600584.SS&amp;from=macro" target="_blank" rel="noopener">长电科技<span class="tk">600584.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-6.9%</span></td>
@@ -3398,7 +3500,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           <tr class="sector-row" data-sector="cn_solar" aria-expanded="false">
             <td class="snm"><span class="chev">▸</span> <span class="l-en">Solar / Photovoltaics</span><span class="l-zh">光伏</span></td>
             <td><span class="cat"><span class="l-en">New Energy &amp; Autos</span><span class="l-zh">New Energy &amp; Autos</span></span></td>
-            <td>15<span class="attn" title="members with institutional-seat activity">2 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
+            <td>15<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股">2 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
             <td><span class="chg neg">-4.7%</span></td>
             <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill neg" style="width:35.0%;--i:20"></span></span>
@@ -3422,7 +3524,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_solar">
-  <td class="mname snm"><a href="china_lookup.html#688472.SS">阿特斯<span class="tk">688472.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688472.SS&amp;from=macro" target="_blank" rel="noopener">阿特斯<span class="tk">688472.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-5.8%</span></td>
@@ -3436,7 +3538,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_solar">
-  <td class="mname snm"><a href="china_lookup.html#688223.SS">晶科能源<span class="tk">688223.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688223.SS&amp;from=macro" target="_blank" rel="noopener">晶科能源<span class="tk">688223.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-7.1%</span></td>
@@ -3450,7 +3552,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_solar">
-  <td class="mname snm"><a href="china_lookup.html#688303.SS">大全能源<span class="tk">688303.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688303.SS&amp;from=macro" target="_blank" rel="noopener">大全能源<span class="tk">688303.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-6.9%</span></td>
@@ -3464,7 +3566,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow conf-diverge" data-sector="cn_solar">
-  <td class="mname snm"><i class="cdot conf-diverge"></i> <a href="china_lookup.html#002129.SZ">TCL中环<span class="tk">002129.SZ</span></a></td>
+  <td class="mname snm"><i class="cdot conf-diverge"></i> <a href="https://app.mastermind-x.com/terminal?sym=002129.SZ&amp;from=macro" target="_blank" rel="noopener">TCL中环<span class="tk">002129.SZ</span></a></td>
   <td><span class="seat buy" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 +0.6亿 <span class="ss">0/2</span></span></td>
   <td></td>
   <td><span class="chg neg">-6.0%</span></td>
@@ -3478,7 +3580,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_solar">
-  <td class="mname snm"><a href="china_lookup.html#601012.SS">隆基绿能<span class="tk">601012.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=601012.SS&amp;from=macro" target="_blank" rel="noopener">隆基绿能<span class="tk">601012.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-4.8%</span></td>
@@ -3492,7 +3594,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_solar">
-  <td class="mname snm"><a href="china_lookup.html#688599.SS">天合光能<span class="tk">688599.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688599.SS&amp;from=macro" target="_blank" rel="noopener">天合光能<span class="tk">688599.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-6.3%</span></td>
@@ -3506,7 +3608,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_solar">
-  <td class="mname snm"><a href="china_lookup.html#300316.SZ">晶盛机电<span class="tk">300316.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300316.SZ&amp;from=macro" target="_blank" rel="noopener">晶盛机电<span class="tk">300316.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-2.9%</span></td>
@@ -3520,7 +3622,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_solar">
-  <td class="mname snm"><a href="china_lookup.html#600438.SS">通威股份<span class="tk">600438.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=600438.SS&amp;from=macro" target="_blank" rel="noopener">通威股份<span class="tk">600438.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-4.5%</span></td>
@@ -3539,7 +3641,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           <tr class="sector-row" data-sector="cn_consumer_elec" aria-expanded="false">
             <td class="snm"><span class="chev">▸</span> <span class="l-en">Consumer Electronics</span><span class="l-zh">消费电子</span></td>
             <td><span class="cat"><span class="l-en">Technology &amp; AI</span><span class="l-zh">Technology &amp; AI</span></span></td>
-            <td>15<span class="attn" title="members with institutional-seat activity">1 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
+            <td>15<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股">1 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
             <td><span class="chg neg">-4.6%</span></td>
             <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill neg" style="width:39.5%;--i:21"></span></span>
@@ -3563,7 +3665,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow conf-sell" data-sector="cn_consumer_elec">
-  <td class="mname snm"><i class="cdot conf-sell"></i> <a href="china_lookup.html#002384.SZ">东山精密<span class="tk">002384.SZ</span></a></td>
+  <td class="mname snm"><i class="cdot conf-sell"></i> <a href="https://app.mastermind-x.com/terminal?sym=002384.SZ&amp;from=macro" target="_blank" rel="noopener">东山精密<span class="tk">002384.SZ</span></a></td>
   <td><span class="seat sell" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 -8.7亿 <span class="ss">2/4</span></span></td>
   <td></td>
   <td><span class="chg neg">-13.8%</span></td>
@@ -3577,7 +3679,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_consumer_elec">
-  <td class="mname snm"><a href="china_lookup.html#300136.SZ">信维通信<span class="tk">300136.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300136.SZ&amp;from=macro" target="_blank" rel="noopener">信维通信<span class="tk">300136.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-10.3%</span></td>
@@ -3591,7 +3693,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_consumer_elec">
-  <td class="mname snm"><a href="china_lookup.html#300866.SZ">安克创新<span class="tk">300866.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300866.SZ&amp;from=macro" target="_blank" rel="noopener">安克创新<span class="tk">300866.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+5.1%</span></td>
@@ -3605,7 +3707,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_consumer_elec">
-  <td class="mname snm"><a href="china_lookup.html#002475.SZ">立讯精密<span class="tk">002475.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002475.SZ&amp;from=macro" target="_blank" rel="noopener">立讯精密<span class="tk">002475.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-8.4%</span></td>
@@ -3619,7 +3721,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_consumer_elec">
-  <td class="mname snm"><a href="china_lookup.html#002938.SZ">鹏鼎控股<span class="tk">002938.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002938.SZ&amp;from=macro" target="_blank" rel="noopener">鹏鼎控股<span class="tk">002938.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-8.1%</span></td>
@@ -3633,7 +3735,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_consumer_elec">
-  <td class="mname snm"><a href="china_lookup.html#002241.SZ">歌尔股份<span class="tk">002241.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002241.SZ&amp;from=macro" target="_blank" rel="noopener">歌尔股份<span class="tk">002241.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-8.0%</span></td>
@@ -3647,7 +3749,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_consumer_elec">
-  <td class="mname snm"><a href="china_lookup.html#000100.SZ">TCL科技<span class="tk">000100.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=000100.SZ&amp;from=macro" target="_blank" rel="noopener">TCL科技<span class="tk">000100.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-6.8%</span></td>
@@ -3661,7 +3763,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_consumer_elec">
-  <td class="mname snm"><a href="china_lookup.html#300433.SZ">蓝思科技<span class="tk">300433.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300433.SZ&amp;from=macro" target="_blank" rel="noopener">蓝思科技<span class="tk">300433.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-3.9%</span></td>
@@ -3680,7 +3782,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           <tr class="sector-row" data-sector="cn_ai_compute" aria-expanded="false">
             <td class="snm"><span class="chev">▸</span> <span class="l-en">AI Compute & Optics</span><span class="l-zh">AI算力与光模块</span></td>
             <td><span class="cat"><span class="l-en">Technology &amp; AI</span><span class="l-zh">Technology &amp; AI</span></span></td>
-            <td>17<span class="attn" title="members with institutional-seat activity">2 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
+            <td>17<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股">2 <span class="l-en">inst</span><span class="l-zh">机构</span></span></td>
             <td><span class="chg neg">-6.3%</span></td>
             <td style="text-align:center"><span class="vbar vbar-md">
   <span class="vbar-track"><span class="vbar-fill neg" style="width:43.7%;--i:22"></span></span>
@@ -3704,7 +3806,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr>
           
 <tr class="mrow " data-sector="cn_ai_compute">
-  <td class="mname snm"><a href="china_lookup.html#688256.SS">寒武纪<span class="tk">688256.SS</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=688256.SS&amp;from=macro" target="_blank" rel="noopener">寒武纪<span class="tk">688256.SS</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg pos">+0.5%</span></td>
@@ -3718,7 +3820,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_ai_compute">
-  <td class="mname snm"><a href="china_lookup.html#300394.SZ">天孚通信<span class="tk">300394.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300394.SZ&amp;from=macro" target="_blank" rel="noopener">天孚通信<span class="tk">300394.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-15.9%</span></td>
@@ -3732,7 +3834,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_ai_compute">
-  <td class="mname snm"><a href="china_lookup.html#002463.SZ">沪电股份<span class="tk">002463.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=002463.SZ&amp;from=macro" target="_blank" rel="noopener">沪电股份<span class="tk">002463.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-12.3%</span></td>
@@ -3746,7 +3848,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_ai_compute">
-  <td class="mname snm"><a href="china_lookup.html#300476.SZ">胜宏科技<span class="tk">300476.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300476.SZ&amp;from=macro" target="_blank" rel="noopener">胜宏科技<span class="tk">300476.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-10.2%</span></td>
@@ -3760,7 +3862,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_ai_compute">
-  <td class="mname snm"><a href="china_lookup.html#300308.SZ">中际旭创<span class="tk">300308.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300308.SZ&amp;from=macro" target="_blank" rel="noopener">中际旭创<span class="tk">300308.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-6.5%</span></td>
@@ -3774,7 +3876,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_ai_compute">
-  <td class="mname snm"><a href="china_lookup.html#300502.SZ">新易盛<span class="tk">300502.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300502.SZ&amp;from=macro" target="_blank" rel="noopener">新易盛<span class="tk">300502.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-8.9%</span></td>
@@ -3788,7 +3890,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow " data-sector="cn_ai_compute">
-  <td class="mname snm"><a href="china_lookup.html#300620.SZ">光库科技<span class="tk">300620.SZ</span></a></td>
+  <td class="mname snm"><a href="https://app.mastermind-x.com/terminal?sym=300620.SZ&amp;from=macro" target="_blank" rel="noopener">光库科技<span class="tk">300620.SZ</span></a></td>
   <td></td>
   <td></td>
   <td><span class="chg neg">-10.0%</span></td>
@@ -3802,7 +3904,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   <td></td>
 </tr>
 <tr class="mrow conf-diverge" data-sector="cn_ai_compute">
-  <td class="mname snm"><i class="cdot conf-diverge"></i> <a href="china_lookup.html#002281.SZ">光迅科技<span class="tk">002281.SZ</span></a></td>
+  <td class="mname snm"><i class="cdot conf-diverge"></i> <a href="https://app.mastermind-x.com/terminal?sym=002281.SZ&amp;from=macro" target="_blank" rel="noopener">光迅科技<span class="tk">002281.SZ</span></a></td>
   <td><span class="seat buy" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 +2.8亿 <span class="ss">3/3</span></span></td>
   <td></td>
   <td><span class="chg neg">-10.1%</span></td>
@@ -3844,42 +3946,42 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr></thead>
           <tbody>
           
-          <tr><td class="snm"><a href="hk_lookup.html#9999.HK">网易<span class="tk">9999.HK</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym=9999.HK&amp;from=macro" target="_blank" rel="noopener">网易<span class="tk">9999.HK</span></a></td>
             <td style="text-align:left">
 <span class="vstate in"><span class="l-en">accumulating</span><span class="l-zh">加仓</span></span></td>
             <td><span class="chg pos">+60.0%</span></td>
             <td><span class="ownbar"><i style="width:1.0%"></i></span> 0.4</td>
             <td>HK$2.5B</td></tr>
           
-          <tr><td class="snm"><a href="hk_lookup.html#3696.HK">英矽智能<span class="tk">3696.HK</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym=3696.HK&amp;from=macro" target="_blank" rel="noopener">英矽智能<span class="tk">3696.HK</span></a></td>
             <td style="text-align:left">
 <span class="vstate in"><span class="l-en">accumulating</span><span class="l-zh">加仓</span></span></td>
             <td><span class="chg pos">+60.0%</span></td>
             <td><span class="ownbar"><i style="width:45.0%"></i></span> 13.4</td>
             <td>HK$3.3B</td></tr>
           
-          <tr><td class="snm"><a href="hk_lookup.html#1896.HK">猫眼娱乐<span class="tk">1896.HK</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym=1896.HK&amp;from=macro" target="_blank" rel="noopener">猫眼娱乐<span class="tk">1896.HK</span></a></td>
             <td style="text-align:left">
 <span class="vstate in"><span class="l-en">accumulating</span><span class="l-zh">加仓</span></span></td>
             <td><span class="chg pos">+26.7%</span></td>
             <td><span class="ownbar"><i style="width:62.0%"></i></span> 18.6</td>
             <td>HK$1.2B</td></tr>
           
-          <tr><td class="snm"><a href="hk_lookup.html#2315.HK">百奥赛图-B<span class="tk">2315.HK</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym=2315.HK&amp;from=macro" target="_blank" rel="noopener">百奥赛图-B<span class="tk">2315.HK</span></a></td>
             <td style="text-align:left">
 <span class="vstate in"><span class="l-en">accumulating</span><span class="l-zh">加仓</span></span></td>
             <td><span class="chg pos">+23.8%</span></td>
             <td><span class="ownbar"><i style="width:100%"></i></span> 34.1</td>
             <td>HK$2.0B</td></tr>
           
-          <tr><td class="snm"><a href="hk_lookup.html#0568.HK">山东墨龙<span class="tk">0568.HK</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym=0568.HK&amp;from=macro" target="_blank" rel="noopener">山东墨龙<span class="tk">0568.HK</span></a></td>
             <td style="text-align:left">
 <span class="vstate in"><span class="l-en">accumulating</span><span class="l-zh">加仓</span></span></td>
             <td><span class="chg pos">+21.0%</span></td>
             <td><span class="ownbar"><i style="width:100%"></i></span> 58.8</td>
             <td>HK$0.7B</td></tr>
           
-          <tr><td class="snm"><a href="hk_lookup.html#3393.HK">威胜控股<span class="tk">3393.HK</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym=3393.HK&amp;from=macro" target="_blank" rel="noopener">威胜控股<span class="tk">3393.HK</span></a></td>
             <td style="text-align:left">
 <span class="vstate in"><span class="l-en">accumulating</span><span class="l-zh">加仓</span></span></td>
             <td><span class="chg pos">+20.7%</span></td>
@@ -3887,42 +3989,42 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
             <td>HK$0.9B</td></tr>
           
           
-          <tr><td class="snm"><a href="hk_lookup.html#1888.HK">建滔积层板<span class="tk">1888.HK</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym=1888.HK&amp;from=macro" target="_blank" rel="noopener">建滔积层板<span class="tk">1888.HK</span></a></td>
             <td style="text-align:left">
 <span class="vstate out"><span class="l-en">distributing</span><span class="l-zh">减仓</span></span></td>
             <td><span class="chg neg">-31.7%</span></td>
             <td><span class="ownbar"><i style="width:57.0%"></i></span> 17.2</td>
             <td>HK$34.1B</td></tr>
           
-          <tr><td class="snm"><a href="hk_lookup.html#0148.HK">建滔集团<span class="tk">0148.HK</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym=0148.HK&amp;from=macro" target="_blank" rel="noopener">建滔集团<span class="tk">0148.HK</span></a></td>
             <td style="text-align:left">
 <span class="vstate out"><span class="l-en">distributing</span><span class="l-zh">减仓</span></span></td>
             <td><span class="chg neg">-30.1%</span></td>
             <td><span class="ownbar"><i style="width:89.0%"></i></span> 26.6</td>
             <td>HK$21.9B</td></tr>
           
-          <tr><td class="snm"><a href="hk_lookup.html#0189.HK">东岳集团<span class="tk">0189.HK</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym=0189.HK&amp;from=macro" target="_blank" rel="noopener">东岳集团<span class="tk">0189.HK</span></a></td>
             <td style="text-align:left">
 <span class="vstate out"><span class="l-en">distributing</span><span class="l-zh">减仓</span></span></td>
             <td><span class="chg neg">-27.4%</span></td>
             <td><span class="ownbar"><i style="width:100%"></i></span> 33.5</td>
             <td>HK$8.0B</td></tr>
           
-          <tr><td class="snm"><a href="hk_lookup.html#6869.HK">长飞光纤光缆<span class="tk">6869.HK</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym=6869.HK&amp;from=macro" target="_blank" rel="noopener">长飞光纤光缆<span class="tk">6869.HK</span></a></td>
             <td style="text-align:left">
 <span class="vstate out"><span class="l-en">distributing</span><span class="l-zh">减仓</span></span></td>
             <td><span class="chg neg">-27.1%</span></td>
             <td><span class="ownbar"><i style="width:100%"></i></span> 48.0</td>
             <td>HK$32.3B</td></tr>
           
-          <tr><td class="snm"><a href="hk_lookup.html#6088.HK">FIT HON TENG<span class="tk">6088.HK</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym=6088.HK&amp;from=macro" target="_blank" rel="noopener">FIT HON TENG<span class="tk">6088.HK</span></a></td>
             <td style="text-align:left">
 <span class="vstate out"><span class="l-en">distributing</span><span class="l-zh">减仓</span></span></td>
             <td><span class="chg neg">-22.5%</span></td>
             <td><span class="ownbar"><i style="width:20.0%"></i></span> 5.9</td>
             <td>HK$2.6B</td></tr>
           
-          <tr><td class="snm"><a href="hk_lookup.html#3323.HK">中国建材<span class="tk">3323.HK</span></a></td>
+          <tr><td class="snm"><a href="https://app.mastermind-x.com/terminal?sym=3323.HK&amp;from=macro" target="_blank" rel="noopener">中国建材<span class="tk">3323.HK</span></a></td>
             <td style="text-align:left">
 <span class="vstate out"><span class="l-en">distributing</span><span class="l-zh">减仓</span></span></td>
             <td><span class="chg neg">-21.8%</span></td>
@@ -3944,7 +4046,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
     <span class="sub"><span class="l-en">cross-border context · mainland ↔ HK aggregate flow · daily 1w / 1m / 3m velocity</span><span class="l-zh">跨境背景 · 内地 ↔ 香港整体资金 · 日度 1周 / 1月 / 3月流速</span></span></div>
   <div class="vgrid">
     
-    <div class="vcard ">
+    <div class="vcard  st-in">
       <div class="vcard-top">
         <h3><span class="l-en">Southbound — mainland money into HK</span><span class="l-zh">南向 · 内地资金入港</span></h3>
         
@@ -3998,7 +4100,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
     <span class="l-en">Stock-Connect channels — Eastmoney RPT_MUTUAL_DEAL_HISTORY (southbound live; northbound aggregate net discontinued 2024-08-16). A-share name/sector flow — Tushare moneyflow_dc 主力 weekly grid. Institutional seats — Eastmoney 龙虎榜 机构专用. HK southbound — Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS.</span><span class="l-zh">沪深港通——东方财富 RPT_MUTUAL_DEAL_HISTORY（南向实时；北向整体净额于2024-08-16停更）。A股个股/板块资金——Tushare moneyflow_dc 主力周度网格。机构席位——东方财富龙虎榜机构专用。南向——东方财富 RPT_MUTUAL_STOCK_HOLDRANKS。</span><br>
     <b><span class="l-en">Method</span><span class="l-zh">方法</span>:</b>
     <span class="l-en">Velocity = slope_z of cumulative net-flow (drift ÷ its own volatility); acceleration = the trailing slope of that velocity. A sector’s velocity is the equal-weight mean of its members’, so members fan out as deviations around the sector bar. Confluence is a render-time agree/diverge class joining 主力 velocity sign to the institutional-seat direction on the same ticker — nothing numeric is manufactured. Causal, point-in-time, descriptive context — not investment advice.</span><span class="l-zh">流速＝累计净流向的 slope_z（漂移 ÷ 自身波动）；加速度＝该流速的滚动斜率。板块流速＝成分股等权均值，故成分股以围绕板块条的偏离呈现。共振为渲染期一致/背离类别，将主力流速方向与同一代码的机构席位方向相连——不制造任何分值。因果、时点对齐、描述性背景，非投资建议。</span>
-    · <span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-11 11:14 UTC
+    · <span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-12 09:08 UTC
   </div>
 </div>
 <script>
@@ -4026,6 +4128,21 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   }
   btns.forEach(function(b){b.addEventListener('click',function(){setMkt(b.getAttribute('data-mkt'));});});
   setMkt(H.getAttribute('data-market')||'a');
+  // ---- pulse chips: click drills straight into that sector's lane ----
+  document.querySelectorAll('.pchip[data-goto]').forEach(function(ch){
+    function go(){
+      var id=ch.getAttribute('data-goto');
+      var row=document.querySelector('tr.sector-row[data-sector="'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'"]');
+      if(!row) return;
+      if(H.getAttribute('data-market')!=='a') setMkt('a');
+      if(!row.classList.contains('open')) row.click();
+      row.scrollIntoView({behavior:'smooth',block:'center'});
+      row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
+      setTimeout(function(){row.classList.remove('flash');},1600);
+    }
+    ch.addEventListener('click',go);
+    ch.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
+  });
   // ---- column sort (keeps open sectors' members attached to their parent) ----
   document.querySelectorAll('table.board').forEach(function(tbl){
     tbl.querySelectorAll('th[data-c]').forEach(function(th){
@@ -4045,11 +4162,12 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           return asc?x-y:y-x;
         });
         pin.concat(rest).forEach(function(g){ body.appendChild(g.head); g.kids.forEach(function(k){body.appendChild(k);}); });
+        tbl.querySelectorAll('th[data-c]').forEach(function(o){o.classList.remove('s-asc','s-desc');});
+        th.classList.add(asc?'s-asc':'s-desc');
       });
     });
   });
 })();
 </script>
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body></html>
