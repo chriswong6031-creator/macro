@@ -978,6 +978,69 @@ def _build_contradictions(world_state: dict | None) -> dict:
     }
 
 
+def _build_rebalance_chip(data_dir: "Path") -> dict | None:
+    """Load rebalance_pulse/latest.json and return a chip dict if the chip should show.
+
+    The chip is visible when:
+      - in_qtr_end_window is True, OR
+      - a non-quiet class fired in the last 5 sessions.
+
+    Returns None (no chip) or a dict with keys:
+      show (bool), class_en, class_zh, text_en, text_zh.
+    """
+    import json as _json
+    from pathlib import Path as _Path
+
+    path = data_dir / "rebalance_pulse" / "latest.json"
+    if not path.exists():
+        return None
+
+    try:
+        pulse = _json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+    cal = pulse.get("calendar") or {}
+    in_qe_window = bool(cal.get("in_qtr_end_window"))
+    pulse_class = pulse.get("class", "quiet")
+    non_quiet = pulse_class != "quiet"
+
+    if not (in_qe_window or non_quiet):
+        return None
+
+    if in_qe_window:
+        return {
+            "show": True,
+            "class_key": "calendar",
+            "text_en": (
+                "Quarter-end rebalancing window — large mechanical volume is normal; "
+                "big-volume turns are worth respecting."
+            ),
+            "text_zh": "季末再平衡窗口——大量机械性交易量属正常现象；量能驱动的转折值得重视。",
+        }
+
+    # Non-quiet class fired
+    _class_en = {
+        "mechanical_spike_absorbed": "Mechanical volume spike absorbed",
+        "mechanical_spike_distributed": "Mechanical volume spike distributed",
+        "mechanical_spike_mixed": "Mechanical volume spike — mixed breadth",
+        "unscheduled_volume_event": "Unscheduled volume event",
+    }
+    _class_zh = {
+        "mechanical_spike_absorbed": "机械性量能放大、买方消化",
+        "mechanical_spike_distributed": "机械性量能放大、卖方承压",
+        "mechanical_spike_mixed": "机械性量能放大、方向混合",
+        "unscheduled_volume_event": "非计划性量能异常",
+    }
+
+    return {
+        "show": True,
+        "class_key": "volume",
+        "text_en": _class_en.get(pulse_class, pulse_class) + " — see committee view for detail.",
+        "text_zh": _class_zh.get(pulse_class, pulse_class) + "——详情见委员会视图。",
+    }
+
+
 def _build_view_model(
     snapshot: dict | None,
     world_state: dict | None,
@@ -1034,6 +1097,7 @@ def _build_view_model(
     transitions_vm = _build_transitions_vm(transitions, today)
     contradictions = _build_contradictions(world_state)
     ms_history = _ms_history(data_dir / "regime" / "market_state_history.parquet")
+    rebalance_chip = _build_rebalance_chip(data_dir)
 
     return {
         # Hub contract keys (exact, unchanged)
@@ -1055,6 +1119,7 @@ def _build_view_model(
         "ms_history": ms_history,
         "snapshot_present": snapshot is not None,
         "world_state_present": world_state is not None,
+        "rebalance_chip": rebalance_chip,
     }
 
 

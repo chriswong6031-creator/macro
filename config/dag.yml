@@ -348,6 +348,8 @@ lanes:
             - scripts.build_cohort_metrics
             # Rotation Command W1 — declared to match daily.yml:753 (was live-workflow drift)
             - scripts.build_rotation_events
+            # RLT-R2 Rebalance Pulse — declared to match daily.yml (off render path, display/context)
+            - scripts.build_rebalance_pulse
             - scripts.build_news
             - scripts.grade_news_events
             - scripts.build_methodology

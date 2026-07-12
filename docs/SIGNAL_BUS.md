@@ -62,6 +62,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | policy-shock | 5 |
 | qualitative-intelligence | 23 |
 | research-factory | 3 |
+| rlt | 3 |
 | sector-pulse | 3 |
 | setup-species | 6 |
 | short-side | 1 |
@@ -82,7 +83,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 243 |
+| display | 246 |
 | infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
@@ -91,7 +92,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 384 |
+| git | 387 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -702,6 +703,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | research-factory-candidates | `data/research_factory/candidates.jsonl` | jsonl | on-demand | display | 1 | 0 |
 | research-factory-paper-monitor | `data/research_factory/paper_monitor.jsonl` | jsonl | on-demand | display | 0 | 0 |
 | research-factory-transitions | `data/research_factory/transitions.jsonl` | jsonl | on-demand | display | 0 | 0 |
+
+### rlt
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| rebalance-pulse-events | `data/rebalance_pulse/events.jsonl` | jsonl | daily-engine | display | 2 | 0 |
+| rebalance-pulse-latest | `data/rebalance_pulse/latest.json` | json | daily-engine | display | 1 | 0 |
+| rebalance-pulse-site | `site/marketdata/rebalance_pulse.json` | json | daily-engine | display | 1 | 0 |
 
 ### sector-pulse
 

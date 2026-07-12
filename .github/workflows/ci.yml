@@ -172,6 +172,12 @@ on:
       - "tests/test_signal_bus_doc.py"
       - "tests/test_synapse_registry.py"
       - "tests/test_neuralweb_envelope.py"
+      # RLT-R1/R2: rebalance calendar organ + rebalance pulse detector.
+      - "engine/rebalance_calendar.py"
+      - "engine/rebalance_pulse.py"
+      - "scripts/build_rebalance_pulse.py"
+      - "tests/test_rebalance_calendar.py"
+      - "tests/test_rebalance_pulse.py"
       # NW Macro Context Rail R5 (PR-A): five orphan NW test files now wired via neural-web-core job.
       - "tests/test_mastermind_context.py"
       - "tests/test_confluence.py"
@@ -789,6 +795,20 @@ jobs:
           tests/test_causal_audit.py tests/test_causal_inventory.py
           tests/test_causal_schema.py tests/test_causal_scout.py
           tests/test_causal_targets.py tests/test_sf_brainstorm.py -q
+
+  rlt-rebalance-calendar-pulse:
+    # RLT-R1/R2: rebalance calendar organ + rebalance pulse detector.
+    # Hermetic tests: synthetic fixtures, no network, no live data stores.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: rebalance calendar + pulse tests
+        run: python -m pytest tests/test_rebalance_calendar.py tests/test_rebalance_pulse.py -q
 
   dag-conformance:
     # W5a (Neural Web): config/dag.yml declares the per-workflow-step lane inventory;
