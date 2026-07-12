@@ -4626,6 +4626,7 @@ artifacts:
     consumers:
       - engine/neuralweb/context_api.py
       - engine/options_entry_state.py
+      - scripts/build_leader_radar.py
     external_consumers: []
     notes: >
       Per-underlying 25Δ IV skew snapshots (accrual store; 1 row/day/underlying).
@@ -4634,6 +4635,9 @@ artifacts:
       2026-07-05. 5d change computed in engine/options_entry_state.py from this store;
       minimum LOOKBACK_TRADING_DAYS+1 rows required for non-null 5d change.
       No scored arithmetic path reads this store until the skew gate passes.
+      LRV-W1: build_leader_radar reads rr proxy (atm_call_iv−otm_put_iv) for
+      call_skew_rich chip; display-only (≥21 obs gate; all names currently below
+      threshold — chip stays null until history accrues).
 
   options-ivspread-snapshots:
     path: data/options_ivspread/snapshots.parquet
@@ -5337,6 +5341,36 @@ artifacts:
       _horizon_role, _display_only, _version.
 
   # ---------------------------------------------------------------------------
+  # LRV-W1: Quarterly SEC insider aggregate (display-only context chip)
+  # Grain: ticker × quarter; n_buys ≥ 2 AND quarter-end ≤ 120d → insider_cluster chip.
+  # Not the PIT Form-4 panel (that is in insider-lh-panel); this is the nightly-lane
+  # quarterly aggregate built by scripts/insider_phase0.py.
+  # ---------------------------------------------------------------------------
+  sec-insider-quarterly:
+    path: data/sec_insider/insider.parquet
+    format: parquet
+    producer: scripts/insider_phase0.py
+    known_extra_writers: []
+    owner_program: leader-radar
+    cadence: daily-engine
+    storage: git
+    asof_field: quarter
+    freshness_sla_hours: 36
+    schema: sec_insider_quarterly.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_leader_radar.py
+    external_consumers: []
+    notes: >
+      Quarterly SEC aggregate (index=ticker, columns: n_buys, n_sells, buy_usd,
+      sell_usd, net_usd, quarter). LRV-R1b: insider_cluster chip = True when
+      n_buys ≥ 2 AND latest quarter-end ≤ 120 days from as_of. Display-only;
+      per-transaction PIT panel is in insider-lh-panel (separate research track).
+      chip is in QA K-of-N but remains display-only pending gauntlet.
+
   # LONG-HOLD LT-3b: insider_sponsor_lh family artifacts (horizon_role: hold_thesis)
   # F4 prereg: research/long_hold/INSIDER_SPONSOR_LH_FAMILY_PREREG.md
   # All artifacts are display/research tier, scored_path_surfaces: [].

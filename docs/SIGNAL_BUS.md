@@ -34,7 +34,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | intraday-flow-tracker | 3 |
-| leader-radar | 4 |
+| leader-radar | 5 |
 | long-hold | 28 |
 | macro-context-rail | 15 |
 | macro-release-intel | 6 |
@@ -81,7 +81,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 238 |
+| display | 239 |
 | infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
@@ -90,7 +90,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 379 |
+| git | 380 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -325,6 +325,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | leader-radar-revisions-history | `data/leader_radar/revisions_history.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
 | leader-radar-state-history | `data/leader_radar/state_history.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
 | rs-series-store | `data/rs_series/` | parquet | daily-engine | infrastructure | 1 | 0 |
+| sec-insider-quarterly | `data/sec_insider/insider.parquet` | parquet | daily-engine | display | 1 | 0 |
 | site-leader-radar | `site/leaderradar/radar.json` | json | daily-engine | display | 1 | 0 |
 
 ### long-hold
@@ -589,9 +590,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | polygon-gex-summaries | `data/polygon_gex/summary_*.parquet` | parquet | collect | display | 4 | 0 |
+| options-skew-snapshots | `data/options_skew/snapshots.parquet` | parquet | collect | display | 3 | 0 |
 | vol-regime-gate | `data/vol_regime/gate.json` | json | on-demand | scored | 3 | 0 |
 | gex-state-history | `data/index_gex_history/*.parquet` | parquet | weekly | display | 2 | 0 |
-| options-skew-snapshots | `data/options_skew/snapshots.parquet` | parquet | collect | display | 2 | 0 |
 | vol-regime-basket-overlay-gate | `data/vol_regime/basket_overlay_gate.json` | json | on-demand | scored | 2 | 0 |
 | options-flow-index | `site/flow/index.json` | json | collect | display | 0 | 1 |
 | options-ivspread-snapshots | `data/options_ivspread/snapshots.parquet` | parquet | collect | display | 1 | 0 |

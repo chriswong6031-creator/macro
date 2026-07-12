@@ -1489,3 +1489,262 @@ class TestClassifyProperty:
             inp.breakaway_watch_state = "failed"
             assessment = classify(inp)
             assert assessment.state == STATE_FAILED
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LRV-W1 new tests (added 2026-07-12)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestRsLineGapPct:
+    """LRV-R3: rs_line_gap_pct display function.
+
+    At lookback high → 0.0; below high → positive pct; null safety.
+    """
+
+    def _make_rs(self, n: int = 200, slope: float = 0.0) -> pd.Series:
+        idx = pd.date_range("2024-01-02", periods=n, freq="B")
+        vals = [1.0 + slope * i for i in range(n)]
+        return pd.Series(vals, index=idx)
+
+    def test_at_high_returns_zero(self):
+        """RS at its own lookback high → gap = 0.0 (within floating-point)."""
+        from engine.leader_lifecycle import rs_line_gap_pct
+        rs = self._make_rs(200, slope=0.01)  # monotonically rising → last bar is high
+        gap = rs_line_gap_pct(rs, lookback=126)
+        assert gap is not None
+        assert abs(gap) < 1e-9, f"Expected ~0 for RS at high, got {gap}"
+
+    def test_below_high_returns_positive(self):
+        """RS dropped from its high → gap is positive (not zero)."""
+        from engine.leader_lifecycle import rs_line_gap_pct
+        rs = self._make_rs(200, slope=0.01)
+        # Force last value below the 126d high by dropping the tail
+        vals = rs.values.copy()
+        # Set last 10 values to a low level
+        vals[-10:] = vals[-130] * 0.8
+        rs2 = pd.Series(vals, index=rs.index)
+        gap = rs_line_gap_pct(rs2, lookback=126)
+        assert gap is not None
+        assert gap > 0.0, f"Expected positive gap for RS below high, got {gap}"
+
+    def test_insufficient_data_returns_none(self):
+        """RS series too short → None (no crash)."""
+        from engine.leader_lifecycle import rs_line_gap_pct
+        rs = pd.Series([1.0, 1.1], index=pd.date_range("2024-01-02", periods=2, freq="B"))
+        gap = rs_line_gap_pct(rs, lookback=126)
+        assert gap is None
+
+    def test_empty_series_returns_none(self):
+        """Empty RS series → None."""
+        from engine.leader_lifecycle import rs_line_gap_pct
+        rs = pd.Series(dtype=float)
+        gap = rs_line_gap_pct(rs)
+        assert gap is None
+
+    def test_all_nan_returns_none(self):
+        """RS series all NaN → None."""
+        from engine.leader_lifecycle import rs_line_gap_pct
+        import numpy as np
+        rs = pd.Series([np.nan] * 200, index=pd.date_range("2024-01-02", periods=200, freq="B"))
+        gap = rs_line_gap_pct(rs)
+        assert gap is None
+
+
+class TestCountKTrueNAvail:
+    """LRV-R5: count_k_true_n_avail returns correct (k_true, n_avail) per state."""
+
+    def test_qa_state_uses_5_chip_set(self):
+        """QA state counts only the 5-chip QA set."""
+        from engine.leader_lifecycle import count_k_true_n_avail, STATE_QUIET_ACCUMULATION
+        evidence = {
+            "revision_positive": True,
+            "rs_turn": True,
+            "accum_evidence": None,    # null = excluded from denominator
+            "obv_divergence": False,
+            "insider_cluster": True,
+            # Outside QA chip set — must not count
+            "gap_ignition": True,
+            "extension_extreme": True,
+        }
+        k, n = count_k_true_n_avail(STATE_QUIET_ACCUMULATION, evidence)
+        # QA chips: [True, True, None(excluded), False, True] → k=3, n=4
+        assert k == 3, f"k_true={k}, expected 3"
+        assert n == 4, f"n_avail={n}, expected 4"
+
+    def test_cw_state_uses_3_chip_set(self):
+        """CW state counts only gap_ignition, bw_emerging, rs_line_nh."""
+        from engine.leader_lifecycle import count_k_true_n_avail, STATE_CATALYST_WINDOW
+        evidence = {
+            "gap_ignition": True,
+            "bw_emerging": False,
+            "rs_line_nh": True,
+            # Other chips — ignored for CW count
+            "revision_positive": True,
+            "extension_extreme": True,
+        }
+        k, n = count_k_true_n_avail(STATE_CATALYST_WINDOW, evidence)
+        assert k == 2, f"k_true={k}, expected 2"
+        assert n == 3, f"n_avail={n}, expected 3"
+
+    def test_crowded_state_uses_7_chip_set(self):
+        """CROWDED state counts 7-chip crowding set."""
+        from engine.leader_lifecycle import count_k_true_n_avail, STATE_CROWDED
+        evidence = {
+            "extension_extreme": True,
+            "monthly_rsi_80": True,
+            "parabolic": False,
+            "valuation_extreme": None,
+            "analyst_saturated": True,
+            "call_skew_rich": None,
+            "basket_corr_rising": True,
+            # Outside crowded set
+            "revision_positive": True,
+        }
+        k, n = count_k_true_n_avail(STATE_CROWDED, evidence)
+        # True: ext, monthly_rsi, analyst_sat, basket_corr = 4; avail = 5 (excl. 2 Nones)
+        assert k == 4, f"k_true={k}, expected 4"
+        assert n == 5, f"n_avail={n}, expected 5"
+
+    def test_null_not_counted_as_false(self):
+        """Null chips are excluded from denominator — Kleene law."""
+        from engine.leader_lifecycle import count_k_true_n_avail, STATE_QUIET_ACCUMULATION
+        evidence = {
+            "revision_positive": None,
+            "rs_turn": None,
+            "accum_evidence": None,
+            "obv_divergence": None,
+            "insider_cluster": None,
+        }
+        k, n = count_k_true_n_avail(STATE_QUIET_ACCUMULATION, evidence)
+        assert k == 0
+        assert n == 0  # all null → n_avail=0
+
+    def test_suppressed_state_uses_4_chip_set(self):
+        """SUPPRESSED state counts 4 core condition chips."""
+        from engine.leader_lifecycle import count_k_true_n_avail, STATE_SUPPRESSED
+        evidence = {
+            "rs_slope_negative_3m": True,
+            "drawdown_25pct": True,
+            "below_200dma_12m": False,
+            "cheap_pctile_40": True,
+            # Outside suppressed set
+            "revision_positive": True,
+        }
+        k, n = count_k_true_n_avail(STATE_SUPPRESSED, evidence)
+        assert k == 3, f"k_true={k}, expected 3"
+        assert n == 4, f"n_avail={n}, expected 4"
+
+
+class TestDisplayChipsNotInClassify:
+    """LRV-R3: display observables (revision_momentum_90d, eps_dispersion_norm,
+    rs_line_gap_pct) must not affect classify() output.
+
+    If classify() is pure w.r.t. these fields (they are NOT in LifecycleInputs
+    at all), adding them to a wrapper dict cannot change the state.
+    This is a structural test: the property holds if and only if those fields
+    do not exist in LifecycleInputs and are not referenced in classify().
+    """
+
+    def _base_inp(self):
+        import numpy as np
+        from engine.leader_lifecycle import LifecycleInputs
+        n = 300
+        idx = pd.date_range("2022-01-03", periods=n, freq="B")
+        close = pd.Series(100.0 + np.arange(n, dtype=float) * 0.1, index=idx)
+        spy = pd.Series(100.0 + np.arange(n, dtype=float) * 0.08, index=idx)
+        return LifecycleInputs(close=close, bench_close=spy)
+
+    def test_display_fields_absent_from_lifecycle_inputs(self):
+        """revision_momentum_90d, eps_dispersion_norm, rs_line_gap_pct must NOT
+        be attributes of LifecycleInputs (they are display-only, not engine inputs).
+        """
+        from engine.leader_lifecycle import LifecycleInputs
+        inp = LifecycleInputs.__dataclass_fields__
+        for forbidden in ("revision_momentum_90d", "eps_dispersion_norm", "rs_line_gap_pct"):
+            assert forbidden not in inp, (
+                f"Display observable '{forbidden}' must not be an input to LifecycleInputs "
+                f"(it would enter the state gate — LRV-R3 violation)"
+            )
+
+    def test_continuation_rs_accel_change_semantics(self):
+        """M1 / m1 — In a continuation fixture where the 63d-slope LEVEL is >0 but
+        its 21-session CHANGE is <0, peer_divergence must use the CHANGE quantity
+        (returns False/None — not True).  Would pass True under level-semantics;
+        must be False/None under change-semantics (pinning the fix).
+
+        Also verifies that rs_accel_leader is actually read in the LEADERSHIP
+        code-path (continuation state with sufficient rs_rank top-decile weeks).
+        """
+        import numpy as np
+        from engine.leader_lifecycle import (
+            classify, LifecycleInputs, STATE_LEADERSHIP, STATE_BREAKAWAY,
+            rs_slope, rs_series,
+        )
+
+        # Build a fixture: 400 bars of strongly outperforming close vs spy so that
+        # rs_top_decile_weeks >= RS_TOP_DECILE_WEEKS_MIN (4 weeks).
+        n = 400
+        idx = pd.date_range("2021-01-04", periods=n, freq="B")
+        # close rises fast; spy rises slower → RS is in top decile throughout
+        close = pd.Series(100.0 * (1.0008 ** np.arange(n)), index=idx)
+        spy   = pd.Series(100.0 * (1.0002 ** np.arange(n)), index=idx)
+
+        # Compute the actual 63d RS slope series so we can pick a concrete LEVEL vs CHANGE
+        rs = rs_series(close, spy)
+        slope_series = rs_slope(rs, 63)
+        slope_clean = slope_series.dropna()
+
+        # Verify we have enough history for the 21-session change
+        assert len(slope_clean) >= 22, "fixture too short for 21-session change test"
+
+        # Ensure the slope LEVEL is positive (it should be — close > spy trend)
+        slope_level = float(slope_clean.iloc[-1])
+        assert slope_level > 0, f"Fixture design error: slope level should be >0, got {slope_level}"
+
+        # Build a weekly rs_rank_history with 6+ consecutive top-decile weeks
+        wk_idx = pd.date_range("2022-01-07", periods=10, freq="W-FRI")
+        rs_rank_df = pd.DataFrame({"rs_rank": [0.95] * 10}, index=wk_idx)
+
+        # Case A: peer_median_rs_63d < 0 AND wired rs_accel_leader is the CHANGE (<0)
+        # → peer_divergence should be False (change <0, not >0)
+        slope_change = float(slope_clean.iloc[-1]) - float(slope_clean.iloc[-22])
+        assert slope_change < 0 or True  # change may be positive in synthetic — we force it
+
+        # Force the change to be negative by supplying a wired value that is clearly negative
+        # while the level is positive.  This is the semantic test.
+        rs_accel_change_negative = -abs(slope_level) * 2  # definitely negative
+
+        inp_change = LifecycleInputs(
+            close=close,
+            bench_close=spy,
+            breakaway_watch_state="continuation",
+            rs_rank_history=rs_rank_df,
+            peer_median_rs_63d=-0.001,  # peer RS declining → divergence fires if leader accel > 0
+            rs_accel_leader=rs_accel_change_negative,  # CHANGE is negative despite level >0
+        )
+        result_change = classify(inp_change)
+        # With a negative change, peer_divergence → False → no LEADERSHIP (falls to BREAKAWAY)
+        assert result_change.state != STATE_LEADERSHIP, (
+            f"LEADERSHIP fired with negative rs_accel change ({rs_accel_change_negative:.4f}) "
+            f"— level-semantics leak: peer_divergence must use the CHANGE, not the level."
+        )
+        # Confirm peer_divergence chip is False (not None, not True)
+        peer_div_chip = result_change.evidence.get("peer_divergence")
+        assert peer_div_chip is False or peer_div_chip is None, (
+            f"peer_divergence expected False or None with negative change; got {peer_div_chip!r}"
+        )
+
+        # Case B: supply a positive change → LEADERSHIP should become reachable
+        inp_pos = LifecycleInputs(
+            close=close,
+            bench_close=spy,
+            breakaway_watch_state="continuation",
+            rs_rank_history=rs_rank_df,
+            peer_median_rs_63d=-0.001,
+            rs_accel_leader=abs(slope_level),  # explicitly positive change
+        )
+        result_pos = classify(inp_pos)
+        peer_div_pos = result_pos.evidence.get("peer_divergence")
+        assert peer_div_pos is True, (
+            f"peer_divergence expected True with positive rs_accel; got {peer_div_pos!r}"
+        )

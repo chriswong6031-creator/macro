@@ -73,7 +73,7 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 396, (
+    assert len(artifact_ids) == 397, (
         f"Expected 393 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (FL-B flow-cohorts added options-flow-cohorts-parquet,"
@@ -241,7 +241,7 @@ def test_all_artifact_ids_present():
         " china-regime-latest, hk-regime-latest, canada-regime-latest, site-intelligence-briefing,"
         " site-factor-series, site-alerts-triage, macro-snapshots-latest, macro-snapshots-ledger,"
         " macro-transitions, macro-context-latest = 246->260;"
-        " nw-context analyst feed added analyst-targets (yfinance targets/ratings context) = 269->270)"
+        " nw-context analyst feed added analyst-targets (yfinance targets/ratings context) = 269->270; leader-radar LRV-W1 declared sec-insider-quarterly = 396->397)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]

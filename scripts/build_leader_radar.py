@@ -581,6 +581,401 @@ def _load_regime_inputs(data_root: Path) -> dict:
         return {}
 
 
+# ── Insider cluster loader (LRV-R1b) ──────────────────────────────────────────
+# Note (LRV-R1b): LR-R2 spec called for 90d open-market buys; the available
+# data is quarterly SEC aggregate (data/sec_insider/insider.parquet, index=ticker,
+# columns: n_buys, n_sells, buy_usd, sell_usd, net_usd, quarter).
+# Quarterly grain is honest — per-transaction Form-4 PIT panel is in a separate
+# research path (sec_insider.py); this store is the available nightly-lane source.
+
+def _load_insider_cluster(
+    data_root: Path,
+    as_of: date,
+    stale_days: int = 120,
+) -> dict[str, bool | None]:
+    """Build {ticker: bool|None} insider_cluster map from data/sec_insider/insider.parquet.
+
+    True  : latest quarter-end within stale_days of as_of AND n_buys >= 2
+    False : quarter present but n_buys < 2
+    None  : ticker absent OR quarter-end older than stale_days
+
+    Args:
+        data_root: repo data root
+        as_of: the date to compute staleness against (typically today)
+        stale_days: max calendar days from quarter-end to as_of (default 120)
+    """
+    p = data_root / "sec_insider" / "insider.parquet"
+    if not p.exists():
+        log.debug("build_leader_radar: data/sec_insider/insider.parquet absent")
+        return {}
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_leader_radar: insider.parquet unreadable: %s", e)
+        return {}
+
+    def _quarter_end(q_str: str) -> date | None:
+        """Convert '2026q1' -> 2026-03-31, '2026q2' -> 2026-06-30, etc."""
+        try:
+            year = int(str(q_str)[:4])
+            q = int(str(q_str)[5])
+            month_end = q * 3
+            day = 31 if month_end in (3, 12) else 30
+            return date(year, month_end, day)
+        except Exception:  # noqa: BLE001
+            return None
+
+    # Grain defense: sort by quarter so latest quarter sorts last, then keep only
+    # the last row per ticker.  Prevents silent last-win on duplicate-ticker stores.
+    if "quarter" in df.columns:
+        df = df.sort_values("quarter", na_position="first")
+    df = df.groupby(level=0).tail(1)
+
+    result: dict[str, bool | None] = {}
+    for ticker, row in df.iterrows():
+        try:
+            q_str = row.get("quarter") if hasattr(row, "get") else getattr(row, "quarter", None)
+            if q_str is None or (isinstance(q_str, float) and pd.isna(q_str)):
+                result[str(ticker)] = None
+                continue
+            qend = _quarter_end(str(q_str))
+            if qend is None:
+                result[str(ticker)] = None
+                continue
+            if (as_of - qend).days > stale_days:
+                result[str(ticker)] = None
+                continue
+            n_buys_raw = row.get("n_buys") if hasattr(row, "get") else getattr(row, "n_buys", None)
+            if n_buys_raw is None or (isinstance(n_buys_raw, float) and pd.isna(n_buys_raw)):
+                result[str(ticker)] = None
+                continue
+            result[str(ticker)] = bool(int(n_buys_raw) >= 2)
+        except Exception as e:  # noqa: BLE001
+            log.debug("build_leader_radar: insider_cluster/%s failed: %s", ticker, e)
+            result[str(ticker)] = None
+    return result
+
+
+# ── Options skew loader (LRV-R1c) ─────────────────────────────────────────────
+# Sign convention: skew column = otm_put_iv - atm_call_iv (negative = puts cheaper than calls).
+# rr proxy = atm_call_iv - otm_put_iv = -skew. Positive rr means calls MORE expensive
+# than puts (call-skew-rich). Chip fires when rr_25d >= own 80th percentile of history.
+# Require >= 21 observations per name for non-null output; emit skew_n_obs for young-data tag.
+
+def _load_options_skew(
+    data_root: Path,
+    min_obs: int = 21,
+) -> dict[str, dict]:
+    """Load call-skew data from data/options_skew/snapshots.parquet.
+
+    Returns {ticker: {'rr_25d': float|None, 'rr_80th_pctile': float|None,
+                       'skew_n_obs': int}} for each underlying in the store.
+
+    rr proxy = atm_call_iv - otm_put_iv (= -skew). Chip calls-rich = True when
+    rr_25d >= rr_80th_pctile. History < min_obs: both rr values are None.
+
+    Args:
+        data_root: repo data root
+        min_obs: minimum date observations per ticker for non-null rr percentile (default 21)
+    """
+    p = data_root / "options_skew" / "snapshots.parquet"
+    if not p.exists():
+        log.debug("build_leader_radar: data/options_skew/snapshots.parquet absent")
+        return {}
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_leader_radar: options_skew/snapshots.parquet unreadable: %s", e)
+        return {}
+
+    if "underlying" not in df.columns or "atm_call_iv" not in df.columns or "otm_put_iv" not in df.columns:
+        log.warning("build_leader_radar: options_skew missing required columns")
+        return {}
+
+    # Compute rr proxy = atm_call_iv - otm_put_iv = -skew (calls-rich = positive)
+    df = df.copy()
+    df["rr"] = df["atm_call_iv"] - df["otm_put_iv"]
+
+    # Per-name: use latest observation only; compute 80th pctile over full history
+    result: dict[str, dict] = {}
+    date_col = "date" if "date" in df.columns else "asof"
+
+    for underlying, grp in df.groupby("underlying"):
+        ticker = str(underlying)
+        try:
+            # Aggregate across tenors: use mean per date
+            daily = grp.groupby(date_col)["rr"].mean().sort_index()
+            n_obs = len(daily)
+            rr_now = float(daily.iloc[-1]) if n_obs > 0 else None
+            if n_obs >= min_obs:
+                rr_pctile = float(daily.quantile(0.80))
+            else:
+                rr_pctile = None
+                rr_now = None  # also null when < min_obs
+            result[ticker] = {
+                "rr_25d": rr_now,
+                "rr_80th_pctile": rr_pctile,
+                "skew_n_obs": n_obs,
+            }
+        except Exception as e:  # noqa: BLE001
+            log.debug("build_leader_radar: options_skew/%s failed: %s", ticker, e)
+            result[ticker] = {"rr_25d": None, "rr_80th_pctile": None, "skew_n_obs": 0}
+    return result
+
+
+# ── Basket correlation (LRV-R1d) ──────────────────────────────────────────────
+
+def _compute_basket_correlations(
+    basket_membership: dict[str, list[str]],
+    ohlcv_map: dict[str, pd.DataFrame],
+    window_sessions: int = 60,
+    min_members: int = 3,
+) -> dict[str, tuple[float | None, float | None]]:
+    """Compute mean pairwise 60d return correlation for each basket, now and 60d ago.
+
+    Returns {basket_name: (corr_now, corr_then)}.
+    corr_now: mean pairwise correlation of 60d daily returns among basket members today.
+    corr_then: same, as of 60 sessions prior.
+    None for baskets with < min_members members with data.
+
+    Computed once per basket; members share the result (LRV-R1d).
+    """
+    results: dict[str, tuple[float | None, float | None]] = {}
+    for basket_name, members in basket_membership.items():
+        if basket_name in ("dow30", "ndx"):
+            results[basket_name] = (None, None)
+            continue
+        closes: list[pd.Series] = []
+        for t in members:
+            ohlcv = ohlcv_map.get(t)
+            if ohlcv is not None and "close" in ohlcv.columns:
+                c = ohlcv["close"].dropna().sort_index()
+                if len(c) >= window_sessions + window_sessions + 2:
+                    closes.append(c.rename(t))
+        if len(closes) < min_members:
+            results[basket_name] = (None, None)
+            continue
+        try:
+            # Align on common index
+            aligned = pd.concat(closes, axis=1, sort=True).dropna()
+            if len(aligned) < window_sessions + window_sessions + 2:
+                results[basket_name] = (None, None)
+                continue
+
+            def _mean_pairwise_corr(ret_df: pd.DataFrame) -> float | None:
+                if ret_df.shape[1] < min_members:
+                    return None
+                corr_matrix = ret_df.corr()
+                # Upper triangle excluding diagonal
+                upper = corr_matrix.where(
+                    pd.DataFrame(
+                        [[i < j for j in range(corr_matrix.shape[1])]
+                         for i in range(corr_matrix.shape[0])],
+                        index=corr_matrix.index,
+                        columns=corr_matrix.columns,
+                    )
+                )
+                vals = upper.stack().dropna()
+                if len(vals) == 0:
+                    return None
+                return float(vals.mean())
+
+            # Now: last window_sessions of returns
+            ret_now = aligned.tail(window_sessions).pct_change().dropna()
+            corr_now = _mean_pairwise_corr(ret_now) if len(ret_now) >= window_sessions // 2 else None
+
+            # Then: window ending window_sessions bars ago
+            end_then = len(aligned) - window_sessions
+            start_then = end_then - window_sessions
+            if start_then < 0:
+                corr_then = None
+            else:
+                ret_then = aligned.iloc[start_then:end_then].pct_change().dropna()
+                corr_then = _mean_pairwise_corr(ret_then) if len(ret_then) >= window_sessions // 2 else None
+
+            results[basket_name] = (corr_now, corr_then)
+        except Exception as e:  # noqa: BLE001
+            log.debug("build_leader_radar: basket_corr/%s failed: %s", basket_name, e)
+            results[basket_name] = (None, None)
+    return results
+
+
+# ── RS rank history builder (LRV-R1a) ─────────────────────────────────────────
+
+def _build_rs_rank_history(
+    universe: list[str],
+    rs_map: dict[str, pd.Series],
+    change_window: int = 63,
+) -> dict[str, pd.DataFrame | None]:
+    """Build weekly RS rank history for each name in the universe.
+
+    Algorithm (vectorized):
+      1. Load all rs_series into a wide DataFrame (date × ticker)
+      2. Compute 63-session change of RS series (cross-sectional pct-rank input)
+      3. Resample weekly (W-FRI)
+      4. Percentile-rank cross-sectionally within universe at each week
+
+    Args:
+        universe: list of tickers
+        rs_map: {ticker: rs_series (daily)}
+        change_window: sessions for RS change computation (default 63)
+
+    Returns:
+        {ticker: DataFrame(DatetimeIndex, rs_rank column) | None}
+    """
+    # Build wide daily RS dataframe
+    series_list = []
+    valid_tickers = []
+    for t in universe:
+        rs = rs_map.get(t)
+        if rs is not None and not rs.empty and len(rs) >= change_window + 2:
+            series_list.append(rs.rename(t))
+            valid_tickers.append(t)
+
+    if not series_list:
+        return {t: None for t in universe}
+
+    wide = pd.concat(series_list, axis=1, sort=True)
+
+    # Compute 63-session change
+    change = wide.diff(change_window)
+
+    # Resample to weekly (W-FRI): take last value per week
+    weekly_change = change.resample("W-FRI").last()
+
+    # Cross-sectional percentile rank at each week (pct=True gives 0..1)
+    weekly_rank = weekly_change.rank(axis=1, pct=True)
+
+    # Build per-ticker output DataFrames
+    result: dict[str, pd.DataFrame | None] = {}
+    for t in universe:
+        if t in weekly_rank.columns:
+            col = weekly_rank[t].dropna()
+            if len(col) == 0:
+                result[t] = None
+            else:
+                result[t] = pd.DataFrame({"rs_rank": col})
+        else:
+            result[t] = None
+    return result
+
+
+# ── Peer median RS slope (LRV-R1a) ────────────────────────────────────────────
+
+def _compute_peer_medians(
+    universe: list[str],
+    basket_membership: dict[str, list[str]],
+    rs_map: dict[str, pd.Series],
+    window: int = 63,
+) -> tuple[dict[str, float | None], dict[str, float | None]]:
+    """Compute peer_median_rs_63d and rs_accel_leader for each ticker.
+
+    peer_median_rs_63d: same-basket peer median of 63d RS slope (name excluded).
+    rs_accel_leader: 21-session change of the name's own 63d RS slope.
+
+    For names in multiple baskets, use the basket with the most members.
+    Names not in any basket: peer_median = None.
+
+    Returns:
+        ({ticker: peer_median_rs_63d}, {ticker: rs_accel_leader})
+    """
+    from engine.leader_lifecycle import rs_slope as _rs_slope
+
+    # Pre-compute 63d RS slope for each ticker (last value)
+    slopes_63d: dict[str, float | None] = {}
+    slope_series_63d: dict[str, pd.Series] = {}
+    for t in universe:
+        rs = rs_map.get(t)
+        if rs is None or rs.empty or len(rs) < window // 2:
+            slopes_63d[t] = None
+            continue
+        try:
+            s = _rs_slope(rs, window)
+            if s.empty or len(s.dropna()) == 0:
+                slopes_63d[t] = None
+            else:
+                val = s.dropna().iloc[-1]
+                slopes_63d[t] = float(val) if pd.notna(val) else None
+                slope_series_63d[t] = s
+        except Exception:  # noqa: BLE001
+            slopes_63d[t] = None
+
+    # rs_accel_leader: 21-session change of the 63d slope series
+    rs_accel: dict[str, float | None] = {}
+    for t in universe:
+        try:
+            s = slope_series_63d.get(t)
+            if s is None or len(s.dropna()) < 22:
+                rs_accel[t] = None
+                continue
+            s_clean = s.dropna()
+            if len(s_clean) >= 22:
+                accel = float(s_clean.iloc[-1]) - float(s_clean.iloc[-22])
+                rs_accel[t] = accel if pd.notna(accel) else None
+            else:
+                rs_accel[t] = None
+        except Exception:  # noqa: BLE001
+            rs_accel[t] = None
+
+    # Build ticker -> primary basket map (largest basket the name belongs to)
+    ticker_basket: dict[str, str | None] = {t: None for t in universe}
+    for basket_name, members in basket_membership.items():
+        if basket_name in ("dow30", "ndx"):
+            continue
+        for t in members:
+            if t in universe:
+                prev = ticker_basket.get(t)
+                if prev is None or len(basket_membership.get(basket_name, [])) > len(basket_membership.get(prev, [])):
+                    ticker_basket[t] = basket_name
+
+    # Peer median: median 63d slope of basket peers, excluding the name itself
+    peer_median: dict[str, float | None] = {}
+    for t in universe:
+        basket = ticker_basket.get(t)
+        if basket is None:
+            peer_median[t] = None
+            continue
+        peers = [p for p in basket_membership.get(basket, []) if p != t and p in universe]
+        peer_slopes = [slopes_63d[p] for p in peers if slopes_63d.get(p) is not None]
+        if not peer_slopes:
+            peer_median[t] = None
+        else:
+            import statistics
+            peer_median[t] = statistics.median(peer_slopes)
+
+    return peer_median, rs_accel
+
+
+# ── Display observables from revisions (LRV-R3) ───────────────────────────────
+
+def _extract_display_chips(sd: dict, revisions_df: pd.DataFrame, ticker: str) -> dict:
+    """Extract display-only observables (LRV-R3). Must NOT enter any K-of-N gate.
+
+    (a) revision_momentum_90d: est_chg_90d > 0 (tri-state) from revisions/latest.parquet
+    (b) eps_dispersion_norm: raw value passed through
+    (c) rs_line_gap_pct: computed per-ticker by builder and passed in separately
+
+    Returns dict suitable for row['display_chips'].
+    """
+    chips: dict = {
+        "revision_momentum_90d": None,
+        "eps_dispersion_norm": None,
+    }
+    try:
+        # Prefer revisions/latest.parquet
+        if not revisions_df.empty and ticker in revisions_df.index:
+            row = revisions_df.loc[ticker]
+            est_90d = row.get("est_chg_90d") if hasattr(row, "get") else getattr(row, "est_chg_90d", None)
+            if est_90d is not None and not (isinstance(est_90d, float) and pd.isna(est_90d)):
+                chips["revision_momentum_90d"] = bool(float(est_90d) > 0)
+            disp = row.get("eps_dispersion_norm") if hasattr(row, "get") else getattr(row, "eps_dispersion_norm", None)
+            if disp is not None and not (isinstance(disp, float) and pd.isna(disp)):
+                chips["eps_dispersion_norm"] = float(disp)
+    except Exception:  # noqa: BLE001
+        pass
+    return chips
+
+
 def _compute_top5_share(
     universe: list[str],
     ohlcv_map: dict[str, pd.DataFrame],
@@ -724,10 +1119,22 @@ def _build_ticker_assessment(
     raw_history: list[tuple[date, str]],
     confirmed_history: list[tuple[date, str]],
     stale: bool,
+    # LRV-W1 new wires (all optional; null-safe)
+    rs_rank_history: "pd.DataFrame | None" = None,
+    peer_median_rs_63d: float | None = None,
+    rs_accel_leader: float | None = None,
+    insider_cluster: bool | None = None,
+    rr_25d: float | None = None,
+    rr_80th_pctile: float | None = None,
+    basket_corr_now: float | None = None,
+    basket_corr_then: float | None = None,
 ) -> tuple[Any, str, str] | None:
     """Build LifecycleInputs, classify, apply_hysteresis.
 
     Returns (assessment, raw_state, confirmed_state) or None on error.
+
+    LRV-W1 adds wires for RS rank history, insider_cluster, call_skew, basket_corr.
+    All new parameters are null-safe; null never counts as False (Kleene).
     """
     from engine.leader_lifecycle import (
         LifecycleInputs,
@@ -755,6 +1162,10 @@ def _build_ticker_assessment(
                 break
         days_in_state = count
 
+    # analyst_buy_pct: gap — per-transaction Form-4 PIT panel not yet in nightly lane;
+    # quarterly SEC aggregate (insider_cluster) is the available source (LRV-R1b).
+    # analyst_buy_pct stays None until a per-transaction feed is integrated.
+
     inp = LifecycleInputs(
         close=close,
         bench_close=spy,
@@ -775,6 +1186,15 @@ def _build_ticker_assessment(
         ),
         state_history=confirmed_history,
         days_in_state=days_in_state,
+        # LRV-W1 new wires (rr_25d + rr_80th_pctile → engine computes call_skew_rich)
+        rs_rank_history=rs_rank_history,
+        peer_median_rs_63d=peer_median_rs_63d,
+        rs_accel_leader=rs_accel_leader,
+        insider_cluster=insider_cluster,
+        rr_25d=rr_25d,
+        rr_80th_pctile=rr_80th_pctile,
+        basket_corr_now=basket_corr_now,
+        basket_corr_then=basket_corr_then,
     )
 
     assessment = classify(inp)
@@ -1115,6 +1535,72 @@ def build(
             except Exception as e:  # noqa: BLE001
                 log.debug("build_leader_radar: rs_series/%s failed: %s", ticker, e)
 
+    # ── LRV-W1: New loaders (insider, skew, RS-rank, basket-corr, peer-medians) ──
+    t_lrv_w1 = time.monotonic()
+
+    # Insider cluster: {ticker: True/False/None}
+    insider_map: dict[str, bool | None] = {}
+    try:
+        insider_map = _load_insider_cluster(data_root, date.today())
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_leader_radar: insider_cluster load failed: %s", e)
+
+    # Options skew: {ticker: {rr_25d, rr_80th_pctile, skew_n_obs}}
+    skew_map: dict[str, dict] = {}
+    try:
+        skew_map = _load_options_skew(data_root)
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_leader_radar: options_skew load failed: %s", e)
+
+    # RS rank history: {ticker: DataFrame(rs_rank) | None}  (vectorized)
+    rs_rank_history_map: dict[str, Any] = {}
+    if rs_map:
+        try:
+            rs_rank_history_map = _build_rs_rank_history(universe, rs_map)
+        except Exception as e:  # noqa: BLE001
+            log.warning("build_leader_radar: rs_rank_history build failed: %s", e)
+
+    # Peer medians: {ticker: peer_median_rs_63d}, {ticker: rs_accel_leader}
+    peer_median_map: dict[str, float | None] = {}
+    rs_accel_map: dict[str, float | None] = {}
+    if rs_map:
+        try:
+            peer_median_map, rs_accel_map = _compute_peer_medians(
+                universe, basket_membership, rs_map
+            )
+        except Exception as e:  # noqa: BLE001
+            log.warning("build_leader_radar: peer_medians failed: %s", e)
+
+    # Basket correlations: {basket: (corr_now, corr_then)}
+    basket_corr_map: dict[str, tuple] = {}
+    if ohlcv_map:
+        try:
+            basket_corr_map = _compute_basket_correlations(
+                basket_membership, ohlcv_map
+            )
+        except Exception as e:  # noqa: BLE001
+            log.warning("build_leader_radar: basket_corr failed: %s", e)
+
+    # Build ticker → basket mapping (primary basket = largest non-dow30/ndx basket)
+    ticker_primary_basket: dict[str, str | None] = {}
+    for t in universe:
+        best: str | None = None
+        best_size = 0
+        for bname, members in basket_membership.items():
+            if bname in ("dow30", "ndx"):
+                continue
+            if t in members and len(members) > best_size:
+                best = bname
+                best_size = len(members)
+        ticker_primary_basket[t] = best
+
+    log.info(
+        "[timing] LRV-W1 loaders: insider=%d, skew=%d, rs_rank=%d, peer_median=%d, basket_corr=%d (%.2fs)",
+        len(insider_map), len(skew_map), len(rs_rank_history_map),
+        len(peer_median_map), len(basket_corr_map),
+        time.monotonic() - t_lrv_w1,
+    )
+
     # ── Per-ticker loop ───────────────────────────────────────────────────────
     today = date.today()
     assessments_map: dict[str, Any] = {}
@@ -1137,6 +1623,11 @@ def build(
         try:
             raw_history, confirmed_history = _ticker_state_history(ticker, state_df)
 
+            # LRV-W1: resolve per-ticker basket-level inputs
+            _primary_basket = ticker_primary_basket.get(ticker)
+            _basket_corr = basket_corr_map.get(_primary_basket) if _primary_basket else None
+            _skew = skew_map.get(ticker) or {}
+
             result = _build_ticker_assessment(
                 ticker=ticker,
                 ohlcv=ohlcv,
@@ -1149,6 +1640,15 @@ def build(
                 raw_history=raw_history,
                 confirmed_history=confirmed_history,
                 stale=stale,
+                # LRV-W1 new wires
+                rs_rank_history=rs_rank_history_map.get(ticker),
+                peer_median_rs_63d=peer_median_map.get(ticker),
+                rs_accel_leader=rs_accel_map.get(ticker),
+                insider_cluster=insider_map.get(ticker),
+                rr_25d=_skew.get("rr_25d"),
+                rr_80th_pctile=_skew.get("rr_80th_pctile"),
+                basket_corr_now=_basket_corr[0] if _basket_corr else None,
+                basket_corr_then=_basket_corr[1] if _basket_corr else None,
             )
             if result is None:
                 continue
@@ -1219,6 +1719,24 @@ def build(
             val = valuation_store.get(ticker) or {}
             earn = earnings_store.get(ticker) or {}
 
+            # LRV-W1: k_true / n_avail per state (count_k_true_n_avail)
+            from engine.leader_lifecycle import count_k_true_n_avail as _count_k
+            k_true, n_avail = _count_k(confirmed_state, assessment.evidence)
+
+            # LRV-W1: rs_line_gap_pct (display-only, must NOT enter K-of-N or state gate)
+            _rs_gap: float | None = None
+            try:
+                from engine.leader_lifecycle import rs_line_gap_pct as _rs_gap_fn
+                _rs_ticker = rs_map.get(ticker)
+                if _rs_ticker is not None and not _rs_ticker.empty:
+                    _rs_gap = _rs_gap_fn(_rs_ticker)
+            except Exception:  # noqa: BLE001
+                _rs_gap = None
+
+            # LRV-W1: display_chips sub-dict (LRV-R3; NEVER enter K-of-N or state gates)
+            _display_chips = _extract_display_chips({}, revisions_df, ticker)
+            _display_chips["rs_line_gap_pct"] = _rs_gap
+
             rows.append({
                 "ticker": ticker,
                 "raw_state": raw_state,
@@ -1230,6 +1748,9 @@ def build(
                 "de_escalations": assessment.de_escalation_chips,
                 "fire_precipice": fire_p,
                 "fire_onset": fire_o,
+                "k_true": k_true,
+                "n_avail": n_avail,
+                "display_chips": _display_chips,
                 "context": {
                     "pe": val.get("fwd_pe"),
                     "fwd_pe": val.get("fwd_pe"),
@@ -1238,6 +1759,11 @@ def build(
                     "days_to_earnings": earn.get("days_to_earnings"),
                     "valuation_pctile_5y": val.get("valuation_pctile_5y"),
                     "tf2d_state": tf2d,
+                    # LRV-W1 context additions
+                    "skew_n_obs": (skew_map.get(ticker) or {}).get("skew_n_obs"),
+                    "peer_median_rs_63d": peer_median_map.get(ticker),
+                    "rs_accel_leader": rs_accel_map.get(ticker),
+                    "insider_cluster": insider_map.get(ticker),
                 },
                 "breakaway_watch_state": watch_states_map.get(ticker),
             })
@@ -1320,6 +1846,120 @@ def build(
     except Exception as e:  # noqa: BLE001
         log.warning("build_leader_radar: rerating_watch failed: %s", e)
 
+    # ── LRV-W1: early_entry artifact (LRV-R2) ────────────────────────────────
+    # CW/QA/SUPPRESSED rows with ≥1 True lead chip; sorted deterministically;
+    # NO fused score — order is by (state_bucket, -k_true, days_in_state asc, ticker).
+    # State buckets: CW=0, QA=1, SUP=2.
+    from engine.leader_lifecycle import (
+        STATE_CATALYST_WINDOW, STATE_QUIET_ACCUMULATION, STATE_SUPPRESSED,
+    )
+
+    _early_state_bucket = {
+        STATE_CATALYST_WINDOW: 0,
+        STATE_QUIET_ACCUMULATION: 1,
+        STATE_SUPPRESSED: 2,
+    }
+    early_entry_rows: list[dict] = []
+    for row in rows:
+        _state = row["state"]
+        if _state not in _early_state_bucket:
+            continue
+        _chips = row.get("chips") or {}
+        # For SUPPRESSED: include only rows with ≥1 True LEAD chip.
+        # Lead chips are the five positive-momentum signals; non-lead suppression chips
+        # (e.g. drawdown_25pct, rs_slope_negative_3m, below_200dma_12m) must NOT
+        # count — they merely confirm suppression, not early-entry candidacy.
+        _LEAD_CHIPS = frozenset((
+            "revision_positive",
+            "rs_turn",
+            "accum_evidence",
+            "obv_divergence",
+            "insider_cluster",
+        ))
+        _has_lead = any(_chips.get(k) is True for k in _LEAD_CHIPS)
+        if _state == STATE_SUPPRESSED and not _has_lead:
+            continue
+        _k = row.get("k_true", 0) or 0
+        _days = row.get("days_in_state")
+        _days_sort = _days if _days is not None else 9999  # nulls last
+        early_entry_rows.append({
+            "ticker": row["ticker"],
+            "state": _state,
+            "k_true": _k,
+            "n_avail": row.get("n_avail", 0),
+            "days_in_state": row.get("days_in_state"),
+            "fire_precipice": row.get("fire_precipice", False),
+            "fire_onset": row.get("fire_onset", False),
+            "rs_line_gap_pct": (row.get("display_chips") or {}).get("rs_line_gap_pct"),
+            "display_chips": row.get("display_chips") or {},
+            "_sort_key": (
+                _early_state_bucket[_state],
+                -_k,
+                _days_sort,
+                row["ticker"],
+            ),
+        })
+
+    early_entry_rows.sort(key=lambda r: r["_sort_key"])
+    for r in early_entry_rows:
+        del r["_sort_key"]
+
+    # ── LRV-W1: handoff_context artifact (LRV-R4) ────────────────────────────
+    # Per-basket: extension_pctile_vs_200d, rs_21d_slope_sign, is_extended.
+    from engine.leader_lifecycle import (
+        rs_slope as _rs_slope_fn,
+        basket_extension_pctile as _basket_ext_pctile,
+    )
+    import statistics as _statistics
+    handoff_context: list[dict] = []
+    for bname, members in basket_membership.items():
+        if bname in ("dow30", "ndx"):
+            continue
+        _is_ext = extended_baskets.get(bname)
+        # rs_21d_slope_sign: sign of 21d RS slope for EW basket RS series
+        # Use median of member 21d RS slopes as basket-level proxy
+        _member_slopes_21d: list[float] = []
+        for t in members:
+            _rs = rs_map.get(t)
+            if _rs is None or _rs.empty or len(_rs) < 22:
+                continue
+            try:
+                _sl = _rs_slope_fn(_rs, 21)
+                if not _sl.empty:
+                    _v = _sl.dropna()
+                    if len(_v) > 0:
+                        _member_slopes_21d.append(float(_v.iloc[-1]))
+            except Exception:  # noqa: BLE001
+                pass
+        _rs21_sign: int | None = None
+        if _member_slopes_21d:
+            _med = _statistics.median(_member_slopes_21d)
+            _rs21_sign = 1 if _med > 0 else (-1 if _med < 0 else 0)
+        # extension_pctile_vs_200d: percentile of current basket EW extension vs own 200d
+        # history, using the same basket_extension_pctile() helper as extended_leg() so
+        # the two callers cannot drift.
+        _ext_pctile: float | None = None
+        _bkt_closes = []
+        for t in members:
+            _ohlcv = ohlcv_map.get(t)
+            if _ohlcv is not None and "close" in _ohlcv.columns:
+                _bkt_closes.append(_ohlcv["close"].dropna().sort_index())
+        if _bkt_closes:
+            try:
+                _aligned_bkt = pd.concat(_bkt_closes, axis=1, sort=True).ffill().dropna()
+                if not _aligned_bkt.empty:
+                    _basket_close = _aligned_bkt.mean(axis=1)
+                    _ext_pctile = _basket_ext_pctile(_basket_close)
+            except Exception:  # noqa: BLE001
+                _ext_pctile = None
+        handoff_context.append({
+            "basket": bname,
+            "n_members": len(members),
+            "is_extended": _is_ext,
+            "rs_21d_slope_sign": _rs21_sign,
+            "extension_pctile_vs_200d": _ext_pctile,
+        })
+
     # ── Payload ───────────────────────────────────────────────────────────────
     elapsed = time.monotonic() - t0
     payload: dict[str, Any] = {
@@ -1338,6 +1978,9 @@ def build(
         "rows": rows,
         "handoff_pairs": handoff_pairs_list,
         "rerating_watch": rerating_watch,
+        # LRV-W1 artifacts
+        "early_entry": early_entry_rows,
+        "handoff_context": handoff_context,
     }
 
     # ── Write artifact ────────────────────────────────────────────────────────
