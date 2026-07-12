@@ -222,11 +222,18 @@ def _derive_headline_state(
 ) -> str:
     """Derive the headline.state label from quality + RRP + overlay.
 
-    Contract table (frozen):
+    Contract table (v1.1 — amended by RLT-R13, 2026-07-12):
       benign-expansion                                    → benign_liquidity_tailwind
-      stress-expansion & mechanical(fed_share<0.5)
-                       & !rrp_exhausted                  → mechanical_liquidity_tailwind
-      stress-expansion & (rrp_exhausted | stress_conf.)  → stress_liquidity_expansion
+      stress-expansion & confirming_stress                → stress_liquidity_expansion
+      stress-expansion & !confirming_stress & mechanical
+                       (fed_share<0.5)                   → mechanical_liquidity_tailwind
+        (RRP exhaustion no longer gates mechanical — it becomes a plain-word
+        caveat in the summary instead of forcing stress classification)
+      stress-expansion & !confirming_stress
+                       & fed_share≥0.5                   → benign_liquidity_tailwind
+      stress-expansion & !confirming_stress
+                       & fed_share unknown               → stress_liquidity_expansion
+        (composition unattributable — stay conservative)
       neutral                                             → neutral_with_buffer
       neutral-hollow                                      → neutral_hollow
       contracting                                         → orderly_drain
@@ -242,10 +249,15 @@ def _derive_headline_state(
     if label == "benign-expansion":
         return "benign_liquidity_tailwind"
     if label == "stress-expansion":
+        if stress_confirming:
+            return "stress_liquidity_expansion"
         mechanical = fed_share is not None and fed_share < 0.5
-        if mechanical and not rrp_exhausted:
+        if mechanical:
             return "mechanical_liquidity_tailwind"
-        return "stress_liquidity_expansion"
+        if fed_share is None:
+            # composition unattributable — stay conservative
+            return "stress_liquidity_expansion"
+        return "benign_liquidity_tailwind"
     if label == "neutral":
         return "neutral_with_buffer"
     if label == "neutral-hollow":
@@ -459,43 +471,76 @@ def _tga_impulse_summary(
     return en, zh
 
 
-def _headline_summary(state: str, quality_label: str | None, overlay: str | None) -> str:
-    """One plain sentence, quality-caveated. No naked probabilities."""
-    _map = {
-        "benign_liquidity_tailwind": (
+def _headline_summary(
+    state: str,
+    quality_label: str | None = None,
+    overlay: str | None = None,
+    *,
+    mechanical: bool | None = None,
+    rrp_exhausted: bool | None = None,
+    stress_confirming: bool | None = None,
+) -> str:
+    """One plain sentence, flag-accurate and quality-caveated. No naked probabilities.
+
+    RRP exhaustion is a forward hazard caveat (appended when rrp_exhausted=True),
+    never a present-stress assertion. Summaries reflect what the engine has
+    already resolved — no OR-disjunctions printed when the branch is known.
+    """
+    _rrp_caveat = (
+        " RRP buffer is empty — the next liquidity drain hits bank reserves directly."
+        if rrp_exhausted is True else ""
+    )
+
+    if state == "benign_liquidity_tailwind":
+        return (
             "Fed balance-sheet expansion is the primary driver of improving net "
             "liquidity; conditions may support existing buy setups (quality "
             "caveat: context-tier only, cycle-ladder 21d odds basis)."
-        ),
-        "mechanical_liquidity_tailwind": (
-            "Net liquidity is expanding but the gain is largely TGA/RRP "
-            "plumbing mechanics rather than Fed asset growth — treat as "
-            "liquidity tailwind with low-quality caveat."
-        ),
-        "stress_liquidity_expansion": (
-            "Net liquidity is technically expanding but RRP is near-exhausted "
-            "or stress indicators are confirming — expansion quality is poor; "
-            "treat with caution, not as a clean tailwind."
-        ),
-        "neutral_with_buffer": (
+            + _rrp_caveat
+        )
+    if state == "mechanical_liquidity_tailwind":
+        base = (
+            "Net liquidity is expanding on Treasury/RRP plumbing (e.g. the Treasury "
+            "spending down its cash account), not Fed asset growth — a real but "
+            "transient tailwind."
+        )
+        if stress_confirming is False:
+            base += " Credit and funding stress gauges are not confirming stress."
+        return base + _rrp_caveat
+    if state == "stress_liquidity_expansion":
+        if stress_confirming:
+            return (
+                "Net liquidity is technically expanding but credit/funding stress "
+                "gauges are confirming stress — expansion quality is poor; treat "
+                "with caution, not as a clean tailwind." + _rrp_caveat
+            )
+        # fed_share unknown → conservative path
+        return (
+            "Net liquidity is expanding but its composition cannot be attributed — "
+            "treated conservatively, not as a clean tailwind." + _rrp_caveat
+        )
+    if state == "neutral_with_buffer":
+        return (
             "Net liquidity is broadly neutral with RRP buffer intact; no "
             "directional signal for buy setups at this time."
-        ),
-        "neutral_hollow": (
+        )
+    if state == "neutral_hollow":
+        return (
             "Net liquidity is neutral but RRP exhausted or composition is "
             "mechanical — buffer is hollow; net-neutral read with limited "
-            "downside cushion."
-        ),
-        "orderly_drain": (
+            "downside cushion." + _rrp_caveat
+        )
+    if state == "orderly_drain":
+        return (
             "Net liquidity is contracting in an orderly manner; conditions "
             "may steer toward headwind for buy setups (existing engine limits apply)."
-        ),
-        "data_degraded": (
+        )
+    if state == "data_degraded":
+        return (
             "Liquidity data is degraded or source is unavailable; "
             "plumbing context is not reliable for this cycle."
-        ),
-    }
-    return _map.get(state, "Liquidity plumbing context unavailable.")
+        )
+    return "Liquidity plumbing context unavailable."
 
 
 # ---------------------------------------------------------------------------
@@ -1097,7 +1142,14 @@ def compute(
     # ------------------------------------------------------------------
     headline_block: dict[str, Any] = {
         "state": headline_state,
-        "summary": _headline_summary(headline_state, quality_label, overlay),
+        "summary": _headline_summary(
+            headline_state,
+            quality_label,
+            overlay,
+            mechanical=quality_mechanical,
+            rrp_exhausted=quality_rrp_exhausted,
+            stress_confirming=quality_stress_confirming,
+        ),
     }
 
     # ------------------------------------------------------------------

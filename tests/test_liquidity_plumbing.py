@@ -10,8 +10,8 @@ Coverage:
   1.  top_level_schema_keys        — all required top-level keys are present
   2.  authority_constants           — score_raise=False, exact constant values
   3.  headline_benign_expansion     — benign-expansion → benign_liquidity_tailwind
-  4.  headline_stress_expansion_rrp — stress-expansion + rrp_exhausted → stress_liquidity_expansion
-  5.  headline_mechanical           — stress-expansion + fed_share<0.5 + !rrp_exhausted → mechanical_liquidity_tailwind
+  4.  rrp_exhausted_no_stress_is_mechanical — v1.1: rrp_exhausted + mechanical + !stress_confirming → mechanical_liquidity_tailwind + RRP caveat in summary
+  5.  headline_mechanical           — stress-expansion + fed_share<0.5 + !stress_confirming → mechanical_liquidity_tailwind
   6.  headline_neutral              — neutral overlay → neutral_with_buffer
   7.  headline_neutral_hollow       — neutral-hollow quality → neutral_hollow
   8.  headline_contracting          — contracting overlay → orderly_drain
@@ -305,23 +305,31 @@ class TestHeadlineStateDerivation:
             f"Expected benign_liquidity_tailwind, got {result['headline']['state']!r}"
         )
 
-    def test_stress_expansion_rrp_exhausted(self):
-        """stress-expansion + rrp_exhausted → stress_liquidity_expansion."""
+    def test_rrp_exhausted_no_stress_is_mechanical(self):
+        """v1.1 (RLT-R13): rrp_exhausted + mechanical composition + !confirming_stress
+        → mechanical_liquidity_tailwind; summary must contain the RRP caveat.
+        RRP exhaustion is no longer a hard stress gate — it becomes a plain-word
+        caveat appended to the summary."""
         result = _full_compute({
             "quality_label": "stress-expansion",
             "overlay": "expanding",
             "rrp_exhausted": True,
-            "fed_share": 0.8,
-            "mechanical": False,
-            "stress_overlay": True,
+            "fed_share": 0.35,   # < 0.5 → mechanical composition
+            "mechanical": True,
+            "stress_overlay": False,   # confirming_stress = False
             "degraded": False,
         })
-        assert result["headline"]["state"] == "stress_liquidity_expansion", (
-            f"Expected stress_liquidity_expansion, got {result['headline']['state']!r}"
+        assert result["headline"]["state"] == "mechanical_liquidity_tailwind", (
+            f"v1.1: rrp_exhausted + mechanical + !confirming_stress must yield "
+            f"mechanical_liquidity_tailwind, got {result['headline']['state']!r}"
+        )
+        assert "RRP buffer is empty" in result["headline"]["summary"], (
+            "Summary must contain the RRP caveat when rrp_exhausted=True"
         )
 
     def test_stress_expansion_stress_confirming(self):
-        """stress-expansion + stress_confirming → stress_liquidity_expansion (stress_overlay path)."""
+        """stress-expansion + stress_confirming → stress_liquidity_expansion (stress_overlay path).
+        Holds regardless of rrp_exhausted (stress_confirming is the decisive branch in v1.1)."""
         result = _full_compute({
             "quality_label": "stress-expansion",
             "overlay": "expanding",
@@ -335,9 +343,24 @@ class TestHeadlineStateDerivation:
             f"Expected stress_liquidity_expansion (stress_overlay path), "
             f"got {result['headline']['state']!r}"
         )
+        # Same result when rrp_exhausted=True: confirming_stress dominates
+        result_rrp = _full_compute({
+            "quality_label": "stress-expansion",
+            "overlay": "expanding",
+            "rrp_exhausted": True,
+            "fed_share": 0.8,
+            "mechanical": False,
+            "stress_overlay": True,
+            "degraded": False,
+        })
+        assert result_rrp["headline"]["state"] == "stress_liquidity_expansion", (
+            "confirming_stress=True + rrp_exhausted=True must still yield "
+            f"stress_liquidity_expansion, got {result_rrp['headline']['state']!r}"
+        )
 
     def test_mechanical_tailwind(self):
-        """stress-expansion + fed_share<0.5 + !rrp_exhausted → mechanical_liquidity_tailwind."""
+        """v1.1: stress-expansion + fed_share<0.5 + !confirming_stress → mechanical_liquidity_tailwind.
+        rrp_exhausted no longer gates mechanical (RLT-R13) — it only adds a caveat to the summary."""
         result = _full_compute({
             "quality_label": "stress-expansion",
             "overlay": "expanding",
@@ -427,6 +450,46 @@ class TestHeadlineStateDerivation:
         summary = result["headline"].get("summary")
         assert isinstance(summary, str) and len(summary) > 0, (
             "headline.summary must be a non-empty string"
+        )
+
+    def test_fed_driven_hollow_is_benign(self):
+        """v1.1 (RLT-R13): stress-expansion + fed_share≥0.5 + rrp_exhausted + !confirming_stress
+        → benign_liquidity_tailwind; summary contains RRP caveat."""
+        result = _full_compute({
+            "quality_label": "stress-expansion",
+            "overlay": "expanding",
+            "rrp_exhausted": True,
+            "fed_share": 0.6,   # ≥ 0.5 → not mechanical → benign branch
+            "mechanical": False,
+            "stress_overlay": False,   # confirming_stress = False
+            "degraded": False,
+        })
+        assert result["headline"]["state"] == "benign_liquidity_tailwind", (
+            f"v1.1: fed_share≥0.5 + rrp_exhausted + !confirming_stress must yield "
+            f"benign_liquidity_tailwind, got {result['headline']['state']!r}"
+        )
+        assert "RRP buffer is empty" in result["headline"]["summary"], (
+            "Summary must contain RRP caveat when rrp_exhausted=True"
+        )
+
+    def test_fed_share_unknown_is_conservative(self):
+        """v1.1 (RLT-R13): fed_share=None + rrp_exhausted + !confirming_stress
+        → stress_liquidity_expansion (conservative); summary mentions cannot be attributed."""
+        result = _full_compute({
+            "quality_label": "stress-expansion",
+            "overlay": "expanding",
+            "rrp_exhausted": True,
+            "fed_share": None,
+            "mechanical": False,
+            "stress_overlay": False,
+            "degraded": False,
+        })
+        assert result["headline"]["state"] == "stress_liquidity_expansion", (
+            f"v1.1: fed_share=None + !confirming_stress must yield "
+            f"stress_liquidity_expansion (conservative), got {result['headline']['state']!r}"
+        )
+        assert "cannot be attributed" in result["headline"]["summary"], (
+            "Summary must mention 'cannot be attributed' for the fed_share=None path"
         )
 
 
@@ -1548,3 +1611,63 @@ class TestPhaseStatusDynamic:
         assert ps["p3_reserve_balances"] == "integrated", (
             f"Expected 'integrated' with WRESBAL loaded, got {ps['p3_reserve_balances']!r}"
         )
+
+
+# ---------------------------------------------------------------------------
+# 33. WALCL staleness raw-cadence semantics (RLT-R13) — regime.liquidity_quality
+# ---------------------------------------------------------------------------
+
+class TestWalclStalenessRawCadence:
+    """RLT-R13: walcl_stale_days measures the RAW store series (data staleness),
+    not the 3-bd-lagged classifier view. A weekly H.4.1 series is flat 0-4
+    business days by cadence, so no on-schedule day may exceed the committee
+    chip threshold (>5); a missed weekly print must exceed it."""
+
+    def _weekly_frame(self, *, miss_last_print: bool = False) -> pd.DataFrame:
+        # 60 sessions Mon 2026-03-02 → Fri 2026-05-22 (no holidays in
+        # bdate_range); WALCL steps every Wednesday (H.4.1 weekly cadence).
+        idx = pd.bdate_range("2026-03-02", periods=60)
+        last_wed = max(d for d in idx if d.weekday() == 2)
+        vals: list[float] = []
+        step = 0
+        for d in idx:
+            if d.weekday() == 2 and not (miss_last_print and d == last_wed):
+                step += 1
+            vals.append(6700.0 + step)
+        f = pd.DataFrame(
+            {"walcl_bn": vals, "rrp_bn": 500.0, "tga_bn": 700.0}, index=idx
+        )
+        f["net_liquidity_bn"] = f["walcl_bn"] - f["rrp_bn"] - f["tga_bn"]
+        return f
+
+    def test_on_schedule_friday_is_two_days_stale(self):
+        from engine.regime import liquidity_quality
+
+        f = self._weekly_frame()
+        q = liquidity_quality(f, overlay=None, asof=f.index[-1])
+        assert q is not None
+        # Frame ends Friday; last H.4.1 step was Wednesday → raw data age = 2.
+        # The old lag-3 semantics reported 4 here — this pin fails if the
+        # counter reverts to the lagged view.
+        assert q["walcl_stale_days"] == 2
+
+    def test_on_schedule_week_never_exceeds_chip_threshold(self):
+        from engine.regime import liquidity_quality
+
+        f = self._weekly_frame()
+        for asof in f.index[-5:]:
+            q = liquidity_quality(f, overlay=None, asof=asof)
+            assert q is not None
+            assert q["walcl_stale_days"] <= 4, (
+                f"on-schedule cadence must stay <=4, got "
+                f"{q['walcl_stale_days']} at {asof.date()}"
+            )
+
+    def test_missed_print_exceeds_chip_threshold(self):
+        from engine.regime import liquidity_quality
+
+        f = self._weekly_frame(miss_last_print=True)
+        q = liquidity_quality(f, overlay=None, asof=f.index[-1])
+        assert q is not None
+        # Last step was the second-to-last Wednesday → 7 flat sessions.
+        assert q["walcl_stale_days"] > 5
