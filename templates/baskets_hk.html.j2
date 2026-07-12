@@ -388,5 +388,69 @@ if(document.readyState!=='loading') boot(); else document.addEventListener('DOMC
 </script>
 <script src="allocation_scorecard.js"></script>
 <script src="theme.js"></script>
+<!-- RC-R14: rotation-event chips on basket cards (display-only context) -->
+<style>
+  .rc-hk-chip { display:inline-block; font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--link) 35%,transparent);
+    background:color-mix(in srgb,var(--link) 8%,transparent); color:var(--link);
+    margin-top:5px; text-decoration:none; cursor:pointer; white-space:nowrap; }
+  .rc-hk-chip:hover { background:color-mix(in srgb,var(--link) 16%,transparent); }
+</style>
+<script>
+(function(){
+'use strict';
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+// Inject rotation-event handoff chips onto matching basket cards.
+// Basket cards in baskets_hk are JS-rendered with data-id = basket key (e.g. "hk_china_tech").
+function injectChipsHk(payload){
+  if(!payload||!payload.active||!payload.active.length) return;
+  // Map leg key → event(s)
+  var byLeg={};
+  payload.active.forEach(function(ev){
+    [ev.from_leg,ev.to_leg].forEach(function(leg){
+      if(!leg) return;
+      if(!byLeg[leg.key]) byLeg[leg.key]=[];
+      byLeg[leg.key].push(ev);
+    });
+  });
+  Object.keys(byLeg).forEach(function(legKey){
+    // Cards rendered by JS: data-id="<basket_id>" (no "b-" prefix in baskets_hk)
+    var card=document.querySelector('[data-id="'+legKey+'"]');
+    if(!card) return;
+    var ev=byLeg[legKey][0];
+    var role=ev.from_leg.key===legKey?'from':'to';
+    var zh=isZh();
+    var label=role==='from'
+      ?(zh?'⟲ 轮出 → '+(ev.to_leg.name_zh||ev.to_leg.name_en)+' 第'+ev.day_n+'天'
+           :'⟲ out→'+(ev.to_leg.name_en)+' day '+ev.day_n)
+      :(zh?'⟲ 轮入自 '+(ev.from_leg.name_zh||ev.from_leg.name_en)+' 第'+ev.day_n+'天'
+           :'⟲ in from '+(ev.from_leg.name_en)+' day '+ev.day_n);
+    // Dedup guard: remove existing chip before appending
+    var prev=card.querySelector('.rc-hk-chip');
+    if(prev) prev.remove();
+    var chip=document.createElement('a');
+    chip.className='rc-hk-chip';
+    chip.href='hk_stocks.html#rc-events-hk';
+    chip.textContent=label;
+    card.appendChild(chip);
+  });
+}
+function tryInjectHk(){
+  fetch('marketdata/rotation_events_hk.json',{cache:'no-cache'})
+    .then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+    .then(function(data){if(data) injectChipsHk(data);});
+}
+// Cards are JS-rendered after boot(). Wait for at least one card to appear.
+var _hkTries=0;
+function waitAndInjectHk(){
+  var cards=document.querySelectorAll('.cards .card[data-id]');
+  if(cards.length>0){tryInjectHk();return;}
+  if(_hkTries++<25) setTimeout(waitAndInjectHk,300);
+}
+waitAndInjectHk();
+var _rcHkChipObs=new MutationObserver(function(){tryInjectHk();});
+_rcHkChipObs.observe(document.documentElement,{attributes:true,attributeFilter:['data-lang']});
+})();
+</script>
 </body>
 </html>

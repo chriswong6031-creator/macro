@@ -1049,6 +1049,9 @@ lanes:
         args: [--china]
       - id: build_hk
         module: scripts.build_hk
+      - id: build_rotation_events_hk
+        module: scripts.build_rotation_events_hk
+        note: non-fatal; RC-R14 display-tier — HK rotation-event detector port; reads hkbasketdata/baskets.json in-process (cheap, few dozen series); no ETF dependency; southbound context embedded in payload (display receipt only — never a detector input, HKRV-R2)
       - id: build_baskets_china
         module: scripts.build_baskets_china
         note: >

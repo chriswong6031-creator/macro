@@ -3064,6 +3064,138 @@
 
   {% endif %}{# /mode != macro — sector rotation #}
 
+  {% if mode != 'macro' %}
+  <!-- RC-R14: HK rotation events strip (display/context tier only) -->
+  <div class="panel span12" id="rc-events-hk-panel">
+<style>
+  #rc-events-hk-panel h2 { font-size:16px; font-weight:800; letter-spacing:-.015em; margin:0 0 4px; }
+  .rc-sub-hk { color:var(--muted); font-size:12px; margin:0 0 10px; max-width:84ch; line-height:1.5; }
+  .rc-grid-hk { display:flex; flex-wrap:wrap; gap:10px; }
+  .rc-card-hk { flex:1 1 300px; min-width:260px; border-radius:12px; border:1px solid var(--line);
+    background:var(--panel2); padding:12px 14px; }
+  .rc-card-hk.rc-major { border-top:3px solid var(--warn); }
+  .rc-card-hk.rc-notable { border-top:3px solid var(--link); }
+  .rc-hd-hk { display:flex; align-items:baseline; gap:7px; margin-bottom:5px; flex-wrap:wrap; }
+  .rc-title-hk { font-weight:800; font-size:13px; }
+  .rc-sev-hk { font-size:9.5px; font-weight:700; text-transform:uppercase; padding:2px 7px; border-radius:6px;
+    background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); letter-spacing:.04em; }
+  .rc-sev-hk.major { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }
+  .rc-sev-hk.notable { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  .rc-day-hk { font-size:11px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; }
+  .rc-copy-hk { font-size:12.5px; line-height:1.55; }
+  .rc-receipts-hk { margin-top:6px; font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .rc-stale-hk { font-style:italic; }
+  .rc-quiet-hk { color:var(--muted); font-size:12.5px; padding:6px 0; }
+  .rc-sb-hk { margin-top:8px; font-size:11px; color:var(--muted); line-height:1.6; }
+  .rc-sb-hk b { color:var(--text); }
+  .rc-caveat-hk { margin-top:8px; font-size:10.5px; color:var(--muted); line-height:1.55; }
+</style>
+    <h2 id="rc-events-hk">⟲ {{ t('HK Basket Rotation Events', '港股篮子轮动事件') }}</h2>
+    <p class="rc-sub-hk">{{ t(
+      'Leadership handoffs across curated HK thematic baskets: blowoff-crash on one basket + fresh-low turn on a peer + pair ratio confirming. Display/context tier — no rank, gate, or size anywhere. Binding kills: no cycle-position entry-confluence, southbound flow is context only (never a detector input, HKRV-R2).',
+      '精选港股主题篮子间的领导权交接：某篮子冲顶崩落 + 同类篮子自新低回升 + 比值确认。仅展示/上下文层——不排名、不设门控、不调仓。约束条款：不做周期位置叠加，南向资金仅作上下文（绝非检测器输入，HKRV-R2）。') }}</p>
+    <div id="rc-events-hk-content"><p class="rc-quiet-hk"><span class="l-en">Loading…</span><span class="l-zh">加载中…</span></p></div>
+<script>
+(function(){
+'use strict';
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+function t(en,zh){return isZh()&&zh?zh:en;}
+function pc(v,dp){return v==null?'—':((v>0?'+':'')+(v*100).toFixed(dp==null?1:dp)+'%');}
+
+function renderHk(ev){
+  var el=document.getElementById('rc-events-hk-content');
+  if(!el) return;
+  var html='';
+  var active=(ev&&ev.active)||[];
+  if(!active.length){
+    html+='<p class="rc-quiet-hk">'+t('No active HK basket rotation events — quiet state is valid.',
+      '当前无活跃港股篮子轮动事件——安静状态是有效状态。')+'</p>';
+  }else{
+    var sevRank={major:0,notable:1,standard:2};
+    active=active.slice().sort(function(a,b){
+      var d=(sevRank[a.severity]!=null?sevRank[a.severity]:9)-(sevRank[b.severity]!=null?sevRank[b.severity]:9);
+      return d!==0?d:String(b.started||'').localeCompare(String(a.started||''));
+    });
+    html+='<div class="lst-wrap"><div class="rc-grid-hk lst-collapse lst-cap4 is-collapsed">';
+    active.forEach(function(e){
+      var sev=e.severity||'standard';
+      var title=isZh()
+        ? esc(e.from_leg.name_zh)+' → '+esc(e.to_leg.name_zh)+'（'+esc(e.sector_name_zh)+'）'
+        : esc(e.from_leg.name_en)+' → '+esc(e.to_leg.name_en)+' ('+esc(e.sector_name_en)+')';
+      var r=e.receipts||{};
+      var rec='';
+      if(r.blowoff&&r.turn&&r.ratio){
+        rec=t('blowoff ','冲顶 ')+'−'+(r.blowoff.drawdown_pct*100).toFixed(0)+'%'
+          +' · '+t('off low ','低点回升 ')+pc(r.turn.off_low_pct)
+          +' · '+t('ratio ','比值 ')+pc(r.ratio.ratio_chg_10s)+'/10s';
+        if(!e.confirmed_tonight){
+          rec+=' <span class="rc-stale-hk">'+t('(as of last confirmation)','（截至最近一次确认）')+'</span>';
+        }
+      }
+      html+='<div class="rc-card-hk rc-'+esc(sev)+'">'
+        +'<div class="rc-hd-hk"><span class="rc-sev-hk '+esc(sev)+'">'+esc(sev)+'</span>'
+        +'<span class="rc-title-hk">'+title+'</span>'
+        +'<span class="rc-day-hk">'+t('day ','第')+esc(e.day_n)+t('',' 天')+' · '+esc(e.started)+'</span></div>'
+        +'<div class="rc-copy-hk">'+esc(isZh()?e.copy_zh:e.copy_en)+'</div>'
+        +(rec?'<div class="rc-receipts-hk">'+rec+'</div>':'')
+        +'</div>';
+    });
+    html+='</div>';
+    if(active.length>4){
+      html+='<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">'
+        +t('Show more','显示更多')+' ▾</span><span class="lm-hide">'+t('Show less','收起')+' ▴</span></button>';
+    }
+    html+='</div>';
+  }
+
+  // ── Southbound context line (display receipt only — never a detector input) ──────
+  // Aggregate net z (252d) from china_connect/southbound; n_adding from hk_southbound/summary.
+  // Binding: per-name southbound as confirmer = NULL (HKRV-R2); as timing leg = REJECTED.
+  var sbCtx=(ev&&ev.southbound_ctx)||null;
+  var sbHtml='<div class="rc-sb-hk">';
+  if(sbCtx&&sbCtx.net_z!=null){
+    var nz=sbCtx.net_z;
+    var nzStr=(nz>=0?'+':'')+nz.toFixed(2)+'σ';
+    sbHtml+='<b>'+t('Southbound net z','南向净买入z')+': '+esc(nzStr)+'</b>';
+    if(nz>1) sbHtml+=t(' (elevated inflow)',' （流入偏强）');
+    else if(nz<-1) sbHtml+=t(' (elevated outflow)',' （流出偏强）');
+    if(sbCtx.n_adding!=null) sbHtml+=' · '+t('names adding','个股南向加仓')+': <b>'+esc(sbCtx.n_adding)+'</b>';
+    sbHtml+=' — ';
+  }else{
+    sbHtml+=t('Southbound aggregate flow: —','南向资金聚合流向：—')+' — ';
+  }
+  sbHtml+='<span style="font-style:italic">'+t('context only — not a detector input or confirmation criterion',
+    '仅作上下文参考——不作检测器输入或确认标准')+'</span></div>';
+  html+=sbHtml;
+
+  html+='<div class="rc-caveat-hk">'
+    +t('Display/context tier only — no rank, gate, or size anywhere. Southbound shown as context receipt, never a witness or gate (HKRV-R2). Events ledgered append-only; expected-NULL until RC-R9 studies mature. as-of: ',
+       '仅展示/上下文层——不排名、不设门控、不调仓位。南向资金仅作上下文凭据（HKRV-R2，绝非见证或门控）。事件按只增账本记录；在RC-R9研究成熟前为预期无效应声明。截至：')
+    +esc((ev&&ev.as_of)||'—')+'</div>';
+  el.innerHTML=html;
+}
+
+function loadHk(){
+  fetch('marketdata/rotation_events_hk.json',{cache:'no-cache'})
+    .then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+    .then(function(data){
+      if(!data){
+        var el=document.getElementById('rc-events-hk-content');
+        if(el) el.innerHTML='<p class="rc-quiet-hk"><span class="l-en">HK rotation-event data unavailable.</span><span class="l-zh">港股轮动事件数据暂不可用。</span></p>';
+        return;
+      }
+      renderHk(data);
+    });
+}
+loadHk();
+var _rcHkObs=new MutationObserver(loadHk);
+_rcHkObs.observe(document.documentElement,{attributes:true,attributeFilter:['data-lang']});
+})();
+</script>
+  </div>
+  {% endif %}{# /mode != macro — RC-R14 HK rotation events #}
+
   {% if mode != 'stocks' %}
   <!-- breadth + cross-market ratios -->
   <div class="panel span4">

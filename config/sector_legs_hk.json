@@ -1,0 +1,70 @@
+{
+  "version": "1.0",
+  "registered": "2026-07-12",
+  "region": "hk",
+  "masterplan": "research/ROTATION_COMMAND_MASTERPLAN_BY_FABLE.md",
+  "notes": {
+    "tiers": "tier is HAND-DECLARED (primary = dominant-liquidity / market-cap leader inside the complex; secondary = everything else). Honest approximation for W1 severity.",
+    "source": "Legs derive from the 17 curated HK thematic baskets in data/baskets_hk/membership.json. Close series are reconstructed from the normalized level chart data in site/hkbasketdata/baskets.json — the same series the HK baskets board reads.",
+    "omitted_baskets": [
+      "hk_consumer (China Consumer Brands — Consumer & Healthcare category; no true rotation peer in the HK basket set)",
+      "hk_biotech (Biotech, Pharma & CXO — Consumer & Healthcare; no close peer basket)",
+      "hk_ev (China EV & Autos — sole Autos basket; no peer)",
+      "hk_property (Property & REITs — sole property basket; no peer)",
+      "hk_gaming (Macau Gaming — sole gaming basket; no peer)",
+      "hk_industrials (Industrials & Infrastructure — sole industrials basket; no peer)"
+    ],
+    "binding_kills": [
+      "Rotation x cycle-position entry-confluence — DO NOT TEST (research/DO_NOT_REBUILD.md)",
+      "Per-name southbound as Confirming Turn confirmer — NULL (HKRV-R2; re-run gate ~2027)",
+      "Southbound as timing leg — REJECTED (CHINA_ENGINE_REASSESSMENT)",
+      "Any rank/gate/size/stance change from these events — FORBIDDEN (display-context tier only)",
+      "Feeding HKRV CONFIRMING TURN K-counts — FORBIDDEN (HKRV-R5)"
+    ]
+  },
+  "sectors": [
+    {
+      "key": "hk_internet_tech",
+      "etf": null,
+      "name_en": "China Tech & Internet",
+      "name_zh": "中资科技与互联网",
+      "legs": [
+        {"key": "hk_platform_tech",  "basket_hk": "hk_platform_tech",  "tier": "primary",   "name_en": "China Platform Megacaps",  "name_zh": "中资平台科技龙头"},
+        {"key": "hk_china_tech",     "basket_hk": "hk_china_tech",     "tier": "secondary", "name_en": "China Tech & Internet",    "name_zh": "中资科技与互联网"},
+        {"key": "hk_tech_hardware",  "basket_hk": "hk_tech_hardware",  "tier": "secondary", "name_en": "Tech Hardware & Semis",    "name_zh": "科技硬件与半导体"}
+      ]
+    },
+    {
+      "key": "hk_financials",
+      "etf": null,
+      "name_en": "HK & China Financials",
+      "name_zh": "港中金融",
+      "legs": [
+        {"key": "hk_banks",    "basket_hk": "hk_banks",    "tier": "primary",   "name_en": "Banks (H + HK)",           "name_zh": "银行（H股及港股���"},
+        {"key": "hk_insurers", "basket_hk": "hk_insurers", "tier": "secondary", "name_en": "Insurers",                 "name_zh": "保险"},
+        {"key": "hk_conglo",   "basket_hk": "hk_conglo",   "tier": "secondary", "name_en": "Conglomerates & Exchange", "name_zh": "综合企业与交易所"}
+      ]
+    },
+    {
+      "key": "hk_resources",
+      "etf": null,
+      "name_en": "Energy & Resources",
+      "name_zh": "能源与资源",
+      "legs": [
+        {"key": "hk_energy",    "basket_hk": "hk_energy",    "tier": "primary",   "name_en": "Energy (H-shares)", "name_zh": "能源（H股）"},
+        {"key": "hk_materials", "basket_hk": "hk_materials", "tier": "secondary", "name_en": "Materials & Metals", "name_zh": "材料与有色金属"},
+        {"key": "hk_miners",    "basket_hk": "hk_miners",    "tier": "secondary", "name_en": "Diversified Miners", "name_zh": "多元矿业"}
+      ]
+    },
+    {
+      "key": "hk_income",
+      "etf": null,
+      "name_en": "Telecom, Utilities & Income",
+      "name_zh": "电信公用与收息",
+      "legs": [
+        {"key": "hk_telco_util", "basket_hk": "hk_telco_util", "tier": "primary",   "name_en": "Telecom & Utilities",         "name_zh": "电信与公用"},
+        {"key": "hk_dividend",   "basket_hk": "hk_dividend",   "tier": "secondary", "name_en": "High-Dividend Blue Chips",    "name_zh": "高息蓝筹"}
+      ]
+    }
+  ]
+}
