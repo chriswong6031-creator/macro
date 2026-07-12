@@ -3036,6 +3036,58 @@ def alloc_card_state() -> dict:
         return {"present": False}
 
 
+def _ms_history_view() -> list[dict] | None:
+    """Last up-to-60 sessions from market_state/forward_log.jsonl.
+    Returns list of {asof, score} dicts (de-duped by asof, keep last), or None
+    when the file is absent/unreadable.  Graceful — never fatal."""
+    try:
+        p = config.data_dir() / "market_state" / "forward_log.jsonl"
+        if not p.exists():
+            return None
+        rows: dict[str, int] = {}
+        for line in p.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                asof = obj.get("asof")
+                score = obj.get("score")
+                if asof and score is not None:
+                    rows[asof] = int(score)
+            except Exception:  # noqa: BLE001
+                continue
+        if not rows:
+            return None
+        ordered = sorted(rows.items())[-60:]
+        return [{"asof": k, "score": v} for k, v in ordered]
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return None
+
+
+def _idx_spark_view() -> dict | None:
+    """Last 20 daily closes for SPY/QQQ/^DJI/^RUT from the price store.
+    Re-uses the same store.read() loader as index_health_rows.
+    Returns {ticker: [float, ...]} or None on total failure."""
+    tickers = [("SPY", "SPY"), ("QQQ", "QQQ"), ("_DJI", "^DJI"), ("_RUT", "^RUT")]
+    out: dict[str, list[float]] = {}
+    try:
+        for store_key, out_key in tickers:
+            try:
+                df = store.read("yahoo", store_key)
+                if df is None or df.empty or "close" not in df.columns:
+                    continue
+                c = df["close"].astype(float).dropna().tail(20)
+                if len(c) < 2:
+                    continue
+                out[out_key] = [float(v) for v in c]
+            except Exception:  # noqa: BLE001 — one ticker failure skips that tile only
+                continue
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
+    return out if out else None
+
+
 # Index drawdown/risk MODEL integrated onto the macro page (the predictive layer
 # from the S&P Vector engine — the allocation STRATEGY itself lives on spvector.html).
 _RISK_LEG_COLORS = {"drawdown": "#e07070", "recession": "#e0a030", "nfci": "#9b8de0",
@@ -3658,6 +3710,8 @@ def main() -> int:
         fear_euphoria=fear_euphoria_synthesis(latest, f),
         regime_snap=_rs_view,
         market_state=market_state_view(latest, f),  # Green/Yellow/Red market-state command-center (display-only)
+        ms_history=_ms_history_view(),    # v5 scorecard: last ≤60 sessions {asof,score} — graceful absent
+        idx_spark=_idx_spark_view(),      # v5 scorecard: 20-point sparklines SPY/QQQ/^DJI/^RUT — graceful absent
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
         vol_shock=_vol_shock_view(latest, event_risk),  # forward vol-shock risk gauge (display-only)
         froth_fragility=_froth_fragility_view(latest),  # euphoria + hidden-distribution top-risk gauge (display-only)

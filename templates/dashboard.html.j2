@@ -1716,6 +1716,13 @@
 </style>
 </head>
 <body class="{{ 'page-stocks' if mode == 'stocks' else 'page-macro mx4-grid' }}">
+{% if mode != 'stocks' %}
+{# MX5 aurora backdrop — fixed-position static radial blooms; NOT background-attachment:fixed
+   (mobile Safari artifact + CDN screenshot failure); scoped to grid view via CSS.
+   Also the shared popover backdrop (one node, reused by both popovers). #}
+<div class="mx5-aurora" aria-hidden="true"><div class="mx5-a3"></div><div class="mx5-a4"></div></div>
+<div class="mx5-popover-backdrop" id="mx5PopBackdrop" onclick="if(window.mx5CloseAllPopovers)mx5CloseAllPopovers()"></div>
+{% endif %}
 <nav class="site-nav">
     {% include "_navlinks.html.j2" %}
   <div class="nav-search">
@@ -3373,151 +3380,17 @@ body.page-macro.mx4-grid #sx-risk-v2:not([data-open]){
   /* still keep order:-1 so when opened it goes to top */
 }
 
-/* ══════════════════════════════════════════════════════════
-   S2 — VERDICT BAND (grid view only)
-   3-zone horizontal band appended after .mx2-hero inside
-   #regime-radar.  Hides in ledger view.
-   ══════════════════════════════════════════════════════════ */
-
-/* ── Grid view: the whole #regime-radar panel IS the verdict band.
-   Zone 1 = .mx2-hero (existing markup, compacted below — never duplicated);
-   zones 2 + 3 (THE RISK / WHAT TO DO) live in .mx4-verdict-band beside it. ── */
-body.page-macro.mx4-grid #regime-radar{
-  display:grid;
-  grid-template-columns:minmax(0,4.6fr) minmax(0,7.4fr);
-  gap:12px;
-  align-items:stretch;
-}
-body.page-macro.mx4-grid .mx4-verdict-band{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  gap:12px;
-  min-width:0;
-}
-/* Hide band in ledger view */
-body.page-macro .mx4-verdict-band{display:none;}
-
-/* Zone-1 card chrome on the hero — grid view only; ledger hero untouched */
-body.page-macro.mx4-grid .mx2-hero{
-  border-left:3px solid var(--ms-c,var(--isle-evidence));
-  border-radius:9px;
-  background:var(--panel2);
-  padding:14px 16px 12px;
-  min-width:0;
-  display:flex;flex-direction:column;
-}
-body.page-macro.mx4-grid .mx2-hero .ms-verdict{display:flex;flex-direction:column;flex:1;min-height:0}
-/* zone-1 reading order: score panel first, then thesis · flip · regime sub-line */
-body.page-macro.mx4-grid .mx2-hero .mx2-hero-row{order:1;display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
-body.page-macro.mx4-grid .mx2-hero .v-thesis{order:2;font-size:16px;line-height:1.5;margin:0 0 6px}
-body.page-macro.mx4-grid .mx2-hero .v-override{order:3;font-size:12px}
-body.page-macro.mx4-grid .mx2-hero .v-flip{order:4;font-size:12px}
-body.page-macro.mx4-grid .mx2-hero .mx2-hero-sub{order:5;margin:auto 0 0}
-body.page-macro.mx4-grid .mx2-score-block{padding:10px 12px;min-width:0;width:100%}
-body.page-macro.mx4-grid .mx2-score-block .v-score{font-size:44px}
-body.page-macro.mx4-grid .mx2-hero-ctx{max-width:none}
-/* Stack: hero above the two cards on narrow desktop; single column on mobile */
-@media(max-width:1100px){
-  body.page-macro.mx4-grid #regime-radar{grid-template-columns:1fr;}
-}
-@media(max-width:700px){
-  body.page-macro.mx4-grid .mx4-verdict-band{grid-template-columns:1fr;}
-}
-
-/* Shared band zone card */
-body.page-macro .mx4-bzone{
-  border-left:3px solid var(--isle-color,var(--line));
-  border-radius:9px;
-  background:var(--panel2);
-  padding:14px 16px;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  min-height:120px;
-}
-body.page-macro .mx4-bzone-eyebrow{
-  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--isle-color,var(--ink-3));
-  display:flex;align-items:center;gap:6px;
-}
-body.page-macro .mx4-bzone-eyebrow::after{
-  content:'';flex:1;height:1px;
-  background:color-mix(in srgb,var(--isle-color,var(--line)) 30%,transparent);
-}
-
-/* Zone 1 — regime zone (extra: label, mini score, flip caption) */
-body.page-macro .mx4-bzone-label{
-  font-size:16px;font-weight:700;color:var(--ink-1);line-height:1.3;
-}
-body.page-macro .mx4-bzone-flip-caption{
-  font-size:10px;color:var(--ink-3);margin-top:auto;line-height:1.4;
-}
-/* Mini score row in zone-1 */
-body.page-macro .mx4-bzone-score{
-  display:flex;align-items:center;gap:8px;margin-top:4px;
-}
-body.page-macro .mx4-bzone-score-num{
-  font-size:28px;font-weight:900;line-height:1;
-  color:var(--isle-color,var(--ink-1));font-variant-numeric:tabular-nums;
-}
-body.page-macro .mx4-bzone-score-denom{
-  font-size:11px;color:var(--ink-3);align-self:flex-end;margin-bottom:2px;
-}
-body.page-macro .mx4-bzone-score-bar{
-  flex:1;height:5px;border-radius:3px;
-  background:color-mix(in srgb,var(--muted) 18%,transparent);
-  position:relative;overflow:hidden;
-}
-body.page-macro .mx4-bzone-score-fill{
-  height:100%;border-radius:3px;
-  background:var(--isle-color,var(--up));
-  transition:width .4s ease;
-}
-/* grid-only utility: visible only in mx4-grid, hidden in ledger */
+/* ── grid-only utility: visible only in mx4-grid, hidden in ledger ── */
 body.page-macro .mx4-grid-only{display:none;}
 body.page-macro.mx4-grid .mx4-grid-only{display:block;}
 
-/* Zone 2 — risk */
-body.page-macro .mx4-bzone-risk-headline{
-  font-size:13px;font-weight:700;color:var(--ink-1);line-height:1.4;
-}
-body.page-macro .mx4-bzone-risk-headline.risk-off{color:var(--down);}
-body.page-macro .mx4-bzone-risk-headline.caution{color:var(--warn);}
-body.page-macro .mx4-bzone-risk-headline.ok{color:var(--up);}
-body.page-macro .mx4-bzone-scare-list{
-  display:flex;flex-direction:column;gap:4px;margin-top:2px;
-}
-body.page-macro .mx4-scare-row{
-  display:grid;grid-template-columns:minmax(0,1fr) 64px 32px;
-  align-items:center;gap:6px;font-size:11px;
-}
-body.page-macro .mx4-scare-name{color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-body.page-macro .mx4-scare-bar-track{height:4px;border-radius:2px;background:color-mix(in srgb,var(--muted) 18%,transparent);}
-body.page-macro .mx4-scare-bar-fill{height:4px;border-radius:2px;}
-body.page-macro .mx4-scare-score{font-size:10px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2);}
-body.page-macro .mx4-bzone-risk-faded{
-  font-size:10px;color:var(--ink-3);margin-top:4px;border-top:1px solid var(--line);padding-top:5px;
-  display:flex;flex-wrap:wrap;gap:4px;align-items:center;
-}
-body.page-macro .mx4-risk-btn{
-  cursor:pointer;
-}
-body.page-macro .mx4-risk-btn:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:6px;}
+/* ── Hide mx4-verdict-band (removed in v5) in all views ─────────── */
+body.page-macro .mx4-verdict-band{display:none!important;}
 
-/* Zone 3 — what to do */
-body.page-macro .mx4-bzone-todo-list{
-  display:flex;flex-direction:column;gap:6px;margin-top:2px;
-}
-body.page-macro .mx4-todo-row{
-  display:grid;grid-template-columns:10px 1fr;gap:6px;align-items:baseline;
-  font-size:12px;line-height:1.45;
-}
-body.page-macro .mx4-todo-dot{
-  width:7px;height:7px;border-radius:50%;display:inline-block;
-  background:var(--todo-dot-color,var(--ink-3));margin-top:3px;flex-shrink:0;
-}
-body.page-macro .mx4-todo-text{color:var(--ink-1);}
-body.page-macro .mx4-todo-text b{font-weight:700;}
+/* ── In grid view: sx-evidence + sx-risk-v2 faces hidden (popovers serve
+   as their glance layer); trays still open full-width from the rack. ── */
+body.page-macro.mx4-grid #sx-evidence .sxg-face{display:none!important;}
+/* sx-risk-v2 face already hidden via existing rule body.page-macro.mx4-grid #sx-risk-v2 .sxg-face */
 
 /* ══════════════════════════════════════════════════════════
    S2 — EVIDENCE face full content
@@ -3603,6 +3476,373 @@ body.page-macro .sxg-fed-path-lbl{color:var(--ink-3);min-width:110px;flex-shrink
 body.page-macro .sxg-fed-path-bar{flex:1;height:4px;border-radius:2px;background:color-mix(in srgb,var(--muted) 18%,transparent);position:relative;}
 body.page-macro .sxg-fed-path-fill{height:4px;border-radius:2px;background:var(--up);position:absolute;top:0;left:0;}
 body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-1);}
+
+</style>
+{% endif %}
+{% if mode != 'stocks' %}
+<style id="mx5-css">
+/* ═══════════════════════════════════════════════════════════════════
+   MX5 — Aurora-Glass command scorecard skin (v5_final rev2, 2026-07-12)
+   ALL selectors scoped under body.page-macro.mx4-grid (grid view only).
+   Ledger view (body.page-macro without .mx4-grid) is pixel-untouched.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── v5 glass tokens (grid view override layer) ─────────────────── */
+body.page-macro.mx4-grid {
+  --mx5-glass-bg:      rgba(255,255,255,.10);
+  --mx5-pop-bg:        rgba(13,18,26,.96);
+  --mx5-glass-border:  rgba(255,255,255,.12);
+  --mx5-glass-shadow:  0 8px 32px rgba(0,0,0,.55), 0 1.5px 0 rgba(255,255,255,.07) inset;
+  --mx5-glass-hover:   0 12px 40px rgba(0,0,0,.65), 0 1.5px 0 rgba(255,255,255,.09) inset;
+  --mx5-blur:          blur(20px);
+  --mx5-radius-card:   18px;
+  --mx5-radius-pill:   999px;
+  --mx5-accent:        #22d97a;
+  --mx5-accent-glow:   rgba(34,217,122,.30);
+  --mx5-accent-dim:    rgba(34,217,122,.10);
+  --mx5-warn:          #f59e0b;
+  --mx5-warn-dim:      rgba(245,158,11,.10);
+}
+[data-theme="light"] body.page-macro.mx4-grid {
+  --mx5-glass-bg:      rgba(255,255,255,.82);
+  --mx5-pop-bg:        rgba(255,255,255,.97);
+  --mx5-glass-border:  rgba(0,0,0,.06);
+  --mx5-glass-shadow:  0 4px 24px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.95) inset;
+  --mx5-glass-hover:   0 8px 32px rgba(0,0,0,.13), 0 1px 0 rgba(255,255,255,.95) inset;
+}
+
+/* ── Aurora backdrop (fixed position, grid-view only) ───────────── */
+body.page-macro.mx4-grid .mx5-aurora{
+  position:fixed;inset:0;
+  pointer-events:none;z-index:0;overflow:hidden;
+}
+body.page-macro.mx4-grid .mx5-aurora::before{
+  content:"";position:absolute;
+  width:900px;height:700px;top:-200px;left:-150px;
+  border-radius:50%;filter:blur(90px);
+  background:radial-gradient(ellipse,rgba(34,217,122,.12) 0%,transparent 70%);
+}
+body.page-macro.mx4-grid .mx5-aurora::after{
+  content:"";position:absolute;
+  width:700px;height:600px;bottom:-100px;right:-100px;
+  border-radius:50%;filter:blur(90px);
+  background:radial-gradient(ellipse,rgba(99,102,241,.10) 0%,transparent 70%);
+}
+body.page-macro.mx4-grid .mx5-aurora .mx5-a3{
+  position:absolute;width:600px;height:500px;
+  top:40%;left:50%;transform:translate(-50%,-50%);
+  border-radius:50%;filter:blur(90px);
+  background:radial-gradient(ellipse,rgba(34,217,122,.07) 0%,transparent 70%);
+}
+body.page-macro.mx4-grid .mx5-aurora .mx5-a4{
+  position:absolute;width:800px;height:600px;bottom:-150px;left:20%;
+  border-radius:50%;filter:blur(90px);
+  background:radial-gradient(ellipse,rgba(99,102,241,.08) 0%,transparent 70%);
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora::before{background:radial-gradient(ellipse,rgba(14,165,98,.06) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora::after {background:radial-gradient(ellipse,rgba(99,102,241,.05) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora .mx5-a3{background:radial-gradient(ellipse,rgba(14,165,98,.04) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora .mx5-a4{background:radial-gradient(ellipse,rgba(99,102,241,.04) 0%,transparent 70%);}
+@media(prefers-reduced-motion:reduce){
+  body.page-macro.mx4-grid .mx5-aurora::before,
+  body.page-macro.mx4-grid .mx5-aurora::after,
+  body.page-macro.mx4-grid .mx5-aurora .mx5-a3{animation:none;}
+}
+
+/* ── Command Scorecard — #regime-radar restyled in grid view ─────── */
+/* In grid view, #regime-radar becomes a two-column glass card:
+   left = gauge cluster, right = 60-session path (hidden ≤700px) */
+body.page-macro.mx4-grid #regime-radar{
+  background:var(--mx5-glass-bg);
+  border:1px solid var(--mx5-glass-border);
+  border-radius:var(--mx5-radius-card);
+  backdrop-filter:var(--mx5-blur);
+  box-shadow:var(--mx5-glass-shadow);
+  padding:0;overflow:visible;
+  display:grid;
+  grid-template-columns:380px 1fr;
+  gap:0;
+  min-height:320px;
+  position:relative;
+}
+/* Ledger view: restore normal panel look */
+body.page-macro:not(.mx4-grid) #regime-radar{
+  display:block;padding:19px 21px;
+}
+@media(max-width:1100px){
+  body.page-macro.mx4-grid #regime-radar{grid-template-columns:340px 1fr;}
+}
+@media(max-width:700px){
+  body.page-macro.mx4-grid #regime-radar{grid-template-columns:1fr;}
+}
+
+/* ── mx2-hero: hidden in grid view (scorecard replaces it) ── */
+body.page-macro.mx4-grid #regime-radar .mx2-hero{
+  display:none!important;
+}
+/* ── alerts toggle + misc hero bits: hidden in grid ── */
+body.page-macro.mx4-grid #regime-radar .ms-head,
+body.page-macro.mx4-grid #regime-radar .ms-oneline,
+body.page-macro.mx4-grid #regime-radar .howto,
+body.page-macro.mx4-grid #regime-radar > script + div > .ms-head{
+  display:none;
+}
+
+/* ── Scorecard left cluster ──────────────────────────────────────── */
+body.page-macro.mx4-grid .mx5-sc-left{
+  padding:28px 26px 22px;
+  border-right:1px solid rgba(255,255,255,.07);
+  display:flex;flex-direction:column;
+  position:relative;overflow:visible;
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-sc-left{
+  border-right-color:rgba(0,0,0,.06);
+}
+body.page-macro.mx4-grid .mx5-sc-gauge-row{
+  display:flex;align-items:center;gap:20px;margin-bottom:16px;
+}
+body.page-macro.mx4-grid .mx5-gauge-svg{
+  width:140px;height:88px;overflow:visible;display:block;flex-shrink:0;
+}
+
+/* Regime pill */
+body.page-macro.mx4-grid .mx5-regime-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 14px;border-radius:var(--mx5-radius-pill);
+  border:1px solid var(--mx5-accent);background:var(--mx5-accent-dim);
+  font-size:11px;font-weight:600;color:var(--mx5-accent);
+  letter-spacing:.04em;margin-bottom:10px;
+}
+body.page-macro.mx4-grid .mx5-regime-pill .mx5-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--mx5-accent);box-shadow:0 0 6px var(--mx5-accent-glow);
+}
+
+/* Score + verdict beside gauge */
+body.page-macro.mx4-grid .mx5-score-line{
+  display:flex;align-items:baseline;gap:8px;
+}
+body.page-macro.mx4-grid .mx5-big-score{
+  font-size:52px;font-weight:800;line-height:1;color:var(--mx5-accent);
+  text-shadow:0 0 36px var(--mx5-accent-glow);
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums;
+}
+body.page-macro.mx4-grid .mx5-verdict-word{
+  font-size:17px;font-weight:700;color:var(--ink-1,var(--text,rgba(255,255,255,.92)));
+}
+body.page-macro.mx4-grid .mx5-sub-line{
+  font-size:11px;color:var(--mx5-accent);font-weight:600;margin-top:3px;
+}
+/* score color by state */
+body.page-macro.mx4-grid.ms-green-page .mx5-big-score,
+body.page-macro.mx4-grid .mx5-score-green .mx5-big-score{color:var(--up,#22d97a);text-shadow:0 0 36px rgba(34,217,122,.3);}
+body.page-macro.mx4-grid.ms-yellow-page .mx5-big-score,
+body.page-macro.mx4-grid .mx5-score-yellow .mx5-big-score{color:var(--warn,#f59e0b);text-shadow:0 0 36px rgba(245,158,11,.3);}
+body.page-macro.mx4-grid.ms-red-page .mx5-big-score,
+body.page-macro.mx4-grid .mx5-score-red .mx5-big-score{color:var(--down,#ef4444);text-shadow:0 0 36px rgba(239,68,68,.3);}
+
+/* Thesis + flip */
+body.page-macro.mx4-grid .mx5-thesis{
+  font-size:13px;font-weight:450;line-height:1.55;
+  color:var(--ink-1,rgba(255,255,255,.92));
+  margin:12px 0 10px;
+  border-left:3px solid var(--mx5-accent);padding-left:12px;
+}
+body.page-macro.mx4-grid .mx5-flip{
+  font-size:11px;color:var(--ink-2,rgba(255,255,255,.6));
+  padding:8px 11px;
+  background:var(--mx5-warn-dim);
+  border:1px solid rgba(245,158,11,.18);
+  border-radius:9px;line-height:1.5;
+}
+body.page-macro.mx4-grid .mx5-flip-arrow{color:var(--mx5-warn);}
+
+/* Popover trigger buttons row */
+body.page-macro.mx4-grid .mx5-btn-row{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;
+  position:relative;
+}
+body.page-macro.mx4-grid .mx5-sc-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 13px;border-radius:var(--mx5-radius-pill);
+  border:1px solid var(--mx5-glass-border);
+  background:var(--mx5-glass-bg);backdrop-filter:blur(12px);
+  color:var(--ink-2,rgba(255,255,255,.6));
+  font-size:11px;font-weight:600;cursor:pointer;
+  font-family:inherit;
+  transition:color .15s,border-color .15s,background .15s;
+}
+body.page-macro.mx4-grid .mx5-sc-btn:hover{
+  color:var(--ink-1,rgba(255,255,255,.92));
+  border-color:rgba(255,255,255,.20);
+  background:rgba(255,255,255,.14);
+}
+body.page-macro.mx4-grid .mx5-sc-btn[aria-expanded="true"]{
+  color:var(--ink-1,rgba(255,255,255,.92));
+  border-color:rgba(255,255,255,.24);
+  background:rgba(255,255,255,.16);
+}
+body.page-macro.mx4-grid .mx5-sc-btn-warn{
+  color:var(--mx5-warn);
+  border-color:rgba(245,158,11,.28);
+  background:rgba(245,158,11,.07);
+}
+body.page-macro.mx4-grid .mx5-sc-btn-warn:hover{
+  background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.40);
+}
+body.page-macro.mx4-grid .mx5-sc-btn-warn[aria-expanded="true"]{
+  background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.40);
+}
+body.page-macro.mx4-grid .mx5-sc-btn:focus-visible{
+  outline:2px solid var(--link,#22d97a);outline-offset:2px;
+}
+
+/* ── 60-session path panel (right) ──────────────────────────────── */
+body.page-macro.mx4-grid .mx5-sc-right{
+  padding:22px 28px 20px;display:flex;flex-direction:column;
+}
+body.page-macro.mx4-grid .mx5-path-header{
+  display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;
+}
+body.page-macro.mx4-grid .mx5-path-title{
+  font-size:11px;font-weight:700;letter-spacing:.10em;
+  text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));
+}
+body.page-macro.mx4-grid .mx5-path-meta{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
+body.page-macro.mx4-grid .mx5-path-svg{
+  display:block;width:100%;flex:1;min-height:180px;overflow:visible;
+}
+/* Hidden on mobile (spec §0) */
+@media(max-width:700px){
+  body.page-macro.mx4-grid .mx5-sc-right{display:none;}
+}
+
+/* ── Popover system ─────────────────────────────────────────────── */
+/* Fixed dim backdrop (z-90) */
+.mx5-popover-backdrop{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.32);z-index:90;
+}
+.mx5-popover-backdrop.open{display:block;}
+
+/* Popover panel */
+.mx5-popover{
+  display:none;position:absolute;z-index:100;
+  background:var(--mx5-pop-bg,rgba(13,18,26,.96));
+  border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));
+  border-radius:var(--mx5-radius-card,18px);
+  backdrop-filter:blur(32px);
+  box-shadow:0 24px 64px rgba(0,0,0,.72),0 1.5px 0 rgba(255,255,255,.09) inset;
+  padding:24px;min-width:320px;max-width:440px;
+  top:calc(100% + 8px);left:0;
+  transform-origin:top left;
+}
+.mx5-popover.open{display:block;}
+@media(prefers-reduced-motion:no-preference){
+  .mx5-popover{
+    opacity:0;transform:scale(.97) translateY(-8px);
+    transition:opacity 220ms cubic-bezier(.22,.68,0,1.2),transform 220ms cubic-bezier(.22,.68,0,1.2);
+  }
+  .mx5-popover.open{opacity:1;transform:scale(1) translateY(0);}
+}
+/* Right-anchored popover */
+.mx5-popover.mx5-pop-right{left:auto;right:0;transform-origin:top right;}
+
+/* Lift the parent card above the backdrop when popover open (stacking context fix) */
+body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
+  z-index:95;position:relative;
+}
+.mx5-popover-title{
+  font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:18px;
+}
+
+/* Mobile bottom-sheet (spec §0 — ≤700px) */
+@media(max-width:700px){
+  .mx5-popover{
+    position:fixed!important;
+    left:12px!important;right:12px!important;
+    bottom:0;top:auto!important;
+    max-width:none;width:auto;
+    max-height:70vh;overflow-y:auto;
+    border-radius:var(--mx5-radius-card) var(--mx5-radius-card) 0 0;
+    transform-origin:bottom center;
+    background:var(--mx5-pop-bg,rgba(13,18,26,.96));
+  }
+  @media(prefers-reduced-motion:no-preference){
+    .mx5-popover{opacity:0;transform:translateY(20px);}
+    .mx5-popover.open{opacity:1;transform:translateY(0);}
+  }
+}
+
+/* ── Factor breakdown (inside popover) ─────────────────────────── */
+.mx5-factors-inner{display:flex;flex-direction:column;gap:14px;}
+.mx5-factor-row{display:flex;flex-direction:column;gap:6px;}
+.mx5-factor-header{display:flex;justify-content:space-between;align-items:baseline;}
+.mx5-factor-name{font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));font-weight:500;}
+.mx5-factor-score{font-size:16px;font-weight:700;color:var(--ink-1,rgba(255,255,255,.92));}
+.mx5-factor-score.weak{color:var(--mx5-warn);}
+.mx5-factor-bar-track{height:7px;border-radius:4px;background:rgba(255,255,255,.07);position:relative;}
+.mx5-factor-bar-fill{height:100%;border-radius:4px;position:relative;
+  background:linear-gradient(90deg,rgba(34,217,122,.45),var(--mx5-accent));}
+.mx5-factor-bar-fill.weak{background:linear-gradient(90deg,rgba(245,158,11,.45),var(--mx5-warn));}
+.mx5-factor-bar-fill::after{
+  content:"";position:absolute;right:-2px;top:-3px;
+  width:13px;height:13px;border-radius:50%;
+  background:var(--mx5-accent);box-shadow:0 0 7px var(--mx5-accent-glow),0 0 16px var(--mx5-accent-glow);
+}
+.mx5-factor-bar-fill.weak::after{
+  background:var(--mx5-warn);box-shadow:0 0 7px rgba(245,158,11,.5);
+}
+.mx5-factor-weak-tag{
+  font-size:11px;color:var(--mx5-warn);font-weight:700;letter-spacing:.05em;margin-top:3px;
+}
+
+/* ── Risk Scare Ladder (inside popover) ─────────────────────────── */
+.mx5-scare-dominant-row{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;}
+.mx5-scare-dominant-num{font-size:48px;font-weight:800;letter-spacing:-.03em;color:var(--mx5-warn);line-height:1;}
+.mx5-scare-dominant-title{font-size:15px;font-weight:700;color:var(--mx5-warn);}
+.mx5-scare-driver{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:20px;line-height:1.5;}
+.mx5-scare-list{display:flex;flex-direction:column;gap:13px;}
+.mx5-scare-item{display:flex;flex-direction:column;gap:4px;}
+.mx5-scare-item-header{display:flex;justify-content:space-between;align-items:baseline;}
+.mx5-scare-item-name{font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));font-weight:500;}
+.mx5-scare-item-val{font-size:14px;font-weight:700;}
+.mx5-scare-item-val.top{color:var(--mx5-warn);}
+.mx5-scare-item-val.lower{color:var(--ink-2,rgba(255,255,255,.6));}
+.mx5-scare-meter{height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden;}
+.mx5-scare-fill{height:100%;border-radius:3px;}
+.mx5-scare-fill.hi {background:linear-gradient(90deg,rgba(245,158,11,.5),var(--mx5-warn));}
+.mx5-scare-fill.mid{background:rgba(245,158,11,.55);}
+.mx5-scare-fill.lo {background:rgba(245,158,11,.35);}
+.mx5-scare-item-label{font-size:11px;color:var(--mx5-warn);font-weight:600;letter-spacing:.04em;}
+
+/* Popover footer */
+.mx5-pop-footer{
+  margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
+}
+[data-theme="light"] .mx5-pop-footer{border-top-color:rgba(0,0,0,.07);}
+.mx5-pop-footer-link{
+  background:none;border:none;cursor:pointer;font-size:11px;font-weight:600;
+  color:var(--mx5-accent);font-family:inherit;padding:0;
+  text-decoration:underline;text-decoration-color:transparent;
+  transition:text-decoration-color .15s;
+}
+.mx5-pop-footer-link:hover{text-decoration-color:var(--mx5-accent);}
+
+/* ── Gauge SVG glow (JS patchable via data attrs) ───────────────── */
+/* Arc and needle updated by risk_state_live.js; see §3.1 */
+body.page-macro.mx4-grid #mx5-gauge-arc-fill{
+  /* initial dasharray set by Jinja inline style; JS updates via setAttribute */
+}
+body.page-macro.mx4-grid #mx5-gauge-needle{
+  /* rotate transform set by Jinja inline; JS updates on live push */
+}
+body.page-macro.mx4-grid #mx5-score-numeral{
+  /* font-size 24px; glow filter via inline style */
+  filter:drop-shadow(0 0 10px rgba(34,217,122,.7));
+}
 
 </style>
 {% endif %}
@@ -3751,154 +3991,309 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
       </section>{# /ms-verdict — wraps thesis + score + tick for check_ms_board_coherence.py #}
     </div>{# /mx2-hero / ms-front #}
 
-    {# ── MX4 VERDICT BAND — grid view only; 3 zones side-by-side ── #}
-    {# Zone 1 is the existing mx2-hero (CSS-restyled in grid view).
-       Zones 2 & 3 are new cards appended here, visible only in grid. #}
+    {# ── MX5 COMMAND SCORECARD — grid view only; overlaid via CSS on #regime-radar ── #}
+    {# mx2-hero is hidden in grid view (CSS body.page-macro.mx4-grid #regime-radar .mx2-hero{display:none}).
+       This block provides the v5 visual scorecard visible in grid view only. #}
     {% if market_state %}
-    <div class="mx4-verdict-band">
+    {# ── Pre-compute gauge geometry (Jinja, no JS math) ── #}
+    {# Arc: center=(70,75) radius=56; half-circle from (14,75) to (126,75).
+       ARC_LEN = PI*56 = 175.93; filled = score/100 * ARC_LEN; gap = ARC_LEN - filled.
+       Needle: -90deg (leftmost at score=0) + score/100 * 180 = final rotation from vertical. #}
+    {% set _mx5_arc_len = 175.93 %}
+    {% set _mx5_score = MS.score | int %}
+    {% set _mx5_filled = (_mx5_score / 100 * _mx5_arc_len) | round(1) %}
+    {% set _mx5_gap = (_mx5_arc_len - _mx5_filled) | round(1) %}
+    {% set _mx5_needle_deg = (_mx5_score / 100 * 180 - 90) | round(1) %}
+    {# Score color variable class #}
+    {% set _mx5_sc_cls = 'mx5-score-green' if MS.color == 'green' else ('mx5-score-yellow' if MS.color == 'yellow' else 'mx5-score-red') %}
+    {% set _mx5_sc_col = '#22d97a' if MS.color == 'green' else ('#f59e0b' if MS.color == 'yellow' else '#ef4444') %}
+    {% set _mx5_sc_glow = 'rgba(34,217,122,.7)' if MS.color == 'green' else ('rgba(245,158,11,.7)' if MS.color == 'yellow' else 'rgba(239,68,68,.7)') %}
+    {# Regime pill: quad_name + transition_state #}
+    {% set _mx5_ts = latest.transition_state if (latest.transition_state is defined and latest.transition_state) else '' %}
+    {% set _mx5_ts_en = {'TRANSITIONING':'Shifting','STABLE':'Stable','WEAKENING':'Weakening','NEW_REGIME':'New Regime'}.get(_mx5_ts, _mx5_ts | title) %}
+    {% set _mx5_ts_zh = {'TRANSITIONING':'转换中','STABLE':'稳定','WEAKENING':'走弱','NEW_REGIME':'新周期'}.get(_mx5_ts, _mx5_ts) %}
+    {# Risk button: show warn style when radar state is elevated/caution/risk-off #}
+    {% set _mx5_rdr = market_state.radar if market_state.radar is defined else {} %}
+    {% set _mx5_rdr_state = _mx5_rdr.state if _mx5_rdr else 'unknown' %}
+    {% set _mx5_risk_elevated = _mx5_rdr_state in ('elevated','caution','risk-off') %}
+    {# Dominant risk for the popover header #}
+    {% set _mx5_radar_top = (_mx5_rdr.top if (_mx5_rdr and _mx5_rdr.top is defined) else 0) | int %}
+    {# Factor rows for factor popover #}
+    {% set _mx5_comps = MS2.components if (MS2 and MS2.components is defined and MS2.components) else [] %}
+    {% set _mx5_n_good = (_mx5_comps | selectattr('tone','equalto','good') | list | length) %}
+    {# Weakest leg #}
+    {% set _mx5_weakest = _mx5_comps | sort(attribute='score') | first if _mx5_comps else none %}
+    {# 60-session path from ms_history VM key #}
+    {% set _mx5_hist = ms_history if (ms_history is defined and ms_history and ms_history | length >= 2) else none %}
+    {% set _mx5_hist_n = _mx5_hist | length if _mx5_hist else 0 %}
 
-      {# ZONE 1 = the mx2-hero itself — the panel-level grid (#regime-radar rules in
-         mx4-css) places the hero beside this band in grid view. No recap card: the
-         verdict word, score, bar, thesis and flip line render exactly once. #}
+    <div class="mx5-sc-left">
 
-      {# ZONE 2 — THE RISK (dominant driver + top-4 scare ladder + what-faded) #}
-      {% set _b2_rdr = market_state.radar if market_state.radar is defined else {} %}
-      {% set _b2_state = _b2_rdr.state if _b2_rdr else 'unknown' %}
-      {% set _b2_col = 'risk-off' if _b2_state == 'risk-off' else ('caution' if _b2_state in ('elevated','caution') else 'ok') %}
-      <div class="mx4-bzone mx4-risk-btn" role="button" tabindex="0"
-           aria-label="Risk — open risk detail"
-           onclick="mx2Toggle('sx-risk-v2')"
-           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx2Toggle('sx-risk-v2');}"
-           style="--isle-color:var(--isle-risk,var(--down));cursor:pointer;">
-        <div class="mx4-bzone-eyebrow"><span class="l-en">The Risk</span><span class="l-zh">当前风险</span></div>
-        {# Dominant driver headline: reuse MS.radar fields #}
-        <div class="mx4-bzone-risk-headline {{ _b2_col }}">
-          {% if _b2_rdr and _b2_rdr.label_en is defined %}
-          <span class="l-en">{{ _b2_rdr.label_en | upper }}</span>
-          <span class="l-zh">{{ _b2_rdr.label_zh if _b2_rdr.label_zh is defined else _b2_rdr.label_en }}</span>
+      {# ── Gauge cluster ── #}
+      <div class="mx5-sc-gauge-row {{ _mx5_sc_cls }}">
+        {# Compact semicircle gauge; data-* attrs for risk_state_live.js patchMacro #}
+        <svg class="mx5-gauge-svg" viewBox="0 0 140 88" fill="none"
+             aria-label="{{ MS.label_en }} — score {{ _mx5_score }}"
+             data-gauge-arc-len="{{ _mx5_arc_len }}"
+             data-gauge-radius="56"
+             data-gauge-cx="70" data-gauge-cy="75">
+          <defs>
+            <linearGradient id="mx5ArcGrad" gradientUnits="userSpaceOnUse" x1="14" y1="75" x2="126" y2="75">
+              <stop offset="0%"   stop-color="#ef4444"/>
+              <stop offset="28%"  stop-color="#f59e0b"/>
+              <stop offset="65%"  stop-color="#22d97a"/>
+              <stop offset="100%" stop-color="#22d97a"/>
+            </linearGradient>
+            <filter id="mx5NeedleGlow" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="2.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="mx5ArcGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          {# Track #}
+          <path d="M 14 75 A 56 56 0 0 1 126 75" stroke="rgba(255,255,255,.08)" stroke-width="10" stroke-linecap="round" fill="none"/>
+          {# Filled arc — dasharray baked by Jinja; JS patches via data-gauge-arc-len #}
+          <path id="mx5-gauge-arc-fill"
+                d="M 14 75 A 56 56 0 0 1 126 75" stroke="url(#mx5ArcGrad)" stroke-width="10" stroke-linecap="round" fill="none"
+                stroke-dasharray="{{ _mx5_filled }} {{ _mx5_gap }}" filter="url(#mx5ArcGlow)"/>
+          {# Tick marks at 0/25/50/75/100 #}
+          <g stroke="rgba(255,255,255,.22)" stroke-width="1.2">
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(-90 70 75)"/>
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(-45 70 75)"/>
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(0 70 75)"/>
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(45 70 75)"/>
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(90 70 75)"/>
+          </g>
+          {# Scale labels — ≥11px per spec #}
+          <text x="8"   y="84" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">0</text>
+          <text x="70"  y="14" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">50</text>
+          <text x="132" y="84" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">100</text>
+          {# Needle — rotation baked by Jinja; JS patches via data attr #}
+          <g id="mx5-gauge-needle" transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#mx5NeedleGlow)">
+            <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(34,217,122,.30)" stroke-width="5" stroke-linecap="round"/>
+            <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
+            <circle cx="70" cy="75" r="7"  fill="rgba(34,217,122,.14)"/>
+            <circle cx="70" cy="75" r="4.5" stroke="{{ _mx5_sc_col }}" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
+            <circle cx="70" cy="75" r="2"  fill="{{ _mx5_sc_col }}"/>
+            <circle cx="70" cy="25.5" r="2.5" fill="{{ _mx5_sc_col }}" style="filter:drop-shadow(0 0 4px {{ _mx5_sc_col }})"/>
+          </g>
+          {# Score numeral inside arc — hidden in ledger view, visible in grid (parent hidden by CSS) #}
+          <text id="mx5-score-numeral"
+                x="70" y="62" fill="{{ _mx5_sc_col }}" font-size="24" font-weight="800"
+                text-anchor="middle" font-family="-apple-system,Inter,sans-serif"
+                style="filter:drop-shadow(0 0 10px {{ _mx5_sc_glow }})">{{ _mx5_score }}</text>
+          <text x="70" y="73" fill="rgba(255,255,255,.32)" font-size="11"
+                text-anchor="middle" font-family="-apple-system,Inter,sans-serif">/ 100</text>
+        </svg>
+
+        {# Right of gauge: regime pill + big score + verdict word #}
+        <div>
+          <div class="mx5-regime-pill">
+            <div class="mx5-dot"></div>
+            <span class="l-en">{{ td(latest.quad_name) if latest.quad_name is defined else 'Regime' }}{% if _mx5_ts_en %} &nbsp;&middot;&nbsp; {{ _mx5_ts_en }}{% endif %}</span>
+            <span class="l-zh">{{ td(latest.quad_name) if latest.quad_name is defined else '周期' }}{% if _mx5_ts_zh %} &nbsp;&middot;&nbsp; {{ _mx5_ts_zh }}{% endif %}</span>
+          </div>
+          <div class="mx5-score-line">
+            <span class="mx5-big-score">{{ _mx5_score }}</span>
+            <span class="mx5-verdict-word"><span class="l-en">{{ MS.label_en }}</span><span class="l-zh">{{ MS.label_zh or MS.label_en }}</span></span>
+          </div>
+          <div class="mx5-sub-line">
+            <span class="l-en">{{ {'green':'GREEN','yellow':'YELLOW','red':'RED'}.get(MS.color,'—') }} &mdash; {{ {'green':'Trend-following supported','yellow':'Trade with caution','red':'Defend capital first'}.get(MS.color,'') }}</span>
+            <span class="l-zh">{{ {'green':'偏多 — 顺势而为受支撑','yellow':'谨慎操作','red':'优先保住本金'}.get(MS.color,'') }}</span>
+          </div>
+        </div>
+      </div>{# /mx5-sc-gauge-row #}
+
+      {# Thesis line (from engine headline_en/zh) #}
+      <div class="mx5-thesis">
+        <span class="l-en">{{ MS.headline_en if MS.headline_en else (MS.label_en ~ ' — see evidence panel.') }}</span>
+        <span class="l-zh">{{ MS.headline_zh if MS.headline_zh else (MS.label_zh or MS.label_en) }}</span>
+      </div>
+
+      {# Flip condition #}
+      {% if MS.flip_en %}
+      <div class="mx5-flip">
+        <span class="mx5-flip-arrow">&#8594;</span>
+        <span class="l-en">{{ MS.flip_en }}</span>
+        {% if _mx5_weakest %}<span class="l-en" style="color:rgba(255,255,255,.65);font-weight:600;"> ({{ _mx5_weakest.label_en }} {{ _mx5_weakest.score }}/100)</span>{% endif %}
+        {% if MS.flip_zh %}<span class="l-zh">{{ MS.flip_zh }}</span>{% endif %}
+        {% if _mx5_weakest and MS.flip_zh %}<span class="l-zh" style="color:rgba(255,255,255,.65);font-weight:600;">（{{ _mx5_weakest.label_zh or _mx5_weakest.label_en }} {{ _mx5_weakest.score }}/100）</span>{% endif %}
+      </div>
+      {% endif %}
+
+      {# Popover trigger buttons #}
+      <div class="mx5-btn-row">
+        {# Button 1: factor signals aligned #}
+        <button class="mx5-sc-btn" id="mx5BtnFactors"
+                onclick="mx5TogglePop('mx5PopFactors','mx5BtnFactors')"
+                aria-expanded="false" aria-controls="mx5PopFactors"
+                type="button">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          <span class="l-en">{{ _mx5_n_good }} signal{{ 's' if _mx5_n_good != 1 else '' }} aligned</span>
+          <span class="l-zh">{{ _mx5_n_good }} 项信号一致</span>
+          <svg width="9" height="9" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l4 4 4-4"/></svg>
+        </button>
+
+        {# Button 2: risk — warn style when elevated, neutral otherwise #}
+        <button class="mx5-sc-btn{% if _mx5_risk_elevated %} mx5-sc-btn-warn{% endif %}" id="mx5BtnRisk"
+                onclick="mx5TogglePop('mx5PopRisk','mx5BtnRisk')"
+                aria-expanded="false" aria-controls="mx5PopRisk"
+                type="button">
+          {% if _mx5_risk_elevated %}
+          <svg width="12" height="11" viewBox="0 0 24 21" fill="none">
+            <path d="M12 2L1.5 20h21L12 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="17" r="1" fill="currentColor"/>
+          </svg>
+          <span class="l-en">Elevated Risk{% if _mx5_radar_top > 0 %} &middot; {{ _mx5_radar_top }}{% endif %}</span>
+          <span class="l-zh">风险偏高{% if _mx5_radar_top > 0 %} &middot; {{ _mx5_radar_top }}{% endif %}</span>
           {% else %}
-          <span class="l-en">{{ _b2_state | upper }}</span>
-          <span class="l-zh">{{ _b2_state }}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <span class="l-en">Risk Detail</span>
+          <span class="l-zh">风险详情</span>
           {% endif %}
-        </div>
-        {% if _b2_rdr and _b2_rdr.do_en is defined %}
-        <div class="sxg-face-sub" style="margin-top:-2px">
-          <span class="l-en">{{ _b2_rdr.do_en }}</span>
-          <span class="l-zh">{{ _b2_rdr.do_zh if _b2_rdr.do_zh is defined else _b2_rdr.do_en }}</span>
-        </div>
-        {% endif %}
-        {# Top-4 scare ladder #}
-        {% if latest.risk_radar is defined and latest.risk_radar and latest.risk_radar.scares %}
-        <div class="mx4-bzone-scare-list">
-          {% for sc in latest.risk_radar.scares[:4] %}
-          {% set _sc_c = 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 35 else 'var(--muted)') %}
-          <div class="mx4-scare-row">
-            <span class="mx4-scare-name"><span class="l-en">{{ sc.label_en if sc.label_en is defined else sc.name }}</span><span class="l-zh">{{ sc.label_zh if sc.label_zh is defined else (sc.name_zh if sc.name_zh is defined else sc.name) }}</span></span>
-            <div class="mx4-scare-bar-track"><div class="mx4-scare-bar-fill" style="width:{{ [sc.score,100]|min }}%;background:{{ _sc_c }}"></div></div>
-            <span class="mx4-scare-score" style="color:{{ _sc_c }}">{{ sc.score }}</span>
-          </div>
-          {% endfor %}
-        </div>
-        {% endif %}
-        {# "What faded" chips — engine-side deescalation.deescalated list (context
-           narration mirroring the rrx card's line; NOT an all-clear). Absent on
-           pre-list artifacts (stale VM pickle) → renders nothing. #}
-        {% set _b2_faded = ((latest.risk_radar.get('deescalation') or {}).get('deescalated') or []) if (latest.risk_radar is defined and latest.risk_radar) else [] %}
-        {% if _b2_faded %}
-        <div class="mx4-bzone-risk-faded">
-          <span><span class="l-en">What faded:</span><span class="l-zh">已消退：</span></span>
-          {% for d in _b2_faded[:3] %}
-          <span><span class="l-en">{{ d.label_en }}</span><span class="l-zh">{{ d.label_zh or d.label_en }}</span>{% if d['from'] is number and d['to'] is number %}&nbsp;{{ d['from']|round|int }}→{{ d['to']|round|int }}{% endif %}</span>
-          {% endfor %}
-        </div>
-        {% endif %}
-        <div class="sxg-face-sub" style="color:var(--ink-3);font-size:10px">
-          <span class="l-en">Tap for full risk breakdown</span>
-          <span class="l-zh">点击查看完整风险分析</span>
-        </div>
-      </div>
+          <svg width="9" height="9" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l4 4 4-4"/></svg>
+        </button>
 
-      {# ZONE 3 — WHAT TO DO (deterministic derivation; no invented advice) #}
-      {% set _todo_dot = '#22c55e' if MS.color == 'green' else ('#eab308' if MS.color == 'yellow' else '#ef4444') %}
-      <div class="mx4-bzone" style="--isle-color:{{ _todo_dot }}">
-        <div class="mx4-bzone-eyebrow"><span class="l-en">What To Do</span><span class="l-zh">操作建议</span></div>
-        <div class="mx4-bzone-todo-list">
-          {# Row 1: the action clause of the engine verdict — fixed vocabulary keyed to
-             MS.color, each line a verbatim reduction of the engine _HEADLINES action
-             clause (ratified lane-name pattern; no free-authored advice). #}
-          {% set _todo_act = {
-            'green':  ('Trend-follow. Add on strength.', '顺势而为，逢强加仓。'),
-            'yellow': ('Trade smaller, favour quality, take profits faster.', '缩小仓位、偏好质量、更快获利了结。'),
-            'red':    ('Defend capital first.', '优先保住本金。'),
-          }.get(MS.color) %}
-          <div class="mx4-todo-row">
-            <span class="mx4-todo-dot" style="--todo-dot-color:{{ _todo_dot }}"></span>
-            <span class="mx4-todo-text">
-              {% if _todo_act %}
-              <span class="l-en"><b>{{ MS.label_en }}</b> — {{ _todo_act[0] }}</span>
-              <span class="l-zh"><b>{{ MS.label_zh or MS.label_en }}</b> — {{ _todo_act[1] }}</span>
-              {% elif MS.get('posture_en') %}
-              <span class="l-en">{{ MS.posture_en }}</span>
-              <span class="l-zh">{{ MS.get('posture_zh') or MS.posture_en }}</span>
+        {# POPOVER: Factor Breakdown #}
+        <div class="mx5-popover" id="mx5PopFactors" role="dialog"
+             aria-label="Factor Breakdown">
+          <div class="mx5-popover-title"><span class="l-en">Factor Breakdown &mdash; {{ _mx5_comps | length }} Signals</span><span class="l-zh">因子分析 &mdash; {{ _mx5_comps | length }} 项</span></div>
+          <div class="mx5-factors-inner">
+            {% for c in _mx5_comps %}
+            {% set _fweak = (_mx5_weakest and c.label_en == _mx5_weakest.label_en) %}
+            <div class="mx5-factor-row">
+              <div class="mx5-factor-header">
+                <span class="mx5-factor-name{% if _fweak %}" style="color:var(--mx5-warn){% endif %}">
+                  <span class="l-en">{{ c.label_en }}</span><span class="l-zh">{{ c.label_zh or c.label_en }}</span>
+                </span>
+                <span class="mx5-factor-score{% if _fweak %} weak{% endif %}">{{ c.score }}</span>
+              </div>
+              <div class="mx5-factor-bar-track">
+                <div class="mx5-factor-bar-fill{% if _fweak %} weak{% endif %}" style="width:{{ [c.score, 100] | min }}%"></div>
+              </div>
+              {% if _fweak %}
+              <div class="mx5-factor-weak-tag"><span class="l-en">WEAKEST LEG &mdash; MONITOR</span><span class="l-zh">最弱分项 &mdash; 持续关注</span></div>
               {% endif %}
-            </span>
+            </div>
+            {% endfor %}
           </div>
-          {# Row 2: weakest leg #}
-          {% if _band_weakest is defined and _band_weakest %}
-          <div class="mx4-todo-row">
-            <span class="mx4-todo-dot" style="--todo-dot-color:var(--warn)"></span>
-            <span class="mx4-todo-text">
-              <span class="l-en">Watch <b>{{ _band_weakest.label_en }}</b> — the weakest leg ({{ _band_weakest.score }}/100).</span>
-              <span class="l-zh">关注<b>{{ _band_weakest.label_zh or _band_weakest.label_en }}</b> — 最弱一环（{{ _band_weakest.score }}/100）。</span>
-            </span>
+          <div class="mx5-pop-footer">
+            <button class="mx5-pop-footer-link" type="button"
+                    onclick="mx5CloseAllPopovers();mx2Toggle('sx-evidence')">
+              <span class="l-en">Full breakdown &#8595;</span><span class="l-zh">完整分析 &#8595;</span>
+            </button>
           </div>
-          {% endif %}
-          {# Row 3: event risk if near-dated — engine emits label_zh (event_calendar
-             _META); EN-label fallback covers pre-label_zh artifacts (stale VM pickle). #}
-          {% if event_risk is defined and event_risk and event_risk.get('show') %}
-          {% set _evr_zh_lbl = event_risk.get('label_zh') or event_risk.get('label', '待发事件') %}
-          <div class="mx4-todo-row">
-            <span class="mx4-todo-dot" style="--todo-dot-color:var(--warn)"></span>
-            <span class="mx4-todo-text">
-              <span class="l-en">Expect noise around <b>{{ event_risk.get('label','upcoming event') }}</b>{% if event_risk.get('when_en') %} ({{ event_risk.when_en }}){% endif %} — don't read the first move as trend.</span>
-              <span class="l-zh"><b>{{ _evr_zh_lbl }}</b>{% if event_risk.get('when_zh') %}（{{ event_risk.when_zh }}）{% endif %}前后波动加大 — 首个走势未必是趋势。</span>
-            </span>
-          </div>
-          {% endif %}
-          {# Row 4: driver note (froth/bubble note = engine's note verbatim) #}
-          {% if _b2_rdr and _b2_rdr.do_en is defined %}
-          <div class="mx4-todo-row">
-            <span class="mx4-todo-dot" style="--todo-dot-color:var(--ink-3)"></span>
-            <span class="mx4-todo-text">
-              <span class="l-en">{{ _b2_rdr.do_en }}</span>
-              <span class="l-zh">{{ _b2_rdr.do_zh if _b2_rdr.do_zh is defined else _b2_rdr.do_en }}</span>
-            </span>
-          </div>
-          {% endif %}
-          {# Row 5: policy state mapping #}
-          {% if policy_lever is defined and policy_lever %}
-          {% set _pl_s = policy_lever.get('state') or 'QUIET' %}
-          <div class="mx4-todo-row">
-            <span class="mx4-todo-dot" style="--todo-dot-color:var(--ink-3)"></span>
-            <span class="mx4-todo-text">
-              {% if _pl_s == 'QUIET' %}
-              <span class="l-en">Policy is quiet — nothing to position for.</span>
-              <span class="l-zh">政策面平静 — 无需布局。</span>
-              {% elif policy_lever.get('framing') %}
-              <span class="l-en">{{ policy_lever.framing }}</span>
-              <span class="l-zh">{{ policy_lever.get('framing_zh') or policy_lever.framing }}</span>
-              {% else %}
-              <span class="l-en">Policy: <b>{{ _pl_s }}</b> — watch for repricing signals.</span>
-              <span class="l-zh">政策面<b>{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_pl_s, _pl_s) }}</b> — 关注重定价信号。</span>
-              {% endif %}
-            </span>
-          </div>
-          {% endif %}
-        </div>
-      </div>
+        </div>{# /mx5PopFactors #}
 
-    </div>{# /mx4-verdict-band #}
-    {% endif %}{# /market_state verdict band #}
+        {# POPOVER: Dominant Risk Ladder #}
+        <div class="mx5-popover mx5-pop-right" id="mx5PopRisk" role="dialog"
+             aria-label="Dominant Risk Ladder">
+          <div class="mx5-popover-title"><span class="l-en">Dominant Risk Ladder</span><span class="l-zh">主导风险阶梯</span></div>
+          {% if latest.risk_radar is defined and latest.risk_radar and latest.risk_radar.scares %}
+          {% set _mx5_top_sc = latest.risk_radar.scares[0] %}
+          <div class="mx5-scare-dominant-row">
+            <span class="mx5-scare-dominant-num">{{ _mx5_top_sc.score | round | int }}</span>
+            <span class="mx5-scare-dominant-title"><span class="l-en">{{ _mx5_top_sc.label_en if _mx5_top_sc.label_en is defined else _mx5_top_sc.name }}</span><span class="l-zh">{{ _mx5_top_sc.label_zh if _mx5_top_sc.label_zh is defined else (_mx5_top_sc.name_zh if _mx5_top_sc.name_zh is defined else _mx5_top_sc.name) }}</span></span>
+          </div>
+          {% if _mx5_rdr and _mx5_rdr.do_en is defined %}
+          <div class="mx5-scare-driver"><span class="l-en">{{ _mx5_rdr.do_en }}</span><span class="l-zh">{{ _mx5_rdr.do_zh if _mx5_rdr.do_zh is defined else _mx5_rdr.do_en }}</span></div>
+          {% endif %}
+          <div class="mx5-scare-list">
+            {% for sc in latest.risk_radar.scares[:4] %}
+            {% set _sclevel = 'hi' if sc.score >= 60 else ('mid' if sc.score >= 40 else 'lo') %}
+            {% set _scistop = loop.index == 1 %}
+            <div class="mx5-scare-item">
+              <div class="mx5-scare-item-header">
+                <span class="mx5-scare-item-name"><span class="l-en">{{ sc.label_en if sc.label_en is defined else sc.name }}</span><span class="l-zh">{{ sc.label_zh if sc.label_zh is defined else (sc.name_zh if sc.name_zh is defined else sc.name) }}</span></span>
+                <span class="mx5-scare-item-val {% if _scistop %}top{% else %}lower{% endif %}">{{ sc.score }}</span>
+              </div>
+              <div class="mx5-scare-meter"><div class="mx5-scare-fill {{ _sclevel }}" style="width:{{ [sc.score, 100] | min }}%"></div></div>
+              {% if _scistop and sc.score >= 50 %}<div class="mx5-scare-item-label"><span class="l-en">ELEVATED</span><span class="l-zh">偏高</span></div>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div style="font-size:12px;color:var(--ink-2)"><span class="l-en">No active risk readings.</span><span class="l-zh">暂无活跃风险读数。</span></div>
+          {% endif %}
+          <div class="mx5-pop-footer">
+            <button class="mx5-pop-footer-link" type="button"
+                    onclick="mx5CloseAllPopovers();mx2Toggle('sx-risk-v2')">
+              <span class="l-en">Full risk detail &#8595;</span><span class="l-zh">完整风险分析 &#8595;</span>
+            </button>
+          </div>
+        </div>{# /mx5PopRisk #}
+
+      </div>{# /mx5-btn-row #}
+    </div>{# /mx5-sc-left #}
+
+    {# 60-session path panel (right, hidden ≤700px per spec §0 via CSS) #}
+    <div class="mx5-sc-right">
+      <div class="mx5-path-header">
+        <span class="mx5-path-title">
+          <span class="l-en">{% if _mx5_hist_n > 0 and _mx5_hist_n < 60 %}{{ _mx5_hist_n }}-session path{% else %}60-session path{% endif %}</span>
+          <span class="l-zh">{% if _mx5_hist_n > 0 and _mx5_hist_n < 60 %}近 {{ _mx5_hist_n }} 交易日走势{% else %}60 交易日走势{% endif %}</span>
+        </span>
+        <span class="mx5-path-meta"><span class="l-en">Score vs time</span><span class="l-zh">综合评分 · 时序</span></span>
+      </div>
+      {% if _mx5_hist %}
+      {# Polyline geometry: viewBox 0 0 1000 200; y=(100-score)/100*200; x=i/(n-1)*1000 #}
+      {% set _ph_n = _mx5_hist | length %}
+      {% set _ph_pts_area = [] %}
+      {% set _ph_pts_line = [] %}
+      {% for row in _mx5_hist %}
+        {% set _ph_x = (loop.index0 / (_ph_n - 1) * 1000) | round(1) %}
+        {% set _ph_y = ((100 - row.score) / 100 * 200) | round(1) %}
+        {% if _ph_pts_line.append(_ph_x ~ ',' ~ _ph_y) %}{% endif %}
+      {% endfor %}
+      {# Build area path: line pts + close to bottom corners #}
+      {% set _ph_x_last = ((_ph_n - 1) / (_ph_n - 1) * 1000) | round(1) %}
+      <svg class="mx5-path-svg" viewBox="0 0 1000 200" preserveAspectRatio="none"
+           aria-label="Score path chart">
+        <defs>
+          <linearGradient id="mx5PathAreaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="{{ _mx5_sc_col }}" stop-opacity=".42"/>
+            <stop offset="65%"  stop-color="{{ _mx5_sc_col }}" stop-opacity=".07"/>
+            <stop offset="100%" stop-color="{{ _mx5_sc_col }}" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        {# Background tint #}
+        <rect x="0" y="0" width="1000" height="200" fill="rgba(34,217,122,.018)" rx="2"/>
+        {# Grid hairlines: y=50(score75), y=100(score50), y=150(score25) #}
+        <line x1="0" y1="50"  x2="1000" y2="50"  stroke="rgba(255,255,255,.045)" stroke-width="1"/>
+        <line x1="0" y1="100" x2="1000" y2="100" stroke="rgba(255,255,255,.065)" stroke-width="1" stroke-dasharray="5,5"/>
+        <line x1="0" y1="150" x2="1000" y2="150" stroke="rgba(255,255,255,.045)" stroke-width="1"/>
+        {# Y labels (spec: 42/60 band hairlines — 42/100*200=84, 60/100*200=120) #}
+        <line x1="0" y1="84"  x2="1000" y2="84"  stroke="rgba(255,255,255,.035)" stroke-width="1" stroke-dasharray="3,6"/>
+        <line x1="0" y1="120" x2="1000" y2="120" stroke="rgba(255,255,255,.035)" stroke-width="1" stroke-dasharray="3,6"/>
+        <text x="8" y="96"  fill="rgba(255,255,255,.20)" font-size="11" font-family="-apple-system,sans-serif">50</text>
+        <text x="8" y="44"  fill="rgba(255,255,255,.16)" font-size="11" font-family="-apple-system,sans-serif">75</text>
+        {# Area fill #}
+        <path d="{{ _ph_pts_line | join(' L') }} L1000,200 L0,200 Z" fill="url(#mx5PathAreaGrad)" stroke="none"/>
+        {# Line #}
+        <polyline points="{{ _ph_pts_line | join(' ') }}" fill="none" stroke="{{ _mx5_sc_col }}" stroke-width="2" vector-effect="non-scaling-stroke" opacity=".9"/>
+        {# Today dot #}
+        {% set _ph_last_y = ((100 - _mx5_hist[-1].score) / 100 * 200) | round(1) %}
+        <line x1="1000" y1="0" x2="1000" y2="200" stroke="{{ _mx5_sc_col }}" stroke-width="1" stroke-dasharray="3,4" opacity=".45"/>
+        <circle cx="1000" cy="{{ _ph_last_y }}" r="5" fill="{{ _mx5_sc_col }}" style="filter:drop-shadow(0 0 7px {{ _mx5_sc_col }})"/>
+        <text x="990" y="{{ (_ph_last_y - 8) | round }}" fill="{{ _mx5_sc_col }}" font-size="11" text-anchor="end" font-family="-apple-system,sans-serif" font-weight="700">{{ _mx5_hist[-1].score }}</text>
+      </svg>
+      {% else %}
+      {# Placeholder when ms_history absent or <2 points #}
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:12px;color:var(--ink-3)"><span class="l-en">Path chart — accruing from nightly log.</span><span class="l-zh">走势图 — 每晚积累中。</span></span>
+      </div>
+      {% endif %}
+    </div>{# /mx5-sc-right #}
+
+    {% endif %}{# /market_state — mx5 scorecard #}
 
     {# alerts toggle script — touch path. The checkbox is `hidden`, so native
        label-for activation does NOT fire on tap (MOB-02): toggle it in JS. #}
@@ -3922,6 +4317,63 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
     })();
     </script>
     {% endif %}{# /if market_state — v2 hero #}
+  {% if mode != 'stocks' %}
+  {# ── MX5 Popover system — mx5TogglePop / mx5CloseAllPopovers ── #}
+  {# NOTE: fn named mx5TogglePop per spec §3.3 — NEVER a native HTMLElement method name.
+     Exposed on window so onclick= inline handlers can reach it. #}
+  <script>
+  (function(){
+    var _mx5Active = null;
+    var _mx5ActiveBtn = null;
+
+    function _mx5Open(popId, btnId) {
+      var pop = document.getElementById(popId);
+      var btn = document.getElementById(btnId);
+      var bd  = document.getElementById('mx5PopBackdrop');
+      var rr  = document.getElementById('regime-radar');
+      if (!pop || !btn) return;
+      pop.classList.add('open');
+      btn.setAttribute('aria-expanded','true');
+      if (bd) bd.classList.add('open');
+      /* Lift containing card above fixed backdrop (stacking context fix — spec §3.3 lesson 2) */
+      if (rr) rr.classList.add('mx5-pop-open');
+      _mx5Active = pop;
+      _mx5ActiveBtn = btn;
+    }
+
+    window.mx5CloseAllPopovers = function() {
+      document.querySelectorAll('.mx5-popover.open').forEach(function(p){ p.classList.remove('open'); });
+      document.querySelectorAll('.mx5-sc-btn[aria-expanded="true"]').forEach(function(b){
+        b.setAttribute('aria-expanded','false');
+      });
+      var bd  = document.getElementById('mx5PopBackdrop');
+      var rr  = document.getElementById('regime-radar');
+      if (bd) bd.classList.remove('open');
+      if (rr) rr.classList.remove('mx5-pop-open');
+      _mx5Active = null; _mx5ActiveBtn = null;
+    };
+
+    window.mx5TogglePop = function(popId, btnId) {
+      var pop = document.getElementById(popId);
+      var isOpen = pop && pop.classList.contains('open');
+      window.mx5CloseAllPopovers();
+      if (!isOpen) _mx5Open(popId, btnId);
+    };
+
+    /* Escape handler: close popovers FIRST, then let mx2 Escape handler close islands.
+       Spec §3.3: "Escape handler must respect existing modal guards and close popovers
+       BEFORE islands." Uses stopImmediatePropagation only when a popover is actually open,
+       so the island Escape handler still fires on subsequent Escape when no popover. */
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Escape') return;
+      if (_mx5Active) {
+        e.stopImmediatePropagation(); /* prevent mx2 island close on same keypress */
+        window.mx5CloseAllPopovers();
+      }
+    });
+  })();
+  </script>
+  {% endif %}
   </div>{# /#regime-radar panel #}
 
   {# ── V2 ROW-LEDGER SECTIONS (macro mode only) ── #}

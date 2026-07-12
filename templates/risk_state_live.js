@@ -50,6 +50,24 @@
     if (sc && disp.score != null) sc.textContent = disp.score;
     var tick = document.getElementById("ms-tick");
     if (tick && disp.score != null) tick.style.left = disp.score + "%";
+    /* v5 gauge: update arc fill + needle + numeral on live score tick */
+    if (disp.score != null) {
+      var gsvg = document.querySelector(".mx5-gauge-svg");
+      if (gsvg) {
+        var arcLen = parseFloat(gsvg.getAttribute("data-gauge-arc-len") || "175.93");
+        var filled = Math.round((disp.score / 100) * arcLen * 10) / 10;
+        var gap    = Math.round((arcLen - filled) * 10) / 10;
+        var needleDeg = Math.round((disp.score / 100 * 180 - 90) * 10) / 10;
+        var arcEl = document.getElementById("mx5-gauge-arc-fill");
+        if (arcEl) arcEl.setAttribute("stroke-dasharray", filled + " " + gap);
+        var needleEl = document.getElementById("mx5-gauge-needle");
+        var cx = gsvg.getAttribute("data-gauge-cx") || "70";
+        var cy = gsvg.getAttribute("data-gauge-cy") || "75";
+        if (needleEl) needleEl.setAttribute("transform", "rotate(" + needleDeg + " " + cx + " " + cy + ")");
+        var numEl = document.getElementById("mx5-score-numeral");
+        if (numEl) numEl.textContent = disp.score;
+      }
+    }
     /* VIS-04/COPY-02: also update progress fill width so bar matches live score */
     if (disp.score != null) {
       var fills = document.querySelectorAll(".mx2-prog-fill");

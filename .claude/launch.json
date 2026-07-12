@@ -20,6 +20,13 @@
       "runtimeArgs": ["-m", "admin", "--port", "8791"],
       "port": 8791,
       "autoPort": false
+    },
+    {
+      "name": "macro-research",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-c", "import os,functools,http.server,socketserver;h=functools.partial(http.server.SimpleHTTPRequestHandler,directory='research/macro_html_refresh');socketserver.TCPServer(('',int(os.environ.get('PORT') or 8848)),h).serve_forever()"],
+      "port": 8848,
+      "autoPort": true
     }
   ]
 }
