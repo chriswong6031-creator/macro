@@ -46,11 +46,9 @@
     background:color-mix(in srgb,var(--panel) 72%,transparent);border:1px solid color-mix(in srgb,var(--line) 75%,transparent); }
   .cmdbar .mc b{ color:var(--text);font-weight:700; } .cmdbar .mc span{ color:var(--muted); }
   .cmdbar .mc.hot{ border-color:color-mix(in srgb,var(--up) 50%,var(--line));color:var(--up); }
-  .posture{ margin:8px 0 2px;font-size:13px;color:color-mix(in srgb,var(--text) 78%,transparent);
-    padding:10px 14px;border-left:3px solid var(--info);border-radius:0 12px 12px 0;
-    background:color-mix(in srgb,var(--info) 7%,transparent); }
-  /* desk status board */
-  .desks{ display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:16px 0 6px; }
+  /* desk status board — 176px floor keeps the widest ledger chip (ACCRUING · NN/25 DATES)
+     inside the card padding; the .ql-chip ellipsis guard below is the never-bleed backstop */
+  .desks{ display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(176px,1fr));margin:16px 0 6px; }
   .desk{ padding:13px 14px;border-radius:14px;text-decoration:none;display:block;transition:.16s ease;
     background:color-mix(in srgb,var(--panel) 80%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,transparent); }
   .desk:hover{ transform:translateY(-3px);border-color:color-mix(in srgb,var(--info) 45%,var(--line)); }
@@ -76,10 +74,14 @@
   .alert{ padding:14px 15px; }
   .alert h3{ font-size:13px;font-weight:700;margin:0 0 10px;display:flex;align-items:center;gap:8px; }
   .alert h3 .ic-svg{ width:16px;height:16px; }
-  .alert .arow{ display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent); }
+  /* .arow layout/type is row-scoped (not .alert-scoped) so it survives the .lst-wrap
+     "View all" overlay moving the list node out of the panel; borders stay in-flow-only
+     because the overlay draws its own separators */
+  .arow{ display:flex;align-items:center;gap:9px;padding:8px 0; }
+  .alert .arow{ border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent); }
   .alert .arow:first-of-type{ border-top:0; }
-  .alert .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:12.5px;min-width:52px; }
-  .alert .rd{ font-size:12px;color:color-mix(in srgb,var(--text) 70%,transparent);line-height:1.35; }
+  .arow .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:12.5px;min-width:52px; }
+  .arow .rd{ font-size:12px;color:color-mix(in srgb,var(--text) 70%,transparent);line-height:1.35; }
   /* command list */
   .cmd{ display:flex;flex-direction:column;gap:8px; }
   .row{ display:grid;grid-template-columns:122px 52px 86px 1fr;gap:12px;align-items:center;padding:11px 14px; }
@@ -190,9 +192,10 @@
   footer.hf{ margin-top:30px;padding-top:16px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);font-size:11px;color:var(--muted);line-height:1.6; }
   @media (prefers-reduced-motion:reduce){ .desk,.row{transition:none} .hh .live::after{animation:none} }
   /* qledger honesty chips (D10) */
-  .ql-chip { display:inline-flex; align-items:center; font:700 9px/1 ui-monospace,Menlo,monospace;
+  .ql-chip { display:inline-block; font:700 9px/1.4 ui-monospace,Menlo,monospace;
     letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:6px;
-    border:1px solid; white-space:nowrap; vertical-align:middle; min-width:0; flex-shrink:0; }
+    border:1px solid; white-space:nowrap; vertical-align:middle;
+    min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; box-sizing:border-box; }
   .ql-chip-ungraded { background:color-mix(in srgb,var(--muted) 12%,transparent);
     color:var(--muted); border-color:color-mix(in srgb,var(--muted) 28%,transparent); }
   .ql-chip-accruing { background:color-mix(in srgb,var(--warn) 14%,transparent);
@@ -202,34 +205,21 @@
   .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent);
     color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
   .desk-chips { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:5px; }
-  /* China Lens module (W0.2) */
-  .cl-badge{ font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
-    padding:2px 7px;border-radius:5px;
-    background:color-mix(in srgb,#f59e0b 18%,transparent);color:#f59e0b;margin-left:7px; }
-  .cl-wrap{ margin-top:0; }
-  .cl-headline{ font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:10px;line-height:1.4; }
-  .cl-chips{ display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px; }
-  .cl-chip{ font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:9px;cursor:default;
-    background:color-mix(in srgb,var(--panel) 78%,transparent);
-    border:1px solid color-mix(in srgb,var(--line) 75%,transparent); }
-  .cl-chip-stale{ border-color:color-mix(in srgb,var(--warn) 45%,var(--line));
-    color:var(--warn); }
-  .cl-rows{ display:flex;flex-direction:column;gap:9px;margin-bottom:12px; }
-  .cl-row{ display:flex;align-items:center;gap:10px;padding:9px 0;
-    border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); }
-  .cl-row:first-child{ border-top:0; }
-  .cl-sector{ font-size:13px;font-weight:700;min-width:120px; }
-  @media(max-width:560px){ .cl-sector{ min-width:80px;font-size:12px; } }
-  .cl-fresh{ display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;margin-bottom:10px; }
-  .cl-fresh-label{ font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em; }
-  .cl-dot{ font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;cursor:default;
-    text-transform:uppercase;letter-spacing:.03em; }
-  .cl-dot-ok{ background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok); }
-  .cl-dot-stale{ background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down); }
-  .cl-footer{ margin-top:10px;padding-top:8px;
-    border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); }
-  .cl-link{ font-size:12px;font-weight:600;color:var(--info);text-decoration:none; }
-  .cl-link:hover{ text-decoration:underline; }
+  /* signal scorecard horizon cards — labelled stat cells (no chip cramming) */
+  .heat.trh-heat{ grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); }
+  .trh .sh{ flex-wrap:nowrap; }
+  .trh .trh-h{ white-space:nowrap; }
+  .trh .pol.mea{ background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted); }
+  .trh-grid{ display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:9px; }
+  .trh-cell{ min-width:0; }
+  .trh-lab{ display:block;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--muted);margin-bottom:2px;line-height:1.35; }
+  .trh-val{ font-size:14px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums; }
+  .trh-val.pos{ color:var(--up); } .trh-val.neg{ color:var(--down); }
+  /* plain-word answer to the question-framed stage labels — the word carries the verdict,
+     the colour only reinforces it (sign convention on the number itself stays untouched) */
+  .trh-ans{ font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em; }
+  .trh-ans.ok{ color:var(--up); } .trh-ans.bad{ color:var(--down); }
 </style>
 </head>
 <body class="page-hub">
@@ -514,7 +504,7 @@
 
 <div class="hub-wrap">
   <header class="hh">
-    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-07-12T06:43:37.490210+00:00">2026-07-12</time></span>
+    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-07-12T07:10:16.000951+00:00">2026-07-12</time></span>
     <h1><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></h1>
     <p><span class="l-en">Ranked by EDGE REMAINING — genuine signal × how much of the move is still ahead × a leading desk firing before the crowd — not by how many desks agree (agreement is a lagging, consensus condition). The hero is what is EMERGING: a leading desk positioning into a quiet tape with room to run. The crowd-favourite that has already run is demoted on purpose. Context only, never a trade trigger.</span><span class="l-zh">按「剩余空间」排序 —— 真实信号 × 行情尚未走完的幅度 × 领先信号台抢在人群之前发动 —— 而非看多少台一致（一致性是滞后的共识状态）。主推「萌芽」机会：领先信号台在安静的盘面中悄悄建仓、仍有上行空间。已经跑完的人群宠儿被刻意下调。仅供参考，绝非交易触发。</span></p>
   </header>
@@ -531,9 +521,7 @@
     <span class="mc"><span class="l-en">Actionable</span><span class="l-zh">可操作</span> <b>3</b></span>
     <span class="mc"><span class="l-en">Universe</span><span class="l-zh">覆盖</span> <b>4839</b></span>
   </div>
-  <div class="posture">
-<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3m0 12v3m9-9h-3M6 12H3m13.5-6.5-2 2m-7 7-2 2m11 0-2-2m-7-7-2-2"/><circle cx="12" cy="12" r="3.2"/></svg> Goldilocks — growth improving while inflation cools. Posture: NEUTRAL — no edge either way; core holdings only, no new conviction bets.</div>
+  
 
   
   <div class="desks">
@@ -584,145 +572,6 @@
     </a>
   </div>
 
-  
-  
-  
-  
-  <div id="china-lens" class="band"><h2 style="--accent:#f59e0b">
-<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.1 5L8.5 15.5l2.1-5z"/></svg>
-    <span class="l-en">China Lens</span><span class="l-zh">中国观察</span>
-    <span class="cl-badge"><span class="l-en">Context only</span><span class="l-zh">上下文</span></span></h2>
-    <span class="ln"></span>
-    
-    <span class="cnt" data-tip-en="briefing.json is built in the asia lane (~08:30 UTC); hub builds at 02:00 UTC — typical lag ~18h" data-tip-zh="简报在亚洲收盘后生成（约北京时间16:30），与情报中枢更新时差约18小时">
-      <span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-11
-      <span class="l-en">(today)</span><span class="l-zh">（今日）</span>
-      
-    </span>
-    
-  </div>
-  <div class="glass acc cl-wrap" style="--accent:#f59e0b;padding:14px 16px">
-    
-    <div class="cl-headline">Upcoming: Money supply, RMB loans & TSF</div>
-
-    
-    <div class="cl-chips">
-      
-      
-      
-      
-      <span class="cl-chip"
-        data-tip-en="RORO state: neutral"
-        data-tip-zh="风险偏好状态：neutral">
-        <span class="l-en">CN Sentiment: Neutral</span>
-        <span class="l-zh">CN情绪：中性</span>
-      </span>
-      
-      
-      <span class="cl-chip "
-        data-tip-en="PBoC stance"
-        data-tip-zh="央行立场">
-        <span class="l-en">PBoC: On hold / neutral</span>
-        <span class="l-zh">央行：按兵不动 / 中性</span>
-      </span>
-      
-      
-      <span class="cl-chip"
-        data-tip-en="China news sentiment band"
-        data-tip-zh="中国新闻情绪区间">
-        <span class="l-en">News: cautious / risk-tilted lean</span>
-        <span class="l-zh">新闻：偏谨慎 / 防风险</span>
-      </span>
-      
-      
-      <span class="cl-chip"
-        data-tip-en="6 flagged tickers — see china_intel.html for detail"
-        data-tip-zh="6 只关注标的 — 详情见中国情报页">
-        6 <span class="l-en">flagged tickers</span><span class="l-zh">关注标的</span>
-      </span>
-      
-    </div>
-
-    
-    
-    <div class="cl-rows">
-      
-      <div class="cl-row">
-        <div class="cl-sector">
-          <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span>
-        </div>
-        <span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
-        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:41%"></i></span>
-<span class="ev">41%</span></div>
-      </div>
-      
-      <div class="cl-row">
-        <div class="cl-sector">
-          <span class="l-en">Defense</span><span class="l-zh">国防军工</span>
-        </div>
-        <span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
-        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:74%"></i></span>
-<span class="ev">74%</span></div>
-      </div>
-      
-    </div>
-    
-
-    
-    
-    <div class="cl-fresh">
-      <span class="cl-fresh-label"><span class="l-en">surfaces:</span><span class="l-zh">数据面：</span></span>
-      
-      <span class="cl-dot cl-dot-ok"
-        data-tip-en="news: 2026-07-11"
-        data-tip-zh="news：2026-07-11">news</span>
-      
-      <span class="cl-dot cl-dot-ok"
-        data-tip-en="policy: 2026-07-10"
-        data-tip-zh="policy：2026-07-10">policy</span>
-      
-      <span class="cl-dot cl-dot-ok"
-        data-tip-en="altdata: 2026-07-11"
-        data-tip-zh="altdata：2026-07-11">altdata</span>
-      
-      <span class="cl-dot cl-dot-ok"
-        data-tip-en="radar: 2026-07-11"
-        data-tip-zh="radar：2026-07-11">radar</span>
-      
-      <span class="cl-dot cl-dot-ok"
-        data-tip-en="analysis: 2026-07-11"
-        data-tip-zh="analysis：2026-07-11">analysis</span>
-      
-      <span class="cl-dot cl-dot-stale"
-        data-tip-en="policy_phrase: 2026-07-02 (stale >3d)"
-        data-tip-zh="policy_phrase：2026-07-02（数据偏旧，超过3天）">policy_phrase</span>
-      
-      <span class="cl-dot cl-dot-ok"
-        data-tip-en="narrative_divergence: None"
-        data-tip-zh="narrative_divergence：None">narrative_divergence</span>
-      
-      <span class="cl-dot cl-dot-stale"
-        data-tip-en="special_situations: 2026-07-06 (stale >3d)"
-        data-tip-zh="special_situations：2026-07-06（数据偏旧，超过3天）">special_situations</span>
-      
-      <span class="cl-dot cl-dot-ok"
-        data-tip-en="command: 2026-07-11"
-        data-tip-zh="command：2026-07-11">command</span>
-      
-    </div>
-    
-
-    
-    <div class="cl-footer">
-      <a href="china_intel.html" class="cl-link">
-        <span class="l-en">Full China report →</span><span class="l-zh">查看中国完整报告 →</span>
-      </a>
-    </div>
-  </div>
-  
   
 
   
@@ -890,10 +739,12 @@
 
   
   <div class="alerts" style="margin-top:18px">
-    <div class="glass acc alert" style="--accent:var(--down)">
+    <div class="glass acc alert" style="--accent:var(--down)"
+         data-ovl-title-en="Exhausted — already run, fade-risk" data-ovl-title-zh="透支 —— 已跑完，派发风险" data-ovl-accent="var(--down)">
       <h3>
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2.5 20h19zM12 10v4m0 3v.5"/></svg> <span class="l-en">Exhausted — already run, fade-risk</span><span class="l-zh">透支 —— 已跑完，派发风险</span> <span class="cnt">12</span></h3>
+      <div class="lst-wrap"><div class="lst-collapse is-collapsed">
       <div class="arow">
         <span class="tk">ALM</span>
         <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">54%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
@@ -910,13 +761,25 @@
         <span class="tk">HOOD</span>
         <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">39%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
         <span class="tk">MP</span>
+        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">34%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
+        <span class="tk">GLW</span>
+        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">53%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
+        <span class="tk">ALB</span>
+        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">34%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
+        <span class="tk">CRML</span>
+        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">34%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
+        <span class="tk">LAC</span>
         <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">34%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div>
+      </div>
+      <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button></div>
       
     </div>
-    <div class="glass acc alert" style="--accent:#a78bfa">
+    <div class="glass acc alert" style="--accent:#a78bfa"
+         data-ovl-title-en="Live catalysts — dated events" data-ovl-title-zh="在途催化 —— 有确定日期的事件" data-ovl-accent="#a78bfa">
       <h3>
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> <span class="l-en">Live catalysts — dated events</span><span class="l-zh">在途催化 —— 有确定日期的事件</span> <span class="cnt">12</span></h3>
+      <div class="lst-wrap"><div class="lst-collapse is-collapsed">
       <div class="arow">
         <span class="tk">SPGI</span>
         <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Acquisitions</span> <span style="color:var(--muted)">2<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>S&P Global Inc. filed a Form S-4 registration statement with the SEC, registering securities to be issued in...</span></div><div class="arow">
@@ -933,7 +796,17 @@
         <span class="tk">BRAG</span>
         <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Restructuring</span> <span style="color:var(--muted)">2<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Bragg Gaming Group announced a further restructuring on July 9, 2026, via a Form 6-K filing (equivalent to a U.S....</span></div><div class="arow">
         <span class="tk">CSAN</span>
-        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Divestitures</span> <span style="color:var(--muted)">2<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Cosan S.A. filed a Form 6-K reporting the execution of purchase and sale agreements for the consensual segregation...</span></div>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Divestitures</span> <span style="color:var(--muted)">2<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Cosan S.A. filed a Form 6-K reporting the execution of purchase and sale agreements for the consensual segregation...</span></div><div class="arow">
+        <span class="tk">CXXIF</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Acquisitions</span> <span style="color:var(--muted)">2<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>C21 Investments Inc. filed a Form 6-K (management information circular) for a special meeting on August 7, 2026, to...</span></div><div class="arow">
+        <span class="tk">DFNSW</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Acquisitions</span> <span style="color:var(--muted)">2<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>T3 Defense Inc. filed an 8-K under Item 2.01 completing the acquisition of 60% of Project 35, an Israeli defense...</span></div><div class="arow">
+        <span class="tk">EPAC</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Acquisitions</span> <span style="color:var(--muted)">2<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Enerpac Tool Group Corp. filed an 8-K regarding its entry into a merger agreement to acquire Specialized Fabrication...</span></div><div class="arow">
+        <span class="tk">EQR</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Acquisitions</span> <span style="color:var(--muted)">2<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Equity Residential filed Amendment No. 1 to Form S-4 on July 9, 2026, in connection with its merger with AvalonBay...</span></div>
+      </div>
+      <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button></div>
       
     </div>
   </div>
@@ -943,7 +816,8 @@
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3m0 12v3m9-9h-3M6 12H3m13.5-6.5-2 2m-7 7-2 2m11 0-2-2m-7-7-2-2"/><circle cx="12" cy="12" r="3.2"/></svg> <span class="l-en">Command — ranked by opportunity</span><span class="l-zh">指挥榜 —— 按机会值排序</span></h2><span class="ln"></span>
     <span class="cnt"><span class="l-en">edge remaining × signal × leading gap</span><span class="l-zh">剩余空间 × 信号 × 领先差</span></span></div>
-  <div class="cmd">
+  <div class="lst-wrap" data-ovl-title-en="Command — ranked by opportunity" data-ovl-title-zh="指挥榜 —— 按机会值排序" data-ovl-accent="var(--up)">
+  <div class="cmd lst-collapse is-collapsed">
     
     <div class="glass acc row" style="--accent:var(--up)">
       <div class="id"><span class="tk">ZS</span><span class="nb-px" data-sym="ZS" data-mkt="us">$139.27</span><span class="nm">ZS</span><span class="mtx" title="news · alt · radar · board · policy">
@@ -1695,6 +1569,8 @@
       </div>
     </div>
   </div>
+  <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button>
+  </div>
 
   
   
@@ -1702,25 +1578,63 @@
   <div class="band"><h2 style="--accent:var(--ok)">
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> <span class="l-en">Signal scorecard — is the edge real?</span><span class="l-zh">信号记分卡 —— 优势是否真实？</span></h2><span class="ln"></span>
-    <span class="cnt"><span class="l-en">the hub graded against realized forward returns</span><span class="l-zh">以实际前瞻收益检验本台</span></span></div>
+    <span class="cnt"><span class="l-en">the hub graded against what actually happened — context only, not a trade signal</span><span class="l-zh">以实际走势检验本台 —— 仅供参考，非交易信号</span></span></div>
   
-  <div class="heat">
+  <div class="heat trh-heat">
     
-    <div class="glass acc sec">
-      <div class="sh">5<span class="l-en">d</span><span class="l-zh">天</span> <span class="l-en">horizon</span><span class="l-zh">周期</span>
-        <span class="etf"><span class="l-en">IC</span><span class="l-zh">信息系数</span> -0.040</span>
-        <span class="pol" style="background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted)"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></div>
-      <small><span><span class="l-en">n</span><span class="l-zh">样本</span> <b>7652</b></span>
-        <span style="color:var(--up)"><span class="l-en">emerging</span><span class="l-zh">萌芽</span> <b>-0.8%</b></span>
-        <span style="color:var(--down)"><span class="l-en">exhausted</span><span class="l-zh">透支</span> <b>-0.3%</b></span></small>
+    
+    
+    
+    <div class="glass acc sec trh">
+      <div class="sh"><span class="trh-h">5<span class="l-en">d</span><span class="l-zh">天</span> <span class="l-en">horizon</span><span class="l-zh">周期</span></span>
+        <span class="pol mea" data-tip-en="Still accruing graded calls at this horizon — shown, not yet trusted" data-tip-zh="该周期样本仍在累积 —— 仅展示，尚未采信"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></div>
+      <div class="trh-grid">
+        <div class="trh-cell" data-tip-en="Information coefficient: correlation between the hub's opportunity rank and the realized SPY-relative return 5 trading days later. Above zero = higher-ranked names did better; below zero = they did worse." data-tip-zh="信息系数：机会排名与5个交易日后实际相对SPY收益的相关性。大于零 = 排名越高表现越好；小于零 = 表现更差。">
+          <span class="trh-lab"><span class="l-en">rank skill</span><span class="l-zh">排名预测力</span></span>
+          <b class="trh-val neg">-0.040</b>
+        </div>
+        <div class="trh-cell" data-tip-en="Matured claims graded at this horizon" data-tip-zh="该周期已到期并完成评分的判断数">
+          <span class="trh-lab"><span class="l-en">graded calls</span><span class="l-zh">已评分判断</span></span>
+          <b class="trh-val">7,652</b>
+        </div>
+        
+        <div class="trh-cell" data-tip-en="Average SPY-relative forward return of names the hub tagged 'emerging'. A real edge shows up positive — 'yes' means the call worked." data-tip-zh="被标记「萌芽」标的的平均相对SPY前瞻收益。真实优势应为正 ——「是」表示判断成立。">
+          <span class="trh-lab"><span class="l-en">emerging: beat SPY?</span><span class="l-zh">萌芽：跑赢SPY？</span></span>
+          <b class="trh-val">-0.8%</b> <span class="trh-ans bad"><span class="l-en">no</span><span class="l-zh">否</span></span>
+        </div>
+        
+        <div class="trh-cell" data-tip-en="Average SPY-relative forward return of names tagged 'exhausted' (fade calls). The call works when this is negative — they lagged as predicted; 'yes' means it did." data-tip-zh="被标记「透支」标的的平均相对SPY前瞻收益。判断成立时应为负（如期跑输）——「是」表示如期兑现。">
+          <span class="trh-lab"><span class="l-en">exhausted: lagged SPY?</span><span class="l-zh">透支：跑输SPY？</span></span>
+          <b class="trh-val">-0.3%</b> <span class="trh-ans ok"><span class="l-en">yes</span><span class="l-zh">是</span></span>
+        </div>
+      </div>
     </div>
-    <div class="glass acc sec">
-      <div class="sh">10<span class="l-en">d</span><span class="l-zh">天</span> <span class="l-en">horizon</span><span class="l-zh">周期</span>
-        <span class="etf"><span class="l-en">IC</span><span class="l-zh">信息系数</span> -0.134</span>
-        <span class="pol" style="background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted)"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></div>
-      <small><span><span class="l-en">n</span><span class="l-zh">样本</span> <b>5365</b></span>
-        <span style="color:var(--up)"><span class="l-en">emerging</span><span class="l-zh">萌芽</span> <b>-3.1%</b></span>
-        <span style="color:var(--down)"><span class="l-en">exhausted</span><span class="l-zh">透支</span> <b>-1.1%</b></span></small>
+    
+    
+    
+    <div class="glass acc sec trh">
+      <div class="sh"><span class="trh-h">10<span class="l-en">d</span><span class="l-zh">天</span> <span class="l-en">horizon</span><span class="l-zh">周期</span></span>
+        <span class="pol mea" data-tip-en="Still accruing graded calls at this horizon — shown, not yet trusted" data-tip-zh="该周期样本仍在累积 —— 仅展示，尚未采信"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></div>
+      <div class="trh-grid">
+        <div class="trh-cell" data-tip-en="Information coefficient: correlation between the hub's opportunity rank and the realized SPY-relative return 10 trading days later. Above zero = higher-ranked names did better; below zero = they did worse." data-tip-zh="信息系数：机会排名与10个交易日后实际相对SPY收益的相关性。大于零 = 排名越高表现越好；小于零 = 表现更差。">
+          <span class="trh-lab"><span class="l-en">rank skill</span><span class="l-zh">排名预测力</span></span>
+          <b class="trh-val neg">-0.134</b>
+        </div>
+        <div class="trh-cell" data-tip-en="Matured claims graded at this horizon" data-tip-zh="该周期已到期并完成评分的判断数">
+          <span class="trh-lab"><span class="l-en">graded calls</span><span class="l-zh">已评分判断</span></span>
+          <b class="trh-val">5,365</b>
+        </div>
+        
+        <div class="trh-cell" data-tip-en="Average SPY-relative forward return of names the hub tagged 'emerging'. A real edge shows up positive — 'yes' means the call worked." data-tip-zh="被标记「萌芽」标的的平均相对SPY前瞻收益。真实优势应为正 ——「是」表示判断成立。">
+          <span class="trh-lab"><span class="l-en">emerging: beat SPY?</span><span class="l-zh">萌芽：跑赢SPY？</span></span>
+          <b class="trh-val">-3.1%</b> <span class="trh-ans bad"><span class="l-en">no</span><span class="l-zh">否</span></span>
+        </div>
+        
+        <div class="trh-cell" data-tip-en="Average SPY-relative forward return of names tagged 'exhausted' (fade calls). The call works when this is negative — they lagged as predicted; 'yes' means it did." data-tip-zh="被标记「透支」标的的平均相对SPY前瞻收益。判断成立时应为负（如期跑输）——「是」表示如期兑现。">
+          <span class="trh-lab"><span class="l-en">exhausted: lagged SPY?</span><span class="l-zh">透支：跑输SPY？</span></span>
+          <b class="trh-val">-1.1%</b> <span class="trh-ans ok"><span class="l-en">yes</span><span class="l-zh">是</span></span>
+        </div>
+      </div>
     </div>
   </div>
   
@@ -1991,7 +1905,7 @@
 
 
   <footer class="hf">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-07-12T06:43:37.490210+00:00">2026-07-12 06:43</time> UTC ·
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-07-12T07:10:16.000951+00:00">2026-07-12 07:10</time> UTC ·
     Context only. A central command that fuses five independent desks — news flow, alt-data smart-money, the divergence radar, the factor buy-board, and policy intent — into one reasoned read per name. Composite conviction rewards INDEPENDENT agreement across desks and is docked by an unanswered falsifier; the second/third-order flags name the setup. The bot sizes through its own risk framework; nothing here sizes alone.
   </footer>
 </div>

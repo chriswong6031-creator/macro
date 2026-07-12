@@ -3,8 +3,11 @@
 Covers:
   (a) build_china_packet from a fixture briefing.json — schema check, key assertions,
       degradation (missing file, missing keys, stale asof).
-  (b) Template renders correctly with china=<packet> and china=None, using the REAL
-      render call shape (kwarg-collision safety — hub+built+mode+qledger_chips+china).
+  (b) Template render, using the REAL render call shape (kwarg-collision safety —
+      hub+built+mode+qledger_chips+china). The China Lens MODULE was removed from the
+      US hub by operator order 2026-07-11: the packet artifact is still built (regions/
+      china.json feeds downstream readers), but the template must NOT render the module
+      even when a packet is passed — these tests are the regression guard.
 
 No tracked parquets are dirtied by these tests.
 """
@@ -360,8 +363,10 @@ def _get_jinja_env():
     )
 
 
-def test_template_renders_with_china_packet(tmp_path):
-    """Template renders without error when china packet is present and contains module markup."""
+def test_template_omits_china_module_even_with_packet(tmp_path):
+    """Operator order 2026-07-11: the US hub must NOT render the China Lens module,
+    even when a valid packet is passed (the render call still passes china= — the
+    kwarg must stay accepted without a collision or an error)."""
     from scripts.build_intel_hub import build_china_packet
     p = _write_fixture(tmp_path)
     pkt = build_china_packet(p, reference_date=_REFERENCE_DATE)
@@ -378,20 +383,11 @@ def test_template_renders_with_china_packet(tmp_path):
         qledger_chips={},
         china=pkt,
     )
-    assert "china-lens" in html, "China Lens module id must be present in rendered HTML"
-    assert "l-en" in html, "bilingual l-en spans must be present"
-    assert "l-zh" in html, "bilingual l-zh spans must be present"
-    # Context only badge
-    assert "Context only" in html or "上下文" in html
-    # Regime / policy chips
-    assert "Greed" in html or "贪婪" in html
-    assert "On hold" in html or "按兵不动" in html
-    # Top conviction sector
-    assert "Semiconductors" in html or "半导体" in html
-    # Freshness dots
-    assert "cl-dot" in html
-    # Footer link
-    assert "china_intel.html" in html
+    assert "china-lens" not in html, "China Lens module removed by operator order — must not render"
+    assert "cl-dot" not in html and "cl-chip" not in html, "China Lens markup must be gone"
+    # Rest of hub still renders bilingually
+    assert "Intelligence Hub" in html or "情报中心" in html
+    assert "l-en" in html and "l-zh" in html
 
 
 def test_template_renders_without_china_omits_module():

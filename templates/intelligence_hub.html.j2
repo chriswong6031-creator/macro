@@ -101,11 +101,9 @@
     background:color-mix(in srgb,var(--panel) 72%,transparent);border:1px solid color-mix(in srgb,var(--line) 75%,transparent); }
   .cmdbar .mc b{ color:var(--text);font-weight:700; } .cmdbar .mc span{ color:var(--muted); }
   .cmdbar .mc.hot{ border-color:color-mix(in srgb,var(--up) 50%,var(--line));color:var(--up); }
-  .posture{ margin:8px 0 2px;font-size:13px;color:color-mix(in srgb,var(--text) 78%,transparent);
-    padding:10px 14px;border-left:3px solid var(--info);border-radius:0 12px 12px 0;
-    background:color-mix(in srgb,var(--info) 7%,transparent); }
-  /* desk status board */
-  .desks{ display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:16px 0 6px; }
+  /* desk status board — 176px floor keeps the widest ledger chip (ACCRUING · NN/25 DATES)
+     inside the card padding; the .ql-chip ellipsis guard below is the never-bleed backstop */
+  .desks{ display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(176px,1fr));margin:16px 0 6px; }
   .desk{ padding:13px 14px;border-radius:14px;text-decoration:none;display:block;transition:.16s ease;
     background:color-mix(in srgb,var(--panel) 80%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,transparent); }
   .desk:hover{ transform:translateY(-3px);border-color:color-mix(in srgb,var(--info) 45%,var(--line)); }
@@ -131,10 +129,14 @@
   .alert{ padding:14px 15px; }
   .alert h3{ font-size:13px;font-weight:700;margin:0 0 10px;display:flex;align-items:center;gap:8px; }
   .alert h3 .ic-svg{ width:16px;height:16px; }
-  .alert .arow{ display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent); }
+  /* .arow layout/type is row-scoped (not .alert-scoped) so it survives the .lst-wrap
+     "View all" overlay moving the list node out of the panel; borders stay in-flow-only
+     because the overlay draws its own separators */
+  .arow{ display:flex;align-items:center;gap:9px;padding:8px 0; }
+  .alert .arow{ border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent); }
   .alert .arow:first-of-type{ border-top:0; }
-  .alert .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:12.5px;min-width:52px; }
-  .alert .rd{ font-size:12px;color:color-mix(in srgb,var(--text) 70%,transparent);line-height:1.35; }
+  .arow .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:12.5px;min-width:52px; }
+  .arow .rd{ font-size:12px;color:color-mix(in srgb,var(--text) 70%,transparent);line-height:1.35; }
   /* command list */
   .cmd{ display:flex;flex-direction:column;gap:8px; }
   .row{ display:grid;grid-template-columns:122px 52px 86px 1fr;gap:12px;align-items:center;padding:11px 14px; }
@@ -245,9 +247,10 @@
   footer.hf{ margin-top:30px;padding-top:16px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);font-size:11px;color:var(--muted);line-height:1.6; }
   @media (prefers-reduced-motion:reduce){ .desk,.row{transition:none} .hh .live::after{animation:none} }
   /* qledger honesty chips (D10) */
-  .ql-chip { display:inline-flex; align-items:center; font:700 9px/1 ui-monospace,Menlo,monospace;
+  .ql-chip { display:inline-block; font:700 9px/1.4 ui-monospace,Menlo,monospace;
     letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:6px;
-    border:1px solid; white-space:nowrap; vertical-align:middle; min-width:0; flex-shrink:0; }
+    border:1px solid; white-space:nowrap; vertical-align:middle;
+    min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; box-sizing:border-box; }
   .ql-chip-ungraded { background:color-mix(in srgb,var(--muted) 12%,transparent);
     color:var(--muted); border-color:color-mix(in srgb,var(--muted) 28%,transparent); }
   .ql-chip-accruing { background:color-mix(in srgb,var(--warn) 14%,transparent);
@@ -257,34 +260,21 @@
   .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent);
     color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
   .desk-chips { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:5px; }
-  /* China Lens module (W0.2) */
-  .cl-badge{ font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
-    padding:2px 7px;border-radius:5px;
-    background:color-mix(in srgb,#f59e0b 18%,transparent);color:#f59e0b;margin-left:7px; }
-  .cl-wrap{ margin-top:0; }
-  .cl-headline{ font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:10px;line-height:1.4; }
-  .cl-chips{ display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px; }
-  .cl-chip{ font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:9px;cursor:default;
-    background:color-mix(in srgb,var(--panel) 78%,transparent);
-    border:1px solid color-mix(in srgb,var(--line) 75%,transparent); }
-  .cl-chip-stale{ border-color:color-mix(in srgb,var(--warn) 45%,var(--line));
-    color:var(--warn); }
-  .cl-rows{ display:flex;flex-direction:column;gap:9px;margin-bottom:12px; }
-  .cl-row{ display:flex;align-items:center;gap:10px;padding:9px 0;
-    border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); }
-  .cl-row:first-child{ border-top:0; }
-  .cl-sector{ font-size:13px;font-weight:700;min-width:120px; }
-  @media(max-width:560px){ .cl-sector{ min-width:80px;font-size:12px; } }
-  .cl-fresh{ display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;margin-bottom:10px; }
-  .cl-fresh-label{ font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em; }
-  .cl-dot{ font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;cursor:default;
-    text-transform:uppercase;letter-spacing:.03em; }
-  .cl-dot-ok{ background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok); }
-  .cl-dot-stale{ background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down); }
-  .cl-footer{ margin-top:10px;padding-top:8px;
-    border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); }
-  .cl-link{ font-size:12px;font-weight:600;color:var(--info);text-decoration:none; }
-  .cl-link:hover{ text-decoration:underline; }
+  /* signal scorecard horizon cards — labelled stat cells (no chip cramming) */
+  .heat.trh-heat{ grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); }
+  .trh .sh{ flex-wrap:nowrap; }
+  .trh .trh-h{ white-space:nowrap; }
+  .trh .pol.mea{ background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted); }
+  .trh-grid{ display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:9px; }
+  .trh-cell{ min-width:0; }
+  .trh-lab{ display:block;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--muted);margin-bottom:2px;line-height:1.35; }
+  .trh-val{ font-size:14px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums; }
+  .trh-val.pos{ color:var(--up); } .trh-val.neg{ color:var(--down); }
+  /* plain-word answer to the question-framed stage labels — the word carries the verdict,
+     the colour only reinforces it (sign convention on the number itself stays untouched) */
+  .trh-ans{ font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em; }
+  .trh-ans.ok{ color:var(--up); } .trh-ans.bad{ color:var(--down); }
 </style>
 </head>
 <body class="page-hub">
@@ -323,7 +313,7 @@
     {% if hub.n_actionable %}<span class="mc">{{ t('Actionable', '可操作') }} <b>{{ hub.n_actionable }}</b></span>{% endif %}
     {% if hub.n_universe %}<span class="mc">{{ t('Universe', '覆盖') }} <b>{{ hub.n_universe }}</b></span>{% endif %}
   </div>
-  {% if MC.posture %}<div class="posture">{{ ic('command') }} {{ MC.posture }}</div>{% endif %}
+  {# posture banner removed by operator order 2026-07-11 — regime/cycle chips above carry the state #}
 
   {# ── desk status board ── #}
   <div class="desks">
@@ -342,102 +332,9 @@
     </a>{% endfor %}
   </div>
 
-  {# ── CHINA LENS (W0.2) — context-only, reads china_intel/briefing.json packet ── #}
-  {# Module is omitted entirely if china packet is None (briefing absent/stale). #}
-  {% if china %}
-  {# Freshness: briefing.json is built at 08:30 UTC (asia lane) while the hub builds at 02:00 UTC.
-     The briefing is typically ~18h old at hub build time — surface age honestly. #}
-  <div id="china-lens" class="band"><h2 style="--accent:#f59e0b">{{ ic('sector') }}
-    {{ t('China Lens', '中国观察') }}
-    <span class="cl-badge">{{ t('Context only', '上下文') }}</span></h2>
-    <span class="ln"></span>
-    {% if china.asof_age_days is not none %}
-    <span class="cnt" data-tip-en="briefing.json is built in the asia lane (~08:30 UTC); hub builds at 02:00 UTC — typical lag ~18h" data-tip-zh="简报在亚洲收盘后生成（约北京时间16:30），与情报中枢更新时差约18小时">
-      {{ t('as of', '截至') }} {{ china.as_of }}
-      {% if china.asof_age_days == 0 %}{{ t('(today)', '（今日）') }}
-      {% elif china.asof_age_days == 1 %}{{ t('(1d ago)', '（1天前）') }}
-      {% else %}{{ t('(' ~ china.asof_age_days ~ 'd ago)', '（' ~ china.asof_age_days ~ '天前）') }}{% endif %}
-    </span>
-    {% endif %}
-  </div>
-  <div class="glass acc cl-wrap" style="--accent:#f59e0b;padding:14px 16px">
-    {# Headline row — derived mechanically from what_changed / top conviction #}
-    <div class="cl-headline">{{ china.headline }}</div>
-
-    {# Chips row: RORO band, PBoC stance, news band #}
-    <div class="cl-chips">
-      {% set rg = china.regime or {} %}
-      {% set po = china.policy or {} %}
-      {% set nw = china.news or {} %}
-      {% if rg.band_en %}
-      <span class="cl-chip"
-        data-tip-en="RORO state: {{ rg.roro_state or '—' }}"
-        data-tip-zh="风险偏好状态：{{ rg.roro_state or '—' }}">
-        <span class="l-en">CN Sentiment: {{ rg.band_en }}</span>
-        <span class="l-zh">CN情绪：{{ rg.band_zh or rg.band_en }}</span>
-      </span>
-      {% endif %}
-      {% if po.stance_label_en %}
-      <span class="cl-chip {{ 'cl-chip-stale' if po.stale else '' }}"
-        data-tip-en="PBoC stance{{ ' (data may be stale)' if po.stale else '' }}"
-        data-tip-zh="央行立场{{ '（数据可能较旧）' if po.stale else '' }}">
-        <span class="l-en">PBoC: {{ po.stance_label_en }}</span>
-        <span class="l-zh">央行：{{ po.stance_label_zh or po.stance_label_en }}</span>
-      </span>
-      {% endif %}
-      {% if nw.band_label_en %}
-      <span class="cl-chip"
-        data-tip-en="China news sentiment band"
-        data-tip-zh="中国新闻情绪区间">
-        <span class="l-en">News: {{ nw.band_label_en }}</span>
-        <span class="l-zh">新闻：{{ nw.band_label_zh or nw.band_label_en }}</span>
-      </span>
-      {% endif %}
-      {% if china.flagged_ticker_count %}
-      <span class="cl-chip"
-        data-tip-en="{{ china.flagged_ticker_count }} flagged tickers — see china_intel.html for detail"
-        data-tip-zh="{{ china.flagged_ticker_count }} 只关注标的 — 详情见中国情报页">
-        {{ china.flagged_ticker_count }} <span class="l-en">flagged tickers</span><span class="l-zh">关注标的</span>
-      </span>
-      {% endif %}
-    </div>
-
-    {# Top-2 conviction rows — reuse existing stage() / edgebar() macros #}
-    {% if china.conviction %}
-    <div class="cl-rows">
-      {% for row in china.conviction %}
-      <div class="cl-row">
-        <div class="cl-sector">
-          <span class="l-en">{{ row.sector_en }}</span><span class="l-zh">{{ row.sector_zh or row.sector_en }}</span>
-        </div>
-        {{ stage(row.stage) }}
-        {% if row.edge_remaining is not none %}{{ edgebar(row.edge_remaining) }}{% endif %}
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-    {# Surface freshness dots — one dot per surface, stale = red #}
-    {% if china.surfaces %}
-    <div class="cl-fresh">
-      <span class="cl-fresh-label">{{ t('surfaces:', '数据面：') }}</span>
-      {% for sname, sinfo in china.surfaces.items() %}
-      <span class="cl-dot {{ 'cl-dot-stale' if sinfo.stale else 'cl-dot-ok' }}"
-        data-tip-en="{{ sname }}: {{ sinfo.asof }}{{ ' (stale >3d)' if sinfo.stale else '' }}"
-        data-tip-zh="{{ sname }}：{{ sinfo.asof }}{{ '（数据偏旧，超过3天）' if sinfo.stale else '' }}">{{ sname }}</span>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-    {# Footer link to china_intel.html #}
-    <div class="cl-footer">
-      <a href="{{ china.links.detail }}" class="cl-link">
-        {{ t('Full China report →', '查看中国完整报告 →') }}
-      </a>
-    </div>
-  </div>
-  {# END CHINA LENS #}
-  {% endif %}
+  {# China Lens module removed by operator order 2026-07-11 — the packet artifact
+     (site/intel_hub/regions/china.json) is still built for downstream readers;
+     the US hub no longer renders it. #}
 
   {# ── EMERGING EDGE — the pre-consensus hero (highest value) ── #}
   {% set EM = hub.emerging or [] %}{% set EX = hub.exhausted or [] %}{% set CA = hub.catalysts or [] %}
@@ -478,22 +375,31 @@
   </div>
   {% endif %}
 
-  {# ── exhausted (fade) + live catalysts ── #}
+  {# ── exhausted (fade) + live catalysts — full lists behind the shared .lst-wrap
+        "View all" overlay (CSS caps the in-flow view at 7 rows / 5 on narrow) ── #}
   <div class="alerts" style="margin-top:18px">
-    <div class="glass acc alert" style="--accent:var(--down)">
+    <div class="glass acc alert" style="--accent:var(--down)"
+         data-ovl-title-en="Exhausted — already run, fade-risk" data-ovl-title-zh="透支 —— 已跑完，派发风险" data-ovl-accent="var(--down)">
       <h3>{{ ic('warn') }} {{ t('Exhausted — already run, fade-risk', '透支 —— 已跑完，派发风险') }} <span class="cnt">{{ EX|length }}</span></h3>
-      {% if EX %}{% for d in EX[:8] %}<div class="arow">
+      {% if EX %}<div class="lst-wrap"><div class="lst-collapse is-collapsed">
+      {% for d in EX %}<div class="arow">
         <span class="tk">{{ d.ticker }}</span>
         <span class="rd">{{ stage(d.stage) }} <b style="color:var(--down)">{{ (d.edge_remaining*100)|round|int }}%</b> {{ t('edge left','剩余') }} · {{ d.read }}</span></div>{% endfor %}
+      </div>
+      <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more','显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button></div>
       {% else %}<div class="empty">{{ t('Nothing flagged exhausted today.', '今日无透支标的。') }}</div>{% endif %}
     </div>
-    <div class="glass acc alert" style="--accent:#a78bfa">
+    <div class="glass acc alert" style="--accent:#a78bfa"
+         data-ovl-title-en="Live catalysts — dated events" data-ovl-title-zh="在途催化 —— 有确定日期的事件" data-ovl-accent="#a78bfa">
       <h3>{{ ic('cal') }} {{ t('Live catalysts — dated events', '在途催化 —— 有确定日期的事件') }} <span class="cnt">{{ CA|length }}</span></h3>
-      {% if CA %}{% for d in CA[:8] %}{% set c = d.catalyst or {} %}<div class="arow">
+      {% if CA %}<div class="lst-wrap"><div class="lst-collapse is-collapsed">
+      {% for d in CA %}{% set c = d.catalyst or {} %}<div class="arow">
         <span class="tk">{{ d.ticker }}</span>
         <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">{{ c.category }}</span>
           {%- if c.days_since is not none %} <span style="color:var(--muted)">{{ c.days_since }}{{ t('d ago','天前') }}</span>{% endif %}
           {%- if c.brief %}<br>{{ c.brief|truncate(120) }}{% endif %}</span></div>{% endfor %}
+      </div>
+      <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more','显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button></div>
       {% else %}<div class="empty">{{ t('No fresh dated catalysts in-universe.', '覆盖范围内暂无新催化事件。') }}</div>{% endif %}
     </div>
   </div>
@@ -501,7 +407,8 @@
   {# ── command list (ranked by OPPORTUNITY = edge remaining × signal) ── #}
   <div class="band"><h2 style="--accent:var(--up)">{{ ic('command') }} {{ t('Command — ranked by opportunity', '指挥榜 —— 按机会值排序') }}</h2><span class="ln"></span>
     <span class="cnt">{{ t('edge remaining × signal × leading gap', '剩余空间 × 信号 × 领先差') }}</span></div>
-  <div class="cmd">
+  <div class="lst-wrap" data-ovl-title-en="Command — ranked by opportunity" data-ovl-title-zh="指挥榜 —— 按机会值排序" data-ovl-accent="var(--up)">
+  <div class="cmd lst-collapse is-collapsed">
     {% for d in hub.command %}
     <div class="glass acc row" style="--accent:{{ 'var(--info)' if d.stage=='emerging' else 'var(--up)' if d.lean>0 else 'var(--down)' if d.lean<0 else 'var(--info)' }}">
       <div class="id"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}<span class="nm">{{ d.name }}</span>{{ matrix(d.directions) }}</div>
@@ -522,30 +429,49 @@
       </div>
     </div>{% endfor %}
   </div>
+  <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more','显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>
+  </div>
 
   {# ── SIGNAL SCORECARD — the falsifiable track-record (measure, don't assert) ── #}
   {% set TR = hub.track_record %}
   {% if TR and TR.n_snapshots %}
   <div class="band"><h2 style="--accent:var(--ok)">{{ ic('pulse') }} {{ t('Signal scorecard — is the edge real?', '信号记分卡 —— 优势是否真实？') }}</h2><span class="ln"></span>
-    <span class="cnt">{{ t('the hub graded against realized forward returns', '以实际前瞻收益检验本台') }}</span></div>
+    <span class="cnt">{{ t('the hub graded against what actually happened — context only, not a trade signal', '以实际走势检验本台 —— 仅供参考，非交易信号') }}</span></div>
   {% if not TR.any_matured %}
   <div class="glass acc" style="padding:13px 16px;font-size:12.5px;color:color-mix(in srgb,var(--text) 80%,transparent);line-height:1.5">
     {{ ic('cal') }} <b>{{ t('Measuring', '测量中') }}</b> — {{ t('the hub records every claim it makes (opportunity rank + lifecycle stage) and grades it against realized SPY-relative forward returns.', '本台记录每一次判断（机会排名 + 生命周期阶段），并以实际相对SPY的前瞻收益评分。') }}
     <b>{{ TR.n_snapshots }}</b> {{ t('claims recorded; grading begins as the 5 / 10 / 21 / 63-day horizons elapse. Until a signal clears a Newey-West significance bar it is shown but not trusted.', '条判断已记录；待 5 / 10 / 21 / 63 天周期走完即开始评分。信号通过 Newey-West 显著性检验前，仅展示、不被采信。') }}
   </div>
   {% else %}
-  <div class="heat">
-    {% for h, e in TR.horizons.items() %}{% if e.n_matured %}
-    <div class="glass acc sec">
-      <div class="sh">{{ h }}{{ t('d', '天') }} {{ t('horizon', '周期') }}
-        <span class="etf">{{ t('IC', '信息系数') }}
-          {%- if e.opportunity_ic is not none %} {{ '%+.3f'|format(e.opportunity_ic) }}
-          {%- elif e.opportunity_ic_pooled is not none %} {{ '%+.3f'|format(e.opportunity_ic_pooled) }}~
-          {%- else %} —{% endif %}</span>
-        {% if TR.proven.get(h) %}<span class="pol up">{{ t('proven', '已验证') }}</span>{% else %}<span class="pol" style="background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted)">{{ t('measuring', '测量中') }}</span>{% endif %}</div>
-      <small><span>{{ t('n', '样本') }} <b>{{ e.n_matured }}</b></span>
-        {% if e.by_stage.emerging %}<span style="color:var(--up)">{{ t('emerging', '萌芽') }} <b>{{ '%+.1f'|format(e.by_stage.emerging.mean_fwd_rel*100) }}%</b></span>{% endif %}
-        {% if e.by_stage.exhausted %}<span style="color:var(--down)">{{ t('exhausted', '透支') }} <b>{{ '%+.1f'|format(e.by_stage.exhausted.mean_fwd_rel*100) }}%</b></span>{% endif %}</small>
+  <div class="heat trh-heat">
+    {% for h, e in TR.horizons.items() %}{% if e.get('n_matured') %}
+    {% set ic_v = e.get('opportunity_ic') if e.get('opportunity_ic') is not none else e.get('opportunity_ic_pooled') %}
+    {% set ic_pooled = e.get('opportunity_ic') is none and e.get('opportunity_ic_pooled') is not none %}
+    {% set stg = e.get('by_stage') or {} %}
+    <div class="glass acc sec trh">
+      <div class="sh"><span class="trh-h">{{ h }}{{ t('d', '天') }} {{ t('horizon', '周期') }}</span>
+        {% if TR.proven.get(h) %}<span class="pol up" data-tip-en="Cleared the pre-registered significance bar at this horizon" data-tip-zh="该周期已通过预登记的显著性检验">{{ t('proven', '已验证') }}</span>
+        {% else %}<span class="pol mea" data-tip-en="Still accruing graded calls at this horizon — shown, not yet trusted" data-tip-zh="该周期样本仍在累积 —— 仅展示，尚未采信">{{ t('measuring', '测量中') }}</span>{% endif %}</div>
+      <div class="trh-grid">
+        <div class="trh-cell" data-tip-en="Information coefficient: correlation between the hub's opportunity rank and the realized SPY-relative return {{ h }} trading days later. Above zero = higher-ranked names did better; below zero = they did worse.{% if ic_pooled %} Thin sample at this horizon, so the value is pooled across horizons (~).{% endif %}" data-tip-zh="信息系数：机会排名与{{ h }}个交易日后实际相对SPY收益的相关性。大于零 = 排名越高表现越好；小于零 = 表现更差。{% if ic_pooled %}该周期样本较少，取跨周期合并值（~）。{% endif %}">
+          <span class="trh-lab">{{ t('rank skill', '排名预测力') }}</span>
+          <b class="trh-val {{ 'pos' if ic_v is not none and ic_v > 0 else 'neg' if ic_v is not none and ic_v < 0 else '' }}">{% if ic_v is not none %}{{ '%+.3f'|format(ic_v) }}{{ '~' if ic_pooled else '' }}{% else %}—{% endif %}</b>
+        </div>
+        <div class="trh-cell" data-tip-en="Matured claims graded at this horizon" data-tip-zh="该周期已到期并完成评分的判断数">
+          <span class="trh-lab">{{ t('graded calls', '已评分判断') }}</span>
+          <b class="trh-val">{{ '{:,}'.format(e.n_matured) }}</b>
+        </div>
+        {% if stg.get('emerging') %}{% set em = stg.emerging.mean_fwd_rel*100 %}
+        <div class="trh-cell" data-tip-en="Average SPY-relative forward return of names the hub tagged 'emerging'. A real edge shows up positive — 'yes' means the call worked." data-tip-zh="被标记「萌芽」标的的平均相对SPY前瞻收益。真实优势应为正 ——「是」表示判断成立。">
+          <span class="trh-lab">{{ t('emerging: beat SPY?', '萌芽：跑赢SPY？') }}</span>
+          <b class="trh-val">{{ '%+.1f'|format(em) }}%</b> <span class="trh-ans {{ 'ok' if em > 0 else 'bad' }}">{{ t('yes','是') if em > 0 else t('no','否') }}</span>
+        </div>{% endif %}
+        {% if stg.get('exhausted') %}{% set exv = stg.exhausted.mean_fwd_rel*100 %}
+        <div class="trh-cell" data-tip-en="Average SPY-relative forward return of names tagged 'exhausted' (fade calls). The call works when this is negative — they lagged as predicted; 'yes' means it did." data-tip-zh="被标记「透支」标的的平均相对SPY前瞻收益。判断成立时应为负（如期跑输）——「是」表示如期兑现。">
+          <span class="trh-lab">{{ t('exhausted: lagged SPY?', '透支：跑输SPY？') }}</span>
+          <b class="trh-val">{{ '%+.1f'|format(exv) }}%</b> <span class="trh-ans {{ 'ok' if exv < 0 else 'bad' }}">{{ t('yes','是') if exv < 0 else t('no','否') }}</span>
+        </div>{% endif %}
+      </div>
     </div>{% endif %}{% endfor %}
   </div>
   {% if TR.lead_time_d %}<div class="drv" style="margin-top:8px">{{ ic('edge') }} {{ t('Measured lead-time', '测得领先期') }}: <b>{{ TR.lead_time_d }}{{ t('d', '天') }}</b> · {{ t('where the opportunity-IC peaks', '机会IC峰值所在') }}</div>{% endif %}
