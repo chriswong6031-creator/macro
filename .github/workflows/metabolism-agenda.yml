@@ -109,6 +109,20 @@ jobs:
           print(f'Anomaly monitor: {len(rows)} new rows')
           PY
 
+          # Step 3.5: Run the scout (uncovered-domain feeler — R-V6-1/W1).
+          # Emits data/metabolism/scout/observations.jsonl + charter_proposals/
+          # after >=K distinct uncovered cycles; the applier consumes proposals
+          # inside the PROPOSE stage (scripts/metabolism_propose.py). This was
+          # the dark link that kept lobe genesis structurally OFF.
+          python - <<PY || echo "scout degraded (continuing)"
+          import sys; sys.path.insert(0, '.')
+          from engine.metabolism.scout import scan
+          result = scan(cycle_id='${CYCLE_ID}')
+          print(f"Scout: {len(result.get('accruing', []))} domain(s) accruing uncovered cycles, "
+                f"{len(result.get('emitted', []))} charter proposal(s) emitted, "
+                f"{len(result.get('covered', []))} covered")
+          PY
+
           # Step 4: Build agenda (INERT — writes artifact only)
           AGENDA="$(python -m scripts.metabolism_agenda --cycle-id "$CYCLE_ID" | tail -n 1 || true)"
           echo "agenda=$AGENDA"
