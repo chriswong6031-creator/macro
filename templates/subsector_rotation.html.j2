@@ -243,7 +243,12 @@ function render(ev, frag){
     html+='<p class="rc-quiet">'+t('No active rotation events — quiet state is a valid state.',
       '当前无活跃轮动事件——安静状态是有效状态。')+'</p>';
   }else{
-    html+='<div class="rc-grid">';
+    var sevRank={major:0,notable:1,standard:2};
+    active=active.slice().sort(function(a,b){
+      var d=(sevRank[a.severity]!=null?sevRank[a.severity]:9)-(sevRank[b.severity]!=null?sevRank[b.severity]:9);
+      return d!==0?d:String(b.started||'').localeCompare(String(a.started||''));
+    });
+    html+='<div class="lst-wrap"><div class="rc-grid lst-collapse lst-cap4 is-collapsed">';
     active.forEach(function(e){
       var sev=e.severity||'standard';
       var title=isZh()
@@ -276,6 +281,11 @@ function render(ev, frag){
         +(rec?'<div class="rc-receipts">'+rec+'</div>':'')
         +'</div>';
     });
+    html+='</div>';
+    if(active.length>4){
+      html+='<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">'
+        +t('Show more','显示更多')+' ▾</span><span class="lm-hide">'+t('Show less','收起')+' ▴</span></button>';
+    }
     html+='</div>';
   }
   var rows=(frag&&frag.sectors)||[];
