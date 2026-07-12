@@ -62,8 +62,8 @@ _FAMILY_CHANNELS: list[tuple[str, set]] = [
         "special_situation", "material_8k", "gov_contract", "gov_contract_accel",
         "gov_grant", "gov_grant_accel", "fda_approval", "fda_label_expansion",
         "clinical_phase3_start", "activist_13d",
-        # previously unmapped — event-horizon catalysts (earnings beats, FDA-adjacent)
-        "github_momentum", "hf_model_momentum", "earnings_beat",
+        # previously unmapped — event-horizon catalyst (drift onset measured at 5/21d)
+        "earnings_beat",
     }),
     ("altdata_flow", {
         "darkpool_accum", "unusual_options",
@@ -73,6 +73,9 @@ _FAMILY_CHANNELS: list[tuple[str, set]] = [
         "analyst_upgrade_cluster", "insider_mspr",
         # previously unmapped — mid-horizon, attention-adjacent but attention dormant
         "cnbc_pick", "news_sentiment",
+        # slow-building AI/dev-adoption momentum (weeks-months, not an event pop) —
+        # ruled to mid-horizon in the W2 review (orchestrator correction of PR-D fix-up)
+        "github_momentum", "hf_model_momentum",
     }),
     ("altdata_slow", {
         "congress_cluster", "congress_buy", "trump", "lobbying", "lobbying_spike",
@@ -132,8 +135,8 @@ def assign_claim_family(channels: list[str]) -> str:
     family wins). Unmapped channels map to 'altdata_mid' (safer mid-horizon fallback;
     event family has the narrowest 21d window which is wrong for truly unknown channels).
     Mapped channels: see _FAMILY_CHANNELS for the complete routing table including
-    github_momentum/hf_model_momentum/earnings_beat → event; cnbc_pick/news_sentiment →
-    mid; bill_catalyst → slow.
+    earnings_beat → event; github_momentum/hf_model_momentum/cnbc_pick/news_sentiment →
+    mid (AI/dev-adoption momentum builds over weeks-months); bill_catalyst → slow.
     """
     if not channels:
         return "altdata_event"

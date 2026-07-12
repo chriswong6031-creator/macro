@@ -132,8 +132,8 @@ Explicit routes as of 2026-07-12 review:
 
 | Channel | Route | Rationale |
 |---|---|---|
-| `github_momentum` | `altdata_event` | Short-window momentum catalyst (days not months) |
-| `hf_model_momentum` | `altdata_event` | Short-window momentum catalyst |
+| `github_momentum` | `altdata_mid` | Dev-adoption momentum builds over weeks-months; mid ruler (W2 review correction) |
+| `hf_model_momentum` | `altdata_mid` | Model-adoption momentum builds over weeks-months; mid ruler (W2 review correction) |
 | `earnings_beat` | `altdata_event` | Hard dated catalyst with 5–20d post-event window |
 | `cnbc_pick` | `altdata_mid` | Attention-adjacent but `altdata_attention` is dormant; mid-horizon safer |
 | `news_sentiment` | `altdata_mid` | Same rationale as cnbc_pick |

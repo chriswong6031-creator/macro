@@ -835,11 +835,12 @@ class TestPerFamilyActiveDedup:
 class TestNewlyMappedChannels:
     """The 6 channels that were previously unmapped must now route correctly."""
 
-    def test_github_momentum_routes_to_event(self):
-        assert assign_claim_family(["github_momentum"]) == "altdata_event"
+    def test_github_momentum_routes_to_mid(self):
+        # dev-adoption momentum builds over weeks-months (W2 review correction)
+        assert assign_claim_family(["github_momentum"]) == "altdata_mid"
 
-    def test_hf_model_momentum_routes_to_event(self):
-        assert assign_claim_family(["hf_model_momentum"]) == "altdata_event"
+    def test_hf_model_momentum_routes_to_mid(self):
+        assert assign_claim_family(["hf_model_momentum"]) == "altdata_mid"
 
     def test_earnings_beat_routes_to_event(self):
         assert assign_claim_family(["earnings_beat"]) == "altdata_event"
