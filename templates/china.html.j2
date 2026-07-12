@@ -1114,15 +1114,25 @@
           <span class="chip {{ 'c-down' if _risk in ('frothy','fire_sale') else ('c-warn' if _risk == 'normal' else 'c-muted') }}">
             {{ t('risk: ' + _risk.replace('_',' '), '风险：' + tr(_risk.replace('_',' '))) }}</span>
         </div>
-        {# top contradiction line #}
+        {# top contradiction line — producer rows are plain STRINGS of the form
+           "check_slug: human description" (engine/china_market_state.py
+           _compute_contradictions, CN-SYS-R13 "text only"); the first fired row
+           (2026-07-11) froze both china pages on the dict-shaped read below.
+           Keep a mapping branch for shape tolerance, but strings are canon. #}
         {% if _contradictions %}
+        {% set _c0 = _contradictions[0] %}
         <div style="margin-top:7px;font-size:11.5px;line-height:1.45;padding:5px 9px;
           border-radius:7px;background:color-mix(in srgb,var(--warn) 9%,var(--panel));
           border:1px solid color-mix(in srgb,var(--warn) 22%,var(--line))">
           ⚠ <span style="color:var(--warn);font-weight:600">{{ t('Contradiction', '矛盾') }}</span>:
-          <span style="color:var(--text)">{{ _contradictions[0].a }}</span> {{ t('vs', 'vs') }}
-          <span style="color:var(--text)">{{ _contradictions[0].b }}</span>
-          {% if _contradictions[0].get('detail') %} — <span style="color:var(--muted)">{{ _contradictions[0].detail }}</span>{% endif %}
+          {% if _c0 is mapping %}
+          <span style="color:var(--text)">{{ _c0.a }}</span> {{ t('vs', 'vs') }}
+          <span style="color:var(--text)">{{ _c0.b }}</span>
+          {% if _c0.get('detail') %} — <span style="color:var(--muted)">{{ _c0.detail }}</span>{% endif %}
+          {% else %}
+          {% set _c0s = (_c0 or '') | string %}
+          <span style="color:var(--text)">{{ _c0s.split(': ', 1)[1] if ': ' in _c0s else _c0s }}</span>
+          {% endif %}
           {% if _contradictions | length > 1 %}<span style="color:var(--muted)"> ({{ _contradictions | length - 1 }} {{ t('more', '条') }})</span>{% endif %}
         </div>
         {% else %}
