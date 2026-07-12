@@ -258,3 +258,14 @@ def test_run_nightly_persists_state_ledger_and_payload(tmp_path):
     payload2 = re_.run_nightly(_sectors(a, b), tmp_path, generated_utc="test")
     assert not payload2["created_tonight"]
     assert any(e["id"] == "xlk:memory->mag7" for e in payload2["active"])
+
+
+def test_lockout_expires_when_close_date_predates_window():
+    """RC-R8 windowed-replay fix: a closed pair whose close date scrolled out of the
+    series window must NOT be locked out forever (_sessions_between returned 0)."""
+    a, b = _aligned_pair()
+    ancient = "2010-01-04"          # far before the pair calendar
+    state = {"active": {}, "closed": {"xlk:memory->mag7": ancient}}
+    _, active, created, _ = re_.step_pairs(_sectors(a, b), state)
+    assert "xlk:memory->mag7" in created
+    assert any(e["id"] == "xlk:memory->mag7" for e in active)

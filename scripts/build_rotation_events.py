@@ -69,6 +69,13 @@ def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict
     payload = rotation_events.run_nightly(sectors, config.data_dir(),
                                           generated_utc=generated_utc)
     payload["fragmented_sectors"] = [r["key"] for r in frag["sectors"] if r["fragmented"]]
+    # RC-R10: the honest late-ruler (descriptive, from the RC-R8 replay census) — lets
+    # the rail print "vs the median historical handoff run" instead of a binary 'late'.
+    try:
+        payload["ruler"] = json.loads(
+            (config.data_dir() / "rotation_events" / "episode_ruler.json").read_text())
+    except Exception:  # noqa: BLE001 — ruler absent → rail simply omits the line
+        pass
     _write_json(site / "marketdata" / "rotation_events.json", payload)
 
     # RC-R5: creation alerts into the shared rotation alert store (same schema the
