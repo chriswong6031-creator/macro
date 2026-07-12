@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-12T11:36:59.181467+00:00",
+  "generated_at": "2026-07-12T11:25:04.143378+00:00",
   "grade_horizons": [
     5,
     21,
@@ -203,7 +203,7 @@
     }
   },
   "counts": {
-    "n_claims": 13751,
+    "n_claims": 13693,
     "n_grades": 6716,
     "n_placebo": 342,
     "n_rejected": 0,
@@ -534,7 +534,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-07-12T11:37:03.037656+00:00",
+  "ladder_states_at": "2026-07-12T11:25:07.903802+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -1359,5 +1359,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-07-12T11:37:10.624463+00:00"
+  "promotion_readiness_at": "2026-07-12T11:25:15.142157+00:00"
 }
