@@ -169,19 +169,32 @@ def _build_prior_row(
     }
 
 
-def _backfill_outcome_priors(root: Path) -> int:
-    """One-time backfill: scan existing verify records and append any not yet in ledger.
+def _compute_backfill_rows(
+    root: Path,
+    existing_ids: set[str],
+    ts: str,
+    contract_index: dict[str, dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """PURE: scan existing verify records, return prior rows not yet in the ledger.
 
-    Safe to call repeatedly — idempotent due to proposal_id dedup.
-    Returns number of rows newly appended.  NEVER raises.
+    Does NOT write.  Mutates `existing_ids` in place to dedup within the batch so a
+    caller can chain compute passes (backfill then accrue).  NEVER raises.
+
+    Splitting compute from persist is what lets dry_run reflect the SAME calibration
+    a real run would produce (#2441 regression: calibration read only the persisted
+    ledger, so dry_run — which skipped the write — always saw insufficient_data even
+    with plenty of seeded verify records).
+
+    `contract_index` (proposal_id → trial_ledger row) supplies construction
+    provenance (kind/tier/lobe/sensors) when a verify record does not embed its own
+    contract — without it the calibration buckets collapse to 'unknown'.
     """
+    rows: list[dict[str, Any]] = []
+    idx = contract_index if contract_index is not None else _load_contract_index(root)
     try:
-        existing_ids = _load_outcome_prior_ids(root)
         verify_dir = root / "data" / "metabolism" / "verify"
         if not verify_dir.exists():
-            return 0
-        added = 0
-        ts = _now_iso()
+            return rows
         for f in sorted(verify_dir.glob("*.json")):
             try:
                 data = json.loads(f.read_text(encoding="utf-8"))
@@ -195,16 +208,65 @@ def _backfill_outcome_priors(root: Path) -> int:
                 # Only backfill concluded (non-pending) records
                 if not outcome or outcome == "PENDING":
                     continue
-                contract = data.get("contract") or {}
-                row = _build_prior_row(proposal_id, contract, data, ts)
-                _append_outcome_prior_row(root, row)
+                # Provenance: prefer an embedded contract, else join trial_ledger.
+                contract = data.get("contract") or idx.get(proposal_id) or {}
+                rows.append(_build_prior_row(proposal_id, contract, data, ts))
                 existing_ids.add(proposal_id)
-                added += 1
             except Exception:  # noqa: BLE001
                 continue
-        if added:
-            log.info("dream._backfill_outcome_priors: backfilled %d rows", added)
-        return added
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dream._compute_backfill_rows: %s", exc)
+    return rows
+
+
+def _compute_accrue_rows(
+    root: Path,
+    existing_ids: set[str],
+    closed_contracts: list[dict[str, Any]],
+    verify_outcomes: list[dict[str, Any]],
+    ts: str,
+) -> list[dict[str, Any]]:
+    """PURE: return prior rows for newly-closed contracts not yet in the ledger.
+
+    Does NOT write.  Mutates `existing_ids` in place.  NEVER raises.
+    """
+    rows: list[dict[str, Any]] = []
+    try:
+        outcome_index: dict[str, dict[str, Any]] = {}
+        for v in verify_outcomes:
+            key = str(v.get("proposal_id") or "")
+            if key:
+                outcome_index[key] = v
+        for c in closed_contracts:
+            proposal_id = str(c.get("proposal_id") or c.get("dedup_hash") or "")
+            if not proposal_id or proposal_id in existing_ids:
+                continue
+            v = outcome_index.get(proposal_id) or {}
+            row = _build_prior_row(proposal_id, c, v, ts)
+            # If no verify record found, use contract outcome field if present
+            if not v and c.get("outcome"):
+                row["outcome"] = str(c["outcome"])
+            rows.append(row)
+            existing_ids.add(proposal_id)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dream._compute_accrue_rows: %s", exc)
+    return rows
+
+
+def _backfill_outcome_priors(root: Path) -> int:
+    """One-time backfill: scan existing verify records and append any not yet in ledger.
+
+    Safe to call repeatedly — idempotent due to proposal_id dedup.
+    Returns number of rows newly appended.  NEVER raises.
+    """
+    try:
+        existing_ids = _load_outcome_prior_ids(root)
+        rows = _compute_backfill_rows(root, existing_ids, _now_iso())
+        for row in rows:
+            _append_outcome_prior_row(root, row)
+        if rows:
+            log.info("dream._backfill_outcome_priors: backfilled %d rows", len(rows))
+        return len(rows)
     except Exception as exc:  # noqa: BLE001
         log.warning("dream._backfill_outcome_priors: %s", exc)
         return 0
@@ -222,30 +284,12 @@ def _accrue_new_outcome_rows(
     """
     try:
         existing_ids = _load_outcome_prior_ids(root)
-        # Build verify outcome index
-        outcome_index: dict[str, dict[str, Any]] = {}
-        for v in verify_outcomes:
-            key = str(v.get("proposal_id") or "")
-            if key:
-                outcome_index[key] = v
-
-        added = 0
-        for c in closed_contracts:
-            proposal_id = str(
-                c.get("proposal_id") or c.get("dedup_hash") or ""
-            )
-            if not proposal_id or proposal_id in existing_ids:
-                continue
-            v = outcome_index.get(proposal_id) or {}
-            # Synthesize a row from contract + verify record
-            row = _build_prior_row(proposal_id, c, v, ts)
-            # If no verify record found, use contract outcome field if present
-            if not v and c.get("outcome"):
-                row["outcome"] = str(c["outcome"])
+        rows = _compute_accrue_rows(
+            root, existing_ids, closed_contracts, verify_outcomes, ts
+        )
+        for row in rows:
             _append_outcome_prior_row(root, row)
-            existing_ids.add(proposal_id)
-            added += 1
-        return added
+        return len(rows)
     except Exception as exc:  # noqa: BLE001
         log.warning("dream._accrue_new_outcome_rows: %s", exc)
         return 0
@@ -300,6 +344,36 @@ def _load_closed_contracts(root: Path, today: str) -> list[dict[str, Any]]:
             malformed_count,
         )
     return closed
+
+
+def _load_contract_index(root: Path) -> dict[str, dict[str, Any]]:
+    """Map proposal_id → its trial_ledger contract row (kind/tier/lobe/sensors).
+
+    Verify records do not always embed their contract, so backfilling a prior row
+    purely from a verify record loses the construction provenance (kind/lobe/sensor)
+    that lives in the trial_ledger row — which is exactly what the calibration
+    buckets key on.  This index lets the backfill JOIN outcome (verify) with
+    provenance (contract).  NEVER raises.
+    """
+    index: dict[str, dict[str, Any]] = {}
+    ledger_path = root / "data" / "trial_ledger.jsonl"
+    if not ledger_path.exists():
+        return index
+    try:
+        for line in ledger_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+                pid = str(r.get("proposal_id") or r.get("dedup_hash") or "")
+                if pid:
+                    index[pid] = r  # last row for a pid wins
+            except Exception:  # noqa: BLE001
+                continue
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dream._load_contract_index: %s", exc)
+    return index
 
 
 def _load_verify_outcomes(root: Path) -> list[dict[str, Any]]:
@@ -531,20 +605,29 @@ def run_dream_cycle(
                 log.info("dream: guard unavailable + not explicitly armed — skipping (fail-closed)")
                 return _paused_prior(ts)
 
-        # R-V8-10: one-time backfill from existing verify records (idempotent)
-        if not dry_run:
-            _backfill_outcome_priors(repo)
+        # R-V8-10: compute the durable-ledger rows this cycle would add — backfill
+        # from existing verify records + accrue newly-closed contracts. Compute is
+        # PURE (no write) so dry_run reflects the SAME calibration a real run would
+        # produce (#2441 regression fix); persistence is gated on `not dry_run`.
+        existing_rows = _load_outcome_priors(repo)
+        seen_ids = {str(r.get("proposal_id") or "") for r in existing_rows}
+        seen_ids.discard("")
+        contract_index = _load_contract_index(repo)
+        backfill_rows = _compute_backfill_rows(repo, seen_ids, ts, contract_index)
 
         # Load closed contracts + verify outcomes
         closed = _load_closed_contracts(repo, today)
         outcomes = _load_verify_outcomes(repo)
+        accrue_rows = _compute_accrue_rows(repo, seen_ids, closed, outcomes, ts)
 
-        # R-V8-10: accrue new closed contracts to the durable ledger
+        new_rows = backfill_rows + accrue_rows
         if not dry_run:
-            _accrue_new_outcome_rows(repo, closed, outcomes, ts)
+            for row in new_rows:
+                _append_outcome_prior_row(repo, row)
 
-        # Build calibration FROM the durable ledger (not from live trial_ledger rows)
-        prior_rows = _load_outcome_priors(repo)
+        # Build calibration FROM the durable ledger (rotation-proof).  In dry_run the
+        # rows aren't persisted, so union them in-memory for an honest preview.
+        prior_rows = existing_rows + new_rows
         n_prior_rows = len(prior_rows)
 
         # Honest null: not enough mature data yet
