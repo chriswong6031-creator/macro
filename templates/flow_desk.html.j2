@@ -63,7 +63,7 @@
   .hm-cell .sec-name { font-size:12.5px; font-weight:600; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .hm-cell .sec-prem { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; }
   .hm-cell .sec-meta { display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:5px; font-size:11px; color:var(--muted); }
-  .hm-cell .z-badge { display:inline-block; font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; border:1px solid; }
+  .z-badge { display:inline-block; font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; border:1px solid; }
   .z-hi { color:var(--up); border-color:var(--up); }
   .z-lo { color:var(--down); border-color:var(--down); }
   .z-neu { color:var(--muted); border-color:var(--muted); }
@@ -234,7 +234,7 @@
           <span class="z-badge {% if c.gross_pct > 75 %}z-hi{% elif c.gross_pct < 25 %}z-lo{% else %}z-neu{% endif %}">{{ "%.0f"|format(c.gross_pct) }}{{ t('th pct', 'th') }}</span>
         {% endif %}
       </div>
-      <div class="c-coverage xs muted">{{ c.coverage_label if c.coverage_label else '' }}</div>
+      {# coverage is in hover receipt (data-tip-en/zh); no glance-tier EN-only div #}
     </div>
     {% endfor %}
   </div>

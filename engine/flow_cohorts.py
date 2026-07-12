@@ -202,8 +202,8 @@ def _aggregate_day(
     return {
         "key": cohort_key,
         "asof": str(asof),
-        "gross_premium_mn": round(gross_pm, 1) if gross_pm else None,
-        "net_premium_mn": round(net_pm, 1) if gross_pm else None,  # soft
+        "gross_premium_mn": round(gross_pm, 1) if n_covered > 0 else None,
+        "net_premium_mn": round(net_pm, 1) if n_covered > 0 else None,  # soft
         "pc_ratio": pc_ratio,
         "zerodte_share": zerodte_share,
         "net_doi": round(net_doi_sum, 0) if net_doi_sum is not None else None,
