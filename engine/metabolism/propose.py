@@ -438,9 +438,11 @@ _SYSTEM_PROMPT_TEMPLATE = (
     "Reply with ONLY a JSON array (no prose, no code fence) of at most {{max_n}} "
     "proposals. Each element:\n"
     '{{"title": str, "tier": "T0"|"T1", "kind": "test"|"doc"|"context_organ"|'
-    '"engine"|"collector"|"ui", "targets_sensor": str, "rationale": str, '
+    '"engine"|"collector"|"ui"|"charter", "targets_sensor": str, "rationale": str, '
     '"fitness_contract": {{"sensor": str, "expected_sign": "+"|"-", "band": str, '
-    '"check_by": "YYYY-MM-DD", "placebo_to_beat": str}}}}'
+    '"check_by": "YYYY-MM-DD", "placebo_to_beat": str}}}}\n\n'
+    'Kind guidance: charter = new-lobe genesis; only ever injected from scout '
+    'evidence, never invent one.'
 )
 
 # Fallback for lobes without charter sensors (kept for import compat)
@@ -791,6 +793,17 @@ def build_docket(
                 continue
 
             seen_this_cycle.add(pid)
+            # FIX B1: carry charter fields through so _genesis_screen in adjudicate
+            # receives proposed_tier, proposed_lifecycle_state, domain_id, etc.
+            # Without this, every charter reaches the screen with proposed_tier=None
+            # and the tier fence denies every charter unconditionally (dead code).
+            _CHARTER_PASS_THROUGH_KEYS = (
+                "proposed_tier", "proposed_lifecycle_state",
+                "domain_id", "evidence_refs", "uncovered_for_cycles", "roster_budget",
+            )
+            charter_extras = {
+                k: prop[k] for k in _CHARTER_PASS_THROUGH_KEYS if k in prop
+            }
             proposals.append({
                 "proposal_id": pid,
                 "content_hash": pid,
@@ -801,6 +814,7 @@ def build_docket(
                 "targets_sensor": sensor,
                 "rationale": str(prop.get("rationale") or "").strip(),
                 "fitness_contract": _mint_contract(prop, pid, day, lobe=lobe),
+                **charter_extras,
             })
         except Exception as exc:  # noqa: BLE001
             log.warning("propose: proposal skipped (%s)", exc)
