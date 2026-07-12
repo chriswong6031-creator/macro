@@ -77,6 +77,7 @@ THRUST_LOW          = 0.30   # cohesion was below this 10 sessions ago
 THRUST_HIGH         = 0.60   # cohesion now at or above this (cross event)
 BREADTH_CONFIRM_PCT = 35.0   # broad breadth confirming threshold (pct_above_50 >= 35)
 THRUST_LOOKBACK     = 10     # number of sessions to look back for the cross
+REARM_SCAN_SESSIONS = 40     # trailing sessions scanned (dated) for the ledger re-arm gate
 
 # ---------------------------------------------------------------------------
 # Lane guard (mirrors hk_washout_watch._ledger_advance_enabled)
@@ -143,17 +144,18 @@ def stamp_ledger(
     cohesion_10d_ago: float,
     as_of: str | None = None,
     data_root: Path | None = None,
-    cohesion_window: list[float] | None = None,
+    cohesion_by_date: dict[str, float] | None = None,
 ) -> int:
     """Append one row per new thrust date (idempotent on date).
 
     Episode arming: after a stamped thrust, suppress further stamps until
-    cohesion has printed at least one bar BELOW THRUST_LOW (0.30) since the
-    last stamped row.  ``cohesion_window`` is the list of per-lag cohesion
-    values scanned during thrust detection (lags 1..THRUST_LOOKBACK, newest
-    first); if it contains a value < THRUST_LOW the episode is considered
-    re-armed.  When None (first-ever call or no prior stamp), arming is not
-    required.
+    cohesion has printed at least one bar BELOW THRUST_LOW (0.30) DATED
+    AFTER the last stamped row.  ``cohesion_by_date`` maps 'YYYY-MM-DD' ->
+    cohesion for the trailing REARM_SCAN_SESSIONS sessions.  A dip that
+    merely sits inside the thrust-detection window but predates the last
+    stamp does NOT re-arm (that is the same episode still in view — the
+    bug the window-based v1 gate had).  When None/empty, the gate is
+    skipped (fail-open: stamp).
 
     Gated by CN_LANE=asia. Never raises. Returns count of appended rows.
     """
@@ -166,18 +168,20 @@ def stamp_ledger(
         existing_dates = {r.get("date") for r in rows}
         if today_str in existing_dates:
             return 0
-        # Episode re-arm gate: suppress if cohesion never dipped below THRUST_LOW
-        # since the last stamped row — prevents autocorrelated nightly re-stamps
-        # during a sustained thrust (same episode).
-        if rows and cohesion_window is not None:
-            # Any value in the scanned window below threshold = re-armed.
-            re_armed = any(c < THRUST_LOW for c in cohesion_window if c is not None)
+        # Episode re-arm gate: suppress unless cohesion dipped below THRUST_LOW
+        # on a bar DATED AFTER the last stamped row — prevents autocorrelated
+        # nightly re-stamps while the originating dip is still inside the
+        # thrust-detection window (same episode).
+        if rows and cohesion_by_date:
+            last_date = max(str(r.get("date") or "") for r in rows)
+            re_armed = any(
+                v is not None and v < THRUST_LOW
+                for d, v in cohesion_by_date.items() if str(d) > last_date
+            )
             if not re_armed:
                 log.debug(
-                    "hk_leadership.stamp_ledger: suppressed (episode not re-armed; "
-                    "cohesion_min_window=%.3f >= THRUST_LOW=%.2f)",
-                    min((c for c in cohesion_window if c is not None), default=1.0),
-                    THRUST_LOW,
+                    "hk_leadership.stamp_ledger: suppressed (no dip < %.2f dated "
+                    "after last stamp %s — same episode)", THRUST_LOW, last_date,
                 )
                 return 0
         rows.append({
@@ -479,13 +483,18 @@ def _compute_inner(
     # current >= 0.60 (F4-a fix: scan true within-window extremes, not just endpoint).
     # This catches crosses where the low occurred mid-window, not exactly LOOKBACK bars ago.
     cohesion_min_window = cohesion_10d_ago  # fallback if scan fails
-    scanned: list[float] = []  # populated below; kept in scope for episode re-arm gate
+    scanned: list[float] = []
+    cohesion_by_date: dict[str, float] = {}  # dated trail for the ledger re-arm gate
     try:
-        scanned = []
-        for lag in range(1, THRUST_LOOKBACK + 1):
+        ref = max(cohort_closes.values(), key=lambda x: len(x.dropna())).dropna()
+        n_scan = min(REARM_SCAN_SESSIONS, len(ref))
+        for lag in range(0, n_scan):
             c = _cohesion_at(cohort_closes, as_of_idx=-1 - lag)
-            if c is not None:
+            if c is None:
+                continue
+            if 1 <= lag <= THRUST_LOOKBACK:
                 scanned.append(c)
+            cohesion_by_date[str(ref.index[-1 - lag].date())] = c
         if scanned:
             cohesion_min_window = min(scanned)
     except Exception:  # noqa: BLE001
@@ -568,7 +577,7 @@ def _compute_inner(
                 cohesion_10d_ago=cohesion_10d_ago,
                 as_of=as_of,
                 data_root=data_root,
-                cohesion_window=scanned if scanned else None,
+                cohesion_by_date=cohesion_by_date or None,
             )
             if n:
                 log.info("hk_leadership: stamped thrust event to ledger (as_of=%s)", thrust_date_str)

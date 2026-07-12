@@ -296,60 +296,77 @@ class TestLedgerWriteInLane:
         assert after == before, "stamp_ledger must not write outside data_root"
 
     def test_same_episode_next_day_does_not_stamp(self, tmp_path, monkeypatch):
-        """Day N+1 in same sustained thrust: cohesion never dipped below 0.30 → suppressed."""
+        """Day N+1 in the same sustained thrust: the originating dip is still inside
+        the trailing window but DATED BEFORE the last stamp -> suppressed.
+        (Production-shaped: the window-based v1 gate failed exactly this case.)"""
         monkeypatch.setenv("CN_LANE", "asia")
-        # Day 1: first stamp (no prior rows → gate bypassed)
+        # Day 1: first stamp (no prior rows -> gate bypassed)
         n1 = LD.stamp_ledger(
             thrust_date="2026-07-10",
             cohesion_now=0.70,
             cohesion_10d_ago=0.20,
             as_of="2026-07-10",
             data_root=tmp_path,
-            cohesion_window=[0.20, 0.22, 0.25, 0.28, 0.35, 0.45, 0.55, 0.65, 0.68, 0.70],
+            cohesion_by_date={"2026-07-02": 0.20, "2026-07-06": 0.28,
+                              "2026-07-08": 0.45, "2026-07-10": 0.70},
         )
         assert n1 == 1, "First episode stamp must succeed"
 
-        # Day 2: next nightly run, cohesion_window shows NO dip below 0.30 (sustained thrust)
-        # cohesion_window values are all >= 0.30 → episode not re-armed → suppressed
+        # Day 2: nightly re-run. The dip bars (07-02/07-06, < 0.30) are STILL inside
+        # the trailing scan window, but they are dated BEFORE the 07-10 stamp ->
+        # episode NOT re-armed -> suppressed.
         n2 = LD.stamp_ledger(
             thrust_date="2026-07-11",
             cohesion_now=0.72,
-            cohesion_10d_ago=0.30,
+            cohesion_10d_ago=0.22,
             as_of="2026-07-11",
             data_root=tmp_path,
-            cohesion_window=[0.60, 0.62, 0.65, 0.67, 0.68, 0.70, 0.70, 0.71, 0.71, 0.72],
+            cohesion_by_date={"2026-07-02": 0.20, "2026-07-06": 0.28,
+                              "2026-07-08": 0.45, "2026-07-10": 0.70,
+                              "2026-07-11": 0.72},
         )
-        assert n2 == 0, "Same-episode next-day stamp must be suppressed (cohesion never dipped)"
+        assert n2 == 0, "Same-episode next-day stamp must be suppressed (dip predates last stamp)"
         rows = LD.load_ledger(tmp_path)
         assert len(rows) == 1, "Only one row must exist after suppressed same-episode stamp"
 
     def test_rearm_after_dip_below_threshold_stamps_again(self, tmp_path, monkeypatch):
-        """After cohesion dips below 0.30 and a fresh cross occurs, a new episode stamps."""
+        """After cohesion dips below 0.30 on a bar dated AFTER the last stamp and a
+        fresh cross occurs, a new episode stamps."""
         monkeypatch.setenv("CN_LANE", "asia")
-        # Day 1: first stamp
         n1 = LD.stamp_ledger(
             thrust_date="2026-07-01",
             cohesion_now=0.70,
             cohesion_10d_ago=0.20,
             as_of="2026-07-01",
             data_root=tmp_path,
-            cohesion_window=[0.20, 0.22, 0.25, 0.28, 0.35, 0.45, 0.55, 0.65, 0.68, 0.70],
+            cohesion_by_date={"2026-06-24": 0.20, "2026-06-30": 0.55, "2026-07-01": 0.70},
         )
         assert n1 == 1, "First episode stamp must succeed"
 
-        # Later: cohesion dipped below 0.30 (re-arm) and crossed back above 0.60
-        # cohesion_window now contains values < 0.30 → re-armed
+        # Later: cohesion dipped below 0.30 on 07-08 (AFTER the 07-01 stamp) and
+        # crossed back above 0.60 -> re-armed -> stamps a second episode.
         n2 = LD.stamp_ledger(
             thrust_date="2026-07-15",
             cohesion_now=0.65,
             cohesion_10d_ago=0.18,
             as_of="2026-07-15",
             data_root=tmp_path,
-            cohesion_window=[0.18, 0.22, 0.28, 0.25, 0.30, 0.40, 0.50, 0.55, 0.60, 0.65],
+            cohesion_by_date={"2026-07-08": 0.18, "2026-07-10": 0.28,
+                              "2026-07-12": 0.42, "2026-07-15": 0.65},
         )
         assert n2 == 1, "Re-armed episode stamp must succeed after dip below threshold"
         rows = LD.load_ledger(tmp_path)
         assert len(rows) == 2, "Two rows expected: original episode + re-armed episode"
+
+    def test_gate_fail_open_without_dated_series(self, tmp_path, monkeypatch):
+        """cohesion_by_date=None -> gate skipped (fail-open: stamps on a new date)."""
+        monkeypatch.setenv("CN_LANE", "asia")
+        assert LD.stamp_ledger(thrust_date="2026-07-01", cohesion_now=0.70,
+                               cohesion_10d_ago=0.20, as_of="2026-07-01",
+                               data_root=tmp_path, cohesion_by_date=None) == 1
+        assert LD.stamp_ledger(thrust_date="2026-07-02", cohesion_now=0.71,
+                               cohesion_10d_ago=0.25, as_of="2026-07-02",
+                               data_root=tmp_path, cohesion_by_date=None) == 1
 
 
 # ---------------------------------------------------------------------------
