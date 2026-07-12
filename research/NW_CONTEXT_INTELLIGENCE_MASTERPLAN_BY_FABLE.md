@@ -186,6 +186,18 @@ are never blocked.
   flags if fires occur without ledger appends. Same heartbeat for
   fire_coordinates after its repair. (Accrual that silently fails is the program's
   single biggest risk.)
+  - *RESOLVED 2026-07-12 (come-back check):* the "no fires on 07-06/07" premise was
+    an artifact of track_record's own append lag — buy/rebuy markers are held back
+    while `quality == "pending"` (anti-repaint), so TTD's 07-06 fire only entered the
+    parquet in the 07-10 commit and SBUX's 07-07 fire in the 07-12 commit. Both DID
+    fire. The same lag made the W2b stamper's `date == build_date` filter a permanent
+    no-op (a fire's row never exists in the parquet on its own date) — the ledger
+    would have stayed empty forever. Fixed same day: 30-day lookback +
+    (ticker, date, type) dedup + `stamped_on` column in
+    `scripts/build_stock_library.py::_stamp_personality_forward_ledger`. R-CI12's
+    feared failure mode ("accrual that silently fails") was REAL and is exactly what
+    the heartbeat must watch: `fires_seen_since_wire` must count fires by row
+    *presence* (any recent-dated buy/rebuy in track_record), not by same-day match.
 
 ---
 
