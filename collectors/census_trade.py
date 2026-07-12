@@ -482,3 +482,6 @@ def _main() -> None:
 
 if __name__ == "__main__":
     _main()
+
+    from lib.procutil import hard_exit  # noqa: PLC0415
+    hard_exit(0)
