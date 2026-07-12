@@ -133,6 +133,7 @@ def test_merge_new_rows(tmp_path, monkeypatch):
     adapter.name = FT.FinnhubTranscriptsAdapter.name
     adapter.group = FT.FinnhubTranscriptsAdapter.group
 
+    # _merge receives already-parsed rows (event_time is the post-parse field name)
     df = pd.DataFrame([
         {"ticker": "AAPL", "transcript_id": "t1", "title": "Q1 2026",
          "event_time": "2026-04-25T21:00:00Z", "quarter": 1, "year": 2026},
@@ -160,6 +161,7 @@ def test_merge_dedup_keeps_first(tmp_path, monkeypatch):
     adapter.name = FT.FinnhubTranscriptsAdapter.name
     adapter.group = FT.FinnhubTranscriptsAdapter.group
 
+    # _merge receives already-parsed rows (event_time is the post-parse field name)
     df1 = pd.DataFrame([{"ticker": "AAPL", "transcript_id": "t1", "title": "Q1 orig",
                           "event_time": "2026-04-25T21:00:00Z", "quarter": 1, "year": 2026}])
     df2 = pd.DataFrame([{"ticker": "AAPL", "transcript_id": "t1", "title": "Q1 dup",
@@ -200,3 +202,56 @@ def test_no_key_sets_expected_failure(monkeypatch):
     assert adapter.expected_failure is not None
     with pytest.raises(RuntimeError, match="FINNHUB key not set"):
         adapter.fetch()
+
+
+# ------------------------------------------------------------------ fetch window filter
+
+def test_fetch_filters_stale_items_by_raw_time_key(tmp_path, monkeypatch):
+    """fetch() must filter out items older than WINDOW_DAYS using the raw 'time' key.
+
+    This test is DISCRIMINATING: it would fail against pre-fix code that filtered on
+    'event_time' (which is always absent in raw items, making the window dead code and
+    passing every item regardless of age).
+
+    Raw Finnhub items carry 'time'; parse_transcript_list renames it to 'event_time'.
+    The window filter in fetch() must operate on 'time' BEFORE parse_transcript_list.
+    """
+    from lib import config
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(config, "ROOT", tmp_path)
+    (tmp_path / "baskets").mkdir()
+    (tmp_path / "baskets" / "membership.json").write_text(json.dumps({
+        "baskets": {"tech": {"members": [{"ticker": "AAPL"}]}}
+    }))
+
+    # Two raw items using the REAL Finnhub API shape (key = "time", not "event_time")
+    recent_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+0000")
+    stale_iso  = "2000-01-01T00:00:00+0000"   # clearly outside WINDOW_DAYS=90
+
+    raw_items = [
+        {"id": "recent1", "symbol": "AAPL", "title": "Recent Call",
+         "time": recent_iso, "quarter": 1, "year": 2026},
+        {"id": "stale1",  "symbol": "AAPL", "title": "Very Old Call",
+         "time": stale_iso, "quarter": 4, "year": 1999},
+    ]
+
+    adapter = FT.FinnhubTranscriptsAdapter.__new__(FT.FinnhubTranscriptsAdapter)
+    adapter.api_key = "test_key"
+    adapter._plan_gated = False
+    adapter.name = FT.FinnhubTranscriptsAdapter.name
+    adapter.group = FT.FinnhubTranscriptsAdapter.group
+    adapter.stale_after_days = FT.FinnhubTranscriptsAdapter.stale_after_days
+
+    def mock_get_list(symbol):
+        return raw_items
+
+    with patch.object(adapter, "_get_transcript_list", side_effect=mock_get_list), \
+         patch("time.sleep"):
+        result = adapter.fetch()
+
+    ingest = result["finnhub_transcripts__ingest"]
+    assert ingest["new_rows"].iloc[0] == 1, (
+        "Only the recent item should pass the 90-day window filter; "
+        "stale item must be excluded. (Pre-fix code filtered on 'event_time' which is "
+        "never present in raw items, making WINDOW_DAYS dead code and passing both items.)"
+    )

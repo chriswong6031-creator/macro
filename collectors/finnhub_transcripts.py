@@ -17,10 +17,12 @@ Store: data/finnhub/transcripts.parquet  (append-only, key-deduped on ticker+id)
 PIT: _first_seen UTC (keep='first'), never overwrites.
 Budget: 1 call per symbol, ~60 req/min free-tier cap respected (reuses PACE_S
 from finnhub_altdata); incremental — only pulls 90-day window; rotates universe
-so a full re-check cycles across ~MAX_TICKERS per run.
+daily via a deterministic date-derived offset (mirrors stocktwits.py pattern)
+so the full universe re-checks across nightly runs (~MAX_TICKERS per run).
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import time
 from datetime import datetime, timedelta, timezone
@@ -37,6 +39,16 @@ BASE = "https://finnhub.io/api/v1"
 MAX_TICKERS = 80           # 1 call each -> ~80 calls; ~1.5 min at free 60/min cap
 PACE_S = 0.9               # stay under 60 req/min (same as finnhub_altdata)
 WINDOW_DAYS = 90           # look-back for new transcripts per run
+ROTATE_SALT = "finnhub_transcripts_v1"   # stable salt for daily offset rotation
+
+
+def _today_offset(n_total: int, n_pick: int) -> int:
+    """Deterministic daily offset so coverage rotates across the full universe."""
+    day_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    h = int(hashlib.md5(f"{ROTATE_SALT}:{day_str}".encode()).hexdigest(), 16)
+    if n_total <= n_pick:
+        return 0
+    return h % (n_total - n_pick + 1)
 
 
 def _key() -> str | None:
@@ -142,9 +154,12 @@ class FinnhubTranscriptsAdapter(Adapter):
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         if not self.api_key:
             raise RuntimeError("FINNHUB key not set")
-        watch = basket_members(cap=MAX_TICKERS)
-        if not watch:
+        universe = basket_members()
+        if not universe:
             raise ValueError("finnhub_transcripts: empty watchlist")
+        # rotate daily so full coverage cycles across the universe
+        offset = _today_offset(len(universe), MAX_TICKERS)
+        watch = universe[offset: offset + MAX_TICKERS]
 
         since_iso = (datetime.now(timezone.utc) - timedelta(days=WINDOW_DAYS)).isoformat()
         rows: list[dict] = []
@@ -157,10 +172,11 @@ class FinnhubTranscriptsAdapter(Adapter):
                 # plan-gated — all remaining symbols will also be None; stop early
                 skipped_plan_gate = len(watch)
                 break
-            # filter to the look-back window
+            # filter to the look-back window using the raw "time" key (parse_transcript_list
+            # renames "time" -> "event_time"; we must filter before parsing)
             for item in items:
-                event_time = item.get("event_time") or ""
-                if event_time >= since_iso or not event_time:
+                raw_time = item.get("time") or ""
+                if not raw_time or raw_time >= since_iso:
                     rows.extend(parse_transcript_list([item], tk))
             time.sleep(PACE_S)
 

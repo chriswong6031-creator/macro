@@ -11,6 +11,12 @@ Per ticker per run, records:
   * watchlist_count — followers of this symbol on StockTwits (from symbol.watchlist_count)
   * _collected    — UTC ISO timestamp
 
+NOTE on bull_ratio semantics: the ~30 messages returned are the most-recent public posts,
+covering an uncontrolled rolling window — minutes for heavily-traded tickers, potentially
+weeks for quiet ones. bull_ratio is NOT a same-day sentiment count and must not be treated
+as such by engine consumers; it reflects recency-weighted posting activity, not a calendar
+period.
+
 Output: data/stocktwits/sentiment.parquet (append-only, key-deduped on ticker+_collected_date)
 PIT: keeps='first' dedup on (ticker, _collected_date) so one reading per day per ticker.
 
@@ -140,11 +146,10 @@ class StockTwitsAdapter(Adapter):
         if not universe:
             raise ValueError("stocktwits: empty universe")
         # rotate daily so full coverage cycles
+        # _today_offset caps at (n_total - TOP_N), so the slice always yields TOP_N items
+        # (or fewer when the universe itself is smaller than TOP_N, which is fine).
         offset = _today_offset(len(universe), TOP_N)
         watch = universe[offset: offset + TOP_N]
-        if len(watch) < TOP_N:
-            # wrap around if near the end
-            watch = (universe[offset:] + universe[: TOP_N - len(universe[offset:])])[:TOP_N]
 
         rows: list[dict] = []
         errors = 0
