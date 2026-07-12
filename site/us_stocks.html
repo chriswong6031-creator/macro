@@ -454,28 +454,31 @@
   .igs .igs-theme.running { color: var(--info);
          border-color: color-mix(in srgb, var(--info) 35%, var(--line)); }
   .igs .igs-theme.fading { color: var(--muted); }
-  .igs .igs-xref { font-size: 10.5px; color: var(--muted); cursor: help; white-space: nowrap;
-         padding: 2px 8px; border-radius: 99px; border: 1px dashed var(--line); margin-left: auto; }
-  /* one merged footer: stance token · engine do-line + track record · as-of right */
-  .igs .igs-ft { margin-top: 9px; padding-top: 8px; font-size: 11px; color: var(--muted);
-         border-top: 1px solid color-mix(in srgb, var(--ic-col) 18%, var(--line));
-         display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
-  .igs .igs-stance { font-weight: 800; color: var(--text); text-transform: uppercase;
-         letter-spacing: .04em; font-size: 10.5px; white-space: nowrap; flex: none; }
-  .igs .igs-ft-body { flex: 1 1 320px; min-width: 0; }
-  .igs .igs-asof { flex: none; margin-left: auto; font-size: 10px; opacity: .75;
-         font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .igs .igs-rank { font-size: 10px; font-weight: 800; opacity: .6;
+         font-variant-numeric: tabular-nums; }
+  /* stance token — top row, right-aligned (footer folded into the ? tip 2026-07-11) */
+  .igs .igs-stance { font-weight: 800; color: var(--ic-col); text-transform: uppercase;
+         letter-spacing: .04em; font-size: 10.5px; white-space: nowrap; flex: none;
+         margin-left: auto; padding: 2px 9px; border-radius: 99px;
+         background: color-mix(in srgb, var(--ic-col) 10%, transparent);
+         border: 1px solid color-mix(in srgb, var(--ic-col) 38%, var(--line)); }
+  .igs .igs-asof { flex: none; margin-left: auto; font-size: 10px; color: var(--muted);
+         opacity: .85; font-variant-numeric: tabular-nums; white-space: nowrap; }
   @media (max-width: 560px) {
     .igs .igs-glance { flex-basis: 100%; }
-    .igs .igs-xref { margin-left: 0; }
+    .igs .igs-stance { margin-left: 0; }
+    .igs .igs-asof { margin-left: 0; }
   }
   /* ============================================================================
      MAG 7 PANEL (.m7p) — cap-weighted Mag 7 context read.
      Blue-info accent. Class prefix: .m7p (no collision with .igx/.rrx).
      Included by dashboard.html.j2 (stocks mode only, adjacent to ignition radar).
      ============================================================================ */
+  /* span12 rides on the root div (dashboard 12-col .grid child — without it the
+     panel collapses to one skinny track, the 2026-07-11 desktop bug). Two compact
+     horizontal rows: .m7p-top (title/state/stance/as-of) + .m7p-ev (evidence). */
   .m7p { --m7-col: var(--info);
-         display: grid; gap: 11px; margin: 12px 0 2px; padding: 15px 18px;
+         display: flex; flex-direction: column; gap: 8px; padding: 11px 16px 12px;
          border-radius: 12px; background: var(--panel); border: 1px solid var(--line);
          border-left: 4px solid var(--m7-col); font-size: 12.5px; line-height: 1.4;
          box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
@@ -487,10 +490,8 @@
   .m7p.m7p-rolling_over    { --m7-col: var(--warn); }
   .m7p.m7p-down            { --m7-col: var(--act); }
 
-  /* header */
-  .m7p .m7p-hd  { display: flex; align-items: flex-start; gap: 10px; }
-  .m7p .m7p-meta { flex: 1; min-width: 0; }
-  .m7p .m7p-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+  /* row 1 — title · badge · ? · run read · stance · as-of */
+  .m7p .m7p-top { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 10px; }
   .m7p .m7p-h2  { margin: 0; font-weight: 700; font-size: 13px; color: var(--text); }
   .m7p .m7p-badge { font-weight: 800; letter-spacing: .03em; color: var(--m7-col);
          font-size: 11px; font-variant-numeric: tabular-nums; padding: 1px 7px;
@@ -501,13 +502,22 @@
          width: 14px; height: 14px; border-radius: 50%;
          background: var(--panel2); border: 1px solid var(--line);
          color: var(--muted); font-size: 9px; font-weight: 700; cursor: help; }
-  /* state + stance lines */
-  .m7p .m7p-state  { font-size: 12.5px; color: var(--text); font-weight: 600; margin-top: 3px; }
-  .m7p .m7p-stance { font-size: 12px; color: var(--m7-col); font-weight: 700; margin-top: 1px; }
+  /* state + stance + as-of (inline in row 1) */
+  .m7p .m7p-state  { font-size: 12.5px; color: var(--text); font-weight: 600; }
+  .m7p .m7p-stance { font-size: 10.5px; color: var(--m7-col); font-weight: 800;
+         text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px;
+         border-radius: 99px;
+         background: color-mix(in srgb, var(--m7-col) 10%, transparent);
+         border: 1px solid color-mix(in srgb, var(--m7-col) 40%, var(--line)); }
+  .m7p .m7p-asof { margin-left: auto; font-size: 10.5px; color: var(--muted);
+         font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-  /* 7-dot member bar */
-  .m7p .m7p-dots { display: flex; gap: 10px 12px; flex-wrap: wrap; align-items: flex-end; }
-  .m7p .m7p-dot-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px;
+  /* row 2 — evidence: dots · generals · structure · legs · flow */
+  .m7p .m7p-ev { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
+
+  /* 7-dot member bar (horizontal dot + ticker pairs) */
+  .m7p .m7p-dots { display: inline-flex; gap: 4px 11px; flex-wrap: wrap; align-items: center; }
+  .m7p .m7p-dot-wrap { display: inline-flex; flex-direction: row; align-items: center; gap: 4px;
          cursor: help; }
   .m7p .m7p-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
   .m7p .m7p-dot.m7p-dot-green { background: var(--up); }
@@ -540,16 +550,10 @@
   .m7p .m7p-leg.dn  .m7p-leg-word { color: var(--down); font-weight: 700; }
   .m7p .m7p-leg.dn2 .m7p-leg-word { color: var(--down); font-weight: 800; }
 
-  /* footer + as-of */
-  .m7p .m7p-foot { font-size: 11px; color: var(--muted);
-         border-top: 1px solid color-mix(in srgb, var(--m7-col) 18%, var(--line));
-         padding-top: 9px; }
-  .m7p .m7p-asof { display: inline; font-size: 10.5px; color: var(--muted);
-         margin-left: 6px; font-variant-numeric: tabular-nums; }
-
   /* responsive */
   @media (max-width: 560px) {
-    .m7p { padding: 13px 14px; gap: 9px; }
+    .m7p { padding: 11px 13px; gap: 8px; }
+    .m7p .m7p-asof { flex-basis: 100%; margin-left: 0; }
     .m7p .m7p-legs .m7p-leg-name.l-zh,
     .m7p .m7p-legs .m7p-leg-name.l-en { font-size: 10.5px; }
   }
@@ -559,20 +563,25 @@
           color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
           position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
   .help .tip { display: none; position: absolute; bottom: 140%; left: 50%;
-               transform: translateX(-50%); width: 290px;
+               transform: translateX(-50%); width: 330px;
                background: var(--panel); border: 1px solid var(--line);
-               padding: 9px 11px; border-radius: 8px;
-               z-index: 60; font-size: 12px; line-height: 1.45; color: var(--text);
+               padding: 10px 13px; border-radius: 8px;
+               z-index: 60; font-size: 12px; line-height: 1.5; color: var(--text);
                text-align: left; font-weight: 400; text-transform: none;
                letter-spacing: normal; box-shadow: var(--popover-shadow);
-               pointer-events: none; white-space: normal;
-               max-height: min(56vh, 360px); overflow-y: auto; overscroll-behavior: contain; }
+               pointer-events: auto; cursor: auto; white-space: normal;
+               max-height: min(60vh, 420px); overflow-y: auto; overscroll-behavior: contain; }
+  /* invisible hover bridge across the gap between the ? icon and the tip box —
+     without it the :hover chain breaks mid-travel and the tip vanishes before
+     the cursor can reach (and scroll) it */
+  .help .tip::after { content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 10px; }
   .help:hover .tip, .help.tip-open .tip { display: block; }
   th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
+  th .help .tip::after, .help.below .tip::after { top: auto; bottom: 100%; }
   /* keep tooltips on-screen near the right/left viewport edges */
   .help.edge-right .tip { left: auto; right: 0; transform: none; }
   .help.edge-left .tip { left: 0; right: auto; transform: none; }
-  .help .tip.tip-wide { width: min(430px, calc(100vw - 32px)); max-height: none; overflow: visible; }
+  .help .tip.tip-wide { width: min(430px, calc(100vw - 32px)); }
   @media (max-width: 640px) {
     .help .tip.tip-wide { width: calc(100vw - 28px); font-size: 11.5px; line-height: 1.45; }
   }
@@ -718,7 +727,7 @@
   .ew-chip { display: none; }  /* hidden in V2 board; moved to popover */
   .acttag, .actage, .acteta, .eqmini { display: none; }  /* moved to popover in V2 */
   /* action-board rows opt in to the shared row-pop engine via [data-rpop] */
-  .notable { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  /* .notable is its own .panel since 2026-07-11 — panel chrome carries the separation */
   .sm { font-size: 12px; margin: 4px 0; }
   /* keep legacy references alive for non-board code */
   .actitem b { color: var(--text); }
@@ -1925,7 +1934,9 @@
   }
 
   /* ── TS-U3: live basket tape band (dtp-* namespace; stocks page only) ─── */
-  #dash-tape-band { background:var(--panel2); border-bottom:2px solid var(--line); display:none; margin:-16px -16px 14px; }
+  /* own grid panel below the standout stocks (2026-07-11) — id beats .panel
+     specificity so the zero padding wins; the .dtp rows carry their own. */
+  #dash-tape-band { background:var(--panel2); display:none; margin:0; padding:0; overflow:hidden; }
   #dash-tape-band.visible { display:block; }
   .dtp-row { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; padding:9px 16px 8px; }
   .dtp-token { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); flex:none; }
@@ -2006,13 +2017,15 @@
   .dash-tw-badge.member { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 32%,transparent); color:var(--info,var(--link)); }
   .dash-tw-name { font-weight:600; color:var(--text); }
   .dash-tw-slow { font-size:11px; color:var(--muted); }
-  .dash-tw-disc { font-size:10.5px; color:var(--muted); margin-top:6px; border-top:1px solid var(--line); padding-top:5px; }
 
   /* ── TS-U3: salience chip on hold/avoid rows ────────────────────────────── */
   .dash-turn-chip { display:inline-flex; align-items:center; gap:3px; padding:1px 5px; border-radius:5px; font-size:9px; font-weight:800; letter-spacing:.04em; white-space:nowrap; background:color-mix(in srgb,var(--warn) 12%,transparent); border:1px solid color-mix(in srgb,var(--warn) 32%,transparent); color:var(--warn); margin-left:4px; }
 
   /* ── TS-U3: per-stock turn setups table ─────────────────────────────────── */
   .dash-mtf-section { margin-top:14px; }
+  /* rest-state fold: 12 rows visible, the rest behind the JS "Show all" toggle */
+  .dash-mtf-collapse.is-collapsed tbody tr:nth-child(n+13) { display:none; }
+  .dash-mtf-more { margin-top:8px; }
   .dash-mtf-tbl { width:100%; border-collapse:collapse; margin-top:7px; font-size:11.5px; }
   .dash-mtf-tbl th { text-align:left; font-weight:700; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.03em; padding:3px 6px; border-bottom:1px solid var(--line); }
   .dash-mtf-tbl td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); }
@@ -2350,9 +2363,11 @@
   <div class="igs-top">
     <span class="igs-ic">⚪</span>
     <span class="igs-ttl"><span class="l-en">Ignition Radar</span><span class="l-zh">点火雷达</span></span>
-    <span class="igs-state"><span class="l-en">Quiet</span><span class="l-zh">静默</span></span>
-    <span class="help">?<span class="tip"><span class="l-en">Risk-ON evidence gauge — the Risk Radar's mirror. Counts eight broad-market signals (breadth thrusts + participation confirms — hover each dot for what it watches) and theme-level turn evidence across the narrative baskets and sector ETFs. Self-graded nightly against what actually happened next; stays display-only until 30+ graded calls and an operator ruling. Evidence, not a buy signal.</span><span class="l-zh">正向风险偏好证据仪表 — 风险雷达的镜像。统计八个大盘信号（广度推进 + 参与度确认 — 悬停各圆点查看含义）及叙事篮子与行业ETF的主题级转折证据。每晚以后续实际走势自评；累计30次评分并经运营员裁定前仅供展示。仅为证据，非买入信号。</span></span></span>
-    <span class="igs-glance"><span class="igs-frag">⚠</span> <span class="l-en">Narrow ignition — XLY; fragile until participation broadens</span><span class="l-zh">局部点火 — XLY；需参与度扩散方可确认</span></span>
+    <span class="igs-state"><span class="l-en">Quiet</span><span class="l-zh">静默</span></span><span class="help">?<span class="tip">
+      <span class="l-en">Gauges the evidence that risk appetite is turning back ON: eight broad-market turn signals plus turn evidence in the hottest theme groups — a theme's rank reflects its checklist, not a price gain. Today: Theme-level evidence only. Fragile until RSP or sector breadth confirms. Evidence read, not a buy call. Grades its own calls nightly; the track record is still building. Risk-off mirror (macro page) reads: watch. Evidence, not a buy signal.</span>
+      <span class="l-zh">衡量风险偏好回暖的证据：八个大盘转折信号加最热主题的转折证据 — 主题排名反映清单证据，并非涨幅。今日：仅主题级证据，RSP或板块广度未确认前存在脆弱性。证据读取，非买入信号。 每晚自评，记录仍在积累。风险预警镜像（宏观页）当前读数：watch。仅为证据，非买入信号。</span>
+    </span></span>
+    <span class="igs-glance"><span class="igs-frag">⚠</span> <span class="l-en">Narrow ignition — XLY; fragile until participation broadens</span><span class="l-zh">局部点火 — XLY；需参与度扩散方可确认</span></span><span class="igs-stance"><span class="l-en">Watch — don't chase</span><span class="l-zh">观望 — 勿追高</span></span>
   </div>
   <div class="igs-ev">
     <span class="igs-k"><span class="l-en">Broad market</span><span class="l-zh">大盘</span></span><span class="igs-dots">
@@ -2383,60 +2398,50 @@
     </span>
     <span class="igs-kcount">1 <span class="l-en">of 8 lit</span><span class="l-zh">/ 8 亮起</span></span>
     <span class="igs-div"></span>
-    <span class="igs-k"><span class="l-en">Hottest themes</span><span class="l-zh">最热主题</span></span>
+    <span class="igs-k" data-tip-en="Ranked by turn evidence — how much of each theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit right now. Hover a theme for its read." data-tip-zh="按转折证据排名 — 各主题清单（成分推进、相对强度转折、多周期确认）当前的亮起比例。悬停查看详情。"><span class="l-en">Hottest themes</span><span class="l-zh">最热主题</span></span>
     <span class="igs-theme igniting"
-      data-tip-en="Turn evidence 77% — how much of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit right now"
-      data-tip-zh="转折证据 77% — 该主题清单（成分推进、相对强度转折、多周期确认）当前的亮起比例">XLY <b>77%</b></span>
+      data-tip-en="#1 by turn evidence: 77% of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit — evidence, not a price change"
+      data-tip-zh="转折证据第1名：该主题清单（成分推进、相对强度转折、多周期确认）当前亮起77% — 为证据而非涨幅">
+      <span class="igs-rank">#1</span> XLY</span>
     <span class="igs-theme igniting"
-      data-tip-en="Turn evidence 70% — how much of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit right now · above a rising 200-day average"
-      data-tip-zh="转折证据 70% — 该主题清单（成分推进、相对强度转折、多周期确认）当前的亮起比例 · 高于上升中的200日均线">Magnificent Seven <b>70%</b> ↗</span>
+      data-tip-en="#2 by turn evidence: 70% of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit — evidence, not a price change · above a rising 200-day average"
+      data-tip-zh="转折证据第2名：该主题清单（成分推进、相对强度转折、多周期确认）当前亮起70% — 为证据而非涨幅 · 高于上升中的200日均线">
+      <span class="igs-rank">#2</span> Magnificent Seven ↗</span>
     <span class="igs-theme igniting"
-      data-tip-en="Turn evidence 69% — how much of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit right now · relative strength at a 6-month high · above a rising 200-day average"
-      data-tip-zh="转折证据 69% — 该主题清单（成分推进、相对强度转折、多周期确认）当前的亮起比例 · 相对强度创6个月新高 · 高于上升中的200日均线">AI Semiconductors <b>69%</b> 🔺 ↗</span>
-    <span class="igs-xref" data-tip-en="The risk-OFF gauge this one mirrors — its current read, from the Macro dashboard." data-tip-zh="本仪表所镜像的风险预警雷达当前读数（见宏观看板）。"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span>: watch</span>
-  </div>
-  <div class="igs-ft">
-    <span class="igs-stance"><span class="l-en">Watch — don't chase</span><span class="l-zh">观望 — 勿追高</span></span>
-    <span class="igs-ft-body">
-    <span class="l-en">Theme-level evidence only. Fragile until RSP or sector breadth confirms. Evidence read, not a buy call.</span><span class="l-zh">仅主题级证据，RSP或板块广度未确认前存在脆弱性。证据读取，非买入信号。</span>
-    · <span class="l-en">still building its self-graded track record</span><span class="l-zh">自评记录积累中</span>
-    </span><span class="igs-asof"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-11</span>
+      data-tip-en="#3 by turn evidence: 69% of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit — evidence, not a price change · relative strength at a 6-month high · above a rising 200-day average"
+      data-tip-zh="转折证据第3名：该主题清单（成分推进、相对强度转折、多周期确认）当前亮起69% — 为证据而非涨幅 · 相对强度创6个月新高 · 高于上升中的200日均线">
+      <span class="igs-rank">#3</span> AI Semiconductors 🔺 ↗</span><span class="igs-asof"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-12</span>
   </div>
 </div>
   
-  <div class="m7p m7p-turning_up">
+  <div class="span12 m7p m7p-turning_up">
 
   
-  <div class="m7p-hd">
-    <div class="m7p-meta">
-      <div class="m7p-title-row">
-        <h2 class="m7p-h2">
-          <span class="l-en">Mag 7</span><span class="l-zh">七巨头</span>
-        </h2>
-        <span class="m7p-badge">
-          <span class="l-en">Turning up</span>
-          <span class="l-zh">拐头向上</span>
-        </span>
-        <span class="m7p-help" data-tip-en="Cap-weighted view of the 7 largest US stocks. Weights: Polygon market-cap weights. MAGS ETF data unavailable. Numbers are descriptive context reads — a heads-up, not a buy signal." data-tip-zh="七只最大美股的市值加权视图。权重：市值加权（Polygon）。MAGS ETF data unavailable。以上数字均为描述性背景读数 — 仅供参考，非买入信号。">?</span>
-      </div>
-
-      
-      <div class="m7p-state">
-        <span class="l-en">Turning up · day 7 · +3% since Jul 01 vs S&P +1%
-        </span>
-        <span class="l-zh">拐头向上 · 第7日 · Jul 01 起 +3% vs 标普 +1%
-        </span>
-      </div>
-
-      
-      <div class="m7p-stance">
-        <span class="l-en">Get ready</span>
-        <span class="l-zh">准备就绪</span>
-      </div>
-    </div>
+  <div class="m7p-top">
+    <h2 class="m7p-h2">
+      <span class="l-en">Mag 7</span><span class="l-zh">七巨头</span>
+    </h2>
+    <span class="m7p-badge">
+      <span class="l-en">Turning up</span>
+      <span class="l-zh">拐头向上</span>
+    </span>
+    <span class="m7p-help" data-tip-en="Cap-weighted view of the 7 largest US stocks. Weights: Polygon market-cap weights. MAGS ETF data unavailable. Numbers are descriptive context reads — a heads-up, not a buy signal; the Buy lanes below still decide entries." data-tip-zh="七只最大美股的市值加权视图。权重：市值加权（Polygon）。MAGS ETF data unavailable。以上数字均为描述性背景读数 — 仅供参考，非买入信号；下方买入通道仍决定入场时机。">?</span>
+    
+    <span class="m7p-state">
+      <span class="l-en">day 7 · +3% since Jul 01 vs S&P +1%
+      </span>
+      <span class="l-zh">第7日 · Jul 01 起 +3% vs 标普 +1%
+      </span>
+    </span>
+    <span class="m7p-stance">
+      <span class="l-en">Get ready</span>
+      <span class="l-zh">准备就绪</span>
+    </span>
+    <span class="m7p-asof"><span class="l-en">as of 2026-07-10</span><span class="l-zh">截至 2026-07-10</span></span>
   </div>
 
   
+  <div class="m7p-ev">
   <div class="m7p-dots">
     <div class="m7p-dot-wrap" data-tip-en="Apple · 20d +8.1% · vs market +3.8% · above 50-day MA · no trend data" data-tip-zh="苹果 · 20日 +8.1% · 相对市场 +3.8% · 站上 50日均线 · no trend data">
       <span class="m7p-dot m7p-dot-green"></span>
@@ -2491,31 +2496,26 @@
     <span class="m7p-leg up2" data-tip-en="10d vs market +8.0% · 20d vs market +1.1%" data-tip-zh="10日相对市场 +8.0% · 20日相对市场 +1.1%">
       <span class="m7p-leg-name l-en">Mag 7</span>
       <span class="m7p-leg-name l-zh">七巨头</span>
-      <span class="m7p-leg-word">▲▲ surging</span>
+      <span class="m7p-leg-word"><span class="l-en">▲▲ surging</span><span class="l-zh">▲▲ 强势拉升</span></span>
     </span>
     <span class="m7p-leg dn" data-tip-en="10d vs market -4.0% · 20d vs market +1.4%" data-tip-zh="10日相对市场 -4.0% · 20日相对市场 +1.4%">
       <span class="m7p-leg-name l-en">AI chips</span>
       <span class="m7p-leg-name l-zh">AI芯片</span>
-      <span class="m7p-leg-word">▼ falling</span>
+      <span class="m7p-leg-word"><span class="l-en">▼ falling</span><span class="l-zh">▼ 回落</span></span>
     </span>
     <span class="m7p-leg dn2" data-tip-en="10d vs market -17.6% · 20d vs market +9.1%" data-tip-zh="10日相对市场 -17.6% · 20日相对市场 +9.1%">
       <span class="m7p-leg-name l-en">Memory</span>
       <span class="m7p-leg-name l-zh">存储</span>
-      <span class="m7p-leg-word">▼▼ falling hard</span>
+      <span class="m7p-leg-word"><span class="l-en">▼▼ falling hard</span><span class="l-zh">▼▼ 大幅回落</span></span>
     </span>
     <span class="m7p-leg up" data-tip-en="10d vs market +2.1% · 20d vs market -12.8%" data-tip-zh="10日相对市场 +2.1% · 20日相对市场 -12.8%">
       <span class="m7p-leg-name l-en">Software</span>
       <span class="m7p-leg-name l-zh">软件</span>
-      <span class="m7p-leg-word">▲ running</span>
+      <span class="m7p-leg-word"><span class="l-en">▲ running</span><span class="l-zh">▲ 上行</span></span>
     </span>
   </div>
 
   
-
-  
-  <div class="m7p-foot">
-    <span class="l-en">Cap-weighted view of the 7 largest US stocks — the Buy lanes below still decide entries.</span><span class="l-zh">七只最大美股的市值加权视图 — 以下买入通道仍决定入场时机。</span>
-    <span class="m7p-asof"><span class="l-en">As of 2026-07-10</span><span class="l-zh">截至 2026-07-10</span></span>
   </div>
 
 </div>
@@ -2530,32 +2530,20 @@
   
   <div class="panel span12">
     <h2><span class="l-en">What to act on now</span><span class="l-zh">当前可操作</span>
-      <span class="help">?<span class="tip"><span class="l-en">Five lanes by cycle position. 🟢 Buy now — entry confirmed today. 🔵 Almost ready — trigger not yet fired, wait. 🏃 In favour — extended, wait for pullback. 🟠 Take profits — late-cycle or topping, protect gains. ⚪ Stand aside — hold what you own, no new buying. 🏛 = cap-weighted GICS sector cycle read (descriptive — no state→return ordering found in backtest; drawdown path is the honest content). 🧩 = narrative basket (finer resolution than the blurry GICS label). ✓ = backtested absolute-trend drawdown-control gate fired — the one measured edge on this board; overrides the cycle lane when it triggers. ★ = in the narrative-rotation model book. Hover any row for full detail.</span><span class="l-zh">五个泳道按周期位置排列。🟢 立即买入 — 今日已确认入场。🔵 接近就绪 — 触发尚未发生，等待。🏃 看好勿追高 — 已延伸，等回调。🟠 止盈 — 周期晚期或做顶，保护利润。⚪ 观望 — 持有勿动，不新开仓。🏛 = 市值加权 GICS 板块周期判读（描述性 — 回测中未发现状态→收益排序关系；回撤路径是诚实的内容）。🧩 = 叙事篮子（比 GICS 标签分辨率更高）。✓ = 经回测的绝对趋势回撤控制门槛触发 — 本板块唯一经实测的优势；触发时覆盖周期泳道判读。★ = 在叙事轮动模型组合中。悬停任意行查看完整详情。</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Every sector and theme is sorted into five lanes by cycle position — the lane name is the action, and each lane explains itself below its title. Hover any row for full detail. Symbols: 🏛 sector fund · 🧩 theme group · ✓ tested sell-discipline gate (overrides the lane read when it fires) · ★ in the model book.</span><span class="l-zh">所有板块与主题按周期位置分入五个泳道 — 泳道名称即操作建议，各泳道标题下有说明。悬停任意行查看完整详情。图例：🏛 板块基金 · 🧩 主题篮子 · ✓ 经回测的卖出纪律门槛（触发时覆盖泳道判读）· ★ 模型组合内。</span></span></span>
     </h2>
     
     
     
     
-    <div id="dash-tape-band" aria-label="Live basket tape">
-      <div class="dtp-row" id="dtp-row">
-        <span class="dtp-token closed" id="dtp-token"><span class="dtp-dot"></span><span id="dtp-token-lbl">—</span></span>
-        <span class="dtp-asof" id="dtp-asof"></span>
-      </div>
-      <div class="dtp-body" id="dtp-body"></div>
-      <button class="dtp-more" id="dtp-more" type="button" aria-expanded="false" hidden></button>
-      <div class="dtp-fn" id="dtp-fn"></div>
-    </div>
-    
     <div id="dash-tw-strip" class="dash-tw-strip">
       <div class="dash-tw-hdr">
         <span class="dash-tw-title"><span class="l-en">&#9889; Early turn signs</span><span class="l-zh">&#9889; 早期拐点迹象</span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Not a buy signal: in 26 past cases, about 6 in 10 of these early signs faded within a day. If the turn is real, the lanes below upgrade on their own.</span><span class="l-zh">非买入信号：历史26次中约六成的早期迹象在一天内消退。若拐点为真，下方泳道会自行升级。</span></span></span>
         <span class="dash-tw-asof" id="dash-tw-asof"></span>
       </div>
       <div class="dash-tw-sub"><span class="l-en">Bounce attempts in groups we still rate Hold / Avoid. Watch — don't chase.</span><span class="l-zh">仍评级为「持有／回避」的板块出现反弹尝试。观察为主 — 勿追高。</span></div>
       <div class="dash-tw-rows" id="dash-tw-rows"></div>
-      <div class="dash-tw-disc">
-        <span class="l-en">Not a buy signal: in 26 past cases, about 6 in 10 of these early signs faded within a day. If the turn is real, the lanes below upgrade on their own.</span><span class="l-zh">非买入信号：历史26次中约六成的早期迹象在一天内消退。若拐点为真，下方泳道会自行升级。</span> <span class="help">?<span class="tip"><span class="l-en">Technical receipt: basket-level multi-timeframe turn meter; backtested edge at basket level = null (Oracle P8; T+1 fade base rate 58%, n=26). Slow reco labels unchanged; display tier only. Sources: turn_watch (basket K-of-N) + mtf_upturn (per-stock confluence).</span><span class="l-zh">技术说明：篮子级多时间框架拐点计量；篮子级回测优势为空值（Oracle P8；T+1消退基础概率58%，n=26）。慢速评级标签未变；仅展示层。数据源：turn_watch（篮子K-of-N）+ mtf_upturn（个股共振）。</span></span></span>
-      </div>
     </div>
     
     
@@ -3797,10 +3785,13 @@
       </div>
     </div>
     
+    <p class="muted" style="font-size:11.5px; margin-top:8px">⚠ <span class="l-en">Cycle timing shows <i>where in the cycle</i> a sector sits — use it for structure and defined exits, not as a return forecast.</span><span class="l-zh">周期择时显示板块<i>处于周期的哪个位置</i> — 用于结构与明确出场，而非收益预测。</span></p>
+  </div>
     
-    <div class="notable" id="us-standouts">
+    
+    <div class="panel span12 notable" id="us-standouts">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-        <span style="font-weight:700;font-size:13px"><span class="l-en">Standout individual stocks</span><span class="l-zh">表现突出的个股</span></span>
+        <h2 style="margin:0"><span class="l-en">Standout individual stocks</span><span class="l-zh">表现突出的个股</span></h2>
         
         
         <span class="st-view-toggle" id="us-st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
@@ -3809,7 +3800,7 @@
         </span>
         
         <span class="muted" style="font-size:11.5px">31 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 32 <span class="l-en">setups · green dot = entry open, yellow = wait for pullback.</span><span class="l-zh">个形态 · 绿点＝现在可入场，黄点＝等回调。</span>
-          <span class="help">?<span class="tip tip-wide"><span class="l-en">Cards answer two questions. Conviction asks: is this a name worth owning? Entry asks: is today a good price? A high conviction score can still mean wait. Use the green dot for open entries, the pullback price for patience, and the alpha chip for selection-edge rank. Conviction and entry are separate — a high conviction score can still mean wait for the pullback. Click a card for the full breakdown.</span><span class="l-zh">卡片回答两个问题：信念＝这是不是值得持有的标的；入场＝今天价格是否合适。高信念不等于立刻买。绿点表示入场窗口已开；黄点看回调价；alpha 标记是选股优势排名。信念与入场分开判断 — 高信念分也可能需要等待回调。点击卡片看完整拆解。</span></span></span></span>
+          <span class="help">?<span class="tip tip-wide"><span class="l-en">Each card answers two separate questions. Conviction: is this a name worth owning? Entry: is today a good price? High conviction can still mean wait for the pullback. Green dot = entry open · yellow = wait · the alpha chip ranks selection edge. Click a card for the full breakdown.</span><span class="l-zh">每张卡片回答两个独立问题。信念：是否值得持有；入场：今天价格是否合适。高信念也可能需要等回调。绿点＝入场窗口已开 · 黄点＝等待 · alpha 标记为选股优势排名。点击卡片看完整拆解。</span></span></span></span>
         
       </div>
       
@@ -5154,7 +5145,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 46d</span><span class="l-zh">筑底46天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 46d</span><span class="l-zh">筑底46天</span></span>
             
             
             
@@ -5269,7 +5260,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 46d · inv $450.98 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 46d · exit below $450.98 · display only</span>
             <span class="l-zh">筑底46天 · 止损 $450.98。仅供参考。</span>
           </div>
           
@@ -5396,7 +5387,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 9d</span><span class="l-zh">筑底9天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 9d</span><span class="l-zh">筑底9天</span></span>
             
             
             
@@ -5511,7 +5502,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 9d · inv $34.64 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 9d · exit below $34.64 · display only</span>
             <span class="l-zh">筑底9天 · 止损 $34.64。仅供参考。</span>
           </div>
           
@@ -5632,7 +5623,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 18d</span><span class="l-zh">筑底18天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 18d</span><span class="l-zh">筑底18天</span></span>
             
             
             
@@ -5758,7 +5749,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 18d · inv $64.48 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 18d · exit below $64.48 · display only</span>
             <span class="l-zh">筑底18天 · 止损 $64.48。仅供参考。</span>
           </div>
           
@@ -5879,7 +5870,7 @@
             <span class="sig-gate sig-take" data-tip-en="CONFIRMED: master 3D confluence just confirmed — 3D MACD-RSI × 3D StochRSI cross, buy-filter endorsed. Tier T1 · weight 0.9. deep-oversold cross. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-07-09" data-tip-zh="CONFIRMED（确认）：主层3日共振已确认——3日MACD-RSI×3日StochRSI交叉，买入过滤器已背书。 层级T1·权重0.9。 一扇门——操作前请确认板块/龙头与止损。 · long-bias · 2026-07-09">✓ <span class="l-en">CONFIRMED</span><span class="l-zh">确认</span> <span class="sig-w">T1·0.9</span></span>
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 4d</span><span class="l-zh">筑底4天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 4d</span><span class="l-zh">筑底4天</span></span>
             
             
             
@@ -6005,7 +5996,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 4d · inv $50.83 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 4d · exit below $50.83 · display only</span>
             <span class="l-zh">筑底4天 · 止损 $50.83。仅供参考。</span>
           </div>
           
@@ -6126,7 +6117,7 @@
             
             
             
-            <span class="nb-hold hold-launched" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
+            <span class="nb-hold hold-launched" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             
             
@@ -6252,7 +6243,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 6d · inv $35.11 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 6d · exit below $35.11 · display only</span>
             <span class="l-zh">筑底6天 · 止损 $35.11。仅供参考。</span>
           </div>
           
@@ -6378,7 +6369,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 6d</span><span class="l-zh">筑底6天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 6d</span><span class="l-zh">筑底6天</span></span>
             
             
             
@@ -6504,7 +6495,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 6d · inv $51.80 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 6d · exit below $51.80 · display only</span>
             <span class="l-zh">筑底6天 · 止损 $51.80。仅供参考。</span>
           </div>
           
@@ -6533,10 +6524,6 @@
           ><span class="l-en">deep</span><span class="l-zh">深度</span></span>
           
           
-          
-          
-          
-          <span class="nb-pulse-heat ph-heating" data-tip-en="Sector theme heat: heating — Big Pharma. Rank 4/46 (+11 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：heating — 大型药企。排名 4/46。仅供展示，不影响排名。"><span class="l-en">▲ heating</span><span class="l-zh">▲ heating</span></span>
           
           
           
@@ -6637,7 +6624,7 @@
             
             
             
-            <span class="nb-hold hold-launched" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
+            <span class="nb-hold hold-launched" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             
             
@@ -6752,7 +6739,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 61d · inv $64.24 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 61d · exit below $64.24 · display only</span>
             <span class="l-zh">筑底61天 · 止损 $64.24。仅供参考。</span>
           </div>
           
@@ -6878,7 +6865,7 @@
             
             
             
-            <span class="nb-hold hold-launched" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
+            <span class="nb-hold hold-launched" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             
             
@@ -7004,7 +6991,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 9d · inv $476.89 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 9d · exit below $476.89 · display only</span>
             <span class="l-zh">筑底9天 · 止损 $476.89。仅供参考。</span>
           </div>
           
@@ -7038,7 +7025,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Industrials (Equal-Weight). Rank 22/46 (-6 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 工业（等权）。排名 22/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-cooling" data-tip-en="Sector theme heat: cooling — Industrials (Equal-Weight). Rank 17/46 (-8 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：cooling — 工业（等权）。排名 17/46。仅供展示，不影响排名。"><span class="l-en">▽ cooling</span><span class="l-zh">▽ cooling</span></span>
           
           
           
@@ -7144,7 +7131,7 @@
             
             
             
-            <span class="nb-hold hold-launched" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
+            <span class="nb-hold hold-launched" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             
             
@@ -7259,7 +7246,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 44d · inv $53.41 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 44d · exit below $53.41 · display only</span>
             <span class="l-zh">筑底44天 · 止损 $53.41。仅供参考。</span>
           </div>
           
@@ -7283,7 +7270,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Consumer Staples (Equal-Weight). Rank 26/46 (-9 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 必需消费（等权）。排名 26/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Consumer Staples (Equal-Weight). Rank 24/46 (-3 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 必需消费（等权）。排名 24/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -7390,7 +7377,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 7d</span><span class="l-zh">筑底7天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 7d</span><span class="l-zh">筑底7天</span></span>
             
             
             
@@ -7516,7 +7503,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 7d · inv $88.11 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 7d · exit below $88.11 · display only</span>
             <span class="l-zh">筑底7天 · 止损 $88.11。仅供参考。</span>
           </div>
           
@@ -7642,7 +7629,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 34d</span><span class="l-zh">筑底34天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 34d</span><span class="l-zh">筑底34天</span></span>
             
             
             
@@ -7662,7 +7649,7 @@
             
             
             
-            
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts richer than calls by -1.7 vol pts vs peers — protection strongly bid (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌比看涨贵 -1.7 个波动点（相对同业） — 保护性看跌被大力买入（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -7757,7 +7744,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 34d · inv $83.37 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 34d · exit below $83.37 · display only</span>
             <span class="l-zh">筑底34天 · 止损 $83.37。仅供参考。</span>
           </div>
           
@@ -7781,7 +7768,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Industrials (Equal-Weight). Rank 22/46 (-6 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 工业（等权）。排名 22/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-cooling" data-tip-en="Sector theme heat: cooling — Industrials (Equal-Weight). Rank 17/46 (-8 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：cooling — 工业（等权）。排名 17/46。仅供展示，不影响排名。"><span class="l-en">▽ cooling</span><span class="l-zh">▽ cooling</span></span>
           
           
           
@@ -7888,7 +7875,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 12d</span><span class="l-zh">筑底12天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 12d</span><span class="l-zh">筑底12天</span></span>
             
             
             
@@ -8014,7 +8001,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 12d · inv $158.98 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 12d · exit below $158.98 · display only</span>
             <span class="l-zh">筑底12天 · 止损 $158.98。仅供参考。</span>
           </div>
           
@@ -8141,7 +8128,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 0d</span><span class="l-zh">筑底0天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 0d</span><span class="l-zh">筑底0天</span></span>
             
             
             
@@ -8256,7 +8243,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 0d · inv $173.23 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 0d · exit below $173.23 · display only</span>
             <span class="l-zh">筑底0天 · 止损 $173.23。仅供参考。</span>
           </div>
           
@@ -8383,7 +8370,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 5d</span><span class="l-zh">筑底5天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 5d</span><span class="l-zh">筑底5天</span></span>
             
             
             
@@ -8498,7 +8485,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 5d · inv $81.31 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 5d · exit below $81.31 · display only</span>
             <span class="l-zh">筑底5天 · 止损 $81.31。仅供参考。</span>
           </div>
           
@@ -8522,7 +8509,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Retail. Rank 42/46 (-4 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 零售。排名 42/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Retail. Rank 41/46 (-7 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 零售。排名 41/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -8622,7 +8609,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 5d</span><span class="l-zh">筑底5天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 5d</span><span class="l-zh">筑底5天</span></span>
             
             
             
@@ -8737,7 +8724,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 5d · inv $183.53 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 5d · exit below $183.53 · display only</span>
             <span class="l-zh">筑底5天 · 止损 $183.53。仅供参考。</span>
           </div>
           
@@ -8771,7 +8758,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Industrials (Equal-Weight). Rank 22/46 (-6 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 工业（等权）。排名 22/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-cooling" data-tip-en="Sector theme heat: cooling — Industrials (Equal-Weight). Rank 17/46 (-8 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：cooling — 工业（等权）。排名 17/46。仅供展示，不影响排名。"><span class="l-en">▽ cooling</span><span class="l-zh">▽ cooling</span></span>
           
           
           
@@ -9030,6 +9017,10 @@
           
           
           
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — US Energy Complex. Rank 34/46 (+3 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 美国能源综合。排名 34/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          
+          
+          
           
           
           
@@ -9138,7 +9129,7 @@
             
             
             
-            <span class="nb-hold hold-launched" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
+            <span class="nb-hold hold-launched" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             
             
@@ -9264,7 +9255,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 10d · inv $2847.13 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 10d · exit below $2847.13 · display only</span>
             <span class="l-zh">筑底10天 · 止损 $2847.13。仅供参考。</span>
           </div>
           
@@ -9296,7 +9287,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Consumer Discretionary (Equal-Weight). Rank 29/46 (-6 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 非必需消费（等权）。排名 29/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Consumer Discretionary (Equal-Weight). Rank 29/46 (-3 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 非必需消费（等权）。排名 29/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -9802,10 +9793,6 @@
           
           
           
-          <span class="nb-pulse-heat ph-heating" data-tip-en="Sector theme heat: heating — Financials (Equal-Weight). Rank 6/46 (+12 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：heating — 金融（等权）。排名 6/46。仅供展示，不影响排名。"><span class="l-en">▲ heating</span><span class="l-zh">▲ heating</span></span>
-          
-          
-          
           
           
           
@@ -9913,7 +9900,7 @@
             <span class="sig-gate sig-pending" data-tip-en="CONFIRMING: master confluence signal forming, not yet confirmed — forward reclaim-and-hold confirmation pending. Tier T1 · weight 0.9. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-07-09" data-tip-zh="CONFIRMING（确认中）：主层共振信号形成中，尚未确认——等待向前的收复确认。 层级T1·权重0.9。 一扇门——操作前请确认板块/龙头与止损。 · long-bias · 2026-07-09">◔ <span class="l-en">CONFIRMING</span><span class="l-zh">确认中</span> <span class="sig-w">T1·0.9</span></span>
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 1d</span><span class="l-zh">筑底1天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 1d</span><span class="l-zh">筑底1天</span></span>
             
             
             
@@ -10039,7 +10026,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 1d · inv $52.01 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 1d · exit below $52.01 · display only</span>
             <span class="l-zh">筑底1天 · 止损 $52.01。仅供参考。</span>
           </div>
           
@@ -10170,7 +10157,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 9d</span><span class="l-zh">筑底9天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 9d</span><span class="l-zh">筑底9天</span></span>
             
             
             
@@ -10285,7 +10272,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 9d · inv $41.90 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 9d · exit below $41.90 · display only</span>
             <span class="l-zh">筑底9天 · 止损 $41.90。仅供参考。</span>
           </div>
           
@@ -10410,7 +10397,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 2d</span><span class="l-zh">筑底2天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 2d</span><span class="l-zh">筑底2天</span></span>
             
             
             
@@ -10536,7 +10523,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 2d · inv $175.91 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 2d · exit below $175.91 · display only</span>
             <span class="l-zh">筑底2天 · 止损 $175.91。仅供参考。</span>
           </div>
           
@@ -10817,6 +10804,10 @@
           
           
           
+          <span class="nb-pulse-heat ph-cooling" data-tip-en="Sector theme heat: cooling — AI Infrastructure. Rank 9/46 (-6 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：cooling — AI 基础设施。排名 9/46。仅供展示，不影响排名。"><span class="l-en">▽ cooling</span><span class="l-zh">▽ cooling</span></span>
+          
+          
+          
           
           
           
@@ -10948,7 +10939,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Non-AI Tech & Hardware) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（非AI科技与硬件）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+3.5% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +3.5%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts modestly richer than calls (-0.9 vol pts vs peers) — mild downside hedge (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌略贵于看涨（-0.9 个波动点（相对同业））— 温和下行对冲（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Non-AI Tech & Hardware) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（非AI科技与硬件）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+3.5% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +3.5%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -11073,7 +11064,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Non-AI Tech & Hardware. Rank 19/46 (+7 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 非AI科技与硬件。排名 19/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Non-AI Tech & Hardware. Rank 22/46 (+5 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 非AI科技与硬件。排名 22/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -11180,7 +11171,7 @@
             
             
             
-            <span class="nb-hold hold-launched" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
+            <span class="nb-hold hold-launched" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             
             
@@ -11306,7 +11297,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 8d · inv $261.58 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 8d · exit below $261.58 · display only</span>
             <span class="l-zh">筑底8天 · 止损 $261.58。仅供参考。</span>
           </div>
           
@@ -11339,10 +11330,6 @@
           ><span class="l-en">deep</span><span class="l-zh">深度</span></span>
           
           
-          
-          
-          
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Materials (Equal-Weight). Rank 34/46 (-3 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 材料（等权）。排名 34/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -11442,7 +11429,7 @@
             <span class="sig-gate sig-early" data-tip-en="APPROACHING: 2D-MACD cross projected, 3D StochRSI already crossed. ONE door — confirm sector/leadership + your stop before acting. · mixed · 2026-07-09" data-tip-zh="APPROACHING（临近）：2日MACD交叉预测中，3日StochRSI已上穿。 一扇门——操作前请确认板块/龙头与止损。 · mixed · 2026-07-09">⋯ <span class="l-en">APPROACHING</span><span class="l-zh">临近</span></span>
             
             
-            <span class="nb-hold hold-launched" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
+            <span class="nb-hold hold-launched" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             
             
@@ -11557,7 +11544,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 75d · inv $96.88 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 75d · exit below $96.88 · display only</span>
             <span class="l-zh">筑底75天 · 止损 $96.88。仅供参考。</span>
           </div>
           
@@ -11582,10 +11569,6 @@
           
           
           
-          
-          
-          
-          <span class="nb-pulse-heat ph-heating" data-tip-en="Sector theme heat: heating — Financials (Equal-Weight). Rank 6/46 (+12 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：heating — 金融（等权）。排名 6/46。仅供展示，不影响排名。"><span class="l-en">▲ heating</span><span class="l-zh">▲ heating</span></span>
           
           
           
@@ -11834,7 +11817,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Technology (Equal-Weight). Rank 21/46 (+7 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 信息技术（等权）。排名 21/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Technology (Equal-Weight). Rank 23/46 (+5 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 信息技术（等权）。排名 23/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -11940,7 +11923,7 @@
             <span class="sig-gate sig-t2" data-tip-en="PRIME: 2D cross with 3D support — historically filled at a lower median premium above the 20d trough than CONFIRMED (measured, not a forward promise). Tier T2 · weight 1.0. deep-oversold cross. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-07-09" data-tip-zh="PRIME（最佳入场）：2日交叉叠加3日支撑——历史上于20日低点以上中位溢价低于CONFIRMED成交（实测数据，非前瞻承诺）。 层级T2·权重1.0。 一扇门——操作前请确认板块/龙头与止损。 · long-bias · 2026-07-09">★ <span class="l-en">PRIME</span><span class="l-zh">最佳入场</span> <span class="sig-w">T2·1.0</span></span>
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 4d</span><span class="l-zh">筑底4天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 4d</span><span class="l-zh">筑底4天</span></span>
             
             
             
@@ -12066,7 +12049,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 4d · inv $19.44 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 4d · exit below $19.44 · display only</span>
             <span class="l-zh">筑底4天 · 止损 $19.44。仅供参考。</span>
           </div>
           
@@ -12196,7 +12179,7 @@
             
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 2d</span><span class="l-zh">筑底2天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 2d</span><span class="l-zh">筑底2天</span></span>
             
             
             
@@ -12322,7 +12305,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 2d · inv $187.15 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 2d · exit below $187.15 · display only</span>
             <span class="l-zh">筑底2天 · 止损 $187.15。仅供参考。</span>
           </div>
           
@@ -12347,10 +12330,6 @@
           
           
           
-          
-          
-          
-          <span class="nb-pulse-heat ph-heating" data-tip-en="Sector theme heat: heating — Financials (Equal-Weight). Rank 6/46 (+12 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：heating — 金融（等权）。排名 6/46。仅供展示，不影响排名。"><span class="l-en">▲ heating</span><span class="l-zh">▲ heating</span></span>
           
           
           
@@ -12457,7 +12436,7 @@
             <span class="sig-gate sig-htf-s1" data-tip-en="S1 · 2-week + 3-day confluence — higher-timeframe sponsorship (display-only)" data-tip-zh="S1 · 2周+3日共振 — 高周期确认（仅展示）"><span class="l-en">S1</span><span class="l-zh">S1</span></span>
             
             
-            <span class="nb-hold hold-intact" data-tip-en="W6-C hold state. Tap to expand for base days + invalidation price." data-tip-zh="W6-C 持仓状态。展开查看筑底天数与失效价。"><span class="l-en">Base 6d</span><span class="l-zh">筑底6天</span></span>
+            <span class="nb-hold hold-intact" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">Base 6d</span><span class="l-zh">筑底6天</span></span>
             
             
             
@@ -12572,7 +12551,7 @@
           
           
           <div class="nb-hold-detail" style="font-size:9px;color:var(--muted);margin-top:2px">
-            <span class="l-en">Base 6d · inv $27.57 · W6-C hold tracker (display-only)</span>
+            <span class="l-en">Base 6d · exit below $27.57 · display only</span>
             <span class="l-zh">筑底6天 · 止损 $27.57。仅供参考。</span>
           </div>
           
@@ -13242,7 +13221,7 @@
       <div class="topsetups">
         <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
           <span style="font-weight:700;font-size:12.5px">⚡ <span class="l-en">Top setups</span><span class="l-zh">顶级布局</span></span>
-          <span class="muted" style="font-size:11px"><span class="l-en">α-ranked names that have triggered the MACD-2D × StochRSI-3D confluence buy · across the S&P 1500</span><span class="l-zh">已触发 MACD-2D × StochRSI-3D 共振买入、并按 α 排序的标的 · 覆盖标普 1500</span>
+          <span class="muted" style="font-size:11px"><span class="l-en">Stocks with a fresh buy trigger, strongest leaders first · across the S&P 1500</span><span class="l-zh">已触发新买入信号的个股，最强领涨优先 · 覆盖标普 1500</span>
             <span class="help">?<span class="tip"><span class="l-en">Actionable setups only. A name appears here only once it has TRIGGERED the validated MACD-2D × StochRSI-3D confluence buy (engine/signal_gate): the 2D MACD and 3D StochRSI have crossed within the last ~6 days and momentum is still constructive (Buy zone), OR the 3D StochRSI has crossed and the 2D MACD is about to cross in the next 1-2 bars (About to cross). This is a HARD gate — a high-α leader that is downtrending / topped on the 3D MACD/StochRSI is NOT shown, no matter how strong its momentum (the bug this fixes). Among the names that pass the gate, the board RANKS by α (sector-neutral residual momentum, market + sector beta stripped) so the strongest leaders surface first; the cycle state, trend chip and 'setup' score are risk-placement CONTEXT, and 👤 flags an insider buy-cluster. Click any row for the full breakdown.</span><span class="l-zh">仅显示可操作布局。标的只有在触发了经验证的 MACD-2D × StochRSI-3D 共振买入（engine/signal_gate）后才会出现：2日 MACD 与 3日 StochRSI 已在约近6日内交叉且动量仍具建设性（买入区），或 3日 StochRSI 已上穿、2日 MACD 即将在未来1-2根K线内交叉（即将交叉）。这是硬性门控——无论动量多强，在 3日 MACD/StochRSI 上处于下行/做顶的高 α 领涨股都不会显示（本次修复的问题）。在通过门控的标的中，榜单按 α（行业中性残差动量，剥离大盘与行业 beta）排序，使最强领涨股优先；周期状态、趋势标签与“布局分”为风险摆位情境，👤 表示内部人集群买入。点击任意行查看完整拆解。</span></span></span></span>
           <a class="ts-more" href="discovery.html"><span class="l-en">Top Picks</span><span class="l-zh">精选股</span> →</a>
         </div>
@@ -13250,7 +13229,7 @@
         <div class="tbl-scroll"><table class="ts-tbl">
           <thead><tr>
             <th><span class="l-en">Stock</span><span class="l-zh">个股</span></th><th><span class="l-en">Sector</span><span class="l-zh">板块</span></th>
-            <th class="r">α</th><th class="r"><span class="l-en">rank</span><span class="l-zh">排名</span></th>
+            <th class="r" data-tip-en="Selection edge (α): sector-neutral residual momentum, market and sector beta stripped — how strongly this stock outruns its peers" data-tip-zh="选股优势（α）：行业中性残差动量（剥离大盘与行业beta）— 相对同行的领先强度"><span class="l-en">edge (α)</span><span class="l-zh">优势 (α)</span></th><th class="r"><span class="l-en">rank</span><span class="l-zh">排名</span></th>
             <th data-tip-en="The validated MACD-2D × StochRSI-3D confluence buy gate (engine/signal_gate): Buy zone = both crossed within ~6 days, still constructive; About to cross = 3D StochRSI crossed, 2D MACD imminent. The board requires this." data-tip-zh="经验证的共振买入门控：买入区=两者约近6日内交叉且建设性；即将交叉=3日StochRSI已上穿、2日MACD即将交叉。榜单以此为准。"><span class="l-en">buy</span><span class="l-zh">买入</span></th>
             <th><span class="l-en">cycle</span><span class="l-zh">周期</span></th><th><span class="l-en">trend</span><span class="l-zh">趋势</span></th>
             <th class="r" data-tip-en="Cross-sectional factor composite (value / quality / low-vol …) — a LIGHT quality tiebreaker (crowded, post-publication decayed), not a driver" data-tip-zh="横截面因子综合（价值/质量/低波…）— 轻量质量打破平局，非主导"><span class="l-en">factor</span><span class="l-zh">因子</span></th>
@@ -13283,7 +13262,7 @@
             </tr>
           
             <tr class="ts-row" onclick="location.href='stock.html#DAR'">
-              <td><span class="ts-tk">DAR</span> <span class="ts-nm">Darling Ingredients</span> <span class="ts-sue" data-tip-en="Earnings momentum: SUE z +1.3 vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score" data-tip-zh="盈利动量：SUE z +1.3（相对标普1500）— 在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 SUE +1.3</span></td>
+              <td><span class="ts-tk">DAR</span> <span class="ts-nm">Darling Ingredients</span> <span class="ts-sue" data-tip-en="Earnings momentum: SUE z +1.3 vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score" data-tip-zh="盈利动量：SUE z +1.3（相对标普1500）— 在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 <span class="l-en">earnings beat</span><span class="l-zh">盈利超预期</span></span></td>
               <td class="muted"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td>
               <td class="r az-up">+1.36</td>
               <td class="r muted">#10/74</td>
@@ -13385,8 +13364,18 @@
       
     </div>
     
-    <p class="muted" style="font-size:11.5px; margin-top:8px">⚠ <span class="l-en">Cycle-timing signals are about <i>where in the price cycle</i> a sector is — most useful combined with the regime read above. Our calibration shows these states don't beat buy-and-hold on average return; their value is structure and risk placement (entry + a defined exit), not certainty.</span><span class="l-zh">周期择时信号关乎一个板块<i>处于价格周期的哪个位置</i> — 与上方的周期判读结合使用最有价值。我们的校准显示这些状态在平均回报上并不能跑赢买入持有；它们的价值在于结构与风险摆位（入场 + 明确的出场），而非确定性。</span></p>
-  </div>
+    
+    
+    <div id="dash-tape-band" class="panel span12" aria-label="Live basket tape">
+      <div class="dtp-row" id="dtp-row">
+        <span class="dtp-token closed" id="dtp-token"><span class="dtp-dot"></span><span id="dtp-token-lbl">—</span></span>
+        <span class="dtp-asof" id="dtp-asof"></span>
+      </div>
+      <div class="dtp-body" id="dtp-body"></div>
+      <button class="dtp-more" id="dtp-more" type="button" aria-expanded="false" hidden></button>
+      <div class="dtp-fn" id="dtp-fn"></div>
+    </div>
+    
   
   
 
@@ -13587,7 +13576,7 @@
   <!-- ============ SECTOR BUY/SELL SETUPS — confluence engine ============ -->
   
   <div class="panel span12" id="sectors">
-    <h2><span class="l-en">Sector buy/sell setups — 3-day MACD + StochRSI confluence</span><span class="l-zh">板块买卖配置 — 3 日 MACD + StochRSI 共振</span> <span class="help">?<span class="tip">
+    <h2><span class="l-en">Sector buy/sell setups — short-term timing</span><span class="l-zh">板块买卖配置 — 短线择时</span> <span class="help">?<span class="tip">
       <span class="l-en">
       The primary sector timing engine: a confluence of MACD + StochRSI crossovers on the
       <b>3-day chart</b> (the daily is the early trigger), gated by the 200-day trend and sorted
@@ -13629,7 +13618,7 @@
       </span>
     </span></span></h2>
     <p class="muted" style="font-size:12.5px;margin:6px 0 4px">
-      <b>2</b> <span class="l-en">on the buy side</span><span class="l-zh">在买入侧</span> · <b>4</b> <span class="l-en">extended / topping / below trend</span><span class="l-zh">过热／见顶／趋势下方</span>. <span class="l-en">A 3-day MACD + StochRSI confluence engine sorted by actionability — a timing map, not a return forecast.</span><span class="l-zh">3日MACD + StochRSI共振引擎，按可操作性排序——择时地图，非收益预测。</span>
+      <b>2</b> <span class="l-en">on the buy side</span><span class="l-zh">在买入侧</span> · <b>4</b> <span class="l-en">extended / topping / below trend</span><span class="l-zh">过热／见顶／趋势下方</span>. <span class="l-en">Sorted most-actionable first — a timing map, not a return forecast.</span><span class="l-zh">按可操作性排序——择时地图，非收益预测。</span>
       <span class="help">?<span class="tip tip-wide"><span class="l-en">Cross-sectionally the buy side has beaten the avoid side by ~0.8%/quarter (1998-2026). Use it to time rotation and to NOT chase extended leaders — never as a return forecast. Hit-rates ~50-56%; the edge is in magnitude and in AVOIDANCE (stops you chasing "confirmed leadership" that institutions distribute into).</span><span class="l-zh">横截面上买入侧每季度约跑赢回避侧 0.8%（1998–2026）。用于把握轮动、避免追逐过热领先股——切勿当作收益预测。胜率约 50–56%；优势在于幅度与「回避」（避免追逐机构派发的「已确认领先」），而非高胜率。</span></span></span>
     </p>
     <div class="tbl-scroll"><table class="act-fold is-collapsed">
@@ -13932,21 +13921,21 @@
       <span class="help">?<span class="tip tip-wide">
         <span class="l-en">
           A per-stock checklist of early bottoming signs — more filled boxes = more timeframes agreeing.
-          Not a buy list and not a return forecast: the backtested basket-level edge = null (Oracle P8 / DO_NOT_REBUILD §2); tier = display.
-          <b>Legs:</b> D = daily MACD bull cross; 3D = house 3-day confluence (MACD+StochRSI, the primary setup engine);
-          W = weekly MACD (filled = confirmed cross, hollow circle = approaching); 2W = biweekly MACD cross.
-          <b>States:</b> UPTURN_CONFIRMED (K≥3 incl. ≥1 weekly/2W leg) · UPTURN_WATCH (K≥2) · NONE.
-          <b>Monthly phase</b> is anti-trap context only (not a gate). Fade base rate: 58% at T+1 (n=26).
-          Mag7 always shown. Data lands after nightly (~02:00 UTC). Accruing from ship date.
+          Not a buy list and not a return forecast: in 26 past cases about 6 in 10 of these signs faded within a day.
+          <b>The four boxes:</b> D = daily momentum turned up; 3D = the house 3-day entry signal;
+          W = weekly (filled = confirmed, dashed = approaching); 2W = biweekly.
+          <b>TURNING UP</b> = 3+ boxes filled including a weekly one · <b>EARLY SIGN</b> = 2 boxes.
+          <b>Monthly phase</b> is anti-trap context only, not a gate.
+          Mag 7 members always shown. Updates after each nightly run.
         </span>
         <span class="l-zh">
           个股早期筑底迹象检查表 — 实心格越多，代表越多时间框架同向。
-          非买入清单、非收益预测：篮子级回测优势为空值（Oracle P8 / DO_NOT_REBUILD §2）；层级=展示。
-          <b>信号腿：</b>D=日线MACD金叉；3D=本系统3日共振（MACD+StochRSI，主要形态引擎）；
-          W=周线MACD（实心=确认交叉，空心=接近交叉）；2W=双周MACD交叉。
-          <b>状态：</b>UPTURN_CONFIRMED（K≥3含≥1周/双周腿）· UPTURN_WATCH（K≥2）· NONE。
-          <b>月线阶段</b>仅作防陷阱参考（非门控）。T+1翻转消退概率：58%（n=26）。
-          Mag7始终显示。数据在每晚收盘后更新（约UTC 02:00）。从上线日起积累。
+          非买入清单、非收益预测：历史26次中约六成迹象在一天内消退。
+          <b>四个格子：</b>D=日线动能转上；3D=本系统3日入场信号；
+          W=周线（实心=确认，虚线=接近）；2W=双周线。
+          <b>转强确认</b>=3格以上且含周线级 · <b>初步迹象</b>=2格。
+          <b>月线阶段</b>仅作防陷阱参考，非门控。
+          七巨头成分始终显示。每晚更新。
         </span>
       </span></span>
     </h2>
@@ -13971,8 +13960,8 @@
         <tr>
           <th class="l"><span class="l-en">sector</span><span class="l-zh">板块</span></th>
           <th class="l"><span class="l-en">stock</span><span class="l-zh">个股</span></th>
-          <th><span class="l-en">raw Δwt</span><span class="l-zh">原始权重Δ</span></th>
-          <th><span class="l-en">active Δwt</span><span class="l-zh">主动权重Δ</span></th>
+          <th><span class="l-en">weight change</span><span class="l-zh">权重变化</span></th>
+          <th data-tip-en="Weight gained beyond what the stock's own price move explains — real buying flowed in" data-tip-zh="超出个股自身价格涨幅所能解释的权重增长 — 有真实买盘流入"><span class="l-en">beyond price</span><span class="l-zh">剔除价格后</span></th>
           <th><span class="l-en">est. flow</span><span class="l-zh">估算资金流</span></th>
           <th class="l"><span class="l-en">technical</span><span class="l-zh">技术面</span></th>
         </tr>
@@ -14331,9 +14320,12 @@ window.__CHART_SWAP__ = {
     if (h) place(h);
   }, true);
 
-  /* MOB-03: tap-to-toggle on touch devices; close on outside tap */
+  /* MOB-03: tap-to-toggle on touch devices; close on outside tap.
+     Clicks INSIDE the open tip body (scrolling, selecting text) must not
+     toggle it closed — only the ? icon itself toggles. */
   var _tipOpen = null;
   document.addEventListener('click', function(e){
+    if(e.target.closest && e.target.closest('.help .tip')) return;
     var h = e.target.closest && e.target.closest('.help');
     if(h){
       e.stopPropagation();
@@ -14870,6 +14862,23 @@ function renderTurnWatch(turnWatch, mtfUpturn){
    PER-STOCK TURN SETUPS TABLE (TS-R3 / TS-R7 / TS-R3)
    ──────────────────────────────────────────────────────────────────────── */
 var MAG7=['AAPL','AMZN','GOOGL','META','MSFT','NVDA','TSLA'];
+function _mtfPhasePlain(raw){
+  /* monthly_phase slugs → plain words (raw slug stays in the hover receipt).
+     Unknown tokens fall through prettified, never raw with underscores. */
+  if(!raw) return '—';
+  var MAP={macd_pos:{en:'above water',zh:'零轴上方'},macd_neg:{en:'below water',zh:'零轴下方'},
+           rising:{en:'rising',zh:'上升'},falling:{en:'falling',zh:'回落'}};
+  var parts=String(raw).split('/');
+  var en=[],zh=[];
+  parts.forEach(function(pt){
+    var m=MAP[pt];
+    en.push(m?m.en:pt.replace(/_/g,' '));
+    zh.push(m?m.zh:pt.replace(/_/g,' '));
+  });
+  return '<span data-tip-en="Monthly momentum: '+esc(raw)+' — anti-trap context only, not a gate" data-tip-zh="月线动能：'+esc(raw)+' — 仅作防陷阱参考，非门控">'
+    +L(esc(en.join(' · ')),esc(zh.join(' · ')))+'</span>';
+}
+
 function renderMtfTable(mtfUpturn){
   var bodyEl=document.getElementById('dash-mtf-body');
   if(!bodyEl) return;
@@ -14957,11 +14966,11 @@ function renderMtfTable(mtfUpturn){
   html+='<div class="tbl-scroll"><table class="dash-mtf-tbl"><thead><tr>'
     +'<th>'+L('ticker','代码')+'</th>'
     +'<th>'+L('state','状态')+'</th>'
-    +'<th class="r">K</th>'
-    +'<th>'+L('legs (D / 3D / W / 2W)','信号腿 (D / 3D / W / 2W)')
+    +'<th class="r">'+L('boxes','格数')+'</th>'
+    +'<th>'+L('checklist (D / 3D / W / 2W)','检查表 (D / 3D / W / 2W)')
       +' <span class="help" style="vertical-align:middle">?<span class="tip">'
-      +'<span class="l-en">Filled = leg fired (recent cross, counts toward K). Ring = histogram positive but no recent cross (running trend, does not count toward K). Empty = histogram negative. D=daily MACD bull cross; 3D=3-day MACD+StochRSI confluence; W=weekly MACD (dashed=approaching); 2W=biweekly MACD. Forward-graded meter; prior sector-level turn printed NULL (Oracle P8). Display context, not a signal.</span>'
-      +'<span class="l-zh">实心=腿触发（近期金叉，计入K值）。空心圆=柱状线为正但无近期金叉（趋势延续，不计入K值）。空心=柱状线为负。D=日线MACD金叉；3D=3日MACD+StochRSI共振；W=周线MACD（虚线=接近）；2W=双周MACD。前瞻计量；板块级别拐点为NULL（Oracle P8）。展示参考，非信号。</span>'
+      +'<span class="l-en">Filled = fired recently (counts toward the box count). Ring = trend still running, no fresh cross (does not count). Empty = negative. D=daily MACD bull cross; 3D=3-day MACD+StochRSI confluence; W=weekly MACD (dashed=approaching); 2W=biweekly MACD. Forward-graded meter; the group-level version of this turn tested as no edge (26 past cases). Display context, not a signal.</span>'
+      +'<span class="l-zh">实心=近期触发（计入格数）。空心圆=趋势延续但无新交叉（不计入）。空=为负。D=日线MACD金叉；3D=3日MACD+StochRSI共振；W=周线MACD（虚线=接近）；2W=双周MACD。前瞻计量；篮子级别的此类拐点经回测无优势（历史26次）。展示参考，非信号。</span>'
       +'</span></span></th>'
     +'<th>'+L('monthly phase','月线阶段')+'</th>'
     +'<th>'+L('since','起始')+'</th>'
@@ -14988,13 +14997,31 @@ function renderMtfTable(mtfUpturn){
         +wMacdEl3(legs.w_macd||'none',trend.w||null)
         +legEl3(!!legs.w2_macd,trend.w2||null,'2W')
       +'</div></td>'
-      +'<td class="dash-mtf-phase">'+esc(t.monthly_phase||'—')+'</td>'
+      +'<td class="dash-mtf-phase">'+_mtfPhasePlain(t.monthly_phase)+'</td>'
       +'<td class="dash-mtf-since">'+esc(t.since||'—')+'</td>'
       +'<td class="dash-mtf-baskets">'+(_bids.length?L(esc(basketEn),esc(basketZh)):'—')+'</td>'
       +'</tr>';
   });
   html+='</tbody></table></div>';
+  /* fold: first 12 rows at rest, the remainder behind a "Show all" toggle
+     (self-wired — theme.js .lst-more handlers only bind inside .lst-wrap) */
+  var FOLD=12;
+  if(rows.length>FOLD){
+    html='<div class="dash-mtf-collapse is-collapsed">'+html+'</div>'
+      +'<button class="lst-more dash-mtf-more" type="button" aria-expanded="false">'
+      +'<span class="lm-show">'+L('Show all '+rows.length+' stocks &#9662;','显示全部 '+rows.length+' 只 &#9662;')+'</span>'
+      +'<span class="lm-hide">'+L('Show less &#9652;','收起 &#9652;')+'</span></button>';
+  }
   bodyEl.innerHTML=html;
+  var _mtfBtn=bodyEl.querySelector('.dash-mtf-more');
+  if(_mtfBtn){
+    _mtfBtn.addEventListener('click',function(){
+      var wrap=bodyEl.querySelector('.dash-mtf-collapse');
+      if(!wrap) return;
+      var nowCollapsed=wrap.classList.toggle('is-collapsed');
+      _mtfBtn.setAttribute('aria-expanded', nowCollapsed?'false':'true');
+    });
+  }
 }
 
 /* ────────────────────────────────────────────────────────────────────────
