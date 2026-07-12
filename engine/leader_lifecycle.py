@@ -187,6 +187,11 @@ EARNINGS_WINDOW_DAYS: int = 14
 # dossier-derived: ≥ 90th pctile extension vs 200d trend (field guide §IV rotation)
 EXTENDED_LEG_PCTILE: float = 90.0
 
+# ---- RS rank history (LRV-R1a) ----------------------------------------------
+# pre-registered-arbitrary (LRV-R1a; frozen)
+RS_RANK_WEEKLY_CHANGE_WINDOW: int = 63   # sessions for cross-sectional pct-rank computation
+RS_LINE_GAP_HIGH_LOOKBACK: int = 126     # sessions for RS-line gap-from-high display chip
+
 # State labels (canonical; never spell out elsewhere — import from here)
 STATE_SUPPRESSED = "SUPPRESSED"
 STATE_QUIET_ACCUMULATION = "QUIET_ACCUMULATION"
@@ -250,6 +255,7 @@ class LifecycleInputs:
     # --- RS peer data ---
     rs_rank_history: pd.DataFrame | None = None # weekly RS rank history (0..1)
     peer_median_rs_63d: float | None = None     # peer median 63d RS change
+    rs_accel_leader: float | None = None        # 21-session change of own 63d RS slope (LRV-R1a)
 
     # --- Valuation pctile own 5y history ---
     valuation_pctile_5y: float | None = None    # ≥ 80th = crowding signal
@@ -805,6 +811,96 @@ def leadership_regime(
     }
 
 
+# ── RS line gap from high (LRV-R3, display-only) ──────────────────────────────
+
+def rs_line_gap_pct(rs: pd.Series, lookback: int = RS_LINE_GAP_HIGH_LOOKBACK) -> float | None:
+    """Percent distance of RS line below its own lookback-period high.
+
+    0.0 means RS is at its lookback-period high; positive values mean RS is below.
+    Display-only observable (LRV-R3) — must NOT enter any K-of-N set or state gate.
+
+    Args:
+        rs: RS ratio series (DatetimeIndex, ascending)
+        lookback: window in sessions (default RS_LINE_GAP_HIGH_LOOKBACK = 126)
+
+    Returns:
+        float: gap in percent (0 = at high, positive = below high); None if insufficient data.
+    """
+    if rs is None or len(rs) < lookback // 2:
+        return None
+    rs_clean = rs.dropna()
+    if len(rs_clean) < lookback // 2:
+        return None
+    rs_window = rs_clean.iloc[-lookback:]
+    rs_high = rs_window.max()
+    rs_now = rs_clean.iloc[-1]
+    if not (np.isfinite(float(rs_high)) and float(rs_high) > 0):
+        return None
+    gap = float((float(rs_high) - float(rs_now)) / float(rs_high) * 100.0)
+    return max(0.0, gap)  # clip to 0 at high (float precision guard)
+
+
+# ── K-true / n-avail per-state chip counter (LRV-R2) ─────────────────────────
+
+def count_k_true_n_avail(
+    state: str,
+    evidence: dict[str, bool | None],
+) -> tuple[int, int]:
+    """Count (k_true, n_avail) for the chip set relevant to a confirmed state.
+
+    Defines the per-state chip set exactly once; used for the early-entry board
+    and for emitting k_true/n_avail on every main row.
+
+    State → chip set mapping:
+      QUIET_ACCUMULATION : 5-chip set (revision_positive, rs_turn, accum_evidence,
+                           obv_divergence, insider_cluster)
+      CATALYST_WINDOW    : 3 ignition triggers (gap_ignition, bw_emerging, rs_line_nh)
+      CROWDED            : 7-chip set (extension_extreme, monthly_rsi_80, parabolic,
+                           valuation_extreme, analyst_saturated, call_skew_rich,
+                           basket_corr_rising)
+      SUPPRESSED         : core conditions (rs_slope_negative_3m, drawdown_25pct,
+                           below_200dma_12m, cheap_pctile_40)
+      All others (BREAKAWAY, LEADERSHIP, FAILED, NONE): count True chips in all evidence.
+
+    Args:
+        state: confirmed lifecycle state string
+        evidence: dict of chip_name -> bool | None
+
+    Returns:
+        (k_true, n_avail): counts of True chips and non-null chips in the state's chip set.
+    """
+    _QA_CHIPS = ["revision_positive", "rs_turn", "accum_evidence", "obv_divergence",
+                 "insider_cluster"]
+    _CW_CHIPS = ["gap_ignition", "bw_emerging", "rs_line_nh"]
+    _CROWDED_CHIPS = ["extension_extreme", "monthly_rsi_80", "parabolic",
+                      "valuation_extreme", "analyst_saturated", "call_skew_rich",
+                      "basket_corr_rising"]
+    _SUPPRESSED_CHIPS = ["rs_slope_negative_3m", "drawdown_25pct",
+                         "below_200dma_12m", "cheap_pctile_40"]
+
+    if state == STATE_QUIET_ACCUMULATION:
+        chip_keys = _QA_CHIPS
+    elif state == STATE_CATALYST_WINDOW:
+        chip_keys = _CW_CHIPS
+    elif state == STATE_CROWDED:
+        chip_keys = _CROWDED_CHIPS
+    elif state == STATE_SUPPRESSED:
+        chip_keys = _SUPPRESSED_CHIPS
+    else:
+        # BREAKAWAY, LEADERSHIP, FAILED, NONE: count all computed chips
+        chip_keys = list(evidence.keys())
+
+    k_true = 0
+    n_avail = 0
+    for key in chip_keys:
+        v = evidence.get(key)
+        if not _is_null(v):
+            n_avail += 1
+            if v is True:
+                k_true += 1
+    return k_true, n_avail
+
+
 # ── State machine helpers ─────────────────────────────────────────────────────
 
 def _k_of_n(chips: dict[str, bool | None], chip_keys: list[str], k: int) -> bool:
@@ -1153,8 +1249,11 @@ def classify(inp: LifecycleInputs) -> LifecycleAssessment:
         leadership_chips["rs_top_decile_4w"] = (
             bool(weeks >= RS_TOP_DECILE_WEEKS_MIN) if weeks is not None else None
         )
-        # Compute leader RS accel for peer_divergence
-        if len(rs) >= RS_63D_WINDOW:
+        # Use pre-wired rs_accel_leader (LRV-R1a); fall back to in-classify computation
+        # when builder hasn't wired it (backward-compatible).
+        if not _is_null(inp.rs_accel_leader):
+            rs_accel = inp.rs_accel_leader
+        elif len(rs) >= RS_63D_WINDOW:
             slope_63 = rs_slope(rs, RS_63D_WINDOW)
             rs_accel = slope_63.iloc[-1] if len(slope_63) > 0 else None
             if isinstance(rs_accel, float) and not np.isfinite(rs_accel):

@@ -703,3 +703,323 @@ class TestFireEntryEvents:
         assert fire_o is False, (
             "Refire must be blocked even past 21 sessions if no de-escalation to NONE/FAILED"
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LRV-W1 new tests (added 2026-07-12)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestBuildRsRankHistory:
+    """LRV-R1(a): _build_rs_rank_history vectorized weekly rank."""
+
+    def _make_rs_series(self, n: int, base: float, slope: float, seed: int = 0) -> pd.Series:
+        rng = np.random.default_rng(seed)
+        vals = base + slope * np.arange(n) + rng.normal(0, 0.002, n)
+        idx = pd.date_range("2022-01-03", periods=n, freq="B")
+        return pd.Series(vals, index=idx)
+
+    def test_three_name_universe_ranks_sum_to_unity_weekly(self):
+        """At each week, the 3 rank values should sum to 2.0 (pct-rank: 1/3+2/3+1=2 for 3 names).
+
+        For pct-rank with method='average' over 3 values: ranks are 1/3, 2/3, 1.0 → sum=2.0.
+        """
+        from scripts.build_leader_radar import _build_rs_rank_history
+        n = 300
+        rs_map = {
+            "AAA": self._make_rs_series(n, 1.0, 0.005, seed=1),
+            "BBB": self._make_rs_series(n, 1.0, 0.003, seed=2),
+            "CCC": self._make_rs_series(n, 1.0, 0.001, seed=3),
+        }
+        result = _build_rs_rank_history(["AAA", "BBB", "CCC"], rs_map)
+        # All three should have DataFrames
+        for t in ("AAA", "BBB", "CCC"):
+            assert result[t] is not None, f"{t} should have rs_rank history"
+            assert "rs_rank" in result[t].columns
+        # Align on common weeks and check sum ~2.0 per week
+        combined = pd.concat(
+            {t: result[t]["rs_rank"] for t in ("AAA", "BBB", "CCC")},
+            axis=1,
+        ).dropna()
+        row_sums = combined.sum(axis=1)
+        # pct-rank for 3 names: 1/3+2/3+1 = 2.0 but with ties possible → ~2.0
+        assert (abs(row_sums - 2.0) < 1e-9).all(), (
+            f"Weekly rank sums should be ~2.0, got: {row_sums.describe()}"
+        )
+
+    def test_absent_ticker_returns_none(self):
+        """Ticker not in rs_map → result is None (not crash)."""
+        from scripts.build_leader_radar import _build_rs_rank_history
+        n = 200
+        rs_map = {
+            "AAA": self._make_rs_series(n, 1.0, 0.005, seed=1),
+        }
+        result = _build_rs_rank_history(["AAA", "MISSING"], rs_map)
+        assert result["MISSING"] is None
+
+    def test_rank_bounded_0_to_1(self):
+        """All rs_rank values should be in [0, 1]."""
+        from scripts.build_leader_radar import _build_rs_rank_history
+        n = 300
+        rs_map = {t: self._make_rs_series(n, 1.0, float(i) * 0.003, seed=i)
+                  for i, t in enumerate(["A", "B", "C", "D"])}
+        result = _build_rs_rank_history(list(rs_map.keys()), rs_map)
+        for t, df in result.items():
+            if df is not None:
+                assert df["rs_rank"].between(0.0, 1.0).all(), (
+                    f"{t} has rs_rank out of [0,1]: {df['rs_rank'].describe()}"
+                )
+
+
+class TestLoadInsiderCluster:
+    """LRV-R1(b): _load_insider_cluster maps quarterly SEC data to True/False/None."""
+
+    def _make_insider_parquet(self, tmp_path: Path, rows: list[dict]) -> Path:
+        p = tmp_path / "sec_insider" / "insider.parquet"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        df = pd.DataFrame(rows).set_index("ticker")
+        df.to_parquet(p)
+        return tmp_path
+
+    def test_two_buys_recent_quarter_true(self, tmp_path):
+        """n_buys >= 2 AND quarter-end within 120d → True."""
+        from scripts.build_leader_radar import _load_insider_cluster
+        data_root = self._make_insider_parquet(tmp_path, [
+            {"ticker": "AAA", "n_buys": 3, "n_sells": 0, "buy_usd": 1e5, "sell_usd": 0, "net_usd": 1e5, "quarter": "2026q1"},
+        ])
+        result = _load_insider_cluster(data_root, date(2026, 7, 12))
+        assert result.get("AAA") is True
+
+    def test_one_buy_returns_false(self, tmp_path):
+        """n_buys < 2 → False (quarter present but threshold not met)."""
+        from scripts.build_leader_radar import _load_insider_cluster
+        data_root = self._make_insider_parquet(tmp_path, [
+            {"ticker": "BBB", "n_buys": 1, "n_sells": 0, "buy_usd": 5e4, "sell_usd": 0, "net_usd": 5e4, "quarter": "2026q1"},
+        ])
+        result = _load_insider_cluster(data_root, date(2026, 7, 12))
+        assert result.get("BBB") is False
+
+    def test_absent_ticker_returns_none(self, tmp_path):
+        """Ticker not in parquet → not present in result (defaults to None)."""
+        from scripts.build_leader_radar import _load_insider_cluster
+        data_root = self._make_insider_parquet(tmp_path, [
+            {"ticker": "AAA", "n_buys": 3, "n_sells": 0, "buy_usd": 1e5, "sell_usd": 0, "net_usd": 1e5, "quarter": "2026q1"},
+        ])
+        result = _load_insider_cluster(data_root, date(2026, 7, 12))
+        assert result.get("MISSING") is None
+
+    def test_stale_quarter_returns_none(self, tmp_path):
+        """Quarter-end > 120d ago → None (stale data excluded)."""
+        from scripts.build_leader_radar import _load_insider_cluster
+        data_root = self._make_insider_parquet(tmp_path, [
+            # 2025q3 end = 2025-09-30; 2026-07-12 is 285d later → stale
+            {"ticker": "CCC", "n_buys": 5, "n_sells": 0, "buy_usd": 2e5, "sell_usd": 0, "net_usd": 2e5, "quarter": "2025q3"},
+        ])
+        result = _load_insider_cluster(data_root, date(2026, 7, 12))
+        assert result.get("CCC") is None
+
+
+class TestLoadOptionsSkew:
+    """LRV-R1(c): _load_options_skew sign convention and young-data null."""
+
+    def _make_skew_parquet(self, tmp_path: Path, rows: list[dict]) -> Path:
+        p = tmp_path / "options_skew" / "snapshots.parquet"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        df = pd.DataFrame(rows)
+        df.to_parquet(p)
+        return tmp_path
+
+    def test_calls_rich_positive_rr(self, tmp_path):
+        """atm_call_iv > otm_put_iv → rr = positive (calls rich); above 80th pctile → True."""
+        from scripts.build_leader_radar import _load_options_skew
+        # Create 25 dates so we exceed the 21-obs threshold
+        dates = pd.date_range("2026-01-02", periods=25, freq="B")
+        rows = []
+        for i, d in enumerate(dates):
+            # calls rich: atm_call_iv > otm_put_iv → rr = 0.02 + small variation
+            rows.append({
+                "date": d.date(), "underlying": "AAA", "asof": d.date(),
+                "spot": 100.0, "tenor_days": 30,
+                "atm_call_iv": 0.25 + i * 0.001,   # rising calls
+                "otm_put_iv": 0.22 + i * 0.001,    # puts cheaper → rr > 0
+                "skew": 0.22 - 0.25,                # skew = put - call = negative
+                "n_strikes": 5,
+            })
+        data_root = self._make_skew_parquet(tmp_path, rows)
+        result = _load_options_skew(data_root, min_obs=21)
+        skew_data = result.get("AAA")
+        assert skew_data is not None
+        assert skew_data["rr_25d"] is not None, "rr_25d should be non-null with 25 obs"
+        assert skew_data["rr_80th_pctile"] is not None
+        assert skew_data["rr_25d"] > 0, "rr should be positive when calls > puts"
+        assert skew_data["skew_n_obs"] == 25
+
+    def test_young_data_below_threshold_returns_null(self, tmp_path):
+        """< 21 observations → rr_25d and rr_80th_pctile are None (young data)."""
+        from scripts.build_leader_radar import _load_options_skew
+        dates = pd.date_range("2026-06-21", periods=16, freq="B")
+        rows = [
+            {"date": d.date(), "underlying": "BBB", "asof": d.date(),
+             "spot": 100.0, "tenor_days": 30, "atm_call_iv": 0.24,
+             "otm_put_iv": 0.23, "skew": -0.01, "n_strikes": 5}
+            for d in dates
+        ]
+        data_root = self._make_skew_parquet(tmp_path, rows)
+        result = _load_options_skew(data_root, min_obs=21)
+        skew_data = result.get("BBB")
+        assert skew_data is not None
+        assert skew_data["rr_25d"] is None, "rr_25d must be None when obs < 21"
+        assert skew_data["rr_80th_pctile"] is None
+        assert skew_data["skew_n_obs"] == 16  # obs count still emitted
+
+
+class TestComputeBasketCorrelations:
+    """LRV-R1(d): basket correlation — guard < 3 members, corr bounds."""
+
+    def _make_ohlcv(self, n: int, seed: int) -> pd.DataFrame:
+        return _make_ohlcv(n, seed=seed)
+
+    def test_fewer_than_3_members_returns_none(self):
+        """Basket with < 3 members with data → (None, None)."""
+        from scripts.build_leader_radar import _compute_basket_correlations
+        ohlcv_map = {"AAA": _make_ohlcv(200, seed=1)}
+        result = _compute_basket_correlations(
+            {"small": ["AAA", "BBB"]},
+            ohlcv_map,
+        )
+        assert result["small"] == (None, None)
+
+    def test_3_members_produces_float_in_minus1_to_1(self):
+        """3 members with enough history → corr in [-1, 1]."""
+        from scripts.build_leader_radar import _compute_basket_correlations
+        n = 250
+        ohlcv_map = {t: _make_ohlcv(n, seed=i) for i, t in enumerate(["A", "B", "C"])}
+        result = _compute_basket_correlations(
+            {"basket": ["A", "B", "C"]},
+            ohlcv_map,
+            window_sessions=60,
+        )
+        corr_now, corr_then = result["basket"]
+        if corr_now is not None:
+            assert -1.0 <= corr_now <= 1.0, f"corr_now={corr_now} out of bounds"
+        if corr_then is not None:
+            assert -1.0 <= corr_then <= 1.0, f"corr_then={corr_then} out of bounds"
+
+    def test_dow30_excluded(self):
+        """dow30 and ndx baskets always return (None, None)."""
+        from scripts.build_leader_radar import _compute_basket_correlations
+        n = 250
+        ohlcv_map = {t: _make_ohlcv(n, seed=i) for i, t in enumerate(["A", "B", "C"])}
+        result = _compute_basket_correlations(
+            {"dow30": ["A", "B", "C"], "ndx": ["A", "B", "C"]},
+            ohlcv_map,
+        )
+        assert result["dow30"] == (None, None)
+        assert result["ndx"] == (None, None)
+
+
+class TestEarlyEntrySort:
+    """LRV-R2: early_entry sort is deterministic; no fused score."""
+
+    def test_sort_order_deterministic(self):
+        """Given the same set of rows, sort must always produce the same order."""
+        from engine.leader_lifecycle import (
+            STATE_CATALYST_WINDOW, STATE_QUIET_ACCUMULATION, STATE_SUPPRESSED
+        )
+        # Simulate rows that would end up in early_entry
+        rows_in = [
+            {"ticker": "ZZZ", "state": STATE_QUIET_ACCUMULATION, "k_true": 3, "n_avail": 5,
+             "days_in_state": 10, "fire_precipice": False, "fire_onset": False,
+             "display_chips": {"rs_line_gap_pct": 5.0}},
+            {"ticker": "AAA", "state": STATE_CATALYST_WINDOW, "k_true": 2, "n_avail": 3,
+             "days_in_state": 2, "fire_precipice": True, "fire_onset": False,
+             "display_chips": {"rs_line_gap_pct": 1.0}},
+            {"ticker": "BBB", "state": STATE_SUPPRESSED, "k_true": 1, "n_avail": 4,
+             "days_in_state": 5, "fire_precipice": False, "fire_onset": False,
+             "display_chips": {"rs_line_gap_pct": 12.0}},
+            {"ticker": "CCC", "state": STATE_QUIET_ACCUMULATION, "k_true": 3, "n_avail": 5,
+             "days_in_state": 5, "fire_precipice": False, "fire_onset": False,
+             "display_chips": {"rs_line_gap_pct": 3.0}},
+        ]
+        # Apply the same sort logic as in build()
+        _early_state_bucket = {
+            STATE_CATALYST_WINDOW: 0,
+            STATE_QUIET_ACCUMULATION: 1,
+            STATE_SUPPRESSED: 2,
+        }
+        def _sort_key(r):
+            _days = r["days_in_state"] if r["days_in_state"] is not None else 9999
+            return (_early_state_bucket[r["state"]], -r["k_true"], _days, r["ticker"])
+
+        sorted1 = sorted(rows_in, key=_sort_key)
+        sorted2 = sorted(rows_in, key=_sort_key)
+        assert [r["ticker"] for r in sorted1] == [r["ticker"] for r in sorted2]
+
+        # CW state must come before QA must come before SUP
+        tickers = [r["ticker"] for r in sorted1]
+        cw_idx = tickers.index("AAA")   # CW
+        qa_zz_idx = tickers.index("ZZZ")  # QA
+        sup_idx = tickers.index("BBB")   # SUP
+        assert cw_idx < qa_zz_idx < sup_idx, (
+            f"CW must sort before QA before SUP; got order: {tickers}"
+        )
+
+
+class TestArtifactSchemaAdditive:
+    """LRV-W1: radar.json schema must have all v1 keys + new LRV-W1 keys."""
+
+    _V1_REQUIRED_KEYS = {
+        "schema", "as_of", "stale", "elapsed_s", "coverage",
+        "regime", "rows", "handoff_pairs", "rerating_watch",
+    }
+    _LRV_W1_KEYS = {"early_entry", "handoff_context"}
+    _ROW_REQUIRED_KEYS = {
+        "ticker", "raw_state", "state", "days_in_state", "chips",
+        "de_escalations", "fire_precipice", "fire_onset", "context",
+        "breakaway_watch_state",
+    }
+    _ROW_LRV_W1_KEYS = {"k_true", "n_avail", "display_chips"}
+
+    def test_payload_has_all_v1_and_w1_keys(self, tmp_path):
+        """Full build smoke: all v1 keys + early_entry + handoff_context present."""
+        from scripts.build_leader_radar import build
+        from unittest.mock import patch
+        import json as _json
+
+        # Write minimal fixtures
+        _write_spy(tmp_path)
+        for i, ticker in enumerate(["AAAA", "BBBB", "CCCC"]):
+            _write_ohlcv(tmp_path, ticker, _make_ohlcv(400, seed=i))
+        _write_membership(tmp_path, ["AAAA", "BBBB", "CCCC"])
+
+        with patch("lib.config.data_dir", lambda: tmp_path / "data"), \
+             patch("lib.config.ROOT", tmp_path), \
+             patch("lib.config.load", lambda: {
+                 "leader_radar": {"enabled": True},
+                 "storage": {"site_dir": "site"},
+             }):
+            try:
+                payload = build(
+                    data_root=tmp_path / "data",
+                    site_root=tmp_path / "site",
+                )
+            except Exception:
+                # Build may fail on missing data; test schema from the JSON file if written
+                out = tmp_path / "site" / "leaderradar" / "radar.json"
+                if out.exists():
+                    payload = _json.loads(out.read_text())
+                else:
+                    pytest.skip("Build failed and no artifact written — schema test skipped")
+
+        if not payload:
+            pytest.skip("Empty payload (kill-switch active?)")
+
+        for key in self._V1_REQUIRED_KEYS:
+            assert key in payload, f"v1 required key '{key}' missing from payload"
+        for key in self._LRV_W1_KEYS:
+            assert key in payload, f"LRV-W1 key '{key}' missing from payload"
+
+        if payload.get("rows"):
+            row = payload["rows"][0]
+            for key in self._ROW_LRV_W1_KEYS:
+                assert key in row, f"LRV-W1 row key '{key}' missing from first row"

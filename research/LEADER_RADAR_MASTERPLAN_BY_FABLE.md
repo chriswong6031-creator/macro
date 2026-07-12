@@ -77,3 +77,46 @@ _One wave = one branch off fresh origin/main = one PR = same-day squash-merge. S
 | Date | Event |
 |---|---|
 | 2026-07-11 | Census (5 lanes). Masterplan adjudicated. Red-team round 1 (2 Opus critics, both SHIP-WITH-FIXES): WA-R8 unlock claim STRUCK (false — winner_case.v1 library is a separate 11-file set; pairlets routed to WA docket); revision chip renamed to level-honest `revision_positive`; precipice fire rule gains rs_line_nh OR-leg (9 revision-uncovered neocloud names stay eligible); precedence cascade + 2-in/3-out hysteresis + state_history store specified in W1/W2a; RS store = full-history backfill (day-one live); 2D radar-local (no global stockdata bloat); regime chip radar-page-only (macro_context fenced); threshold-provenance clause added; universe-exit + refire-lockout rules pinned; W2 split into W2a/W2b. Waves dispatched. |
+| 2026-07-12 | LRV-W1 systems wave landed. See §7. |
+
+## §7 LRV-W1 systems wave — rulings of record
+
+_Dispatched 2026-07-12. Covers input wiring, artifact additions, and data-reality decisions that arose during W1 implementation. All rulings are additive; zero changes to state definitions, thresholds, K-of-N sets, fire rules, or hysteresis (those are frozen in the engine)._
+
+### LRV-R1(a) — RS rank history + peer observables wired
+
+Pre-registered-arbitrary constants (frozen; change = engine version bump): `RS_RANK_WEEKLY_CHANGE_WINDOW = 63` sessions for cross-sectional pct-rank input; `RS_LINE_GAP_HIGH_LOOKBACK = 126` sessions for the RS-line gap-from-high display chip.
+
+Builder implementation: all RS series loaded once into a wide DataFrame; `diff(63)` → W-FRI resample → `.rank(axis=1, pct=True)` → per-name `DataFrame(rs_rank)` passed to `LifecycleInputs.rs_rank_history`. `LifecycleInputs.peer_median_rs_63d` wired from same-basket peer median of 63d RS slope (name excluded; primary basket = largest non-dow30/ndx basket). `LifecycleInputs.rs_accel_leader` wired as 21-session change of the name's own 63d RS slope series.
+
+### LRV-R1(b) — insider_cluster wired from quarterly SEC aggregate
+
+Available nightly-lane source: `data/sec_insider/insider.parquet` (index=ticker, columns: n_buys, n_sells, buy_usd, sell_usd, net_usd, quarter; grain = latest quarter per ticker). Chip definition implemented as: latest quarter-end ≤ 120 calendar days from as_of AND n_buys ≥ 2 → True; quarter present but n_buys < 2 → False; ticker absent or quarter stale → None.
+
+**Gap acknowledged:** the LR-R2 spec calls for "≥2 open-market buys in 90d" at per-transaction grain. The available store is quarterly aggregate. Wired as-is (null-honest; chips that can't fire are None, not False — Kleene); per-transaction Form-4 PIT integration is a separate research path (see `sec_insider.py`). `analyst_buy_pct` stays None (gap documented in builder comment) — depends on the same PIT feed not yet in the nightly lane.
+
+### LRV-R1(c) — call_skew_rich wired from options snapshots; young-data disclosure
+
+Data reality: `data/options_skew/snapshots.parquet` contains 16 dates as of 2026-07-12 (history starts 2026-06-21). All names are below the 21-observation minimum threshold. Builder reads rr proxy = `atm_call_iv − otm_put_iv` (positive = calls richer); emits `skew_n_obs` in every row's context dict. When `skew_n_obs < 21`, both `rr_25d` and `rr_80th_pctile` are null → `call_skew_rich` = None for all names currently. Chip becomes non-null automatically once history accrues; no code change needed at that point.
+
+**Sign convention fixed:** skew column in the parquet = `otm_put_iv − atm_call_iv` (verified on AAPL row: skew=−0.0137, atm_call_iv=0.2412, otm_put_iv=0.2275); rr proxy = −skew = positive when calls expensive.
+
+### LRV-R1(d) — basket_corr_now / basket_corr_then wired
+
+`_compute_basket_correlations()` computes mean pairwise 60-session daily return correlation for each theme basket. Guard: < 3 members with sufficient history → None. `basket_corr_now` = last 60 sessions; `basket_corr_then` = window ending 60 sessions ago. Assigned to all basket members via `ticker_primary_basket` map (largest non-dow30/ndx basket per name). dow30/ndx baskets excluded (large-cap indices do not have a single EW basket in this context).
+
+### LRV-R2 — early_entry artifact added (additive; no state-definition change)
+
+New `early_entry` key in radar.json payload. Rows: CW/QA state names + SUPPRESSED names with ≥1 True lead chip. Sort: deterministic tuple `(state_bucket CW=0/QA=1/SUP=2, −k_true, days_in_state asc nulls-last, ticker)`. No fused score anywhere in the sort (constitutional law). Fields: ticker, state, k_true, n_avail, days_in_state, fire_precipice, fire_onset, rs_line_gap_pct, display_chips.
+
+### LRV-R3 — display_chips sub-dict added (additive; display-only)
+
+New `display_chips` key on every main row. Fields: `revision_momentum_90d` (tri-state: est_chg_90d > 0 from revisions/latest.parquet), `eps_dispersion_norm` (raw float), `rs_line_gap_pct` (percent below RS line's 126d high; 0.0 = at high). These three observables are **permanently fenced**: they must not enter any K-of-N gate, state condition, or fire rule. `rs_line_gap_pct()` is defined in `engine/leader_lifecycle.py` with display-only provenance comment.
+
+### LRV-R4 — handoff_context artifact added (additive)
+
+New `handoff_context` key in radar.json payload. Per theme-basket fields: `basket`, `n_members`, `is_extended` (from `extended_baskets`), `rs_21d_slope_sign` (median of member 21d RS slope signs: +1/−1/0/None), `extension_pctile_vs_200d` (None — requires basket-close SMA200 history store not yet built; explicitly TODO with note).
+
+### LRV-R5 — count_k_true_n_avail() defined once in engine (LRV-R1a)
+
+`count_k_true_n_avail(state, evidence) → (k_true, n_avail)` added to `engine/leader_lifecycle.py`. Per-state chip-set mapping: QA=5-chip set, CW=3 ignition triggers, CROWDED=7-chip set, SUPPRESSED=4 core conditions, all others=full evidence dict. Used for the early_entry board and for `k_true`/`n_avail` fields on every main row. Docstring frozen; chip sets match the K-of-N definitions in LR-R2 exactly.

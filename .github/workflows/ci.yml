@@ -310,6 +310,11 @@ on:
       - "scripts/backfill_options_flow.py"
       - "scripts/build_options_flow.py"
       - "tests/test_backfill_options_flow.py"
+      # LRV-W1 leader lifecycle + builder (LRV-R1/R2/R3/R4/R5)
+      - "engine/leader_lifecycle.py"
+      - "scripts/build_leader_radar.py"
+      - "tests/test_leader_lifecycle.py"
+      - "tests/test_build_leader_radar.py"
   workflow_dispatch:
 
 permissions:
@@ -967,6 +972,25 @@ jobs:
         run: python3 scripts/check_claim_passport.py
       - name: house-law registry tests (idempotency + integration)
         run: python -m pytest tests/test_house_law_registry.py -q
+
+  leader-radar-unit:
+    # LRV-W1: leader lifecycle engine + builder unit tests.
+    # Engine (test_leader_lifecycle.py): state machine, hysteresis, tri-state Kleene,
+    # rs_line_gap_pct, count_k_true_n_avail, display chip fence.
+    # Builder (test_build_leader_radar.py): RS rank history, insider cluster,
+    # options skew, basket corr, early_entry sort, artifact schema additive.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: leader lifecycle engine tests
+        run: python -m pytest tests/test_leader_lifecycle.py -q
+      - name: leader radar builder tests
+        run: python -m pytest tests/test_build_leader_radar.py -q
 
   evidence-clock:
     # Global Evidence Clock (EC-R1..R8): the committed display-only artifact
