@@ -372,6 +372,13 @@ on:
       - "engine/altdata_brain.py"
       - "tests/test_w7a_tenants.py"
       - "tests/test_altdata_brain_reconcile.py"
+      # NW lobe unfreeze (fix/nw-unfreeze-dtcontra-nasdaq): dt_contra_state list-root
+      # crash fix + nasdaq archetype_groups preserve-through-rebuild fix.
+      - "scripts/build_dt_contra_state.py"
+      - "tests/test_dt_contra_state.py"
+      - "scripts/build_subsector_membership.py"
+      - "tests/test_build_subsector_membership.py"
+      - "data/baskets_nasdaq/membership.json"
   workflow_dispatch:
 
 permissions:
@@ -1519,3 +1526,21 @@ jobs:
         run: pip install pytest pandas numpy pyyaml pyarrow
       - name: altdata-brain governance + de-escalation law tests
         run: python -m pytest tests/test_w7a_tenants.py tests/test_altdata_brain_reconcile.py -q
+
+  nw-lobe-unfreeze:
+    # Regression guard for the two Neural-Web lobes frozen since 2026-07-07:
+    #   1. dt_contra_state crash: build_dt_contra_state.py crashed on index.json (list root);
+    #      fixed by isinstance(data, dict) guard — 8 tests covering the fix.
+    #   2. nasdaq archetype_groups clobber: build_subsector_membership._write() now
+    #      re-injects archetype_groups from the existing file when the new payload lacks it;
+    #      4 tests covering preserve/no-clobber/no-file/malformed-file paths.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest
+      - name: dt_contra_state + subsector membership test suites
+        run: python -m pytest tests/test_dt_contra_state.py tests/test_build_subsector_membership.py -q

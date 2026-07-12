@@ -108,6 +108,11 @@ def build(stockdata_dir: Path | None = None) -> dict:
             n_parse_errors += 1
             continue
 
+        if not isinstance(data, dict):
+            # index.json, fund_flows.json etc. are list-rooted — skip silently.
+            log.debug("skipping non-dict JSON root in %s", jf.name)
+            continue
+
         chip = data.get("dt_contra")
         if not chip:
             continue
