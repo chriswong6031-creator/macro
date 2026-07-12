@@ -11,13 +11,25 @@ name: key-pool-probe
 # gracefully by design).
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: >-
+          Runner to probe from. Use self-hosted-macstudio for a
+          production-shaped answer: the metabolism lanes run there, and
+          GitHub-hosted runner IPs can be 429'd by the API even when the
+          keys themselves have quota.
+        type: choice
+        default: self-hosted-macstudio
+        options:
+          - self-hosted-macstudio
+          - ubuntu-latest
 
 permissions:
   contents: read
 
 jobs:
   probe:
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event.inputs.runner == 'ubuntu-latest' && 'ubuntu-latest' || fromJSON('["self-hosted","macstudio"]') }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
