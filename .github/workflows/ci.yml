@@ -358,8 +358,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Seeded-defect round-trip: fixtures with a curly-quote onclick, a broken
+      # handler, and a .j2 curly onclick must go RED (plus a clean control that
+      # must pass). Guards the guard — a regression that silently stops catching
+      # the PR #2321 contamination class fails here, not in production.
+      - name: guard self-test (seeded curly-quote onclick must go red)
+        run: python3 scripts/check_inline_js.py --selftest
+      # Checks <script> blocks AND on*= handler attributes (node --check, handler
+      # wrapped as a function body — the #2321 gap), plus a smart-quote
+      # contamination scan. templates/ is included so .j2 sources are curly-scanned
+      # at PR time instead of riding green until the next render regenerates the
+      # site copy (node cannot parse Jinja, so .j2 gets the curly scan only).
       - name: inline JS must parse
-        run: python3 scripts/check_inline_js.py site
+        run: python3 scripts/check_inline_js.py site templates
       # Companion guard: standalone site/*.js bundles are loaded via <script src=...>,
       # which the inline-JS guard deliberately skips — a syntax error there (e.g. the
       # smart-quote delimiters that blanked markets.html for ~2 days, PR #1004→#1353)

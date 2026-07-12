@@ -2353,7 +2353,11 @@
           <span class="rip-zone-label"><span class="l-en">FALLING</span><span class="l-zh">仍在下跌</span></span>
           <span class="rip-zone-count">{{ _rip_fall|length }}</span>
           <span class="rip-zone-defn"><span class="l-en">still falling — do not catch</span><span class="l-zh">仍在下跌 — 勿接飞刀</span></span>
-          <button class="rip-toggle-btn" onclick="var b=this.closest('.rip-zone').querySelector('.rip-fall-body');b.classList.toggle('rip-collapsed');this.textContent=b.classList.contains('rip-collapsed')?'{{ t('show','展开') }}':'{{ t('hide','收起') }}'">
+          {# t() emits <span class="..."> spans: the inner double quotes must ride as
+             &quot; (a raw " truncates this double-quoted attribute and the handler
+             throws SyntaxError on every click — caught by check_inline_js), and the
+             swap must be innerHTML (textContent prints the span markup literally). #}
+          <button class="rip-toggle-btn" onclick="var b=this.closest('.rip-zone').querySelector('.rip-fall-body');b.classList.toggle('rip-collapsed');this.innerHTML=b.classList.contains('rip-collapsed')?'{{ t('show','展开')|replace('"','&quot;') }}':'{{ t('hide','收起')|replace('"','&quot;') }}'">
             <span class="l-en">show</span><span class="l-zh">展开</span>
           </button>
         </div>
