@@ -679,3 +679,6 @@ if __name__ == "__main__":
         f"theme_trade_flows: {stats.get('themes_with_data', 0)}/{stats.get('total_themes', 0)} "
         f"themes with data, {stats.get('codes_with_data', 0)}/{stats.get('total_codes_configured', 0)} codes"
     )
+
+    from lib.procutil import hard_exit  # noqa: PLC0415
+    hard_exit(0)
