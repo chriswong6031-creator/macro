@@ -21,7 +21,8 @@ Nine GitHub Actions workflows drive the metabolism loop. The gating is two-layer
 | `metabolism-adjudicate.yml` | `15 10 * * *` (daily 10:15 UTC) | ADJUDICATE: iterates ALL pending propose branches; orchestrator + adversary + two-key resolve |
 | `metabolism-build.yml` | `45 10 * * *` (daily 10:45 UTC) | BUILD: Sonnet draft-PR sessions on authorized proposals (also `workflow_dispatch` per-cycle) |
 | `metabolism-verify.yml` | `15 11 * * *` (daily 11:15 UTC) | VERIFY: grades realized fitness deltas on matured contracts |
-| `metabolism-merge.yml` | `15 12 * * *` (daily 12:15 UTC) | MERGE: serialized two-key + green-CI + fence-checked merges (also `workflow_dispatch`) |
+| `metabolism-audit.yml` | `45 11 * * *` (daily 11:45 UTC) | AUDIT (V7): deterministic containment + adversarial Opus code review of each build-lane draft PR; writes audit record + governance event; required by MERGE gate step 5.5 |
+| `metabolism-merge.yml` | `15 12 * * *` (daily 12:15 UTC) | MERGE: serialized two-key + green-CI + fence-checked + **audit-approved** merges (also `workflow_dispatch`) |
 | `metabolism-dream.yml` | `0 6 * * 0` (Sunday 06:00 UTC) | DREAM: preference_prior + lessons anti-rot resummary |
 | `metabolism-gc.yml` | `20 7 * * *` (daily 07:20 UTC) | GC: reaps leaked build worktrees. Deliberately UNGATED — cleanup must run even while paused; it is read-and-remove only |
 
@@ -267,6 +268,7 @@ After flipping `AUTONOMY_PAUSED=false`, monitor GitHub Actions for the first ful
 | 09:45 | metabolism-propose | Docket committed; proposals > 0; `registered` contracts > 0 in trial_ledger.jsonl |
 | 10:15 | metabolism-adjudicate | Governance rows written; `two_key` resolve row shows authorized count |
 | 11:15 | metabolism-verify | Verify record written; `outcome=UNVERIFIABLE` is correct (no mature contracts yet) |
+| 11:45 | metabolism-audit | Audit records written to `data/metabolism/audit/<pr>.json`; each record has `verdict` and `head_sha`; governance events appended to `data/neuralweb/governance.jsonl` with `event_type=metabolism_audit` |
 | Sunday 06:00 | metabolism-dream | preference_prior.json written; armed runs show `status=insufficient_data` until ≥10 closed contracts (~2026-10-15) |
 
 ### Where artifacts land

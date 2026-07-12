@@ -93,6 +93,10 @@ _VALID_EVENT_TYPES = frozenset({
     # display-tier (article:null) — the metabolism authors code, not signals.
     "metabolism_adjudication",
     "metabolism_adversary_review",
+    # Metabolism V7 (R-V7-4): PR AUDIT record — deterministic containment re-check
+    # plus adversarial Opus code review verdict for each build-lane draft PR.
+    # target = "metabolism_pr:<pr_number>".  authored_by = "metabolism_audit".
+    "metabolism_audit",
 })
 
 
