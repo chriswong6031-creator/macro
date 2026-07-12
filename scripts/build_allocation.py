@@ -116,6 +116,28 @@ def _theme_act_now(region: str, site) -> dict | None:
         return None
 
 
+def _hk_turn_context(region: str, site) -> dict | None:
+    """HK only: the leadership organ's participation read (site/factordata/hk_standouts.json,
+    HKRV-W2) so the allocation page can carry the ratified 'Leaders moving first' banner
+    (HKRV-W3 idiom) when mega-caps thrust ahead of the slow book. One-directional display
+    context — never read back by the engine, never touches allocate(). Fail-open: None on
+    any shortfall, wrong region, non-firing state, or a stale artifact (a frozen asia lane
+    must not leave a weeks-old banner up — 5-calendar-day freshness fence)."""
+    if region != "hk":
+        return None
+    try:
+        d = json.loads((site / "factordata" / "hk_standouts.json").read_text())
+        led = d.get("leadership") or {}
+        if led.get("state") != "leaders_participating":
+            return None
+        as_of = pd.Timestamp(d.get("as_of"))
+        if pd.isna(as_of) or (pd.Timestamp.now(tz="UTC").tz_localize(None) - as_of).days > 5:
+            return None
+        return led
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return None
+
+
 def build_region(region: str, env, built: str, site) -> bool:
     """Build one market's Narrative-Rotation page + JSON. Additive — logs and returns False
     on shortfall (e.g. a market's caches absent locally) so the others still build."""
@@ -158,6 +180,7 @@ def build_region(region: str, env, built: str, site) -> bool:
         risk_history_json=json.dumps(hist, separators=(",", ":")),
         act_now_json=json.dumps(act_now, separators=(",", ":"), default=str),
         standouts_json=json.dumps(standouts, separators=(",", ":")),
+        hk_leadership=_hk_turn_context(region, site),
         generated_utc=built)
     write_page(site / page, html)
     log.info("[%s] wrote %s (%d themes, headline=%s)", region, page,
