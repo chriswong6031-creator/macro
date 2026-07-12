@@ -413,17 +413,21 @@ def _load_context() -> dict:
         "asof": d.get("date"),
         "regime": {
             "quad": d.get("quad"), "quad_name": d.get("quad_name"),
+            "quad_name_zh": enum_zh("quad", d.get("quad_name")),
             "label": d.get("label"), "cycle": d.get("cycle_tag"),
             "transition": d.get("transition_state"),
         },
         "cross_asset": {
-            "verdict": ca.get("verdict"), "headline": ca.get("headline"),
+            "verdict": ca.get("verdict"), "verdict_zh": enum_zh("ca", ca.get("verdict")),
+            "headline": ca.get("headline"),
             "dominant_cluster": ca.get("dominant_cluster") or [],
             "mean_abs_corr": ca.get("mean_abs_corr"),
         },
         "risk_backdrop": {
-            "recession_band": ra.get("label"), "drawdown_band": dd.get("band"),
-            "nfci_state": fc.get("state"), "nfci_trend": fc.get("trend"),
+            "recession_band": ra.get("label"), "recession_band_zh": enum_zh("band", ra.get("label")),
+            "drawdown_band": dd.get("band"), "drawdown_band_zh": enum_zh("band", dd.get("band")),
+            "nfci_state": fc.get("state"), "nfci_state_zh": enum_zh("nfci", fc.get("state")),
+            "nfci_trend": fc.get("trend"),
             "vix_term": risk.get("vix_term_state"), "vrp": risk.get("vrp_state"),
             "stock_bond_corr": risk.get("stock_bond_corr"),
         },
@@ -520,6 +524,277 @@ def _jsonl_raw(source: str, today: pd.Timestamp, cutoff: pd.Timestamp,
     return out
 
 
+# ---------------------------------------------------------------------------
+# MODELING v2 — persistence, lifecycle, storyline clustering, board read
+# ---------------------------------------------------------------------------
+# The v1 board deduplicated re-fires down to a single best instance, which threw
+# away the fact that a flag firing every day for a week is stickier than a one-off.
+# It also showed 60 disconnected rows with no board-level synthesis, so the two
+# loudest-by-VOLUME feeds (single-name alt-data + theme rotation) buried the two
+# most-important-by-CONSEQUENCE ones (credit / recession / the BTC risk regime).
+#
+# These helpers recover that information WITHOUT breaking the honesty culture:
+#   • persistence + lifecycle are DESCRIPTIVE (a fire-count is a fact, not a
+#     forecast).  They feed the DEMOTE-ONLY severity cap below as one corroborator,
+#     so a persisting flag can RETAIN the engine's own prior band (decline a
+#     demotion) — it can preserve, but never manufacture, priority above that prior.
+#     No surface is ever raised above its hardcoded prior — Article-2 safe;
+#   • the corroboration cap only ever DEMOTES a severity band (extends the #42
+#     "cap a null emitter, never raise it" doctrine to the whole board), so no
+#     surface gains conviction it didn't earn;
+#   • storyline clustering + the board read are pure display groupings over the
+#     already-ranked feed; they do not reorder it.
+
+# (source, type) → storyline cluster id.  DISPLAY grouping only.
+_CLUSTER = {
+    # ---- risk-off STRESS spine (macro + bonds + commodity) ----
+    ("bonds", "recession_risk"): "stress", ("bonds", "credit_band"): "stress",
+    ("bonds", "uninversion"): "stress", ("bonds", "repo_stress"): "stress",
+    ("bonds", "rates_vol"): "stress", ("bonds", "curve_regime"): "stress",
+    ("bonds", "corr_regime"): "stress",
+    ("macro", "hy_oas_widening"): "stress", ("macro", "ebp_widening"): "stress",
+    ("macro", "nfci_tightening"): "stress", ("macro", "drawdown_risk_high"): "stress",
+    ("macro", "capitulation_signal"): "stress", ("macro", "sahm_trigger"): "stress",
+    ("macro", "conditions_recession_state_change"): "stress",
+    ("commodity", "risk_regime"): "stress", ("commodity", "risk_extreme"): "stress",
+    ("commodity", "price_shock"): "stress", ("commodity", "residual_shock"): "stress",
+    # ---- REGIME shifts ----
+    ("macro", "transition_state_change"): "regime", ("macro", "gex_flip_cross"): "regime",
+    ("vector", "risk_regime"): "regime", ("vector", "impulse_warn_down"): "regime",
+    ("vector", "impulse_warn_up"): "regime", ("vector", "leadership"): "regime",
+    # ---- LIQUIDITY & rates plumbing ----
+    ("macro", "net_liquidity_roc_flip"): "liquidity",
+    # ---- SECTOR & THEME rotation ----
+    ("themes", "theme_topping"): "rotation", ("themes", "theme_deteriorating"): "rotation",
+    ("themes", "theme_emerging"): "rotation", ("themes", "reco_change"): "rotation",
+    ("themes", "leadership_rotation"): "rotation",
+    ("rotation", "rotation_emerging"): "rotation", ("rotation", "rotation_fading"): "rotation",
+    ("rotation", "entered_book"): "rotation", ("rotation", "left_book"): "rotation",
+    ("oracle", "oracle_onset"): "rotation", ("oracle", "oracle_confirmed"): "rotation",
+    ("oracle", "oracle_rollover"): "rotation", ("oracle", "oracle_two_sided"): "rotation",
+    ("oracle", "oracle_regime"): "rotation",
+    ("emergence", "narrative_forming"): "rotation",
+    # ---- SINGLE-NAME unusual activity ----
+    ("altdata", "convergence"): "single_name",
+    ("demand", "demand_ahead"): "single_name", ("demand", "demand_at_risk"): "single_name",
+    ("watchlist", "buy_zone_enter"): "single_name",
+}
+# cluster id → display metadata (icon, bilingual label, sort order).
+CLUSTER_META = {
+    "stress":      {"label": "Risk-off stress",       "label_zh": "风险规避压力", "icon": "🛑", "order": 0,
+                    "gist": "credit, recession & rates plumbing under strain",
+                    "gist_zh": "信用、衰退与利率体系承压"},
+    "regime":      {"label": "Regime shift",           "label_zh": "机制转变",     "icon": "🧭", "order": 1,
+                    "gist": "the market's underlying weather is changing",
+                    "gist_zh": "市场的底层“天气”正在改变"},
+    "liquidity":   {"label": "Liquidity & rates",      "label_zh": "流动性与利率", "icon": "💧", "order": 2,
+                    "gist": "the tide of money into risk assets is turning",
+                    "gist_zh": "流入风险资产的资金潮汐正在转向"},
+    "rotation":    {"label": "Sector & theme rotation","label_zh": "板块与主题轮动", "icon": "🔄", "order": 3,
+                    "gist": "leadership is handing off between themes",
+                    "gist_zh": "领涨在主题之间交接"},
+    "single_name": {"label": "Single-name flags",      "label_zh": "个股信号",     "icon": "🎯", "order": 4,
+                    "gist": "unusual activity converging on individual tickers",
+                    "gist_zh": "个股上出现多渠道异常活动汇聚"},
+    "other":       {"label": "Other",                  "label_zh": "其他",         "icon": "•",  "order": 9,
+                    "gist": "", "gist_zh": ""},
+}
+
+
+def cluster_of(source: str, type_: str) -> str:
+    """Storyline cluster for an alert (display grouping only)."""
+    return _CLUSTER.get((source, type_), "other")
+
+
+# Bilingual maps for the small closed enum sets that appear in the board read +
+# the backdrop strip (regime/latest.json states).  Unknown values fall through to
+# the raw token so a new upstream state degrades to English, never crashes.
+_CA_ZH = {"concentrated": "集中", "diversified": "分散", "converging": "趋同", "unknown": "未知"}
+_BAND_ZH = {"low": "低", "moderate": "中等", "elevated": "偏高", "high": "高",
+            "severe": "严重", "extreme": "极端", "none": "无"}
+_NFCI_ZH = {"loose": "宽松", "easing": "趋松", "neutral": "中性", "tight": "收紧", "tightening": "趋紧"}
+_QUAD_ZH = {"Goldilocks": "金发经济", "Reflation": "再通胀", "Inflation": "通胀",
+            "Stagflation": "滞胀", "Deflation": "通缩", "Disinflation": "去通胀",
+            "Growth": "增长", "Slowdown": "放缓", "Recovery": "复苏", "Contraction": "收缩"}
+
+
+def enum_zh(kind: str, value):
+    """Chinese label for a closed-enum backdrop value (verdict / band / nfci / quad),
+    falling back to the raw token.  Exposed so the template can render the backdrop
+    strip bilingually without duplicating the maps."""
+    if value is None:
+        return None
+    return {"ca": _CA_ZH, "band": _BAND_ZH, "nfci": _NFCI_ZH, "quad": _QUAD_ZH}.get(kind, {}).get(value, value)
+
+
+# Persistence thresholds: a flag is "persisting" once it has re-fired at least
+# _PERSIST_MIN_FIRES times spanning at least _PERSIST_MIN_DAYS days.  These are the
+# same numbers used by the corroboration cap so the two reads never disagree.
+_PERSIST_MIN_FIRES = 3
+_PERSIST_MIN_DAYS = 3
+
+
+def _persistence(instances: list[dict]) -> dict:
+    """Aggregate same-key raw fires into persistence stats.  A re-fire pattern is
+    a FACT (not a forecast): the old keep-best dedup discarded it entirely."""
+    ts = sorted(pd.Timestamp(e["ts"]) for e in instances)
+    first, last = ts[0], ts[-1]
+    return {"fire_count": len(instances), "first_ts": first.isoformat(),
+            "last_ts": last.isoformat(), "streak_days": int((last - first).days)}
+
+
+def lifecycle_of(fire_count: int, streak_days: int, age_days: float) -> str:
+    """Descriptive lifecycle stage from the fire pattern (never a prediction):
+      persisting — re-fired repeatedly across days AND still firing now;
+      fading     — was persistent but has gone quiet (last fire aging out);
+      new        — first appeared in the last two days;
+      aging      — an older one-off still inside the window."""
+    persistent = fire_count >= _PERSIST_MIN_FIRES and streak_days >= _PERSIST_MIN_DAYS
+    if persistent:
+        return "persisting" if age_days <= 2 else "fading"
+    return "new" if age_days <= 2 else "aging"
+
+
+def corroborated_severity(band: str, tier: str, ca_tag: str, validation: dict,
+                          fire_count: int, streak_days: int) -> tuple[str, str | None]:
+    """DEMOTE-ONLY severity cap: the engine severity word is a PRIOR that an alert
+    must corroborate to keep.  An isolated, unvalidated, one-off flag should not sit
+    at the same visual volume as a persisting, cross-asset-confirmed, or backtested
+    signal — so without ANY corroborator we step the band down one notch.
+
+    This extends the #42 doctrine (cap a measured-null emitter, never raise it) to
+    the whole board.  It NEVER raises a band, so it is Article-2 clean: no ranking
+    surface gains conviction it didn't earn.  Returns (band, reason|None)."""
+    if band == "minor":
+        return band, None
+    corroborated = (
+        tier == "act"                                    # already true cross-asset weight
+        or ca_tag == "confirm"                           # the tape agrees with it
+        or validation.get("backtested") is True          # a measured edge backs the family
+        or (fire_count >= _PERSIST_MIN_FIRES and streak_days >= _PERSIST_MIN_DAYS)  # it persists
+    )
+    if corroborated:
+        return band, None
+    return {"critical": "major", "major": "minor"}[band], "uncorroborated"
+
+
+def _scrub(text: str) -> str:
+    """Strip upstream NaN/None artifacts from a display string (e.g. a bonds detail
+    that reads 'crossed the crisis band at nan').  Display hygiene only."""
+    if not text:
+        return text
+    for bad in (" at nan", " at None", " (nan)", " (None)", "报 nan", "，报 nan"):
+        text = text.replace(bad, "")
+    return text.replace("  ", " ").strip()
+
+
+def _board_read(kept: list[dict], ctx: dict) -> dict:
+    """A one-line synthesis of what the whole board is saying — a DESCRIPTIVE read
+    of the current alert mix plus the documented backdrop, explicitly NOT a forecast
+    and never a P(risk-off).  Transparent: the driver counts are shown."""
+    stress = [a for a in kept if a.get("cluster") == "stress"]
+    stress_confirm = sum(1 for a in stress if a.get("cross_asset_tag") == "confirm")
+    act = [a for a in kept if a.get("tier") == "act"]
+    crit = [a for a in kept if a.get("severity") == "critical"]
+    ca = (ctx.get("cross_asset") or {}).get("verdict")
+    rb = ctx.get("risk_backdrop") or {}
+    # transparent, bounded pressure gauge (display only; not a probability)
+    score = min(100, len(stress) * 8 + stress_confirm * 6 + len(act) * 10 + len(crit) * 6)
+    if ca == "concentrated":
+        score = min(100, score + 8)
+    if score >= 45:
+        stance, stance_zh = "risk-off", "偏防御"
+    elif score >= 20:
+        stance, stance_zh = "mixed", "喜忧参半"
+    else:
+        stance, stance_zh = "constructive", "偏进攻"
+    drivers, drivers_zh = [], []
+    if act:
+        drivers.append(f"{len(act)} act-tier call{'s' if len(act) != 1 else ''}")
+        drivers_zh.append(f"{len(act)} 条执行级信号")
+    if stress:
+        d = f"{len(stress)} risk-off stress alert{'s' if len(stress) != 1 else ''}"
+        if stress_confirm:
+            d += f" ({stress_confirm} cross-asset-confirmed)"
+        drivers.append(d)
+        drivers_zh.append(f"{len(stress)} 条风险规避压力警报" +
+                          (f"（{stress_confirm} 条获跨资产佐证）" if stress_confirm else ""))
+    if ca:
+        # full-domain map — the verdict can be concentrated / diversified / converging /
+        # unknown (engine.cross_asset); a binary 'concentrated vs 分散' mislabels the last two.
+        article = "an" if ca == "unknown" else "a"
+        drivers.append(f"{article} {ca} tape")
+        drivers_zh.append(f"盘面{_CA_ZH.get(ca, ca)}")
+    if rb.get("recession_band"):
+        drivers.append(f"recession risk {rb['recession_band']}")
+        drivers_zh.append(f"衰退风险 {_BAND_ZH.get(rb['recession_band'], rb['recession_band'])}")
+    lead = {"risk-off": "The tape is leaning risk-off",
+            "mixed": "The tape is mixed",
+            "constructive": "The tape is broadly constructive"}[stance]
+    lead_zh = {"risk-off": "整体盘面偏防御",
+               "mixed": "整体盘面喜忧参半",
+               "constructive": "整体盘面偏进攻"}[stance]
+    one = lead + (" — " + ", ".join(drivers) + "." if drivers else ".")
+    one_zh = lead_zh + ("：" + "、".join(drivers_zh) + "。" if drivers_zh else "。")
+    return {"stance": stance, "stance_zh": stance_zh, "score": score,
+            "drivers": drivers, "one_liner": one, "one_liner_zh": one_zh}
+
+
+def _volume_context(raw: list[dict], today_ts: pd.Timestamp, days: int) -> dict:
+    """How busy the last week has been vs the window's own trailing weekly rate — so
+    a user can tell a genuinely loud week from ambient chatter.  Descriptive stat."""
+    if not raw:
+        return {}
+    fires = [pd.Timestamp(e["ts"]).normalize() for e in raw]
+    last7 = sum(1 for t in fires if 0 <= (today_ts - t).days <= 7)
+    weeks = max(1.0, days / 7.0)
+    baseline_wk = len(fires) / weeks
+    ratio = (last7 / baseline_wk) if baseline_wk > 0 else 1.0
+    if ratio >= 1.25:
+        state, state_zh = "busier", "更繁忙"
+    elif ratio <= 0.75:
+        state, state_zh = "quieter", "更平静"
+    else:
+        state, state_zh = "normal", "正常"
+    return {"last_7d": last7, "baseline_weekly": round(baseline_wk, 1),
+            "ratio": round(ratio, 2), "state": state, "state_zh": state_zh,
+            "total_in_window": len(fires)}
+
+
+def _storylines(kept: list[dict]) -> list[dict]:
+    """Collapse the ranked feed into a handful of storyline cards — one per cluster —
+    so the board reads as 'a few stories', not 60 disconnected rows.  Pure grouping
+    over the already-ranked feed; it does NOT reorder the feed itself."""
+    groups: dict[str, list[dict]] = {}
+    for a in kept:
+        groups.setdefault(a.get("cluster", "other"), []).append(a)
+    out: list[dict] = []
+    for cl, items in groups.items():
+        meta = CLUSTER_META.get(cl, CLUSTER_META["other"])
+        items = sorted(items, key=lambda x: (x["priority"], x["ts"]), reverse=True)
+        top = items[0]
+        assets = []
+        for x in items:
+            a = str(x.get("asset") or "")
+            if a and a not in (x["source"], "macro", "rates", "vector") and len(a) <= 6 and a not in assets:
+                assets.append(a)
+        out.append({
+            "cluster": cl, "label": meta["label"], "label_zh": meta["label_zh"],
+            "icon": meta["icon"], "gist": meta["gist"], "gist_zh": meta["gist_zh"],
+            "order": meta["order"], "count": len(items),
+            "act": sum(1 for x in items if x["tier"] == "act"),
+            "critical": sum(1 for x in items if x["severity"] == "critical"),
+            "persisting": sum(1 for x in items if x.get("lifecycle") == "persisting"),
+            "top_headline": top["headline"], "top_headline_zh": top.get("headline_zh") or top["headline"],
+            "top_priority": top["priority"], "top_source": top["source"],
+            "assets": assets[:10],
+        })
+    # most consequential storyline first: any act-tier, then criticals, then top priority
+    out.sort(key=lambda s: (s["act"] > 0, s["critical"], s["top_priority"], s["count"]),
+             reverse=True)
+    return out
+
+
 def build_triage(days: int = 30, today: date | None = None,
                  per_source_context_cap: int = 6, max_items: int = 60) -> dict:
     """Assemble the full Alert Command Center payload. Pure assembler, graceful.
@@ -551,56 +826,70 @@ def build_triage(days: int = 30, today: date | None = None,
     raw += _jsonl_raw("oracle", today_ts, cutoff, _ORACLE_TIER)
     raw += _jsonl_raw("watchlist", today_ts, cutoff, _WATCHLIST_TIER)
 
-    enriched: list[dict] = []
+    # ---- persistence-aware grouping (v2) -----------------------------------
+    # Collapse re-fires of the same (source, type, asset) BEFORE enriching, but keep
+    # the fire pattern instead of discarding it.  The representative is the newest
+    # fire (freshest headline + timestamp); its persistence stats summarise the rest.
+    groups: dict[tuple, list[dict]] = {}
     for a in raw:
-        tier = a["tier"]
-        band = severity_band(tier, a["raw_sev"])
+        groups.setdefault((a["source"], a["type"], a.get("asset") or a["source"]), []).append(a)
+
+    enriched: list[dict] = []
+    for key, instances in groups.items():
+        pers = _persistence(instances)
+        rep = max(instances, key=lambda e: pd.Timestamp(e["ts"]))  # newest fire
+        rep = {**rep, "ts": pers["last_ts"]}                        # anchor to last fire
+        tier = rep["tier"]
+        band = severity_band(tier, rep["raw_sev"])
         # #42: measured-IC severity — the hardcoded band is a prior; a spine-measured null /
         # wrong-sign emitter is capped so it can't outrank validated risk-off signals.
-        band, ic_note = ic_severity_cap(a["source"], a["type"], band)
-        ca_tag = cross_asset_tag(a["type"], ca_verdict)
-        age = max(0.0, (today_ts - pd.Timestamp(a["ts"]).normalize()).days)
+        band, ic_note = ic_severity_cap(rep["source"], rep["type"], band)
+        ca_tag = cross_asset_tag(rep["type"], ca_verdict)
+        validation = _validation(rep["source"], rep["type"], rep.get("edge", ""),
+                                 rep.get("edge_zh", ""), reg, rule_sc, rep.get("detail", ""))
+        # v2: DEMOTE-ONLY corroboration cap — an isolated, unvalidated one-off can't
+        # sit at the same volume as a persisting / confirmed / backtested signal.
+        band, corr_reason = corroborated_severity(
+            band, tier, ca_tag, validation, pers["fire_count"], pers["streak_days"])
+        age = max(0.0, (today_ts - pd.Timestamp(rep["ts"]).normalize()).days)
         score, comp = priority(tier, band, age, ca_tag)
         act_en, act_zh = action_for(tier, band, ca_tag)
-        smeta = SOURCES.get(a["source"], {})
-        # Stable content-hash ID: (source, type, asset, date-part).
-        # Truncated to 12 hex chars — collision-probability negligible for
-        # the ~60-alert board.  Used by the admin Alerts capture tab.
-        _id_key = f"{a['source']}|{a['type']}|{a.get('asset', '')}|{a['ts'][:10]}"
+        life = lifecycle_of(pers["fire_count"], pers["streak_days"], age)
+        smeta = SOURCES.get(rep["source"], {})
+        # Stable content-hash ID: (source, type, asset, date-part).  Truncated to 12
+        # hex chars — collision-probability negligible for the ~60-alert board.
+        _id_key = f"{rep['source']}|{rep['type']}|{rep.get('asset', '')}|{rep['ts'][:10]}"
         alert_id = hashlib.sha256(_id_key.encode()).hexdigest()[:12]
         enriched.append({
-            **a,
+            **rep,
+            "headline": _scrub(rep.get("headline", "")),
+            "headline_zh": _scrub(rep.get("headline_zh", "")),
+            "detail": _scrub(rep.get("detail", "")),
+            "detail_zh": _scrub(rep.get("detail_zh", "")),
             "alert_id": alert_id,
             "severity": band, "age_days": int(age),
             "priority": score, "priority_components": comp,
             "cross_asset_tag": ca_tag,
             "action": act_en, "action_zh": act_zh,
-            "source_label": smeta.get("label", a["source"]),
-            "source_label_zh": smeta.get("label_zh", a["source"]),
+            "cluster": cluster_of(rep["source"], rep["type"]),
+            "lifecycle": life,
+            "fire_count": pers["fire_count"], "streak_days": pers["streak_days"],
+            "first_ts": pers["first_ts"], "last_ts": pers["last_ts"],
+            "severity_capped": corr_reason,
+            "source_label": smeta.get("label", rep["source"]),
+            "source_label_zh": smeta.get("label_zh", rep["source"]),
             "source_icon": smeta.get("icon", "•"),
-            "link": smeta.get("page", "macro.html") + (a.get("anchor") or ""),
-            "validation": _validation(a["source"], a["type"], a.get("edge", ""),
-                                      a.get("edge_zh", ""), reg, rule_sc,
-                                      a.get("detail", "")),
+            "link": smeta.get("page", "macro.html") + (rep.get("anchor") or ""),
+            "validation": validation,
             "ic_severity": ic_note,
         })
 
-    # collapse re-fires of the same (source,type,asset) within the window: keep the
-    # newest, highest-priority instance so the board reads current, not repetitive.
-    best: dict[tuple, dict] = {}
-    for a in enriched:
-        key = (a["source"], a["type"], a["asset"])
-        cur = best.get(key)
-        if cur is None or (a["priority"], a["ts"]) > (cur["priority"], cur["ts"]):
-            best[key] = a
-    deduped = list(best.values())
-
-    deduped.sort(key=lambda x: (x["priority"], x["ts"]), reverse=True)
+    enriched.sort(key=lambda x: (x["priority"], x["ts"]), reverse=True)
 
     # keep every act/watch; cap the context-tier long tail per source
     seen_ctx: dict[str, int] = {}
     kept: list[dict] = []
-    for a in deduped:
+    for a in enriched:
         if a["tier"] == "context":
             n = seen_ctx.get(a["source"], 0)
             if n >= per_source_context_cap:
@@ -615,8 +904,12 @@ def build_triage(days: int = 30, today: date | None = None,
         "major": sum(1 for a in kept if a["severity"] == "major"),
         "minor": sum(1 for a in kept if a["severity"] == "minor"),
         "actionable": sum(1 for a in kept if a["tier"] == "act"),
+        "persisting": sum(1 for a in kept if a["lifecycle"] == "persisting"),
+        "new_today": sum(1 for a in kept if a["age_days"] == 0),
         "by_source": {s: sum(1 for a in kept if a["source"] == s) for s in SOURCES},
+        "by_cluster": {c: sum(1 for a in kept if a["cluster"] == c) for c in CLUSTER_META},
         "backtested": sum(1 for a in kept if a["validation"].get("backtested") is True),
+        "total_fires_in_window": sum(a["fire_count"] for a in kept),
     }
 
     return {
@@ -628,6 +921,9 @@ def build_triage(days: int = 30, today: date | None = None,
         "risk_backdrop": ctx.get("risk_backdrop") or {},
         "events": _events(today),
         "summary": summary,
+        "board_read": _board_read(kept, ctx),
+        "volume": _volume_context(raw, today_ts, days),
+        "storylines": _storylines(kept),
         "alerts": kept,
         "weights": {"tier": W_TIER, "severity": W_SEVERITY, "confirm": W_CONFIRM},
     }
