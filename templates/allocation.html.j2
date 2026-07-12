@@ -586,6 +586,8 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 <p class="sub">{{ t(
 	  'Themes ranked by momentum, trend gate, durability and crowding.',
 	  '主题按动量、趋势门、持续性与拥挤度排序。') }}
+  {{ t('The rank is deliberately slow — “Past 2 weeks” shows what each theme just did.',
+	  '排名有意放慢 — 「近两周」显示各主题最近的实际表现。') }}
   <span class="muted">{{ t('Click a theme name to open its constituents on the Thematic Baskets page.', '点击主题名称可在主题篮子页面查看其成分。') }}</span></p>
 {% set BASKETS_PAGE = {'us':'baskets.html','china':'baskets_china.html','hk':'baskets_hk.html','canada':'baskets_canada.html'}.get(d.region, 'baskets.html') %}
 <div class="panel"><div class="ts">
@@ -593,6 +595,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
   <thead><tr>
     <th>{{ t('Theme', '主题') }}</th>
     <th class="num">{{ t('Score', '评分') }}</th>
+    <th class="num" data-tip-en="Equal-weight basket return over the last 10 trading days — the recent stretch the strategic rank deliberately excludes (skip-month construction). Context only: it never changes rank, score or suggested weights." data-tip-zh="等权篮子最近10个交易日回报 — 正是战略排名按构建刻意跳过的最近区间。仅供参考：不改变排名、评分或建议权重。">{{ t('Past 2 weeks', '近两周') }}</th>
     <th>{{ t('Trend', '趋势') }}</th>
     <th class="num" title="durability bar">{{ t('Durability', '持续性') }}</th>
     <th class="num" title="own-history regime">{{ t('Hurst', '赫斯特') }}</th>
@@ -609,6 +612,8 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
       {% elif r.val_state == 'fading' %}<span class="stage" style="color:var(--warn)" title="real-activity radar: activity behind price">🛰️ {{ t('fading', '退潮') }}</span>{% endif %}
       <div class="legrow">{{ r.category }} · {{ r.n_live }} {{ t('names', '只') }}</div></td>
     <td class="num"><b>{{ '%.2f'|format(r.score) if r.score is not none else '—' }}</b></td>
+    {% set r10 = r.get('r10') %}
+    <td class="num">{% if r10 is not none %}<span class="{{ 'pos' if r10 >= 0 else 'neg' }}">{{ '%+.1f'|format(r10*100) }}%</span>{% else %}<span class="muted">—</span>{% endif %}</td>
     <td>{% if r.eligible %}<span class="stage" style="color:var(--up)">▲ {{ t('in trend', '趋势内') }}</span>{% else %}<span class="stage" style="color:var(--muted)">▽ {{ t('off trend', '趋势外') }}</span>{% endif %}</td>
     <td class="num">{% if du.bar is not none %}<span class="dbar"><i style="width:{{ (du.bar*100)|round|int }}%"></i></span> {{ (du.bar*100)|round|int }}{% else %}—{% endif %}</td>
     <td class="num">{{ du.hurst if du.hurst is not none else '—' }}{% if du.hurst_tag %}<span class="muted sm"> {{ {'trend':'↗','mean-revert':'↺','mixed':'~'}.get(du.hurst_tag,'') }}</span>{% endif %}</td>
