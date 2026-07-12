@@ -2,18 +2,18 @@
 
 # Active Build Map
 
-Generated: 2026-07-11T07:07:30.387141+00:00  |  Open PRs: 7  |  Merged (window): 500  |  base: `f8b481bfdb60f4b0977a21e378c693a11d524c2c`
+Generated: 2026-07-12T07:01:29.115728+00:00  |  Open PRs: 7  |  Merged (window): 500  |  base: `8d9759f1fc863e6f401f1bfe0921a00004e645f4`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #2224 | feat(flow-leaders): W2 — Flow Leaders desk page + nightly builder + Pick Lab books (23→25) + flow_desk badges + R2 publish | `claude/flow-leaders-w2-surfaces` | 2026-07-11 | ⚠ protected:4 |
+| #2317 | feat(bilingual): china synthesis read/read_zh — de-slug the feed-intelligence read line at the source | `claude/eloquent-goldberg-55b461` | 2026-07-12 | ⚠ protected:1 |
 | #2129 | prereg(w8b) [DO NOT MERGE — OPERATOR RATIFICATION REQUIRED (FT-R7)]: macro-prior entries for AI-capex complex baskets | `claude/turn-sense-w8b` | 2026-07-10 | DRAFT |
 | #2098 | research(entry-stack): S-SQ def-4 variant pre-registration (DT-R22) — DRAFT, execution gated on Fable §APPROVAL | `claude/sharp-almeida-8d4349` | 2026-07-10 | — |
 | #1888 | test(mri): claims synthetic vintages to raw ALFRED persons scale (~200k) | `claude/nfp-claims-unit-fix` | 2026-07-07 | DRAFT |
-| #1875 | research(oracle): RC-RUL-5 item 5 — base-10 time-shift placebo sweep [DO NOT MERGE — adjudication pending] | `claude/base10-tc-sweep` | 2026-07-07 | DRAFT / ⚠ CONFLICTING |
-| #1780 | chore(policy): scheduled intel refresh 2026-07-06 | `policy-intel-refresh-20260706` | 2026-07-07 | ⚠ CONFLICTING |
+| #1875 | research(oracle): RC-RUL-5 item 5 — base-10 time-shift placebo sweep [DO NOT MERGE — adjudication pending] | `claude/base10-tc-sweep` | 2026-07-12 | DRAFT |
+| #1780 | chore(policy): scheduled intel refresh 2026-07-06 | `policy-intel-refresh-20260706` | 2026-07-12 | DRAFT |
 | #1639 | research(ontology): W4.7 — pos_v2 acceptance study [HOLD: peak gate IQR 48.8 > 25] | `wave/w4-7-axis-flip` | 2026-07-06 | — |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
@@ -26,8 +26,105 @@ _No file collisions detected among open PRs._
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #2330 | ops(key-pool-probe): sparse checkout + 30m timeout for the self-hosted runner | 2026-07-12 |
+| #2329 | feat(us-stocks): operator UI overhaul — Mag 7 strip fix, ignition compaction, scroll-safe help tips, panel split + copy sweep | 2026-07-12 |
+| #2328 | docs(macro-v5): binding mockup rev2 — command scorecard + popovers, alerts centre, larger sentiment dial | 2026-07-12 |
+| #2327 | ops(key-pool-probe): probe from the production runner by default | 2026-07-12 |
+| #2326 | fix(china): render CN-SYS-R13 string contradictions — unfreeze china.html + china_stocks.html | 2026-07-12 |
+| #2325 | fix(collectors): adjustment-basis guard for windowed yfinance upserts (yahoo + china/hk stock stores) | 2026-07-12 |
+| #2324 | fix(dag): declare build_rotation_events in daily cl_baskets — heal conformance drift | 2026-07-12 |
+| #2323 | ops(metabolism): key-pool probe — per-key 1-token liveness check for the OAuth secrets | 2026-07-12 |
+| #2322 | feat(rotation): Rotation Command W1 surfaces — mega-cap node + rotation-events rail + creation alerts (RC-R3/R4/R5) | 2026-07-12 |
+| #2321 | feat(hkrv-w3): leadership banner + CONFIRMING TURN chip on HK stocks page | 2026-07-12 |
+| #2320 | feat(integrity): RC-R2 append-only marker law — renders can no longer rewrite their own history | 2026-07-12 |
+| #2319 | feat(rotation): Rotation Command W1 — rotation-event detector + sector-fragmentation board (RC-R1/R6) | 2026-07-12 |
+| #2318 | docs(macro-v5): aurora-glass hybrid ruling — 5-theme competition artifacts + binding v5_final mockup | 2026-07-12 |
+| #2316 | fix(china): log.exception in build_china swallow-all — unmask the render crash freezing china pages | 2026-07-12 |
+| #2315 | feat(bilingual): de-slug channel chips at the source — top_channels ship label_en/label_zh | 2026-07-12 |
+| #2314 | fix(collectors): unfreeze finra_ats_transparency (2.5y stale) + china_credit (100d stale) | 2026-07-12 |
+| #2312 | feat(odds): Odds Desk — historical base-rate analyzer + factor match screener | 2026-07-12 |
+| #2311 | feat(bilingual): engine-side label_zh / de-escalated chips / read_zh — fix v4 template workarounds at source | 2026-07-12 |
+| #2310 | ops(render): raise render job timeout 75→115m — scope=all renders now brush the old cap | 2026-07-12 |
+| #2309 | hk(revamp): CONFIRMING TURN state + Leadership organ + Context chips + W5 robustness (HKRV W1–W5 integration) | 2026-07-12 |
+| #2308 | feat(fl-c/fl-d): live flow lane ops + cohort flow chips on turn surfaces (FC-R5/R6/R7/R8/R10) | 2026-07-12 |
+| #2304 | feat(fl-a): EOD flow backfill + z activation + staleness warning (FC-R4/R11) | 2026-07-12 |
+| #2303 | docs(hk-revamp): W0 masterplan — leadership visibility program + falsifier studies | 2026-07-12 |
+| #2302 | research(meta): META July 2026 rally deep research + Q2 earnings scenario tree | 2026-07-12 |
+| #2301 | feat(macro): v4 scorecard grid — verdict triptych + instrument rack; ledger stays behind a view toggle | 2026-07-12 |
+| #2299 | feat(flow-cohorts): FL-B cohort options-flow aggregation + flow_desk Cohorts strip | 2026-07-12 |
+| #2298 | feat(ihm): W1 - index_momentum.v1 hybrid momentum organ (display-dark) (IHM-R1..R4) | 2026-07-12 |
+| #2297 | feat(fl-e): statement tape registry + schema guard + field-guide exhibit (FC-R9) | 2026-07-12 |
+| #2296 | fix(mag7-regime): mktcap weights from polygon_universe reference (sp500_heatmap path never existed) | 2026-07-12 |
+| #2295 | fix(metabolism): never-stuck core — Wave A+B durability (R-V5-1..4) | 2026-07-12 |
+| #2294 | fix(metabolism): absorb #2284 leftovers — scan-time docket-lobe backfill + shadow contract lobe key | 2026-07-12 |
+| #2293 | docs(flow): Flow Continuity masterplan (FC-R1..R12) + Mag-7 turn post-mortem | 2026-07-12 |
+| #2292 | fix(us-stocks): polish round 2 — strip stance/as-of/dot families + board inline glyphs & stat lines | 2026-07-12 |
+| #2291 | fix(ignition): persistence day counter in the strip variant (M7C-R7 follow-up) | 2026-07-11 |
+| #2290 | docs(metabolism): arming checklist v2 — ruleset Act 2 (original would freeze the nightly), auto-chain reality, Act 6 | 2026-07-12 |
+| #2289 | docs(metabolism): v5 durability + self-repair masterplan — ranked upgrade sweep | 2026-07-11 |
+| #2288 | ci(metabolism): always-on fences.yml — the 3 branch-protection required checks | 2026-07-11 |
+| #2287 | ops(metabolism): workflow durability wave — auto-chain build/merge, GC, ledger, PAT wiring | 2026-07-11 |
+| #2286 | docs(rotation): Rotation Command masterplan — 06-25 semis→Mag7 handoff miss postmortem + upgrade program (RC-R1..R15) | 2026-07-11 |
+| #2285 | fix(metabolism): close learning-wire gaps — lobe threading, triage flags, lesson lobe field | 2026-07-11 |
+| #2283 | fix(synapse): declare build_site.py as consumer of mag7-regime-site — heal read-gate hard fail | 2026-07-11 |
+| #2282 | feat(metabolism): multi-key OAuth failover — pool waterfall, auth/429 cooling, build-lane key retry | 2026-07-11 |
+| #2281 | feat(admin): Metabolism tab — arm/pause autonomous loop switch | 2026-07-11 |
+| #2280 | docs(ihm): Index Hybrid Momentum masterplan (W0) — RSI-MACD at the regime layer + global turn confluence | 2026-07-11 |
+| #2279 | feat(surfaces): Mag 7 panel + baskets split-tape chip (M7C-R6/R11/R12) | 2026-07-11 |
+| #2278 | research(mag7): Mag-7 field guide + census script (M7C-R9) | 2026-07-11 |
+| #2277 | feat(mag7-regime): Mag-7 regime context organ v1 (M7C-R2/R3) | 2026-07-11 |
+| #2276 | feat(baskets): leadership_split disclosure fields + 10d horizon (M7C-R4) | 2026-07-11 |
+| #2275 | feat(ignition): narrow persistence honesty — streak_sessions + day counter (M7C-R7) | 2026-07-11 |
+| #2274 | ops(collect): raise timeout 100→150m + basket staleness warning (M7C-R8) | 2026-07-11 |
+| #2273 | docs(mag7): Mag 7 Command masterplan — mega-cap regime + leadership rotation + tech fragmentation (M7C-R1..R12) | 2026-07-11 |
+| #2272 | fix(us-stocks): Ignition Radar strip + action-board anv2 port + gamma banner removal; china copy trims | 2026-07-11 |
+| #2271 | fix(nightly): raise collect job timeout 100→150m — Friday collections lost at exact-100m cancel | 2026-07-11 |
+| #2270 | fix(china): Show-more on sector action-board lanes (lst-cap4 + View-all modal) | 2026-07-11 |
+| #2269 | docs(house-law): regen guard-suite doc for ops.workflow_yaml_parses (#2268 follow-up) | 2026-07-11 |
+| #2268 | ci(workflow-yaml): parse-guard all workflow files — unparseable workflow = failed run on EVERY push | 2026-07-11 |
+| #2267 | fix(tape): expander continues each column — no more interleaved restated full tape | 2026-07-11 |
+| #2266 | ci(causal): wire the 10 orphan CHF + sf_brainstorm test suites into a causal-factory job | 2026-07-11 |
+| #2265 | fix(til-w6): wire the earliness_log producer — grader was grading an empty tape forever | 2026-07-11 |
+| #2264 | fix(causal): nightly lane-status refresh — armed config no longer invisible between Tuesdays (CHF-R8) | 2026-07-11 |
+| #2263 | feat(metab-v4-w6): shadow-cycle harness + arming checklist — the first breath (R-V4-1) | 2026-07-11 |
+| #2262 | feat(metabolism): V4 W5 steering memory + applier | 2026-07-11 |
+| #2261 | feat(neural-web): W4 'the eye' — confluence strength, sequence, discovery (R-V4-6/7/8) | 2026-07-11 |
+| #2260 | feat(metabolism): W2 pulse — verify/dream workflows + heartbeat fix + schedule repair | 2026-07-11 |
+| #2259 | feat(metabolism): real BUILD dispatch — R-V4-2 (Metabolism V4 W1) | 2026-07-11 |
+| #2258 | feat(metab-v4-w3): mission self-model + one kill-registry (R-V4-4/R-V4-5) | 2026-07-11 |
+| #2257 | feat(macro): v3 islands — 3D container-island ledger + full tray content redesign | 2026-07-11 |
+| #2256 | docs(metabolism): v4 First Breath masterplan — close the loop, wire the memory, deepen the eye (R-V4-1..12) | 2026-07-11 |
+| #2255 | fix(workflows): port #2252 untracked-collision sweep to all 24 autostash retry sites | 2026-07-11 |
+| #2254 | feat(reports): Haven Audition — TSLA encore anatomy + robot-run rhyme + magnet-control clock | 2026-07-11 |
+| #2253 | data(tape-flow): first full-universe tape accrual (375/375) + connect-timeout fix on tape steps | 2026-07-11 |
+| #2252 | fix(render): pre-sync untracked-collision sweep so push retries actually retry | 2026-07-11 |
+| #2251 | feat(reports): Haven Audition — asymmetric-haven framework + lever stack + deal rubric + sovereignty catalyst | 2026-07-11 |
+| #2250 | feat(leader-radar): W2b — leader_radar.html lifecycle board + handoff watch + regime banner + rerating watch | 2026-07-11 |
+| #2249 | feat(macro): v2 full transition — one-screen row-ledger with press-to-expand depth | 2026-07-11 |
+| #2248 | feat(leader-radar): W2a — nightly radar builder + rs_series/state-history + Pick Lab books 26-27 | 2026-07-11 |
+| #2247 | fix(notify): turn-event alert headlines, slugs, and leg jargon to plain words (doctrine Law 2) | 2026-07-11 |
+| #2246 | fix(notify): turn-event alert copy to plain words (doctrine Law 2/3) | 2026-07-11 |
+| #2244 | feat(reports): The Haven Audition — Meta rerating vs safe-haven adjudication into the midterms | 2026-07-11 |
+| #2243 | feat(leader-radar): W1 — leader lifecycle engine + masterplan + field guide | 2026-07-11 |
+| #2242 | fix(us-stocks): tape-band fade note to plain words — 58% receipt demoted to ? tip (doctrine Law 2/3) | 2026-07-11 |
+| #2241 | fix(basket-detail): bilingual why-this-score line in Score Anatomy (doctrine §5 bilingual parity) | 2026-07-11 |
+| #2240 | feat(ratio-lens): W1 — pair registry + ratio_lens organ + offrender step + synapse/ledger/tests (RL-R1..R16) | 2026-07-11 |
+| #2239 | fix(china): user-first evidence copy — bilingual ripening chips + phase-card slug translation (doctrine §7 #8 engine residual) | 2026-07-11 |
+| #2238 | fix(deploy): close the port-80 empty-200 CDN poisoning class (china.html 2026-07-11) | 2026-07-11 |
+| #2237 | docs(ratio-lens): Ratio Lens masterplan + registration (W0) — pairwise ratio intelligence & rotation localization (RL-R1..R16) | 2026-07-11 |
+| #2236 | feat(baskets): re-port tape band to v3 two-column ranked idiom (#2227 supersedes chip strip) | 2026-07-11 |
+| #2235 | fix(baskets): wire disagreement chip to theme_intel recos — BASKETS.baskets carries no reco (FTR W3 latent dead code) | 2026-07-11 |
+| #2234 | fix(baskets): W8 anatomy — unterminated crowding style attr exploded orange fill over basket detail pages | 2026-07-11 |
+| #2233 | docs(doctrine): mark §7 census offenders #2/#4/#11 FIXED (#2232) | 2026-07-11 |
+| #2232 | feat(baskets): user-first copy port to turn-watch surfaces + .dtp tape strip (doctrine §7 #2/#4/#11) | 2026-07-11 |
+| #2231 | feat(risk-radar): multi-channel receding evidence + drivers line + card icon/label fixes (RRX2 WA) | 2026-07-11 |
+| #2230 | docs(doctrine): mark census offenders #3/#8 (china) fixed by #2228 | 2026-07-11 |
+| #2229 | feat(ignition-radar): risk-on ignition layer — broad thrust confluence + narrow theme ignition (IGN WB) | 2026-07-11 |
+| #2228 | fix(china): user-first copy — context strip + ripening-shelf acronyms (doctrine §7 offenders #3/#8) | 2026-07-11 |
+| #2227 | feat(ts-u8): tape band v3 — two-column ranked session tape (operator-directed redo) | 2026-07-11 |
 | #2226 | feat(us-stocks): conditions-card popover — real sector/theme content, shared engine, Lens row retired | 2026-07-11 |
 | #2225 | feat(cn-hk-stocks): conditions-card payloads + View-all migration for china anv2 + HK boards | 2026-07-11 |
+| #2224 | feat(flow-leaders): W2 — Flow Leaders desk page + nightly builder + Pick Lab books (23→25) + flow_desk badges + R2 publish | 2026-07-11 |
 | #2223 | fix(edgar): junk-fact NULL lane for stock columns — MDT/FTI/MIR leading-edge wrong-fact rows nulled | 2026-07-11 |
 | #2222 | feat(ui): list overlay ('View all' popup) + shared row-popover engine | 2026-07-11 |
 | #2221 | fix(us-stocks): Turn Watch → 'Early turn signs' user-first rewrite + user-first design doctrine (house law) | 2026-07-11 |
@@ -429,103 +526,6 @@ _No file collisions detected among open PRs._
 | #1811 | research(momoedge): competitive RE + master build docket (options terminal + Oracle) | 2026-07-07 |
 | #1810 | feat(alerts): watchlist buy-zone sentinel — Supabase watchlist x buy-zone enter-detection -> alert center + Discord (B6) | 2026-07-07 |
 | #1809 | feat(nasdaq-internals): archetype-group taxonomy + descriptive internals artifact (TI-R2/R3/R5) | 2026-07-07 |
-| #1808 | feat(nw): pathway + support-map consumer integrations — brief, ask_brain/cortex, committee, admin (W3) | 2026-07-07 |
-| #1807 | feat(render): template↔site sync guard — root-cause fix for the -X theirs stale-copy resurrect (ui.template_site_sync) | 2026-07-07 |
-| #1806 | feat(subsectors): Nasdaq Internals archetype panel on Nasdaq-100 tab (TI-R4) | 2026-07-07 |
-| #1805 | research(tech-internals): Codex tech_archetype+shock_fit adjudication (TI-R1..R7) | 2026-07-07 |
-| #1804 | research(nw): R6.1-lite latent-state feature manifest + PIT coverage audit (RUL-CC-8, parked reference) | 2026-07-07 |
-| #1803 | feat(nw): Support Map library — dependency blast-radius embedded in health.json + admin (RUL-CC-6,7,14) | 2026-07-07 |
-| #1802 | feat(nw): Mechanism Pathway Compiler v1 — display-only 'why the tape moved' artifact (RUL-CC-1..5,10..13) | 2026-07-07 |
-| #1800 | feat(governance): Fable succession bench W0 — tiered adjudication ladder + packet tooling + opus RF actor (RUL-SUCC-1..12) | 2026-07-07 |
-| #1799 | feat(governance): drain research-factory authority bare-WARN debt (RF-11) + backfill 2 unregistered guards | 2026-07-07 |
-| #1798 | docs(research): NW core-cognition adjudication — MPC thin-accept, R7 kill/salvage, R6 park (RUL-CC-1..14) | 2026-07-07 |
-| #1797 | feat(evidence-clock): daily-brief counts block + admin Observatory queue (EC-R5 surfaces) | 2026-07-07 |
-| #1796 | feat(evidence-clock): Global Evidence Clock v1 — read-only review-queue aggregator (EC-R1..R8) | 2026-07-07 |
-| #1795 | feat(neural-web): Ruling Graph / Case-Law Compiler v1 — 500 quote-verified rulings + CI conflict guard | 2026-07-07 |
-| #1794 | feat(neural-web): Entity/Thesis/Mechanism Registry v1 — display-only crosswalk (fable_exit §05) | 2026-07-07 |
-| #1793 | feat(governance): unified house-law CI guard registry + meta-guard | 2026-07-07 |
-| #1792 | feat(stocks): per-name event-windows display block — earnings/FOMC/debt-maturity (Codex B5) | 2026-07-07 |
-| #1791 | test: render-smoke dashboard.html.j2 in both modes (macro + stocks) | 2026-07-07 |
-| #1790 | fix(committee): size synapse-map canvas to the real fullscreen viewport (no 100vh) | 2026-07-07 |
-| #1789 | feat(governance): Active Build Map + DO_NOT_REBUILD registry — derived multi-agent collision intelligence | 2026-07-07 |
-| #1788 | feat(stocks): per-ticker conviction delta — deterministic dossier diff + what-changed strip (Codex B4) | 2026-07-07 |
-| #1787 | feat(neural-web): reverse feedback reader — mastermind_feedback_summary + synapse reg + nightly step (FB-R7/R8/R14) | 2026-07-07 |
-| #1786 | fix(committee): synapse-map fullscreen fills the monitor + zooms in on large displays | 2026-07-07 |
-| #1785 | feat(privacy): reverse-feedback privacy rail — data/private ignore + check_private_boundary CI guard + operator_grading host-path scrub (FB-R12/R13) | 2026-07-07 |
-| #1784 | feat(stocks): Buy Decision Packet v0 — per-row dossier join + trim-only verb + not-now reasons (Codex B2+B3) | 2026-07-07 |
-| #1783 | feat(stocks): render great-company-trap de-escalation panel + activate crowding leg (B1) | 2026-07-07 |
-| #1782 | S11 Buyback-Floor Washout: EDGAR debt columns + phase-0 FALSIFIED (W5) | 2026-07-07 |
-| #1781 | docs(research): Codex buy-decision docket adjudication (two memos, W1 dispatch) | 2026-07-07 |
-| #1779 | CPI IX-1 (§17): index-level transfer test — 0/4 PASS, down cells killed by the sign-stability leg | 2026-07-07 |
-| #1778 | feat(china-stocks): "Show more" collapse for long action-board columns | 2026-07-07 |
-| #1777 | feat(entry-stack): decline_geometry display descriptor + underwater shadow on bottom_sensors (A3 §F.3) | 2026-07-07 |
-| #1776 | feat(neural-web): curated Synapse Map — human-named lobed brain, no plumbing/dangling nodes | 2026-07-07 |
-| #1775 | docs: clear cycle-pattern authority guard WARNs (docstring-only path mentions) | 2026-07-07 |
-| #1774 | fix(live-flow): current-day tape via per-expiration fallback + ET schedule | 2026-07-07 |
-| #1773 | feat(cpi-p6): Neural Web cycle-pattern lobe + UI-HZ-1 calibrated turn-hazard surfaces | 2026-07-07 |
-| #1772 | fix(signal-bus): repair pin drift 205→210 + stale cycle-pattern-entities notes | 2026-07-07 |
-| #1771 | CPI TR-1: next-phase transition model (§16) — 4/6 PASS, the program's first gate-passing cells | 2026-07-07 |
-| #1770 | CPI P-D5-1 phase 4a: regime-vintage PIT spine (regime_v2_pit) — builder + divergence audit | 2026-07-07 |
-| #1769 | CPI IX-1 SUBSTRATE: index-level hazard panel (SPY + 7 blocs) + covariates + per-entity KM utility | 2026-07-07 |
-| #1768 | feat(neuralweb): committee + admin independence display (R-ORTH PR-4) | 2026-07-07 |
-| #1767 | feat(china-intel): F-C exploratory leg — MPC communiqué phrase-diff × SHCOMP descriptive CARs (RUL-5 unsigned) | 2026-07-07 |
-| #1766 | feat(signal-engine): S1 HTF badge + S2 shadow, G-HTF1 + G-T2X first run, Codex adjudication | 2026-07-07 |
-| #1765 | feat(cpi): TGA/net-liquidity data-infrastructure wave — fed_net_liquidity artifact + nightly lane + Signal Bus registration | 2026-07-07 |
-| #1764 | fix(nav): flyout submenu triggers get descriptions + full-height rows | 2026-07-07 |
-| #1763 | data(options): W5-B signed-tape pilot + resumable backfill state machine (20 names x 60d) | 2026-07-07 |
-| #1762 | fix(admin): left-align content, scrollable tables, tidy Experiments columns | 2026-07-07 |
-| #1761 | research(entry-intel): PM0 price-memory bundled phase-0 PREREG (Signal Commons R2 / DT-R7 dispatch) | 2026-07-07 |
-| #1760 | data(china): block-trade tape archiver + SW-L1 mapping — F5-01 accrual infra | 2026-07-07 |
-| #1759 | feat(stock-personality): W2b — wire stock_personality.v1 into nightly pipeline | 2026-07-07 |
-| #1758 | feat(housing): Redfin/ZORI HF product + conditioning phase-0 — NULL | 2026-07-07 |
-| #1757 | test(index): d2 Russell deletion overshoot phase-0 — DESCRIPTIVE/ACCRUAL (n=3 valid, descriptive-honesty) | 2026-07-07 |
-| #1756 | test(legal): ITC-337 exclusion-risk phase-0 — NULL | 2026-07-07 |
-| #1755 | research: DT-R14 time-confound exposure audit (read-only, ranked memo) | 2026-07-07 |
-| #1754 | CPI lattice batch 2 (§15): within-family baselines — 27/135; CPI-020 re-test FAILS → retired | 2026-07-07 |
-| #1753 | test(bottoms): w5 trade-size capitulation phase-0 — PARTIAL (frozen prereg) | 2026-07-07 |
-| #1752 | fix(filings): d2 comment-letter release-phase0 reviewer fixes — PASS | 2026-07-07 |
-| #1751 | research(dannytrades): DT-W2 64y month-block re-run — DT-R13 settlement | 2026-07-07 |
-| #1750 | research(oracle): adjudicate Codex rotation Time Machine intake — REJECT-REDUNDANT + 2 entry_onset caveats | 2026-07-07 |
-| #1749 | fix(baskets): basket_tape Danny fields relabeled descriptive per DT-W1a | 2026-07-07 |
-| #1748 | feat(neuralweb): R-ORTH covariance spine MVP — lobe independence accounting (R-ORTH PR-3) | 2026-07-07 |
-| #1747 | docs(entry-stack): A3 phase0 results + adjudication — decline-geometry ships, HTF-turn split, washout×turn killed | 2026-07-06 |
-| #1746 | test(credit): CMDI conditioning phase-0 — FAIL (T1+T3) / T2 PASS after identical-dates fix | 2026-07-07 |
-| #1745 | test(labor): WARN intensity phase-0 — DATA-BLOCKED (consolidated feed) | 2026-07-07 |
-| #1744 | test(rates): d2 rates-calendar flows phase-0 — SCORED V3 month-end extension (auction cycle + quarter-end + extension day) | 2026-07-07 |
-| #1743 | data(consumer): TSA daily throughput collector + display product (2019->) | 2026-07-07 |
-| #1741 | feat(dispersion): eigen-concentration fields + DISP-EIGEN-1 prereg (R-ORTH PR-5) | 2026-07-06 |
-| #1740 | feat(yield-curve): additive pca_health sub-block (R-ORTH PR-2) | 2026-07-06 |
-| #1739 | research(r-orth): adjudicated masterplan + prereg + null-calibrated PCA diagnostics | 2026-07-06 |
-| #1738 | feat(admin): redesign NW system map as a readable radial dendrogram | 2026-07-06 |
-| #1737 | feat(stock-personality): W2a classifier cascades + stock_personality.v1 assembly | 2026-07-06 |
-| #1736 | research(dannytrades): DT-W1 survivorship-honest whale replication (prereg §4.1) | 2026-07-06 |
-| #1735 | feat(neuralweb): DT-NW-1 — register live dt_contra chip as NW display artifact | 2026-07-06 |
-| #1734 | data(china-filings): 60d inquiry-family backfill seed | 2026-07-06 |
-| #1733 | fix(stock-boards): un-squeeze us_stocks run/take-profit names + port "what to act on now" board to CN/HK/CA stock pages | 2026-07-06 |
-| #1732 | research(dannytrades): Codex docket adjudication (DT-R1..R12) + DT-W1 prereg + DT-NW-1 authorization | 2026-07-06 |
-| #1731 | feat(research-factory): arm Cortex Batch B — Lens 6, RF-conformance, LLM-auth hardening + cortex retry-gate fix | 2026-07-06 |
-| #1730 | feat(stock-personality): W1 path-feature library (engine/path_personality.py) | 2026-07-06 |
-| #1729 | docs(stock-personality): adjudicated masterplan + R-SP16 registry schema fix | 2026-07-06 |
-| #1728 | feat(china-intel): W4 — special-sits migration to filings spine + analogs card | 2026-07-06 |
-| #1727 | feat(admin): NW map hover popups + plain-English lobe descriptions (never-stale) | 2026-07-06 |
-| #1726 | research(signal-lab): Day-2 Fable docket + adjudication (50 candidates gauntleted) | 2026-07-06 |
-| #1725 | CPI lattice batch 1: 135 shrunken cells — 48 gate-passing, adjudicated to 1 lead + confirmatory record | 2026-07-06 |
-| #1724 | fix(china-communiques): review findings — short-title coverage, pagination hash, failure reconciliation | 2026-07-06 |
-| #1723 | docs(research-factory): follow-up program seeds + operating runbook | 2026-07-06 |
-| #1722 | feat(neural-web): committee.html → The Neural Web — synapse map, hero, honest cortex UX + staleness-gate fix | 2026-07-06 |
-| #1721 | feat(china-intel): China policy-event study phase-0 — RRR/LPR forward event study (W2.2) | 2026-07-06 |
-| #1720 | fix(replay): reconcile R1 budget bookkeeping + registration dedup guard | 2026-07-06 |
-| #1719 | feat(china-filings): CNInfo A-share filing metadata collector (W3.2) | 2026-07-06 |
-| #1718 | CPI P3 batch 2: FT-2 credit/curve trial — preregistered, run, null (harmful); FT-3 deferred to collector wave | 2026-07-06 |
-| #1716 | feat(china-intel): historical regime analog finder — display-only (W2.3) | 2026-07-06 |
-| #1715 | docs(china-intel): masterplan Amendment 1 — archive-lane reuse + division-of-labor record | 2026-07-06 |
-| #1714 | feat(admin): PR-C4 operator capture — alert IDs, Alerts tab, overrode button | 2026-07-06 |
-| #1713 | test(horizon-firewall): allowlist per-fire-sector-benchmark + long-hold-thesis-funnel-history | 2026-07-06 |
-| #1712 | feat(trim-grid): TRIM-GRID-1 scaled partial-trim exit policies + profit_take leg (RUL-F3.5, PR-F3.3) | 2026-07-06 |
-| #1711 | docs(nw): NEXT3 close-out — wave outcomes + printed nulls | 2026-07-06 |
-| #1710 | research(short-side): W-0B Phase-0b species batch — BD-4/5/6 tape extension (NEXT3) | 2026-07-06 |
-| #1709 | feat(dispersion): DISP-GATE-1 hardening — clamp-invariant tests + replication addendum (PR-F3.2b) | 2026-07-06 |
-| #1708 | feat(admin): Neural Web lobe observatory + premium SaaS console revamp | 2026-07-06 |
 
 ---
 
