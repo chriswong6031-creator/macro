@@ -60,6 +60,42 @@
   .wh-disc { font-size:11.5px; color:var(--muted); border-top:1px solid var(--line); margin-top:14px; padding-top:10px; }
   .wh-pagedisc { max-width:1060px; margin:18px auto 0; font-size:12px; color:var(--muted);
                  border:1px solid var(--line); border-radius:12px; padding:12px 16px; background:var(--panel2); }
+
+  /* Treasury Watch panel — the TGA liquidity read (money-green → gold accent) */
+  .wh-tre { max-width:1060px; margin:22px auto 0; background:var(--panel); border:1px solid var(--line);
+            border-radius:16px; padding:22px 24px; box-shadow:var(--card-shadow); position:relative; overflow:hidden; }
+  .wh-tre::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
+            background:linear-gradient(90deg,#1f7a4e,#2f8f6f 55%,#d9a441); }
+  .wh-tre .tk { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 6px; font-weight:700; }
+  .wh-tre h2 { font-size:19px; line-height:1.2; margin:0 0 4px; letter-spacing:-.01em; }
+  .wh-tre p.sub { font-size:13px; color:var(--text); opacity:.78; margin:0 0 14px; max-width:78ch; }
+  .wh-stats { display:flex; flex-wrap:wrap; gap:10px 12px; margin:0 0 6px; }
+  .wh-stat { flex:1 1 150px; min-width:138px; background:var(--panel2); border:1px solid var(--line);
+             border-radius:12px; padding:10px 13px; }
+  .wh-stat .lab { font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin:0 0 3px; }
+  .wh-stat .val { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.15; }
+  .wh-stat .val .u { font-size:12px; font-weight:600; opacity:.6; }
+  .wh-stat .delta { font-size:12px; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .wh-stat .delta.up { color:#1f9a55; } .wh-stat .delta.dn { color:#d23f3f; }
+  .wh-stat .val.up { color:#1f9a55; } .wh-stat .val.dn { color:#d23f3f; }
+  html[data-theme="dark"] .wh-stat .delta.up, html[data-theme="dark"] .wh-stat .val.up { color:#3fc07e; }
+  html[data-theme="dark"] .wh-stat .delta.dn, html[data-theme="dark"] .wh-stat .val.dn { color:#ef6a6a; }
+  .wh-chip { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.03em;
+             padding:3px 9px; border-radius:999px; border:1px solid var(--line); }
+  .wh-chip.green { color:#1f9a55; border-color:#1f9a5566; }
+  .wh-chip.amber { color:#d9a441; border-color:#d9a44166; }
+  .wh-chip.red   { color:#d23f3f; border-color:#d23f3f66; }
+  .wh-chip.mut   { color:var(--muted); }
+  html[data-theme="dark"] .wh-chip.green { color:#3fc07e; }
+  .wh-tre .impulse { font-size:13.5px; line-height:1.55; margin:12px 0; padding:10px 13px;
+             background:var(--panel2); border-radius:10px; border-left:3px solid #2f8f6f; }
+  .wh-tre .sparkwrap { margin:12px 0 2px; }
+  .wh-tre .sparkcap { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted);
+             margin:0 0 4px; font-variant-numeric:tabular-nums; }
+  .wh-spark { width:100%; height:64px; display:block; }
+  .wh-tre .foot { font-size:11.5px; color:var(--muted); margin:12px 0 0; border-top:1px solid var(--line); padding-top:9px; }
+  .wh-badge.tre { color:#1f7a4e; border-color:#1f7a4e66; }
+  html[data-theme="dark"] .wh-badge.tre { color:#3fc07e; }
 {% endblock %}
 
 {% block content %}
@@ -67,8 +103,88 @@
   <p class="wh-kick">🏛️ {{ t('White House Watch', '白宫快讯') }}</p>
   <h1>{{ t('Policy alerts, market-read', '政策快讯 · 市场解读') }}</h1>
   <p class="sub">{{ t('Every White House announcement is monitored. When one is judged market-moving, Claude Opus writes the read below — implications, sector head/tailwinds, and the names most exposed. Banners surface the live ones across the site.',
-        '持续监控白宫的每一条公告。当某条被判定为可能影响市场时，Claude Opus 在下方给出解读——影响、行业的顺逆风，以及最受影响的标的。横幅会在全站推送仍然有效的快讯。') }}</p>
+        '持续监控白宫的每一条公告。当某条被判定为可能影响市场时，Claude Opus 在下方给出解读——影响、行业的顺逆风，以及最受影响的标的。横幅会在全站推送仍然有效的快讯。') }}
+    {{ t('Major Treasury cash-flow moves — the TGA account at the Fed — are tracked the same way.',
+         '财政部的重大现金流动（联储的 TGA 账户）也以同样方式跟踪。') }}</p>
 </header>
+
+{% if treasury %}
+{% set tg = treasury.tga %}
+{% set nl = treasury.net_liquidity %}
+{% set pl = treasury.plumbing %}
+{% set imp = treasury.tga_impulse %}
+{% set mc = treasury.market_context %}
+{% set hs = (pl.headline_state if pl else '') or '' %}
+{% set hcls = 'green' if hs.startswith('benign') else ('red' if (hs.startswith('orderly_drain') or hs.startswith('contract')) else ('amber' if hs.startswith('stress') else 'mut')) %}
+<section class="wh-tre" id="treasury-watch">
+  <p class="tk">💵 {{ t('Treasury Watch', '财政部观察') }}</p>
+  <h2>{{ t('Treasury liquidity — the TGA read', '财政部流动性 · TGA 解读') }}</h2>
+  <p class="sub">{{ t('The Treasury General Account (TGA) is Treasury’s cash at the Fed. When it falls, that cash lands in bank reserves — a mechanical liquidity injection; when it rebuilds, reserves drain. Large quarter-end and debt-ceiling swings can backstop or tighten the tape.',
+        '财政部一般账户（TGA）是财政部在美联储的现金余额。余额下降时，现金进入银行准备金——形成机械性的流动性注入；余额回补时，准备金被抽离。季末与债务上限相关的大幅波动可能托底或收紧市场。') }}</p>
+
+  {% if tg %}
+  <div class="wh-stats">
+    <div class="wh-stat">
+      <div class="lab">{{ t('TGA balance', 'TGA 余额') }}{% if tg.asof %} · {{ tg.asof }}{% endif %}</div>
+      <div class="val">${{ '%.0f'|format(tg.level_bn) }}<span class="u">bn</span></div>
+      {% if tg.chg_1d_bn is not none %}<div class="delta {{ 'up' if tg.chg_1d_bn >= 0 else 'dn' }}">{{ '%+.1f'|format(tg.chg_1d_bn) }} {{ t('1d','单日') }}</div>{% endif %}
+    </div>
+
+    {% set qe = tg.quarter_end %}
+    {% if qe and qe.chg_since_bn is not none %}
+    <div class="wh-stat">
+      <div class="lab">{{ t('Δ since quarter-end', '较季末') }}{% if qe.date %} ({{ qe.date[5:] }}){% endif %}</div>
+      <div class="val {{ 'up' if qe.chg_since_bn >= 0 else 'dn' }}">{{ '%+.0f'|format(qe.chg_since_bn) }}<span class="u">bn</span></div>
+    </div>
+    {% elif tg.chg_5d_bn is not none %}
+    <div class="wh-stat">
+      <div class="lab">{{ t('Δ 5 sessions', '5日变动') }}</div>
+      <div class="val {{ 'up' if tg.chg_5d_bn >= 0 else 'dn' }}">{{ '%+.0f'|format(tg.chg_5d_bn) }}<span class="u">bn</span></div>
+    </div>
+    {% endif %}
+
+    {% if nl and nl.netliq_bn is not none %}
+    <div class="wh-stat">
+      <div class="lab">{{ t('Net liquidity', '净流动性') }}</div>
+      <div class="val">${{ '%.0f'|format(nl.netliq_bn) }}<span class="u">bn</span></div>
+      {% if nl.chg_20d_bn is not none %}<div class="delta {{ 'up' if nl.chg_20d_bn >= 0 else 'dn' }}">{{ '%+.0f'|format(nl.chg_20d_bn) }} {{ t('20d','20日') }}{% if nl.pctile_expanding is not none %} · {{ (nl.pctile_expanding * 100)|round|int }}{{ t('th pct','分位') }}{% endif %}</div>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if pl and pl.rrp_buffer_state %}
+    <div class="wh-stat">
+      <div class="lab">{{ t('RRP buffer', '逆回购缓冲') }}</div>
+      <div class="val" style="font-size:15px">{{ pl.rrp_buffer_state }}</div>
+      {% if pl.reserve_scarcity_state %}<div class="delta">{{ t('reserves', '准备金') }}: {{ pl.reserve_scarcity_state }}</div>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if hs %}
+    <div class="wh-stat">
+      <div class="lab">{{ t('Plumbing state', '流动性状态') }}</div>
+      <div class="val" style="font-size:13px;padding-top:3px"><span class="wh-chip {{ hcls }}">{{ hs }}</span></div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if imp and imp.summary_en %}
+  <div class="impulse"><span class="l-en">{{ imp.summary_en }}</span><span class="l-zh">{{ imp.summary_zh or imp.summary_en }}</span></div>
+  {% endif %}
+
+  {% if tg and tg.spark_points %}
+  <div class="sparkwrap">
+    <div class="sparkcap"><span>{{ t('TGA · last 60 sessions', 'TGA · 近60个交易日') }}</span>{% if tg.spark_60d %}<span>{{ tg.spark_60d[0][0] }} → {{ tg.spark_60d[-1][0] }}</span>{% endif %}</div>
+    <svg class="wh-spark" viewBox="0 0 560 64" preserveAspectRatio="none" aria-hidden="true">
+      <polyline fill="none" stroke="var(--link)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="{{ tg.spark_points }}"></polyline>
+    </svg>
+  </div>
+  {% endif %}
+
+  <p class="foot">{% if mc and mc.quad_name %}{{ t('Regime', '环境') }}: {{ mc.quad_name }}{% if mc.liquidity_overlay %} · {{ t('Fed liquidity overlay', '联储流动性') }}: {{ mc.liquidity_overlay }}{% endif %} · {% endif %}{{ t('Source: U.S. Treasury Daily Treasury Statement (fiscaldata.treasury.gov). Context only — feeds no score or allocation.',
+        '来源：美国财政部每日报表（fiscaldata.treasury.gov）。仅供参考，不参与任何评分或配置。') }}</p>
+</section>
+{% endif %}
 
 {% if not alerts %}
   <div class="wh-empty">{{ t('No market-moving White House announcements on watch right now. This page updates automatically when one lands.',
@@ -79,6 +195,7 @@
     <section class="wh-card{{ ' live' if a.live else '' }}" id="{{ a.id }}">
       <div class="row1">
         {% if a.live %}<span class="wh-badge live">● {{ t('LIVE', '生效中') }}</span>{% endif %}
+        {% if a.section == 'treasury' %}<span class="wh-badge tre">💵 {{ t('Treasury', '财政部') }}</span>{% endif %}
         <span class="wh-badge tone-{{ a.tone }}">
           {% if a.tone == 'tailwind' %}{{ t('Tailwind', '顺风') }}
           {% elif a.tone == 'headwind' %}{{ t('Headwind', '逆风') }}
@@ -161,8 +278,8 @@
 {% endif %}
 
 <div class="wh-pagedisc">
-  {{ t('Source: the White House public RSS feeds (primary). Significance, titles and analysis are generated by',
-       '来源：白宫公开 RSS（一手）。重要性、标题与分析由') }}
+  {{ t('Sources: the White House public RSS feeds and the U.S. Treasury Daily Treasury Statement (fiscaldata.treasury.gov, primary). Significance, titles and analysis are generated by',
+       '来源：白宫公开 RSS 与美国财政部每日报表（fiscaldata.treasury.gov，一手）。重要性、标题与分析由') }}
   {{ provider or 'Claude' }}
   {{ t('— context only, not investment advice. The tickers named are illustrative of plausible exposure, not recommendations, and feed no score or allocation.',
        '生成——仅供参考，不构成投资建议。所列标的仅为可能受影响的示例，并非推荐，且不参与任何评分或配置。') }}
