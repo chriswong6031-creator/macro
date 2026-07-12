@@ -6796,7 +6796,8 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
                 <span class="mx-chip mx-c-warn">{{ macro_news.synthesis.high_impact_count }} {{ t('high-impact','高影响') }}</span>
                 {% endif %}
                 {% for ch in (macro_news.synthesis.get('top_channels') or [])[:3] %}
-                <span class="mx-chip mx-c-muted"><span class="l-en">{{ _syn_ch_en.get(ch.name, ch.name|replace('_',' ')) }}</span><span class="l-zh">{{ _syn_ch_zh.get(ch.name, ch.name) }}</span> {{ ch.count }}</span>
+                {# engine label_en/label_zh preferred (single source of truth); inline maps stay as fallback for stale VM pickles #}
+                <span class="mx-chip mx-c-muted"><span class="l-en">{{ ch.get('label_en') or _syn_ch_en.get(ch.name, ch.name|replace('_',' ')) }}</span><span class="l-zh">{{ ch.get('label_zh') or _syn_ch_zh.get(ch.name, ch.name) }}</span> {{ ch.count }}</span>
                 {% endfor %}
               </div>
               <span class="isle-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span>
