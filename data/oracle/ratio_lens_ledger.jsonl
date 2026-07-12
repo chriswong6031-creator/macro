@@ -1,0 +1,24 @@
+{"date": "2026-07-11", "pair_id": "smh_vs_spy", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": 1.774, "z63": 0.589, "pct_3y": 97.5, "kind": "etf"}
+{"date": "2026-07-11", "pair_id": "smh_vs_qqq", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": 1.72, "z63": 0.708, "pct_3y": 97.6, "kind": "etf"}
+{"date": "2026-07-11", "pair_id": "sox_vs_qqq", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": 1.742, "z63": 0.589, "pct_3y": 97.2, "kind": "etf"}
+{"date": "2026-07-11", "pair_id": "igv_vs_smh", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": -1.53, "z63": -0.687, "pct_3y": 1.9, "kind": "etf"}
+{"date": "2026-07-11", "pair_id": "igv_vs_smh", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.012475, "leg_den_ret_1w": 0.03115, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-11", "pair_id": "igv_vs_qqq", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": -1.293, "z63": -0.312, "pct_3y": 2.9, "kind": "etf"}
+{"date": "2026-07-11", "pair_id": "igv_vs_qqq", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.012475, "leg_den_ret_1w": 0.017955, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-11", "pair_id": "qqq_vs_rsp", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": 1.204, "z63": -0.029, "pct_3y": 94.8, "kind": "etf"}
+{"date": "2026-07-11", "pair_id": "qqq_vs_rsp", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.017955, "leg_den_ret_1w": -0.002842, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-11", "pair_id": "smh_vs_rsp", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": 1.743, "z63": 0.48, "pct_3y": 96.8, "kind": "etf"}
+{"date": "2026-07-11", "pair_id": "smh_vs_rsp", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.03115, "leg_den_ret_1w": -0.002842, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-11", "pair_id": "memory_vs_ailogic", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": 1.281, "z63": 0.86, "pct_3y": 98.3, "kind": "basket"}
+{"date": "2026-07-11", "pair_id": "memory_vs_equipment", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": 1.59, "z63": 0.963, "pct_3y": 98.8, "kind": "basket"}
+{"date": "2026-07-11", "pair_id": "memory_vs_equipment", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.070861, "leg_den_ret_1w": -0.016171, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-07-11", "pair_id": "ailogic_vs_equipment", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": -0.563, "z63": 0.605, "pct_3y": 56.9, "kind": "basket"}
+{"date": "2026-07-11", "pair_id": "ailogic_vs_equipment", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.051066, "leg_den_ret_1w": -0.016171, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-07-11", "pair_id": "ailogic_vs_legacy", "event": "state_transition", "state_from": null, "state": "TRENDING", "z252": -0.297, "z63": -0.934, "pct_3y": 76.9, "kind": "basket"}
+{"date": "2026-07-11", "pair_id": "software_vs_ailogic", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": -1.635, "z63": -0.271, "pct_3y": 3.4, "kind": "basket"}
+{"date": "2026-07-11", "pair_id": "software_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.009654, "leg_den_ret_1w": 0.051066, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-07-11", "pair_id": "cyber_vs_software", "event": "state_transition", "state_from": null, "state": "EXTENDED", "z252": 2.612, "z63": 1.434, "pct_3y": 98.9, "kind": "basket"}
+{"date": "2026-07-11", "pair_id": "cyber_vs_software", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.006123, "leg_den_ret_1w": 0.009654, "state": "EXTENDED", "kind": "basket"}
+{"date": "2026-07-11", "pair_id": "mag7_vs_ailogic", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": -1.996, "z63": -0.578, "pct_3y": 3.0, "kind": "basket"}
+{"date": "2026-07-11", "pair_id": "power_vs_ailogic", "event": "state_transition", "state_from": null, "state": "NO_ANCHOR", "z252": -1.123, "z63": -1.396, "pct_3y": 7.5, "kind": "basket"}
+{"date": "2026-07-11", "pair_id": "power_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.026884, "leg_den_ret_1w": 0.051066, "state": "NO_ANCHOR", "kind": "basket"}
