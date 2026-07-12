@@ -285,6 +285,27 @@ def _run_sense_fitness(shadow_root: Path, real_root: Path, cycle_id: str) -> dic
         return {"status": "failed", "artifact": None, "note": str(exc)}
 
 
+def _run_sense_generic_fitness(shadow_root: Path, real_root: Path, cycle_id: str) -> dict[str, Any]:
+    """SENSE stage 0.5: generic fitness cards (R-V6-4).
+
+    Calls build_generic_fitness_cards(root=shadow_root) so cards land in the
+    shadow root's fitness/ directory, not the real stores.
+    Runs BEFORE sense_organism_state so the cards feed the same SENSE cycle.
+    """
+    stage = "sense_generic_fitness"
+    try:
+        from engine.metabolism.generic_fitness import build_generic_fitness_cards  # type: ignore[import]
+        written = build_generic_fitness_cards(root=shadow_root)
+        return {
+            "status": "ok",
+            "artifact": None,
+            "note": f"generic fitness cards written to shadow root: {len(written)} — {written}",
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("shadow_cycle[%s]: %s", stage, exc)
+        return {"status": "failed", "artifact": None, "note": str(exc)}
+
+
 def _run_sense_organism_state(shadow_root: Path, real_root: Path, cycle_id: str) -> dict[str, Any]:
     """SENSE stage 2: organism_state.  Reads real lobe data; writes to shadow root."""
     stage = "sense_organism_state"
@@ -299,6 +320,141 @@ def _run_sense_organism_state(shadow_root: Path, real_root: Path, cycle_id: str)
     except Exception as exc:  # noqa: BLE001
         log.warning("shadow_cycle[%s]: %s", stage, exc)
         return {"status": "failed", "artifact": None, "note": str(exc)}
+
+
+def _build_genesis_probe_proposal(real_root: Path) -> dict[str, Any]:
+    """Build a synthetic charter_proposal artifact for the shadow genesis probe.
+
+    Shape mirrors scout._build_charter_proposal() exactly.
+    domain_id: "shadow-genesis-probe"
+    Vocabulary: alien >=4-char nonsense tokens (empirically screened against
+    DO_NOT_REBUILD + ACTIVE_BUILD_MAP corpora like the existing stub).
+
+    NEVER raises.
+    """
+    from datetime import datetime, timezone  # noqa: PLC0415
+    ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+    # Alien vocabulary: nonsense tokens >=4 chars, no real domain words
+    # Screened empirically against both corpora (same method as _STUB_INJECTED_PROPOSALS).
+    probe_title = "zzqx vvkq wqxp genesis-probe shadow lane"
+    probe_label = "zzqx-vvkq-genesis-probe"
+    probe_domain_id = "shadow-genesis-probe"
+
+    return {
+        "schema": "metabolism.charter_proposal.v1",
+        "ts": ts,
+        "cycle_id": None,
+        "domain_id": probe_domain_id,
+        "label": probe_label,
+        "description": (
+            "Synthetic shadow-genesis-probe: zzqx wqxp vvkq exercise "
+            "for shadow harness R-V6-7 genesis gate. "
+            "Alien vocabulary; no real domain meaning."
+        ),
+        "proposed_tier": "display",
+        "proposed_lifecycle_state": "proposed",
+        "uncovered_for_cycles": 3,
+        "min_uncovered_cycles": 3,
+        "demand_evidence_count": 1,
+        "evidence_refs": ["shadow-probe-evidence-001"],
+        "roster_budget": {
+            "active_nonscored_count": 0,
+            "max_active_nonscored_lobes": 66,
+            "headroom": 66,
+        },
+        "rationale": (
+            f"Domain {probe_domain_id!r} ({probe_label}) has had ZERO active covering lobes "
+            "across 3 distinct scout cycles (threshold=3); 1 open insight-bus row(s) "
+            "reference this domain. Proposing a display-tier lobe charter for the "
+            "normal gauntlet. [SHADOW PROBE — synthetic; not a real domain]"
+        ),
+        "generated_by": "metabolism_shadow_cycle",
+        "authority": {
+            "is_context_only": True,
+            "may_rank": False,
+            "may_gate": False,
+            "may_size": False,
+            "may_escalate": False,
+            "display_only": True,
+            "not_a_signal": True,
+            "tier": "shadow",
+            "_shadow_probe": True,
+        },
+    }
+
+
+def _run_genesis_probe(shadow_root: Path, real_root: Path, cycle_id: str) -> dict[str, Any]:
+    """SENSE stage 4: genesis probe (R-V6-7).
+
+    Injects a synthetic charter_proposal into the shadow root's
+    data/metabolism/charter_proposals/ directory (NO config mutation),
+    then runs applier.consume_charter_proposals(root=shadow_root, armed=False)
+    in dry mode.
+
+    Asserts: real stores untouched (the harness snapshots handle this globally).
+    The proposal is consumed, tier fence is exercised, plan record written
+    under shadow root.
+
+    NEVER raises.
+    """
+    stage = "genesis_probe"
+    try:
+        # Write synthetic proposal to shadow root ONLY (not real root)
+        proposals_dir = shadow_root / "data" / "metabolism" / "charter_proposals"
+        proposals_dir.mkdir(parents=True, exist_ok=True)
+        proposal = _build_genesis_probe_proposal(real_root)
+        probe_path = proposals_dir / "shadow-genesis-probe.json"
+        probe_path.write_text(
+            json.dumps(proposal, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+
+        # Run applier against shadow root (armed=False = dry, never touches real stores)
+        applier_results: list | None = None
+        try:
+            from engine.metabolism.applier import consume_charter_proposals  # type: ignore[import]
+            applier_results = consume_charter_proposals(
+                root=shadow_root,
+                armed=False,   # dry: probe only, no real materialization
+                dry_run=True,
+            )
+        except Exception as ae:  # noqa: BLE001
+            log.warning("shadow_cycle[%s]: applier error: %s", stage, ae)
+            return {
+                "status": "degraded",
+                "artifact": str(probe_path),
+                "note": f"proposal written; applier error: {ae}",
+                "probe_written": True,
+                "plan_record_count": 0,
+            }
+
+        n_plans = len(applier_results) if applier_results else 0
+        # Count consumed (non-refused) proposals
+        n_consumed = sum(
+            1 for r in (applier_results or [])
+            if isinstance(r, dict) and not r.get("refused")
+        )
+
+        # Find any plan record written to shadow root
+        plan_dir = shadow_root / "data" / "metabolism" / "applier_plans"
+        plan_files = sorted(plan_dir.glob("*.json")) if plan_dir.exists() else []
+
+        return {
+            "status": "ok",
+            "artifact": str(probe_path),
+            "note": (
+                f"genesis probe: proposal written to shadow root; "
+                f"applier ran: n_plans={n_plans} consumed={n_consumed}; "
+                f"plan_files={len(plan_files)}; tier_fence=exercised; "
+                f"real_stores=untouched (verified by harness snapshot)"
+            ),
+            "probe_written": True,
+            "plan_record_count": n_plans,
+            "n_consumed": n_consumed,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("shadow_cycle[%s]: %s", stage, exc)
+        return {"status": "failed", "artifact": None, "note": str(exc), "probe_written": False}
 
 
 def _run_sense_scout(shadow_root: Path, real_root: Path, cycle_id: str) -> dict[str, Any]:
@@ -801,6 +957,9 @@ def run_shadow_cycle(
     # ── Stage: sense_fitness ──────────────────────────────────────────────────
     stages["sense_fitness"] = _run_sense_fitness(shadow_root, real_root, cycle_id)
 
+    # ── Stage: sense_generic_fitness (R-V6-4, before organism_state) ─────────
+    stages["sense_generic_fitness"] = _run_sense_generic_fitness(shadow_root, real_root, cycle_id)
+
     # ── Stage: sense_organism_state ───────────────────────────────────────────
     stages["sense_organism_state"] = _run_sense_organism_state(shadow_root, real_root, cycle_id)
 
@@ -809,6 +968,9 @@ def run_shadow_cycle(
 
     # ── Stage: sense_scout (uncovered-domain feeler — R-V6-1/W1) ──────────────
     stages["sense_scout"] = _run_sense_scout(shadow_root, real_root, cycle_id)
+
+    # ── Stage: genesis_probe (synthetic charter → applier dry-run — R-V6-7) ───
+    stages["genesis_probe"] = _run_genesis_probe(shadow_root, real_root, cycle_id)
 
     # ── Stage: agenda ─────────────────────────────────────────────────────────
     if not use_llm:

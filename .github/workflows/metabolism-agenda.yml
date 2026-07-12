@@ -90,6 +90,16 @@ jobs:
           fi
           echo "cycle_id=$CYCLE_ID"
 
+          # Step 0.5: Build generic fitness cards for all loop-managed lobes without
+          # bespoke builders (R-V6-4). Runs BEFORE organism_state so the cards feed
+          # the same SENSE cycle. Best-effort; organism_state proceeds even if degraded.
+          python - <<PY || echo "generic_fitness build degraded (continuing)"
+          import sys; sys.path.insert(0, '.')
+          from engine.metabolism.generic_fitness import build_generic_fitness_cards
+          written = build_generic_fitness_cards()
+          print(f'Generic fitness cards written: {len(written)} — {written}')
+          PY
+
           # Step 1: Build organism_state (best-effort; agenda proceeds even if degraded)
           python -m scripts.build_organism_state || echo "organism_state build degraded (continuing)"
 

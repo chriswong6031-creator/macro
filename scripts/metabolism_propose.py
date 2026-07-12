@@ -53,17 +53,231 @@ _STAGE = "propose"
 _EST_TOKENS_PER_CALL = 30_000
 
 
-def _load_max_docket_size(root: Path, override: int | None) -> int:
+def _load_max_docket_size(root: Path, override: int | None, lobe: str = _LOBE) -> int:
     if override is not None:
         return int(override)
     try:
         from scripts.metabolism_budget import _load_config  # type: ignore[import]
         cfg = _load_config(root)
-        lobe_cfg = (cfg.get("lobe_caps") or {}).get(_LOBE) or {}
+        lobe_cfg = (cfg.get("lobe_caps") or {}).get(lobe) or {}
         return int(lobe_cfg.get("max_docket_size", cfg.get("max_docket_size", 5)))
     except Exception as exc:  # noqa: BLE001
         log.warning("metabolism_propose: could not read max_docket_size (%s) — default 5", exc)
         return 5
+
+
+def _discover_loop_managed_lobes(root: Path) -> list[str]:
+    """Discover loop-managed lobe IDs from config/lobe_charters.yml.
+
+    Returns lobe IDs whose lifecycle_state is in ("probation","active") AND
+    fitness_sensors are structured (list of dicts with id+store keys).
+    The 'til' lobe is ALWAYS included first (backward compat guarantee).
+    NEVER raises.
+    """
+    try:
+        import yaml  # noqa: PLC0415
+        charters_path = root / "config" / "lobe_charters.yml"
+        if not charters_path.exists():
+            return [_LOBE]
+        data = yaml.safe_load(charters_path.read_text(encoding="utf-8"))
+        charters = (data or {}).get("charters") or {}
+        loop_managed: list[str] = []
+        for lobe_id, charter in charters.items():
+            lc_state = (charter or {}).get("lifecycle_state") or ""
+            if lc_state not in ("probation", "active"):
+                continue
+            sensors = (charter or {}).get("fitness_sensors") or []
+            if not isinstance(sensors, list) or not sensors:
+                continue
+            # Structured = all items are dicts with id+store
+            if not all(isinstance(s, dict) and "id" in s and "store" in s for s in sensors):
+                continue
+            loop_managed.append(lobe_id)
+
+        # 'til' must be present and first (backward compat)
+        if _LOBE not in loop_managed:
+            loop_managed = [_LOBE] + loop_managed
+        else:
+            loop_managed = [_LOBE] + [l for l in loop_managed if l != _LOBE]
+
+        return loop_managed
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_propose: _discover_loop_managed_lobes: %s — default [til]", exc)
+        return [_LOBE]
+
+
+def _run_all_lobes(args: "argparse.Namespace", root: Path) -> int:  # noqa: F821
+    """Run the single-lobe propose flow for every loop-managed lobe.
+
+    The first lobe (always 'til') keeps the bare base cycle_id (backward compat).
+    Every subsequent lobe gets cycle_id = f"{base_cycle_id}-{lobe_id}".
+    Per-lobe failures isolate (log + continue).
+    NEVER raises.
+
+    Returns 0 always.
+    """
+    try:
+        from scripts.metabolism_journal import new_cycle_id  # type: ignore[import]
+        base_cycle = args.cycle_id or new_cycle_id()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_propose --all-lobes: could not get base cycle_id: %s", exc)
+        base_cycle = f"cycle-{__import__('datetime').datetime.now(__import__('datetime').timezone.utc).strftime('%Y%m%d-%H%M%S')}"
+
+    loop_managed = _discover_loop_managed_lobes(root)
+    log.info(
+        "metabolism_propose --all-lobes: base_cycle=%s lobes=%s",
+        base_cycle, loop_managed,
+    )
+
+    for i, lobe_id in enumerate(loop_managed):
+        # First lobe keeps the bare base cycle_id (backward compat guarantee)
+        cycle_id = base_cycle if i == 0 else f"{base_cycle}-{lobe_id}"
+        try:
+            log.info(
+                "metabolism_propose --all-lobes: running lobe=%s cycle_id=%s",
+                lobe_id, cycle_id,
+            )
+            # Build a namespace that matches single-lobe path expectations
+            import copy  # noqa: PLC0415
+            lobe_args = copy.copy(args)
+            lobe_args.lobe = lobe_id
+            lobe_args.cycle_id = cycle_id
+            lobe_args.all_lobes = False  # prevent recursive call
+            _run_single_lobe(lobe_args, root, lobe_id, cycle_id)
+        except Exception as exc:  # noqa: BLE001
+            log.warning(
+                "metabolism_propose --all-lobes: lobe=%s cycle=%s failed: %s",
+                lobe_id, cycle_id, exc,
+            )
+            # Per-lobe failure isolates — continue to next lobe
+
+    return 0
+
+
+def _run_single_lobe(args: "argparse.Namespace", root: Path, lobe: str, cycle_id: str) -> None:  # noqa: F821
+    """Run the propose flow for a single lobe.  NEVER raises.
+
+    Extracted from main() to allow --all-lobes to reuse it.
+    """
+    try:
+        from scripts.metabolism_guard import is_paused, pause_reason  # type: ignore[import]
+        from scripts.metabolism_journal import (  # type: ignore[import]
+            start_stage, finish_stage,
+        )
+
+        # ── Gate 1: KILL SWITCH ────────────────────────────────────────────
+        if is_paused():
+            log.info("metabolism_propose[%s]: %s — no-op", lobe, pause_reason())
+            finish_stage(cycle_id, _STAGE, status="noop_paused", note=pause_reason(), root=root)
+            return
+
+        # ── Gate 2: per-lobe circuit breaker ─────────────────────────────
+        try:
+            from scripts.metabolism_budget import (  # type: ignore[import]
+                is_lobe_paused, init_cycle, check_cap, record_spend,
+            )
+            if is_lobe_paused(lobe, root=root):
+                reason = f"lobe '{lobe}' circuit breaker tripped — no-op"
+                log.warning("metabolism_propose[%s]: %s", lobe, reason)
+                finish_stage(cycle_id, _STAGE, status="noop_paused", note=reason, root=root)
+                return
+
+            # ── Gate 3: budget cap ────────────────────────────────────────
+            init_cycle(cycle_id, root=root)
+            cap = check_cap(cycle_id, root=root)
+            if cap.get("over_cap"):
+                reason = (f"budget over cap (usd_remaining={cap.get('usd_remaining')}, "
+                          f"token_remaining={cap.get('token_remaining')}) — no-op")
+                log.warning("metabolism_propose[%s]: %s", lobe, reason)
+                finish_stage(cycle_id, _STAGE, status="noop_paused", note=reason, root=root)
+                return
+        except Exception as exc:  # noqa: BLE001
+            log.warning("metabolism_propose[%s]: budget layer error (%s) — proceeding cautiously",
+                        lobe, exc)
+
+        # ── Gate 4: OAuth preflight ───────────────────────────────────────
+        if not args.dry_run:
+            try:
+                from scripts.preflight_claude_auth import check_auth  # type: ignore[import]
+                auth = check_auth(lane=args.lane, root=root)
+                if not auth.get("auth_ok"):
+                    reason = f"preflight auth failed: {auth.get('reason')}"
+                    log.warning("metabolism_propose[%s]: %s", lobe, reason)
+                    finish_stage(cycle_id, _STAGE, status="noop_paused", note=reason, root=root)
+                    return
+            except Exception as exc:  # noqa: BLE001
+                log.warning("metabolism_propose[%s]: preflight error (%s) — treating as failed",
+                            lobe, exc)
+                finish_stage(cycle_id, _STAGE, status="noop_paused",
+                             note=f"preflight error: {exc}", root=root)
+                return
+
+        # ── Stage start ───────────────────────────────────────────────────
+        start_stage(cycle_id, _STAGE, root=root)
+        max_docket_size = _load_max_docket_size(root, args.max_docket_size, lobe=lobe)
+
+        # ── PROPOSE ───────────────────────────────────────────────────────
+        from engine.metabolism.propose import propose  # type: ignore[import]
+
+        applier_proposals: list | None = None
+        try:
+            from engine.metabolism.applier import consume_charter_proposals  # type: ignore[import]
+            _armed = not is_paused()
+            applier_proposals = consume_charter_proposals(
+                root=root,
+                dry_run=args.dry_run,
+                armed=_armed,
+            )
+            if applier_proposals:
+                log.info(
+                    "metabolism_propose[%s]: applier injected %d proposal(s)",
+                    lobe, len(applier_proposals),
+                )
+        except Exception as _ae:  # noqa: BLE001
+            log.warning("metabolism_propose[%s]: applier error (%s) — skipping injected",
+                        lobe, _ae)
+            applier_proposals = None
+
+        result = propose(
+            cycle_id, lobe=lobe, root=root,
+            max_docket_size=max_docket_size,
+            today=args.today, run_id=_run_id(), dry_run=args.dry_run,
+            injected_proposals=applier_proposals if applier_proposals else None,
+        )
+        meta = result.get("meta", {})
+
+        try:
+            from scripts.metabolism_budget import record_spend  # type: ignore[import]
+            record_spend(cycle_id, _STAGE, tokens=_EST_TOKENS_PER_CALL,
+                         note=f"propose lobe={lobe} n={meta.get('n_proposals')}", root=root)
+        except Exception:  # noqa: BLE001
+            pass
+
+        log.info(
+            "metabolism_propose[%s]: cycle=%s proposals=%s rejected=%s registered=%s "
+            "provider=%s degraded=%s",
+            lobe, cycle_id, meta.get("n_proposals"), meta.get("n_rejected"),
+            meta.get("registered"), meta.get("provider"), meta.get("degraded_reason"),
+        )
+        artifact = meta.get("artifact")
+        finish_stage(
+            cycle_id, _STAGE, status="done",
+            artifacts=[artifact] if artifact else [],
+            next_stage="adjudicate",
+            note=(f"docket {meta.get('n_proposals')} proposal(s); "
+                  f"lobe={lobe}; provider={meta.get('provider')}"),
+            root=root,
+        )
+        if artifact:
+            print(artifact)
+
+    except Exception as exc:  # noqa: BLE001
+        log.error("metabolism_propose[%s]: unexpected error: %s", lobe, exc)
+        try:
+            from scripts.metabolism_journal import finish_stage  # type: ignore[import]
+            finish_stage(cycle_id, _STAGE, status="failed", note=str(exc), root=root)
+        except Exception:  # noqa: BLE001
+            pass
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -76,130 +290,34 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--lobe", default=None,
                         help="Lobe to drive (default: til). Use a different lobe id to run "
                              "the charter-driven prompt and accrual-honesty gate for that lobe.")
+    parser.add_argument("--all-lobes", action="store_true",
+                        help=(
+                            "Iterate ALL loop-managed lobes (structured sensors + active/probation). "
+                            "Each runs as its own --lobe invocation with cycle_id=<base>-<lobe_id>. "
+                            "The first lobe (til) keeps the bare base cycle_id for backward compat. "
+                            "Per-lobe failures isolate (continue). "
+                            "Switches metabolism-propose.yml to multi-lobe iteration (R-V6-5)."
+                        ))
     parser.add_argument("--dry-run", action="store_true",
                         help="Build docket but do not register contracts or write")
     args = parser.parse_args(argv)
 
     root = Path(args.root) if args.root else _ROOT
 
-    from scripts.metabolism_guard import is_paused, pause_reason  # type: ignore[import]
-    from scripts.metabolism_journal import (  # type: ignore[import]
-        start_stage, finish_stage, new_cycle_id,
-    )
+    # ── --all-lobes: iterate loop-managed lobes ─────────────────────────────
+    if args.all_lobes:
+        return _run_all_lobes(args, root)
 
-    cycle_id = args.cycle_id or new_cycle_id()
-
-    # ── Gate 1: KILL SWITCH (first action, before any work) ─────────────────
-    if is_paused():
-        log.info("metabolism_propose: %s — no-op exit 0", pause_reason())
-        finish_stage(cycle_id, _STAGE, status="noop_paused", note=pause_reason(), root=root)
+    # ── Single-lobe path (backward compat) ──────────────────────────────────
+    try:
+        from scripts.metabolism_journal import new_cycle_id  # type: ignore[import]
+        cycle_id = args.cycle_id or new_cycle_id()
+    except Exception as exc:  # noqa: BLE001
+        log.error("metabolism_propose: could not get cycle_id: %s", exc)
         return 0
 
-    # ── Gate 2: per-lobe circuit breaker ────────────────────────────────────
-    try:
-        from scripts.metabolism_budget import (  # type: ignore[import]
-            is_lobe_paused, init_cycle, check_cap, record_spend,
-        )
-        if is_lobe_paused(_LOBE, root=root):
-            reason = f"lobe '{_LOBE}' circuit breaker tripped — no-op"
-            log.warning("metabolism_propose: %s", reason)
-            finish_stage(cycle_id, _STAGE, status="noop_paused", note=reason, root=root)
-            return 0
-
-        # ── Gate 3: budget cap ──────────────────────────────────────────────
-        init_cycle(cycle_id, root=root)
-        cap = check_cap(cycle_id, root=root)
-        if cap.get("over_cap"):
-            reason = (f"budget over cap (usd_remaining={cap.get('usd_remaining')}, "
-                      f"token_remaining={cap.get('token_remaining')}) — no-op")
-            log.warning("metabolism_propose: %s", reason)
-            finish_stage(cycle_id, _STAGE, status="noop_paused", note=reason, root=root)
-            return 0
-    except Exception as exc:  # noqa: BLE001
-        log.warning("metabolism_propose: budget layer error (%s) — proceeding cautiously", exc)
-
-    # ── Gate 4: OAuth preflight (A2) ────────────────────────────────────────
-    if not args.dry_run:
-        try:
-            from scripts.preflight_claude_auth import check_auth  # type: ignore[import]
-            auth = check_auth(lane=args.lane, root=root)
-            if not auth.get("auth_ok"):
-                reason = f"preflight auth failed: {auth.get('reason')}"
-                log.warning("metabolism_propose: %s", reason)
-                finish_stage(cycle_id, _STAGE, status="noop_paused", note=reason, root=root)
-                return 0
-        except Exception as exc:  # noqa: BLE001
-            log.warning("metabolism_propose: preflight error (%s) — treating as failed", exc)
-            finish_stage(cycle_id, _STAGE, status="noop_paused",
-                         note=f"preflight error: {exc}", root=root)
-            return 0
-
-    # ── Stage start ─────────────────────────────────────────────────────────
-    start_stage(cycle_id, _STAGE, root=root)
-    max_docket_size = _load_max_docket_size(root, args.max_docket_size)
-
-    # ── PROPOSE ─────────────────────────────────────────────────────────────
-    try:
-        from engine.metabolism.propose import propose  # type: ignore[import]
-
-        # Charter-proposal + lifecycle-docket applier (R-V4-9).
-        # Injects consumed items as proposals only when armed (not paused).
-        # The applier itself is NEVER-RAISE and emits plan records even in shadow.
-        applier_proposals: list | None = None
-        try:
-            from engine.metabolism.applier import consume_charter_proposals  # type: ignore[import]
-            _armed = not is_paused()  # armed when not paused
-            applier_proposals = consume_charter_proposals(
-                root=root,
-                dry_run=args.dry_run,
-                armed=_armed,
-            )
-            if applier_proposals:
-                log.info(
-                    "metabolism_propose: applier injected %d proposal(s)",
-                    len(applier_proposals),
-                )
-        except Exception as _ae:  # noqa: BLE001
-            log.warning("metabolism_propose: applier error (%s) — skipping injected proposals", _ae)
-            applier_proposals = None
-
-        result = propose(
-            cycle_id, lobe=args.lobe or _LOBE, root=root,
-            max_docket_size=max_docket_size,
-            today=args.today, run_id=_run_id(), dry_run=args.dry_run,
-            injected_proposals=applier_proposals if applier_proposals else None,
-        )
-        meta = result.get("meta", {})
-
-        # Record the token spend against the budget ledger (best-effort).
-        try:
-            record_spend(cycle_id, _STAGE, tokens=_EST_TOKENS_PER_CALL,
-                         note=f"propose n={meta.get('n_proposals')}", root=root)
-        except Exception:  # noqa: BLE001
-            pass
-
-        log.info(
-            "metabolism_propose: cycle=%s proposals=%s rejected=%s registered=%s "
-            "provider=%s degraded=%s",
-            cycle_id, meta.get("n_proposals"), meta.get("n_rejected"),
-            meta.get("registered"), meta.get("provider"), meta.get("degraded_reason"),
-        )
-        artifact = meta.get("artifact")
-        finish_stage(
-            cycle_id, _STAGE, status="done",
-            artifacts=[artifact] if artifact else [],
-            next_stage="adjudicate",
-            note=(f"docket {meta.get('n_proposals')} proposal(s); "
-                  f"provider={meta.get('provider')}"),
-            root=root,
-        )
-        # Emit the docket path on stdout for the workflow to pick up.
-        if artifact:
-            print(artifact)
-    except Exception as exc:  # noqa: BLE001
-        log.error("metabolism_propose: unexpected error: %s", exc)
-        finish_stage(cycle_id, _STAGE, status="failed", note=str(exc), root=root)
-
+    lobe = args.lobe or _LOBE
+    _run_single_lobe(args, root, lobe, cycle_id)
     return 0
 
 
