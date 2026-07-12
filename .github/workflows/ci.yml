@@ -703,7 +703,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pyyaml pandas pyarrow
+        run: pip install pytest pyyaml pandas pyarrow requests
       - name: synapse registry integrity (hard gate)
         run: python3 scripts/check_synapse_registry.py
       - name: synapse read-gate — warn tier + Article-2 hard fail
