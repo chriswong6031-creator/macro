@@ -551,6 +551,10 @@ def _seed_verify_contract(
             "falsifier_spec": {},  # empty → UNVERIFIABLE (honest null by design)
             "asof": today,
             "title": "[shadow-seed] synthetic contract for VERIFY grading path exercise",
+            # Mirror the MINTED contract shape (post-#2285 _mint_contract emits
+            # lobe) — hand-built fixtures that omit real-path keys masked the
+            # dead strategic-memory wire once already.
+            "lobe": "til",
             "_shadow_seeded": True,
         }
 

@@ -125,13 +125,20 @@ def _read_claims(root: Path | None = None) -> list[dict[str, Any]]:
         return []
 
 
-def _cycle_claimed_files(cycle_id: str, root: Path | None = None) -> set[str]:
-    """Return the set of target_files already claimed this cycle. NEVER raises."""
+def _cycle_claimed_files(cycle_id: str, root: Path | None = None,
+                         exclude_proposal: str | None = None) -> set[str]:
+    """Return the set of target_files already claimed this cycle.
+
+    exclude_proposal: skip rows claimed by this proposal_id (its OWN prior
+    claim is not a collision — enables bounded re-attempts, #2295 F3).
+    NEVER raises."""
     try:
         rows = _read_claims(root)
         claimed: set[str] = set()
         for row in rows:
             if row.get("cycle_id") != cycle_id:
+                continue
+            if exclude_proposal and row.get("proposal_id") == exclude_proposal:
                 continue
             for f in row.get("target_files") or []:
                 claimed.add(str(f))
@@ -159,7 +166,11 @@ def claim_proposal(
     """
     result: dict[str, Any] = {"claimed": False, "collision_files": [], "ts": ""}
     try:
-        already = _cycle_claimed_files(cycle_id, root)
+        # Self-claims are NOT collisions (#2295 review F3): claim_proposal runs
+        # BEFORE dispatch and claims.jsonl is committed, so on a re-attempt of a
+        # failed proposal its own prior claim row must not block it — only a
+        # claim by a DIFFERENT proposal is a real collision.
+        already = _cycle_claimed_files(cycle_id, root, exclude_proposal=proposal_id)
         collisions = [f for f in target_files if f in already]
         if collisions:
             result["collision_files"] = collisions
@@ -515,17 +526,109 @@ def _journal_dispatch(
     *,
     root: Path | None = None,
 ) -> None:
-    """Persist a dispatch record to the cycle journal.  NEVER raises."""
+    """Persist a dispatch record to the cycle journal.
+
+    Terminal status mapping (R-V5-1):
+      - record["status"] == "dispatched" | "would_dispatch"  → journal "done"
+        (the proposal was successfully launched or dry-run noted)
+      - record["status"] in retryable error classes           → journal "failed"
+        (the proposal may be re-attempted on the next cycle)
+      - record["status"] == "immutable_refusal"               → journal "done"
+        (permanently refused; retrying is pointless)
+      - record["status"] == "foreign_file_abort"              → journal "failed"
+        (parks after one occurrence per _is_dispatch_done; must emit insight row)
+
+    NEVER raises.
+    """
     try:
-        from scripts.metabolism_journal import finish_stage
+        from scripts.metabolism_journal import finish_stage, _read_journal  # type: ignore[attr-defined]
         stage = f"{_DISPATCH_STAGE_PREFIX}{proposal_id}"
+        record_status = record.get("status", "")
+
+        # Permanently claimed: success paths and immutable refusal are "done"
+        if record_status in ("dispatched", "would_dispatch", "immutable_refusal"):
+            terminal_status = "done"
+            note_record = record
+        else:
+            # All error classes (session_error, invalid_wt_path, diff_error,
+            # foreign_file_abort) are "failed" so the proposal is re-attemptable
+            # (bounded by max_build_attempts; foreign_file_abort parks after 1).
+            terminal_status = "failed"
+            # Increment the failure counter embedded in the note (R-V5-1 tracking).
+            # Read the prior note to accumulate: each _journal_dispatch call for a
+            # failed record increments _failed_attempts so _is_dispatch_done can count.
+            prior_count = 0
+            try:
+                prior_j = _read_journal(cycle_id, root)
+                prior_note = prior_j.get("stages", {}).get(stage, {}).get("note", "")
+                if prior_note and prior_note.startswith("{"):
+                    prior_data = json.loads(prior_note)
+                    prior_count = int(prior_data.get("_failed_attempts", 0))
+            except Exception:  # noqa: BLE001
+                pass
+            note_record = {**record, "_failed_attempts": prior_count + 1}
+
+            # Emit the parked insight exactly ONCE, at the threshold CROSSING
+            # (write path) — emitting from the _is_dispatch_done read path
+            # would append a duplicate row on every subsequent scan (#2295 F5).
+            try:
+                budget = _load_budget_config(root)
+                max_attempts = int(budget.get("max_build_attempts", 2))
+                threshold = 1 if record_status == "foreign_file_abort" else max_attempts
+                new_count = prior_count + 1
+                if new_count >= threshold and prior_count < threshold:
+                    _emit_parked_insight(cycle_id, proposal_id, new_count, root=root)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("BUILD: parked-insight emit failed (%s) — continuing", exc)
+
         finish_stage(
-            cycle_id, stage, "done",
-            note=json.dumps(record, separators=(",", ":"), default=str)[:500],
+            cycle_id, stage, terminal_status,
+            note=json.dumps(note_record, separators=(",", ":"), default=str)[:600],
             root=root,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("BUILD: _journal_dispatch(%s/%s): %s", cycle_id, proposal_id, exc)
+
+
+def _load_budget_config(root: Path | None = None) -> dict[str, Any]:
+    """Load metabolism_budget.yml; returns {} on error.  NEVER raises."""
+    try:
+        import yaml
+        p = (root or _ROOT) / "config" / "metabolism_budget.yml"
+        with open(p) as fh:
+            return yaml.safe_load(fh) or {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _load_budget_config: %s", exc)
+        return {}
+
+
+def _emit_parked_insight(
+    cycle_id: str,
+    proposal_id: str,
+    failed_count: int,
+    *,
+    root: Path | None = None,
+) -> None:
+    """Emit an insight-bus row when a proposal is permanently parked (R-V5-1).
+
+    NEVER raises.
+    """
+    try:
+        from engine.metabolism.insight_bus import append_row, build_row
+        row = build_row(
+            emitter="metabolism_build._journal_dispatch",
+            kind="dispatched_build_parked",
+            severity="high",
+            entities=[proposal_id, cycle_id],
+            summary=(
+                f"Proposal {proposal_id} (cycle {cycle_id}) permanently parked after "
+                f"{failed_count} failed dispatch attempts. Operator review required."
+            ),
+            cycle_id=cycle_id,
+        )
+        append_row(row, root=root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: _emit_parked_insight(%s/%s): %s", cycle_id, proposal_id, exc)
 
 
 def _is_dispatch_done(cycle_id: str, proposal_id: str, root: Path | None = None) -> bool:
@@ -533,21 +636,103 @@ def _is_dispatch_done(cycle_id: str, proposal_id: str, root: Path | None = None)
 
     Idempotency check — prevents double-dispatch on retry.
 
-    Treats BOTH 'done' (completed) AND 'running' (in-flight) as "already dispatched":
-    a concurrent invocation that finds 'running' must not launch a second session.
-    The pre-launch call to `start_stage` in `_dispatch_build_session` writes the
-    'running' record atomically before subprocess launch, so this guard catches
-    concurrent runs even before the session finishes.
+    Logic (R-V5-1 + R-V5-2):
+      - "done": permanently claimed.  Old schema "done" rows still claim (backward-compat).
+      - "running": claimed IF the started_at is fresh (within stale_running_ttl_hours);
+        a stale "running" marker (crashed runner) is treated as NOT claimed.
+      - "failed": NOT claimed, BUT bounded — count prior "failed" rows for this stage;
+        when count >= max_build_attempts → permanently parked (emit insight bus row,
+        return True).
+      - "immutable_refusal" journaled as "done" → permanently claimed already.
+      - "foreign_file_abort" journaled as "failed" → parks after ONE "failed" row
+        (the note encodes "foreign_file_abort"; a single failed foreign-abort → parked).
 
     NEVER raises.
     """
     try:
         from scripts.metabolism_journal import _read_journal  # type: ignore[attr-defined]
+        from datetime import datetime, timezone, timedelta
         stage = f"{_DISPATCH_STAGE_PREFIX}{proposal_id}"
         j = _read_journal(cycle_id, root)
-        status = j.get("stages", {}).get(stage, {}).get("status")
-        # Treat running (in-flight) and done (completed) both as "dispatch already claimed"
-        return status in ("running", "done")
+        stage_rec = j.get("stages", {}).get(stage, {})
+        status = stage_rec.get("status")
+
+        # --- "done" (including immutable_refusal path): permanently claimed ---
+        if status == "done":
+            return True
+
+        # --- "running": claimed only when the marker is fresh (R-V5-2) ---
+        if status == "running":
+            budget = _load_budget_config(root)
+            ttl_hours = float(budget.get("stale_running_ttl_hours", 3))
+            started_at_str = stage_rec.get("started_at", "")
+            if started_at_str:
+                try:
+                    if started_at_str.endswith("Z"):
+                        started_at_str = started_at_str[:-1] + "+00:00"
+                    started_at = datetime.fromisoformat(started_at_str).astimezone(timezone.utc)
+                    age = datetime.now(timezone.utc) - started_at
+                    if age > timedelta(hours=ttl_hours):
+                        # Stale running marker — treat as not claimed (re-attemptable)
+                        log.warning(
+                            "BUILD: stale 'running' marker for %s/%s (age=%.1fh > ttl=%.1fh) "
+                            "— treating as not claimed",
+                            cycle_id, proposal_id, age.total_seconds() / 3600, ttl_hours,
+                        )
+                        return False
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("BUILD: _is_dispatch_done: started_at parse error: %s", exc)
+            # Fresh (or unparseable — fail-safe: treat as claimed to prevent double-dispatch)
+            return True
+
+        # --- "failed": count attempts; park when exhausted (R-V5-1) ---
+        if status == "failed":
+            # Check if the last failure was a foreign_file_abort → park after 1
+            note = stage_rec.get("note", "")
+            try:
+                note_data = json.loads(note) if note.startswith("{") else {}
+            except Exception:  # noqa: BLE001
+                note_data = {}
+            is_foreign_abort = note_data.get("status") == "foreign_file_abort"
+
+            # Count all "failed" journal rows for this stage across all cycle journals
+            # (the stage key is proposal-scoped, so we count in this cycle's record).
+            # For simplicity: count consecutive failed rows for this stage.
+            # Since finish_stage OVERWRITES the stage record, we count by reading
+            # all journal rows that match this stage and are "failed".
+            # Efficient approach: a single "failed" status record means at least 1 failure.
+            # We use a separate counter key appended to the note to track attempts.
+            try:
+                failed_count = int(note_data.get("_failed_attempts", 1))
+            except Exception:  # noqa: BLE001
+                failed_count = 1
+
+            budget = _load_budget_config(root)
+            max_attempts = int(budget.get("max_build_attempts", 2))
+
+            # foreign_file_abort parks after 1 occurrence; others park after max_attempts
+            park_threshold = 1 if is_foreign_abort else max_attempts
+
+            if failed_count >= park_threshold:
+                log.warning(
+                    "BUILD: proposal %s/%s permanently parked after %d failed attempt(s) "
+                    "(threshold=%d, is_foreign_abort=%s)",
+                    cycle_id, proposal_id, failed_count, park_threshold, is_foreign_abort,
+                )
+                # (insight row already emitted at the write-time threshold
+                #  crossing in _journal_dispatch — no emission on reads, #2295 F5)
+                return True  # permanently parked
+
+            # Under the threshold — re-attemptable
+            log.info(
+                "BUILD: proposal %s/%s has %d failed attempt(s) (max=%d) — re-attemptable",
+                cycle_id, proposal_id, failed_count, max_attempts,
+            )
+            return False
+
+        # No journal entry or unknown status → not claimed
+        return False
+
     except Exception as exc:  # noqa: BLE001
         log.warning("BUILD: _is_dispatch_done(%s/%s): %s", cycle_id, proposal_id, exc)
         return False
@@ -856,8 +1041,11 @@ def _dispatch_build_session(
             except Exception as exc:  # noqa: BLE001
                 log.warning("BUILD: start_stage pre-launch failed (%s) — continuing", exc)
 
-        # Record session start in the key ledger (quota accounting)
-        _record_key_session(cap_id, cycle_id, outcome="ok", root=root)
+        # Record session LAUNCH in the key ledger for window_load spread-accounting
+        # (R-V5-3): use outcome="launched" so the quota window counts this slot,
+        # but is_cooling's ok-clear logic does NOT fire on a mere launch.
+        # outcome="ok" is recorded ONLY after returncode==0 (post-success).
+        _record_key_session(cap_id, cycle_id, outcome="launched", root=root)
 
         # ── Step 6: launch the build session (with key failover) ─────────────
         # When a session fails in a way that indicts the KEY (401/403 auth,
@@ -875,6 +1063,8 @@ def _dispatch_build_session(
                 pid, returncode, len(run_result.get("stdout", "")),
             )
             if returncode == 0:
+                # Record success AFTER confirmed completion (R-V5-3: ok only post-success)
+                _record_key_session(cap_id, cycle_id, outcome="ok", root=root)
                 break
 
             _record_key_session(cap_id, cycle_id, outcome="error", root=root)
@@ -921,7 +1111,8 @@ def _dispatch_build_session(
             cap_id = next_cap
             tried_keys.add(cap_id)
             session_env[_KEY_REF_ENV] = next_ref
-            _record_key_session(cap_id, cycle_id, outcome="ok", root=root)
+            # Record launch for next key's quota accounting (not ok — not yet confirmed)
+            _record_key_session(cap_id, cycle_id, outcome="launched", root=root)
 
         # ── Step 7: foreign-file diff check ──────────────────────────────────
         changed_files = _diff_worktree_files(wt_path)
@@ -1097,6 +1288,18 @@ def run_build_lane(
     if _is_paused():
         log.info("BUILD: AUTONOMY_PAUSED — no-op")
         return [{"status": "noop_paused", "cycle_id": cycle_id}]
+
+    # R-V5-2: reap stale 'running' markers BEFORE scanning dispatch state, so a
+    # crashed prior session's marker is honestly 'failed' and re-attemptable.
+    # Runs here (not in the cron GC lane) because THIS lane checks out the
+    # branch the journals live on and commits them afterward (#2295 review F2).
+    try:
+        from scripts.metabolism_gc import sweep_stale_running_markers
+        _sweep = sweep_stale_running_markers(root or _ROOT, dry_run=dry_run)
+        if _sweep.get("swept"):
+            log.info("BUILD: stale-running sweep reaped %d marker(s)", _sweep["swept"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BUILD: stale-running sweep failed (%s) — continuing", exc)
 
     results: list[dict[str, Any]] = []
     try:

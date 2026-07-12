@@ -827,3 +827,215 @@ class TestInertness:
         run(tmp_path, dry_run=True)
         # dry-run must not write the fitness file
         assert not (tmp_path / "data" / "metabolism" / "fitness" / "til.json").exists()
+
+
+# ===========================================================================
+# R-V5-2 — Stale running marker GC sweep
+# ===========================================================================
+
+class TestStaleRunningMarkerSweep:
+    """R-V5-2: GC sweep rewrites stale 'running' journal markers to 'failed'."""
+
+    def _tmp_root_with_budget(self, ttl_hours: float = 3.0) -> Path:
+        d = _tmp_metab_root()
+        (d / "config" / "metabolism_budget.yml").write_text(
+            f"schema: metabolism_budget.v1\n"
+            f"per_cycle_usd_cap: 25\n"
+            f"max_build_attempts: 2\n"
+            f"stale_running_ttl_hours: {ttl_hours}\n",
+            encoding="utf-8",
+        )
+        return d
+
+    def _write_running_journal(self, root: Path, cycle_id: str, stage: str,
+                                started_at_offset_hours: float) -> None:
+        """Write a journal with a 'running' marker at started_at_offset_hours ago."""
+        from datetime import datetime, timezone, timedelta
+        journal_dir = root / "data" / "metabolism" / "journal"
+        journal_dir.mkdir(parents=True, exist_ok=True)
+        started_at = (datetime.now(timezone.utc) - timedelta(hours=started_at_offset_hours)
+                      ).isoformat(timespec="seconds")
+        journal = {
+            "schema": "metabolism.journal.v1",
+            "cycle_id": cycle_id,
+            "stage": stage,
+            "status": "running",
+            "auth_ok": None,
+            "artifacts": [],
+            "next_stage": None,
+            "ts": started_at,
+            "stages": {
+                stage: {
+                    "status": "running",
+                    "started_at": started_at,
+                }
+            }
+        }
+        (journal_dir / f"{cycle_id}.json").write_text(
+            __import__("json").dumps(journal, indent=2), encoding="utf-8"
+        )
+
+    def test_fresh_running_marker_not_swept(self):
+        """A 'running' marker within TTL must NOT be touched by the GC sweep."""
+        from scripts.metabolism_gc import sweep_stale_running_markers
+        d = self._tmp_root_with_budget(ttl_hours=3.0)
+        # Write a marker 1 hour ago (well within 3h TTL)
+        self._write_running_journal(d, "cycle-sweep-001", "build_dispatch_p1",
+                                     started_at_offset_hours=1.0)
+        result = sweep_stale_running_markers(d, dry_run=False)
+        assert result["swept"] == 0, "Fresh running marker must not be swept"
+
+        # Verify it's still 'running'
+        import json
+        j = json.loads((d / "data" / "metabolism" / "journal" / "cycle-sweep-001.json"
+                        ).read_text())
+        assert j["stages"]["build_dispatch_p1"]["status"] == "running"
+
+    def test_stale_running_marker_rewritten_to_failed(self):
+        """A 'running' marker older than TTL must be rewritten to 'failed'."""
+        from scripts.metabolism_gc import sweep_stale_running_markers
+        d = self._tmp_root_with_budget(ttl_hours=3.0)
+        # Write a marker 5 hours ago (exceeds 3h TTL)
+        self._write_running_journal(d, "cycle-sweep-002", "build_dispatch_p2",
+                                     started_at_offset_hours=5.0)
+        result = sweep_stale_running_markers(d, dry_run=False)
+        assert result["swept"] >= 1, "Stale running marker must be swept"
+
+        import json
+        j = json.loads((d / "data" / "metabolism" / "journal" / "cycle-sweep-002.json"
+                        ).read_text())
+        stage = j["stages"]["build_dispatch_p2"]
+        assert stage["status"] == "failed", (
+            f"Stale running marker must be rewritten to 'failed', got {stage['status']!r}"
+        )
+        assert "stale_running reaped by gc" in stage.get("note", ""), (
+            "GC note must include 'stale_running reaped by gc'"
+        )
+
+    def test_dry_run_sweep_does_not_write(self):
+        """Dry-run sweep must report count without modifying any journal."""
+        from scripts.metabolism_gc import sweep_stale_running_markers
+        d = self._tmp_root_with_budget(ttl_hours=3.0)
+        self._write_running_journal(d, "cycle-sweep-003", "build_dispatch_p3",
+                                     started_at_offset_hours=6.0)
+        result = sweep_stale_running_markers(d, dry_run=True)
+        assert result["swept"] >= 1, "Dry-run should count the stale marker"
+
+        import json
+        j = json.loads((d / "data" / "metabolism" / "journal" / "cycle-sweep-003.json"
+                        ).read_text())
+        # Dry-run must NOT have modified the file
+        assert j["stages"]["build_dispatch_p3"]["status"] == "running", (
+            "Dry-run must not modify the journal"
+        )
+
+
+# ===========================================================================
+# R-V5-4 — parse_check_by robust date parser
+# ===========================================================================
+
+class TestParseCheckBy:
+    """R-V5-4: parse_check_by handles canonical, non-padded, T-suffix, and garbage."""
+
+    def test_canonical_date_parses(self):
+        from engine.metabolism.verify import parse_check_by
+        from datetime import date
+        assert parse_check_by("2026-07-15") == date(2026, 7, 15)
+        assert parse_check_by("2026-10-01") == date(2026, 10, 1)
+
+    def test_non_padded_month_day_parses(self):
+        from engine.metabolism.verify import parse_check_by
+        from datetime import date
+        assert parse_check_by("2026-7-15") == date(2026, 7, 15)
+        assert parse_check_by("2026-7-5") == date(2026, 7, 5)
+        assert parse_check_by("2026-10-1") == date(2026, 10, 1)
+
+    def test_iso_datetime_t_suffix_parses(self):
+        from engine.metabolism.verify import parse_check_by
+        from datetime import date
+        assert parse_check_by("2026-07-15T00:00:00Z") == date(2026, 7, 15)
+        assert parse_check_by("2026-07-15T12:30:00+00:00") == date(2026, 7, 15)
+
+    def test_garbage_returns_none(self):
+        from engine.metabolism.verify import parse_check_by
+        assert parse_check_by("not-a-date") is None
+        assert parse_check_by("") is None
+        assert parse_check_by("tomorrow") is None
+        assert parse_check_by(None) is None  # type: ignore
+
+    def test_malformed_verify_quarantines_to_unverifiable(self):
+        """verify_proposal with malformed check_by must return UNVERIFIABLE + operator tap."""
+        from engine.metabolism.verify import verify_proposal
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "data" / "metabolism" / "verify").mkdir(parents=True)
+            contract = {
+                "check_by": "2026-7-15",  # non-padded month
+                "sensor": "test_sensor",
+                "proposal_id": "p_malformed",
+            }
+            # Non-padded still parses correctly — so use a truly garbage value
+            contract_bad = {
+                "check_by": "NOT-A-DATE",
+                "sensor": "test_sensor",
+                "proposal_id": "p_malformed_bad",
+            }
+            record = verify_proposal("cycle-rv54-001", contract_bad, root,
+                                      today="2026-07-15")
+            assert record["realized"]["outcome"] == "UNVERIFIABLE", (
+                "Malformed check_by must produce UNVERIFIABLE outcome"
+            )
+            assert record["triage"]["action"] == "operator_tap", (
+                "Malformed check_by must route to operator_tap"
+            )
+            note = (record["triage"].get("note") or "").lower()
+            assert "could not be parsed" in note or "malformed" in note, (
+                f"Triage note must mention parse failure, got: {record['triage'].get('note')!r}"
+            )
+
+    def test_non_padded_check_by_still_matures_correctly(self):
+        """Non-padded date like '2026-7-15' must mature correctly on 2026-07-15."""
+        from engine.metabolism.verify import verify_proposal, parse_check_by
+        from datetime import date
+        # Verify the parser handles it
+        assert parse_check_by("2026-7-15") == date(2026, 7, 15)
+
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "data" / "metabolism" / "verify").mkdir(parents=True)
+            contract = {
+                "check_by": "2026-7-15",  # non-padded
+                "sensor": "test_sensor",
+                "proposal_id": "p_nonpadded",
+            }
+            # On the maturity date, must NOT return PENDING (must attempt verification)
+            record = verify_proposal("cycle-rv54-002", contract, root,
+                                      today="2026-07-15")
+            assert record["realized"]["outcome"] != "PENDING", (
+                "Non-padded check_by on the maturity date must not stay PENDING"
+            )
+
+    def test_dream_excludes_malformed_contracts(self):
+        """dream._load_closed_contracts must exclude contracts with garbage check_by."""
+        from engine.metabolism.dream import _load_closed_contracts
+        import json, tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "data").mkdir(parents=True)
+            ledger = root / "data" / "trial_ledger.jsonl"
+            # Write one good and one malformed contract
+            rows = [
+                json.dumps({"check_by": "2026-07-01", "outcome": "CONFIRMED",
+                             "kind": "test", "tier": "T1"}),
+                json.dumps({"check_by": "NOT-A-DATE", "outcome": "CONFIRMED",
+                             "kind": "test", "tier": "T1"}),
+            ]
+            ledger.write_text("\n".join(rows) + "\n")
+            closed = _load_closed_contracts(root, today="2026-12-31")
+            # Only the good one should be included
+            assert len(closed) == 1, (
+                f"Malformed check_by must be excluded from calibration, got {len(closed)}"
+            )
+            assert closed[0]["check_by"] == "2026-07-01"

@@ -71,6 +71,8 @@ _KINDS = frozenset({
     # V2-C Unit 6 emitters (scout + revamp adjudicator)
     "uncovered_domain",
     "revamp_recommendation",
+    # R-V5-1: permanently parked dispatch (exceeded max_build_attempts)
+    "dispatched_build_parked",
 })
 
 

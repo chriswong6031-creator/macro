@@ -30,6 +30,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+# R-V5-4: import shared robust date parser
+from engine.metabolism.verify import parse_check_by  # noqa: E402
+
 log = logging.getLogger(__name__)
 
 SCHEMA = "metabolism.preference_prior.v1"
@@ -62,9 +65,15 @@ def _today_str() -> str:
 def _load_closed_contracts(root: Path, today: str) -> list[dict[str, Any]]:
     """Load trial_ledger contracts whose check_by has arrived (closed).
 
+    Uses parse_check_by() for robust date comparison (R-V5-4): malformed
+    check_by strings are excluded from calibration but counted in a
+    "malformed" log rather than silently mis-ordered or included.
+
     Returns list of contract dicts.  NEVER raises.
     """
     closed: list[dict[str, Any]] = []
+    malformed_count = 0
+    today_date = parse_check_by(today)
     ledger_path = root / "data" / "trial_ledger.jsonl"
     if not ledger_path.exists():
         return closed
@@ -75,14 +84,30 @@ def _load_closed_contracts(root: Path, today: str) -> list[dict[str, Any]]:
                 continue
             try:
                 r = json.loads(line)
-                check_by = r.get("check_by") or ""
+                check_by_raw = r.get("check_by") or ""
+                if not check_by_raw:
+                    continue
+                check_by_date = parse_check_by(str(check_by_raw))
+                if check_by_date is None:
+                    # Malformed check_by: exclude from calibration, count for logging
+                    malformed_count += 1
+                    continue
                 # Closed = check_by has arrived and outcome is known
-                if check_by and check_by <= today and r.get("outcome"):
+                if today_date is not None and check_by_date <= today_date and r.get("outcome"):
+                    closed.append(r)
+                elif today_date is None and str(check_by_raw) <= today and r.get("outcome"):
+                    # Fallback string compare if today itself is malformed (should not happen)
                     closed.append(r)
             except Exception:  # noqa: BLE001
                 continue
     except Exception as exc:  # noqa: BLE001
         log.warning("dream._load_closed_contracts: %s", exc)
+    if malformed_count:
+        log.warning(
+            "dream._load_closed_contracts: excluded %d contracts with malformed check_by "
+            "(R-V5-4: non-parseable dates excluded from calibration)",
+            malformed_count,
+        )
     return closed
 
 

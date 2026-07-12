@@ -984,3 +984,134 @@ class TestSynapseCount:
         assert any("metabolism_dispatch" in str(w) for w in extra_writers), (
             "scripts/metabolism_dispatch.py not in metabolism-journal known_extra_writers"
         )
+
+
+# ===========================================================================
+# R-V5-3 — Cooling horizon: weekly vs window/auth clear semantics
+# ===========================================================================
+
+class TestCoolingHorizonSemantics:
+    """R-V5-3: weekly cooling must NOT be cleared by a later ok row;
+    window/auth coolings ARE cleared by a later ok row;
+    'launched' rows never clear any cooling."""
+
+    def _make_ledger(self, root: Path, rows: list[dict]) -> None:
+        """Write synthetic ledger rows to the key_ledger.jsonl."""
+        import json
+        p = root / "data" / "metabolism" / "key_ledger.jsonl"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with p.open("w", encoding="utf-8") as fh:
+            for row in rows:
+                fh.write(json.dumps(row) + "\n")
+
+    def _cooling_row(self, key_id: str, cool_kind: str,
+                      started_offset_s: float = -10,
+                      reset_offset_s: float = 3600) -> dict:
+        """Return a cooling ledger row."""
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone.utc)
+        ts = (now + timedelta(seconds=started_offset_s)).isoformat(timespec="seconds")
+        reset = (now + timedelta(seconds=reset_offset_s)).isoformat(timespec="seconds")
+        return {
+            "schema": "metabolism.key_ledger.v1",
+            "ts": ts,
+            "key_id": key_id,
+            "cycle_id": "",
+            "stage": "cooling",
+            "est_tokens": 0,
+            "outcome": "auth_failed" if cool_kind == "auth" else "rate_limited",
+            "cool_kind": cool_kind,
+            "reset_hint": reset,
+        }
+
+    def _session_row(self, key_id: str, outcome: str, offset_s: float = 0) -> dict:
+        """Return a session ledger row."""
+        from datetime import datetime, timezone, timedelta
+        ts = (datetime.now(timezone.utc) + timedelta(seconds=offset_s)
+              ).isoformat(timespec="seconds")
+        return {
+            "schema": "metabolism.key_ledger.v1",
+            "ts": ts,
+            "key_id": key_id,
+            "cycle_id": "test",
+            "stage": "build",
+            "est_tokens": 0,
+            "outcome": outcome,
+        }
+
+    def test_weekly_cooling_not_cleared_by_ok_row(self):
+        """A 'weekly' cooling must NOT be cleared by a subsequent ok row (R-V5-3)."""
+        from engine.neuralweb.key_pool import is_cooling
+        d = _make_tmp()
+        key_id = "claude_code_oauth_1"
+        rows = [
+            self._cooling_row(key_id, cool_kind="weekly", started_offset_s=-10,
+                               reset_offset_s=7 * 24 * 3600),  # resets in 7 days
+            self._session_row(key_id, outcome="ok", offset_s=5),  # ok AFTER cooling
+        ]
+        self._make_ledger(d, rows)
+        # Despite the ok row, weekly cooling must still be active
+        assert is_cooling(key_id, root=d) is True, (
+            "Weekly cooling must NOT be cleared by a subsequent ok row"
+        )
+
+    def test_window_cooling_cleared_by_ok_row(self):
+        """A 'window' cooling IS cleared by a subsequent ok row."""
+        from engine.neuralweb.key_pool import is_cooling
+        d = _make_tmp()
+        key_id = "claude_code_oauth_1"
+        rows = [
+            self._cooling_row(key_id, cool_kind="window", started_offset_s=-10,
+                               reset_offset_s=5 * 3600),  # resets in 5h
+            self._session_row(key_id, outcome="ok", offset_s=5),  # ok AFTER cooling
+        ]
+        self._make_ledger(d, rows)
+        # Window cooling cleared by ok row
+        assert is_cooling(key_id, root=d) is False, (
+            "Window cooling must be cleared by a subsequent ok row"
+        )
+
+    def test_auth_cooling_cleared_by_ok_row(self):
+        """An 'auth' cooling IS cleared by a subsequent ok row."""
+        from engine.neuralweb.key_pool import is_cooling
+        d = _make_tmp()
+        key_id = "claude_code_oauth_1"
+        rows = [
+            self._cooling_row(key_id, cool_kind="auth", started_offset_s=-10,
+                               reset_offset_s=24 * 3600),  # resets in 24h
+            self._session_row(key_id, outcome="ok", offset_s=5),
+        ]
+        self._make_ledger(d, rows)
+        assert is_cooling(key_id, root=d) is False, (
+            "Auth cooling must be cleared by a subsequent ok row"
+        )
+
+    def test_launched_row_does_not_clear_window_cooling(self):
+        """A 'launched' outcome row must NOT clear window cooling."""
+        from engine.neuralweb.key_pool import is_cooling
+        d = _make_tmp()
+        key_id = "claude_code_oauth_1"
+        rows = [
+            self._cooling_row(key_id, cool_kind="window", started_offset_s=-10,
+                               reset_offset_s=5 * 3600),
+            self._session_row(key_id, outcome="launched", offset_s=5),  # launched, not ok
+        ]
+        self._make_ledger(d, rows)
+        assert is_cooling(key_id, root=d) is True, (
+            "'launched' row must not clear window cooling"
+        )
+
+    def test_weekly_cooling_clears_after_reset_hint_passes(self):
+        """A weekly cooling whose reset_hint is in the past must be resolved."""
+        from engine.neuralweb.key_pool import is_cooling
+        d = _make_tmp()
+        key_id = "claude_code_oauth_1"
+        rows = [
+            self._cooling_row(key_id, cool_kind="weekly",
+                               started_offset_s=-7 * 24 * 3600 - 10,  # > 7 days ago
+                               reset_offset_s=-60),  # reset_hint 60s in the past
+        ]
+        self._make_ledger(d, rows)
+        assert is_cooling(key_id, root=d) is False, (
+            "Weekly cooling whose reset_hint has passed must resolve"
+        )

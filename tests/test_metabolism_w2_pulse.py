@@ -263,3 +263,63 @@ def test_validated_absent_from_verify_script():
             assert "validated" not in node.value.lower(), (
                 f"'validated' found in string literal at line {node.lineno}: {node.value!r}"
             )
+
+
+# ── Test: scan backfills lobe from docket/proposal (pre-#2285 backlog) ────────
+
+def test_scan_backfills_lobe_from_docket_toplevel():
+    """A contract minted before the lobe-threading fix (#2285) carries no lobe
+    key; the scan must backfill it from the docket top-level (or proposal row)
+    so its verify row is not dropped by the per-lobe strategic-memory filter."""
+    root = _tmp_root()
+    docket = {
+        "schema": "metabolism.docket.v1",
+        "cycle_id": "cycle-old",
+        "lobe": "til",
+        "proposals": [
+            {
+                "proposal_id": "cycle-old-p0",
+                "fitness_contract": {
+                    "check_by": "2026-07-01",
+                    "falsifier": {"sensor": "ic_sharpe", "band": [0.0, None]},
+                },
+            }
+        ],
+    }
+    path = root / "data" / "metabolism" / "dockets" / "cycle-old.json"
+    path.write_text(json.dumps(docket), encoding="utf-8")
+
+    from scripts.metabolism_verify import _scan_pending_cycles
+    pending = _scan_pending_cycles(root, "2026-07-11")
+    assert len(pending) == 1
+    cycle_id, contract = pending[0]
+    assert cycle_id == "cycle-old"
+    assert contract.get("lobe") == "til", "scan must backfill lobe from docket"
+
+
+def test_scan_does_not_override_contract_lobe():
+    """A contract that already carries lobe (post-#2285) keeps its own value."""
+    root = _tmp_root()
+    docket = {
+        "schema": "metabolism.docket.v1",
+        "cycle_id": "cycle-new",
+        "lobe": "other_lobe",
+        "proposals": [
+            {
+                "proposal_id": "cycle-new-p0",
+                "lobe": "other_lobe",
+                "fitness_contract": {
+                    "check_by": "2026-07-01",
+                    "lobe": "til",
+                    "falsifier": {"sensor": "ic_sharpe", "band": [0.0, None]},
+                },
+            }
+        ],
+    }
+    path = root / "data" / "metabolism" / "dockets" / "cycle-new.json"
+    path.write_text(json.dumps(docket), encoding="utf-8")
+
+    from scripts.metabolism_verify import _scan_pending_cycles
+    pending = _scan_pending_cycles(root, "2026-07-11")
+    assert len(pending) == 1
+    assert pending[0][1].get("lobe") == "til", "contract's own lobe must win"
