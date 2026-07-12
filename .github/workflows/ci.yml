@@ -300,6 +300,11 @@ on:
       - "scripts/build_flow_desk.py"
       - "templates/flow_desk.html.j2"
       - "tests/test_flow_cohorts.py"
+      # FL-A EOD flow backfill (FC-R4/R11): backfill script, build_options_flow staleness
+      # warning, and the test suite that pins idempotence + schema-variant handling.
+      - "scripts/backfill_options_flow.py"
+      - "scripts/build_options_flow.py"
+      - "tests/test_backfill_options_flow.py"
   workflow_dispatch:
 
 permissions:
@@ -577,7 +582,8 @@ jobs:
           tests/test_ignition_persistence.py
           tests/test_mag7_panel.py
           tests/test_index_momentum.py
-          tests/test_statement_tape.py -q
+          tests/test_statement_tape.py
+          tests/test_backfill_options_flow.py -q
 
   collector-registry:
     # timeout: this job had none (6h GitHub default) — a wedged one-shot (e.g. the
