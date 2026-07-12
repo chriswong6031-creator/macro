@@ -1907,16 +1907,16 @@
             <span class="l-en">Leaders moving first</span><span class="l-zh">龙头先行</span>
           </div>
           <div class="hkrv-banner-line">
-            <span class="l-en">Mega-caps are participating; the broad market hasn’t confirmed yet.</span>
+            <span class="l-en">Mega-caps are participating; the broad market hasn't confirmed yet.</span>
             <span class="l-zh">大型龙头正在参与，大盘尚未确认。</span>
           </div>
         </div>
         <div class="hkrv-stance-chip">
-          <span class="l-en">Watch — don’t chase</span><span class="l-zh">观察，勿追高</span>
+          <span class="l-en">Watch — don't chase</span><span class="l-zh">观察，勿追高</span>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <button class="hkrv-why-toggle" type="button" onclick="(function(b){var p=document.getElementById(‘hkrv-pop-a’);p.classList.toggle(‘hkrv-pop-open’);b.textContent=p.classList.contains(‘hkrv-pop-open’)?’▴ Why — close’:’▾ Why — details’;})(this)">&#9662; Why &#8212; details</button>
+        <button class="hkrv-why-toggle" type="button" onclick="(function(b){var p=document.getElementById('hkrv-pop-a');p.classList.toggle('hkrv-pop-open');b.textContent=p.classList.contains('hkrv-pop-open')?'▴ Why — close':'▾ Why — details';})(this)">&#9662; Why &#8212; details</button>
         <span style="font-size:11px;color:var(--muted)">
           <span class="l-en">{{ _ldr_n_above }} of {{ _ldr_n_total }} mega-caps above rising 10-day MA{% if _ldr_breadth is not none %} · {{ _ldr_breadth | round | int }}% broad breadth{% endif %}</span>
           <span class="l-zh">{{ _ldr_n_total }}只龙头中{{ _ldr_n_above }}只高于上升10日均线{% if _ldr_breadth is not none %} · 大盘广度{{ _ldr_breadth | round | int }}%{% endif %}</span>
@@ -1938,8 +1938,8 @@
         {%- if _ldr_study_n and _ldr_fwd is not none -%}
         <div class="hkrv-pop-row">
           <span class="hkrv-pop-lbl"><span class="l-en">History</span><span class="l-zh">历史参考</span></span>
-          <span class="l-en">{{ _ldr_study_n }} similar episodes since 2016: the broad index did not follow — the leaders themselves gained while the index{% if _ldr_fwd < 0 %} was {% else %} gained {% endif %}~{{ '%+.1f' | format(_ldr_fwd) }}% over 40 sessions.</span>
-          <span class="l-zh">2016年以来{{ _ldr_study_n }}次类似情形：大盘指数未必跟进 — 指数40日均回报约{{ '%+.1f' | format(_ldr_fwd) }}%。</span>
+          <span class="l-en">{{ _ldr_study_n }} similar episodes since 2016: the broad index did not follow — the leaders themselves gained while the index moved ~{{ '%+.1f' | format(_ldr_fwd) }}% over 40 sessions.</span>
+          <span class="l-zh">2016年以来{{ _ldr_study_n }}次类似情形：大盘指数并未跟进 — 指数40日均回报约{{ '%+.1f' | format(_ldr_fwd) }}%。</span>
         </div>
         {%- endif -%}
         <div class="hkrv-pop-row">
