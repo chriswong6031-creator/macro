@@ -26,6 +26,9 @@ on:
       - "scripts/check_title_i18n.py"
       # conflict-marker guard: a merge must never ship literal <<<<<<< / ======= / >>>>>>> lines.
       - "scripts/check_conflict_markers.py"
+      # statement-tape schema guard (FL-E): committed tape rows must match the binding schema.
+      - "scripts/check_statement_tape.py"
+      - "data/statement_tape/**"
       # template↔site sync guard: plain-copy page assets must byte-match their templates.
       - "scripts/check_template_site_sync.py"
       # interfonts guard: _interfonts.html.j2 @font-face blocks must match theme.css.
@@ -392,6 +395,23 @@ jobs:
             exit 0
           fi
           python3 scripts/check_board_contradictions.py site/factordata/us_standouts.json
+
+  statement-tape:
+    # FL-E / FC-R9 statement-tape schema guard (registered as
+    # epistemics.statement_tape_schema in config/house_law_checks.yml): every
+    # committed row in data/statement_tape/registry.jsonl must match the binding
+    # schema and carry no prediction-implying keys (PS-R1). Pure stdlib; validates
+    # the committed artifact. Added 2026-07-12 — #2297 shipped the script without
+    # registry entry or wiring, which failed the house-law census on every PR.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: statement tape rows must match the binding schema
+        run: python3 scripts/check_statement_tape.py
 
   ms-board-coherence:
     # 2026-07-07 incident: render commit 5bf116a3b3 shipped a hybrid Market State board

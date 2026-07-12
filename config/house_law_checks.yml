@@ -493,6 +493,40 @@ checks:
     notes: >
       Wired into house-law-registry job (exit 0 confirmed 2026-07-06).
 
+  - law_id: epistemics.statement_tape_schema
+    summary: >
+      Every non-comment row in data/statement_tape/registry.jsonl must match the
+      binding statement-tape schema (date / speaker / venue / quote / stance_tag /
+      added_by / added_at; stance_tag in the fixed vocabulary), and no key may
+      imply an LLM-emitted signal or forecast (PS-R1 banned key substrings:
+      "signal", "forecast", "prediction", "probability", "prob", "edge").
+    source_ref:
+      - scripts/check_statement_tape.py
+      - data/statement_tape/registry.jsonl
+      - research/MAG7_FIELD_GUIDE.md
+      - "PR #2297"
+    severity: hard
+    check_script: scripts/check_statement_tape.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: statement-tape
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; deterministic stdlib scan of a committed jsonl artifact.
+      Functional coverage lives in tests/test_statement_tape.py (wired into the
+      ci.yml pytest whitelist by #2297).
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - An absent paraphrase field is a soft warning, not a hard fail (the schema
+        default-falses it).
+    owner_program: fl-e-statement-tape
+    notes: >
+      Registered 2026-07-12 after #2297 shipped the guard script without a
+      registry entry — the census meta-guard failed EVERY open PR's merge-commit
+      CI until this row + the statement-tape ci.yml job landed.
+
   # ── Contracts guards ───────────────────────────────────────────────────────
 
   - law_id: contracts.reliability_contract
