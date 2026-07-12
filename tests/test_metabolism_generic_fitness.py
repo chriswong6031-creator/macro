@@ -385,15 +385,19 @@ def _write_governance_probation_event(root: Path, lobe_id: str, ts: str) -> None
         f.write(event + "\n")
 
 
-def _write_verify_record(root: Path, lobe_id: str, cycle_id: str = "test-cycle-001") -> None:
-    """Write a minimal verify record naming the lobe (simulates a matured contract)."""
+def _write_verify_record(root: Path, lobe_id: str, cycle_id: str = "test-cycle-001",
+                         outcome: str = "UNVERIFIABLE") -> None:
+    """Write a verify record in the REALISTIC nested shape real records emit:
+    the lobe lives under contract.lobe and the grade under realized.outcome
+    (there is no top-level lobe field on a real record). A graded outcome —
+    including honest UNVERIFIABLE — counts as matured; PENDING does not."""
     verify_dir = root / "data" / "metabolism" / "verify"
     verify_dir.mkdir(parents=True, exist_ok=True)
     record = {
         "schema": "metabolism.verify.v1",
         "cycle_id": cycle_id,
-        "lobe": lobe_id,
-        "outcome": "UNVERIFIABLE",  # honest null — still counts as matured
+        "contract": {"lobe": lobe_id},
+        "realized": {"outcome": outcome},
     }
     (verify_dir / f"{cycle_id}.json").write_text(json.dumps(record), encoding="utf-8")
 
@@ -615,3 +619,53 @@ def test_genesis_probe_never_raises(tmp_path):
     assert isinstance(result, dict)
     # status must be one of the expected values
     assert result.get("status") in ("ok", "degraded", "failed")
+
+
+
+def test_accountability_clock_pending_not_matured(tmp_path):
+    """A PENDING verify record must NOT count as matured (else a lobe dodges
+    the clock forever — #2341 review)."""
+    lobe_id = "test-genesis-lobe"
+    root = _make_probation_root(tmp_path, lobe_id)
+    start_dt = datetime.now(timezone.utc) - timedelta(days=60)
+    _write_governance_probation_event(root, lobe_id, start_dt.isoformat(timespec="seconds"))
+    _write_verify_record(root, lobe_id, "test-cycle-pending", outcome="PENDING")
+
+    from engine.metabolism.lifecycle import sweep_genesis_accountability
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    results = sweep_genesis_accountability(root=root, today=today)
+    assert len(results) == 1
+    # Past deadline + only a PENDING (not matured) record → demotion proposed
+    assert results[0]["action"] != "has_contracts_no_demotion", (
+        f"PENDING record must not be counted as matured: {results[0]}"
+    )
+
+
+def test_accountability_clock_realistic_nested_record_counts(tmp_path):
+    """A graded record in the real nested shape (contract.lobe + realized.outcome)
+    counts as matured → no demotion."""
+    lobe_id = "test-genesis-lobe"
+    root = _make_probation_root(tmp_path, lobe_id)
+    start_dt = datetime.now(timezone.utc) - timedelta(days=60)
+    _write_governance_probation_event(root, lobe_id, start_dt.isoformat(timespec="seconds"))
+    _write_verify_record(root, lobe_id, "cyc-real", outcome="PASS")
+
+    from engine.metabolism.lifecycle import sweep_genesis_accountability
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    results = sweep_genesis_accountability(root=root, today=today)
+    assert results[0]["action"] == "has_contracts_no_demotion"
+
+
+def test_accountability_clock_fail_open_no_probation_start(tmp_path):
+    """Unrecoverable probation-start date → fail OPEN (no demotion), never a
+    wrongful demotion (R-V6-6 spec)."""
+    lobe_id = "test-genesis-lobe"
+    root = _make_probation_root(tmp_path, lobe_id)
+    # No governance probation event written → start date unrecoverable
+    from engine.metabolism.lifecycle import sweep_genesis_accountability
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    results = sweep_genesis_accountability(root=root, today=today)
+    assert len(results) == 1
+    assert "demot" not in str(results[0].get("action", "")).lower(), (
+        f"unrecoverable start must NOT demote: {results[0]}"
+    )

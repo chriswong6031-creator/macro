@@ -521,20 +521,25 @@ def _has_matured_contracts(lobe_id: str, root: Path) -> bool:
                 record = json.loads(vf.read_text(encoding="utf-8"))
             except Exception:  # noqa: BLE001
                 continue
-            # Check lobe field at record level
+            # A PENDING record is NOT matured — the contract was registered but
+            # not yet graded. Counting it as matured would let a lobe dodge the
+            # accountability clock forever (#2341 review). Only a graded record
+            # (any outcome incl. honest UNVERIFIABLE/null) counts.
+            outcome = str((record.get("realized") or {}).get("outcome") or "").upper()
+            classification = str((record.get("triage") or {}).get("classification") or "").lower()
+            if outcome == "PENDING" or classification == "pending":
+                continue
+            # Match this lobe: record.lobe, nested contract.lobe (the shape real
+            # verify records actually emit), then a cycle_id EXACT-suffix guard
+            # (avoid a substring false-positive across unrelated cycle ids).
             record_lobe = str(record.get("lobe") or "").strip()
-            if record_lobe == lobe_id:
-                return True
-            # Also check nested contract.lobe
             contract_lobe = str(
                 (record.get("contract") or {}).get("lobe") or ""
             ).strip()
-            if contract_lobe == lobe_id:
+            if lobe_id in (record_lobe, contract_lobe):
                 return True
-            # Docket-cycle naming convention: the verify record may embed cycle_id
-            # that contains the lobe slug
             cycle_field = str(record.get("cycle_id") or "")
-            if lobe_id in cycle_field:
+            if cycle_field == lobe_id or cycle_field.endswith(f"-{lobe_id}"):
                 return True
         return False
     except Exception as exc:  # noqa: BLE001
