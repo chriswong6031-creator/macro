@@ -611,6 +611,17 @@ body::before {
         {% endif %}
       </div>
 
+      <!-- Rebalance Pulse context chip (RLT-R2) — visible in QE window or non-quiet -->
+      {% if vm.rebalance_chip and vm.rebalance_chip.show %}
+      <div style="margin-top:10px;padding:8px 12px;background:color-mix(in srgb,var(--warn) 8%,var(--panel2));border-left:3px solid color-mix(in srgb,var(--warn) 40%,transparent);border-radius:2px 8px 8px 2px;font-size:12px;line-height:1.55">
+        <span style="font-weight:700;color:var(--warn)">
+          {% if vm.rebalance_chip.class_key == 'calendar' %}<span class="l-en">&#9670; Rebalance Window</span><span class="l-zh">&#9670; 再平衡窗口</span>{% else %}<span class="l-en">&#9670; Volume Alert</span><span class="l-zh">&#9670; 量能警示</span>{% endif %}
+        </span>
+        &nbsp;—&nbsp;
+        <span class="l-en">{{ vm.rebalance_chip.text_en }}</span><span class="l-zh">{{ vm.rebalance_chip.text_zh }}</span>
+      </div>
+      {% endif %}
+
       <!-- Recovery spark -->
       {% if vm.hero.spark_pts %}
       <div class="hero-recovery">

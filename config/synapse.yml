@@ -7836,6 +7836,78 @@ artifacts:
       nudge (engine/cycles.py untouched); this lobe exposes its context
       and quality, not a new one.
 
+  # --- RLT-R2: Rebalance Pulse (display/context, append-only ledger) ---
+  rebalance-pulse-events:
+    path: data/rebalance_pulse/events.jsonl
+    format: jsonl
+    producer: scripts/build_rebalance_pulse.py
+    known_extra_writers: []
+    owner_program: rlt
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: rlt.rebalance_pulse.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+      - scripts/build_rebalance_pulse.py
+    external_consumers: []
+    notes: >
+      DISPLAY/CONTEXT ONLY — may_rank=false, may_gate=false, may_size=false.
+      Append-only ledger of non-quiet Rebalance Pulse events (RLT-R2).
+      Idempotent: each date appears at most once (PIT law RC-R2 class).
+      Frozen class vocabulary: mechanical_spike_absorbed,
+      mechanical_spike_distributed, mechanical_spike_mixed,
+      unscheduled_volume_event. NOT a bottom-caller.
+
+  rebalance-pulse-latest:
+    path: data/rebalance_pulse/latest.json
+    format: json
+    producer: scripts/build_rebalance_pulse.py
+    known_extra_writers: []
+    owner_program: rlt
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: rlt.rebalance_pulse.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      DISPLAY/CONTEXT ONLY — latest session's pulse record (single JSON object).
+
+  rebalance-pulse-site:
+    path: site/marketdata/rebalance_pulse.json
+    format: json
+    producer: scripts/build_rebalance_pulse.py
+    known_extra_writers: []
+    owner_program: rlt
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: rlt.rebalance_pulse_site.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      DISPLAY/CONTEXT ONLY — site-facing payload consumed by the Rebalance Pulse
+      committee card. Contains latest pulse, upcoming calendar events, recent
+      ledger rows, and authority block. Read by committee.html.j2 via JS fetch.
+
   # --- CHF-W1: Causal feature inventory (CHF-R4) ---
   causal-feature-inventory:
     path: data/neuralweb/causal_feature_inventory.json
