@@ -214,12 +214,24 @@ def _last_change(s: pd.Series, min_bp: float = 1.0) -> dict | None:
     }
 
 
-def _trend_3m(s: pd.Series) -> str | None:
-    """3-month trend of policy rate: 'hiking' | 'easing' | 'hold'."""
+def _trend_3m(s: pd.Series, cadence: str = "daily") -> str | None:
+    """3-month trend of policy rate: 'hiking' | 'easing' | 'hold'.
+
+    Parameters
+    ----------
+    s:
+        Rate series (policy rate values, not changes).
+    cadence:
+        'daily' → lookback ~63 business days (≈ 3 months).
+        'monthly' → lookback 3 observations (≈ 3 months of monthly data).
+        Using 63 obs on a monthly series would read ~5y of history,
+        causing a mistaken 'hiking' read while the rate has been flat 24 months.
+    """
     if s is None or len(s) < 2:
         return None
-    # ~63 business days ≈ 3 months; for monthly series use ~3 rows
-    n = min(63, len(s))
+    # Cadence-aware lookback: daily ≈ 63 business days, monthly ≈ 3 rows
+    n_lookback = 3 if cadence == "monthly" else 63
+    n = min(n_lookback, len(s))
     chg = float(s.iloc[-1]) - float(s.iloc[-n])
     if chg > 0.10 / 100:  # > 10bps
         return "hiking"
@@ -263,7 +275,12 @@ def _bs_impulse(spec: dict, gaps: list[str]) -> dict | None:
 
 
 def _next_meeting(cb_key: str, calendar: dict, today: date) -> dict | None:
-    """Find the next scheduled meeting date from the calendar YAML."""
+    """Find the next scheduled meeting date from the calendar YAML.
+
+    Returns a dict with keys 'date' (ISO string) and 'days' (calendar days until
+    the meeting).  The surface (intl.html.j2 and macro.html.j2) consumes the 'days'
+    key for countdown display; do not rename it without updating both templates.
+    """
     cb_data = calendar.get("banks", {}).get(cb_key)
     if cb_data is None:
         return None
@@ -331,8 +348,8 @@ def snapshot() -> dict:
         # Last change
         lc = _last_change(rate_s)
 
-        # 3m trend
-        trend = _trend_3m(rate_s)
+        # 3m trend — pass cadence so monthly series use 3-obs lookback not 63
+        trend = _trend_3m(rate_s, cadence=cadence)
 
         # BS impulse (where available)
         bs = _bs_impulse(spec, gaps)

@@ -333,11 +333,13 @@ def smile_decomp() -> dict | None:
         return {"gaps": gaps, "regime": None, "display_only": True}
 
     # Build basket 2y (weighted EUR/JPY/GBP)
-    basket_parts: list[tuple[pd.Series, float]] = []
+    # Stored as (key, series, weight) tuples so label tracks the survivor when
+    # a series is absent and the list is shorter than _SMILE_WEIGHTS_2Y.
+    basket_parts: list[tuple[str, pd.Series, float]] = []
     for key, weight in _SMILE_WEIGHTS_2Y.items():
         s = series.get(f"{key[:3]}2y")
         if s is not None and not s.empty:
-            basket_parts.append((s, weight))
+            basket_parts.append((key, s, weight))
         else:
             gaps.append(f"smile_decomp: {key}_2y absent — re-weighted to available")
 
@@ -345,13 +347,13 @@ def smile_decomp() -> dict | None:
         gaps.append("smile_decomp: no foreign 2y series available — differential leg null")
         return {"gaps": gaps, "regime": None, "display_only": True}
 
-    # Re-normalize weights to available series
-    total_w = sum(w for _, w in basket_parts)
-    basket_parts = [(s, w / total_w) for s, w in basket_parts]
+    # Re-normalize weights to available series (key label travels with the tuple)
+    total_w = sum(w for _, _s, w in basket_parts)
+    basket_parts = [(k, s, w / total_w) for k, s, w in basket_parts]
 
     # Build common daily index (union of all series)
     all_idx = dxy.index
-    for s, _ in basket_parts:
+    for _, s, _ in basket_parts:
         all_idx = all_idx.union(s.index)
     all_idx = all_idx.union(us2y.index)
     all_idx = all_idx.sort_values()
@@ -359,7 +361,7 @@ def smile_decomp() -> dict | None:
     # Forward-fill monthly series up to 40 days (monthly cadence)
     dxy_a = dxy.reindex(all_idx).ffill(limit=5)
     us2y_a = us2y.reindex(all_idx).ffill(limit=5)
-    basket_2y = sum(s.reindex(all_idx).ffill(limit=40) * w for s, w in basket_parts)
+    basket_2y = sum(s.reindex(all_idx).ffill(limit=40) * w for _, s, w in basket_parts)
 
     # Daily changes
     dxy_ret = np.log(dxy_a / dxy_a.shift(1))       # DXY log return
@@ -451,10 +453,12 @@ def smile_decomp() -> dict | None:
     beta_last = float(beta_ser.iloc[-1]) if not beta_ser.empty else None
     r2_last = float(r2_ser.iloc[-1]) if not r2_ser.empty else None
 
-    # Actual weights after re-normalization (for surface disclosure)
+    # Actual weights after re-normalization (for surface disclosure).
+    # Key labels come from the basket_parts tuples — correct even when a series
+    # is absent and basket_parts is shorter than _SMILE_WEIGHTS_2Y.
     weights_used = {
         f"{k[:3]}2y": round(w, 3)
-        for (_, w), k in zip(basket_parts, _SMILE_WEIGHTS_2Y.keys())
+        for k, _s, w in basket_parts
     }
 
     return {

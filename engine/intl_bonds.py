@@ -33,7 +33,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from engine.ird_velocity import velocity_fields as _ird_velocity
+from engine.ird_velocity import velocity_fields_bp as _ird_velocity
 from lib import store
 
 log = logging.getLogger(__name__)

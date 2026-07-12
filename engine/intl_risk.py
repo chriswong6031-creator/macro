@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 
 from lib import store
+from engine.ird_velocity import velocity_fields as _ird_velocity_fields
 
 log = logging.getLogger(__name__)
 
@@ -121,28 +122,14 @@ def _pctile_trailing(s: pd.Series, window: int) -> tuple[float | None, int]:
     return pct, wd
 
 
-def _vel_z(s: pd.Series, lag: int, norm_window: int) -> float | None:
-    """Velocity z-score: (s[-1] - s[-1-lag]) / rolling_std(norm_window).
+def _vel_z_20d(s: pd.Series) -> float | None:
+    """20d velocity z-score via shared IRD-R13 grammar (engine.ird_velocity).
 
-    Strictly causal: std computed on the trailing norm_window of the CHANGE series
-    (shift(lag)), excluding the current value by computing std on history up to t-1.
+    Calls velocity_fields(s, scale=1) and returns vel_20d_z — a TRUE z (mean-subtracted,
+    current-obs excluded from the norm window, trailing 2y or max-available).
+    This is the single authoritative velocity grammar for all IRD lobes.
     """
-    if s is None or len(s) < lag + max(30, norm_window // 4):
-        return None
-    chg = s.diff(lag).dropna()
-    if len(chg) < max(30, norm_window // 4):
-        return None
-    # std on all history preceding the current value
-    hist = chg.iloc[:-1]
-    if len(hist) < max(20, norm_window // 8):
-        return None
-    w = hist.iloc[-norm_window:]
-    sd = float(w.std())
-    if sd == 0 or not math.isfinite(sd):
-        return None
-    current_chg = float(chg.iloc[-1])
-    z = current_chg / sd
-    return _r(z, 3) if math.isfinite(z) else None
+    return _ird_velocity_fields(s, scale=1.0)["vel_20d_z"]
 
 
 def _asof(s: pd.Series) -> str:
@@ -167,17 +154,21 @@ def _leg(
     name: str,
     adverse_direction: str = "up",  # "up" or "down" for the leg
 ) -> dict | None:
-    """Build the IRD-R13 leg grammar dict from a series."""
+    """Build the IRD-R13 leg grammar dict from a series.
+
+    vel_20d_z uses the shared IRD-R13 grammar from engine.ird_velocity
+    (true z: mean-subtracted, current-obs excluded, trailing 2y window).
+    vel_5d_z and level-z are not part of the shared grammar; they are None.
+    """
     if s is None or s.empty:
         return None
     val = _r(float(s.iloc[-1]))
     pct, wd = _pctile_trailing(s, pctile_window)
-    v5z = _vel_z(s, _FIVE_D, pctile_window)
-    v20z = _vel_z(s, _TWENTY_D, pctile_window)
+    v20z = _vel_z_20d(s)
     return {
         "value": val,
-        "z": _r(_vel_z(s, 1, pctile_window)),  # level z vs trailing dist
-        "vel_5d_z": v5z,
+        "z": None,       # level-z not in shared grammar; set to None
+        "vel_5d_z": None,  # 5d z not in shared grammar; set to None
         "vel_20d_z": v20z,
         "pctile": _r(pct, 1),
         "asof": _asof(s),
@@ -335,9 +326,10 @@ def _leg_em_fx_basket(gaps: list[str]) -> dict | None:
     pctiles = [p for p in [rvol_pct, dd_pct] if p is not None]
     composite_pctile = float(np.mean(pctiles)) if pctiles else None
 
-    # Velocity z on the basket level
-    v5z = _vel_z(basket_lvl, _FIVE_D, min(_TWO_YEARS, len(basket_lvl)))
-    v20z = _vel_z(basket_lvl, _TWENTY_D, min(_TWO_YEARS, len(basket_lvl)))
+    # Velocity z on the basket level via shared IRD-R13 grammar
+    _bvf = _ird_velocity_fields(basket_lvl, scale=1.0)
+    v5z = None   # 5d z not in shared grammar
+    v20z = _bvf["vel_20d_z"]
 
     return {
         "value": _r(dd_last * 100.0, 2),  # drawdown % from 60d high

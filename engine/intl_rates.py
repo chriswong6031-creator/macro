@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 from engine import intl_compare, intl_inputs
-from engine.ird_velocity import velocity_fields as _ird_velocity
+from engine.ird_velocity import velocity_fields_bp as _ird_velocity
 from lib import config, store
 
 log = logging.getLogger(__name__)

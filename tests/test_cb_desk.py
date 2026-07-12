@@ -388,6 +388,54 @@ class TestStaleFlagging:
             assert fed_row["stale"] is True
 
 
+class TestTrend3mCadenceAware:
+    """IRD review finding: monthly series must use 3-obs lookback, not 63."""
+
+    def test_monthly_flat_24m_after_hike_reads_hold(self):
+        """Monthly IR3TIB series flat for 24 months after an old hike → 'hold'.
+
+        With the OLD cadence-unaware logic (n=63 on a monthly series = ~5y lookback),
+        BoJ/BoE/SNB/BoC/RBA show 'hiking' while the rate has been flat for 2 years.
+        With cadence='monthly', n=3 → only the last 3 months are compared → 'hold'.
+        """
+        # Monthly series: one hike 24 months ago (jump from 0 to 0.25), then flat
+        n = 36   # 36 months of history
+        idx = pd.date_range("2022-01-01", periods=n, freq="MS")
+        # First 12 months: 0.0; then hike to 0.25 at month 12; then flat 24 months
+        values = np.where(np.arange(n) < 12, 0.0, 0.25)
+        s = pd.Series(values, index=idx)
+
+        # OLD behavior (cadence="daily" / no cadence param): reads "hiking"
+        trend_old = _trend_3m(s, cadence="daily")
+        assert trend_old == "hiking", (
+            "Sanity: daily cadence on monthly series should misread as 'hiking' "
+            f"(got {trend_old!r})"
+        )
+
+        # FIXED behavior (cadence="monthly"): last 3 monthly obs are all 0.25 → 'hold'
+        trend_fixed = _trend_3m(s, cadence="monthly")
+        assert trend_fixed == "hold", (
+            f"Monthly cadence: 24m flat after old hike should read 'hold', got {trend_fixed!r}"
+        )
+
+    def test_monthly_recent_hike_still_reads_hiking(self):
+        """Monthly series with recent hike within 3 months → 'hiking' with cadence='monthly'."""
+        n = 24
+        idx = pd.date_range("2024-01-01", periods=n, freq="MS")
+        # Hike 2 months ago: 0.0 → 0.25
+        values = np.where(np.arange(n) < n - 2, 0.0, 0.25)
+        s = pd.Series(values, index=idx)
+
+        trend = _trend_3m(s, cadence="monthly")
+        assert trend == "hiking", f"Recent monthly hike should read 'hiking', got {trend!r}"
+
+    def test_daily_cadence_default_unchanged(self):
+        """Default cadence='daily' is backward-compatible: rising daily series → 'hiking'."""
+        s = _rising_rate(600, 0.0, 0.055)["fed_funds"]
+        result = _trend_3m(s)   # no cadence arg → default "daily"
+        assert result == "hiking"
+
+
 class TestDeterminism:
     def test_snapshot_deterministic(self):
         """Two calls with same data return identical results."""

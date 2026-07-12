@@ -180,8 +180,14 @@ reuse `.rcard`/`.rdesk`/`.kpi`/`.chip` scaffolding — no new idiom.
 - **IRD-R12 · Surface law.** Design Doctrine binds every panel: stance vocabulary on Tier 1,
   banned vocab demoted to hover receipts, one as-of + one footnote per panel, bilingual parity,
   reuse existing card idioms (no new tape forms; tape v3 is the only sanctioned tape).
-- **IRD-R13 · Velocity grammar.** One shared construction everywhere: Δ5d and Δ20d, z-scored on
-  2y history (or max available, disclosed). "Velocity" means exactly this on every IRD surface.
+- **IRD-R13 · Velocity grammar.** One shared construction everywhere (implemented in
+  `engine/ird_velocity.py`): Δ5d and Δ20d (× 100 = basis points for yield/OAS series in
+  %-point units; scale=1 for ratio/level series).  The 20d velocity z-score is a TRUE z:
+  `(current_20d_chg − mean(hist)) / std(hist)` where `hist` is the trailing 2y (504bd) of the
+  20d-change series EXCLUDING the current observation (causal).  Callers: `intl_bonds` /
+  `intl_rates` use `velocity_fields_bp()` (scale=100); `intl_risk` / `contagion` use
+  `velocity_fields(scale=1)` via `_vel_z_20d()` thin wrappers.  "Velocity" means exactly this
+  on every IRD surface — window_days disclosed.
 
 Standing kills this program must not disturb: C1/C2/C4c/C5/C6/C7/C8 (all CONTEXT/INVERTED,
 weight 0), per-pair FX gating (INTL-43), lead-lag read-throughs beyond transmission reads

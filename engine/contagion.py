@@ -33,6 +33,7 @@ import numpy as np
 import pandas as pd
 
 from lib import store
+from engine.ird_velocity import velocity_fields as _ird_velocity_fields
 
 log = logging.getLogger(__name__)
 
@@ -121,6 +122,13 @@ def _fred_series(series_id: str) -> pd.Series | None:
 
 
 def _pctile_trailing(s: pd.Series, window: int) -> float | None:
+    """Trailing percentile of the current observation within its own window.
+
+    Inclusive convention: the current value IS included in its own ranking window
+    (w <= last includes the last element of w, which equals last).  This means a
+    fresh all-time-high within the window reads 100.0, not (n-1)/n × 100.
+    Callers that need exclusive-window percentiles must slice before calling.
+    """
     if s is None or s.empty:
         return None
     w = s.iloc[-min(window, len(s)):]
@@ -128,21 +136,14 @@ def _pctile_trailing(s: pd.Series, window: int) -> float | None:
     return round(float((w <= last).mean() * 100.0), 1)
 
 
-def _vel_z(s: pd.Series, lag: int, window: int) -> float | None:
-    if s is None or len(s) < lag + max(20, window // 4):
-        return None
-    chg = s.diff(lag).dropna()
-    if len(chg) < max(20, window // 4):
-        return None
-    hist = chg.iloc[:-1]
-    if len(hist) < max(10, window // 8):
-        return None
-    w = hist.iloc[-window:]
-    sd = float(w.std())
-    if sd == 0 or not math.isfinite(sd):
-        return None
-    z = float(chg.iloc[-1]) / sd
-    return _r(z, 3) if math.isfinite(z) else None
+def _vel_z_20d(s: pd.Series) -> float | None:
+    """20d velocity z-score via shared IRD-R13 grammar (engine.ird_velocity).
+
+    Calls velocity_fields(s, scale=1) and returns vel_20d_z — a TRUE z (mean-subtracted,
+    current-obs excluded from the norm window, trailing 2y or max-available).
+    This is the single authoritative velocity grammar for all IRD lobes.
+    """
+    return _ird_velocity_fields(s, scale=1.0)["vel_20d_z"]
 
 
 # ---------------------------------------------------------------------------
@@ -469,7 +470,6 @@ def corr_tightening() -> dict:
 
     fx_rets: list[pd.Series] = []
     for ticker in _EM_FX_YAHOO_CORR:
-        s = _load_etf_close("yahoo") if False else None
         df = store.read("yahoo", ticker)
         if df is not None and not df.empty:
             col = "close" if "close" in df.columns else df.columns[0]
@@ -539,7 +539,7 @@ def corr_tightening() -> dict:
             avg_corr_ser = pd.Series(avg_corr_ts, index=tail.index[_CORR_WINDOW:]).dropna()
             if not avg_corr_ser.empty:
                 pairwise = _r(float(avg_corr_ser.iloc[-1]), 3)
-                pairwise_vel = _vel_z(avg_corr_ser, 20, min(_TWO_YEARS, len(avg_corr_ser)))
+                pairwise_vel = _vel_z_20d(avg_corr_ser)
 
     # Tightening signal: corr rising (vel > 0) while returns negative
     tightening = None
@@ -610,7 +610,7 @@ def two_tier_read(em_stress_state: str | None = None) -> dict:
             gaps.append(f"tier1: regional OAS {series_id} absent")
             regional_oas[name] = None
             continue
-        v20z = _vel_z(s, 20, min(_TWO_YEARS, len(s)))
+        v20z = _vel_z_20d(s)
         regional_oas[name] = {
             "value": _r(float(s.iloc[-1])),
             "vel_20d_z": v20z,
@@ -634,7 +634,7 @@ def two_tier_read(em_stress_state: str | None = None) -> dict:
     # (a) US HY OAS Δ20d z >= 2
     us_hy = _fred_series("BAMLH0A0HYM2")
     if us_hy is not None:
-        v20z = _vel_z(us_hy, 20, min(_TWO_YEARS, len(us_hy)))
+        v20z = _vel_z_20d(us_hy)
         hot = v20z is not None and v20z >= 2.0
         tier2_legs["us_hy_oas_vel"] = {
             "value": _r(float(us_hy.iloc[-1])),
