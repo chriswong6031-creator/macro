@@ -1579,7 +1579,8 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pandas numpy pyyaml pyarrow requests
+        # jinja2: test_ird_wiring imports scripts.build_intl / build_macro_context (template env)
+        run: pip install pytest pandas numpy pyyaml pyarrow requests jinja2
       - name: IRD substrate + engines test suite
         run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py tests/test_intl_risk.py tests/test_contagion.py tests/test_cb_desk.py tests/test_ird_velocity.py tests/test_ird_wiring.py -q
 
