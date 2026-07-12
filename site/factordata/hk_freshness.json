@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-07-12T01:46:25+00:00",
+  "checked_at": "2026-07-12T02:57:12+00:00",
   "expected_session": "2026-07-10",
   "stores": {
     "cache": {
@@ -21,6 +21,11 @@
       "asof": "2026-07-10",
       "lag_days": 0,
       "state": "fresh"
+    },
+    "southbound": {
+      "asof": null,
+      "lag_days": null,
+      "state": "dead"
     }
   },
   "coherence": {
@@ -35,6 +40,9 @@
     "curr_cache_max": "2026-07-10",
     "note": null
   },
-  "verdict": "ok",
-  "banner_message": null
+  "verdict": "degraded",
+  "banner_message": {
+    "en": "HK data degraded \u2014 southbound \u2014 behind (last \u2014)",
+    "zh": "\u6e2f\u80a1\u6570\u636e\u964d\u7ea7 \u2014 southbound \u843d\u540e \u2014\uff08\u6700\u540e \u2014\uff09"
+  }
 }
