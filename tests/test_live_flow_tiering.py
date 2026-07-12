@@ -3,22 +3,27 @@
 Tests:
   1.  max_concurrent: env override via LIVE_FLOW_MAX_CONCURRENT
   2.  max_concurrent: config fallback when env absent
-  3.  max_concurrent: invalid env value falls back to config
-  4.  two_tier_enabled: False by default
-  5.  two_tier_enabled: True when LIVE_FLOW_TWO_TIER=1
-  6.  select_cycle_roots: two-tier OFF returns all roots unchanged
-  7.  select_cycle_roots: two-tier ON splits tier1 vs tier2 correctly
-  8.  select_cycle_roots: tier2 round-robins across cycles
-  9.  select_cycle_roots: all roots in tier1 → returns tier1 only, no crash
-  10. pinned_publish_enabled: ON by default
-  11. pinned_publish_enabled: OFF when env=0
-  12. pinned_publish roots: added to publish set when missing from top-40
-  13. pinned_publish roots: already in top-40 → not duplicated
-  14. write_daily_summary: correct schema and fields
-  15. write_daily_summary: nightly-idempotent (second call overwrites cleanly)
-  16. write_daily_summary: handles empty day_state gracefully
-  17. write_daily_summary: prem_z computed when baseline present
-  18. write_daily_summary: prem_z is None when baseline absent
+  3.  max_concurrent: default=2 when neither env nor config present
+  4.  max_concurrent: invalid env value falls back to config
+  5.  two_tier_enabled: False by default
+  6.  two_tier_enabled: True when LIVE_FLOW_TWO_TIER=1
+  7.  two_tier_enabled: False for other env values
+  8.  select_cycle_roots: two-tier OFF returns all roots unchanged
+  9.  select_cycle_roots: two-tier ON splits tier1 vs tier2 correctly
+  10. select_cycle_roots: tier2 round-robins across cycles
+  11. select_cycle_roots: all roots in tier1 → returns tier1 only, no crash
+  12. pinned_publish_enabled: ON by default
+  13. pinned_publish_enabled: OFF when env=0
+  14. pinned_publish roots: added to publish set when missing from top-40
+  15. pinned_publish roots: already in top-40 → not duplicated
+  16. write_daily_summary: correct schema and fields
+  17. write_daily_summary: nightly-idempotent (second call overwrites cleanly)
+  18. write_daily_summary: handles empty day_state gracefully
+  19. write_daily_summary: prem_z computed when baseline present
+  20. write_daily_summary: prem_z is None when baseline absent
+  21. daily_summary_enabled: False by default (MUST_FIX-2 gate coverage)
+  22. daily_summary_enabled: True when LIVE_FLOW_DAILY_SUMMARY=1
+  23. daily_summary_enabled: False for other env values
 """
 from __future__ import annotations
 
@@ -328,3 +333,30 @@ class TestWriteDailySummary:
         spy_row = next(r for r in d["names"] if r["root"] == "SPY")
         assert spy_row["has_baseline"] is False
         assert spy_row["prem_z"] is None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 19–21. _daily_summary_enabled (FC-R8 gate flag, MUST_FIX-2 coverage)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestDailySummaryEnabled:
+    """FC-R8 daily summary is gated DEFAULT OFF (new production write path)."""
+
+    def test_false_by_default(self, monkeypatch):
+        """Daily summary is OFF by default — production safe."""
+        lf = _import_poller()
+        monkeypatch.delenv(lf.DAILY_SUMMARY_ENV, raising=False)
+        assert lf._daily_summary_enabled() is False
+
+    def test_true_when_env_set(self, monkeypatch):
+        """Daily summary ON when LIVE_FLOW_DAILY_SUMMARY=1."""
+        lf = _import_poller()
+        monkeypatch.setenv(lf.DAILY_SUMMARY_ENV, "1")
+        assert lf._daily_summary_enabled() is True
+
+    def test_false_for_other_env_values(self, monkeypatch):
+        """Values other than '1' do not enable daily summary."""
+        lf = _import_poller()
+        for val in ("0", "yes", "true", ""):
+            monkeypatch.setenv(lf.DAILY_SUMMARY_ENV, val)
+            assert lf._daily_summary_enabled() is False, f"expected False for {val!r}"
