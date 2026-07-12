@@ -178,6 +178,139 @@ def test_priority_components_reconstruct_the_score():
         assert sum(v[0] for v in a["priority_components"].values()) == a["priority"]
 
 
+# --- v2 modeling: persistence, lifecycle, corroboration cap, storylines -------
+
+def test_corroboration_cap_is_demote_only():
+    # Article-2 clean: the cap may only ever LOWER a band, never raise it.  An
+    # uncorroborated major drops to minor; a corroborated one is untouched.
+    reg = at._registry_index()
+    doc = at._validation("altdata", "convergence", "", "", reg)   # documented, not backtested
+    # isolated one-off, no cross-asset confirm, not persisting → demoted
+    band, why = at.corroborated_severity("major", "watch", "neutral", doc, fire_count=1, streak_days=0)
+    assert band == "minor" and why == "uncorroborated"
+    # a persisting flag keeps its band (persistence corroborates)
+    band, why = at.corroborated_severity("major", "watch", "neutral", doc, fire_count=5, streak_days=6)
+    assert band == "major" and why is None
+    # cross-asset confirm corroborates → band untouched (even as a one-off)
+    band, why = at.corroborated_severity("critical", "watch", "confirm", doc, 1, 0)
+    assert band == "critical" and why is None
+    # an uncorroborated critical steps down exactly one notch (→ major), never further
+    band, why = at.corroborated_severity("critical", "watch", "neutral", doc, 1, 0)
+    assert band == "major" and why == "uncorroborated"
+    # a backtested family keeps its band even as a one-off
+    bt = {"backtested": True}
+    band, why = at.corroborated_severity("major", "watch", "neutral", bt, 1, 0)
+    assert band == "major" and why is None
+    # act-tier is inherently corroborated; minor is a no-op floor
+    assert at.corroborated_severity("major", "act", "neutral", doc, 1, 0)[0] == "major"
+    assert at.corroborated_severity("minor", "context", "neutral", doc, 1, 0) == ("minor", None)
+
+
+def test_persistence_recovers_the_fire_pattern():
+    inst = [{"ts": "2026-06-01T00:00:00"}, {"ts": "2026-06-05T00:00:00"},
+            {"ts": "2026-06-03T00:00:00"}]
+    p = at._persistence(inst)
+    assert p["fire_count"] == 3
+    assert p["first_ts"].startswith("2026-06-01") and p["last_ts"].startswith("2026-06-05")
+    assert p["streak_days"] == 4
+
+
+def test_lifecycle_stages_are_descriptive():
+    # persisting = re-fired across days AND still fresh; fading = same history, gone quiet
+    assert at.lifecycle_of(fire_count=5, streak_days=6, age_days=0) == "persisting"
+    assert at.lifecycle_of(fire_count=5, streak_days=6, age_days=9) == "fading"
+    assert at.lifecycle_of(fire_count=1, streak_days=0, age_days=0) == "new"
+    assert at.lifecycle_of(fire_count=1, streak_days=0, age_days=9) == "aging"
+
+
+def test_clustering_maps_related_alerts_together():
+    assert at.cluster_of("bonds", "credit_band") == "stress"
+    assert at.cluster_of("macro", "transition_state_change") == "regime"
+    assert at.cluster_of("altdata", "convergence") == "single_name"
+    assert at.cluster_of("themes", "theme_deteriorating") == "rotation"
+    assert at.cluster_of("nope", "nope") == "other"
+
+
+def test_board_read_is_bounded_and_descriptive():
+    p = _payload()
+    br = p["board_read"]
+    assert 0 <= br["score"] <= 100
+    assert br["stance"] in ("risk-off", "mixed", "constructive")
+    assert br["one_liner"] and br["one_liner_zh"]
+
+
+def test_new_payload_keys_and_alert_fields_present():
+    p = _payload()
+    for k in ("board_read", "volume", "storylines"):
+        assert k in p
+    for a in p["alerts"]:
+        for k in ("cluster", "lifecycle", "fire_count", "streak_days", "first_ts", "last_ts"):
+            assert k in a
+        assert a["fire_count"] >= 1
+        assert a["lifecycle"] in ("new", "persisting", "fading", "aging")
+
+
+def test_storylines_do_not_reorder_the_feed():
+    # storylines are a grouping VIEW; the alerts array stays priority-sorted, and
+    # every storyline's count reconciles with the feed's cluster membership.
+    p = _payload()
+    from collections import Counter
+    feed_by_cluster = Counter(a["cluster"] for a in p["alerts"])
+    for st in p["storylines"]:
+        assert st["count"] == feed_by_cluster[st["cluster"]]
+    assert sum(st["count"] for st in p["storylines"]) == len(p["alerts"])
+
+
+def test_severity_is_no_longer_a_monotone_wall():
+    # the whole point of the v2 corroboration cap: the board must show a real triage
+    # gradient, not 60 identical 'major' rows.  At least two distinct bands appear.
+    p = _payload()
+    bands = {a["severity"] for a in p["alerts"]}
+    assert len(bands) >= 2
+
+
+def test_volume_context_states_and_empty():
+    import pandas as pd
+    today = pd.Timestamp("2026-06-14")
+    # empty input → {} (template guards on volume.state)
+    assert at._volume_context([], today, 30) == {}
+    # busier: last-7d fires far above the trailing weekly rate
+    busy = ([{"ts": (today - pd.Timedelta(days=1)).isoformat()}] * 40
+            + [{"ts": (today - pd.Timedelta(days=20)).isoformat()}] * 4)
+    v = at._volume_context(busy, today, 30)
+    assert v["state"] == "busier" and v["ratio"] >= 1.25 and v["last_7d"] == 40
+    # quieter: last week almost silent vs a busy earlier stretch
+    quiet = ([{"ts": (today - pd.Timedelta(days=25)).isoformat()}] * 60
+             + [{"ts": (today - pd.Timedelta(days=2)).isoformat()}] * 2)
+    q = at._volume_context(quiet, today, 30)
+    assert q["state"] == "quieter" and q["ratio"] <= 0.75
+    # normal: last-7d roughly equal to the weekly baseline
+    norm = [{"ts": (today - pd.Timedelta(days=d)).isoformat()} for d in range(0, 28)]
+    n = at._volume_context(norm, today, 28)
+    assert n["state"] == "normal" and 0.75 < n["ratio"] < 1.25
+
+
+def test_enum_zh_maps_closed_sets_and_falls_back():
+    assert at.enum_zh("ca", "converging") == "趋同"      # the bug the review caught
+    assert at.enum_zh("ca", "unknown") == "未知"
+    assert at.enum_zh("band", "elevated") == "偏高"
+    assert at.enum_zh("nfci", "loose") == "宽松"
+    assert at.enum_zh("quad", "Goldilocks") == "金发经济"
+    assert at.enum_zh("ca", "some_new_state") == "some_new_state"  # degrade, never crash
+    assert at.enum_zh("band", None) is None
+
+
+def test_board_read_zh_matches_en_verdict(monkeypatch):
+    # regression for the ZH 'converging/unknown → 分散' mislabel: the ZH label must
+    # track the true verdict, never silently collapse to 'diversified'.
+    import engine.alert_triage as m
+    for verdict, zh in [("converging", "趋同"), ("unknown", "未知"), ("diversified", "分散")]:
+        ctx = {"cross_asset": {"verdict": verdict}, "risk_backdrop": {}}
+        br = m._board_read([], ctx)
+        assert zh in br["one_liner_zh"], f"{verdict} should render {zh}"
+        assert verdict in br["one_liner"]
+
+
 # --- the page render ----------------------------------------------------------
 
 def test_page_renders_without_template_errors():
