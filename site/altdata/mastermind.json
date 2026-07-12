@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-07-12",
-  "generated_utc": "2026-07-12T09:45:51.248501+00:00",
+  "generated_utc": "2026-07-12T10:10:43.315653+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": null,
   "brain_present": false,
@@ -20,7 +20,7 @@
     "open": 0,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 109,
+  "n_signals": 110,
   "n_broken": 21,
   "signals": [
     {
@@ -613,6 +613,42 @@
       "clamped": null
     },
     {
+      "ticker": "DHR",
+      "signal_score": 44,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.4,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "special_situation",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": -8.3,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -17.4,
+      "ret_20d": 8.6,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Jim Cramer",
+          "rel": "AFFILIATES_WITH",
+          "kind": "influencer"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "GSK",
       "signal_score": 43,
       "conviction": "medium",
@@ -1003,35 +1039,6 @@
       "channels": [
         "activist_13d",
         "material_8k"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": null,
-      "no_price_data": true,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": null,
-      "ret_20d": null,
-      "above_50dma": null,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "NVS",
-      "signal_score": 34,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.05,
-      "convergence_score": 2,
-      "channels": [
-        "clinical_phase3_start",
-        "fda_label_expansion"
       ],
       "trump_linked": false,
       "rs_vs_spy_60d": null,
