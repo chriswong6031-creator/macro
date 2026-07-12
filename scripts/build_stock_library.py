@@ -3915,7 +3915,7 @@ def main() -> int:
                 try:
                     _plab_d12_df = _plab_s1d.compute_grids(_ext_closes)
                 except Exception as _plab_d12_e:
-                    log.debug("pick_lab: 1D/2D grid skipped (%s)", _plab_d12_e)
+                    log.warning("pick_lab: 1D/2D grid skipped (%s)", _plab_d12_e)
 
                 # ── 3. Compute 3D oscillator scalars per ticker ───────────────────────
                 # signal_frame already ran inside sig_verdict but does not expose raw
@@ -3976,6 +3976,15 @@ def main() -> int:
                     except Exception:
                         pass  # null-honest: leave d3 absent for this ticker
 
+                # ── 3b. T0 beta indicator artifact (display-only; reuses the grids above) ──
+                try:
+                    from engine import t0_indicator as _t0i
+                    _t0_art = _t0i.build_artifact(d1_grid=_plab_d12_df, d3_map=_plab_d3, closes=_ext_closes, asof=_plab_asof, sector_map=_coil_sector, liq_map=_liq_map)
+                    _t0i.write_artifact(_t0_art, site)
+                    log.info("t0_indicator: %d matches / %d scanned for %s", len(_t0_art["matches"]), _t0_art["universe_n"], _plab_asof)
+                except Exception as _t0_e:  # noqa: BLE001 — never fatal
+                    log.warning("t0_indicator artifact skipped (%s)", _t0_e)
+
                 # ── 4. Build rec lookup for tech/alpha/context fields ─────────────────
                 # to_write is list of (safe_ticker, rec); rec["ticker"] is the canonical key.
                 _plab_rec_by_t: dict[str, dict] = {}
@@ -4010,7 +4019,7 @@ def main() -> int:
                     _plab_alpha = _plab_rec2.get("alpha") or {}
                     _plab_lad = _plab_rec2.get("ladder") or {}
                     _plab_vs  = _plab_rec2.get("vol_squeeze") or {}
-                    _plab_liq_chip = _plab_liq_map.get(_plab_tk) or {}
+                    _plab_liq_chip = _liq_map.get(_plab_tk) or {}
                     _plab_axes = _plab_prof.get("axes") or {}
                     _plab_coil_cb = coiled_by.get(_plab_tk) or {}
 
@@ -4144,11 +4153,11 @@ def main() -> int:
                     log.info("pick_lab snapshot: %d rows for %s (%.1fs)",
                              len(_plab_rows), _plab_asof, _plab_time.time() - _plab_t0)
                 else:
-                    log.debug("pick_lab snapshot: 0 rows assembled for %s", _plab_asof)
+                    log.warning("pick_lab snapshot: 0 rows assembled for %s", _plab_asof)
             else:
-                log.debug("pick_lab snapshot skipped: no as_of or no close panel")
+                log.warning("pick_lab snapshot skipped: no as_of or no close panel")
         except Exception as _plab_e:  # noqa: BLE001 — snapshot producer is never fatal
-            log.debug("pick_lab snapshot skipped (%s)", _plab_e)
+            log.warning("pick_lab snapshot skipped (%s)", _plab_e)
     # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
     # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)
     bccal = config.data_dir() / "regime" / "bottom_confidence_calibration.json"

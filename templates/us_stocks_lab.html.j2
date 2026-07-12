@@ -118,6 +118,16 @@
   .book-chip.on{background:var(--panel2,var(--panel));color:var(--text);border-color:var(--muted)}
   .book-chip .fam{font-size:10px;font-weight:700;color:var(--muted);margin-left:4px}
 
+  /* ── beta tab ── */
+  .beta-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--info,#4c8bf5) 60%,var(--line));
+    color:var(--info,#4c8bf5);background:color-mix(in srgb,var(--info,#4c8bf5) 10%,transparent);
+    vertical-align:middle;margin-left:6px}
+  .beta-hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:0 0 6px}
+  .beta-title{font-size:18px;font-weight:800;letter-spacing:-.01em}
+  .beta-sub{font-size:13px;color:var(--muted);margin:0 0 10px;max-width:80ch}
+  .beta-adv{font-variant-numeric:tabular-nums}
+
   /* ── long-hold tab ── */
   .lh-banner{margin:0 0 16px;padding:13px 16px;border:1.5px solid color-mix(in srgb,var(--info,#4c8bf5) 40%,var(--line));
     border-radius:12px;background:color-mix(in srgb,var(--info,#4c8bf5) 7%,var(--panel))}
@@ -168,6 +178,7 @@
     <button class="tabbtn on" data-tab="scoreboard" role="tab">{{ t('Scoreboard', '记分板') }}</button>
     <button class="tabbtn" data-tab="velocity" role="tab">{{ t('1D Velocity', '1日动能') }}</button>
     <button class="tabbtn" data-tab="allbooks" role="tab">{{ t('All Books', '全部书本') }}</button>
+    <button class="tabbtn" data-tab="beta" role="tab">{{ t('Beta', '测试') }}</button>
     <button class="tabbtn" data-tab="longhold" role="tab">{{ t('Long-Hold Grid', '长持网格') }}</button>
     <button class="tabbtn" data-tab="method" role="tab">{{ t('Method', '方法') }}</button>
   </div>
@@ -499,6 +510,81 @@
       {% endif %}
     </div>
     {% endfor %}
+    {% endif %}
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- TAB BETA: EARLY TURN SCREEN                                       -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="beta" style="display:none">
+    <div class="beta-hd">
+      <span class="beta-title">{{ t('Early Turn Screen', '早期拐点筛选') }}</span>
+      <span class="beta-chip">BETA</span>
+    </div>
+    {% if t0.as_of %}<p class="pl-asof">{{ t('As of', '截至') }} {{ t0.as_of }}</p>{% endif %}
+    <p class="beta-sub">{{ t("Stocks washed out on the slow frame, first daily up-tick today. Watch — don't chase.", '慢框架超跌、当日日线首现回升的股票。观察为主，勿追高。') }}</p>
+    <div class="sb-note">
+      {{ t('T0 = 3-day-frame StochRSI under 30 with a same-day daily StochRSI up-cross (RSI14/Stoch14/3/3). Beta — an early, unproven flag; not a buy signal.', 'T0 = 3日框架StochRSI低于30且当日日线StochRSI上穿（RSI14/Stoch14/3/3）。测试版 — 早期且未经验证的提示，并非买入信号。') }}
+    </div>
+
+    {% if not t0.present %}
+    <div class="pl-empty">
+      <div class="pl-empty-icon">🔬</div>
+      <h2>{{ t('No data yet', '暂无数据') }}</h2>
+      <p>{{ t('No data yet — this beta screen populates after the next nightly build.', '暂无数据 — 此测试版筛选将在下次夜间构建后填充。') }}</p>
+    </div>
+    {% elif t0.matches %}
+    {% if t0.total > 30 %}
+    <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
+      {{ t('Showing top 30 of', '显示前30，共') }} {{ t0.total }} {{ t('by liquidity', '按流动性排序') }}
+    </p>
+    {% endif %}
+    <div class="tbl-scroll">
+      <table class="sb-tbl" aria-label="T0 Early Turn Screen">
+        <thead>
+          <tr>
+            <th class="l">{{ t('Ticker', '代码') }}</th>
+            <th class="l">{{ t('Sector', '板块') }}</th>
+            <th>{{ t('Close', '收盘') }}</th>
+            <th class="l">{{ t('Slow frame', '慢框架') }}</th>
+            <th class="l">{{ t('Daily', '日线') }}</th>
+            <th>{{ t('Liquidity', '流动性') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in t0.matches %}
+          <tr>
+            <td class="l"><b>{{ m.ticker }}</b></td>
+            <td class="l" style="color:var(--muted);font-size:12px">{{ m.sector or '—' }}</td>
+            <td>{% if m.close is not none %}${{ "%.2f"|format(m.close) }}{% else %}—{% endif %}</td>
+            <td class="l">
+              <span class="l-en">washed out</span><span class="l-zh">深度超跌</span>
+              <span style="color:var(--muted);font-size:11px;margin-left:4px">(K {{ m.d3_k|round(0)|int }})</span>
+            </td>
+            <td class="l">
+              <span class="l-en">turned up today</span><span class="l-zh">今日上穿</span>
+            </td>
+            <td class="beta-adv">
+              {%- if m.dollar_adv_20d is not none -%}
+                {%- set adv = m.dollar_adv_20d -%}
+                {%- if adv >= 1e9 -%}${{ "%.1f"|format(adv / 1e9) }}B
+                {%- elif adv >= 1e6 -%}${{ "%.0f"|format(adv / 1e6) }}M
+                {%- elif adv >= 1e3 -%}${{ "%.0f"|format(adv / 1e3) }}K
+                {%- else -%}${{ "%.0f"|format(adv) }}
+                {%- endif -%}
+              {%- else -%}—{%- endif -%}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="pl-empty">
+      <div class="pl-empty-icon">🔬</div>
+      <h2>{{ t('Nothing flagging today', '今日无触发') }}</h2>
+      <p>{{ t('Nothing is flagging today — most days this list is empty.', '今日无触发 — 大多数日子该列表为空。') }}</p>
+    </div>
     {% endif %}
   </section>
 
