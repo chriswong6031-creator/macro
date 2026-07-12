@@ -158,6 +158,8 @@ on:
       - "tests/test_china_news_engine.py"
       # LHB-W2c symbol-directory archival: collector + test must re-run together.
       - "tests/test_symbol_directory.py"
+      # LHB-W3 winner-autopsy B-family feature columns: engine + builder + test re-run together.
+      - "tests/test_winner_autopsy.py"
       # sector_pulse wiring tripwire (#1193 post-mortem): PR #1170 injected sector_pulse
       # into build_stock_library.py; an unrelated refactor 90 min later silently deleted
       # the block and merged green because nothing here covered the builder. The wiring
@@ -845,6 +847,8 @@ jobs:
         run: python -m pytest tests/test_edgar_quarterly_tags.py -q
       - name: symbol-directory archival collector tests (LHB-W2c / LHB-R8)
         run: python -m pytest tests/test_symbol_directory.py -q
+      - name: winner autopsy B-family feature column tests (LHB-W3)
+        run: python -m pytest tests/test_winner_autopsy.py -q
 
   neural-web:
     # neural-web program (W0, #1253 post-mortem): three test files were run by ZERO

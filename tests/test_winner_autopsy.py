@@ -58,7 +58,7 @@ class TestConstants:
         assert wa.BLOWOFF_RETRACE == 0.50
 
     def test_schema_names(self):
-        assert wa.SCHEMA_EPISODES == "winner_episodes.v1"
+        assert wa.SCHEMA_EPISODES == "winner_episodes.v2"
         assert wa.SCHEMA_WATCH == "breakaway_watch.v1"
 
     def test_gics_etf_map(self):
@@ -595,3 +595,343 @@ class TestBuildScriptDryRun:
         assert panel["cases"]["n_cases"] >= 1, (
             "Expected at least 1 case (MRNA_2026.md must parse)"
         )
+
+
+# ---------------------------------------------------------------------------
+# 7. B1 — Hardening ladder feature extraction
+# ---------------------------------------------------------------------------
+
+def _make_events_df(rows: list[dict]) -> pd.DataFrame:
+    """Build a synthetic material_8k_events DataFrame."""
+    if not rows:
+        return pd.DataFrame(columns=["ticker", "filing_date", "items", "cik",
+                                     "form", "accession"])
+    return pd.DataFrame(rows)
+
+
+class TestExtractB1HardeningLadder:
+    """Synthetic event frames for B1 orderings."""
+
+    def test_soft_then_hard_detected(self):
+        """Soft event before hard event in pre-onset window produces soft_then_hard=True."""
+        t0 = pd.Timestamp("2020-06-01")
+        events = _make_events_df([
+            # soft: 30d before t0
+            {"ticker": "FOO", "filing_date": "2020-05-01", "items": "7.01"},
+            # hard: 10d before t0 (after the soft)
+            {"ticker": "FOO", "filing_date": "2020-05-22", "items": "1.01"},
+        ])
+        result = wa.extract_b1_hardening_ladder("FOO", t0, events)
+        assert result["soft_then_hard"] is True
+        assert result["hard_event_count_126d"] == 1
+        assert result["soft_event_count_126d"] == 1
+        assert result["days_soft_to_hard"] is not None
+        assert result["days_soft_to_hard"] == (pd.Timestamp("2020-05-22") - pd.Timestamp("2020-05-01")).days
+        assert result["b1_coverage"] == "post_2014_only"
+
+    def test_hard_only_no_soft_then_hard(self):
+        """Hard events with no soft events: soft_then_hard=False."""
+        t0 = pd.Timestamp("2020-06-01")
+        events = _make_events_df([
+            {"ticker": "FOO", "filing_date": "2020-05-15", "items": "1.01"},
+            {"ticker": "FOO", "filing_date": "2020-05-20", "items": "2.01"},
+        ])
+        result = wa.extract_b1_hardening_ladder("FOO", t0, events)
+        assert result["soft_then_hard"] is False
+        assert result["hard_event_count_126d"] == 2
+        assert result["soft_event_count_126d"] == 0
+
+    def test_post_t0_events_excluded_from_counts(self):
+        """Events after t0 must not appear in pre-onset counts."""
+        t0 = pd.Timestamp("2020-06-01")
+        events = _make_events_df([
+            # This one is AFTER t0 — must be excluded from pre-counts
+            {"ticker": "FOO", "filing_date": "2020-06-10", "items": "1.01"},
+            # This one is before t0 and within 126d
+            {"ticker": "FOO", "filing_date": "2020-05-10", "items": "8.01"},
+        ])
+        result = wa.extract_b1_hardening_ladder("FOO", t0, events)
+        assert result["hard_event_count_126d"] == 0, (
+            "Post-t0 hard event must not be counted in pre-onset window"
+        )
+        assert result["soft_event_count_126d"] == 1
+
+    def test_era_cutoff_pre_2014_returns_none(self):
+        """Episodes with t0 < 2014-01-01 must return all feature columns as None."""
+        t0 = pd.Timestamp("2010-03-15")
+        events = _make_events_df([
+            {"ticker": "BAR", "filing_date": "2010-02-01", "items": "1.01"},
+        ])
+        result = wa.extract_b1_hardening_ladder("BAR", t0, events)
+        assert result["hard_event_count_126d"] is None
+        assert result["soft_event_count_126d"] is None
+        assert result["soft_then_hard"] is None
+        assert result["days_soft_to_hard"] is None
+        assert result["hard_event_reversed"] is None
+        assert result["b1_coverage"] == "pre_era_cutoff"
+
+    def test_hard_event_reversed_detected(self):
+        """1.02 (deal termination) within 252cd after t0 sets hard_event_reversed=True."""
+        t0 = pd.Timestamp("2020-06-01")
+        events = _make_events_df([
+            # pre-onset hard event
+            {"ticker": "FOO", "filing_date": "2020-05-15", "items": "1.01"},
+            # post-onset 1.02 (termination) within 252 days
+            {"ticker": "FOO", "filing_date": "2020-09-01", "items": "1.02"},
+        ])
+        result = wa.extract_b1_hardening_ladder("FOO", t0, events)
+        assert result["hard_event_reversed"] is True
+
+    def test_hard_event_reversed_false_when_no_102(self):
+        """No 1.02 after t0: hard_event_reversed=False."""
+        t0 = pd.Timestamp("2020-06-01")
+        events = _make_events_df([
+            {"ticker": "FOO", "filing_date": "2020-05-15", "items": "1.01"},
+        ])
+        result = wa.extract_b1_hardening_ladder("FOO", t0, events)
+        assert result["hard_event_reversed"] is False
+
+    def test_empty_events_df_returns_unavailable(self):
+        """Empty events_df returns unavailable coverage."""
+        t0 = pd.Timestamp("2020-06-01")
+        result = wa.extract_b1_hardening_ladder("FOO", t0, pd.DataFrame())
+        assert result["b1_coverage"] == "unavailable"
+        assert result["hard_event_count_126d"] is None
+
+    def test_multi_item_row_parsed_correctly(self):
+        """A row with 'items=1.01,7.01' counts as both hard and soft."""
+        t0 = pd.Timestamp("2020-06-01")
+        events = _make_events_df([
+            {"ticker": "FOO", "filing_date": "2020-05-15", "items": "1.01,7.01"},
+        ])
+        result = wa.extract_b1_hardening_ladder("FOO", t0, events)
+        assert result["hard_event_count_126d"] == 1
+        assert result["soft_event_count_126d"] == 1
+
+
+# ---------------------------------------------------------------------------
+# 8. B2 — Self-funding crossover
+# ---------------------------------------------------------------------------
+
+def _make_statements_df(rows: list[dict]) -> pd.DataFrame:
+    """Build a synthetic annual statements DataFrame."""
+    if not rows:
+        return pd.DataFrame(columns=["ticker", "period_end", "cfo", "capex", "revenue"])
+    return pd.DataFrame(rows)
+
+
+class TestExtractB2SelfFunding:
+    """B2 PIT correctness tests."""
+
+    def _base_row(self, ticker: str, period_end: str, cfo: float, capex: float,
+                  revenue: float) -> dict:
+        return {
+            "ticker": ticker,
+            "period_end": period_end,
+            "cfo": cfo,
+            "capex": capex,
+            "revenue": revenue,
+        }
+
+    def test_self_funded_true_when_both_years_qualify(self):
+        """Both PIT years with cfo > |capex| and revenue growing => self_funded_at_t0=True."""
+        t0 = pd.Timestamp("2022-06-01")
+        # period_end + 120d <= t0: use 2021-01-31 (+ 120d = 2021-05-31 <= 2022-06-01)
+        #                          and 2020-01-31 (+ 120d = 2020-05-31 <= 2022-06-01)
+        stmt = _make_statements_df([
+            self._base_row("ACME", "2020-01-31", cfo=100.0, capex=-30.0, revenue=500.0),
+            self._base_row("ACME", "2021-01-31", cfo=120.0, capex=-40.0, revenue=600.0),
+        ])
+        result = wa.extract_b2_self_funding("ACME", t0, stmt)
+        # cfo_y0=120 > |capex_y0|=40, cfo_y1=100 > |capex_y1|=30, rev_y0=600 > rev_y1=500
+        assert result["self_funded_at_t0"] is True
+        assert result["b2_cfo_y0"] == 120.0
+        assert result["b2_cfo_y1"] == 100.0
+
+    def test_self_funded_false_when_revenue_declining(self):
+        """Revenue declining between two PIT years => self_funded_at_t0=False."""
+        t0 = pd.Timestamp("2022-06-01")
+        stmt = _make_statements_df([
+            self._base_row("ACME", "2020-01-31", cfo=100.0, capex=-30.0, revenue=700.0),
+            self._base_row("ACME", "2021-01-31", cfo=120.0, capex=-40.0, revenue=600.0),
+        ])
+        result = wa.extract_b2_self_funding("ACME", t0, stmt)
+        # cfo > |capex| in both years, but revenue fell 700->600
+        assert result["self_funded_at_t0"] is False
+
+    def test_self_funded_false_when_capex_exceeds_cfo(self):
+        """CFO < |capex| in y0 => self_funded_at_t0=False."""
+        t0 = pd.Timestamp("2022-06-01")
+        stmt = _make_statements_df([
+            self._base_row("ACME", "2020-01-31", cfo=100.0, capex=-30.0, revenue=500.0),
+            # y0: cfo=50 < |capex|=200
+            self._base_row("ACME", "2021-01-31", cfo=50.0, capex=-200.0, revenue=600.0),
+        ])
+        result = wa.extract_b2_self_funding("ACME", t0, stmt)
+        assert result["self_funded_at_t0"] is False
+
+    def test_pit_invisible_row_excluded(self):
+        """A row whose period_end + 120d > t0 must NOT be counted as PIT-visible."""
+        t0 = pd.Timestamp("2021-04-01")
+        stmt = _make_statements_df([
+            # period_end 2020-01-31 + 120d = 2020-05-31 <= t0: visible
+            self._base_row("ACME", "2020-01-31", cfo=100.0, capex=-30.0, revenue=500.0),
+            # period_end 2020-12-31 + 120d = 2021-04-30 > t0: NOT visible
+            self._base_row("ACME", "2020-12-31", cfo=200.0, capex=-50.0, revenue=800.0),
+        ])
+        result = wa.extract_b2_self_funding("ACME", t0, stmt)
+        # Only 1 PIT-visible row, so fewer_than_2_pit_years
+        assert result["self_funded_at_t0"] is None
+        assert result["b2_note"] == "fewer_than_2_pit_years"
+
+    def test_null_returned_when_no_rows_for_ticker(self):
+        """Ticker not in statements_df returns null."""
+        t0 = pd.Timestamp("2022-06-01")
+        stmt = _make_statements_df([
+            self._base_row("OTHER", "2021-01-31", cfo=100.0, capex=-30.0, revenue=500.0),
+        ])
+        result = wa.extract_b2_self_funding("ACME", t0, stmt)
+        assert result["self_funded_at_t0"] is None
+        assert result["b2_note"] == "no_rows_for_ticker"
+
+    def test_empty_statements_df_returns_unavailable(self):
+        """Empty statements_df returns unavailable."""
+        result = wa.extract_b2_self_funding("ACME", pd.Timestamp("2022-06-01"), pd.DataFrame())
+        assert result["b2_note"] == "unavailable"
+        assert result["self_funded_at_t0"] is None
+
+
+# ---------------------------------------------------------------------------
+# 9. B4 — Index provenance
+# ---------------------------------------------------------------------------
+
+def _make_index_changes_df(rows: list[dict]) -> pd.DataFrame:
+    """Build a synthetic sp_index_changes DataFrame."""
+    if not rows:
+        return pd.DataFrame(columns=["ticker", "action", "announce_date", "effective_date"])
+    return pd.DataFrame(rows)
+
+
+class TestExtractB4IndexProvenance:
+    """B4 coverage-honesty and window tests."""
+
+    def test_none_when_t0_predates_archive(self):
+        """t0 before B4_ARCHIVE_START (2026-06-11) yields None for both bool columns."""
+        t0 = pd.Timestamp("2024-01-15")
+        changes = _make_index_changes_df([
+            {"ticker": "XYZ", "action": "addition", "announce_date": "2026-06-15",
+             "effective_date": "2026-06-20"},
+        ])
+        result = wa.extract_b4_index_provenance("XYZ", t0, changes)
+        assert result["index_announce_within_63d_pre_t0"] is None
+        assert result["index_announce_within_63d_post_t0"] is None
+        assert result["b4_coverage"] == "pre_archive"
+
+    def test_pre_t0_addition_detected(self):
+        """Addition announced within 63d before t0 sets pre_t0 flag True."""
+        t0 = pd.Timestamp("2026-08-01")
+        # announce_date 30 days before t0 = 2026-07-02
+        changes = _make_index_changes_df([
+            {"ticker": "XYZ", "action": "addition", "announce_date": "2026-07-02",
+             "effective_date": "2026-07-07"},
+        ])
+        result = wa.extract_b4_index_provenance("XYZ", t0, changes)
+        assert result["index_announce_within_63d_pre_t0"] is True
+        assert result["b4_coverage"] == "full"
+
+    def test_post_t0_addition_detected(self):
+        """Addition announced within 63d after t0 sets post_t0 flag True."""
+        t0 = pd.Timestamp("2026-07-01")
+        # announce_date 20 days after t0 = 2026-07-21
+        changes = _make_index_changes_df([
+            {"ticker": "XYZ", "action": "addition", "announce_date": "2026-07-21",
+             "effective_date": "2026-07-28"},
+        ])
+        result = wa.extract_b4_index_provenance("XYZ", t0, changes)
+        assert result["index_announce_within_63d_post_t0"] is True
+        assert result["index_announce_within_63d_pre_t0"] is False
+
+    def test_deletion_not_counted_as_addition(self):
+        """Deletions are ignored; only additions count for the flag."""
+        t0 = pd.Timestamp("2026-07-01")
+        changes = _make_index_changes_df([
+            {"ticker": "XYZ", "action": "deletion", "announce_date": "2026-06-20",
+             "effective_date": "2026-06-25"},
+        ])
+        result = wa.extract_b4_index_provenance("XYZ", t0, changes)
+        assert result["index_announce_within_63d_pre_t0"] is False
+        assert result["index_announce_within_63d_post_t0"] is False
+        assert result["b4_coverage"] == "full"
+
+    def test_empty_changes_returns_unavailable(self):
+        """Empty changes_df returns unavailable for t0 >= archive start."""
+        t0 = pd.Timestamp("2026-07-01")
+        result = wa.extract_b4_index_provenance("XYZ", t0, pd.DataFrame())
+        assert result["b4_coverage"] == "unavailable"
+        assert result["index_announce_within_63d_pre_t0"] is None
+
+
+# ---------------------------------------------------------------------------
+# 10. Row-count / order preservation via _join_b_features
+# ---------------------------------------------------------------------------
+
+class TestJoinBFeaturesPreservesRows:
+    """Row count and order must be preserved exactly after joining B features."""
+
+    def test_row_count_preserved(self):
+        """_join_b_features must return the exact same number of rows."""
+        import scripts.research.build_winner_autopsy as bwa  # noqa: PLC0415
+
+        # Build a minimal episodes_df with 5 rows
+        t0s = pd.bdate_range("2020-01-02", periods=5)
+        eps = pd.DataFrame({
+            "ticker": ["A", "B", "C", "D", "E"],
+            "t0": t0s,
+        })
+
+        result = bwa._join_b_features(eps, None, None, None)
+        assert len(result) == len(eps), (
+            f"Row count changed: {len(eps)} -> {len(result)}"
+        )
+
+    def test_row_order_preserved(self):
+        """Original ticker order must be preserved."""
+        import scripts.research.build_winner_autopsy as bwa  # noqa: PLC0415
+
+        tickers = ["Z", "Y", "X", "W", "V"]
+        t0s = pd.bdate_range("2020-01-02", periods=5)
+        eps = pd.DataFrame({"ticker": tickers, "t0": t0s})
+
+        result = bwa._join_b_features(eps, None, None, None)
+        assert list(result["ticker"]) == tickers, (
+            "Row order not preserved after B-feature join"
+        )
+
+    def test_b1_columns_added(self):
+        """B1 columns must be present in joined result."""
+        import scripts.research.build_winner_autopsy as bwa  # noqa: PLC0415
+
+        eps = pd.DataFrame({"ticker": ["A"], "t0": [pd.Timestamp("2020-01-02")]})
+        result = bwa._join_b_features(eps, None, None, None)
+        for col in ["hard_event_count_126d", "soft_event_count_126d",
+                    "soft_then_hard", "b1_coverage"]:
+            assert col in result.columns, f"Missing B1 column: {col}"
+
+    def test_b2_columns_added(self):
+        """B2 columns must be present in joined result."""
+        import scripts.research.build_winner_autopsy as bwa  # noqa: PLC0415
+
+        eps = pd.DataFrame({"ticker": ["A"], "t0": [pd.Timestamp("2020-01-02")]})
+        result = bwa._join_b_features(eps, None, None, None)
+        for col in ["self_funded_at_t0", "b2_cfo_y0", "b2_capex_y0", "b2_note"]:
+            assert col in result.columns, f"Missing B2 column: {col}"
+
+    def test_b4_columns_added(self):
+        """B4 columns must be present in joined result."""
+        import scripts.research.build_winner_autopsy as bwa  # noqa: PLC0415
+
+        eps = pd.DataFrame({"ticker": ["A"], "t0": [pd.Timestamp("2020-01-02")]})
+        result = bwa._join_b_features(eps, None, None, None)
+        for col in ["index_announce_within_63d_pre_t0",
+                    "index_announce_within_63d_post_t0", "b4_coverage"]:
+            assert col in result.columns, f"Missing B4 column: {col}"

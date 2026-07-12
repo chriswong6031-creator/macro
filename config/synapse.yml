@@ -5943,7 +5943,7 @@ artifacts:
     storage: git
     asof_field: t0
     freshness_sla_hours: 8760
-    schema: winner_episodes.v1
+    schema: winner_episodes.v2
     tier: display
     horizon_role: hold_thesis
     weights: none
@@ -5964,6 +5964,19 @@ artifacts:
       (2021-10-25 → 2025-01-02). Cross-episode inference is month-clustered + era-split
       (WA-R4 / DT-R14 / DT-R16). FIREWALL (WA-R5): MUST NOT feed board ordering, alert
       triage, top-setups, or push floor. fdr_family=long_hold. No scored_path_surfaces.
+      v2 schema (LHB-W3): adds B1 hardening-ladder columns (hard_event_count_126d,
+      soft_event_count_126d, soft_then_hard, days_soft_to_hard, hard_event_reversed,
+      b1_coverage; era-gated to t0>=2014-01-01; source=material_8k_events.parquet;
+      hard items=1.01/2.01 only, 2.02/earnings omitted per FFB-R8),
+      B2 self-funding crossover columns (self_funded_at_t0, b2_cfo/capex/revenue_y0/y1,
+      b2_note; annual grain only per FFB-R8; WA-R7 firewall: episodes t0>=2024-01-01
+      must be EXCLUDED from cross-case aggregate tables until A2 commits; coverage
+      split at 2024 boundary in panel feature_coverage block),
+      and B4 index-provenance columns (index_announce_within_63d_pre/post_t0, b4_coverage;
+      None for t0 < 2026-06-11 archive start — almost all current episodes).
+      WA-R7 note for aggregate tables: B2 columns for episodes t0>=2024-01-01 are
+      A2-firewalled (fundamental family). Use --features-only to join B columns onto
+      an existing episodes parquet without rerunning the episode census.
 
   winner-episodes-manifest:
     path: data/research/winner_episodes_manifest.json

@@ -48,8 +48,26 @@ GAP_PERIOD_END = pd.Timestamp("2025-01-02")
 WATCH_WINDOW_TD: int = 150
 
 # Schema identifiers
-SCHEMA_EPISODES: str = "winner_episodes.v1"
+SCHEMA_EPISODES: str = "winner_episodes.v2"
 SCHEMA_WATCH: str = "breakaway_watch.v1"
+
+# B1 era cutoff (LHB-R5/WA-R4: hardening-ladder features only for episodes t0 >= this date)
+B1_ERA_CUTOFF: pd.Timestamp = pd.Timestamp("2014-01-01")
+
+# B1 item codes: hard events trigger a material transaction (1.01 = entry into agreement,
+# 2.01 = acquisition/disposition). We default to 1.01/2.01 only (see extract_b1_events
+# docstring). 1.02 = termination of agreement (reverse / deal-break event, used for
+# hard_event_reversed outcome column).
+B1_HARD_ITEMS: frozenset[str] = frozenset({"1.01", "2.01"})
+B1_SOFT_ITEMS: frozenset[str] = frozenset({"7.01", "8.01"})
+B1_REVERSAL_ITEM: str = "1.02"
+
+# B2 PIT lag: an annual statement is PIT-visible period_end + 120d (conservative; typical
+# 10-K filing window is 60-90d, but 120d covers late filers and avoids look-ahead).
+B2_PIT_LAG_DAYS: int = 120
+
+# B4 index change archive start (first _seen date in data/sp_index_changes/changes.parquet)
+B4_ARCHIVE_START: pd.Timestamp = pd.Timestamp("2026-06-11")
 
 # GICS sector -> SPDR ETF map (verbatim from scripts/grade_us_board.py lines 111-117)
 _GICS_ETF: dict[str, str] = {
@@ -1100,6 +1118,440 @@ def _empty_features() -> dict[str, Any]:
         "dv_z21": None,
         "updown_dollar_vol_ratio": None,
         "close_location_value_or_None": None,
+    }
+
+
+# ---------------------------------------------------------------------------
+# B-family feature extraction (B1, B2, B4)
+# ---------------------------------------------------------------------------
+
+def _parse_items_list(items_str: str | None) -> list[str]:
+    """Parse comma-separated 8-K item codes into a sorted list of strings.
+
+    e.g. "1.01,2.03,8.01" -> ["1.01", "2.03", "8.01"]
+    Returns [] if items_str is None or empty.
+    """
+    if not items_str or not isinstance(items_str, str):
+        return []
+    return [s.strip() for s in items_str.split(",") if s.strip()]
+
+
+def extract_b1_hardening_ladder(
+    ticker: str,
+    t0: pd.Timestamp,
+    events_df: pd.DataFrame,
+) -> dict[str, Any]:
+    """B1 — Hardening-ladder event features from data/edgar/material_8k_events.parquet.
+
+    Era restriction (LHB-R5 / WA-R4): episodes with t0 < 2014-01-01 get all columns
+    set to None. This is the earliest date for which 8-K EDGAR submissions-feed
+    backfill coverage is considered adequate for event-density comparisons.
+
+    Hard items (B1_HARD_ITEMS): Item 1.01 (entry into agreement) and Item 2.01
+    (acquisition/disposition). We intentionally omit Item 2.02 (earnings) because:
+    (a) the masterplan's earnings-store mention was conditional on "if cheap"; the
+    earnings_8k_dates store does not align cleanly with material_8k_events ticker-keys
+    in this worktree; and (b) earnings are already captured separately as a context
+    layer via the earnings_8k_dates store. This decision is noted in the column docstring.
+
+    Soft items (B1_SOFT_ITEMS): Item 7.01 (Reg FD) and 8.01 (other events).
+
+    hard_event_reversed (forward-only outcome, NOT a PIT input): an Item 1.02
+    (termination of agreement / deal-break) filed within 252 trading-calendar days
+    AFTER t0. This is a descriptive forward outcome for display only. 1.02 historical
+    coverage is limited to whatever the submissions-feed backfill reached before the
+    W2b expansion; we report this via b1_coverage.
+
+    Parameters
+    ----------
+    ticker:
+        Ticker string.
+    t0:
+        Episode onset date (pd.Timestamp).
+    events_df:
+        material_8k_events.parquet DataFrame (ALL rows; we filter inside).
+        Required columns: ticker, filing_date, items.
+
+    Returns
+    -------
+    dict with keys:
+        hard_event_count_126d  int | None  # era-gated
+        soft_event_count_126d  int | None  # era-gated
+        soft_then_hard         bool | None # any soft strictly before any hard in [t0-126d, t0)
+        days_soft_to_hard      int | None  # days from earliest soft to earliest subsequent hard
+        hard_event_reversed    bool | None # Item 1.02 within 252cd after t0 (outcome column)
+        b1_coverage            str         # "post_2014_only" | "pre_era_cutoff" | "unavailable"
+    """
+    _empty: dict[str, Any] = {
+        "hard_event_count_126d": None,
+        "soft_event_count_126d": None,
+        "soft_then_hard": None,
+        "days_soft_to_hard": None,
+        "hard_event_reversed": None,
+        "b1_coverage": "unavailable",
+    }
+
+    if events_df is None or events_df.empty:
+        return _empty
+
+    required = {"ticker", "filing_date", "items"}
+    if not required.issubset(set(events_df.columns)):
+        return _empty
+
+    # Era gate
+    if t0 < B1_ERA_CUTOFF:
+        return {
+            "hard_event_count_126d": None,
+            "soft_event_count_126d": None,
+            "soft_then_hard": None,
+            "days_soft_to_hard": None,
+            "hard_event_reversed": None,
+            "b1_coverage": "pre_era_cutoff",
+        }
+
+    # Filter to this ticker
+    ticker_mask = events_df["ticker"].astype(str) == str(ticker)
+    ev = events_df[ticker_mask].copy()
+    if ev.empty:
+        return {**_empty, "b1_coverage": "post_2014_only"}
+
+    # Parse filing_date to Timestamp
+    try:
+        ev["_fd"] = pd.to_datetime(ev["filing_date"], errors="coerce")
+    except Exception:  # noqa: BLE001
+        return {**_empty, "b1_coverage": "post_2014_only"}
+
+    ev = ev.dropna(subset=["_fd"])
+    if ev.empty:
+        return {**_empty, "b1_coverage": "post_2014_only"}
+
+    # Pre-onset window: filing_date strictly < t0, within 126 calendar days of t0
+    window_start = t0 - pd.Timedelta(days=126)
+    pre_mask = (ev["_fd"] < t0) & (ev["_fd"] >= window_start)
+    pre_ev = ev[pre_mask].copy()
+
+    # For each row, parse the items list and explode to per-item rows
+    def _has_item(items_str: str | None, item_codes: frozenset[str]) -> bool:
+        parsed = _parse_items_list(items_str)
+        return any(code in item_codes for code in parsed)
+
+    hard_count = 0
+    soft_count = 0
+    hard_dates: list[pd.Timestamp] = []
+    soft_dates: list[pd.Timestamp] = []
+
+    for _, row in pre_ev.iterrows():
+        items_str = row.get("items")
+        fd = row["_fd"]
+        is_hard = _has_item(items_str, B1_HARD_ITEMS)
+        is_soft = _has_item(items_str, B1_SOFT_ITEMS)
+        if is_hard:
+            hard_count += 1
+            hard_dates.append(pd.Timestamp(fd))
+        if is_soft:
+            soft_count += 1
+            soft_dates.append(pd.Timestamp(fd))
+
+    # soft_then_hard: any soft strictly before any hard (in the pre-onset window)
+    soft_then_hard: bool | None = None
+    days_soft_to_hard: int | None = None
+    if soft_dates and hard_dates:
+        earliest_soft = min(soft_dates)
+        earliest_hard_after_soft = min(
+            (d for d in hard_dates if d > earliest_soft), default=None
+        )
+        if earliest_hard_after_soft is not None:
+            soft_then_hard = True
+            days_soft_to_hard = int((earliest_hard_after_soft - earliest_soft).days)
+        else:
+            soft_then_hard = False
+    elif hard_dates or soft_dates:
+        # Only one type present — soft_then_hard is False (no sequence)
+        soft_then_hard = False
+
+    # hard_event_reversed: Item 1.02 within 252 calendar days AFTER t0
+    # Coverage note: historical 1.02 rows depend on the submissions-feed backfill depth
+    # (W2b expansion); early years may have incomplete coverage.
+    post_mask = (ev["_fd"] >= t0) & (
+        ev["_fd"] <= t0 + pd.Timedelta(days=252)
+    )
+    post_ev = ev[post_mask]
+    hard_event_reversed: bool | None = False
+    for _, row in post_ev.iterrows():
+        if B1_REVERSAL_ITEM in _parse_items_list(row.get("items")):
+            hard_event_reversed = True
+            break
+
+    return {
+        "hard_event_count_126d": hard_count,
+        "soft_event_count_126d": soft_count,
+        "soft_then_hard": soft_then_hard,
+        "days_soft_to_hard": days_soft_to_hard,
+        "hard_event_reversed": hard_event_reversed,
+        "b1_coverage": "post_2014_only",
+    }
+
+
+def extract_b2_self_funding(
+    ticker: str,
+    t0: pd.Timestamp,
+    statements_df: pd.DataFrame,
+) -> dict[str, Any]:
+    """B2 — Self-funding crossover features from data/edgar/statements.parquet (ANNUAL).
+
+    PIT rule: a statement row is visible at t0 if period_end + 120d <= t0
+    (B2_PIT_LAG_DAYS = 120). We take the latest two PIT-visible annual rows
+    and check whether both years have cfo > capex AND revenue is growing year-on-year.
+
+    FFB-R8 note: quarterly cfo/capex are ~66% null due to YTD-only tagging on 10-Qs.
+    B2 uses annual grain only (data/edgar/statements.parquet, not statements_quarterly).
+    Working-capital timing legs are omitted — annual filing does not carry interim
+    working-capital granularity.
+
+    WA-R7 firewall: for episodes with t0 >= 2024-01-01, self_funded_at_t0 is a
+    fundamental-family (F1/B2) column and MUST NOT be included in any cross-case
+    aggregate table until A2 commits. The panel's feature_coverage block MUST split
+    non-null counts at the 2024-01-01 boundary.
+
+    Parameters
+    ----------
+    ticker:
+        Ticker string.
+    t0:
+        Episode onset date (pd.Timestamp).
+    statements_df:
+        Annual statements.parquet DataFrame (ALL rows; we filter inside).
+        Required columns: ticker, period_end, cfo, capex, revenue.
+
+    Returns
+    -------
+    dict with keys:
+        self_funded_at_t0   bool | None  — both latest PIT years: cfo>capex AND rev growing
+        b2_cfo_y0           float | None — cfo in the most recent PIT year
+        b2_cfo_y1           float | None — cfo in the prior PIT year
+        b2_capex_y0         float | None — capex (abs) in the most recent PIT year
+        b2_capex_y1         float | None — capex (abs) in the prior PIT year
+        b2_revenue_y0       float | None — revenue in the most recent PIT year
+        b2_revenue_y1       float | None — revenue in the prior PIT year
+        b2_note             str           — coverage / skip reason
+    """
+    _empty: dict[str, Any] = {
+        "self_funded_at_t0": None,
+        "b2_cfo_y0": None,
+        "b2_cfo_y1": None,
+        "b2_capex_y0": None,
+        "b2_capex_y1": None,
+        "b2_revenue_y0": None,
+        "b2_revenue_y1": None,
+        "b2_note": "unavailable",
+    }
+
+    if statements_df is None or statements_df.empty:
+        return _empty
+
+    required = {"ticker", "period_end", "cfo", "capex", "revenue"}
+    if not required.issubset(set(statements_df.columns)):
+        return _empty
+
+    # Filter to this ticker
+    ticker_mask = statements_df["ticker"].astype(str) == str(ticker)
+    tk_rows = statements_df[ticker_mask].copy()
+    if tk_rows.empty:
+        return {**_empty, "b2_note": "no_rows_for_ticker"}
+
+    # Parse period_end to Timestamp (PIT cutoff = period_end + 120d)
+    try:
+        tk_rows["_pe"] = pd.to_datetime(tk_rows["period_end"], errors="coerce")
+    except Exception:  # noqa: BLE001
+        return {**_empty, "b2_note": "period_end_parse_error"}
+
+    tk_rows = tk_rows.dropna(subset=["_pe"])
+    if tk_rows.empty:
+        return {**_empty, "b2_note": "no_valid_period_end"}
+
+    # PIT filter: period_end + B2_PIT_LAG_DAYS <= t0
+    pit_cutoff = t0 - pd.Timedelta(days=B2_PIT_LAG_DAYS)
+    pit_visible = tk_rows[tk_rows["_pe"] <= pit_cutoff].sort_values("_pe")
+    if len(pit_visible) < 2:
+        return {**_empty, "b2_note": "fewer_than_2_pit_years"}
+
+    # Take the two most recent PIT-visible rows
+    row_y0 = pit_visible.iloc[-1]  # most recent
+    row_y1 = pit_visible.iloc[-2]  # prior year
+
+    def _float_or_none(val: Any) -> float | None:
+        try:
+            v = float(val)
+            return v if not (v != v) else None  # NaN check
+        except (TypeError, ValueError):
+            return None
+
+    cfo_y0 = _float_or_none(row_y0.get("cfo"))
+    cfo_y1 = _float_or_none(row_y1.get("cfo"))
+    capex_y0 = _float_or_none(row_y0.get("capex"))
+    capex_y1 = _float_or_none(row_y1.get("capex"))
+    rev_y0 = _float_or_none(row_y0.get("revenue"))
+    rev_y1 = _float_or_none(row_y1.get("revenue"))
+
+    # Capex in statements.parquet is negative (cash outflow convention) or positive
+    # depending on the source. We use abs() for the cfo>capex comparison so both
+    # conventions work. Note this in b2_note.
+    capex_y0_abs = abs(capex_y0) if capex_y0 is not None else None
+    capex_y1_abs = abs(capex_y1) if capex_y1 is not None else None
+
+    # self_funded_at_t0: both years have cfo > |capex| AND revenue is growing
+    self_funded: bool | None = None
+    if (
+        cfo_y0 is not None and capex_y0_abs is not None
+        and cfo_y1 is not None and capex_y1_abs is not None
+        and rev_y0 is not None and rev_y1 is not None
+    ):
+        both_self_funded = (cfo_y0 > capex_y0_abs) and (cfo_y1 > capex_y1_abs)
+        rev_growing = rev_y0 > rev_y1
+        self_funded = bool(both_self_funded and rev_growing)
+    elif cfo_y0 is None or capex_y0_abs is None or rev_y0 is None:
+        # Missing data in the most recent year → null
+        self_funded = None
+
+    note = "annual_grain_only_capex_abs_convention"
+
+    return {
+        "self_funded_at_t0": self_funded,
+        "b2_cfo_y0": cfo_y0,
+        "b2_cfo_y1": cfo_y1,
+        "b2_capex_y0": capex_y0,
+        "b2_capex_y1": capex_y1,
+        "b2_revenue_y0": rev_y0,
+        "b2_revenue_y1": rev_y1,
+        "b2_note": note,
+    }
+
+
+def extract_b4_index_provenance(
+    ticker: str,
+    t0: pd.Timestamp,
+    index_changes_df: pd.DataFrame,
+) -> dict[str, Any]:
+    """B4 — Index provenance (addition/deletion) features.
+
+    Source: data/sp_index_changes/changes.parquet (accruing since 2026-06-11).
+
+    Two forward-only windows (relative to t0):
+    - index_announce_within_63d_pre_t0:  bool | None
+        An index ADDITION was announced within 63 calendar days BEFORE t0.
+        announce_date in [t0 - 63d, t0).
+    - index_announce_within_63d_post_t0: bool | None
+        An index ADDITION was announced within 63 calendar days AFTER t0.
+        announce_date in [t0, t0 + 63d].
+
+    None when t0 predates the archive start (B4_ARCHIVE_START = 2026-06-11):
+    almost all current episodes have t0 before the archive, so most rows will be None.
+
+    b4_coverage: "full" | "pre_archive" | "unavailable"
+
+    Parameters
+    ----------
+    ticker:
+        Ticker string.
+    t0:
+        Episode onset date (pd.Timestamp).
+    index_changes_df:
+        sp_index_changes/changes.parquet DataFrame (ALL rows; we filter inside).
+        Required columns: ticker, action, announce_date.
+
+    Returns
+    -------
+    dict with keys:
+        index_announce_within_63d_pre_t0   bool | None
+        index_announce_within_63d_post_t0  bool | None
+        b4_coverage                        str
+    """
+    _empty: dict[str, Any] = {
+        "index_announce_within_63d_pre_t0": None,
+        "index_announce_within_63d_post_t0": None,
+        "b4_coverage": "unavailable",
+    }
+
+    if index_changes_df is None or index_changes_df.empty:
+        return _empty
+
+    required = {"ticker", "action", "announce_date"}
+    if not required.issubset(set(index_changes_df.columns)):
+        return _empty
+
+    # Pre-archive: almost all episodes have t0 < B4_ARCHIVE_START
+    if t0 < B4_ARCHIVE_START:
+        return {
+            "index_announce_within_63d_pre_t0": None,
+            "index_announce_within_63d_post_t0": None,
+            "b4_coverage": "pre_archive",
+        }
+
+    # Filter to this ticker and additions only
+    ticker_mask = index_changes_df["ticker"].astype(str) == str(ticker)
+    action_mask = index_changes_df["action"].astype(str).str.lower() == "addition"
+    ev = index_changes_df[ticker_mask & action_mask].copy()
+
+    if ev.empty:
+        return {
+            "index_announce_within_63d_pre_t0": False,
+            "index_announce_within_63d_post_t0": False,
+            "b4_coverage": "full",
+        }
+
+    try:
+        ev["_ad"] = pd.to_datetime(ev["announce_date"], errors="coerce")
+    except Exception:  # noqa: BLE001
+        return {**_empty, "b4_coverage": "full"}
+
+    ev = ev.dropna(subset=["_ad"])
+
+    # Pre-t0 window: [t0 - 63d, t0)
+    pre_start = t0 - pd.Timedelta(days=63)
+    pre_mask = (ev["_ad"] >= pre_start) & (ev["_ad"] < t0)
+    pre_match = bool(pre_mask.any())
+
+    # Post-t0 window: [t0, t0 + 63d]
+    post_end = t0 + pd.Timedelta(days=63)
+    post_mask = (ev["_ad"] >= t0) & (ev["_ad"] <= post_end)
+    post_match = bool(post_mask.any())
+
+    return {
+        "index_announce_within_63d_pre_t0": pre_match,
+        "index_announce_within_63d_post_t0": post_match,
+        "b4_coverage": "full",
+    }
+
+
+def _empty_b1() -> dict[str, Any]:
+    return {
+        "hard_event_count_126d": None,
+        "soft_event_count_126d": None,
+        "soft_then_hard": None,
+        "days_soft_to_hard": None,
+        "hard_event_reversed": None,
+        "b1_coverage": "unavailable",
+    }
+
+
+def _empty_b2() -> dict[str, Any]:
+    return {
+        "self_funded_at_t0": None,
+        "b2_cfo_y0": None,
+        "b2_cfo_y1": None,
+        "b2_capex_y0": None,
+        "b2_capex_y1": None,
+        "b2_revenue_y0": None,
+        "b2_revenue_y1": None,
+        "b2_note": "unavailable",
+    }
+
+
+def _empty_b4() -> dict[str, Any]:
+    return {
+        "index_announce_within_63d_pre_t0": None,
+        "index_announce_within_63d_post_t0": None,
+        "b4_coverage": "unavailable",
     }
 
 

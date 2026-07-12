@@ -69,6 +69,11 @@ _PIT_PATH = _DATA / "breadth" / "sp1500_pit_membership.parquet"
 _REGISTRY_PATH = _DATA / "experiments" / "registry_seed.json"
 _CASES_GLOB = str(_REPO_ROOT / "research" / "winners" / "cases" / "*.md")
 
+# B-family feature stores
+_MATERIAL_8K_PATH = _DATA / "edgar" / "material_8k_events.parquet"
+_STATEMENTS_PATH = _DATA / "edgar" / "statements.parquet"
+_INDEX_CHANGES_PATH = _DATA / "sp_index_changes" / "changes.parquet"
+
 _OUT_DIR = _DATA / "research"
 _EPISODES_PATH = _OUT_DIR / "winner_episodes.parquet"
 _WATCH_PATH = _OUT_DIR / "breakaway_watch.parquet"
@@ -298,6 +303,176 @@ def _load_clocks() -> list[dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
+# B-family store loaders
+# ---------------------------------------------------------------------------
+
+def _load_material_8k_events() -> pd.DataFrame | None:
+    """Load data/edgar/material_8k_events.parquet for B1 feature extraction."""
+    if not _MATERIAL_8K_PATH.exists():
+        log.warning("material_8k_events not found: %s", _MATERIAL_8K_PATH)
+        return None
+    try:
+        df = pd.read_parquet(_MATERIAL_8K_PATH)
+        log.info("Loaded material_8k_events: %d rows", len(df))
+        return df
+    except Exception as exc:  # noqa: BLE001
+        log.warning("material_8k_events load fail: %s", exc)
+        return None
+
+
+def _load_annual_statements() -> pd.DataFrame | None:
+    """Load data/edgar/statements.parquet (annual grain) for B2 feature extraction."""
+    if not _STATEMENTS_PATH.exists():
+        log.warning("statements.parquet not found: %s", _STATEMENTS_PATH)
+        return None
+    try:
+        df = pd.read_parquet(_STATEMENTS_PATH)
+        log.info("Loaded annual statements: %d rows", len(df))
+        return df
+    except Exception as exc:  # noqa: BLE001
+        log.warning("annual statements load fail: %s", exc)
+        return None
+
+
+def _load_index_changes() -> pd.DataFrame | None:
+    """Load data/sp_index_changes/changes.parquet for B4 feature extraction."""
+    if not _INDEX_CHANGES_PATH.exists():
+        log.warning("index_changes not found: %s", _INDEX_CHANGES_PATH)
+        return None
+    try:
+        df = pd.read_parquet(_INDEX_CHANGES_PATH)
+        log.info("Loaded index_changes: %d rows", len(df))
+        return df
+    except Exception as exc:  # noqa: BLE001
+        log.warning("index_changes load fail: %s", exc)
+        return None
+
+
+def _join_b_features(
+    episodes_df: pd.DataFrame,
+    events_df: pd.DataFrame | None,
+    statements_df: pd.DataFrame | None,
+    index_changes_df: pd.DataFrame | None,
+) -> pd.DataFrame:
+    """Join B1/B2/B4 feature columns onto episodes_df.
+
+    Preserves row order and count exactly (natural key join by position).
+    Returns a new DataFrame with B-family columns appended.
+
+    Feature-coverage block (non-null counts) is NOT written here — it goes
+    in _build_feature_coverage_block() for inclusion in the panel JSON.
+    """
+    from engine.winner_autopsy import (  # noqa: PLC0415
+        extract_b1_hardening_ladder,
+        extract_b2_self_funding,
+        extract_b4_index_provenance,
+        _empty_b1,
+        _empty_b2,
+        _empty_b4,
+    )
+
+    n = len(episodes_df)
+    b1_rows: list[dict[str, Any]] = []
+    b2_rows: list[dict[str, Any]] = []
+    b4_rows: list[dict[str, Any]] = []
+
+    for _, ep in episodes_df.iterrows():
+        ticker = str(ep["ticker"])
+        t0 = pd.Timestamp(ep["t0"])
+
+        if events_df is not None:
+            b1 = extract_b1_hardening_ladder(ticker, t0, events_df)
+        else:
+            b1 = _empty_b1()
+
+        if statements_df is not None:
+            b2 = extract_b2_self_funding(ticker, t0, statements_df)
+        else:
+            b2 = _empty_b2()
+
+        if index_changes_df is not None:
+            b4 = extract_b4_index_provenance(ticker, t0, index_changes_df)
+        else:
+            b4 = _empty_b4()
+
+        b1_rows.append(b1)
+        b2_rows.append(b2)
+        b4_rows.append(b4)
+
+    b1_df = pd.DataFrame(b1_rows)
+    b2_df = pd.DataFrame(b2_rows)
+    b4_df = pd.DataFrame(b4_rows)
+
+    out = episodes_df.copy()
+    for col in b1_df.columns:
+        out[col] = b1_df[col].values
+    for col in b2_df.columns:
+        out[col] = b2_df[col].values
+    for col in b4_df.columns:
+        out[col] = b4_df[col].values
+
+    log.info(
+        "_join_b_features: %d rows, added %d B-family columns",
+        n,
+        len(b1_df.columns) + len(b2_df.columns) + len(b4_df.columns),
+    )
+    return out
+
+
+def _build_feature_coverage_block(episodes_df: pd.DataFrame) -> dict[str, Any]:
+    """Build the feature_coverage block for the panel JSON.
+
+    Reports non-null counts per B-family column, split at the 2024-01-01 boundary
+    (WA-R7: B2 is a fundamental-family column — episodes with t0 >= 2024 are in the
+    A2 firewall until A2 commits and MUST be reported separately).
+    """
+    b_cols = [
+        # B1
+        "hard_event_count_126d", "soft_event_count_126d",
+        "soft_then_hard", "days_soft_to_hard",
+        "hard_event_reversed", "b1_coverage",
+        # B2
+        "self_funded_at_t0", "b2_cfo_y0", "b2_cfo_y1",
+        "b2_capex_y0", "b2_capex_y1", "b2_revenue_y0", "b2_revenue_y1",
+        # B4
+        "index_announce_within_63d_pre_t0", "index_announce_within_63d_post_t0",
+        "b4_coverage",
+    ]
+
+    available_cols = [c for c in b_cols if c in episodes_df.columns]
+    if not available_cols or episodes_df.empty:
+        return {"available": False, "notes": ["B-family columns not yet computed"]}
+
+    t0_col = pd.to_datetime(episodes_df["t0"]) if "t0" in episodes_df.columns else pd.Series(dtype="datetime64[ns]")
+    cutoff_2024 = pd.Timestamp("2024-01-01")
+
+    pre_2024_mask = t0_col < cutoff_2024
+    post_2024_mask = t0_col >= cutoff_2024
+
+    coverage: dict[str, Any] = {"available": True, "columns": {}}
+    for col in available_cols:
+        series = episodes_df[col]
+        n_total = int(series.notna().sum())
+        n_pre = int(series[pre_2024_mask].notna().sum()) if pre_2024_mask.any() else 0
+        n_post = int(series[post_2024_mask].notna().sum()) if post_2024_mask.any() else 0
+        coverage["columns"][col] = {
+            "non_null_total": n_total,
+            "non_null_pre_2024": n_pre,
+            "non_null_post_2024_a2_firewall": n_post,
+        }
+
+    coverage["notes"] = [
+        "B2 (self_funded_at_t0 and legs): fundamental-family column — "
+        "non_null_post_2024_a2_firewall rows must NOT appear in cross-case "
+        "aggregate tables until A2 commits (WA-R7).",
+        "B1 era_cutoff=2014-01-01 (LHB-R5/WA-R4): pre-era rows are None.",
+        "B4 archive_start=2026-06-11: almost all episodes are None (pre_archive).",
+        "hard_event_count_126d omits Item 2.02 (earnings) — see extract_b1_hardening_ladder docstring.",
+    ]
+    return coverage
+
+
+# ---------------------------------------------------------------------------
 # Panel JSON builder
 # ---------------------------------------------------------------------------
 
@@ -519,6 +694,7 @@ def _write_panel(
     cases_block: dict[str, Any],
     watch_block: dict[str, Any],
     clocks: list[dict[str, Any]],
+    feature_coverage_block: dict[str, Any] | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
     """Build and optionally write winner_autopsy_panel.json."""
@@ -532,6 +708,8 @@ def _write_panel(
         "watch": watch_block,
         "clocks": clocks,
     }
+    if feature_coverage_block is not None:
+        panel["feature_coverage"] = feature_coverage_block
 
     if not dry_run:
         _OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -700,6 +878,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
             "winner_episodes.parquet and manifest. Off-render, on-demand."
         ),
     )
+    parser.add_argument(
+        "--features-only",
+        action="store_true",
+        help=(
+            "Join B1/B2/B4 feature columns onto the EXISTING winner_episodes.parquet "
+            "without recomputing episodes (no price stores required). Writes updated "
+            "winner_episodes.parquet and feature_coverage block in panel JSON. "
+            "Use when price stores are absent but B-family stores are available."
+        ),
+    )
     args = parser.parse_args(argv)
 
     # HARD-EXIT guard: --smoke + --write-history is forbidden (WA-R9 sole-advancer)
@@ -719,8 +907,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     )
 
     t_start = time.time()
-    log.info("build_winner_autopsy: starting (dry_run=%s smoke=%s backfill=%s write_history=%s)",
-             args.dry_run, args.smoke, args.backfill, args.write_history)
+    log.info(
+        "build_winner_autopsy: starting "
+        "(dry_run=%s smoke=%s backfill=%s write_history=%s features_only=%s)",
+        args.dry_run, args.smoke, args.backfill, args.write_history,
+        getattr(args, "features_only", False),
+    )
 
     # ---- Import engine ----
     try:
@@ -735,6 +927,51 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     except ImportError as exc:
         log.error("Cannot import engine.winner_autopsy: %s", exc)
         return 1
+
+    # ---- Load B-family feature stores (needed for backfill + features-only) ----
+    features_only = getattr(args, "features_only", False)
+    events_df = _load_material_8k_events()
+    statements_df = _load_annual_statements()
+    index_changes_df = _load_index_changes()
+
+    # ---- features-only path ----
+    if features_only:
+        log.info("build_winner_autopsy: --features-only mode")
+        if not _EPISODES_PATH.exists():
+            log.error("--features-only requires existing %s", _EPISODES_PATH)
+            return 1
+        try:
+            episodes_df = pd.read_parquet(_EPISODES_PATH)
+            log.info("Loaded existing episodes: %d rows", len(episodes_df))
+        except Exception as exc:  # noqa: BLE001
+            log.error("Cannot load existing episodes: %s", exc)
+            return 1
+
+        n_before = len(episodes_df)
+        episodes_df = _join_b_features(episodes_df, events_df, statements_df, index_changes_df)
+        # Bump schema stamp
+        episodes_df["_schema"] = SCHEMA_EPISODES
+        episodes_df["_version"] = "v2"
+        assert len(episodes_df) == n_before, (
+            f"Row count changed during B-feature join: {n_before} -> {len(episodes_df)}"
+        )
+
+        if not args.dry_run:
+            _OUT_DIR.mkdir(parents=True, exist_ok=True)
+            episodes_df.to_parquet(_EPISODES_PATH, index=False)
+            log.info("features-only: wrote %s (%d rows)", _EPISODES_PATH, len(episodes_df))
+
+        feature_cov = _build_feature_coverage_block(episodes_df)
+        # Print coverage summary
+        if feature_cov.get("available") and "columns" in feature_cov:
+            print("=== B-FEATURE COVERAGE ===")
+            for col, counts in feature_cov["columns"].items():
+                print(
+                    f"  {col}: non_null_total={counts['non_null_total']}"
+                    f"  pre_2024={counts['non_null_pre_2024']}"
+                    f"  post_2024={counts['non_null_post_2024_a2_firewall']}"
+                )
+        return 0
 
     # ---- Load prices ----
     # In smoke mode, limit yahoo loading to 200 non-bench tickers to avoid
@@ -769,6 +1006,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
 
     # ---- Backfill: full historical census ----
     episodes_df: pd.DataFrame | None = None
+    feature_cov_block: dict[str, Any] | None = None
 
     if args.backfill:
         log.info("build_winner_autopsy: running full backfill census …")
@@ -828,10 +1066,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
                     ctrl_counts.append(len(controls))
                 episodes_df["n_controls"] = ctrl_counts
 
-            # Stamp
+            # Join B-family feature columns (B1/B2/B4)
+            n_before = len(episodes_df)
+            episodes_df = _join_b_features(
+                episodes_df, events_df, statements_df, index_changes_df
+            )
+            assert len(episodes_df) == n_before, (
+                f"Row count changed during B-feature join: {n_before} -> {len(episodes_df)}"
+            )
+            feature_cov_block = _build_feature_coverage_block(episodes_df)
+
+            # Stamp (v2 — schema bumped for B-family columns)
             episodes_df["_display_only"] = True
             episodes_df["_horizon_role"] = "hold_thesis"
-            episodes_df["_version"] = "v1"
+            episodes_df["_version"] = "v2"
             episodes_df["_schema"] = SCHEMA_EPISODES
 
             log.info(
@@ -856,6 +1104,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
                 log.info("Loaded existing episodes: %d rows", len(episodes_df))
             except Exception as exc:  # noqa: BLE001
                 log.warning("Cannot load existing episodes: %s", exc)
+        # Rebuild feature coverage block for panel even in default mode
+        if episodes_df is not None and not episodes_df.empty:
+            feature_cov_block = _build_feature_coverage_block(episodes_df)
 
     # ---- Watch states (current) ----
     watch_df: pd.DataFrame | None = None
@@ -885,7 +1136,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     watch_block = _build_watch_block(watch_df, as_of_str)
 
     elapsed_total = time.time() - t_start
-    panel = _write_panel(census_block, cases_block, watch_block, clocks, dry_run=args.dry_run)
+    panel = _write_panel(
+        census_block, cases_block, watch_block, clocks,
+        feature_coverage_block=feature_cov_block,
+        dry_run=args.dry_run,
+    )
     _write_autopsy_manifest(panel, elapsed_total, dry_run=args.dry_run)
 
     # ---- History append (sole-advancer; nightly only) ----
