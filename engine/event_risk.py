@@ -148,15 +148,17 @@ def snapshot(latest: dict | None = None, events: list[dict] | None = None,
     frag = fragility(latest)
 
     label = nxt.get("label", etype)
+    label_zh = nxt.get("label_zh") or label
     md = nxt.get("md", nxt.get("date", ""))
+    md_zh = nxt.get("md_zh") or md
     time_et = nxt.get("time_et", "")
     up_pct = round(hist["up_rate"] * 100)
 
     headline_en = f"Event-risk window: {label} {when_en}"
-    headline_zh = f"事件风险窗口：{label} {when_zh}"
+    headline_zh = f"事件风险窗口：{label_zh} {when_zh}"
     if nxt_days >= 1:
         headline_en += f" ({md}{(' · ' + time_et + ' ET') if time_et else ''})"
-        headline_zh += f"（{md}{(' · ' + time_et + ' ET') if time_et else ''}）"
+        headline_zh += f"（{md_zh}{(' · ' + time_et + ' ET') if time_et else ''}）"
 
     sub_en = (f"Realized volatility is typically {tier} around this catalyst "
               f"(historically ~±{hist['typ_abs']:.1f}% on the S&P, up about {up_pct}% of the time). "
@@ -168,14 +170,16 @@ def snapshot(latest: dict | None = None, events: list[dict] | None = None,
 
     if frag["fragile"]:
         headline_en = f"Walking into {label} {when_en} positioned FRAGILE"
-        headline_zh = f"在仓位脆弱状态下迎接 {label}（{when_zh}）"
+        headline_zh = f"在仓位脆弱状态下迎接{label_zh}（{when_zh}）"
 
     return {
         "show": True,
         "is_context_only": True,
         "type": etype,
         "label": label,
+        "label_zh": label_zh,
         "md": md,
+        "md_zh": md_zh,
         "dow": nxt.get("dow", ""),
         "time_et": time_et,
         "days_to": nxt_days,
@@ -207,13 +211,14 @@ def as_alert(snap: dict | None) -> dict | None:
     if not snap or not snap.get("show"):
         return None
     label = snap.get("label", "")
+    label_zh = snap.get("label_zh") or label
     when_en, when_zh = snap.get("when_en", ""), snap.get("when_zh", "")
     tier = snap.get("vol_tier", "elevated")
     frag = " · positioned fragile" if snap.get("fragility", {}).get("fragile") else ""
     frag_zh = " · 仓位脆弱" if snap.get("fragility", {}).get("fragile") else ""
     en = (f"Event-risk window: {label} {when_en} — {_TIER_EN.get(tier, tier)} two-sided "
           f"volatility expected{frag}. Not a sell signal; size for the noise.")
-    zh = (f"事件风险窗口：{label}（{when_zh}）—— 预计{_TIER_ZH.get(tier, tier)}的两面性波动{frag_zh}。"
+    zh = (f"事件风险窗口：{label_zh}（{when_zh}）—— 预计{_TIER_ZH.get(tier, tier)}的两面性波动{frag_zh}。"
           f"非卖出信号；按噪声调整仓位。")
     return {"rule": "event_risk", "severity": "warn", "message": en, "message_zh": zh}
 

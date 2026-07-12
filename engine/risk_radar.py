@@ -952,7 +952,11 @@ def _deescalation(dominant: str | None, subs: pd.DataFrame | None,
     agree with: eligible=false whenever the dominant scare is risk-off-flavored
     and the odds trend is rising (or the dominant sub-score itself is still
     climbing). The panel may still narrate what IS fading (receding_scare) as
-    context — it may not present an all-clear. Pure; never raises."""
+    context — it may not present an all-clear. Pure; never raises.
+
+    `deescalated` = the de-escalated-scares chip list (mirrors trajectory
+    drivers.faded; from=peak, to=now sub-score). Context narration only — it is
+    NOT gated on `eligible`, exactly like the rrx card's "What faded" line."""
     h21 = (prob or {}).get("h21")
     od = (traj or {}).get("odds_delta")
     trend = "unknown"
@@ -992,6 +996,11 @@ def _deescalation(dominant: str | None, subs: pd.DataFrame | None,
         reason = f"radar {phase} on the dominant scare; h21 drawdown_prob {trend}"
     else:
         reason = f"radar phase = {phase or 'unknown'} — nothing to recede from"
+    deescalated = [
+        {"key": d.get("key"), "label_en": d.get("label_en"), "label_zh": d.get("label_zh"),
+         "from": d.get("peak"), "to": d.get("now")}
+        for d in ((traj or {}).get("drivers") or {}).get("faded") or []
+    ]
     return {
         "eligible": eligible,
         "reason": reason,
@@ -999,6 +1008,7 @@ def _deescalation(dominant: str | None, subs: pd.DataFrame | None,
         "dominant_velocity": dominant_velocity,  # pts over ~1wk on the dominant sub-score
         "drawdown_prob_h21": h21,
         "drawdown_prob_trend": trend,
+        "deescalated": deescalated,             # chip list for the "What faded" box
     }
 
 

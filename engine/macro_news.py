@@ -124,6 +124,48 @@ THEME_LABEL = {
     "capital_return": ("Buybacks/Dividends", "回购/分红"), "stocks": ("Stocks", "个股"),
 }
 
+# channel/theme slug -> (EN plain words, ZH) for the synthesis `read` line — the
+# doctrine bans raw slugs on user-facing surfaces, so the engine de-slugs at the
+# source. Covers CHANNEL_KEYWORDS keys plus the theme slugs that back-fill a
+# channel when no keyword fires (enrich_headline line: channels or [theme]).
+CHANNEL_LABEL: dict[str, tuple[str, str]] = {
+    "rates": ("rates", "利率"),
+    "inflation": ("inflation", "通胀"),
+    "labor": ("jobs & labor", "就业"),
+    "growth": ("growth", "增长"),
+    "credit": ("credit", "信贷"),
+    "fiscal_trade": ("fiscal & trade", "财政与贸易"),
+    "equities": ("equity market", "股票市场"),
+    "single_stock": ("single stocks", "个股"),
+    "earnings": ("earnings", "业绩"),
+    "guidance": ("guidance", "业绩指引"),
+    "analyst": ("analyst views", "分析师观点"),
+    "deals": ("deals & IPOs", "并购/IPO"),
+    "capital_return": ("buybacks & dividends", "回购与分红"),
+    "energy": ("energy", "能源"),
+    "consumer": ("consumer", "消费"),
+    "housing": ("housing", "房地产"),
+    "monetary": ("Fed & rates", "美联储与利率"),
+    "fiscal": ("fiscal policy", "财政政策"),
+    "stocks": ("individual stocks", "个股"),
+    "macro": ("macro", "宏观"),
+    "stock_wire": ("stock wire", "个股快讯"),
+}
+
+# source_tier slug -> (EN plain words, ZH) for the synthesis `read` line.
+TIER_LABEL: dict[str, tuple[str, str]] = {
+    "official": ("official releases", "官方发布"),
+    "tier1": ("tier-1 press", "一线媒体"),
+    "quality": ("quality press", "优质媒体"),
+    "stock_wire": ("stock wire", "个股快讯"),
+    "unknown": ("other", "其他"),
+}
+
+
+def _slug_label(slug: str, table: dict[str, tuple[str, str]]) -> tuple[str, str]:
+    """(EN, ZH) display pair for a channel/tier slug; unmapped slugs de-underscore."""
+    return table.get(slug) or (slug.replace("_", " "), slug.replace("_", " "))
+
 # Official/key-source feeds that carry first-party signals the broad GDELT wire can
 # miss or down-rank. Best-effort, cached, and still display-only.
 OFFICIAL_FEEDS = [
@@ -648,6 +690,7 @@ def _synthesis(headlines: list[dict]) -> dict:
             "high_impact_count": 0, "top_channels": [], "top_tickers": [],
             "top_themes": [], "source_mix": [], "dominant_channel": "",
             "read": "No high-signal macro tape passed the current filter.",
+            "read_zh": "当前过滤条件下无高信号宏观信息。",
         }
     channels = Counter(c for h in headlines for c in (h.get("channels") or []))
     tickers = Counter(t for h in headlines for t in (h.get("tickers") or []))
@@ -656,8 +699,13 @@ def _synthesis(headlines: list[dict]) -> dict:
     high = sum(1 for h in headlines if h.get("importance") == "high")
     dom_channel = channels.most_common(1)[0][0] if channels else ""
     dom_theme = themes.most_common(1)[0][0] if themes else "macro"
-    read = f"{high} high-impact items; dominant channel {dom_channel or dom_theme}; source mix " \
-           + ", ".join(f"{k}:{v}" for k, v in sources.most_common(3))
+    # bilingual plain-word read line (no raw slugs — doctrine Law 2)
+    ch_en, ch_zh = _slug_label(dom_channel or dom_theme, CHANNEL_LABEL)
+    mix = [(_slug_label(k, TIER_LABEL), v) for k, v in sources.most_common(3)]
+    read = (f"{high} high-impact items; dominant channel {ch_en}; sources "
+            + ", ".join(f"{t[0]} {v}" for t, v in mix))
+    read_zh = (f"{high} 条高影响信息；主导渠道：{ch_zh}；来源："
+               + "、".join(f"{t[1]} {v}" for t, v in mix))
     return {
         "high_impact_count": high,
         "avg_importance": round(sum(float(h.get("importance_score", 0) or 0) for h in headlines) / len(headlines), 1),
@@ -668,6 +716,7 @@ def _synthesis(headlines: list[dict]) -> dict:
         "dominant_channel": dom_channel,
         "dominant_theme": dom_theme,
         "read": read,
+        "read_zh": read_zh,
     }
 
 
@@ -1141,6 +1190,7 @@ def upcoming_catalysts(today: date | None = None, horizon_days: int = 14) -> lis
         if today <= dd <= end:
             out.append({"type": c.get("type", "EVENT"), "date": c["date"],
                         "time_et": c.get("time_et", ""), "label": c.get("label", ""),
+                        "label_zh": c.get("label_zh") or c.get("label", ""),
                         "impact": "med", "source": "config", "is_context_only": True})
     out.sort(key=lambda c: c["date"])
     return out

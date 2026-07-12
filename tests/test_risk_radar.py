@@ -379,3 +379,21 @@ def test_build_jpy_carry_50dma_regime_fires():
     active = leg.iloc[550:]   # well into the declining phase with MA below
     assert (active > 0.0).any(), (
         "jpy_carry never fires when USD/JPY is declining below 50d MA")
+
+
+def test_deescalation_emits_deescalated_chip_list():
+    """The de-escalated-scares chip list mirrors trajectory drivers.faded
+    (from=peak, to=now) — context narration for the v4 'What faded' box."""
+    traj = {"phase": "receding", "odds_delta": -0.01,
+            "drivers": {"faded": [{"key": "vol", "label_en": "Volatility scare",
+                                   "label_zh": "波动率惊吓", "peak": 62.0, "now": 38.0}],
+                        "warm": []}}
+    out = rr._deescalation(None, None, traj, {"h21": 0.1})
+    assert out["deescalated"] == [{"key": "vol", "label_en": "Volatility scare",
+                                   "label_zh": "波动率惊吓", "from": 62.0, "to": 38.0}]
+
+
+def test_deescalation_deescalated_empty_on_missing_drivers():
+    """Old artifacts / missing trajectory degrade to an empty chip list, never a crash."""
+    assert rr._deescalation(None, None, None, None)["deescalated"] == []
+    assert rr._deescalation(None, None, {"phase": "peaking"}, None)["deescalated"] == []
