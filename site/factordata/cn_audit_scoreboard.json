@@ -1,0 +1,10 @@
+{
+  "as_of": "2026-07-12",
+  "schema": "cn_audit_scoreboard.v1",
+  "taxonomy_version": "v2",
+  "note": "no matured rows yet \u2014 accruing",
+  "cells": [],
+  "outcome_cause_mix": {},
+  "process_fault_mix": {},
+  "us_proxy_note": "Pre-store rows (own_market_regime=null) carry stratum='us_proxy'. They are never pooled with own-market cells in any significance claim. Seam date: first row in data/china_regime/regime_daily.parquet."
+}

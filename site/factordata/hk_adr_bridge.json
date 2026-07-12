@@ -15,7 +15,7 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "KWEB": {
+    "FXI": {
       "asof": "2026-07-10",
       "lag_days": 0,
       "state": "fresh"
@@ -30,7 +30,7 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "FXI": {
+    "KWEB": {
       "asof": "2026-07-10",
       "lag_days": 0,
       "state": "fresh"

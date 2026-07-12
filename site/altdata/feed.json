@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-12T13:09:57.773628+00:00",
+  "generated_utc": "2026-07-12T14:20:59.301223+00:00",
   "as_of": "2026-07-12",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -44449,105 +44449,120 @@
         "date": "2026-07-02",
         "otc_total": 159461769.0,
         "dpi": 0.56,
-        "lean": "balanced"
+        "lean": "balanced",
+        "stale": false
       },
       {
         "ticker": "ADTX",
         "date": "2026-07-02",
         "otc_total": 110045530.0,
         "dpi": 0.292,
-        "lean": "accumulation"
+        "lean": "accumulation",
+        "stale": false
       },
       {
         "ticker": "AAL",
         "date": "2026-07-02",
         "otc_total": 108193663.0,
         "dpi": 0.393,
-        "lean": "accumulation"
+        "lean": "accumulation",
+        "stale": false
       },
       {
         "ticker": "CWD",
         "date": "2026-07-02",
         "otc_total": 95796565.0,
         "dpi": 0.556,
-        "lean": "balanced"
+        "lean": "balanced",
+        "stale": false
       },
       {
         "ticker": "SURG",
         "date": "2026-07-02",
         "otc_total": 89624263.0,
         "dpi": 0.587,
-        "lean": "balanced"
+        "lean": "balanced",
+        "stale": false
       },
       {
         "ticker": "OPEN",
         "date": "2026-07-02",
         "otc_total": 72636652.0,
         "dpi": 0.602,
-        "lean": "distribution"
+        "lean": "distribution",
+        "stale": false
       },
       {
         "ticker": "ABTC",
         "date": "2026-07-02",
         "otc_total": 69869399.0,
         "dpi": 0.733,
-        "lean": "distribution"
+        "lean": "distribution",
+        "stale": false
       },
       {
         "ticker": "OLPX",
         "date": "2026-07-02",
         "otc_total": 64006100.0,
         "dpi": 0.052,
-        "lean": "accumulation"
+        "lean": "accumulation",
+        "stale": false
       },
       {
         "ticker": "ONDS",
         "date": "2026-07-02",
         "otc_total": 54751093.0,
         "dpi": 0.412,
-        "lean": "balanced"
+        "lean": "balanced",
+        "stale": false
       },
       {
         "ticker": "SOFI",
         "date": "2026-07-02",
         "otc_total": 52486448.0,
         "dpi": 0.485,
-        "lean": "balanced"
+        "lean": "balanced",
+        "stale": false
       },
       {
         "ticker": "NVDA",
         "date": "2026-07-02",
         "otc_total": 52094900.0,
         "dpi": 0.322,
-        "lean": "accumulation"
+        "lean": "accumulation",
+        "stale": false
       },
       {
         "ticker": "T",
         "date": "2026-07-02",
         "otc_total": 51671235.0,
         "dpi": 0.307,
-        "lean": "accumulation"
+        "lean": "accumulation",
+        "stale": false
       },
       {
         "ticker": "INTC",
         "date": "2026-07-02",
         "otc_total": 50547445.0,
         "dpi": 0.316,
-        "lean": "accumulation"
+        "lean": "accumulation",
+        "stale": false
       },
       {
         "ticker": "NMHI",
         "date": "2026-07-02",
         "otc_total": 48549085.0,
         "dpi": 0.401,
-        "lean": "balanced"
+        "lean": "balanced",
+        "stale": false
       },
       {
         "ticker": "INLF",
         "date": "2026-07-02",
         "otc_total": 45772223.0,
         "dpi": 0.403,
-        "lean": "balanced"
+        "lean": "balanced",
+        "stale": false
       }
     ],
     "insiders": {
@@ -44799,181 +44814,118 @@
     "inst_13f": {
       "adds": [
         {
-          "ticker": "AVGO",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2023-12-31",
-          "chg_usd": 943253575.0,
-          "chg_shares": 845020.0
+          "ticker": "C",
+          "fund": "Sarasin & Partners LLP",
+          "period": "2026-06-30",
+          "chg_usd": 168218064.0,
+          "chg_shares": 1201901.0
         },
         {
-          "ticker": "GOOGL",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-03-31",
-          "chg_usd": 885852340.0,
-          "chg_shares": 429500.0
+          "ticker": "RKLB",
+          "fund": "TEMA ETFS LLC",
+          "period": "2026-06-30",
+          "chg_usd": 164627969.0,
+          "chg_shares": 1619557.0
         },
         {
-          "ticker": "AMZN",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-12-31",
-          "chg_usd": 845388564.0,
-          "chg_shares": 253540.0
+          "ticker": "SATS",
+          "fund": "TEMA ETFS LLC",
+          "period": "2026-06-30",
+          "chg_usd": 159754660.0,
+          "chg_shares": 1537359.0
         },
         {
-          "ticker": "CMG",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2023-06-30",
-          "chg_usd": 818167500.0,
-          "chg_shares": 382500.0
+          "ticker": "TSM",
+          "fund": "Sarasin & Partners LLP",
+          "period": "2026-06-30",
+          "chg_usd": 158746178.0,
+          "chg_shares": 332404.0
         },
         {
-          "ticker": "CMG",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2022-09-30",
-          "chg_usd": 553616784.0,
-          "chg_shares": 368400.0
+          "ticker": "SWK",
+          "fund": "CONFLUENCE INVESTMENT MANAGEMENT LLC",
+          "period": "2026-06-30",
+          "chg_usd": 126908961.0,
+          "chg_shares": 1348374.0
         },
         {
-          "ticker": "GOOGL",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-06-30",
-          "chg_usd": 502666889.0,
-          "chg_shares": 205860.0
+          "ticker": "SPY",
+          "fund": "BENJAMIN JOSEPH FLOYD DBA FLOYD CAPITAL MANAGEMENT",
+          "period": "2026-06-30",
+          "chg_usd": 120238184.0,
+          "chg_shares": 161011.0
         },
         {
-          "ticker": "NVDA",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-03-31",
-          "chg_usd": 501958272.0,
-          "chg_shares": 940120.0
+          "ticker": "SGOV",
+          "fund": "CONFLUENCE INVESTMENT MANAGEMENT LLC",
+          "period": "2026-06-30",
+          "chg_usd": 104142914.0,
+          "chg_shares": 1034498.0
         },
         {
-          "ticker": "AMZN",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-03-31",
-          "chg_usd": 474817517.0,
-          "chg_shares": 153460.0
+          "ticker": "DORM",
+          "fund": "REINHART PARTNERS, LLC.",
+          "period": "2026-06-30",
+          "chg_usd": 93383924.0,
+          "chg_shares": 684382.0
         },
         {
-          "ticker": "AMZN",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-06-30",
-          "chg_usd": 292895222.0,
-          "chg_shares": 85140.0
+          "ticker": "FBND",
+          "fund": "Legacy Wealth Management, LLC",
+          "period": "2026-06-30",
+          "chg_usd": 90785849.0,
+          "chg_shares": 1995732.0
         },
         {
-          "ticker": "MSFT",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2023-12-31",
-          "chg_usd": 273836088.0,
-          "chg_shares": 728210.0
+          "ticker": "ASTS",
+          "fund": "TEMA ETFS LLC",
+          "period": "2026-06-30",
+          "chg_usd": 89117605.0,
+          "chg_shares": 1002899.0
         },
         {
-          "ticker": "GOOGL",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2022-03-31",
-          "chg_usd": 221451087.0,
-          "chg_shares": 79620.0
+          "ticker": "VSAT",
+          "fund": "TEMA ETFS LLC",
+          "period": "2026-06-30",
+          "chg_usd": 86702574.0,
+          "chg_shares": 965400.0
         },
         {
-          "ticker": "NVDA",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2023-12-31",
-          "chg_usd": 218080031.0,
-          "chg_shares": 440370.0
+          "ticker": "CME",
+          "fund": "Sarasin & Partners LLP",
+          "period": "2026-06-30",
+          "chg_usd": 84706192.0,
+          "chg_shares": 383581.0
         },
         {
-          "ticker": "AMZN",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-09-30",
-          "chg_usd": 199467629.0,
-          "chg_shares": 60720.0
+          "ticker": "SPY",
+          "fund": "Gainplan LLC",
+          "period": "2026-06-30",
+          "chg_usd": 82441914.0,
+          "chg_shares": 110398.0
         },
         {
-          "ticker": "AVGO",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-03-31",
-          "chg_usd": 187592199.0,
-          "chg_shares": 404590.0
+          "ticker": "IEF",
+          "fund": "CenturyLink Investment Management Co",
+          "period": "2026-06-30",
+          "chg_usd": 70596505.0,
+          "chg_shares": 746500.0
         },
         {
-          "ticker": "MCO",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2023-12-31",
-          "chg_usd": 184168177.0,
-          "chg_shares": 471549.0
+          "ticker": "FLY",
+          "fund": "TEMA ETFS LLC",
+          "period": "2026-06-30",
+          "chg_usd": 67007275.0,
+          "chg_shares": 2279159.0
         }
       ],
       "trims": [
-        {
-          "ticker": "TCOM",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-03-31",
-          "chg_usd": -2070936350.0,
-          "chg_shares": -52256784.0
-        },
-        {
-          "ticker": "NVDA",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-06-30",
-          "chg_usd": -720025992.0,
-          "chg_shares": -899920.0
-        },
-        {
-          "ticker": "GOOG",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2022-03-31",
-          "chg_usd": -549883871.0,
-          "chg_shares": -196880.0
-        },
-        {
-          "ticker": "NVDA",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2023-06-30",
-          "chg_usd": -513791632.0,
-          "chg_shares": -1214580.0
-        },
         {
           "ticker": "SGVT",
           "fund": "MOULTON WEALTH MANAGEMENT, INC",
           "period": "2026-06-30",
           "chg_usd": -464495719.0,
           "chg_shares": -4610837.0
-        },
-        {
-          "ticker": "GME",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-03-31",
-          "chg_usd": -445164345.0,
-          "chg_shares": -2345192.0
-        },
-        {
-          "ticker": "GOOG",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2022-06-30",
-          "chg_usd": -393915996.0,
-          "chg_shares": -180080.0
-        },
-        {
-          "ticker": "GOOG",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-06-30",
-          "chg_usd": -317149733.0,
-          "chg_shares": -126540.0
-        },
-        {
-          "ticker": "AMZN",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2022-06-30",
-          "chg_usd": -279824265.0,
-          "chg_shares": -2634632.0
-        },
-        {
-          "ticker": "AMZN",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2022-03-31",
-          "chg_usd": -273314208.0,
-          "chg_shares": -83840.0
         },
         {
           "ticker": "FTNT",
@@ -44983,20 +44935,6 @@
           "chg_shares": -1466544.0
         },
         {
-          "ticker": "GOOG",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-09-30",
-          "chg_usd": -193021750.0,
-          "chg_shares": -72420.0
-        },
-        {
-          "ticker": "BABA",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2021-06-30",
-          "chg_usd": -170765794.0,
-          "chg_shares": -753002.0
-        },
-        {
           "ticker": "AFL",
           "fund": "Japan Post Holdings Co., Ltd.",
           "period": "2026-06-30",
@@ -45004,11 +44942,88 @@
           "chg_shares": -1401510.0
         },
         {
-          "ticker": "NVDA",
-          "fund": "STOREBRAND ASSET MANAGEMENT AS",
-          "period": "2023-03-31",
-          "chg_usd": -144309848.0,
-          "chg_shares": -519530.0
+          "ticker": "ACLS",
+          "fund": "REINHART PARTNERS, LLC.",
+          "period": "2026-06-30",
+          "chg_usd": -138125153.0,
+          "chg_shares": -729085.0
+        },
+        {
+          "ticker": "GVI",
+          "fund": "EASTERN BANK",
+          "period": "2026-06-30",
+          "chg_usd": -120517236.0,
+          "chg_shares": -1135937.0
+        },
+        {
+          "ticker": "AMGN",
+          "fund": "Sarasin & Partners LLP",
+          "period": "2026-06-30",
+          "chg_usd": -116784424.0,
+          "chg_shares": -322502.0
+        },
+        {
+          "ticker": "SIMO",
+          "fund": "REINHART PARTNERS, LLC.",
+          "period": "2026-06-30",
+          "chg_usd": -115991840.0,
+          "chg_shares": -347979.0
+        },
+        {
+          "ticker": "HON",
+          "fund": "CONFLUENCE INVESTMENT MANAGEMENT LLC",
+          "period": "2026-06-30",
+          "chg_usd": -111919102.0,
+          "chg_shares": -499862.0
+        },
+        {
+          "ticker": "JPM",
+          "fund": "Sarasin & Partners LLP",
+          "period": "2026-06-30",
+          "chg_usd": -100262816.0,
+          "chg_shares": -306305.0
+        },
+        {
+          "ticker": "ADI",
+          "fund": "CONFLUENCE INVESTMENT MANAGEMENT LLC",
+          "period": "2026-06-30",
+          "chg_usd": -98200282.0,
+          "chg_shares": -247250.0
+        },
+        {
+          "ticker": "SPY",
+          "fund": "Fortitude Financial, LLC",
+          "period": "2026-06-30",
+          "chg_usd": -83588953.0,
+          "chg_shares": -111934.0
+        },
+        {
+          "ticker": "SLF",
+          "fund": "Cardinal Capital Management, Inc.",
+          "period": "2026-06-30",
+          "chg_usd": -83333013.0,
+          "chg_shares": -1062650.0
+        },
+        {
+          "ticker": "FORM",
+          "fund": "REINHART PARTNERS, LLC.",
+          "period": "2026-06-30",
+          "chg_usd": -83127776.0,
+          "chg_shares": -519776.0
+        },
+        {
+          "ticker": "JPST",
+          "fund": "Legacy Wealth Management, LLC",
+          "period": "2026-06-30",
+          "chg_usd": -82492211.0,
+          "chg_shares": -1631248.0
+        },
+        {
+          "ticker": "CSCO",
+          "fund": "CONFLUENCE INVESTMENT MANAGEMENT LLC",
+          "period": "2026-06-30",
+          "chg_usd": -82123216.0,
+          "chg_shares": -699159.0
         }
       ]
     },
@@ -46244,7 +46259,7 @@
         "reviews": 29584974,
         "apps": 6,
         "top_app": "Uber - Request a ride",
-        "review_velocity": 10524.0,
+        "review_velocity": 0.0004,
         "lean": "strong"
       },
       {
@@ -46253,7 +46268,7 @@
         "reviews": 25793671,
         "apps": 5,
         "top_app": "Google Drive",
-        "review_velocity": 10799.0,
+        "review_velocity": 0.0004,
         "lean": "strong"
       },
       {
@@ -46262,7 +46277,7 @@
         "reviews": 19753746,
         "apps": 8,
         "top_app": "Microsoft Outlook",
-        "review_velocity": 6179.0,
+        "review_velocity": 0.0003,
         "lean": "strong"
       },
       {
@@ -46271,7 +46286,7 @@
         "reviews": 18604109,
         "apps": 5,
         "top_app": "Walmart: Shopping & Savings",
-        "review_velocity": 10845.0,
+        "review_velocity": 0.0006,
         "lean": "strong"
       },
       {
@@ -46280,7 +46295,7 @@
         "reviews": 17694393,
         "apps": 3,
         "top_app": "Lyft",
-        "review_velocity": 5237.0,
+        "review_velocity": 0.0003,
         "lean": "strong"
       },
       {
@@ -46289,7 +46304,7 @@
         "reviews": 8099957,
         "apps": 4,
         "top_app": "Starbucks",
-        "review_velocity": 1.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -46298,7 +46313,7 @@
         "reviews": 7630791,
         "apps": 4,
         "top_app": "Zillow Real Estate & Rentals",
-        "review_velocity": 179.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -46307,7 +46322,7 @@
         "reviews": 7224494,
         "apps": 2,
         "top_app": "Etsy: Shop Home, Style & More",
-        "review_velocity": 1837.0,
+        "review_velocity": 0.0003,
         "lean": "strong"
       },
       {
@@ -46316,7 +46331,7 @@
         "reviews": 7105682,
         "apps": 1,
         "top_app": "Southwest Airlines: Travel App",
-        "review_velocity": 1439.0,
+        "review_velocity": 0.0002,
         "lean": "strong"
       },
       {
@@ -46325,7 +46340,7 @@
         "reviews": 7005745,
         "apps": 3,
         "top_app": "Fly Delta",
-        "review_velocity": 9.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -46334,7 +46349,7 @@
         "reviews": 7080086,
         "apps": 4,
         "top_app": "Shop: All your favorite brands",
-        "review_velocity": 2206.0,
+        "review_velocity": 0.0003,
         "lean": "strong"
       },
       {
@@ -46343,7 +46358,7 @@
         "reviews": 6855846,
         "apps": 2,
         "top_app": "Netflix",
-        "review_velocity": 6728.0,
+        "review_velocity": 0.001,
         "lean": "strong"
       },
       {
@@ -46352,7 +46367,7 @@
         "reviews": 5814200,
         "apps": 1,
         "top_app": "The Roku App (Official)",
-        "review_velocity": 4763.0,
+        "review_velocity": 0.0008,
         "lean": "strong"
       },
       {
@@ -46361,7 +46376,7 @@
         "reviews": 5707129,
         "apps": 1,
         "top_app": "Pinterest",
-        "review_velocity": 1195.0,
+        "review_velocity": 0.0002,
         "lean": "strong"
       },
       {
@@ -46370,7 +46385,7 @@
         "reviews": 5863990,
         "apps": 1,
         "top_app": "Snapchat",
-        "review_velocity": 1206.0,
+        "review_velocity": 0.0002,
         "lean": "strong"
       }
     ],
@@ -47751,11 +47766,25 @@
     ],
     "convergence": [
       {
-        "ticker": "MSFT",
+        "ticker": "NVDA",
         "score": 7,
-        "weighted_score": 2.55,
+        "weighted_score": 2.4,
         "channel_list": [
-          "13f_add",
+          "cnbc_pick",
+          "darkpool_accum",
+          "github_momentum",
+          "hf_model_momentum",
+          "patent_cluster",
+          "retail_buzz",
+          "special_situation"
+        ],
+        "why": "cnbc_pick: Joe Terranova \u00b7 darkpool_accum: DPI 0.322 \u00b7 github_momentum: +0.25% stars \u00b7 hf_model_momentum: +12.6% model downloads \u00b7 patent_cluster: 90 grants, 15 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+      },
+      {
+        "ticker": "MSFT",
+        "score": 6,
+        "weighted_score": 2.15,
+        "channel_list": [
           "app_demand",
           "cnbc_pick",
           "github_momentum",
@@ -47763,22 +47792,7 @@
           "hf_model_momentum",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,753,746 reviews \u00b7 cnbc_pick: Rob Sechan \u00b7 github_momentum: +0.23% stars \u00b7 gov_contract: $22,858,532 awarded \u00b7 hf_model_momentum: +7.4% model downloads \u00b7 patent_cluster: 149 grants, 23 IPC classes"
-      },
-      {
-        "ticker": "NVDA",
-        "score": 7,
-        "weighted_score": 2.25,
-        "channel_list": [
-          "13f_add",
-          "cnbc_pick",
-          "github_momentum",
-          "hf_model_momentum",
-          "patent_cluster",
-          "retail_buzz",
-          "special_situation"
-        ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 cnbc_pick: Joe Terranova \u00b7 github_momentum: +0.25% stars \u00b7 hf_model_momentum: +12.6% model downloads \u00b7 patent_cluster: 90 grants, 15 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "app_demand: 4.77\u2605 \u00d7 19,753,746 reviews \u00b7 cnbc_pick: Rob Sechan \u00b7 github_momentum: +0.23% stars \u00b7 gov_contract: $22,858,532 awarded \u00b7 hf_model_momentum: +7.4% model downloads \u00b7 patent_cluster: 149 grants, 23 IPC classes"
       },
       {
         "ticker": "MRK",
@@ -47802,7 +47816,7 @@
           "patent_cluster",
           "special_situation"
         ],
-        "why": "darkpool_accum: DPI z -1.55 \u00b7 gov_grant: $7,937,735 federal grant/loan \u00b7 patent_cluster: 175 grants, 33 IPC classes \u00b7 special_situation: Other Situations"
+        "why": "darkpool_accum: DPI 0.316 \u00b7 gov_grant: $7,937,735 federal grant/loan \u00b7 patent_cluster: 175 grants, 33 IPC classes \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "AMD",
@@ -47815,30 +47829,6 @@
           "special_situation"
         ],
         "why": "congress_cluster: 3 members net +16 \u00b7 github_momentum: +0.21% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations"
-      },
-      {
-        "ticker": "GOOGL",
-        "score": 4,
-        "weighted_score": 1.55,
-        "channel_list": [
-          "13f_add",
-          "app_demand",
-          "hf_model_momentum",
-          "special_situation"
-        ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,793,671 reviews \u00b7 hf_model_momentum: +13.3% model downloads \u00b7 special_situation: Other Situations"
-      },
-      {
-        "ticker": "AMZN",
-        "score": 4,
-        "weighted_score": 1.55,
-        "channel_list": [
-          "13f_add",
-          "cnbc_pick",
-          "special_situation",
-          "trump"
-        ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$199,467,629 \u00b7 cnbc_pick: Karen Finerman \u00b7 special_situation: Other Situations \u00b7 trump: Amazon Com Inc"
       },
       {
         "ticker": "GSK",
@@ -47924,6 +47914,16 @@
         "why": "insider_cluster: 16 insiders, $33,115,993 net \u00b7 special_situation: Capital Returns"
       },
       {
+        "ticker": "T",
+        "score": 2,
+        "weighted_score": 1.35,
+        "channel_list": [
+          "congress_cluster",
+          "darkpool_accum"
+        ],
+        "why": "congress_cluster: 4 members net +8 \u00b7 darkpool_accum: DPI 0.307"
+      },
+      {
         "ticker": "DASH",
         "score": 2,
         "weighted_score": 1.3,
@@ -47954,6 +47954,17 @@
         "why": "gov_contract_accel: $11,917,246, 4.0x accel \u00b7 special_situation: Strategic Reviews"
       },
       {
+        "ticker": "TSM",
+        "score": 3,
+        "weighted_score": 1.2,
+        "channel_list": [
+          "13f_add",
+          "patent_cluster",
+          "special_situation"
+        ],
+        "why": "13f_add: Sarasin & Partners LLP +$158,746,178 \u00b7 patent_cluster: 320 grants, 39 IPC classes \u00b7 special_situation: Divestitures"
+      },
+      {
         "ticker": "SPGI",
         "score": 2,
         "weighted_score": 1.2,
@@ -47975,6 +47986,17 @@
         "why": "cnbc_pick: Guy Adami \u00b7 special_situation: Other Situations \u00b7 trump: CONOCOPHILLIPS"
       },
       {
+        "ticker": "AMZN",
+        "score": 3,
+        "weighted_score": 1.15,
+        "channel_list": [
+          "cnbc_pick",
+          "special_situation",
+          "trump"
+        ],
+        "why": "cnbc_pick: Karen Finerman \u00b7 special_situation: Other Situations \u00b7 trump: Amazon Com Inc"
+      },
+      {
         "ticker": "COST",
         "score": 3,
         "weighted_score": 1.15,
@@ -47983,7 +48005,18 @@
           "special_situation",
           "trump"
         ],
-        "why": "cnbc_pick: Joe Terranova \u00b7 special_situation: Capital Returns \u00b7 trump: Costco Whsl Corp New"
+        "why": "cnbc_pick: Joe Terranova \u00b7 special_situation: Capital Returns \u00b7 trump: COSTCO WHOLESALE CORP"
+      },
+      {
+        "ticker": "GOOGL",
+        "score": 3,
+        "weighted_score": 1.15,
+        "channel_list": [
+          "app_demand",
+          "hf_model_momentum",
+          "special_situation"
+        ],
+        "why": "app_demand: 4.71\u2605 \u00d7 25,793,671 reviews \u00b7 hf_model_momentum: +13.3% model downloads \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "ALGN",
@@ -48005,26 +48038,6 @@
           "patent_cluster"
         ],
         "why": "github_momentum: +0.37% stars \u00b7 hf_model_momentum: +11.5% model downloads \u00b7 patent_cluster: 244 grants, 36 IPC classes"
-      },
-      {
-        "ticker": "PLTR",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "gov_contract_accel",
-          "retail_buzz"
-        ],
-        "why": "gov_contract_accel: $81,413,696, 19.2x accel \u00b7 retail_buzz: 91 WSB mentions"
-      },
-      {
-        "ticker": "NVS",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion"
-        ],
-        "why": "clinical_phase3_start: 7 new Phase-3, 7 halt(s) \u00b7 fda_label_expansion: KISQALI"
       }
     ]
   }
