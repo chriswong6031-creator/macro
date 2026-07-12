@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-07-11",
+ "as_of": "2026-07-12",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -52,12 +52,12 @@
      "name": "Analog Devices Inc"
     },
     {
-     "ticker": "ALAB",
-     "name": "Astera Labs Inc"
-    },
-    {
      "ticker": "NXPI",
      "name": "NXP Semiconductors NV"
+    },
+    {
+     "ticker": "ALAB",
+     "name": "Astera Labs Inc"
     },
     {
      "ticker": "MPWR",
@@ -110,12 +110,12 @@
      "name": "Roper Technologies Inc"
     },
     {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
     }
    ]
   },
@@ -294,12 +294,12 @@
      "name": "Sandisk Corp"
     },
     {
-     "ticker": "WDC",
-     "name": "Western Digital Corp"
-    },
-    {
      "ticker": "STX",
      "name": "Seagate Technology Holdings Plc"
+    },
+    {
+     "ticker": "WDC",
+     "name": "Western Digital Corp"
     }
    ]
   },
@@ -406,12 +406,12 @@
      "name": "Analog Devices Inc"
     },
     {
-     "ticker": "ALAB",
-     "name": "Astera Labs Inc"
-    },
-    {
      "ticker": "NXPI",
      "name": "NXP Semiconductors NV"
+    },
+    {
+     "ticker": "ALAB",
+     "name": "Astera Labs Inc"
     },
     {
      "ticker": "MPWR",
@@ -466,12 +466,12 @@
      "name": "Sandisk Corp"
     },
     {
-     "ticker": "WDC",
-     "name": "Western Digital Corp"
-    },
-    {
      "ticker": "STX",
      "name": "Seagate Technology Holdings Plc"
+    },
+    {
+     "ticker": "WDC",
+     "name": "Western Digital Corp"
     }
    ]
   },
@@ -552,12 +552,12 @@
      "name": "Roper Technologies Inc"
     },
     {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
     },
     {
      "ticker": "CTAS",

@@ -1,0 +1,33 @@
+{
+  "generated_at": "2026-07-12T03:04:42.038916+00:00",
+  "families": {
+    "narrative_source_call": {
+      "n_claims": 7,
+      "n_resolved": 0,
+      "hit_rate": null,
+      "accruing": true,
+      "state": "ACCRUING"
+    },
+    "narrative_flare_state": {
+      "n_claims": 0,
+      "n_resolved": 0,
+      "hit_rate": null,
+      "accruing": true,
+      "state": "UNGRADED",
+      "excess_by_horizon_td": {
+        "21": [],
+        "63": []
+      },
+      "excess_n_matured": 0
+    }
+  },
+  "source_registry_n": 0,
+  "source_registry_total_calls": 0,
+  "authority": {
+    "tier": "display",
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false
+  }
+}

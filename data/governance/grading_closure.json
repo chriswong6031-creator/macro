@@ -1,6 +1,6 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-07-11T10:38:32.663472+00:00",
+  "generated_at": "2026-07-12T02:41:56.334556+00:00",
   "n_ledgers": 27,
   "n_closed": 8,
   "n_grader_starved": 19,
@@ -11,7 +11,7 @@
       "path": "data/qledger/claims.jsonl",
       "storage": "present",
       "grader_wired": "Y:scripts/grade_qledger.py",
-      "n_logged": 12786,
+      "n_logged": 13421,
       "n_graded": 6716,
       "last_graded_at": "2026-07-10T06:57:10.497031+00:00",
       "tune_step": "N",
@@ -243,8 +243,8 @@
       "storage": "present",
       "grader_wired": "Y:scripts/grade_policy_calendar.py",
       "n_logged": 113,
-      "n_graded": 28,
-      "last_graded_at": "2026-07-08",
+      "n_graded": 31,
+      "last_graded_at": "2026-07-11",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
