@@ -39,6 +39,20 @@ _DESKS = (
     ("Demand Chain", "demand_chain"),
 )
 
+# SA-W5: Standout Board tracks — read-only entries surfacing board accountability
+# alongside the Phase-C desk loops.  These are buy-board track records, not
+# falsifiable-thesis loops, so they use a separate reader that maps the
+# us_board_track.json / cn_standout_track schema.
+#
+# CN note (F2): the real CN ledger is data/china_standout_track/board.parquet
+# (committed, 38KB).  data/cn_standout_track.json does not exist — nothing produces
+# it.  We store the parquet path and let _standout_track_row detect the .parquet
+# extension and read it directly (pandas, never-raise).
+_STANDOUT_TRACKS = (
+    ("US Buy Board (v1)", "site/factordata/us_board_track.json", "US"),
+    ("CN Standout Track", "data/china_standout_track/board.parquet", "CN"),
+)
+
 
 def _read_json(path):
     try:
@@ -71,6 +85,112 @@ def _desk_health(track: dict) -> tuple[str, str]:
     if hr is not None and hr < 0.5:
         return "weak", f"hit-rate {hr} below coin-flip — leans not yet a validated edge"
     return "calibrated", f"hit-rate {hr} over {n} scored; conviction ordering holds"
+
+
+def _standout_track_row_from_parquet(label: str, rel_path: str, region: str, root: Path) -> dict:
+    """Build a display-only row from a standout board.parquet file.
+
+    Used for the CN track (data/china_standout_track/board.parquet) because no JSON
+    summary is produced in this wave — the real ledger is the parquet.
+
+    Derives: n_rows (total rows in parquet), n_graded (rows with non-null fwd_mfe_21),
+    date span, and health.  Hit rate is ACCRUING until n_graded >= _MIN_SAMPLE and
+    fwd_mfe_21 represents an honest 21d-excess measure.
+
+    Never raises; absent / parse-fail → cold ACCRUING row.
+    """
+    _cold = {
+        "name": label, "region": region, "rel_path": rel_path,
+        "board_dates": 0, "graded_rows": 0,
+        "h21_hit_rate": None, "h21_n": 0,
+        "health": "cold", "health_note": "no track record yet (ACCRUING)",
+    }
+    try:
+        import pandas as pd  # local import — keep calibration_hub import-light
+        p = root / rel_path
+        if not p.exists():
+            return _cold
+        df = pd.read_parquet(p)
+        n_rows = len(df)
+        # n_graded: rows where the 21d forward metric has matured (non-null)
+        graded_col = "fwd_mfe_21"
+        n_graded = int(df[graded_col].notna().sum()) if graded_col in df.columns else 0
+        # date span from 'date' column
+        date_col = "date"
+        board_dates = 0
+        if date_col in df.columns:
+            board_dates = int(df[date_col].nunique())
+        if n_rows == 0:
+            return dict(_cold, board_dates=board_dates)
+        # hit rate: ACCRUING until n_graded >= floor — fwd_mfe_21 is MFE not excess;
+        # we only count ACCRUING for now (no excess-vs-CSI300 column yet).
+        note = (
+            f"{n_rows} board rows, {n_graded} graded (fwd_mfe_21 non-null) — "
+            "ACCRUING; hit-rate requires excess_21d column (not yet wired)"
+        )
+        return {
+            "name": label, "region": region, "rel_path": rel_path,
+            "board_dates": board_dates,
+            "graded_rows": n_graded,
+            "h21_hit_rate": None, "h21_n": n_graded,
+            "health": "cold", "health_note": note,
+        }
+    except Exception:  # noqa: BLE001
+        return _cold
+
+
+def _standout_track_row(label: str, rel_path: str, region: str, root: Path) -> dict:
+    """Build a display-only row from a standout/board track JSON or parquet.
+
+    Dispatches to _standout_track_row_from_parquet when rel_path ends in .parquet
+    (used for the CN ledger: data/china_standout_track/board.parquet).
+
+    Reads the track's top-level summary fields (board_dates_total, graded_rows_total,
+    per_horizon h21 buy_lane hit_rate) and maps them to a calibration-hub-compatible
+    dict.  Never raises; absent or corrupt file → cold state.
+
+    This is read-only context (SA-W5 §3 / SA-R10 — display_only, ACCRUING until floors).
+    These entries appear separately from _DESKS so the hub can show board-track records
+    in one place without conflating them with Phase-C falsifiable-thesis loops.
+    """
+    if rel_path.endswith(".parquet"):
+        return _standout_track_row_from_parquet(label, rel_path, region, root)
+    track = _read_json(root / rel_path)
+    if not track:
+        return {
+            "name": label, "region": region, "rel_path": rel_path,
+            "board_dates": 0, "graded_rows": 0,
+            "h21_hit_rate": None, "h21_n": 0,
+            "health": "cold", "health_note": "no track record yet (ACCRUING)",
+        }
+    if track.get("empty"):
+        return {
+            "name": label, "region": region, "rel_path": rel_path,
+            "board_dates": track.get("board_dates_total", 0),
+            "graded_rows": track.get("graded_rows_total", 0),
+            "h21_hit_rate": None, "h21_n": 0,
+            "health": "cold", "health_note": "no matured rows yet (ACCRUING — first read ~2026-09)",
+        }
+    h21 = (track.get("per_horizon") or {}).get("h21") or {}
+    buy = (h21.get("buy_lane") or {}).get("vs_spy") or {}
+    n = buy.get("n") or 0
+    hr = buy.get("hit_rate")
+    if n < _MIN_SAMPLE:
+        health = "cold"
+        note = f"only {n} matured h21 rows — ACCRUING; floor ~25 cluster-unit rows"
+    elif hr is not None and hr < 0.5:
+        health = "weak"
+        note = f"h21 hit-rate {hr:.1%} below coin-flip over {n} rows"
+    else:
+        health = "calibrated" if hr is not None else "cold"
+        note = f"h21 hit-rate {hr:.1%} over {n} rows" if hr is not None else f"{n} rows"
+    return {
+        "name": label, "region": region, "rel_path": rel_path,
+        "board_dates": track.get("board_dates_total", 0),
+        "graded_rows": track.get("graded_rows_total", 0),
+        "h21_hit_rate": hr, "h21_n": n,
+        "health": health, "health_note": note,
+    }
 
 
 def _desk_row(label: str, slug: str, root: Path) -> dict:
@@ -109,6 +229,11 @@ def build(root=None) -> dict:
     cold = len(desks) - live
     note = (f"{live}/{len(desks)} desk loops live; {cold} still cold (windows maturing). "
             "Display-only — track records calibrate conviction, never size a position.")
+    # SA-W5: standout board tracks (read-only; ACCRUING; separate from Phase-C desks)
+    standout_tracks = [
+        _standout_track_row(label, rel, region, root)
+        for label, rel, region in _STANDOUT_TRACKS
+    ]
     return {
         "schema": SCHEMA,
         "as_of": date.today().isoformat(),
@@ -116,6 +241,8 @@ def build(root=None) -> dict:
         "loops": {"total": len(desks), "live": live, "cold": cold},
         "trial_ledger": _trial_ledger_summary(root),
         "summary_note": note,
+        # SA-W5: buy-board standing track records (display-only, SA-R10 ACCRUING state)
+        "standout_tracks": standout_tracks,
     }
 
 
@@ -150,6 +277,17 @@ def render_html(s: dict) -> str:
         for f in s["trial_ledger"]["families"]) or \
         "<tr><td colspan=4 style='color:#8B8D98'>no trials counted yet</td></tr>"
     lp = s["loops"]
+    # SA-W5: standout board track rows
+    st_rows = "".join(
+        f"<tr><td>{t['name']}</td><td>{t['region']}</td>"
+        f"<td style='text-align:right'>{t['board_dates']}</td>"
+        f"<td style='text-align:right'>{t['graded_rows']}</td>"
+        f"<td style='text-align:right'>{_pct(t['h21_hit_rate'])}</td>"
+        f"<td><span style='color:{_HEALTH_COLOR.get(t['health'], '#8B8D98')};font-weight:500'>"
+        f"{t['health']}</span><br>"
+        f"<span style='color:#8B8D98;font-size:12px'>{t['health_note']}</span></td></tr>"
+        for t in s.get("standout_tracks", [])
+    ) or "<tr><td colspan=6 style='color:#8B8D98'>no board tracks yet</td></tr>"
     return f"""<!doctype html><html><head><meta charset="utf-8">
 <title>Calibration Hub</title><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
@@ -182,6 +320,10 @@ th{{color:#8B8D98;font-weight:500;font-size:12px;text-transform:uppercase;letter
 <h2>Phase-C desks — are the falsifiable-thesis loops right?</h2>
 <table><tr><th>Desk</th><th>Scored</th><th>Open</th><th>Hit-rate</th><th>Dir.</th>
 <th>Regimes</th><th>Health</th></tr>{''.join(rows)}</table>
+<h2>Board track records — standing accuracy, all known boards (SA-W5, display-only)</h2>
+<p class="sub">ACCRUING — cluster-unit floors (SA-R10) not yet met. First US read ~2026-09-15; CN ~2026-10-15.</p>
+<table><tr><th>Board</th><th>Region</th><th>Board dates</th><th>Graded rows</th>
+<th>h21 hit-rate</th><th>Health</th></tr>{st_rows}</table>
 <h2>Trial Ledger — honest multiple-testing counts (P3 keystone)</h2>
 <table><tr><th>Signal family</th><th>Itemized</th><th>Declared floor</th><th>Effective N</th></tr>{led_rows}</table>
 <p class="sub">{s['summary_note']}</p>

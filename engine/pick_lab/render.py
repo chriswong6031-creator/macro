@@ -128,10 +128,40 @@ def _build_t0_vm(t0_dict: dict | None) -> dict:
     }
 
 
+def _build_accountability_vm(scoreboard: dict | None) -> dict:
+    """Normalise a us_audit_scoreboard.v1 artifact into a template-safe dict.
+
+    Always returns a dict with at least {"present": bool}.
+    Never raises; absent or corrupt JSON → {"present": False}.
+    """
+    if not scoreboard:
+        return {"present": False}
+    try:
+        cov = scoreboard.get("coverage_monitor") or {}
+        return {
+            "present": True,
+            "as_of": scoreboard.get("as_of"),
+            "note": scoreboard.get("note") or "",
+            "buy_lane_rows": scoreboard.get("buy_lane_rows") or 0,
+            "all_lanes_rows": scoreboard.get("all_lanes_rows") or 0,
+            "strata": scoreboard.get("strata") or {},
+            "coverage_monitor": {
+                "frozen_baseline": cov.get("frozen_baseline"),
+                "trailing_4wk_buy_count": cov.get("trailing_4wk_buy_count"),
+                "weekly_history": cov.get("weekly_history") or [],
+                "data_gap": cov.get("data_gap"),
+            },
+            "gate_suppressed": scoreboard.get("gate_suppressed") or {},
+        }
+    except Exception:  # noqa: BLE001
+        return {"present": False}
+
+
 def build_vm(
     pick_lab_dict: dict | None,
     longhold_dict: dict | None,
     t0_dict: dict | None = None,
+    audit_scoreboard: dict | None = None,
 ) -> dict:
     """Build the Jinja2 view-model for us_stocks_lab.html.
 
@@ -139,6 +169,7 @@ def build_vm(
     schema. Returns a vm dict safe to pass directly to the template.
 
     t0_dict: optional t0_indicator.v1 artifact (site/factordata/t0_indicator.json).
+    audit_scoreboard: optional us_audit_scoreboard.v1 artifact (SA-W5 Accountability section).
     Authority: display_only throughout.
     """
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -258,6 +289,8 @@ def build_vm(
         "first_maturation_eta": first_maturation_eta or "~2027-01",
         "method_note": method_note,
         "t0": _build_t0_vm(t0_dict),
+        # SA-W5: Accountability section data (display-only; absent → empty state)
+        "accountability": _build_accountability_vm(audit_scoreboard),
         # Display-only invariant — never drives selection / scoring
         "authority": "display_only",
     }
@@ -267,9 +300,34 @@ def build_vm(
 #  Page renderer                                                               #
 # --------------------------------------------------------------------------- #
 
+def _load_audit_scoreboard(site: Path) -> dict | None:
+    """Load site/factordata/us_audit_scoreboard.json; never raises."""
+    try:
+        import json as _json
+        p = site / "factordata" / "us_audit_scoreboard.json"
+        if p.exists():
+            return _json.loads(p.read_text())
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
 def render_page(vm: dict, site: Path | None = None) -> None:
-    """Render site/us_stocks_lab.html from vm (the output of build_vm)."""
+    """Render site/us_stocks_lab.html from vm (the output of build_vm).
+
+    SA-W5: if vm does not already contain 'accountability', or if it contains
+    {"present": False} (the default emitted by build_vm when no audit_scoreboard
+    arg was passed), load site/factordata/us_audit_scoreboard.json from disk and
+    inject the real scoreboard.  Belt-and-suspenders: the builders should also
+    pass audit_scoreboard explicitly (see build_pick_lab.py), but this fallback
+    guarantees the committed JSON is never suppressed.
+    """
     site = site or (config.ROOT / "site")
+    # Inject accountability when absent OR when build_vm emitted the null sentinel
+    _acct = vm.get("accountability")
+    if "accountability" not in vm or (_acct is not None and not _acct.get("present")):
+        vm = dict(vm)
+        vm["accountability"] = _build_accountability_vm(_load_audit_scoreboard(site))
     env = Environment(
         loader=FileSystemLoader(str(config.ROOT / "templates")),
         autoescape=True,

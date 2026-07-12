@@ -455,8 +455,8 @@ def test_render_empty_state():
     vm = build_vm(None)
     html = _render_cn_lab(vm)
     assert "First accrual tonight" in html or "今晚首次累积" in html
-    # Must have 4 tab panel sections (no Long-Hold; JS also references the attr)
-    assert html.count('<section data-tab-panel=') == 4
+    # Must have 5 tab panel sections (no Long-Hold; SA-W5 adds Accountability)
+    assert html.count('<section data-tab-panel=') == 5
 
 
 def test_render_no_long_hold_tab(tmp_path):
@@ -470,14 +470,14 @@ def test_render_no_long_hold_tab(tmp_path):
 
 
 def test_render_four_tabs():
-    """Rendered page must have exactly 4 tab buttons: Scoreboard, Velocity CN, All Books, Method."""
+    """Rendered page must have exactly 5 tab buttons: Scoreboard, Velocity CN, All Books, Record (SA-W5), Method."""
     from engine.pick_lab.render_cn import build_vm
     vm = build_vm(None)
     html = _render_cn_lab(vm)
     # Count data-tab attributes in tabbtn elements
     tabs = re.findall(r'data-tab=["\'](\w+)["\']', html)
-    assert set(tabs) == {"scoreboard", "velocity", "allbooks", "method"}
-    assert len(tabs) == 4
+    assert set(tabs) == {"scoreboard", "velocity", "allbooks", "accountability", "method"}
+    assert len(tabs) == 5  # SA-W5: +1 for Accountability tab
 
 
 def test_render_bilingual_spans():
