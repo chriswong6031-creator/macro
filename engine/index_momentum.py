@@ -174,19 +174,39 @@ def _load_mag7_carrier(root: Path | None = None) -> pd.Series | None:
 # ---------------------------------------------------------------------------
 
 def _resample_to_grid(close: pd.Series, n_sessions: int | None, rule: str | None) -> pd.Series | None:
-    """Resample close to the requested grid.  Returns completed-bar series."""
+    """Resample close to the requested grid.  Returns COMPLETED-bar series only.
+
+    IHM-R1 PIT compliance
+    ---------------------
+    - W-FRI: drop the trailing bucket when its label (the next Friday) is AFTER the last
+      observed daily date — that week is still in progress.  Pattern mirrors the
+      RUL-31 _completed_resample idiom in confluence_tiers.py.
+    - 2B/3B: drop the last bucket when len(daily) % n_sessions != 0 — that bucket
+      has fewer than n_sessions sessions and is still accumulating.
+    """
     if close is None or len(close) < 30:
         return None
     try:
         if n_sessions is None or n_sessions == 1:
             if rule:
-                # Calendar resample (W-FRI) — shift(1) to ensure completed bars only
+                # Calendar resample (W-FRI) — completed bars only (IHM-R1 PIT gate):
+                # a W-FRI bar labeled with a future Friday is an in-progress week;
+                # drop it by keeping only bars whose label <= last observed daily date.
+                last_obs = close.index.max()
                 b = close.resample(rule).last().dropna()
-                return b
+                b = b[b.index <= last_obs]
+                return b if len(b) > 0 else None
             return close  # 1D: daily bars are already complete
         else:
             bucketed, _ = resample_sessions(close, n_sessions)
-            return bucketed
+            # Drop the trailing partial bucket when the session count is not an exact
+            # multiple of n_sessions — that last bucket has < n_sessions sessions.
+            # Use len(close.dropna()) to match the internal count resample_sessions uses
+            # (loaders always return dropna() series, but defensive here is free).
+            n_sessions_total = int(close.dropna().count())
+            if n_sessions_total % n_sessions != 0 and len(bucketed) > 0:
+                bucketed = bucketed.iloc[:-1]
+            return bucketed if len(bucketed) > 0 else None
     except Exception as e:  # noqa: BLE001
         log.warning("index_momentum: resample failed n=%s rule=%s: %s", n_sessions, rule, e)
         return None
@@ -207,6 +227,11 @@ def _compute_grid(close: pd.Series, grid_label: str, n_sessions: int | None, rul
         # Use up to _DEPTH_PCTILE_BARS bars back from each point
         depth_pctile = _rolling_percentile(macd_s, _DEPTH_PCTILE_BARS)
 
+        # Effective window size at the latest bar (IHM spec §5 disclosure requirement).
+        # Indices with < 10y history compute pctile against a shorter window; downstream
+        # consumers (ledger, display) must be able to see the effective window.
+        pctile_window_bars = int(min(len(macd_s.dropna()), _DEPTH_PCTILE_BARS))
+
         # Cross events
         bull_cross = crossover(macd_s, sig_s)
         bear_cross = crossunder(macd_s, sig_s)
@@ -215,17 +240,18 @@ def _compute_grid(close: pd.Series, grid_label: str, n_sessions: int | None, rul
         fast_reclaim = _compute_fast_reclaim(macd_s, hist_vel3, depth_pctile)
 
         return {
-            "macd":          macd_s,
-            "signal":        sig_s,
-            "hist":          hist,
-            "hist_vel3":     hist_vel3,
-            "k":             k_s,
-            "d":             d_s,
-            "depth_pctile":  depth_pctile,
-            "bull_cross":    bull_cross,
-            "bear_cross":    bear_cross,
-            "fast_reclaim":  fast_reclaim,
-            "dates":         s.index,
+            "macd":               macd_s,
+            "signal":             sig_s,
+            "hist":               hist,
+            "hist_vel3":          hist_vel3,
+            "k":                  k_s,
+            "d":                  d_s,
+            "depth_pctile":       depth_pctile,
+            "pctile_window_bars": pctile_window_bars,
+            "bull_cross":         bull_cross,
+            "bear_cross":         bear_cross,
+            "fast_reclaim":       fast_reclaim,
+            "dates":              s.index,
         }
     except Exception as e:  # noqa: BLE001
         log.warning("index_momentum: compute_grid %s failed: %s", grid_label, e)
@@ -400,10 +426,24 @@ def _global_washout_turn_tag(
     spy_grid1d: dict | None,
     lookback_sessions: int = 10,
 ) -> bool:
-    """IHM-R4b: global_washout_turn = HK washout_turn + SPY deep cross (<=−4) within prior 10 sessions."""
+    """IHM-R4b: global_washout_turn = HK washout_turn + SPY deep cross (<=−4) within prior 10 sessions.
+
+    PIT-compliance notes
+    --------------------
+    1. Restricted to grid == '1D' only.  The construction (IHM-R4b) is defined at the
+       daily grain; applying a 10-daily-session SPY window to a W-FRI/2B/3B HK event is
+       a grain mismatch — it over-fires the macro-washout chip on weekly events.
+    2. SPY window uses searchsorted side='right' so the window end index is EXCLUSIVE
+       of any SPY session AFTER the HK event date — fixes a 1-2-session look-ahead that
+       was present with the prior side='left' / idx+1 idiom.
+    """
     if event.get("quality_tag") != "washout_turn":
         return False
     if event.get("index") not in ("^HSI", "^HSCE", "3033.HK"):
+        return False
+    # Restrict to 1D grain — W-FRI/2B/3B events must not be tagged with a 10-daily-session
+    # SPY window (grain mismatch; IHM-R4b is a daily-grain construction).
+    if event.get("grid") != "1D":
         return False
     if spy_grid1d is None:
         return False
@@ -415,9 +455,12 @@ def _global_washout_turn_tag(
         # SPY deep cross (macd <= -4) within prior 10 sessions
         if spy_macd.empty or spy_bull.empty:
             return False
-        idx = spy_bull.index.searchsorted(event_date)
+        # side='right': insertion point AFTER any bar ON event_date, so the slice
+        # spy_bull.iloc[lo_idx:idx] is strictly "SPY sessions at-or-before event_date".
+        # This avoids the 1-2-session look-ahead that side='left' / idx+1 produced.
+        idx = spy_bull.index.searchsorted(event_date, side="right")
         lo_idx = max(0, idx - lookback_sessions)
-        window_bull = spy_bull.iloc[lo_idx:idx + 1]
+        window_bull = spy_bull.iloc[lo_idx:idx]
         recent_spy_crosses = window_bull[window_bull].index
         for spy_dt in recent_spy_crosses:
             try:
@@ -477,17 +520,25 @@ def _current_values(grid_data: dict) -> dict:
         v = s.iloc[-1]
         return round(float(v), 3) if np.isfinite(float(v)) else None
 
+    # pctile_window_bars: effective trailing bar count used for depth_pctile.
+    # Disclosed per IHM spec §5: indices with < 10y history use a shorter window;
+    # exposing this lets the ledger and display surfaces flag heterogeneous comparisons.
+    pw_bars = grid_data.get("pctile_window_bars")
+    pw_days = int(round(pw_bars * 7 / 5)) if pw_bars is not None else None  # approx calendar days
+
     return {
-        "macd":          _last(grid_data["macd"]),
-        "signal":        _last(grid_data["signal"]),
-        "hist":          _last(grid_data["hist"]),
-        "hist_vel3":     _last(grid_data["hist_vel3"]),
-        "k":             _last(grid_data["k"]),
-        "d":             _last(grid_data["d"]),
-        "depth_pctile":  (_last(grid_data["depth_pctile"])
-                          if grid_data["depth_pctile"] is not None else None),
-        "fast_reclaim":  grid_data.get("fast_reclaim"),
-        "as_of":         str(grid_data["dates"][-1].date()) if len(grid_data["dates"]) > 0 else None,
+        "macd":                _last(grid_data["macd"]),
+        "signal":              _last(grid_data["signal"]),
+        "hist":                _last(grid_data["hist"]),
+        "hist_vel3":           _last(grid_data["hist_vel3"]),
+        "k":                   _last(grid_data["k"]),
+        "d":                   _last(grid_data["d"]),
+        "depth_pctile":        (_last(grid_data["depth_pctile"])
+                                if grid_data["depth_pctile"] is not None else None),
+        "pctile_window_bars":  pw_bars,
+        "pctile_window_days":  pw_days,
+        "fast_reclaim":        grid_data.get("fast_reclaim"),
+        "as_of":               str(grid_data["dates"][-1].date()) if len(grid_data["dates"]) > 0 else None,
     }
 
 

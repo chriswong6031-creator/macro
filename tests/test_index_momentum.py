@@ -421,3 +421,232 @@ def test_events_parquet_naive_ts(tmp_path):
         f"events.parquet date column has timezone {dt_col.dt.tz}; "
         "must be naive (pandas 3.0.x tz-aware→naive assignment raises)"
     )
+
+
+# ---------------------------------------------------------------------------
+# 17–21. PIT / partial-bar guard tests (review findings 1–3)
+# ---------------------------------------------------------------------------
+
+class TestCompletedBarsOnly:
+    """IHM-R1 PIT guard: _resample_to_grid must never emit in-progress (partial) bars."""
+
+    def _make_close_n(self, n: int = 500, seed: int = 7) -> pd.Series:
+        rng = np.random.default_rng(seed)
+        dates = pd.bdate_range("2018-01-01", periods=n)
+        prices = 100.0 * np.cumprod(1 + rng.normal(0.0003, 0.010, n))
+        return pd.Series(prices, index=dates)
+
+    def test_wfri_completed_bars_mid_week(self):
+        """W-FRI resample on data ending mid-week must NOT include the partial current week.
+
+        Construct a series ending on a Wednesday.  The W-FRI bar labeled with the NEXT
+        Friday is in-progress and must be dropped.
+        """
+        from engine.index_momentum import _resample_to_grid
+        # Build 500 business days starting Monday 2018-01-01 ending on a Wednesday
+        close = self._make_close_n(501)
+        # Trim to a Wednesday-ending date (weekday=2)
+        last_wed = None
+        for d in reversed(close.index):
+            if d.weekday() == 2:  # Wednesday
+                last_wed = d
+                break
+        assert last_wed is not None
+        close_to_wed = close.loc[:last_wed]
+        result = _resample_to_grid(close_to_wed, None, "W-FRI")
+        assert result is not None and len(result) > 0
+        # The last bar's label must be <= last observed daily date
+        assert result.index[-1] <= last_wed, (
+            f"W-FRI partial bar leak: last bar label {result.index[-1].date()} "
+            f"> last obs {last_wed.date()}"
+        )
+        # Specifically: the last bar must be the PREVIOUS completed Friday, not the next
+        assert result.index[-1].weekday() == 4, (
+            f"Last completed W-FRI bar should be a Friday, got weekday {result.index[-1].weekday()}"
+        )
+
+    def test_wfri_completed_bars_on_friday(self):
+        """W-FRI resample on data ending on a Friday must include that Friday's bar."""
+        from engine.index_momentum import _resample_to_grid
+        close = self._make_close_n(500)
+        # Find a Friday-ending truncation point
+        last_fri = None
+        for d in reversed(close.index):
+            if d.weekday() == 4:  # Friday
+                last_fri = d
+                break
+        assert last_fri is not None
+        close_to_fri = close.loc[:last_fri]
+        result = _resample_to_grid(close_to_fri, None, "W-FRI")
+        assert result is not None and len(result) > 0
+        # Last bar == last_fri (it's a completed week)
+        assert result.index[-1] == last_fri, (
+            f"Friday-ending W-FRI should include {last_fri.date()}, got {result.index[-1].date()}"
+        )
+
+    def test_3b_drops_partial_trailing_bucket(self):
+        """3B resample must drop the trailing bucket when session count % 3 != 0."""
+        from engine.index_momentum import _resample_to_grid
+        # 502 sessions: 502 % 3 = 1 → last bucket has 1 session (partial)
+        close = self._make_close_n(502)
+        assert len(close) % 3 == 1  # pre-condition
+        result = _resample_to_grid(close, 3, None)
+        assert result is not None
+        # 501 sessions (complete) → 167 full buckets; 502nd session is partial → dropped
+        assert len(result) == 167, (
+            f"Expected 167 complete 3B buckets from 502 sessions, got {len(result)}"
+        )
+
+    def test_3b_exact_multiple_keeps_all(self):
+        """3B resample must keep all buckets when session count is an exact multiple of 3."""
+        from engine.index_momentum import _resample_to_grid
+        # 501 sessions: 501 % 3 = 0 → all 167 buckets are complete
+        close = self._make_close_n(501)
+        assert len(close) % 3 == 0
+        result = _resample_to_grid(close, 3, None)
+        assert result is not None
+        assert len(result) == 167, (
+            f"Expected 167 complete 3B buckets from 501 sessions, got {len(result)}"
+        )
+
+    def test_2b_drops_partial_trailing_bucket(self):
+        """2B resample must drop the trailing bucket when session count is odd."""
+        from engine.index_momentum import _resample_to_grid
+        # 501 sessions: 501 % 2 = 1 → last bucket has 1 session (partial)
+        close = self._make_close_n(501)
+        assert len(close) % 2 == 1
+        result = _resample_to_grid(close, 2, None)
+        assert result is not None
+        assert len(result) == 250, (
+            f"Expected 250 complete 2B buckets from 501 sessions, got {len(result)}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 22–23. global_washout_turn PIT guard tests (review findings 4 and 6)
+# ---------------------------------------------------------------------------
+
+class TestGlobalWashoutTurnPIT:
+    """PIT-compliance tests for _global_washout_turn_tag."""
+
+    def _make_spy_grid1d_with_cross(self, cross_date: pd.Timestamp, cross_depth: float):
+        """Build a minimal spy_grid1d dict with a single deep bull cross at cross_date."""
+        dates = pd.bdate_range("2026-01-01", "2026-07-10")
+        n = len(dates)
+        macd = pd.Series(np.full(n, -1.0), index=dates)
+        # Set a deep trough at cross_date - 1, and recovery at cross_date
+        if cross_date in macd.index:
+            idx = macd.index.get_loc(cross_date)
+            if idx > 0:
+                macd.iloc[idx - 1] = cross_depth - 0.1  # before cross: deep
+                macd.iloc[idx] = cross_depth             # at cross
+        sig = macd + 0.5  # signal always above macd → macd < sig
+        # Create a synthetic bull_cross: True only at cross_date
+        bull_cross = pd.Series(False, index=dates)
+        if cross_date in bull_cross.index:
+            bull_cross.loc[cross_date] = True
+        return {"macd": macd, "signal": sig, "hist": macd - sig, "bull_cross": bull_cross}
+
+    def test_no_look_ahead_spy_window(self):
+        """global_washout_turn must not include SPY sessions AFTER the HK event date.
+
+        Construct an HK event on a Thursday (2026-07-02).  Place a qualifying SPY deep
+        cross on the NEXT Monday (2026-07-06).  With the old side='left'/idx+1 idiom that
+        cross would be included in the look-back window and fire the tag.  With the
+        side='right' fix it must NOT be included.
+        """
+        from engine.index_momentum import _global_washout_turn_tag
+        hk_event_date = date(2026, 7, 2)  # Thursday
+        spy_cross_date = pd.Timestamp("2026-07-06")  # following Monday (future)
+        spy_grid1d = self._make_spy_grid1d_with_cross(spy_cross_date, cross_depth=-5.0)
+        event = {
+            "index": "^HSI",
+            "grid": "1D",
+            "date": hk_event_date,
+            "quality_tag": "washout_turn",
+        }
+        result = _global_washout_turn_tag(event, spy_grid1d)
+        assert result is False, (
+            f"global_washout_turn must NOT fire when the only qualifying SPY cross "
+            f"({spy_cross_date.date()}) is AFTER the HK event date ({hk_event_date}) — "
+            f"that is a PIT look-ahead violation."
+        )
+
+    def test_restricted_to_1d_grid(self):
+        """global_washout_turn must NOT fire on W-FRI / 2B / 3B HK events (grain mismatch)."""
+        from engine.index_momentum import _global_washout_turn_tag
+        spy_cross_date = pd.Timestamp("2026-06-20")  # within lookback
+        spy_grid1d = self._make_spy_grid1d_with_cross(spy_cross_date, cross_depth=-5.0)
+        hk_event_date = date(2026, 6, 27)
+        for non_daily_grid in ("W-FRI", "2B", "3B"):
+            event = {
+                "index": "^HSI",
+                "grid": non_daily_grid,
+                "date": hk_event_date,
+                "quality_tag": "washout_turn",
+            }
+            result = _global_washout_turn_tag(event, spy_grid1d)
+            assert result is False, (
+                f"global_washout_turn must NOT fire on grid={non_daily_grid} "
+                f"(10-daily-session SPY window is a grain mismatch for non-daily HK events)"
+            )
+
+    def test_fires_on_valid_1d_event_with_prior_spy_cross(self):
+        """global_washout_turn must fire when there IS a deep SPY cross within prior 10 sessions."""
+        from engine.index_momentum import _global_washout_turn_tag
+        spy_cross_date = pd.Timestamp("2026-06-23")  # a few sessions before event
+        spy_grid1d = self._make_spy_grid1d_with_cross(spy_cross_date, cross_depth=-5.0)
+        hk_event_date = date(2026, 6, 27)
+        event = {
+            "index": "^HSI",
+            "grid": "1D",
+            "date": hk_event_date,
+            "quality_tag": "washout_turn",
+        }
+        result = _global_washout_turn_tag(event, spy_grid1d)
+        assert result is True, (
+            f"global_washout_turn should fire: deep SPY cross at {spy_cross_date.date()} "
+            f"within 10 sessions before HK event at {hk_event_date}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 24. pctile_window_bars disclosure (review finding 5)
+# ---------------------------------------------------------------------------
+
+def test_pctile_window_bars_disclosed():
+    """_compute_grid must emit pctile_window_bars; _current_values must emit both
+    pctile_window_bars and pctile_window_days in the JSON snapshot dict.
+
+    Spec §5: effective percentile window must be disclosed when < 10y (2520 bars).
+    """
+    from engine.index_momentum import _compute_grid, _current_values, _DEPTH_PCTILE_BARS
+
+    # Short series (< 10y): pctile_window_bars must be < _DEPTH_PCTILE_BARS
+    n_short = 400  # ~16 months
+    rng = np.random.default_rng(11)
+    dates = pd.bdate_range("2022-01-01", periods=n_short)
+    prices = pd.Series(100.0 * np.cumprod(1 + rng.normal(0.0003, 0.01, n_short)), index=dates)
+    gd = _compute_grid(prices, "1D", 1, None)
+    assert gd is not None
+    assert "pctile_window_bars" in gd, "pctile_window_bars missing from _compute_grid output"
+    assert gd["pctile_window_bars"] < _DEPTH_PCTILE_BARS, (
+        f"Short series pctile_window_bars={gd['pctile_window_bars']} should be < {_DEPTH_PCTILE_BARS}"
+    )
+
+    curr = _current_values(gd)
+    assert "pctile_window_bars" in curr, "pctile_window_bars missing from _current_values output"
+    assert "pctile_window_days" in curr, "pctile_window_days missing from _current_values output"
+    assert curr["pctile_window_bars"] == gd["pctile_window_bars"]
+    assert curr["pctile_window_days"] is not None and curr["pctile_window_days"] > 0
+
+    # Full series (>= 10y): pctile_window_bars must be capped at _DEPTH_PCTILE_BARS
+    n_long = 3000
+    dates_long = pd.bdate_range("2010-01-01", periods=n_long)
+    prices_long = pd.Series(100.0 * np.cumprod(1 + rng.normal(0.0003, 0.01, n_long)), index=dates_long)
+    gd_long = _compute_grid(prices_long, "1D", 1, None)
+    assert gd_long is not None
+    assert gd_long["pctile_window_bars"] == _DEPTH_PCTILE_BARS, (
+        f"Long series pctile_window_bars should be capped at {_DEPTH_PCTILE_BARS}, "
+        f"got {gd_long['pctile_window_bars']}"
+    )
