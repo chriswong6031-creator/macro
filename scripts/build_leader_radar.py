@@ -625,6 +625,12 @@ def _load_insider_cluster(
         except Exception:  # noqa: BLE001
             return None
 
+    # Grain defense: sort by quarter so latest quarter sorts last, then keep only
+    # the last row per ticker.  Prevents silent last-win on duplicate-ticker stores.
+    if "quarter" in df.columns:
+        df = df.sort_values("quarter", na_position="first")
+    df = df.groupby(level=0).tail(1)
+
     result: dict[str, bool | None] = {}
     for ticker, row in df.iterrows():
         try:
@@ -1859,8 +1865,18 @@ def build(
         if _state not in _early_state_bucket:
             continue
         _chips = row.get("chips") or {}
-        # For SUPPRESSED: include only rows with ≥1 True lead chip
-        _has_lead = any(v is True for v in _chips.values())
+        # For SUPPRESSED: include only rows with ≥1 True LEAD chip.
+        # Lead chips are the five positive-momentum signals; non-lead suppression chips
+        # (e.g. drawdown_25pct, rs_slope_negative_3m, below_200dma_12m) must NOT
+        # count — they merely confirm suppression, not early-entry candidacy.
+        _LEAD_CHIPS = frozenset((
+            "revision_positive",
+            "rs_turn",
+            "accum_evidence",
+            "obv_divergence",
+            "insider_cluster",
+        ))
+        _has_lead = any(_chips.get(k) is True for k in _LEAD_CHIPS)
         if _state == STATE_SUPPRESSED and not _has_lead:
             continue
         _k = row.get("k_true", 0) or 0
@@ -1890,7 +1906,11 @@ def build(
 
     # ── LRV-W1: handoff_context artifact (LRV-R4) ────────────────────────────
     # Per-basket: extension_pctile_vs_200d, rs_21d_slope_sign, is_extended.
-    from engine.leader_lifecycle import rs_slope as _rs_slope_fn
+    from engine.leader_lifecycle import (
+        rs_slope as _rs_slope_fn,
+        basket_extension_pctile as _basket_ext_pctile,
+    )
+    import statistics as _statistics
     handoff_context: list[dict] = []
     for bname, members in basket_membership.items():
         if bname in ("dow30", "ndx"):
@@ -1913,17 +1933,31 @@ def build(
                 pass
         _rs21_sign: int | None = None
         if _member_slopes_21d:
-            import statistics
-            _med = statistics.median(_member_slopes_21d)
+            _med = _statistics.median(_member_slopes_21d)
             _rs21_sign = 1 if _med > 0 else (-1 if _med < 0 else 0)
-        # extension_pctile_vs_200d: placeholder — requires full basket-close history vs SMA200
-        # Left as None until basket-close history store is built (see research TODO)
+        # extension_pctile_vs_200d: percentile of current basket EW extension vs own 200d
+        # history, using the same basket_extension_pctile() helper as extended_leg() so
+        # the two callers cannot drift.
+        _ext_pctile: float | None = None
+        _bkt_closes = []
+        for t in members:
+            _ohlcv = ohlcv_map.get(t)
+            if _ohlcv is not None and "close" in _ohlcv.columns:
+                _bkt_closes.append(_ohlcv["close"].dropna().sort_index())
+        if _bkt_closes:
+            try:
+                _aligned_bkt = pd.concat(_bkt_closes, axis=1, sort=True).ffill().dropna()
+                if not _aligned_bkt.empty:
+                    _basket_close = _aligned_bkt.mean(axis=1)
+                    _ext_pctile = _basket_ext_pctile(_basket_close)
+            except Exception:  # noqa: BLE001
+                _ext_pctile = None
         handoff_context.append({
             "basket": bname,
             "n_members": len(members),
             "is_extended": _is_ext,
             "rs_21d_slope_sign": _rs21_sign,
-            "extension_pctile_vs_200d": None,  # TODO: needs basket-close SMA200 history
+            "extension_pctile_vs_200d": _ext_pctile,
         })
 
     # ── Payload ───────────────────────────────────────────────────────────────

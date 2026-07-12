@@ -81,7 +81,9 @@ _One wave = one branch off fresh origin/main = one PR = same-day squash-merge. S
 
 ## §7 LRV-W1 systems wave — rulings of record
 
-_Dispatched 2026-07-12. Covers input wiring, artifact additions, and data-reality decisions that arose during W1 implementation. All rulings are additive; zero changes to state definitions, thresholds, K-of-N sets, fire rules, or hysteresis (those are frozen in the engine)._
+_Dispatched 2026-07-12. Covers input wiring, artifact additions, and data-reality decisions that arose during W1 implementation. State definitions, thresholds, K-of-N sets, fire rules, and hysteresis are frozen in the engine — no changes to those._
+
+**Structural reachability note (LRV-R1a):** Wiring `rs_rank_history` + `peer_median_rs_63d` makes the LEADERSHIP state reachable for the first time. Pre-PR, both fields were always null on every LifecycleInputs instance, so `peer_divergence()` always returned None and the `conc is True` branch could never fire — LEADERSHIP was structurally unreachable. This PR does not change the LEADERSHIP definition; it removes a data-starvation blockage. Fire rules for the two Pick Lab books are untouched: precipice fires on CATALYST_WINDOW entry, onset fires on BREAKAWAY entry — neither reads LEADERSHIP._
 
 ### LRV-R1(a) — RS rank history + peer observables wired
 
@@ -115,7 +117,7 @@ New `display_chips` key on every main row. Fields: `revision_momentum_90d` (tri-
 
 ### LRV-R4 — handoff_context artifact added (additive)
 
-New `handoff_context` key in radar.json payload. Per theme-basket fields: `basket`, `n_members`, `is_extended` (from `extended_baskets`), `rs_21d_slope_sign` (median of member 21d RS slope signs: +1/−1/0/None), `extension_pctile_vs_200d` (None — requires basket-close SMA200 history store not yet built; explicitly TODO with note).
+New `handoff_context` key in radar.json payload. Per theme-basket fields: `basket`, `n_members`, `is_extended` (from `extended_baskets`), `rs_21d_slope_sign` (median of member 21d RS slope signs: +1/−1/0/None), `extension_pctile_vs_200d` (float 0..100 or None). The EW basket-close series is assembled from `ohlcv_map` member closes (aligned → ffill → mean); the percentile is computed by `basket_extension_pctile()` in `engine/leader_lifecycle.py` — the same helper used inside `extended_leg()` so the two callers cannot drift. Returns None when fewer than 50 non-null SMA200 observations are available.
 
 ### LRV-R5 — count_k_true_n_avail() defined once in engine (LRV-R1a)
 

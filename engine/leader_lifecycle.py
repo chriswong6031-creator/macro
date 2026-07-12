@@ -1250,13 +1250,22 @@ def classify(inp: LifecycleInputs) -> LifecycleAssessment:
             bool(weeks >= RS_TOP_DECILE_WEEKS_MIN) if weeks is not None else None
         )
         # Use pre-wired rs_accel_leader (LRV-R1a); fall back to in-classify computation
-        # when builder hasn't wired it (backward-compatible).
+        # when builder hasn't wired it.
+        # NOTE: rs_accel_leader is the 21-session CHANGE of the 63d RS slope series
+        # (slope_series.iloc[-1] − slope_series.iloc[-22]), NOT the slope level itself.
+        # The fallback replicates the same quantity so the two code paths are consistent.
         if not _is_null(inp.rs_accel_leader):
             rs_accel = inp.rs_accel_leader
         elif len(rs) >= RS_63D_WINDOW:
-            slope_63 = rs_slope(rs, RS_63D_WINDOW)
-            rs_accel = slope_63.iloc[-1] if len(slope_63) > 0 else None
-            if isinstance(rs_accel, float) and not np.isfinite(rs_accel):
+            slope_series = rs_slope(rs, RS_63D_WINDOW)
+            if len(slope_series.dropna()) >= 22:
+                last = slope_series.iloc[-1]
+                prev = slope_series.iloc[-22]
+                if isinstance(last, float) and isinstance(prev, float) and np.isfinite(last) and np.isfinite(prev):
+                    rs_accel = last - prev
+                else:
+                    rs_accel = None
+            else:
                 rs_accel = None
         else:
             rs_accel = None
@@ -1511,6 +1520,34 @@ def eligible_for_refire(
 
 # ── Handoff watch (LR-R4) ────────────────────────────────────────────────────
 
+
+def basket_extension_pctile(close: pd.Series) -> float | None:
+    """Compute the percentile of current extension vs 200d SMA in own history.
+
+    Shared helper used by both extended_leg() and the builder's handoff_context.
+    Single implementation so the two callers cannot drift.
+
+    Args:
+        close: equal-weight basket (or any) close series (DatetimeIndex).
+
+    Returns:
+        float 0..100 representing how extended the series is vs its own history,
+        or None if insufficient data (< 50 non-null observations after SMA200
+        dropna, or SMA200 not yet valid).
+    """
+    if close is None or len(close) < 63:
+        return None
+    sma200 = close.rolling(200, min_periods=100).mean()
+    if pd.isna(sma200.iloc[-1]) or not np.isfinite(float(sma200.iloc[-1])):
+        return None
+    ext_pct = (float(close.iloc[-1]) / float(sma200.iloc[-1]) - 1.0) * 100.0
+    ext_series = (close / sma200.replace(0, np.nan) - 1.0) * 100.0
+    ext_clean = ext_series.dropna()
+    if len(ext_clean) < 50:
+        return None
+    return float((ext_clean < ext_pct).mean() * 100.0)
+
+
 def extended_leg(
     basket_ew_close: pd.Series,
     bench_close: pd.Series,
@@ -1531,17 +1568,10 @@ def extended_leg(
         return None
 
     # Extension: current price vs 200d trend (own history percentile)
-    sma200 = basket_ew_close.rolling(200, min_periods=100).mean()
-    # Use pd.isna() + isfinite; numpy floats are never `is None` (dead guard)
-    if pd.isna(sma200.iloc[-1]) or not np.isfinite(float(sma200.iloc[-1])):
+    # Uses shared helper so extended_leg and handoff_context cannot drift.
+    pctile = basket_extension_pctile(basket_ew_close)
+    if pctile is None:
         return None
-    ext_pct = (float(basket_ew_close.iloc[-1]) / float(sma200.iloc[-1]) - 1.0) * 100.0
-    # Own history percentile of extension
-    ext_series = (basket_ew_close / sma200.replace(0, np.nan) - 1.0) * 100.0
-    ext_clean = ext_series.dropna()
-    if len(ext_clean) < 50:
-        return None
-    pctile = float((ext_clean < ext_pct).mean() * 100.0)
     if pctile < extension_pctile_threshold:
         return False
 
