@@ -50,6 +50,11 @@
     if (sc && disp.score != null) sc.textContent = disp.score;
     var tick = document.getElementById("ms-tick");
     if (tick && disp.score != null) tick.style.left = disp.score + "%";
+    /* VIS-04/COPY-02: also update progress fill width so bar matches live score */
+    if (disp.score != null) {
+      var fills = document.querySelectorAll(".mx2-prog-fill");
+      for (var fi = 0; fi < fills.length; fi++) fills[fi].style.width = disp.score + "%";
+    }
     var front = word.closest(".ms-front") || word.closest(".ms");
     if (front) {
       front.classList.remove("ms-green", "ms-yellow", "ms-red");

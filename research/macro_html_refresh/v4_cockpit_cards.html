@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Macro Ledger — v4 Cockpit Cards</title>
+<style>
+/* ── Design tokens (copied from v3_final.html) ── */
+:root {
+  --bg:#0c0f14;
+  --panel:#13171f;
+  --panel2:#181d26;
+  --panel3:#1d2330;
+  --text:#d7dce3;
+  --ink:#edf0f5;
+  --muted:#7a8494;
+  --line:#242b38;
+  --hair:rgba(255,255,255,.05);
+  --up:#3ec87a;
+  --down:#e05c5c;
+  --warn:#e0a030;
+  --info:#4d8ef5;
+  --link:#6ba3f0;
+  --anim:250ms cubic-bezier(.4,0,.2,1);
+
+  /* Island accent system */
+  --isle-evidence:#20c0a0;
+  --isle-events:#e0a030;
+  --isle-markets:#4d8ef5;
+  --isle-risk:#e05c5c;
+  --isle-policy:#a070e8;
+  --isle-brief:#38c472;
+  --isle-news:#7a8494;
+  --isle-deep:#4d8ef5;
+
+  /* Card elevation */
+  --card-shadow:0 2px 12px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.3);
+  --card-shadow-hover:0 6px 24px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.35);
+  --card-radius:14px;
+  --card-pad:18px 20px;
+}
+
+[data-theme="light"] {
+  --bg:#f2f5fa;
+  --panel:#ffffff;
+  --panel2:#eef1f7;
+  --panel3:#e4e8f0;
+  --text:#1c2430;
+  --ink:#0d1420;
+  --muted:#5a6a7e;
+  --line:#d4d9e4;
+  --hair:rgba(0,0,0,.05);
+  --up:#1a9248;
+  --down:#c93a3a;
+  --warn:#9a6010;
+  --info:#1a4fd6;
+  --link:#1a4fd6;
+  --card-shadow:0 2px 10px rgba(20,30,50,.10), 0 1px 3px rgba(20,30,50,.06);
+  --card-shadow-hover:0 6px 20px rgba(20,30,50,.16), 0 2px 6px rgba(20,30,50,.08);
+  --isle-evidence:#158a72;
+  --isle-events:#9a6010;
+  --isle-markets:#1a4fd6;
+  --isle-risk:#c93a3a;
+  --isle-policy:#7a44c8;
+  --isle-brief:#1a8048;
+  --isle-news:#5a6a7e;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:14px}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  overflow-x:hidden;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Subtle aurora backdrop */
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 900px 600px at 5% 0%,rgba(32,192,160,.05) 0%,transparent 65%),
+    radial-gradient(ellipse 700px 500px at 95% 10%,rgba(77,142,245,.05) 0%,transparent 65%),
+    radial-gradient(ellipse 500px 400px at 50% 95%,rgba(160,112,232,.04) 0%,transparent 60%);
+}
+
+/* ── Topbar ── */
+.topbar{
+  position:sticky;top:0;z-index:200;
+  background:var(--bg);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+  padding:12px 24px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.topbar-brand{
+  font-size:12px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--muted);flex-shrink:0;
+}
+.topbar-asof{
+  font-size:11px;color:var(--muted);
+  background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:3px 9px;flex-shrink:0;
+}
+.topbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap;}
+
+/* Segmented control [Grid | Ledger] */
+.seg-ctrl{
+  display:inline-flex;background:var(--panel2);border:1px solid var(--line);
+  border-radius:8px;overflow:hidden;flex-shrink:0;
+}
+.seg-btn{
+  padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.04em;
+  border:none;background:none;cursor:pointer;color:var(--muted);
+  transition:background .14s,color .14s;white-space:nowrap;
+}
+.seg-btn.active{background:var(--panel);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.seg-btn:first-child{border-radius:7px 0 0 7px}
+.seg-btn:last-child{border-radius:0 7px 7px 0}
+
+.expand-all-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 14px;border-radius:20px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(77,142,245,.14),rgba(62,200,122,.09));
+  border:1px solid rgba(77,142,245,.36);
+  color:var(--text);font-size:11px;font-weight:700;letter-spacing:.04em;
+  cursor:pointer;white-space:nowrap;
+  transition:transform .15s,box-shadow .18s;
+}
+.expand-all-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(77,142,245,.35)}
+
+.theme-toggle{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 12px;border-radius:8px;flex-shrink:0;
+  background:var(--panel2);border:1px solid var(--line);
+  color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;
+  transition:border-color .14s,color .14s;white-space:nowrap;
+}
+.theme-toggle:hover{border-color:var(--info);color:var(--text)}
+
+/* ── Page layout ── */
+.page{max-width:1440px;margin:0 auto;padding:24px 24px 80px;}
+
+/* ── HERO CARD (wide gradient command card) ── */
+.hero-card{
+  position:relative;overflow:hidden;
+  border-radius:18px;padding:28px 32px 24px;
+  margin-bottom:20px;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb,var(--up) 18%,var(--panel)) 0%,
+      var(--panel) 40%,
+      color-mix(in srgb,var(--info) 12%,var(--panel)) 100%);
+  border:1.5px solid color-mix(in srgb,var(--up) 28%,var(--line));
+  box-shadow:0 4px 28px rgba(0,0,0,.38), 0 0 60px -10px color-mix(in srgb,var(--up) 14%,transparent);
+}
+[data-theme="light"] .hero-card{
+  box-shadow:0 4px 20px rgba(20,50,30,.14), 0 0 40px -8px color-mix(in srgb,var(--up) 10%,transparent);
+}
+/* Faint grid texture */
+.hero-card::before{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(var(--hair) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hair) 1px, transparent 1px);
+  background-size:40px 40px;
+}
+.hero-inner{position:relative;z-index:1}
+.hero-row{display:flex;align-items:flex-start;gap:32px;flex-wrap:wrap;}
+
+/* Score block */
+.hero-score-block{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px;}
+.hero-verdict-word{
+  font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--up);margin-bottom:2px;
+}
+.hero-score-numeral{
+  font-size:64px;font-weight:900;line-height:1;
+  color:var(--ink);letter-spacing:-.03em;
+}
+.hero-score-denom{font-size:20px;font-weight:600;color:var(--muted);margin-left:2px;}
+.hero-score-label{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:.02em;}
+
+/* Progress bar */
+.hero-bar-wrap{margin-top:10px;width:200px;}
+.hero-bar-track{
+  height:6px;border-radius:3px;
+  background:color-mix(in srgb,var(--muted) 22%,transparent);
+  position:relative;overflow:visible;
+}
+.hero-bar-fill{
+  height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--warn),var(--up));
+  width:77%;
+}
+.hero-bar-tick{
+  position:absolute;top:-3px;width:2px;height:12px;border-radius:1px;
+  background:var(--ink);left:77%;transform:translateX(-50%);
+}
+.hero-bar-labels{
+  display:flex;justify-content:space-between;
+  font-size:9.5px;color:var(--muted);margin-top:4px;
+}
+
+/* Thesis block */
+.hero-thesis-block{flex:1;min-width:260px;}
+.hero-thesis{
+  font-size:18px;font-weight:700;line-height:1.35;
+  background:linear-gradient(120deg,var(--up) 0%,color-mix(in srgb,var(--up) 65%,var(--info)) 60%,var(--info) 100%);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+  margin-bottom:10px;
+}
+[data-theme="light"] .hero-thesis{
+  background:linear-gradient(120deg,var(--up) 0%,color-mix(in srgb,var(--up) 55%,var(--info)) 60%,var(--info) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero-flip-line{
+  font-size:12.5px;color:var(--muted);
+  padding:8px 12px;border-radius:8px;
+  background:var(--hair);border:1px solid var(--line);
+  margin-bottom:12px;line-height:1.5;
+}
+.hero-meta-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.hero-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;
+}
+.hero-chip-goldilocks{
+  background:color-mix(in srgb,var(--up) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--up) 32%,transparent);
+  color:var(--up);
+}
+.hero-chip-bubble{
+  background:color-mix(in srgb,var(--warn) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 32%,transparent);
+  color:var(--warn);
+}
+.hero-chip-alert{
+  background:color-mix(in srgb,var(--warn) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 36%,transparent);
+  color:var(--warn);
+  cursor:pointer;
+}
+.hero-chip-alert .dot{
+  width:6px;height:6px;border-radius:50%;background:var(--warn);
+  animation:alertpulse 1.8s ease-in-out infinite;
+}
+@keyframes alertpulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── GRID ── */
+.card-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+  align-items:start; /* masonry-ish: no height stretch */
+}
+
+/* ── BASE CARD ── */
+.card{
+  position:relative;
+  background:var(--panel);
+  border-radius:var(--card-radius);
+  border:1.5px solid var(--line);
+  box-shadow:var(--card-shadow);
+  overflow:hidden;
+  transition:box-shadow .2s,transform .2s,border-color .2s,opacity .3s;
+  cursor:pointer;
+}
+.card::before{
+  content:'';
+  position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--accent,var(--muted));border-radius:var(--card-radius) 0 0 var(--card-radius);
+}
+.card:hover{
+  box-shadow:var(--card-shadow-hover);
+  transform:translateY(-2px);
+  border-color:color-mix(in srgb,var(--accent,var(--muted)) 40%,var(--line));
+}
+
+/* dim non-expanded cards when one is open */
+.grid-has-expanded .card:not(.expanded){
+  opacity:.55;
+  filter:saturate(.5) brightness(.9);
+  transform:none;
+}
+.grid-has-expanded .card.expanded{
+  opacity:1;filter:none;
+}
+
+/* Card accent colors */
+.card-evidence{--accent:var(--isle-evidence)}
+.card-events{--accent:var(--isle-events)}
+.card-markets{--accent:var(--isle-markets)}
+.card-risk{--accent:var(--isle-risk)}
+.card-policy{--accent:var(--isle-policy)}
+.card-brief{--accent:var(--isle-brief)}
+.card-news{--accent:var(--isle-news)}
+.card-deep{--accent:var(--isle-deep)}
+.card-health{--accent:var(--muted)}
+
+/* Card inner padding (allows for the accent edge) */
+.card-body{padding:var(--card-pad);padding-left:22px;}
+
+/* Card header */
+.card-hd{display:flex;align-items:center;gap:9px;margin-bottom:14px;}
+.card-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--accent,var(--muted));flex-shrink:0;
+  box-shadow:0 0 8px 2px color-mix(in srgb,var(--accent,var(--muted)) 45%,transparent);
+}
+.card-label{
+  font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--accent,var(--muted));
+}
+.card-stamp{font-size:10px;color:var(--muted);margin-left:auto;white-space:nowrap;}
+.card-chev{
+  font-size:12px;color:var(--muted);margin-left:4px;
+  transition:transform .25s;
+}
+.card.expanded .card-chev{transform:rotate(180deg)}
+
+/* Card state word — the big stance */
+.card-state{
+  font-size:16px;font-weight:800;
+  color:var(--accent,var(--text));
+  margin-bottom:5px;line-height:1.2;
+}
+
+/* Card stance line */
+.card-stance{
+  font-size:12px;color:var(--muted);
+  margin-bottom:14px;line-height:1.5;
+}
+
+/* Key-value rows */
+.kv-row{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);
+  font-size:12px;}
+.kv-row:last-child{border-bottom:none}
+.kv-key{color:var(--muted);white-space:nowrap;flex-shrink:0;max-width:55%}
+.kv-val{font-weight:700;color:var(--text);text-align:right;white-space:nowrap;}
+.kv-val.up{color:var(--up)}
+.kv-val.dn{color:var(--down)}
+.kv-val.warn{color:var(--warn)}
+.kv-val.accent{color:var(--accent,var(--text))}
+
+/* Mini strength bar */
+.mini-bar-wrap{display:flex;align-items:center;gap:7px;}
+.mini-bar-label{font-size:11px;font-weight:600;color:var(--text);flex-shrink:0;min-width:2ch;text-align:right;}
+.mini-bar-track{flex:1;height:5px;border-radius:2.5px;
+  background:color-mix(in srgb,var(--muted) 20%,transparent);}
+.mini-bar-fill{height:100%;border-radius:2.5px;
+  background:var(--bar-color,var(--up));min-width:3px;}
+
+/* Dot meter (like rrx-meter) */
+.dot-meter{display:inline-flex;gap:2px;align-items:center;}
+.dot-meter i{width:4px;height:10px;border-radius:2px;
+  background:color-mix(in srgb,var(--muted) 25%,transparent);}
+.dot-meter i.on{background:var(--dm-color,var(--warn));}
+
+/* Expanded tray — in-flow (no modal/popup) */
+.card-expand-tray{
+  display:none;
+  padding:16px 22px 20px;
+  border-top:1px solid var(--line);
+  background:color-mix(in srgb,var(--accent,var(--muted)) 5%,var(--panel2));
+}
+.card.expanded .card-expand-tray{display:block;}
+.card.expanded{
+  border-color:color-mix(in srgb,var(--accent,var(--muted)) 50%,var(--line));
+  box-shadow:
+    var(--card-shadow-hover),
+    0 0 40px -8px color-mix(in srgb,var(--accent,var(--muted)) 22%,transparent);
+}
+.card.expanded::before{width:4px;}
+
+/* Full-width expand: card spans all 3 columns when open */
+.card.expanded.full-span{grid-column:1/-1;}
+/* Sibling reflow is handled via .grid-has-expanded dimming only,
+   not DOM reorder (static mockup) */
+
+/* Expand section header */
+.expand-section-head{
+  font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--accent,var(--muted));margin-bottom:10px;padding-bottom:6px;
+  border-bottom:1px solid color-mix(in srgb,var(--accent,var(--muted)) 22%,var(--line));
+}
+
+/* ── FACTOR ROWS (expanded evidence) ── */
+.factor-row{display:flex;align-items:center;gap:8px;padding:7px 0;
+  border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);}
+.factor-row:last-child{border-bottom:none}
+.factor-dir{font-size:13px;flex-shrink:0;width:14px;text-align:center;}
+.factor-name-wrap{flex:1;min-width:0;}
+.factor-name{font-size:12px;font-weight:700;color:var(--text);}
+.factor-sub{font-size:10.5px;color:var(--muted);line-height:1.35;margin-top:1px;}
+.factor-bar-area{flex:0 0 120px;}
+.factor-bar-track{height:5px;border-radius:2.5px;
+  background:color-mix(in srgb,var(--muted) 18%,transparent);}
+.factor-bar-fill{height:100%;border-radius:2.5px;}
+.factor-score{flex:0 0 28px;text-align:right;font-size:13px;font-weight:800;}
+
+/* Weakest callout */
+.factor-weakest-note{
+  margin-top:12px;padding:10px 12px;border-radius:8px;font-size:11px;
+  background:color-mix(in srgb,var(--warn) 9%,var(--panel2));
+  border:1px solid color-mix(in srgb,var(--warn) 28%,transparent);
+  color:var(--text);line-height:1.5;
+}
+
+/* ── INDEX TILES (markets card) ── */
+.idx-tile-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.idx-tile{
+  flex:1 1 80px;padding:10px 11px;border-radius:10px;
+  background:var(--panel2);border:1px solid var(--line);
+}
+.idx-tile-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+.idx-tile-ticker{font-size:11px;font-weight:800;color:var(--ink);}
+.idx-tile-chg{font-size:11px;font-weight:700;}
+.idx-tile-chg.up{color:var(--up)} .idx-tile-chg.dn{color:var(--down)}
+.idx-tile-px{font-size:16px;font-weight:800;color:var(--ink);line-height:1;}
+.idx-tile-name{font-size:9.5px;color:var(--muted);margin-top:3px;}
+
+/* ── SECTOR HEAT ROWS ── */
+.sector-cols{display:flex;gap:20px;flex-wrap:wrap;}
+.sector-col{flex:1;min-width:120px;}
+.sector-col-head{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:7px;}
+.sector-row{display:flex;align-items:center;gap:6px;padding:4px 0;
+  border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent);font-size:11.5px;}
+.sector-row:last-child{border-bottom:none}
+.sector-arr{font-size:10px;}
+.sector-arr.heat{color:var(--down)} .sector-arr.cool{color:var(--isle-markets)}
+.sector-name{flex:1;color:var(--text);}
+.sector-rk{color:var(--muted);font-size:10.5px;}
+
+/* ── EVENT CHIPS & CALENDAR ── */
+.event-row{
+  display:flex;align-items:flex-start;gap:10px;padding:7px 0;
+  border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);
+  font-size:12px;
+}
+.event-row:last-child{border-bottom:none}
+.event-date{
+  flex-shrink:0;min-width:44px;font-size:11px;font-weight:700;
+  color:var(--accent,var(--text));
+}
+.event-name{flex:1;color:var(--text);}
+.event-impact{
+  flex-shrink:0;font-size:10px;font-weight:700;
+  padding:2px 7px;border-radius:10px;
+}
+.event-impact.high{
+  color:var(--warn);
+  background:color-mix(in srgb,var(--warn) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);
+}
+.event-impact.med{
+  color:var(--muted);
+  background:color-mix(in srgb,var(--muted) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--muted) 24%,transparent);
+}
+
+/* Fed odds strip */
+.fed-strip{
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  padding:9px 0;margin-top:8px;
+  border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);
+  font-size:11.5px;
+}
+.fed-item{display:flex;flex-direction:column;gap:2px;flex:1;min-width:100px;}
+.fed-key{font-size:10px;color:var(--muted);}
+.fed-val{font-weight:700;color:var(--text);}
+
+/* Scare ladder rows */
+.scare-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;
+  border-bottom:1px solid color-mix(in srgb,var(--line) 45%,transparent);}
+.scare-row:last-child{border-bottom:none}
+.scare-name{flex:1;color:var(--text);}
+.scare-bar-track{flex:0 0 80px;height:5px;border-radius:2.5px;
+  background:color-mix(in srgb,var(--muted) 20%,transparent);}
+.scare-bar-fill{height:100%;border-radius:2.5px;}
+.scare-val{flex:0 0 32px;text-align:right;font-size:12px;font-weight:700;}
+.scare-band{
+  flex-shrink:0;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.scare-band-watch{
+  background:color-mix(in srgb,var(--warn) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 28%,transparent);color:var(--warn);
+}
+.scare-band-calm{
+  background:color-mix(in srgb,var(--muted) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted);
+}
+
+/* Drawdown ladder */
+.dd-ladder{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.dd-box{
+  padding:8px 12px;border-radius:8px;text-align:center;
+  background:var(--panel2);border:1px solid var(--line);min-width:60px;
+}
+.dd-horizon{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.dd-val{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;}
+.dd-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+
+/* Sentiment row */
+.sentiment-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.sent-num{font-size:22px;font-weight:800;line-height:1;}
+.sent-chip{
+  font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;
+}
+.sent-chip-up{background:color-mix(in srgb,var(--up) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--up) 28%,transparent);color:var(--up);}
+.grad-track{height:5px;border-radius:2.5px;flex:1;min-width:100px;
+  background:linear-gradient(90deg,var(--isle-risk),var(--warn),var(--up));
+  position:relative;margin:0 4px;}
+.grad-marker{
+  position:absolute;top:-4px;width:2px;height:13px;border-radius:1px;
+  background:var(--ink);
+}
+
+/* ── Policy card rows ── */
+.pol-row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:12px;
+  border-bottom:1px solid color-mix(in srgb,var(--line) 45%,transparent);}
+.pol-row:last-child{border-bottom:none}
+.pol-key{color:var(--muted);flex-shrink:0;min-width:100px;padding-right:4px;}
+.pol-val{font-weight:600;color:var(--text);flex:1;}
+.pol-chip{
+  display:inline-block;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:700;
+}
+.pol-chip-muted{
+  background:color-mix(in srgb,var(--muted) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--muted) 28%,transparent);color:var(--muted);
+}
+.pol-chip-info{
+  background:color-mix(in srgb,var(--info) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--info) 28%,transparent);color:var(--info);
+}
+.pol-chip-warn{
+  background:color-mix(in srgb,var(--warn) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 28%,transparent);color:var(--warn);
+}
+
+/* Regime path */
+.regime-path{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.regime-bq{
+  padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+}
+.regime-bq-q3{background:color-mix(in srgb,var(--isle-risk) 18%,transparent);
+  border:1px solid color-mix(in srgb,var(--isle-risk) 35%,transparent);color:var(--isle-risk);}
+.regime-bq-q2{background:color-mix(in srgb,var(--warn) 18%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);color:var(--warn);}
+.regime-bq-q4{background:color-mix(in srgb,var(--info) 18%,transparent);
+  border:1px solid color-mix(in srgb,var(--info) 35%,transparent);color:var(--info);}
+.regime-arw{color:var(--muted);font-size:14px;}
+.regime-bq small{font-size:9px;font-weight:500;letter-spacing:.04em;opacity:.85;}
+
+/* AI brief card */
+.brief-body{
+  font-size:12.5px;color:var(--muted);line-height:1.7;
+  border-left:3px solid color-mix(in srgb,var(--isle-brief) 50%,transparent);
+  padding-left:12px;margin-bottom:12px;
+}
+.brief-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.brief-chip{
+  font-size:10.5px;padding:2px 9px;border-radius:10px;font-weight:600;
+  background:color-mix(in srgb,var(--muted) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--muted) 22%,transparent);color:var(--text);
+}
+.brief-chip.warn{
+  background:color-mix(in srgb,var(--warn) 12%,transparent);
+  border-color:color-mix(in srgb,var(--warn) 28%,transparent);color:var(--warn);
+}
+.brief-disclaimer{
+  font-size:10px;color:var(--muted);font-style:italic;
+  margin-top:10px;padding-top:8px;border-top:1px solid var(--line);
+  line-height:1.5;
+}
+
+/* News items */
+.news-item{padding:8px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);}
+.news-item:last-child{border-bottom:none}
+.news-item-row{display:flex;align-items:baseline;gap:7px;margin-bottom:3px;}
+.news-theme-chip{
+  font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:4px;flex-shrink:0;
+  background:color-mix(in srgb,var(--muted) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted);
+}
+.news-title{font-size:12px;font-weight:600;color:var(--text);flex:1;line-height:1.4;}
+.news-meta{display:flex;align-items:center;gap:6px;margin-top:3px;}
+.news-impact-chip{
+  font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:4px;
+}
+.news-impact-chip.high{
+  background:color-mix(in srgb,var(--warn) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 28%,transparent);color:var(--warn);
+}
+.news-impact-chip.med{
+  background:color-mix(in srgb,var(--muted) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted);
+}
+.news-source{font-size:10px;color:var(--muted);}
+.news-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+.news-pill{
+  font-size:9.5px;padding:1px 6px;border-radius:4px;
+  background:color-mix(in srgb,var(--info) 10%,transparent);
+  border:1px solid color-mix(in srgb,var(--info) 20%,transparent);color:var(--link);
+}
+.news-foot{display:flex;align-items:center;justify-content:space-between;
+  margin-top:10px;padding-top:8px;border-top:1px solid var(--line);
+  font-size:11px;color:var(--muted);}
+.news-foot a{color:var(--link);font-weight:700;text-decoration:none;}
+.news-foot a:hover{text-decoration:underline;}
+
+/* Deep context chips */
+.deep-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.deep-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px;border-radius:10px;
+  background:var(--panel2);border:1px solid var(--line);
+  font-size:12px;font-weight:600;color:var(--text);
+  text-decoration:none;flex:1 1 130px;min-width:0;
+  transition:border-color .15s,background .15s,box-shadow .15s;
+}
+.deep-chip:hover{
+  border-color:var(--info);
+  background:color-mix(in srgb,var(--info) 6%,var(--panel2));
+  box-shadow:0 2px 12px rgba(77,142,245,.18);
+  text-decoration:none;
+}
+.deep-chip-ic{font-size:16px;}
+.deep-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* Health card */
+.health-row{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;}
+.health-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.health-dot.ok{background:var(--up);}
+.health-dot.warn{background:var(--warn);}
+.health-count{font-weight:700;color:var(--text);}
+.health-label{color:var(--muted);}
+.health-divider{
+  height:1px;background:var(--line);margin:8px 0;
+}
+
+/* ── UTIL ── */
+.label-up{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--up);
+}
+.span-full{grid-column:1/-1}
+.text-muted{color:var(--muted)}
+.text-up{color:var(--up)}
+.text-dn{color:var(--down)}
+.text-warn{color:var(--warn)}
+a{color:var(--link);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+/* ── MOBILE ── */
+@media(max-width:900px){
+  .card-grid{grid-template-columns:1fr 1fr}
+  .card.expanded.full-span{grid-column:1/-1}
+}
+@media(max-width:600px){
+  .page{padding:16px 14px 60px}
+  .topbar{padding:10px 14px}
+  .hero-card{padding:20px 18px}
+  .hero-score-numeral{font-size:48px}
+  .hero-thesis{font-size:15px}
+  .card-grid{grid-template-columns:1fr}
+  .idx-tile-row{flex-wrap:wrap}
+  .idx-tile{flex:1 1 calc(50% - 4px)}
+  .sector-cols{flex-direction:column}
+  .dd-ladder{gap:5px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Topbar ── -->
+<header class="topbar">
+  <span class="topbar-brand">Macro Ledger</span>
+  <span class="topbar-asof">as of 2026-07-10</span>
+  <div class="topbar-right">
+    <div class="seg-ctrl" role="tablist">
+      <button class="seg-btn active" role="tab" aria-selected="true">Grid</button>
+      <button class="seg-btn" role="tab" aria-selected="false">Ledger</button>
+    </div>
+    <button class="expand-all-btn" onclick="expandAll()">
+      <span>&#8964;</span> Expand all
+    </button>
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span id="theme-icon">☀</span> <span id="theme-label">Light</span>
+    </button>
+  </div>
+</header>
+
+<!-- ── Page ── -->
+<main class="page">
+
+  <!-- ── HERO COMMAND CARD ── -->
+  <div class="hero-card">
+    <div class="hero-inner">
+      <div class="hero-row">
+
+        <!-- Score dial -->
+        <div class="hero-score-block">
+          <div class="hero-verdict-word">Risk-on</div>
+          <div>
+            <span class="hero-score-numeral">77</span><span class="hero-score-denom">/100</span>
+          </div>
+          <div class="hero-score-label">Market state score</div>
+          <div class="hero-bar-wrap">
+            <div class="hero-bar-track">
+              <div class="hero-bar-fill"></div>
+              <div class="hero-bar-tick"></div>
+            </div>
+            <div class="hero-bar-labels">
+              <span>Risk-off 0</span>
+              <span>Mixed 50</span>
+              <span>100 Risk-on</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thesis block -->
+        <div class="hero-thesis-block">
+          <p class="hero-thesis">Risk-on — the tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported.</p>
+          <div class="hero-flip-line">
+            Flip condition: Mixed if breadth and participation rolls over (now 59/100, the weakest leg).
+          </div>
+          <div class="hero-meta-row">
+            <span class="hero-chip hero-chip-goldilocks">Goldilocks · Transitioning</span>
+            <span class="hero-chip hero-chip-bubble">
+              Bubble / blow-off unwind: a risk is building — stay normal, just watch it.
+            </span>
+            <span class="hero-chip hero-chip-alert" onclick="alert('Alert 1: A data source went dark (hkma). Alert 2: CPI event-risk window in 3 days — high volatility expected. Size for the noise.')">
+              <span class="dot"></span> 2 fired alerts
+            </span>
+            <span class="hero-chip" style="background:color-mix(in srgb,var(--warn) 10%,transparent);border:1px solid color-mix(in srgb,var(--warn) 24%,transparent);color:var(--warn)">
+              CPI (consumer prices) Jul 14
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CARD GRID ── -->
+  <div class="card-grid" id="cardGrid">
+
+    <!-- ══ EVIDENCE CARD ══ -->
+    <div class="card card-evidence expanded full-span" id="card-evidence" onclick="toggleCard('card-evidence')">
+      <div class="card-body">
+        <div class="card-hd">
+          <div class="card-dot"></div>
+          <span class="card-label">Evidence</span>
+          <span class="card-stamp">Six factors · as of 2026-07-10</span>
+          <span class="card-chev">&#8964;</span>
+        </div>
+        <div class="card-state">Risk-on across 5 of 6 factors</div>
+        <div class="card-stance">Trend, liquidity, risk appetite, and downside protection all confirm. Only breadth is lagging — the one to watch.</div>
+
+        <!-- Mini factor bars at rest -->
+        <div style="display:flex;flex-direction:column;gap:6px;">
+
+          <div class="mini-bar-wrap" title="Trend &amp; technicals: 3/3 US indices in an uptrend. Score 90.">
+            <span class="kv-key" style="flex:0 0 160px;font-size:11.5px;">Trend &amp; technicals</span>
+            <div class="mini-bar-track" style="flex:1"><div class="mini-bar-fill" style="width:90%;--bar-color:var(--up)"></div></div>
+            <span class="mini-bar-label" style="color:var(--up)">90</span>
+          </div>
+
+          <div class="mini-bar-wrap" title="Risk appetite: Cross-asset risk-on; bonds/FX diverge. Score 70.">
+            <span class="kv-key" style="flex:0 0 160px;font-size:11.5px;">Risk appetite</span>
+            <div class="mini-bar-track" style="flex:1"><div class="mini-bar-fill" style="width:70%;--bar-color:var(--up)"></div></div>
+            <span class="mini-bar-label" style="color:var(--up)">70</span>
+          </div>
+
+          <div class="mini-bar-wrap" title="Breadth &amp; participation: Weakest leg — 59th percentile. Score 59.">
+            <span class="kv-key" style="flex:0 0 160px;font-size:11.5px;color:var(--warn)">Breadth &amp; participation ⚠</span>
+            <div class="mini-bar-track" style="flex:1"><div class="mini-bar-fill" style="width:59%;--bar-color:var(--warn)"></div></div>
+            <span class="mini-bar-label" style="color:var(--warn)">59</span>
+          </div>
+
+          <div class="mini-bar-wrap" title="Liquidity &amp; credit: Fed liquidity expanding; HY credit tightening. Score 77.">
+            <span class="kv-key" style="flex:0 0 160px;font-size:11.5px;">Liquidity &amp; credit</span>
+            <div class="mini-bar-track" style="flex:1"><div class="mini-bar-fill" style="width:77%;--bar-color:var(--up)"></div></div>
+            <span class="mini-bar-label" style="color:var(--up)">77</span>
+          </div>
+
+          <div class="mini-bar-wrap" title="Downturn-risk guard: Downturn risk low; drawdown band low. Score 87.">
+            <span class="kv-key" style="flex:0 0 160px;font-size:11.5px;">Downturn-risk guard</span>
+            <div class="mini-bar-track" style="flex:1"><div class="mini-bar-fill" style="width:87%;--bar-color:var(--up)"></div></div>
+            <span class="mini-bar-label" style="color:var(--up)">87</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Expanded tray — full granularity -->
+      <div class="card-expand-tray" onclick="event.stopPropagation()">
+        <div class="expand-section-head">Six-Factor Full Breakdown</div>
+
+        <div class="factor-row">
+          <span class="factor-dir" style="color:var(--up)">▲</span>
+          <div class="factor-name-wrap">
+            <div class="factor-name">Trend &amp; technicals</div>
+            <div class="factor-sub">3/3 US indices in an uptrend across all timeframes (uptrend, uptrend, uptrend).</div>
+          </div>
+          <div class="factor-bar-area">
+            <div class="factor-bar-track"><div class="factor-bar-fill" style="width:90%;background:var(--up)"></div></div>
+          </div>
+          <span class="factor-score" style="color:var(--up)">90</span>
+        </div>
+
+        <div class="factor-row">
+          <span class="factor-dir" style="color:var(--up)">▲</span>
+          <div class="factor-name-wrap">
+            <div class="factor-name">Risk appetite</div>
+            <div class="factor-sub">Cross-asset risk-on confirmed; bonds and FX diverge slightly.</div>
+          </div>
+          <div class="factor-bar-area">
+            <div class="factor-bar-track"><div class="factor-bar-fill" style="width:70%;background:var(--up)"></div></div>
+          </div>
+          <span class="factor-score" style="color:var(--up)">70</span>
+        </div>
+
+        <div class="factor-row" style="background:color-mix(in srgb,var(--warn) 5%,transparent);border-radius:6px;padding-left:4px;padding-right:4px;margin:0 -4px;">
+          <span class="factor-dir" style="color:var(--warn)">▲</span>
+          <div class="factor-name-wrap">
+            <div class="factor-name" style="color:var(--warn)">Breadth &amp; participation <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--warn) 16%,transparent);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);color:var(--warn);margin-left:4px;">WEAKEST LEG</span></div>
+            <div class="factor-sub">Breadth at 59th percentile of 5-year range; confirming price but not expanding.</div>
+          </div>
+          <div class="factor-bar-area">
+            <div class="factor-bar-track"><div class="factor-bar-fill" style="width:59%;background:var(--warn)"></div></div>
+          </div>
+          <span class="factor-score" style="color:var(--warn)">59</span>
+        </div>
+
+        <div class="factor-row">
+          <span class="factor-dir" style="color:var(--up)">▲</span>
+          <div class="factor-name-wrap">
+            <div class="factor-name">Liquidity &amp; credit</div>
+            <div class="factor-sub">Fed liquidity expanding; HY credit spreads tightening.</div>
+          </div>
+          <div class="factor-bar-area">
+            <div class="factor-bar-track"><div class="factor-bar-fill" style="width:77%;background:var(--up)"></div></div>
+          </div>
+          <span class="factor-score" style="color:var(--up)">77</span>
+        </div>
+
+        <div class="factor-row">
+          <span class="factor-dir" style="color:var(--up)">▲</span>
+          <div class="factor-name-wrap">
+            <div class="factor-name">Downturn-risk guard</div>
+            <div class="factor-sub">Downturn risk low; drawdown band in low zone.</div>
+          </div>
+          <div class="factor-bar-area">
+            <div class="factor-bar-track"><div class="factor-bar-fill" style="width:87%;background:var(--up)"></div></div>
+          </div>
+          <span class="factor-score" style="color:var(--up)">87</span>
+        </div>
+
+        <div class="factor-weakest-note">
+          Weakest leg: Breadth &amp; participation at 59/100 is the closest flip-trigger. Confirms what has already turned; does not forecast. Watch for broadening — if breadth rolls below 42, the regime shifts to Mixed.
+        </div>
+
+        <!-- Multi-timeframe tape -->
+        <div style="margin-top:16px;">
+          <div class="expand-section-head">Multi-Timeframe Tape · US Broad Market</div>
+          <div style="overflow-x:auto;">
+            <table style="border-collapse:collapse;width:100%;font-size:12px;min-width:360px;">
+              <thead>
+                <tr>
+                  <th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line)">Index</th>
+                  <th style="padding:4px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);text-align:center">1D</th>
+                  <th style="padding:4px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);text-align:center">3D</th>
+                  <th style="padding:4px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);text-align:center">7D</th>
+                  <th style="padding:4px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);text-align:center">30D</th>
+                  <th style="padding:4px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);text-align:right">Read</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding:5px 8px;color:var(--muted);border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)">S&amp;P 500</td>
+                  <td style="padding:5px 8px;text-align:center;color:var(--up);font-weight:700;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)">▲ 60</td>
+                  <td style="padding:5px 8px;text-align:center;color:var(--muted);font-weight:700;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)">▶ 64</td>
+                  <td style="padding:5px 8px;text-align:center;color:var(--up);font-weight:700;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)">▲ 66</td>
+                  <td style="padding:5px 8px;text-align:center;color:var(--up);font-weight:700;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)">▲ 75</td>
+                  <td style="padding:5px 8px;text-align:right;color:var(--up);font-weight:600;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)">Uptrend</td>
+                </tr>
+                <tr>
+                  <td style="padding:5px 8px;color:var(--muted)">Nasdaq 100</td>
+                  <td style="padding:5px 8px;text-align:center;color:var(--muted);font-weight:700">▶ 53</td>
+                  <td style="padding:5px 8px;text-align:center;color:var(--muted);font-weight:700">▶ 59</td>
+                  <td style="padding:5px 8px;text-align:center;color:var(--up);font-weight:700">▲ 64</td>
+                  <td style="padding:5px 8px;text-align:center;color:var(--up);font-weight:700">▲ 75</td>
+                  <td style="padding:5px 8px;text-align:right;color:var(--up);font-weight:600">Uptrend</td>
+                </tr>
+                <tr>
+                  <td style="padding:5px 8px;color:var(--muted)">Russell 2000</td>
+                  <td style="padding:5px 8px;text-align:center;color:var(--muted);font-weight:700">▶ 53</td>
+                  <td style="padding:5px 8px;text-align:center;color:var(--up);font-weight:700">▲ 67</td>
+                  <td style="padding:5px 8px;text-align:center;color:var(--up);font-weight:700">▲ 67</td>
+                  <td style="padding:5px 8px;text-align:center;color:var(--up);font-weight:700">▲ 71</td>
+                  <td style="padding:5px 8px;text-align:right;color:var(--up);font-weight:600">Uptrend</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.5;">
+            Blended 0–100. ≥60 = risk-on · 42–59 = mixed · &lt;42 = risk-off. Confirms what has already turned; does not forecast.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ EVENTS CARD ══ -->
+    <div class="card card-events" id="card-events" onclick="toggleCard('card-events')">
+      <div class="card-body">
+        <div class="card-hd">
+          <div class="card-dot"></div>
+          <span class="card-label">Events</span>
+          <span class="card-stamp">Next catalysts</span>
+          <span class="card-chev">&#8964;</span>
+        </div>
+        <div class="card-state">CPI in 4 days — high impact</div>
+        <div class="card-stance">Two back-to-back high-impact data prints this week. Size for volatility, not a signal to exit.</div>
+
+        <div class="event-row">
+          <span class="event-date">Jul 14</span>
+          <span class="event-name">CPI — consumer prices</span>
+          <span class="event-impact high">HIGH</span>
+        </div>
+        <div class="event-row">
+          <span class="event-date">Jul 15</span>
+          <span class="event-name">PPI — producer prices</span>
+          <span class="event-impact high">HIGH</span>
+        </div>
+        <div class="event-row">
+          <span class="event-date">Jul 16</span>
+          <span class="event-name">Initial jobless claims</span>
+          <span class="event-impact med">MED</span>
+        </div>
+        <div class="event-row">
+          <span class="event-date">Jul 17</span>
+          <span class="event-name">Options expiration</span>
+          <span class="event-impact med">MED</span>
+        </div>
+
+        <div class="fed-strip">
+          <div class="fed-item">
+            <span class="fed-key">Next Fed decision</span>
+            <span class="fed-val">No change 84.5%</span>
+          </div>
+          <div class="fed-item">
+            <span class="fed-key">Cuts this year</span>
+            <span class="fed-val">0 cuts — 77.5%</span>
+          </div>
+          <div class="fed-item">
+            <span class="fed-key">CPI market price</span>
+            <span class="fed-val">2.8% — 53.5%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-expand-tray" onclick="event.stopPropagation()">
+        <div class="expand-section-head">Full Calendar — Next 2 Weeks</div>
+        <div class="event-row">
+          <span class="event-date" style="color:var(--isle-events)">Jul 14</span>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:12px;color:var(--text)">CPI — consumer prices <span style="font-size:10px;color:var(--muted);font-weight:400">08:30 ET</span></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Event-risk window: high two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</div>
+          </div>
+          <span class="event-impact high">HIGH</span>
+        </div>
+        <div class="event-row">
+          <span class="event-date" style="color:var(--isle-events)">Jul 15</span>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:12px;color:var(--text)">PPI — producer prices <span style="font-size:10px;color:var(--muted);font-weight:400">08:30 ET</span></div>
+          </div>
+          <span class="event-impact high">HIGH</span>
+        </div>
+        <div class="event-row">
+          <span class="event-date">Jul 16</span>
+          <span class="event-name">Initial jobless claims · 08:30 ET</span>
+          <span class="event-impact med">MED</span>
+        </div>
+        <div class="event-row">
+          <span class="event-date">Jul 17</span>
+          <span class="event-name">Options expiration · 16:00 ET</span>
+          <span class="event-impact med">MED</span>
+        </div>
+        <div class="event-row">
+          <span class="event-date">Jul 22</span>
+          <span class="event-name">20-Year Bond auction (reopening) · 13:00 ET</span>
+          <span class="event-impact med">MED</span>
+        </div>
+        <div class="event-row">
+          <span class="event-date">Jul 23</span>
+          <span class="event-name">Initial jobless claims · 08:30 ET</span>
+          <span class="event-impact med">MED</span>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="expand-section-head">Fed Market Pricing · Polymarket</div>
+          <div class="fed-strip" style="padding:0;margin:0">
+            <div class="fed-item"><span class="fed-key">Next decision</span><span class="fed-val">No change 84.5% (+7.0pp)</span></div>
+            <div class="fed-item"><span class="fed-key">Cuts in 2026</span><span class="fed-val">0 cuts (0 bps) 77.5% (−1.4pp)</span></div>
+            <div class="fed-item"><span class="fed-key">CPI outcome</span><span class="fed-val">2.8% at 53.5%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MARKETS CARD ══ -->
+    <div class="card card-markets" id="card-markets" onclick="toggleCard('card-markets')">
+      <div class="card-body">
+        <div class="card-hd">
+          <div class="card-dot"></div>
+          <span class="card-label">Markets</span>
+          <span class="card-stamp">Index health</span>
+          <span class="card-chev">&#8964;</span>
+        </div>
+        <div class="card-state">All indices in uptrend</div>
+        <div class="card-stance">Broad tape intact. Small-caps softer on the day but holding above key levels. Cybersecurity and pharma are the hot pockets.</div>
+
+        <!-- Mini index quote tiles -->
+        <div class="idx-tile-row">
+          <div class="idx-tile">
+            <div class="idx-tile-top">
+              <span class="idx-tile-ticker">SPY</span>
+              <span class="idx-tile-chg up">+0.43%</span>
+            </div>
+            <div class="idx-tile-px">754.95</div>
+            <div class="idx-tile-name">S&amp;P 500</div>
+          </div>
+          <div class="idx-tile">
+            <div class="idx-tile-top">
+              <span class="idx-tile-ticker">QQQ</span>
+              <span class="idx-tile-chg up">+0.31%</span>
+            </div>
+            <div class="idx-tile-px">725.51</div>
+            <div class="idx-tile-name">Nasdaq 100</div>
+          </div>
+          <div class="idx-tile">
+            <div class="idx-tile-top">
+              <span class="idx-tile-ticker">DJI</span>
+              <span class="idx-tile-chg up">+0.29%</span>
+            </div>
+            <div class="idx-tile-px">52,637</div>
+            <div class="idx-tile-name">Dow Jones</div>
+          </div>
+          <div class="idx-tile">
+            <div class="idx-tile-top">
+              <span class="idx-tile-ticker">RUT</span>
+              <span class="idx-tile-chg dn">−0.49%</span>
+            </div>
+            <div class="idx-tile-px">2,977</div>
+            <div class="idx-tile-name">Russell 2000</div>
+          </div>
+        </div>
+
+        <!-- Quick sector heat -->
+        <div class="kv-row">
+          <span class="kv-key">Hot: Cybersecurity, Insurance</span>
+          <span class="kv-val up">▲ leading</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Cold: Memory/Storage, Reg. Banks</span>
+          <span class="kv-val" style="color:var(--isle-markets)">▼ lagging</span>
+        </div>
+      </div>
+
+      <div class="card-expand-tray" onclick="event.stopPropagation()">
+        <div class="expand-section-head">Index Health Detail</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+          <div class="idx-tile">
+            <div class="idx-tile-top"><span class="idx-tile-ticker">SPY</span><span class="idx-tile-chg up">+0.43%</span></div>
+            <div class="idx-tile-px">754.95</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;">
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--up) 12%,transparent);border:1px solid color-mix(in srgb,var(--up) 25%,transparent);color:var(--up)">−0.4% off high</span>
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:var(--panel3);border:1px solid var(--line);color:var(--muted)">RSI 59</span>
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--up) 10%,transparent);border:1px solid color-mix(in srgb,var(--up) 20%,transparent);color:var(--up)">200d ✓</span>
+            </div>
+          </div>
+          <div class="idx-tile">
+            <div class="idx-tile-top"><span class="idx-tile-ticker">QQQ</span><span class="idx-tile-chg up">+0.31%</span></div>
+            <div class="idx-tile-px">725.51</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;">
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--warn) 10%,transparent);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)">−2.7% off high</span>
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:var(--panel3);border:1px solid var(--line);color:var(--muted)">RSI 53</span>
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--up) 10%,transparent);border:1px solid color-mix(in srgb,var(--up) 20%,transparent);color:var(--up)">200d ✓</span>
+            </div>
+          </div>
+          <div class="idx-tile">
+            <div class="idx-tile-top"><span class="idx-tile-ticker">DJI</span><span class="idx-tile-chg up">+0.29%</span></div>
+            <div class="idx-tile-px">52,637</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;">
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--up) 10%,transparent);border:1px solid color-mix(in srgb,var(--up) 20%,transparent);color:var(--up)">−0.8% off high</span>
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:var(--panel3);border:1px solid var(--line);color:var(--muted)">RSI 62</span>
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--up) 10%,transparent);border:1px solid color-mix(in srgb,var(--up) 20%,transparent);color:var(--up)">200d ✓</span>
+            </div>
+          </div>
+          <div class="idx-tile">
+            <div class="idx-tile-top"><span class="idx-tile-ticker">RUT</span><span class="idx-tile-chg dn">−0.49%</span></div>
+            <div class="idx-tile-px">2,977</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;">
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--warn) 10%,transparent);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)">−1.5% off high</span>
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:var(--panel3);border:1px solid var(--line);color:var(--muted)">RSI 54</span>
+              <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--up) 10%,transparent);border:1px solid color-mix(in srgb,var(--up) 20%,transparent);color:var(--up)">200d ✓</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="expand-section-head">Sector Heat</div>
+        <div class="sector-cols">
+          <div class="sector-col">
+            <div class="sector-col-head">Hot sectors</div>
+            <div class="sector-row"><span class="sector-arr heat">▲</span><span class="sector-name">Cybersecurity</span><span class="sector-rk">#1</span></div>
+            <div class="sector-row"><span class="sector-arr heat">▲</span><span class="sector-name">Insurance &amp; Brokers</span><span class="sector-rk">#2</span></div>
+            <div class="sector-row"><span class="sector-arr heat">▲</span><span class="sector-name">GLP-1 &amp; Obesity</span><span class="sector-rk">#3</span></div>
+            <div class="sector-row"><span class="sector-arr heat">▲</span><span class="sector-name">Big Pharma</span><span class="sector-rk">#4</span></div>
+          </div>
+          <div class="sector-col">
+            <div class="sector-col-head">Cold sectors</div>
+            <div class="sector-row"><span class="sector-arr cool">▼</span><span class="sector-name">Memory, HBM &amp; Storage</span><span class="sector-rk">#10</span></div>
+            <div class="sector-row"><span class="sector-arr cool">▼</span><span class="sector-name">Regional Banks</span><span class="sector-rk">#11</span></div>
+            <div class="sector-row"><span class="sector-arr cool">▼</span><span class="sector-name">Managed Care &amp; Insurers</span><span class="sector-rk">#14</span></div>
+            <div class="sector-row"><span class="sector-arr cool">▼</span><span class="sector-name">Semiconductor Equipment</span><span class="sector-rk">#16</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RISK CARD ══ -->
+    <div class="card card-risk" id="card-risk" onclick="toggleCard('card-risk')">
+      <div class="card-body">
+        <div class="card-hd">
+          <div class="card-dot"></div>
+          <span class="card-label">Risk</span>
+          <span class="card-stamp">Scare ladder</span>
+          <span class="card-chev">&#8964;</span>
+        </div>
+        <div class="card-state">Bubble / blow-off unwind — watch</div>
+        <div class="card-stance">Top scare at 62 ("watch" band) but below alert threshold. Broad market stress remains low. Narrow leadership in semis is the flag to monitor.</div>
+
+        <!-- Top 3 scare rows -->
+        <div class="scare-row">
+          <span class="scare-name">Bubble / blow-off unwind</span>
+          <div class="scare-bar-track"><div class="scare-bar-fill" style="width:62%;background:var(--warn)"></div></div>
+          <span class="scare-val" style="color:var(--warn)">62</span>
+          <span class="scare-band scare-band-watch">watch</span>
+        </div>
+        <div class="scare-row">
+          <span class="scare-name">Global breadth breakdown</span>
+          <div class="scare-bar-track"><div class="scare-bar-fill" style="width:56%;background:var(--warn)"></div></div>
+          <span class="scare-val" style="color:var(--warn)">56</span>
+          <span class="scare-band scare-band-watch">watch</span>
+        </div>
+        <div class="scare-row">
+          <span class="scare-name">Credit stress</span>
+          <div class="scare-bar-track"><div class="scare-bar-fill" style="width:47%;background:var(--muted)"></div></div>
+          <span class="scare-val" style="color:var(--muted)">47</span>
+          <span class="scare-band scare-band-calm">calm</span>
+        </div>
+
+        <!-- Sentiment read -->
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)">
+          <div style="font-size:10.5px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em">Fear ↔ Euphoria</div>
+          <div class="sentiment-row">
+            <span class="sent-num" style="color:var(--up)">93</span>
+            <span class="sent-chip sent-chip-up">Euphoria</span>
+            <div class="grad-track" style="min-width:80px">
+              <div class="grad-marker" style="left:calc(93% - 1px)"></div>
+            </div>
+            <span style="font-size:10.5px;color:var(--muted)">RORO +0.61</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-expand-tray" onclick="event.stopPropagation()">
+        <div class="expand-section-head">Full Scare Ladder</div>
+        <div class="scare-row">
+          <span class="scare-name">Bubble / blow-off unwind</span>
+          <div class="scare-bar-track"><div class="scare-bar-fill" style="width:62%;background:var(--warn)"></div></div>
+          <span class="scare-val" style="color:var(--warn)">62.1</span>
+          <span class="scare-band scare-band-watch">watch</span>
+        </div>
+        <div class="scare-row">
+          <span class="scare-name">Global breadth breakdown</span>
+          <div class="scare-bar-track"><div class="scare-bar-fill" style="width:56%;background:var(--warn)"></div></div>
+          <span class="scare-val" style="color:var(--warn)">55.5</span>
+          <span class="scare-band scare-band-watch">watch</span>
+        </div>
+        <div class="scare-row">
+          <span class="scare-name">Credit stress</span>
+          <div class="scare-bar-track"><div class="scare-bar-fill" style="width:47%;background:var(--muted)"></div></div>
+          <span class="scare-val" style="color:var(--muted)">47.4</span>
+          <span class="scare-band scare-band-calm">calm</span>
+        </div>
+        <div class="scare-row">
+          <span class="scare-name">Growth scare / defensive rotation</span>
+          <div class="scare-bar-track"><div class="scare-bar-fill" style="width:38%;background:var(--muted)"></div></div>
+          <span class="scare-val" style="color:var(--muted)">38.1</span>
+          <span class="scare-band scare-band-calm">calm</span>
+        </div>
+        <div class="scare-row">
+          <span class="scare-name">Rates / inflation shock</span>
+          <div class="scare-bar-track"><div class="scare-bar-fill" style="width:25%;background:var(--muted)"></div></div>
+          <span class="scare-val" style="color:var(--muted)">24.8</span>
+          <span class="scare-band scare-band-calm">calm</span>
+        </div>
+        <div class="scare-row">
+          <span class="scare-name">Volatility event</span>
+          <div class="scare-bar-track"><div class="scare-bar-fill" style="width:4%;background:var(--muted)"></div></div>
+          <span class="scare-val" style="color:var(--muted)">3.9</span>
+          <span class="scare-band scare-band-calm">calm</span>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="expand-section-head">Drawdown Odds (model estimates, not forecasts)</div>
+          <div class="dd-ladder">
+            <div class="dd-box">
+              <div class="dd-horizon">5 days</div>
+              <div class="dd-val" style="color:var(--up)">2%</div>
+              <div class="dd-sub">≥5% SPY odds</div>
+            </div>
+            <div class="dd-box">
+              <div class="dd-horizon">10 days</div>
+              <div class="dd-val" style="color:var(--up)">6%</div>
+              <div class="dd-sub">≥5% SPY odds</div>
+            </div>
+            <div class="dd-box" style="border-color:color-mix(in srgb,var(--warn) 35%,var(--line))">
+              <div class="dd-horizon">21 days</div>
+              <div class="dd-val" style="color:var(--warn)">13%</div>
+              <div class="dd-sub">≥10% odds</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="expand-section-head">Sentiment</div>
+          <div class="kv-row">
+            <span class="kv-key">Fear/Greed (11-leg composite)</span>
+            <span class="kv-val">55/100 · Neutral</span>
+          </div>
+          <div class="kv-row">
+            <span class="kv-key">CBOE put/call ratio</span>
+            <span class="kv-val">1.076</span>
+          </div>
+          <div class="kv-row">
+            <span class="kv-key">AAII bullish %</span>
+            <span class="kv-val">36.3%</span>
+          </div>
+          <div class="kv-row">
+            <span class="kv-key">Froth &amp; Fragility</span>
+            <span class="kv-val up">22/100 · Calm &amp; broad</span>
+          </div>
+          <div class="kv-row" style="border:none;">
+            <span class="kv-key">Leading: Narrow leadership (semis)</span>
+            <span class="kv-val warn">92nd pct ✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ POLICY CARD ══ -->
+    <div class="card card-policy" id="card-policy" onclick="toggleCard('card-policy')">
+      <div class="card-body">
+        <div class="card-hd">
+          <div class="card-dot"></div>
+          <span class="card-label">Policy</span>
+          <span class="card-stamp">as of 2026-07-10</span>
+          <span class="card-chev">&#8964;</span>
+        </div>
+        <div class="card-state">Quiet — no active jawboning</div>
+        <div class="card-stance">Fed in hold mode. Last policy event 2026-07-02. Oil / Iran re-escalation is the main risk to current conditions.</div>
+
+        <div class="kv-row">
+          <span class="kv-key">Fed stance</span>
+          <span class="kv-val">Neutral / hold</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Last policy event</span>
+          <span class="kv-val">2026-07-02</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Jawboning (7d / 30d)</span>
+          <span class="kv-val">0 / 4 events</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Iran / oil</span>
+          <span class="kv-val up">Quiet (26d base)</span>
+        </div>
+        <div class="kv-row" style="border:none">
+          <span class="kv-key">Next US midterms</span>
+          <span class="kv-val">115 days (Nov 3)</span>
+        </div>
+      </div>
+
+      <div class="card-expand-tray" onclick="event.stopPropagation()">
+        <div class="expand-section-head">Policy Lever Detail</div>
+        <div class="pol-row"><span class="pol-key">State</span><span class="pol-val"><span class="pol-chip pol-chip-muted">QUIET</span> — no active jawboning</span></div>
+        <div class="pol-row"><span class="pol-key">Last event</span><span class="pol-val"><span class="pol-chip pol-chip-info">2026-07-02</span></span></div>
+        <div class="pol-row"><span class="pol-key">Fed stance</span><span class="pol-val">Neutral / hold</span></div>
+        <div class="pol-row"><span class="pol-key">Repricing coherence</span><span class="pol-val">0 / 4 components confirmed</span></div>
+        <div class="pol-row"><span class="pol-key">Flip confirmation</span><span class="pol-val"><span class="pol-chip pol-chip-warn">FADED</span> — last flip 2026-07-02, fade rate 58%</span></div>
+        <div class="pol-row"><span class="pol-key">Iran / oil (CL=F)</span><span class="pol-val">Quiet · Re-escalation risk noted post 2026-07-08 strikes — oil spike would reprice fed-funds futures</span></div>
+        <div class="pol-row"><span class="pol-key">China / tariffs</span><span class="pol-val">90-day tariff truce fragile; any rollback compresses semis margins</span></div>
+        <div class="pol-row"><span class="pol-key">NEPA reform</span><span class="pol-val">Unlocks federal land/permits — tailwind for energy, construction, defense, data centers</span></div>
+
+        <div style="margin-top:12px">
+          <div class="expand-section-head">Regime Path (3-quarter model)</div>
+          <div class="regime-path">
+            <div class="regime-bq regime-bq-q3">
+              <small>+1Q</small>
+              STAGFLATION
+            </div>
+            <span class="regime-arw">→</span>
+            <div class="regime-bq regime-bq-q2">
+              <small>+2Q</small>
+              REFLATION
+            </div>
+            <span class="regime-arw">→</span>
+            <div class="regime-bq regime-bq-q4">
+              <small>+3Q</small>
+              GROWTH SCARE
+            </div>
+          </div>
+          <p style="font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.5">
+            Next quarter: growth decelerating (1.0% YoY, high base) · inflation accelerating (3.1% YoY, low base). Base-effect forced — not a directional call.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ AI BRIEF CARD ══ -->
+    <div class="card card-brief" id="card-brief" onclick="toggleCard('card-brief')">
+      <div class="card-body">
+        <div class="card-hd">
+          <div class="card-dot"></div>
+          <span class="card-label">AI Brief</span>
+          <span class="card-stamp">2026-07-10</span>
+          <span class="card-chev">&#8964;</span>
+        </div>
+        <div class="card-state">5 high-impact items today</div>
+        <div class="card-stance">Dominant channel: rates. Top tickers: XLF, XLK, KRE. Bank earnings season approaching. Read below before acting.</div>
+
+        <div class="brief-chips">
+          <span class="brief-chip warn">5 high-impact</span>
+          <span class="brief-chip">rates 7</span>
+          <span class="brief-chip">credit 4</span>
+          <span class="brief-chip">earnings 4</span>
+        </div>
+        <div class="brief-disclaimer">
+          This is a summary of existing signals from stock_wire, official releases, and tier-1 sources — not a signal source itself.
+        </div>
+      </div>
+
+      <div class="card-expand-tray" onclick="event.stopPropagation()">
+        <div class="expand-section-head">Full AI Synthesis · Cross-Asset</div>
+        <div class="brief-body">
+          5 high-impact items flagged today. Dominant theme is rates — 7 items touched rate-sensitive sectors. Source mix: stock_wire 6, official 5, tier1 4. Bank earnings season approaching with a market anomaly in pricing. Fed stress tests confirmed large banks are well-positioned to weather a severe recession.
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Dominant channel</span>
+          <span class="kv-val">Rates (7 items)</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Secondary channels</span>
+          <span class="kv-val">Credit (4), Earnings (4)</span>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Top tickers flagged</span>
+          <span class="kv-val">XLF, XLK, KRE</span>
+        </div>
+        <div class="kv-row" style="border:none">
+          <span class="kv-key">Source mix</span>
+          <span class="kv-val">stock_wire:6 · official:5 · tier1:4</span>
+        </div>
+        <div class="brief-disclaimer">
+          Display-only synthesis of existing signals — not a signal source. LLMs do not originate scores or escalations on this platform.
+        </div>
+        <div style="margin-top:10px">
+          <a href="aibrief.html" style="font-size:12px;font-weight:700;color:var(--isle-brief)">Full AI Brief →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ NEWS CARD ══ -->
+    <div class="card card-news" id="card-news" onclick="toggleCard('card-news')">
+      <div class="card-body">
+        <div class="card-hd">
+          <div class="card-dot"></div>
+          <span class="card-label">News</span>
+          <span class="card-stamp">18 items · 258 scanned</span>
+          <span class="card-chev">&#8964;</span>
+        </div>
+        <div class="card-state">Bank earnings + Fed stress test</div>
+        <div class="card-stance">Three high-impact items today: bank earnings anomaly, PepsiCo miss, and the Fed stress test pass. Next catalyst CPI Jul 14.</div>
+
+        <div class="news-item">
+          <div class="news-item-row">
+            <span class="news-theme-chip">Earnings</span>
+            <span class="news-title">As bank earnings approach, a market anomaly emerges</span>
+          </div>
+          <div class="news-meta">
+            <span class="news-impact-chip high">HIGH</span>
+            <span class="news-source">CNBC · 74min ago</span>
+          </div>
+        </div>
+
+        <div class="news-item">
+          <div class="news-item-row">
+            <span class="news-theme-chip">Earnings</span>
+            <span class="news-title">PepsiCo earnings miss estimates as U.S. consumers tighten budgets</span>
+          </div>
+          <div class="news-meta">
+            <span class="news-impact-chip high">HIGH</span>
+            <span class="news-source">CNBC · 78min ago</span>
+          </div>
+        </div>
+
+        <div class="news-item">
+          <div class="news-item-row">
+            <span class="news-theme-chip">Fed</span>
+            <span class="news-title">Fed annual stress test confirms large banks can weather severe recession</span>
+          </div>
+          <div class="news-meta">
+            <span class="news-impact-chip high">HIGH</span>
+            <span class="news-source">Federal Reserve · 80min ago</span>
+          </div>
+        </div>
+
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">
+          Next catalyst: <strong style="color:var(--text)">CPI Jul 14</strong>
+        </div>
+      </div>
+
+      <div class="card-expand-tray" onclick="event.stopPropagation()">
+        <div class="expand-section-head">Top Headlines · Market Intelligence</div>
+
+        <div class="news-item">
+          <div class="news-item-row">
+            <span class="news-theme-chip">Earnings</span>
+            <span class="news-title">As bank earnings approach, a market anomaly emerges</span>
+          </div>
+          <div class="news-meta">
+            <span class="news-impact-chip high">HIGH</span>
+            <span class="news-source">CNBC - Investing</span>
+          </div>
+          <div class="news-tags">
+            <span class="news-pill">credit</span><span class="news-pill">earnings</span>
+            <span class="news-pill" style="color:var(--info)">XLF</span>
+          </div>
+        </div>
+
+        <div class="news-item">
+          <div class="news-item-row">
+            <span class="news-theme-chip">Earnings</span>
+            <span class="news-title">PepsiCo earnings miss estimates as U.S. consumers tighten their budgets</span>
+          </div>
+          <div class="news-meta">
+            <span class="news-impact-chip high">HIGH</span>
+            <span class="news-source">CNBC - Markets</span>
+          </div>
+          <div class="news-tags">
+            <span class="news-pill">fiscal trade</span><span class="news-pill">earnings</span>
+          </div>
+        </div>
+
+        <div class="news-item">
+          <div class="news-item-row">
+            <span class="news-theme-chip">Guidance</span>
+            <span class="news-title">Levi Strauss beats quarterly expectations, raises guidance and dividend</span>
+          </div>
+          <div class="news-meta">
+            <span class="news-impact-chip high">HIGH</span>
+            <span class="news-source">CNBC - Markets</span>
+          </div>
+          <div class="news-tags">
+            <span class="news-pill">guidance</span><span class="news-pill">capital return</span>
+          </div>
+        </div>
+
+        <div class="news-item">
+          <div class="news-item-row">
+            <span class="news-theme-chip">Earnings</span>
+            <span class="news-title">Chip rally, Fed task forces, Delta earnings and more in Morning Squawk</span>
+          </div>
+          <div class="news-meta">
+            <span class="news-impact-chip high">HIGH</span>
+            <span class="news-source">CNBC - Tech</span>
+          </div>
+          <div class="news-tags">
+            <span class="news-pill">rates</span><span class="news-pill">earnings</span>
+            <span class="news-pill" style="color:var(--info)">XLK</span>
+          </div>
+        </div>
+
+        <div class="news-item">
+          <div class="news-item-row">
+            <span class="news-theme-chip">Fed</span>
+            <span class="news-title">Fed annual bank stress test confirms large banks are well positioned to weather a severe recession</span>
+          </div>
+          <div class="news-meta">
+            <span class="news-impact-chip high">HIGH</span>
+            <span class="news-source">Federal Reserve - All Press</span>
+          </div>
+          <div class="news-tags">
+            <span class="news-pill">growth</span><span class="news-pill">credit</span>
+            <span class="news-pill" style="color:var(--info)">KRE</span>
+            <span class="news-pill" style="color:var(--info)">XLF</span>
+          </div>
+        </div>
+
+        <div class="news-foot">
+          <a href="news.html">Open full news feed →</a>
+          <span>18 stories · 258 scanned · next catalyst: <strong>CPI Jul 14</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DEEP CONTEXT CARD ══ -->
+    <div class="card card-deep" id="card-deep" onclick="toggleCard('card-deep')">
+      <div class="card-body">
+        <div class="card-hd">
+          <div class="card-dot"></div>
+          <span class="card-label">Deep Context</span>
+          <span class="card-chev">&#8964;</span>
+        </div>
+        <div class="card-state">5 linked desks</div>
+        <div class="card-stance">Full cross-asset detail, sector cycles, AI synthesis, and the Neural Web are one tap away.</div>
+
+        <div class="deep-chips">
+          <a class="deep-chip" href="macro_context.html"><span class="deep-chip-ic">🌐</span><span>Macro Weather</span></a>
+          <a class="deep-chip" href="aibrief.html"><span class="deep-chip-ic">🤖</span><span>AI Brief</span></a>
+          <a class="deep-chip" href="sector_central.html"><span class="deep-chip-ic">📊</span><span>Sector Central</span></a>
+          <a class="deep-chip" href="committee.html"><span class="deep-chip-ic">🧠</span><span>Neural Web</span></a>
+          <a class="deep-chip" href="macro_signals.html"><span class="deep-chip-ic">⚡</span><span>Signal Lab</span></a>
+        </div>
+      </div>
+
+      <div class="card-expand-tray" onclick="event.stopPropagation()">
+        <div class="expand-section-head">Linked Analysis Surfaces</div>
+        <div class="deep-chips" style="flex-direction:column;gap:8px;">
+          <a class="deep-chip" href="macro_context.html" style="flex:none;">
+            <span class="deep-chip-ic">🌐</span>
+            <div>
+              <div style="font-weight:700">Macro Weather</div>
+              <div style="font-size:10.5px;color:var(--muted)">Full cross-asset regime context · growth/inflation quadrant · global signals</div>
+            </div>
+          </a>
+          <a class="deep-chip" href="aibrief.html" style="flex:none;">
+            <span class="deep-chip-ic">🤖</span>
+            <div>
+              <div style="font-weight:700">AI Daily Brief</div>
+              <div style="font-size:10.5px;color:var(--muted)">Cross-asset synthesis · 5 high-impact items today · display-only</div>
+            </div>
+          </a>
+          <a class="deep-chip" href="sector_central.html" style="flex:none;">
+            <span class="deep-chip-ic">📊</span>
+            <div>
+              <div style="font-weight:700">Sector Central</div>
+              <div style="font-size:10.5px;color:var(--muted)">Cycle map · market heat · one gated read per sector &amp; theme</div>
+            </div>
+          </a>
+          <a class="deep-chip" href="committee.html" style="flex:none;">
+            <span class="deep-chip-ic">🧠</span>
+            <div>
+              <div style="font-weight:700">Neural Web</div>
+              <div style="font-size:10.5px;color:var(--muted)">Thematic intelligence · TIL frameworks · pathway analysis</div>
+            </div>
+          </a>
+          <a class="deep-chip" href="macro_signals.html" style="flex:none;">
+            <span class="deep-chip-ic">⚡</span>
+            <div>
+              <div style="font-weight:700">Signal Lab</div>
+              <div style="font-size:10.5px;color:var(--muted)">Consolidated validation scorecard · raw macro data · cycle</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DATA HEALTH CARD (small) ══ -->
+    <div class="card card-health" id="card-health" style="--accent:var(--muted)" onclick="toggleCard('card-health')">
+      <div class="card-body">
+        <div class="card-hd">
+          <div class="card-dot"></div>
+          <span class="card-label">Data Health</span>
+          <span class="card-stamp">as of 2026-07-10</span>
+          <span class="card-chev">&#8964;</span>
+        </div>
+        <div class="card-state" style="color:var(--warn)">7 sources need attention</div>
+        <div class="card-stance">One source ('hkma') marked dead after 3 consecutive failures — affected signals lose confidence until it recovers. Plumbing notice, not a market signal.</div>
+
+        <div class="health-row">
+          <div class="health-dot ok"></div>
+          <span class="health-count">147</span>
+          <span class="health-label">sources healthy</span>
+        </div>
+        <div class="health-row">
+          <div class="health-dot warn"></div>
+          <span class="health-count">7</span>
+          <span class="health-label">sources need attention</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">
+          154 total sources · <a href="#health" style="color:var(--link)">details ↓</a>
+        </div>
+      </div>
+
+      <div class="card-expand-tray" onclick="event.stopPropagation()">
+        <div class="expand-section-head">Source Health Summary</div>
+        <div class="kv-row"><span class="kv-key">Total sources</span><span class="kv-val">154</span></div>
+        <div class="kv-row"><span class="kv-key">Healthy</span><span class="kv-val up">147</span></div>
+        <div class="kv-row"><span class="kv-key">Need attention</span><span class="kv-val warn">7</span></div>
+        <div class="kv-row" style="border:none">
+          <span class="kv-key">Critical dead source</span>
+          <span class="kv-val warn">'hkma' — 3 consecutive failures</span>
+        </div>
+        <p style="font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.5">
+          The 'hkma' feed is paused until it recovers. Any signals depending on it automatically have reduced confidence. This is a plumbing notice — not a market signal.
+        </p>
+      </div>
+    </div>
+
+  </div><!-- /card-grid -->
+
+</main>
+
+<script>
+// ── Theme toggle ──
+function toggleTheme(){
+  var html=document.documentElement;
+  var current=html.getAttribute('data-theme')||'dark';
+  var next=current==='dark'?'light':'dark';
+  html.setAttribute('data-theme',next);
+  document.getElementById('theme-icon').textContent=next==='dark'?'☀':'☾';
+  document.getElementById('theme-label').textContent=next==='dark'?'Light':'Dark';
+}
+
+// ── Card expand toggle ──
+var expandedCard=null;
+
+function toggleCard(id){
+  var card=document.getElementById(id);
+  var grid=document.getElementById('cardGrid');
+  if(!card)return;
+
+  if(card.classList.contains('expanded')){
+    card.classList.remove('expanded','full-span');
+    grid.classList.remove('grid-has-expanded');
+    expandedCard=null;
+  } else {
+    // Close currently open card if any
+    if(expandedCard && expandedCard!==card){
+      expandedCard.classList.remove('expanded','full-span');
+    }
+    card.classList.add('expanded','full-span');
+    grid.classList.add('grid-has-expanded');
+    expandedCard=card;
+    // Scroll into view
+    setTimeout(function(){card.scrollIntoView({behavior:'smooth',block:'nearest'})},50);
+  }
+}
+
+// ── Expand all toggle ──
+function expandAll(){
+  var cards=document.querySelectorAll('.card');
+  var grid=document.getElementById('cardGrid');
+  var anyOpen=false;
+  cards.forEach(function(c){if(c.classList.contains('expanded'))anyOpen=true;});
+
+  if(anyOpen){
+    // Close all
+    cards.forEach(function(c){c.classList.remove('expanded','full-span');});
+    grid.classList.remove('grid-has-expanded');
+    expandedCard=null;
+    // Re-open hero evidence card (default state)
+    var evCard=document.getElementById('card-evidence');
+    if(evCard){evCard.classList.add('expanded','full-span');grid.classList.add('grid-has-expanded');expandedCard=evCard;}
+  } else {
+    // Can't truly expand all in-flow (only one can full-span at a time) —
+    // just open evidence as the primary view
+    var evCard=document.getElementById('card-evidence');
+    if(evCard){
+      evCard.classList.add('expanded','full-span');
+      grid.classList.add('grid-has-expanded');
+      expandedCard=evCard;
+    }
+  }
+}
+
+// Prevent topbar segmented control from triggering card toggle
+document.querySelectorAll('.seg-btn').forEach(function(btn){
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    document.querySelectorAll('.seg-btn').forEach(function(b){b.classList.remove('active');});
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

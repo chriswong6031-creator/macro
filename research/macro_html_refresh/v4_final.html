@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Macro Ledger — v4 Final (binding design record)</title>
+<style>
+/* ─────────────────────────────────────────────────────────────────────
+   PALETTE  (dark primary / light secondary — no external requests)
+   Sourced from v4_state_board + cockpit_cards + command_grid tokens
+───────────────────────────────────────────────────────────────────── */
+:root {
+  --bg:      #0c0f14;
+  --panel:   #13171f;
+  --panel2:  #181d26;
+  --panel3:  #1d2330;
+  --text:    #d7dce3;
+  --text-hi: #f0f3f7;
+  --muted:   #7a8494;
+  --line:    #242b38;
+  --hair:    rgba(255,255,255,.05);
+  --up:      #3ec87a;
+  --down:    #e05c5c;
+  --warn:    #e0a030;
+  --info:    #4d8ef5;
+  --link:    #4d8ef5;
+  --num:     ui-monospace,"SF Mono","Cascadia Code","Fira Code",monospace;
+
+  /* isle accent colours */
+  --isle-evidence: #20c0a0;
+  --isle-events:   #e0a030;
+  --isle-markets:  #4d8ef5;
+  --isle-risk:     #e05c5c;
+  --isle-policy:   #a070e8;
+  --isle-brief:    #38c472;
+  --isle-news:     #7a8494;
+  --isle-deep:     #4d8ef5;
+  --isle-health:   #a070e8;
+
+  --regime: var(--up);
+  --card-radius: 10px;
+  --card-shadow-hover: 0 6px 24px rgba(0,0,0,.3);
+}
+
+[data-theme="light"] {
+  --bg:      #f0f2f7;
+  --panel:   #ffffff;
+  --panel2:  #eaecf3;
+  --panel3:  #e2e5ef;
+  --text:    #1c2430;
+  --text-hi: #0a1018;
+  --muted:   #5d6b7e;
+  --line:    #d2d8e6;
+  --hair:    rgba(0,0,0,.06);
+  --up:      #1a8a4a;
+  --down:    #c03535;
+  --warn:    #9a6010;
+  --info:    #1a4fd6;
+  --link:    #1a4fd6;
+  --isle-evidence: #0e9e82;
+  --isle-events:   #9a6010;
+  --isle-markets:  #1a4fd6;
+  --isle-risk:     #c03535;
+  --isle-policy:   #7040c0;
+  --isle-brief:    #1a8a4a;
+  --isle-news:     #5d6b7e;
+  --isle-deep:     #1a4fd6;
+  --isle-health:   #7040c0;
+  --card-shadow-hover: 0 4px 16px rgba(0,0,0,.14);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   RESET & BASE
+───────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   TOPBAR
+───────────────────────────────────────────────────────────────────── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  padding: 0 24px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topbar-brand {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  flex: none;
+}
+
+.topbar-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--up); flex: none;
+}
+
+.topbar-asof {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--num);
+  flex: none;
+}
+
+.topbar-spacer { flex: 1; }
+
+.topbar-note {
+  font-size: 10px;
+  color: var(--muted);
+  font-style: italic;
+  flex: none;
+}
+
+/* segmented control */
+.seg-ctrl {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.seg-btn {
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 5px 14px;
+  cursor: pointer;
+  letter-spacing: .04em;
+  transition: background .12s, color .12s;
+  min-height: 32px;
+}
+
+.seg-btn.active {
+  background: var(--info);
+  color: #fff;
+}
+
+.seg-btn:not(.active):hover {
+  background: var(--panel2);
+  color: var(--text);
+}
+
+.btn-sm {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: border-color .12s, color .12s;
+  min-height: 32px;
+}
+
+.btn-sm:hover {
+  border-color: var(--info);
+  color: var(--text);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   PAGE LAYOUT
+───────────────────────────────────────────────────────────────────── */
+.page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 20px 24px 60px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   TOP BAND — 3 large verdict cards
+───────────────────────────────────────────────────────────────────── */
+.band {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   VERDICT CARD — GRAFT 3: 3px LEFT accent edge (replaces top border)
+   GRAFT 3: left accent via ::before pseudo, keyed to --card-accent
+───────────────────────────────────────────────────────────────────── */
+.vcard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  padding: 20px 22px 18px 26px;   /* extra left for the accent bar */
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow .15s, transform .12s;
+  cursor: pointer;
+}
+
+/* 3px LEFT accent strip (graft 3 — replaces top border) */
+.vcard::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--card-accent, var(--muted));
+  border-radius: var(--card-radius) 0 0 var(--card-radius);
+}
+
+.vcard:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.vcard-eyebrow {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+/* Sibling dim on expansion (graft 5) */
+.band.has-expanded .vcard:not(.is-expanded) {
+  opacity: .55;
+  filter: saturate(.5);
+}
+
+/* THE REGIME card */
+.vcard-regime { --card-accent: var(--up); }
+
+.regime-state {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--up);
+  letter-spacing: -.02em;
+  margin-bottom: 4px;
+}
+
+.regime-score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.regime-score-big {
+  font-size: 56px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--up);
+  letter-spacing: -.04em;
+  font-family: var(--num);
+}
+
+.regime-score-denom {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+  padding-bottom: 4px;
+}
+
+/* Score bar + flip-tick with caption (graft 1) */
+.regime-bar-wrap {
+  margin-bottom: 10px;
+}
+
+.regime-bar-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9.5px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.regime-bar-track {
+  height: 6px;
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+  border-radius: 3px;
+  overflow: visible;
+  position: relative;
+}
+
+.regime-bar-fill {
+  height: 100%;
+  width: 77%;
+  background: linear-gradient(90deg, var(--warn) 0%, var(--up) 60%);
+  border-radius: 3px;
+}
+
+/* flip trigger tick */
+.regime-bar-tick {
+  position: absolute;
+  top: -4px;
+  left: 59%;
+  width: 2px;
+  height: 14px;
+  background: var(--warn);
+  border-radius: 1px;
+  box-shadow: 0 0 4px color-mix(in srgb, var(--warn) 60%, transparent);
+}
+
+/* GRAFT 1: caption under the bar */
+.regime-bar-caption {
+  font-size: 9.5px;
+  color: var(--warn);
+  font-weight: 600;
+  margin-top: 8px;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.regime-bar-caption::before {
+  content: '↑';
+  font-size: 11px;
+}
+
+.regime-thesis {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.regime-flip {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  padding-left: 8px;
+  border-left: 2px solid color-mix(in srgb, var(--warn) 50%, transparent);
+  margin-bottom: 10px;
+}
+
+.regime-goldilocks {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--up);
+  margin-top: 8px;
+  padding: 3px 9px;
+  background: color-mix(in srgb, var(--up) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--up) 25%, transparent);
+  border-radius: 20px;
+}
+
+.regime-alerts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.chip-warn {
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 28%, transparent);
+}
+
+.chip-risk {
+  background: color-mix(in srgb, var(--down) 14%, transparent);
+  color: var(--down);
+  border: 1px solid color-mix(in srgb, var(--down) 28%, transparent);
+}
+
+/* THE RISK card */
+.vcard-risk { --card-accent: var(--isle-risk); }
+
+.risk-state {
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.1;
+  color: var(--down);
+  letter-spacing: -.01em;
+  margin-bottom: 4px;
+}
+
+.risk-desc {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.risk-heat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.risk-heat-label {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-weight: 600;
+  min-width: 78px;
+}
+
+.risk-heat-bar {
+  flex: 1;
+  height: 4px;
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.risk-heat-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.risk-heat-val {
+  font-size: 11.5px;
+  font-weight: 800;
+  font-family: var(--num);
+  min-width: 22px;
+  text-align: right;
+}
+
+.risk-scare {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--down) 6%, var(--panel2));
+  border: 1px solid color-mix(in srgb, var(--down) 20%, transparent);
+  border-left: 3px solid var(--down);
+  border-radius: 7px;
+  font-size: 11.5px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.risk-scare-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--down);
+  margin-bottom: 3px;
+}
+
+/* WHAT TO DO card */
+.vcard-action { --card-accent: var(--up); }
+
+.action-state {
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.1;
+  color: var(--up);
+  letter-spacing: -.01em;
+  margin-bottom: 12px;
+}
+
+.action-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.action-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.action-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--up);
+  flex: none;
+  margin-top: 5px;
+}
+
+.action-dot.amber { background: var(--warn); }
+.action-dot.red   { background: var(--down); }
+
+.action-text {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   SECTION DIVIDER
+───────────────────────────────────────────────────────────────────── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 18px;
+}
+
+.section-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.section-divider-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   INSTRUMENT RACK — GRAFT 3: icard uses 3px LEFT accent
+───────────────────────────────────────────────────────────────────── */
+.rack {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   INSTRUMENT CARD — GRAFT 3: left accent replaces top border
+───────────────────────────────────────────────────────────────────── */
+.icard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  padding: 14px 16px 14px 20px;  /* extra left padding for accent */
+  position: relative;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, transform .12s, opacity .2s;
+}
+
+/* 3px LEFT accent (graft 3) */
+.icard::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--card-color, var(--muted));
+  border-radius: var(--card-radius) 0 0 var(--card-radius);
+}
+
+.icard:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--card-color, var(--muted)) 40%, var(--line));
+}
+
+.icard-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.icard-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--card-color, var(--muted));
+  flex: none;
+  box-shadow: 0 0 7px 2px color-mix(in srgb, var(--card-color, var(--muted)) 40%, transparent);
+}
+
+.icard-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.icard-expand-icon {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: .5;
+}
+
+.icard-stance {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--card-color, var(--text));
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+/* label-value rows */
+.kv-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--hair);
+  font-size: 11.5px;
+}
+
+.kv-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.kv-key {
+  color: var(--muted);
+  font-weight: 500;
+  flex: none;
+  min-width: 82px;
+  font-size: 10.5px;
+}
+
+.kv-val {
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--num);
+  flex: 1;
+  text-align: right;
+  font-size: 11.5px;
+}
+
+.kv-val.up   { color: var(--up); }
+.kv-val.down { color: var(--down); }
+.kv-val.warn { color: var(--warn); }
+
+/* GRAFT 4: Fed-odds meeting path — inline bars in POLICY card */
+.fed-path-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 0;
+  font-size: 11px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.fed-path-row:last-child { border-bottom: none; }
+
+.fed-path-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+  min-width: 72px;
+  flex: none;
+}
+
+.fed-path-bar-track {
+  flex: 1;
+  height: 4px;
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.fed-path-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.fed-path-val {
+  font-family: var(--num);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text);
+  min-width: 38px;
+  text-align: right;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   EVIDENCE CARD expanded state — SIX factor rows (graft 7)
+───────────────────────────────────────────────────────────────────── */
+.icard.is-expanded {
+  grid-column: span 4;
+  border-color: var(--card-color, var(--muted));
+  transform: none;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--card-color, var(--muted)) 20%, transparent),
+    0 8px 32px -8px color-mix(in srgb, var(--card-color, var(--muted)) 24%, transparent);
+  background: color-mix(in srgb, var(--card-color, var(--muted)) 4%, var(--panel));
+}
+
+/* GRAFT 2: raw tokens confined to expand-tray only */
+.expand-tray-raw {
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.6;
+  font-family: var(--num);
+  margin-top: 10px;
+}
+
+.expand-tray-raw-lbl {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+  opacity: .7;
+}
+
+/* Evidence factor list */
+.ev-factors {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ev-row {
+  display: grid;
+  grid-template-columns: 16px 1fr 100px 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.ev-row:last-child { border-bottom: none; }
+
+.ev-row.ev-weakest {
+  background: color-mix(in srgb, var(--warn) 5%, transparent);
+  border-radius: 5px;
+  padding: 5px 6px;
+  border: 1px solid color-mix(in srgb, var(--warn) 22%, transparent);
+  margin: 2px 0;
+}
+
+.ev-dir {
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+  line-height: 1;
+}
+
+.ev-name-wrap {}
+
+.ev-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-hi);
+  line-height: 1.2;
+}
+
+.ev-sub {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.ev-bar-area {}
+
+.ev-bar-track {
+  height: 4px;
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ev-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.ev-score {
+  font-family: var(--num);
+  font-size: 14px;
+  font-weight: 900;
+  text-align: right;
+  line-height: 1;
+}
+
+.ev-weakest-callout {
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-left: 2px solid var(--warn);
+  background: color-mix(in srgb, var(--warn) 6%, transparent);
+  border-radius: 0 5px 5px 0;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* GRAFT 5: sibling dim */
+.rack.has-expanded .icard:not(.is-expanded) {
+  opacity: .55;
+  filter: saturate(.5);
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   MARKETS CARD — GRAFT 6: hot/cold sector line
+───────────────────────────────────────────────────────────────────── */
+.quote-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.quote-tile {
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 9px;
+}
+
+.quote-ticker {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.quote-px {
+  font-size: 13px;
+  font-weight: 800;
+  font-family: var(--num);
+  color: var(--text-hi);
+  line-height: 1;
+}
+
+.quote-chg {
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: var(--num);
+  margin-top: 2px;
+}
+
+.quote-chg.up   { color: var(--up); }
+.quote-chg.down { color: var(--down); }
+
+/* GRAFT 6: hot/cold line */
+.sector-line {
+  padding: 7px 0 0;
+  border-top: 1px solid var(--line);
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+}
+
+.sector-hot-lbl { font-weight: 700; color: var(--up); font-size: 9.5px; letter-spacing: .05em; }
+.sector-cold-lbl { font-weight: 700; color: var(--down); font-size: 9.5px; letter-spacing: .05em; }
+.sector-name { color: var(--text); font-weight: 600; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   NEWS / AI BRIEF
+───────────────────────────────────────────────────────────────────── */
+.news-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.news-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+.news-headline {
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.news-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.impact-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--down);
+  flex: none;
+}
+
+.ai-disclaimer {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   DEEP CONTEXT chips
+───────────────────────────────────────────────────────────────────── */
+.deep-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.deep-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color .12s;
+}
+
+.deep-chip:hover {
+  border-color: var(--info);
+  text-decoration: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   SIBLING NOTE (graft 7 reference — displayed inline under evidence)
+───────────────────────────────────────────────────────────────────── */
+.sibling-dim-note {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 10px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--muted) 5%, transparent);
+  font-style: italic;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .band { grid-template-columns: 1fr; }
+  .rack { grid-template-columns: 1fr 1fr; }
+  .icard.is-expanded { grid-column: span 2; }
+}
+
+@media (max-width: 700px) {
+  .page { padding: 14px 14px 40px; }
+  .rack { grid-template-columns: 1fr; }
+  .icard.is-expanded { grid-column: span 1; }
+  .topbar { padding: 0 14px; gap: 8px; }
+  .topbar-asof { display: none; }
+  .seg-btn { min-height: 44px; padding: 0 16px; }
+  .btn-sm { min-height: 44px; }
+}
+
+@media (max-width: 390px) {
+  .band { grid-template-columns: 1fr; }
+  .quote-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* GRAFT 7: SIBLING NOTE for the evidence header */
+.icard-stance.ev-headline {
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--isle-evidence);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .icard, .vcard { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── TOPBAR ──────────────────────────────────────────────────────── -->
+<header class="topbar">
+  <span class="topbar-brand">Macro Ledger</span>
+  <div class="topbar-dot"></div>
+  <span class="topbar-asof">as of 2026-07-10 · nightly</span>
+  <div class="topbar-spacer"></div>
+  <span class="topbar-note">v4 final — binding design record (S0)</span>
+  <div class="seg-ctrl" role="tablist" aria-label="View mode">
+    <button class="seg-btn active" id="btn-grid" onclick="setView('grid')">Grid</button>
+    <button class="seg-btn" id="btn-ledger" onclick="setView('ledger')">Ledger</button>
+  </div>
+  <button class="btn-sm" onclick="toggleAll()">Expand all</button>
+  <button class="btn-sm" id="theme-btn" onclick="toggleTheme()">Light</button>
+</header>
+
+<!-- ─── PAGE ─────────────────────────────────────────────────────────── -->
+<div class="page">
+
+  <!-- ════════════════════════════════════════════════════════════════
+       TOP BAND — THE REGIME · THE RISK · WHAT TO DO
+  ════════════════════════════════════════════════════════════════════ -->
+  <div class="band" id="band">
+
+    <!-- 1. THE REGIME -->
+    <div class="vcard vcard-regime">
+      <div class="vcard-eyebrow">The Regime</div>
+
+      <div class="regime-state">Risk-on</div>
+
+      <div class="regime-score-row">
+        <span class="regime-score-big">77</span>
+        <span class="regime-score-denom">/100</span>
+      </div>
+
+      <!-- GRAFT 1: score bar + flip-tick + visible caption -->
+      <div class="regime-bar-wrap">
+        <div class="regime-bar-axis">
+          <span style="color:var(--down)">0 Risk-off</span>
+          <span>50 Mixed</span>
+          <span style="color:var(--up)">100 Risk-on</span>
+        </div>
+        <div class="regime-bar-track">
+          <div class="regime-bar-fill"></div>
+          <div class="regime-bar-tick"></div>
+        </div>
+        <!-- GRAFT 1: visible caption below bar -->
+        <div class="regime-bar-caption">
+          tick = flip trigger at 59
+        </div>
+        <!-- ZH caption -->
+        <div class="regime-bar-caption" style="color:var(--warn);font-size:9px;margin-top:2px;font-style:normal;opacity:.75">
+          标记 = 59 分为翻转触发点
+        </div>
+      </div>
+
+      <p class="regime-thesis">
+        Tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported.
+      </p>
+
+      <p class="regime-flip">
+        Turns mixed if breadth &amp; participation rolls over — now at 59, the weakest leg.
+      </p>
+
+      <div class="regime-goldilocks">
+        <span>▲</span>
+        <span>Goldilocks — shifting</span>
+      </div>
+
+      <div class="regime-alerts">
+        <span class="chip chip-warn">⚠ CPI Jul 14</span>
+        <span class="chip chip-warn">⚠ PPI Jul 15</span>
+        <span class="chip chip-risk">Blow-off unwind — watch</span>
+      </div>
+    </div>
+
+    <!-- 2. THE RISK -->
+    <div class="vcard vcard-risk">
+      <div class="vcard-eyebrow">The Risk</div>
+
+      <div class="risk-state">Bubble / Blow-off Unwind</div>
+      <p class="risk-desc">
+        Still warm at 62 — down from 90. The dominant residual risk channel is a late-cycle valuation unwind, not a macro shock.
+      </p>
+
+      <div>
+        <div class="risk-heat-row">
+          <span class="risk-heat-label">Blow-off unwind</span>
+          <div class="risk-heat-bar">
+            <div class="risk-heat-fill" style="width:62%;background:var(--warn)"></div>
+          </div>
+          <span class="risk-heat-val" style="color:var(--warn)">62</span>
+        </div>
+        <div class="risk-heat-row">
+          <span class="risk-heat-label">Global breadth</span>
+          <div class="risk-heat-bar">
+            <div class="risk-heat-fill" style="width:56%;background:var(--warn)"></div>
+          </div>
+          <span class="risk-heat-val" style="color:var(--warn)">56</span>
+        </div>
+        <div class="risk-heat-row">
+          <span class="risk-heat-label">Vol event</span>
+          <div class="risk-heat-bar">
+            <div class="risk-heat-fill" style="width:4%;background:var(--muted)"></div>
+          </div>
+          <span class="risk-heat-val" style="color:var(--muted)">4</span>
+        </div>
+        <div class="risk-heat-row">
+          <span class="risk-heat-label">Growth scare</span>
+          <div class="risk-heat-bar">
+            <div class="risk-heat-fill" style="width:38%;background:var(--muted)"></div>
+          </div>
+          <span class="risk-heat-val" style="color:var(--muted)">38</span>
+        </div>
+      </div>
+
+      <div class="risk-scare">
+        <div class="risk-scare-label">What faded</div>
+        Vol event 96→4 · Growth scare 91→38 · Blow-off unwind 90→62
+      </div>
+
+      <p style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5">
+        What would flip it: breadth &amp; participation breaks below 42, or vol event re-ignites above 70.
+      </p>
+    </div>
+
+    <!-- 3. WHAT TO DO -->
+    <div class="vcard vcard-action">
+      <div class="vcard-eyebrow">What To Do</div>
+
+      <div class="action-state">Stay long, size for noise</div>
+
+      <div>
+        <div class="action-item">
+          <div class="action-dot"></div>
+          <div class="action-text">Trend-follow. Add on strength. All indices in uptrend across timeframes.</div>
+        </div>
+        <div class="action-item">
+          <div class="action-dot amber"></div>
+          <div class="action-text">Size for CPI/PPI noise (Jul 14–15). High two-sided volatility expected — not a sell signal; reduce position size ahead of prints.</div>
+        </div>
+        <div class="action-item">
+          <div class="action-dot amber"></div>
+          <div class="action-text">Watch breadth — the weakest leg at 59. If it rolls below 42, the regime flips to mixed.</div>
+        </div>
+        <div class="action-item">
+          <div class="action-dot red"></div>
+          <div class="action-text">Don't chase the blow-off theme. Bubble/blow-off risk still warm at 62.</div>
+        </div>
+        <div class="action-item">
+          <div class="action-dot"></div>
+          <div class="action-text">Policy is quiet — no active jawboning. Fed holds at 84.5% odds.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /band -->
+
+  <!-- ─── SECTION DIVIDER ──────────────────────────────────────────── -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-label">Instrument Detail</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       INSTRUMENT RACK
+       GRAFT 3: all icards use 3px LEFT accent
+       GRAFT 5: siblings dim when one is open
+  ════════════════════════════════════════════════════════════════════ -->
+  <div class="rack" id="rack">
+
+    <!-- ─── EVIDENCE — expanded default (demo) ─── -->
+    <!-- GRAFT 7: SIX factor rows; icard stance never hardcodes count -->
+    <div class="icard is-expanded"
+         style="--card-color: var(--isle-evidence)"
+         onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">Evidence</span>
+        <span class="icard-expand-icon" style="margin-left:auto">⌄</span>
+      </div>
+      <!-- GRAFT 7: headline derives from loop, never hardcodes "five" -->
+      <div class="icard-stance ev-headline">Six signals — breadth the weakest leg</div>
+
+      <!-- GRAFT 7: SIX factor rows — Volatility regime added -->
+      <div class="ev-factors">
+
+        <div class="ev-row">
+          <span class="ev-dir" style="color:var(--up)">▲</span>
+          <div class="ev-name-wrap">
+            <div class="ev-name">Trend &amp; technicals</div>
+            <div class="ev-sub">3/3 US indices uptrend across timeframes</div>
+          </div>
+          <div class="ev-bar-area">
+            <div class="ev-bar-track"><div class="ev-bar-fill" style="width:90%;background:var(--up)"></div></div>
+          </div>
+          <span class="ev-score" style="color:var(--up)">90</span>
+        </div>
+
+        <div class="ev-row">
+          <span class="ev-dir" style="color:var(--up)">▲</span>
+          <div class="ev-name-wrap">
+            <div class="ev-name">Risk appetite</div>
+            <div class="ev-sub">Cross-asset RORO risk-on; bonds/FX diverge</div>
+          </div>
+          <div class="ev-bar-area">
+            <div class="ev-bar-track"><div class="ev-bar-fill" style="width:70%;background:var(--up)"></div></div>
+          </div>
+          <span class="ev-score" style="color:var(--up)">70</span>
+        </div>
+
+        <!-- Weakest leg -->
+        <div class="ev-row ev-weakest">
+          <span class="ev-dir" style="color:var(--warn)">▲</span>
+          <div class="ev-name-wrap">
+            <div class="ev-name" style="color:var(--warn)">Breadth &amp; participation <span style="display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;padding:1px 5px;background:color-mix(in srgb,var(--warn) 16%,transparent);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent);border-radius:3px;margin-left:4px">WEAKEST LEG</span></div>
+            <div class="ev-sub">Breadth 59th pctile of 5-year range — confirming price, not leading</div>
+          </div>
+          <div class="ev-bar-area">
+            <div class="ev-bar-track"><div class="ev-bar-fill" style="width:59%;background:var(--warn)"></div></div>
+          </div>
+          <span class="ev-score" style="color:var(--warn)">59</span>
+        </div>
+
+        <div class="ev-row">
+          <span class="ev-dir" style="color:var(--up)">▲</span>
+          <div class="ev-name-wrap">
+            <div class="ev-name">Liquidity &amp; credit</div>
+            <div class="ev-sub">Fed liquidity expanding; HY credit tightening</div>
+          </div>
+          <div class="ev-bar-area">
+            <div class="ev-bar-track"><div class="ev-bar-fill" style="width:77%;background:var(--up)"></div></div>
+          </div>
+          <span class="ev-score" style="color:var(--up)">77</span>
+        </div>
+
+        <div class="ev-row">
+          <span class="ev-dir" style="color:var(--up)">▲</span>
+          <div class="ev-name-wrap">
+            <div class="ev-name">Downturn-risk guard</div>
+            <div class="ev-sub">Downturn risk low; drawdown band low</div>
+          </div>
+          <div class="ev-bar-area">
+            <div class="ev-bar-track"><div class="ev-bar-fill" style="width:87%;background:var(--up)"></div></div>
+          </div>
+          <span class="ev-score" style="color:var(--up)">87</span>
+        </div>
+
+        <!-- GRAFT 7: Volatility regime — 6th factor
+             Real value sourced from vol_regime.published_snapshot():
+             regime=normalizing, risk_score=0.237, VIX=16.15, ts_slope_state=contango
+             Score = round(100 - 23.7) = 76 (vol calm/contango = supportive of risk-on)
+             Source: engine/vol_regime.py → published_snapshot() → data/vol_regime/ -->
+        <div class="ev-row">
+          <span class="ev-dir" style="color:var(--up)">▲</span>
+          <div class="ev-name-wrap">
+            <div class="ev-name">Volatility regime</div>
+            <div class="ev-sub">VIX 16.2 · term structure contango — calm, normalizing</div>
+          </div>
+          <div class="ev-bar-area">
+            <div class="ev-bar-track"><div class="ev-bar-fill" style="width:76%;background:var(--up)"></div></div>
+          </div>
+          <span class="ev-score" style="color:var(--up)">76</span>
+        </div>
+
+      </div><!-- /ev-factors -->
+
+      <div class="ev-weakest-callout">
+        <strong>Weakest leg:</strong> Breadth &amp; participation at 59/100 is the closest flip-trigger. Confirms what has already turned; does not forecast. Scale: ≥60 risk-on · 42–59 mixed · &lt;42 risk-off.
+      </div>
+
+      <!-- GRAFT 2: raw tokens stay tray-only, never on card face -->
+      <div class="expand-tray-raw">
+        <div class="expand-tray-raw-lbl">Raw read-through (tray only · not a signal)</div>
+        trend_score:90 · roro:70 · breadth_pctile:59 · liq_credit:77 · dr_guard:87 · vol_regime:76 (VIX 16.2 contango · risk_score 0.24 · VRP normal · VVIX 88.8)
+      </div>
+
+      <!-- GRAFT 7: sibling-dim note (informational) -->
+      <div class="sibling-dim-note">
+        In grid view, opening a card dims siblings (opacity .55 · saturate .5) — see the panel above.
+      </div>
+
+    </div><!-- /evidence -->
+
+    <!-- ─── EVENTS ─── -->
+    <div class="icard" style="--card-color: var(--isle-events)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">Events</span>
+        <span class="icard-expand-icon">⌄</span>
+      </div>
+      <div class="icard-stance" style="color:var(--warn)">Two high-impact prints this week</div>
+      <div class="kv-row">
+        <span class="kv-key">CPI (prices)</span>
+        <span class="kv-val warn">Jul 14 · HIGH</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">PPI (producers)</span>
+        <span class="kv-val warn">Jul 15 · HIGH</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Initial claims</span>
+        <span class="kv-val">Jul 16 · MED</span>
+      </div>
+      <!-- GRAFT 4: Fed-odds meeting-path row in EVENTS -->
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Fed · no change priced at</div>
+        <div class="fed-path-row">
+          <span class="fed-path-label">Next meeting</span>
+          <div class="fed-path-bar-track">
+            <div class="fed-path-bar-fill" style="width:84.5%;background:var(--isle-policy)"></div>
+          </div>
+          <span class="fed-path-val" style="color:var(--isle-policy)">84.5%</span>
+        </div>
+        <div class="fed-path-row">
+          <span class="fed-path-label">2026 cuts: 0</span>
+          <div class="fed-path-bar-track">
+            <div class="fed-path-bar-fill" style="width:77.5%;background:var(--isle-policy)"></div>
+          </div>
+          <span class="fed-path-val" style="color:var(--isle-policy)">77.5%</span>
+        </div>
+        <div class="fed-path-row">
+          <span class="fed-path-label">CPI 2.8%</span>
+          <div class="fed-path-bar-track">
+            <div class="fed-path-bar-fill" style="width:53.5%;background:var(--warn)"></div>
+          </div>
+          <span class="fed-path-val" style="color:var(--warn)">53.5%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── MARKETS (GRAFT 6: hot/cold sector line) ─── -->
+    <div class="icard" style="--card-color: var(--isle-markets)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">Markets</span>
+        <span class="icard-expand-icon">⌄</span>
+      </div>
+      <div class="icard-stance" style="color:var(--up)">Large cap up, small cap lagging</div>
+      <div class="quote-grid">
+        <div class="quote-tile">
+          <div class="quote-ticker">SPY</div>
+          <div class="quote-px">754.95</div>
+          <div class="quote-chg up">+0.43%</div>
+        </div>
+        <div class="quote-tile">
+          <div class="quote-ticker">QQQ</div>
+          <div class="quote-px">725.51</div>
+          <div class="quote-chg up">+0.31%</div>
+        </div>
+        <div class="quote-tile">
+          <div class="quote-ticker">DJI</div>
+          <div class="quote-px">52,637</div>
+          <div class="quote-chg up">+0.29%</div>
+        </div>
+        <div class="quote-tile">
+          <div class="quote-ticker">RUT</div>
+          <div class="quote-px">2,977.81</div>
+          <div class="quote-chg down">−0.49%</div>
+        </div>
+      </div>
+      <!-- GRAFT 6: hot/cold sectors line from sector_heat data -->
+      <div class="sector-line">
+        <span class="sector-hot-lbl">Hot:</span>
+        <span class="sector-name">Cybersecurity</span>
+        <span style="color:var(--muted)">·</span>
+        <span class="sector-name">Insurance &amp; Brokers</span>
+        <span style="color:var(--muted)">·</span>
+        <span class="sector-name">GLP-1 &amp; Obesity</span>
+        &nbsp;
+        <span class="sector-cold-lbl">Cold:</span>
+        <span class="sector-name">Memory &amp; HBM</span>
+        <span style="color:var(--muted)">·</span>
+        <span class="sector-name">Regional Banks</span>
+      </div>
+      <!-- ZH sector line -->
+      <div class="sector-line" style="margin-top:3px;opacity:.75;font-size:10px">
+        <span class="sector-hot-lbl">热门：</span>
+        <span>网络安全 · 保险与经纪 · GLP-1与减肥药</span>
+        &nbsp;
+        <span class="sector-cold-lbl">冷门：</span>
+        <span>内存/HBM · 区域银行</span>
+      </div>
+    </div>
+
+    <!-- ─── POLICY (GRAFT 4: Fed-odds meeting-path row) ─── -->
+    <div class="icard" style="--card-color: var(--isle-policy)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">Policy</span>
+        <span class="icard-expand-icon">⌄</span>
+      </div>
+      <div class="icard-stance" style="color:var(--isle-policy)">Quiet — no active jawboning</div>
+      <div class="kv-row">
+        <span class="kv-key">State</span>
+        <span class="kv-val">Quiet</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Last flip</span>
+        <span class="kv-val">2026-07-02</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Fed stance</span>
+        <span class="kv-val">Neutral / hold</span>
+      </div>
+      <!-- GRAFT 4: Fed-odds meeting-path with inline bars -->
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Fed · meeting path (no change priced at)</div>
+        <div class="fed-path-row">
+          <span class="fed-path-label">Next (Jul 30)</span>
+          <div class="fed-path-bar-track">
+            <div class="fed-path-bar-fill" style="width:84.5%;background:var(--isle-policy)"></div>
+          </div>
+          <span class="fed-path-val" style="color:var(--isle-policy)">84.5%</span>
+        </div>
+        <div class="fed-path-row">
+          <span class="fed-path-label">2026 (0 cuts)</span>
+          <div class="fed-path-bar-track">
+            <div class="fed-path-bar-fill" style="width:77.5%;background:var(--isle-policy)"></div>
+          </div>
+          <span class="fed-path-val" style="color:var(--isle-policy)">77.5%</span>
+        </div>
+        <div class="fed-path-row" style="opacity:.7">
+          <span class="fed-path-label">CPI 2.8%</span>
+          <div class="fed-path-bar-track">
+            <div class="fed-path-bar-fill" style="width:53.5%;background:var(--warn)"></div>
+          </div>
+          <span class="fed-path-val" style="color:var(--warn)">53.5%</span>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:5px">美联储：按兵不动概率 84.5% · 今年降息 0 次 77.5%</div>
+      </div>
+    </div>
+
+    <!-- ─── AI BRIEF ─── -->
+    <div class="icard" style="--card-color: var(--isle-brief)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">AI Brief</span>
+        <span class="icard-expand-icon">⌄</span>
+      </div>
+      <div class="icard-stance" style="color:var(--isle-brief)">Rates &amp; earnings dominate today's tape</div>
+      <div class="kv-row">
+        <span class="kv-key">High-impact</span>
+        <span class="kv-val warn">5 items</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Top themes</span>
+        <span class="kv-val" style="font-family:inherit">Rates · Credit · Earnings</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Top tickers</span>
+        <span class="kv-val" style="font-family:inherit">XLF · XLK · KRE</span>
+      </div>
+      <!-- GRAFT 2 + VIS-02: badge unwrapped, in tray only for raw tokens -->
+      <div class="ai-disclaimer">
+        A read-through of existing signals — not a signal source.<br>
+        <span style="font-size:10px;color:var(--muted);opacity:.8">仅为现有信号的汇总解读 — 非独立信号源。</span>
+      </div>
+    </div>
+
+    <!-- ─── NEWS ─── -->
+    <div class="icard" style="--card-color: var(--isle-news)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">News</span>
+        <span class="icard-expand-icon">⌄</span>
+      </div>
+      <div class="icard-stance">18 items · earnings season in focus</div>
+      <div class="news-item">
+        <div class="news-headline">As bank earnings approach, a market anomaly emerges</div>
+        <div class="news-meta">
+          <div class="impact-dot"></div>
+          HIGH · CNBC · 74
+        </div>
+      </div>
+      <div class="news-item">
+        <div class="news-headline">PepsiCo earnings miss as U.S. consumers tighten budgets</div>
+        <div class="news-meta">
+          <div class="impact-dot"></div>
+          HIGH · CNBC · 78
+        </div>
+      </div>
+      <div class="news-item">
+        <div class="news-headline">Fed annual bank stress test confirms large banks well positioned</div>
+        <div class="news-meta">
+          <div class="impact-dot"></div>
+          HIGH · Fed Press · 80
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── DEEP CONTEXT ─── -->
+    <div class="icard" style="--card-color: var(--isle-deep)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">Deep Context</span>
+        <span class="icard-expand-icon">⌄</span>
+      </div>
+      <div class="icard-stance">Research &amp; signal links</div>
+      <div class="deep-chips">
+        <a class="deep-chip" href="macro_context.html">🌤 Macro Weather</a>
+        <a class="deep-chip" href="aibrief.html">🤖 AI Brief</a>
+        <a class="deep-chip" href="sector_central.html">🧠 Sector Central</a>
+        <a class="deep-chip" href="mastermind.html">🕸 Neural Web</a>
+        <a class="deep-chip" href="factors.html">📐 Signal Lab</a>
+      </div>
+    </div>
+
+    <!-- ─── DATA HEALTH ─── -->
+    <div class="icard" style="--card-color: var(--isle-health)" onclick="toggleExpand(this)">
+      <div class="icard-header">
+        <div class="icard-dot"></div>
+        <span class="icard-label">Data Health</span>
+        <span class="icard-expand-icon">⌄</span>
+      </div>
+      <div class="icard-stance" style="color:var(--warn)">Mostly live — 7 of 154 sources need attention</div>
+      <div class="kv-row">
+        <span class="kv-key">Total sources</span>
+        <span class="kv-val">154</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Need attention</span>
+        <span class="kv-val warn">7</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-key">Pipeline</span>
+        <span class="kv-val up">Nightly · live</span>
+      </div>
+    </div>
+
+  </div><!-- /rack -->
+
+  <!-- ─── DESIGN NOTES (informational; not shipped to production) ─── -->
+  <div style="margin-top:32px;padding:14px 18px;background:color-mix(in srgb,var(--info) 8%,var(--panel2));border:1px solid color-mix(in srgb,var(--info) 28%,var(--line));border-radius:8px;font-size:11px;color:var(--muted);line-height:1.7">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--info);margin-bottom:6px">v4_final.html — Binding Design Record (Stage S0)</div>
+    <strong style="color:var(--text)">Grafts applied:</strong>
+    1 · Flip-tick caption under score bar (plain EN+ZH, threshold from engine data) ·
+    2 · Raw tokens confined to expand-tray receipts only (never card faces) ·
+    3 · 3px LEFT accent edge per card, keyed to isle-* tokens (replaces state_board top border) ·
+    4 · Fed-odds meeting-path row: labeled inline bars (84.5% / 77.5% / 53.5%), in both EVENTS and POLICY faces ·
+    5 · Sibling dim on expansion: opacity:.55; filter:saturate(.5) ·
+    6 · Markets face: hot/cold sectors line from sector_heat data ·
+    7 · Evidence = six factors — Volatility regime added (VIX 16.2, contango, risk_score 0.237 → support score 76); faces never hardcode factor counts.
+    <br><strong style="color:var(--text)">Volatility regime value:</strong> sourced from <code>engine/vol_regime.published_snapshot()</code> (asof 2026-07-02, risk_score=0.237, VIX=16.15, ts_slope_state=contango, vrp_state=normal). Score rendered as 76 = round(100 − 23.7).
+    <br><strong style="color:var(--text)">Sector data:</strong> from site/macro.html evidence tray / isle-sector-block (Cybersecurity #1, Insurance &amp; Brokers #2, GLP-1 &amp; Obesity #3 hot; Memory/HBM #10, Regional Banks #11 cold).
+    <br><strong style="color:var(--text)">Fed odds:</strong> from site/macro.html policy isle-fed-strip (Next decision: No change 84.5%; Cuts this year: 0 (0 bps) 77.5%; CPI outcome: 2.8% 53.5%).
+  </div>
+
+</div><!-- /page -->
+
+<script>
+/* ─── theme toggle ─────────────────────────────────────────────── */
+function toggleTheme() {
+  var html = document.documentElement;
+  var next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  document.getElementById('theme-btn').textContent = next === 'dark' ? 'Light' : 'Dark';
+}
+
+/* ─── card expand/collapse ─────────────────────────────────────── */
+function toggleExpand(card) {
+  var rack = document.getElementById('rack');
+  var wasExpanded = card.classList.contains('is-expanded');
+
+  rack.querySelectorAll('.icard.is-expanded').forEach(function(c) {
+    c.classList.remove('is-expanded');
+  });
+  rack.classList.remove('has-expanded');
+
+  if (!wasExpanded) {
+    card.classList.add('is-expanded');
+    rack.classList.add('has-expanded');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+/* ─── expand all ───────────────────────────────────────────────── */
+function toggleAll() {
+  var rack = document.getElementById('rack');
+  var anyExpanded = rack.querySelector('.icard.is-expanded');
+  if (anyExpanded) {
+    rack.querySelectorAll('.icard.is-expanded').forEach(function(c) {
+      c.classList.remove('is-expanded');
+    });
+    rack.classList.remove('has-expanded');
+  }
+}
+
+/* ─── segmented control (Grid / Ledger, visual only for design record) */
+function setView(v) {
+  document.getElementById('btn-grid').classList.toggle('active', v === 'grid');
+  document.getElementById('btn-ledger').classList.toggle('active', v === 'ledger');
+}
+</script>
+</body>
+</html>

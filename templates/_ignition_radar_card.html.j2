@@ -31,7 +31,9 @@
     <div class="igx-id">
       <div class="igx-ttl">
         {{ t('Ignition Radar','点火雷达') }}
-        <span class="igx-badge">{{ t(state|upper, state|upper) }} · K={{ ig.k_count|default(0) }}/8</span>
+        {# BIL-04: translate state badge to ZH #}
+        {%- set _igx_state_zh = {'off':'未触发','warming':'预热中','ignited':'已点火'}.get(state, state|upper) -%}
+        <span class="igx-badge">{{ t(state|upper, _igx_state_zh) }} · K={{ ig.k_count|default(0) }}/8</span>
         {{ help('Risk-ON evidence gauge — the Risk Radar\'s mirror. Confluence of breadth-thrust events and participation. Display-only, forward-graded; not a buy signal.', '正向风险偏好证据仪表 — 风险雷达的镜像。广度推进事件与参与度的共振读数。仅展示，前瞻评分中；非买入信号。') }}
       </div>
       {%- set nt = ig.narrow_top if ig.narrow_top else {} -%}
