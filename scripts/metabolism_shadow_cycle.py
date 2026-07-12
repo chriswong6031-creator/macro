@@ -545,6 +545,7 @@ def _seed_verify_contract(
             "sensor": "front_run_lead",
             "expected_sign": "+",
             "band": "accruing",
+            "lobe": "til",  # real _mint_contract stamps this; shadow must mirror the shape
             "check_by": today,  # <= today so verify fires, not pending
             "placebo_to_beat": "shadow placebo tape",
             "falsifier_spec": {},  # empty → UNVERIFIABLE (honest null by design)

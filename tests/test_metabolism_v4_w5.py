@@ -898,3 +898,70 @@ class TestProposeTrajectoryStamp:
         assert rows[-1].get("lobe_id") == "til", (
             f"Last trajectory row has no lobe_id='til': {rows[-1]}"
         )
+
+
+# ── Verify scan: docket-lobe backfill for pre-lobe contracts ──────────────────
+
+class TestScanBackfillsDocketLobe:
+    """_scan_pending_cycles backfills docket-level lobe into pre-lobe contracts.
+
+    Contracts minted before the contract-level lobe key existed would verify
+    with lobe="" and their strategic-memory rows get dropped by the per-lobe
+    PROPOSE filter (mission.build_strategic_memory_block).
+    """
+
+    def test_pre_lobe_contract_inherits_docket_lobe(self, tmp_path: Path) -> None:
+        from scripts.metabolism_verify import _scan_pending_cycles
+
+        dockets_dir = tmp_path / "data" / "metabolism" / "dockets"
+        dockets_dir.mkdir(parents=True, exist_ok=True)
+        docket = {
+            "schema": "metabolism.docket.v1",
+            "cycle_id": "cycle-prelobe",
+            "lobe": "til",
+            "proposals": [{
+                "proposal_id": "p1",
+                # minted before contracts carried a lobe key — no "lobe" here
+                "fitness_contract": {
+                    "proposal_id": "p1",
+                    "sensor": "front_run_lead",
+                    "check_by": "2026-01-01",
+                },
+            }],
+        }
+        (dockets_dir / "cycle-prelobe.json").write_text(json.dumps(docket), encoding="utf-8")
+
+        pending = _scan_pending_cycles(tmp_path, today="2026-07-11")
+
+        assert len(pending) == 1
+        cycle_id, contract = pending[0]
+        assert cycle_id == "cycle-prelobe"
+        assert contract.get("lobe") == "til", (
+            f"pre-lobe contract must inherit the docket-level lobe, got: {contract}"
+        )
+
+    def test_contract_level_lobe_is_not_overwritten(self, tmp_path: Path) -> None:
+        from scripts.metabolism_verify import _scan_pending_cycles
+
+        dockets_dir = tmp_path / "data" / "metabolism" / "dockets"
+        dockets_dir.mkdir(parents=True, exist_ok=True)
+        docket = {
+            "schema": "metabolism.docket.v1",
+            "cycle_id": "cycle-postlobe",
+            "lobe": "til",
+            "proposals": [{
+                "proposal_id": "p1",
+                "fitness_contract": {
+                    "proposal_id": "p1",
+                    "sensor": "front_run_lead",
+                    "lobe": "neural_web",
+                    "check_by": "2026-01-01",
+                },
+            }],
+        }
+        (dockets_dir / "cycle-postlobe.json").write_text(json.dumps(docket), encoding="utf-8")
+
+        pending = _scan_pending_cycles(tmp_path, today="2026-07-11")
+
+        assert len(pending) == 1
+        assert pending[0][1].get("lobe") == "neural_web"
