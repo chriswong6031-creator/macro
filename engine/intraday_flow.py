@@ -526,7 +526,308 @@ def confluence_legs(
     )
 
 
-# ── 9. Washout context (derived from daily bars) ──────────────────────────────
+# ── 9. Dealer context (from site/gex/<T>.json summary block) ─────────────────
+
+def _g(d: dict, *path):
+    """Safe nested get — returns None on any missing key or non-dict intermediate."""
+    cur = d
+    for k in path:
+        if not isinstance(cur, dict):
+            return None
+        cur = cur.get(k)
+    return cur
+
+
+def _clean(v):
+    """Map NaN/inf to None; pass through all other values unchanged."""
+    if v is None:
+        return None
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return v
+    import math
+    if math.isnan(f) or math.isinf(f):
+        return None
+    return v
+
+
+def dealer_context(gex_summary: dict | None) -> dict | None:
+    """Normalize a gex/<T>.json summary block into the flat dealer display-context dict.
+
+    Reads the ``summary`` sub-block plus sibling top-level blocks
+    (``expected_move``, ``vol_hole``, ``tilt``, ``opex_days``) passed in via
+    the same dict when the caller has merged them in advance.
+
+    Args:
+        gex_summary: The ``summary`` dict from a ``site/gex/<T>.json`` file,
+            optionally augmented with sibling top-level keys (``expected_move``,
+            ``vol_hole``, ``tilt``, ``opex_days``).  None → None.
+
+    Returns:
+        Flat dict with exactly the 31 keys enumerated in the v2 ruling §4, or
+        None when ``gex_summary`` is None.  Any missing sub-field is None.
+        NaN/inf values are mapped to None.  Never raises.
+    """
+    if gex_summary is None:
+        return None
+
+    d = gex_summary  # alias for brevity
+
+    try:
+        result: dict = {
+            # Regime + caveat
+            "regime":                   _clean(_g(d, "regime")),
+            "structurally_constant":    _clean(_g(d, "regime_passport", "structurally_constant")),
+            # GEX surface
+            "net_gex_bn":               _clean(_g(d, "net_gex_bn")),
+            "gamma_flip":               _clean(_g(d, "gamma_flip")),
+            "dist_to_flip_pct":         _clean(_g(d, "dist_to_flip_pct")),
+            "call_wall":                _clean(_g(d, "call_wall")),
+            "put_wall":                 _clean(_g(d, "put_wall")),
+            "call_wall_band":           _clean(_g(d, "call_wall_band")),
+            "call_wall_hard":           _clean(_g(d, "call_wall_hard")),
+            "call_wall_dist_sigma":     _clean(_g(d, "call_wall_dist_sigma")),
+            "put_wall_band":            _clean(_g(d, "put_wall_band")),
+            "magnet_up":                _clean(_g(d, "magnet_up")),
+            "magnet_down":              _clean(_g(d, "magnet_down")),
+            "max_pain":                 _clean(_g(d, "max_pain")),
+            # Expected move (may live as sibling top-level or inside summary)
+            "expected_move_daily_pct":  _clean(_g(d, "expected_move", "daily_pct")),
+            "expected_move_weekly_pct": _clean(_g(d, "expected_move", "weekly_pct")),
+            # Vol hole
+            "vol_hole_state":           _clean(_g(d, "vol_hole", "state")),
+            "vol_hole_bias":            _clean(_g(d, "vol_hole", "bias")),
+            "vol_hole_upper":           _clean(_g(d, "vol_hole", "upper")),
+            "vol_hole_lower":           _clean(_g(d, "vol_hole", "lower")),
+            "vol_hole_compression":     _clean(_g(d, "vol_hole", "compression")),
+            # Skew
+            "skew_tone":                _clean(_g(d, "skew", "tone")),
+            "skew_rr25":                _clean(_g(d, "skew", "rr25")),
+            # IV
+            "iv30":                     _clean(_g(d, "iv30")),
+            "iv_rank_band":             _clean(_g(d, "iv_rank", "band")),
+            "iv_rank_pct":              _clean(_g(d, "iv_rank", "rank_pct")),
+            "iv_rank_low_confidence":   _clean(_g(d, "iv_rank", "low_confidence")),
+            # OPEX + tier
+            "opex_days":                _clean(_g(d, "opex_days")),
+            "tier":                     _clean(_g(d, "tier")),
+            "top_oi_share":             _clean(_g(d, "top_oi_share")),
+            # Tilt
+            "tilt_read":                _clean(_g(d, "tilt", "read")),
+        }
+    except Exception:  # noqa: BLE001
+        return None
+
+    return result
+
+
+# ── 10. Stance derivation ─────────────────────────────────────────────────────
+
+# Stance key → (EN copy, ZH copy, lane key)
+_STANCE_COPY: dict[str, tuple[str, str, str]] = {
+    "take_profits": (
+        "Take profits — stretched into the call wall / pin; expect mean-reversion, don't chase.",
+        "止盈 — 已拉伸至认购墙/到期钉住区域；预期均值回归，不追涨。",
+        "take_profits",
+    ),
+    "act": (
+        "Buy now — washout reclaimed on durable volume; structure supports continuation. "
+        "Stop below the base.",
+        "立即买入 — 洗盘后在持续成交量中收复，结构支持延续。止损设在底部结构下方。",
+        "act",
+    ),
+    "get_ready": (
+        "Almost ready — washout base built; waiting for a reclaim above VWAP on volume.",
+        "即将就绪 — 洗盘底部已形成；等待放量收复VWAP。",
+        "get_ready",
+    ),
+    "in_favour": (
+        "In favour — trending above VWAP; ride it, no fresh entry here.",
+        "顺势而行 — 强势运行于VWAP上方；持仓，不追新入场。",
+        "in_favour",
+    ),
+    "watch": (
+        "Watch — don't chase — moving without a washout base (or trap-prone); "
+        "wait for structure.",
+        "观望 — 不追涨 — 无洗盘底部结构即上涨（或回踩陷阱型）；等待结构形成。",
+        "watch",
+    ),
+    "stand_aside": (
+        "Stand aside — quiet tape, no setup.",
+        "观望 — 盘面平静，暂无机会。",
+        "stand_aside",
+    ),
+}
+
+# Off-hours get_ready copy (different from live-session copy)
+_OFF_HOURS_GET_READY_EN = "Base in place — waiting for the open."
+_OFF_HOURS_GET_READY_ZH = "底部已形成 — 等待开盘。"
+
+
+def stance(
+    *,
+    legs: "ConfluenceLegs",
+    K: int,
+    vwap_delta_pct: float | None = None,
+    price_up_on_day: bool | None = None,
+    squeeze_coiled: bool | None = None,
+    dealer: dict | None = None,
+    live_present: bool = True,
+) -> dict:
+    """Derive the stance lane from confluence legs + dealer context.
+
+    Implements the deterministic boolean precedence in v2 ruling §3.
+    No weighted scores.  First-match-wins over the 6 lanes.
+
+    Off-hours branch (``live_present=False``): only the nightly skeleton is
+    computed — L1 ∧ (L6 ∨ squeeze_coiled) ⇒ ``get_ready``; else ``stand_aside``.
+
+    Args:
+        legs: ConfluenceLegs dataclass (L1–L7, computed booleans/None).
+        K: Count of True legs (redundant from legs.K but kept for callers that
+           pass it explicitly).
+        vwap_delta_pct: Spot price % above VWAP (positive = above).  Used by
+            ``extended_up``.  None → helper is False.
+        price_up_on_day: True when spot > prevClose.  Used for rule 5 (Watch).
+            None treated as False for the Watch gate.
+        squeeze_coiled: True when the vol-squeeze is in a coiled state.  Used
+            in ``get_ready`` rule 3 and off-hours skeleton.
+        dealer: Flat dealer-context dict from ``dealer_context()``.  Fields
+            used: ``call_wall_hard``, ``call_wall_dist_sigma``,
+            ``expected_move_daily_pct``, ``opex_days``, ``regime``.
+            None or missing fields → relevant helpers are False.
+        live_present: False during off-hours / null tape; triggers the
+            nightly-skeleton branch.
+
+    Returns:
+        Dict with keys: ``key`` (stance slug), ``en`` (plain EN copy),
+        ``zh`` (plain ZH copy), ``lane`` (color/emoji key = stance slug).
+    """
+
+    def _dealer(key: str):
+        if dealer is None:
+            return None
+        return dealer.get(key)
+
+    # ── derived helpers ───────────────────────────────────────────────────────
+
+    # extended_up: price stretched vs IV-implied 1σ OR near hard call wall above VWAP
+    def _extended_up() -> bool:
+        em = _dealer("expected_move_daily_pct")
+        cw_hard = _dealer("call_wall_hard")
+        cw_sigma = _dealer("call_wall_dist_sigma")
+        # arm 1: vwap_delta >= 1.5 × daily expected move
+        if vwap_delta_pct is not None and em is not None:
+            try:
+                if float(vwap_delta_pct) >= 1.5 * float(em):
+                    return True
+            except (TypeError, ValueError):
+                pass
+        # arm 2: hard call wall close AND price above VWAP
+        if cw_hard and cw_sigma is not None and vwap_delta_pct is not None:
+            try:
+                if bool(cw_hard) and float(cw_sigma) <= 0.5 and float(vwap_delta_pct) > 0:
+                    return True
+            except (TypeError, ValueError):
+                pass
+        return False
+
+    # pin_watch: OPEX close + long-gamma + near wall/magnet
+    def _pin_watch() -> bool:
+        opex = _dealer("opex_days")
+        regime = _dealer("regime")
+        cw_sigma = _dealer("call_wall_dist_sigma")
+        if opex is None or regime is None:
+            return False
+        try:
+            if int(opex) <= 5 and str(regime).lower() == "long" and cw_sigma is not None:
+                return float(cw_sigma) <= 0.01  # ~1% approx
+        except (TypeError, ValueError):
+            pass
+        return False
+
+    # into_ceiling: hard call wall is close
+    def _into_ceiling() -> bool:
+        cw_hard = _dealer("call_wall_hard")
+        cw_sigma = _dealer("call_wall_dist_sigma")
+        if cw_hard is None or cw_sigma is None:
+            return False
+        try:
+            return bool(cw_hard) and float(cw_sigma) <= 0.5
+        except (TypeError, ValueError):
+            return False
+
+    # ── off-hours skeleton ────────────────────────────────────────────────────
+    if not live_present:
+        l1 = legs.L1_washout_recent is True
+        l6 = legs.L6_upturn_organ is True
+        sq = squeeze_coiled is True
+        if l1 and (l6 or sq):
+            return {
+                "key": "get_ready",
+                "en": _OFF_HOURS_GET_READY_EN,
+                "zh": _OFF_HOURS_GET_READY_ZH,
+                "lane": "get_ready",
+            }
+        en, zh, lane = _STANCE_COPY["stand_aside"]
+        return {"key": "stand_aside", "en": en, "zh": zh, "lane": lane}
+
+    # ── live-session precedence (first match wins) ────────────────────────────
+    l1 = legs.L1_washout_recent is True
+    l2 = legs.L2_reclaim is True
+    l3 = legs.L3_rvol_elevated is True
+    l4 = legs.L4_vol_durable is True
+    l5 = legs.L5_flow_bid is True
+    l6 = legs.L6_upturn_organ is True
+    # Quality gates the good lanes as a NEGATIVE filter: only a KNOWN trap
+    # (L7 is False) blocks act/get_ready/in_favour. Unknown quality (None) must
+    # NOT block — trap flags are sparse, so `is True` would make "Buy now"
+    # unreachable for most leaders. Ruling §3: L7 = "not a known trap".
+    l7 = legs.L7_leader_quality is not False
+    sq = squeeze_coiled is True
+    pup = price_up_on_day is True
+
+    extended_up = _extended_up()
+    pin_watch = _pin_watch()
+    into_ceiling = _into_ceiling()
+
+    def _make(key: str) -> dict:
+        en, zh, lane = _STANCE_COPY[key]
+        return {"key": key, "en": en, "zh": zh, "lane": lane}
+
+    # Rule 1 — Take profits: up-move stretched into resistance
+    # Price above VWAP AND (extended_up OR pin_watch)
+    above_vwap = (vwap_delta_pct is not None and vwap_delta_pct > 0) or l2
+    if above_vwap and (extended_up or pin_watch):
+        return _make("take_profits")
+
+    # Rule 2 — Buy now (act): full continuation, not into a ceiling
+    # L1 ∧ L2 ∧ L4 ∧ L7 ∧ (L3 ∨ L5) ∧ NOT into_ceiling
+    if l1 and l2 and l4 and l7 and (l3 or l5) and not into_ceiling:
+        return _make("act")
+
+    # Rule 3 — Almost ready (get_ready): base in place, trigger not fired
+    # L1 ∧ (L6 ∨ squeeze_coiled) ∧ L7 ∧ NOT L2
+    if l1 and (l6 or sq) and l7 and not l2:
+        return _make("get_ready")
+
+    # Rule 4 — In favour: trending and holding, no fresh washout
+    # L2 ∧ L6 ∧ (L3 ∨ L4) ∧ L7 ∧ NOT L1
+    if l2 and l6 and (l3 or l4) and l7 and not l1:
+        return _make("in_favour")
+
+    # Rule 5 — Watch: active without structure, or trap-prone
+    # (L3 ∨ price_up_on_day) AND (NOT L1 OR L7 == false)
+    l7_false = legs.L7_leader_quality is False
+    if (l3 or pup) and (not l1 or l7_false):
+        return _make("watch")
+
+    # Rule 6 — Stand aside (default)
+    return _make("stand_aside")
+
+
+# ── 11. Washout context (derived from daily bars) ─────────────────────────────
 
 def washout_context(
     bars: pd.DataFrame,

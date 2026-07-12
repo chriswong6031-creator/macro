@@ -559,30 +559,147 @@ def _extract_stockdata_context(sd: dict) -> dict:
     return ctx
 
 
-def _load_options_entry(ticker: str, data_root: Path) -> dict | None:
-    """Load options_entry context for a ticker from state.parquet.
+def _dealer_from_gex(ticker: str, site_root: Path) -> dict | None:
+    """Read site/gex/<TICKER>.json and return a flat dealer dict per ruling §4.
 
-    Returns a slim dict with gamma_regime, dist_to_flip_pct, walls or None.
+    Fail-soft: missing file or parse error → None.
+    All numeric values pass through NaN/inf→None safety.
     """
-    p = data_root / "options_entry" / "state.parquet"
+    p = site_root / "gex" / f"{ticker}.json"
     if not p.exists():
         return None
     try:
-        df = pd.read_parquet(p)
-        if "ticker" not in df.columns:
-            return None
-        row = df[df["ticker"] == ticker]
-        if row.empty:
-            return None
-        r = row.iloc[0]
-        return {
-            "gamma_regime": _safe_field(r, "gamma_regime"),
-            "dist_to_flip_pct": _safe_field(r, "dist_to_flip_pct"),
-            "walls": _safe_field(r, "walls"),
-        }
+        d = json.loads(p.read_text())
     except Exception as e:  # noqa: BLE001
-        log.debug("build_intraday_flow: options_entry read failed: %s", e)
+        log.debug("build_intraday_flow: gex/%s.json unreadable: %s", ticker, e)
         return None
+
+    def _g(obj: Any, *keys: str) -> Any:
+        """Safe nested get; returns None on missing key or bad type."""
+        cur = obj
+        for k in keys:
+            if not isinstance(cur, dict):
+                return None
+            cur = cur.get(k)
+        if cur is None:
+            return None
+        if isinstance(cur, float) and not np.isfinite(cur):
+            return None
+        return cur
+
+    summary = d.get("summary") or {}
+    regime_pp = summary.get("regime_passport") or {}
+    skew = summary.get("skew") or {}
+    iv_rank = summary.get("iv_rank") or {}
+    em = d.get("expected_move") or {}
+    vh = d.get("vol_hole") or {}
+    tilt = d.get("tilt") or {}
+
+    return {
+        "regime":                   _g(summary, "regime"),
+        "structurally_constant":    _g(regime_pp, "structurally_constant"),
+        "net_gex_bn":               _g(summary, "net_gex_bn"),
+        "gamma_flip":               _g(summary, "gamma_flip"),
+        "dist_to_flip_pct":         _g(summary, "dist_to_flip_pct"),
+        "call_wall":                _g(summary, "call_wall"),
+        "put_wall":                 _g(summary, "put_wall"),
+        "call_wall_band":           _g(summary, "call_wall_band"),
+        "call_wall_hard":           _g(summary, "call_wall_hard"),
+        "call_wall_dist_sigma":     _g(summary, "call_wall_dist_sigma"),
+        "put_wall_band":            _g(summary, "put_wall_band"),
+        "magnet_up":                _g(summary, "magnet_up"),
+        "magnet_down":              _g(summary, "magnet_down"),
+        "max_pain":                 _g(summary, "max_pain"),
+        "expected_move_daily_pct":  _g(em, "daily_pct"),
+        "expected_move_weekly_pct": _g(em, "weekly_pct"),
+        "vol_hole_state":           _g(vh, "state"),
+        "vol_hole_bias":            _g(vh, "bias"),
+        "vol_hole_upper":           _g(vh, "upper"),
+        "vol_hole_lower":           _g(vh, "lower"),
+        "vol_hole_compression":     _g(vh, "compression"),
+        "skew_tone":                _g(skew, "tone"),
+        "skew_rr25":                _g(skew, "rr25"),
+        "iv30":                     _g(summary, "iv30"),
+        "iv_rank_band":             _g(iv_rank, "band"),
+        "iv_rank_pct":              _g(iv_rank, "rank_pct"),
+        "iv_rank_low_confidence":   _g(iv_rank, "low_confidence"),
+        "opex_days":                _g(summary, "opex_days"),
+        "tier":                     _g(summary, "tier"),
+        "top_oi_share":             _g(summary, "top_oi_share"),
+        "tilt_read":                _g(tilt, "read"),
+    }
+
+
+# ivspread band labels per options_ivspread language (bilingual handled in template).
+def _ivspread_lean_label(ivspread_rel: Any) -> str | None:
+    """Map ivspread_rel float to a plain-text lean label."""
+    try:
+        v = float(ivspread_rel)
+    except (TypeError, ValueError):
+        return None
+    if not np.isfinite(v):
+        return None
+    if v >= 0.015:
+        return "calls richer (bullish lean)"
+    if v >= 0.005:
+        return "mild call richness"
+    if v <= -0.015:
+        return "puts richer (hedge bid)"
+    if v <= -0.005:
+        return "mild put richness"
+    return "balanced"
+
+
+def _load_options_entry(ticker: str, data_root: Path, site_root: Path) -> dict | None:
+    """Load options_entry context for a ticker.
+
+    Keeps v1 keys (gamma_regime, dist_to_flip_pct, walls) for back-compat.
+    Adds:
+      - dealer: from _dealer_from_gex (site/gex/<T>.json)
+      - ivspread_rel, ivspread_lean, net_doi, evidence_quality: from state.parquet
+        (all display-only / inert context; all fail-soft to None)
+    """
+    # v1 base from state.parquet
+    p = data_root / "options_entry" / "state.parquet"
+    base: dict[str, Any] = {
+        "gamma_regime": None,
+        "dist_to_flip_pct": None,
+        "walls": None,
+    }
+    # opex_days from parquet (not present in gex JSON summary; merged into dealer below)
+    _parquet_opex_days: Any = None
+    if p.exists():
+        try:
+            df = pd.read_parquet(p)
+            if "ticker" in df.columns:
+                row = df[df["ticker"] == ticker]
+                if not row.empty:
+                    r = row.iloc[0]
+                    base["gamma_regime"] = _safe_field(r, "gamma_regime")
+                    base["dist_to_flip_pct"] = _safe_field(r, "dist_to_flip_pct")
+                    base["walls"] = _safe_field(r, "walls")
+                    # Supplementary context (display-only, inert)
+                    ivspread_rel = _safe_field(r, "ivspread_rel")
+                    base["ivspread_rel"] = ivspread_rel
+                    base["ivspread_lean"] = _ivspread_lean_label(ivspread_rel)
+                    base["net_doi"] = _safe_field(r, "net_doi")
+                    base["evidence_quality"] = _safe_field(r, "evidence_quality")
+                    # opex_days: not in gex JSON summary, sourced from parquet
+                    _parquet_opex_days = _safe_field(r, "opex_days")
+        except Exception as e:  # noqa: BLE001
+            log.debug("build_intraday_flow: options_entry read failed: %s", e)
+
+    # Ensure supplementary keys always present (fail-soft on missing parquet)
+    for k in ("ivspread_rel", "ivspread_lean", "net_doi", "evidence_quality"):
+        base.setdefault(k, None)
+
+    # dealer from gex JSON (pure site→site join); merge parquet opex_days into it
+    dealer = _dealer_from_gex(ticker, site_root)
+    if dealer is not None and dealer.get("opex_days") is None and _parquet_opex_days is not None:
+        dealer["opex_days"] = _parquet_opex_days
+    base["dealer"] = dealer
+
+    return base
 
 
 def _load_baselines(ticker: str, data_root: Path) -> dict | None:
@@ -744,8 +861,8 @@ def _build_leader_record(
     except Exception as e:  # noqa: BLE001
         log.debug("build_intraday_flow: washout_context for %s failed: %s", ticker, e)
 
-    # Options entry context.
-    rec["options_entry"] = _load_options_entry(ticker, data_root)
+    # Options entry context (v2: enriched with dealer block from gex JSON).
+    rec["options_entry"] = _load_options_entry(ticker, data_root, site_root)
 
     # Premium baselines.
     rec["baselines"] = _load_baselines(ticker, data_root)
@@ -857,7 +974,12 @@ def _run_nightly(cfg: dict, data_root: Path, site_root: Path, tpl_root: Path) ->
     try:
         env = Environment(loader=FileSystemLoader(str(tpl_root)), autoescape=False)
         tpl = env.get_template("intraday_flow.html.j2")
-        rendered = tpl.render(intraday_flow=payload)
+        # Coerce numpy/parquet scalar types to pure-python before render: Jinja's
+        # `tojson` filter uses the stdlib encoder (not our _json_default), so a
+        # numpy int64/float64 introduced by the state.parquet enrichment
+        # (net_doi, ivspread_rel) would otherwise abort the whole HTML render.
+        payload_safe = json.loads(json.dumps(payload, default=_json_default))
+        rendered = tpl.render(intraday_flow=payload_safe)
         html_out = site_root / "intraday_flow.html"
         html_out.write_text(rendered)
         log.info("build_intraday_flow nightly: rendered %s", html_out)
@@ -894,6 +1016,13 @@ def _advance_ledger(
         log.warning("build_intraday_flow: confluence_legs import failed: %s", e)
         return
 
+    # Try importing stance(); graceful if engine hasn't landed yet (nightly fills it once).
+    _stance_fn = None
+    try:
+        from engine.intraday_flow import stance as _stance_fn  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        log.debug("build_intraday_flow: stance() not yet importable — stance column will be null")
+
     today_str = str(date.today())
     new_rows: list[dict] = []
 
@@ -927,6 +1056,18 @@ def _advance_ledger(
                 # L7
                 failed_breakout_trap=rec.get("failed_breakout_trap"),
             )
+            # EOD stance from stance() over settled legs + dealer context.
+            # guard: stance() may not yet be importable when engine hasn't landed.
+            _eod_stance: str | None = None
+            if _stance_fn is not None:
+                try:
+                    dealer = (rec.get("options_entry") or {}).get("dealer")
+                    _eod_stance = _stance_fn(legs=legs, dealer=dealer)
+                except Exception as _se:  # noqa: BLE001
+                    log.debug(
+                        "build_intraday_flow: stance() for %s failed: %s", ticker, _se
+                    )
+
             row: dict[str, Any] = {
                 "session":        today_str,
                 "ticker":         ticker,
@@ -940,6 +1081,8 @@ def _advance_ledger(
                 "L6_upturn_organ":    legs.L6_upturn_organ,
                 "L7_leader_quality":  legs.L7_leader_quality,
                 "K":                  legs.K,
+                # EOD stance (categorical label from stance(); null until engine lands)
+                "stance":             _eod_stance,
                 # EOD snapshot metrics
                 "close":              rec.get("prev_close"),
                 "mtf_upturn_state":   mtu_state,
@@ -995,6 +1138,7 @@ def _run_fastpath(cfg: dict, data_root: Path, site_root: Path) -> None:
     """
     from engine.intraday_flow import (
         higher_lows,
+        rvol_tod as _rvol_tod,
         session_vwap,
         volume_durability,
     )
@@ -1035,6 +1179,32 @@ def _run_fastpath(cfg: dict, data_root: Path, site_root: Path) -> None:
                 bars, baseline_curve=baseline_curve, adv20_shares=adv20_shares
             )
             hl = higher_lows(bars)
+
+            # ── NEW fastpath fields (ruling §4) ──────────────────────────────
+            # rvol_tod: cum_vol / (adv20_shares × expected_share_at_current_bar)
+            # expected_share: baseline_curve[min(bar_idx, len-1)] if curve present
+            _expected_share: float | None = None
+            if baseline_curve and len(bars) > 0:
+                bar_idx = min(len(bars) - 1, len(baseline_curve) - 1)
+                _expected_share = baseline_curve[bar_idx]
+            _rvol_tod_val = _rvol_tod(
+                cum_vol_today=cum_vol if cum_vol > 0 else None,
+                adv20_shares=adv20_shares,
+                expected_share=_expected_share,
+            )
+            # session_high / session_low: max/min of bar highs/lows
+            _highs = [b.get("high") for b in bars if b.get("high") is not None]
+            _lows  = [b.get("low")  for b in bars if b.get("low")  is not None]
+            _session_high = float(max(_highs)) if _highs else None
+            _session_low  = float(min(_lows))  if _lows  else None
+            # bars_above_vwap: count of bars whose close >= session vwap
+            _bars_above_vwap: int | None = None
+            if vwap is not None:
+                _bars_above_vwap = sum(
+                    1 for b in bars
+                    if b.get("close") is not None and b["close"] >= vwap
+                )
+
             tickers_out.append({
                 "ticker": ticker,
                 "bars_today": len(bars),
@@ -1045,6 +1215,11 @@ def _run_fastpath(cfg: dict, data_root: Path, site_root: Path) -> None:
                 "last_close": (bars[-1].get("close") if bars else None),
                 "last_high": (bars[-1].get("high") if bars else None),
                 "last_low": (bars[-1].get("low") if bars else None),
+                # NEW §4 fastpath fields
+                "rvol_tod":          _rvol_tod_val,
+                "session_high":      _session_high,
+                "session_low":       _session_low,
+                "bars_above_vwap":   _bars_above_vwap,
             })
         except Exception as e:  # noqa: BLE001
             log.debug("build_intraday_flow fastpath: %s failed: %s", ticker, e)
