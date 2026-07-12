@@ -138,6 +138,46 @@ def _hk_turn_context(region: str, site) -> dict | None:
         return None
 
 
+def _hk_index_turn(region: str) -> dict | None:
+    """HK only: the index-momentum organ's recent ^HSI washout-turn read
+    (data/index_momentum/latest.json, IHM W1) as ONE context row inside the ratified
+    'Leaders moving first' popover (audit GAP-2: the tag rendered nowhere). Display
+    tier, one-directional — a context row only, never a K input, never read back by
+    the engine; the IHM program owns engine/index_momentum.py. Fail-open: None on
+    wrong region, missing/stale artifact (runner-local data/ does not ride into
+    worktrees/CI), no recent washout_turn, or any shortfall. Two recency fences:
+    5-calendar-day artifact fence on data_as_of (frozen-lane guard, same spirit as
+    _hk_turn_context) + the event itself within ~15 sessions (21 calendar days)."""
+    if region != "hk":
+        return None
+    try:
+        p = config.data_dir() / "index_momentum" / "latest.json"
+        d = json.loads(p.read_text())
+        data_as_of = pd.Timestamp(d.get("data_as_of"))
+        now = pd.Timestamp.now(tz="UTC").tz_localize(None)
+        if pd.isna(data_as_of) or (now - data_as_of).days > 5:
+            return None
+        grids = ((d.get("indices") or {}).get("^HSI") or {}).get("grids") or {}
+        events = (grids.get("1D") or {}).get("recent_events") or []
+        turns = []
+        for ev in events:
+            if ev.get("direction") != "bull" or ev.get("quality_tag") != "washout_turn":
+                continue
+            ev_d = pd.Timestamp(ev.get("date"))
+            if pd.isna(ev_d) or (now - ev_d).days > 21:  # ~15 HK sessions
+                continue
+            turns.append((ev_d, ev))
+        if not turns:
+            return None
+        ev_d, ev = max(turns, key=lambda t: t[0])
+        return {"date": str(ev_d.date()),
+                "date_en": f"{ev_d:%b} {ev_d.day}",
+                "date_zh": f"{ev_d.month}月{ev_d.day}日",
+                "us_confirm": bool(ev.get("us_confirm"))}
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return None
+
+
 def build_region(region: str, env, built: str, site) -> bool:
     """Build one market's Narrative-Rotation page + JSON. Additive — logs and returns False
     on shortfall (e.g. a market's caches absent locally) so the others still build."""
@@ -181,6 +221,7 @@ def build_region(region: str, env, built: str, site) -> bool:
         act_now_json=json.dumps(act_now, separators=(",", ":"), default=str),
         standouts_json=json.dumps(standouts, separators=(",", ":")),
         hk_leadership=_hk_turn_context(region, site),
+        hk_index_turn=_hk_index_turn(region),
         generated_utc=built)
     write_page(site / page, html)
     log.info("[%s] wrote %s (%d themes, headline=%s)", region, page,

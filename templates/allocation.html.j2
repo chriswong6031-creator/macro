@@ -280,6 +280,22 @@ fetch('policy_lever.json',{cache:'no-cache'})
       <span class="l-zh">{{ _ldr_breadth | round | int }}%个股高于其50日均线 — 尚未确认。</span>
     </div>
     {%- endif -%}
+    {#- IHM context row (audit GAP-2): the ^HSI washout-turn read, builder fail-open —
+        absent unless a recent deep turn exists (_hk_index_turn). Depth-at-cross empirics
+        per research/INDEX_HYBRID_MOMENTUM_MASTERPLAN_BY_FABLE.md §2.2-2.3 — descriptive
+        display-tier history, never a buy signal. -#}
+    {%- if hk_index_turn -%}
+    <div class="hkrv-pop-row">
+      <span class="hkrv-pop-lbl"><span class="l-en">Index turn</span><span class="l-zh">指数拐点</span></span>
+      {%- if hk_index_turn.us_confirm -%}
+      <span class="l-en">The Hang Seng itself turned up from washed-out depths on {{ hk_index_turn.date_en }} (the deepest tenth of its 10-year range), with US momentum confirming — historically the variant worth watching: about 2 in 3 held over the following quarter, while turns from only part-way down held less than half the time.</span>
+      <span class="l-zh">恒生指数本身于{{ hk_index_turn.date_zh }}自深度超卖区（近十年最深一成）向上转折，且美股动能同步确认——历史上这类较值得关注：约三分之二在其后一季度守住涨势，而仅跌至半途便转折的守住不到一半。</span>
+      {%- else -%}
+      <span class="l-en">The Hang Seng itself turned up from washed-out depths on {{ hk_index_turn.date_en }}, but US momentum has not confirmed — historically only about half of unconfirmed turns held; the durable variant needs both.</span>
+      <span class="l-zh">恒生指数本身于{{ hk_index_turn.date_zh }}自深度超卖区向上转折，但美股动能尚未确认——历史上缺乏美股确认的转折仅约一半守住；较持久的一类需两者兼备。</span>
+      {%- endif -%}
+    </div>
+    {%- endif -%}
     {%- if _ldr_study_n and _ldr_fwd is not none -%}
     <div class="hkrv-pop-row">
       <span class="hkrv-pop-lbl"><span class="l-en">History</span><span class="l-zh">历史参考</span></span>
