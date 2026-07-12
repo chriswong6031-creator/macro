@@ -531,7 +531,9 @@ LADDER = ["DECLINE", "BOTTOM WATCH", "TURN SIGNALED", "FRESH BUY",
 LADDER_SCORE = {"DECLINE": -80, "ROLLING OVER": -40, "TOP WATCH": -10,
                 "BOTTOM WATCH": 10, "TURN SIGNALED": 45, "FRESH BUY": 80,
                 "RALLY ON": 55, "COUNTERTREND BOUNCE": -25,
-                "CONFIRMING TURN": 15}
+                # -15: softening reroute from COUNTERTREND BOUNCE (-25) — softer than its parent,
+                # still caution-tier/weekly-unconfirmed, so strictly negative.
+                "CONFIRMING TURN": -15}
 
 # Liquidity conviction modifier — the US net-liquidity regime (engine.regime.
 # liquidity_overlay) is the repo's strongest adversarially-validated ORTHOGONAL

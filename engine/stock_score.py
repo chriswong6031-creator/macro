@@ -1098,8 +1098,9 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
 
     # ---- CONFIRMING TURN: watch/don't-chase — same caution tier as COUNTERTREND BOUNCE.
     # Must appear BEFORE the constructive cases so it never falls through to 'Reversal
-    # candidate — selection edge'. HK-native state; surfaces on any market where
-    # the ladder emits it (HK confirm-bypass path).
+    # candidate — selection edge'. NOTE: HK market paths return early via the
+    # exposure-language branch above and never reach this block; this branch serves
+    # non-HK markets whose ladder emits CONFIRMING TURN.
     if state == "CONFIRMING TURN":
         return _v("Turn in progress — evidence building; watch, don't chase",
                   "转向进行中 — 证据积累中；观察，勿追高", drivers, cautions)

@@ -1350,6 +1350,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             _sb_ts = pd.Timestamp(str(_sb_asof)).date()
             _as_ts = pd.Timestamp(str(as_of)).date()
             # Use trading-day count (busday_count) so a Friday→Monday gap = 1 td, not 3 cal days.
+            # busday_count excludes weekends only (HK public holidays not modeled; errs conservative — flags stale early).
             _gap = int(_np_sb.busday_count(_sb_ts, _as_ts)) if _as_ts >= _sb_ts else 0
             if _gap > FRESHNESS_MAX_STALE_TD:
                 health.append({

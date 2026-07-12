@@ -143,8 +143,17 @@ def stamp_ledger(
     cohesion_10d_ago: float,
     as_of: str | None = None,
     data_root: Path | None = None,
+    cohesion_window: list[float] | None = None,
 ) -> int:
     """Append one row per new thrust date (idempotent on date).
+
+    Episode arming: after a stamped thrust, suppress further stamps until
+    cohesion has printed at least one bar BELOW THRUST_LOW (0.30) since the
+    last stamped row.  ``cohesion_window`` is the list of per-lag cohesion
+    values scanned during thrust detection (lags 1..THRUST_LOOKBACK, newest
+    first); if it contains a value < THRUST_LOW the episode is considered
+    re-armed.  When None (first-ever call or no prior stamp), arming is not
+    required.
 
     Gated by CN_LANE=asia. Never raises. Returns count of appended rows.
     """
@@ -157,6 +166,20 @@ def stamp_ledger(
         existing_dates = {r.get("date") for r in rows}
         if today_str in existing_dates:
             return 0
+        # Episode re-arm gate: suppress if cohesion never dipped below THRUST_LOW
+        # since the last stamped row — prevents autocorrelated nightly re-stamps
+        # during a sustained thrust (same episode).
+        if rows and cohesion_window is not None:
+            # Any value in the scanned window below threshold = re-armed.
+            re_armed = any(c < THRUST_LOW for c in cohesion_window if c is not None)
+            if not re_armed:
+                log.debug(
+                    "hk_leadership.stamp_ledger: suppressed (episode not re-armed; "
+                    "cohesion_min_window=%.3f >= THRUST_LOW=%.2f)",
+                    min((c for c in cohesion_window if c is not None), default=1.0),
+                    THRUST_LOW,
+                )
+                return 0
         rows.append({
             "date":              today_str,
             "thrust_date":       thrust_date,
@@ -456,6 +479,7 @@ def _compute_inner(
     # current >= 0.60 (F4-a fix: scan true within-window extremes, not just endpoint).
     # This catches crosses where the low occurred mid-window, not exactly LOOKBACK bars ago.
     cohesion_min_window = cohesion_10d_ago  # fallback if scan fails
+    scanned: list[float] = []  # populated below; kept in scope for episode re-arm gate
     try:
         scanned = []
         for lag in range(1, THRUST_LOOKBACK + 1):
@@ -544,6 +568,7 @@ def _compute_inner(
                 cohesion_10d_ago=cohesion_10d_ago,
                 as_of=as_of,
                 data_root=data_root,
+                cohesion_window=scanned if scanned else None,
             )
             if n:
                 log.info("hk_leadership: stamped thrust event to ledger (as_of=%s)", thrust_date_str)

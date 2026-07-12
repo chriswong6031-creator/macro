@@ -157,8 +157,16 @@ def test_v_recovery_all_witnesses_confirming_turn():
     assert "WATCH" in action or "watch" in action.lower(), (
         f"CONFIRMING TURN action should contain WATCH, got {action!r}"
     )
-    # score should be defined
-    assert LADDER_SCORE.get("CONFIRMING TURN") is not None
+    # score pins: -15, strictly above COUNTERTREND BOUNCE (-25), and negative
+    assert LADDER_SCORE["CONFIRMING TURN"] == -15, (
+        f"CONFIRMING TURN score must be -15, got {LADDER_SCORE['CONFIRMING TURN']}"
+    )
+    assert LADDER_SCORE["CONFIRMING TURN"] > LADDER_SCORE["COUNTERTREND BOUNCE"], (
+        "CONFIRMING TURN must be softer (less negative) than COUNTERTREND BOUNCE"
+    )
+    assert LADDER_SCORE["CONFIRMING TURN"] < 0, (
+        "CONFIRMING TURN must remain caution-tier (strictly negative)"
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
