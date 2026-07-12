@@ -1095,7 +1095,12 @@ def main() -> int:
         # DO NOT re-add them here — they run as separate steps after build_china.
         # See research/CHINA_SYSTEM_MASTERPLAN_BY_FABLE.md §6 W5a Scope 2.
     except Exception as e:  # noqa: BLE001
-        log.error("china page render failed (%s); skipping", e)
+        # log.exception, not log.error: this handler wraps the ENTIRE vm assembly +
+        # both page renders, so a bare message ("'str object' has no attribute
+        # 'get'", 2026-07-12 incident) localizes NOTHING — china.html/china_stocks
+        # .html silently freeze while the lane reports success. The traceback is
+        # the only way the next reader finds the crash site.
+        log.exception("china page render failed (%s); skipping", e)
         return 0
     return 0
 
