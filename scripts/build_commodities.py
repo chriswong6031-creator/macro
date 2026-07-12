@@ -568,6 +568,33 @@ def main() -> int:
               for a in ORDER if a in results]
     cx = complex_vm(results, calib)
 
+    # --- commodity SECTOR INDEX + breadth / trend-diversity / velocity ---------
+    # Display-tier (engine/commodity_index.py). DATA-ONLY this build — the page still
+    # renders the core four until the UI revamp; this emits signals_index.parquet +
+    # the index/breadth snapshot for the hub + the cycle.html regime bridge. Reuses
+    # the already-computed core frames; computes the 13 expansion members once.
+    index_snap: dict = {}
+    try:
+        import time as _time
+        from engine import commodity_index
+        cfg_com = config.load()["commodities"]
+        _t0 = _time.time()
+        members_ai = commodity_inputs.load_members(cfg_com)
+        member_results = {n: (results[n] if n in results
+                              else commodity_signals.compute_asset(ai, cfg_com))
+                          for n, ai in members_ai.items()}
+        benchmarks = {}
+        for _t in cfg_com.get("index", {}).get("benchmarks", []):
+            try:
+                benchmarks[_t] = commodity_inputs.load_price(_t)["close"].rename(_t)
+            except Exception:  # noqa: BLE001 — benchmark optional
+                pass
+        index_snap = commodity_index.build_index(member_results, benchmarks, cfg_com)
+        log.info("[timing] commodity index+breadth (%d members) in %.1fs",
+                 len(member_results), _time.time() - _t0)
+    except Exception as e:  # noqa: BLE001 — additive, never break the page
+        log.warning("commodity index build failed (%s)", e)
+
     recent_events = commodity_alerts.recent(all_events, acfg["timeline_days"])
     timeline = _group_timeline(recent_events)
 
@@ -614,6 +641,7 @@ def main() -> int:
     _asof_raw = results["gold"].index.max()
     latest = {"date": as_of, "asof": _asof_raw.strftime("%Y-%m-%d"),
               "regime": cx["regime"], "favored": cx["favored"],
+              "index": index_snap.get("index", {}), "breadth": index_snap.get("breadth", {}),
               "assets": {a["key"]: {"label": a["label"], "price": a["price"], "chg": a["chg"],
                                     "alloc": a["alloc_pct"], "risk": a["risk_word"],
                                     "trend": a["ts_trend"],
@@ -621,6 +649,17 @@ def main() -> int:
                                     "conviction": (a.get("conviction") or {}).get("score")}
                          for a in assets}}
     (outdir / "latest.json").write_text(json.dumps(latest, indent=2, default=str))
+
+    # complex_latest.json — the commodity-complex quadrant + sector index + breadth,
+    # consumed by engine/regime_prior.py so the cycle.html disagreement banner can
+    # cross-check the commodity read (P3 bridge). Display-tier, additive.
+    complex_latest = {"asof": _asof_raw.strftime("%Y-%m-%d"),
+                      "complex_regime": cx["regime"],
+                      "dollar_dir": cx["dollar_dir"], "growth_dir": cx["growth_dir"],
+                      "index": index_snap.get("index", {}),
+                      "breadth": index_snap.get("breadth", {}),
+                      "members": index_snap.get("members", [])}
+    (outdir / "complex_latest.json").write_text(json.dumps(complex_latest, indent=2, default=str))
     return 0
 
 

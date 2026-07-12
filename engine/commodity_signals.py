@@ -382,7 +382,7 @@ def residual_shock(px: pd.DataFrame, drivers: dict, asset: str, cfg: dict) -> pd
     if prim in X.columns:
         corr = y.rolling(cfg["decoupling_corr_window_d"], min_periods=90).corr(X[prim])
         out["driver_corr"] = corr
-        orient = config.load()["commodities"]["driver_axis"]["weights"][asset].get(prim, -1.0)
+        orient = config.load()["commodities"]["driver_axis"]["weights"].get(asset, {}).get(prim, -1.0)
         exp_sign = 1.0 if orient > 0 else -1.0
         out["decoupled"] = ((np.sign(corr) != exp_sign) | (corr.abs() < cfg["decoupling_corr_max"]))
     return out

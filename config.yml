@@ -1341,6 +1341,20 @@ cot:
     silver: ["SILVER - COMMODITY EXCHANGE"]   # COMEX 5000oz (1986->); excludes CBOT mini contracts
     oil: ["CRUDE OIL, LIGHT 'SWEET' - NEW YORK", "CRUDE OIL, LIGHT SWEET - NEW YORK", "CRUDE OIL, LIGHT SWEET-WTI - ICE"]   # WTI: NYMEX physical (1986-2022) spliced to ICE Europe WTI (2014->) via per-date max-OI dedup; net_spec_pct_oi normalizes the contract handoff
     bitcoin: ["BITCOIN - C"]      # CME contract; prefix excludes BITCOIN CASH / MICRO BITCOIN
+    # Commodity complex — expansion roster (display-tier breadth/index members). Keyless CFTC.
+    natgas: ["NATURAL GAS - NEW YORK MERCANTILE EXCHANGE"]   # NYMEX futures only (exclude the ICE Henry Hub SWAP — different contract, would splice under max-OI dedup)
+    platinum: ["PLATINUM - NEW YORK MERCANTILE EXCHANGE"]
+    palladium: ["PALLADIUM - NEW YORK MERCANTILE EXCHANGE"]
+    gasoline: ["GASOLINE RBOB - NEW YORK MERCANTILE EXCHANGE", "GASOLINE BLENDSTOCK (RBOB)"]
+    heating_oil: ["#2 HEATING OIL, N.Y. HARBOR-ULSD - NEW YORK MERCANTILE EXCHANGE", "NO. 2 HEATING OIL"]
+    corn: ["CORN - CHICAGO BOARD OF TRADE"]
+    wheat: ["WHEAT-SRW - CHICAGO BOARD OF TRADE", "WHEAT - CHICAGO BOARD OF TRADE"]
+    soybeans: ["SOYBEANS - CHICAGO BOARD OF TRADE"]
+    live_cattle: ["LIVE CATTLE - CHICAGO MERCANTILE EXCHANGE"]
+    coffee: ["COFFEE C - ICE FUTURES U.S.", "COFFEE C - NEW YORK BOARD OF TRADE"]
+    sugar: ["SUGAR NO. 11 - ICE FUTURES U.S.", "SUGAR NO. 11 - NEW YORK BOARD OF TRADE"]
+    cocoa: ["COCOA - ICE FUTURES U.S.", "COCOA - NEW YORK BOARD OF TRADE"]
+    cotton: ["COTTON NO. 2 - ICE FUTURES U.S.", "COTTON NO. 2 - NEW YORK BOARD OF TRADE"]
     # Forex Vector — CME currency futures (contrarian spec positioning). dollar (cot_dollar) above.
     euro_fx: ["EURO FX - CHICAGO MERCANTILE EXCHANGE", "EURO FX"]
     yen: ["JAPANESE YEN - CHICAGO MERCANTILE EXCHANGE", "JAPANESE YEN"]
@@ -3130,6 +3144,42 @@ commodities:
     copper: ["HG=F", cot_copper, industrial]
     oil:    ["CL=F", cot_oil,    energy]
 
+  # Broad commodity roster for the SECTOR INDEX + breadth/trend-diversity engine
+  # (engine/commodity_index.py). DISPLAY-TIER: these members get the generic price
+  # technical + MTF + cycle stack, NOT the per-asset DSR calibration / alerts that
+  # `assets` above drives. cot_* series load gracefully as None until nightly fills
+  # them (load_cot_positioning). class = display group + macro-driver group.
+  complex_members:                 # name: [yahoo price ticker, cot store-series, class]
+    gold:        ["GC=F", cot_gold,        precious]
+    silver:      ["SI=F", cot_silver,      precious]
+    platinum:    ["PL=F", cot_platinum,    precious]
+    palladium:   ["PA=F", cot_palladium,   precious]
+    copper:      ["HG=F", cot_copper,      industrial]
+    oil:         ["CL=F", cot_oil,         energy]
+    natgas:      ["NG=F", cot_natgas,      energy]
+    gasoline:    ["RB=F", cot_gasoline,    energy]
+    heating_oil: ["HO=F", cot_heating_oil, energy]
+    corn:        ["ZC=F", cot_corn,        grain]
+    wheat:       ["ZW=F", cot_wheat,       grain]
+    soybeans:    ["ZS=F", cot_soybeans,    grain]
+    live_cattle: ["LE=F", cot_live_cattle, livestock]
+    coffee:      ["KC=F", cot_coffee,      soft]
+    sugar:       ["SB=F", cot_sugar,       soft]
+    cocoa:       ["CC=F", cot_cocoa,       soft]
+    cotton:      ["CT=F", cot_cotton,      soft]
+
+  index:                           # sector-index construction + breadth/velocity params
+    benchmarks: ["DBC", "GSG"]     # tradeable broad-commodity ETFs (context benchmark lines)
+    rebase_min_members: 6          # need >= this many members present on a date for breadth
+    breadth_pctile_lookback_d: 1260   # ~5y rolling rank for the breadth percentile
+    velocity_windows_d: [5, 20, 60, 252]   # multi-horizon return ladder (impulse)
+    impulse_window_d: 20           # window for the vol-normalized impulse z
+    accel_window_d: 10             # ts_momentum acceleration lookback
+    price_shock:                   # price-return z-score (washout/blow-off) for members
+      return_window_d: 21          #   without a macro-driver model (grain/soft/livestock)
+      z_lookback_d: 252
+      shock_z: 1.75                # |z| above -> washout (-) / blow-off (+)
+
   drivers:                         # shared macro series: name -> [store-group, store-name]
     real_yield:    [fred, DFII10]        # 10y TIPS real yield — the gold/silver anchor
     dxy:           [yahoo, "DX-Y.NYB"]   # US Dollar Index (1971->; gold/silver dollar driver)
@@ -3194,6 +3244,12 @@ commodities:
       silver: {real_yield: -1.0, dxy: -1.0, breakeven10: 0.5, indpro: 0.5}
       copper: {broad_dollar: -1.0, indpro: 1.0, real_yield: -0.5, us10y: 0.3}  # broad$ > DXY for copper (measured)
       oil:    {broad_dollar: -1.0, breakeven10: 0.5, indpro: 0.5}              # broad$ > DXY for oil (measured)
+      # complex-member group defaults (display-tier; grain/soft/livestock omitted -> priced on supply, price-shock only)
+      platinum:    {real_yield: -1.0, dxy: -1.0, indpro: 0.5}                  # precious + industrial hybrid
+      palladium:   {real_yield: -1.0, dxy: -1.0, indpro: 0.5}
+      natgas:      {broad_dollar: -0.5, indpro: 0.3}                           # weak macro link; mostly weather/storage
+      gasoline:    {broad_dollar: -1.0, breakeven10: 0.5, indpro: 0.5}
+      heating_oil: {broad_dollar: -1.0, breakeven10: 0.5, indpro: 0.5}
     trigger: 0.34                  # |score| above -> tailwind / headwind regime
     exit: 0.15
 
@@ -3204,6 +3260,11 @@ commodities:
       silver: [real_yield, dxy]
       copper: [broad_dollar, indpro]
       oil:    [broad_dollar]
+      platinum:    [real_yield, dxy]
+      palladium:   [real_yield, dxy]
+      natgas:      [broad_dollar]
+      gasoline:    [broad_dollar]
+      heating_oil: [broad_dollar]
     min_train_d: 504               # >=2y before first fit (expanding, refit monthly — causal)
     refit_every_d: 21
     z_lookback_d: 252              # rolling std for the shock z-score
@@ -5919,6 +5980,7 @@ yahoo:
     crypto: [BTC-USD, ETH-USD, SOL-USD]   # deep daily history (BTC 2014->); Coinbase = intraday-quality OHLC
     crypto_fut: ["BTC=F"]                 # CME (regulated) Bitcoin front-month future -> institutional carry / basis (D-vec-CME; daily 2021->)
     flagship_cycles: [MU, ALB, SQM, DBA, "^SOX", "NG=F", "ZC=F", "PL=F", "PA=F"]   # W1.4 cycle.html proxy tapes (masterplan D3 registry); PL=F/PA=F = platinum/palladium FUTURES — never bare PL (that's Planet Labs equity)
+    commodities: ["RB=F", "HO=F", "ZW=F", "ZS=F", "LE=F", "KC=F", "SB=F", "CC=F", "CT=F", "DBC", "GSG"]   # commodity-complex expansion roster (engine/commodity_index.py) + broad-index ETFs; NG/ZC/PL/PA already in flagship_cycles
     fx_decomp: ["USDSEK=X", "USDSGD=X", "USDIDR=X", "USDCLP=X", "USDZAR=X", "USDTRY=X", "USDPLN=X", "USDHKD=X"]   # W1.4 country-cycle FX-decomposition legs (masterplan D4/S4)
     # ADR sensor mini-set (W0-4 of INTL_FIX_MASTERPLAN — INTL-49).
     # US-listed ADRs / proxies for key intl bellwethers: deep history, US-session
