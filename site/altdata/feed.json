@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-12T10:10:30.110985+00:00",
+  "generated_utc": "2026-07-12T13:09:57.773628+00:00",
   "as_of": "2026-07-12",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -4101,22 +4101,22 @@
       "emoji": "\ud83d\udcb8",
       "label_en": "Corporate donors",
       "label_zh": "\u4f01\u4e1a\u6350\u8d60",
-      "rows": 1423,
+      "rows": 1425,
       "last_seen": "2026-07-05",
       "recent": [
         {
-          "BioGuideID": "H001058",
-          "CandidateName": "HUIZENGA, WILLIAM P",
-          "CompanyCMTENM": "CITIGROUP INC. PAC - FEDERAL (CITI PAC - FEDERAL)",
+          "BioGuideID": "C001101",
+          "CandidateName": "CLARK, KATHERINE",
+          "CompanyCMTENM": "STATE STREET BANK AND TRUST COMPANY VOLUNTARY POLITICAL ACTION COMMITTEE",
           "TransactionDate": "2026-05-21",
           "TransactionAmount": "2500",
-          "Ticker": "C",
-          "CommitteeName": "BILL HUIZENGA FOR CONGRESS",
+          "Ticker": "STT",
+          "CommitteeName": "KATHERINE CLARK FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00008474",
+          "CompanyCMTEID": "C00072751",
           "Uploaded": "2026-07-05 23:33:39.981559",
-          "_first_seen": "2026-07-12T05:53:33.158331+00:00"
+          "_first_seen": "2026-07-12T10:48:22.538168+00:00"
         },
         {
           "BioGuideID": "S001198",
@@ -4427,16 +4427,16 @@
           "_first_seen": "2026-07-07T12:04:37.873514+00:00"
         },
         {
-          "BioGuideID": "L000599",
-          "CandidateName": "LAWLER, MICHAEL VINCENT",
-          "CompanyCMTENM": "U.S. BANCORP FEDERAL POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-05-28",
-          "TransactionAmount": "500",
-          "Ticker": "TBBK",
-          "CommitteeName": "LAWLER FOR CONGRESS",
+          "BioGuideID": "F000480",
+          "CandidateName": "FONG, VINCE",
+          "CompanyCMTENM": "THE BOEING COMPANY PAC",
+          "TransactionDate": "2026-05-27",
+          "TransactionAmount": "1000",
+          "Ticker": "BA",
+          "CommitteeName": "VINCE FONG FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00488882",
+          "CompanyCMTEID": "C00142711",
           "Uploaded": "2026-07-05 23:33:39.981559",
           "_first_seen": "2026-07-07T12:04:37.873514+00:00"
         },
@@ -4460,9 +4460,18 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 822,
+      "rows": 823,
       "last_seen": "2026-07-12",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/Hemab+Therapeutics+Reports+Positive+HMB-002+Clinical+Data+in+Von+Willebrand+Disease+and+Announces+HMB-003+Program",
+          "time": "2026-07-12 10:30:27",
+          "headline": "Hemab Therapeutics Reports Positive HMB-002 Clinical Data in Von Willebrand Disease and Announces HMB-003 Program",
+          "category": "press_release_summary",
+          "summary": "<p>HMB-002 shows significant increases in coagulation factors, while HMB-003 offers a new treatment approach for bleeding disorders.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Hemab Therapeutics has annou\u2026",
+          "image": "https://www.quiverquant.com/images/coag_rect_new.png",
+          "_first_seen": "2026-07-12T10:48:22.922014+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Scott+H.+Peters+Made+an+Estimated+%24640.0K+in+the+Stock+Market+Last+Month",
           "time": "2026-07-12 03:01:08",
@@ -4590,21 +4599,21 @@
           "_first_seen": "2026-07-12T02:04:31.889430+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+INTERDIGITAL+lobbying+was+just+disclosed",
-          "time": "2026-07-11 23:08:37",
-          "headline": "Lobbying Update: $30,000 of INTERDIGITAL lobbying was just disclosed",
-          "category": "lobbying_automated",
-          "summary": "<p>$30,000 of INTERDIGITAL lobbying was just disclosed, from Q2 of 2026, in a new Lobbying Disclosure Act filing.</p><p>This included lobbying on issues like:</p><p>\"Patent infringement\"</p><p>You can find more data o\u2026",
-          "image": "https://www.quiverquant.com/images/idcc_rect_new.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+DIGITAL+REALTY+TRUST+INC.+lobbying+was+just+disclosed",
           "time": "2026-07-11 23:08:37",
           "headline": "Lobbying Update: $30,000 of DIGITAL REALTY TRUST INC. lobbying was just disclosed",
           "category": "lobbying_automated",
           "summary": "<p>$30,000 of DIGITAL REALTY TRUST INC. lobbying was just disclosed, from Q2 of 2026, in a new Lobbying Disclosure Act filing.</p><p>This included lobbying on issues like:</p><p>\"Issues related to data centers\"</p><p>\u2026",
           "image": "https://www.quiverquant.com/images/dlr_rect_new.png",
+          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+INTERDIGITAL+lobbying+was+just+disclosed",
+          "time": "2026-07-11 23:08:37",
+          "headline": "Lobbying Update: $30,000 of INTERDIGITAL lobbying was just disclosed",
+          "category": "lobbying_automated",
+          "summary": "<p>$30,000 of INTERDIGITAL lobbying was just disclosed, from Q2 of 2026, in a new Lobbying Disclosure Act filing.</p><p>This included lobbying on issues like:</p><p>\"Patent infringement\"</p><p>You can find more data o\u2026",
+          "image": "https://www.quiverquant.com/images/idcc_rect_new.png",
           "_first_seen": "2026-07-12T02:04:31.889430+00:00"
         },
         {
@@ -4677,15 +4686,6 @@
           "category": "discussion_automated",
           "summary": "<p><strong style=\"color: rgb(218,48,46);\">BofA initiates coverage:</strong> Social media chatter intensified following Bank of America's initiation of coverage with an Underperform rating and a $190 price target for A\u2026",
           "image": "https://www.quiverquant.com/images/adbe_rect_new.png",
-          "_first_seen": "2026-07-12T02:04:31.889430+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/DFTX+Inc.+Stock+%28DFTX%29+Opinions+on+Phase+3+Results+and+Offering",
-          "time": "2026-07-11 17:33:23",
-          "headline": "DFTX Inc. Stock (DFTX) Opinions on Phase 3 Results and Offering",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Phase 3 Momentum:</strong> Recent social media chatter highlights the resilience of DFTX shares following positive phase 3 trial outcomes. Observers note the stock's ability t\u2026",
-          "image": "https://www.quiverquant.com/images/dftx_rect_new.png",
           "_first_seen": "2026-07-12T02:04:31.889430+00:00"
         }
       ]
@@ -5471,28 +5471,14 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 98677,
+      "rows": 98685,
       "last_seen": "2026-07-12",
       "recent": [
         {
-          "ticker": "BMY",
-          "owner_name": "TORONTO DOMINION BANK",
+          "ticker": "BWXT",
+          "owner_name": "Russell Investments Group, Ltd.",
           "owner_title": "Institution",
-          "shares": "903512",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AMGN",
-          "owner_name": "RAYMOND JAMES FINANCIAL INC",
-          "owner_title": "Institution",
-          "shares": "1620353",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AMGN",
-          "owner_name": "Fisher Asset Management, LLC",
-          "owner_title": "Institution",
-          "shares": "1577866",
+          "shares": "72383",
           "_collected": "2026-07-12"
         },
         {
@@ -5500,13 +5486,6 @@
           "owner_name": "STIFEL FINANCIAL CORP",
           "owner_title": "Institution",
           "shares": "1540435",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AMGN",
-          "owner_name": "Sumitomo Mitsui Trust Group, Inc.",
-          "owner_title": "Institution",
-          "shares": "1537964",
           "_collected": "2026-07-12"
         },
         {
@@ -5609,16 +5588,9 @@
         },
         {
           "ticker": "AMGN",
-          "owner_name": "Swiss National Bank",
+          "owner_name": "BANK OF MONTREAL /CAN/",
           "owner_title": "Institution",
-          "shares": "1580353",
-          "_collected": "2026-07-12"
-        },
-        {
-          "ticker": "AMGN",
-          "owner_name": "ENVESTNET ASSET MANAGEMENT INC",
-          "owner_title": "Institution",
-          "shares": "1697306",
+          "shares": "961165",
           "_collected": "2026-07-12"
         },
         {
@@ -5630,23 +5602,51 @@
         },
         {
           "ticker": "AMGN",
-          "owner_name": "FEDERATED HERMES, INC.",
+          "owner_name": "CALIFORNIA STATE TEACHERS RETIREMENT SYSTEM",
           "owner_title": "Institution",
-          "shares": "1799440",
+          "shares": "845056",
           "_collected": "2026-07-12"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "GOLDMAN SACHS GROUP INC",
+          "owner_name": "Sumitomo Mitsui Trust Group, Inc.",
           "owner_title": "Institution",
-          "shares": "4219989",
+          "shares": "1537964",
           "_collected": "2026-07-12"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "Legal & General Group Plc",
+          "owner_name": "Fisher Asset Management, LLC",
           "owner_title": "Institution",
-          "shares": "3870863",
+          "shares": "1577866",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "HighTower Advisors, LLC",
+          "owner_title": "Institution",
+          "shares": "820320",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Swiss National Bank",
+          "owner_title": "Institution",
+          "shares": "1580353",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "FMR LLC",
+          "owner_title": "Institution",
+          "shares": "3776430",
+          "_collected": "2026-07-12"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Amundi",
+          "owner_title": "Institution",
+          "shares": "3396945",
           "_collected": "2026-07-12"
         }
       ]
@@ -6420,57 +6420,57 @@
     ],
     "hf": [
       {
-        "ticker": "IBM",
-        "downloads_30d": 11563028.0,
-        "wow_pct": 12.4,
+        "ticker": "GOOGL",
+        "downloads_30d": 240863925.0,
+        "wow_pct": 13.3,
         "hot": true
       },
       {
         "ticker": "NVDA",
-        "downloads_30d": 37106676.0,
-        "wow_pct": 12.3,
+        "downloads_30d": 37219478.0,
+        "wow_pct": 12.6,
         "hot": true
       },
       {
-        "ticker": "GOOGL",
-        "downloads_30d": 238321297.0,
-        "wow_pct": 12.1,
+        "ticker": "IBM",
+        "downloads_30d": 11468365.0,
+        "wow_pct": 11.5,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "downloads_30d": 30130149.0,
-        "wow_pct": 7.0,
+        "downloads_30d": 30263080.0,
+        "wow_pct": 7.4,
         "hot": true
       },
       {
         "ticker": "META",
-        "downloads_30d": 99914115.0,
-        "wow_pct": 6.4,
-        "hot": false
-      },
-      {
-        "ticker": "AMZN",
-        "downloads_30d": 26073637.0,
-        "wow_pct": 3.6,
+        "downloads_30d": 98958434.0,
+        "wow_pct": 5.4,
         "hot": false
       },
       {
         "ticker": "BABA",
-        "downloads_30d": 209252916.0,
-        "wow_pct": 3.4,
+        "downloads_30d": 206876096.0,
+        "wow_pct": 2.3,
+        "hot": false
+      },
+      {
+        "ticker": "AMZN",
+        "downloads_30d": 25657825.0,
+        "wow_pct": 2.0,
         "hot": false
       },
       {
         "ticker": "CRM",
-        "downloads_30d": 6089827.0,
-        "wow_pct": -8.2,
+        "downloads_30d": 6056328.0,
+        "wow_pct": -8.7,
         "hot": false
       },
       {
         "ticker": "AAPL",
-        "downloads_30d": 5147683.0,
-        "wow_pct": -9.7,
+        "downloads_30d": 4924709.0,
+        "wow_pct": -13.6,
         "hot": false
       }
     ],
@@ -44235,14 +44235,14 @@
     "github": [
       {
         "ticker": "NET",
-        "stars": 14817,
-        "wow_pct": 0.83,
+        "stars": 14819,
+        "wow_pct": 0.84,
         "hot": true
       },
       {
         "ticker": "GTLB",
-        "stars": 24572,
-        "wow_pct": 0.4,
+        "stars": 24573,
+        "wow_pct": 0.41,
         "hot": true
       },
       {
@@ -44264,50 +44264,50 @@
         "hot": true
       },
       {
-        "ticker": "AMD",
-        "stars": 6679,
+        "ticker": "MSFT",
+        "stars": 187481,
         "wow_pct": 0.23,
         "hot": true
       },
       {
-        "ticker": "MSFT",
-        "stars": 187466,
-        "wow_pct": 0.23,
+        "ticker": "AMD",
+        "stars": 6678,
+        "wow_pct": 0.21,
         "hot": true
       },
       {
         "ticker": "ESTC",
-        "stars": 77598,
+        "stars": 77600,
         "wow_pct": 0.21,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "stars": 196321,
+        "stars": 196324,
         "wow_pct": 0.14,
         "hot": false
       },
       {
         "ticker": "PLTR",
-        "stars": 21911,
+        "stars": 21912,
         "wow_pct": 0.12,
         "hot": false
       },
       {
         "ticker": "U",
-        "stars": 19551,
-        "wow_pct": 0.11,
+        "stars": 19553,
+        "wow_pct": 0.12,
         "hot": false
       },
       {
         "ticker": "META",
-        "stars": 246431,
+        "stars": 246443,
         "wow_pct": 0.08,
         "hot": false
       },
       {
         "ticker": "MDB",
-        "stars": 28447,
+        "stars": 28448,
         "wow_pct": 0.06,
         "hot": false
       },
@@ -44319,7 +44319,7 @@
       },
       {
         "ticker": "CRM",
-        "stars": 11249,
+        "stars": 11250,
         "wow_pct": 0.04,
         "hot": false
       },
@@ -45768,6 +45768,13 @@
     ],
     "news": [
       {
+        "headline": "Hemab Therapeutics Reports Positive HMB-002 Clinical Data in Von Willebrand Disease and Announces HMB-003 Program",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-07-12 10:30:27",
+        "url": "https://www.quiverquant.com/news/Hemab+Therapeutics+Reports+Positive+HMB-002+Clinical+Data+in+Von+Willebrand+Disease+and+Announces+HMB-003+Program"
+      },
+      {
         "headline": "Net Worth Update: Representative Scott H. Peters Made an Estimated $640.0K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
@@ -45866,18 +45873,18 @@
         "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2450%2C000+of+AAR+CORP+lobbying+was+just+disclosed"
       },
       {
-        "headline": "Lobbying Update: $30,000 of INTERDIGITAL lobbying was just disclosed",
-        "ticker": null,
-        "category": "lobbying_automated",
-        "time": "2026-07-11 23:08:37",
-        "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+INTERDIGITAL+lobbying+was+just+disclosed"
-      },
-      {
         "headline": "Lobbying Update: $30,000 of DIGITAL REALTY TRUST INC. lobbying was just disclosed",
         "ticker": null,
         "category": "lobbying_automated",
         "time": "2026-07-11 23:08:37",
         "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+DIGITAL+REALTY+TRUST+INC.+lobbying+was+just+disclosed"
+      },
+      {
+        "headline": "Lobbying Update: $30,000 of INTERDIGITAL lobbying was just disclosed",
+        "ticker": null,
+        "category": "lobbying_automated",
+        "time": "2026-07-11 23:08:37",
+        "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2430%2C000+of+INTERDIGITAL+lobbying+was+just+disclosed"
       },
       {
         "headline": "$BTCY Q4 2026 Earnings Preview: Recent $BTCY Insider Trading, Hedge Fund Activity, and More",
@@ -45899,13 +45906,6 @@
         "category": "press_release_summary",
         "time": "2026-07-11 20:10:26",
         "url": "https://www.quiverquant.com/news/HII+Christen%27s+Future+USS+George+M.+Neal+%28DDG+131%29+at+Ingalls+Shipbuilding"
-      },
-      {
-        "headline": "Press Release: Troy Downing\u2019s Whole-Home Repairs Act Included in Housing Legislation That Becomes Law",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-07-11 18:24:07",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Troy+Downing%E2%80%99s+Whole-Home+Repairs+Act+Included+in+Housing+Legislation+That+Becomes+Law"
       }
     ],
     "wsb": [
@@ -47763,7 +47763,7 @@
           "hf_model_momentum",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,753,746 reviews \u00b7 cnbc_pick: Rob Sechan \u00b7 github_momentum: +0.23% stars \u00b7 gov_contract: $22,858,532 awarded \u00b7 hf_model_momentum: +7.0% model downloads \u00b7 patent_cluster: 149 grants, 23 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,753,746 reviews \u00b7 cnbc_pick: Rob Sechan \u00b7 github_momentum: +0.23% stars \u00b7 gov_contract: $22,858,532 awarded \u00b7 hf_model_momentum: +7.4% model downloads \u00b7 patent_cluster: 149 grants, 23 IPC classes"
       },
       {
         "ticker": "NVDA",
@@ -47778,7 +47778,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 cnbc_pick: Joe Terranova \u00b7 github_momentum: +0.25% stars \u00b7 hf_model_momentum: +12.3% model downloads \u00b7 patent_cluster: 90 grants, 15 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 cnbc_pick: Joe Terranova \u00b7 github_momentum: +0.25% stars \u00b7 hf_model_momentum: +12.6% model downloads \u00b7 patent_cluster: 90 grants, 15 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "MRK",
@@ -47814,7 +47814,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "congress_cluster: 3 members net +16 \u00b7 github_momentum: +0.23% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations"
+        "why": "congress_cluster: 3 members net +16 \u00b7 github_momentum: +0.21% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "GOOGL",
@@ -47826,7 +47826,7 @@
           "hf_model_momentum",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,793,671 reviews \u00b7 hf_model_momentum: +12.1% model downloads \u00b7 special_situation: Other Situations"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,793,671 reviews \u00b7 hf_model_momentum: +13.3% model downloads \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "AMZN",
@@ -48004,7 +48004,7 @@
           "hf_model_momentum",
           "patent_cluster"
         ],
-        "why": "github_momentum: +0.37% stars \u00b7 hf_model_momentum: +12.4% model downloads \u00b7 patent_cluster: 244 grants, 36 IPC classes"
+        "why": "github_momentum: +0.37% stars \u00b7 hf_model_momentum: +11.5% model downloads \u00b7 patent_cluster: 244 grants, 36 IPC classes"
       },
       {
         "ticker": "PLTR",
