@@ -36,7 +36,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | intraday-flow-tracker | 3 |
 | ird | 4 |
 | leader-radar | 5 |
-| long-hold | 30 |
+| long-hold | 31 |
 | macro-context-rail | 15 |
 | macro-release-intel | 6 |
 | mag7-regime | 3 |
@@ -79,12 +79,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | til-w9-discovery-v2 | 3 |
 | turn-sensitivity | 1 |
 | us-stocks-prebreakout | 2 |
+| whitehouse-desk | 1 |
 
 ### Artifacts by tier
 
 | tier | count |
 |---|---|
-| display | 251 |
+| display | 253 |
 | infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
@@ -93,7 +94,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 392 |
+| git | 394 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -362,6 +363,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
+| long-hold-symbol-directory | `data/symbol_directory/manifest.json` | json | collect | display | 1 | 0 |
 | long-hold-thesis-funnel-history | `data/research/thesis_funnel_history.parquet` | parquet | daily-engine | display | 1 | 0 |
 | long-hold-thesis-funnel-panel | `embedded: thesis_funnel inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-thesis-funnel-states | `data/research/thesis_funnel_states.parquet` | parquet | on-demand | display | 1 | 0 |
@@ -852,6 +854,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | site-us-standouts | `site/factordata/us_standouts.json` | json | daily-engine | display | 12 | 4 |
 | site-signal-gate | `site/factordata/signal_gate.json` | json | daily-engine | display | 5 | 0 |
+
+### whitehouse-desk
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| treasury-watch | `site/whdata/treasury_watch.json` | json | intraday | display | 0 | 1 |
 
 ## Producer → Artifact → Consumer Graph
 
