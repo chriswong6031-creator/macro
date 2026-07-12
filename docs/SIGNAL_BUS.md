@@ -63,6 +63,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | qualitative-intelligence | 23 |
 | research-factory | 3 |
 | rlt | 3 |
+| rotation-command | 3 |
 | sector-pulse | 3 |
 | setup-species | 6 |
 | short-side | 1 |
@@ -83,7 +84,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 248 |
+| display | 251 |
 | infrastructure | 91 |
 | scored | 4 |
 | shadow | 63 |
@@ -92,7 +93,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 389 |
+| git | 392 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -713,6 +714,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | rebalance-pulse-events | `data/rebalance_pulse/events.jsonl` | jsonl | daily-engine | display | 2 | 0 |
 | rebalance-pulse-latest | `data/rebalance_pulse/latest.json` | json | daily-engine | display | 1 | 0 |
 | rebalance-pulse-site | `site/marketdata/rebalance_pulse.json` | json | daily-engine | display | 1 | 0 |
+
+### rotation-command
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-marketdata-subsector-confluence | `site/marketdata/subsector_confluence.json` | json | daily-engine | display | 5 | 0 |
+| site-marketdata-rotation-events | `site/marketdata/rotation_events.json` | json | daily-engine | display | 1 | 0 |
+| data-rotation-events-ledger | `data/rotation_events/events.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
 ### sector-pulse
 
