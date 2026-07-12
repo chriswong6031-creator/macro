@@ -126,6 +126,10 @@ _READ_TOOLS = frozenset({
     "read_china_decision_packet",
     # CHF W5: read-only causal mechanism cards + screened edges + null count
     "read_causal_candidates",
+    # ADB-W3: read-only master_brain thesis ledger + track record summary
+    "read_master_brain_theses",
+    # ADB-W3: read-only content fields from master_brief / china_brief / btc_brief
+    "read_master_brain_brief",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -1286,6 +1290,142 @@ def _tool_read_causal_candidates(root: Path, _params: dict) -> dict:
     return result
 
 
+# ---------------------------------------------------------------------------
+# ADB-W3: Master-brain read tools (brief → cortex direction)
+# ---------------------------------------------------------------------------
+
+_MB_THESES_CAP = 20          # max rows returned from theses.jsonl
+_MB_BRIEF_CAP = 50 * 1024    # 50 KB total cap across all brief JSONs
+
+
+def _tool_read_master_brain_theses(root: Path, _params: dict) -> dict:
+    """Return the last <=20 rows of data/master_brain/theses.jsonl (most recent first)
+    plus a compact summary of data/master_brain/track_record.json.
+
+    DISPLAY-ONLY: is_context_only=True. Cap 50 KB total return.
+    Degrade-never-raise: missing files produce {absent: true}.
+    """
+    result: dict = {
+        "is_context_only": True,
+        "display_only": True,
+        "theses": [],
+        "track_record_summary": None,
+        "gaps": [],
+    }
+
+    # ---- theses.jsonl ----
+    theses_path = _data(root, "master_brain", "theses.jsonl")
+    if not theses_path.exists():
+        result["theses_absent"] = True
+        result["gaps"].append("data/master_brain/theses.jsonl: absent")
+    else:
+        try:
+            rows: list[dict] = []
+            with theses_path.open(encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        rows.append(json.loads(line))
+                    except Exception:  # noqa: BLE001
+                        pass
+            # Most recent first
+            rows.reverse()
+            result["theses"] = rows[:_MB_THESES_CAP]
+            result["total_theses"] = len(rows)
+        except Exception as exc:  # noqa: BLE001
+            result["gaps"].append(f"data/master_brain/theses.jsonl: unreadable — {exc}")
+
+    # ---- track_record.json ----
+    tr_path = _data(root, "master_brain", "track_record.json")
+    if not tr_path.exists():
+        result["track_record_absent"] = True
+        result["gaps"].append("data/master_brain/track_record.json: absent")
+    else:
+        try:
+            tr = json.loads(tr_path.read_text(encoding="utf-8"))
+            # Return only compact summary fields
+            result["track_record_summary"] = {
+                k: tr.get(k)
+                for k in ("scored_total", "hit_rate", "calibration_note", "as_of")
+                if k in tr
+            }
+        except Exception as exc:  # noqa: BLE001
+            result["gaps"].append(f"data/master_brain/track_record.json: unreadable — {exc}")
+
+    # Enforce 50 KB cap on the serialised payload
+    payload = json.dumps(result, ensure_ascii=False)
+    if len(payload.encode()) > _MB_BRIEF_CAP:
+        # Trim theses list until it fits
+        while result["theses"] and len(json.dumps(result, ensure_ascii=False).encode()) > _MB_BRIEF_CAP:
+            result["theses"].pop()
+        result["truncated"] = True
+
+    return result
+
+
+def _tool_read_master_brain_brief(root: Path, _params: dict) -> dict:
+    """Return content fields from site/master_brief.json + site/china_brief.json +
+    site/btc_brief.json.
+
+    Content fields returned: summary, regime_read, conflicts, rotation_check,
+    transmission, watch_items, confidence, theses, generated_at, state_asof.
+
+    DISPLAY-ONLY: is_context_only=True. Cap 50 KB total across all three briefs.
+    Degrade-never-raise: missing files produce {absent: true} for that brief.
+    """
+    _CONTENT_FIELDS = frozenset({
+        "summary", "regime_read", "conflicts", "rotation_check",
+        "transmission", "watch_items", "confidence", "theses",
+        "generated_at", "state_asof",
+    })
+
+    result: dict = {
+        "is_context_only": True,
+        "display_only": True,
+        "macro_brief": None,
+        "china_brief": None,
+        "btc_brief": None,
+        "gaps": [],
+    }
+
+    brief_specs = [
+        ("macro_brief", _site(root, "master_brief.json")),
+        ("china_brief", _site(root, "china_brief.json")),
+        ("btc_brief",   _site(root, "btc_brief.json")),
+    ]
+
+    total_bytes = 0
+    for key, path in brief_specs:
+        if not path.exists():
+            result[key] = {"absent": True}
+            result["gaps"].append(f"{path.name}: absent")
+            continue
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            # Extract content fields only
+            subset = {k: raw[k] for k in _CONTENT_FIELDS if k in raw}
+            subset_bytes = len(json.dumps(subset, ensure_ascii=False).encode())
+            total_bytes += subset_bytes
+            result[key] = subset
+        except Exception as exc:  # noqa: BLE001
+            result[key] = {"absent": True}
+            result["gaps"].append(f"{path.name}: unreadable — {exc}")
+
+    # Enforce 50 KB cap: if over, null out the smallest-value briefs until fits
+    if total_bytes > _MB_BRIEF_CAP:
+        result["truncated"] = True
+        for key, _path in reversed(brief_specs):
+            if isinstance(result.get(key), dict) and "absent" not in result[key]:
+                result[key] = {"truncated": True}
+                total_bytes = len(json.dumps(result, ensure_ascii=False).encode())
+                if total_bytes <= _MB_BRIEF_CAP:
+                    break
+
+    return result
+
+
 def dispatch_tool(
     tool_name: str,
     tool_params: dict,
@@ -1350,6 +1490,12 @@ def dispatch_tool(
     elif tool_name == "read_causal_candidates":
         # CHF W5: read causal mechanism cards + screened edges + null count
         return _tool_read_causal_candidates(root, tool_params)
+    elif tool_name == "read_master_brain_theses":
+        # ADB-W3: master_brain thesis ledger + track record summary
+        return _tool_read_master_brain_theses(root, tool_params)
+    elif tool_name == "read_master_brain_brief":
+        # ADB-W3: content fields from master_brief / china_brief / btc_brief
+        return _tool_read_master_brain_brief(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -1692,6 +1838,34 @@ def _tool_schemas() -> list[dict]:
             ),
             "input_schema": {"type": "object", "properties": {}, "required": []},
         },
+        # --- ADB-W3: master_brain thesis ledger + track record (brief → cortex) ---
+        {
+            "name": "read_master_brain_theses",
+            "description": (
+                "Read the master brain's open thesis ledger and track record. "
+                "Returns: last <=20 rows of data/master_brain/theses.jsonl (most recent first) "
+                "plus a compact summary of data/master_brain/track_record.json "
+                "(scored_total, hit_rate, calibration_note). "
+                "Cap 50 KB total. DISPLAY-ONLY: is_context_only=true. "
+                "Use to review the brief's open theses against current contradictions — "
+                "any disagreements belong in deserves_operator, never as origination. "
+                "Fails open with {absent: true} when files are missing."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        # --- ADB-W3: content fields from the three daily briefs (brief → cortex) ---
+        {
+            "name": "read_master_brain_brief",
+            "description": (
+                "Read content fields from site/master_brief.json, site/china_brief.json, "
+                "and site/btc_brief.json. "
+                "Fields returned per brief: summary, regime_read, conflicts, rotation_check, "
+                "transmission, watch_items, confidence, theses, generated_at, state_asof. "
+                "Cap 50 KB total across all three. DISPLAY-ONLY: is_context_only=true. "
+                "Fails open with {absent: true} per missing brief."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
         {
             "name": "flag_attention",
             "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
@@ -1795,13 +1969,14 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (18): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+READ (20): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
            read_governance, read_artifact,
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
            read_factor_state, list_factor_contradictions, explain_factor_context,
            read_cycle_pattern_state, read_mechanism_pathways,
-           read_context_candidates, read_causal_candidates
+           read_context_candidates, read_causal_candidates,
+           read_master_brain_theses, read_master_brain_brief
 WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 
 CAUSAL CANDIDATES (CHF W5): read_causal_candidates returns inert CHF mechanism cards
@@ -1831,6 +2006,11 @@ DELIBERATION PROTOCOL:
    cortex probation per masterplan §5.3). Do NOT attempt to write a separate factor record.
 8. Draft hypotheses for metabolism in PR2 (stub only — use stake_hypothesis).
 9. Always finish by calling write_memo summarising what you found.
+10. ADB-W3: Use read_master_brain_theses to review the brief's open theses against current
+    contradictions (from step 4). Any thesis that conflicts with a current contradiction
+    deserves operator attention — surface it in deserves_operator. This is an attention flag,
+    never a signal, score, or escalation. You may only de-escalate calibrated keys; never
+    originate a position or probability.
 
 PROBATION DISCIPLINE:
 • Everything you write carries is_context_only=True.

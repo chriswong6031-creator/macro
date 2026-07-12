@@ -1399,6 +1399,8 @@ jobs:
         run: python -m pytest tests/test_llm_auth.py -q
       - name: cortex provider routing + tool loop suite
         run: python -m pytest tests/test_cortex.py -q
+      - name: cortex ADB-W3 two-way read tools + parity suite
+        run: python -m pytest tests/test_cortex_adb_w3.py -q
       - name: metabolism w2-pulse suite (verify scan mode + dream invocability)
         run: python -m pytest tests/test_metabolism_w2_pulse.py -q
       - name: metabolism v4 w5 suite (steering memory + applier)
