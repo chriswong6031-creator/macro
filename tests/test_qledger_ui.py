@@ -109,9 +109,12 @@ class TestChipAccruing:
 
     def test_label_shows_counts(self):
         chip = self._accruing_chip(7)
-        # should contain the numerator and denominator
+        # Plain-word label: "early — 7d of evidence" — must include n_dates
+        # (DESIGN_DOCTRINE Law 2: plain-word state, stats demoted to hover/detail).
         assert "7" in chip["label"]
-        assert str(GRADED_MIN_DATES) in chip["label"]
+        # The denominator (GRADED_MIN_DATES) is now demoted to hover/detail tier,
+        # not shown in the glance label — confirm n_dates present and label is human.
+        assert "evidence" in chip["label"] or "early" in chip["label"]
 
     def test_label_zh_present(self):
         chip = self._accruing_chip(7)

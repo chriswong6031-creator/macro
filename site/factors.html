@@ -37,7 +37,10 @@
   .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%);
                width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px;
                border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text);
-               font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+               font-weight:400; box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto;
+               max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { display:block; }
   .lead { display:flex; flex-direction:column; gap:6px; }
   .leadrow { display:grid; grid-template-columns:150px 1fr 64px; align-items:center; gap:10px; }
@@ -2273,7 +2276,7 @@
 
   <div class="panel">
     <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: SEC EDGAR XBRL 'frames' API (free, keyless) for FY2025 fundamentals, joined to the S&P 1500 price universe; 1494 names with a full composite as of 2026-07-10. Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/QUANT_FACTOR_EXPANSION.md and LIMITATIONS.md.</span><span class="l-zh">来源：SEC EDGAR XBRL ‘frames’ API（免费、无需密钥）的 FY2025 基本面，与标普 1500 价格域连接；截至 2026-07-10 有 1494 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。</span>
-      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-12 07:19 UTC</p>
+      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-12 08:03 UTC</p>
   </div>
   <script>
     (function(){

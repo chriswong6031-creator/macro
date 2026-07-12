@@ -24,16 +24,16 @@
   .regline.rl-neutral { border-left-color:var(--muted); background:color-mix(in srgb, var(--muted) 10%, var(--panel2)); }
   .entrybar { display:flex; gap:10px; align-items:flex-start; margin:10px 0 8px;
               padding:9px 12px; border-radius:9px; background:var(--panel2);
-              border-left:4px solid var(--muted); font-size:14px; }
+              border-top:2px solid var(--muted); font-size:14px; }
   .entrytag { font-weight:800; font-size:12px; letter-spacing:.04em; white-space:nowrap;
               padding:3px 9px; border-radius:7px; background:var(--panel); color:var(--text); border:1px solid var(--line); }
-  .urg-now .entrytag { background:var(--up); color:#fff; } .urg-now { border-left-color:var(--up); }
-  .urg-imminent .entrytag { background:var(--g-cold); color:#fff; } .urg-imminent { border-left-color:var(--g-cold); }
-  .urg-soon { border-left-color:var(--g-cold); } .urg-later { border-left-color:var(--muted); }
-  .urg-hold { border-left-color:var(--muted); }
-  .urg-caution .entrytag { background:var(--warn); color:#1a1a1a; } .urg-caution { border-left-color:var(--warn); }
-  .urg-exit .entrytag { background:var(--down); color:#fff; } .urg-exit { border-left-color:var(--down); }
-  .urg-avoid { border-left-color:var(--down); }
+  .urg-now .entrytag { background:var(--up); color:#fff; } .urg-now { border-top-color:var(--up); }
+  .urg-imminent .entrytag { background:var(--g-cold); color:#fff; } .urg-imminent { border-top-color:var(--g-cold); }
+  .urg-soon { border-top-color:var(--g-cold); } .urg-later { border-top-color:var(--muted); }
+  .urg-hold { border-top-color:var(--muted); }
+  .urg-caution .entrytag { background:var(--warn); color:#1a1a1a; } .urg-caution { border-top-color:var(--warn); }
+  .urg-exit .entrytag { background:var(--down); color:#fff; } .urg-exit { border-top-color:var(--down); }
+  .urg-avoid { border-top-color:var(--down); }
   .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2);
              border-left:3px solid var(--link); font-size:13px; color:var(--text); }
   .eqbadge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
@@ -141,9 +141,13 @@
                padding:10px 12px; border-radius:9px; z-index:60; font-size:12px;
                line-height:1.5; color:var(--text); text-align:left; font-weight:400;
                text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow);
-               pointer-events:none; white-space:normal; }
+               pointer-events:auto; cursor:auto; white-space:normal;
+               max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content:''; position:absolute; bottom:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { display:block; }
   th .help .tip, .help.below .tip { bottom:auto; top:150%; }
+  th .help:hover::before, .help.below:hover::before { bottom:auto; top:100%; }
   .help.edge-right .tip { left:auto; right:0; transform:none; }
   .help.edge-left .tip { left:0; right:auto; transform:none; }
   .tip b { color:var(--text); }
@@ -1183,7 +1187,7 @@
     else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
 </script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-12 08:29 UTC UTC · <span class="l-en">charts by TradingView · top constituents of JP/KR/TW/UK/EU, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 日/韩/台/英/欧主要成分股，非全市场</span></p>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-12 09:09 UTC UTC · <span class="l-en">charts by TradingView · top constituents of JP/KR/TW/UK/EU, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 日/韩/台/英/欧主要成分股，非全市场</span></p>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>

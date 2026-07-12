@@ -91,8 +91,11 @@ def _refresh_track_record(e: dict) -> dict:
         if verdict:
             s += f" · verdict={verdict}"
         out["state"] = s
-    # results are "ready" once the read has graded (verdict advanced off 'accruing')
-    if verdict and verdict != "accruing":
+    # results are "ready" once the read has GRADED. 'accruing' and 'measuring' are both
+    # pre-verdict accrual states ('measuring' = rows matured but the significance gate is
+    # not yet callable — engine/subsector_track_record.py); any other verdict (validated /
+    # a printed null / …) is a real result and must flag ready.
+    if verdict and verdict not in ("accruing", "measuring"):
         out["ready"] = True
     return out
 

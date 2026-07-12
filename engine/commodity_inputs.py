@@ -103,3 +103,32 @@ def load_all(cfg: dict | None = None) -> dict[str, dict]:
         except Exception as e:  # noqa: BLE001 — optional enrichment, degrade gracefully
             log.warning("commodity_inputs: brent unavailable (%s)", e)
     return out
+
+
+def load_members(cfg: dict | None = None) -> dict[str, dict]:
+    """Load all complex_members, sharing one driver load.
+
+    Mirrors load_all but iterates cfg["complex_members"] (the broad 17-member
+    roster used for sector index + breadth). Skips any member whose price store
+    is absent (logs a warning, never raises). Returns {name: ai_dict} where each
+    ai_dict has the same shape as load_asset (asset/class/ticker/price/
+    cot_net_pct_oi/drivers)."""
+    cfg = cfg or config.load()["commodities"]
+    drivers = load_drivers(cfg)
+    out: dict[str, dict] = {}
+    for name, spec in cfg.get("complex_members", {}).items():
+        ticker, cot_name, klass = spec[0], spec[1], spec[2]
+        try:
+            price = load_price(ticker)
+        except Exception as e:  # noqa: BLE001 — skip missing members gracefully
+            log.warning("commodity_inputs.load_members: skipping %s (%s)", name, e)
+            continue
+        out[name] = {
+            "asset": name,
+            "class": klass,
+            "ticker": ticker,
+            "price": price,
+            "cot_net_pct_oi": load_cot_positioning(cot_name),
+            "drivers": drivers,
+        }
+    return out

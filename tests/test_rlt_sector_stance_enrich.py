@@ -47,10 +47,14 @@ def _standout_row(ticker: str, sector: str) -> dict:
 # ---------------------------------------------------------------------------
 
 def _apply_enrichment(us_standouts: dict, sc_doc: dict) -> None:
-    """Apply the RLT-R6 join in-place (mirrors build_site logic)."""
+    """Apply the RLT-R6 join in-place (mirrors build_site logic).
+
+    Only the buy lane is enriched — watch rows are never rendered as cards
+    so their enrichment would be dead code.
+    """
     from engine.spotlight import GICS_TO_ETF as _GICS_ETF
 
-    _sc_by_etf: dict[str, tuple[str, str, int]] = {}
+    _sc_by_etf: dict[str, tuple[str, str]] = {}
     for _sec in (sc_doc.get("sectors") or []):
         _etf = _sec.get("ticker")
         _conv = _sec.get("conviction") or {}
@@ -58,18 +62,15 @@ def _apply_enrichment(us_standouts: dict, sc_doc: dict) -> None:
             _sc_by_etf[_etf] = (
                 _conv["label_en"],
                 _conv.get("label_zh") or _conv["label_en"],
-                int(_conv.get("score") or 0),
             )
 
-    for _lane in ("buy", "watch"):
-        for _card in (us_standouts.get(_lane) or []):
-            _gics = _card.get("sector") or ""
-            _etf = _GICS_ETF.get(_gics)
-            if _etf and _etf in _sc_by_etf:
-                _lbl_en, _lbl_zh, _sc_score = _sc_by_etf[_etf]
-                _card["sector_stance"] = _lbl_en
-                _card["sector_stance_zh"] = _lbl_zh
-                _card["sector_score"] = _sc_score
+    for _card in (us_standouts.get("buy") or []):
+        _gics = _card.get("sector") or ""
+        _etf = _GICS_ETF.get(_gics)
+        if _etf and _etf in _sc_by_etf:
+            _lbl_en, _lbl_zh = _sc_by_etf[_etf]
+            _card["sector_stance"] = _lbl_en
+            _card["sector_stance_zh"] = _lbl_zh
 
 
 # ---------------------------------------------------------------------------
@@ -84,18 +85,16 @@ class TestSectorStanceEnrichBasic:
         card = rows["buy"][0]
         assert card["sector_stance"] == "Reduce"
         assert card["sector_stance_zh"] == "减配"
-        assert card["sector_score"] == 25
 
-    def test_watch_row_gets_stance_fields(self):
+    def test_watch_row_not_enriched(self):
+        """Watch rows are card-less (never rendered) — enrichment is buy-only."""
         sc = _sc_payload([_sc_sector("XLRE", "Reduce", "减配", 15)])
         rows = {"buy": [], "watch": [_standout_row("GNL", "Real Estate")]}
         _apply_enrichment(rows, sc)
-        card = rows["watch"][0]
-        assert card["sector_stance"] == "Reduce"
-        assert card["sector_stance_zh"] == "减配"
-        assert card["sector_score"] == 15
+        # watch lane must NOT receive stance fields (no card rendering surface)
+        assert "sector_stance" not in rows["watch"][0]
 
-    def test_both_lanes_enriched(self):
+    def test_buy_lane_enriched_watch_untouched(self):
         sc = _sc_payload([
             _sc_sector("XLV", "Reduce", "减配", 25),
             _sc_sector("XLRE", "Reduce", "减配", 15),
@@ -106,14 +105,14 @@ class TestSectorStanceEnrichBasic:
         }
         _apply_enrichment(rows, sc)
         assert rows["buy"][0]["sector_stance"] == "Reduce"
-        assert rows["watch"][0]["sector_stance"] == "Reduce"
+        # watch row must remain unmodified
+        assert "sector_stance" not in rows["watch"][0]
 
     def test_accumulate_sector_gets_positive_stance(self):
         sc = _sc_payload([_sc_sector("XLU", "Accumulate", "积极配置", 74)])
         rows = {"buy": [_standout_row("SO", "Utilities")], "watch": []}
         _apply_enrichment(rows, sc)
         assert rows["buy"][0]["sector_stance"] == "Accumulate"
-        assert rows["buy"][0]["sector_score"] == 74
 
     def test_constructive_sector(self):
         sc = _sc_payload([_sc_sector("XLE", "Constructive", "建设性", 65)])

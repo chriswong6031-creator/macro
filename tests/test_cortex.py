@@ -1907,3 +1907,71 @@ class TestRateLimitResilience:
         finally:
             _os.environ.clear()
             _os.environ.update(env_backup)
+
+    # ------------------------------------------------------------------
+    # Provider-order tests (metered-key-first hardening)
+    # ------------------------------------------------------------------
+
+    def test_provider_order_unchanged_without_metered_key(self, monkeypatch):
+        """Without CORTEX_ANTHROPIC_API_KEY, provider_order must NOT be injected."""
+        from engine.neuralweb.cortex import _build_providers, _CORTEX_API_KEY_ENV
+
+        monkeypatch.delenv(_CORTEX_API_KEY_ENV, raising=False)
+
+        seen: dict = {}
+
+        def mock_bp(cfg, **kwargs):
+            seen.update(cfg)
+            return []
+
+        with patch("engine.llm_auth.build_providers", side_effect=mock_bp):
+            _build_providers({})
+
+        assert "provider_order" not in seen, (
+            "provider_order must not be injected when metered key is absent; "
+            f"got {seen.get('provider_order')!r}"
+        )
+
+    def test_provider_order_anthropic_first_with_metered_key(self, monkeypatch):
+        """With CORTEX_ANTHROPIC_API_KEY set, anthropic must be first in provider_order."""
+        from engine.neuralweb.cortex import _build_providers, _CORTEX_API_KEY_ENV
+
+        monkeypatch.setenv(_CORTEX_API_KEY_ENV, "test-metered-key")
+        monkeypatch.delenv("CLAUDE_CODE_OAUTH_TOKEN", raising=False)
+
+        seen: dict = {}
+
+        def mock_bp(cfg, **kwargs):
+            seen.update(cfg)
+            return []
+
+        with patch("engine.llm_auth.build_providers", side_effect=mock_bp):
+            _build_providers({})
+
+        order = seen.get("provider_order")
+        assert order is not None, "provider_order must be set when metered key is present"
+        assert order[0] == "anthropic", (
+            f"anthropic must be first in provider_order; got {order!r}"
+        )
+        assert "oauth" in order, f"oauth must still be present as fallback; got {order!r}"
+
+    def test_explicit_cfg_provider_order_not_clobbered(self, monkeypatch):
+        """An explicit provider_order in cfg (from config.yml) must not be overridden."""
+        from engine.neuralweb.cortex import _build_providers, _CORTEX_API_KEY_ENV
+
+        monkeypatch.setenv(_CORTEX_API_KEY_ENV, "test-metered-key")
+
+        explicit_order = ["oauth", "anthropic"]
+        seen: dict = {}
+
+        def mock_bp(cfg, **kwargs):
+            seen.update(cfg)
+            return []
+
+        with patch("engine.llm_auth.build_providers", side_effect=mock_bp):
+            _build_providers({"provider_order": explicit_order})
+
+        assert seen.get("provider_order") == explicit_order, (
+            "Explicit provider_order from cfg must not be clobbered by _build_providers; "
+            f"got {seen.get('provider_order')!r}"
+        )

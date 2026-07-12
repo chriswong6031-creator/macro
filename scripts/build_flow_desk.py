@@ -8,6 +8,11 @@ Reads:
   data/tape_flow/daily/<ROOT>.parquet      — signed columns if present (auto-upgrade as
                                              accrual grows; absent-safe)
   data/flows/etf_flow_proxy.parquet        — sector-ETF creation/redemption proxy
+  data/flows/<T>.parquet                   — per-ticker SO snapshots (written by BroadFlowAdapter)
+
+Writes (additions for RLT-R3):
+  data/flows/broad_flow_proxy.parquet      — broad-index ETF proxy (SPY/QQQ/IWM/RSP/DIA);
+                                             rebuilt here each nightly run via rebuild_broad()
 
 Writes:
   site/flow_desk.json      — data payload (Market Tide + cohorts + sector heatmap + top movers + ETF)
@@ -427,6 +432,25 @@ def build_top_movers(flow_rows: list[dict], n: int = TOP_MOVERS_N,
     return candidates[:n]
 
 
+def _rebuild_broad_proxy() -> None:
+    """RLT-R3: rebuild broad_flow_proxy.parquet (SPY/QQQ/IWM/RSP/DIA).
+
+    Called from build() each nightly run so broad_flow_proxy.parquet is
+    produced by the existing build_flow_desk step without adding a new DAG
+    node.  Non-fatal: a missing per-ticker parquet simply means that ticker
+    is skipped this run and accrues on the next collection cycle.
+    """
+    try:
+        from engine.etf_flows import rebuild_broad
+        path = rebuild_broad()
+        if path is not None:
+            log.info("flow_desk: broad ETF proxy rebuilt -> %s", path)
+        else:
+            log.info("flow_desk: broad ETF proxy skipped (no SO data yet)")
+    except Exception as e:  # noqa: BLE001
+        log.warning("flow_desk: broad ETF proxy rebuild failed (non-fatal): %s", e)
+
+
 def build_etf_tile(data_dir: Path) -> dict | None:
     """Section 4: ETF flows tile — proxy-labeled creation/redemption flows."""
     try:
@@ -468,6 +492,10 @@ def build() -> dict:
     data_dir = config.data_dir()
     site_dir = config.ROOT / cfg["storage"]["site_dir"]
     site_dir.mkdir(parents=True, exist_ok=True)
+
+    # RLT-R3: rebuild broad-index ETF proxy FIRST so load_broad_proxy() in
+    # downstream consumers (RLT-R2 classifier) reads today's data.
+    _rebuild_broad_proxy()
 
     flow_rows = _load_flow_index(site_dir)
     if not flow_rows:

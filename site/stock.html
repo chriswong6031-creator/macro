@@ -27,16 +27,16 @@
              background:color-mix(in srgb, var(--muted) 10%, var(--panel2)); }
   .entrybar { display:flex; gap:10px; align-items:flex-start; margin:10px 0 8px;
               padding:9px 12px; border-radius:9px; background:var(--panel2);
-              border-left:4px solid var(--muted); font-size:14px; }
+              border-top:2px solid var(--muted); font-size:14px; }
   .entrytag { font-weight:800; font-size:12px; letter-spacing:.04em; white-space:nowrap;
               padding:3px 9px; border-radius:7px; background:var(--panel); color:var(--text); border:1px solid var(--line); }
-  .urg-now .entrytag { background:var(--up); color:#fff; } .urg-now { border-left-color:var(--up); }
-  .urg-imminent .entrytag { background:var(--g-cold); color:#fff; } .urg-imminent { border-left-color:var(--g-cold); }
-  .urg-soon { border-left-color:var(--g-cold); } .urg-later { border-left-color:var(--muted); }
-  .urg-hold { border-left-color:var(--muted); }
-  .urg-caution .entrytag { background:var(--warn); color:#1a1a1a; } .urg-caution { border-left-color:var(--warn); }
-  .urg-exit .entrytag { background:var(--down); color:#fff; } .urg-exit { border-left-color:var(--down); }
-  .urg-avoid { border-left-color:var(--down); }
+  .urg-now .entrytag { background:var(--up); color:#fff; } .urg-now { border-top-color:var(--up); }
+  .urg-imminent .entrytag { background:var(--g-cold); color:#fff; } .urg-imminent { border-top-color:var(--g-cold); }
+  .urg-soon { border-top-color:var(--g-cold); } .urg-later { border-top-color:var(--muted); }
+  .urg-hold { border-top-color:var(--muted); }
+  .urg-caution .entrytag { background:var(--warn); color:#1a1a1a; } .urg-caution { border-top-color:var(--warn); }
+  .urg-exit .entrytag { background:var(--down); color:#fff; } .urg-exit { border-top-color:var(--down); }
+  .urg-avoid { border-top-color:var(--down); }
   .early { margin:6px 0; padding:8px 12px; border-radius:8px;
            background:color-mix(in srgb, var(--g-cold) 14%, var(--panel2));
            border-left:3px solid var(--g-cold); font-size:13px; color:var(--text); }
@@ -194,13 +194,17 @@
           color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
           position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
   .help .tip { display: none; position: absolute; bottom: 140%; left: 50%;
-               transform: translateX(-50%); width: 290px;
+               transform: translateX(-50%); width: 330px;
                background: var(--panel); border: 1px solid var(--line);
                padding: 9px 11px; border-radius: 8px;
                z-index: 60; font-size: 12px; line-height: 1.45; color: var(--text);
                text-align: left; font-weight: 400; text-transform: none;
                letter-spacing: normal; box-shadow: var(--popover-shadow);
-               pointer-events: none; white-space: normal; }
+               pointer-events: auto; cursor: auto; white-space: normal;
+               max-height: min(60vh, 420px); overflow-y: auto; overscroll-behavior: contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel
+     (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content: ''; position: absolute; bottom: 100%; left: -30px; right: -30px; height: 10px; }
   .help:hover .tip { display: block; }
   .help.edge-left .tip { left: 0; right: auto; transform: none; }
   /* ---- fundamentals suite (Phase 1) ---- */
@@ -253,14 +257,14 @@
   .cv-tier { font-size:11px; color:var(--muted); margin-top:1px; }
   /* ENTRY-timing gauge (the second gauge) on the detail conviction hero */
   .cv-entry { margin:10px 0 2px; padding:8px 10px; border-radius:10px; background:var(--panel);
-              border:1px solid var(--line); border-left:4px solid var(--muted); }
-  .cv-entry.nbe-buy_now, .cv-entry.nbe-partial { border-left-color:var(--up);
+              border:1px solid var(--line); border-top:2px solid var(--muted); }
+  .cv-entry.nbe-buy_now, .cv-entry.nbe-partial { border-top-color:var(--up);
               background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
-  .cv-entry.nbe-buy_soon, .cv-entry.nbe-watch { border-left-color:var(--g-cold); }
-  .cv-entry.nbe-wait_pullback, .cv-entry.nbe-hold { border-left-color:var(--warn); }
-  .cv-entry.nbe-extended, .cv-entry.nbe-topping { border-left-color:var(--warn);
+  .cv-entry.nbe-buy_soon, .cv-entry.nbe-watch { border-top-color:var(--g-cold); }
+  .cv-entry.nbe-wait_pullback, .cv-entry.nbe-hold { border-top-color:var(--warn); }
+  .cv-entry.nbe-extended, .cv-entry.nbe-topping { border-top-color:var(--warn);
               background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
-  .cv-entry.nbe-exit, .cv-entry.nbe-avoid, .cv-entry.nbe-blocked { border-left-color:var(--down);
+  .cv-entry.nbe-exit, .cv-entry.nbe-avoid, .cv-entry.nbe-blocked { border-top-color:var(--down);
               background:color-mix(in srgb,var(--down) 8%,var(--panel)); }
   .cv-ehead { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:800; }
   .cv-entry .nbe-dot { width:9px; height:9px; border-radius:50%; background:var(--muted); flex:none; }
@@ -3701,7 +3705,7 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-07-12 07:19 UTC · charts rendered in-house with
+<p class="muted" style="font-size:12px">Generated 2026-07-12 08:03 UTC · charts rendered in-house with
 Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>

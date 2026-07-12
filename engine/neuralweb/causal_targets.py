@@ -65,6 +65,21 @@ _REPLAY_BOARDED_ENV = "REPLAY_BOARDED_PATH"
 _GOOD_21D_STATES = {"CUSHIONED", "CLEAN_LIFTOFF"}
 _STOPPED_STATE = "STOPPED"
 
+# Target metric ids per family — the ONLY valid target_id / test_spec.metric
+# values the panels produce. Rendered into the brainstorm pack so proposal
+# cards cannot invent metrics no panel builds (W28 skeptic finding: the
+# generator minted 'entry_quality_score_21d' because the pack never listed
+# the real names).
+TARGET_IDS_BY_FAMILY = {
+    "regime_risk": [
+        "regime_worsening_5d",
+        "regime_worsening_10d",
+        "recession_onset_63d",
+        "breadth_deterioration_21d",
+    ],
+    "entry_quality": ["good_21d", "stopped_8_21", "fwd_mdd_21"],
+}
+
 
 # ---------------------------------------------------------------------------
 # Regime / risk target panel (CI-safe anchor family)
@@ -257,7 +272,7 @@ def build_entry_quality_panel(root: Path | str | None = None) -> dict[str, pd.Se
     if not isinstance(verdict_df.index, pd.DatetimeIndex):
         # Try to find a date column
         date_col = None
-        for col in ("date", "fire_date", "Date"):
+        for col in ("signal_date", "date", "fire_date", "Date"):
             if col in verdict_df.columns:
                 date_col = col
                 break
@@ -295,9 +310,30 @@ def build_entry_quality_panel(root: Path | str | None = None) -> dict[str, pd.Se
         fwd_mdd.name = "fwd_mdd_21"
         targets["fwd_mdd_21"] = fwd_mdd
 
+    # CHF-R5 ticker-panel law: many fires share one signal date, so the raw
+    # series carries duplicate date labels. Collapse to per-date cross-sections
+    # BEFORE any time-series inference — the v1 candidate causes are macro
+    # series with no within-date cross-ticker variation, so the admissible
+    # collapse is the per-date cross-sectional mean (daily good-rate /
+    # stop-rate / mean drawdown). Effective N is calendar periods by
+    # construction, never fire counts.
+    # PROMOTION-PATH TODOs (Opus review 2026-07-12, non-blocking while all
+    # verdicts are null): (1) the per-date mean of a varying-count Bernoulli
+    # is heteroskedastic (1-fire dates are far noisier) and the downstream
+    # market_series HAC does not model it — WLS-by-fire-count or a
+    # min-fires-per-date gate before trusting any positive edge; (2) the
+    # collapsed index is fire-dates-only (calendar-sparse), so HAC lags in
+    # index positions ≠ calendar days — reindex to business days first.
+    targets = {
+        tid: s.groupby(s.index).mean().sort_index().rename(tid)
+        for tid, s in targets.items()
+    }
+
+    n_dates = len(next(iter(targets.values()))) if targets else 0
     log.info(
-        "causal_targets: entry_quality panel built — %d targets, %d rows (era ≥%s)",
-        len(targets), len(verdict_df), _ENTRY_QUALITY_ERA_START.date()
+        "causal_targets: entry_quality panel built — %d targets, %d fires "
+        "collapsed to %d per-date cross-sections (era ≥%s)",
+        len(targets), len(verdict_df), n_dates, _ENTRY_QUALITY_ERA_START.date()
     )
     return targets
 

@@ -63,6 +63,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 try:
     from engine.neuralweb.liquidity_plumbing import (  # noqa: F401
         _derive_reserve_scarcity_state,
+        _derive_tga_impulse,
         _level_d20_pctile,
         _spread_bp,
         _to_series,
@@ -1329,3 +1330,221 @@ class TestSwapLinesIntegration:
         # IRD-R5: swap lines are confirmation only — headline driven by regime
         assert result["headline"]["state"] not in ("foreign_dollar_stress",)
         assert result["authority"]["score_raise"] is False
+
+
+# ---------------------------------------------------------------------------
+# 31. TGA impulse detector (RLT-R4) — _derive_tga_impulse unit tests
+# ---------------------------------------------------------------------------
+
+def _tga_series_bn(
+    values: list[float],
+    start: str = "2026-06-01",
+) -> pd.Series:
+    """Build a business-daily TGA series (values in $bn) for impulse testing."""
+    dates = pd.bdate_range(start, periods=len(values))
+    return pd.Series(values, index=dates)
+
+
+def _jun_jul_2026_tga() -> pd.Series:
+    """Reproduce the Jun 30 → Jul 9 2026 TGA drawdown shape (from masterplan §0).
+
+    Jun-30 ~919bn → Jul-9 ~745bn is ~$174bn drawdown over ~7 business days.
+    We build a series with a flat pre-period (May) then a sharp drawdown in Jul.
+    """
+    # 40 business days starting 2026-05-01
+    dates = pd.bdate_range("2026-05-01", periods=40)
+    vals = [900.0] * 22 + [919.1] + [880.0, 850.0, 807.4, 770.6, 760.0, 744.6] + [744.6] * 10
+    # Trim to 40 rows
+    vals = vals[:40]
+    return pd.Series(vals, index=dates[:len(vals)])
+
+
+class TestTgaImpulseUnit:
+    """Unit tests for _derive_tga_impulse (RLT-R4) using synthetic series."""
+
+    def test_null_input_returns_inactive(self):
+        result = _derive_tga_impulse(None)
+        assert result["active"] is False
+        assert result["direction"] is None
+        assert result["magnitude_bn"] is None
+
+    def test_empty_series_returns_inactive(self):
+        result = _derive_tga_impulse(pd.Series(dtype=float))
+        assert result["active"] is False
+
+    def test_sub_threshold_null(self):
+        """A move of only $50bn should NOT trigger (< $75bn threshold)."""
+        s = _tga_series_bn([900.0, 890.0, 870.0, 860.0, 855.0, 850.0])
+        result = _derive_tga_impulse(s)
+        assert result["active"] is False
+
+    def test_fast_drawdown_episode(self):
+        """$175bn drawdown over 9 business sessions triggers the fast-episode rule."""
+        # Start at 919, drop to 744 over 9 sessions (>= $75bn in <= 10 sessions)
+        vals = [919.0, 900.0, 870.0, 840.0, 810.0, 790.0, 770.0, 760.0, 750.0, 744.0]
+        s = _tga_series_bn(vals)
+        result = _derive_tga_impulse(s)
+        assert result["active"] is True
+        assert result["direction"] == "drawdown"
+        assert result["magnitude_bn"] >= 75.0
+        assert result["days"] is not None and result["days"] <= 10
+        assert result["since"] is not None
+
+    def test_fast_build_episode(self):
+        """$100bn build over 8 business sessions triggers the fast-episode rule."""
+        vals = [700.0, 720.0, 740.0, 760.0, 780.0, 800.0, 810.0, 815.0, 800.0]
+        s = _tga_series_bn(vals)
+        result = _derive_tga_impulse(s)
+        assert result["active"] is True
+        assert result["direction"] == "build"
+        assert result["magnitude_bn"] >= 75.0
+
+    def test_direction_drawdown(self):
+        """direction field must be 'drawdown' when TGA falls."""
+        vals = [900.0] * 2 + [800.0] * 2 + [750.0] * 6
+        s = _tga_series_bn(vals)
+        result = _derive_tga_impulse(s)
+        if result["active"]:
+            assert result["direction"] == "drawdown"
+
+    def test_quarter_end_adjacent_true(self):
+        """Episode starting on Jun 30 or within 7 BD after should set quarter_end_adjacent=True."""
+        # Jun 30 is the quarter end. Start series from Jun 30, show a big drawdown immediately.
+        vals = [919.0, 880.0, 840.0, 800.0, 760.0, 744.0] + [744.0] * 4
+        s = _tga_series_bn(vals, start="2026-06-30")
+        result = _derive_tga_impulse(s)
+        assert result["active"] is True
+        assert result["quarter_end_adjacent"] is True
+
+    def test_quarter_end_adjacent_false(self):
+        """Fast-path episode well after a QE date: episode_start > 7 BD from last QE → not adjacent.
+
+        QE-first ordering: the QE path checks cumulative from the last quarter-end.
+        When the total move from last-QE to latest is < $120bn (QE path doesn't fire)
+        but the most-recent 10 sessions show a ≥ $75bn move (fast path fires), and the
+        fast episode_start is > 7 BD after the last QE, quarter_end_adjacent is False.
+
+        Design: 30 BD starting 2026-05-04 (34 BD after Mar-31 QE). Stable at 900
+        for 20 sessions then fast drop to 820 over 10 sessions (−80bn, ≥ $75bn fast
+        threshold). Total from Mar-31 (last QE) = 900→820 = −80bn < $120bn → QE
+        path does NOT fire. Fast path fires; episode_start ~2026-05-29 which is
+        ~42 BD from Mar-31 → quarter_end_adjacent = False.
+        """
+        # 30 BD: stable at 900 for first 20, then drop 8bn/session for 10 sessions → 820
+        base_vals = [900.0] * 20
+        drop_vals = [892.0, 884.0, 876.0, 868.0, 860.0, 852.0, 844.0, 836.0, 828.0, 820.0]
+        all_vals = base_vals + drop_vals
+        s = _tga_series_bn(all_vals, start="2026-05-04")
+        result = _derive_tga_impulse(s)
+        # Fast episode should fire (−80bn ≥ $75bn threshold)
+        assert result["active"] is True, "Expected fast episode to fire on −80bn drop"
+        assert result["direction"] == "drawdown"
+        # Mar-31 is ~34 BD before May-4; episode_start is ~May-29 (~46 BD from Mar-31) → not adjacent
+        assert result["quarter_end_adjacent"] is False, (
+            f"Expected quarter_end_adjacent=False for mid-May episode, got "
+            f"since={result['since']}, qe_adj={result['quarter_end_adjacent']}"
+        )
+
+    def test_summary_en_is_nonempty_string(self):
+        vals = [919.0, 880.0, 840.0, 800.0, 760.0, 744.0] + [744.0] * 4
+        s = _tga_series_bn(vals, start="2026-06-30")
+        result = _derive_tga_impulse(s)
+        assert isinstance(result["summary_en"], str) and len(result["summary_en"]) > 10
+        assert isinstance(result["summary_zh"], str) and len(result["summary_zh"]) > 5
+
+    def test_no_validated_word_in_summary(self):
+        """'validated' must not appear in any impulse summary (CI guard)."""
+        vals = [919.0, 880.0, 840.0, 800.0, 760.0, 744.0] + [744.0] * 4
+        s = _tga_series_bn(vals, start="2026-06-30")
+        result = _derive_tga_impulse(s)
+        assert "validated" not in result["summary_en"].lower()
+        assert "validated" not in result["summary_zh"].lower()
+
+    def test_impulse_block_keys(self):
+        """All required keys must be present in the impulse block."""
+        vals = [919.0, 880.0, 840.0, 800.0, 760.0, 744.0] + [744.0] * 4
+        s = _tga_series_bn(vals, start="2026-06-30")
+        result = _derive_tga_impulse(s)
+        for key in ("active", "direction", "magnitude_bn", "days", "since",
+                    "quarter_end_adjacent", "summary_en", "summary_zh"):
+            assert key in result, f"tga_impulse missing key {key!r}"
+
+    def test_impulse_in_treasury_block(self):
+        """compute() must include tga_impulse sub-block in the treasury block."""
+        result = _full_compute()
+        t = result["treasury"]
+        assert "tga_impulse" in t, "treasury block must contain tga_impulse key"
+        imp = t["tga_impulse"]
+        for key in ("active", "direction", "magnitude_bn", "days", "since",
+                    "quarter_end_adjacent", "summary_en", "summary_zh"):
+            assert key in imp, f"tga_impulse sub-block missing key {key!r}"
+
+    def test_qe_anchored_episode_not_preempted_by_fast_path(self):
+        """RLT-R4 VERIFY: Jun-30 QE episode must be preferred over a pre-QE fast anchor.
+
+        Reproduces the scenario where the 10-BD trailing window spans before the
+        quarter-end date, giving a truncated magnitude and quarter_end_adjacent=False.
+        With QE-first ordering the QE path must be preferred, giving:
+        - since = on or after Jun-30
+        - quarter_end_adjacent = True
+        - magnitude >= the QE-slice move (not truncated by the fast-path anchor)
+
+        Series: 5 pre-QE rows (Jun-25 area) ending at 919, then Jun-30 at 919.1,
+        then 8 post-QE rows declining to 744.6 (~$174.5bn from Jun-30).
+        The 10-BD fast window spans from Jun-25 to Jul-9 (includes pre-QE values),
+        so the old code would anchor at Jun-25 and report ~$127bn and adjacent=False.
+        The fixed code must anchor at Jun-30 and report ~$174.5bn and adjacent=True.
+        """
+        # Build with explicit dates to control alignment precisely.
+        # Jun-30 2026 is a Tuesday; bdate_range("2026-06-24") gives:
+        #   Jun-24(1), Jun-25(2), Jun-26(3), Jun-29(4), Jun-30(5)=QE, Jul-1..Jul-9 (6..12)
+        vals = [900.0, 910.0, 915.0, 919.0, 919.1,   # Jun-24..Jun-30 (QE spike)
+                880.0, 850.0, 807.0, 771.0, 760.0, 745.0, 744.6]  # Jul-1..Jul-9
+        s = _tga_series_bn(vals, start="2026-06-24")
+        result = _derive_tga_impulse(s)
+        assert result["active"] is True
+        assert result["direction"] == "drawdown"
+        # QE-anchored: first date ≥ Jun-30 is Jun-30 itself (919.1 → 744.6 = −174.5bn)
+        assert result["magnitude_bn"] >= 120.0, (
+            f"Expected QE-anchored magnitude >= $120bn, got {result['magnitude_bn']:.1f}bn "
+            f"(since={result['since']}). Fast-path pre-emption bug not fixed."
+        )
+        assert result["quarter_end_adjacent"] is True, (
+            f"Expected quarter_end_adjacent=True for Jun-30 anchor, got "
+            f"since={result['since']}, adj={result['quarter_end_adjacent']}"
+        )
+        # since must be on or after Jun-30 (the QE anchor)
+        import datetime as _dt
+        since_date = _dt.date.fromisoformat(result["since"])
+        assert since_date >= _dt.date(2026, 6, 30), (
+            f"since={result['since']} should be on/after Jun-30 (QE anchor), not pre-QE"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 32. Phase-label fix (RLT-R4) — p3_reserve_balances reflects actual load state
+# ---------------------------------------------------------------------------
+
+class TestPhaseStatusDynamic:
+    """p3_reserve_balances must reflect actual load state (not always fail-open string)."""
+
+    def test_fail_open_when_no_reserves_frame(self):
+        """Without WRESBAL, p3_reserve_balances must be the fail-open sentinel."""
+        result = _full_compute()
+        ps = result["phase_status"]
+        assert ps["p3_reserve_balances"] == "fail_open_until_wresbal_collected", (
+            f"Expected fail-open sentinel without reserves frame, got {ps['p3_reserve_balances']!r}"
+        )
+
+    def test_integrated_when_reserves_loaded(self):
+        """With WRESBAL frame present, p3_reserve_balances must be 'integrated'."""
+        reserves = _reserves_frame()
+        result = compute(
+            _regime_latest(), _netliq_frame(), _treasury_frames(),
+            _auction_snapshot(), _config(),
+            reserves_frame=reserves,
+        )
+        ps = result["phase_status"]
+        assert ps["p3_reserve_balances"] == "integrated", (
+            f"Expected 'integrated' with WRESBAL loaded, got {ps['p3_reserve_balances']!r}"
+        )

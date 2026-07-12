@@ -202,7 +202,9 @@
   th,td { text-align:right; padding:4px 8px; border-bottom:1px solid var(--line); }
   th { color:var(--muted); font-weight:500; } th:first-child,td:first-child { text-align:left; }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
-  .help .tip { display:none; position:absolute; bottom:150%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:9px; z-index:60; font-size:12px; line-height:1.5; color:var(--text); text-align:left; font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help .tip { display:none; position:absolute; bottom:150%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:9px; z-index:60; font-size:12px; line-height:1.5; color:var(--text); text-align:left; font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content:''; position:absolute; bottom:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { display:block; }
   .caveat { font-size:11.5px; color:var(--muted); font-style:italic; }
   /* ===== W6 UX overhaul (§7): desk-header · track-record · watch/laggard strips ===== */
@@ -1152,7 +1154,7 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-10 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-12 08:28 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-10 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-12 09:07 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
@@ -2777,7 +2779,7 @@
 
 
 
-<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-12 08:28 UTC</p>
+<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-12 09:07 UTC</p>
 
 <script src="mtf.js"></script>
 <script src="theme.js"></script>

@@ -36,7 +36,10 @@
   .help .tip { display:none; position:absolute; top:140%; left:0; width:320px;
                background:var(--panel); border:1px solid var(--line); padding:9px 11px;
                border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text);
-               font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
+               font-weight:400; box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto;
+               max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { display:block; }
 
   /* context strip */
@@ -2884,7 +2887,7 @@
   <p class="src muted sm" style="margin:0">
     <span class="l-en">Assembler</span><span class="l-zh">汇编</span>: engine/alert_triage.py · <span class="l-en">feeds</span><span class="l-zh">数据源</span>: macro / bonds / forex / vector / commodity ·
     <span class="l-en">window</span><span class="l-zh">窗口</span> 30<span class="l-en">d</span><span class="l-zh">天</span> · <span class="l-en">as-of</span><span class="l-zh">截至</span> 2026-07-10 ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-12 07:19 UTC</p>
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-12 08:03 UTC</p>
 </div>
 
 <script>

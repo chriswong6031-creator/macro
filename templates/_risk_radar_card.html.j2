@@ -130,6 +130,16 @@
       <span class="rrx-rec-k">{{ t('Central banks','央行') }}</span>
       {% for c in rv.catalysts %}<span class="rrx-rec-chip{{ ' fresh' if c.fresh }}">{{ c.icon }} {{ t(c.label_en, c.label_zh) }}{{ help(c.detail_en, c.detail_zh) }}</span>{% endfor %}
     </div>
+    {#- RLT-R5: Liquidity salience line — measured odds edge from LIQUIDITY_LADDER.
+       Renders when fed_netliq catalyst is present AND carries salience_en.
+       Display-only, glance tier. 'backtested' not 'validated' (CI guard). -#}
+    {%- set _netliq_cat = rv.catalysts | selectattr('key', 'equalto', 'fed_netliq') | first | default(none) -%}
+    {%- if _netliq_cat and _netliq_cat.salience_en %}
+    <div class="rrx-rec-sal">
+      <span class="l-en">{{ _netliq_cat.salience_en }}</span>
+      <span class="l-zh">{{ _netliq_cat.salience_zh }}</span>
+    </div>
+    {%- endif %}
     {% else %}
     <div class="rrx-rec-cats none">{{ t('No liquidity catalyst yet — risk easing on its own; watch for a policy / liquidity turn to confirm.','尚无流动性催化 — 风险自行回落；留意政策／流动性转向以确认。') }}</div>
     {% endif %}

@@ -173,6 +173,17 @@ def _section_target_families() -> str:
             f"  {t.get('feature_id', '?')} — {t.get('description', '')} "
             f"[lag={t.get('min_lag_days', '?')}d, era={t.get('era_coverage', '?')}]"
         )
+
+    # Valid target metric ids per family (W28 skeptic finding: without this
+    # list the generator invents metric names no panel produces).
+    try:
+        from engine.neuralweb.causal_targets import TARGET_IDS_BY_FAMILY
+        parts.append("")
+        parts.append("  VALID TARGET METRICS (test_spec.metric MUST be one of these):")
+        for fam, ids in TARGET_IDS_BY_FAMILY.items():
+            parts.append(f"  {fam}: {', '.join(ids)}")
+    except Exception:  # noqa: BLE001
+        pass
     return "\n".join(parts)
 
 
@@ -185,8 +196,11 @@ def _section_candidate_edges() -> str:
 
     parts.append(f"  {len(rows)} edges on file")
     for row in rows[:20]:
-        cause = row.get("cause", "?")
-        target = row.get("target", "?")
+        cause = row.get("cause_feature_id", "?")
+        cause_col = row.get("cause_column", "")
+        if cause_col:
+            cause = f"{cause}/{cause_col}"
+        target = row.get("target_id", "?")
         env = row.get("environment", "?")
         verdict = row.get("verdict", "?")
         parts.append(f"  {cause} → {target} [{env}] verdict={verdict}")
@@ -202,7 +216,10 @@ def _section_frontier(focus: str | None) -> str:
         parts.append(_absent("causal_frontier.json"))
         return "\n".join(parts)
 
-    cells = data.get("frontier_cells", []) if isinstance(data, dict) else []
+    cells = data.get("cells", []) if isinstance(data, dict) else []
+    # Unexplored/accruing first, highest deterministic value first (CHF-R8)
+    cells = [c for c in cells if c.get("state") in ("unexplored", "accruing")]
+    cells.sort(key=lambda c: -c.get("value_score", 0))
     if focus:
         cells = [c for c in cells if focus in (c.get("cause_family", "") + c.get("target_family", ""))]
 
@@ -210,12 +227,12 @@ def _section_frontier(focus: str | None) -> str:
         parts.append("  (no frontier cells)")
         return "\n".join(parts)
 
-    parts.append("  cause_family | target_family | environment | state | value_heuristic")
+    parts.append("  cause_family | target_family | environment | state | value_score")
     for cell in cells[:15]:
         parts.append(
             f"  {cell.get('cause_family','?')} | {cell.get('target_family','?')} | "
             f"{cell.get('environment','?')} | {cell.get('state','?')} | "
-            f"{cell.get('value_heuristic','?')}"
+            f"{cell.get('value_score','?')}"
         )
     if len(cells) > 15:
         parts.append(f"  ... ({len(cells) - 15} more frontier cells)")
@@ -252,10 +269,13 @@ def _section_null_library_and_kill_mask() -> str:
         parts.append(_absent("causal_nulls.jsonl"))
     else:
         for n in nulls[:20]:
-            cause = n.get("cause", "?")
-            target = n.get("target", "?")
+            cause = n.get("cause_feature_id", "?")
+            cause_col = n.get("cause_column", "")
+            if cause_col:
+                cause = f"{cause}/{cause_col}"
+            target = n.get("target_id", "?")
             env = n.get("environment", "?")
-            reason = n.get("null_reason", "?")
+            reason = n.get("failed_reason") or n.get("verdict", "?")
             parts.append(f"  - {cause} → {target} [{env}]: {reason}")
         if len(nulls) > 20:
             parts.append(f"  ... ({len(nulls) - 20} more nulls)")

@@ -2021,6 +2021,14 @@ def _compose_liquidity_plumbing(root: "Path | str | None" = None) -> dict:
             "tga_chg_20d_bn": _clean(treasury.get("tga_chg_20d_bn")),
             "net_issuance_20d_bn": _clean(treasury.get("net_issuance_20d_bn")),
             "treasury_asof": _clean(treasury.get("asof")),
+            # RLT-R4: TGA impulse forwarding (lean: key fields only, display/context tier)
+            "tga_impulse_active": _clean((treasury.get("tga_impulse") or {}).get("active")),
+            "tga_impulse_direction": _clean((treasury.get("tga_impulse") or {}).get("direction")),
+            "tga_impulse_magnitude_bn": _clean((treasury.get("tga_impulse") or {}).get("magnitude_bn")),
+            "tga_impulse_since": _clean((treasury.get("tga_impulse") or {}).get("since")),
+            "tga_impulse_quarter_end_adjacent": _clean((treasury.get("tga_impulse") or {}).get("quarter_end_adjacent")),
+            "tga_impulse_summary_en": _clean((treasury.get("tga_impulse") or {}).get("summary_en")),
+            "tga_impulse_summary_zh": _clean((treasury.get("tga_impulse") or {}).get("summary_zh")),
             # Entry effect (context/entry-quality authority only)
             "entry_effect_direction": _clean(entry_effect.get("direction")),
             "entry_effect_quality": _clean(entry_effect.get("quality")),
@@ -2036,6 +2044,80 @@ def _compose_liquidity_plumbing(root: "Path | str | None" = None) -> dict:
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("liquidity_plumbing: compose failed — %s", exc)
+        return dict(_null)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Rebalance Pulse lobe (RLT-R2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _compose_rebalance_pulse(root: "Path | str | None" = None) -> dict:
+    """Compose the rebalance_pulse sub-block for world_state.
+
+    Reads data/rebalance_pulse/latest.json (produced by
+    scripts/build_rebalance_pulse.py, nightly cadence).
+
+    Follows the _compose_liquidity_plumbing fail-open discipline exactly:
+    - all data loading internal to this function
+    - _clean() on every value
+    - display_only=True always
+    - absent artifact → {"available": False}
+
+    Authority: display/context tier.  may_rank=false, may_gate=false,
+    may_size=false.  NOT a bottom-caller.
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "rebalance_pulse" / "latest.json"
+
+    _null: dict = {
+        "available": False,
+        "display_only": True,
+        "authority": {"may_rank": False, "may_gate": False, "may_size": False},
+    }
+
+    if not path.exists():
+        log.info("rebalance_pulse: artifact absent (%s) — null block", path)
+        return dict(_null)
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            log.warning("rebalance_pulse: artifact not a dict — null block")
+            return dict(_null)
+
+        cal = raw.get("calendar") or {}
+        authority = raw.get("authority") or {}
+
+        return {
+            "available": True,
+            "display_only": True,
+            "date": _clean(raw.get("date")),
+            "class": _clean(raw.get("class")),
+            "market_vol_ratio": _clean(raw.get("market_vol_ratio")),
+            "up_share": _clean(raw.get("up_share")),
+            "basis": _clean(raw.get("basis")),
+            "n_megacap_rvol2": _clean(raw.get("n_megacap_rvol2")),
+            "megacap_rvol": _clean(raw.get("megacap_rvol") or {}),
+            # Calendar flags (forward to consumers)
+            "is_quarter_end": _clean(cal.get("is_quarter_end")),
+            "td_to_quarter_end": _clean(cal.get("td_to_quarter_end")),
+            "in_qtr_end_window": _clean(cal.get("in_qtr_end_window")),
+            "is_russell_recon_session": _clean(cal.get("is_russell_recon_session")),
+            "in_recon_week": _clean(cal.get("in_recon_week")),
+            "is_sp_rebalance_session": _clean(cal.get("is_sp_rebalance_session")),
+            "is_month_end_session": _clean(cal.get("is_month_end_session")),
+            # Summaries
+            "summary_en": _clean(raw.get("summary_en")),
+            "summary_zh": _clean(raw.get("summary_zh")),
+            # Authority block (constants — never raises a score)
+            "authority": {
+                "may_rank": False,
+                "may_gate": False,
+                "may_size": False,
+            },
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("rebalance_pulse: compose failed — %s", exc)
         return dict(_null)
 
 
@@ -2223,6 +2305,28 @@ def build_world_state(
         gaps.append(
             "data/neuralweb/liquidity_plumbing.json: absent "
             "(run scripts/build_liquidity_plumbing.py to populate)"
+        )
+
+    # ── 6f-rp. rebalance_pulse (RLT-R2) — fail-open ─────────────────────────
+    # Reads data/rebalance_pulse/latest.json (nightly, off render path).
+    # Display/context only: calendar × volume day-classifier.
+    # may_rank=false, may_gate=false, may_size=false.  NOT a bottom-caller.
+    _rp_path = data_dir / "rebalance_pulse" / "latest.json"
+    try:
+        rebalance_pulse_block: dict = _compose_rebalance_pulse(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: rebalance_pulse lobe failed — %s", exc)
+        gaps.append(f"rebalance_pulse: {exc}")
+        rebalance_pulse_block = {"available": False, "display_only": True,
+                                 "authority": {"may_rank": False, "may_gate": False, "may_size": False}}
+    sources[str(_rp_path.relative_to(repo))] = (
+        rebalance_pulse_block.get("date")
+        if rebalance_pulse_block.get("available") else None
+    )
+    if not _rp_path.exists():
+        gaps.append(
+            "data/rebalance_pulse/latest.json: absent "
+            "(run scripts/build_rebalance_pulse.py to populate)"
         )
 
     # ── 6f. china_market_state (CN-SYS W7 NW adapter) — fail-open ──────────
@@ -2463,6 +2567,7 @@ def build_world_state(
         "stock_personality_summary": stock_personality_summary_block,  # R-SP20 wiring line
         "context_risk": context_risk_block,  # R-CI7 nw-context-intelligence W3 wiring line
         "liquidity_plumbing": liquidity_plumbing_block,  # neuralweb.liquidity_plumbing.v1 wiring line
+        "rebalance_pulse": rebalance_pulse_block,  # RLT-R2 rebalance_pulse wiring line
         "china_market_state": china_market_state_block,  # CN-SYS W7 NW adapter wiring line
         "thematic_state": thematic_state_block,  # TIL W5 NW citizenship wiring line
         "qi": None,

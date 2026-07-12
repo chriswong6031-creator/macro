@@ -200,6 +200,12 @@ def _build_providers(cfg: dict) -> list[dict]:
     if cortex_key:
         cfg_override["api_key_env"] = _CORTEX_API_KEY_ENV
         log.info("cortex: using dedicated %s for anthropic provider", _CORTEX_API_KEY_ENV)
+        # Promote anthropic ahead of oauth so we don't burn 4×(15/60/180s) of
+        # OAuth 429 backoff before reaching the metered key.  Only override when
+        # config.yml has not set an explicit provider_order (operator config wins).
+        if "provider_order" not in cfg:
+            cfg_override["provider_order"] = ["anthropic", "oauth", "deepseek"]
+            log.debug("cortex: metered key present — provider order set to anthropic-first")
     else:
         # Ensure the standard key env is used (belt-and-suspenders default)
         cfg_override.setdefault("api_key_env", _FALLBACK_API_KEY_ENV)

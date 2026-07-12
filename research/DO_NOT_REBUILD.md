@@ -43,6 +43,7 @@ curated, not generated. Do not build an extractor.
 | LLM numeric confidence anywhere in CHF surfaces | FORBIDDEN — RF-16 extension | CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md` |
 | Runtime LLM frame-tag / narrative-frame classification feeding any organ state or escalation-eligible key | FORBIDDEN — TI-R1/CONST-ART1 restated; char-span receipts validate the quote, not the classification; frame annotation is display-only | NAR-R4, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md` |
 | Chatter-only promotion to a narrative candidate state (source-credibility-alone escalation without the cross-modal tape veto) | FORBIDDEN — single credible flare earns salience, never authority; veto unconditional | NAR-R2, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md` |
+| Hypothesis-slot pre-reservation via standalone coverage census (bypassing WA-R8's ≥8-cases + Opus fingerprint + explicit-ruling gate) | FORBIDDEN — a census proves testability, never entitlement; second attempted end-run (LR docket round 1, LH brainstorm round 2) | LHB-R5, `LONG_HOLD_LOBE_BRAINSTORM_ADJUDICATION_BY_FABLE.md`; precedent LR-R9 |
 
 ## 2. Killed / refuted signal families and theses
 

@@ -179,6 +179,45 @@ class TestBuildEntryQualityPanel:
         assert "good_21d" in result
         assert "stopped_8_21" in result
 
+    def test_signal_date_column_store(self, tmp_path, monkeypatch):
+        """Prod store shape: dates live in a signal_date COLUMN (RangeIndex),
+        not a DatetimeIndex — the builder must find and set it."""
+        df = _make_replay_boarded(n_fire=50)
+        df = df.reset_index().rename(columns={"index": "signal_date"})
+        store_path = tmp_path / "replay_boarded.parquet"
+        df.to_parquet(store_path)
+        monkeypatch.setenv("REPLAY_BOARDED_PATH", str(store_path))
+        result = build_entry_quality_panel(root=tmp_path)
+        assert result is not None
+        assert "good_21d" in result
+        assert isinstance(result["good_21d"].index, pd.DatetimeIndex)
+
+    def test_duplicate_fire_dates_collapse_to_per_date_cross_sections(
+        self, tmp_path, monkeypatch
+    ):
+        """Prod store shape: many fires per signal date. CHF-R5 ticker-panel
+        law — the panel must collapse to per-date cross-sectional means with a
+        UNIQUE date index (never fire-level rows with duplicate labels)."""
+        df = _make_replay_boarded(n_fire=30)
+        # Duplicate every date 3x with mixed outcomes: 2 good, 1 stopped per date
+        good = df.copy()
+        good["state_8_21"] = list(_GOOD_21D_STATES)[0]
+        stopped = df.copy()
+        stopped["state_8_21"] = "STOPPED"
+        panel = pd.concat([good, good, stopped]).sort_index()
+        store_path = tmp_path / "replay_boarded.parquet"
+        panel.to_parquet(store_path)
+        monkeypatch.setenv("REPLAY_BOARDED_PATH", str(store_path))
+        result = build_entry_quality_panel(root=tmp_path)
+        assert result is not None
+        s = result["good_21d"]
+        assert s.index.is_unique, "per-date collapse must dedupe the date index"
+        assert s.index.is_monotonic_increasing
+        # 2 of 3 fires good on every date → per-date good-rate = 2/3
+        assert np.allclose(s.values, 2.0 / 3.0)
+        # stop-rate = 1/3
+        assert np.allclose(result["stopped_8_21"].values, 1.0 / 3.0)
+
     def test_era_stamp_is_post_2022(self, tmp_path, monkeypatch):
         """Entry-quality panel should only contain dates >= 2022-06-30."""
         # Mix pre and post era dates

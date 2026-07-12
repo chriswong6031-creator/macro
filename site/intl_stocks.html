@@ -86,7 +86,9 @@
   table.sb th, table.sb td { padding:5px 9px; border-bottom:1px solid var(--line); text-align:right; }
   table.sb td.l, table.sb th.l { text-align:left; } table.sb th { color:var(--muted); font-weight:600; }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
-  .help .tip { display:none; position:absolute; bottom:150%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:9px; z-index:60; font-size:12px; line-height:1.5; color:var(--text); text-align:left; font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); pointer-events:none; }
+  .help .tip { display:none; position:absolute; bottom:150%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:9px; z-index:60; font-size:12px; line-height:1.5; color:var(--text); text-align:left; font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content:''; position:absolute; bottom:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { display:block; }
   .caveat { font-size:11.5px; color:var(--muted); font-style:italic; }
   .more-btn { display:inline-block; margin-top:10px; padding:5px 14px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--link); font-weight:600; font-size:12px; cursor:pointer; }
@@ -498,7 +500,7 @@
   <div class="row">
     <h1>🌍 <span class="l-en">International Stock Dashboard</span><span class="l-zh">国际股票看板</span></h1>
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-10 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-12 08:29 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-10 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-12 09:09 UTC</span>
   </div>
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">Standout names from major non-US markets, ranked within their own market. Search any name above.</span><span class="l-zh">主要非美市场精选个股，按各自市场内部排序。可在上方搜索。</span>
     <a href="intl.html" style="color:var(--link);font-weight:600">← <span class="l-en">Macro comparison</span><span class="l-zh">宏观对比</span></a></p>

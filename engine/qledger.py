@@ -875,7 +875,17 @@ def _aggregate(claims: list[dict], grades: list[dict],
         gh = a["graded_hits"]
         hit_rate = round(a["hits"] / gh, 6) if gh else None
         excess_mean = round(a["excess_sum"] / n_obs, 6) if n_obs else None
-        ci_low = wilson_ci_low(a["hits"], gh) if gh else None
+        # Cluster-honest Wilson CI: project the pooled hit rate onto the date-cluster n
+        # so that n_dates (distinct asof clusters) — not the correlated n_obs — drives
+        # the confidence interval.  This matches the altdata_brain.py article3 convention
+        # (hits=round(hit_rate*n_dates), n=n_dates) and the ticker-cluster time-confound
+        # law: overlapping observations across the same date clusters inflate n and make
+        # the CI anti-conservative (see _date_cluster / §5 doctrine above).
+        if gh and n_dates:
+            cluster_hits = int(round((a["hits"] / gh) * n_dates))
+            ci_low = wilson_ci_low(cluster_hits, n_dates)
+        else:
+            ci_low = None
         out[key] = {
             "n_obs": n_obs,
             "n_dates": n_dates,          # the honest n
@@ -1149,7 +1159,13 @@ def promotion_check(claim_family: str, horizon: int,
 
     n_dates = len(dates)
     current_state = derive_state(n_dates)
-    ci_low = wilson_ci_low(hits, graded_hits) if graded_hits else None
+    # Cluster-honest Wilson CI: project pooled hit rate onto independent date-cluster n.
+    # Mirrors _aggregate convention (altdata_brain.py:389, ticker-cluster time-confound law).
+    if graded_hits and n_dates:
+        cluster_hits = int(round(hits / graded_hits * n_dates))
+        ci_low = wilson_ci_low(cluster_hits, n_dates)
+    else:
+        ci_low = None
 
     # §3 gate criterion 1: n_dates
     if n_dates < PROMOTION_MIN_DATES:
