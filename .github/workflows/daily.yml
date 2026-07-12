@@ -599,6 +599,11 @@ jobs:
           # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
           # allocation that the watchlist scores against). Reads only committed data; returns 0 on error.
           run_py "congressional trades desk (build_congress)" scripts.build_congress
+          # Odds Desk — historical base-rate analyzer + factor match (research/ODDS_DESK.md).
+          # Backfills/upserts the runner-local data/odds_ohlcv store (yfinance), recomputes the
+          # per-ticker factor matrices (site/oddsmatrix -> R2) + site/oddsdata catalog/factor_match
+          # JSON, and renders odds.html. Display-only; returns 0 on error — never breaks the render.
+          run_py "odds desk (build_odds)" scripts.build_odds
           # Technical Lab hub — screener + lab profile page. Reads site/factordata/tech_screener.json
           # + tech_lab.json (written by nightly tech signal engine). Falls back to sample fixture if
           # absent; returns 0 on error — never breaks the build.
@@ -1729,7 +1734,7 @@ jobs:
         # US-evening shard owns the US/intl/canada/subsector stores; CN/HK go via asia-close.yml.
         # Content-hash skip -> only deltas upload. Still committed to git for now (Pages fallback);
         # the git de-bloat + Pages slim-down is the follow-up increment once the client reads R2.
-        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,subsectorohlc_nasdaq,stockdata,intlstockdata,canadastockdata,intraday,feeds,massive_stock_day,stock_personality || echo "::warning::R2 publish failed (non-fatal)"
+        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,subsectorohlc_nasdaq,stockdata,intlstockdata,canadastockdata,intraday,feeds,massive_stock_day,stock_personality,oddsmatrix,odds_ohlcv || echo "::warning::R2 publish failed (non-fatal)"
       - name: verify R2 data plane freshness (loud tripwire — the publish above is non-fatal)
         # The publish step swallows every failure (incl. the exit-0 no-op when the R2_*
         # secrets are absent/expired), so the live site would serve stale per-ticker data
@@ -1746,7 +1751,7 @@ jobs:
       - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
         if: always()
         run: |
-          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/subsectorohlc_nasdaq site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday site/feeds 2>/dev/null || true
+          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/subsectorohlc_nasdaq site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday site/feeds site/oddsmatrix 2>/dev/null || true
       - name: upload pages artifact
         if: always()   # deploy must not hinge on the commit-push above succeeding
         uses: actions/upload-pages-artifact@v3

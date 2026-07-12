@@ -1,0 +1,478 @@
+{
+ "SPY": {
+  "name": "State Street SPDR S&P 500 ETF T",
+  "sector": "ETF"
+ },
+ "QQQ": {
+  "name": "Invesco QQQ Trust, Series 1",
+  "sector": "ETF"
+ },
+ "IWM": {
+  "name": "iShares Russell 2000 Index Fund",
+  "sector": "ETF"
+ },
+ "DIA": {
+  "name": "State Street SPDR Dow Jones Ind",
+  "sector": "ETF"
+ },
+ "RSP": {
+  "name": "Invesco S&P 500 Equal Weight ET",
+  "sector": "ETF"
+ },
+ "XLK": {
+  "name": "State Street Technology Select ",
+  "sector": "ETF"
+ },
+ "XLF": {
+  "name": "State Street Financial Select S",
+  "sector": "ETF"
+ },
+ "XLE": {
+  "name": "State Street Energy Select Sect",
+  "sector": "ETF"
+ },
+ "XLV": {
+  "name": "State Street Health Care Select",
+  "sector": "ETF"
+ },
+ "XLI": {
+  "name": "State Street Industrial Select ",
+  "sector": "ETF"
+ },
+ "XLY": {
+  "name": "State Street Consumer Discretio",
+  "sector": "ETF"
+ },
+ "XLP": {
+  "name": "State Street Consumer Staples S",
+  "sector": "ETF"
+ },
+ "XLU": {
+  "name": "State Street Utilities Select S",
+  "sector": "ETF"
+ },
+ "XLB": {
+  "name": "State Street Materials Select S",
+  "sector": "ETF"
+ },
+ "XLRE": {
+  "name": "State Street Real Estate Select",
+  "sector": "ETF"
+ },
+ "XLC": {
+  "name": "State Street Communication Serv",
+  "sector": "ETF"
+ },
+ "SMH": {
+  "name": "VanEck Semiconductor ETF",
+  "sector": "ETF"
+ },
+ "KRE": {
+  "name": "State Street SPDR S&P Regional ",
+  "sector": "ETF"
+ },
+ "XBI": {
+  "name": "State Street SPDR S&P Biotech E",
+  "sector": "ETF"
+ },
+ "GLD": {
+  "name": "SPDR Gold Shares",
+  "sector": "ETF"
+ },
+ "SLV": {
+  "name": "iShares Silver Trust",
+  "sector": "ETF"
+ },
+ "TLT": {
+  "name": "iShares 20+ Year Treasury Bond ",
+  "sector": "ETF"
+ },
+ "HYG": {
+  "name": "iShares iBoxx $ High Yield Corp",
+  "sector": "ETF"
+ },
+ "NVDA": {
+  "name": "NVIDIA Corporation",
+  "sector": "Technology"
+ },
+ "TSLA": {
+  "name": "Tesla, Inc.",
+  "sector": "Consumer Cyclical"
+ },
+ "MU": {
+  "name": "Micron Technology, Inc.",
+  "sector": "Technology"
+ },
+ "MSFT": {
+  "name": "Microsoft Corporation",
+  "sector": "Technology"
+ },
+ "AMZN": {
+  "name": "Amazon.com, Inc.",
+  "sector": "Consumer Cyclical"
+ },
+ "PLTR": {
+  "name": "Palantir Technologies Inc.",
+  "sector": "Technology"
+ },
+ "AMD": {
+  "name": "Advanced Micro Devices, Inc.",
+  "sector": "Technology"
+ },
+ "AAPL": {
+  "name": "Apple Inc.",
+  "sector": "Technology"
+ },
+ "COIN": {
+  "name": "Coinbase Global, Inc.",
+  "sector": "Financial Services"
+ },
+ "AVGO": {
+  "name": "Broadcom Inc.",
+  "sector": "Technology"
+ },
+ "META": {
+  "name": "Meta Platforms, Inc.",
+  "sector": "Communication Services"
+ },
+ "NFLX": {
+  "name": "Netflix, Inc.",
+  "sector": "Communication Services"
+ },
+ "MSTR": {
+  "name": "Strategy Inc",
+  "sector": "Technology"
+ },
+ "INTC": {
+  "name": "Intel Corporation",
+  "sector": "Technology"
+ },
+ "GOOG": {
+  "name": "Alphabet Inc.",
+  "sector": "Communication Services"
+ },
+ "HOOD": {
+  "name": "Robinhood Markets, Inc.",
+  "sector": "Financial Services"
+ },
+ "CRWD": {
+  "name": "CrowdStrike Holdings, Inc.",
+  "sector": "Technology"
+ },
+ "COHR": {
+  "name": "Coherent Corp.",
+  "sector": "Technology"
+ },
+ "APP": {
+  "name": "Applovin Corporation",
+  "sector": "Communication Services"
+ },
+ "ORCL": {
+  "name": "Oracle Corporation",
+  "sector": "Technology"
+ },
+ "JPM": {
+  "name": "JP Morgan Chase & Co.",
+  "sector": "Financial Services"
+ },
+ "WDC": {
+  "name": "Western Digital Corporation",
+  "sector": "Technology"
+ },
+ "XOM": {
+  "name": "ExxonMobil Holdings Corporation",
+  "sector": "Energy"
+ },
+ "NOW": {
+  "name": "ServiceNow, Inc.",
+  "sector": "Technology"
+ },
+ "GLW": {
+  "name": "Corning Incorporated",
+  "sector": "Technology"
+ },
+ "SPOT": {
+  "name": "Spotify Technology S.A.",
+  "sector": "Communication Services"
+ },
+ "CVX": {
+  "name": "Chevron Corporation",
+  "sector": "Energy"
+ },
+ "CRM": {
+  "name": "Salesforce, Inc.",
+  "sector": "Technology"
+ },
+ "CAT": {
+  "name": "Caterpillar, Inc.",
+  "sector": "Industrials"
+ },
+ "LLY": {
+  "name": "Eli Lilly and Company",
+  "sector": "Healthcare"
+ },
+ "UNH": {
+  "name": "UnitedHealth Group Incorporated",
+  "sector": "Healthcare"
+ },
+ "INTU": {
+  "name": "Intuit Inc.",
+  "sector": "Technology"
+ },
+ "GEV": {
+  "name": "GE Vernova Inc.",
+  "sector": "Industrials"
+ },
+ "LRCX": {
+  "name": "Lam Research Corporation",
+  "sector": "Technology"
+ },
+ "AMAT": {
+  "name": "Applied Materials, Inc.",
+  "sector": "Technology"
+ },
+ "STX": {
+  "name": "Seagate Technology Holdings PLC",
+  "sector": "Technology"
+ },
+ "BAC": {
+  "name": "Bank of America Corporation",
+  "sector": "Financial Services"
+ },
+ "V": {
+  "name": "Visa Inc.",
+  "sector": "Financial Services"
+ },
+ "ROST": {
+  "name": "Ross Stores, Inc.",
+  "sector": "Consumer Cyclical"
+ },
+ "TMUS": {
+  "name": "T-Mobile US, Inc.",
+  "sector": "Communication Services"
+ },
+ "GS": {
+  "name": "Goldman Sachs Group, Inc. (The)",
+  "sector": "Financial Services"
+ },
+ "BKNG": {
+  "name": "Booking Holdings Inc. Common St",
+  "sector": "Consumer Cyclical"
+ },
+ "WMT": {
+  "name": "Walmart Inc.",
+  "sector": "Consumer Defensive"
+ },
+ "COST": {
+  "name": "Costco Wholesale Corporation",
+  "sector": "Consumer Defensive"
+ },
+ "SHOP": {
+  "name": "Shopify Inc.",
+  "sector": "Technology"
+ },
+ "SOFI": {
+  "name": "SoFi Technologies, Inc.",
+  "sector": "Financial Services"
+ },
+ "KO": {
+  "name": "Coca-Cola Company (The)",
+  "sector": "Consumer Defensive"
+ },
+ "PANW": {
+  "name": "Palo Alto Networks, Inc.",
+  "sector": "Technology"
+ },
+ "UBER": {
+  "name": "Uber Technologies, Inc.",
+  "sector": "Technology"
+ },
+ "BA": {
+  "name": "Boeing Company (The)",
+  "sector": "Industrials"
+ },
+ "FCX": {
+  "name": "Freeport-McMoRan, Inc.",
+  "sector": "Basic Materials"
+ },
+ "DELL": {
+  "name": "Dell Technologies Inc.",
+  "sector": "Technology"
+ },
+ "TGT": {
+  "name": "Target Corporation",
+  "sector": "Consumer Defensive"
+ },
+ "MA": {
+  "name": "Mastercard Incorporated",
+  "sector": "Financial Services"
+ },
+ "MRNA": {
+  "name": "Moderna, Inc.",
+  "sector": "Healthcare"
+ },
+ "APH": {
+  "name": "Amphenol Corporation",
+  "sector": "Technology"
+ },
+ "C": {
+  "name": "Citigroup, Inc.",
+  "sector": "Financial Services"
+ },
+ "WBD": {
+  "name": "Warner Bros. Discovery, Inc. - ",
+  "sector": "Communication Services"
+ },
+ "AXP": {
+  "name": "American Express Company",
+  "sector": "Financial Services"
+ },
+ "VRT": {
+  "name": "Vertiv Holdings, LLC",
+  "sector": "Industrials"
+ },
+ "AA": {
+  "name": "Alcoa Corporation",
+  "sector": "Basic Materials"
+ },
+ "ADBE": {
+  "name": "Adobe Inc.",
+  "sector": "Technology"
+ },
+ "SMCI": {
+  "name": "Super Micro Computer, Inc.",
+  "sector": "Technology"
+ },
+ "ABBV": {
+  "name": "AbbVie Inc.",
+  "sector": "Healthcare"
+ },
+ "MELI": {
+  "name": "MercadoLibre, Inc.",
+  "sector": "Consumer Cyclical"
+ },
+ "UPS": {
+  "name": "United Parcel Service, Inc.",
+  "sector": "Industrials"
+ },
+ "CSCO": {
+  "name": "Cisco Systems, Inc.",
+  "sector": "Technology"
+ },
+ "BSX": {
+  "name": "Boston Scientific Corporation",
+  "sector": "Healthcare"
+ },
+ "MDB": {
+  "name": "MongoDB, Inc.",
+  "sector": "Technology"
+ },
+ "WFC": {
+  "name": "Wells Fargo & Company",
+  "sector": "Financial Services"
+ },
+ "GE": {
+  "name": "GE Aerospace",
+  "sector": "Industrials"
+ },
+ "QCOM": {
+  "name": "QUALCOMM Incorporated",
+  "sector": "Technology"
+ },
+ "JNJ": {
+  "name": "Johnson & Johnson",
+  "sector": "Healthcare"
+ },
+ "CIEN": {
+  "name": "Ciena Corporation",
+  "sector": "Technology"
+ },
+ "VZ": {
+  "name": "Verizon Communications Inc.",
+  "sector": "Communication Services"
+ },
+ "RTX": {
+  "name": "RTX Corporation",
+  "sector": "Industrials"
+ },
+ "IBM": {
+  "name": "International Business Machines",
+  "sector": "Technology"
+ },
+ "F": {
+  "name": "Ford Motor Company",
+  "sector": "Consumer Cyclical"
+ },
+ "OXY": {
+  "name": "Occidental Petroleum Corporatio",
+  "sector": "Energy"
+ },
+ "LMT": {
+  "name": "Lockheed Martin Corporation",
+  "sector": "Industrials"
+ },
+ "TER": {
+  "name": "Teradyne, Inc.",
+  "sector": "Technology"
+ },
+ "MRVL": {
+  "name": "Marvell Technology, Inc.",
+  "sector": "Technology"
+ },
+ "PG": {
+  "name": "Procter & Gamble Company (The)",
+  "sector": "Consumer Defensive"
+ },
+ "COP": {
+  "name": "ConocoPhillips",
+  "sector": "Energy"
+ },
+ "BX": {
+  "name": "Blackstone Inc.",
+  "sector": "Financial Services"
+ },
+ "NRG": {
+  "name": "NRG Energy, Inc.",
+  "sector": "Utilities"
+ },
+ "T": {
+  "name": "AT&T Inc.",
+  "sector": "Communication Services"
+ },
+ "LITE": {
+  "name": "Lumentum Holdings Inc.",
+  "sector": "Technology"
+ },
+ "ASTS": {
+  "name": "AST SpaceMobile, Inc.",
+  "sector": "Technology"
+ },
+ "IREN": {
+  "name": "IREN LIMITED",
+  "sector": "Financial Services"
+ },
+ "BE": {
+  "name": "Bloom Energy Corporation",
+  "sector": "Industrials"
+ },
+ "RKLB": {
+  "name": "Rocket Lab Corporation",
+  "sector": "Industrials"
+ },
+ "NBIS": {
+  "name": "Nebius Group N.V.",
+  "sector": "Communication Services"
+ },
+ "AAOI": {
+  "name": "Applied Optoelectronics, Inc.",
+  "sector": "Technology"
+ },
+ "CRDO": {
+  "name": "Credo Technology Group Holding ",
+  "sector": "Technology"
+ },
+ "ONDS": {
+  "name": "Ondas Inc",
+  "sector": "Technology"
+ }
+}
