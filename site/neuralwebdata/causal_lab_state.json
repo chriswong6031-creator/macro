@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.causal_lab_state.v1",
-  "asof": "2026-07-12T08:45:24Z",
+  "asof": "2026-07-12T10:01:42Z",
   "heartbeat": {
     "program": "CHF",
     "wave": "W3",
@@ -52,7 +52,9 @@
     "asof": "2026-07-12T08:42:52+00:00",
     "description": "operator-paste full chain completed 2026-07-12; 2 card(s) filed via ingest firewall (round-1 all-drop, round-2 corrective); scheduled OAuth run still fires Tuesday nightly"
   },
-  "data_absent_notes": [],
+  "data_absent_notes": [
+    "entry_quality target family unavailable: replay_boarded.parquet not found (set REPLAY_BOARDED_PATH env var to runner-local path)"
+  ],
   "authority": {
     "tier": "shadow",
     "display_only": true,
