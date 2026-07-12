@@ -352,6 +352,13 @@ on:
       - "config/lobe_charters.yml"
       - "config/metabolism_roles.yml"
       - "config/adjudication_rubrics.yml"
+      # R-V8-A immune lane: CI-red sentinel + lane-health sensors + claim dedup.
+      - "engine/metabolism/immune.py"
+      - "scripts/metabolism_immune.py"
+      - "config/metabolism_immune.yml"
+      - "config/metabolism_anomaly.yml"
+      - "tests/test_metabolism_immune.py"
+      - ".github/workflows/metabolism-immune.yml"
       # M7C-R8 basket staleness warning: build_baskets.py is the producer; a change
       # to it alone (without touching ci.yml or engine/**) must still retrigger the
       # basket-staleness-warn test job — belt-and-suspenders, per reviewer nit.
@@ -1440,6 +1447,8 @@ jobs:
         run: python -m pytest tests/test_metabolism_remediation.py -q
       - name: SA-W3 standout accountability metabolism wiring suite
         run: python -m pytest tests/test_metabolism_sa_w3.py -q
+      - name: metabolism v8-A immune suite (CI-red sentinel + claim dedup + lane-health sensors)
+        run: python -m pytest tests/test_metabolism_immune.py -q
       - name: self-mod fence selftest
         run: python3 scripts/check_self_mod_fence.py --selftest
       - name: grader manifest (fitness graders + immutable configs unchanged)

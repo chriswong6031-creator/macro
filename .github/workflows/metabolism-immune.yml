@@ -1,0 +1,126 @@
+name: metabolism-immune
+# Metabolism Phase V8-A — IMMUNE lane (R-V8-1..R-V8-5).
+#
+# Runs every 2h.  Three responsibilities:
+#   (A) Main-red sentinel: classifies red REQUIRED checks, runs deterministic
+#       heal recipes in a fresh worktree, opens DRAFT heal PRs, claims work.
+#   (B) Lane-health sensors: dead cron, queue saturation, offline runners,
+#       key-pool degradation — each fires once per day per condition.
+#   (C) Auto-merge: DEFERRED (R-V8-3 amended 2026-07-12).  Returns as R-V8-3b
+#       (future wave).  This wave opens DRAFT PRs only; operator review required.
+#
+# NOTE: NO job-level AUTONOMY_PAUSED gate here — sensing and insight emission
+# must always run.  The git-push/PR-open path is gated IN-SCRIPT on _is_paused()
+# (R-V8-1 amended 2026-07-12), mirroring metabolism_build.py's is_paused-first
+# pattern.  ci_status writes and insight emission run regardless of pause state.
+#
+# KILL SWITCH (R-AUT-2):
+#   gh variable set AUTONOMY_PAUSED --body true    # pause heal push/PR (sensing always runs)
+#   gh variable set AUTONOMY_PAUSED --body false   # arm heal push/PR (operator-only)
+
+on:
+  schedule:
+    - cron: "15 */2 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (describe actions, no real changes)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write       # push heal branches + commit claim rows
+  pull-requests: write  # open DRAFT heal PRs + auto-merge
+
+concurrency:
+  group: metabolism-immune
+  cancel-in-progress: false
+
+jobs:
+  immune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # METABOLISM_MERGE_PAT: PAT with no-workflows scope so DRAFT PRs opened by this
+          # lane trigger pull_request CI (GITHUB_TOKEN PRs are exempt from required checks).
+          token: ${{ secrets.METABOLISM_MERGE_PAT || secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        run: pip install --quiet pyyaml
+
+      - name: run immune lane
+        env:
+          AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          GH_TOKEN: ${{ secrets.METABOLISM_MERGE_PAT || secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUNNER_TEMP: ${{ runner.temp }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          set -euo pipefail
+
+          DRY_FLAG=""
+          if [ "${DRY_RUN:-false}" = "true" ]; then
+            DRY_FLAG="--dry-run"
+            echo "Running in DRY-RUN mode"
+          fi
+
+          python -m scripts.metabolism_immune $DRY_FLAG
+
+      - name: commit ci_status.json (R-V8-5)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.METABOLISM_MERGE_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # If ci_status.json was written, commit it to main so anomaly_monitor can read it.
+          STATUS_FILE="data/metabolism/ci_status.json"
+          if [ ! -f "$STATUS_FILE" ]; then
+            echo "ci_status.json not written — skipping commit"
+            exit 0
+          fi
+
+          git config user.email "metabolism-immune[bot]@users.noreply.github.com"
+          git config user.name "metabolism-immune[bot]"
+
+          # Also stage any immune journal markers written this run
+          git add "$STATUS_FILE" "data/metabolism/immune/" 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "no changes to commit"
+            exit 0
+          fi
+
+          COMMIT_MSG="chore(immune): update ci_status + immune journals [skip ci]"
+          for _i in 1 2 3; do
+            if git pull --rebase --autostash origin main && \
+               git commit -m "$COMMIT_MSG" && \
+               git push origin HEAD:main; then
+              echo "ci_status committed on attempt $_i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "push attempt $_i lost a race; re-syncing"
+            sleep $((_i * 7))
+          done
+          echo "::warning::could not push ci_status.json after 3 attempts (non-fatal)"
+
+      - name: notify on failure
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$TOKEN" ] || exit 0
+          curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            -d chat_id="$CHAT_ID" \
+            -d text="[Metabolism] metabolism-immune run failed: ${RUN_URL}" || true

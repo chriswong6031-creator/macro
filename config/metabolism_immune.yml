@@ -1,0 +1,84 @@
+# config/metabolism_immune.yml — Immune system recipe registry (R-V8-1).
+#
+# Each entry maps a CI red-check class to a deterministic heal recipe.
+# The immune lane uses this to classify reds, run heals, and decide auto-merge.
+#
+# FIELDS per recipe:
+#   check_name_pattern  — substring that must appear in the failing check name
+#   detector            — command to run to DETECT / VERIFY the red
+#   heal_cmd            — command to run to HEAL the red (byte-deterministic regen)
+#   auto_merge_allowed  — true only for provably byte-deterministic regen classes
+#
+# IMMUTABLE: this file is an operator-ratified policy document.
+# Loop PRs may NOT add/remove recipes or change auto_merge_allowed without a T2 operator-tap.
+#
+# Schema: metabolism_immune.v1
+
+schema: metabolism_immune.v1
+generated_at: "2026-07-12"
+owner_program: autonomic-loop
+
+# ── Heal recipes ──────────────────────────────────────────────────────────────
+
+recipes:
+  - check_name_pattern: "blocklist-drift"
+    detector: "python3 scripts/check_blocklist_drift.py"
+    heal_cmd: "python3 scripts/compile_loop_blocklists.py"
+    auto_merge_allowed: true
+
+  - check_name_pattern: "grader-manifest"
+    detector: "python3 scripts/check_grader_manifest.py"
+    heal_cmd: "python3 scripts/check_grader_manifest.py --regen"
+    # FALSE: the F1 doctrinal header hand-edit law (memory: grader-manifest-regen-strips-comments)
+    # --regen yaml-round-trips AWAY the F1 doctrinal header; hand-edit of sha256 lines required.
+    # The lane opens a DRAFT PR for operator review — never auto-merges.
+    auto_merge_allowed: false
+
+  - check_name_pattern: "house-law-docs"
+    detector: "python3 scripts/check_house_law_registry.py"
+    heal_cmd: "python3 scripts/check_house_law_registry.py --emit-docs"
+    auto_merge_allowed: true
+
+  - check_name_pattern: "template-site-sync"
+    detector: "python -m scripts.check_template_site_sync"
+    heal_cmd: "python -m scripts.check_template_site_sync --fix"
+    auto_merge_allowed: true
+
+# ── Lane-health thresholds ────────────────────────────────────────────────────
+
+lane_health:
+  # Minutes a run can stay queued before flagging Actions queue saturation
+  queue_stuck_min: 40
+
+  # reserved for R-V8-3b auto-merge follow-up
+  immune_max_automerge_per_day: 2
+
+  # Days a self-hosted runner can be offline before flagging (0 = any offline = flag)
+  runner_offline_threshold_days: 0
+
+  # Key-pool degradation threshold: flag when this fraction (or more) of keys are cooling
+  key_pool_degraded_fraction: 0.5
+
+  # Cron lanes: flag when the latest run conclusion matches any of these
+  dead_cron_conclusions:
+    - "cancelled"
+    - "timed_out"
+
+# ── Known-spurious CI checks (FIX-5) ─────────────────────────────────────────
+# These checks are known to produce false reds (non-required, ignorable).
+# See CLAUDE.md 'known-spurious CI: "Workers Builds: macro" red X is ignorable'.
+# The immune lane filters them OUT of both red-detection and ci_status green computation.
+# Operator-only list: never edited by loop PRs (config is in IMMUTABLE set).
+spurious_checks:
+  - "Workers Builds: macro"
+
+# ── Cooldown / dedup keys ─────────────────────────────────────────────────────
+# Each lane-health sensor fires AT MOST ONCE per day per key (journal-durable).
+# Unknown-red operator pages also dedup once per day per red-class (FIX-5).
+cooldown:
+  dead_cron_journal_key: "immune.lane_health.dead_cron"
+  queue_stuck_journal_key: "immune.lane_health.queue_stuck"
+  runner_offline_journal_key: "immune.lane_health.runner_offline"
+  key_pool_degraded_journal_key: "immune.lane_health.key_pool_degraded"
+  # Journal key prefix for unknown-red operator pages; red_class is appended
+  unknown_red_journal_prefix: "immune.unknown_red"

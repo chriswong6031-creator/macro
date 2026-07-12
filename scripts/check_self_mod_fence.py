@@ -83,6 +83,10 @@ IMMUTABLE_PATTERNS: list[str] = [
     # V4-W3 addition (R-V4-4): the mission self-model.
     # The loop must not rewrite its own purpose.
     "config/nw_mission.yml",
+    # V8-A addition (R-V8-3): immune recipe registry + spurious-checks allowlist.
+    # Fenced NOW so R-V8-3b auto-merge inherits the guarantee that the loop
+    # cannot expand its own auto-merge allowlist or remove spurious-check filters.
+    "config/metabolism_immune.yml",
 ]
 
 # ── Loop namespace markers ────────────────────────────────────────────────────

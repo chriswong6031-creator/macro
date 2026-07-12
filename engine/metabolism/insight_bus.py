@@ -77,6 +77,10 @@ _KINDS = frozenset({
     "audit_rebuild_exhausted",
     # SA-W3: standout-lobe audit trigger (SA-R9 stateless-cattle)
     "audit_due",
+    # R-V8-1: immune lane — unknown CI red class (no recipe match)
+    "ci_red_unknown",
+    # R-V8-4: lane-health sensors (dead cron, queue saturation, runner offline, key degradation)
+    "lane_health_alert",
 })
 
 

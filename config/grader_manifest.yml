@@ -65,11 +65,12 @@ files:
   # --- V2-A IMMUTABLE configs (R-V2-8) ---
 
   - path: config/metabolism_anomaly.yml
-    sha256: 66ada967b3aeea85df434c174aa3dd63a89e983700ef5be88588540037c9f1c0
+    sha256: 4b73e80310ce3252777591de69228b835428ddc524bf559d21bc1ce03bfaeb5d
     role: anomaly_thresholds
     notes: >
       V2-A anomaly monitor thresholds (R-V2-9). IMMUTABLE operator-ratified
       policy: robust-z K, n_min, z_thresh per sensor. Loop PRs may NOT modify.
+      R-V8-5: ci_status_artifact wired from null to data/metabolism/ci_status.json.
 
   - path: config/fable_mode_core.md
     sha256: 7034195ac0221da208c75e52bf66e4dd0e9e8f8ec7d403c0b6b4dab314dc5c41
@@ -125,3 +126,16 @@ files:
       clocks in YAML. Injected into every orchestrator-tier PROPOSE prompt.
       IMMUTABLE — the loop may read it but never edit it; a loop PR that rewrites
       this file rewrites the loop's own purpose (highest-privilege attack path).
+
+  # --- V8-A IMMUTABLE config (R-V8-3) ---
+
+  - path: config/metabolism_immune.yml
+    sha256: 650e0ffd7ea120ed24e855de8020e692925c66a2b609df42f58f5ca93f48615d
+    role: immune_recipe_registry
+    notes: >
+      V8-A immune system recipe registry + spurious-checks allowlist (R-V8-1,
+      R-V8-3). Operator-ratified heal recipes (check → heal_cmd → detector),
+      known-spurious CI check filter, and lane-health thresholds. Fenced here so
+      R-V8-3b auto-merge inherits the guarantee that the loop cannot expand its
+      own auto-merge allowlist or remove spurious-check filters. IMMUTABLE —
+      loop PRs may not modify.
