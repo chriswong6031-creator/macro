@@ -351,3 +351,13 @@ warn_rules:
   W-3:
     rule: "decided packet missing rationale"
     description: "Decided packets should include a decision rationale for audit trail"
+
+  W-4:
+    rule: "standout-lobe proposal cites hit_quality sensor without paired coverage sensor"
+    description: >-
+      SA-R4 anti-narrowing guard: any proposal whose fitness_contract.sensor is
+      'hit_quality' (a precision sensor on a standout lobe) must also reference at
+      least one paired coverage sensor (coverage_health, missed_mover_rate, or
+      upside_capture) in its rationale or a sibling proposal in the same docket.
+      Proposals that improve precision alone without coverage counter-evidence risk
+      rewarding surface-area narrowing (fewer/safer picks). Flag for adversary review.

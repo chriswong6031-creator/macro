@@ -1049,13 +1049,100 @@ charters:
     tier: display
     lifecycle_state: active
     information_domain: tactical_entry
+    # SA-W3: dict-form fitness_sensors promote site-us-standouts to loop-manageable
+    # (R-V4-10 charter mechanism, multi-lobe propose from #2341).  Store =
+    # data/metabolism/fitness/standouts_us.json — committed path written by the
+    # bespoke builder engine/standout_audit.py.  Sensors reference SA-R1 / R-V4-10;
+    # accrual-honesty law: proposals must carry check_by >= maturity_date (2026-09-15).
     fitness_sensors:
-    - liveness
-    - freshness_sla
-    - logic_breach_counter
+    - id: hit_quality
+      store: data/metabolism/fitness/standouts_us.json
+      maturity_date: '2026-09-15'
+      accruing: true
+      description: Wilson-LB hit rate on 21d matured picks vs SPY/sector excess (SA-R10).
+    - id: upside_capture
+      store: data/metabolism/fitness/standouts_us.json
+      maturity_date: '2026-09-15'
+      accruing: true
+      description: Ratio of buy-lane upside captured vs missed-mover cohort upside (SA-R3 pairing).
+    - id: coverage_health
+      store: data/metabolism/fitness/standouts_us.json
+      maturity_date: '2026-09-15'
+      accruing: true
+      description: Trailing-4wk buy-lane ticker count; frozen baseline anchored at first maturity (SA-R4).
+    - id: missed_mover_rate
+      store: data/metabolism/fitness/standouts_us.json
+      maturity_date: '2026-09-15'
+      accruing: true
+      description: Fraction of significant movers not surfaced by buy lane in the entry window (SA-R3 counter-sensor).
+    - id: timing_quality
+      store: data/metabolism/fitness/standouts_us.json
+      maturity_date: '2026-09-15'
+      accruing: true
+      description: Median board tenure at matured-pick entry; signaled_too_late share (SA-R13 process axis).
+    - id: process_integrity
+      store: data/metabolism/fitness/standouts_us.json
+      maturity_date: '2026-09-15'
+      accruing: true
+      description: Inverse data_fault share on matured picks; stale-feed process failures (SA-R11).
     owner_program: us-stocks-prebreakout
-    notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
-      do not edit independently.
+    notes: >-
+      SA-W3: upgraded to loop-manageable (dict-form fitness_sensors; SA-R1/R-V4-10).
+      Six sensors mirror the bespoke standout_audit.py card schema.  Store path is
+      the committed card written by engine/standout_audit.py.  All sensors accruing
+      until 2026-09-15 (first maturity read per SA-R9 trigger math); proposals must
+      carry check_by >= 2026-09-15 (accrual-honesty gate R-V4-10).  tier read-mirrored
+      from synapse.yml (do not edit independently).  Roster: 64 -> 65 of 66 (SA-R1).
+  site-china-standouts:
+    lobe_id: site-china-standouts
+    tier: display
+    lifecycle_state: active
+    information_domain: tactical_entry
+    # SA-W3: NEW charter matching exact synapse.yml artifact id.  Six dict-form sensors
+    # mirror the CN audit card written by engine/china_standout_audit.py.  NW-scope
+    # prerequisite satisfied: mastermind_context.py wires china_standouts.json into
+    # the candidate intake (SA-R1), and 'mastermind:context' is tagged in synapse.yml
+    # in the same PR.  Accrual-honesty: proposals must carry check_by >= 2026-10-15.
+    fitness_sensors:
+    - id: hit_quality
+      store: data/metabolism/fitness/standouts_cn.json
+      maturity_date: '2026-10-15'
+      accruing: true
+      description: Wilson-LB hit rate on 21d matured CN picks vs CSI300 excess (SA-R10).
+    - id: upside_capture
+      store: data/metabolism/fitness/standouts_cn.json
+      maturity_date: '2026-10-15'
+      accruing: true
+      description: Ratio of CN buy-lane upside captured vs missed-mover cohort upside (SA-R3 pairing).
+    - id: coverage_health
+      store: data/metabolism/fitness/standouts_cn.json
+      maturity_date: '2026-10-15'
+      accruing: true
+      description: Trailing-4wk CN buy-lane ticker count; frozen baseline anchored at first maturity (SA-R4).
+    - id: missed_mover_rate
+      store: data/metabolism/fitness/standouts_cn.json
+      maturity_date: '2026-10-15'
+      accruing: true
+      description: Fraction of CN significant movers not surfaced by buy lane in entry window (SA-R3 counter-sensor).
+    - id: timing_quality
+      store: data/metabolism/fitness/standouts_cn.json
+      maturity_date: '2026-10-15'
+      accruing: true
+      description: Median CN board tenure at matured-pick entry; signaled_too_late share (SA-R13 process axis).
+    - id: process_integrity
+      store: data/metabolism/fitness/standouts_cn.json
+      maturity_date: '2026-10-15'
+      accruing: true
+      description: Inverse data_fault share on CN matured picks; stale-feed process failures (SA-R11).
+    owner_program: china-alpha
+    notes: >-
+      SA-W3: NEW loop-manageable charter for the CN standout lobe (SA-R1).  Exact id
+      matches synapse.yml entry 'site-china-standouts'.  Store path is the committed
+      card written by engine/china_standout_audit.py.  NW-scope: mastermind:context
+      wired in mastermind_context.py + synapse.yml in this PR (SA-R1 prerequisite).
+      All sensors accruing until 2026-10-15; proposals must carry check_by >= 2026-10-15
+      (accrual-honesty gate R-V4-10).  tier read-mirrored from synapse.yml (display).
+      owner_program: china-alpha.  Roster: 65 of 66 (SA-R1).
   spine-index:
     lobe_id: spine-index
     tier: infrastructure

@@ -75,6 +75,8 @@ _KINDS = frozenset({
     "dispatched_build_parked",
     # R-V7-7: audit-reject rebuild cap exhausted — proposal parked for operator review
     "audit_rebuild_exhausted",
+    # SA-W3: standout-lobe audit trigger (SA-R9 stateless-cattle)
+    "audit_due",
 })
 
 
@@ -505,6 +507,13 @@ def run_all_emitters(root: Path | None = None, cycle_id: str | None = None) -> l
         repo = _repo_root(root)
         new_rows: list[dict] = []
 
+        # SA-W3: import audit_due_emitter here to avoid circular import at module level
+        try:
+            from engine.metabolism.standout_auditor import audit_due_emitter  # type: ignore[import]
+        except Exception as _import_exc:  # noqa: BLE001
+            audit_due_emitter = None  # type: ignore[assignment]
+            log.warning("insight_bus: standout_auditor import failed — audit_due_emitter skipped: %s", _import_exc)
+
         emitters = [
             health_transition_emitter,
             contradiction_emitter,
@@ -512,6 +521,8 @@ def run_all_emitters(root: Path | None = None, cycle_id: str | None = None) -> l
             freshness_sla_emitter,
             comeback_clock_emitter,
         ]
+        if audit_due_emitter is not None:
+            emitters.append(audit_due_emitter)
 
         # Load existing insight ids to avoid duplicates within the same cycle
         existing = get_open_rows(root=repo)
