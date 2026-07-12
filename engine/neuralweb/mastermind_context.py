@@ -1091,6 +1091,27 @@ def _build_candidate_context(
     except Exception as exc:  # noqa: BLE001
         gap_notes.append(f"candidate_context: us_standouts read failed — {exc}")
 
+    # --- CN standouts tickers (SA-W3: parity with us_standouts; context-only) ---
+    # site/factordata/china_standouts.json — display-context intake, never gates/ranks.
+    # Authority: is_context_only=True; NW-scope wired via mastermind:context tag in
+    # synapse.yml (SA-R1 prerequisite).  Never raises.
+    cn_standouts_path = repo / "site" / "factordata" / "china_standouts.json"
+    try:
+        cs = _read_json(cn_standouts_path)
+        if isinstance(cs, dict):
+            for key in ("buy", "watch", "laggards", "ripening", "ripening_falling"):
+                lst = cs.get(key) or []
+                if isinstance(lst, list):
+                    for item in lst:
+                        if isinstance(item, dict):
+                            t = item.get("ticker") or item.get("symbol")
+                        else:
+                            t = str(item)
+                        if t:
+                            standouts_tickers.add(t)
+    except Exception as exc:  # noqa: BLE001
+        gap_notes.append(f"candidate_context: cn_standouts read failed — {exc}")
+
     # --- Altdata mastermind tickers ---
     altdata_path = repo / "site" / "altdata" / "mastermind.json"
     altdata_tickers: set[str] = set()

@@ -31,6 +31,7 @@ Warn rules (W)
 W-1  undecided packet older than stale_after_days without escalated=true
 W-2  duplicate_risk high with empty deferred_or_killed_hits
 W-3  decided packet missing rationale
+W-4  standout-lobe proposal cites hit_quality sensor without paired coverage sensor
 
 Usage
 -----
@@ -466,6 +467,42 @@ def validate_packet(
         rationale = _get_nested(packet, "decision", "rationale")
         if not rationale:
             warn("W-3", "decided packet is missing decision.rationale")
+
+    # ── W-4: standout-lobe precision-only fitness contract (SA-R4) ──────────
+    # Fires when a fitness_contract.sensor is 'hit_quality' (precision sensor)
+    # on a standout lobe without a paired coverage sensor in the same packet.
+    _COVERAGE_SENSORS = frozenset({
+        "coverage_health", "missed_mover_rate", "upside_capture",
+    })
+    _PRECISION_SENSORS = frozenset({"hit_quality"})
+    try:
+        proposals = packet.get("proposals") or []
+        for prop in proposals:
+            fc = prop.get("fitness_contract") or {}
+            sensor = str(fc.get("sensor") or prop.get("targets_sensor") or "").strip()
+            lobe = str(prop.get("lobe") or "").strip()
+            # Only fire for standout lobes
+            if lobe not in ("site-us-standouts", "site-china-standouts"):
+                continue
+            if sensor in _PRECISION_SENSORS:
+                # Check all proposals in this packet for a paired coverage sensor
+                has_coverage = any(
+                    str(
+                        (p.get("fitness_contract") or {}).get("sensor")
+                        or p.get("targets_sensor") or ""
+                    ).strip() in _COVERAGE_SENSORS
+                    for p in proposals
+                )
+                if not has_coverage:
+                    warn(
+                        "W-4",
+                        f"standout-lobe proposal targets '{sensor}' (precision sensor) "
+                        f"without a paired coverage sensor (coverage_health, "
+                        f"missed_mover_rate, upside_capture) in the docket — "
+                        f"SA-R4 anti-narrowing check requires coverage counter-evidence",
+                    )
+    except Exception:  # noqa: BLE001
+        pass  # NEVER-RAISE: warn rules must not abort the checker
 
     return findings
 

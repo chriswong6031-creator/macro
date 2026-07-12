@@ -35,6 +35,18 @@ lobe_caps:
     # Per-lobe circuit breaker: after this many consecutive failed PRs for the
     # lobe, auto-set a per-lobe pause flag.
     breaker_trip: 3
+  # SA-W3: standout lobes added as loop-manageable (SA-R1). Caps mirror til.
+  # Roster: 64 → 65 of 66 (max_active_nonscored_lobes).
+  site-us-standouts:
+    per_cycle_usd_cap: 25
+    per_cycle_token_cap: 25000000
+    max_docket_size: 5
+    breaker_trip: 3
+  site-china-standouts:
+    per_cycle_usd_cap: 25
+    per_cycle_token_cap: 25000000
+    max_docket_size: 5
+    breaker_trip: 3
 
 # ── Circuit breaker config ───────────────────────────────────────────────────
 
@@ -65,7 +77,7 @@ budget_ledger_path: data/metabolism/budget_ledger.json
 #
 # These values are IMMUTABLE (loop PRs cannot modify them; R-V2-8).
 # An operator raises them via a T2 tap-gated human PR.
-max_active_nonscored_lobes: 66    # 63 current + 3 headroom (operator-ratified 2026-07-10)
+max_active_nonscored_lobes: 66    # 65 current (SA-W3 adds site-china-standouts) + 1 headroom (SA-R1; operator-ratified 2026-07-10 base was 63+3)
 max_probation_lobes: 5            # max simultaneous probation lobes (anti-cascade)
 
 # ── Genesis-specific caps (R-V6-3 — W2 genesis gauntlet) ─────────────────────

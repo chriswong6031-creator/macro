@@ -813,6 +813,67 @@ def _run_verify(
         return {"status": "failed", "artifact": None, "note": str(exc)}
 
 
+def _run_audit_due_probe(
+    shadow_root: Path,
+    real_root: Path,
+    cycle_id: str,
+) -> dict[str, Any]:
+    """SA-W3 shadow probe: check audit_due() for both markets against real stores.
+
+    This is a SENSE-tier probe — deterministic, no LLM call.  It reads real
+    attribution state (US/CN) to check whether SA-R9 thresholds are met, then
+    emits the result into the shadow insight_bus (shadow root only).
+
+    run_audit() is NOT called in shadow mode — the postmortem would require a
+    real Opus call and write to the real postmortems/ directory.  The probe
+    proves the trigger logic is wired; the full auditor runs post-arming.
+
+    NEVER raises.
+    """
+    stage = "audit_due_probe"
+    try:
+        from engine.metabolism.standout_auditor import (  # type: ignore[import]
+            audit_due, audit_due_emitter,
+        )
+        results: dict[str, Any] = {}
+        for market in ("us", "cn"):
+            try:
+                # Check audit_due against REAL stores (read-only)
+                result = audit_due(market, root=real_root)
+                results[market] = {
+                    "due": result.get("due"),
+                    "reason": result.get("reason"),
+                    "newly_matured_rows": result.get("newly_matured_rows"),
+                    "days_since_postmortem": result.get("days_since_postmortem"),
+                }
+            except Exception as exc:  # noqa: BLE001
+                results[market] = {"due": False, "error": str(exc)}
+
+        # Emit audit_due rows into the SHADOW insight_bus (not real)
+        try:
+            emitted = audit_due_emitter(root=shadow_root, cycle_id=cycle_id)
+            n_emitted = len(emitted)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("shadow_cycle[%s]: audit_due_emitter: %s", stage, exc)
+            n_emitted = 0
+
+        us_due = results.get("us", {}).get("due", False)
+        cn_due = results.get("cn", {}).get("due", False)
+
+        return {
+            "status": "ok",
+            "artifact": None,
+            "note": (
+                f"audit_due probe: us_due={us_due} cn_due={cn_due} "
+                f"bus_rows_emitted={n_emitted}; "
+                f"us={results.get('us', {})}; cn={results.get('cn', {})}"
+            ),
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("shadow_cycle[%s]: %s", stage, exc)
+        return {"status": "failed", "artifact": None, "note": str(exc)}
+
+
 def _run_dream(
     shadow_root: Path,
     real_root: Path,
@@ -992,6 +1053,9 @@ def run_shadow_cycle(
 
     # ── Stage: verify (seeded contract) ───────────────────────────────────────
     stages["verify"] = _run_verify(shadow_root, real_root, cycle_id, today)
+
+    # ── Stage: audit_due_probe (SA-W3 — deterministic, no LLM call) ──────────
+    stages["audit_due_probe"] = _run_audit_due_probe(shadow_root, real_root, cycle_id)
 
     # ── Stage: dream ──────────────────────────────────────────────────────────
     stages["dream"] = _run_dream(shadow_root, real_root, cycle_id, today)

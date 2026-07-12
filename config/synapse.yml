@@ -2806,8 +2806,10 @@ artifacts:
       - scripts/build_china.py
       - scripts/export_signal_contracts.py
       - scripts/backfill_stock_open.py
+      - engine/neuralweb/mastermind_context.py
     external_consumers:
       - mastermind:vendored
+      - mastermind:context
     notes: >
       Producer: scripts/build_china_library.py:1865 write_text.
       W8-R1 addendum: china_standouts.json now also carries 'ripening' (READY+BASING,
