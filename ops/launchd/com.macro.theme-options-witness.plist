@@ -39,7 +39,14 @@
   OUTPUT:
     data/neuralweb/theme_options_witness.json  (NW artifact)
     site/basketdata/options_witness.json        (compact site projection)
-    Both are git-tracked artifacts; commit them via the nightly render lane.
+    Both are git-tracked artifacts. KNOWN GAP (2026-07-12): writes land in the
+    flow-ops-wt working tree and NOTHING commits them — the nightly lanes run on
+    isolated runner checkouts and cannot see this worktree, and the daily.yml
+    collect-lane witness step (which CAN commit) has no ThetaData store and
+    overwrites with the honest-null artifact each night. Before installing this
+    plist, add a commit+push tail here (narrow add of the two artifacts, rebase
+    --autostash + retry, per the daily.yml "commit data" pattern) or the real
+    legs will never reach git.
 
   LOG TAILING:
     tail -f /tmp/theme_options_witness.stdout.log /tmp/theme_options_witness.stderr.log

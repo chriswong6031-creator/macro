@@ -1710,21 +1710,6 @@ divergences:
 
   - lanes: [collect]
     differs: >
-      scripts.build_discovery_confluence is declared in dag.yml collect lane
-      (TIL W9 PR-W9) but is NOT yet present in the live
-      .github/workflows/daily.yml collect job.
-    reason: >
-      New collect-lane step (TIL W9 EDGAR phrase-velocity + GitHub adoption
-      two-source discovery confluence). The dag.yml entry registers the intended
-      placement (collect lane, after build_hiring_velocity and before
-      publish_r2_attention). The daily.yml wiring follows the same pattern as
-      W7 (scripts.collect_dol_certs / scripts.build_hiring_velocity): safe to
-      invoke standalone; workflow PR closes this divergence when the lane is
-      activated. No new secrets required (keyless sources only).
-    evidence: "engine/edgar_phrase_velocity.py:_STORE_ENV, engine/theme_adoption.py:AUTHORITY"
-
-  - lanes: [collect]
-    differs: >
       collectors.census_trade and engine.theme_trade_flows are declared in
       dag.yml collect lane (TIL W8 PR-W8) but are NOT yet present in the live
       .github/workflows/daily.yml collect job.
@@ -1739,35 +1724,10 @@ divergences:
       to wire immediately once the collector secret is in place.
     evidence: "collectors/census_trade.py:docstring API VERIFIED NOTE"
 
-  - lanes: [collect]
-    differs: >
-      collectors.clinicaltrials_themes and engine.theme_clinical are declared in
-      dag.yml collect lane (TIL W10 PR-W10) but are NOT yet present in the live
-      .github/workflows/daily.yml collect job.
-    reason: >
-      New collect-lane steps (TIL W10 ClinicalTrials.gov theme-level pipeline
-      density). The dag.yml entries register the intended placement (collect lane,
-      after build_theme_trade_flows and before build_discovery_confluence). The
-      daily.yml wiring follows the same deferred pattern as W7/W8/W9: invoke
-      standalone first; workflow PR closes this divergence. No new secrets
-      required — ClinicalTrials.gov v2 API is keyless (verified 2026-07-09).
-      The engine step (build_theme_clinical) is cheap (pure in-memory) and
-      exits 0 even without a parquet — safe to wire immediately.
-    evidence: "collectors/clinicaltrials_themes.py:_STUDIES_URL VERIFIED LIVE 2026-07-09"
-
-  - lanes: [collect]
-    differs: >
-      engine.theme_options_witness is declared in dag.yml collect lane
-      (TIL W11 PR-W11) but is NOT yet present in the live
-      .github/workflows/daily.yml collect job.
-    reason: >
-      New collect-lane step (TIL W11 options-tape crowding-hazard witness).
-      Reads the runner-local ThetaData EOD store (THETADATA_STORE / theta-ops-wt
-      path); emits full honest-null artifact + exit 0 when the store is absent,
-      so wiring is safe anywhere the box lacks the store. daily.yml wiring
-      follows the same deferred pattern as W7/W8/W9/W10: invoke standalone
-      first; workflow PR closes this divergence.
-    evidence: "engine/theme_options_witness.py:_theta_store resolution + store-absent null-path tests"
+  # (TIL W9/W10/W11 collect-lane divergences closed 2026-07-12 — the declared
+  # steps collect_clinicaltrials_themes, build_theme_clinical,
+  # build_theme_options_witness and build_discovery_confluence are now live in
+  # the daily.yml collect job. W7 and W8 above remain deliberately unwired.)
 
 # ---------------------------------------------------------------------------
 # MODULES — 25-module IO table from the W5a scout
