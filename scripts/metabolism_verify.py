@@ -49,10 +49,16 @@ def _scan_pending_cycles(root: Path, today: str | None) -> list[tuple[str, dict]
     Scans data/metabolism/dockets/<cycle_id>.json for registered fitness
     contracts.  Skips cycles that already have a verify record at
     data/metabolism/verify/<cycle_id>.json.  Never raises.
+
+    Uses parse_check_by() for robust date comparison (R-V5-4): a malformed
+    check_by is still included (the verify engine will quarantine it as
+    UNVERIFIABLE with an operator tap) rather than silently skipped here.
     """
     from datetime import datetime, timezone  # noqa: PLC0415
+    from engine.metabolism.verify import parse_check_by  # noqa: PLC0415
 
     today_str = today or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_date = parse_check_by(today_str)
     dockets_dir = root / "data" / "metabolism" / "dockets"
     verify_dir = root / "data" / "metabolism" / "verify"
     pending: list[tuple[str, dict]] = []
@@ -81,16 +87,34 @@ def _scan_pending_cycles(root: Path, today: str | None) -> list[tuple[str, dict]
             if not isinstance(contract, dict):
                 continue
             # Contracts minted before the lobe key existed inherit the
-            # docket-level lobe, else verify writes lobe="" strategic-memory
-            # rows that the per-lobe PROPOSE filter drops.
-            if docket_lobe and not contract.get("lobe"):
-                contract["lobe"] = docket_lobe
-            check_by = contract.get("check_by")
-            if not check_by:
+            # proposal-row or docket-level lobe (#2294), else verify writes
+            # lobe="" strategic-memory rows that the per-lobe PROPOSE filter
+            # drops. The contract's own lobe always wins.
+            if not contract.get("lobe"):
+                _lobe = str(proposal.get("lobe") or docket_lobe or "").strip()
+                if _lobe:
+                    contract["lobe"] = _lobe
+            check_by_raw = contract.get("check_by")
+            if not check_by_raw:
                 continue
-            if check_by <= today_str:
+            check_by_date = parse_check_by(str(check_by_raw))
+            if check_by_date is None:
+                # Malformed check_by: route to verify engine which will quarantine it
+                log.warning(
+                    "metabolism_verify scan: malformed check_by %r in %s — "
+                    "routing to verify for operator quarantine",
+                    check_by_raw, cycle_id,
+                )
+                pending.append((cycle_id, contract))
+                break
+            if today_date is not None and check_by_date <= today_date:
                 pending.append((cycle_id, contract))
                 break  # one verify per docket cycle_id (the workflow loops if needed)
+            elif today_date is None:
+                # Fallback: if today can't be parsed (shouldn't happen), use string compare
+                if str(check_by_raw) <= today_str:
+                    pending.append((cycle_id, contract))
+                    break
 
     return pending
 

@@ -39,6 +39,7 @@ import json
 import logging
 import subprocess
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 log = logging.getLogger("metabolism_gc")
@@ -158,6 +159,116 @@ def _matches_pattern(name: str) -> bool:
     return any(fnmatch.fnmatch(name, pat) for pat in _WATCHED_PATTERNS)
 
 
+# ── Stale running marker sweep (R-V5-2) ──────────────────────────────────────
+
+def _load_budget_ttl(repo_root: Path) -> float:
+    """Load stale_running_ttl_hours from metabolism_budget.yml.  Returns 3.0 on error."""
+    try:
+        import yaml
+        cfg_path = repo_root / "config" / "metabolism_budget.yml"
+        with open(cfg_path) as fh:
+            cfg = yaml.safe_load(fh) or {}
+        return float(cfg.get("stale_running_ttl_hours", 3))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("GC: _load_budget_ttl: %s — defaulting to 3h", exc)
+        return 3.0
+
+
+def sweep_stale_running_markers(repo_root: Path, dry_run: bool = False) -> dict:
+    """Rewrite stale 'running' journal markers to 'failed' with a GC note (R-V5-2).
+
+    A 'running' marker is stale when its started_at is older than
+    stale_running_ttl_hours (from metabolism_budget.yml, default 3h).
+
+    This sweep writes journal state ONLY — it never dispatches, never touches
+    git worktrees, and never reads secret values.
+
+    Returns a summary dict: {"swept": int, "errors": list[str]}.
+    NEVER raises.
+    """
+    summary: dict = {"swept": 0, "errors": []}
+    try:
+        ttl_hours = _load_budget_ttl(repo_root)
+        ttl = timedelta(hours=ttl_hours)
+        now = datetime.now(timezone.utc)
+
+        journal_dir = repo_root / "data" / "metabolism" / "journal"
+        if not journal_dir.exists():
+            return summary
+
+        for jf in sorted(journal_dir.glob("*.json")):
+            cycle_id = jf.stem
+            try:
+                data = json.loads(jf.read_text(encoding="utf-8"))
+            except Exception as exc:  # noqa: BLE001
+                log.warning("GC: stale-running sweep: cannot read %s: %s", jf, exc)
+                summary["errors"].append(f"{cycle_id}: read error: {exc}")
+                continue
+
+            stages = data.get("stages") or {}
+            modified = False
+            for stage_name, stage_rec in stages.items():
+                if stage_rec.get("status") != "running":
+                    continue
+                started_at_str = stage_rec.get("started_at", "")
+                if not started_at_str:
+                    continue
+                try:
+                    if started_at_str.endswith("Z"):
+                        started_at_str = started_at_str[:-1] + "+00:00"
+                    started_at = datetime.fromisoformat(started_at_str).astimezone(timezone.utc)
+                except Exception as exc:  # noqa: BLE001
+                    log.warning(
+                        "GC: stale-running sweep: cannot parse started_at %r in %s/%s: %s",
+                        started_at_str, cycle_id, stage_name, exc,
+                    )
+                    continue
+
+                age = now - started_at
+                if age <= ttl:
+                    continue
+
+                # Stale — rewrite to "failed" with a GC note
+                log.info(
+                    "GC: stale running marker: cycle=%s stage=%s age=%.1fh > ttl=%.1fh — "
+                    "rewriting to 'failed'",
+                    cycle_id, stage_name, age.total_seconds() / 3600, ttl_hours,
+                )
+                if not dry_run:
+                    stage_rec["status"] = "failed"
+                    stage_rec["finished_at"] = now.isoformat(timespec="seconds")
+                    # Preserve prior note if any; append GC annotation
+                    prior_note = stage_rec.get("note", "")
+                    try:
+                        note_data = json.loads(prior_note) if prior_note.startswith("{") else {}
+                    except Exception:  # noqa: BLE001
+                        note_data = {}
+                    note_data["_gc_note"] = "stale_running reaped by gc"
+                    note_data["_failed_attempts"] = int(note_data.get("_failed_attempts", 0)) + 1
+                    stage_rec["note"] = json.dumps(note_data, separators=(",", ":"))
+                    stages[stage_name] = stage_rec
+                    modified = True
+                summary["swept"] += 1
+
+            if modified and not dry_run:
+                # Update top-level ts; write back atomically
+                data["stages"] = stages
+                data["ts"] = now.isoformat(timespec="seconds")
+                try:
+                    tmp = jf.with_suffix(".tmp")
+                    tmp.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+                    tmp.replace(jf)
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("GC: stale-running sweep: write failed for %s: %s", jf, exc)
+                    summary["errors"].append(f"{cycle_id}: write error: {exc}")
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_gc.sweep_stale_running_markers: %s", exc)
+        summary["errors"].append(str(exc))
+
+    return summary
+
+
 # ── Main GC loop ─────────────────────────────────────────────────────────────
 
 def gc(repo_root: Path, dry_run: bool = False) -> dict:
@@ -262,6 +373,15 @@ def main(argv: list[str] | None = None) -> int:
         repo_root = Path(__file__).resolve().parent.parent
 
     log.info("GC: repo_root=%s dry_run=%s", repo_root, args.dry_run)
+
+    # Stale running marker sweep (R-V5-2): runs first, before worktree reaping
+    sweep_result = sweep_stale_running_markers(repo_root, dry_run=args.dry_run)
+    log.info(
+        "GC stale-running sweep: swept=%d errors=%d",
+        sweep_result["swept"],
+        len(sweep_result["errors"]),
+    )
+
     result = gc(repo_root, dry_run=args.dry_run)
 
     log.info(

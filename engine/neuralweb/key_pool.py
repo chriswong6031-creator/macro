@@ -402,17 +402,23 @@ def is_cooling(key_id: str, root: Path | None = None) -> bool:
 
         now = datetime.now(timezone.utc)
 
-        # Check if a subsequent successful session was recorded AFTER (or at the
-        # same second as) this cooling row — meaning the key was successfully used
-        # again and the cooling resolved.  Use >= to handle same-second writes.
-        cooling_ts = _ts_key(last_cooling)
-        for r in rows:
-            if r.get("key_id") != key_id:
-                continue
-            if r.get("outcome") == "ok":
-                row_ts = _ts_key(r)
-                if row_ts >= cooling_ts:
-                    return False  # key was used successfully at or after the cooling row
+        # A subsequent "ok" row clears cooling ONLY for window/auth kinds.
+        # A "weekly" cooling clears ONLY when reset_hint passes (i.e. now >= reset_dt).
+        # An "ok" row recorded before the session completes (former pick-time recording)
+        # must NOT clear weekly cooling — that would let a weekly-exhausted key be
+        # re-picked on the very next cycle (R-V5-3).
+        cool_kind = last_cooling.get("cool_kind", "window")
+        if cool_kind in ("window", "auth"):
+            # window and auth coolings are cleared by a later "ok" row
+            cooling_ts = _ts_key(last_cooling)
+            for r in rows:
+                if r.get("key_id") != key_id:
+                    continue
+                if r.get("outcome") == "ok":
+                    row_ts = _ts_key(r)
+                    if row_ts >= cooling_ts:
+                        return False  # key was used successfully at or after the cooling row
+        # weekly cooling: cleared ONLY by time (reset_hint passage), not by ok rows
 
         return now < reset_dt
     except Exception as exc:  # noqa: BLE001

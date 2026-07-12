@@ -40,7 +40,8 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+import re
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -176,6 +177,38 @@ def _measurement_lens_triage(
     }
 
 
+# ── Shared date parser (R-V5-4) ───────────────────────────────────────────────
+
+def parse_check_by(s: str) -> date | None:
+    """Robustly parse a check_by string to a date object.
+
+    Handles:
+      - "YYYY-MM-DD"                 — canonical ISO date
+      - "YYYY-M-D", "YYYY-M-DD", etc — non-zero-padded (LLM-authored)
+      - ISO datetime with T/Z suffix — e.g. "2026-07-15T00:00:00Z"
+
+    Returns None if the string is unparseable, so callers can route to
+    operator visibility instead of silently mis-ordering.
+
+    NEVER raises.
+    """
+    if not s or not isinstance(s, str):
+        return None
+    s = s.strip()
+    # Strip optional time component: "2026-07-15T00:00:00Z" → "2026-07-15"
+    # Match the date portion before any 'T' or space
+    m = re.match(r'^(\d{4})-(\d{1,2})-(\d{1,2})', s)
+    if not m:
+        return None
+    try:
+        year = int(m.group(1))
+        month = int(m.group(2))
+        day = int(m.group(3))
+        return date(year, month, day)
+    except (ValueError, OverflowError):
+        return None
+
+
 # ── Main verify function ───────────────────────────────────────────────────────
 
 def verify_proposal(
@@ -205,8 +238,46 @@ def verify_proposal(
         if today is None:
             today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-        check_by = contract.get("check_by") or today
-        if check_by > today:
+        check_by_raw = str(contract.get("check_by") or today)
+        check_by_date = parse_check_by(check_by_raw)
+        today_date = parse_check_by(today)
+
+        # R-V5-4: unparseable check_by → operator visibility (quarantined)
+        if check_by_date is None:
+            log.warning(
+                "metabolism_verify.verify_proposal: malformed check_by %r in cycle %s — "
+                "quarantining as UNVERIFIABLE",
+                check_by_raw, cycle_id,
+            )
+            triage = _measurement_lens_triage(_UNVERIFIABLE, contract, context)
+            triage["operator_tap_reason"] = (
+                f"malformed check_by quarantined: {check_by_raw!r} — "
+                + (triage.get("operator_tap_reason") or "")
+            )
+            triage["classification"] = "unverifiable"
+            triage["note"] = f"check_by {check_by_raw!r} could not be parsed (R-V5-4)"
+            ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            record: dict[str, Any] = {
+                "schema": SCHEMA,
+                "cycle_id": cycle_id,
+                "proposal_id": contract.get("proposal_id") or contract.get("dedup_hash"),
+                "check_by": check_by_raw,
+                "contract": contract,
+                "realized": {
+                    "outcome": _UNVERIFIABLE,
+                    "detail": f"malformed check_by quarantined: {check_by_raw!r}",
+                    "delta_vs_contract": None,
+                },
+                "triage": triage,
+                "authority": AUTHORITY_BLOCK,
+                "ts": ts,
+            }
+            if triage["action"] == "operator_tap":
+                _append_governance_tap(cycle_id, contract, triage, root)
+            return record
+
+        check_by = check_by_date.strftime("%Y-%m-%d")  # normalized canonical form
+        if today_date is None or check_by_date > today_date:
             # check_by hasn't arrived yet — return pending record
             return _pending_record(cycle_id, contract, check_by)
 

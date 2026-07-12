@@ -67,3 +67,15 @@ budget_ledger_path: data/metabolism/budget_ledger.json
 # An operator raises them via a T2 tap-gated human PR.
 max_active_nonscored_lobes: 66    # 63 current + 3 headroom (operator-ratified 2026-07-10)
 max_probation_lobes: 5            # max simultaneous probation lobes (anti-cascade)
+
+# ── Never-stuck durability (R-V5-1, R-V5-2) ──────────────────────────────────
+#
+# max_build_attempts: maximum times a "failed" dispatch may be re-attempted
+# before the proposal is permanently parked (operator-tap insight emitted).
+# A foreign_file_abort parks after ONE occurrence regardless of this cap.
+max_build_attempts: 2
+
+# stale_running_ttl_hours: a "running" journal marker older than this is treated
+# as stale (crashed runner / OOM) and NOT counted as claimed.  Default = 3h ≈ 2×
+# the 90-minute build timeout.
+stale_running_ttl_hours: 3

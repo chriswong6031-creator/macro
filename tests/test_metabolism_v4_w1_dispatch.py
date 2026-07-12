@@ -1654,3 +1654,312 @@ class TestKeyFailoverHelpers:
         (tmp_path / "f.txt").write_text("dirty")
         assert mb._worktree_is_clean(str(tmp_path)) is False
         assert mb._worktree_is_clean("/nonexistent/path/xyz") is False
+
+
+# ── R-V5-1: Re-attemptable dispatches ────────────────────────────────────────
+
+class TestReattempableDispatches:
+    """R-V5-1: failed dispatches journal 'failed', not 'done'; re-dispatch is allowed
+    under max_build_attempts; immutable_refusal stays permanently claimed; old 'done'
+    rows are still treated as claimed (backward compatibility)."""
+
+    def _write_budget_yml(self, d: Path, max_build_attempts: int = 2) -> None:
+        (d / "config").mkdir(parents=True, exist_ok=True)
+        (d / "config" / "metabolism_budget.yml").write_text(
+            f"schema: metabolism_budget.v1\n"
+            f"per_cycle_usd_cap: 25\n"
+            f"max_build_attempts: {max_build_attempts}\n"
+            f"stale_running_ttl_hours: 3\n",
+            encoding="utf-8",
+        )
+
+    def test_session_error_journals_failed_not_done(self):
+        """A session_error result must journal 'failed', not 'done'."""
+        mb = _import_mb()
+        d = _tmp_root()
+        self._write_budget_yml(d)
+        cycle_id = "cycle-rv51-001"
+        pid = "p1"
+        mb._journal_dispatch(cycle_id, pid, {"status": "session_error", "returncode": 1}, root=d)
+
+        from scripts.metabolism_journal import _read_journal
+        j = _read_journal(cycle_id, d)
+        stage = j.get("stages", {}).get(f"build_dispatch_{pid}", {})
+        assert stage.get("status") == "failed", (
+            f"session_error must journal 'failed', got {stage.get('status')!r}"
+        )
+
+    def test_dispatched_journals_done(self):
+        """A successful dispatch must journal 'done' (permanently claimed)."""
+        mb = _import_mb()
+        d = _tmp_root()
+        self._write_budget_yml(d)
+        cycle_id = "cycle-rv51-002"
+        pid = "p2"
+        mb._journal_dispatch(cycle_id, pid, {"status": "dispatched"}, root=d)
+
+        from scripts.metabolism_journal import _read_journal
+        j = _read_journal(cycle_id, d)
+        stage = j.get("stages", {}).get(f"build_dispatch_{pid}", {})
+        assert stage.get("status") == "done"
+
+    def test_immutable_refusal_journals_done(self):
+        """An immutable_refusal must journal 'done' — retrying is pointless."""
+        mb = _import_mb()
+        d = _tmp_root()
+        self._write_budget_yml(d)
+        cycle_id = "cycle-rv51-003"
+        pid = "p3"
+        mb._journal_dispatch(cycle_id, pid,
+                             {"status": "immutable_refusal", "immutable_hits": ["config/x.yml"]},
+                             root=d)
+
+        from scripts.metabolism_journal import _read_journal
+        j = _read_journal(cycle_id, d)
+        stage = j.get("stages", {}).get(f"build_dispatch_{pid}", {})
+        assert stage.get("status") == "done", "immutable_refusal must be 'done' (never retried)"
+
+    def test_failed_below_max_is_re_attemptable(self):
+        """With 1 failure (< max_build_attempts=2), _is_dispatch_done returns False."""
+        mb = _import_mb()
+        d = _tmp_root()
+        self._write_budget_yml(d, max_build_attempts=2)
+        cycle_id = "cycle-rv51-004"
+        pid = "p4"
+        # Journal one failure (count = 1)
+        mb._journal_dispatch(cycle_id, pid, {"status": "session_error", "returncode": 1}, root=d)
+
+        result = mb._is_dispatch_done(cycle_id, pid, root=d)
+        assert result is False, (
+            "A single failed attempt (< max_build_attempts=2) must be re-attemptable"
+        )
+
+    def test_failed_at_max_is_permanently_parked_with_insight(self):
+        """After max_build_attempts failures, _is_dispatch_done returns True + emits insight."""
+        mb = _import_mb()
+        d = _tmp_root()
+        self._write_budget_yml(d, max_build_attempts=2)
+        (d / "data" / "metabolism").mkdir(parents=True, exist_ok=True)
+        cycle_id = "cycle-rv51-005"
+        pid = "p5"
+        # Journal two failures (== max_build_attempts=2)
+        mb._journal_dispatch(cycle_id, pid, {"status": "session_error", "returncode": 1}, root=d)
+        mb._journal_dispatch(cycle_id, pid, {"status": "session_error", "returncode": 1}, root=d)
+
+        result = mb._is_dispatch_done(cycle_id, pid, root=d)
+        assert result is True, (
+            "At max_build_attempts failures, proposal must be permanently parked"
+        )
+        # Verify insight row was emitted
+        bus_path = d / "data" / "metabolism" / "insight_bus.jsonl"
+        assert bus_path.exists(), "insight_bus.jsonl must be written after permanent park"
+        rows = [json.loads(line) for line in bus_path.read_text().splitlines() if line.strip()]
+        parked_rows = [r for r in rows if r.get("kind") == "dispatched_build_parked"]
+        assert parked_rows, "must emit a dispatched_build_parked insight row"
+
+    def test_foreign_file_abort_parks_after_one(self):
+        """A foreign_file_abort parks after exactly ONE occurrence (deliberate containment)."""
+        mb = _import_mb()
+        d = _tmp_root()
+        self._write_budget_yml(d, max_build_attempts=2)
+        (d / "data" / "metabolism").mkdir(parents=True, exist_ok=True)
+        cycle_id = "cycle-rv51-006"
+        pid = "p6"
+        # Journal ONE foreign_file_abort
+        mb._journal_dispatch(cycle_id, pid,
+                             {"status": "foreign_file_abort", "foreign_files": ["README.md"]},
+                             root=d)
+
+        result = mb._is_dispatch_done(cycle_id, pid, root=d)
+        assert result is True, "foreign_file_abort must park after one occurrence"
+        # Verify insight row emitted
+        bus_path = d / "data" / "metabolism" / "insight_bus.jsonl"
+        assert bus_path.exists(), "insight row must be emitted for foreign_file_abort park"
+
+    def test_old_schema_done_row_still_claims(self):
+        """Old-schema 'done' journal rows must still be treated as claimed (backward-compat)."""
+        mb = _import_mb()
+        d = _tmp_root()
+        self._write_budget_yml(d)
+        cycle_id = "cycle-rv51-007"
+        pid = "p7"
+        # Simulate an old-schema "done" row (written by a previous version)
+        from scripts.metabolism_journal import finish_stage
+        stage = f"build_dispatch_{pid}"
+        finish_stage(cycle_id, stage, "done", note='{"status":"dispatched"}', root=d)
+
+        result = mb._is_dispatch_done(cycle_id, pid, root=d)
+        assert result is True, "Old-schema 'done' row must still claim the dispatch slot"
+
+    def test_immutable_refusal_never_retried_in_dispatch(self):
+        """_dispatch_build_session with immutable targets returns False and
+        _is_dispatch_done sees 'done' (no retry possible)."""
+        mb = _import_mb()
+        d = _tmp_root()
+        self._write_budget_yml(d)
+        proposal = _minimal_proposal(target_files=["config/grader_manifest.yml"])
+        launched = []
+
+        def fake_launch(cmd, env, cwd, timeout_s=1800):
+            launched.append(cmd)
+            return {"returncode": 0, "stdout": "", "stderr": ""}
+
+        cycle_id = "cycle-rv51-008"
+        with patch.dict(os.environ, _armed_env(), clear=False):
+            with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
+                mb._dispatch_build_session(
+                    proposal, "/tmp/wt", "test-branch",
+                    "claude_code_oauth_1",
+                    cycle_id=cycle_id, root=d,
+                )
+
+        # After immutable refusal, is_dispatch_done must return True
+        pid = proposal["proposal_id"]
+        assert mb._is_dispatch_done(cycle_id, pid, root=d) is True, (
+            "After immutable_refusal, dispatch must be permanently claimed"
+        )
+        assert len(launched) == 0
+
+
+# ── R-V5-2: Running marker TTL ────────────────────────────────────────────────
+
+class TestRunningMarkerTTL:
+    """R-V5-2: a 'running' marker fresher than TTL is claimed; older than TTL is not."""
+
+    def _write_budget_yml(self, d: Path, ttl_hours: float = 3.0) -> None:
+        (d / "config").mkdir(parents=True, exist_ok=True)
+        (d / "config" / "metabolism_budget.yml").write_text(
+            f"schema: metabolism_budget.v1\n"
+            f"per_cycle_usd_cap: 25\n"
+            f"max_build_attempts: 2\n"
+            f"stale_running_ttl_hours: {ttl_hours}\n",
+            encoding="utf-8",
+        )
+
+    def test_fresh_running_marker_is_claimed(self):
+        """A 'running' marker written just now must block re-dispatch."""
+        mb = _import_mb()
+        d = _tmp_root()
+        self._write_budget_yml(d, ttl_hours=3.0)
+        cycle_id = "cycle-rv52-001"
+        pid = "p1"
+        from scripts.metabolism_journal import start_stage
+        start_stage(cycle_id, f"build_dispatch_{pid}", root=d)
+
+        assert mb._is_dispatch_done(cycle_id, pid, root=d) is True, (
+            "Fresh 'running' marker must be treated as claimed (in-flight)"
+        )
+
+    def test_stale_running_marker_is_not_claimed(self):
+        """A 'running' marker older than TTL must NOT block re-dispatch."""
+        mb = _import_mb()
+        d = _tmp_root()
+        self._write_budget_yml(d, ttl_hours=0.001)  # ~3.6s TTL — expires immediately
+        cycle_id = "cycle-rv52-002"
+        pid = "p2"
+
+        # Write a running marker with a started_at in the past
+        from scripts.metabolism_journal import _write_journal, _read_journal
+        j = _read_journal(cycle_id, d)
+        import time
+        # Use a started_at that is definitely in the past
+        from datetime import datetime, timezone, timedelta
+        old_ts = (datetime.now(timezone.utc) - timedelta(hours=4)).isoformat(timespec="seconds")
+        stage = f"build_dispatch_{pid}"
+        if "stages" not in j:
+            j["stages"] = {}
+        j["stages"][stage] = {"status": "running", "started_at": old_ts}
+        _write_journal(cycle_id, j, d)
+
+        assert mb._is_dispatch_done(cycle_id, pid, root=d) is False, (
+            "Stale 'running' marker (older than TTL) must NOT be treated as claimed"
+        )
+
+
+# ── R-V5-3: Cooling horizon respected ────────────────────────────────────────
+
+class TestCoolingHorizonInBuildLane:
+    """R-V5-3: launched outcome used at launch time; ok only recorded on success;
+    weekly cooling not cleared by ok rows."""
+
+    def test_launched_outcome_recorded_at_dispatch(self):
+        """The build lane records 'launched' at launch, not 'ok'."""
+        mb = _import_mb()
+        d = _tmp_root()
+        ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
+        pid = "p_r53"
+        cycle_id = "cycle-rv53-001"
+
+        recorded_outcomes = []
+
+        def fake_record(cap_id, cycle_id_arg, outcome="ok", root=None):
+            recorded_outcomes.append(outcome)
+
+        def fake_launch(cmd, env, cwd, timeout_s=1800):
+            return {"returncode": 0, "stdout": "ok", "stderr": ""}
+
+        def fake_diff(wt_path, base_ref="origin/main"):
+            return ["engine/test_sensor.py"]
+
+        import tempfile
+        env = {**_armed_env(), ref_name: "fake_token_value"}
+        proposal = _minimal_proposal(pid=pid, cycle_id=cycle_id)
+
+        with tempfile.TemporaryDirectory() as wt_dir:
+            with patch.dict(os.environ, env, clear=False):
+                with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
+                    with patch.object(mb, "_diff_worktree_files", side_effect=fake_diff):
+                        with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
+                            with patch.object(mb, "_record_key_session",
+                                              side_effect=fake_record):
+                                mb._dispatch_build_session(
+                                    proposal, wt_dir, "metabolism/build-test",
+                                    "claude_code_oauth_1", root=d,
+                                )
+
+        # First recorded outcome must be "launched" (not "ok" at pre-launch)
+        assert recorded_outcomes, "record_key_session must have been called"
+        assert recorded_outcomes[0] == "launched", (
+            f"First ledger row must be 'launched', got {recorded_outcomes[0]!r}"
+        )
+        # "ok" must appear after "launched" (post-success)
+        assert "ok" in recorded_outcomes, "ok row must be recorded on success"
+        launch_idx = recorded_outcomes.index("launched")
+        ok_idx = recorded_outcomes.index("ok")
+        assert launch_idx < ok_idx, "launched must come before ok"
+
+    def test_ok_not_recorded_on_session_failure(self):
+        """On session failure, 'ok' must NOT be recorded (only launched + error)."""
+        mb = _import_mb()
+        d = _tmp_root()
+        ref_name = "CLAUDE_CODE_OAUTH_TOKEN_1"
+        pid = "p_r53_fail"
+        cycle_id = "cycle-rv53-002"
+
+        recorded_outcomes = []
+
+        def fake_record(cap_id, cycle_id_arg, outcome="ok", root=None):
+            recorded_outcomes.append(outcome)
+
+        def fake_launch(cmd, env, cwd, timeout_s=1800):
+            return {"returncode": 1, "stdout": "", "stderr": "some build error"}
+
+        import tempfile
+        env = {**_armed_env(), ref_name: "fake_token_value"}
+        proposal = _minimal_proposal(pid=pid, cycle_id=cycle_id)
+
+        with tempfile.TemporaryDirectory() as wt_dir:
+            with patch.dict(os.environ, env, clear=False):
+                with patch.object(mb, "_launch_build_subprocess", side_effect=fake_launch):
+                    with patch.object(mb, "_resolve_key_ref", return_value=(ref_name, None)):
+                        with patch.object(mb, "_record_key_session",
+                                          side_effect=fake_record):
+                            with patch.object(mb, "_pick_build_key", return_value=None):
+                                mb._dispatch_build_session(
+                                    proposal, wt_dir, "metabolism/build-test",
+                                    "claude_code_oauth_1", root=d,
+                                )
+
+        assert "ok" not in recorded_outcomes, (
+            f"'ok' must NOT be recorded on session failure; got {recorded_outcomes}"
+        )
