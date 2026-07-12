@@ -1,0 +1,40 @@
+{
+ "schema": "episode_ruler.v1",
+ "watermark": "leg membership as of 2026 \u2014 reconstructed era is approximation; descriptive only, never a gate (RC-R10)",
+ "all": {
+  "n": 15,
+  "run_pct": {
+   "p25": 1.6,
+   "median": 4.0,
+   "p75": 9.7
+  },
+  "sessions_to_peak": {
+   "median": 10,
+   "p75": 18
+  }
+ },
+ "modern": {
+  "n": 8,
+  "run_pct": {
+   "p25": 3.4,
+   "median": 7.8,
+   "p75": 11.0
+  },
+  "sessions_to_peak": {
+   "median": 9,
+   "p75": 17
+  }
+ },
+ "reconstructed": {
+  "n": 7,
+  "run_pct": {
+   "p25": 0.0,
+   "median": 1.4,
+   "p75": 3.7
+  },
+  "sessions_to_peak": {
+   "median": 10,
+   "p75": 19
+  }
+ }
+}

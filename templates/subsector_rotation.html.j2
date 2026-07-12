@@ -258,6 +258,15 @@ function render(ev, frag){
         if(!e.confirmed_tonight){
           rec+=' <span class="rc-stale">'+t('(as of last confirmation)','（截至最近一次确认）')+'</span>';
         }
+        // RC-R10 honest late-ruler: the measured census distribution instead of a
+        // binary "late" instinct. Descriptive only, never a gate.
+        var ru=(ev&&ev.ruler&&ev.ruler.modern&&ev.ruler.modern.run_pct)?ev.ruler.modern:null;
+        if(ru&&ru.n>=5){
+          rec+='<br>'+t('vs modern-era handoffs: median run ','对照现代样本：中位行情 ')
+            +'+'+ru.run_pct.median+'% ('+t('p75 ','75分位 ')+'+'+ru.run_pct.p75+'%), '
+            +t('peaking ~','约 ')+ru.sessions_to_peak.median
+            +t(' sessions in (n='+ru.n+', descriptive only)',' 个交易日见顶（n='+ru.n+'，仅描述性）');
+        }
       }
       html+='<div class="rc-card rc-'+esc(sev)+'">'
         +'<div class="rc-hd"><span class="rc-sev '+esc(sev)+'">'+esc(sev)+'</span>'

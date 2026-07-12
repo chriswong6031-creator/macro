@@ -148,12 +148,22 @@ def pair_confirm(close_in: pd.Series, close_out: pd.Series, p: dict = PARAMS) ->
 
 
 def evaluate_pair(close_out: pd.Series, close_in: pd.Series,
-                  p: dict = PARAMS, phase_in: str | None = None) -> dict | None:
-    """All three signatures at the last common bar, or None."""
+                  p: dict = PARAMS, phase_in: str | None = None,
+                  _blowoff_cache: dict | None = None) -> dict | None:
+    """All three signatures at the last common bar, or None. `_blowoff_cache` (optional,
+    keyed on the out-leg object + evaluation date) lets step_pairs/the RC-R8 replay skip
+    recomputing one out-leg's blowoff for each of its N peer in-legs — pure memo, no
+    behavior change."""
     idx = close_out.dropna().index.intersection(close_in.dropna().index)
     if len(idx) == 0:
         return None
-    a = blowoff_crash(close_out.loc[:idx[-1]], p)
+    if _blowoff_cache is not None:
+        key = (id(close_out), idx[-1])
+        if key not in _blowoff_cache:
+            _blowoff_cache[key] = blowoff_crash(close_out.loc[:idx[-1]], p)
+        a = _blowoff_cache[key]
+    else:
+        a = blowoff_crash(close_out.loc[:idx[-1]], p)
     if a is None:
         return None
     b = turn_up(close_in.loc[:idx[-1]], p, phase=phase_in)
@@ -182,9 +192,16 @@ def find_start(close_out: pd.Series, close_in: pd.Series,
 # ------------------------------------------------------------------ lifecycle ----
 
 def _sessions_between(dates: list[str], a: str, b: str) -> int:
-    """Trading sessions from a to b inclusive-of-b (0 if a==b), on the pair calendar."""
+    """Trading sessions from a to b inclusive-of-b (0 if a==b), on the pair calendar.
+    If `a` predates the calendar (e.g. scrolled out of a WINDOWED series in the RC-R8
+    replay), it was LONG ago — return a large count, never 0: a 0 here once made a
+    closed pair's re-fire lockout permanent."""
     try:
-        return max(0, dates.index(b) - dates.index(a))
+        ia = dates.index(a)
+    except ValueError:
+        return 10**6 if (dates and a < dates[0]) else 0
+    try:
+        return max(0, dates.index(b) - ia)
     except ValueError:
         return 0
 
@@ -227,6 +244,7 @@ def step_pairs(sectors: dict, state: dict, p: dict = PARAMS) -> tuple[dict, list
     events_active: list = []
     created: list = []
     closed: list = []
+    blowoff_cache: dict = {}          # one out-leg's blowoff shared across its N in-legs
 
     for skey, sec in sectors.items():
         cfg = sec["cfg"]
@@ -242,7 +260,8 @@ def step_pairs(sectors: dict, state: dict, p: dict = PARAMS) -> tuple[dict, list
                     continue
                 dates = [str(d.date()) for d in idx]
                 asof = dates[-1]
-                receipts = evaluate_pair(close_out, close_in, p)
+                receipts = evaluate_pair(close_out, close_in, p,
+                                         _blowoff_cache=blowoff_cache)
                 prev = active_prev.get(pair_id)
 
                 # ratio-slope exit counter (runs whether or not the pair fired tonight)

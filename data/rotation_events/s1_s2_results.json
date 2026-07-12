@@ -1,0 +1,38 @@
+{
+ "prereg": "research/ROTATION_COMMAND_S1_S2_PREREG.md",
+ "universe": {
+  "start": "2015-01-01",
+  "end": "2026-04-30",
+  "june_2026_excluded": true
+ },
+ "s1": {
+  "all": {
+   "n": 13,
+   "median_pp": -0.24,
+   "mean_pp": 0.67,
+   "wr": 0.462,
+   "false_fire": 0.154,
+   "p_boot": 0.6124
+  },
+  "modern": {
+   "n": 6,
+   "median_pp": -0.66,
+   "mean_pp": 1.18,
+   "wr": 0.5,
+   "false_fire": 0.167,
+   "p_boot": 0.5628
+  },
+  "p_adj": 0.7095,
+  "verdict": "ACCRUE"
+ },
+ "s2": {
+  "n": 13,
+  "median_diff_pp": -1.97,
+  "wr": 0.462,
+  "p_sign": 0.70947265625,
+  "p_boot": 0.6078,
+  "maxdd_clause_ok": true,
+  "p_adj": 0.7095,
+  "verdict": "ACCRUE"
+ }
+}
