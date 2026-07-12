@@ -11,10 +11,13 @@
 # terminal universe back to ~34-37 symbols. Installing from the vendored file keeps the
 # provisioner idempotent against the repo, not against a snapshot frozen in a heredoc.
 #
-# Deploy model: the charting-app code (ingest/signal_layer/contracts) is rsynced to
-# /opt/terminal (charting-app is local-git-only, no remote). This script installs the
-# wrapper + cron. Requires /opt/terminal/.env with POLYGON_API_KEY (transferred
-# out-of-band, never committed).
+# Deploy model: the charting-app lives on GitHub
+# (https://github.com/chriswong6031-creator/mastermind-terminal.git) and deploys are
+# git-gated — merge to master, then /opt/terminal/terminal-build.sh on the VPS runs
+# `git fetch && git reset --hard origin/master` in /opt/terminal/.gitsrc and
+# overlay-syncs the runtime code (ingest/signal_layer/contracts) from that checkout.
+# This script installs the wrapper + cron. Requires /opt/terminal/.env with
+# POLYGON_API_KEY (transferred out-of-band, never committed).
 set -euo pipefail
 VENV="/opt/macro/.venv"   # reuse the engine venv (pandas/numpy/pyarrow) + jsonschema for contracts
 log() { echo "[terminal-data] $*"; }
