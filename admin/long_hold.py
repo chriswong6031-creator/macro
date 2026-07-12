@@ -11,6 +11,7 @@ Primary artifact: data/research/winner_autopsy_panel.json
 Secondary artifacts (optional supplementary data):
   data/research/thesis_funnel_states_manifest.json  — funnel population + state counts
   data/research/long_hold_labels_manifest.json      — label distribution
+  data/research/falsifier_packets_manifest.json     — A1 packet build summary (LHB-W3)
 """
 from __future__ import annotations
 
@@ -26,6 +27,7 @@ _WINNER_PANEL = DATA / "research" / "winner_autopsy_panel.json"
 _THESIS_FUNNEL = DATA / "research" / "thesis_funnel_states_manifest.json"
 _LABELS = DATA / "research" / "long_hold_labels_manifest.json"
 _WATERFALL = DATA / "research" / "delivery_waterfall_panel.json"
+_FALSIFIER_PACKETS_MANIFEST = DATA / "research" / "falsifier_packets_manifest.json"
 
 
 # ---------------------------------------------------------------------------
@@ -185,6 +187,40 @@ def _waterfall_block() -> dict:
         return {"available": False, "reason": "parse_error"}
 
 
+def _falsifier_packets_block() -> dict:
+    """Read falsifier_packets_manifest.json (LHB-W3 A1 packet summary). Fail-open.
+
+    Follows the _waterfall_block pattern exactly. Reads the manifest only —
+    the full per-ticker packets JSON is too large for the panel; the manifest
+    carries all summary counts and metadata needed for admin display.
+
+    DISPLAY-ONLY. Tier-3 admin surface (LHB-R2). Raw enums legal here only.
+    """
+    raw = _read_json(_FALSIFIER_PACKETS_MANIFEST)
+    if raw is None:
+        return {
+            "available": False,
+            "reason": "falsifier_packets_manifest.json not found",
+        }
+    try:
+        return {
+            "available":             True,
+            "generated_at":          raw.get("generated_at"),
+            "n_tickers":             raw.get("n_tickers"),
+            "n_with_signal":         raw.get("n_with_signal"),
+            "n_summary_only":        raw.get("n_summary_only"),
+            "sensor_status_counts":  raw.get("sensor_status_counts", {}),
+            "a6_item_counts":        raw.get("a6_item_counts", {}),
+            "elapsed_seconds":       raw.get("elapsed_seconds"),
+            "ffb_r2_coverage_copy":  (
+                "Advance review in 7 of 12 studied true breaks; 5 of 12 were visible only "
+                "coincident with the break. A6 is a hard-stop bus, not a lead generator."
+            ),
+        }
+    except Exception:  # noqa: BLE001
+        return {"available": False, "reason": "parse_error"}
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -217,4 +253,5 @@ def panel() -> dict:
         "thesis_funnel":     _thesis_funnel_block(),
         "labels":            _labels_block(),
         "delivery_waterfall": _waterfall_block(),
+        "falsifier_packets": _falsifier_packets_block(),
     }

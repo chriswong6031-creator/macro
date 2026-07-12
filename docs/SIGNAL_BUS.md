@@ -36,7 +36,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | intraday-flow-tracker | 3 |
 | ird | 5 |
 | leader-radar | 5 |
-| long-hold | 31 |
+| long-hold | 33 |
 | macro-context-rail | 15 |
 | macro-release-intel | 6 |
 | mag7-regime | 3 |
@@ -86,7 +86,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 260 |
+| display | 262 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -95,7 +95,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 411 |
+| git | 413 |
 | gitignored-local | 11 |
 | r2 | 6 |
 
@@ -368,6 +368,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold-expect-drift-manifest | `data/research/expect_drift_panel_manifest.json` | json | on-demand | display | 1 | 0 |
 | long-hold-expect-drift-panel | `data/research/expect_drift_panel.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-expectation-state | `embedded: expectation_state inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+| long-hold-falsifier-packets | `data/research/falsifier_packets.json` | json | on-demand | display | 1 | 0 |
+| long-hold-falsifier-packets-manifest | `data/research/falsifier_packets_manifest.json` | json | on-demand | display | 1 | 0 |
 | long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |

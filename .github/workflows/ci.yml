@@ -148,6 +148,10 @@ on:
       - "tests/test_china_news.py"
       # LHB-W2b 8-K item expansion: test-only edits must still trigger the job
       - "tests/test_edgar_8k_items.py"
+      # LHB-W3 A1 falsifier packet: engine + builder + admin block + test re-run together.
+      - "engine/falsifier_packet.py"
+      - "scripts/research/build_falsifier_packets.py"
+      - "tests/test_falsifier_packet.py"
       # china_news engine contract (theme gate, flash filter, bilingual synthesis
       # labels — doctrine Law 2): engine + test re-run together.
       - "engine/china_news.py"
@@ -730,6 +734,7 @@ jobs:
           tests/test_risk_radar_market_catalysts.py tests/test_risk_radar_recovery.py
           tests/test_canon.py tests/test_whitehouse_w5.py
           tests/test_winner_autopsy.py tests/test_admin_long_hold.py
+          tests/test_falsifier_packet.py
           tests/test_board_ledger.py tests/test_grade_us_board.py
           tests/test_options_stamp.py tests/test_sector_pulse_wiring.py
           tests/test_news_page_render.py tests/test_china_lens_hub.py

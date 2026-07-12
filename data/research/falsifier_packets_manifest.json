@@ -1,0 +1,35 @@
+{
+  "schema": "falsifier_packets_manifest.v1",
+  "generated_at": "2026-07-12T14:07:58.544799+00:00",
+  "_display_only": true,
+  "_horizon_role": "hold_thesis",
+  "_version": "v1",
+  "n_tickers": 1720,
+  "n_with_signal": 1586,
+  "n_summary_only": 134,
+  "sensor_status_counts": {
+    "unverifiable": 12257,
+    "challenged": 1002,
+    "not_observed": 501
+  },
+  "a6_item_counts": {
+    "5.02": 13834,
+    "1.02": 959,
+    "3.02": 941,
+    "2.04": 57,
+    "3.01": 176,
+    "4.02": 52,
+    "1.03": 10
+  },
+  "input_paths": {
+    "thesis_funnel_states": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/wf_0e8e2b06-f96-3/data/research/thesis_funnel_states.parquet",
+    "delivery_waterfall": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/wf_0e8e2b06-f96-3/data/research/delivery_waterfall.parquet",
+    "material_8k_events": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/wf_0e8e2b06-f96-3/data/edgar/material_8k_events.parquet",
+    "statements": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/wf_0e8e2b06-f96-3/data/edgar/statements.parquet"
+  },
+  "output_paths": {
+    "falsifier_packets": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/wf_0e8e2b06-f96-3/data/research/falsifier_packets.json",
+    "falsifier_packets_manifest": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/wf_0e8e2b06-f96-3/data/research/falsifier_packets_manifest.json"
+  },
+  "elapsed_seconds": 4.0
+}
