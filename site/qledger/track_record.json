@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-12T02:41:45.448905+00:00",
+  "generated_at": "2026-07-12T06:29:38.240279+00:00",
   "grade_horizons": [
     5,
     21,
@@ -203,7 +203,7 @@
     }
   },
   "counts": {
-    "n_claims": 13421,
+    "n_claims": 13686,
     "n_grades": 6716,
     "n_placebo": 342,
     "n_rejected": 0,
@@ -388,6 +388,35 @@
         "pinned_reason": ""
       }
     },
+    "narrative_source_call": {
+      "5": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      },
+      "21": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      },
+      "63": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      }
+    },
     "policy": {
       "5": {
         "eligible": false,
@@ -505,7 +534,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-07-12T02:41:48.813616+00:00",
+  "ladder_states_at": "2026-07-12T06:29:42.218551+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -902,7 +931,7 @@
         "ready": false,
         "approaching": false,
         "projected_ready_date": null,
-        "reason": "No claims found for claim_family='narrative_source_call'"
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
       },
       "21": {
         "n_dates": 0,
@@ -913,7 +942,7 @@
         "ready": false,
         "approaching": false,
         "projected_ready_date": null,
-        "reason": "No claims found for claim_family='narrative_source_call'"
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
       },
       "63": {
         "n_dates": 0,
@@ -924,7 +953,7 @@
         "ready": false,
         "approaching": false,
         "projected_ready_date": null,
-        "reason": "No claims found for claim_family='narrative_source_call'"
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
       }
     },
     "news_llm": {
@@ -1330,5 +1359,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-07-12T02:41:55.927405+00:00"
+  "promotion_readiness_at": "2026-07-12T06:29:50.244916+00:00"
 }
