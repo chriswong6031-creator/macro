@@ -243,16 +243,43 @@ jobs:
         run: |
           python scripts/collect_zori.py \
             || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
-      # ── TIL collect-lane organs (W9/W10/W11) ──────────────────────────────
-      # These four steps close the dag.yml collect-lane divergences left open at
-      # the TIL merges (#2056/#2067/#2072): the engines + synapse lobes shipped
-      # 2026-07-09 but the daily.yml wiring never landed, so the artifacts froze
-      # at their merge-day values (the dead-wire class, cf. #2360). Placement and
-      # order follow the declared dag.yml collect lane. W7 (dol_certs) stays
-      # unwired by design (accrual gate); W8 (census_trade) stays unwired until
-      # CENSUS_API_KEY exists as a repo secret — both divergences remain declared.
-      # Measured 2026-07-12 (Mac Studio, warm venv): 6.6s + 0.5s + 0.5s + 1.4s
-      # ≈ 9s total — no material claim on the 150-min job budget.
+      # ── TIL collect-lane organs (W8/W9/W10/W11) ───────────────────────────
+      # These steps close the dag.yml collect-lane divergences left open at
+      # the TIL merges (#2056/#2058/#2067/#2072): the engines + synapse lobes
+      # shipped 2026-07-09 but the daily.yml wiring never landed, so the
+      # artifacts froze at their merge-day values (the dead-wire class, cf.
+      # #2360). Placement and order follow the declared dag.yml collect lane.
+      # W7 (dol_certs) stays unwired by design (accrual gate) — its divergence
+      # remains declared. W8 wired 2026-07-12 once CENSUS_API_KEY landed as a
+      # repo secret. Measured 2026-07-12 (Mac Studio, warm venv): W9-W11
+      # 6.6s + 0.5s + 0.5s + 1.4s ≈ 9s total; W8 keyless/invalid-key no-op
+      # 0.8s + 0.6s; W8 keyed runs hard-capped (see step comment) — no
+      # material claim on the 150-min job budget.
+      - name: TIL W8 — Census HS-code import-flow ingest (non-fatal)
+        # Requires the CENSUS_API_KEY repo secret (API is NOT keyless — verified
+        # 2026-07-09; keyless/invalid key 302s and the run no-ops honest-null in
+        # ~1s, exit 0). --max-requests 450 hard-bounds every run to ~7-8 min
+        # (measured ~0.5s/request + 0.5s pacing) AND honors the documented
+        # 500 req/day/key API limit; the ~2,900-request 2018-01 first backfill
+        # self-chunks across ~7 nights via data/trade_flows/census_state.json
+        # (state-resume covered in tests/test_census_trade.py::TestRequestCap).
+        # Writes data/trade_flows/imports_monthly.parquet (git-stored via
+        # `git add data/` below).
+        env:
+          CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
+        run: |
+          python -m collectors.census_trade --max-requests 450 \
+            || echo "::warning::census_trade ingest failed (non-fatal)"
+      - name: TIL W8 — theme trade-flow rollup (non-fatal)
+        # Rolls the parquet above into per-theme YoY/accel/confirmation reads
+        # (measured 0.6s on the honest-null path). Emits honest null with a
+        # fresh as_of when the parquet is absent — keeps both W8 lobes' as_of
+        # current on committee.html Web Health while data accrues. Writes
+        # data/neuralweb/theme_trade_flows.json + site/basketdata/trade_flows.json
+        # (staged via `git add data/ ... site/basketdata/` below).
+        run: |
+          python -m engine.theme_trade_flows \
+            || echo "::warning::theme_trade_flows rollup failed (non-fatal)"
       - name: TIL W10 — ClinicalTrials.gov theme pipeline ingest (non-fatal)
         # Keyless CT.gov v2 full fetch (9 modalities, ~2.5k rows, measured 6.6s).
         # Writes data/clinical_trials/modality_monthly.parquet (git-stored via

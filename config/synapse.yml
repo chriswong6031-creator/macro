@@ -10477,11 +10477,14 @@ artifacts:
       Authority: all may_* false; is_context_only=true.
       Requires CENSUS_API_KEY (NOT keyless — verified 2026-07-09). When key
       absent: parquet absent → honest null written, all themes n_codes_with_data=0.
-      UNWIRED as of 2026-07-12: producer runs in NO lane (dag.yml collect-lane
-      divergence stands) — deliberately deferred until CENSUS_API_KEY exists as
-      a repo secret (operator action). Artifact is the honest-null scaffold from
-      the 2026-07-09 merge (0/11 themes); it will flag stale ~2026-10-07 unless
-      the key lands and the census collect steps are wired.
+      WIRED 2026-07-12 as daily.yml collect-lane steps (CENSUS_API_KEY repo
+      secret registered same day). Nightly rollup refreshes as_of even on
+      honest null, so this lobe stays green while data accrues. NOTE: key was
+      registered but NOT yet email-activated at wiring time (API 302s →
+      invalid_key.html; collector no-ops honest-null until the operator clicks
+      the activation link). Once active, the 2018-01 backfill self-chunks
+      across ~7 nights (collector --max-requests 450 under the documented
+      500 req/day/key API limit).
       Off render path (collect-lane step or standalone CLI).
       Data since 2018-01 backfill; Census trade data lags ~6 weeks.
       29 HS codes across 11 themes: rare_earth_critical_min / solar /
@@ -10515,8 +10518,8 @@ artifacts:
       Per-theme (compact): yoy_pct, accel_3m_vs_12m, confirmation, magnitude_band,
       coverage_note EN/ZH. No code_detail in site projection.
       Authority: all may_* false; is_context_only=true.
-      UNWIRED as of 2026-07-12 — see neuralweb-theme-trade-flows notes
-      (deferred on CENSUS_API_KEY repo secret; honest-null scaffold).
+      WIRED 2026-07-12 — see neuralweb-theme-trade-flows notes (data accrual
+      pends key email-activation; honest null with fresh as_of until then).
       Off render path (collect-lane step or standalone CLI).
       Honest null (all metrics null) when CENSUS_API_KEY not set.
 

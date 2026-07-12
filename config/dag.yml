@@ -87,6 +87,9 @@ lanes:
           Requires CENSUS_API_KEY env var (API is NOT keyless — verified
           2026-07-09; keyless returns 302). No-ops with honest null if key
           absent. Backfills since 2018-01 on first run; incremental after.
+          Hard-capped at 450 requests/run (--max-requests; documented API
+          limit is 500/day/key) — the ~2,900-request first backfill
+          self-chunks across ~7 nightly runs via the state file.
           Output: data/trade_flows/imports_monthly.parquet (git-stored, small).
           State: data/trade_flows/census_state.json.
           Per-code failure isolation: one bad HS code never voids others.
@@ -1708,26 +1711,14 @@ divergences:
       workflow PR will close this divergence when accrual gates pass.
     evidence: "collectors/dol_labor_certs.py:WIRING NOTE"
 
-  - lanes: [collect]
-    differs: >
-      collectors.census_trade and engine.theme_trade_flows are declared in
-      dag.yml collect lane (TIL W8 PR-W8) but are NOT yet present in the live
-      .github/workflows/daily.yml collect job.
-    reason: >
-      New collect-lane steps (TIL W8 Census HS-code import-flow trace). The
-      dag.yml entries register the intended placement (collect lane, after
-      build_hiring_velocity and before build_discovery_confluence). The
-      daily.yml wiring follows the same deferred pattern as W7/W9: invoke
-      standalone first; workflow PR closes this divergence when the key is
-      set as a repo secret (CENSUS_API_KEY). The engine step (build_theme_trade_flows)
-      is cheap (pure in-memory) and exits 0 even without a parquet — safe
-      to wire immediately once the collector secret is in place.
-    evidence: "collectors/census_trade.py:docstring API VERIFIED NOTE"
-
   # (TIL W9/W10/W11 collect-lane divergences closed 2026-07-12 — the declared
   # steps collect_clinicaltrials_themes, build_theme_clinical,
   # build_theme_options_witness and build_discovery_confluence are now live in
-  # the daily.yml collect job. W7 and W8 above remain deliberately unwired.)
+  # the daily.yml collect job. W8 closed later the same day once CENSUS_API_KEY
+  # landed as a repo secret: collect_census_trade + build_theme_trade_flows are
+  # now live in the daily.yml collect job (collector hard-capped at 450
+  # requests/run under the documented 500 req/day/key API limit). W7 above
+  # remains deliberately unwired (accrual gate).)
 
 # ---------------------------------------------------------------------------
 # MODULES — 25-module IO table from the W5a scout
