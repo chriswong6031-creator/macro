@@ -1,0 +1,7 @@
+asset,direction,adjusted_signal_count,raw_signal_count,exact_date_matches,jaccard_similarity
+SPY,bullish,32,33,27,0.7105263157894737
+SPY,bearish,31,32,26,0.7027027027027027
+SPY,all,63,65,53,0.7066666666666667
+QQQ,bullish,32,32,30,0.8823529411764706
+QQQ,bearish,31,31,29,0.8787878787878788
+QQQ,all,63,63,59,0.8805970149253731
