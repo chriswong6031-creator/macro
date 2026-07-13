@@ -1,0 +1,102 @@
+# config/flow_detector.yml — Flow-event detector specification (FS-0b)
+#
+# RE-LABEL LAW (binding):
+#   Any change to detection thresholds below = bump version (e.g. live_feed_v2)
+#   + full re-label of the ledger under the new version. Ledger rows carry
+#   detector_version so training cohorts from different detector versions are
+#   NEVER pooled (FS-R4: cohort law). Changing this file without bumping the
+#   version poisons every training run that reads a mixed ledger.
+#
+# Version history:
+#   live_feed_v1  2026-07-13  initial freeze (Fable, FS-0b)
+
+version: live_feed_v1
+
+# ── upstream qualification gates (live_flow.py / live_flow_poller.py) ─────────
+# These gates are applied BY the upstream poller/engine, not by this collector.
+# Documented here so the detector version is fully reproducible.
+
+upstream_gates:
+  # Premium floor — a print must exceed this threshold (per root type) OR
+  # have premium_z >= z252_threshold relative to the 252-day EOD baseline.
+  premium_floors:
+    etf_roots_usd: 1_000_000    # DEFAULT_ETF_FLOOR in engine/live_flow.py
+    single_names_usd: 250_000   # DEFAULT_NAME_FLOOR in engine/live_flow.py
+  z252_threshold: 3.0           # premium_z >= 3.0 qualifies (baseline_source='z252')
+
+  # ETF anchors — full list from live_flow_poller.py:TIER1_ROOTS / _ETF_ANCHORS_SET
+  # (see engine/live_flow.py:_ETF_ANCHORS_SET for the canonical 23-name list).
+  etf_anchor_treatment: premium_floor_1M_usd
+
+  # Signing source: quote-rule (Lee-Ready) — at-ask >= 60% of batch premium ->
+  # side='~buy'; at-bid >= 60% -> side='~sell'; else 'mixed'.
+  # Direction is SOFT (~buy / ~sell); signing_gate.json production_ready=false
+  # (F3, 2026-07-04: 3 multi-session extensions all failed the 0.75/0.75 bar).
+  # The soft direction rides every ledger row as a feature but is NEVER used as
+  # a label (FS-R6: tick-rule suspension standing).
+  side_threshold: 0.60          # fraction of batch premium from ask/bid side
+
+  # Sweep-like heuristic: >= 3 prints, >= 2 distinct exchanges, all within 2s.
+  # Labeled 'swept=True' on events. Heuristic only; never a directional signal.
+  sweep_detection:
+    min_prints: 3
+    min_exchanges: 2
+    max_span_sec: 2.0
+
+  # Repeated-hit: same contract notable >= 2 cycles intraday -> repeated=True.
+  # Captures ascending-fill and cluster patterns per §1.1 competitor decode.
+  repeat_threshold_cycles: 2
+
+  # Vol > OI check: cumulative day volume vs prior-session open interest.
+  # vol_gt_oi=True flags contracts where day volume has exceeded prior OI.
+  vol_gt_oi_source: prior_session_oi  # from thetadata_eod chain()
+
+  # DTE bucketing (from engine/tape_flow._dte_bucket — canonical definition):
+  dte_buckets:
+    "0d":    {min_dte: 0, max_dte: 0}
+    "1_7d":  {min_dte: 1, max_dte: 7}
+    "8_30d": {min_dte: 8, max_dte: 30}
+    "31_90d": {min_dte: 31, max_dte: 90}
+    "90p":   {min_dte: 91, max_dte: null}
+
+  # Moneyness bucketing (from engine/tape_flow._moneyness_bucket via prev_close).
+  # 'unknown' when prev_close unavailable.
+  mny_bucket_source: prior_session_close_yahoo
+
+  # Session retention: feed_current.json retains the 2000 newest events (24h).
+  # Archive blobs: R2 live_flow/archive/YYYYMMDDTHH.json, pruned at 48h.
+  feed_event_cap: 2000
+  archive_retention_hours: 48
+
+# ── ledger-side qualification (applied by collectors/flow_signals.py) ─────────
+# The collector applies NO additional filtering beyond what the upstream already
+# applied. Every event that appears in feed_current.json or the R2 archive blobs
+# meets the upstream gates and is persisted. This design choice:
+#   - avoids double-filtering confusion (upstream already filtered);
+#   - keeps the population definition solely in the upstream config above;
+#   - ensures the detector_version faithfully describes the UPSTREAM gates.
+# Future tightening (e.g. DTE floor, size/OI floor) must bump the version.
+ledger_side_gates:
+  additional_filters: none
+  keep_zerodte: true            # 0DTE events included but bucket-labeled (FS-R2)
+  keep_mixed_side: true         # 'mixed' side events included (not filtered)
+  dedup_policy: keep_first      # first ingestion wins; never mutate ingest fields
+
+# ── crowdedness counters (FS-R9, to be computed in FS-3) ─────────────────────
+# These features are computed from the ledger itself at training time, not at
+# collection time. Included here for documentation per FS-R9 adjacency note.
+crowdedness_features_at_training:
+  signal_count_7d: "count of ledger rows for same root in trailing 7 calendar days"
+  bull_premium_share_14d: "share of 14d gross premium from ~buy prints, per root"
+  # NOTE: these count OUR OWN logged events (distinct from the killed
+  # sector-level ΔOI persistence construction, DOI family dead per DO_NOT_REBUILD §2).
+
+# ── FS-C1 checkpoint (FS-R6) ─────────────────────────────────────────────────
+# Per FS-R6, the FIRST ops-lane action for FS-1 must verify that bulk
+# trade_quote carries usable per-print quote fields (bid/ask/price) enabling
+# quote-rule execution classification (measurement, not tick-rule inference).
+# If per-print quote fields are absent, FS-1 collapses to unsigned magnitude
+# features only. This checkpoint is recorded in the FS-1 wave; it does not
+# affect FS-0 collector behavior (which reads the already-classified side field
+# from the upstream engine output).
+fsc1_checkpoint: pending_fs1_ops_lane
