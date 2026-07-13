@@ -42,11 +42,11 @@ from lib import config
 
 # Tier metadata: order on the page + bilingual labels + a one-line honest blurb.
 TIERS: list[dict] = [
-    {"key": "scored", "label": "Scored — validated & wired into a number",
+    {"key": "scored", "label": "Scored — passed the battery & wired into a number",
      "label_zh": "已计分 — 通过验证并纳入计算",
      "blurb": "Passed the validation battery AND drives an allocation, composite or score.",
      "blurb_zh": "通过验证电池，并实际驱动配置、综合分或评分。"},
-    {"key": "confirmer", "label": "Confirmer / context — validated, but not a standalone sizer",
+    {"key": "confirmer", "label": "Confirmer / context — passed the battery, but not a standalone sizer",
      "label_zh": "确认/背景 — 已验证，但非独立定量信号",
      "blurb": "A measured forward edge used as context or a tiebreaker — never sized on its own.",
      "blurb_zh": "有可测的前瞻性边际，用作背景或加分项 — 但不单独定仓。"},
