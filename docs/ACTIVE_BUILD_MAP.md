@@ -2,14 +2,13 @@
 
 # Active Build Map
 
-Generated: 2026-07-13T08:03:27.261900+00:00  |  Open PRs: 2  |  Merged (window): 500  |  base: `585300edf444ecd6ad44227de7aaf6d1677fa3af`
+Generated: 2026-07-13T16:59:08.963577+00:00  |  Open PRs: 0  |  Merged (window): 500  |  base: `e2be2da12aead047cc9dabe742b9c68b4a719242`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #2495 | fix(ci): declare scripts.build_flow_signals in dag.yml (heal #2493 dag-conformance drift) | `claude/eager-cerf-09cddd` | 2026-07-13 | ⚠ protected:1 |
-| #2487 | feat(etfs): full-sweep ETF-holdings radar — +10 sponsors (~48 funds incl. WGMI), cross-fund consensus, sparklines, coverage panel | `feat/etfs-fullsweep-20260712` | 2026-07-13 | — |
+| — | No open PRs | — | — | — |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
 
@@ -21,7 +20,29 @@ _No file collisions detected among open PRs._
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #2517 | ui(nav): mobile menu breathing room + animated back-to-top | 2026-07-13 |
+| #2516 | alerts: count-aware dark-source collapse + plain-word copy for 7 bare rules | 2026-07-13 |
+| #2515 | feat(cbf): W2 engine — flow-regime nightly organ (bloc gauges, EMP watch, discriminator, swap lines, history) | 2026-07-13 |
+| #2514 | feat(admin): night batch — pace ladder truth, live loop-status strips, Master Brain plain-word revamp | 2026-07-13 |
+| #2513 | fix(ird): IRD-R8 — wire vulnerability_table into build_intl; fragility map live | 2026-07-13 |
+| #2512 | entry-signal: honest bounce_wait status for COUNTERTREND BOUNCE names | 2026-07-13 |
+| #2511 | test(rr): anchor _rr_section_src on stable markers (deterministic RR window) | 2026-07-13 |
+| #2510 | fix(signal-lab): heal stale-render 'validated' tier labels (BC-2 red on main) | 2026-07-13 |
+| #2509 | feat(stocktable): resizable columns, Terminal ticker links, CN Setup rank default sort; fix overextended washout misfire | 2026-07-13 |
+| #2508 | fix(mri): MRI-R5 — remove affirmative 'consensus' from Fed card + RR link copy | 2026-07-13 |
+| #2507 | fix(ci): declare scripts.build_orchestrator_log in dag.yml — heal dag-conformance red on main | 2026-07-13 |
+| #2506 | feat(cbf): W1 regime census — flow-regime classifier core + study + era-split census | 2026-07-13 |
+| #2505 | feat(attention): propose cadence gate — halve per-loop LLM spend | 2026-07-13 |
+| #2504 | ops(asia-close): cap gate pre-floor hold 90m → 45m (3-slot runner pool) | 2026-07-13 |
+| #2503 | feat(macro): v5.2 polish — dark glass, chrome-free heatmap, full AI brief in-dialog, render-crash guards | 2026-07-13 |
+| #2502 | docs(cbf): Cross-Border Flow Regimes masterplan (W0) — flow-direction lens + field guide (CBF-R1..R12) | 2026-07-13 |
+| #2501 | ops(asia-close): start the lane at the Asia close — multi-slot cron + dedup/floor gate | 2026-07-13 |
+| #2500 | W-AI: orchestrator face + Mastermind AI dialogue (run log, 5-run reviews, v3 reverse bridge, Master Brain admin) | 2026-07-13 |
+| #2499 | feat(metabolism): v11 throttle UX — plain-word panel, loops-per-5h ladder, 5H/WEEKLY MAX auto-run | 2026-07-13 |
+| #2498 | feat(flow-ml): FS-1 historical flow cohorts — tape_recon + eod_proxy + one-grader grading | 2026-07-13 |
+| #2497 | feat(crx): 7-key Claude OAuth pool + Codex ChatGPT research lane (CRX W1) | 2026-07-13 |
 | #2496 | fix(pick-lab): un-stick the US Pick Lab lane — §7 pit schema, non-destructive quarantine, regime-key render crash | 2026-07-13 |
+| #2495 | fix(ci): declare scripts.build_flow_signals in dag.yml (heal #2493 dag-conformance drift) | 2026-07-13 |
 | #2494 | fix(macro): un-warp the session-path chart Y-axis + labels | 2026-07-13 |
 | #2493 | feat(flow-ml): FS-0 flow-event ledger + outcome grader (+FS-0b detector v1 freeze) | 2026-07-13 |
 | #2492 | fix(hk/canada/intl): LIMITED records for recent listings — port the China #2484 dead-end fix to the three sibling markets | 2026-07-13 |
@@ -29,6 +50,7 @@ _No file collisions detected among open PRs._
 | #2490 | fix(lookup): port calibration null-disclosure note to HK/US/Intl/Canada analyzers | 2026-07-13 |
 | #2489 | research(flow-ml): Flow Signal ML masterplan — outcome-labeled options-flow scoring | 2026-07-13 |
 | #2488 | fix(weekly): un-kill the weekly lane — 300m cap, dead-lane heartbeat tripwire, W0b calibration carve-out | 2026-07-13 |
+| #2487 | feat(etfs): full-sweep ETF-holdings radar — +10 sponsors (~48 funds incl. WGMI), cross-fund consensus, sparklines, coverage panel | 2026-07-13 |
 | #2486 | feat(metabolism): v10 operator throttle & key economy — intensity, pace, run-now, key toggles, usage tracking | 2026-07-13 |
 | #2485 | fix(security): enable Jinja autoescape in build_site.py (stored-XSS defense-in-depth) | 2026-07-13 |
 | #2484 | fix(china): LIMITED records for recent listings — kill the 46-tile heatmap dead end | 2026-07-13 |
@@ -498,29 +520,6 @@ _No file collisions detected among open PRs._
 | #1999 | feat(causal): CHF W3 — live scout loop: target panels + frontier + weekly bounded battery + nightly causal job | 2026-07-09 |
 | #1998 | feat(til-w1): theme thesis ledger — curated 18-theme registry + falsifier evaluator | 2026-07-09 |
 | #1997 | feat(til): W3 per-leg asymmetry panel (PR-E) | 2026-07-09 |
-| #1996 | feat(til-w6): grading pack — crowd lead-lag, placebo tape, falsifier evaluator | 2026-07-09 |
-| #1995 | feat(til-w2): beneficiary/loser pathway graph — PR-D | 2026-07-09 |
-| #1994 | fix(synapse): no-op grade_thematic stub — unblock registry gate after TIL PR-0 (#1993) | 2026-07-09 |
-| #1993 | feat(til): PR-0 — pre-register W1/W2/W3/W6 artifacts + stage dispatcher | 2026-07-09 |
-| #1992 | ui(china-stocks): zoned standout cards — names visible, act-now cap 4, RAN 1-row shelves | 2026-07-09 |
-| #1991 | feat(til): W0 state spine — theme crosswalk + composition organ + PIT tape | 2026-07-09 |
-| #1990 | feat(til-w0b): WARN Act velocity leg — per-basket loser-cohort disruption evidence | 2026-07-09 |
-| #1989 | docs(citr): Citrini ingestion architecture (recon-grounded) | 2026-07-09 |
-| #1988 | feat(causal): W4 — mechanism-card schema + brainstorm pack + ingest firewall + instrument library | 2026-07-09 |
-| #1987 | docs(til): Thematic Intelligence Layer adjudication + masterplan | 2026-07-09 |
-| #1986 | feat(hk): live 15-min-delayed heatmap — wire tiles to live.js recolor (fail-open to EOD) | 2026-07-09 |
-| #1985 | feat(hub): mobile revamp — Explore scroll CTA, Markets/Other-Features toggle, compact grids, strip removal | 2026-07-09 |
-| #1984 | feat(regime): HTF momentum durability engine + liquidity-card reframe (front-running, monthly-veto anti-trap; display-only P0-P2) | 2026-07-09 |
-| #1983 | fix(china): See-More on sector-ladder + macro-news cards, remove Regime time machine | 2026-07-09 |
-| #1982 | fix(hk): UI/UX/i18n overhaul — command-panel polish, See-More, clean ticker links, i18n leaks, company names, graceful states, ADR bug, page differentiation | 2026-07-09 |
-| #1981 | fix(nav): stop pre-JS mobile nav overflow clipping page content | 2026-07-09 |
-| #1980 | feat(causal): W2 — edge-scout estimator core + synthetic mirage gauntlet (CHF-R5/R12/R3) | 2026-07-09 |
-| #1979 | feat(causal): W1 — causal constitution + feature inventory (CHF-R4) | 2026-07-09 |
-| #1978 | research(causal): Causal Hypothesis Factory masterplan (W0) — CHF-R1..R17 | 2026-07-09 |
-| #1977 | feat(reports): The Relapse (复燃) — tactical companion to The Second Act | 2026-07-09 |
-| #1976 | feat(hk): CBBC W2 — SLD-PDF mandatory-call-price + call-level magnet clusters (the flagship CBBC feature) | 2026-07-09 |
-| #1975 | fix(pipeline): W0b follow-up — same asia-data git-add guard + --autostash on weekly.yml (#1963 sibling) | 2026-07-09 |
-| #1974 | test(support-map): re-anchor regime-latest downstream census ceiling 55→70 | 2026-07-09 |
 
 ---
 
