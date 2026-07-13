@@ -60,11 +60,35 @@ def _load_china() -> tuple[pd.DataFrame, pd.DataFrame, dict, dict, dict]:
     cons["name"] = members.get("name_en", members.get("name")).fillna(members.index.to_series())
     cons["sector"] = members["sector"].astype(str)
 
+    # china_universe seeds CSI/config extras with a 30.0亿 sentinel (~46% of members
+    # carry it exactly) — NOT a real cap; sizing tiles from it fabricates a uniform
+    # mid-cap for half the map. Drop the sentinel, then fill the gaps with real caps
+    # from the asof-gated Tushare valuation plane (same guard as build_china_library).
+    _PLACEHOLDER_MCAP = 30.0
     caps: dict[str, float] = {}
     if "mktcap_yi" in members.columns:
         for t, v in members["mktcap_yi"].items():
-            if pd.notna(v) and float(v) > 0:
+            if pd.notna(v) and float(v) > 0 and float(v) != _PLACEHOLDER_MCAP:
                 caps[t] = float(v) * 1e8  # 亿 CNY -> absolute CNY
+    try:
+        from engine.tushare_freshness import prefer_tushare as _prefer_tv
+        tv_p = _data("tushare", "valuation.parquet")
+        pe_p = _data("china_a_val", "pe.parquet")
+        tv = pd.read_parquet(tv_p) if tv_p.exists() else None
+        chosen, _src = _prefer_tv(tv if (tv is not None and "total_mv_yi" in tv.columns) else None,
+                                  pd.read_parquet(pe_p) if pe_p.exists() else None)
+        if _src == "tushare" and chosen is not None and "total_mv_yi" in chosen.columns:
+            filled = 0
+            member_set = set(cons.index.astype(str))
+            for _, r in chosen.iterrows():
+                t, v = str(r.get("ticker")), r.get("total_mv_yi")
+                if t in member_set and t not in caps and pd.notna(v) and float(v) > 0:
+                    caps[t] = float(v) * 1e8
+                    filled += 1
+            log.info("china heatmap caps: filled %d names from Tushare total_mv_yi "
+                     "(30.0亿 placeholders dropped)", filled)
+    except Exception as e:  # noqa: BLE001 — Tushare overlay is additive; engine floor covers the rest
+        log.debug("china tushare mktcap overlay skipped (%s)", e)
 
     names_zh: dict[str, str] = {}
     if "name_zh" in members.columns:

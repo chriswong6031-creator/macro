@@ -551,6 +551,7 @@ live:
   # is live (see research/LIVE_DATA_POLYGON.md). feed_label is the human caption.
   delayed_min: 15
   feed_label: "≈15-min delayed (Polygon Standard / Yahoo)"
+  feed_label_zh: "≈延迟15分钟（Polygon Standard / Yahoo）"   # zh caption for the same badge (bilingual UI law)
   top_conviction_n: 60         # also include the top-N US names by |conviction| from the search index
   universe_extra: []           # optional extra tickers beyond Mastermind assets + top US conviction
   market_context: [SPY, QQQ, "^VIX"]   # cheap live macro read emitted in overlay.market (VIX gets a band)

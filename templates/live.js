@@ -243,10 +243,14 @@
 
   // Stamp an honest feed caption into any [data-live-label] element the build placed
   // (e.g. "≈15-min delayed (Polygon Standard / Yahoo)"). No-op if none / no label.
+  // Single-language render + langchange re-paint (an attribute/textContent can't hold
+  // l-en/l-zh spans), same idiom as theme.js placeholders.
   function paintLabel() {
-    if (!FEED_LABEL) return;
+    var zh = document.documentElement.getAttribute("data-lang") === "zh";
+    var lab = (zh && window.LIVE_FEED_LABEL_ZH) || FEED_LABEL;
+    if (!lab) return;
     [].slice.call(document.querySelectorAll("[data-live-label]"))
-      .forEach(function (el) { el.textContent = FEED_LABEL; el.title = FEED_LABEL; });
+      .forEach(function (el) { el.textContent = lab; el.title = lab; });
   }
 
   function _startTimer() {
@@ -257,6 +261,7 @@
   function start() {
     injectStyle();
     paintLabel();
+    document.addEventListener("langchange", paintLabel);
     // Pause/resume API for callers that want to suppress polling (e.g. a settings
     // toggle persisted in localStorage as liveOff=1).
     // .pause()  — stops the interval; marks _paused so tick() is a no-op even if called.

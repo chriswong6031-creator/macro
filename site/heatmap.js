@@ -642,6 +642,7 @@
       hideCard(); hideMembers();
       if (mode === 'tree') recolor(); else layoutList();
       updateLegend();
+      updateRead();
     }
     function updateLegend() {
       var e = edgesFor(TF), pal = binPalette();
@@ -655,7 +656,7 @@
         + '<span class="hm-lg-step">' + L('bins', '分档') + ' ±' + edgeFmt(e[0]) + '/' + edgeFmt(e[1]) + '/' + edgeFmt(e[2]) + '</span>';
     }
     function updateRead() {
-      var br = breadth(data.tiles, '1D');
+      var br = breadth(data.tiles, TF);
       var live = data.source === 'polygon-live';
       var when = live ? (fmtUpdated(data) || data.asof || '—') : (data.asof || '—');
       var srcEn, srcZh;
