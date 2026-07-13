@@ -431,6 +431,38 @@ def load_allocation(root: Path | None = None) -> dict:
         return {}
 
 
+def effective_allocation(cycle_id: str | None = None, root: Path | None = None) -> dict:
+    """Return the allocation to act on, healing stage-local absence (R-V9-2).
+
+    Stage artifacts travel on metabolism/* branches and never land on main, so
+    a downstream stage's checkout (PROPOSE, BUILD) may lack the agenda-stage
+    allocation file.  House pattern (stateless-cattle): rebuild sensors fresh
+    in the stage workspace.  Loads the committed allocation when present;
+    otherwise builds a STRUCTURAL-ONLY allocation here (providers=None — the
+    LLM discretion layer runs in the AGENDA stage only; a stage-local rebuild
+    never spends tokens).  The rebuilt artifact rides whatever branch the
+    stage commits (or stays uncommitted in read-only lanes like the BUILD
+    pick).  Returns {} only on total failure.  NEVER raises.
+    """
+    try:
+        alloc = load_allocation(root=root)
+        if (alloc or {}).get("allocations"):
+            return alloc
+        log.info(
+            "attention.effective_allocation: no allocation in this workspace — "
+            "rebuilding structural-only (stage-local heal)"
+        )
+        return build_attention(
+            cycle_id=cycle_id or "stage-local",
+            root=root,
+            providers=None,
+            model=None,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("attention.effective_allocation: %s — returning empty", exc)
+        return {}
+
+
 def band_for(lobe_id: str, allocation: dict | None = None, root: Path | None = None) -> str:
     """Return the attention band for a lobe.
 
@@ -579,7 +611,9 @@ def rank_cycle_ids(
         ids = [str(c).strip() for c in cycle_ids if str(c).strip()]
         if not ids:
             return []
-        alloc = allocation if allocation is not None else load_allocation(root=root)
+        # Stage-local heal (R-V9-2): the BUILD lane runs on a main checkout that
+        # never carries the agenda-branch allocation — rebuild structural-only.
+        alloc = allocation if allocation is not None else effective_allocation(root=root)
         try:
             from engine.metabolism import lobe_registry  # noqa: PLC0415
             lobe_ids = list(lobe_registry.load(root)["charters"].keys())
