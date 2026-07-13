@@ -1050,19 +1050,7 @@
     color:var(--down); border:1px solid color-mix(in srgb,var(--down) 25%,transparent); }
 
   /* filter row */
-  .st-filters { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:8px 0 10px; }
-  .st-filter-sel { font:inherit; font-size:12px; background:var(--panel); color:var(--text);
-    border:1px solid var(--line); border-radius:7px; padding:4px 8px; cursor:pointer;
-    min-width:90px; }
-  .st-filter-txt { font:inherit; font-size:12px; background:var(--panel); color:var(--text);
-    border:1px solid var(--line); border-radius:7px; padding:4px 8px; outline:none; }
-  .st-filter-txt:focus { border-color:var(--link); }
-  .st-filter-chk { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px;
-    cursor:pointer; user-select:none; }
-  .st-reset-btn, .st-col-btn { font:inherit; font-size:12px; font-weight:700; cursor:pointer;
-    border:1px solid var(--line); background:var(--panel); color:var(--muted);
-    padding:4px 10px; border-radius:7px; white-space:nowrap; transition:color .12s; }
-  .st-reset-btn:hover, .st-col-btn:hover { color:var(--text); border-color:var(--link); }
+  /* filter-row + column-chooser chrome (.stf-*) is injected by stocktable.js since v3 */
 
   /* table wrapper — horizontal scroll, sticky first col */
   .st-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;
@@ -1111,28 +1099,6 @@
     background:var(--up); color:#fff; padding:0 4px; border-radius:4px; margin-right:4px;
     vertical-align:1px; }
 
-  /* column chooser panel */
-  .st-chooser-wrap { position:relative; }
-  .st-chooser { position:absolute; top:0; right:0; z-index:20; min-width:240px;
-    background:var(--panel); border:1px solid var(--line); border-radius:10px;
-    box-shadow:0 8px 28px rgba(0,0,0,.22); padding:0; overflow:hidden; }
-  .st-chooser-hidden .st-chooser { display:none; }
-  .st-chooser-hdr { display:flex; align-items:center; gap:8px; padding:10px 12px 8px;
-    border-bottom:1px solid var(--line); font-weight:700; font-size:12.5px; }
-  .st-chooser-note { font-size:10.5px; color:var(--muted); font-weight:400; margin-left:auto; }
-  .st-chooser-close { font:inherit; font-size:15px; cursor:pointer; background:none;
-    border:none; color:var(--muted); padding:0 2px; line-height:1; }
-  .st-chooser-list { max-height:340px; overflow-y:auto; padding:6px 0; }
-  .st-chooser-row { display:flex; align-items:center; gap:8px; padding:5px 12px;
-    cursor:grab; user-select:none; font-size:12px; }
-  .st-chooser-row:hover { background:var(--panel2,color-mix(in srgb,var(--muted) 7%,var(--panel))); }
-  .st-chooser-row.st-dragging { opacity:.5; }
-  .st-drag-handle { color:var(--muted); font-size:11px; flex:none; }
-  .st-chooser-footer { padding:8px 12px; border-top:1px solid var(--line); }
-  .st-chooser-reset { font:inherit; font-size:12px; cursor:pointer; background:none;
-    border:1px solid var(--line); border-radius:7px; padding:4px 10px; color:var(--muted); }
-  .st-chooser-reset:hover { color:var(--text); border-color:var(--link); }
-
   /* th tooltip */
   .st-th-tip { display:inline-flex; align-items:center; justify-content:center;
     width:13px; height:13px; border-radius:50%; border:1px solid var(--muted);
@@ -1155,10 +1121,8 @@
     .st-table td, .st-table th { padding:4px 5px; }
     .st-table .st-chip { font-size:8.5px; padding:1px 5px; }
     .st-table .st-sarrow-idle { display:none; }
-    .st-table td.st-hide-sm, .st-table th.st-hide-sm, .st-chooser-row.st-hide-sm { display:none; }
+    .st-table td.st-hide-sm, .st-table th.st-hide-sm { display:none; }
     .st-table td.st-name { max-width:74px; }
-    .st-filters { gap:4px; }
-    .st-filter-sel { font-size:11px; min-width:70px; padding:3px 6px; }
   }
   /* W8-R7 organ chip — inline to avoid collision with theme.css in-flight PRs */
   .anv2-chip-organ { background:color-mix(in srgb,var(--info) 10%,var(--panel)); color:color-mix(in srgb,var(--info) 80%,var(--text)); border-color:color-mix(in srgb,var(--info) 26%,transparent); }
@@ -5014,13 +4978,6 @@
         <button id="st-btn-table" aria-selected="false" onclick="StockTable._setView('table')">☰ <span class="l-en">Table</span><span class="l-zh">表格</span></button>
       </span>
     </h2>
-    
-    <div style="margin:6px 0 9px;padding:7px 11px;border-radius:9px;font-size:11.5px;line-height:1.5;border:1px solid var(--line);border-left:3px solid var(--muted);background:color-mix(in srgb,var(--link) 7%,var(--panel))">
-      <span style="font-size:13px">〰</span>
-      <b><span class="l-en">QVIX vol regime</span><span class="l-zh">QVIX 波动区制</span>: <span class="l-en">normal</span><span class="l-zh">正常</span></b>
-      (z +1.0, 21.1) — <span class="l-en">QVIX normal — full signal operation</span><span class="l-zh">QVIX 正常 — 信号正常运作</span>
-      <span class="help">?<span class="tip"><span class="l-en">Market-wide QVIX regime. Uses 60-day z-score, not level. Context, not a per-stock signal.</span><span class="l-zh">全市场QVIX体制。使用60日z分数而非绝对水平。背景，非个股信号。</span></span></span>
-    </div>
     
     
     
