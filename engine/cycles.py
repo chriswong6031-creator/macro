@@ -1980,6 +1980,11 @@ _EG_STOCH_OB = float(_EG.get("stoch_overbought", 80.0))            # 3D/daily St
 _EG_DAILY_RSI_MAX = float(_EG.get("daily_rsi_extension_cap", 62.0))  # daily RSI14 hotter than this = too late
 _EG_STRETCH_BLOCK = float(_EG.get("stretch_block_pct", 30.0))     # % over 200dma = overextended chase
 _EG_APPROACH_DAYS = int(_EG.get("approach_days", 2))               # 3D "about to cross" ETA cap (trading days)
+_EG_OSC_EXEMPT_BELOW = float(_EG.get("overextended_osc_exempt_below_pct", -10.0))
+# When price is this far BELOW the 200dma, the oscillator legs (StochRSI/RSI14) are
+# suppressed: post-washout the look-back range is compressed so any bounce pins
+# StochRSI > 80 (range-compression noise, not extension). The stretch leg
+# (ext_pct >= +30%) is unreachable at such distances and is unaffected.
 
 # how good each leg is, for the in-tier rank (earliness/oversold-origin weighted, NOT
 # lateness): a weekly bear-recovering + a 3D StochRSI-from-oversold turn score highest.
@@ -2102,15 +2107,29 @@ def _overextended(mtf: dict, ext_pct: float | None = None) -> bool:
     3-day OR daily StochRSI overbought (> stoch_overbought), daily RSI14 hotter than the
     extension cap, or price far above the 200-day (ext_pct >= stretch_block). ext_pct (%
     over the 200dma) is supplied by analyze(); the oscillator legs work without it, so
-    callers that don't pass it still get the StochRSI/RSI brakes."""
+    callers that don't pass it still get the StochRSI/RSI brakes.
+
+    OSC EXEMPT BELOW guard (mirrors the RALLY ON→TOP WATCH fix at line 1006-1014):
+    When ext_pct is not None AND ext_pct <= _EG_OSC_EXEMPT_BELOW (default −10%), the
+    two oscillator legs (StochRSI overbought + RSI14 cap) are SUPPRESSED. Post-washout
+    the short look-back range is compressed — any bounce pins StochRSI > 80 without the
+    stock being remotely extended; e.g. 600519.SS 2026-07-10 D.stoch=83 / pct_vs_200dma
+    −12.5 → misfired as "extended → entry_confirm × 0.50". The stretch leg
+    (ext_pct >= +30%) is unreachable when price is deep below the 200dma and is unchanged.
+    When ext_pct is None (close-only callers: ladder_state's de-escalation gate at
+    line 1400), behavior is UNCHANGED — osc legs fire as before."""
     d = mtf.get("D") or {}
-    for tf in (d, mtf.get("3D") or {}):
-        st = tf.get("stoch")
-        if st is not None and st > _EG_STOCH_OB:
+    # oscillator legs are suppressed when price is far below the 200dma (range-compression
+    # saturation); the stretch leg is structurally unreachable there and is unaffected.
+    osc_exempt = ext_pct is not None and ext_pct <= _EG_OSC_EXEMPT_BELOW
+    if not osc_exempt:
+        for tf in (d, mtf.get("3D") or {}):
+            st = tf.get("stoch")
+            if st is not None and st > _EG_STOCH_OB:
+                return True
+        rsi = d.get("rsi14")
+        if rsi is not None and rsi > _EG_DAILY_RSI_MAX:
             return True
-    rsi = d.get("rsi14")
-    if rsi is not None and rsi > _EG_DAILY_RSI_MAX:
-        return True
     return bool(ext_pct is not None and ext_pct >= _EG_STRETCH_BLOCK)
 
 

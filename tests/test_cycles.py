@@ -15,7 +15,7 @@ from engine.cycles import (  # noqa: E402
     bottom_confidence, bottom_confidence_fields, market_vix_context, washout,
     cycle_state, early_signals, entry_quality, entry_quality_fields, entry_timing,
     find_troughs, ladder_state, mtf_snapshot, signal_age, signal_age_fields,
-    STATE_DISPLAY,
+    STATE_DISPLAY, _overextended,
 )
 
 IDX = pd.bdate_range("2020-01-01", periods=520)
@@ -568,6 +568,69 @@ def test_below_ma10_near_low_daily_rollover_only_gets_unconfirmed_not_extended()
             f"text_zh falsely claims '{forbidden}': {entry.get('text_zh', '')[:120]!r}")
 
 
+# ── _overextended() OSC-EXEMPT-BELOW guard (post-washout range-compression fix) ──
+# Mirrors the RALLY ON→TOP WATCH StochRSI-saturation fix at cycles.py:1006-1014.
+# Guard: when ext_pct is not None AND <= _EG_OSC_EXEMPT_BELOW (default -10.0), the
+# StochRSI-overbought and RSI14-cap oscillator legs are suppressed.  The stretch leg
+# (ext_pct >= +30%) and None-ext_pct callers are unaffected.
+
+def _osc_exempt_mtf(d_stoch: float, rsi14: float, t3_stoch: float = 30.0) -> dict:
+    """Minimal mtf fixture for _overextended() unit tests."""
+    return {
+        "D": {"stoch": d_stoch, "rsi14": rsi14},
+        "3D": {"stoch": t3_stoch, "rsi14": 50.0},
+    }
+
+
+def test_overextended_washed_out_bounce_not_flagged() -> None:
+    """Case 1 (600519.SS pathology): D.stoch=83 > 80, rsi14=55, pct=-12.5 → NOT
+    overextended after fix. Range-compression post-washout saturates StochRSI but
+    price is still deep below the 200dma — oscillator leg must be suppressed."""
+    mtf = _osc_exempt_mtf(d_stoch=83.0, rsi14=55.0)
+    assert not _overextended(mtf, ext_pct=-12.5), (
+        "washed-out bounce with D.stoch=83/pct=-12.5 must NOT be overextended")
+
+
+def test_overextended_genuinely_extended_still_flagged() -> None:
+    """Case 2: D.stoch=85, ext_pct=+8 (above 200dma) → STILL overextended.
+    Price is not below the exemption threshold, so oscillator leg fires normally."""
+    mtf = _osc_exempt_mtf(d_stoch=85.0, rsi14=55.0)
+    assert _overextended(mtf, ext_pct=8.0), (
+        "genuinely extended name (D.stoch=85, pct=+8) must still be flagged")
+
+
+def test_overextended_osc_exempt_boundary_at_threshold() -> None:
+    """Case 3a: hot RSI (rsi14=70 > 62) with ext_pct=-10.0 exactly (== threshold)
+    → EXEMPT (<=). The boundary is inclusive on the exempt side."""
+    mtf = _osc_exempt_mtf(d_stoch=50.0, rsi14=70.0)
+    assert not _overextended(mtf, ext_pct=-10.0), (
+        "ext_pct=-10.0 (== threshold) must exempt the RSI oscillator leg")
+
+
+def test_overextended_osc_not_exempt_just_above_threshold() -> None:
+    """Case 3b: same hot RSI (rsi14=70) with ext_pct=-9.9 (just above threshold)
+    → NOT exempt, RSI14 cap fires normally → overextended=True."""
+    mtf = _osc_exempt_mtf(d_stoch=50.0, rsi14=70.0)
+    assert _overextended(mtf, ext_pct=-9.9), (
+        "ext_pct=-9.9 (above threshold) must NOT exempt the RSI14 cap leg")
+
+
+def test_overextended_none_ext_pct_still_fires() -> None:
+    """Case 4: ext_pct=None with D.stoch=83 → still overextended (legacy behaviour
+    preserved for close-only callers like ladder_state's de-escalation gate)."""
+    mtf = _osc_exempt_mtf(d_stoch=83.0, rsi14=50.0)
+    assert _overextended(mtf, ext_pct=None), (
+        "ext_pct=None must NOT exempt oscillators — legacy caller behaviour unchanged")
+
+
+def test_overextended_stretch_leg_fires_regardless() -> None:
+    """Case 5: ext_pct=+35 (>= stretch_block=30) → overextended=True even when
+    oscillators are mild. The stretch leg is independent of the osc-exempt guard."""
+    mtf = _osc_exempt_mtf(d_stoch=30.0, rsi14=40.0)
+    assert _overextended(mtf, ext_pct=35.0), (
+        "stretch leg (ext_pct=+35 >= 30) must fire regardless of oscillator values")
+
+
 if __name__ == "__main__":
     for fn in [test_trough_spacing, test_translation_right, test_translation_left,
                test_failed_cycle_flag, test_ladder_states_sane, test_decline_on_breakdown,
@@ -591,7 +654,13 @@ if __name__ == "__main__":
                test_below_ma10_turn_signaled_with_rollover_veto_does_not_buy,
                test_below_ma10_turn_signaled_with_stoch_overextended_does_not_buy,
                test_below_ma10_turn_signaled_clean_bottom_still_buys,
-               test_below_ma10_near_low_daily_rollover_only_gets_unconfirmed_not_extended]:
+               test_below_ma10_near_low_daily_rollover_only_gets_unconfirmed_not_extended,
+               test_overextended_washed_out_bounce_not_flagged,
+               test_overextended_genuinely_extended_still_flagged,
+               test_overextended_osc_exempt_boundary_at_threshold,
+               test_overextended_osc_not_exempt_just_above_threshold,
+               test_overextended_none_ext_pct_still_fires,
+               test_overextended_stretch_leg_fires_regardless]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all cycle tests passed")

@@ -122,6 +122,10 @@
   // from=macro lets the Terminal show its prominent "back to Dashboard" button reliably even when the
   // referrer is stripped (the Terminal also falls back to document.referrer when this param is absent).
   function terminalUrl(t) { return MM_TERMINAL_BASE + '?sym=' + encodeURIComponent(t) + '&from=macro'; }
+  // Public handle so modules that navigate programmatically (stocktable.js row clicks —
+  // window.location, not an <a>, so the capture-phase intercept below never sees them)
+  // route through the SAME rewrite; the URL scheme + kill-switch live in one place.
+  window.MDXTerminal = { url: terminalUrl, on: mmTerminalOn };
   (function prewarmTerminal() {
     if (!mmTerminalOn() || !document.head) return;
     ['preconnect', 'dns-prefetch'].forEach(function (rel) {

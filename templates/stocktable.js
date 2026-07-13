@@ -215,6 +215,17 @@
       '.stf-ch-reset{font:inherit;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:7px;padding:5px 10px;}',
       '.stf-ch-reset:hover{color:var(--text);border-color:var(--muted);}',
       '.stf-ch-note{margin-left:auto;font-size:10.5px;color:var(--muted);}',
+      /* Feature 2: ticker anchor in table — inherits row color, dotted underline on hover */
+      '.stf-tkr{color:inherit;text-decoration:none;border-bottom:1px dotted transparent;}',
+      '.stf-tkr:hover{color:var(--link);border-bottom-color:var(--link);}',
+      /* Feature 1: column resize — fixed-layout override (scoped to avoid .st-table host CSS) */
+      'table.st-fixed-layout{table-layout:fixed;}',
+      /* Feature 1: resize handle on th — th needs position:relative for handle */
+      'thead th{position:relative;}',
+      '.stf-rsz{position:absolute;right:-4px;top:0;width:8px;height:100%;cursor:col-resize;z-index:3;display:flex;align-items:center;justify-content:center;}',
+      '.stf-rsz::after{content:"";display:block;width:2px;height:60%;background:var(--link);border-radius:1px;opacity:0;transition:opacity .15s;}',
+      '.stf-rsz:hover::after,.stf-rsz.stf-rsz-active::after{opacity:1;}',
+      '@media (pointer:coarse){.stf-rsz{width:14px;right:-7px;}}',
       /* focus rings */
       '.stf-dd-btn:focus-visible,.stf-chipbtn:focus-visible,.stf-colbtn:focus-visible,.stf-ghost:focus-visible,.stf-ch-reset:focus-visible,.stf-ch-close:focus-visible,.stf-clear:focus-visible{outline:2px solid var(--link);outline-offset:2px;}',
       /* reduced motion */
@@ -242,11 +253,44 @@
     var lsView   = LS_PREFIX + market + '_view';       // 'grid' or 'table'
     var lsCols   = LS_PREFIX + market + '_cols';       // JSON array of visible col keys
     var lsOrder  = LS_PREFIX + market + '_order';      // JSON array of col keys (order)
+    var lsWidths = LS_PREFIX + market + '_widths';     // Feature 1: {colKey: px}
+
+    // Feature 1: colgroup element (shared reference; rebuilt by _syncColgroup).
+    var colgroup = null;
+    // Feature 1: stored column widths from localStorage (or empty object).
+    var colWidths = readLsJson(lsWidths, {});
+    // Feature 1: mobile breakpoint — disable custom widths at ≤680px (display:none
+    // on hidden cells combined with table-layout:fixed misaligns by column index).
+    var _mq680 = window.matchMedia('(max-width:680px)');
+    var _isMobile = _mq680.matches;
+    function _onMqChange(e) {
+      _isMobile = e.matches;
+      if (_isMobile) {
+        // remove fixed layout so mobile uses auto
+        table.classList.remove('st-fixed-layout');
+        if (colgroup) { colgroup.parentNode && table.removeChild(colgroup); colgroup = null; }
+      } else {
+        // re-apply stored widths if any exist
+        _syncColgroup();
+      }
+    }
+    // older MediaQueryList implementations expose addListener only
+    if (_mq680.addEventListener) _mq680.addEventListener('change', _onMqChange);
+    else if (_mq680.addListener) _mq680.addListener(_onMqChange);
 
     _injectCss();
 
     var allRows = (payload.rows || []).slice();  // master copy in system order
     var columns = cfg.columns || [];             // column schema
+
+    // Feature 3: rankFn — compute _rank for every row at parse time.
+    // cfg.rankFn(row) -> number|null; errors per-row are caught and yield null.
+    if (typeof cfg.rankFn === 'function') {
+      allRows.forEach(function(row) {
+        try { row._rank = cfg.rankFn(row); }
+        catch(e) { row._rank = null; }
+      });
+    }
 
     /* ── persisted column state ───────────────────────────────────────── */
     var defaultVisible  = columns.filter(function(c){ return c.default !== false; }).map(function(c){ return c.key; });
@@ -277,8 +321,9 @@
     var SEARCH_PH = cfg.searchPlaceholder || ['Search name or theme…','搜索名称或主题…'];
 
     /* ── sort state ───────────────────────────────────────────────────── */
-    var sortKey   = null;  // null = system order
-    var sortDir   = null;  // 'asc' / 'desc' / null
+    // Feature 3: if rankFn is provided, initial sort is _rank desc.
+    var sortKey   = (typeof cfg.rankFn === 'function') ? '_rank' : null;
+    var sortDir   = (typeof cfg.rankFn === 'function') ? 'desc'  : null;
 
     /* ── build skeleton ───────────────────────────────────────────────── */
     container.innerHTML = '';
@@ -338,6 +383,72 @@
         .filter(function(c){ return c && visibleCols.indexOf(c.key) !== -1; });
     }
 
+    /* ── Feature 1: colgroup width management ─────────────────────────── */
+    // _syncColgroup: rebuild or update the <colgroup> based on current colWidths.
+    // Called after renderHeader (when th elements exist for snapshot) and after
+    // column chooser changes. Must run after the DOM is updated.
+    function _syncColgroup() {
+      if (_isMobile) return;
+      var cols = orderedCols();
+      var hasAny = cols.some(function(c){ return colWidths[c.key] != null; });
+      if (!hasAny) {
+        // No custom widths — remove fixed layout and colgroup entirely.
+        table.classList.remove('st-fixed-layout');
+        if (colgroup && colgroup.parentNode) table.removeChild(colgroup);
+        colgroup = null;
+        return;
+      }
+      // Snapshot current th widths for columns without a stored width, so the
+      // table doesn't jump when we switch to fixed layout.
+      var ths = thead.querySelectorAll('tr:first-child th');
+      cols.forEach(function(c, i) {
+        if (colWidths[c.key] == null && ths[i]) {
+          colWidths[c.key] = ths[i].offsetWidth || ths[i].getBoundingClientRect().width;
+        }
+      });
+      // Build or rebuild colgroup.
+      if (!colgroup) {
+        colgroup = document.createElement('colgroup');
+        table.insertBefore(colgroup, table.firstChild);
+      }
+      colgroup.innerHTML = '';
+      cols.forEach(function(c) {
+        var col = document.createElement('col');
+        var w = colWidths[c.key];
+        if (w != null) col.style.width = w + 'px';
+        colgroup.appendChild(col);
+      });
+      table.classList.add('st-fixed-layout');
+    }
+
+    // _applyColWidth: set a single column's width during a drag.
+    function _applyColWidth(colKey, px) {
+      if (_isMobile) return;
+      px = Math.max(36, px);
+      colWidths[colKey] = px;
+      // Ensure we're in fixed layout with a colgroup.
+      if (!colgroup || !colgroup.parentNode) {
+        // Trigger a full snapshot + build.
+        _syncColgroup();
+      }
+      // Update the specific <col> element.
+      var cols = orderedCols();
+      var idx = -1;
+      for (var i = 0; i < cols.length; i++) { if (cols[i].key === colKey) { idx = i; break; } }
+      if (colgroup && idx !== -1) {
+        var colEls = colgroup.querySelectorAll('col');
+        if (colEls[idx]) colEls[idx].style.width = px + 'px';
+      }
+      writeLsJson(lsWidths, colWidths);
+    }
+
+    // _clearColWidth: remove a column's stored width; if none remain, exit fixed layout.
+    function _clearColWidth(colKey) {
+      delete colWidths[colKey];
+      writeLsJson(lsWidths, colWidths);
+      _syncColgroup();
+    }
+
     function renderHeader() {
       thead.innerHTML = '';
       var tr = document.createElement('tr');
@@ -362,8 +473,12 @@
           tipHtml = '<span class="st-th-tip" data-tip-en="' + esc(col.tip.en) + '" data-tip-zh="' + esc(col.tip.zh || col.tip.en) + '">?</span>';
         }
         th.innerHTML = bi(col.labelEn, col.labelZh) + arrow + tipHtml;
+
+        // Feature 1: sort click handler — dragged flag prevents a resize drag
+        // from triggering a sort cycle (the flag is set by the resize handler).
         if (col.sortable !== false) {
-          th.addEventListener('click', function() {
+          th.addEventListener('click', function(e) {
+            if (th._rszDragged) { th._rszDragged = false; return; }
             var k = th.getAttribute('data-key');
             if (sortKey === k) {
               sortDir = nextSortState(sortDir);
@@ -376,9 +491,58 @@
             renderRows();
           });
         }
+
+        // Feature 1: resize handle.
+        var handle = document.createElement('div');
+        handle.className = 'stf-rsz';
+        handle.setAttribute('aria-hidden', 'true');
+        th.appendChild(handle);
+
+        // Pointer events: capture pointer to receive moves even outside the element.
+        // Drag liveness is tracked with an own flag (not hasPointerCapture): capture
+        // can be unavailable (synthetic/emulated pointers throw NotFoundError) and the
+        // drag must still work — capture only widens the move-tracking area.
+        var startX = 0, startW = 0, dragging = false;
+        handle.addEventListener('pointerdown', function(e) {
+          if (_isMobile) return;
+          e.stopPropagation(); // prevent sort
+          e.preventDefault();
+          try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+          handle.classList.add('stf-rsz-active');
+          startX = e.clientX;
+          // Snapshot current width: use colWidths if set, else th.offsetWidth.
+          startW = colWidths[col.key] != null ? colWidths[col.key] : th.offsetWidth;
+          dragging = true;
+          th._rszDragged = false;
+        });
+        handle.addEventListener('pointermove', function(e) {
+          if (!dragging) return;
+          var delta = e.clientX - startX;
+          if (Math.abs(delta) > 3) th._rszDragged = true;
+          _applyColWidth(col.key, startW + delta);
+        });
+        handle.addEventListener('pointerup', function(e) {
+          dragging = false;
+          handle.classList.remove('stf-rsz-active');
+          try { handle.releasePointerCapture(e.pointerId); } catch (err) {}
+        });
+        handle.addEventListener('pointercancel', function(e) {
+          dragging = false;
+          handle.classList.remove('stf-rsz-active');
+        });
+        // A zero-movement click on the handle must not bubble into the th sort cycle.
+        handle.addEventListener('click', function(e) { e.stopPropagation(); });
+        // Double-click: clear this column's stored width.
+        handle.addEventListener('dblclick', function(e) {
+          e.stopPropagation();
+          _clearColWidth(col.key);
+        });
+
         tr.appendChild(th);
       });
       thead.appendChild(tr);
+      // Feature 1: (re)apply colgroup after header DOM is settled.
+      _syncColgroup();
     }
 
     function applyFilters(rows) {
@@ -403,16 +567,17 @@
 
     function sortRows(rows) {
       if (!sortKey || !sortDir) return rows;
-      var col = columns.find(function(c){ return c.key === sortKey; });
-      if (!col) return rows;
+      // Feature 3: allow sorting by raw row fields (e.g. _rank) even when no
+      // column schema entry exists — col lookup failure no longer bails out.
       var factor = sortDir === 'asc' ? 1 : -1;
       return rows.slice().sort(function(a, b) {
         var av = a[sortKey], bv = b[sortKey];
-        // nulls last in both directions
-        if (av == null && bv == null) return 0;
-        if (av == null) return 1;
-        if (bv == null) return -1;
-        // numeric if both are numbers
+        // nulls/undefined sort LAST regardless of direction
+        var anull = (av == null), bnull = (bv == null);
+        if (anull && bnull) return 0;
+        if (anull) return 1;
+        if (bnull) return -1;
+        // numeric if both parse
         var an = parseFloat(av), bn = parseFloat(bv);
         if (!isNaN(an) && !isNaN(bn)) return factor * (an - bn);
         return factor * String(av).localeCompare(String(bv));
@@ -456,6 +621,13 @@
           } else {
             html = esc(String(val));
           }
+
+          // Feature 2: wrap ticker column content in <a class="stf-tkr"> so
+          // theme.js Terminal capture-phase intercept applies naturally.
+          if (col.key === 'ticker' && cfg.linkPattern) {
+            var tkrLink = cfg.linkPattern.replace('{ticker}', esc(row.ticker || ''));
+            html = '<a class="stf-tkr" href="' + tkrLink + '">' + html + '</a>';
+          }
           td.innerHTML = html;
 
           // row click (first col only — whole row is clickable)
@@ -463,7 +635,11 @@
             var link = cfg.linkPattern.replace('{ticker}', esc(row.ticker || ''));
             tr.style.cursor = 'pointer';
             tr.addEventListener('click', function(e) {
-              if (!e.target.closest('a')) window.location.href = link;
+              // Feature 2: let .stf-tkr anchor and modified clicks pass through
+              // to the browser / theme.js Terminal intercept naturally.
+              if (e.target.closest('a')) return;
+              var T = window.MDXTerminal;
+              window.location.href = (T && T.on && T.on()) ? T.url(row.ticker || '') : link;
             });
           }
           tr.appendChild(td);
