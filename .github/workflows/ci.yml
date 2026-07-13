@@ -784,7 +784,8 @@ jobs:
           tests/test_china_news_engine.py
           tests/test_aibrief_page.py
           tests/test_aibrief_w4_panels.py
-          tests/test_sa_w5_v2_grader_hook.py -q
+          tests/test_sa_w5_v2_grader_hook.py
+          tests/test_w8b_macro_prior_entries.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)

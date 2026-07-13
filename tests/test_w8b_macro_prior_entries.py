@@ -96,11 +96,13 @@ def test_w8b_semiconductor_baskets_use_smh_proxy():
             f"{bid!r}: expected SMH proxy, got {ts._SECTOR_PROXY[bid]!r}")
 
 
-def test_w8b_power_baskets_use_xlu_proxy():
-    """Power-family baskets (data_center_power, nuclear_power) use XLU as proxy."""
-    for bid in ["data_center_power", "nuclear_power"]:
-        assert ts._SECTOR_PROXY[bid] == "XLU", (
-            f"{bid!r}: expected XLU proxy, got {ts._SECTOR_PROXY[bid]!r}")
+def test_w8b_power_baskets_use_correct_proxy():
+    """data_center_power uses XLI (Electrical-Equipment Industrials: Vertiv/Eaton/GE-Vernova);
+    nuclear_power uses XLU (nuclear operators genuinely classify within utilities)."""
+    assert ts._SECTOR_PROXY["data_center_power"] == "XLI", (
+        f"data_center_power: expected XLI proxy (Industrials), got {ts._SECTOR_PROXY['data_center_power']!r}")
+    assert ts._SECTOR_PROXY["nuclear_power"] == "XLU", (
+        f"nuclear_power: expected XLU proxy (Utilities), got {ts._SECTOR_PROXY['nuclear_power']!r}")
 
 
 def test_legacy_prior_entries_unchanged():
@@ -126,7 +128,7 @@ def test_macro_leg_fires_for_w8b_baskets_in_pro_growth_state():
     W8b baskets — confirming they are no longer macro-blind."""
     mc_tailwind = {
         "state": {"growth": 0.8, "rates": 0.5, "inflation": 0.2, "riskon": 0.9},
-        "sector_rs": {"SMH": 0.85, "XLU": 0.70},
+        "sector_rs": {"SMH": 0.85, "XLU": 0.70, "XLI": 0.75},
         "display": {"fed_dir": "easing", "nfci_state": "loose"},
     }
     for bid in W8B_BASKETS:

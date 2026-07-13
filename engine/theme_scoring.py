@@ -109,13 +109,16 @@ _MACRO_PRIOR = {
     # memory_storage: HBM/DRAM — direct AI accelerator demand beneficiary; profile close to
     # ai_semiconductors but slightly lower risk-on (memory is commodity-like, cyclical).
     "memory_storage":     {"growth": 0.6, "rates": 0.2, "inflation": 0.0,  "riskon": 0.7},
-    # data_center_power: power & cooling for data centers (Vertiv/Eaton/GEV); physical
-    # infrastructure character like power_grid — benefits from growth, infrastructure
-    # spending, and mild reflation (equipment pricing); rate-easing helps via project finance.
+    # data_center_power: power & cooling for data centers (Vertiv/Eaton/GE-Vernova); these
+    # are Electrical-Equipment Industrials (GICS) that sit in XLI, not XLU — high-beta
+    # cyclicals that benefit from AI-capex growth; riskon 0.4 is a cyclical loading
+    # consistent with XLI, not the defensive-utility profile of XLU.
     "data_center_power":  {"growth": 0.5, "rates": 0.3, "inflation": 0.2,  "riskon": 0.4},
-    # nuclear_power: nuclear/SMR build-out for data-center and grid demand; by analogy with
-    # power_grid + energy_complex — benefits from reflation, energy scarcity narratives, and
-    # infrastructure spending; moderate rates sensitivity (long-duration capital projects).
+    # nuclear_power: nuclear/SMR build-out for data-center and grid demand; values chosen
+    # on their own merits — energy-scarcity narrative drives higher inflation loading (0.4);
+    # moderate growth/riskon (0.3) sits between defensive utility parents (0.1) and the
+    # cyclical AI-capex entries; this is NOT a numeric blend of power_grid + energy_complex
+    # (both parents have riskon 0.1; weighted averages of them cannot yield 0.3).
     "nuclear_power":      {"growth": 0.3, "rates": 0.3, "inflation": 0.4,  "riskon": 0.3},
 }
 
@@ -130,8 +133,8 @@ _SECTOR_PROXY = {
     "ai_semiconductors": "SMH",   # semiconductor ETF: direct proxy for AI silicon demand
     "semicap_equipment": "SMH",   # same semiconductor supply-chain ecosystem
     "memory_storage":    "SMH",   # HBM/DRAM within the semiconductor complex
-    "data_center_power": "XLU",   # power/utilities ETF: closest to the power-infra build-out
-    "nuclear_power":     "XLU",   # utilities ETF: nuclear sits inside XLU
+    "data_center_power": "XLI",   # industrials ETF: Vertiv/Eaton/GE-Vernova are Electrical-Equipment Industrials (XLI), the coherent cyclical proxy for riskon 0.4
+    "nuclear_power":     "XLU",   # utilities ETF: nuclear operators genuinely classify within XLU
 }
 
 # Lifecycle label -> (en, zh) display.
