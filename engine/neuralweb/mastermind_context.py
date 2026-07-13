@@ -826,6 +826,60 @@ def _summarize_thematic_state(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_mastermind_ai(repo: Path) -> tuple[dict, str | None]:
+    """W-AI: the Mastermind AI reflection lobe — the trading bot as a lobe of the web.
+
+    Reads ONLY data/governance/mastermind_feedback_summary.json (the whitelisted,
+    staleness-gated reverse-bridge summary built by engine/neuralweb/mastermind_feedback.py)
+    — never site/mastermind/ directly. Carries (a) the bot's reflection/nudge state in
+    counts+codes, and (b) the ACK block the bot reads back to advance its directive
+    statuses — this lobe IS the macro→bot half of the two-way dialogue.
+
+    Counts/codes only (the reverse bridge already enforces the leak-proof whitelist).
+    Display/context only: may never originate, score, or escalate.
+    """
+    summ = _read_json(repo / "data" / "governance" / "mastermind_feedback_summary.json")
+    if not summ:
+        return {}, "data/governance/mastermind_feedback_summary.json absent or unreadable"
+
+    state = summ.get("state") or "absent"
+    lobe: dict = {
+        "as_of": summ.get("asof") or (summ.get("generated_utc") or "")[:10] or None,
+        "state": state,
+        "source_schema": summ.get("source_schema"),
+    }
+    if state == "present":
+        nudges = summ.get("nudges") or []
+        by_sev: dict[str, int] = {}
+        for n in nudges:
+            if isinstance(n, dict):
+                sev = n.get("severity") or "low"
+                by_sev[sev] = by_sev.get(sev, 0) + 1
+        directives = summ.get("operator_directives") or []
+        rf = summ.get("reflection") or {}
+        lobe.update({
+            "nudges": {
+                "n": len(nudges),
+                "by_severity": by_sev,
+                "top_codes": [n.get("code") for n in nudges[:5] if isinstance(n, dict)],
+            },
+            "directives": {
+                "n": len(directives),
+                "ids": [d.get("id") for d in directives[:10] if isinstance(d, dict)],
+            },
+            "reflection": {
+                "state": rf.get("state"),
+                "contract_drift_n": len(rf.get("contract_drift") or []),
+                "coverage_rate": (rf.get("coverage") or {}).get("coverage_rate"),
+                "context_seen_rate": (rf.get("context_quality") or {}).get("seen_rate"),
+                "attribution_state": (rf.get("attribution") or {}).get("state"),
+            },
+            # THE ACK — the bot's reader keys directive/nudge status advancement off this.
+            "ack": summ.get("ack") or {"nudge_codes_seen": [], "directive_ids_seen": []},
+        })
+    return lobe, None
+
+
 # Registry: ordered list of (lobe_name, summarizer_fn)
 # Each fn signature: (repo: Path) -> (lobe_dict, gap_note | None)
 LOBE_SUMMARIZERS: dict[str, Any] = {
@@ -839,6 +893,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "claim_reliability": _summarize_claim_reliability,
     "cycle_pattern": _summarize_cycle_pattern,
     "thematic_state": _summarize_thematic_state,
+    "mastermind_ai": _summarize_mastermind_ai,
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -853,6 +908,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "claim_reliability": ["site-qledger-track-record"],
     "cycle_pattern": ["cycle-pattern-state"],
     "thematic_state": ["theme-state"],
+    "mastermind_ai": ["mastermind-feedback-summary"],
 }
 
 

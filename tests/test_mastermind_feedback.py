@@ -14,6 +14,10 @@ Test list:
 10. Real-artifact smoke test (if nw_feedback.json exists in-tree).
 11. m2/m3 — _parse_date and unparseable generated_at → absent.
 12. n1 — context_seen_rate out-of-range → field dropped + gap note.
+13. v3 W-AI dialogue blocks (+ poison / caps).
+14. W-AI operator switch — config.yml orchestrator.ingest_bot_feedback:
+    false → state 'disabled' (no dialogue blocks, no fabricated counts);
+    missing/malformed config or non-bool value → enabled (fail-open).
 """
 from __future__ import annotations
 
@@ -989,3 +993,449 @@ class TestContextSeenRateClamping:
         summary = self._make_v2_with_rate(tmp_path, 2.0)
         gap_str = " ".join(summary["gap_notes"])
         assert "context_seen_rate" in gap_str.lower() or "out of" in gap_str.lower()
+
+
+# ---------------------------------------------------------------------------
+# 13. W-AI v3 source — reflection / nudges / operator_directives + ack
+# ---------------------------------------------------------------------------
+
+def _v3_fixture(generated_at: str = _FRESH_TS) -> dict:
+    """v3 source fixture: v2 + the W-AI dialogue blocks."""
+    base = _v2_fixture(generated_at)
+    base["schema"] = "mastermind_nw_feedback.v3"
+    base["reflection"] = {
+        "state": "ok",
+        "asof": "2026-07-10",
+        "contract_drift": [
+            {"code": "radar_ticker_gap", "status": "dead", "severity": "high"},
+        ],
+        "coverage": {"open_theses_n": 4, "resolved_recent_n": 2,
+                     "with_context_row_n": 3, "coverage_rate": 0.75},
+        "context_quality": {"window_runs": 14, "n_present": 10, "n_stale": 2,
+                            "n_absent": 2, "seen_rate": 0.7142},
+        "attribution": {"n_resolved": 2, "joinable_n": 1, "state": "accruing"},
+    }
+    base["nudges"] = [
+        {"code": "ctx_stale_run", "kind": "staleness", "severity": "high",
+         "detail": "context stale on 2 of 14 runs", "first_seen": "2026-07-08",
+         "builds_seen": 3},
+        {"code": "lobe_request_theme", "kind": "lobe_request", "severity": "low",
+         "detail": "want a theme lobe", "first_seen": "2026-07-09",
+         "builds_seen": 1},
+    ]
+    base["operator_directives"] = [
+        {"id": "deadbeef01", "created": "2026-07-10",
+         "text": "Investigate the radar ticker contract drift"},
+    ]
+    return base
+
+
+class TestV3Fixture:
+    def test_state_present(self, tmp_path):
+        _write_feedback(tmp_path, _v3_fixture())
+        summary = build_summary(root=tmp_path)
+        assert summary["state"] == "present"
+
+    def test_source_schema_v3(self, tmp_path):
+        _write_feedback(tmp_path, _v3_fixture())
+        summary = build_summary(root=tmp_path)
+        assert summary["source_schema"] == "mastermind_nw_feedback.v3"
+
+    def test_v2_blocks_still_extracted_from_v3(self, tmp_path):
+        """v3 is a superset of v2 — decision_flow/outcome_mix/context_audit must
+        be extracted exactly as they are for v2 (_V2_PLUS_SCHEMAS)."""
+        _write_feedback(tmp_path, _v3_fixture())
+        summary = build_summary(root=tmp_path)
+        df = summary["decision_flow"]
+        flagship = next(e for e in df["by_book"] if e["book_id"] == "flagship")
+        assert flagship["packet_accepted"] == 45
+        assert flagship["packet_rejected"] == 22
+        assert df["rejection_error_classes"]["falsifiers"] == 7
+        assert summary["outcome_mix"]["n_resolved"] == 30
+        assert summary["outcome_mix"]["by_outcome"]["1"] == 20
+        ca = summary["context_audit"]
+        assert ca["n_present"] == 25
+        assert ca["n_runs_total"] == 30
+
+    def test_totals_still_correct(self, tmp_path):
+        _write_feedback(tmp_path, _v3_fixture())
+        summary = build_summary(root=tmp_path)
+        totals = summary["totals"]
+        assert totals["n_books"] == 2
+        assert totals["gate_failures_total"] == 12
+        assert totals["rejected_decisions_total"] == 133
+
+    def test_reflection_extracted(self, tmp_path):
+        _write_feedback(tmp_path, _v3_fixture())
+        summary = build_summary(root=tmp_path)
+        rf = summary["reflection"]
+        assert rf["state"] == "ok"
+        assert rf["asof"] == "2026-07-10"
+        assert rf["contract_drift"] == [
+            {"code": "radar_ticker_gap", "status": "dead", "severity": "high"},
+        ]
+        assert rf["coverage"]["open_theses_n"] == 4
+        assert rf["coverage"]["coverage_rate"] == pytest.approx(0.75)
+        assert rf["context_quality"]["window_runs"] == 14
+        assert rf["context_quality"]["seen_rate"] == pytest.approx(0.7142)
+        assert rf["attribution"]["n_resolved"] == 2
+        assert rf["attribution"]["state"] == "accruing"
+
+    def test_nudges_extracted(self, tmp_path):
+        _write_feedback(tmp_path, _v3_fixture())
+        summary = build_summary(root=tmp_path)
+        nudges = summary["nudges"]
+        assert len(nudges) == 2
+        assert nudges[0] == {
+            "code": "ctx_stale_run", "kind": "staleness", "severity": "high",
+            "detail": "context stale on 2 of 14 runs", "first_seen": "2026-07-08",
+            "builds_seen": 3,
+        }
+        assert nudges[1]["code"] == "lobe_request_theme"
+        assert nudges[1]["kind"] == "lobe_request"
+
+    def test_directives_extracted(self, tmp_path):
+        _write_feedback(tmp_path, _v3_fixture())
+        summary = build_summary(root=tmp_path)
+        assert summary["operator_directives"] == [
+            {"id": "deadbeef01", "created": "2026-07-10",
+             "text": "Investigate the radar ticker contract drift"},
+        ]
+
+    def test_ack_lists_exactly_ingested(self, tmp_path):
+        """The ack block must acknowledge exactly the ingested codes/ids."""
+        _write_feedback(tmp_path, _v3_fixture())
+        summary = build_summary(root=tmp_path)
+        assert summary["ack"] == {
+            "nudge_codes_seen": ["ctx_stale_run", "lobe_request_theme"],
+            "directive_ids_seen": ["deadbeef01"],
+        }
+
+    def test_unknown_nudge_kind_and_severity_normalized(self, tmp_path):
+        obj = _v3_fixture()
+        obj["nudges"] = [{"code": "weird_row", "kind": "prophecy",
+                          "severity": "catastrophic", "detail": "x"}]
+        _write_feedback(tmp_path, obj)
+        summary = build_summary(root=tmp_path)
+        n = summary["nudges"][0]
+        assert n["kind"] == "other"
+        assert n["severity"] == "low"
+
+    def test_directive_id_lowercased(self, tmp_path):
+        obj = _v3_fixture()
+        obj["operator_directives"] = [
+            {"id": "DEADBEEF01", "created": "2026-07-10", "text": "fine text"},
+        ]
+        _write_feedback(tmp_path, obj)
+        summary = build_summary(root=tmp_path)
+        assert summary["operator_directives"][0]["id"] == "deadbeef01"
+        assert summary["ack"]["directive_ids_seen"] == ["deadbeef01"]
+
+    def test_metric_families_wai_live(self, tmp_path):
+        """New W-AI metric families are registered as live."""
+        _write_feedback(tmp_path, _v3_fixture())
+        summary = build_summary(root=tmp_path)
+        statuses = {mf["family"]: mf["status"] for mf in summary["metric_families"]}
+        assert statuses.get("nw_reflection") == "live"
+        assert statuses.get("orchestrator_dialogue") == "live"
+
+    def test_v2_source_gets_no_dialogue_blocks(self, tmp_path):
+        """v2 source must not produce reflection/nudges/operator_directives/ack."""
+        _write_feedback(tmp_path, _v2_fixture())
+        summary = build_summary(root=tmp_path)
+        for key in ("reflection", "nudges", "operator_directives", "ack"):
+            assert key not in summary, f"unexpected v3 key {key!r} on v2 source"
+
+    def test_v1_source_gets_no_dialogue_blocks(self, tmp_path):
+        _write_feedback(tmp_path, _v1_fixture())
+        summary = build_summary(root=tmp_path)
+        for key in ("reflection", "nudges", "operator_directives", "ack"):
+            assert key not in summary, f"unexpected v3 key {key!r} on v1 source"
+
+    def test_v3_stale_no_dialogue_blocks(self, tmp_path):
+        """Stale v3 source → no dialogue blocks, no fabricated ack."""
+        _write_feedback(tmp_path, _v3_fixture(generated_at=_STALE_TS))
+        summary = build_summary(root=tmp_path)
+        assert summary["state"] == "stale"
+        for key in ("reflection", "nudges", "operator_directives", "ack"):
+            assert key not in summary
+
+
+# ---------------------------------------------------------------------------
+# 13b. POISONED v3 dialogue blocks → rows dropped whole, nothing leaks
+# ---------------------------------------------------------------------------
+
+def _poisoned_v3_fixture(generated_at: str = _FRESH_TS) -> dict:
+    """v3 fixture where 2 of 3 nudges and 2 of 3 directives are poisoned."""
+    base = _v3_fixture(generated_at)
+    base["nudges"] = [
+        {"code": "good_nudge", "kind": "staleness", "severity": "high",
+         "detail": "context stale on 2 of 14 runs"},
+        # bad code chars → dropped whole
+        {"code": "Bad-Code!", "kind": "staleness", "severity": "low",
+         "detail": "code fails the label whitelist"},
+        # detail hits the MASTERMIND_ deny pattern → dropped whole
+        {"code": "flag_leak", "kind": "other", "severity": "low",
+         "detail": "enable MASTERMIND_SECRET_FLAG on the next run"},
+    ]
+    base["operator_directives"] = [
+        {"id": "deadbeef01", "created": "2026-07-10",
+         "text": "Check the radar contract"},
+        # dollar amount in text → dropped whole
+        {"id": "beefcafe11", "created": "2026-07-10",
+         "text": "raise sizing to $4,000 next week"},
+        # bad id → dropped whole (its benign text goes with it)
+        {"id": "NOT-HEX-ID", "created": "2026-07-10",
+         "text": "benign text on a bad id"},
+    ]
+    return base
+
+
+class TestPoisonedV3Dialogue:
+    def test_state_still_present(self, tmp_path):
+        _write_feedback(tmp_path, _poisoned_v3_fixture())
+        summary = build_summary(root=tmp_path)
+        assert summary["state"] == "present"
+
+    def test_poisoned_nudges_dropped_whole(self, tmp_path):
+        _write_feedback(tmp_path, _poisoned_v3_fixture())
+        summary = build_summary(root=tmp_path)
+        codes = [n["code"] for n in summary["nudges"]]
+        assert codes == ["good_nudge"]
+
+    def test_poisoned_directives_dropped_whole(self, tmp_path):
+        _write_feedback(tmp_path, _poisoned_v3_fixture())
+        summary = build_summary(root=tmp_path)
+        ids = [d["id"] for d in summary["operator_directives"]]
+        assert ids == ["deadbeef01"]
+
+    def test_ack_lists_only_survivors(self, tmp_path):
+        """ack must acknowledge only the rows that were actually ingested."""
+        _write_feedback(tmp_path, _poisoned_v3_fixture())
+        summary = build_summary(root=tmp_path)
+        assert summary["ack"] == {
+            "nudge_codes_seen": ["good_nudge"],
+            "directive_ids_seen": ["deadbeef01"],
+        }
+
+    def test_gap_notes_mention_drops(self, tmp_path):
+        _write_feedback(tmp_path, _poisoned_v3_fixture())
+        summary = build_summary(root=tmp_path)
+        gaps = summary["gap_notes"]
+        assert any("nudges" in g and "dropped 2" in g for g in gaps), gaps
+        assert any("operator_directives" in g and "dropped 2" in g for g in gaps), gaps
+
+    def test_serialized_output_leak_free(self, tmp_path):
+        """Serialize the whole summary and regex-assert nothing poisoned leaked."""
+        import re
+        _write_feedback(tmp_path, _poisoned_v3_fixture())
+        summary = build_summary(root=tmp_path)
+        serialized = json.dumps(summary, default=str)
+        assert "MASTERMIND_SECRET_FLAG" not in serialized
+        assert re.search(r"MASTERMIND_[A-Z_]+", serialized) is None, (
+            "MASTERMIND_* flag string leaked into the output"
+        )
+        assert "$4,000" not in serialized
+        assert re.search(r"\$[\d,]+\d", serialized) is None, (
+            "dollar amount leaked into the output"
+        )
+        assert "bad-code" not in serialized.lower()
+        assert "not-hex-id" not in serialized.lower()
+        assert "beefcafe" not in serialized.lower()
+        # whole-row drop: the benign text of the bad-id directive is gone too
+        assert "benign text on a bad id" not in serialized
+        assert "enable" not in serialized  # poisoned nudge detail dropped whole
+
+    def test_survivor_content_intact(self, tmp_path):
+        _write_feedback(tmp_path, _poisoned_v3_fixture())
+        summary = build_summary(root=tmp_path)
+        assert summary["nudges"][0]["detail"] == "context stale on 2 of 14 runs"
+        assert summary["operator_directives"][0]["text"] == "Check the radar contract"
+
+
+# ---------------------------------------------------------------------------
+# 13c. v3 caps — 15 nudges → 10 kept; 15 directives → 10 kept
+# ---------------------------------------------------------------------------
+
+def _capped_v3_fixture(generated_at: str = _FRESH_TS) -> dict:
+    base = _v3_fixture(generated_at)
+    base["nudges"] = [
+        {"code": f"nudge_code_{i:02d}", "kind": "other", "severity": "low",
+         "detail": f"detail {i}"} for i in range(15)
+    ]
+    base["operator_directives"] = [
+        {"id": f"{i:010x}", "created": "2026-07-10",
+         "text": f"directive number {i}"} for i in range(15)
+    ]
+    return base
+
+
+class TestV3Caps:
+    def test_nudges_capped_at_10(self, tmp_path):
+        _write_feedback(tmp_path, _capped_v3_fixture())
+        summary = build_summary(root=tmp_path)
+        assert len(summary["nudges"]) == 10
+        assert [n["code"] for n in summary["nudges"]] == [
+            f"nudge_code_{i:02d}" for i in range(10)
+        ]
+
+    def test_directives_capped_at_10(self, tmp_path):
+        _write_feedback(tmp_path, _capped_v3_fixture())
+        summary = build_summary(root=tmp_path)
+        assert len(summary["operator_directives"]) == 10
+        assert [d["id"] for d in summary["operator_directives"]] == [
+            f"{i:010x}" for i in range(10)
+        ]
+
+    def test_ack_matches_capped_lists(self, tmp_path):
+        _write_feedback(tmp_path, _capped_v3_fixture())
+        summary = build_summary(root=tmp_path)
+        assert len(summary["ack"]["nudge_codes_seen"]) == 10
+        assert summary["ack"]["nudge_codes_seen"] == [
+            n["code"] for n in summary["nudges"]
+        ]
+        assert len(summary["ack"]["directive_ids_seen"]) == 10
+        assert summary["ack"]["directive_ids_seen"] == [
+            d["id"] for d in summary["operator_directives"]
+        ]
+
+    def test_nudge_detail_length_capped_at_160(self, tmp_path):
+        # NB: multi-word filler — a 40+ char run of one repeated letter would
+        # (correctly) trip the base64 deny pattern and drop the row whole.
+        obj = _v3_fixture()
+        obj["nudges"] = [{"code": "long_detail", "kind": "other",
+                          "severity": "low", "detail": "stale run " * 40}]
+        _write_feedback(tmp_path, obj)
+        summary = build_summary(root=tmp_path)
+        assert len(summary["nudges"][0]["detail"]) == 160
+
+    def test_directive_text_length_capped_at_280(self, tmp_path):
+        obj = _v3_fixture()
+        obj["operator_directives"] = [{"id": "deadbeef01", "created": "2026-07-10",
+                                       "text": "check the radar " * 40}]
+        _write_feedback(tmp_path, obj)
+        summary = build_summary(root=tmp_path)
+        assert len(summary["operator_directives"][0]["text"]) == 280
+
+
+# ---------------------------------------------------------------------------
+# 14. W-AI operator switch — config.yml orchestrator.ingest_bot_feedback
+# ---------------------------------------------------------------------------
+
+def _write_config(tmp_path: Path, body: str) -> Path:
+    p = tmp_path / "config.yml"
+    p.write_text(body, encoding="utf-8")
+    return p
+
+
+class TestIngestSwitchDisabled:
+    """ingest_bot_feedback: false → state 'disabled', never fabricated counts."""
+
+    def _disabled_summary(self, tmp_path: Path) -> dict:
+        # A fresh, fully valid v3 source is present — the switch alone disables it
+        _write_feedback(tmp_path, _v3_fixture())
+        _write_config(tmp_path, "orchestrator:\n  ingest_bot_feedback: false\n")
+        return build_summary(root=tmp_path)
+
+    def test_read_feedback_state_disabled(self, tmp_path):
+        _write_feedback(tmp_path, _v3_fixture())
+        _write_config(tmp_path, "orchestrator:\n  ingest_bot_feedback: false\n")
+        result = read_feedback(root=tmp_path)
+        assert result["state"] == "disabled"
+        assert result["raw"] is None
+        assert result["source_schema"] is None
+
+    def test_build_summary_state_disabled(self, tmp_path):
+        summary = self._disabled_summary(tmp_path)
+        assert summary["state"] == "disabled"
+
+    def test_no_fabricated_counts(self, tmp_path):
+        summary = self._disabled_summary(tmp_path)
+        assert summary["totals"] is None
+        assert summary["per_book"] is None
+
+    def test_no_dialogue_blocks(self, tmp_path):
+        """The valid v3 dialogue in the source must not reach the output."""
+        summary = self._disabled_summary(tmp_path)
+        for key in ("reflection", "nudges", "operator_directives", "ack",
+                    "decision_flow", "outcome_mix", "context_audit",
+                    "asof", "window_days"):
+            assert key not in summary, f"unexpected key {key!r} on disabled state"
+
+    def test_source_content_never_serialized(self, tmp_path):
+        summary = self._disabled_summary(tmp_path)
+        serialized = json.dumps(summary, default=str)
+        assert "ctx_stale_run" not in serialized
+        assert "deadbeef01" not in serialized
+
+    def test_gap_note_names_config_key(self, tmp_path):
+        summary = self._disabled_summary(tmp_path)
+        gap_str = " ".join(summary["gap_notes"])
+        assert "ingest_bot_feedback" in gap_str
+        assert "config.yml" in gap_str
+
+    def test_schema_and_authority_still_governed(self, tmp_path):
+        """Disabled output keeps the governed envelope: schema, context-only,
+        all-false authority."""
+        summary = self._disabled_summary(tmp_path)
+        assert summary["schema"] == SCHEMA
+        assert summary["is_context_only"] is True
+        assert all(v is False for k, v in summary["authority"].items()
+                   if k != "notes")
+
+    def test_build_and_write_disabled_writes_artifact(self, tmp_path):
+        _write_feedback(tmp_path, _v3_fixture())
+        _write_config(tmp_path, "orchestrator:\n  ingest_bot_feedback: false\n")
+        payload = build_and_write(root=tmp_path)
+        out = tmp_path / "data" / "governance" / "mastermind_feedback_summary.json"
+        assert out.exists()
+        assert payload["state"] == "disabled"
+        assert json.loads(out.read_text(encoding="utf-8"))["state"] == "disabled"
+
+
+class TestIngestSwitchFailsOpen:
+    """The switch must fail OPEN — only an explicit boolean false disables."""
+
+    def test_missing_config_enabled(self, tmp_path):
+        # No config.yml at all
+        _write_feedback(tmp_path, _v3_fixture())
+        summary = build_summary(root=tmp_path)
+        assert summary["state"] == "present"
+
+    def test_malformed_config_enabled(self, tmp_path):
+        _write_feedback(tmp_path, _v3_fixture())
+        _write_config(tmp_path, ": not valid yaml : [")
+        summary = build_summary(root=tmp_path)
+        assert summary["state"] == "present"
+
+    def test_config_without_orchestrator_block_enabled(self, tmp_path):
+        _write_feedback(tmp_path, _v3_fixture())
+        _write_config(tmp_path, "other_section:\n  x: 1\n")
+        summary = build_summary(root=tmp_path)
+        assert summary["state"] == "present"
+
+    def test_non_bool_value_enabled(self, tmp_path):
+        """A string 'false' is not a boolean — the switch stays open."""
+        _write_feedback(tmp_path, _v3_fixture())
+        _write_config(tmp_path, "orchestrator:\n  ingest_bot_feedback: 'false'\n")
+        summary = build_summary(root=tmp_path)
+        assert summary["state"] == "present"
+
+    def test_explicit_true_behaves_as_before(self, tmp_path):
+        """ingest_bot_feedback: true → full present summary, totals intact."""
+        _write_feedback(tmp_path, _v3_fixture())
+        _write_config(tmp_path, "orchestrator:\n  ingest_bot_feedback: true\n")
+        summary = build_summary(root=tmp_path)
+        assert summary["state"] == "present"
+        assert summary["totals"]["n_books"] == 2
+        assert summary["totals"]["gate_failures_total"] == 12
+        assert [n["code"] for n in summary["nudges"]] == [
+            "ctx_stale_run", "lobe_request_theme"]
+        assert summary["ack"]["directive_ids_seen"] == ["deadbeef01"]
+
+    def test_disabled_beats_absent_source(self, tmp_path):
+        """Switch off with NO source file → still 'disabled' (the switch is
+        checked before the file), not 'absent'."""
+        _write_config(tmp_path, "orchestrator:\n  ingest_bot_feedback: false\n")
+        result = read_feedback(root=tmp_path)
+        assert result["state"] == "disabled"

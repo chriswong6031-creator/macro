@@ -2542,6 +2542,17 @@ jobs:
           cat "$RUNNER_TEMP/nw_brief_finalize.log"
           if [ "$rc" -ne 0 ]; then echo "::warning title=nw_brief_finalize::rc=$rc (non-fatal — keeping previous daily_brief.json)"; fi
           exit 0
+      - name: record orchestrator run log (W-AI)
+        if: always()
+        # W-AI: one deterministic run-log entry per pipeline run (+ every-N-runs review) composed
+        # from health.json + daily_brief.json + mastermind_feedback_summary.json — runs AFTER the
+        # brief finalize so it records the run's final state. Fail-open, exit 0.
+        run: |
+          set +e
+          python -m scripts.build_orchestrator_log --workflow daily > "$RUNNER_TEMP/orchestrator_log.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/orchestrator_log.log"
+          if [ "$rc" -ne 0 ]; then echo "::warning title=orchestrator_log::rc=$rc (non-fatal)"; fi
+          exit 0
       - name: commit cortex outputs
         run: |
           git config user.name "dashboard-bot"
@@ -2565,6 +2576,10 @@ jobs:
           git add data/neuralweb/daily_brief.json 2>/dev/null || true
           git add site/neuralwebdata/daily_brief.json 2>/dev/null || true
           git add data/neuralweb/daily_brief_history.jsonl 2>/dev/null || true
+          # W-AI: orchestrator run log + N-run reviews (recorded in THIS job — same commit lane)
+          git add data/neuralweb/orchestrator_runlog.jsonl 2>/dev/null || true
+          git add data/neuralweb/orchestrator_reviews.jsonl 2>/dev/null || true
+          git add site/neuralwebdata/orchestrator_runlog.json 2>/dev/null || true
           # R-CI7: nw-context-intelligence W3 personality risk lens (display-only)
           git add data/neuralweb/context_risk.json 2>/dev/null || true
           git add site/neuralwebdata/context_risk.json 2>/dev/null || true
