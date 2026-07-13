@@ -1,14 +1,14 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-13T19:48:47.537872+00:00",
-  "posts_seen": 7,
-  "seen_total": 22,
+  "as_of": "2026-07-13T21:12:45.140203+00:00",
+  "posts_seen": 6,
+  "seen_total": 23,
   "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
   "gate_scores": [
     {
-      "id": "wh-2026-07-13-president-trumps-relentless-strategy-is-dismantling-fentanyl-networks-and-saving",
+      "id": "wh-2026-07-13-nominations-sent-to-the-senate-3fd0",
       "importance": 10,
       "activated": false,
       "degraded_reason": "served_by:deepseek"
