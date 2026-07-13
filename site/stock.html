@@ -716,6 +716,10 @@
    borderless inner blocks, per-section accent rails. Shared by all 5 markets.
    =========================================================================== */
 .sv-verdict-grid { gap: 16px; grid-template-columns: minmax(165px, .78fr) 1.22fr; align-items: stretch; }
+/* re-assert the ≤560px single-column collapse: the two-column rule above follows the
+   media block in source order at equal specificity, so without this the "Act Now?"
+   lane overflows and clips off-screen on phones. */
+@media (max-width: 560px) { .sv-verdict-grid { grid-template-columns: 1fr; } }
 .sv-lane { border: none; background: var(--panel2); border-radius: 14px; padding: 16px; }
 .sv-lane-name { justify-content: center; gap: 7px; }
 .sv-state-conflict .sv-lane-act { border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); }

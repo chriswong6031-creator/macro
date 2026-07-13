@@ -224,6 +224,7 @@ def write_live_config(site_dir) -> None:
           # restore the green "live" pulse once a real-time/websocket plan is live.
           f"window.LIVE_DELAYED_MIN={int(cfg.get('delayed_min', 0))};"
           f"window.LIVE_FEED_LABEL={json.dumps(str(cfg.get('feed_label', '') or ''))};"
+          f"window.LIVE_FEED_LABEL_ZH={json.dumps(str(cfg.get('feed_label_zh', '') or ''))};"
           f"window.LIVE_ENABLED={json.dumps(bool(cfg.get('enabled', True)))};\n")
     (site_dir / "live_config.js").write_text(js)
 
