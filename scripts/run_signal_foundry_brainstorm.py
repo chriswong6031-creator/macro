@@ -269,7 +269,7 @@ def _llm_call(
             max_tokens=max_tokens,
             system=system,
             messages=[{"role": "user", "content": user}],
-            temperature=0,
+            # temperature removed — rejected (400) on opus-4.7+ per Anthropic API
         )
         text = "".join(
             b.text for b in resp.content if getattr(b, "type", "") == "text"

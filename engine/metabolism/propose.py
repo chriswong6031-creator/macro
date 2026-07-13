@@ -596,7 +596,7 @@ def _invoke_llm(
                 max_tokens=max_tokens,
                 system=system,
                 messages=[{"role": "user", "content": user}],
-                temperature=0,
+                # temperature removed — rejected (400) on opus-4.7+ per Anthropic API
             )
             if getattr(resp, "stop_reason", None) == "refusal":
                 return None, "stop_refusal"

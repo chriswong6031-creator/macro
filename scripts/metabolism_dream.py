@@ -128,7 +128,7 @@ def _request_llm_summary(raw_lessons: str, root: Path) -> str | None:
         def _do_call(client: Any, model: str) -> tuple[str | None, str | None]:
             resp = client.messages.create(
                 model=model, max_tokens=800, system=system,
-                messages=[{"role": "user", "content": user}], temperature=0,
+                messages=[{"role": "user", "content": user}],  # temperature removed — rejected (400) on opus-4.7+ per Anthropic API
             )
             text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
             return (text.strip() or None), None
