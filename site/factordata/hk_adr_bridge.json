@@ -5,12 +5,12 @@
   "expected_hk_session": "2026-07-10",
   "freshness_verdict": "ok",
   "adr_freshness": {
-    "FXI": {
+    "JD": {
       "asof": "2026-07-10",
       "lag_days": 0,
       "state": "fresh"
     },
-    "BABA": {
+    "PDD": {
       "asof": "2026-07-10",
       "lag_days": 0,
       "state": "fresh"
@@ -30,12 +30,7 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "PDD": {
-      "asof": "2026-07-10",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "JD": {
+    "BABA": {
       "asof": "2026-07-10",
       "lag_days": 0,
       "state": "fresh"

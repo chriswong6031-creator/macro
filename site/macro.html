@@ -5239,7 +5239,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <p class="v-thesis ms-green"><span class="l-en">Risk-on — the tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported.</span><span class="l-zh">风险偏好 — 价格、广度与跨资产信号一致。顺势交易与逢强加仓得到支持。</span></p>
         
-        <p class="v-flip"><span class="l-en">→ Mixed if breadth & participation rolls over (now 59/100, the weakest leg).</span><span class="l-zh">→ 若广度与参与转弱（现 59/100，最弱项）则转为「混合」。</span></p>
+        <p class="v-flip"><span class="l-en">→ Mixed if risk appetite rolls over (now 70/100, the weakest leg).</span><span class="l-zh">→ 若风险偏好转弱（现 70/100，最弱项）则转为「混合」。</span></p>
         <div class="hero-sub mx2-hero-sub">
           
           
@@ -5314,7 +5314,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
                   
                   <a class="ms-sig sev-warn">
                     <div class="ms-sig-head"><span class="ms-sig-ico">🔔</span><span class="ms-sig-title"><span class="l-en">Macro signal fired</span><span class="l-zh">宏观信号触发</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: CPI (consumer prices) in 3 days — high two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：CPI (consumer prices)（3 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: CPI (consumer prices) in 2 days — high two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：消费者物价指数（CPI）（2 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span></div>
                     <div class="ms-sig-what"><span class="l-en">An automated macro signal changed state. Open the dashboard for the full read.</span><span class="l-zh">一个自动宏观信号发生了状态变化。打开仪表盘查看完整解读。</span></div>
                     
                   </a>
@@ -5328,7 +5328,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             
             <span class="v2chip c-warn" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
               <span class="l-en" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;white-space:nowrap">CPI (consumer prices) 07-14</span>
-              <span class="l-zh" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;white-space:nowrap">CPI (consumer prices) 07-14</span>
+              <span class="l-zh" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;white-space:nowrap">消费者物价指数（CPI） 07-14</span>
             </span>
             
           </div>
@@ -5461,10 +5461,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       
       <div class="mx5-flip">
         <span class="mx5-flip-arrow">&#8594;</span>
-        <span class="l-en">→ Mixed if breadth & participation rolls over (now 59/100, the weakest leg).</span>
-        <span class="l-en" style="color:var(--ink-2);font-weight:600;"> (Breadth & participation 59/100)</span>
-        <span class="l-zh">→ 若广度与参与转弱（现 59/100，最弱项）则转为「混合」。</span>
-        <span class="l-zh" style="color:var(--ink-2);font-weight:600;">（广度与参与 59/100）</span>
+        <span class="l-en">→ Mixed if risk appetite rolls over (now 70/100, the weakest leg).</span>
+        <span class="l-en" style="color:var(--ink-2);font-weight:600;"> (Risk appetite 70/100)</span>
+        <span class="l-zh">→ 若风险偏好转弱（现 70/100，最弱项）则转为「混合」。</span>
+        <span class="l-zh" style="color:var(--ink-2);font-weight:600;">（风险偏好 70/100）</span>
       </div>
       
 
@@ -5530,13 +5530,29 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             
             <div class="mx5-factor-row">
               <div class="mx5-factor-header">
-                <span class="mx5-factor-name">
+                <span class="mx5-factor-name" style="color:var(--mx5-warn-ink)">
                   <span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span>
                 </span>
-                <span class="mx5-factor-score">70</span>
+                <span class="mx5-factor-score weak">70</span>
               </div>
               <div class="mx5-factor-bar-track">
-                <div class="mx5-factor-bar-fill" style="width:70%"></div>
+                <div class="mx5-factor-bar-fill weak" style="width:70%"></div>
+              </div>
+              
+              <div class="mx5-factor-weak-tag"><span class="l-en">WEAKEST LEG &mdash; MONITOR</span><span class="l-zh">最弱分项 &mdash; 持续关注</span></div>
+              
+            </div>
+            
+            
+            <div class="mx5-factor-row">
+              <div class="mx5-factor-header">
+                <span class="mx5-factor-name">
+                  <span class="l-en">Volatility regime</span><span class="l-zh">波动率环境</span>
+                </span>
+                <span class="mx5-factor-score">86</span>
+              </div>
+              <div class="mx5-factor-bar-track">
+                <div class="mx5-factor-bar-fill" style="width:86%"></div>
               </div>
               
             </div>
@@ -5641,9 +5657,9 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-scare-item">
               <div class="mx5-scare-item-header">
                 <span class="mx5-scare-item-name"><span class="l-en">Credit stress</span><span class="l-zh">信用压力</span></span>
-                <span class="mx5-scare-item-val lower">47.4</span>
+                <span class="mx5-scare-item-val lower">43.3</span>
               </div>
-              <div class="mx5-scare-meter"><div class="mx5-scare-fill mid" style="width:47.4%"></div></div>
+              <div class="mx5-scare-meter"><div class="mx5-scare-fill mid" style="width:43.3%"></div></div>
               
             </div>
             
@@ -6119,8 +6135,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="l-en">Watch Breadth & participation &mdash; the weakest leg (59/100).</span>
-              <span class="l-zh">关注广度与参与 &mdash; 最弱分项（59/100）。</span>
+              <span class="l-en">Watch Risk appetite &mdash; the weakest leg (70/100).</span>
+              <span class="l-zh">关注风险偏好 &mdash; 最弱分项（70/100）。</span>
             </div>
             <div class="mx5-action-sub">
               <span class="l-en">Flip trigger if this rolls further</span>
@@ -6145,11 +6161,11 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <div class="mx5-action-text">
             <div class="mx5-action-label">
               <span class="l-en">Expect noise around CPI (consumer prices) &mdash; don&rsquo;t read the first move as trend.</span>
-              <span class="l-zh">CPI (consumer prices)前后噪音加大 &mdash; 勿将初动解读为趋势。</span>
+              <span class="l-zh">消费者物价指数（CPI）前后噪音加大 &mdash; 勿将初动解读为趋势。</span>
             </div>
             <div class="mx5-action-sub">
               <span class="l-en">CPI (consumer prices) 07-14 &middot; HIGH impact</span>
-              <span class="l-zh">CPI (consumer prices) 07-14 &middot; 高影响</span>
+              <span class="l-zh">消费者物价指数（CPI） 07-14 &middot; 高影响</span>
             </div>
           </div>
         </div>
@@ -6237,7 +6253,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           <div class="mx5-tl-item">
             <div class="mx5-tl-dot mx5-dot-high"></div>
-            <div class="mx5-tl-name"><span class="l-en">CPI (con</span><span class="l-zh">CPI (</span></div>
+            <div class="mx5-tl-name"><span class="l-en">CPI (con</span><span class="l-zh">消费者物价</span></div>
             <div class="mx5-tl-date">Jul 14</div>
             <div class="mx5-tl-badge high">
               <span class="l-en">HIGH</span>
@@ -6250,7 +6266,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           <div class="mx5-tl-item">
             <div class="mx5-tl-dot mx5-dot-high"></div>
-            <div class="mx5-tl-name"><span class="l-en">PPI (pro</span><span class="l-zh">PPI (</span></div>
+            <div class="mx5-tl-name"><span class="l-en">PPI (pro</span><span class="l-zh">生产者物价</span></div>
             <div class="mx5-tl-date">Jul 15</div>
             <div class="mx5-tl-badge high">
               <span class="l-en">HIGH</span>
@@ -6263,7 +6279,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           <div class="mx5-tl-item">
             <div class="mx5-tl-dot mx5-dot-med"></div>
-            <div class="mx5-tl-name"><span class="l-en">Initial </span><span class="l-zh">Initi</span></div>
+            <div class="mx5-tl-name"><span class="l-en">Initial </span><span class="l-zh">初请失业金</span></div>
             <div class="mx5-tl-date">Jul 16</div>
             <div class="mx5-tl-badge med">
               <span class="l-en">MED</span>
@@ -6276,7 +6292,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           <div class="mx5-tl-item">
             <div class="mx5-tl-dot mx5-dot-med"></div>
-            <div class="mx5-tl-name"><span class="l-en">Options </span><span class="l-zh">Optio</span></div>
+            <div class="mx5-tl-name"><span class="l-en">Options </span><span class="l-zh">期权到期日</span></div>
             <div class="mx5-tl-date">Jul 17</div>
             <div class="mx5-tl-badge med">
               <span class="l-en">MED</span>
@@ -6289,7 +6305,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           <div class="mx5-tl-item">
             <div class="mx5-tl-dot mx5-dot-med"></div>
-            <div class="mx5-tl-name"><span class="l-en">20-Year </span><span class="l-zh">20-Ye</span></div>
+            <div class="mx5-tl-name"><span class="l-en">20-Year </span><span class="l-zh">20年期国</span></div>
             <div class="mx5-tl-date">Jul 22</div>
             <div class="mx5-tl-badge med">
               <span class="l-en">MED</span>
@@ -8073,10 +8089,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           </defs>
           <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="8"/>
           <circle cx="40" cy="40" r="30" fill="none" stroke="#22d97a"
-            stroke-width="8" stroke-dasharray="159.3 29.2"
+            stroke-width="8" stroke-dasharray="149.9 38.6"
             stroke-linecap="round" transform="rotate(-90 40 40)" filter="url(#fedDonutGlow5)"/>
         </svg>
-        <div class="mx5-fed-pct-overlay">84<small>%</small></div>
+        <div class="mx5-fed-pct-overlay">79<small>%</small></div>
       </div>
       <div>
         <div class="mx5-fed-verdict">
@@ -8108,8 +8124,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <div class="mx5-fed-hist-col">
         <div class="mx5-fed-hist-bar" style="height:2px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.15);border-radius:2px 2px 0 0;"></div>
         <div class="mx5-fed-hist-name">
-          <span class="l-en">50+ bp</span>
-          <span class="l-zh">50+ </span>
+          <span class="l-en">25 bps</span>
+          <span class="l-zh">25 b</span>
         </div>
       </div>
       
@@ -8118,15 +8134,15 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <div class="mx5-fed-hist-col">
         <div class="mx5-fed-hist-bar" style="height:2px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.15);border-radius:2px 2px 0 0;"></div>
         <div class="mx5-fed-hist-name">
-          <span class="l-en">25 bps</span>
-          <span class="l-zh">25 b</span>
+          <span class="l-en">50+ bp</span>
+          <span class="l-zh">50+ </span>
         </div>
       </div>
       
       
       
       <div class="mx5-fed-hist-col">
-        <div class="mx5-fed-hist-bar" style="height:7px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.15);border-radius:2px 2px 0 0;"></div>
+        <div class="mx5-fed-hist-bar" style="height:10px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.15);border-radius:2px 2px 0 0;"></div>
         <div class="mx5-fed-hist-name">
           <span class="l-en">25 bps</span>
           <span class="l-zh">25 b</span>
@@ -8136,7 +8152,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       
       
       <div class="mx5-fed-hist-col">
-        <div class="mx5-fed-hist-bar" style="height:42px;background:linear-gradient(180deg,rgba(34,217,122,.45) 0%,rgba(34,217,122,.18) 100%);border:1px solid rgba(34,217,122,.28);box-shadow:0 0 10px rgba(34,217,122,.18);border-radius:2px 2px 0 0;"></div>
+        <div class="mx5-fed-hist-bar" style="height:40px;background:linear-gradient(180deg,rgba(34,217,122,.45) 0%,rgba(34,217,122,.18) 100%);border:1px solid rgba(34,217,122,.28);box-shadow:0 0 10px rgba(34,217,122,.18);border-radius:2px 2px 0 0;"></div>
         <div class="mx5-fed-hist-name" style="color:var(--mx5-accent-ink);font-weight:700">
           <span class="l-en">No cha</span>
           <span class="l-zh">不变</span>
@@ -8192,7 +8208,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <line x1="190" y1="185" x2="190" y2="30"
               stroke="#f59e0b" stroke-width="4" stroke-linecap="round"
-              transform="rotate(9.0, 190, 185)"
+              transform="rotate(12.6, 190, 185)"
               filter="url(#dialGlow5)"/>
         <circle cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke="#f59e0b" stroke-width="2.5"/>
         <circle cx="190" cy="185" r="4"  fill="#f59e0b"/>
@@ -8207,8 +8223,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <span class="l-zh">中性</span>
     </div>
     <div class="mx5-sentiment-label">
-      <span class="l-en">Composite at 55 &middot; neutral zone</span>
-      <span class="l-zh">综合指数 55 &middot; 中性区间</span>
+      <span class="l-en">Composite at 57 &middot; neutral zone</span>
+      <span class="l-zh">综合指数 57 &middot; 中性区间</span>
     </div>
   </div>
   </div>
@@ -8226,18 +8242,18 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <div class="mx5-sector-chips">
         
         <span class="mx5-sector-chip hot">
-          <span class="l-en">Cybersecurity</span>
-          <span class="l-zh">网络安全</span>
-        </span>
-        
-        <span class="mx5-sector-chip hot">
           <span class="l-en">Insurance & Brokers</span>
           <span class="l-zh">保险与经纪</span>
         </span>
         
         <span class="mx5-sector-chip hot">
-          <span class="l-en">GLP-1 & Obesity</span>
-          <span class="l-zh">GLP-1 与减肥药</span>
+          <span class="l-en">Cybersecurity</span>
+          <span class="l-zh">网络安全</span>
+        </span>
+        
+        <span class="mx5-sector-chip hot">
+          <span class="l-en">Magnificent Seven</span>
+          <span class="l-zh">七巨头</span>
         </span>
         
       </div>
@@ -8249,18 +8265,18 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <div class="mx5-sector-chips">
         
         <span class="mx5-sector-chip cold">
-          <span class="l-en">Memory, HBM & Storage</span>
-          <span class="l-zh">内存、HBM 与存储</span>
+          <span class="l-en">GLP-1 & Obesity</span>
+          <span class="l-zh">GLP-1 与减肥药</span>
         </span>
         
         <span class="mx5-sector-chip cold">
-          <span class="l-en">Regional Banks</span>
-          <span class="l-zh">区域银行</span>
+          <span class="l-en">AI Infrastructure</span>
+          <span class="l-zh">AI 基础设施</span>
         </span>
         
         <span class="mx5-sector-chip cold">
-          <span class="l-en">Managed Care & Insurers</span>
-          <span class="l-zh">管理式医疗与保险</span>
+          <span class="l-en">Reshoring & Industrial Capex</span>
+          <span class="l-zh">回流与工业资本开支</span>
         </span>
         
       </div>
@@ -8280,16 +8296,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:28px;background:rgba(34,217,122,0.72);"></div>
-          <div class="mx5-sector-heat-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></div>
-        </div>
-        
-        
-        
-        
-        
-        
-        <div class="mx5-sector-heat-col">
-          <div class="mx5-sector-heat-bar" style="height:25px;background:rgba(34,217,122,0.64);"></div>
           <div class="mx5-sector-heat-name"><span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span></div>
         </div>
         
@@ -8300,6 +8306,26 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:22px;background:rgba(34,217,122,0.5599999999999999);"></div>
+          <div class="mx5-sector-heat-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></div>
+        </div>
+        
+        
+        
+        
+        
+        
+        <div class="mx5-sector-heat-col">
+          <div class="mx5-sector-heat-bar" style="height:11px;background:rgba(34,217,122,0.22);"></div>
+          <div class="mx5-sector-heat-name"><span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span></div>
+        </div>
+        
+        
+        
+        
+        
+        
+        <div class="mx5-sector-heat-col">
+          <div class="mx5-sector-heat-bar" style="height:19px;background:rgba(239,68,68,0.41000000000000003);"></div>
           <div class="mx5-sector-heat-name"><span class="l-en">GLP-1 & Obesity</span><span class="l-zh">GLP-1 与减肥药</span></div>
         </div>
         
@@ -8309,8 +8335,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <div class="mx5-sector-heat-col">
-          <div class="mx5-sector-heat-bar" style="height:19px;background:rgba(34,217,122,0.48);"></div>
-          <div class="mx5-sector-heat-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></div>
+          <div class="mx5-sector-heat-bar" style="height:11px;background:rgba(239,68,68,0.18);"></div>
+          <div class="mx5-sector-heat-name"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></div>
         </div>
         
         
@@ -8320,7 +8346,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:11px;background:rgba(239,68,68,0.18);"></div>
-          <div class="mx5-sector-heat-name"><span class="l-en">Memory, HBM & Storage</span><span class="l-zh">内存、HBM 与存储</span></div>
+          <div class="mx5-sector-heat-name"><span class="l-en">Reshoring & Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></div>
         </div>
         
         
@@ -8331,26 +8357,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:11px;background:rgba(239,68,68,0.18);"></div>
           <div class="mx5-sector-heat-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></div>
-        </div>
-        
-        
-        
-        
-        
-        
-        <div class="mx5-sector-heat-col">
-          <div class="mx5-sector-heat-bar" style="height:11px;background:rgba(239,68,68,0.18);"></div>
-          <div class="mx5-sector-heat-name"><span class="l-en">Managed Care & Insurers</span><span class="l-zh">管理式医疗与保险</span></div>
-        </div>
-        
-        
-        
-        
-        
-        
-        <div class="mx5-sector-heat-col">
-          <div class="mx5-sector-heat-bar" style="height:11px;background:rgba(239,68,68,0.18);"></div>
-          <div class="mx5-sector-heat-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></div>
         </div>
         
       </div>
@@ -8378,8 +8384,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <div class="mx5-mkt-tile up" data-sym="SPY" data-mkt="us">
           <div class="mx5-mkt-ticker">SPY</div>
           <div class="mx5-mkt-sub">US Equities</div>
-          <div class="mx5-mkt-price nb-px" data-sym="SPY" data-mkt="us" data-bare>751.71</div>
-          <div class="mx5-mkt-delta up nb-chg" data-sym="SPY" data-mkt="us">+0.85%</div>
+          <div class="mx5-mkt-price nb-px" data-sym="SPY" data-mkt="us" data-bare>754.95</div>
+          <div class="mx5-mkt-delta up nb-chg" data-sym="SPY" data-mkt="us">+0.43%</div>
           
           
           
@@ -8496,8 +8502,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <div class="mx5-mkt-tile up" data-sym="QQQ" data-mkt="us">
           <div class="mx5-mkt-ticker">QQQ</div>
           <div class="mx5-mkt-sub">Nasdaq</div>
-          <div class="mx5-mkt-price nb-px" data-sym="QQQ" data-mkt="us" data-bare>723.28</div>
-          <div class="mx5-mkt-delta up nb-chg" data-sym="QQQ" data-mkt="us">+1.66%</div>
+          <div class="mx5-mkt-price nb-px" data-sym="QQQ" data-mkt="us" data-bare>725.51</div>
+          <div class="mx5-mkt-delta up nb-chg" data-sym="QQQ" data-mkt="us">+0.31%</div>
           
           
           
@@ -8614,8 +8620,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <div class="mx5-mkt-tile up" data-sym="DJI" data-mkt="us">
           <div class="mx5-mkt-ticker">DJI</div>
           <div class="mx5-mkt-sub">Dow Jones</div>
-          <div class="mx5-mkt-price nb-px" data-sym="DJI" data-mkt="us" data-bare>52,487.41</div>
-          <div class="mx5-mkt-delta up nb-chg" data-sym="DJI" data-mkt="us">+0.27%</div>
+          <div class="mx5-mkt-price nb-px" data-sym="DJI" data-mkt="us" data-bare>52,637.01</div>
+          <div class="mx5-mkt-delta up nb-chg" data-sym="DJI" data-mkt="us">+0.29%</div>
           
           
           
@@ -8729,11 +8735,11 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         
-        <div class="mx5-mkt-tile up" data-sym="RUT" data-mkt="us">
+        <div class="mx5-mkt-tile dn" data-sym="RUT" data-mkt="us">
           <div class="mx5-mkt-ticker">RUT</div>
           <div class="mx5-mkt-sub">Small Cap</div>
-          <div class="mx5-mkt-price nb-px" data-sym="RUT" data-mkt="us" data-bare>2,992.54</div>
-          <div class="mx5-mkt-delta up nb-chg" data-sym="RUT" data-mkt="us">+1.22%</div>
+          <div class="mx5-mkt-price nb-px" data-sym="RUT" data-mkt="us" data-bare>2,977.81</div>
+          <div class="mx5-mkt-delta dn nb-chg" data-sym="RUT" data-mkt="us">-0.49%</div>
           
           
           
@@ -8824,12 +8830,12 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             
           
           
-          <div class="mx5-spark mx5-spark-up">
+          <div class="mx5-spark mx5-spark-dn">
             <svg viewBox="0 0 120 34" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="spkGrad_RUT" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#22d97a" stop-opacity=".12"/>
-                  <stop offset="100%" stop-color="#22d97a" stop-opacity="0"/>
+                  <stop offset="0%" stop-color="#ef4444" stop-opacity=".26"/>
+                  <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
                 </linearGradient>
               </defs>
               <path class="mx5-spark-area"
@@ -8837,7 +8843,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
                 fill="url(#spkGrad_RUT)" stroke="none"/>
               <polyline class="mx5-spark-line"
                 points="0.0,31.1 6.3,24.2 12.6,17.8 18.9,25.6 25.3,32.0 31.6,13.4 37.9,6.0 44.2,14.7 50.5,11.4 56.8,5.0 63.2,4.3 69.5,4.2 75.8,0.0 82.1,3.5 88.4,8.5 94.7,4.5 101.1,12.6 107.4,20.4 113.7,9.6 120.0,14.0"
-                fill="none" stroke="#22d97a" stroke-width="1.5" opacity=".75"/>
+                fill="none" stroke="#ef4444" stroke-width="1.5"/>
             </svg>
           </div>
           
@@ -8910,8 +8916,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <span class="mx5-policy-key"><span class="l-en">Status</span><span class="l-zh">状态</span></span>
           <span class="mx5-policy-val" style="font-size:11px;color:var(--ink-2,rgba(255,255,255,.6))">
             
-            <span class="l-en">0 speeches 7d</span>
-            <span class="l-zh">7日 0 次发声</span>
+            <span class="l-en">2 speeches 7d</span>
+            <span class="l-zh">7日 2 次发声</span>
             
           </span>
         </div>
@@ -8927,8 +8933,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <div class="mx5-policy-row">
           <span class="mx5-policy-key"><span class="l-en">Fed stance</span><span class="l-zh">美联储立场</span></span>
           <span class="mx5-policy-val">
-            <span class="l-en">Neutral / hold</span>
-            <span class="l-zh">中性 / 不动</span>
+            <span class="l-en">Hawkish</span>
+            <span class="l-zh">鹰派</span>
           </span>
         </div>
         
@@ -8961,13 +8967,11 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <span class="mx5-ai-ticker-pill">QQQ</span>
         
-        <span class="mx5-ai-ticker-pill">USO</span>
-        
         <span class="mx5-ai-ticker-pill">XLF</span>
         
-        <span class="mx5-ai-ticker-pill">KRE</span>
+        <span class="mx5-ai-ticker-pill">USO</span>
         
-        <span class="mx5-ai-ticker-pill">META</span>
+        <span class="mx5-ai-ticker-pill">XLK</span>
         
       </div>
       
@@ -8976,12 +8980,12 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <span class="l-en">
           <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 High-Impact Items</span><br>
-          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">rates</span><br>
+          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
           5 high-impact signals across channels
         </span>
         <span class="l-zh">
           <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 条高影响信息</span><br>
-          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">利率</span><br>
+          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
           5 条高影响信号
         </span>
         
@@ -9010,9 +9014,9 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <div class="mx5-card-title-row">
         <div class="mx5-card-title"><span class="l-en">Alerts Centre</span><span class="l-zh">警报中心</span></div>
         
-        <div class="mx5-card-badge" style="color:var(--mx5-warn);background:var(--mx5-warn-dim);border:1px solid rgba(245,158,11,.20);">
-          <span class="l-en">2 FIRED</span>
-          <span class="l-zh">2 条触发</span>
+        <div class="mx5-card-badge" style="color:var(--mx5-warn-ink);background:var(--mx5-warn-dim);border:1px solid rgba(245,158,11,.20);">
+          <span class="l-en">1 FIRED</span>
+          <span class="l-zh">1 条触发</span>
         </div>
         
       </div>
@@ -9028,23 +9032,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               <span class="l-zh">宏观信号触发</span>
             </div>
             <div class="mx5-alert-detail">
-              <span class="l-en">ARKK: manager added META by +22% of position (2026-06-30..2026-07-10, flow-normalized)</span>
-              <span class="l-zh">ARKK：经理 added META 仓位 +22%（2026-06-30..2026-07-10，已按资金流标准化）</span>
-            </div>
-          </div>
-        </div>
-        
-        
-        <div class="mx5-alert-item info">
-          <div class="mx5-alert-dot info"></div>
-          <div class="mx5-alert-content">
-            <div class="mx5-alert-title info">
-              <span class="l-en">A star fund manager made a notable move</span>
-              <span class="l-zh">明星基金经理出现显著动作</span>
-            </div>
-            <div class="mx5-alert-detail">
-              <span class="l-en">ARKK: manager added XE by +27% of position (2026-06-30..2026-07-10, flow-normalized)</span>
-              <span class="l-zh">ARKK：经理 added XE 仓位 +27%（2026-06-30..2026-07-10，已按资金流标准化）</span>
+              <span class="l-en">Event-risk window: CPI (consumer prices) in 2 days — high two-sided volatility expected · positioned fragile. Not a sell…</span>
+              <span class="l-zh">事件风险窗口：消费者物价指数（CPI）（2 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span>
             </div>
           </div>
         </div>
@@ -9052,8 +9041,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 2 of 2 fired</span>
-          <span class="l-zh">显示 2 / 2 条</span>
+          <span class="l-en">Showing 1 of 1 fired</span>
+          <span class="l-zh">显示 1 / 1 条</span>
         </span>
         <button type="button" class="mx5-alert-footer-link" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -9100,7 +9089,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <div class="mx5-dlg-eyebrow"><span class="l-en">Composite Score</span><span class="l-zh">综合评分</span></div>
         <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:20px">
           
-          <span style="font-size:40px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--up);line-height:1">80</span>
+          <span style="font-size:40px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--up);line-height:1">81</span>
           <div>
             <div style="font-size:14px;font-weight:700;color:var(--up)">
               <span class="l-en">Risk-On</span>
@@ -9140,14 +9129,14 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row weakest">
           <div>
             <div class="mx5-dlg-factor-name">
               <span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span>
-              
+              <span class="v2chip c-warn" style="font-size:9px;padding:1px 5px;margin-left:6px;vertical-align:middle"><span class="l-en">WEAKEST</span><span class="l-zh">最弱</span></span>
             </div>
             
-            <div class="mx5-dlg-factor-read"><span class="l-en">Cross-asset RORO risk-on; bonds/FX mixed</span><span class="l-zh">跨资产 RORO 风险偏好；债/汇 分歧</span></div>
+            <div class="mx5-dlg-factor-read"><span class="l-en">Cross-asset RORO risk-on; bonds/FX diverge</span><span class="l-zh">跨资产 RORO 风险偏好；债/汇 背离</span></div>
             
           </div>
           <div>
@@ -9171,6 +9160,25 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           </div>
           <div>
             <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:86%;background:var(--up)"></div></div>
+            <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
+          </div>
+          <div class="mx5-dlg-factor-score" style="color:var(--up)">86</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name">
+              <span class="l-en">Breadth & participation</span><span class="l-zh">广度与参与</span>
+              
+            </div>
+            
+            <div class="mx5-dlg-factor-read"><span class="l-en">Breadth 73%ile of 5y; confirming price</span><span class="l-zh">广度处于五年 73 百分位；确认价格</span></div>
+            
+          </div>
+          <div>
+            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:73%;background:var(--up)"></div></div>
             <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
           </div>
           <div class="mx5-dlg-factor-score" style="color:var(--up)">73</div>
@@ -9224,10 +9232,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             </svg>
           </div>
           <div>
-            <div class="mx5-dlg-weakest-label"><span class="l-en">Watch: Breadth & participation</span><span class="l-zh">关注：广度与参与</span></div>
+            <div class="mx5-dlg-weakest-label"><span class="l-en">Watch: Risk appetite</span><span class="l-zh">关注：风险偏好</span></div>
             <div class="mx5-dlg-weakest-sub">
-              <span class="l-en">Weakest leg at 59/100 — the closest flip-trigger. Confirms what has already turned; does not forecast.</span>
-              <span class="l-zh">最弱分项 59/100，最接近翻转触发点。确认已转向信号，不预测未来。</span>
+              <span class="l-en">Weakest leg at 70/100 — the closest flip-trigger. Confirms what has already turned; does not forecast.</span>
+              <span class="l-zh">最弱分项 70/100，最接近翻转触发点。确认已转向信号，不预测未来。</span>
             </div>
           </div>
         </div>
@@ -9248,11 +9256,11 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <tr>
             <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">S&P 500</span><span class="l-zh">标普500</span></td>
             
-            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">58</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">60</span></span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">63</span></span></td>
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">64</span></span></td>
             
-            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">65</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">66</span></span></td>
             
             <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">75</span></span></td>
             
@@ -9262,7 +9270,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <tr>
             <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Nasdaq 100</span><span class="l-zh">纳指100</span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">52</span></span></td>
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">53</span></span></td>
             
             <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">59</span></span></td>
             
@@ -9276,13 +9284,13 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <tr>
             <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Russell 2000</span><span class="l-zh">罗素2000</span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">56</span></span></td>
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">53</span></span></td>
             
-            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">68</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">67</span></span></td>
             
-            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">68</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">67</span></span></td>
             
-            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">72</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">71</span></span></td>
             
             <td style="text-align:right"><span class="mx5-dlg-mtf-conf good"><span class="l-en">Uptrend</span><span class="l-zh">上升趋势</span></span></td>
           </tr>
@@ -9328,7 +9336,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-cal-date">Jul 14</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">CPI (consumer prices)</span>
-              <span class="l-zh">CPI (consumer prices)</span>
+              <span class="l-zh">消费者物价指数（CPI）</span>
             </div>
             <div class="mx5-dlg-cal-meta">
               <span class="mx5-dlg-cal-time">08:30 ET</span>
@@ -9347,7 +9355,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-cal-date">Jul 15</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">PPI (producer prices)</span>
-              <span class="l-zh">PPI (producer prices)</span>
+              <span class="l-zh">生产者物价指数（PPI）</span>
             </div>
             <div class="mx5-dlg-cal-meta">
               <span class="mx5-dlg-cal-time">08:30 ET</span>
@@ -9366,7 +9374,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-cal-date">Jul 16</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">Initial jobless claims</span>
-              <span class="l-zh">Initial jobless claims</span>
+              <span class="l-zh">初请失业金</span>
             </div>
             <div class="mx5-dlg-cal-meta">
               <span class="mx5-dlg-cal-time">08:30 ET</span>
@@ -9385,7 +9393,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-cal-date">Jul 17</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">Options expiration</span>
-              <span class="l-zh">Options expiration</span>
+              <span class="l-zh">期权到期日</span>
             </div>
             <div class="mx5-dlg-cal-meta">
               <span class="mx5-dlg-cal-time">16:00 ET</span>
@@ -9404,7 +9412,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-cal-date">Jul 22</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">20-Year Bond auction (reopening)</span>
-              <span class="l-zh">20-Year Bond auction (reopening)</span>
+              <span class="l-zh">20年期国债拍卖（续发行）</span>
             </div>
             <div class="mx5-dlg-cal-meta">
               <span class="mx5-dlg-cal-time">13:00 ET</span>
@@ -9423,7 +9431,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-cal-date">Jul 23</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">Initial jobless claims</span>
-              <span class="l-zh">Initial jobless claims</span>
+              <span class="l-zh">初请失业金</span>
             </div>
             <div class="mx5-dlg-cal-meta">
               <span class="mx5-dlg-cal-time">08:30 ET</span>
@@ -9442,7 +9450,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-cal-date">Jul 23</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">10-Year Note auction</span>
-              <span class="l-zh">10-Year Note auction</span>
+              <span class="l-zh">10年期国债拍卖</span>
             </div>
             <div class="mx5-dlg-cal-meta">
               <span class="mx5-dlg-cal-time">13:00 ET</span>
@@ -9466,22 +9474,29 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           <div class="mx5-dlg-fed-item">
             <span class="mx5-dlg-fed-desc"><span class="l-en">Next Fed decision</span><span class="l-zh">下次美联储决议</span></span>
-            <span class="mx5-dlg-fed-val"><span class="num">No change 84.5%</span></span>
-            <span class="mx5-dlg-fed-chg pos">+7.0pp</span>
+            <span class="mx5-dlg-fed-val"><span class="num">No change 79.5%</span></span>
+            
           </div>
           
           
           <div class="mx5-dlg-fed-item">
             <span class="mx5-dlg-fed-desc"><span class="l-en">Fed cuts this year</span><span class="l-zh">今年降息次数</span></span>
-            <span class="mx5-dlg-fed-val"><span class="num">0 (0 bps) 77.5%</span></span>
-            <span class="mx5-dlg-fed-chg neg">-1.4pp</span>
+            <span class="mx5-dlg-fed-val"><span class="num">0 (0 bps) 78.0%</span></span>
+            
+          </div>
+          
+          
+          <div class="mx5-dlg-fed-item">
+            <span class="mx5-dlg-fed-desc"><span class="l-en">US recession</span><span class="l-zh">美国衰退</span></span>
+            <span class="mx5-dlg-fed-val"><span class="num">US recession by end of 2026? 10.5%</span></span>
+            
           </div>
           
           
           <div class="mx5-dlg-fed-item">
             <span class="mx5-dlg-fed-desc"><span class="l-en">CPI outcome market</span><span class="l-zh">CPI市场预期</span></span>
-            <span class="mx5-dlg-fed-val"><span class="num">2.8% 53.5%</span></span>
-            
+            <span class="mx5-dlg-fed-val"><span class="num">0.2% 62.0%</span></span>
+            <span class="mx5-dlg-fed-chg pos">+4.5pp</span>
           </div>
           
           <div class="mx5-dlg-fed-src">Polymarket</div>
@@ -9529,8 +9544,64 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <div class="mx5-dlg-idx-card">
             <div class="mx5-dlg-idx-ticker">SPY</div>
             <div class="mx5-dlg-idx-name">S&P 500</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="SPY" data-mkt="us" data-bare>751.71</div>
-            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="SPY" data-mkt="us">+0.85%</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="SPY" data-mkt="us" data-bare>754.95</div>
+            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="SPY" data-mkt="us">+0.43%</div>
+            <div class="mx5-dlg-idx-chips">
+              
+              <span class="mx5-dlg-idx-chip ok" title="Distance from 52-week high">-0.4% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              
+              
+              <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average">50d ✓</span>
+              
+              
+              
+              <span class="mx5-dlg-idx-chip ok" title="vs 200-day moving average">200d ✓</span>
+              
+              
+              
+              
+              
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 59"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              
+            </div>
+          </div>
+          
+          
+          
+          
+          <div class="mx5-dlg-idx-card">
+            <div class="mx5-dlg-idx-ticker">QQQ</div>
+            <div class="mx5-dlg-idx-name">Nasdaq 100</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="QQQ" data-mkt="us" data-bare>725.51</div>
+            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="QQQ" data-mkt="us">+0.31%</div>
+            <div class="mx5-dlg-idx-chips">
+              
+              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-2.7% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              
+              
+              <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average">50d ✓</span>
+              
+              
+              
+              <span class="mx5-dlg-idx-chip ok" title="vs 200-day moving average">200d ✓</span>
+              
+              
+              
+              
+              
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 53"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              
+            </div>
+          </div>
+          
+          
+          
+          
+          <div class="mx5-dlg-idx-card">
+            <div class="mx5-dlg-idx-ticker">DJI</div>
+            <div class="mx5-dlg-idx-name">Dow Jones</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="DJI" data-mkt="us" data-bare>52,637.01</div>
+            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="DJI" data-mkt="us">+0.29%</div>
             <div class="mx5-dlg-idx-chips">
               
               <span class="mx5-dlg-idx-chip ok" title="Distance from 52-week high">-0.8% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
@@ -9546,63 +9617,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               
               
               
-              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 57"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
-              
-            </div>
-          </div>
-          
-          
-          
-          
-          <div class="mx5-dlg-idx-card">
-            <div class="mx5-dlg-idx-ticker">QQQ</div>
-            <div class="mx5-dlg-idx-name">Nasdaq 100</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="QQQ" data-mkt="us" data-bare>723.28</div>
-            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="QQQ" data-mkt="us">+1.66%</div>
-            <div class="mx5-dlg-idx-chips">
-              
-              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-3.0% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
-              
-              
-              <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average">50d ✓</span>
-              
-              
-              
-              <span class="mx5-dlg-idx-chip ok" title="vs 200-day moving average">200d ✓</span>
-              
-              
-              
-              
-              
-              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 52"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
-              
-            </div>
-          </div>
-          
-          
-          
-          
-          <div class="mx5-dlg-idx-card">
-            <div class="mx5-dlg-idx-ticker">DJI</div>
-            <div class="mx5-dlg-idx-name">Dow Jones</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="DJI" data-mkt="us" data-bare>52,487.41</div>
-            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="DJI" data-mkt="us">+0.27%</div>
-            <div class="mx5-dlg-idx-chips">
-              
-              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-1.1% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
-              
-              
-              <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average">50d ✓</span>
-              
-              
-              
-              <span class="mx5-dlg-idx-chip ok" title="vs 200-day moving average">200d ✓</span>
-              
-              
-              
-              
-              
-              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 61"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 62"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
               
             </div>
           </div>
@@ -9613,11 +9628,11 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <div class="mx5-dlg-idx-card">
             <div class="mx5-dlg-idx-ticker">RUT</div>
             <div class="mx5-dlg-idx-name">Russell 2000</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="RUT" data-mkt="us" data-bare>2,992.54</div>
-            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="RUT" data-mkt="us">+1.22%</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="RUT" data-mkt="us" data-bare>2,977.81</div>
+            <div class="mx5-dlg-idx-chg dn nb-chg" data-sym="RUT" data-mkt="us">-0.49%</div>
             <div class="mx5-dlg-idx-chips">
               
-              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-1.1% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-1.5% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
               
               
               <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average">50d ✓</span>
@@ -9630,7 +9645,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               
               
               
-              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 56"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 54"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
               
             </div>
           </div>
@@ -9648,26 +9663,20 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span></span>
               <span class="mx5-dlg-sector-rk">#1</span>
             </div>
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span></span>
-              <span class="mx5-dlg-sector-rk">#2</span>
-            </div>
-            
-            <div class="mx5-dlg-sector-row">
-              <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">GLP-1 & Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span>
               <span class="mx5-dlg-sector-rk">#3</span>
             </div>
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span>
-              <span class="mx5-dlg-sector-rk">#4</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span></span>
+              <span class="mx5-dlg-sector-rk">#13</span>
             </div>
             
           </div>
@@ -9676,7 +9685,19 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Memory, HBM & Storage</span><span class="l-zh">内存、HBM 与存储</span></span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">GLP-1 & Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span>
+              <span class="mx5-dlg-sector-rk">#4</span>
+            </div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></span>
+              <span class="mx5-dlg-sector-rk">#9</span>
+            </div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Reshoring & Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></span>
               <span class="mx5-dlg-sector-rk">#10</span>
             </div>
             
@@ -9684,18 +9705,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               <span class="mx5-dlg-sector-arr cool">&#9661;</span>
               <span class="mx5-dlg-sector-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span>
               <span class="mx5-dlg-sector-rk">#11</span>
-            </div>
-            
-            <div class="mx5-dlg-sector-row">
-              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Managed Care & Insurers</span><span class="l-zh">管理式医疗与保险</span></span>
-              <span class="mx5-dlg-sector-rk">#14</span>
-            </div>
-            
-            <div class="mx5-dlg-sector-row">
-              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span>
-              <span class="mx5-dlg-sector-rk">#16</span>
             </div>
             
           </div>
@@ -9728,7 +9737,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           <div class="mx5-dlg-asset-tile">
             <div class="mx5-dlg-asset-lbl">VIX</div>
-            <div class="mx5-dlg-asset-val" style="color:var(--up)">15.8</div>
+            <div class="mx5-dlg-asset-val" style="color:var(--up)">15.0</div>
             <div class="mx5-dlg-asset-ctx"><span class="l-en">calm</span><span class="l-zh">平静</span></div>
           </div>
           
@@ -9793,9 +9802,9 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           
           
-          <span class="mx5-dlg-chip" style="border-color:var(--warn);color:var(--warn)">
-            <span class="l-en">Fed: Neutral</span>
-            <span class="l-zh">美联储：中性</span>
+          <span class="mx5-dlg-chip" style="border-color:var(--down);color:var(--down)">
+            <span class="l-en">Fed: Hawkish</span>
+            <span class="l-zh">美联储：鹰派</span>
           </span>
           
           
@@ -9879,7 +9888,11 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     </div>
     
     <div class="rrx-rec-cats"><span class="rrx-rec-k"><span class="l-en">Central banks</span><span class="l-zh">央行</span></span>
-      <span class="rrx-rec-chip fresh">💵 <span class="l-en">Fed liquidity expanding</span><span class="l-zh">美联储流动性扩张</span><span class="help">?<span class="tip"><span class="l-en">Net liquidity (WALCL − RRP − TGA) rising — TGA drawdown / reserves added.</span><span class="l-zh">净流动性（WALCL − RRP − TGA）上升 — TGA 回落／准备金注入。</span></span></span></span>
+      <span class="rrx-rec-chip fresh">💵 <span class="l-en">Fed liquidity expanding</span><span class="l-zh">美联储流动性扩张</span><span class="help">?<span class="tip"><span class="l-en">Net liquidity (WALCL − RRP − TGA) rising (+$65B/20d) — TGA drawdown / reserves added.</span><span class="l-zh">净流动性（WALCL − RRP − TGA）上升（+650亿美元/20日）— TGA 回落／准备金注入。</span></span></span></span>
+    </div>
+    <div class="rrx-rec-sal">
+      <span class="l-en">When liquidity is expanding like this, buying dips has historically worked ~6pp more often over the next month (a measured odds edge, not a promise).</span>
+      <span class="l-zh">历史上，在流动性扩张期间逢低买入的成功率比平均高约6个百分点（次月维度）——这是一个经过回测的概率优势，不是承诺。</span>
     </div>
     
     <div class="rrx-rec-cats">
@@ -9917,7 +9930,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     <span class="rrx-th" style="--sb:var(--muted)">
       <span class="rrx-th-n"><span class="l-en">Credit stress</span><span class="l-zh">信用压力</span></span>
       <span class="rrx-meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>
-      <b class="rrx-th-s">47</b>
+      <b class="rrx-th-s">43</b>
     </span>
     <span class="rrx-th" style="--sb:var(--muted)">
       <span class="rrx-th-n"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span></span>
@@ -9969,7 +9982,97 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   
   </div>
 </div>
-        
+        <div class="igx igx-off">
+  <div class="igx-hd">
+    <span class="igx-ic">⚪</span>
+    <div class="igx-id">
+      <div class="igx-ttl">
+        <span class="l-en">Ignition Radar</span><span class="l-zh">点火雷达</span>
+        <span class="igx-badge"><span class="l-en">OFF</span><span class="l-zh">未触发</span> · K=1/8</span>
+        <span class="help">?<span class="tip"><span class="l-en">Risk-ON evidence gauge — the Risk Radar's mirror. Confluence of breadth-thrust events and participation. Display-only, forward-graded; not a buy signal.</span><span class="l-zh">正向风险偏好证据仪表 — 风险雷达的镜像。广度推进事件与参与度的共振读数。仅展示，前瞻评分中；非买入信号。</span></span></span>
+      </div>
+      <div class="igx-glance"><span class="l-en">Narrow ignition — XLY; fragile until participation broadens</span><span class="l-zh">局部点火 — XLY；需参与度扩散方可确认</span></div>
+      <div class="igx-fragile">⚠️ <span class="l-en">Fragile until participation broadens</span><span class="l-zh">需参与度扩散方可确认</span></div>
+    </div>
+  </div>
+
+  
+  <div class="igx-chips">
+    <span class="igx-k"><span class="l-en">Broad K</span><span class="l-zh">宽幅K</span>:</span>
+    <span class="igx-chip">
+      <span class="igx-chip-dot"></span>
+      <span class="l-en">Breadth thrust confluence</span><span class="l-zh">广度推进共振</span>
+    </span>
+    <span class="igx-chip">
+      <span class="igx-chip-dot"></span>
+      <span class="l-en">Summation low→high swing</span><span class="l-zh">麦克伦求和指数低位跃升</span>
+    </span>
+    <span class="igx-chip">
+      <span class="igx-chip-dot"></span>
+      <span class="l-en">%>20dma washout→thrust</span><span class="l-zh">20日线上比例洗出→推进</span>
+    </span>
+    <span class="igx-chip">
+      <span class="igx-chip-dot"></span>
+      <span class="l-en">Follow-through day</span><span class="l-zh">放量确认日</span>
+    </span>
+    <span class="igx-chip lit">
+      <span class="igx-chip-dot"></span>
+      <span class="l-en">Breadth >50dma recovery</span><span class="l-zh">50日线广度回升</span>
+    </span>
+    <span class="igx-chip">
+      <span class="igx-chip-dot"></span>
+      <span class="l-en">New highs flipping positive</span><span class="l-zh">新高翻正</span>
+    </span>
+    <span class="igx-chip">
+      <span class="igx-chip-dot"></span>
+      <span class="l-en">Equal-weight RS (RSP/SPY)</span><span class="l-zh">等权RS（RSP/SPY）</span>
+    </span>
+    <span class="igx-chip">
+      <span class="igx-chip-dot"></span>
+      <span class="l-en">Sector breadth (8-of-11)</span><span class="l-zh">板块广度（11中8）</span>
+    </span>
+  </div>
+
+  
+  <div class="igx-narrow">
+    <span class="igx-narrow-k"><span class="l-en">Theme</span><span class="l-zh">主题</span></span>
+    <span class="igx-theme igniting">⚠️ 
+      XLY
+      <span class="igx-theme-score">77%</span>
+      <span class="igx-theme-flags">
+      </span>
+    </span>
+    <span class="igx-theme igniting">⚠️ 
+      Magnificent Seven
+      <span class="igx-theme-score">70%</span>
+      <span class="igx-theme-flags">↗
+      </span>
+    </span>
+    <span class="igx-theme igniting">⚠️ 
+      AI Semiconductors
+      <span class="igx-theme-score">69%</span>
+      <span class="igx-theme-flags">🔺↗
+      </span>
+    </span>
+  </div>
+
+  
+  <div class="igx-xref">
+    <span class="igx-xref-k"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span>:</span>
+    watch
+  </div>
+
+  
+  <div class="igx-do">
+    <span class="igx-do-k"><span class="l-en">Note</span><span class="l-zh">注意</span></span><span class="l-en">Theme-level evidence only. Fragile until RSP or sector breadth confirms. Evidence read, not a buy call.</span><span class="l-zh">仅主题级证据，RSP或板块广度未确认前存在脆弱性。证据读取，非买入信号。</span>
+  </div>
+
+  
+  <div class="igx-audit">
+    <span class="igx-audit-k">🧾 <span class="l-en">Self-audit</span><span class="l-zh">自审</span></span>
+    <span class="l-en">accruing — display-only until ≥30 grades + operator ruling</span><span class="l-zh">积累中 — 至少30次评分及运营员决定前仅展示</span>
+  </div>
+</div>
 
         
         
@@ -10023,8 +10126,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               
               
             </span>
-            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:47.4%;background:var(--warn)"></div></div>
-            <span class="sc-score" style="color:var(--warn)">47.4</span>
+            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:43.3%;background:var(--warn)"></div></div>
+            <span class="sc-score" style="color:var(--warn)">43.3</span>
             <span class="sc-band sc-band-elev">
               <span class="l-en">calm</span>
               <span class="l-zh">calm</span>
@@ -10059,8 +10162,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               
               
             </span>
-            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:27.2%;background:var(--muted)"></div></div>
-            <span class="sc-score" style="color:var(--muted)">27.2</span>
+            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:29.7%;background:var(--muted)"></div></div>
+            <span class="sc-score" style="color:var(--muted)">29.7</span>
             <span class="sc-band sc-band-calm">
               <span class="l-en">calm</span>
               <span class="l-zh">calm</span>
@@ -10077,8 +10180,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               
               
             </span>
-            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:22.6%;background:var(--muted)"></div></div>
-            <span class="sc-score" style="color:var(--muted)">22.6</span>
+            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:27.2%;background:var(--muted)"></div></div>
+            <span class="sc-score" style="color:var(--muted)">27.2</span>
             <span class="sc-band sc-band-calm">
               <span class="l-en">calm</span>
               <span class="l-zh">calm</span>
@@ -10171,10 +10274,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             
             
             <div class="mx2-sent-row">
-              <div class="mx2-sent-key"><span class="num">90</span>
+              <div class="mx2-sent-key"><span class="num">96</span>
                 <span class="chip c-up"><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
               </div>
-              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:90%;background:var(--up)"></div></div>
+              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:96%;background:var(--up)"></div></div>
             </div>
             <div class="grad-labels" style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:6px">
               <span><span class="l-en">Panic</span><span class="l-zh">恐慌</span></span><span><span class="l-en">Fear</span><span class="l-zh">恐惧</span></span><span><span class="l-en">Neutral</span><span class="l-zh">中性</span></span><span><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span><span><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
@@ -10184,8 +10287,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             
             <div class="mx2-sent-row">
               <div class="mx2-sent-key"><span class="l-en">Fear/Greed</span><span class="l-zh">恐贪指数</span></div>
-              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:55%;background:var(--warn)"></div></div>
-              <div class="mx2-sent-val"><span class="num">55</span>
+              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:57%;background:var(--warn)"></div></div>
+              <div class="mx2-sent-val"><span class="num">57</span>
                 <span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
             </div>
             
@@ -10193,7 +10296,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             
             <div class="mx2-sent-row" id="froth-fragility">
               <div class="mx2-sent-key"><span class="l-en">Froth & Fragility</span><span class="l-zh">狂热与脆弱</span></div>
-              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:21.8%;background:var(--muted)"></div></div>
+              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:21.5%;background:var(--muted)"></div></div>
               <div class="mx2-sent-val"><span class="num">22</span>
                 <span class="l-en">Calm</span><span class="l-zh">平静</span>
                 <span class="l-en muted"> provisional</span><span class="l-zh muted"> 暂定</span>
@@ -10209,7 +10312,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             
             <div class="froth-split">
               <div class="froth-split-item"><div class="froth-split-lbl"><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></div><div class="froth-split-val">19</div></div>
-              <div class="froth-split-item"><div class="froth-split-lbl"><span class="l-en">Fragility / distribution</span><span class="l-zh">脆弱／派发</span></div><div class="froth-split-val">25</div></div>
+              <div class="froth-split-item"><div class="froth-split-lbl"><span class="l-en">Fragility / distribution</span><span class="l-zh">脆弱／派发</span></div><div class="froth-split-val">24</div></div>
             </div>
             <div class="muted sm" style="margin-top:8px"><span class="l-en">Forward record accruing.</span><span class="l-zh">前瞻记录积累中。</span> <span class="l-en">Display-only — the response is sizing, not selection.</span><span class="l-zh">仅供展示——应对是调整仓位，而非选股。</span></div>
             
@@ -10245,7 +10348,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             </span>
             <div>
               <div style="font-size:13px;font-weight:600"><span class="l-en">No active policy pressure</span><span class="l-zh">当前无积极政策压力</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">As of 2026-07-09</span><span class="l-zh">截至 2026-07-09</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">As of 2026-07-10</span><span class="l-zh">截至 2026-07-10</span></div>
             </div>
           </div>
           
@@ -10261,7 +10364,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:8px">
             <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Fed stance</span><span class="l-zh">美联储立场</span></span>
-            <span style="font-size:12px;font-weight:600"><span class="l-en">Neutral — no clear lean</span><span class="l-zh">中性 — 无明确倾向</span></span>
+            <span style="font-size:12px;font-weight:600"><span class="l-en">Hawkish — leaning toward tighter policy</span><span class="l-zh">鹰派 — 倾向收紧政策</span></span>
           </div>
           
           
@@ -10283,11 +10386,11 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <div class="mx5-dlg-sep"></div>
           <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:8px">
             <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Jawboning events (7 day / 30 day)</span><span class="l-zh">政策发声次数（7日 / 30日）</span></span>
-            <span style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums">0 / 4</span>
+            <span style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums">2 / 6</span>
           </div>
           
           <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.6;padding-left:4px">
-            <span class="l-en">Trump's NEPA overhaul unlocks federal land & permits — tailwind for energy, construction, defense & data centers</span><span class="l-zh">特朗普NEPA改革放开联邦土地和许可——能源、建筑、国防和数据中心获提振</span>
+            <span class="l-en">Treasury injects $175bn of quarter-end cash into exhausted RRP — a monster reserves boost backstops the tape</span><span class="l-zh">财政部在季度末向枯竭的逆回购中注入1750亿美元——巨额准备金注入支撑市场</span>
           </div>
           
           
@@ -10328,8 +10431,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           
           <div class="isle-aibrief-body">
-            <span class="l-en">5 high-impact items today · dominant: <strong>rates</strong></span>
-            <span class="l-zh">今日 5 条高影响信息 · 主导：<strong>利率</strong></span>
+            <span class="l-en">5 high-impact items today · dominant: <strong>earnings</strong></span>
+            <span class="l-zh">今日 5 条高影响信息 · 主导：<strong>业绩</strong></span>
           </div>
           
           <div class="isle-aibrief-footer"><span></span><span class="isle-aibrief-link"><span class="l-en">Full AI brief →</span><span class="l-zh">完整 AI 简报 →</span></span></div>
@@ -10368,43 +10471,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div style="width:8px;height:8px;border-radius:50%;background:var(--mx5-warn);flex-shrink:0;margin-top:5px"></div>
             <div>
               <div style="font-size:13px;font-weight:600;color:var(--mx5-warn);margin-bottom:4px"><span class="l-en">Macro signal fired</span><span class="l-zh">宏观信号触发</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: CPI (consumer prices) in 3 days — high two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：CPI (consumer prices)（3 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span></div>
-            </div>
-          </div>
-          
-          
-          <div style="display:flex;gap:10px;padding:12px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid rgba(255,255,255,.06)">
-            <div style="width:8px;height:8px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.36));flex-shrink:0;margin-top:5px"></div>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--ink-1,rgba(255,255,255,.92));margin-bottom:4px"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">ARKK: manager added META by +22% of position (2026-06-30..2026-07-10, flow-normalized)</span><span class="l-zh">ARKK：经理 added META 仓位 +22%（2026-06-30..2026-07-10，已按资金流标准化）</span></div>
-            </div>
-          </div>
-          
-          
-          <div style="display:flex;gap:10px;padding:12px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid rgba(255,255,255,.06)">
-            <div style="width:8px;height:8px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.36));flex-shrink:0;margin-top:5px"></div>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--ink-1,rgba(255,255,255,.92));margin-bottom:4px"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">ARKK: manager added XE by +27% of position (2026-06-30..2026-07-10, flow-normalized)</span><span class="l-zh">ARKK：经理 added XE 仓位 +27%（2026-06-30..2026-07-10，已按资金流标准化）</span></div>
-            </div>
-          </div>
-          
-          
-          <div style="display:flex;gap:10px;padding:12px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid rgba(255,255,255,.06)">
-            <div style="width:8px;height:8px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.36));flex-shrink:0;margin-top:5px"></div>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--ink-1,rgba(255,255,255,.92));margin-bottom:4px"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">ARKW: manager cut ROKU by -80% of position (2026-06-30..2026-07-10, flow-normalized)</span><span class="l-zh">ARKW：经理 cut ROKU 仓位 -80%（2026-06-30..2026-07-10，已按资金流标准化）</span></div>
-            </div>
-          </div>
-          
-          
-          <div style="display:flex;gap:10px;padding:12px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid rgba(255,255,255,.06)">
-            <div style="width:8px;height:8px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.36));flex-shrink:0;margin-top:5px"></div>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--ink-1,rgba(255,255,255,.92));margin-bottom:4px"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">ARKW: manager added CRWD by +296% of position (2026-06-30..2026-07-10, flow-normalized)</span><span class="l-zh">ARKW：经理 added CRWD 仓位 +296%（2026-06-30..2026-07-10，已按资金流标准化）</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: CPI (consumer prices) in 2 days — high two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：消费者物价指数（CPI）（2 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span></div>
             </div>
           </div>
           
@@ -10420,7 +10487,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <details class="nb-item" open>
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">As bank earnings approach, a market anomaly emerges</span><span class="l-zh">As bank earnings approach, a market anomaly emerges</span></span>
+              <span class="nb-htitle"><span class="l-en">As bank earnings approach, a market anomaly emerges</span><span class="l-zh">银行财报季临近，市场出现反常现象</span></span>
             </summary>
             <div class="nb-body">
               <a class="nb-read" href="https://www.cnbc.com/2026/07/10/as-bank-earnings-approach-a-market-anomaly-emerges.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
@@ -10431,10 +10498,21 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">Chip rally, Fed task forces, Delta earnings and more in Morning Squawk</span><span class="l-zh">Chip rally, Fed task forces, Delta earnings and more in Morning Squawk</span></span>
+              <span class="nb-htitle"><span class="l-en">Chip rally, Fed task forces, Delta earnings and more in Morning Squawk</span><span class="l-zh">芯片股反弹、美联储工作小组、达美航空财报等——早间市场速览</span></span>
             </summary>
             <div class="nb-body">
               <a class="nb-read" href="https://www.cnbc.com/2026/07/10/5-things-to-know-before-the-stock-market-opens.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nb-htitle"><span class="l-en">The volatile AI trade marched higher, but oil kept Wall Street on edge last week</span><span class="l-zh">The volatile AI trade marched higher, but oil kept Wall Street on edge last week</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/11/the-volatile-ai-rally-marched-higher-but-oil-kept-wall-street-on-edge-last-week.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -10452,19 +10530,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-              <span class="nb-htitle"><span class="l-en">Levi Strauss beats quarterly expectations, raises guidance and dividend</span><span class="l-zh">李维斯季度业绩超预期，上调指引并增加股息</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/08/levi-strauss-levi-q2-2026-earnings.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nb-htitle"><span class="l-en">Federal Reserve Board's annual bank stress test confirms that large banks are well positioned to weather a severe recession and able to continue to lend to households and businesses</span><span class="l-zh">Federal Reserve Board's annual bank stress test confirms that large banks are well positioned to weather a severe recession and able to continue to lend to households and businesses</span></span>
+              <span class="nb-htitle"><span class="l-en">Federal Reserve Board's annual bank stress test confirms that large banks are well positioned to weather a severe recession and able to continue to lend to households and businesses</span><span class="l-zh">美联储年度银行压力测试确认大型银行具备承受严重衰退的能力，可继续向家庭和企业放贷</span></span>
             </summary>
             <div class="nb-body">
               <a class="nb-read" href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260624a.htm" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
@@ -10475,10 +10542,21 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Metaplanet launches "Project NOVA" to build Bitcoin-backed digital credit products</span><span class="l-zh">Metaplanet launches "Project NOVA" to build Bitcoin-backed digital credit products</span></span>
+              <span class="nb-htitle"><span class="l-en">Costco, Target tie urban expansion to affordable housing boom</span><span class="l-zh">Costco, Target tie urban expansion to affordable housing boom</span></span>
             </summary>
             <div class="nb-body">
               <a class="nb-read" href="https://seekingalpha.com/news/4613077-costco-target-tie-urban-expansion-to-affordable-housing-boom?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="nb-htitle"><span class="l-en">National Storage Affiliates declares $0.0336/share deal-contingent special dividend</span><span class="l-zh">National Storage Affiliates declares $0.0336/share deal-contingent special dividend</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4613092-national-storage-affiliates-declares-00336share-deal-contingent-special-dividend?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -10512,39 +10590,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             </summary>
             <div class="nb-body">
               <a class="nb-read" href="https://www.marketwatch.com/story/earnings-estimates-have-been-following-an-unusual-pattern-this-time-around-fbebfb62?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Janus Research wins $200M Army contract for research support services</span><span class="l-zh">Janus Research wins $200M Army contract for research support services</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4613037-janus-research-wins-200m-army-contract-for-research-support-services?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Frontier Nuclear gets Nasdaq non-compliance notice over missing Form 6-K filing</span><span class="l-zh">Frontier Nuclear gets Nasdaq non-compliance notice over missing Form 6-K filing</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4613035-frontier-nuclear-gets-nasdaq-non-compliance-notice-over-missing-form-6-k-filing?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Gold drifts lower as investors fear elevated rates from renewed Middle East tensions</span><span class="l-zh">Gold drifts lower as investors fear elevated rates from renewed Middle East tensions</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4613031-gold-drifts-lower-as-investors-fear-elevated-rates-from-renewed-middle-east-tensions?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -10597,7 +10642,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <div class="mx5-dlg-sep"></div>
           
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">84<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
+            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">79<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
             <div>
               <div style="font-size:14px;font-weight:700"><span class="l-en">No change</span><span class="l-zh">按兵不动</span></div>
               <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; Fed Decision in July?</span><span class="l-zh">市场最高概率结果 &middot; Fed Decision in July?</span></div>
@@ -10613,10 +10658,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               <span style="font-size:12px;font-weight:700;color:var(--mx5-accent,#22d97a)">
                 <span class="l-en">No change</span><span class="l-zh">按兵不动</span>
               </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">84%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+7.0pp</span></span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">79%</span>
             </div>
             <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:84.5%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
+              <div style="height:100%;width:79.5%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
             </div>
           </div>
           
@@ -10627,10 +10672,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
                 <span class="l-en">25 bps increase</span><span class="l-zh">加息25bp</span>
               </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">14%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-6.0pp</span></span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">20%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-0.3pp</span></span>
             </div>
             <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:14.6%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+              <div style="height:100%;width:20.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
             </div>
           </div>
           
@@ -10655,10 +10700,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
                 <span class="l-en">50+ bps increase</span><span class="l-zh">加息50bp以上</span>
               </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-0.1pp</span></span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%</span>
             </div>
             <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:0.2%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+              <div style="height:100%;width:0.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
             </div>
           </div>
           
@@ -10692,7 +10737,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <div class="mx5-dlg-sep"></div>
           
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">77<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
+            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">78<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
             <div>
               <div style="font-size:14px;font-weight:700"><span class="l-en">0 (0 bps)</span><span class="l-zh">0 (0 bps)</span></div>
               <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; How many Fed rate cuts in 2026?</span><span class="l-zh">市场最高概率结果 &middot; How many Fed rate cuts in 2026?</span></div>
@@ -10708,10 +10753,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               <span style="font-size:12px;font-weight:700;color:var(--mx5-accent,#22d97a)">
                 <span class="l-en">0 (0 bps)</span><span class="l-zh">0 (0 bps)</span>
               </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">77%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-1.4pp</span></span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">78%</span>
             </div>
             <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:77.5%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
+              <div style="height:100%;width:78.0%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
             </div>
           </div>
           
@@ -10722,7 +10767,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
                 <span class="l-en">1 (25 bps)</span><span class="l-zh">1 (25 bps)</span>
               </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">14%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-1.0pp</span></span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">14%</span>
             </div>
             <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
               <div style="height:100%;width:14.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
@@ -10736,10 +10781,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
                 <span class="l-en">2 (50 bps)</span><span class="l-zh">2 (50 bps)</span>
               </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">3%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+1.0pp</span></span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">4%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+0.1pp</span></span>
             </div>
             <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:3.8%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+              <div style="height:100%;width:4.3%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
             </div>
           </div>
           
@@ -10750,7 +10795,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
                 <span class="l-en">3 (75 bps)</span><span class="l-zh">3 (75 bps)</span>
               </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">1%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+0.5pp</span></span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">1%</span>
             </div>
             <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
               <div style="height:100%;width:1.9%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
@@ -10764,10 +10809,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
                 <span class="l-en">12+ (300+ bps)</span><span class="l-zh">12+ (300+ bps)</span>
               </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+0.2pp</span></span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%</span>
             </div>
             <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:0.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+              <div style="height:100%;width:0.6%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
             </div>
           </div>
           
@@ -10778,7 +10823,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
                 <span class="l-en">4 (100 bps)</span><span class="l-zh">4 (100 bps)</span>
               </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+0.1pp</span></span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%</span>
             </div>
             <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
               <div style="height:100%;width:0.4%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
@@ -10797,14 +10842,14 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <div style="margin-bottom:24px">
-          <div class="mx5-dlg-eyebrow"><span class="l-en">CPI outcome market</span><span class="l-zh">CPI市场预期</span></div>
+          <div class="mx5-dlg-eyebrow"><span class="l-en">US recession</span><span class="l-zh">美国衰退</span></div>
           <div class="mx5-dlg-sep"></div>
           
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">53<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
+            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">10<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
             <div>
-              <div style="font-size:14px;font-weight:700"><span class="l-en">2.8%</span><span class="l-zh">2.8%</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; Core CPI YoY - June 2026</span><span class="l-zh">市场最高概率结果 &middot; Core CPI YoY - June 2026</span></div>
+              <div style="font-size:14px;font-weight:700"><span class="l-en">US recession by end of 2026?</span><span class="l-zh">US recession by end of 2026?</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; US recession by end of 2026?</span><span class="l-zh">市场最高概率结果 &middot; US recession by end of 2026?</span></div>
             </div>
           </div>
           
@@ -10815,82 +10860,12 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <div style="margin-bottom:8px">
             <div style="display:flex;justify-content:space-between;margin-bottom:3px">
               <span style="font-size:12px;font-weight:700;color:var(--mx5-accent,#22d97a)">
-                <span class="l-en">2.8%</span><span class="l-zh">2.8%</span>
+                <span class="l-en">US recession by end of 2026?</span><span class="l-zh">US recession by end of 2026?</span>
               </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">53%</span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">10%</span>
             </div>
             <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:53.5%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">2.9%</span><span class="l-zh">2.9%</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">34%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+2.5pp</span></span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:34.0%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">2.7%</span><span class="l-zh">2.7%</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">12%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-1.5pp</span></span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:12.0%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">3.0%</span><span class="l-zh">3.0%</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">1%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+1.0pp</span></span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:1.8%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">3.1%</span><span class="l-zh">3.1%</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">1%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+0.1pp</span></span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:1.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">3.2%</span><span class="l-zh">3.2%</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">1%</span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:1.1%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+              <div style="height:100%;width:10.5%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
             </div>
           </div>
           
@@ -10899,7 +10874,116 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">Source: Polymarket</span><span class="l-zh">来源: Polymarket</span></div>
           
           
-          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right"><span class="l-en">Resolves 2026-07-15</span><span class="l-zh">结算日 2026-07-15</span></div>
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right"><span class="l-en">Resolves 2027-01-31</span><span class="l-zh">结算日 2027-01-31</span></div>
+          
+        </div>
+        
+        
+        
+        <div style="margin-bottom:24px">
+          <div class="mx5-dlg-eyebrow"><span class="l-en">CPI outcome market</span><span class="l-zh">CPI市场预期</span></div>
+          <div class="mx5-dlg-sep"></div>
+          
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">62<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
+            <div>
+              <div style="font-size:14px;font-weight:700"><span class="l-en">0.2%</span><span class="l-zh">0.2%</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; Core CPI MoM - July 2026</span><span class="l-zh">市场最高概率结果 &middot; Core CPI MoM - July 2026</span></div>
+            </div>
+          </div>
+          
+          
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:700;color:var(--mx5-accent,#22d97a)">
+                <span class="l-en">0.2%</span><span class="l-zh">0.2%</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">62%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+4.5pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:62.0%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">0.3%</span><span class="l-zh">0.3%</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">20%</span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:20.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">0.1%</span><span class="l-zh">0.1%</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">14%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+3.5pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:14.0%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">0.4%</span><span class="l-zh">0.4%</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">1%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-0.8pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:1.3%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">0.6%+</span><span class="l-zh">0.6%+</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%</span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:0.4%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">0.5%</span><span class="l-zh">0.5%</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%</span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:0.4%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">Source: Polymarket</span><span class="l-zh">来源: Polymarket</span></div>
+          
+          
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right"><span class="l-en">Resolves 2026-08-12</span><span class="l-zh">结算日 2026-08-12</span></div>
           
         </div>
         
@@ -10934,7 +11018,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-          <div style="font-size:40px;font-weight:800;color:#f59e0b;line-height:1;font-variant-numeric:tabular-nums">55</div>
+          <div style="font-size:40px;font-weight:800;color:#f59e0b;line-height:1;font-variant-numeric:tabular-nums">57</div>
           <div>
             <div style="font-size:18px;font-weight:700;color:#f59e0b"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
             <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Composite sentiment · 0 = Extreme Fear · 100 = Extreme Greed</span><span class="l-zh">综合情绪 · 0=极度恐慌 · 100=极度贪婪</span></div>
@@ -10953,8 +11037,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-factor-name"><span class="l-en">SPX momentum (vs 125d MA)</span><span class="l-zh">标普动量（对比125日均线）</span></div>
             <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:77.0%;background:#22d97a"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#22d97a">77</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:79.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">79</div>
         </div>
         
         
@@ -10964,8 +11048,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-factor-name"><span class="l-en">52-week strength (new-high ratio)</span><span class="l-zh">52周强势（新高比例）</span></div>
             <div class="mx5-dlg-factor-read" style="color:#f59e0b"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:58.0%;background:#f59e0b"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#f59e0b">58</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:59.0%;background:#f59e0b"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#f59e0b">59</div>
         </div>
         
         
@@ -10973,10 +11057,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <div class="mx5-dlg-factor-row">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">McClellan oscillator</span><span class="l-zh">麦克莱伦振荡器</span></div>
-            <div class="mx5-dlg-factor-read" style="color:#f59e0b"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:49.0%;background:#f59e0b"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#f59e0b">49</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:64.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">64</div>
         </div>
         
         
@@ -10997,8 +11081,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-factor-name"><span class="l-en">Safe haven demand (SPY − TLT 20d)</span><span class="l-zh">避险需求（SPY−TLT 20日）</span></div>
             <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:62.0%;background:#22d97a"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#22d97a">62</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:76.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">76</div>
         </div>
         
         
@@ -11008,8 +11092,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX level</span><span class="l-zh">VIX 水平</span></div>
             <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:62.0%;background:#22d97a"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#22d97a">62</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:68.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">68</div>
         </div>
         
         
@@ -11019,8 +11103,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX trend (20d change)</span><span class="l-zh">VIX 趋势（20日变动）</span></div>
             <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:94.0%;background:#22d97a"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#22d97a">94</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:88.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">88</div>
         </div>
         
         
@@ -11030,8 +11114,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX term structure (VIX/VIX3M)</span><span class="l-zh">VIX 期限结构（VIX/VIX3M）</span></div>
             <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:77.0%;background:#22d97a"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#22d97a">77</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:92.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">92</div>
         </div>
         
         
@@ -11041,8 +11125,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-factor-name"><span class="l-en">CBOE SKEW (tail risk pricing)</span><span class="l-zh">CBOE SKEW（尾部风险定价）</span></div>
             <div class="mx5-dlg-factor-read" style="color:#ef4444"><span class="l-en">Fear zone</span><span class="l-zh">恐慌区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:6.0%;background:#ef4444"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#ef4444">6</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:7.0%;background:#ef4444"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#ef4444">7</div>
         </div>
         
         
@@ -11080,7 +11164,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         </div>
         
         
-        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of 2026-07-11</span><span class="l-zh">数据日期 2026-07-11</span></div>
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of 2026-07-13</span><span class="l-zh">数据日期 2026-07-13</span></div>
         
       </div>
     </div>
@@ -11107,6 +11191,20 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           <div class="mx5-dlg-sector-row">
             <span class="mx5-dlg-sector-arr heat">&#9650;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+5<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+            
+            
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">dominant</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr heat">&#9650;</span>
             <span class="mx5-dlg-sector-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span>
             
             <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+8<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
@@ -11121,41 +11219,13 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           <div class="mx5-dlg-sector-row">
             <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span></span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span></span>
             
-            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-1<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
-            
-            
-            
-            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">dominant</span></span>
-            
-          </div>
-          
-          
-          
-          <div class="mx5-dlg-sector-row">
-            <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">GLP-1 & Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span>
-            
-            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-1<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+23<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
             
             
             
-            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">dominant</span></span>
-            
-          </div>
-          
-          
-          
-          <div class="mx5-dlg-sector-row">
-            <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span>
-            
-            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+11<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
-            
-            
-            
-            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">dominant</span></span>
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">emerging</span></span>
             
           </div>
           
@@ -11169,9 +11239,27 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           <div class="mx5-dlg-sector-row">
             <span class="mx5-dlg-sector-arr cool">&#9660;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">Memory, HBM & Storage</span><span class="l-zh">内存、HBM 与存储</span></span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">GLP-1 & Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span>
             
-            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+10<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            <span class="mx5-dlg-sector-rk" style="color:var(--ink-3)">0<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+          </div>
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr cool">&#9660;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-6<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+          </div>
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr cool">&#9660;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Reshoring & Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-8<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
             
           </div>
           
@@ -11180,25 +11268,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <span class="mx5-dlg-sector-arr cool">&#9660;</span>
             <span class="mx5-dlg-sector-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span>
             
-            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-5<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
-            
-          </div>
-          
-          
-          <div class="mx5-dlg-sector-row">
-            <span class="mx5-dlg-sector-arr cool">&#9660;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">Managed Care & Insurers</span><span class="l-zh">管理式医疗与保险</span></span>
-            
-            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-7<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
-            
-          </div>
-          
-          
-          <div class="mx5-dlg-sector-row">
-            <span class="mx5-dlg-sector-arr cool">&#9660;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span>
-            
-            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-13<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-4<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
             
           </div>
           
@@ -11211,7 +11281,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <span class="l-zh">板块排名每晚更新。领跑板块显示持续资金流入；落后板块持续资金外流。排名反映相对强弱，非绝对判断。</span>
         </div>
         
-        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of 2026-07-09</span><span class="l-zh">数据日期 2026-07-09</span></div>
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of 2026-07-10</span><span class="l-zh">数据日期 2026-07-10</span></div>
         
         
       </div>
@@ -11473,7 +11543,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     <summary><span class="l-en">Data health</span><span class="l-zh">数据健康度</span>
       <span class="help">?<span class="tip"><span class="l-en">Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence reduced automatically). FAILED = today's fetch broke (yesterday's data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ runs and paused until it recovers.</span><span class="l-zh">本仪表盘所依赖的每个数据源。OK = 新鲜。STALE = 近期无新数据（信号置信度已自动下调）。FAILED = 今日抓取失败（仍沿用昨日数据）。BLOCKED = 已知且有记录的限制 — 并非故障。DEAD = 连续 3 次以上失败，已暂停直至恢复。</span></span></span>
       
-      <span class="fold-stat">7 <span class="l-en">need attention</span><span class="l-zh">需关注</span> · 153 <span class="l-en">sources</span><span class="l-zh">数据源</span></span>
+      <span class="fold-stat">5 <span class="l-en">need attention</span><span class="l-zh">需关注</span> · 154 <span class="l-en">sources</span><span class="l-zh">数据源</span></span>
       <span class="fold-caret">▾</span>
     </summary>
     <table>
@@ -11484,7 +11554,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11493,7 +11563,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>20</td><td>2026-07-09</td>
+        <td>11</td><td>2026-07-11</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11502,7 +11572,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-09</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11511,7 +11581,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>560</td><td>2026-07-09</td>
+        <td>562</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11520,7 +11590,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>729</td><td>2026-07-09</td>
+        <td>729</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11529,7 +11599,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>72718</td><td>2026-07-09</td>
+        <td>73202</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11538,7 +11608,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>353</td><td>2026-07-10</td>
+        <td>354</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11547,7 +11617,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-09</td>
+        <td>1</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11556,7 +11626,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>11</td><td>2026-07-09</td>
+        <td>11</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11565,7 +11635,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-09</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11574,7 +11644,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>9180</td><td>2026-07-09</td>
+        <td>9181</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11583,7 +11653,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>12</td><td>2026-07-09</td>
+        <td>12</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11592,7 +11662,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>5057</td><td>2026-07-09</td>
+        <td>5058</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11619,7 +11689,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>29</td><td>2026-07-10</td>
+        <td>28</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11636,8 +11706,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <td class="l">china_credit</td>
         
         
-        <td class="l"><span class="pill pill-stale"><span class="l-en">stale</span><span class="l-zh">过期</span></span></td>
-        <td>136</td><td>2026-04-01</td>
+        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
+        <td>5</td><td>2026-05-01</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11646,7 +11716,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-11</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11655,7 +11725,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>6</td><td>2026-07-10</td>
+        <td>4</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11664,7 +11734,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-11</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11673,7 +11743,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>2568</td><td>2026-07-10</td>
+        <td>2567</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11691,7 +11761,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-11</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11700,7 +11770,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>6</td><td>2026-07-10</td>
+        <td>5</td><td>2026-07-11</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11709,7 +11779,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11718,7 +11788,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-11</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11736,7 +11806,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>618</td><td>2026-07-11</td>
+        <td>642</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11763,7 +11833,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>140573</td><td>2026-07-10</td>
+        <td>140573</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11781,7 +11851,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>38798</td><td>2026-07-10</td>
+        <td>38931</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11790,7 +11860,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-11</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11817,7 +11887,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11826,7 +11896,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11835,7 +11905,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>31</td><td>2026-07-10</td>
+        <td>11</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11844,7 +11914,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11853,7 +11923,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>70</td><td>2026-07-09</td>
+        <td>60</td><td>2026-07-11</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11862,7 +11932,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>17</td><td>2026-06-30</td>
+        <td>17</td><td>2026-07-07</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11871,7 +11941,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>5159</td><td>2026-07-10</td>
+        <td>5163</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11880,7 +11950,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>6</td><td>2026-07-10</td>
+        <td>6</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11889,7 +11959,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-09</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11898,7 +11968,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11907,7 +11977,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11916,7 +11986,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11934,7 +12004,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-09</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11943,7 +12013,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>640</td><td>2026-07-09</td>
+        <td>641</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11952,7 +12022,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>3078</td><td>2026-07-10</td>
+        <td>3080</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11970,7 +12040,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11987,8 +12057,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <td class="l">finra_ats_transparency</td>
         
         
-        <td class="l"><span class="pill pill-stale"><span class="l-en">stale</span><span class="l-zh">过期</span></span></td>
-        <td>1</td><td>2023-11-06</td>
+        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
+        <td>1</td><td>2026-06-01</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11997,7 +12067,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-09</td>
+        <td>1</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12015,7 +12085,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>617983</td><td>2028-01-01</td>
+        <td>620075</td><td>2028-01-01</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12033,7 +12103,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>5775</td><td>2026-07-09</td>
+        <td>5776</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12078,7 +12148,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12132,7 +12202,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12168,7 +12238,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12204,7 +12274,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>167</td><td>2026-07-10</td>
+        <td>170</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12249,7 +12319,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>3395</td><td>2026-07-10</td>
+        <td>3397</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12258,7 +12328,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12267,7 +12337,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>366</td><td>2026-07-10</td>
+        <td>367</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12275,9 +12345,9 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <td class="l">hkma</td>
         
         
-        <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
-        <td>0</td><td>—</td>
-        <td class="l muted">ReadTimeout: HTTPSConnectionPool(host='api.hkma.gov.hk', port=443): Read timed out. (read </td>
+        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
+        <td>100</td><td>2026-07-10</td>
+        <td class="l muted"></td>
       </tr>
       
       <tr>
@@ -12285,7 +12355,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-09</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12294,7 +12364,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12303,7 +12373,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1035</td><td>2026-07-09</td>
+        <td>1035</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12312,7 +12382,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>26012</td><td>2026-07-09</td>
+        <td>26013</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12321,7 +12391,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>433</td><td>2026-07-10</td>
+        <td>435</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12329,8 +12399,17 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <td class="l">intl_universe</td>
         
         
+        <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
+        <td>0</td><td>—</td>
+        <td class="l muted">RuntimeError: intl_universe: no closes downloaded</td>
+      </tr>
+      
+      <tr>
+        <td class="l">intraday_flow_nightly</td>
+        
+        
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>0</td><td>—</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12348,7 +12427,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12356,18 +12435,18 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <td class="l">lbnl_queue</td>
         
         
-        <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
+        <td class="l"><span class="pill pill-dead"><span class="l-en">dead</span><span class="l-zh">已停用</span></span></td>
         <td>0</td><td>—</td>
-        <td class="l muted">RuntimeError: lbnl_queue: emp.lbl.gov unreachable (Cloudflare WAF); the committed seed JSO</td>
+        <td class="l muted">circuit open (6 consecutive failures)</td>
       </tr>
       
       <tr>
         <td class="l">massive_stock_day</td>
         
         
-        <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
+        <td class="l"><span class="pill pill-dead"><span class="l-en">dead</span><span class="l-zh">已停用</span></span></td>
         <td>0</td><td>—</td>
-        <td class="l muted">RuntimeError: massive_stock_day: no_creds</td>
+        <td class="l muted">circuit open (6 consecutive failures)</td>
       </tr>
       
       <tr>
@@ -12375,7 +12454,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>33</td><td>2026-07-10</td>
+        <td>34</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12384,7 +12463,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1454</td><td>2026-07-09</td>
+        <td>1454</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12393,7 +12472,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1272</td><td>2026-07-09</td>
+        <td>1268</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12402,7 +12481,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-09</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12411,7 +12490,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>60381</td><td>2026-07-07</td>
+        <td>60390</td><td>2026-07-08</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12420,7 +12499,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1393</td><td>2026-07-10</td>
+        <td>1393</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12429,7 +12508,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12438,7 +12517,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12455,8 +12534,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <td class="l">polygon_gex_accrual</td>
         
         
-        <td class="l"><span class="pill pill-no_key"><span class="l-en">no_key</span><span class="l-zh">缺密钥</span></span></td>
-        <td>0</td><td>—</td>
+        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
+        <td>171769</td><td>—</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12465,7 +12544,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12474,7 +12553,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-09</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12483,7 +12562,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12492,7 +12571,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12501,7 +12580,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12510,7 +12589,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12519,7 +12598,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12528,7 +12607,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12537,7 +12616,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12546,7 +12625,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12555,7 +12634,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12564,7 +12643,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12573,7 +12652,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12582,7 +12661,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12591,7 +12670,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12600,7 +12679,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12609,7 +12688,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12618,7 +12697,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12627,7 +12706,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12636,7 +12715,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12645,7 +12724,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12654,7 +12733,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12663,7 +12742,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12672,7 +12751,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12681,7 +12760,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>64</td><td>2026-07-10</td>
+        <td>63</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12708,7 +12787,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-09</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12717,7 +12796,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>22</td><td>2026-07-08</td>
+        <td>21</td><td>2026-07-08</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12735,7 +12814,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1454</td><td>2026-07-09</td>
+        <td>1454</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12744,7 +12823,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>39520</td><td>2026-07-08</td>
+        <td>39523</td><td>2026-07-09</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12753,7 +12832,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-09</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12762,7 +12841,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>13082</td><td>2026-07-09</td>
+        <td>4400</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12771,7 +12850,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>0</td><td>2026-07-02</td>
+        <td>0</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12780,7 +12859,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>22</td><td>2026-07-08</td>
+        <td>21</td><td>2026-07-09</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12789,7 +12868,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-09</td>
+        <td>1</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12797,8 +12876,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <td class="l">tsa</td>
         
         
-        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>2746</td><td>2026-07-08</td>
+        <td class="l"><span class="pill pill-stale"><span class="l-en">stale</span><span class="l-zh">过期</span></span></td>
+        <td>2747</td><td>2026-07-09</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12807,7 +12886,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>30328</td><td>2026-07-09</td>
+        <td>30330</td><td>2026-07-11</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12825,7 +12904,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>139156</td><td>2026-07-09</td>
+        <td>144433</td><td>2026-07-11</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12834,7 +12913,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>4026</td><td>2026-07-08</td>
+        <td>4029</td><td>2026-07-11</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12852,15 +12931,15 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>14054</td><td>2026-07-10</td>
+        <td>23764</td><td>2026-07-12</td>
         <td class="l muted"></td>
       </tr>
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-13 04:16 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-13 04:43 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-13 04:16 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-13 04:43 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
