@@ -47,13 +47,24 @@
     data/neuralweb/theme_options_witness.json  (NW artifact)
     site/basketdata/options_witness.json        (compact site projection)
     Both are git-tracked. run_theme_options_witness.sh commits exactly these
-    two paths and pushes to main (rebase --autostash + retry, mirroring the
-    daily.yml "commit data" race handling). Two-writer coexistence with the
+    two paths and pushes to main via /Users/chriswong/witness-push-repo — a
+    small standalone sparse clone with its gitdir under $HOME. TCC LAW: git
+    inside flow-ops-wt is IMPOSSIBLE under launchd (its gitdir lives under
+    ~/Documents, which launchd agents cannot read — verified 2026-07-12), so
+    the tail runs fetch/reset/copy/commit/push in the push repo instead
+    (self-healing: re-clones if absent). Two-writer coexistence with the
     daily.yml collect-lane witness step (which has no ThetaData store) is the
     engine's keep-last-real law: a store-less run skips its honest-null write
     while the committed artifact holds real legs newer than 6 days, so the
     nightly never clobbers what this lane pushed. (This closes the KNOWN GAP
     of 2026-07-12: writes landed in the worktree and nothing committed them.)
+
+  FLOW-OPS-WT STALENESS (operator note):
+    This lane runs git only in the push repo, so it does NOT advance
+    flow-ops-wt. Refresh the engine-code surface occasionally (and after any
+    engine change) from a normal shell:
+      git -C /Users/chriswong/flow-ops-wt fetch origin
+      git -C /Users/chriswong/flow-ops-wt checkout --detach origin/main
 
   LOG TAILING:
     tail -f /tmp/theme_options_witness.stdout.log /tmp/theme_options_witness.stderr.log

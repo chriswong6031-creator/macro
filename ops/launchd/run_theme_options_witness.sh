@@ -17,119 +17,109 @@
 # a store-less run skips its null write while the committed artifact holds
 # real legs newer than 6 days.
 #
-# SHARED WORKTREE CONTRACT (flow-ops-wt)
+# TCC LAW — WHY THE PUSH HAPPENS IN A SEPARATE $HOME REPO
 # ─────────────────────────────────────────────────────────────────────────────
-# flow-ops-wt is shared with the mastermind lanes (optionshub 16:45 ET,
-# liveflow RTH poller, flowenrich). This lane fires 17:15 ET, after the RTH
-# lanes self-exit. HEAD is DETACHED at an origin/main commit by convention —
-# this script never creates or switches branches: it commits on the detached
-# HEAD, rebases onto origin/main (--autostash parks runtime-dirty tracked
-# files such as data/run_status.json), and pushes HEAD:main. On any failure
-# the rebase is aborted; the worktree is never left mid-rebase. A conflicted
-# autostash pop (rebase still exits 0!) is detected and hard-reset so sibling
-# lanes never see conflict markers or a stray stash entry.
+# launchd agents are DENIED all reads under ~/Documents (macOS TCC). The
+# flow-ops-wt worktree's FILES live under $HOME, so the engine runs fine —
+# but its gitdir is ~/Documents/.../.git/worktrees/flow-ops-wt, so EVERY git
+# command inside flow-ops-wt fails under launchd (empirically: rev-parse
+# returns empty; first kickstart 2026-07-12 died on the dead-worktree guard).
+# Therefore the commit+push tail runs in $PUSH_REPO: a small STANDALONE
+# sparse blob-less clone (own .git under $HOME, only data/neuralweb +
+# site/basketdata checked out, ~100MB). The wrapper self-heals it if absent.
+# The repo is disposable — delete it and the next run re-clones.
 #
-# Side effect BY DESIGN: each successful run advances the detached HEAD to
-# fresh origin/main + this commit — which keeps flow-ops-wt near origin/main,
-# as the plist header requires. A push failure is non-destructive: the commit
-# stays local and the NEXT run's rebase carries it forward.
+# Consequence: this lane no longer advances flow-ops-wt (no git ops there).
+# Keeping flow-ops-wt's ENGINE CODE near origin/main is an operator/ops
+# concern: run `git -C /Users/chriswong/flow-ops-wt fetch origin && git -C
+# /Users/chriswong/flow-ops-wt checkout --detach origin/main` from a normal
+# (non-launchd) shell occasionally, and after any engine change.
 #
-# RACE HANDLING mirrors the daily.yml "commit data" step:
-#   fetch → collision sweep (a local non-ignored untracked file that is now
-#   TRACKED on origin/main would abort the rebase checkout identically on
-#   every retry; origin/main is authoritative for anything it tracks, and
-#   everything this lane publishes is already committed above — so delete the
-#   local copy and let the rebase materialize main's version) →
-#   rebase --autostash -X theirs (in a rebase "theirs" = the commit being
-#   replayed, i.e. OUR fresh legs win any artifact conflict with the runner's
-#   null write) → push, retry ×5 with backoff.
-#   Deviation from daily.yml: explicit fetch+rebase instead of `git pull
-#   --rebase` because HEAD is detached (pull requires a branch).
+# RACE HANDLING (simpler than the daily.yml rebase dance — the push repo is
+# single-purpose, so there is nothing local to preserve):
+#   fetch --depth 1 → reset --hard origin/main (also self-heals any debris
+#   from a previous failed run) → copy the two artifacts in → narrow commit →
+#   push; on a lost race, retry ×5 with backoff, re-syncing each time.
+#
+# SMOKE-TESTING THE TAIL ALONE (skips the ~5 min engine run; uses whatever
+# artifacts are already in flow-ops-wt):
+#   WITNESS_SKIP_ENGINE=1 /Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh \
+#     /Users/chriswong/flow-ops-wt/.env \
+#     /Users/chriswong/flow-ops-wt/ops/launchd/run_theme_options_witness.sh
 #
 # LOG TAILING:
 #   tail -f /tmp/theme_options_witness.stdout.log /tmp/theme_options_witness.stderr.log
-#
-# MANUAL RUN (smoke, commits+pushes for real — use a throwaway --date only if
-# you intend to publish it):
-#   /Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh \
-#     /Users/chriswong/flow-ops-wt/.env \
-#     /Users/chriswong/flow-ops-wt/ops/launchd/run_theme_options_witness.sh
 
 set -u
 
 REPO="/Users/chriswong/flow-ops-wt"
+PUSH_REPO="/Users/chriswong/witness-push-repo"
+REMOTE_URL="https://github.com/chriswong6031-creator/macro.git"
 PYTHON="/opt/homebrew/Caskroom/miniconda/base/bin/python"
 ART_NW="data/neuralweb/theme_options_witness.json"
 ART_SITE="site/basketdata/options_witness.json"
 
 cd "$REPO" || { echo "[theme_options_witness] ERROR: cannot cd $REPO"; exit 1; }
 
-# Dead-worktree guard: if the worktree's .git link no longer resolves, git
-# commands fall through to whatever repo encloses the path. Refuse to run
-# rather than commit into the wrong tree.
+# ── engine (file reads/writes only — no git; flow-ops-wt gitdir is TCC-dead) ──
+if [ "${WITNESS_SKIP_ENGINE:-0}" = "1" ]; then
+    echo "[theme_options_witness] WITNESS_SKIP_ENGINE=1 — skipping engine, pushing existing artifacts"
+else
+    echo "[theme_options_witness] running engine (THETADATA_STORE=${THETADATA_STORE:-unset})"
+    if ! "$PYTHON" -m engine.theme_options_witness; then
+        echo "[theme_options_witness] ERROR: engine run failed — not committing"
+        exit 1
+    fi
+fi
+
+if [ ! -f "$REPO/$ART_NW" ] || [ ! -f "$REPO/$ART_SITE" ]; then
+    echo "[theme_options_witness] ERROR: artifact(s) missing in $REPO — nothing to push"
+    exit 1
+fi
+
+# ── commit tail (in the $HOME push repo — see TCC LAW above) ─────────────────
+if [ ! -d "$PUSH_REPO/.git" ]; then
+    echo "[theme_options_witness] push repo absent — cloning (sparse, blob-less, depth 1)"
+    git clone --depth 1 --filter=blob:none --sparse "$REMOTE_URL" "$PUSH_REPO" \
+        || { echo "[theme_options_witness] ERROR: clone failed"; exit 1; }
+    git -C "$PUSH_REPO" sparse-checkout set data/neuralweb site/basketdata \
+        || { echo "[theme_options_witness] ERROR: sparse-checkout failed"; exit 1; }
+fi
+
+cd "$PUSH_REPO" || { echo "[theme_options_witness] ERROR: cannot cd $PUSH_REPO"; exit 1; }
+
+# Standalone-repo guard: gitdir must resolve INSIDE the push repo. A gitdir
+# anywhere else (worktree layout, or fall-through to an enclosing repo) would
+# reintroduce the TCC failure or commit into the wrong tree.
 TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
-if [ "$TOPLEVEL" != "$REPO" ]; then
-    echo "[theme_options_witness] ERROR: git toplevel '$TOPLEVEL' != $REPO — dead worktree? aborting"
+GITDIR=$(git rev-parse --absolute-git-dir 2>/dev/null || echo "")
+if [ "$TOPLEVEL" != "$PUSH_REPO" ] || [ "$GITDIR" != "$PUSH_REPO/.git" ]; then
+    echo "[theme_options_witness] ERROR: push repo layout wrong (toplevel='$TOPLEVEL' gitdir='$GITDIR') — aborting"
     exit 1
 fi
-
-echo "[theme_options_witness] running engine (THETADATA_STORE=${THETADATA_STORE:-unset})"
-if ! "$PYTHON" -m engine.theme_options_witness; then
-    echo "[theme_options_witness] ERROR: engine run failed — not committing"
-    exit 1
-fi
-
-# ── commit tail ──────────────────────────────────────────────────────────────
-# Narrow add: exactly the two artifacts this lane owns. The pathspec-limited
-# commit below also insulates us from anything another lane left staged.
-git add -- "$ART_NW" "$ART_SITE"
-if git diff --cached --quiet -- "$ART_NW" "$ART_SITE"; then
-    echo "[theme_options_witness] no artifact changes — nothing to commit"
-    exit 0
-fi
-
-git -c user.name="dashboard-bot" -c user.email="actions@users.noreply.github.com" \
-    commit -m "data: theme options witness $(date -u +%F)" -- "$ART_NW" "$ART_SITE"
 
 n=1
 while [ "$n" -le 5 ]; do
-    git fetch origin main || true
-
-    # Collision sweep (see RACE HANDLING above). /bin/sh has no process
-    # substitution — stage the two sorted lists in temp files.
-    UNTRACKED_LIST=$(mktemp) || exit 1
-    TRACKED_LIST=$(mktemp) || exit 1
-    git ls-files --others --exclude-standard | LC_ALL=C sort > "$UNTRACKED_LIST"
-    git ls-tree -r --name-only origin/main | LC_ALL=C sort > "$TRACKED_LIST"
-    comm -12 "$UNTRACKED_LIST" "$TRACKED_LIST" | while IFS= read -r f; do
-        rm -f -- "$f" || true
-    done
-    rm -f "$UNTRACKED_LIST" "$TRACKED_LIST"
-
-    if git rebase --autostash -X theirs origin/main; then
-        # `git rebase --autostash` exits 0 even when re-applying the autostash
-        # CONFLICTS (the rebase succeeded; only the pop failed) — leaving
-        # conflict markers plus a leftover stash that would poison the sibling
-        # lanes sharing this worktree. Detect via unmerged index entries and
-        # reset: the stashed content is runtime state (e.g. data/run_status.json)
-        # that its owner lane regenerates on its next run.
-        if [ -n "$(git ls-files -u 2>/dev/null)" ]; then
-            echo "[theme_options_witness] autostash pop conflicted — hard-resetting working tree (runtime files regenerate)"
-            git reset --hard HEAD
-            if git stash list | sed -n 1p | grep -q autostash; then
-                git stash drop >/dev/null 2>&1 || true
-            fi
+    if git fetch --depth 1 origin main \
+        && git reset --hard refs/remotes/origin/main >/dev/null; then
+        cp "$REPO/$ART_NW" "$ART_NW" || exit 1
+        cp "$REPO/$ART_SITE" "$ART_SITE" || exit 1
+        git add -- "$ART_NW" "$ART_SITE"
+        if git diff --cached --quiet -- "$ART_NW" "$ART_SITE"; then
+            echo "[theme_options_witness] artifacts identical to origin/main — nothing to push"
+            exit 0
         fi
-        if git push origin HEAD:refs/heads/main; then
+        if git -c user.name="dashboard-bot" -c user.email="actions@users.noreply.github.com" \
+                commit -q -m "data: theme options witness $(date -u +%F)" -- "$ART_NW" "$ART_SITE" \
+            && git push origin main; then
             echo "[theme_options_witness] pushed artifacts on attempt $n"
             exit 0
         fi
     fi
-    git rebase --abort 2>/dev/null || true
-    echo "[theme_options_witness] push attempt $n lost a race; re-syncing"
+    echo "[theme_options_witness] push attempt $n lost a race / failed; re-syncing"
     sleep $((n * 7))
     n=$((n + 1))
 done
 
-echo "[theme_options_witness] ERROR: could not push after 5 attempts — commit stays local; next run's rebase carries it forward"
+echo "[theme_options_witness] ERROR: could not push after 5 attempts — artifacts remain in $REPO; next run retries"
 exit 1
