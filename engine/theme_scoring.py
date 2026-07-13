@@ -97,6 +97,29 @@ _MACRO_PRIOR = {
     "travel":           {"growth": 0.7, "rates": 0.1, "inflation": -0.2, "riskon": 0.5},
     "retail":           {"growth": 0.6, "rates": 0.3, "inflation": -0.3, "riskon": 0.5},
     "crypto":           {"growth": 0.3, "rates": 0.4, "inflation": 0.1,  "riskon": 1.0},
+    # --- W8b prereg additions: AI-capex complex baskets (FT-R7 disclosed exception) ---
+    # ai_semiconductors: direct AI silicon (GPUs / accelerators); by analogy with ai_infra
+    # (same hyperscaler demand pool, same growth/risk-on profile) — slightly higher rates
+    # sensitivity than ai_infra because pure-play semis reprice sharply on Fed pivots.
+    "ai_semiconductors":  {"growth": 0.7, "rates": 0.3, "inflation": -0.1, "riskon": 0.9},
+    # semicap_equipment: wafer-fab equipment (ASML/KLAC/LRCX/AMAT); pro-cyclical tech capex
+    # but one step upstream → lagged demand, more industrial in character than ai_infra;
+    # rates matter less (long equipment capex cycles), moderate risk-on exposure.
+    "semicap_equipment":  {"growth": 0.6, "rates": 0.1, "inflation": 0.1,  "riskon": 0.6},
+    # memory_storage: HBM/DRAM — direct AI accelerator demand beneficiary; profile close to
+    # ai_semiconductors but slightly lower risk-on (memory is commodity-like, cyclical).
+    "memory_storage":     {"growth": 0.6, "rates": 0.2, "inflation": 0.0,  "riskon": 0.7},
+    # data_center_power: power & cooling for data centers (Vertiv/Eaton/GE-Vernova); these
+    # are Electrical-Equipment Industrials (GICS) that sit in XLI, not XLU — high-beta
+    # cyclicals that benefit from AI-capex growth; riskon 0.4 is a cyclical loading
+    # consistent with XLI, not the defensive-utility profile of XLU.
+    "data_center_power":  {"growth": 0.5, "rates": 0.3, "inflation": 0.2,  "riskon": 0.4},
+    # nuclear_power: nuclear/SMR build-out for data-center and grid demand; values chosen
+    # on their own merits — energy-scarcity narrative drives higher inflation loading (0.4);
+    # moderate growth/riskon (0.3) sits between defensive utility parents (0.1) and the
+    # cyclical AI-capex entries; this is NOT a numeric blend of power_grid + energy_complex
+    # (both parents have riskon 0.1; weighted averages of them cannot yield 0.3).
+    "nuclear_power":      {"growth": 0.3, "rates": 0.3, "inflation": 0.4,  "riskon": 0.3},
 }
 
 # basket id -> the home sector-ETF whose live relative-strength (regime.sector_rs) is a
@@ -106,6 +129,12 @@ _SECTOR_PROXY = {
     "power_grid": "XLU", "reshoring": "XLI", "regional_banks": "XLF",
     "managed_care": "XLV", "housing": "XLY", "payments_fintech": "XLF",
     "energy_complex": "XLE", "defensives": "XLP", "travel": "XLY", "retail": "XLY",
+    # W8b prereg additions — AI-capex complex
+    "ai_semiconductors": "SMH",   # semiconductor ETF: direct proxy for AI silicon demand
+    "semicap_equipment": "SMH",   # same semiconductor supply-chain ecosystem
+    "memory_storage":    "SMH",   # HBM/DRAM within the semiconductor complex
+    "data_center_power": "XLI",   # industrials ETF: Vertiv/Eaton/GE-Vernova are Electrical-Equipment Industrials (XLI), the coherent cyclical proxy for riskon 0.4
+    "nuclear_power":     "XLU",   # utilities ETF: nuclear operators genuinely classify within XLU
 }
 
 # Lifecycle label -> (en, zh) display.
