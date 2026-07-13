@@ -2753,6 +2753,12 @@ body.page-macro .mx-pcol-sub{font-size:11px;color:var(--muted);margin-top:8px;li
 body.page-macro .rr-card{background:color-mix(in srgb,var(--panel2) 90%,var(--panel));border-color:var(--line)}
 body.page-macro .rr-card:hover{border-color:color-mix(in srgb,var(--info) 45%,var(--line));box-shadow:0 2px 12px color-mix(in srgb,var(--info) 8%,transparent)}
 body.page-macro #release-radar{background:var(--panel)}
+/* v5.1: the standalone Release Radar panel does not render on the grid page — its cards
+   are the data source for the RR modal, reachable from the Events dialog (mmOpenFirstRR).
+   Offscreen + visibility (NOT display:none) so the position:fixed modal overlay nested
+   inside stays functional; overlay re-shows itself when opened. */
+body.page-macro.mx4-grid #release-radar{position:absolute;left:-10000px;top:0;width:920px;visibility:hidden;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.page-macro.mx4-grid #release-radar #rr-modal-overlay.open{visibility:visible}
 /* projection fill-bars reuse mx-prog-track/fill */
 
 /* ── AI BRIEF CARD (macro upgrade) ── */
