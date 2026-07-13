@@ -1,4 +1,1 @@
-{
-  "activate": false,
-  "importance": 0
-}
+{"activate": false, "importance": 0}
