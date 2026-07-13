@@ -13,6 +13,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | active-build-map | 1 |
 | btc-vector | 5 |
 | causal-hypothesis-factory | 9 |
+| cbf | 2 |
 | china-alpha | 20 |
 | china-intel-hub | 2 |
 | china-pick-lab | 3 |
@@ -86,7 +87,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 269 |
+| display | 271 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -95,7 +96,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 419 |
+| git | 421 |
 | gitignored-local | 11 |
 | r2 | 7 |
 
@@ -130,6 +131,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | causal-brainstorm-runs | `data/neuralweb/causal_brainstorm_runs.jsonl` | jsonl | weekly | infrastructure | 0 | 0 |
 | causal-surprise-queue | `data/neuralweb/causal_surprise_queue.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | site-causal-lab-state | `site/neuralwebdata/causal_lab_state.json` | json | daily-engine | display | 0 | 0 |
+
+### cbf
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| cbf-flow-regime-history | `data/flow_regime/history.parquet` | parquet | daily-engine | display | 0 | 0 |
+| cbf-flow-regime-latest | `data/flow_regime/latest.json` | json | daily-engine | display | 0 | 0 |
 
 ### china-alpha
 

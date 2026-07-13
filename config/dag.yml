@@ -2218,6 +2218,38 @@ modules:
     needs_secrets: false
     event_driven: false
 
+  - module: scripts.build_intl
+    reads:
+      - data/intl_etf/*.parquet
+      - data/intl/*.parquet
+      - data/yahoo/*.parquet
+      - data/fred/DTWEXBGS.parquet
+      - data/fred/DX-Y.NYB.parquet
+      - data/fred/SWPT.parquet
+      - data/fred/WLCFLL.parquet
+      - data/fred/BAMLEMRLCRPILAOAS.parquet
+      - data/fred/BAMLEMRACRPIASIAOAS.parquet
+      - data/fred/BAMLEMRECRPIEMEAOAS.parquet
+      - data/fred/BAMLEMCBPIOAS.parquet
+      - data/fred/BAMLH0A0HYM2.parquet
+      - data/intl_risk/latest.json
+      - data/forex/latest.json
+    writes:
+      - site/intl.html
+      - site/intl_stocks.html
+      - site/intlstockdata/
+      - data/intl/hub.json
+      - data/intl_risk/latest.json
+      - data/flow_regime/latest.json
+      - data/flow_regime/history.parquet
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      International dashboard + IRD-W2 risk desk + CBF-W2 cross-border flow
+      regime. CBF outputs: data/flow_regime/latest.json (daily snapshot) +
+      data/flow_regime/history.parquet (append-only CBF-R10 backfill).
+
   - module: scripts.build_world_state
     reads:
       - data/market_state/latest.json
