@@ -9,6 +9,8 @@ Attribution is by namespace + trailer, NOT identity (R-AUT-5):
 
 The IMMUTABLE set (hard-coded here and in the F1/F3 manifests):
   .claude/hooks/**
+  .claude/settings.json
+  .claude/settings.local.json
   .github/workflows/**
   config/grader_manifest.yml
   config/capability_manifest.yml
@@ -16,8 +18,11 @@ The IMMUTABLE set (hard-coded here and in the F1/F3 manifests):
   engine/neuralweb/capability_broker.py
   scripts/check_self_mod_fence.py
   scripts/check_grader_manifest.py
-  settings.json
   research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md   (the tier table lives here)
+  engine/standout_audit.py               (SA-R2/SA-R4: US taxonomy constants + sensor defs)
+  engine/china_standout_audit.py         (SA-R2/SA-R4: CN taxonomy constants)
+  engine/standout_review.py              (SA-R4: clamp/whitelist enforcement engine)
+  config/standout_review.yml             (SA-R4: coverage clamps + whitelist bounds)
 
 Fail-CLOSED contract:
   - Unclassifiable inputs (can't determine branch, can't list files) → BLOCK (exit 1).
@@ -58,7 +63,6 @@ IMMUTABLE_PATTERNS: list[str] = [
     "engine/neuralweb/capability_broker.py",
     "scripts/check_self_mod_fence.py",
     "scripts/check_grader_manifest.py",
-    "settings.json",
     "research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md",
     # V2-A additions (R-V2-8)
     "config/metabolism_anomaly.yml",
@@ -91,6 +95,21 @@ IMMUTABLE_PATTERNS: list[str] = [
     # max_focus_lobes, dispatch priorities).  A loop that could edit its own
     # docket_share could grant itself more tokens — operator T2 only.
     "config/metabolism_attention.yml",
+    # SA-R2/SA-R4 additions: Standout Accountability ruler files.
+    # The attribution taxonomy constants (SA-R2) and coverage clamps (SA-R4)
+    # are the loop's own ruler/yardstick — allowing the loop to modify them is
+    # equivalent to letting it grade its own homework.  Operator PR required.
+    # Note: these files may not exist yet (built in future SA waves); the fence
+    # blocks any loop-authored PR that creates OR modifies them.
+    "engine/standout_audit.py",
+    "engine/china_standout_audit.py",
+    "engine/standout_review.py",
+    "config/standout_review.yml",
+    # settings.json lives at .claude/ (the repo root has no settings.json).
+    # This file wires the model-routing-guard hooks; a loop PR that edits it
+    # could disable the dispatch-time permission guard.
+    ".claude/settings.json",
+    ".claude/settings.local.json",
 ]
 
 # ── Loop namespace markers ────────────────────────────────────────────────────
@@ -281,6 +300,49 @@ def selftest() -> int:
             "",
             1,
             "empty branch → unclassifiable → BLOCKED (fail-closed)",
+        ),
+        # SA-R2/SA-R4: standout ruler files → BLOCKED for loop PRs
+        (
+            "metabolism/neuter-guards",
+            [".claude/settings.json"],
+            "",
+            1,  # BLOCKED — loop PR touching hook-wiring settings file
+            "loop branch + .claude/settings.json → BLOCKED",
+        ),
+        (
+            "metabolism/neuter-guards",
+            [".claude/settings.local.json"],
+            "",
+            1,  # BLOCKED — loop PR touching hook-wiring settings file
+            "loop branch + .claude/settings.local.json → BLOCKED",
+        ),
+        (
+            "metabolism/self-tune-ruler",
+            ["engine/standout_audit.py"],
+            "",
+            1,  # BLOCKED — SA-R2: loop may not move its own ruler
+            "loop branch + engine/standout_audit.py → BLOCKED (SA-R2)",
+        ),
+        (
+            "metabolism/self-tune-ruler",
+            ["engine/china_standout_audit.py"],
+            "",
+            1,  # BLOCKED — SA-R2: CN taxonomy constants
+            "loop branch + engine/china_standout_audit.py → BLOCKED (SA-R2)",
+        ),
+        (
+            "metabolism/self-tune-ruler",
+            ["engine/standout_review.py"],
+            "",
+            1,  # BLOCKED — SA-R4: clamp enforcement engine
+            "loop branch + engine/standout_review.py → BLOCKED (SA-R4)",
+        ),
+        (
+            "metabolism/self-tune-ruler",
+            ["config/standout_review.yml"],
+            "",
+            1,  # BLOCKED — SA-R4: coverage clamp values
+            "loop branch + config/standout_review.yml → BLOCKED (SA-R4)",
         ),
     ]
 
