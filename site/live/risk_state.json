@@ -1,34 +1,47 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-10 21:52:05 UTC",
+  "built": "2026-07-13 15:35:05 UTC",
   "session": {
     "region": "us",
-    "open": false,
-    "local_time": "2026-07-10 17:52 EDT"
+    "open": true,
+    "local_time": "2026-07-13 11:35 EDT"
   },
-  "live_active": false,
-  "stale": true,
-  "stale_reason": "market closed",
+  "live_active": true,
+  "stale": false,
+  "stale_reason": null,
   "delayed_min": 15,
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
   "nightly_asof": "2026-07-10",
-  "polygon_status": "unused",
-  "n_live_symbols": 0,
-  "movers": [],
+  "polygon_status": "ok",
+  "n_live_symbols": 12,
+  "movers": [
+    {
+      "sym": "SPY",
+      "chg_pct": -0.36
+    },
+    {
+      "sym": "QQQ",
+      "chg_pct": -1.11
+    },
+    {
+      "sym": "VIX",
+      "chg_pct": 7.92
+    }
+  ],
   "display": {
     "verdict": "RISK_ON",
     "label_en": "Risk-on",
     "label_zh": "\u98ce\u9669\u504f\u597d",
     "color": "green",
-    "score": 79,
+    "score": 80,
     "band_changed": false,
     "pending": null
   },
   "live": {
     "verdict": "RISK_ON",
-    "score": 79,
-    "raw_score": 79,
+    "score": 80,
+    "raw_score": 80,
     "color": "green",
     "label_en": "Risk-on",
     "label_zh": "\u98ce\u9669\u504f\u597d",
@@ -37,7 +50,7 @@
     "radar": {
       "state": "watch",
       "state_ungated": "watch",
-      "top_score": 62,
+      "top_score": 58,
       "label_en": "Bubble / blow-off unwind",
       "label_zh": "\u6ce1\u6cab/\u89c1\u9876\u56de\u5410",
       "context_gate": {
@@ -54,8 +67,8 @@
   },
   "nightly": {
     "verdict": "RISK_ON",
-    "score": 79,
-    "raw_score": 79,
+    "score": 81,
+    "raw_score": 81,
     "color": "green",
     "label_en": "Risk-on",
     "label_zh": "\u98ce\u9669\u504f\u597d",
@@ -77,9 +90,9 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 90,
-      "basis": "carried",
-      "asof": "2026-07-10"
+      "score": 88,
+      "basis": "live",
+      "asof": "live"
     },
     {
       "key": "risk",
@@ -92,13 +105,13 @@
       "key": "vol",
       "label_en": "Volatility regime",
       "score": 86,
-      "basis": "carried",
-      "asof": "2026-07-10"
+      "basis": "live",
+      "asof": "live"
     },
     {
       "key": "breadth",
       "label_en": "Breadth & participation",
-      "score": 59,
+      "score": 73,
       "basis": "carried",
       "asof": "2026-07-10"
     },
@@ -118,10 +131,10 @@
     }
   ],
   "legs_asof": {
-    "tape_trend": "2026-07-10",
-    "volatility": "2026-07-10",
-    "radar_fast": "2026-07-10",
-    "credit_hy_oas": "2026-07-08",
+    "tape_trend": "live",
+    "volatility": "live",
+    "radar_fast": "live",
+    "credit_hy_oas": "2026-07-09",
     "breadth": "2026-07-10",
     "liquidity": "2026-07-10",
     "macro_stress": "2026-07-10",
