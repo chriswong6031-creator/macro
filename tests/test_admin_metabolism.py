@@ -365,3 +365,105 @@ class TestRepoVariableRequests:
              self._stub_requests(gha, patch=mock.Mock(return_value=resp)):
             gha.set_repo_variable("AUTONOMY_PAUSED", "false")
         # If we get here without exception, the token was not accidentally logged/raised
+
+
+# ---------------------------------------------------------------------------
+# 5. FIX 9 — friendly 403 error messages in dispatch() and set_repo_variable()
+# ---------------------------------------------------------------------------
+
+class TestFriendly403Errors:
+    """dispatch() and set_repo_variable() must return/expose actionable plain-English
+    error messages when GitHub returns HTTP 403 — not raw status codes."""
+
+    @staticmethod
+    def _stub_requests(gha, **methods):
+        import types
+        stub = types.SimpleNamespace(**methods)
+        return mock.patch.object(gha, "requests", stub)
+
+    def _make_response(self, status: int, body: dict | None = None):
+        resp = mock.MagicMock()
+        resp.status_code = status
+        resp.json.return_value = body or {}
+        resp.text = ""
+        return resp
+
+    def test_dispatch_403_returns_friendly_message(self):
+        """dispatch() on HTTP 403 must return ok=False with an actionable message."""
+        import admin.github_api as gha  # noqa: PLC0415
+
+        resp = self._make_response(403, {"message": "Resource not accessible by integration"})
+        with mock.patch.object(gha, "token", return_value="ghp_fake"), \
+             mock.patch.object(gha, "repo", return_value=("owner", "repo")), \
+             self._stub_requests(gha, post=mock.Mock(return_value=resp)):
+            result = gha.dispatch(workflow="metabolism-cycle.yml", ref="main")
+
+        assert result["ok"] is False
+        err = result["error"]
+        assert "403" in err
+        assert "Actions" in err or "workflow" in err.lower()
+        assert "GH_TOKEN" in err
+        assert "/etc/macro-admin.env" in err
+        # Must NOT contain the token value
+        assert "ghp_fake" not in err
+
+    def test_dispatch_404_returns_friendly_message(self):
+        """dispatch() on HTTP 404 must return ok=False with a fine-grained PAT hint."""
+        import admin.github_api as gha  # noqa: PLC0415
+
+        resp = self._make_response(404, {"message": "Not Found"})
+        with mock.patch.object(gha, "token", return_value="ghp_fake"), \
+             mock.patch.object(gha, "repo", return_value=("owner", "repo")), \
+             self._stub_requests(gha, post=mock.Mock(return_value=resp)):
+            result = gha.dispatch(workflow="metabolism-cycle.yml", ref="main")
+
+        assert result["ok"] is False
+        err = result["error"]
+        assert "404" in err
+        assert "GH_TOKEN" in err or "token" in err.lower()
+
+    def test_set_repo_variable_403_sets_last_error(self):
+        """set_repo_variable() on HTTP 403 must set _last_set_variable_error with an
+        actionable message including Variables: Read & write and /etc/macro-admin.env."""
+        import admin.github_api as gha  # noqa: PLC0415
+
+        resp_403 = self._make_response(403)
+        with mock.patch.object(gha, "token", return_value="ghp_fake"), \
+             mock.patch.object(gha, "repo", return_value=("owner", "repo")), \
+             self._stub_requests(gha, patch=mock.Mock(return_value=resp_403)):
+            result = gha.set_repo_variable("METAB_RUN_UNTIL", "5h_max")
+
+        assert result is False
+        err = gha._last_set_variable_error
+        assert err is not None, "_last_set_variable_error must be set on 403"
+        assert "403" in err
+        assert "Variables" in err
+        assert "GH_TOKEN" in err
+        assert "/etc/macro-admin.env" in err
+        # Token value must not appear in the error message
+        assert "ghp_fake" not in err
+
+    def test_dispatch_204_clears_error_state(self):
+        """dispatch() on 204 success must return ok=True."""
+        import admin.github_api as gha  # noqa: PLC0415
+
+        resp_204 = self._make_response(204)
+        with mock.patch.object(gha, "token", return_value="ghp_fake"), \
+             mock.patch.object(gha, "repo", return_value=("owner", "repo")), \
+             self._stub_requests(gha, post=mock.Mock(return_value=resp_204)):
+            result = gha.dispatch(workflow="metabolism-cycle.yml", ref="main")
+
+        assert result["ok"] is True
+
+    def test_set_repo_variable_success_clears_last_error(self):
+        """set_repo_variable() on success (204) must reset _last_set_variable_error to None."""
+        import admin.github_api as gha  # noqa: PLC0415
+
+        resp_204 = self._make_response(204)
+        with mock.patch.object(gha, "token", return_value="ghp_fake"), \
+             mock.patch.object(gha, "repo", return_value=("owner", "repo")), \
+             self._stub_requests(gha, patch=mock.Mock(return_value=resp_204)):
+            result = gha.set_repo_variable("METAB_RUN_UNTIL", "5h_max")
+
+        assert result is True
+        assert gha._last_set_variable_error is None

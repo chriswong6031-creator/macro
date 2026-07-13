@@ -25,8 +25,8 @@ name: metabolism-cycle
 
 on:
   schedule:
-    # Every 6h at :35 — staggered from the daily chain (:15/:45/:15/:45)
-    - cron: "35 */6 * * *"
+    # Hourly at :35 — budget gate controls actual run frequency
+    - cron: "35 * * * *"
   workflow_dispatch:
     inputs:
       lobe:
@@ -45,10 +45,18 @@ on:
         description: "Force even when AUTONOMY_PAUSED=true (ops verification only)"
         type: boolean
         default: false
+      run_until_continue:
+        description: "Internal: continuation trigger from auto-run mode"
+        type: boolean
+        default: false
+      depth:
+        description: "Internal: auto-run recursion depth (max 30)"
+        type: string
+        default: "0"
 
 permissions:
-  actions: write    # dispatch sub-workflows + poll run list
-  contents: read
+  actions: write    # dispatch sub-workflows + poll run list + re-trigger
+  contents: write   # narrow-commit key_budget_status.json
 
 concurrency:
   group: metabolism-cycle
@@ -81,9 +89,12 @@ jobs:
           METAB_PACE: ${{ vars.METAB_PACE }}
           METAB_INTENSITY: ${{ vars.METAB_INTENSITY }}
           METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
+          METAB_RUN_UNTIL: ${{ vars.METAB_RUN_UNTIL }}
           FORCE_RUN: ${{ github.event.inputs.force_run }}
           LOBE_INPUT: ${{ github.event.inputs.lobe }}
           STAGES_INPUT: ${{ github.event.inputs.stages }}
+          RUN_UNTIL_CONTINUE: ${{ github.event.inputs.run_until_continue }}
+          DEPTH_INPUT: ${{ github.event.inputs.depth }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_WORKFLOW: ${{ github.workflow }}
@@ -102,45 +113,63 @@ jobs:
             exit 0
           fi
 
-          # ── Gate 2: PACE GATE (schedule events only; dispatch/button skips) ──
-          # Map METAB_PACE → allowed extra cycles per UTC day:
-          #   single → 0 (extra crons always no-op)
-          #   2x     → 1 extra cycle
-          #   4x     → 3 extra cycles
-          # Count today's completed schedule-event runs of THIS workflow (excluding
-          # current run) via gh run list.
+          # ── Gate 2: PACE / BUDGET GATE ────────────────────────────────────────
           EVENT="${GITHUB_EVENT_NAME:-}"
-          if [ "$EVENT" = "schedule" ]; then
-            _PACE="${METAB_PACE:-single}"
-            case "$_PACE" in
-              "2x")  _ALLOWED=1 ;;
-              "4x")  _ALLOWED=3 ;;
-              *)     _ALLOWED=0 ;;
-            esac
+          _RUN_UNTIL="${METAB_RUN_UNTIL:-off}"
+          _RU_CONTINUE="${RUN_UNTIL_CONTINUE:-false}"
+          _DEPTH="${DEPTH_INPUT:-0}"
+          # Clamp depth to integer; bash 3.2 safe arithmetic
+          _DEPTH="$(python -c "import sys; d=int('${_DEPTH}' or 0) if '${_DEPTH}'.isdigit() else 0; print(d)")"
 
-            if [ "$_ALLOWED" -eq 0 ]; then
-              echo "METAB_PACE=single — schedule no-op (extra cron suppressed)."
-              exit 0
+          if [ "$EVENT" = "schedule" ] || [ "$_RU_CONTINUE" = "true" ]; then
+            # Auto-run mode active?
+            if [ "$_RUN_UNTIL" = "5h_max" ] || [ "$_RUN_UNTIL" = "weekly_max" ]; then
+              echo "METAB_RUN_UNTIL=$_RUN_UNTIL — consulting budget gate..."
+              _VERDICT_FILE="${RUNNER_TEMP:-/tmp}/budget_verdict_$$.json"
+              python -m engine.metabolism.budget_gate --mode "$_RUN_UNTIL" --write-status > "$_VERDICT_FILE" 2>/dev/null || echo '{}' > "$_VERDICT_FILE"
+              echo "budget gate verdict: $(cat "$_VERDICT_FILE")"
+              _ALL_DONE="$(python -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('all_done','false'))" "$_VERDICT_FILE" 2>/dev/null || echo false)"
+              _ELIGIBLE="$(python -c "import json,sys; d=json.load(open(sys.argv[1])); print(len(d.get('eligible_keys',[])))" "$_VERDICT_FILE" 2>/dev/null || echo 1)"
+              _REASON="$(python -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('reason',''))" "$_VERDICT_FILE" 2>/dev/null || echo '')"
+              if [ "$_ALL_DONE" = "True" ] || [ "$_ALL_DONE" = "true" ]; then
+                echo "::notice::Budget target reached ($_RUN_UNTIL) — auto-run disarmed."
+                gh variable set METAB_RUN_UNTIL --body "off" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+                echo "### Auto-run complete" >> "$GITHUB_STEP_SUMMARY"
+                echo "Target reached for mode \`$_RUN_UNTIL\`. METAB_RUN_UNTIL reset to off." >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              fi
+              if [ "${_ELIGIBLE:-0}" -eq 0 ]; then
+                echo "No eligible keys (reason: $_REASON) — waiting on window reset; no-op."
+                exit 0
+              fi
+              echo "Budget gate: $_ELIGIBLE eligible key(s) — proceeding with chain."
+            else
+              # Not armed: fall back to LOOPS-per-5h-window pace gate
+              _ALLOWED="$(python -c "from engine.metabolism.throttle import pace_loops_per_window; print(pace_loops_per_window())" 2>/dev/null || echo 1)"
+              # Count schedule-event runs in the trailing 5 hours (excluding current run)
+              _NOW_EPOCH="$(python -c "import time; print(int(time.time()))")"
+              _CURRENT_RUN="${GITHUB_RUN_ID:-}"
+              _GH_JSON="$(gh run list --workflow metabolism-cycle.yml --json createdAt,event,databaseId --limit 50 2>/dev/null || echo '[]')"
+              _COUNT="$(python -c "import json,sys; rows=json.loads(sys.argv[1]); now=int(sys.argv[2]); cur=sys.argv[3]; cutoff=now-5*3600; n=sum(1 for r in rows if r.get('event')=='schedule' and str(r.get('databaseId',''))!=cur and r.get('createdAt') and __import__('datetime').datetime.fromisoformat(r.get('createdAt','').replace('Z','+00:00')).timestamp()>=cutoff); print(n)" "$_GH_JSON" "$_NOW_EPOCH" "$_CURRENT_RUN" 2>/dev/null || echo 0)"
+              echo "METAB_PACE loops_per_window=$_ALLOWED runs_in_trailing_5h=$_COUNT"
+              if [ "${_COUNT:-0}" -ge "${_ALLOWED:-1}" ]; then
+                echo "pace gate: $_COUNT/$_ALLOWED loops already run in trailing 5h — no-op."
+                exit 0
+              fi
+              echo "pace gate: $_COUNT/$_ALLOWED — proceeding."
             fi
-
-            # Count schedule-event runs today (UTC), excluding the current run.
-            _TODAY="$(date -u +%Y-%m-%d)"
-            _CURRENT_RUN="${GITHUB_RUN_ID:-}"
-            _COUNT="$(gh run list \
-              --workflow metabolism-cycle.yml \
-              --created "$_TODAY" \
-              --json databaseId,event \
-              --jq "[.[] | select(.event==\"schedule\" and (.databaseId | tostring) != \"$_CURRENT_RUN\")] | length" \
-              2>/dev/null || echo 0)"
-
-            echo "METAB_PACE=$_PACE allowed_extra=$_ALLOWED completed_schedule_runs_today=$_COUNT"
-            if [ "${_COUNT:-0}" -ge "$_ALLOWED" ]; then
-              echo "pace gate: $_COUNT/$_ALLOWED schedule runs already completed today — no-op."
-              exit 0
-            fi
-            echo "pace gate: $_COUNT/$_ALLOWED — proceeding."
           else
-            echo "dispatch/button event — pace gate skipped."
+            # dispatch event (not a continuation): manual floor gate
+            echo "dispatch event — checking manual floor..."
+            _MANUAL_VERDICT_FILE="${RUNNER_TEMP:-/tmp}/budget_manual_$$.json"
+            python -m engine.metabolism.budget_gate --mode manual > "$_MANUAL_VERDICT_FILE" 2>/dev/null || echo '{}' > "$_MANUAL_VERDICT_FILE"
+            _BLOCKED="$(python -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('blocked','false'))" "$_MANUAL_VERDICT_FILE" 2>/dev/null || echo false)"
+            if [ "$_BLOCKED" = "True" ] || [ "$_BLOCKED" = "true" ]; then
+              _REASON="$(python -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('reason',''))" "$_MANUAL_VERDICT_FILE" 2>/dev/null || echo '')"
+              echo "::error::All keys are >=90% of weekly limits — a loop likely cannot finish. Blocked until a weekly window resets. (reason: $_REASON)"
+              exit 1
+            fi
+            echo "Manual floor gate: not blocked — proceeding."
           fi
 
           # ── Mint CYCLE_ID ─────────────────────────────────────────────────
@@ -280,6 +309,76 @@ jobs:
           # ── Final summary ─────────────────────────────────────────────────
           echo "--- metabolism-cycle $CYCLE_ID complete ---"
           echo "stage conclusions: ${_STAGE_CONCLUSIONS:-none}"
+
+          # ── Auto-run continuation ──────────────────────────────────────────
+          # Re-read METAB_RUN_UNTIL live so that STOP button wins mid-run.
+          _RUN_UNTIL_LIVE="$(gh variable get METAB_RUN_UNTIL --repo "$GITHUB_REPOSITORY" 2>/dev/null | tr -d '[:space:]' || echo 'off')"
+          if [ "$_RUN_UNTIL_LIVE" = "5h_max" ] || [ "$_RUN_UNTIL_LIVE" = "weekly_max" ]; then
+            if [ "${_DEPTH:-0}" -lt 30 ]; then
+              # Re-check budget gate before scheduling next iteration
+              _NEXT_VERDICT_FILE="${RUNNER_TEMP:-/tmp}/budget_next_$$.json"
+              python -m engine.metabolism.budget_gate --mode "$_RUN_UNTIL_LIVE" > "$_NEXT_VERDICT_FILE" 2>/dev/null || echo '{}' > "$_NEXT_VERDICT_FILE"
+              _NEXT_ALL_DONE="$(python -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('all_done','false'))" "$_NEXT_VERDICT_FILE" 2>/dev/null || echo false)"
+              _NEXT_ELIGIBLE="$(python -c "import json,sys; d=json.load(open(sys.argv[1])); print(len(d.get('eligible_keys',[])))" "$_NEXT_VERDICT_FILE" 2>/dev/null || echo 0)"
+              if [ "$_NEXT_ALL_DONE" = "True" ] || [ "$_NEXT_ALL_DONE" = "true" ]; then
+                echo "::notice::Auto-run target reached after chain — disarming METAB_RUN_UNTIL."
+                gh variable set METAB_RUN_UNTIL --body "off" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+              elif [ "${_NEXT_ELIGIBLE:-0}" -gt 0 ]; then
+                _NEXT_DEPTH="$(python -c "print(int('${_DEPTH}' or 0) + 1)")"
+                echo "Auto-run: scheduling continuation at depth $_NEXT_DEPTH..."
+                # Depth cap is per continuation-origin chain (depth resets to 0 on
+                # each fresh hourly cron trigger, which always starts a new chain).
+                # The all_done disarm above is what bounds total work — depth cap is
+                # a safety backstop only.  The concurrency group serializes runs so
+                # at most one chain is active at any moment.
+                gh workflow run metabolism-cycle.yml \
+                  -f "run_until_continue=true" \
+                  -f "depth=$_NEXT_DEPTH" \
+                  --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+              else
+                echo "No eligible keys for next iteration — waiting for window reset."
+              fi
+            else
+              echo "Auto-run depth limit (30) reached — stopping auto-run chain."
+            fi
+          fi
+
+      - name: publish budget status
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -uo pipefail
+          # Write fresh status snapshot
+          python -m engine.metabolism.budget_gate --mode manual --write-status 2>/dev/null || true
+
+          # Narrow-commit: ONLY data/metabolism/key_budget_status.json
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/metabolism/key_budget_status.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "key_budget_status.json unchanged — nothing to commit"
+            exit 0
+          fi
+          git commit -m "metab: update key_budget_status.json [skip ci]"
+
+          # Rebase-tolerant push (same idiom as signal-foundry.yml)
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "pushed key_budget_status.json on attempt $i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "push attempt $i lost race; re-syncing"
+            sleep $((i * 5))
+          done
+          echo "could not push key_budget_status.json after 5 attempts (non-fatal)"
+          exit 0
 
       - name: notify on failure
         if: failure()

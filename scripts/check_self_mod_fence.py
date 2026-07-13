@@ -59,6 +59,11 @@ IMMUTABLE_PATTERNS: list[str] = [
     ".github/workflows/**",
     "config/grader_manifest.yml",
     "config/capability_manifest.yml",
+    # V11 addition: metabolism budget + gate policy.
+    # fivehour_done_pct, weekly_done_pct, weekly_key_stop_pct, manual_floor_pct
+    # and the per-cycle USD/token caps are operator-ratified spend knobs.
+    # A loop-authored edit could raise its own quota ceiling or disable the
+    # manual-run hard floor — operator T2 action required for any change.
     "config/metabolism_budget.yml",
     "engine/neuralweb/capability_broker.py",
     "scripts/check_self_mod_fence.py",

@@ -507,6 +507,15 @@ on:
       - "tests/test_codex_lanes.py"
       - "tests/test_admin_codex.py"
       - ".github/workflows/codex-research.yml"
+      # V11 Metabolism Throttle UX: budget gate engine, dispatch balancer,
+      # workflow machinery, admin UX panel.  Any change to these surfaces
+      # re-proves the auto-run contract tests before merging.
+      - "engine/metabolism/budget_gate.py"
+      - "tests/test_metabolism_budget_gate.py"
+      - "tests/test_metabolism_rununtil.py"
+      - "tests/test_admin_metabolism_ux.py"
+      - ".github/workflows/metabolism-cycle.yml"
+      - ".github/workflows/key-pool-probe.yml"
   workflow_dispatch:
 
 permissions:
@@ -1558,6 +1567,8 @@ jobs:
         run: python -m pytest tests/test_metabolism_attention_wiring.py -q
       - name: metabolism V10 throttle suite (intensity + pace + METAB_* env plumbing)
         run: python -m pytest tests/test_metabolism_throttle.py -q
+      - name: metabolism V11 budget gate suite (auto-run gate verdicts + header parsing)
+        run: python -m pytest tests/test_metabolism_budget_gate.py -q
       - name: metabolism V10 key pool economy suite (enabled-set + header capture + usage snapshot)
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: metabolism V10 admin throttle suite (admin routes + UI bindings)
@@ -1873,3 +1884,33 @@ jobs:
         run: python -m pytest tests/test_codex_lanes.py -q
       - name: CRX admin panel tests (routes, usage bars, recent-attempts list)
         run: python -m pytest tests/test_admin_codex.py -q
+
+  metab-throttle-ux:
+    # V11 Metabolism Throttle UX (budget gate + run-until dispatch):
+    # Three suites, one job:
+    #   test_metabolism_budget_gate.py — key_budget header parsing, gate_verdict
+    #                                    semantics (5h_max/weekly_max/manual),
+    #                                    write_status schema, NEVER-RAISE.
+    #   test_metabolism_rununtil.py    — pick_key weekly_max exclusion, soft
+    #                                    manual-floor preference + never-empty rule,
+    #                                    fail-open on ImportError, workflow YAML
+    #                                    assertions (cron hourly, narrow-commit target,
+    #                                    manual floor gate, continuation re-read).
+    #   test_admin_metabolism_ux.py    — admin routes for the new UX controls
+    #                                    (5H MAX / WEEKLY MAX / STOP buttons,
+    #                                    budget status panel data).
+    # Zero network calls; key_pool and budget_gate are monkeypatched throughout.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: budget gate contract tests (key_budget, gate_verdict, write_status)
+        run: python -m pytest tests/test_metabolism_budget_gate.py -q
+      - name: run-until dispatch + workflow YAML assertion tests
+        run: python -m pytest tests/test_metabolism_rununtil.py -q
+      - name: admin metabolism UX panel tests
+        run: python -m pytest tests/test_admin_metabolism_ux.py -q

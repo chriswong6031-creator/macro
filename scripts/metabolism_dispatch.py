@@ -97,6 +97,58 @@ def _stage_allowed_now(stage: str, schedule: dict) -> bool:
         return True
 
 
+def _budget_filter(candidates: list[str], root: Path | None = None) -> list[str]:
+    """Apply budget-gate soft preferences to the candidate key list.
+
+    Two filters, applied in order:
+      1. weekly_max exclusion: when METAB_RUN_UNTIL==weekly_max, drop keys
+         whose known pct_weekly >= weekly_key_stop_pct.
+      2. manual floor preference: drop keys with known pct_weekly >= manual_floor_pct
+         when at least one candidate is below floor (or unknown).  Never empties pool.
+
+    Fails open on any error (ImportError or otherwise).  NEVER raises.
+    """
+    try:
+        from engine.metabolism.budget_gate import load_budget_cfg, key_budget  # noqa: PLC0415
+        cfg = load_budget_cfg(root)
+        weekly_stop = float(cfg.get("weekly_key_stop_pct") or 85)
+        manual_floor = float(cfg.get("manual_floor_pct") or 90)
+
+        run_until = os.environ.get("METAB_RUN_UNTIL", "off").strip().lower()
+
+        budgets: dict[str, dict] = {}
+        for k in candidates:
+            try:
+                budgets[k] = key_budget(k, root)
+            except Exception:  # noqa: BLE001
+                budgets[k] = {"pct_weekly": None}
+
+        # Filter 1: weekly_max exclusion
+        if run_until == "weekly_max":
+            filtered = [
+                k for k in candidates
+                if budgets[k].get("pct_weekly") is None
+                or budgets[k]["pct_weekly"] < weekly_stop
+            ]
+            if filtered:
+                candidates = filtered
+
+        # Filter 2: soft manual floor preference (never empties pool)
+        below_floor = [
+            k for k in candidates
+            if budgets[k].get("pct_weekly") is None
+            or budgets[k]["pct_weekly"] < manual_floor
+        ]
+        if below_floor:
+            # At least one key is below floor — prefer it, drop above-floor keys
+            candidates = below_floor
+
+        return candidates
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_dispatch._budget_filter: %s — failing open", exc)
+        return candidates
+
+
 def pick_key(
     stage: str = "",
     root: Path | None = None,
@@ -180,6 +232,9 @@ def pick_key(
             if notify_on_freeze:
                 _notify_freeze(earliest, freeze, root)
             return None
+
+        # Budget-gate filtering (V11): guarded import; fails open if unavailable
+        available = _budget_filter(available, root)
 
         # Pick least-loaded key by 5h window sessions (LRU)
         chosen = min(available, key=lambda k: window_load(k, root))
