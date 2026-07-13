@@ -1,0 +1,195 @@
+{% extends "report_base.html.j2" %}
+{#
+  Fund directory — the index for the per-fund dossiers (smart-money v3).
+  Rendered once at SITE ROOT (site/fund_index.html — F6: report_base hardcodes
+  root-relative theme.css/theme.js, so no nav_prefix is needed or used).
+
+  Context contract (all optional — every access is guarded):
+    rows          list of {slug, name, style, status, grade, reliability,
+                  core_lean_label, core_lean_label_zh, book_value_usd,
+                  n_positions, href}
+    generated_utc build timestamp string
+    active_section / active_page ride through to the site nav include.
+
+  House rules: every UI string bilingual via the inherited t(en, zh) macro
+  (defined at the top of report_base.html.j2); fund names are entities and render
+  as-is; numbers tabular; SM2-R3 13F-lane / filing-date clock only; descriptive
+  framing — grades rank a curated survivor cohort, never a forecast.
+#}
+
+{% block title %}{{ t('Fund Directory — 13F Ownership Context','基金目录 — 13F 持仓背景') }}{% endblock %}
+
+{% block base_css %}
+.fx { --numf:"SF Mono",ui-monospace,"DejaVu Sans Mono",monospace; max-width:1220px; margin:0 auto; }
+.fx .num { font-family:var(--numf); font-variant-numeric:tabular-nums; }
+
+/* hero */
+.fx-hero { margin:22px auto 6px; }
+.fx-hero .eyebrow { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 6px; }
+.fx-hero h1 { font-size:26px; margin:0 0 6px; }
+.fx-sub { color:var(--muted); font-size:13px; max-width:70ch; margin:0 0 12px; }
+.fx-meta { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+.fx-chip { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; padding:5px 10px; border-radius:999px;
+           background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+
+/* filter rail */
+.fx-filters { display:inline-flex; flex-wrap:wrap; gap:4px; padding:4px; border-radius:11px;
+              background:var(--panel2); border:1px solid var(--line); margin:14px 0 16px; }
+.fx-filters button { font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; border:1px solid transparent;
+                     background:transparent; color:var(--muted); padding:6px 13px; border-radius:8px; line-height:1.2;
+                     transition:all .14s ease; white-space:nowrap; }
+.fx-filters button:hover { color:var(--text); }
+.fx-filters button[aria-selected="true"] { background:var(--panel); color:var(--text); border-color:var(--line);
+                                            box-shadow:var(--popover-shadow); }
+
+/* grid of fund cards */
+.fx-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; margin:4px 0 30px; }
+.fx-card { display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 15px;
+           color:inherit; transition:border-color .14s ease, transform .14s ease, box-shadow .14s ease; }
+html body a.fx-card:hover { transform:translateY(-2px); border-color:color-mix(in srgb, var(--link) 45%, var(--line));
+                            box-shadow:0 14px 30px -16px color-mix(in srgb, var(--link) 40%, transparent); }
+.fx-card .fc-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.fx-card .fc-name { font-size:15px; font-weight:650; line-height:1.25; }
+.fx-card .fc-sub { color:var(--muted); font-size:11px; margin-top:2px; }
+.fx-card .fc-lean { font-size:12.5px; margin:10px 0 2px; color:var(--text); }
+.fx-card .fc-lean .lbl { color:var(--muted); font-size:10px; letter-spacing:.1em; text-transform:uppercase; display:block; margin-bottom:2px; }
+.fx-card .fc-stats { display:flex; gap:14px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+.fx-card .fc-stat .k { font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.fx-card .fc-stat .v { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; margin-top:2px; }
+
+.grade { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 5px;
+         border-radius:6px; font:700 12px/1 var(--numf); border:1px solid var(--line); }
+.grade.A { color:#1f9a55; border-color:#1f9a5566; background:#1f9a5514; }
+.grade.B { color:#3b82f6; border-color:#3b82f666; background:#3b82f614; }
+.grade.C { color:#c98a1a; border-color:#c98a1a66; background:#c98a1a14; }
+.grade.D { color:#d23f3f; border-color:#d23f3f66; background:#d23f3f14; }
+.grade.na { color:var(--muted); }
+html[data-theme="dark"] .grade.A { color:#3fc07e; }
+html[data-theme="dark"] .grade.C { color:#e0a93a; }
+html[data-theme="dark"] .grade.D { color:#ef6a6a; }
+
+.stylepill { font:600 9.5px/1 var(--numf); letter-spacing:.06em; text-transform:uppercase; padding:3px 7px;
+             border-radius:99px; border:1px solid var(--line); color:var(--muted); background:var(--panel2); }
+.relchip { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px; letter-spacing:.03em; white-space:nowrap; }
+.relchip.improving { color:var(--up); background:rgba(69,184,115,.1); border:1px solid rgba(69,184,115,.35); }
+.relchip.deteriorating { color:var(--down); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
+.relchip.stable, .relchip.na { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+.fx-disc { color:var(--muted); font-size:11.5px; border-left:3px solid var(--info); padding:8px 12px; margin:14px 0 8px;
+           background:var(--panel2); border-radius:0 8px 8px 0; }
+.fx-closed { opacity:.62; }
+{% endblock %}
+
+{% block content %}
+{#- ===== macro helpers (desk idiom — defined inside the block, t() inherited) ===== -#}
+{% macro fxusd(v) -%}
+{%- if v is none -%}—
+{%- else -%}
+  {%- set a = v | abs -%}
+  {%- if a >= 1000000000000 -%}${{ "%.2f" | format(a / 1000000000000) }}T
+  {%- elif a >= 1000000000 -%}${{ "%.1f" | format(a / 1000000000) }}B
+  {%- elif a >= 1000000 -%}${{ "%.0f" | format(a / 1000000) }}M
+  {%- else -%}${{ "%.0f" | format(a) }}
+  {%- endif -%}
+{%- endif -%}
+{%- endmacro %}
+{% macro gradeb(g) -%}
+{%- set gg = (g or 'n/a') -%}
+<span class="grade {{ 'na' if gg in ('n/a','—') else gg }}">{{ '—' if gg in ('n/a','') else gg }}</span>
+{%- endmacro %}
+
+<div class="fx">
+
+  <section class="fx-hero">
+    <p class="eyebrow">💼 {{ t('Institutional 13F · super-investor track record','机构 13F · 超级投资者业绩记录') }}</p>
+    <h1>{{ t('Fund Directory','基金目录') }}</h1>
+    <p class="fx-sub">{{ t(
+      'Open any tracked fund for its full resolved book, transparent conviction scores, sector &amp; theme rotation, grade history, and core lean. Grades rank a curated survivor cohort on public 13F filing dates vs SPY — descriptive, never a forecast.',
+      '打开任一追踪基金，查看其完整解析持仓、透明的信念评分、行业与主题轮动、评级历史及核心倾向。评级基于13F公开申报日、以精选幸存者队列相对标普评分——描述性，非预测。'
+    ) }}</p>
+    <div class="fx-meta">
+      <span class="fx-chip">{{ rows | length }} {{ t('funds tracked','家追踪基金') }}</span>
+      <span class="fx-chip">{{ t('13F lane · filing-date clock · ~45d lag','13F通道 · 申报日时钟 · 约45天滞后') }}</span>
+      <a class="fx-chip" href="smart_money.html">← {{ t('Ownership Intelligence Desk','持仓情报台') }}</a>
+    </div>
+  </section>
+
+  <div class="fx-filters" id="fx-seg" role="tablist">
+    <button aria-selected="true" data-grade="all">{{ t('All','全部') }}</button>
+    <button data-grade="A">A</button>
+    <button data-grade="B">B</button>
+    <button data-grade="C">C</button>
+    <button data-grade="D">D</button>
+  </div>
+
+  <div class="fx-grid" id="fx-grid">
+  {% for r in rows %}
+    {% set _rel = r.get('reliability') or {} %}
+    {% set _trend = _rel.get('trend') or 'na' %}
+    <a class="fx-card {{ 'fx-closed' if r.get('status') == 'closed' else '' }}"
+       href="{{ r.get('href') or ('fund_' ~ r.get('slug') ~ '.html') }}"
+       data-grade="{{ r.get('grade') or 'na' }}">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">{{ r.get('name') or r.get('slug') }}</div>
+          <div class="fc-sub">
+            {% if r.get('style') %}<span class="stylepill">{{ r.get('style') | replace('_',' ') }}</span>{% endif %}
+            {% if r.get('status') == 'closed' %}<span class="stylepill">{{ t('closed','已关闭') }}</span>{% endif %}
+          </div>
+        </div>
+        {{ gradeb(r.get('grade')) }}
+      </div>
+
+      {% if r.get('core_lean_label') %}
+      <div class="fc-lean">
+        <span class="lbl">{{ t('Core lean','核心倾向') }}</span>
+        {{ t(r.get('core_lean_label'), r.get('core_lean_label_zh') or r.get('core_lean_label')) }}
+      </div>
+      {% endif %}
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k">{{ t('Book','账面') }}</div>
+          <div class="v num">{{ fxusd(r.get('book_value_usd')) }}</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k">{{ t('Positions','持仓') }}</div>
+          <div class="v num">{{ r.get('n_positions') if r.get('n_positions') is not none else '—' }}</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k">{{ t('Record','记录') }}</div>
+          <div class="v"><span class="relchip {{ _trend }}">{{ t(_rel.get('label_en') or 'n/a', _rel.get('label_zh') or 'n/a') }}</span></div>
+        </div>
+      </div>
+    </a>
+  {% else %}
+    <p class="sub">{{ t('No funds available this build.','本次构建暂无基金。') }}</p>
+  {% endfor %}
+  </div>
+
+  <div class="fx-disc">{{ t(
+    'Context only — never a buy list. 13F is quarterly, ~45-day lag, long-only US-listed ≥$100M: no shorts, no cash, no non-US positions. A grade ranks trade quality within this curated cohort; it is not a recommendation.',
+    '仅供背景参考——绝非买入清单。13F为季度披露、约45天滞后、仅含美股多头且≥1亿美元：不含空头、现金或非美股仓位。评级衡量该精选队列内的交易质量，并非投资建议。'
+  ) }}</div>
+
+  <p class="sub" style="color:var(--muted);font-size:11px;margin-top:8px">{{ t('Generated','生成于') }} {{ generated_utc }}</p>
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function(){
+  var seg = document.getElementById('fx-seg');
+  var grid = document.getElementById('fx-grid');
+  if(!seg || !grid) return;
+  seg.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-grade]');
+    if(!btn) return;
+    var g = btn.getAttribute('data-grade');
+    seg.querySelectorAll('button').forEach(function(b){ b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
+    grid.querySelectorAll('a.fx-card').forEach(function(card){
+      card.style.display = (g === 'all' || card.getAttribute('data-grade') === g) ? '' : 'none';
+    });
+  });
+})();
+</script>
+{% endblock %}

@@ -662,6 +662,25 @@ smart_money:
   user_agent: "Macro Dashboard 13F research longr2512@gmail.com"
   history_quarters: 12         # snapshots kept per fund — SM2-R6: deep history for multi-quarter accumulation trend
   backfill_quarters: 13        # --full-history depth (SM2-R6)
+  insider_intel:               # v3 Signal Desk — role-aware insider lanes (two clocks, SM2-R3)
+    quiver_window_days: 90     # daily Quiver lane lookback
+    panel_window_days: 180     # SEC bulk-panel lane lookback (~45d publication lag)
+    min_csuite_usd: 250000     # C-suite open-market board floor
+    usd_sanity_cap: 500000000  # per-trade cap — re-filed dupes minted $B ghosts (OLPX)
+    min_cluster_buyers: 3      # distinct officer/director buyers for a cluster row
+  conviction:                  # conviction_score component weights (sum = 100)
+    w_pct_book: 35
+    w_rank_top10: 15
+    w_tilt: 10
+    w_add_streak: 20
+    w_new_at_size: 10
+    w_persisted: 10
+  flow:
+    board_top_n: 30            # stock in/out flow rows kept per side
+    model_top_n: 20            # rows per descriptive model board
+    top_grades: [A, B]         # "top funds" variant = funds graded in this set
+  dossier:
+    enabled: true              # per-fund dossier pages at site root (fund_<slug>.html)
   panel_top_n: 12              # holders shown per stock panel
   # 13F Smart-Money TRADE TRACKER (engine/manager_trades.py + scripts/build_smart_money.py)
   # — grades each fund's new/add/trim/exit moves by SPY-relative forward return from the
