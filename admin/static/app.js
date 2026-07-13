@@ -137,12 +137,13 @@ const ICONS = {
   context_lobe:  NAV_ICO('<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>'),
   causal_lab:    NAV_ICO('<path d="M9 3h6M10 3v5.5L5.4 17.6A2 2 0 0 0 7.2 20.5h9.6a2 2 0 0 0 1.8-2.9L14 8.5V3"/><path d="M8 14h8"/><circle cx="17" cy="7" r="3"/><path d="M15.5 5.5l3 3"/>'),
   metabolism:    NAV_ICO('<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/><circle cx="12" cy="12" r="3"/>'),
+  codex:         NAV_ICO('<path d="M12 3l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"]] },
-  { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["cost", "AI Cost"], ["content", "Content"]] },
+  { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
 ];
 const TAB_LABELS = Object.fromEntries(NAV_GROUPS.flatMap(g => g.items));
@@ -2306,6 +2307,203 @@ RENDER.metabolism = async () => {
 
     render(activeFilter);
   })();
+};
+
+/* ---- Codex Research panel ----------------------------------------------- */
+RENDER.codex = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="sub muted">Loading Codex Research status…</div>`;
+  const d = await api("/api/codex");
+
+  const hasToken = !!(d.mode && d.mode.allowed);  // panel returned = token may or may not be set
+
+  // --- Mode selector ---
+  const modeSel = d.mode || {};
+  const lanesSel = d.lanes || {};
+  const intHrs = d.interval_hours || {};
+
+  function codexSelectorHtml(id, label, options, currentEffective) {
+    return `<div style="margin-bottom:10px"><span class="sub">${esc(label)}</span><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">` +
+      options.map(opt =>
+        `<button class="btn${opt === currentEffective ? " primary" : ""}" data-cdx-sel="${esc(id)}" data-cdx-val="${esc(opt)}" style="min-width:60px">${esc(opt)}</button>`
+      ).join("") +
+      `</div></div>`;
+  }
+
+  const modeHtml = `
+    <div style="margin-bottom:8px">
+      ${modeSel.value != null ? `<div class="kv"><span>CODEX_MODE (repo var)</span><b class="mono">${esc(modeSel.value)}</b></div>` : `<div class="kv"><span>CODEX_MODE</span><b class="mono muted">(not set — effective: off)</b></div>`}
+      ${intHrs.value != null ? `<div class="kv"><span>CODEX_INTERVAL_HOURS (repo var)</span><b class="mono">${esc(intHrs.value)}</b></div>` : ""}
+      ${lanesSel.value != null ? `<div class="kv"><span>CODEX_LANES (repo var)</span><b class="mono">${esc(lanesSel.value)}</b></div>` : ""}
+    </div>
+    ${codexSelectorHtml("mode", "Mode", modeSel.allowed || ["auto","interval","off"], modeSel.effective || "off")}
+    <div style="margin-bottom:10px">
+      <span class="sub">Interval hours (interval mode; 1–48)</span>
+      <div style="display:flex;gap:8px;margin-top:4px;align-items:center;flex-wrap:wrap">
+        <input id="cdxIntervalInput" type="number" min="1" max="48" value="${esc(String(intHrs.effective || 6))}" style="padding:4px 8px;background:var(--bg2,#1e1e2e);border:1px solid var(--border,#333);color:var(--text,#ccc);border-radius:4px;width:80px">
+        <button class="btn" id="cdxIntervalSetBtn">Set interval</button>
+      </div>
+    </div>
+    ${codexSelectorHtml("lanes", "Lanes", lanesSel.allowed || ["both","cases","signals"], lanesSel.effective || "both")}`;
+
+  // --- Usage bars ---
+  const usage = d.usage;
+  let usageHtml = `<div class="sub muted">No usage data yet — runs will populate this.</div>`;
+  if (usage) {
+    const priPct = usage.primary_used_pct;
+    const secPct = usage.secondary_used_pct;
+    const budgetPct = usage.budget_pct || 85;
+    const pausedUntil = usage.paused_until;
+    const degraded = !!usage.degraded;
+
+    const pbar = (label, pct) => {
+      if (pct == null) return `<div class="kv"><span>${esc(label)}</span><b class="muted">—</b></div>`;
+      const fill = Math.min(100, Math.max(0, pct));
+      const cls = fill >= budgetPct ? "s-bad" : fill >= budgetPct * 0.75 ? "s-warn" : "s-ok";
+      return `<div style="margin-bottom:8px">
+        <div class="kv" style="margin-bottom:4px"><span class="sub">${esc(label)}</span><b>${fill.toFixed(1)}%</b></div>
+        <div style="background:var(--bg2,#1e1e2e);border-radius:4px;height:8px;overflow:hidden">
+          <div style="width:${fill}%;height:100%;background:var(--accent,#7f6bf5);border-radius:4px;padding:0" class="statpill ${cls}"></div>
+        </div>
+        ${fill >= budgetPct ? `<div class="sub muted" style="margin-top:2px">At or above ${budgetPct}% budget — lane will pause until window resets.</div>` : ""}
+      </div>`;
+    };
+
+    usageHtml = `
+      ${pausedUntil ? `<div class="sub" style="background:var(--bg2,#1e1e2e);padding:8px;border-radius:4px;margin-bottom:10px;border-left:3px solid var(--warn,#f5a623)">Paused until <b>${esc(pausedUntil)}</b> (usage limit hit; auto-mode resumes after reset)</div>` : ""}
+      ${degraded ? `<div class="kv" style="margin-bottom:8px"><span>Mode</span><span class="statpill s-warn">degraded — est. session cap</span></div>` : ""}
+      ${pbar("5h primary window used", priPct)}
+      ${pbar("Weekly secondary window used", secPct)}
+      <div class="kv"><span>Budget cutoff</span><b>${budgetPct}%</b></div>
+      ${usage.sessions_in_window != null ? `<div class="kv"><span>Sessions in current 5h window</span><b>${usage.sessions_in_window}</b></div>` : ""}`;
+  }
+
+  // --- Run-now ---
+  const runNowHtml = `
+    <div style="margin-bottom:10px">
+      <span class="sub">Iterations (1–20)</span>
+      <div style="display:flex;gap:8px;margin-top:4px;align-items:center">
+        <input id="cdxIterInput" type="number" min="1" max="20" value="1" style="padding:4px 8px;background:var(--bg2,#1e1e2e);border:1px solid var(--border,#333);color:var(--text,#ccc);border-radius:4px;width:80px">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn primary" data-cdx-run="cases">▶ Cases</button>
+      <button class="btn" data-cdx-run="signals">▶ Signals</button>
+      <button class="btn" data-cdx-run="both">▶ Both</button>
+    </div>`;
+
+  // --- Recent attempts ---
+  const attempts = Array.isArray(d.attempts) ? d.attempts : [];
+  const attemptsHtml = attempts.length === 0
+    ? `<div class="sub muted">No case attempts recorded yet.</div>`
+    : `<table><thead><tr><th>Episode</th><th>Status</th><th>PR</th><th>Timestamp</th></tr></thead><tbody>
+      ${attempts.map(a => {
+        const stCls = a.status === "pr_opened" ? "s-ok" : a.status === "audit_failed" ? "s-bad" : a.status === "skipped" ? "s-mut" : "s-warn";
+        const prLink = a.pr_url ? `<a href="${esc(a.pr_url)}" target="_blank" rel="noopener">PR ↗</a>` : "—";
+        return `<tr>
+          <td class="mono">${esc(a.episode || "—")}</td>
+          <td><span class="statpill ${stCls}">${esc(a.status || "—")}</span></td>
+          <td>${prLink}</td>
+          <td class="sub mono">${esc((a.ts || a.timestamp || "").slice(0, 16).replace("T", " "))}</td>
+        </tr>`;
+      }).join("")}
+    </tbody></table>`;
+
+  // --- Loop journal ---
+  const loop = Array.isArray(d.loop) ? d.loop : [];
+  const loopHtml = loop.length === 0
+    ? `<div class="sub muted">No loop journal entries yet.</div>`
+    : loop.map(row => {
+        const ts = esc((row.ts || "").slice(0, 16).replace("T", " "));
+        return `<div class="kv"><span class="sub mono">${ts}</span><span>${esc(row.action || row.event || JSON.stringify(row))}</span></div>`;
+      }).join("");
+
+  // --- Workflow runs ---
+  const runs = Array.isArray(d.runs) ? d.runs : [];
+  const runsHtml = runs.length === 0
+    ? `<div class="sub muted">No codex-research workflow runs found.</div>`
+    : `<table><thead><tr><th>Status</th><th>Conclusion</th><th>Started</th><th>Link</th></tr></thead><tbody>
+      ${runs.map(r => {
+        const stCls = r.conclusion === "success" ? "s-ok" : r.conclusion === "failure" ? "s-bad" : r.conclusion ? "s-mut" : "s-warn";
+        return `<tr>
+          <td>${esc(r.status || "—")}</td>
+          <td><span class="statpill ${stCls}">${esc(r.conclusion || r.status || "—")}</span></td>
+          <td class="sub mono">${esc((r.created_at || "").slice(0, 16).replace("T", " "))}</td>
+          <td>${r.html_url ? `<a href="${esc(r.html_url)}" target="_blank" rel="noopener">open ↗</a>` : "—"}</td>
+        </tr>`;
+      }).join("")}
+    </tbody></table>`;
+
+  v.innerHTML = `
+    <div class="section">Codex Mode</div>
+    <div class="card" id="cdxModeCard">${modeHtml}</div>
+    <div class="section">Usage</div>
+    <div class="card">${usageHtml}</div>
+    <div class="section">Run Now</div>
+    <div class="card" id="cdxRunCard">${runNowHtml}</div>
+    <div class="section">Recent Case Attempts <span class="cnt">${attempts.length}</span></div>
+    <div class="card">${attemptsHtml}</div>
+    <div class="section">Loop Journal</div>
+    <div class="card">${loopHtml}</div>
+    <div class="section">Recent Workflow Runs <span class="cnt">${runs.length}</span></div>
+    <div class="card">${runsHtml}</div>`;
+
+  // Wire mode / lanes selector buttons
+  v.querySelectorAll("[data-cdx-sel]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const field = btn.dataset.cdxSel;
+      const val = btn.dataset.cdxVal;
+      if (!window.confirm(`Set ${field} = "${val}"?`)) return;
+      btn.disabled = true;
+      const r = await post("/api/codex/mode", { [field]: val, confirm: true });
+      if (r.ok) {
+        toast(`Set ${field} = ${val}`);
+        RENDER.codex();
+      } else {
+        const errMsg = r.errors ? JSON.stringify(r.errors) : (r.error || "unknown error");
+        alert(`Failed: ${errMsg}`);
+        btn.disabled = false;
+      }
+    });
+  });
+
+  // Wire interval set button
+  const cdxIntervalBtn = $("#cdxIntervalSetBtn", v);
+  if (cdxIntervalBtn) {
+    cdxIntervalBtn.addEventListener("click", async () => {
+      const val = parseInt(($("#cdxIntervalInput", v) || {}).value || "6", 10);
+      if (!window.confirm(`Set interval_hours = ${val}?`)) return;
+      cdxIntervalBtn.disabled = true;
+      const r = await post("/api/codex/mode", { interval_hours: val, confirm: true });
+      if (r.ok) {
+        toast(`Set CODEX_INTERVAL_HOURS = ${val}`);
+        RENDER.codex();
+      } else {
+        const errMsg = r.errors ? JSON.stringify(r.errors) : (r.error || "unknown error");
+        alert(`Failed: ${errMsg}`);
+        cdxIntervalBtn.disabled = false;
+      }
+    });
+  }
+
+  // Wire run-now buttons
+  v.querySelectorAll("[data-cdx-run]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const lane = btn.dataset.cdxRun;
+      const iterEl = $("#cdxIterInput", v);
+      const iterations = iterEl ? parseInt(iterEl.value || "1", 10) : 1;
+      const label = lane.charAt(0).toUpperCase() + lane.slice(1);
+      if (!window.confirm(`Dispatch Codex Research — lane: ${lane}, iterations: ${iterations}?`)) return;
+      btn.disabled = true;
+      const r = await post("/api/codex/run", { lane, iterations, confirm: true });
+      if (r.ok) {
+        toast(`Dispatched Codex ${label} (${iterations} iteration${iterations === 1 ? "" : "s"})`);
+      } else {
+        alert(`Dispatch failed: ${r.error || "unknown error"}`);
+      }
+      btn.disabled = false;
+    });
+  });
 };
 
 /* ---- boot --------------------------------------------------------------- */

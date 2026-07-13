@@ -453,16 +453,25 @@ class TestRedlineRefNameOnly:
 
 def _make_dispatch_env(d: Path, present_keys: list[str] | None = None) -> dict:
     """Set up env so the given keys appear present, all others absent."""
+    # Zero out ALL pool slots so no ambient env var bleeds into the test.
     env = {
         "CLAUDE_CODE_OAUTH_TOKEN_1": "",
         "CLAUDE_CODE_OAUTH_TOKEN_2": "",
         "CLAUDE_CODE_OAUTH_TOKEN_3": "",
+        "CLAUDE_CODE_OAUTH_TOKEN_4": "",
+        "CLAUDE_CODE_OAUTH_TOKEN_5": "",
+        "CLAUDE_CODE_OAUTH_TOKEN_6": "",
+        "CLAUDE_CODE_OAUTH_TOKEN_7": "",
         "AUTONOMY_PAUSED": "false",  # armed for dispatch tests
     }
     all_caps = {
         "claude_code_oauth_1": "CLAUDE_CODE_OAUTH_TOKEN_1",
         "claude_code_oauth_2": "CLAUDE_CODE_OAUTH_TOKEN_2",
         "claude_code_oauth_3": "CLAUDE_CODE_OAUTH_TOKEN_3",
+        "claude_code_oauth_4": "CLAUDE_CODE_OAUTH_TOKEN_4",
+        "claude_code_oauth_5": "CLAUDE_CODE_OAUTH_TOKEN_5",
+        "claude_code_oauth_6": "CLAUDE_CODE_OAUTH_TOKEN_6",
+        "claude_code_oauth_7": "CLAUDE_CODE_OAUTH_TOKEN_7",
     }
     for cap_id, ref in all_caps.items():
         if present_keys and cap_id in present_keys:

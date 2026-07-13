@@ -110,6 +110,12 @@ IMMUTABLE_PATTERNS: list[str] = [
     # could disable the dispatch-time permission guard.
     ".claude/settings.json",
     ".claude/settings.local.json",
+    # CRX-R7 addition: Codex research lane operator policy.
+    # budget_pct, sandbox, max_sessions_per_window, and case_pr_mode are
+    # token-spend knobs that belong to the operator.  A loop-authored edit to
+    # this file could raise its own budget ceiling or auto-promote cases without
+    # human review.  Operator T2 action required for any change.
+    "config/codex_lane.yml",
 ]
 
 # ── Loop namespace markers ────────────────────────────────────────────────────

@@ -1,0 +1,38 @@
+# config/codex_lane.yml — Codex research lane operator policy (CRX-R7).
+#
+# OPERATOR-RATIFIED POLICY — IMMUTABLE.
+# Loop-authored PRs may NOT modify this file (CRX-R7).
+# Changes require a T2 operator action (admin panel or gh variable set).
+# Modification blocked by self-mod fence: scripts/check_self_mod_fence.py.
+#
+# Schema: codex_lane.operator_policy.v1
+schema: codex_lane.operator_policy.v1
+
+# Budget gate (CRX-R4): refuse new sessions when either 5h primary or weekly
+# secondary window's reported used_percent >= this threshold.
+# 85 leaves headroom for the in-flight session; operator may set 70..95.
+budget_pct: 85
+
+# Degraded-mode cap: max sessions per 5h window when Codex reports no usage data
+max_sessions_per_window: 10
+
+# Per-session timeout in minutes (also used for paused_until fallback window)
+session_timeout_min: 25
+
+# Case lane: how many new cases to attempt per run_once call (always 1 per spec)
+cases_per_run: 1
+
+# Signal lane: how many specs to request per brainstorm call
+signals_per_run: 5
+
+# Case PR mode: "draft" (operator must review+merge) or "ready"
+case_pr_mode: "draft"
+
+# Codex model string: empty = let CLI pick its default
+codex_model: ""
+
+# Sandbox mode passed to codex exec --sandbox
+sandbox: "workspace-write"
+
+# Network access inside sandbox (cases need external source URLs)
+network: true

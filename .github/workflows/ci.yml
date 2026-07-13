@@ -487,6 +487,20 @@ on:
       # IRD-W4 weather-station intl_risk card (builder lives in build_macro_context)
       - "scripts/build_macro_context.py"
       - "templates/macro_context.html.j2"
+      # CRX W1 — Codex Research Engine: runner/budget core + both lane scripts + loop driver
+      # + key-pool 7-key extension + admin panel + workflow wiring.  Any change to these
+      # surfaces re-proves the CRX contract tests before merging.
+      - "engine/codex_lane/**"
+      - "scripts/codex_case_lane.py"
+      - "scripts/codex_signal_lane.py"
+      - "scripts/codex_research_loop.py"
+      - "config/codex_lane.yml"
+      - "admin/codex_panel.py"
+      - "tests/test_key_pool_seven.py"
+      - "tests/test_codex_runner_budget.py"
+      - "tests/test_codex_lanes.py"
+      - "tests/test_admin_codex.py"
+      - ".github/workflows/codex-research.yml"
   workflow_dispatch:
 
 permissions:
@@ -1521,6 +1535,8 @@ jobs:
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: metabolism V10 admin throttle suite (admin routes + UI bindings)
         run: python -m pytest tests/test_admin_metabolism_throttle.py -q
+      - name: CRX Part A — key pool 7-key extension suite (pool grows to 7 OAuth keys)
+        run: python -m pytest tests/test_key_pool_seven.py -q
       - name: preflight claude CLI resolution suite (runner launchd-PATH fallback)
         run: python -m pytest tests/test_preflight_claude_resolve.py -q
       - name: metabolism gc+merge lifecycle suite (propose-branch deletion + reaper + audit max-age)
@@ -1800,3 +1816,33 @@ jobs:
         run: pip install pytest pandas numpy pyyaml pyarrow
       - name: RC-R14 China + HK rotation events test suite
         run: python -m pytest tests/test_rotation_events.py tests/test_rotation_events_china.py tests/test_rotation_events_hk.py -v
+
+  codex-research-engine:
+    # CRX W1 (CRX-R1..R8): Codex Research Engine — runner/budget core + both lanes.
+    # Three suites, one job:
+    #   test_codex_runner_budget.py  — runner binary resolution, run_codex subprocess
+    #                                  wrapper, event-stream parser, budget can_run()
+    #                                  gate (85% rule, paused_until, session cap),
+    #                                  note_result() usage-state update, NEVER-RAISE.
+    #   test_codex_lanes.py          — case lane (episode pick, audit, PR open, ledger
+    #                                  row) + signal lane (SF context pack, screen gates,
+    #                                  harness file, dedup); both run_once() functions;
+    #                                  codex_research_loop driver iterations.
+    #   test_admin_codex.py          — admin panel routes (/api/codex/panel, /mode, /run),
+    #                                  usage bars, recent-attempts list.
+    # Zero network calls; codex CLI is mocked in all test suites.
+    # scipy: signal lane imports engine.signal_foundry which imports scipy.stats.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml scipy
+      - name: CRX runner + budget contract tests (NEVER-RAISE, 85% gate, usage-state)
+        run: python -m pytest tests/test_codex_runner_budget.py -q
+      - name: CRX lanes + loop driver tests (case lane, signal lane, run_once, loop iterations)
+        run: python -m pytest tests/test_codex_lanes.py -q
+      - name: CRX admin panel tests (routes, usage bars, recent-attempts list)
+        run: python -m pytest tests/test_admin_codex.py -q

@@ -78,13 +78,19 @@ _USAGE_LEDGER_REL = "data/metabolism/key_usage.jsonl"
 _USAGE_SCHEMA = "metabolism.key_usage.v1"
 
 # The capability_ids this pool manages (in order).
-# Operator adds keys by setting CLAUDE_CODE_OAUTH_TOKEN_1/_2/_3 as GH secrets
+# Operator adds keys by setting CLAUDE_CODE_OAUTH_TOKEN_1.._7 as GH secrets
 # and adding rows to capability_manifest.yml.  The pool discovers which subset
-# is present by checking if the env ref exists.
+# is present by checking if the env ref exists.  Keys can be added one at a
+# time — absent secrets resolve to empty env = "not present", so presence-based
+# discovery handles partial sets with no code change required.
 POOL_CAPABILITY_IDS = [
     "claude_code_oauth_1",
     "claude_code_oauth_2",
     "claude_code_oauth_3",
+    "claude_code_oauth_4",
+    "claude_code_oauth_5",
+    "claude_code_oauth_6",
+    "claude_code_oauth_7",
 ]
 
 # 5-hour window in seconds
