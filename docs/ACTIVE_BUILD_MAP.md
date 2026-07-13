@@ -2,343 +2,107 @@
 
 # Active Build Map
 
-Generated: 2026-07-12T13:05:49.516200+00:00  |  Open PRs: 40  |  Merged (window): 500  |  base: `fdd13960a46972515083fabce3129223f93bcca5`
+Generated: 2026-07-13T08:03:27.261900+00:00  |  Open PRs: 2  |  Merged (window): 500  |  base: `585300edf444ecd6ad44227de7aaf6d1677fa3af`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #2436 | fix(til): W11 two-writer coexistence — keep-last-real law + launchd commit/push tail | `claude/elated-elbakyan-58d86b` | 2026-07-12 | ⚠ protected:3 |
-| #2435 | fix(registry): regen compiled kill registry — unbreak capability-broker (drift from #2388 + #2396) | `claude/fix-blocklist-drift` | 2026-07-12 | — |
-| #2434 | ci(read-gate): heal synapse-read-gate — numpy/pandas missing for test_delivery_waterfall | `claude/heal-readgate-numpy` | 2026-07-12 | ⚠ protected:1 |
-| #2433 | feat(til-w8): wire census trade-flow collect-lane steps + request-cap hardening — close the last deferred TIL dead-wire | `claude/heuristic-poincare-ae27f6` | 2026-07-12 | ⚠ protected:3 |
-| #2432 | feat(long-hold): LHB-W2a — quarterly EDGAR working-capital tags + forced backfill (LHB-R6) | `claude/lhb-w2a-quarterly-tags` | 2026-07-12 | ⚠ protected:1 |
-| #2431 | feat(long-hold): LHB-W2c — prospective symbol-directory archival collector (LHB-R8) | `claude/lhb-w2c-symbol-directory` | 2026-07-12 | ⚠ protected:3 |
-| #2430 | research(long-hold): Falsifier Field Book as-received + adjudication (FFB-R1..R9) | `claude/lhb-field-book` | 2026-07-12 | — |
-| #2429 | feat(adb-w4): four new panels on aibrief page (context strip, What's ahead, brief's record, cortex deliberation) | `claude/adb-w4-page` | 2026-07-12 | DRAFT / ⚠ protected:1 |
-| #2428 | feat(adb-w1): NW context packet composer + master_brain wiring | `claude/adb-w1-context-packet` | 2026-07-12 | DRAFT / ⚠ protected:3 |
-| #2427 | feat(cortex): ADB-W3 — cortex two-way read tools (read_master_brain_theses + read_master_brain_brief) | `claude/adb-w3-cortex-twoway` | 2026-07-12 | DRAFT / ⚠ protected:3 |
-| #2426 | feat(standout-review): SA-W4 — improvement lanes (clamped shadow-apply engine + Tier-0 replay + lab come-back alerts) | `claude/sa-w4-improvement` | 2026-07-12 | ⚠ protected:2 |
-| #2425 | docs(adb): AI Daily Brief Deep-Wire masterplan — wire Neural Web + Cortex + deterministic forward stack into the AI brief (ADB-R1..R16) | `claude/stoic-northcutt-8d3bd4` | 2026-07-12 | — |
-| #2424 | feat(long-hold): LHB-W2b — 8-K item-code expansion + PIT-preserving union merge (LHB-R7) | `claude/lhb-w2b-8k-items` | 2026-07-12 | ⚠ protected:1 |
-| #2421 | feat(standout-audit): SA-W1 — US attribution organ + off-render lane + standout fitness card | `claude/sa-w1-us-audit` | 2026-07-12 | ⚠ protected:5 |
-| #2420 | feat(ftr-hk): extend the basket pulse to HK baskets — per-market session detection + HKEX fastpath window (GAP-3) | `claude/elegant-hoover-079c12` | 2026-07-12 | ⚠ protected:2 |
-| #2419 | feat(standout-audit): SA-W2 — CN foundations + attribution (PIT regime store, species_id, two-axis audit, fitness card) | `claude/sa-w2-cn-audit` | 2026-07-12 | ⚠ protected:3 |
-| #2416 | fix(blocklist): regenerate compiled kill-registry — heal main-carried drift | `claude/heal-main-reds` | 2026-07-12 | ⚠ protected:1 |
-| #2415 | feat(allocation-hk): IHM 'Index turn' row in the Leaders-moving-first popover [SIGN-OFF PENDING, stacked on #2392] | `claude/alloc-hk-ihm-turn-row` | 2026-07-12 | DRAFT |
-| #2412 | feat(allocation): fast-tape 'Past 2 weeks' column on the Narrative Lifecycle Board (r10, display-tier) [MOCKUP — awaiting operator ratification] | `claude/nlb-fast-tape` | 2026-07-12 | DRAFT |
-| #2409 | guard(inline-js): on*= handler attributes + smart-quote contamination scan (+ fix broken china_stocks rip-toggle onclick) | `claude/focused-burnell-ec8483` | 2026-07-12 | ⚠ protected:2 |
-| #2397 | feat(altdata): per-channel claim families with pre-registered horizon rulers, episode emission, placebo tape (ALTDATA_REBOOT W2) | `claude/altdata-ledger-redesign` | 2026-07-12 | ⚠ CONFLICTING / ⚠ protected:2 |
-| #2392 | feat(allocation-hk): 'Leaders moving first' turn banner on allocation page [RATIFICATION PENDING] | `claude/alloc-hk-turn-banner` | 2026-07-12 | DRAFT / ⚠ CONFLICTING |
-| #2389 | feat(ird): International Risk Desk W2-W4 — engines + intl.html risk desk + weather card | `claude/ird-w2-engines` | 2026-07-12 | ⚠ protected:4 |
-| #2386 | feat(rotation): RC-R14 China — rotation-event detector port + connect-flow context (display-tier, operator pull-forward) | `claude/rc-cn-rotation` | 2026-07-12 | ⚠ protected:4 |
-| #2383 | feat(metabolism): v7 R-V7-7 — audit-reject remediation loop, bounded then parked | `claude/metabolism-audit-remediation` | 2026-07-12 | ⚠ protected:4 |
-| #2381 | feat(nw): rotation-events world_state lobe + synapse registration for the rotation family (RC deep-integration) | `claude/rc-nw-wiring` | 2026-07-12 | ⚠ protected:3 |
-| #2380 | fix(allocation): region-aware playbook links + basket-name map (HK/CN/CA 404s) | `claude/alloc-region-links-fix` | 2026-07-12 | — |
-| #2379 | fix(nw-health): weekend-aware SLA, as_of rollup unpinning, staleness_from override, placeholder rollup | `fix/nw-health-staleness-semantics` | 2026-07-12 | ⚠ protected:3 |
-| #2377 | feat(metabolism): v7 PR audit — adversarial code review gate before autonomous merge (R-V7-1..6) | `claude/metabolism-pr-audit` | 2026-07-12 | ⚠ protected:4 |
-| #2373 | fix(altdata): collector rot + signal-construction hygiene sweep (dead feeds, pagination, smart-money list, z-score floors, windows) | `claude/altdata-signal-hygiene` | 2026-07-12 | ⚠ protected:1 |
-| #2372 | fix(altdata-brain): enforce LLM de-escalation-only law + correct false Wilson de-dup comments | `claude/altdata-brain-govern` | 2026-07-12 | ⚠ protected:1 |
-| #2368 | feat(macro): v5 aurora-glass grid — command scorecard + popovers, instrument cards, alerts centre (operator-ratified) | `claude/macro-v5-wiring` | 2026-07-12 | — |
-| #2365 | fix(nw): unfreeze dt_contra_state + nasdaq-internals lobes (frozen since 07-06/07-07) | `fix/nw-unfreeze-dtcontra-nasdaq` | 2026-07-12 | ⚠ protected:1 |
-| #2317 | feat(bilingual): china synthesis read/read_zh — de-slug the feed-intelligence read line at the source | `claude/eloquent-goldberg-55b461` | 2026-07-12 | ⚠ CONFLICTING / ⚠ protected:1 |
-| #2129 | prereg(w8b) [DO NOT MERGE — OPERATOR RATIFICATION REQUIRED (FT-R7)]: macro-prior entries for AI-capex complex baskets | `claude/turn-sense-w8b` | 2026-07-10 | DRAFT |
-| #2098 | research(entry-stack): S-SQ def-4 variant pre-registration (DT-R22) — DRAFT, execution gated on Fable §APPROVAL | `claude/sharp-almeida-8d4349` | 2026-07-10 | — |
-| #1888 | test(mri): claims synthetic vintages to raw ALFRED persons scale (~200k) | `claude/nfp-claims-unit-fix` | 2026-07-07 | DRAFT |
-| #1875 | research(oracle): RC-RUL-5 item 5 — base-10 time-shift placebo sweep [DO NOT MERGE — adjudication pending] | `claude/base10-tc-sweep` | 2026-07-12 | DRAFT |
-| #1780 | chore(policy): scheduled intel refresh 2026-07-06 | `policy-intel-refresh-20260706` | 2026-07-12 | DRAFT |
-| #1639 | research(ontology): W4.7 — pos_v2 acceptance study [HOLD: peak gate IQR 48.8 > 25] | `wave/w4-7-axis-flip` | 2026-07-06 | — |
+| #2495 | fix(ci): declare scripts.build_flow_signals in dag.yml (heal #2493 dag-conformance drift) | `claude/eager-cerf-09cddd` | 2026-07-13 | ⚠ protected:1 |
+| #2487 | feat(etfs): full-sweep ETF-holdings radar — +10 sponsors (~48 funds incl. WGMI), cross-fund consensus, sparklines, coverage panel | `feat/etfs-fullsweep-20260712` | 2026-07-13 | — |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
 
 ## File Collisions
 
-| PR A | PR B | Shared files | Files |
-|------|------|-------------|-------|
-| #2383 | #2377 | 13 ⚠ | `.github/workflows/ci.yml`, `.github/workflows/metabolism-audit.yml`, `config/capability_manifest.yml`, `config/metabolism_budget.yml`, `docs/METABOLISM_ARMING_CHECKLIST.md`, `engine/metabolism/audit.py`, `engine/neuralweb/governance.py`, `research/METABOLISM_V7_PR_AUDIT_BY_FABLE.md` +5 more |
-| #2431 | #2421 | 4 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml`, `docs/SIGNAL_BUS.md`, `tests/test_signal_bus_doc.py` |
-| #2431 | #2389 | 4 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml`, `docs/SIGNAL_BUS.md`, `tests/test_signal_bus_doc.py` |
-| #2421 | #2389 | 4 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml`, `docs/SIGNAL_BUS.md`, `tests/test_signal_bus_doc.py` |
-| #2389 | #2381 | 4 ⚠ | `config/synapse.yml`, `docs/SIGNAL_BUS.md`, `engine/neuralweb/world_state.py`, `tests/test_signal_bus_doc.py` |
-| #2436 | #2433 | 3 ⚠ | `.github/workflows/daily.yml`, `config/dag.yml`, `config/synapse.yml` |
-| #2436 | #2421 | 3 ⚠ | `.github/workflows/daily.yml`, `config/dag.yml`, `config/synapse.yml` |
-| #2433 | #2421 | 3 ⚠ | `.github/workflows/daily.yml`, `config/dag.yml`, `config/synapse.yml` |
-| #2431 | #2381 | 3 ⚠ | `config/synapse.yml`, `docs/SIGNAL_BUS.md`, `tests/test_signal_bus_doc.py` |
-| #2421 | #2419 | 3 ⚠ | `.github/workflows/ci.yml`, `config/dag.yml`, `config/synapse.yml` |
-| #2421 | #2386 | 3 ⚠ | `.github/workflows/ci.yml`, `config/dag.yml`, `config/synapse.yml` |
-| #2421 | #2381 | 3 ⚠ | `config/synapse.yml`, `docs/SIGNAL_BUS.md`, `tests/test_signal_bus_doc.py` |
-| #2419 | #2386 | 3 ⚠ | `.github/workflows/ci.yml`, `config/dag.yml`, `config/synapse.yml` |
-| #2436 | #2419 | 2 ⚠ | `config/dag.yml`, `config/synapse.yml` |
-| #2436 | #2386 | 2 ⚠ | `config/dag.yml`, `config/synapse.yml` |
-| #2435 | #2416 | 2 | `config/compiled_kill_registry.yml`, `config/signal_foundry_blocklist.yml` |
-| #2433 | #2419 | 2 ⚠ | `config/dag.yml`, `config/synapse.yml` |
-| #2433 | #2386 | 2 ⚠ | `config/dag.yml`, `config/synapse.yml` |
-| #2431 | #2428 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2431 | #2427 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2431 | #2419 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2431 | #2386 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2431 | #2379 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2428 | #2427 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2428 | #2421 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2428 | #2419 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2428 | #2389 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2428 | #2386 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2428 | #2379 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2427 | #2421 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2427 | #2419 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2427 | #2389 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2427 | #2386 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2427 | #2379 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2424 | #2373 | 2 ⚠ | `.github/workflows/ci.yml`, `engine/altdata.py` |
-| #2421 | #2397 | 2 ⚠ | `.github/workflows/ci.yml`, `.github/workflows/daily.yml` |
-| #2421 | #2379 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2419 | #2389 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2419 | #2379 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2415 | #2392 | 2 | `scripts/build_allocation.py`, `templates/allocation.html.j2` |
-| #2389 | #2386 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2389 | #2379 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2386 | #2379 | 2 ⚠ | `.github/workflows/ci.yml`, `config/synapse.yml` |
-| #2436 | #2431 | 1 ⚠ | `config/synapse.yml` |
-| #2436 | #2428 | 1 ⚠ | `config/synapse.yml` |
-| #2436 | #2427 | 1 ⚠ | `config/synapse.yml` |
-| #2436 | #2397 | 1 ⚠ | `.github/workflows/daily.yml` |
-| #2436 | #2389 | 1 ⚠ | `config/synapse.yml` |
-| #2436 | #2381 | 1 ⚠ | `config/synapse.yml` |
-| #2436 | #2379 | 1 ⚠ | `config/synapse.yml` |
-| #2434 | #2432 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2431 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2429 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2428 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2427 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2426 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2424 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2421 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2419 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2416 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2409 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2397 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2389 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2386 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2379 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2434 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2433 | #2431 | 1 ⚠ | `config/synapse.yml` |
-| #2433 | #2428 | 1 ⚠ | `config/synapse.yml` |
-| #2433 | #2427 | 1 ⚠ | `config/synapse.yml` |
-| #2433 | #2397 | 1 ⚠ | `.github/workflows/daily.yml` |
-| #2433 | #2389 | 1 ⚠ | `config/synapse.yml` |
-| #2433 | #2381 | 1 ⚠ | `config/synapse.yml` |
-| #2433 | #2379 | 1 ⚠ | `config/synapse.yml` |
-| #2432 | #2431 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2429 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2428 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2427 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2426 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2424 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2421 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2419 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2416 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2409 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2397 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2389 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2386 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2379 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2432 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2431 | #2429 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2431 | #2426 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2431 | #2424 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2431 | #2416 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2431 | #2409 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2431 | #2397 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2431 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2431 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2431 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2431 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2431 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2431 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2428 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2427 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2426 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2424 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2421 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2419 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2416 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2409 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2397 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2389 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2386 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2379 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2429 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2428 | #2426 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2428 | #2424 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2428 | #2416 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2428 | #2409 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2428 | #2397 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2428 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2428 | #2381 | 1 ⚠ | `config/synapse.yml` |
-| #2428 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2428 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2428 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2428 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2428 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2427 | #2426 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2427 | #2424 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2427 | #2416 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2427 | #2409 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2427 | #2397 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2427 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2427 | #2381 | 1 ⚠ | `config/synapse.yml` |
-| #2427 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2427 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2427 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2427 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2427 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2424 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2421 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2419 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2416 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2409 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2397 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2389 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2386 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2379 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2426 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2421 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2419 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2416 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2409 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2397 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2389 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2386 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2379 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2424 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2421 | #2416 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2421 | #2409 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2421 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2421 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2421 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2421 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2421 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2421 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2420 | #2415 | 1 | `templates/allocation.html.j2` |
-| #2420 | #2412 | 1 | `templates/allocation.html.j2` |
-| #2420 | #2392 | 1 | `templates/allocation.html.j2` |
-| #2420 | #2380 | 1 | `templates/allocation.html.j2` |
-| #2419 | #2416 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2419 | #2409 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2419 | #2397 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2419 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2419 | #2381 | 1 ⚠ | `config/synapse.yml` |
-| #2419 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2419 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2419 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2419 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2419 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2416 | #2409 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2416 | #2397 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2416 | #2389 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2416 | #2386 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2416 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2416 | #2379 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2416 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2416 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2416 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2416 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2416 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2415 | #2412 | 1 | `templates/allocation.html.j2` |
-| #2415 | #2380 | 1 | `templates/allocation.html.j2` |
-| #2412 | #2392 | 1 | `templates/allocation.html.j2` |
-| #2412 | #2380 | 1 | `templates/allocation.html.j2` |
-| #2409 | #2397 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2409 | #2389 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2409 | #2386 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2409 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2409 | #2379 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2409 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2409 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2409 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2409 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2409 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2397 | #2389 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2397 | #2386 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2397 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2397 | #2379 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2397 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2397 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2397 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2397 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2397 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2392 | #2380 | 1 | `templates/allocation.html.j2` |
-| #2389 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2389 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2389 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2389 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2389 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2389 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2386 | #2383 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2386 | #2381 | 1 ⚠ | `config/synapse.yml` |
-| #2386 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2386 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2386 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2386 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2386 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2383 | #2379 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2383 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2383 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2383 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2383 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2381 | #2379 | 1 ⚠ | `config/synapse.yml` |
-| #2379 | #2377 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2379 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2379 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2379 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2379 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2377 | #2373 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2377 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2377 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2377 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2373 | #2372 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2373 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2373 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2372 | #2365 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2372 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #2365 | #2317 | 1 ⚠ | `.github/workflows/ci.yml` |
+_No file collisions detected among open PRs._
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #2496 | fix(pick-lab): un-stick the US Pick Lab lane — §7 pit schema, non-destructive quarantine, regime-key render crash | 2026-07-13 |
+| #2494 | fix(macro): un-warp the session-path chart Y-axis + labels | 2026-07-13 |
+| #2493 | feat(flow-ml): FS-0 flow-event ledger + outcome grader (+FS-0b detector v1 freeze) | 2026-07-13 |
+| #2492 | fix(hk/canada/intl): LIMITED records for recent listings — port the China #2484 dead-end fix to the three sibling markets | 2026-07-13 |
+| #2491 | Research: S&P 500 and Nasdaq regime-rotation atlas, 2013-2026 | 2026-07-13 |
+| #2490 | fix(lookup): port calibration null-disclosure note to HK/US/Intl/Canada analyzers | 2026-07-13 |
+| #2489 | research(flow-ml): Flow Signal ML masterplan — outcome-labeled options-flow scoring | 2026-07-13 |
+| #2488 | fix(weekly): un-kill the weekly lane — 300m cap, dead-lane heartbeat tripwire, W0b calibration carve-out | 2026-07-13 |
+| #2486 | feat(metabolism): v10 operator throttle & key economy — intensity, pace, run-now, key toggles, usage tracking | 2026-07-13 |
+| #2485 | fix(security): enable Jinja autoescape in build_site.py (stored-XSS defense-in-depth) | 2026-07-13 |
+| #2484 | fix(china): LIMITED records for recent listings — kill the 46-tile heatmap dead end | 2026-07-13 |
+| #2483 | fix(china): seed ladder calibration so the A-share trust-the-state table ships + null-disclosure fallback | 2026-07-13 |
+| #2482 | fix(metabolism): BUILD/MERGE fan out over ALL dockets riding a propose branch (R-V6-5 per-lobe dead wire) | 2026-07-13 |
+| #2481 | fix(metabolism): ADJUDICATE rules on ALL dockets riding a propose branch (R-V6-5 per-lobe dead wire) | 2026-07-13 |
+| #2480 | test(metabolism): sync 3 cooling tests to #2469 F4 window-clear semantics | 2026-07-13 |
+| #2479 | fix(macro): calm market tiles — inner-surface token (glass-on-glass was compounding to ~19% white) | 2026-07-13 |
+| #2478 | fix(llm): remove temperature param — rejected (400) on opus-4.7+ across the fleet | 2026-07-13 |
+| #2477 | feat(macro): v5.3 — legit path chart, 30:70 hero, frosted animated dialogs, unified hover + 9 audit fixes (opus/max round) | 2026-07-13 |
+| #2476 | fix(metabolism): CLI-absence is non-fatal for SDK-channel preflight (PROPOSE/ADJUDICATE) | 2026-07-13 |
+| #2474 | fix(metabolism): resolve claude CLI from install dirs — runner launchd PATH omits ~/.local/bin | 2026-07-13 |
+| #2473 | fix(metabolism): v9 stage-local attention heal — downstream stages rebuild structural allocation | 2026-07-13 |
+| #2472 | feat(stocktable): v3 filter UI — custom SaaS-grade dropdowns/search/chooser across US/CN/HK/CA table views; remove QVIX banner | 2026-07-13 |
+| #2471 | fix(china-heatmap): breadth follows selected TF, real caps for sentinel names, mobile verdict-grid clip, bilingual live badge | 2026-07-13 |
+| #2470 | fix(metabolism-memory): steering-memory integrity — dry-run purity, append idempotency, bus compaction, card unification | 2026-07-13 |
+| #2469 | fix(auditor+races): CN audit_due schema fix, cursor round-trip, trial-ledger race, key-cooling window | 2026-07-13 |
+| #2468 | fix(metabolism-ops): commit-once-retry-push idiom for immune+audit lanes; propose-* branch deletion + reaper | 2026-07-13 |
+| #2467 | fix(fences): loop can no longer edit its own standout clamps/ruler; .claude/settings.json actually fenced | 2026-07-13 |
+| #2466 | fix(macro): v5.2 polish — all left accents stripped, rack un-boxed, footer brand fixed (operator-ordered) | 2026-07-13 |
+| #2465 | feat(metabolism): v9 attention economy — orchestrator-directed lobe prioritization under scarce tokens | 2026-07-13 |
+| #2464 | ruling(oracle): RC-RUL-6 — base-10 time-shift sweep adjudication (resolves RC-RUL-5 item 5) | 2026-07-13 |
+| #2463 | feat(admin): Metabolism change-history feed — unified log of autonomous-loop actions | 2026-07-13 |
+| #2462 | fix(ci): heal nav-gap (commodities) + title-i18n (smart_money) — both red on main | 2026-07-13 |
+| #2461 | feat(macro): v5.1 — popup dashboards everywhere; accents + Grid/Ledger toggle retired (operator-ordered) | 2026-07-13 |
+| #2460 | ci(heal): add requests to capability-broker deps — reflex tests dead at import since #2442 | 2026-07-13 |
+| #2459 | fix(til): W11 launchd commit tail — push via $HOME sparse repo (TCC) | 2026-07-13 |
+| #2458 | ci(blocklist): fix the drift class — auto-regen hook + 3-channel drift check + --fix heal | 2026-07-13 |
+| #2457 | feat(smart-money): v3 signal desk — insider intel, fund dossiers, consensus flow, conviction models | 2026-07-13 |
+| #2456 | feat(commodities): complete UI revamp — sector-first, anticipatory, doctrine-compliant (P4) | 2026-07-13 |
+| #2455 | fix(ci): add pyarrow to capability-broker deps — SA-W3 parquet reads red on every PR | 2026-07-12 |
+| #2454 | docs(standout-accountability): SA-W6 — verification evidence + follow-up docket | 2026-07-12 |
+| #2452 | feat(standout-surfaces): SA-W5 — lab Accountability sections, v2 grader hook, calibration-hub ingestion, committee card | 2026-07-12 |
+| #2451 | feat(metabolism): SA-W3 — standout-lobe metabolism wiring (auditor organ + charters + synapse) | 2026-07-12 |
+| #2450 | feat(adb-w2): forward-calendar state block + forward_watch/forward_read output (ADB-W2) | 2026-07-12 |
+| #2449 | fix(ci): ird job plotly dep — heal latent red for IRD-path PRs | 2026-07-12 |
+| #2448 | feat(long-hold): LHB-W3 lane 3 — A1 falsifier packet + A6 hard-stop bus on admin Long-Hold page | 2026-07-12 |
+| #2447 | feat(long-hold): LHB-W3 lane 1 — A2 pricing-power pilot (gross-margin leg, peer-gated, review-opener only) | 2026-07-12 |
+| #2446 | feat(long-hold): LHB-W3 lane 2 — winner-autopsy B1/B2/B4 feature columns (schema v2) | 2026-07-12 |
+| #2445 | feat(rotation): RC-R14 HK — rotation-event detector port + southbound context on HK cycle section (display-tier) | 2026-07-12 |
+| #2444 | fix(dag): declare backfill_qledger_us in the collect lane — heal main-carried dag-conformance red (#2397 drift) | 2026-07-12 |
+| #2443 | feat(immune): V8-A immune system — CI-red sentinel, lane-health sensors, claim dedup | 2026-07-12 |
+| #2442 | feat(metabolism): reflex arcs — revert plans, falsifier bridge, tap escalation, construction parking (R-V8-6..R-V8-9) | 2026-07-12 |
+| #2441 | feat(metabolism): v8C meta-learning spine — durable outcome-prior ledger + de-rank + recall parity | 2026-07-12 |
+| #2440 | feat(whitehouse): Treasury Watch — market-critical TGA cash-flow detector | 2026-07-12 |
+| #2439 | fix(metabolism): v7 audit gate security hardening — restore the 6 adversarial-review fixes lost in the #2383 stack merge | 2026-07-12 |
+| #2438 | fix(nw-health): cortex degradation floors headline at warn — OAuth-by-design ruling (2026-07-12) | 2026-07-12 |
+| #2437 | feat(commodities): cycle.html <-> commodity deep bridge (P3, data-tier) | 2026-07-12 |
+| #2436 | fix(til): W11 two-writer coexistence — keep-last-real law + launchd commit/push tail | 2026-07-12 |
+| #2435 | fix(registry): regen compiled kill registry — unbreak capability-broker (drift from #2388 + #2396) | 2026-07-12 |
+| #2433 | feat(til-w8): wire census trade-flow collect-lane steps + request-cap hardening — close the last deferred TIL dead-wire | 2026-07-12 |
+| #2432 | feat(long-hold): LHB-W2a — quarterly EDGAR working-capital tags + forced backfill (LHB-R6) | 2026-07-12 |
+| #2431 | feat(long-hold): LHB-W2c — prospective symbol-directory archival collector (LHB-R8) | 2026-07-12 |
+| #2430 | research(long-hold): Falsifier Field Book as-received + adjudication (FFB-R1..R9) | 2026-07-12 |
+| #2429 | feat(adb-w4): four new panels on aibrief page (context strip, What's ahead, brief's record, cortex deliberation) | 2026-07-12 |
+| #2428 | feat(adb-w1): NW context packet composer + master_brain wiring | 2026-07-12 |
+| #2427 | feat(cortex): ADB-W3 — cortex two-way read tools (read_master_brain_theses + read_master_brain_brief) | 2026-07-12 |
+| #2426 | feat(standout-review): SA-W4 — improvement lanes (clamped shadow-apply engine + Tier-0 replay + lab come-back alerts) | 2026-07-12 |
+| #2425 | docs(adb): AI Daily Brief Deep-Wire masterplan — wire Neural Web + Cortex + deterministic forward stack into the AI brief (ADB-R1..R16) | 2026-07-12 |
+| #2424 | feat(long-hold): LHB-W2b — 8-K item-code expansion + PIT-preserving union merge (LHB-R7) | 2026-07-12 |
 | #2423 | fix(baskets): unblock china/canada seeder regen — encode reconciler prunes + mirror live copy | 2026-07-12 |
 | #2422 | fix(seeders): intl + us_sector seeders bootstrap-only — refuse overwrite without --force | 2026-07-12 |
+| #2421 | feat(standout-audit): SA-W1 — US attribution organ + off-render lane + standout fitness card | 2026-07-12 |
+| #2420 | feat(ftr-hk): extend the basket pulse to HK baskets — per-market session detection + HKEX fastpath window (GAP-3) | 2026-07-12 |
+| #2419 | feat(standout-audit): SA-W2 — CN foundations + attribution (PIT regime store, species_id, two-axis audit, fitness card) | 2026-07-12 |
 | #2418 | feat(hkrv): two-tier leadership banner — breadth-confirmed upgrade + R3 cohort honest framing | 2026-07-12 |
 | #2417 | test(winners): library-wide winner_case.v1 parse gate + CI wiring; CRWD sourcing fix | 2026-07-12 |
+| #2415 | feat(allocation-hk): IHM 'Index turn' row in the Leaders-moving-first popover (audit GAP-2) | 2026-07-12 |
 | #2414 | research(long-hold): add falsifier field book | 2026-07-12 |
 | #2413 | feat(long-hold): LHB-W1 A3 Fundamental Delivery Waterfall — refusal-first run decomposition + admin receipt | 2026-07-12 |
+| #2412 | feat(allocation): fast-tape 'Past 2 weeks' column on the Narrative Lifecycle Board (r10, display-tier) [MOCKUP — awaiting operator ratification] | 2026-07-12 |
 | #2411 | chore(registry): regen compiled kill registry — heal capability-broker drift (LHB-R5 row) | 2026-07-12 |
 | #2410 | docs(standout-accountability): W0 masterplan — rolling track-record audits + self-improvement for the standout boards (SA-R1..R16) | 2026-07-12 |
+| #2409 | guard(inline-js): on*= handler attributes + smart-quote contamination scan (+ fix broken china_stocks rip-toggle onclick) | 2026-07-12 |
 | #2408 | fix(seeders): backport simplified basket copy into HK/intl/us_sector seeders — regen no longer clobbers live membership | 2026-07-12 |
 | #2407 | docs(deploy): fix stale deploy-model comment in terminal-data-setup.sh | 2026-07-12 |
 | #2406 | fix(til): hard_exit guard on W8 parquet-touching one-shot entrypoints | 2026-07-12 |
@@ -348,23 +112,35 @@ Generated: 2026-07-12T13:05:49.516200+00:00  |  Open PRs: 40  |  Merged (window)
 | #2401 | fix(til): hard_exit guard on W9-W11 parquet-touching one-shot entrypoints | 2026-07-12 |
 | #2399 | feat(rotation): Rotation Command W3 — sector_cycles chips (RC-R3), behaves-as (RC-R7), washout counter-read (RC-R11) | 2026-07-12 |
 | #2398 | data(til-w10): arm neuralweb-theme-clinical — first ClinicalTrials.gov collect + committed artifacts | 2026-07-12 |
+| #2397 | feat(altdata): per-channel claim families with pre-registered horizon rulers, episode emission, placebo tape (ALTDATA_REBOOT W2) | 2026-07-12 |
 | #2396 | research(species): S10 phase-0 adjudication — K1 NO-GO ratified, construction-scoped falsification landed | 2026-07-12 |
 | #2395 | fix(nw): declare research-queue lobe honestly — park never-scheduled SLA at 9999 | 2026-07-12 |
 | #2393 | feat(alerts): Alert Command Center v2 — persistence-aware modeling + user-first reskin | 2026-07-12 |
+| #2392 | feat(allocation-hk): 'Leaders moving first' turn banner on allocation page | 2026-07-12 |
 | #2391 | feat(intraday-flow): v2 stance-first desk — dealer-gamma port + fixed live flow + plain-word calls | 2026-07-12 |
+| #2389 | feat(ird): International Risk Desk W2-W4 — engines + intl.html risk desk + weather card | 2026-07-12 |
 | #2388 | research(long-hold): Long-Hold Lobe brainstorm — paper as-received + adjudication (LHB-R1..R11) | 2026-07-12 |
 | #2387 | fix(til): wire W9/W10/W11 collect-lane organs — close 3 dead-wire dag divergences | 2026-07-12 |
+| #2386 | feat(rotation): RC-R14 China — rotation-event detector port + connect-flow context (display-tier, operator pull-forward) | 2026-07-12 |
 | #2384 | feat(hk-baskets): factor-split lenses — platforms / tech hardware / miners [RATIFICATION PENDING] | 2026-07-12 |
+| #2383 | feat(metabolism): v7 R-V7-7 — audit-reject remediation loop, bounded then parked | 2026-07-12 |
 | #2382 | fix(nw): declare dormant-armed lobes honestly — park review-log + contradictions-ledger SLAs at 9999 | 2026-07-12 |
+| #2381 | feat(nw): rotation-events world_state lobe + synapse registration for the rotation family (RC deep-integration) | 2026-07-12 |
+| #2380 | fix(allocation): region-aware playbook links + basket-name map (HK/CN/CA 404s) | 2026-07-12 |
+| #2379 | fix(nw-health): weekend-aware SLA, as_of rollup unpinning, staleness_from override, placeholder rollup | 2026-07-12 |
 | #2378 | fix(deploy): terminal-data-setup installs wrapper from vendored terminal-refresh.sh (stop heredoc clobber of live nightly refresh) | 2026-07-12 |
 | #2376 | feat(rlt): RLT-R13 — liquidity quality-state truthfulness: v1.1 lobe mapping, flag-accurate summaries, weekly-aware WALCL stale badge | 2026-07-12 |
 | #2375 | fix(rotation): collapse the Rotation Events rail — severity-sorted, 4 visible + View-all overlay | 2026-07-12 |
 | #2374 | research(species): land stranded W5 S10 phase-0 pre-registration (Margin-Inflection Reclaim) | 2026-07-12 |
+| #2373 | fix(altdata): collector rot + signal-construction hygiene sweep (dead feeds, pagination, smart-money list, z-score floors, windows) | 2026-07-12 |
+| #2372 | fix(altdata-brain): enforce LLM de-escalation-only law + correct false Wilson de-dup comments | 2026-07-12 |
 | #2371 | feat(altdata): earnings-call transcript + StockTwits sentiment collectors (data accrual, display wiring deferred) | 2026-07-12 |
 | #2370 | feat(ui): flow_velocity upgrade — Terminal stock links, quiet anchors, glance pulse strip | 2026-07-12 |
 | #2369 | fix(qledger): cluster-honest Wilson CI — compute LB on independent date clusters, not correlated obs | 2026-07-12 |
+| #2368 | feat(macro): v5 aurora-glass grid — command scorecard + popovers, instrument cards, alerts centre (operator-ratified) | 2026-07-12 |
 | #2367 | feat(tech-lab): combo miner — multi-signal cross-timeframe backtests, Combos tab, working builder | 2026-07-12 |
 | #2366 | feat(cortex): try metered CORTEX_ANTHROPIC_API_KEY rung before shared OAuth when present | 2026-07-12 |
+| #2365 | fix(nw): unfreeze dt_contra_state + nasdaq-internals lobes (frozen since 07-06/07-07) | 2026-07-12 |
 | #2364 | feat(causal): W28 operator cycle — entry_quality family live, CHF-R5 per-date collapse, pack renderer fixes + battery/brainstorm artifacts | 2026-07-12 |
 | #2363 | feat(rlt): W1 PR-B — named TGA impulse + liquidity salience on recovery panel (RLT-R4/R5) | 2026-07-12 |
 | #2362 | feat(rlt): W1 PR-A — US rebalance calendar + Rebalance Pulse organ (RLT-R1/R2) | 2026-07-12 |
@@ -411,6 +187,7 @@ Generated: 2026-07-12T13:05:49.516200+00:00  |  Open PRs: 40  |  Merged (window)
 | #2320 | feat(integrity): RC-R2 append-only marker law — renders can no longer rewrite their own history | 2026-07-12 |
 | #2319 | feat(rotation): Rotation Command W1 — rotation-event detector + sector-fragmentation board (RC-R1/R6) | 2026-07-12 |
 | #2318 | docs(macro-v5): aurora-glass hybrid ruling — 5-theme competition artifacts + binding v5_final mockup | 2026-07-12 |
+| #2317 | feat(bilingual): china synthesis read/read_zh — de-slug the feed-intelligence read line at the source | 2026-07-12 |
 | #2316 | fix(china): log.exception in build_china swallow-all — unmask the render crash freezing china pages | 2026-07-12 |
 | #2315 | feat(bilingual): de-slug channel chips at the source — top_channels ship label_en/label_zh | 2026-07-12 |
 | #2314 | fix(collectors): unfreeze finra_ats_transparency (2.5y stale) + china_credit (100d stale) | 2026-07-12 |
@@ -590,6 +367,7 @@ Generated: 2026-07-12T13:05:49.516200+00:00  |  Open PRs: 40  |  Merged (window)
 | #2132 | feat(mri): W11-D Track R — NFP revision-direction model + multi-vintage collector (prereg+backtest) | 2026-07-10 |
 | #2131 | feat(ts-u7): additive trend-state display fields on mtf_upturn.v1 | 2026-07-10 |
 | #2130 | ops(earlyclose): publish stockdata to R2 after the provisional render (TSU U9) | 2026-07-10 |
+| #2129 | prereg(w8b): macro-prior entries for AI-capex complex baskets [FT-R7 ratified 2026-07-13] | 2026-07-13 |
 | #2128 | ci(fonts): guard _interfonts.html.j2 @font-face blocks against theme.css drift | 2026-07-10 |
 | #2127 | feat(mri): W11-A ops hardening — no-orphan capture, nightly vintages, capture_health, TTL gates, cutoff labels, pinball (MRI-R31..R35) | 2026-07-10 |
 | #2126 | fix(us-board): sector-label integrity for us_standouts — skip cross-fund holdings logs, GICS-normalize, write-side guard | 2026-07-10 |
@@ -620,6 +398,7 @@ Generated: 2026-07-12T13:05:49.516200+00:00  |  Open PRs: 40  |  Merged (window)
 | #2101 | fix(factors): post-split mktcap_bn ~10-25x low — reconcile EDGAR shares with the Polygon reference | 2026-07-10 |
 | #2100 | docs(metabolism-v2): master-orchestrator governing-mind masterplan | 2026-07-10 |
 | #2099 | ui(signal-badge): stage-name vocabulary v2 — PRIME/CONFIRMED/CONFIRMING/APPROACHING/FIRST SPARK (china_alpha W8-R4, site-wide) | 2026-07-10 |
+| #2098 | research(entry-stack): S-SQ def-4 variant pre-registration (DT-R22) — DRAFT, execution gated on Fable §APPROVAL | 2026-07-12 |
 | #2097 | fix(heatmap): restore real market-cap tile sizing (weekly committed Polygon reference + poisoned-record screen) | 2026-07-10 |
 | #2096 | feat(hub): front-page UX program — bugs, a11y/i18n, responsive, features, settings pane (W0-W2+W4) | 2026-07-10 |
 | #2095 | fix(ext-quotes): ET window math on a PT machine | 2026-07-10 |
@@ -742,95 +521,6 @@ Generated: 2026-07-12T13:05:49.516200+00:00  |  Open PRs: 40  |  Merged (window)
 | #1976 | feat(hk): CBBC W2 — SLD-PDF mandatory-call-price + call-level magnet clusters (the flagship CBBC feature) | 2026-07-09 |
 | #1975 | fix(pipeline): W0b follow-up — same asia-data git-add guard + --autostash on weekly.yml (#1963 sibling) | 2026-07-09 |
 | #1974 | test(support-map): re-anchor regime-latest downstream census ceiling 55→70 | 2026-07-09 |
-| #1973 | docs(mri): §11.3 Wave-10 close-out — v3 build-out outcomes of record | 2026-07-08 |
-| #1972 | feat(mri): Round-3 UI — Release Radar card+modal redesign (MRI-R24) | 2026-07-08 |
-| #1971 | feat(mri): Round-2b integration — v3_factor + cpi_bridge shadow tracks (ledger + artifact + scoring) | 2026-07-08 |
-| #1970 | feat(mri): Round-2a integration — new targets (PCE/PPI/retail) + provenance/coverage flags | 2026-07-08 |
-| #1969 | feat(mri): Track CB — BLS relative-importance CPI component bridge (prereg+backtest) | 2026-07-08 |
-| #1968 | feat(china): sweeping UI redesign of A-Share Market Mechanics cockpit | 2026-07-08 |
-| #1967 | feat(mri): Track M — v3 factor challenger (prereg+backtest, shadow-wiring deferred) | 2026-07-08 |
-| #1966 | feat(mri): Track N — new targets PCE/PPI (+retail scaffold): prereg+backtest | 2026-07-08 |
-| #1965 | feat(hk): command panel — force stack + combustibility verdict + bottom/chase scorecards (display-tier synthesis) | 2026-07-08 |
-| #1964 | fix(house-law): sync HOUSE-U4 source_quote to CLAUDE.md rewording (unwedge ruling-graph) | 2026-07-08 |
-| #1963 | fix(pipeline): W0b — narrow US daily/engine git-add to exclude asia-owned data (stop -X theirs clobber of fresh HK/China; 2026-07-08 incident) | 2026-07-09 |
-| #1962 | feat(mri): Wave-10 foundation — keyless data materialization + ADP fix + provenance module (MRI-R26/R27) | 2026-07-08 |
-| #1961 | feat(neural-web): liquidity-plumbing lobe (neuralweb.liquidity_plumbing.v1) — Fed/Treasury plumbing context organ | 2026-07-08 |
-| #1960 | docs(mri): §11 Wave-10 program charter — v3 build-out + BLS component bridge (MRI-R25..R27) | 2026-07-08 |
-| #1959 | feat(hk): WASHOUT WATCH ignition organ + eligible:0 carve-out — stock-board revamp core (display-tier + forward ledger) | 2026-07-08 |
-| #1958 | ui(china): move Market Mechanics into China → Research submenu | 2026-07-08 |
-| #1957 | feat(hk): GDELT narrative/attention-shock organ — context-tier display-only (data-plane W1) | 2026-07-08 |
-| #1956 | ops(china): W9 close-out — CN lane unification + accrual clocks + program record (CN-SYS) | 2026-07-08 |
-| #1955 | feat(china): W8 cockpit UI — market-state strip, A-Share Mechanics page, phase history, board microstructure chips (CN-SYS) | 2026-07-08 |
-| #1954 | feat(china): W7 NW adapter — world_state china lobe + decision packet + ask-brain routing + brief/mastermind labels (CN-SYS) | 2026-07-08 |
-| #1953 | feat(hk): HKEXnews company-catalyst filing bus — display-tier event tape (data-plane W1) | 2026-07-08 |
-| #1952 | feat(nw-context-analyst): Build 3 — free yfinance analyst collector + context block + 300KB cap | 2026-07-08 |
-| #1951 | research(d4): D4-01b Stage-0 re-entry — family cn_supply_absorption CLOSES at frozen ruler | 2026-07-08 |
-| #1950 | feat(hk): CBBC/warrant leverage map organ — display-tier + forward ledger (data-plane W1) | 2026-07-08 |
-| #1949 | feat(admin): Context Lobe view — Neural Web per-ticker context layer | 2026-07-08 |
-| #1948 | feat(china): W6 sovereign spine — china_market_state.v1 + NW registrations + wiring (CN-SYS) | 2026-07-08 |
-| #1947 | feat(china): W3 cycle-phase lobe — 10-phase tape + falsifier auto-grading ledger (CN-SYS) | 2026-07-08 |
-| #1946 | feat(nw-context): Build 1 consolidated per-ticker context layer | 2026-07-08 |
-| #1945 | feat(hk): scheduled-catalyst calendar organ — display-tier (data-plane W1) | 2026-07-08 |
-| #1944 | docs(signal-lab): D4-01 reassessment — construct kill upheld, family verdict vacated, REVIVE-AMENDED | 2026-07-08 |
-| #1943 | research(d4): E2 re-entry on corrected path — cn_supply_absorption family FAIL unchanged | 2026-07-08 |
-| #1942 | ops(china): W5a — adjusted-store lag root fix + intel step extraction + Batch-1 lobe wiring (CN-SYS) | 2026-07-08 |
-| #1941 | feat(china): W5b — wire validated CN drawdown-radar + AI-semis→CPO chips onto live surfaces (CN-SYS) | 2026-07-08 |
-| #1940 | feat(china): W4 policy transmission unifier — deterministic impulse + append-only event ledger (CN-SYS) | 2026-07-08 |
-| #1939 | feat(china): W2 participation lobe + tape — whose money controls the tape (CN-SYS) | 2026-07-08 |
-| #1938 | feat(china): W1 microstructure lobe + limit-state PIT tape 2011→ (CN-SYS) | 2026-07-08 |
-| #1937 | feat(hk): ADR overnight bridge organ — display-tier + forward ledger (data-plane W1) | 2026-07-08 |
-| #1936 | fix(synapse): register China alt-data desk emits — 3 missing site/chinaaltdata artifacts | 2026-07-08 |
-| #1935 | research(china-system): sovereign China market brain masterplan (W0) — CN-SYS-R1..R14 | 2026-07-08 |
-| #1934 | feat(hk): freshness sentinel + lib/hk_calendar + untrack stale _closes_cache (W0a) | 2026-07-08 |
-| #1933 | docs(hk): Neural Web overhaul masterplan + build-first epistemics doctrine | 2026-07-08 |
-| #1932 | fix(cn-supply-absorption): commit analysis script + E2 source-path mismatch flag | 2026-07-08 |
-| #1931 | fix(d4-breakout-tradesize): collinearity disclosure + winsorize reconciliation + ledger commit | 2026-07-08 |
-| #1930 | fix(credit-flow-d4): analysis script + oas_chg10d_z52 column + NW overlap caveat | 2026-07-08 |
-| #1929 | research(oracle-reversion): refresh cost-table + independence map to 11-row base; fix RC-RUL-5 citation | 2026-07-08 |
-| #1928 | test(rates): D4 extension-day complex — LQD month-end SCORED + ledger hygiene fix | 2026-07-08 |
-| #1927 | test(china): cn_supply_absorption phase-0 — FAIL (path-matched neutralization) | 2026-07-08 |
-| #1926 | test(credit): flow-vs-OAS divergence — AUC GATE FAILS (d4_credit_flow_divergence) | 2026-07-08 |
-| #1925 | test(bottoms): breakout trade-size horse race — NULL_NEGATIVE (w5 family amendment) | 2026-07-08 |
-| #1924 | research(options): W5-B tape-residual formal prereg — frozen construct + auto-trigger | 2026-07-08 |
-| #1923 | test(rates): extension-day complex — LQD SCORED (d2_rates_calendar_flows amendment) | 2026-07-08 |
-| #1922 | research(options): W5-B tape-residual formal prereg — frozen construct + auto-trigger | 2026-07-08 |
-| #1921 | research(signal-lab): Day-4 docket + adjudication (7 candidates, operator-ratified) | 2026-07-08 |
-| #1920 | feat(w2044-warn): WARN panel acquisition via warn-scraper + phase-0 harness | 2026-07-08 |
-| #1919 | feat(nw-valuation-bottom-sensors): context-only valuation wire into bottom_sensors + mastermind_context | 2026-07-08 |
-| #1918 | fix(banks): uniform 60d PIT lag for ALL rows in w3 bank-stress — amended re-run (verdict unchanged: ACCRUE) | 2026-07-08 |
-| #1917 | feat(pipeline): price-store freshness gate — NYSE-calendar assert + keyless self-heal + market_state no-regress (2026-07-07 stale-regime incident) | 2026-07-08 |
-| #1916 | feat(china-communiques): prove stubbed-day absence from listing_title (#1913 downstream) | 2026-07-08 |
-| #1915 | guard(ui.ms_board_coherence): Market State boards must be single-snapshot coherent — kill the -X theirs hybrid-board class | 2026-07-08 |
-| #1914 | feat(banks): backfill SIVB/SBNY/FRC into canonical FFIEC panel — survivorship correction store-backed | 2026-07-08 |
-| #1913 | fix(cctv-archive): hard timeout on hung news_cctv fetches + listing_title on stub/error rows | 2026-07-08 |
-| #1912 | fix(f501): threshold unit bug + own-group baseline + boundary tests | 2026-07-08 |
-| #1911 | fix(prophet-build): pass content blocks through to index.json | 2026-07-08 |
-| #1910 | feat(prophet): deterministic content blocks — what_to_do_now, profit_plan, thesis | 2026-07-08 |
-| #1909 | test(china): F5-01 block-discount sector read-through phase-0 — NULL (slot reclaimed) | 2026-07-08 |
-| #1908 | fix(ruling-graph): regenerate derived outputs to clear stale source_sha256 drift | 2026-07-08 |
-| #1907 | fix(options): extend ThetaData v3 API dedup to OI + greeks paths | 2026-07-08 |
-| #1906 | fix(committee): remove two botched-paste JS fragments blanking the Neural Web page | 2026-07-08 |
-| #1905 | fix(collect): wire TSA throughput adapter into nightly | 2026-07-08 |
-| #1904 | feat(nw-context-intelligence): W4 — context scanner (template families, printed nulls, display-only candidates) | 2026-07-08 |
-| #1903 | feat(nw-context-intelligence): W3 — personality risk lens (board/universe exposure profile, display-only) | 2026-07-08 |
-| #1902 | feat(admin-experiments): register 10 frontier program come-back clocks | 2026-07-08 |
-| #1901 | feat(nw-context-intelligence): W2 — context_snapshot PIT API + personality coordinates on spine rows | 2026-07-08 |
-| #1900 | fix(nw-context-intelligence): W1 coordinate-layer repairs — fire_coordinates, qledger backfill provenance, accrual heartbeats | 2026-07-08 |
-| #1899 | fix(matrix): exclude expired expiries + plain-ISO expiry serialization | 2026-07-08 |
-| #1898 | docs(nw-context-intelligence): masterplan + context_scan fdr family + clocks (W0) | 2026-07-08 |
-| #1897 | feat(insider): Insider Power engine + per-ticker export for Terminal "Insider" tab | 2026-07-08 |
-| #1896 | CN interim track record + US standout popover | 2026-07-08 |
-| #1895 | fix(us-board): restore survivor-bias framing in dead-store survivorship note | 2026-07-08 |
-| #1894 | fix(us-board): widen track record + fix Surfaced/Status sort + honest win/loss counts | 2026-07-08 |
-| #1893 | feat(stock-personality): playbook doctrine lines in the stock-page panel (EN/ZH) | 2026-07-08 |
-| #1892 | research(stock-personality): Operator Playbook + Field Guide — the understanding layer | 2026-07-08 |
-| #1891 | feat(tech-lab): StockInvest Technical Lab (supersedes #1840) + composite-bound & screener-firing robustness fixes | 2026-07-09 |
-| #1890 | feat(nw-r6): Cross-Asset Depth wave — display-only cross_asset_flows lobe | 2026-07-08 |
-| #1889 | feat(mri): Package L — §10 adjudication + over/under-expectation read | 2026-07-08 |
-| #1887 | feat(mri): quirk flags (MRI-R20) — deterministic release-quirk chips | 2026-07-07 |
-| #1886 | research(stock-personality): Phase-0 compat study executed — 0/40 FDR survivors (pre-committed null) | 2026-07-07 |
-| #1885 | feat(mri): Package K — Release Radar UI v2 | 2026-07-07 |
-| #1883 | feat(mri): Package I — surprise distribution + market-implied benchmark + reaction sensitivity | 2026-07-07 |
 
 ---
 
