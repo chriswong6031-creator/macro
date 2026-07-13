@@ -25,11 +25,18 @@ Usage:
         [--run-id <id>]             # default: GITHUB_RUN_ID-<role>
         [--root /path] [--lane metabolism-adjudicate] [--dry-run]
 
+    python -m scripts.metabolism_adjudicate --list-dockets --cycle-id <base_cycle_id>
+        # prints every docket path on this checkout belonging to the base cycle:
+        # <base>.json (til) + <base>-<lobe>.json per-lobe dockets (R-V6-5).
+        # The workflow iterates these — the branch name alone carries only the
+        # base id, so per-lobe dockets would otherwise never be ruled on.
+
 Exit 0 always.
 """
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -55,6 +62,48 @@ def _default_docket(root: Path, cycle_id: str) -> Path:
     return root / "data" / "metabolism" / "dockets" / f"{cycle_id}.json"
 
 
+def discover_cycle_dockets(root: Path, base_cycle_id: str) -> list[Path]:
+    """Enumerate ALL docket files belonging to a propose branch's base cycle.
+
+    A multi-lobe PROPOSE (R-V6-5) writes one docket per loop-managed lobe onto
+    a SINGLE branch metabolism/propose-<base>: the base docket <base>.json
+    (til, backward compat) plus per-lobe dockets <base>-<lobe_id>.json.
+    ADJUDICATE must rule on every one of them — the branch name carries only
+    the base id (first armed cycle 2026-07-13: the site-us-standouts /
+    site-china-standouts dockets were silently never ruled on).
+
+    Returns the base docket first (when present), then per-lobe dockets sorted
+    by filename.  The "-" right after the base id keeps sibling cycles whose
+    ids merely share a prefix (cycle-…-31 vs cycle-…-3198) out of each other's
+    sweeps.  Missing dir / no matches → [].  NEVER raises.
+    """
+    out: list[Path] = []
+    try:
+        dockets_dir = root / "data" / "metabolism" / "dockets"
+        base = dockets_dir / f"{base_cycle_id}.json"
+        if base.is_file():
+            out.append(base)
+        out.extend(sorted(
+            p for p in dockets_dir.glob(f"{base_cycle_id}-*.json") if p.is_file()
+        ))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("discover_cycle_dockets: %s", exc)
+    return out
+
+
+def _docket_lobe(docket_file: Path) -> str:
+    """Lobe owning this docket, for the per-lobe circuit breaker (Gate 2).
+
+    Per-lobe dockets (R-V6-5) carry their lobe in the docket body; fall back to
+    'til' (the historical hardcode) when unreadable.  NEVER raises.
+    """
+    try:
+        lobe = json.loads(Path(docket_file).read_text(encoding="utf-8")).get("lobe")
+        return str(lobe) if lobe else _LOBE
+    except Exception:  # noqa: BLE001
+        return _LOBE
+
+
 def _run_id(role: str, override: str | None) -> str | None:
     if override:
         return override
@@ -65,15 +114,35 @@ def _run_id(role: str, override: str | None) -> str | None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Metabolism ADJUDICATE stage (A5)")
     parser.add_argument("--cycle-id", required=True)
-    parser.add_argument("--role", required=True, choices=_VALID_ROLES)
+    parser.add_argument("--role", choices=_VALID_ROLES,
+                        help="Required unless --list-dockets is given")
     parser.add_argument("--docket-file", default=None)
     parser.add_argument("--run-id", default=None)
     parser.add_argument("--root", default=None)
     parser.add_argument("--lane", default="metabolism-adjudicate")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--list-dockets", action="store_true",
+                        help=(
+                            "Print every docket path for the base --cycle-id "
+                            "(base + per-lobe, one per line, R-V6-5) and exit. "
+                            "No guards, no journal — pure enumeration."
+                        ))
     args = parser.parse_args(argv)
 
     root = Path(args.root) if args.root else _ROOT
+
+    # ── --list-dockets: pure enumeration for the workflow's per-docket loop ─
+    if args.list_dockets:
+        for p in discover_cycle_dockets(root, args.cycle_id):
+            try:
+                print(p.relative_to(root))
+            except ValueError:
+                print(p)
+        return 0
+
+    if not args.role:
+        parser.error("--role is required unless --list-dockets is given")
+
     cycle_id = args.cycle_id
     role = args.role
     stage = f"adjudicate_{role}"
@@ -91,12 +160,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     # ── Gate 2: per-lobe circuit breaker ────────────────────────────────────
+    # The lobe comes from the docket body (per-lobe dockets, R-V6-5); 'til'
+    # remains the fallback so the historical single-lobe path is unchanged.
+    _lobe = _docket_lobe(docket_file)
     try:
         from scripts.metabolism_budget import (  # type: ignore[import]
             is_lobe_paused, init_cycle, record_spend,
         )
-        if is_lobe_paused(_LOBE, root=root):
-            reason = f"lobe '{_LOBE}' circuit breaker tripped — no-op"
+        if is_lobe_paused(_lobe, root=root):
+            reason = f"lobe '{_lobe}' circuit breaker tripped — no-op"
             log.warning("metabolism_adjudicate[%s]: %s", role, reason)
             finish_stage(cycle_id, stage, status="noop_paused", note=reason, root=root)
             return 0
