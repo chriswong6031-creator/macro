@@ -164,6 +164,40 @@ def set_repo_variable(name: str, value: str) -> bool:
         return False
 
 
+def _slim_pr(p: dict) -> dict:
+    return {
+        "number": p.get("number"),
+        "title": p.get("title"),
+        "state": p.get("state"),
+        "draft": bool(p.get("draft")),
+        "merged_at": p.get("merged_at"),
+        "created_at": p.get("created_at"),
+        "head_ref": (p.get("head") or {}).get("ref"),
+        "html_url": p.get("html_url"),
+    }
+
+
+def list_prs(per_page: int = 100) -> dict:
+    """Recent PRs (newest first). Fail-soft: returns {ok: False, error: ..., prs: []} on any error."""
+    if requests is None:
+        return {"ok": False, "error": "requests not installed", "prs": []}
+    owner, name = repo()
+    if not (owner and name):
+        return {"ok": False, "error": "could not detect owner/repo from git remote", "prs": []}
+    url = f"{API}/repos/{owner}/{name}/pulls"
+    try:
+        resp = requests.get(url, headers=_headers(),
+                            params={"state": "all", "sort": "created",
+                                    "direction": "desc", "per_page": per_page},
+                            timeout=12)
+        if resp.status_code != 200:
+            return {"ok": False, "error": f"HTTP {resp.status_code}", "prs": []}
+        prs = [_slim_pr(p) for p in resp.json()]
+        return {"ok": True, "prs": prs}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e), "prs": []}
+
+
 def dispatch(workflow: str = "daily.yml", ref: str = "main",
              inputs: dict | None = None) -> dict:
     """Trigger a workflow_dispatch. Requires a token with Actions: write."""

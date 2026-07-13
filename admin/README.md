@@ -66,6 +66,13 @@ GH_TOKEN=ghp_...                 # Contents:write + Actions:write → flag toggl
 GA4_PROPERTY_ID / GA4_SA_JSON    # optional legacy GA4 reader
 ```
 
+## API endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/metabolism` | Metabolism panel: armed state, recent runs, organism state, key pool health. |
+| `GET /api/metabolism/history?limit=N` | **Change History:** unified reverse-chronological event feed over all metabolism and Neural Web ledgers (PRs, audit verdicts, reverts, immune heals, governance events, charter proposals, revamp adjudications, lifecycle docket, cycle journals, dispatch freezes, verify outcomes, lessons, parked constructions, heartbeat probes, shadow rehearsals). Returns `{events, sources, phase0, generated_at}`. |
+
 ## Deploy to admin.mastermind-x.com
 
 DNS A record `admin → 146.190.142.17` (grey-cloud/DNS-only) is required. Then:

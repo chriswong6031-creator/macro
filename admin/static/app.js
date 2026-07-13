@@ -2001,6 +2001,12 @@ RENDER.metabolism = async () => {
     <div class="card">${keysHtml}</div>
     <div class="section">Recent Metabolism Runs <span class="cnt">${(d.runs || []).length}</span></div>
     <div class="card">${runsHtml}</div>
+    <div class="section">Change History <span class="cnt" id="mhCnt"></span></div>
+    <div class="card" id="mhCard">
+      <div class="skeleton skeleton-text" style="width:60%"></div>
+      <div class="skeleton skeleton-text" style="width:80%"></div>
+      <div class="skeleton skeleton-text" style="width:50%"></div>
+    </div>
     <div class="section" style="margin-top:20px">Break-glass</div>
     <div class="card sub muted">Emergency stop: this switch, or <code>gh variable set AUTONOMY_PAUSED --body true</code>, or disable the metabolism workflows in GitHub Actions.</div>`;
 
@@ -2023,6 +2029,98 @@ RENDER.metabolism = async () => {
       }
     };
   }
+
+  // Async Change History loader — does not block the panel above.
+  (async () => {
+    const mhCard = $("#mhCard");
+    if (!mhCard) return;
+
+    // Status pill for a history event (label = event.kind, class from status).
+    const mhPill = (ev) => {
+      const cls = ev.status === "ok" ? "s-ok" : ev.status === "warn" ? "s-warn" : ev.status === "bad" ? "s-bad" : "s-mut";
+      return `<span class="statpill ${cls}">${esc(ev.kind || ev.status || "info")}</span>`;
+    };
+
+    // Build timeline HTML for a filtered event list.
+    const mhTimeline = (events) => {
+      if (!events.length) {
+        return `<div class="empty"><div class="empty-icon">📜</div><div class="empty-text">No autonomous changes recorded yet.</div><div class="empty-sub">This feed fills as the loop runs — PRs authored, audits filed, lobe lifecycle events, and reverts will appear here.</div></div>`;
+      }
+      return `<div class="timeline">${events.map(ev => {
+        const ts = esc((ev.ts || "").slice(0, 16).replace("T", " "));
+        const titleLink = ev.url
+          ? `${esc(ev.title || "")} <a href="${esc(ev.url)}" target="_blank" rel="noopener">open ↗</a>`
+          : esc(ev.title || "");
+        const detail = esc(ev.detail || "") + (ev.ref ? " · " + esc(ev.ref) : "");
+        return `<div class="timeline-item">
+          <div class="timeline-ts">${ts}</div>
+          <div class="timeline-header"><span class="timeline-kind">${esc(ev.source || "")}</span> ${mhPill(ev)}</div>
+          <div class="timeline-summary">${titleLink}</div>
+          ${detail ? `<div class="timeline-source">${detail}</div>` : ""}
+        </div>`;
+      }).join("")}</div>`;
+    };
+
+    let h;
+    try {
+      h = await api("/api/metabolism/history?limit=200");
+    } catch (e) {
+      const card = $("#mhCard");
+      if (card) card.innerHTML = `<div class="sub muted">Could not load change history: ${esc(String(e))}</div>`;
+      return;
+    }
+
+    // Guard: user may have navigated away.
+    const card = $("#mhCard");
+    if (!card) return;
+
+    if (h.error) {
+      card.innerHTML = `<div class="sub muted">Change history unavailable: ${esc(h.error)}</div>`;
+      return;
+    }
+
+    const allEvents = Array.isArray(h.events) ? h.events : [];
+    const sources = h.sources && typeof h.sources === "object" ? h.sources : {};
+    const phase0 = !!h.phase0;
+
+    // Gather active sources (count > 0) for pills.
+    const activeSources = Object.entries(sources).filter(([, v]) => v && v.count > 0).map(([k, v]) => [k, v.count]);
+    const total = allEvents.length;
+
+    // Filter state — "all" or a source name.
+    let activeFilter = "all";
+
+    const render = (filter) => {
+      const card2 = $("#mhCard");
+      if (!card2) return;
+      const filtered = filter === "all" ? allEvents : allEvents.filter(ev => ev.source === filter);
+      const cnt = $("#mhCnt");
+      if (cnt) cnt.textContent = filter === "all" ? total : `${filtered.length}/${total}`;
+
+      // Source filter pills.
+      const pillsHtml = [
+        `<button class="btn" data-mhf="all" style="margin:0 4px 6px 0;font-size:12px;${filter === "all" ? "border:2px solid var(--accent);font-weight:700" : ""}">All ${total}</button>`,
+        ...activeSources.map(([src, cnt2]) =>
+          `<button class="btn" data-mhf="${esc(src)}" style="margin:0 4px 6px 0;font-size:12px;${filter === src ? "border:2px solid var(--accent);font-weight:700" : ""}">${esc(src)} ${cnt2}</button>`)
+      ].join("");
+
+      const phase0Banner = phase0
+        ? `<div class="sub muted" style="margin-bottom:10px">The loop is still inert (Phase 0) — only heartbeats and rehearsals appear here. Once armed, autonomous PRs, audits, lobe lifecycle events and reverts will land in this feed.</div>`
+        : "";
+
+      // Degradation notes.
+      const notes = Object.values(sources).filter(v => v && v.note).map(v => `<div class="sub muted" style="margin-top:8px">${esc(v.note)}</div>`).join("");
+
+      card2.innerHTML = `<div style="margin-bottom:8px">${pillsHtml}</div>${phase0Banner}${mhTimeline(filtered)}${notes}`;
+
+      // Bind filter pills.
+      card2.querySelectorAll("[data-mhf]").forEach(el => {
+        el.onclick = () => { activeFilter = el.dataset.mhf; render(activeFilter); };
+      });
+    };
+
+    render(activeFilter);
+  })();
 };
 
 /* ---- boot --------------------------------------------------------------- */
