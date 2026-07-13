@@ -471,3 +471,202 @@ class TestCheckBlocklistDrift:
         drift_checker = _load_script(_scripts_dir() / "check_blocklist_drift.py")
         rc = drift_checker.check_drift(tmp_path)
         assert rc == 1
+
+
+# ---------------------------------------------------------------------------
+# G. check_blocklist_drift — misplaced rows, SF drift, --fix
+#    (drift-class hardening, 2026-07-12: two same-day regen misses + one
+#     silently unparsed row — see .claude/hooks/blocklist_regen_guard.py)
+# ---------------------------------------------------------------------------
+
+MISPLACED_ROW = "| Misplaced kill topic | KILLED | XX-R99 |"
+
+
+def _setup_clean_repo(tmp_path: Path) -> None:
+    """Fixture repo where committed artifacts == fresh compile (drift-free)."""
+    import shutil  # noqa: PLC0415
+    (tmp_path / "research").mkdir()
+    (tmp_path / "config").mkdir()
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "research" / "DO_NOT_REBUILD.md").write_text(FIXTURE_MD, encoding="utf-8")
+    for script in ("compile_loop_blocklists.py", "check_blocklist_drift.py"):
+        shutil.copy2(_scripts_dir() / script, tmp_path / "scripts" / script)
+    compiler = _load_script(_scripts_dir() / "compile_loop_blocklists.py")
+    assert compiler.compile_blocklists(tmp_path) == 0
+
+
+class TestMisplacedRows:
+    def test_clean_fixture_has_no_misplaced_rows(self) -> None:
+        drift_checker = _load_script(_scripts_dir() / "check_blocklist_drift.py")
+        assert drift_checker.find_misplaced_rows(FIXTURE_MD) == []
+
+    def test_row_after_section5_flagged(self) -> None:
+        drift_checker = _load_script(_scripts_dir() / "check_blocklist_drift.py")
+        rows = drift_checker.find_misplaced_rows(FIXTURE_MD + MISPLACED_ROW + "\n")
+        assert len(rows) == 1
+        assert "Misplaced kill topic" in rows[0][1]
+
+    def test_row_in_preamble_flagged(self) -> None:
+        drift_checker = _load_script(_scripts_dir() / "check_blocklist_drift.py")
+        md = "# Title\n\n| Early row | KILLED | src |\n\n" + FIXTURE_MD.split("\n", 2)[2]
+        assert len(drift_checker.find_misplaced_rows(md)) == 1
+
+    def test_fenced_pipe_lines_ignored(self) -> None:
+        drift_checker = _load_script(_scripts_dir() / "check_blocklist_drift.py")
+        md = FIXTURE_MD + "```\n| not a registry row |\n```\n"
+        assert drift_checker.find_misplaced_rows(md) == []
+
+    def test_misplaced_row_exits_1(self, tmp_path: Path) -> None:
+        """A row the compiler silently ignores is a hard failure (live class:
+        the MRI-R38 CPI row landed after §5 and never reached the registry)."""
+        _setup_clean_repo(tmp_path)
+        md_path = tmp_path / "research" / "DO_NOT_REBUILD.md"
+        md_path.write_text(
+            md_path.read_text(encoding="utf-8") + MISPLACED_ROW + "\n", encoding="utf-8"
+        )
+        drift_checker = _load_script(_scripts_dir() / "check_blocklist_drift.py")
+        assert drift_checker.check_drift(tmp_path) == 1
+
+    def test_fix_does_not_heal_misplaced_row(self, tmp_path: Path) -> None:
+        """--fix regenerates artifacts but cannot move a row between sections."""
+        _setup_clean_repo(tmp_path)
+        md_path = tmp_path / "research" / "DO_NOT_REBUILD.md"
+        md_path.write_text(
+            md_path.read_text(encoding="utf-8") + MISPLACED_ROW + "\n", encoding="utf-8"
+        )
+        drift_checker = _load_script(_scripts_dir() / "check_blocklist_drift.py")
+        assert drift_checker.fix_drift(tmp_path) == 1
+
+
+class TestSignalFoundryDrift:
+    def test_tampered_generated_block_exits_1(self, tmp_path: Path) -> None:
+        _setup_clean_repo(tmp_path)
+        sf_path = tmp_path / "config" / "signal_foundry_blocklist.yml"
+        text = sf_path.read_text(encoding="utf-8")
+        assert "BL-G001" in text
+        sf_path.write_text(text.replace("BL-G001", "BL-G999", 1), encoding="utf-8")
+        drift_checker = _load_script(_scripts_dir() / "check_blocklist_drift.py")
+        assert drift_checker.check_drift(tmp_path) == 1
+
+    def test_hand_curated_entry_above_block_passes(self, tmp_path: Path) -> None:
+        """Hand edits outside the generated block are legitimate, not drift."""
+        _setup_clean_repo(tmp_path)
+        sf_path = tmp_path / "config" / "signal_foundry_blocklist.yml"
+        text = sf_path.read_text(encoding="utf-8")
+        text = text.replace(
+            "entries:",
+            "entries:\n\n  - id: BL-HAND-042\n    match:\n"
+            "      any_of: ['hand_pattern']\n    reason: 'curated'\n    source: 'human'",
+            1,
+        )
+        sf_path.write_text(text, encoding="utf-8")
+        drift_checker = _load_script(_scripts_dir() / "check_blocklist_drift.py")
+        assert drift_checker.check_drift(tmp_path) == 0
+
+
+class TestFixFlag:
+    def test_fix_heals_tampered_registry(self, tmp_path: Path) -> None:
+        _setup_clean_repo(tmp_path)
+        reg_path = tmp_path / "config" / "compiled_kill_registry.yml"
+        clean_bytes = reg_path.read_bytes()
+        reg_path.write_bytes(clean_bytes + b"\n# TAMPER\n")
+        drift_checker = _load_script(_scripts_dir() / "check_blocklist_drift.py")
+        assert drift_checker.fix_drift(tmp_path) == 0
+        assert reg_path.read_bytes() == clean_bytes
+
+    def test_fix_via_main_cli(self, tmp_path: Path) -> None:
+        _setup_clean_repo(tmp_path)
+        md_path = tmp_path / "research" / "DO_NOT_REBUILD.md"
+        md_path.write_text(
+            md_path.read_text(encoding="utf-8").replace(
+                "| Insider × T2 interaction | KILLED | Codex docket (#1781) |",
+                "| Insider × T2 interaction | KILLED | Codex docket (#1781) |\n"
+                "| Fresh kill topic | KILLED | YY-R1 |",
+            ),
+            encoding="utf-8",
+        )
+        drift_checker = _load_script(_scripts_dir() / "check_blocklist_drift.py")
+        assert drift_checker.main(["--repo-root", str(tmp_path)]) == 1  # drift
+        assert drift_checker.main(["--repo-root", str(tmp_path), "--fix"]) == 0
+        reg = (tmp_path / "config" / "compiled_kill_registry.yml").read_text(encoding="utf-8")
+        assert "Fresh kill topic" in reg
+
+
+# ---------------------------------------------------------------------------
+# H. blocklist_regen_guard hook — end-to-end via subprocess (payload on stdin,
+#    exactly as the PostToolUse harness invokes it)
+# ---------------------------------------------------------------------------
+
+def _hook_path() -> Path:
+    return _repo_root() / ".claude" / "hooks" / "blocklist_regen_guard.py"
+
+
+def _run_hook(payload) -> "subprocess.CompletedProcess[str]":
+    import subprocess  # noqa: PLC0415
+    import sys as _sys  # noqa: PLC0415
+    raw = payload if isinstance(payload, str) else json.dumps(payload)
+    return subprocess.run(
+        [_sys.executable, str(_hook_path())],
+        input=raw, capture_output=True, text=True, timeout=120,
+    )
+
+
+class TestBlocklistRegenGuardHook:
+    def test_hook_regens_on_registry_edit(self, tmp_path: Path) -> None:
+        _setup_clean_repo(tmp_path)
+        md_path = tmp_path / "research" / "DO_NOT_REBUILD.md"
+        md_path.write_text(
+            md_path.read_text(encoding="utf-8").replace(
+                "| DOI (options delta-OI family) | DEAD | W-E1 gauntlet |",
+                "| DOI (options delta-OI family) | DEAD | W-E1 gauntlet |\n"
+                "| Hook-added kill topic | KILLED | ZZ-R1 |",
+            ),
+            encoding="utf-8",
+        )
+        proc = _run_hook({"tool_name": "Edit", "tool_input": {"file_path": str(md_path)}})
+        assert proc.returncode == 0, proc.stderr
+        out = json.loads(proc.stdout)
+        assert "regenerated" in out["hookSpecificOutput"]["additionalContext"]
+        reg = (tmp_path / "config" / "compiled_kill_registry.yml").read_text(encoding="utf-8")
+        assert "Hook-added kill topic" in reg
+        # And the checker agrees the tree is clean again
+        drift_checker = _load_script(_scripts_dir() / "check_blocklist_drift.py")
+        assert drift_checker.check_drift(tmp_path) == 0
+
+    def test_hook_silent_when_no_drift(self, tmp_path: Path) -> None:
+        _setup_clean_repo(tmp_path)
+        md_path = tmp_path / "research" / "DO_NOT_REBUILD.md"
+        proc = _run_hook({"tool_name": "Edit", "tool_input": {"file_path": str(md_path)}})
+        assert proc.returncode == 0
+        assert proc.stdout.strip() == ""
+
+    def test_hook_ignores_other_files(self, tmp_path: Path) -> None:
+        _setup_clean_repo(tmp_path)
+        other = tmp_path / "research" / "OTHER.md"
+        other.write_text("x", encoding="utf-8")
+        proc = _run_hook({"tool_name": "Edit", "tool_input": {"file_path": str(other)}})
+        assert proc.returncode == 0
+        assert proc.stdout.strip() == ""
+
+    def test_hook_exit2_on_misplaced_row(self, tmp_path: Path) -> None:
+        _setup_clean_repo(tmp_path)
+        md_path = tmp_path / "research" / "DO_NOT_REBUILD.md"
+        md_path.write_text(
+            md_path.read_text(encoding="utf-8") + MISPLACED_ROW + "\n", encoding="utf-8"
+        )
+        proc = _run_hook({"tool_name": "Edit", "tool_input": {"file_path": str(md_path)}})
+        assert proc.returncode == 2
+        assert "sections 1-4" in proc.stderr
+
+    def test_hook_fails_open_on_garbage_stdin(self) -> None:
+        proc = _run_hook("this is not json")
+        assert proc.returncode == 0
+
+    def test_hook_fails_open_outside_repo_layout(self, tmp_path: Path) -> None:
+        """research/DO_NOT_REBUILD.md with no scripts/ beside it → not our repo."""
+        (tmp_path / "research").mkdir()
+        md_path = tmp_path / "research" / "DO_NOT_REBUILD.md"
+        md_path.write_text(FIXTURE_MD, encoding="utf-8")
+        proc = _run_hook({"tool_name": "Write", "tool_input": {"file_path": str(md_path)}})
+        assert proc.returncode == 0
+        assert proc.stdout.strip() == ""

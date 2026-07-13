@@ -16,6 +16,10 @@ cite this registry first. An entry here is grounds for summary REJECT-REDUNDANT.
 **Append convention:** any PR whose adjudication kills, forbids, or indefinitely defers a
 topic appends one row to the matching section *in the same PR*. One line per entry:
 topic | verdict | ruling/source. Keep grounds in the source doc, not here.
+Rows are machine-compiled from sections 1–4 ONLY — a row anywhere else is invisible to
+enforcement and hard-fails CI. Commit the regenerated `config/compiled_kill_registry.yml`
+and `config/signal_foundry_blocklist.yml` with the row (harness edits auto-regen via the
+`blocklist_regen_guard` hook; manual heal: `python3 scripts/check_blocklist_drift.py --fix`).
 
 Verdict formats across `research/` are too inconsistent to auto-extract (three dominant
 patterns + ~15% freeform prose over 492 docs — census 2026-07-07), so this registry is
@@ -84,6 +88,7 @@ curated, not generated. Do not build an extractor.
 | Absolute-VIX spike-and-fade thresholds | REJECT-STAT — non-stationary absolute anchors (R-SP21); <10 episodes in >50 bucket | RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6 |
 | Lumber/gold ratio (daily growth filter) | REJECT-DATA — FRED monthly-only, LBS=F thin, supply-shock contaminated; use copper/gold | RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6 |
 | Dow Theory transports non-confirmation as a radar leg | REJECT — lagging (2007 signal fired post-peak), oil-confounded; rotation physics covered by validated XLY/XLP + XLU legs | RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6 |
+| CPI revision-direction model (first→latest MoM revision prediction) | KILLED before attempt — CPI revisions are annual seasonal-recalc only, tiny magnitude; empirics on our own vintage store show no exploitable structure | MRI-R38, `MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md` §12.3 |
 
 ## 3. Wrong-ruler / estimator laws (methodology — using these invalidates the study)
 
@@ -121,4 +126,3 @@ curated, not generated. Do not build an extractor.
   Signal Commons rulings, R-ORTH RUL-ORTH-1..8, nontech-bottom RUL-18..29.
 - `docs/ACTIVE_BUILD_MAP.md` — the generated temporal complement (open PRs, collisions,
   recent merges). Regenerate: `python scripts/build_active_build_map.py`.
-| CPI revision-direction model (first→latest MoM revision prediction) | KILLED before attempt — CPI revisions are annual seasonal-recalc only, tiny magnitude; empirics on our own vintage store show no exploitable structure | MRI-R38, `MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md` §12.3 |
