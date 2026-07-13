@@ -99,4 +99,64 @@ crowdedness_features_at_training:
 # features only. This checkpoint is recorded in the FS-1 wave; it does not
 # affect FS-0 collector behavior (which reads the already-classified side field
 # from the upstream engine output).
-fsc1_checkpoint: pending_fs1_ops_lane
+fsc1_checkpoint: resolved_positive_2026-07-13
+# FS-C1 RESULT (2026-07-13): confirmed positive. _sample_V_2026-07-02.json
+# carries per-print price/bid/ask fields enabling quote-rule execution
+# classification (at-ask/at-bid/aggression). Signed direction columns are NOT
+# emitted (FS-R6 Theta-tape SUSPENDED row honored).
+
+# ── eod_proxy thresholds (FS-1, ops lane) ────────────────────────────────────
+# RE-LABEL LAW: changing these thresholds = bump eod_proxy_version below AND
+# re-label all cohort_eod_proxy.parquet rows under the new version.
+# These are NEVER production consumption (ops-lane / off-render only, FS-R12).
+#
+# RATIONALE per threshold:
+#   vol_oi_burst_multiplier: 1.0 = volume exceeds prior-day OI (any excess).
+#     The "burst" is conservative: vol > OI is already notable; higher bars
+#     reduce event count but reduce noise. Set at 1.0 to maximize cohort n.
+#   premium_burst_z: 2.5 sigma above the rolling 60-day mean premium for the
+#     contract bucket (root × dte_bucket × mny_bucket). Selected to balance
+#     event count vs signal quality (matches the live_feed z252_threshold
+#     direction, relaxed to 2.5 for the 60-day rolling window vs 252-day).
+#   min_contract_volume: 5 contracts minimum to exclude trivially small prints.
+#   min_premium_usd: 100000 notional floor — see comparability note below.
+#
+# COMPARABILITY NOTE (eod_proxy floor vs live detector):
+#   eod_proxy is a PRIOR-generating proxy cohort, not a serving-distribution
+#   match. The live detector floors are $1M for ETF roots and $250k for
+#   single names. The $100k proxy floor sits one order of magnitude under the
+#   single-name floor to admit older/cheaper-era prints (pre-2016 premiums were
+#   structurally smaller) while keeping the population within hailing distance of
+#   the detector's serving distribution.
+#
+#   Smoke rate at the OLD floor ($1k): ~117k events per root over 14 years
+#   (observed in eod_proxy smoke run, 2026-07-13, 3-root sample). This was
+#   dominated by trivially small prints that would never be observed live.
+#   REQUIRED FOLLOW-UP: after the next full-store run at the $100k floor, report
+#   projected volume (sample_count / 3 * 383) and compare to the old floor.
+#
+eod_proxy:
+  version: eod_proxy_v1
+  # PIT LAW: compare volume vs PRIOR-DAY OI only (OI is T+1 in OPRA reporting).
+  # A same-day vol>OI comparison is a data leak (spec §2 F4 / FS-R4 OI-only grid).
+  # This is enforced in code; documented here as the authoritative spec reference.
+  oi_comparison: prior_day_only
+  vol_oi_burst_multiplier: 1.0  # volume > multiplier * prior_oi → pseudo-event
+  premium_burst_z: 2.5          # premium z-score above 60d bucket mean → event
+  min_contract_volume: 5        # minimum contracts traded in the session
+  min_premium_usd: 100000       # minimum notional — see comparability note above
+  rolling_window_days: 60       # window for premium_burst baseline
+  # Era partitions per FS-R4 OI-only grid:
+  era_partitions:
+    - name: "2012-15"
+      start: "2012-01-01"
+      end: "2015-12-31"
+    - name: "2016-19"
+      start: "2016-01-01"
+      end: "2019-12-31"
+    - name: "2020-22"
+      start: "2020-01-01"
+      end: "2022-12-31"
+    - name: "2023+"
+      start: "2023-01-01"
+      end: null  # open-ended

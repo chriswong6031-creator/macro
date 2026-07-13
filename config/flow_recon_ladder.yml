@@ -1,0 +1,104 @@
+# config/flow_recon_ladder.yml — tape_recon priority ladder for ops_flow_cohorts.py
+#
+# PURPOSE: defines which (root, date-range) units are fetched from ThetaTerminal
+# during the tape_recon reconstruction sweep, in priority order.
+#
+# OPERATOR-EXTENDABLE: add tiers or roots to any tier; the tape_recon subcommand
+# iterates tiers in order (tier1 first), processing pending units before moving on.
+# Mirrors the masterplan §5 FS-1 wave R6 priority ladder.
+#
+# TAPE SUSPENSION COMPLIANCE (FS-R6): all pulled prints feed the detector via
+# quote-rule execution classification only (at-ask/at-bid/aggression from the
+# print's own bid/ask). No tick-rule signed net-direction label is emitted.
+# FS-C1 verified 2026-07-13: bulk trade_quote carries usable per-print quote fields.
+#
+# RE-LABEL LAW: changing the tier definitions (roots, date ranges) does NOT require
+# a detector version bump — the detector version is stamped by config/flow_detector.yml.
+# However, adding new roots to existing tiers does change the population; document
+# the addition date in a comment so cohort splits can be computed at training time.
+
+# ── Tier 1: episode windows 2022→ (highest priority) ──────────────────────────
+# Index ETFs and all 11 SPDR sector ETFs: liquid, well-understood, richest tape.
+# Date range: 2022-01-01 → present (ThetaTerminal reachable date).
+# Rationale: covers the post-FOMC-tightening regime (2022→) which is the most
+# relevant regime for the calibration table's near-term horizon.
+tier1:
+  label: "episode_windows_2022+"
+  start_date: "2022-01-01"
+  end_date: null  # null = today (resolved at runtime)
+  roots:
+    # Core index ETFs
+    - SPY
+    - QQQ
+    - IWM
+    - DIA
+    # 11 SPDR sector ETFs
+    - XLF
+    - XLE
+    - XLU
+    - XLK
+    - XLV
+    - XLI
+    - XLB
+    - XLY
+    - XLP
+    - XLRE
+    - XLC
+
+# ── Tier 2: ETF history 2017→ (greeks era coverage) ──────────────────────────
+# Same ETF set as tier1 extended back to 2017-01-01.
+# Rationale: 2017-01-01 aligns with the greeks-era start per FS-R4; this cohort
+# enables the 2017-19 era partition. Does NOT include 2012-16 because the eod_proxy
+# cohort covers OI-only eras more efficiently than tape reconstruction.
+tier2:
+  label: "etf_history_2017+"
+  start_date: "2017-01-01"
+  end_date: "2021-12-31"   # 2022→ covered by tier1
+  roots:
+    - SPY
+    - QQQ
+    - IWM
+    - DIA
+    - XLF
+    - XLE
+    - XLU
+    - XLK
+    - XLV
+    - XLI
+    - XLB
+    - XLY
+    - XLP
+    - XLRE
+    - XLC
+
+# ── Tier 3: single names opportunistic (2022→) ────────────────────────────────
+# The 20 roots present in data/options_tape_signed/ (daily aggregates available
+# as of 2026-07-13). Fetch 2022-01-01→present for these names.
+# Rationale: single-name tape is noisier and has a much larger per-day print count
+# (~160k prints for AAPL vs ~5k for a sector ETF). Process AFTER tier1+tier2
+# to avoid blocking the ETF cohort on per-name stalls.
+# The 'roots' list below matches options_tape_signed/*.parquet as of 2026-07-13.
+# Append new single names to this list as tape coverage expands.
+tier3:
+  label: "single_names_opportunistic_2022+"
+  start_date: "2022-01-01"
+  end_date: null  # null = today
+  roots:
+    - AAPL
+    - AMD
+    - AMZN
+    - BAC
+    - CVX
+    - GOOGL
+    - GS
+    - HD
+    - JNJ
+    - JPM
+    - META
+    - MSFT
+    - NVDA
+    - QQQ   # already in tier1/2 but included here as a reference; deduped at runtime
+    - SPY   # already in tier1/2; deduped at runtime
+    - TSLA
+    - UNH
+    - V
