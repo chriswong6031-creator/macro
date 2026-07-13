@@ -430,6 +430,34 @@ def reap_propose_branches(repo_root: Path, dry_run: bool = False) -> dict:
     return summary
 
 
+# ── Insight bus compaction (F2) ──────────────────────────────────────────────
+
+def compact_insight_bus(repo_root: Path, dry_run: bool = False) -> dict:
+    """Compact data/metabolism/insight_bus.jsonl via insight_bus.compact_bus().
+
+    Runs even when the metabolism loop is paused (GC is always active).
+    Atomic rewrite — safe to interrupt.  NEVER raises.
+
+    Returns a summary dict: {retained, archived, errors}.
+    """
+    if dry_run:
+        log.info("GC [DRY-RUN]: would compact insight_bus.jsonl")
+        return {"retained": 0, "archived": 0, "errors": [], "dry_run": True}
+    try:
+        from engine.metabolism.insight_bus import compact_bus  # noqa: PLC0415
+        result = compact_bus(root=repo_root)
+        log.info(
+            "GC insight_bus compact: retained=%d archived=%d errors=%d",
+            result.get("retained", 0),
+            result.get("archived", 0),
+            len(result.get("errors") or []),
+        )
+        return result
+    except Exception as exc:  # noqa: BLE001
+        log.warning("GC compact_insight_bus: %s", exc)
+        return {"retained": 0, "archived": 0, "errors": [str(exc)]}
+
+
 # ── Main GC loop ─────────────────────────────────────────────────────────────
 
 def gc(repo_root: Path, dry_run: bool = False) -> dict:
@@ -560,6 +588,11 @@ def main(argv: list[str] | None = None) -> int:
         len(propose_result["skipped"]),
         len(propose_result["errors"]),
     )
+
+    # Insight bus compaction (F2): always runs (acceptable ungated — loop-internal state)
+    bus_result = compact_insight_bus(repo_root, dry_run=args.dry_run)
+    if bus_result.get("errors"):
+        log.warning("GC insight_bus compact errors: %s", bus_result["errors"])
 
     result = gc(repo_root, dry_run=args.dry_run)
 

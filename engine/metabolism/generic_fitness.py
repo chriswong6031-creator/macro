@@ -56,8 +56,15 @@ log = logging.getLogger(__name__)
 
 SCHEMA = "metabolism.generic_fitness.v1"
 
-# Lobes with bespoke builders — skip here
-_BESPOKE_LOBE_IDS = frozenset({"til"})
+# Lobes with bespoke builders — skip here.
+# F3 fix: site-us-standouts and site-china-standouts have bespoke builders
+# (engine/standout_audit.py and engine/china_standout_audit.py) that write the
+# real sensor content to data/metabolism/fitness/standouts_us.json and
+# data/metabolism/fitness/standouts_cn.json.  The charter store paths point at
+# those same files.  If generic_fitness runs on these lobes it overwrites the
+# bespoke card with an empty sensor-probe-only card, stranding the real sensors.
+# Mirror the "til" exemption: bespoke producer owns the card; generic builder skips.
+_BESPOKE_LOBE_IDS = frozenset({"til", "site-us-standouts", "site-china-standouts"})
 
 # Lifecycle states that are loop-managed (get a fitness card)
 _LOOP_MANAGED_STATES = frozenset({"probation", "active"})

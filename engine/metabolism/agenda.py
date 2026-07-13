@@ -745,6 +745,27 @@ def _build_agenda_inner(
     except Exception as _exc:  # noqa: BLE001
         log.warning("agenda: grounding check failed (display-tier, non-fatal) — %s", _exc)
 
+    # 12. mark_handled: high-severity insight rows that made it into forced-floor items
+    # are now consumed by the agenda — mark them handled so compact_bus can archive them.
+    # This is the first genuine mark_handled caller (F2 fix).
+    # Wiring rationale: _enforce_severity_floor inserts an agenda item per high-severity row;
+    # once the agenda artifact is written, the insight row has served its purpose.
+    # NEVER raises — agenda generation must not fail on a bus write error.
+    try:
+        from engine.metabolism.insight_bus import mark_handled as _mark_handled  # noqa: PLC0415
+        forced_dedup_hashes = {i["dedup_hash"] for i in items if i.get("forced_floor")}
+        for bus_row in high_rows:
+            # Only mark handled if the row's forced-floor item survived into the final agenda
+            title = f"[AUTO] {bus_row.get('kind', 'anomaly').upper()}: {bus_row.get('summary', '')[:80]}"
+            if _dedup_hash(title) in forced_dedup_hashes:
+                _mark_handled(
+                    insight_id=str(bus_row.get("insight_id", "")),
+                    handler_id=f"agenda:{cycle_id}",
+                    root=repo,
+                )
+    except Exception as _mh_exc:  # noqa: BLE001
+        log.warning("agenda: mark_handled failed (non-fatal) — %s", _mh_exc)
+
     return {
         "schema": SCHEMA,
         "cycle_id": cycle_id,

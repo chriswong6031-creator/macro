@@ -716,17 +716,30 @@ def _validate_proposal(
     if not sensor:
         return "fitness_contract has no sensor"
 
-    # Accrual-honesty gate (R-V4-10): check_by must be >= maturity_date for accruing sensors
+    # Accrual-honesty gate (R-V4-10): check_by must be >= maturity_date for accruing sensors.
+    # F4b fix: parse both dates before comparing (handles non-zero-padded YYYY-M-D check_by).
     if accruing_maturity:
         mat_date = accruing_maturity.get(sensor)
         if mat_date:
-            check_by = str(fc.get("check_by") or "").strip()
-            if check_by and re.match(r"^\d{4}-\d{2}-\d{2}$", check_by):
-                if check_by < mat_date:
-                    return (
-                        f"accrual-honesty violation: sensor '{sensor}' matures {mat_date} "
-                        f"but check_by={check_by!r} is earlier; set check_by >= {mat_date}"
-                    )
+            check_by_raw = str(fc.get("check_by") or "").strip()
+            if check_by_raw:
+                try:
+                    from engine.metabolism.verify import parse_check_by as _pcb  # noqa: PLC0415
+                    check_by_parsed = _pcb(check_by_raw)
+                    mat_date_parsed = _pcb(str(mat_date))
+                    if check_by_parsed and mat_date_parsed and check_by_parsed < mat_date_parsed:
+                        return (
+                            f"accrual-honesty violation: sensor '{sensor}' matures {mat_date} "
+                            f"but check_by={check_by_raw!r} is earlier; set check_by >= {mat_date}"
+                        )
+                except Exception:  # noqa: BLE001
+                    # Fallback: string compare only for canonical zero-padded dates
+                    if re.match(r"^\d{4}-\d{2}-\d{2}$", check_by_raw):
+                        if check_by_raw < str(mat_date):
+                            return (
+                                f"accrual-honesty violation: sensor '{sensor}' matures {mat_date} "
+                                f"but check_by={check_by_raw!r} is earlier; set check_by >= {mat_date}"
+                            )
 
     return None
 
