@@ -7169,7 +7169,7 @@ artifacts:
     known_extra_writers:
       - "engine/neuralweb/orchestrator_log.py — record_run() appends entries + reviews, publishes site copy"
     owner_program: neural-web
-    cadence: daily-cortex
+    cadence: nightly-cortex
     storage: git
     asof_field: run_date
     freshness_sla_hours: 30
@@ -7197,7 +7197,7 @@ artifacts:
     known_extra_writers:
       - "engine/neuralweb/orchestrator_log.py — _publish_site() writes the stamped site copy"
     owner_program: neural-web
-    cadence: daily-cortex
+    cadence: nightly-cortex
     storage: git
     asof_field: as_of
     freshness_sla_hours: 30
