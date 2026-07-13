@@ -335,9 +335,11 @@ on:
       - "engine/trial_ledger.py"
       - "engine/validation.py"
       - "engine/llm_auth.py"
+      - "engine/neuralweb/key_pool.py"
       # Multi-key OAuth failover surface: the auth waterfall, the key pool,
       # the dispatcher, and the build lane must re-prove failover on change.
       - "tests/test_llm_auth.py"
+      - "tests/test_key_pool.py"
       - "scripts/metabolism_build.py"
       - "scripts/metabolism_dispatch.py"
       # V7 PR Audit gate (R-V7-1..6): audit engine, CLI, merge gate, workflow, test.
@@ -1447,7 +1449,7 @@ jobs:
       - name: metabolism v4 w1 suite (real BUILD dispatch — R-V4-2)
         run: python -m pytest tests/test_metabolism_v4_w1_dispatch.py tests/test_metabolism_buildlane.py -q
       - name: llm auth waterfall + multi-key failover suite
-        run: python -m pytest tests/test_llm_auth.py -q
+        run: python -m pytest tests/test_llm_auth.py tests/test_key_pool.py -q
       - name: cortex provider routing + tool loop suite
         run: python -m pytest tests/test_cortex.py -q
       - name: cortex ADB-W3 two-way read tools + parity suite

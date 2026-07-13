@@ -2558,7 +2558,11 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            # F3 FIX: plain rebase (no -X theirs) so an adjacent-append conflict
+            # on shared JSONL paths (trial_ledger, governance, machine_registry)
+            # surfaces as a conflict → the retry re-runs cleanly instead of
+            # silently dropping the causal job's committed rows.
+            if git pull --rebase --autostash origin main && git push; then
               echo "pushed cortex outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true

@@ -72,6 +72,19 @@ _TRIGGER_NEW_ROWS_HARD = 15    # hard trigger: >= 15 newly matured graded rows
 _TRIGGER_NEW_ROWS_SOFT = 5     # soft trigger: >= 5 AND >= 14 days
 _TRIGGER_DAYS_SINCE_PM = 14    # days since last postmortem for soft trigger
 
+# F1 FIX: market-aware date column name for the attribution parquet.
+# US organ writes an 'as_of' column; CN organ writes a 'date' column.
+# This mapping drives _count_graded_rows_since_audit so a missing column
+# is a loud schema error, never a silent zero.
+_DATE_COL: dict[str, str] = {"us": "as_of", "cn": "date"}
+# F2 FIX: canonical audit-state key names (auditor's own schema).
+# The US organ writes 'last_graded_asof'; the auditor reads 'last_audit_graded_as_of'.
+# _read_audit_state checks both so the organ stamp advances the cursor without a
+# second writer.
+_STATE_KEY_GRADED = "last_audit_graded_as_of"     # auditor-owned key (primary)
+_STATE_KEY_GRADED_ORGAN = "last_graded_asof"       # organ stamp key (fallback alias)
+_STATE_KEY_PM_CYCLE = "last_postmortem_cycle_id"   # auditor-owned key (no alias needed)
+
 # Byte budget for context blocks (total context sent to LLM)
 _SCOREBOARD_BUDGET_BYTES = 12_000
 _EVIDENCE_BUDGET_BYTES = 20_000
@@ -276,12 +289,25 @@ def _json_truncated(obj: Any, budget: int) -> str:
 # ---------------------------------------------------------------------------
 
 def _read_audit_state(market: str, root: Path) -> dict:
-    """Read the audit state JSON for the given market.  Returns {} on any error."""
+    """Read the audit state JSON for the given market.  Returns {} on any error.
+
+    F2 FIX: normalises the organ-stamp alias key 'last_graded_asof' (written by
+    engine/standout_audit.py) into the auditor's canonical key
+    'last_audit_graded_as_of' so the organ stamp advances the cursor without
+    requiring a separate state writer.  The auditor's own key takes precedence
+    (set by run_audit's post-audit stamp).
+    """
     try:
         p = _state_path(market, root)
         if not p.exists():
             return {}
-        return _read_json(p) or {}
+        raw = _read_json(p) or {}
+        # F2: if the auditor's canonical key is absent but the organ alias is present,
+        # promote the organ alias so downstream readers see a unified cursor.
+        if _STATE_KEY_GRADED not in raw and _STATE_KEY_GRADED_ORGAN in raw:
+            raw = dict(raw)
+            raw[_STATE_KEY_GRADED] = raw[_STATE_KEY_GRADED_ORGAN]
+        return raw
     except Exception:  # noqa: BLE001
         return {}
 
@@ -290,29 +316,62 @@ def _count_graded_rows_since_audit(market: str, root: Path, last_audit_graded_as
     """Count newly matured graded rows since the last audit.
 
     Uses the attribution parquet if available, else falls back to evidence JSONL.
-    'Newly matured' means rows whose as_of > last_audit_graded_as_of (or all
+    'Newly matured' means rows whose date_col > last_audit_graded_as_of (or all
     rows if last_audit_graded_as_of is None/absent).
+
+    F1 FIX: uses _DATE_COL[market] to handle the US ('as_of') vs CN ('date')
+    schema difference.  A KeyError on the expected column is now a loud WARNING
+    with status="schema_error" surfaced via the caller — never a silent zero.
+
     NEVER raises.
     """
     try:
+        date_col = _DATE_COL.get(market, "as_of")
         attr_p = _attribution_path(market, root)
         if attr_p.exists():
             try:
                 import pandas as pd  # type: ignore[import]
-                df = pd.read_parquet(str(attr_p), columns=["as_of"])
+                # F1: check schema BEFORE reading to distinguish "column absent"
+                # (schema mismatch = loud error sentinel) from other read errors
+                # (fallback to JSONL).  pyarrow.parquet.ParquetFile.schema_arrow
+                # is cheap (no row scan) and available in all supported versions.
+                try:
+                    import pyarrow.parquet as _pq  # type: ignore[import]
+                    _schema = _pq.ParquetFile(str(attr_p)).schema_arrow
+                    _available = {str(f.name) for f in _schema}
+                except Exception:  # noqa: BLE001
+                    _available = None  # cannot verify schema → fall through to read
+
+                if _available is not None and date_col not in _available:
+                    log.error(
+                        "standout_auditor: _count_graded_rows_since_audit(%s): "
+                        "expected column %r absent in attribution parquet "
+                        "(available: %s) — schema mismatch; "
+                        "returning -1 as error sentinel",
+                        market, date_col, sorted(_available),
+                    )
+                    return -1  # loud error sentinel; audit_due will surface schema_error
+
+                df = pd.read_parquet(str(attr_p), columns=[date_col])
                 if df.empty:
                     return 0
                 if last_audit_graded_as_of:
-                    # Count rows with as_of strictly after the last audit snapshot
-                    df["as_of"] = pd.to_datetime(df["as_of"], errors="coerce")
+                    # Count rows with date_col strictly after the last audit snapshot
+                    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
                     cutoff = pd.to_datetime(last_audit_graded_as_of, errors="coerce")
                     if cutoff is not pd.NaT:  # type: ignore[comparison-overlap]
-                        return int((df["as_of"] > cutoff).sum())
+                        return int((df[date_col] > cutoff).sum())
                 return len(df)
-            except Exception:  # noqa: BLE001
-                pass
+            except Exception as exc:  # noqa: BLE001
+                log.warning(
+                    "standout_auditor: _count_graded_rows_since_audit(%s): "
+                    "parquet read failed (%s); falling back to evidence JSONL",
+                    market, exc,
+                )
 
-        # Fallback: count evidence JSONL rows
+        # Fallback: count evidence JSONL rows (evidence uses market-native date key)
+        # CN evidence rows use 'date'; US evidence rows use 'as_of'
+        ev_date_key = date_col  # same mapping applies to JSONL evidence rows
         ev_p = _evidence_path(market, root)
         if not ev_p.exists():
             return 0
@@ -322,7 +381,7 @@ def _count_graded_rows_since_audit(market: str, root: Path, last_audit_graded_as
         if last_audit_graded_as_of:
             return sum(
                 1 for r in rows
-                if str(r.get("as_of") or "") > last_audit_graded_as_of
+                if str(r.get(ev_date_key) or r.get("as_of") or "") > last_audit_graded_as_of
             )
         return len(rows)
     except Exception as exc:  # noqa: BLE001
@@ -394,13 +453,18 @@ def build_context(market: str, root: Path | None = None) -> dict:
         # (b) Evidence packs tail since last audit
         try:
             state = _read_audit_state(market, repo)
-            last_graded = state.get("last_audit_graded_as_of")
+            last_graded = state.get(_STATE_KEY_GRADED)
             ev_path = _evidence_path(market, repo)
+            # F1: use market-aware date key for evidence JSONL filtering
+            ev_date_key = _DATE_COL.get(market, "as_of")
             if ev_path.exists():
                 ev_rows = _read_jsonl_tail(ev_path, n=500)
-                # Filter to rows since last audit
+                # Filter to rows since last audit; fall back to 'as_of' for cross-market safety
                 if last_graded and ev_rows:
-                    ev_rows = [r for r in ev_rows if str(r.get("as_of") or "") > last_graded]
+                    ev_rows = [
+                        r for r in ev_rows
+                        if str(r.get(ev_date_key) or r.get("as_of") or "") > last_graded
+                    ]
                 ev_text = "\n".join(
                     json.dumps(r, default=str) for r in ev_rows
                 )
@@ -529,10 +593,29 @@ def audit_due(market: str, root: Path | None = None) -> dict:
         repo = _repo_root(root)
         state = _read_audit_state(market, repo)
 
-        last_graded = state.get("last_audit_graded_as_of")
-        last_pm_cycle = state.get("last_postmortem_cycle_id")
+        last_graded = state.get(_STATE_KEY_GRADED)
+        last_pm_cycle = state.get(_STATE_KEY_PM_CYCLE)
 
         new_rows = _count_graded_rows_since_audit(market, repo, last_graded)
+
+        # F1: -1 is the loud schema-error sentinel from _count_graded_rows_since_audit
+        if new_rows < 0:
+            return {
+                "schema": SCHEMA_AUDIT_DUE,
+                "market": market,
+                "due": False,
+                "reason": (
+                    f"schema_error: attribution parquet for {market} missing expected "
+                    f"column '{_DATE_COL.get(market, 'as_of')}' — check CN vs US schema; "
+                    f"audit_due blocked to avoid false-zero trigger"
+                ),
+                "newly_matured_rows": 0,
+                "days_since_postmortem": None,
+                "last_audit_graded_as_of": last_graded,
+                "last_postmortem_cycle_id": last_pm_cycle,
+                "status": "schema_error",
+            }
+
         days_pm = _days_since_last_postmortem(market, repo, last_pm_cycle)
 
         # SA-R9 trigger logic
@@ -1274,6 +1357,44 @@ def run_audit(
             pm["_insight_bus_ids"] = emitted_ids
         else:
             emitted_ids = []
+
+        # ── F2: advance the audit cursor in the state file ────────────────
+        # Write last_audit_graded_as_of and last_postmortem_cycle_id so that
+        # subsequent audit_due() calls see an advanced cursor and do not
+        # immediately re-trigger (the cursor was never written before this fix).
+        # NEVER raises (NEVER-RAISE contract).
+        try:
+            sp = _state_path(market, repo)
+            sp.parent.mkdir(parents=True, exist_ok=True)
+            existing_state: dict = {}
+            if sp.exists():
+                try:
+                    existing_state = json.loads(sp.read_text(encoding="utf-8"))
+                except Exception:  # noqa: BLE001
+                    existing_state = {}
+            # Read the current max date from the attribution parquet to stamp cursor
+            date_col = _DATE_COL.get(market, "as_of")
+            new_graded_asof: str | None = None
+            try:
+                attr_p = _attribution_path(market, repo)
+                if attr_p.exists():
+                    import pandas as pd  # type: ignore[import]
+                    _df = pd.read_parquet(str(attr_p), columns=[date_col])
+                    if not _df.empty:
+                        new_graded_asof = str(_df[date_col].max())
+            except Exception:  # noqa: BLE001
+                pass
+            existing_state[_STATE_KEY_GRADED] = new_graded_asof or ts
+            existing_state[_STATE_KEY_PM_CYCLE] = cycle_id
+            existing_state["last_run_utc"] = ts
+            sp.write_text(json.dumps(existing_state, indent=2, default=str), encoding="utf-8")
+            log.info(
+                "standout_auditor: audit cursor advanced → %s=%s, %s=%s",
+                _STATE_KEY_GRADED, existing_state[_STATE_KEY_GRADED],
+                _STATE_KEY_PM_CYCLE, cycle_id,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("standout_auditor: failed to write audit state cursor: %s", exc)
 
         return {
             "schema": SCHEMA_POSTMORTEM,
