@@ -59,7 +59,8 @@ def _library_workers() -> int:
 def _intl_one_task(item):
     ticker, close, name, sector, flag, market = item
     try:
-        return _one(ticker, close, name, sector, flag, market)
+        return _one(ticker, close, name, sector, flag, market,
+                    allow_limited=True)  # universe-wide opt-in mirroring the CN build
     except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
         log.debug("intl library %s failed: %s", ticker, e)
         return None
@@ -92,6 +93,27 @@ _TV_EXCH = {".T": "TSE", ".KS": "KRX", ".KQ": "KOSDAQ", ".TW": "TWSE", ".L": "LS
             ".CO": "OMXCOP", ".OL": "OSL", ".VI": "VIE", ".LS": "EURONEXT", ".IR": "EURONEXT"}
 
 
+def _limited_rec(ticker: str, c: pd.Series, name: str, sector: str,
+                 flag: str, market: str) -> dict:
+    """A minimal, honest record for a name too new for the cycle model (a recent
+    international listing under the 300-session floor). US/CN-parity port of
+    build_stock_library._limited_rec / build_china_library._limited_rec: identity,
+    listing date, session count, flag, market and the LIMITED sentinel state
+    (intl_stock keys off `limited` before ever reading the ladder), so the
+    click-through from search suggestions never 404s. Note: intl_stock.html charts
+    from site/intlohlc/ which emit_close_only builds off the index — no `chart` key
+    needed here; charts are free once indexed, exactly like China."""
+    return {
+        "ticker": ticker, "name": name, "sector": sector, "tv": tv_symbol(ticker),
+        "flag": flag, "market": market,
+        "asof": str(c.index.max().date()),
+        "listed": str(c.index.min().date()),
+        "history_days": int(len(c)),
+        "limited": True,
+        "ladder": {"state": "LIMITED"},
+    }
+
+
 def tv_symbol(ticker: str) -> str:
     for sfx, exch in _TV_EXCH.items():
         if ticker.endswith(sfx):
@@ -100,13 +122,22 @@ def tv_symbol(ticker: str) -> str:
 
 
 def _one(ticker: str, close: pd.Series, name: str, sector: str,
-         flag: str, market: str) -> dict | None:
+         flag: str, market: str,
+         min_days: int = 300, allow_limited: bool = False) -> dict | None:
     c = close.dropna()
-    if len(c) < 300:
+    if not len(c):
         return None
+    # The search universe and this library share the same intl_search panel, so a
+    # name the search suggestions return must never 404 on click-through: below the
+    # 300-session cycle floor we emit an honest LIMITED record (searchable identity +
+    # listing date + chart, "analysis pending") instead of dropping the name —
+    # display-tier context ships freely; the full read unlocks as history accrues.
+    # allow_limited covers the WHOLE universe (universe-wide, mirroring the CN build).
+    if len(c) < min_days:
+        return _limited_rec(ticker, c, name, sector, flag, market) if allow_limited else None
     res = analyze(c, None, kind="equity")
     if not res.get("ladder"):
-        return None
+        return _limited_rec(ticker, c, name, sector, flag, market) if allow_limited else None
     month = int(c.index.max().month)
     seas = seasonality(c)
     # RICH close-only technicals (engine.stock_technicals: momentum / 52w-high proximity / BBWP /
@@ -254,7 +285,7 @@ def main(alpha: dict | None = None) -> dict | None:
     except Exception as e:  # noqa: BLE001 — additive cone, never fatal
         log.warning("intl anticipation benchmarks unavailable (%s)", e)
 
-    index, cand, built, failed = [], [], 0, 0
+    index, cand, built, failed, limited = [], [], 0, 0, 0
     uni = []
     for ticker in closes.columns:
         if ticker not in members.index:
@@ -269,6 +300,15 @@ def main(alpha: dict | None = None) -> dict | None:
     for (ticker, close, name, sector, flag, market), rec in zip(uni, recs):
         if rec is None:
             failed += 1
+            continue
+        if rec.get("limited"):
+            # recent listing under the history floor — searchable identity + honest
+            # "analysis pending" detail page (renderLimited), but it NEVER enters
+            # scoring / standouts / profiles (accrual without authority).
+            to_write.append((ticker.replace("=", "_").replace("^", "_"), rec))
+            index.append({"t": ticker, "n": rec["name"], "s": rec["sector"], "st": "LIMITED",
+                          "fl": rec["flag"], "mk": rec["market"]})
+            limited += 1
             continue
         # COMBINE: confluence cascade computed alongside the residual-alpha selection — additive.
         # It NEVER changes eligibility (the rank_setups alpha floor stays the inclusion gate); it
@@ -407,8 +447,8 @@ def main(alpha: dict | None = None) -> dict | None:
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "intl_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
-    log.info("intl library: %d analyzed, %d skipped, %d standouts",
-             built, failed, len(cand))
+    log.info("intl library: %d analyzed, %d limited (recent listings), %d skipped (empty/failed), %d standouts",
+             built, limited, failed, len(cand))
     return setups
 
 

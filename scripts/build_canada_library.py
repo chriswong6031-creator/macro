@@ -70,7 +70,9 @@ def _ca_winit(liq=None) -> None:
 def _ca_one_task(item):
     ticker, close, high, name, sector = item
     try:
-        return _one(ticker, close, high, name, sector, liquidity=_CA_SHARED.get("liq"))
+        # universe-wide opt-in: the search universe IS the heatmap universe (mirrors CN build)
+        return _one(ticker, close, high, name, sector, liquidity=_CA_SHARED.get("liq"),
+                    allow_limited=True)
     except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
         log.debug("canada library %s failed: %s", ticker, e)
         return None
@@ -151,17 +153,47 @@ def tv_symbol(ticker: str) -> str:
     return ticker
 
 
+def _limited_rec(ticker: str, c: pd.Series, name: str, sector: str) -> dict:
+    """A minimal, honest record for a name too new for the cycle model (a recent TSX
+    listing under the 300-session floor). Port of build_china_library._limited_rec:
+    identity, listing date, session count and the LIMITED sentinel state
+    (canada_stock.html keys off `limited` before ever reading the ladder), plus the
+    TV symbol so the page can chart it.
+
+    Note: no `chart` key here — canada_stock.html charts from site/canadaohlc/ which
+    emit_close_only builds off index.json (limited names are indexed with st=LIMITED
+    and get canadaohlc charts for free once they appear in the index)."""
+    return {
+        "ticker": ticker, "name": name, "sector": sector, "tv": tv_symbol(ticker),
+        "asof": str(c.index.max().date()),
+        "listed": str(c.index.min().date()),
+        "history_days": int(len(c)),
+        "limited": True,
+        "ladder": {"state": "LIMITED"},
+    }
+
+
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
-         name: str, sector: str, liquidity: str | None = None) -> dict | None:
+         name: str, sector: str, liquidity: str | None = None,
+         min_days: int = 300, allow_limited: bool = False) -> dict | None:
     c = close.dropna()
-    if len(c) < 300:
+    if not len(c):
         return None
+    # The heatmap and this library read the SAME canada_search panel, so a name the
+    # tiles render must never 404 on click-through: below the 300-session cycle
+    # floor we emit an honest LIMITED record (searchable identity + listing date +
+    # chart, "analysis pending") instead of dropping the name — display-tier
+    # context ships freely; the full read unlocks as history accrues. Unlike the
+    # US build (curated extras only), allow_limited covers the WHOLE universe here
+    # because the search universe IS the heatmap universe.
+    if len(c) < min_days:
+        return _limited_rec(ticker, c, name, sector) if allow_limited else None
     # Canada net-liquidity / regime overlay is a single macro label that conditions
     # every TSX-listed name's buy-setup conviction (mirrors the US library; macro_drag
     # / VIX legs are US-only and intentionally dropped here).
     res = analyze(c, high, kind="equity", liquidity=liquidity)
     if not res.get("ladder"):
-        return None
+        return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)
     seas = seasonality(c)
     # RICH close-only technicals (engine.stock_technicals: momentum / 52w-high proximity / BBWP /
@@ -694,7 +726,7 @@ def main(alpha: dict | None = None) -> dict | None:
         fdir.mkdir(parents=True, exist_ok=True)
         (fdir / "canada_alpha.json").write_text(json.dumps(alpha, separators=(",", ":"), default=str))
 
-    index, cand, built, failed = [], [], 0, 0
+    index, cand, built, failed, limited = [], [], 0, 0, 0
     sector_by: dict[str, str] = {}
     uni = universe()
 
@@ -780,6 +812,14 @@ def main(alpha: dict | None = None) -> dict | None:
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
+            continue
+        if rec.get("limited"):
+            # recent listing under the history floor — searchable identity + honest
+            # "analysis pending" detail page (renderLimited), but it NEVER enters
+            # scoring / boards / profiles (accrual without authority).
+            to_write[ticker] = (ticker.replace("=", "_").replace("^", "_"), rec)
+            index.append({"t": ticker, "n": name, "s": sector, "st": "LIMITED"})
+            limited += 1
             continue
         # COMBINE: confluence cascade computed alongside the alpha/alignment gate — additive.
         # It NEVER changes eligibility (alpha floor + alignment stay the inclusion gate); it only
@@ -1046,8 +1086,8 @@ def main(alpha: dict | None = None) -> dict | None:
             json.dumps(wide, separators=(",", ":"), default=str))
         log.info("wrote canada_standouts.json (%d buy of %d eligible / %d universe)",
                  len(wide["buy"]), eligible, len(cand))
-    log.info("canada library: %d analyzed, %d skipped (thin history), %d setups",
-             built, failed, len(cand))
+    log.info("canada library: %d analyzed, %d limited (recent listings), %d skipped (empty/failed), %d setups",
+             built, limited, failed, len(cand))
     return setups
 
 

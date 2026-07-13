@@ -206,7 +206,7 @@
       <div id="sv-fingerprint"></div>
       <div id="sv-honesty"></div>
       <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
-      <details class="sv-deep"><summary>{{ t('Cycle &amp; timing detail', '周期与时机详情') }}</summary>
+      <details class="sv-deep" id="panel_deep"><summary>{{ t('Cycle &amp; timing detail', '周期与时机详情') }}</summary>
         <div id="r_conviction" class="conv" style="display:none"></div>
         <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
         <p id="r_age" class="agewhen" style="display:none"></p>
@@ -223,7 +223,7 @@
       <div id="tvbox"></div>
     </div>
     <!-- ===== Momentum across timeframes — paired right under the chart ===== -->
-    <div class="panel">
+    <div class="panel" id="panel_mtf">
       <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
       <div id="r_mtf"></div>
     </div>
@@ -251,7 +251,7 @@
     </div>
     </details>
     <!-- Trust-the-state: standalone panel at the page bottom (per revamp) -->
-    <div class="panel">
+    <div class="panel" id="panel_cal">
       <h2>{{ t('How much to trust the state — measured on HK history', '这个状态有多可信 — 基于香港历史实测') }}{{ help(
         'HK stocks drift up over a month from every state (the market\'s long upward bias); the spread between
         states is small, and the "scary" states measured slightly better forward returns — markets mean-revert
@@ -315,8 +315,9 @@
   function L(k) { return (T[lang()] || T.en)[k]; }
   function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
   var DISP = {{ state_display_json | safe }};
-  function dlabel(s) { var d = DISP[s]; if (!d) return s; return lang() === 'zh' ? (d.label_zh || d.label) : d.label; }
+  function dlabel(s) { if (s === 'LIMITED') return lang() === 'zh' ? '历史不足' : 'limited history'; var d = DISP[s]; if (!d) return s; return lang() === 'zh' ? (d.label_zh || d.label) : d.label; }
   function disp(s) {
+    if (s === 'LIMITED') return lang() === 'zh' ? '新上市 · 历史不足' : 'new listing · limited history';
     var d = DISP[s]; if (!d) return s;
     return lang() === 'zh' ? (d.label_zh || d.label) + ' · ' + (d.action_zh || d.action)
                            : d.label + ' · ' + d.action;
@@ -457,9 +458,50 @@
     box.style.display = '';
   }
 
+  // A recent HK listing has no computable cycle ladder yet (the model needs ~300
+  // sessions ≈ a year of trading). Show an honest limited card — identity, listing
+  // date, an "analysis pending" banner and the price chart — instead of the old
+  // NOT-IN-LIBRARY dead end every young heatmap tile hit. Mirrors stock.html's
+  // renderLimited; hides every analysis panel so nothing stale leaks through.
+  // HKEX data is login-gated on TradingView's free embed, so the chart draws from
+  // the inline `chart` series the limited rec carries.
+  function renderLimited(d) {
+    var st = document.getElementById('r_state');
+    st.textContent = lang() === 'zh' ? '历史不足' : 'LIMITED';
+    st.className = 'state';
+    document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
+    document.getElementById('r_points').innerHTML = '';
+    document.getElementById('r_cyclebox').innerHTML = '';
+    document.getElementById('r_flags').textContent = '';
+    document.getElementById('r_why').textContent = '';
+    document.getElementById('r_cal').innerHTML = '';
+    document.getElementById('r_mtf').innerHTML = '';
+    ['sv-decision', 'sv-fingerprint', 'sv-honesty', 'sv-evidence', 'sv-country']
+      .forEach(function (id) { var el = document.getElementById(id); if (el) el.innerHTML = ''; });
+    ['r_conviction', 'r_eq', 'r_age', 'r_early', 'r_entry',
+     'r_gbeta_panel', 'r_fund_panel', 'r_ah_panel',
+     'panel_deep', 'panel_mtf', 'panel_cal']
+      .forEach(function (id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    // #r_summary is display:none by the page polish CSS, so the banner can't live there
+    document.getElementById('r_summary').textContent = '';
+    var n = d.history_days || 0;
+    // the banner takes the decision-band slot (the page's "one call" position)
+    document.getElementById('sv-decision').innerHTML = '<div class="cyclebox">🆕 ' + esc(lz(
+      'New listing — first traded ' + d.listed + ', only ' + n + ' session' + (n === 1 ? '' : 's') +
+      ' of history so far. The cycle & momentum model needs about a year of trading, so the full analysis unlocks as data accrues. Watch — don\'t chase. Price chart below.',
+      '新上市 —— 首个交易日 ' + d.listed + '，目前仅有 ' + n + ' 个交易日。周期与动量模型需约一年历史，完整分析将随数据积累解锁。宜观察，勿追高。下方为价格走势图。')) + '</div>';
+    drawChart(d);
+    hideEmptyGroups();
+  }
+
   function render(d) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
+    if (d.limited) { renderLimited(d); return; }
+    // a full record may follow a limited one — re-show the panels it hid and drop
+    // its banner (SV.mount rebuilds sv-decision only when the view-model mounts)
+    ['panel_deep', 'panel_mtf', 'panel_cal'].forEach(function (id) { var el = document.getElementById(id); if (el) el.style.display = ''; });
+    document.getElementById('sv-decision').innerHTML = '';
     var st = document.getElementById('r_state');
     st.textContent = dlabel(d.ladder.state) || d.ladder.label;
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
