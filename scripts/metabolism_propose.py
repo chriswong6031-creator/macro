@@ -131,6 +131,20 @@ def _run_all_lobes(args: "argparse.Namespace", root: Path) -> int:  # noqa: F821
         base_cycle, loop_managed,
     )
 
+    # ── R-V9-2 stage-local heal: agenda-branch artifacts never reach main, so
+    # this checkout may lack the allocation.  Rebuild structural-only once
+    # (writes data/metabolism/attention_allocation.json — rides the propose
+    # branch commit; the LLM discretion layer stays agenda-stage-only).
+    _alloc: dict | None = None
+    try:
+        from engine.metabolism import attention as _attn_heal  # noqa: PLC0415
+        _alloc = _attn_heal.effective_allocation(cycle_id=base_cycle, root=root)
+    except Exception as _he:  # noqa: BLE001
+        log.warning(
+            "metabolism_propose --all-lobes: attention heal failed (%s) — "
+            "per-call defaults apply", _he,
+        )
+
     for i, lobe_id in enumerate(loop_managed):
         # First lobe keeps the bare base cycle_id (backward compat guarantee)
         cycle_id = base_cycle if i == 0 else f"{base_cycle}-{lobe_id}"
@@ -145,7 +159,9 @@ def _run_all_lobes(args: "argparse.Namespace", root: Path) -> int:  # noqa: F821
             _attn_skip_reason = ""
             try:
                 from engine.metabolism import attention as _attn  # noqa: PLC0415
-                _attn_skip, _attn_skip_reason = _attn.propose_skip(lobe_id, root=root)
+                _attn_skip, _attn_skip_reason = _attn.propose_skip(
+                    lobe_id, root=root, allocation=_alloc,
+                )
             except Exception as _ae:  # noqa: BLE001
                 log.warning(
                     "metabolism_propose --all-lobes: attention.propose_skip failed for "
@@ -314,12 +330,16 @@ def _run_single_lobe(args: "argparse.Namespace", root: Path, lobe: str, cycle_id
         _base_docket_size = max_docket_size
         try:
             from engine.metabolism import attention as _attn_scale  # noqa: PLC0415
+            # R-V9-2 stage-local heal: idempotent — loads the allocation when
+            # present (the --all-lobes heal already wrote it), rebuilds
+            # structural-only otherwise (direct single-lobe invocation).
+            _alloc_sl = _attn_scale.effective_allocation(cycle_id=cycle_id, root=root)
             max_docket_size = _attn_scale.effective_docket_size(
-                lobe, _base_docket_size, root=root,
+                lobe, _base_docket_size, root=root, allocation=_alloc_sl,
             )
             if max_docket_size != _base_docket_size:
                 try:
-                    _band = _attn_scale.band_for(lobe, root=root)
+                    _band = _attn_scale.band_for(lobe, allocation=_alloc_sl, root=root)
                 except Exception:  # noqa: BLE001
                     _band = "STANDARD"
                 log.info(

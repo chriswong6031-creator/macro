@@ -1130,3 +1130,49 @@ class TestRankCycleIds:
         out = rank_cycle_ids(["no-date-here", "cycle-2026-07-12-a3f2"], root=root,
                              allocation={"allocations": "junk"})
         assert len(out) == 2  # nothing dropped, nothing raised
+
+
+# ===========================================================================
+# R-V9-2 — effective_allocation: stage-local heal (agenda artifacts never
+# reach main; downstream stages rebuild structural-only in their workspace)
+# ===========================================================================
+
+class TestEffectiveAllocation:
+
+    def test_absent_file_rebuilds_structural(self, tmp_path: Path) -> None:
+        """No allocation in the workspace → structural-only rebuild, written
+        to disk, no LLM (providers=None path)."""
+        root = _make_repo(tmp_path)
+        from engine.metabolism.attention import ALLOCATION_PATH, effective_allocation
+        assert not (root / ALLOCATION_PATH).exists()
+        alloc = effective_allocation(cycle_id="cycle-test-heal", root=root)
+        assert alloc.get("allocations"), "structural rebuild must populate allocations"
+        assert alloc.get("cycle_id") == "cycle-test-heal"
+        assert (root / ALLOCATION_PATH).exists(), "heal must persist the artifact"
+        # No provider was available → honest degraded marker, bands structural
+        assert alloc.get("provider") is None
+
+    def test_present_file_passthrough(self, tmp_path: Path) -> None:
+        """Existing allocation is returned verbatim — no rebuild, no overwrite."""
+        root = _make_repo(tmp_path)
+        from engine.metabolism.attention import ALLOCATION_PATH, effective_allocation
+        marker = {
+            "schema": "metabolism.attention.v1",
+            "cycle_id": "cycle-agenda-built",
+            "provider": "marker-test",
+            "allocations": {"til": {"band": "FOCUS", "weight": 1.0,
+                                    "structural_band": "STANDARD", "llm_band": "FOCUS",
+                                    "floored": False, "rationale": "x"}},
+            "focus_lobes": ["til"],
+        }
+        p = root / ALLOCATION_PATH
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(marker), encoding="utf-8")
+        alloc = effective_allocation(cycle_id="cycle-other", root=root)
+        assert alloc.get("provider") == "marker-test"
+        assert alloc.get("cycle_id") == "cycle-agenda-built"
+
+    def test_never_raises_on_broken_root(self, tmp_path: Path) -> None:
+        from engine.metabolism.attention import effective_allocation
+        out = effective_allocation(root=tmp_path / "nonexistent")
+        assert isinstance(out, dict)  # {} or degraded artifact — never raises
