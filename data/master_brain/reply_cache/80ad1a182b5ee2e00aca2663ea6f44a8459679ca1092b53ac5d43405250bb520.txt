@@ -1,0 +1,21 @@
+{
+  "regime_context": "The detector shows Big Banks as the dominant theme with a wide leadership margin, broad participation (breadth 1.0), and durable score, but it is crowded. No one-narrative extreme; rotation is broad. The absolute-trend gate has historically helped cut drawdowns in this market, and currently the leader is eligible.",
+  "theses": [
+    {
+      "subject": "Big Banks",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Big Banks hold the top rank with strong breadth and a high durability bar (0.74), supported by the absolute-trend gate's eligibility. The rotation radar shows no immediate challenger threat (margin 1.593), suggesting leadership persistence. Crowding flags demand sizing caution, not a fade.",
+      "evidence": [
+        "Rank #1 with score 2.105 and eligible status (absolute-trend gate).",
+        "Durability bar 0.74 and breadth 1.0 signal cohesion.",
+        "Rotation leader with a wide margin over challenger Insurers (1.593)."
+      ],
+      "dissent": "Crowding (z=1.57) raises the risk of sharp mean-reversion, and the Hurst 'mixed' tag indicates trends are not clean. A macro shock (e.g., real estate or credit stress) could rotate leadership away from banks abruptly.",
+      "falsifier_text": "The absolute-trend gate removes eligibility for Big Banks (score turns negative or durability collapses, indicated by a flip to 'eligible: false' in a future state)."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

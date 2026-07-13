@@ -1,0 +1,20 @@
+DESK NOTE – NARRATIVE EMERGENCE SCOUT (2026‑07‑10, Canada/TSX)
+
+*Context*  
+Big Banks dominate the current thematic ranking (score 2.1, durability 0.74, breadth 1.0, crowded). The rotation is broad (75% of themes eligible) but not directional; no confirmed handoff is underway. Absorption of 0.37 confirms that no single narrative monopolises flow. In such a “leader with plenty of also‑rans” structure, forming leadership often emerges from themes with solid internal health that are not yet over‑owned.
+
+*Watch hypothesis – FORMING leadership*  
+**Rails & Industrials** (ca_rails_ind) is worth monitoring as a possible narrative‑formation candidate.  
+– Rank 6/16, score +0.14 (the third‑highest non‑financials score behind Pipelines and Base Metals).  
+– Durability bar 0.61, breadth 0.77, not crowded (z = 0.28).  
+– Hurst tag “mixed” – no strong trend yet, but the cohesion and breadth suggest the group is holding together while not being chased.  
+– If the macro backdrop tilts toward domestic infrastructure or industrial re‑shoring, this theme could begin to build momentum.
+
+*Kill criterion (check‑by: 2026‑08‑07)*  
+The forming‑leadership thesis is falsified if **both** of the following occur over the next 4 weeks:  
+1) The theme’s momentum score falls below –0.2 (i.e., turns clearly negative).  
+2) Its durability bar drops below 0.50, indicating the internal trend‑health of constituents is breaking down.  
+If the score instead rises above 0.5 and the Hurst tag shifts to “trend,” the hypothesis would strengthen – but that remains a conditional watch, never a trade.
+
+*Accountability*  
+Track‑record n = 0; this is a fresh, falsifiable conditional. All observations are drawn from a display‑only detector with no validated forward edge. The absolute‑trend gate is the sole validated drawdown control; everything else is a fallible lens. No position size, weight, or recommendation is implied.

@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-07-13",
-  "generated_utc": "2026-07-13T08:39:33.431055+00:00",
-  "n_tickers": 4917,
+  "generated_utc": "2026-07-13T09:28:37.631346+00:00",
+  "n_tickers": 4932,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "HUBB": {
@@ -3440,10 +3440,12 @@
     },
     "FDX": {
       "ticker": "FDX",
-      "channels": [],
-      "weighted_score": 0,
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
       "congress_position_usd": 36390000.0,
-      "convergence_score": 0,
+      "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },
@@ -27767,6 +27769,16 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "INMD": {
+      "ticker": "INMD",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "JELD": {
       "ticker": "JELD",
       "channels": [
@@ -29819,6 +29831,16 @@
     },
     "PAACU": {
       "ticker": "PAACU",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "RFAMU": {
+      "ticker": "RFAMU",
       "channels": [
         "special_situation"
       ],
@@ -38428,16 +38450,6 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "ISOU": {
-      "ticker": "ISOU",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.4,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "MTEKW": {
       "ticker": "MTEKW",
       "channels": [
@@ -39760,6 +39772,16 @@
     },
     "BFRGW": {
       "ticker": "BFRGW",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "GOVX": {
+      "ticker": "GOVX",
       "channels": [
         "special_situation"
       ],
@@ -41968,6 +41990,16 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "LMFA": {
+      "ticker": "LMFA",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "PLUR": {
       "ticker": "PLUR",
       "channels": [
@@ -43060,16 +43092,6 @@
     },
     "NFGC": {
       "ticker": "NFGC",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.4,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "REAX": {
-      "ticker": "REAX",
       "channels": [
         "special_situation"
       ],
@@ -49620,6 +49642,136 @@
     },
     "RDZNW": {
       "ticker": "RDZNW",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "RAYA": {
+      "ticker": "RAYA",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "MSGY": {
+      "ticker": "MSGY",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "PLTS": {
+      "ticker": "PLTS",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "VRAX": {
+      "ticker": "VRAX",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "VSA": {
+      "ticker": "VSA",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "CCCTU": {
+      "ticker": "CCCTU",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "CETI": {
+      "ticker": "CETI",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "FEED": {
+      "ticker": "FEED",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "EHSI": {
+      "ticker": "EHSI",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "LINC": {
+      "ticker": "LINC",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "LSH": {
+      "ticker": "LSH",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "MIACU": {
+      "ticker": "MIACU",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "SNBH": {
+      "ticker": "SNBH",
       "channels": [
         "special_situation"
       ],

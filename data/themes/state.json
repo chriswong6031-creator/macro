@@ -5,7 +5,7 @@
       "pending": {
         "bucket": "2026-07-10",
         "count": 1,
-        "tid": "insurance"
+        "tid": "memory_storage"
       }
     },
     "reco": {}
@@ -22,7 +22,7 @@
     "label": "neutral",
     "name": "AI Infrastructure",
     "name_zh": "AI \u57fa\u7840\u8bbe\u65bd",
-    "rank": 9,
+    "rank": 11,
     "reco": "hold",
     "score": 60
   },
@@ -38,15 +38,15 @@
     "label": "neutral",
     "name": "AI Semiconductors",
     "name_zh": "AI\u534a\u5bfc\u4f53",
-    "rank": 16,
+    "rank": 3,
     "reco": "hold",
-    "score": 58
+    "score": 63
   },
   "ai_software": {
     "label": "deteriorating",
     "name": "AI Software & Platforms",
     "name_zh": "AI \u8f6f\u4ef6\u4e0e\u5e73\u53f0",
-    "rank": 15,
+    "rank": 17,
     "reco": "avoid",
     "score": 58
   },
@@ -54,7 +54,7 @@
     "label": "neutral",
     "name": "Big Pharma",
     "name_zh": "\u5927\u578b\u836f\u4f01",
-    "rank": 12,
+    "rank": 14,
     "reco": "hold",
     "score": 60
   },
@@ -78,7 +78,7 @@
     "label": "neutral",
     "name": "Crypto & Digital Rails",
     "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8f68\u9053",
-    "rank": 38,
+    "rank": 37,
     "reco": "hold",
     "score": 41
   },
@@ -86,7 +86,7 @@
     "label": "dominant",
     "name": "Cybersecurity",
     "name_zh": "\u7f51\u7edc\u5b89\u5168",
-    "rank": 3,
+    "rank": 4,
     "reco": "hold",
     "score": 63
   },
@@ -94,9 +94,9 @@
     "label": "neutral",
     "name": "Data-Center Power & Cooling",
     "name_zh": "\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e0e\u6563\u70ed",
-    "rank": 28,
+    "rank": 25,
     "reco": "hold",
-    "score": 50
+    "score": 52
   },
   "defense": {
     "label": "deteriorating",
@@ -142,7 +142,7 @@
     "label": "dominant",
     "name": "Insurance & Brokers",
     "name_zh": "\u4fdd\u9669\u4e0e\u7ecf\u7eaa",
-    "rank": 1,
+    "rank": 2,
     "reco": "accumulate",
     "score": 67
   },
@@ -150,7 +150,7 @@
     "label": "emerging",
     "name": "Magnificent Seven",
     "name_zh": "\u4e03\u5de8\u5934",
-    "rank": 13,
+    "rank": 15,
     "reco": "enter",
     "score": 59
   },
@@ -158,7 +158,7 @@
     "label": "fading",
     "name": "Managed Care & Insurers",
     "name_zh": "\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669",
-    "rank": 19,
+    "rank": 20,
     "reco": "trim",
     "score": 56
   },
@@ -166,15 +166,15 @@
     "label": "neutral",
     "name": "Memory, HBM & Storage",
     "name_zh": "\u5185\u5b58\u3001HBM \u4e0e\u5b58\u50a8",
-    "rank": 2,
+    "rank": 1,
     "reco": "hold",
-    "score": 65
+    "score": 70
   },
   "non_ai_software": {
     "label": "deteriorating",
     "name": "Non-AI Software",
     "name_zh": "\u975eAI\u8f6f\u4ef6",
-    "rank": 26,
+    "rank": 27,
     "reco": "avoid",
     "score": 51
   },
@@ -190,15 +190,15 @@
     "label": "neutral",
     "name": "Nuclear & SMR Power",
     "name_zh": "\u6838\u7535\u4e0e\u5c0f\u578b\u6a21\u5757\u5316\u53cd\u5e94\u5806",
-    "rank": 36,
+    "rank": 38,
     "reco": "hold",
-    "score": 43
+    "score": 41
   },
   "obesity_glp1": {
     "label": "fading",
     "name": "GLP-1 & Obesity",
     "name_zh": "GLP-1 \u4e0e\u51cf\u80a5\u836f",
-    "rank": 4,
+    "rank": 5,
     "reco": "trim",
     "score": 62
   },
@@ -206,7 +206,7 @@
     "label": "neutral",
     "name": "Payments & Fintech",
     "name_zh": "\u652f\u4ed8\u4e0e\u91d1\u878d\u79d1\u6280",
-    "rank": 6,
+    "rank": 7,
     "reco": "hold",
     "score": 61
   },
@@ -230,7 +230,7 @@
     "label": "fading",
     "name": "Regional Banks",
     "name_zh": "\u533a\u57df\u94f6\u884c",
-    "rank": 11,
+    "rank": 13,
     "reco": "trim",
     "score": 60
   },
@@ -238,7 +238,7 @@
     "label": "neutral",
     "name": "Reshoring & Industrial Capex",
     "name_zh": "\u56de\u6d41\u4e0e\u5de5\u4e1a\u8d44\u672c\u5f00\u652f",
-    "rank": 10,
+    "rank": 12,
     "reco": "hold",
     "score": 60
   },
@@ -254,7 +254,7 @@
     "label": "neutral",
     "name": "Robotics & Automation",
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
-    "rank": 25,
+    "rank": 26,
     "reco": "hold",
     "score": 52
   },
@@ -262,9 +262,9 @@
     "label": "neutral",
     "name": "Semiconductor Equipment (WFE)",
     "name_zh": "\u534a\u5bfc\u4f53\u8bbe\u5907\uff08\u6676\u5706\u5382\u8bbe\u5907\uff09",
-    "rank": 20,
+    "rank": 8,
     "reco": "hold",
-    "score": 56
+    "score": 61
   },
   "space_economy": {
     "label": "deteriorating",
@@ -278,7 +278,7 @@
     "label": "neutral",
     "name": "Travel & Experiences",
     "name_zh": "\u65c5\u884c\u4e0e\u4f53\u9a8c",
-    "rank": 14,
+    "rank": 16,
     "reco": "hold",
     "score": 59
   },
@@ -310,7 +310,7 @@
     "label": "deteriorating",
     "name": "Energy (Equal-Weight)",
     "name_zh": "\u80fd\u6e90\uff08\u7b49\u6743\uff09",
-    "rank": 37,
+    "rank": 36,
     "reco": "avoid",
     "score": 43
   },
@@ -318,7 +318,7 @@
     "label": "neutral",
     "name": "Financials (Equal-Weight)",
     "name_zh": "\u91d1\u878d\uff08\u7b49\u6743\uff09",
-    "rank": 7,
+    "rank": 9,
     "reco": "hold",
     "score": 61
   },
@@ -326,7 +326,7 @@
     "label": "neutral",
     "name": "Health Care (Equal-Weight)",
     "name_zh": "\u533b\u7597\u4fdd\u5065\uff08\u7b49\u6743\uff09",
-    "rank": 5,
+    "rank": 6,
     "reco": "hold",
     "score": 62
   },
@@ -334,7 +334,7 @@
     "label": "neutral",
     "name": "Industrials (Equal-Weight)",
     "name_zh": "\u5de5\u4e1a\uff08\u7b49\u6743\uff09",
-    "rank": 17,
+    "rank": 18,
     "reco": "hold",
     "score": 58
   },
@@ -342,7 +342,7 @@
     "label": "neutral",
     "name": "Materials (Equal-Weight)",
     "name_zh": "\u6750\u6599\uff08\u7b49\u6743\uff09",
-    "rank": 27,
+    "rank": 28,
     "reco": "hold",
     "score": 51
   },
@@ -350,7 +350,7 @@
     "label": "deteriorating",
     "name": "Real Estate (Equal-Weight)",
     "name_zh": "\u623f\u5730\u4ea7\uff08\u7b49\u6743\uff09",
-    "rank": 18,
+    "rank": 19,
     "reco": "avoid",
     "score": 57
   },
@@ -374,7 +374,7 @@
     "label": "neutral",
     "name": "Utilities (Equal-Weight)",
     "name_zh": "\u516c\u7528\u4e8b\u4e1a\uff08\u7b49\u6743\uff09",
-    "rank": 8,
+    "rank": 10,
     "reco": "hold",
     "score": 61
   }

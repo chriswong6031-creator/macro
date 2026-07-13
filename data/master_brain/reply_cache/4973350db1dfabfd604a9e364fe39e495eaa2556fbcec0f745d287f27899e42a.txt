@@ -1,0 +1,36 @@
+**DESK NOTE — Crowding-Skeptic Analyst (HK, 2026-07-10)**
+
+**Role boundary:** I am here to falsify the longs, not to balance. I name the most over‑extended theme and argue for a **size‑down** — never a fade, sell, or short. The one validated edge is drawdown control via the absolute‑trend gate, so overcrowding flags are only a caution on position magnitude. My view is fallible and has *zero* track‑record (n=0).
+
+---
+
+### Which theme is most over‑extended?
+**Tech Hardware & Semis (hk_tech_hardware)** is the most extended long in the eligible universe.
+
+**Crowding / extension evidence (all from the detector snapshot):**
+- **Crowding Z:** +0.31 — the *only* positive z‑score across all 17 themes. Every other theme is below zero, signalling money is concentrated here.
+- **Narrow leadership / one‑narrative structure:** Only 4 of 17 themes are eligible (24 %), and Tech Hardware absorbs 55 % of the eligible‑set “score mass” (absorption = 0.55). The leader‑challenger margin is a staggering 1.87 — a degree of separation that historically marks performance‑chasing, not healthy broad‑based strength.
+- **Extended trend:** Durability_bar 0.78, Hurst “trend.” High durability is normally welcome, but when paired with the only positive crowding Z and extreme concentration, the trend is looking long‑in‑the‑tooth rather than early.
+- **Implied “rs‑stretch / parabolic” feel:** Score of 2.625 is 3.5× the next eligible theme (Banks at 0.258). Such outlier relative strength often attracts reflexivity — not a sell signal, but a signal to cap and avoid adding.
+
+**Therefore:** Tech Hardware & Semis is the candidate for a **size‑down** (position cap or reduction, not an exit). The crowd isn’t yet at a blow‑off (crowded=false), but the margin of safety is thinning.
+
+---
+
+### Sharpest bear case on each eligible long
+1. **Tech Hardware & Semis** — AI capex digestion risk; high embedded expectations; any trade‑policy hiccup or earnings miss can trigger a sharp drawdown because nobody is positioned for disappointment. The narrow leadership means if this theme stumbles, there is no second engine to catch the market.
+
+2. **Conglomerates & Exchange** — Hurst “mean‑revert” suggests trend‑less price action; low durability (0.45) and breadth (0.40) mean only a few names carry the headline. Macro headwinds (property drag, China macro uncertainty) could easily cap any intermittent strength.
+
+3. **Banks (H + HK)** — Also mean‑reverting with the lowest breadth among financials (0.308). Pinned to a weak property sector and a rate‑benefit story that is already discounted. A rate‑cut cycle or a fresh NPL scare would undercut the thesis instantly.
+
+4. **High‑Dividend Blue Chips** — Breadth of only 0.25 (1 in 4 names trending) is a warning: the theme’s recent buoyancy is held up by a tiny fraction of constituents. If real yields rise or China’s SOE reforms disappoint, the “safe haven” trade can unwind fast.
+
+---
+
+### Falsifiable conditional lean (check‑by horizon)
+*If by 2026‑08‑10 Tech Hardware’s crowding_z exceeds 1.0 OR its breadth drops below 0.55, the size‑down caution is validated — extension was indeed capping upside and foreshadowing a mean‑reversion shock. If instead breadth stays above 0.65 and crowding_z drifts back toward zero, the caution was premature and the trend re‑asserted; no harm beyond a temporary smaller allocation.*
+
+**Accountability:** I will mark this note as a miss if I called a size‑down and the theme subsequently delivers strong risk‑adjusted returns without a material drawdown *while all crowding/extension metrics remain unchanged.* Conversely, if any valid drawdown occurs after the flag, the caution served its purpose.
+
+*(Reminder: this is a sizing caution only; no fade, no short, no next‑theme call. Reflexivity punishes those who bet against a dominant narrative.)*

@@ -38,11 +38,11 @@
   footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
   
   /* page-scoped: widen the reading column for the screener table */
-  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1336px)/2)); padding-right:max(18px,calc((100vw - 1336px)/2)); } }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1356px)/2)); padding-right:max(18px,calc((100vw - 1356px)/2)); } }
 
 </style>
 
-<link rel="stylesheet" href="odds.css?v=1">
+<link rel="stylesheet" href="odds.css?v=2">
 
 </head>
 <body>
@@ -338,14 +338,14 @@
 
 
 <section class="od-hero">
-  <p class="eyebrow">🎲 <span class="l-en">Historical Odds Desk</span><span class="l-zh">历史胜率台</span></p>
+  <p class="od-eyebrow"><span class="l-en">Historical Odds Desk</span><span class="l-zh">历史胜率台</span></p>
   <h1><span class="l-en">Odds — what happened next on days like today</span><span class="l-zh">胜率 — 历史上像今天这样的日子，后来怎么走</span></h1>
-  <p class="od-sub"><span class="l-en">Pick a ticker. Today's market fingerprint — move size, VIX regime, market trend, macro quad and more — becomes a set of toggleable conditions. Every active condition filters up to 35 years of history down to the days that looked like today; the verdict is the empirical base rate of what happened next. No prediction, no model — just counted history, with the unconditional base rate shown alongside so the edge is honest.</span><span class="l-zh">选择一个标的。今天的市场指纹——涨跌幅度、VIX 区间、大盘趋势、宏观象限等——变成一组可开关的条件。每个激活的条件把最长 35 年的历史过滤到与今天相似的交易日；结论就是随后走势的经验概率。不预测、不建模——只统计历史，并同时展示无条件基础概率，让优势诚实可见。</span></p>
+  <p class="od-sub"><span class="l-en">Today's market fingerprint — move size, VIX regime, market trend, macro quad and more — becomes a set of toggleable conditions. Every active condition filters up to 35 years of history down to the days that looked like today; the verdict is the empirical base rate of what happened next. No prediction, no model — counted history, with the unconditional base rate alongside so the edge is honest.</span><span class="l-zh">今天的市场指纹——涨跌幅度、VIX 区间、大盘趋势、宏观象限等——变成一组可开关的条件。每个激活的条件把最长 35 年的历史过滤到与今天相似的交易日；结论就是随后走势的经验概率。不预测、不建模——只统计历史，并同时展示无条件基础概率，让优势诚实可见。</span></p>
   <div class="od-meta">
-    <span class="chip" id="od-asof-chip"><span class="l-en">As of —</span><span class="l-zh">截至 —</span></span>
-    <span class="chip"><span class="l-en">Returns: open-to-close</span><span class="l-zh">收益口径：开盘→收盘</span></span>
-    <span class="chip" id="od-uni-chip" hidden></span>
-    <span class="chip tag-macro"><span class="l-en">Macro Quad conditions — unique to this desk</span><span class="l-zh">宏观象限条件 — 本台独有</span></span>
+    <span class="od-mchip" id="od-asof-chip"><span class="l-en">As of —</span><span class="l-zh">截至 —</span></span>
+    <span class="od-mchip"><span class="l-en">Returns: open-to-close</span><span class="l-zh">收益口径：开盘→收盘</span></span>
+    <span class="od-mchip" id="od-uni-chip" hidden></span>
+    <span class="od-mchip quad"><span class="l-en">Macro Quad conditions — unique to this desk</span><span class="l-zh">宏观象限条件 — 本台独有</span></span>
   </div>
 </section>
 
@@ -359,50 +359,87 @@
 <div id="od-app" hidden>
 
   
+  <div id="od-onboard" class="od-onboard" hidden>
+    <div class="od-ob-head">
+      <span class="od-eyebrow"><span class="l-en">How this desk works</span><span class="l-zh">本台使用方法</span></span>
+      <button id="od-onboard-x" class="od-ob-x" type="button" aria-label="Dismiss">&times;</button>
+    </div>
+    <div class="od-ob-steps">
+      <div class="od-ob-step"><span class="od-ob-n">1</span><div><span class="l-en"><b>Pick an asset.</b> Search any ticker in the odds universe — ETFs and liquid megacaps.</span><span class="l-zh"><b>选择标的。</b>在胜率标的池中搜索任意代码——ETF 与高流动性大盘股。</span></div></div>
+      <div class="od-ob-step"><span class="od-ob-n">2</span><div><span class="l-en"><b>Toggle conditions.</b> Each card is one thing that is true today; active cards filter history to similar days.</span><span class="l-zh"><b>开关条件。</b>每张卡片代表今天成立的一个条件；激活的卡片把历史过滤到相似交易日。</span></div></div>
+      <div class="od-ob-step"><span class="od-ob-n">3</span><div><span class="l-en"><b>Read the verdict.</b> The big number is the historical win rate; the band is its 95% confidence interval vs the 50% coin flip.</span><span class="l-zh"><b>阅读结论。</b>大数字是历史胜率；区间带是其 95% 置信区间，并标出 50% 的抛硬币基准。</span></div></div>
+    </div>
+    <button id="od-onboard-ok" class="od-ob-ok" type="button"><span class="l-en">Got it</span><span class="l-zh">知道了</span></button>
+  </div>
+
+  
   <div class="od-top" id="od-top">
-    <div class="od-tk">
-      <img id="od-logo" class="od-logo lg" alt="" loading="eager" hidden>
-      <div class="od-tk-box">
-        <input id="od-tk-input" type="text" autocomplete="off" spellcheck="false"
-               aria-label="Ticker search"
-               placeholder="Search ticker — SPY, NVDA, XLK…"
-               data-ph-zh="搜索标的 — SPY、NVDA、XLK…">
-        <div id="od-tk-sugg" class="od-sugg" hidden></div>
+    <div class="od-ident">
+      <span class="od-logo-ring"><img id="od-logo" class="od-logo" alt="" loading="eager" hidden></span>
+      <div class="od-ident-txt">
+        <div class="od-ident-l1">
+          <span id="od-ident-tk" class="od-ident-tk">—</span>
+          <span id="od-ident-name" class="od-ident-name"></span>
+          <span id="od-move-chip" class="od-move" hidden></span>
+        </div>
+        <div class="od-ident-l2" id="od-ident-sub"></div>
       </div>
-      <span id="od-move-chip" class="od-move" hidden></span>
     </div>
     <div class="od-ctrls">
-      <div class="od-ctrl">
-        <span class="od-ctrl-k"><span class="l-en">Outcome</span><span class="l-zh">观察期</span></span>
-        <div class="od-seg" id="od-seg-horizon" role="group" aria-label="Outcome horizon">
-          <button class="segbtn" data-v="1d"><span class="l-en">Next Day</span><span class="l-zh">次日</span></button>
-          <button class="segbtn" data-v="5d"><span class="l-en">Next Week · 5d</span><span class="l-zh">下周 · 5日</span></button>
-          <button class="segbtn" data-v="20d"><span class="l-en">Next Month · 20d</span><span class="l-zh">下月 · 20日</span></button>
+      <div class="od-ctrl od-search">
+        <span class="od-ctrl-k"><span class="l-en">Ticker</span><span class="l-zh">标的</span></span>
+        <div class="od-tk-box">
+          <svg class="od-tk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="od-tk-input" type="text" autocomplete="off" spellcheck="false"
+                 aria-label="Ticker search"
+                 placeholder="SPY, NVDA, XLK…"
+                 data-ph-zh="SPY、NVDA、XLK…">
+          <div id="od-tk-sugg" class="od-sugg" hidden></div>
         </div>
       </div>
-      <div class="od-ctrl">
-        <span class="od-ctrl-k"><span class="l-en">Range</span><span class="l-zh">数据范围</span></span>
-        <div class="od-seg" id="od-seg-range" role="group" aria-label="Data range">
-          <button class="segbtn" data-v="5y">5y</button>
-          <button class="segbtn" data-v="10y">10y</button>
-          <button class="segbtn" data-v="20y">20y</button>
-          <button class="segbtn" data-v="max"><span class="l-en">Max</span><span class="l-zh">全部</span></button>
+      <div class="od-ctrl" id="od-ctl-horizon">
+        <button class="od-chipbtn" type="button" aria-haspopup="true" aria-expanded="false">
+          <span class="od-ctrl-k"><span class="l-en">Outcome</span><span class="l-zh">观察期</span></span>
+          <span class="od-ctrl-v"></span>
+          <svg class="od-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="od-menu" hidden>
+          <button class="od-opt" type="button" data-v="1d"><span class="l-en">Next Day</span><span class="l-zh">次日</span></button>
+          <button class="od-opt" type="button" data-v="5d"><span class="l-en">Next Week · 5d</span><span class="l-zh">下周 · 5日</span></button>
+          <button class="od-opt" type="button" data-v="20d"><span class="l-en">Next Month · 20d</span><span class="l-zh">下月 · 20日</span></button>
         </div>
       </div>
-      <div class="od-ctrl">
-        <span class="od-ctrl-k"><span class="l-en">Tolerance</span><span class="l-zh">容差</span></span>
-        <div class="od-seg" id="od-seg-tol" role="group" aria-label="Bucket tolerance">
-          <button class="segbtn" data-v="0"><span class="l-en">Exact</span><span class="l-zh">精确</span></button>
-          <button class="segbtn" data-v="1">±1</button>
-          <button class="segbtn" data-v="2">±2</button>
+      <div class="od-ctrl" id="od-ctl-range">
+        <button class="od-chipbtn" type="button" aria-haspopup="true" aria-expanded="false">
+          <span class="od-ctrl-k"><span class="l-en">Range</span><span class="l-zh">数据范围</span></span>
+          <span class="od-ctrl-v"></span>
+          <svg class="od-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="od-menu" hidden>
+          <button class="od-opt" type="button" data-v="5y"><span class="l-en">5 years</span><span class="l-zh">5年</span></button>
+          <button class="od-opt" type="button" data-v="10y"><span class="l-en">10 years</span><span class="l-zh">10年</span></button>
+          <button class="od-opt" type="button" data-v="20y"><span class="l-en">20 years</span><span class="l-zh">20年</span></button>
+          <button class="od-opt" type="button" data-v="max"><span class="l-en">Max history</span><span class="l-zh">全部历史</span></button>
+        </div>
+      </div>
+      <div class="od-ctrl" id="od-ctl-tol">
+        <button class="od-chipbtn" type="button" aria-haspopup="true" aria-expanded="false">
+          <span class="od-ctrl-k"><span class="l-en">Match</span><span class="l-zh">匹配</span></span>
+          <span class="od-ctrl-v"></span>
+          <svg class="od-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="od-menu" hidden>
+          <button class="od-opt" type="button" data-v="0"><span class="l-en">Exact</span><span class="l-zh">精确</span></button>
+          <button class="od-opt" type="button" data-v="1"><span class="l-en">±1 bucket</span><span class="l-zh">±1 档</span></button>
+          <button class="od-opt" type="button" data-v="2"><span class="l-en">±2 buckets</span><span class="l-zh">±2 档</span></button>
         </div>
       </div>
       <div class="od-ctrl od-soon">
-        <span class="od-ctrl-k"><span class="l-en">Pattern</span><span class="l-zh">形态</span></span>
-        <div class="od-seg">
-          <button class="segbtn" disabled><span class="l-en">Single day</span><span class="l-zh">单日</span></button>
-        </div>
-        <span class="od-soon-tag"><span class="l-en">multi-day — soon</span><span class="l-zh">多日形态 — 即将推出</span></span>
+        <button class="od-chipbtn" type="button" disabled>
+          <span class="od-ctrl-k"><span class="l-en">Pattern</span><span class="l-zh">形态</span></span>
+          <span class="od-ctrl-v"><span class="l-en">Single day</span><span class="l-zh">单日</span></span>
+          <span class="od-soon-tag"><span class="l-en">soon</span><span class="l-zh">即将推出</span></span>
+        </button>
       </div>
     </div>
   </div>
@@ -411,32 +448,34 @@
   <div class="od-layout" id="od-layout">
     <aside class="od-rail" id="od-rail">
       <div class="od-rail-h">
-        <span class="od-rail-title"><span class="l-en">Market Context</span><span class="l-zh">市场环境</span></span>
-        <span class="chip" id="od-active-count"></span>
+        <span class="od-eyebrow"><span class="l-en">Market Context</span><span class="l-zh">市场环境</span></span>
+        <span class="od-pill" id="od-active-count"></span>
       </div>
       <div class="od-matchline" id="od-match-count"></div>
       <div id="od-rail-body"></div>
-      <p class="od-rail-note"><span class="l-en">Tolerance applies to ordered factors only; categorical factors (trend state, month, quad) always match exactly. A condition with no value today cannot be activated.</span><span class="l-zh">容差仅适用于有序因子；分类因子（趋势状态、月份、象限）始终精确匹配。今日无数据的条件无法激活。</span></p>
+      <p class="od-rail-note"><span class="l-en">Match tolerance applies to ordered factors only; categorical factors (trend state, month, quad) always match exactly. A condition with no value today cannot be activated.</span><span class="l-zh">匹配容差仅适用于有序因子；分类因子（趋势状态、月份、象限）始终精确匹配。今日无数据的条件无法激活。</span></p>
     </aside>
 
     <main class="od-main">
       <section id="od-verdict" class="od-verdict" aria-live="polite"></section>
 
       <nav class="od-tabs" id="od-tabs" role="tablist">
-        <button class="tabbtn" data-tab="days" role="tab"><span class="l-en">Matching Days</span><span class="l-zh">匹配交易日</span></button>
-        <button class="tabbtn" data-tab="path" role="tab"><span class="l-en">Price Path</span><span class="l-zh">价格路径</span></button>
+        <button class="tabbtn" data-tab="days" role="tab"><span class="l-en">Matching days</span><span class="l-zh">匹配交易日</span></button>
+        <button class="tabbtn" data-tab="path" role="tab"><span class="l-en">Price path</span><span class="l-zh">价格路径</span></button>
         <button class="tabbtn" data-tab="returns" role="tab"><span class="l-en">Returns</span><span class="l-zh">收益分布</span></button>
-        <button class="tabbtn" data-tab="fm" role="tab"><span class="l-en">Factor Match</span><span class="l-zh">因子共振筛选</span></button>
+        <button class="tabbtn" data-tab="fm" role="tab"><span class="l-en">Factor match</span><span class="l-zh">因子共振</span></button>
+        <span class="od-tab-ink" id="od-tab-ink" aria-hidden="true"></span>
+        <button id="od-csv" class="od-csvbtn" type="button" hidden>⬇ <span class="l-en">Export CSV</span><span class="l-zh">导出 CSV</span></button>
       </nav>
 
       <section id="od-pane-days" class="od-pane" role="tabpanel" hidden>
         <div class="od-pane-h">
           <h3><span class="l-en">Where the matching days sit on the chart</span><span class="l-zh">匹配交易日在走势中的位置</span></h3>
-          <button id="od-csv" class="navbtn" type="button">⬇ <span class="l-en">Export CSV</span><span class="l-zh">导出 CSV</span></button>
         </div>
         <div id="od-price-chart" class="od-chart" data-h="300"></div>
+        <div id="od-vol-strip" class="od-vstrip" hidden></div>
         <div id="od-days-note" class="od-note"></div>
-        <div class="tbl-scroll"><table class="od-tbl" id="od-days-table"></table></div>
+        <div class="tbl-scroll od-tblwrap"><table class="od-tbl" id="od-days-table"></table></div>
       </section>
 
       <section id="od-pane-path" class="od-pane" role="tabpanel" hidden>
@@ -473,7 +512,7 @@
           </div>
         </div>
         <div id="od-fm-market" class="od-note"></div>
-        <div class="tbl-scroll"><table class="od-tbl od-fm-tbl" id="od-fm-table"></table></div>
+        <div class="tbl-scroll od-tblwrap fm"><table class="od-tbl od-fm-tbl" id="od-fm-table"></table></div>
         <div id="od-fm-note" class="od-note"></div>
       </section>
     </main>
@@ -491,8 +530,8 @@
   <span class="l-en">Research Reports are read-only analysis for informational purposes only — not investment advice. Figures are point-in-time and may change.</span><span class="l-zh">研究报告仅为信息性分析，不构成投资建议。数据为特定时点快照，可能调整。</span>
 </footer>
 
-<script src="mm_charts.js?v=2"></script>
-<script src="odds.js?v=1"></script>
+<script src="mm_charts.js?v=3"></script>
+<script src="odds.js?v=2"></script>
 
 <script src="theme.js"></script>
 <script defer data-whb data-root="" src="wh_banner.js"></script>

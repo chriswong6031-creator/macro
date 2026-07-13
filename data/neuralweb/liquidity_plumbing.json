@@ -5,8 +5,9 @@
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
     "p3_srf_discount_window": "pending_collection",
-    "p3_reserve_balances": "fail_open_until_wresbal_collected",
-    "p5_swap_fima": "pending"
+    "p5_swap_lines": "integrated_ird_w1",
+    "p5_fima_repo": "pending_no_free_breakout",
+    "p3_reserve_balances": "integrated"
   },
   "authority": {
     "entry_tailwind": "measured_near_term_only",
@@ -18,14 +19,14 @@
     "hard_gate": false
   },
   "headline": {
-    "state": "stress_liquidity_expansion",
-    "summary": "Net liquidity is technically expanding but RRP is near-exhausted or stress indicators are confirming — expansion quality is poor; treat with caution, not as a clean tailwind."
+    "state": "mechanical_liquidity_tailwind",
+    "summary": "Net liquidity is expanding on Treasury/RRP plumbing (e.g. the Treasury spending down its cash account), not Fed asset growth — a real but transient tailwind. Credit and funding stress gauges are not confirming stress. RRP buffer is empty — the next liquidity drain hits bank reserves directly."
   },
   "fed": {
     "assets_bn": 6735.609,
     "assets_chg_20d_bn": 10.212,
     "reserve_balances_bn": 3098.911,
-    "walcl_stale_days": 4,
+    "walcl_stale_days": 2,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
     "asof": "2026-07-10"
@@ -36,6 +37,16 @@
     "net_issuance_20d_bn": 124.1,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
+    "tga_impulse": {
+      "active": true,
+      "direction": "drawdown",
+      "magnitude_bn": 174.5,
+      "days": 7,
+      "since": "2026-06-30",
+      "quarter_end_adjacent": true,
+      "summary_en": "Treasury spent down $174B of its cash account since Jun 30 — that cash re-enters the financial system (supportive while it lasts). Quarter-end seasonal pattern may be a contributing factor.",
+      "summary_zh": "自6月30日起，美国财政部已动用现金账户中的$174B — 这部分资金重新流入金融体系（短期内具支撑性）。 季末季节性规律可能是促成因素之一。"
+    },
     "asof": "2026-07-09"
   },
   "rrp": {
@@ -62,7 +73,7 @@
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 4
+    "walcl_stale_days": 2
   },
   "funding": {
     "effr_minus_iorb_bp": -3.0,
@@ -360,9 +371,12 @@
     }
   },
   "foreign_dollar": {
-    "swap_lines_bn": null,
+    "swap_lines_bn": 0.17,
+    "facility_loans_bn": 5.822,
     "fima_repo_bn": null,
-    "state": "not_integrated_yet"
+    "state": "quiescent",
+    "note": "IRD-R5: swap-line levels are confirmation tier — they grade severity after price signals fire, never trigger alerts. FIMA repo: no free per-facility breakout; aggregate rides H.4.1 repo line.",
+    "asof": "2026-07-08"
   },
   "entry_effect": {
     "direction": "tailwind",
@@ -371,13 +385,12 @@
     "use": "support existing buy setup, never originate one"
   },
   "gaps": [
-    "SRF take-up and discount-window primary credit not collected yet — srf_takeup_bn / discount_window_primary_credit_bn stay null",
-    "H.4.1 swap/FIMA not integrated (Phase 5)"
+    "SRF take-up and discount-window primary credit not collected yet — srf_takeup_bn / discount_window_primary_credit_bn stay null"
   ],
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-07-12T04:59:01Z",
-  "inputs_hash": "sha256:0e50257cc5fa5b552a174e17dfc297b009627fe2d7905543f255c3cf9600c4d5",
+  "produced_at": "2026-07-13T09:33:48Z",
+  "inputs_hash": "sha256:8e3ae5e7be6731cb398764fa06e81314a622a9ba4a8e60de6c6c6936317ef549",
   "tier": "shadow"
 }

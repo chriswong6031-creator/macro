@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_asymmetry.v1",
-  "as_of": "2026-07-12",
-  "generated_at": "2026-07-12T05:01:09Z",
+  "as_of": "2026-07-13",
+  "generated_at": "2026-07-13T09:36:01Z",
   "hard_caveat": "not a buy score; no behavior-changing consumer",
   "authority": {
     "is_context_only": true,
@@ -1751,6 +1751,7 @@
     }
   ],
   "stale_legs": [
+    "divergence_log[cybersecurity]: stale (as_of=2026-07-08)",
     "divergence_log[robotics_automation]: stale (as_of=2026-07-01)",
     "divergence_log[defense_aerospace]: stale (as_of=2026-07-06)",
     "divergence_log[glp1_obesity]: stale (as_of=2026-07-07)",
@@ -1760,7 +1761,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-12T05:01:09Z",
-  "inputs_hash": "sha256:f8212dc787a344476985d08207314d919db9111571aeb328f5c91cf46918a1bb",
+  "produced_at": "2026-07-13T09:36:01Z",
+  "inputs_hash": "sha256:271d8cf3c90d3213b804eb15659455276ae394b34544b1604bc8a1c858682571",
   "tier": "display"
 }

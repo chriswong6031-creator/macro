@@ -1,0 +1,18 @@
+{
+  "stance": "The cross-group cluster (Financials, Industrials, Consumer Discretionary, Real Estate) exhibits broad, low-HHI co-movement, ruling out a single-name mirage. The tight Industrials-Materials pair (corr 0.82) and extremely broad leadership in Industrials (HHI 0.007, n=253) point to Industrials as the structural leader of this cyclical linkage.",
+  "candidates": [
+    {
+      "subject": "Industrials",
+      "lean": "overweight",
+      "rationale": "Centers the cyclical cluster with the broadest, lowest-concentration leadership and a strong supply-chain tie to Materials (top pair corr 0.82).",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Materials",
+      "lean": "overweight",
+      "rationale": "Tightly co-moves with Industrials as the top pair, forming a genuine supply-chain spread with solid participation (HHI 0.02, n=76).",
+      "strength": "moderate"
+    }
+  ],
+  "key_risk": "The cluster is a coincident structural snapshot with no forward edge; a macro or geopolitical shock could dissolve the co-movement and break the relative tilt."
+}

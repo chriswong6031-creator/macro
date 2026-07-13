@@ -1,0 +1,36 @@
+**DESK NOTE — Trend-Rider Analyst, Hong Kong Thematic Desk**
+**Date:** 10 July 2026
+**Subject:** Staying with the dominant durable theme — Tech Hardware & Semis (科技硬件与半导体)
+
+**Context:** The detector is trust-graded and display-only. Momentum rank is a focus lens (rank-IC ≈0, not alpha), rotation-timing has no validated edge. The ONLY backtest-validated edge here is **drawdown/shake-out avoidance via the absolute-trend gate** — keeping you in the prevailing trend, not trying to call tops. Gate helps in this market (drawdown-control edge confirmed). The guardrails explicitly forbid fading the dominant theme; the documented failure mode is fading the leader.
+
+---
+
+### 1. The prevailing theme: Tech Hardware & Semis (hk_tech_hardware)
+
+**Rank:** #1 out of 17 themes, with a score of 2.625 — more than 3× the next-eligible challenger (Conglomerates & Exchange at 0.263). The one-narrative flag is true; absorption at 0.55 indicates a meaningful concentration of thematic flow into this single bucket. The rotation structure is narrow (4/17 eligible), and the only other “leader” — Diversified Miners — is not even eligible. Leadership is unambiguous.
+
+**Durability bar:** 0.78 (trend-classified, Hurst → “trend”). This is the highest durability bar in the universe, well above the next (High-Dividend Blue Chips at 0.59, which is a trend but with zero breadth). High durability suggests the trend regime is persistent; it is not an early-stage breakout that will easily whip back.
+
+**Absolute-trend gate:** The discipline’s gate is the only validated edge — staying with the trend as long as this gate remains positive. Tech Hardware & Semis has a strongly positive durability bar and is trend-classified. As of today, there is **no signal** from the gate to exit or reduce; the trend is intact. Historically, the gate materially cuts volatility and tail drawdowns in this market (gate_helps = true). Prematurely leaving a durable trend leader, especially one flagged as “one narrative” and uncrowded, would be the precise failure mode the guardrails warn against.
+
+---
+
+### 2. Why staying with it is the honest, falsifiable case
+
+- **Crowding is low (z=0.31, not crowded).** There is no reflexive risk to cap or fade. The crowding flag is explicitly **not** a sell or short signal — it’s only a sizing caution, but even that is not triggered here.
+- **Breadth is 66.7%.** A majority of constituents are participating in the trend — not a handful of outliers driving the score. This cohesion makes the trend structurally more durable than a thin, single-name-driven impulse.
+- **Rotation is coincidence, not a handoff signal.** The challenger (Miners) has extremely poor breadth (0.0) and a low durability bar (0.33). There is no confirmed leadership handoff underway; the margin is huge. The guardrails instruct us to flag only a **confirmed** handoff — not anticipate one. So the discipline says: stay.
+- **Macro narrative context (coincident, not a trigger):** The dominant market-level theme flow is AI/tech (n=255 out of 442 recent headlines), which aligns narratively with Tech Hardware & Semis. This is not a buy signal, but it doesn’t contradict the trend picture.
+
+---
+
+### 3. Falsifiable conditional lean (per directive)
+
+**Conditional lean:** *If the absolute-trend gate for Tech Hardware & Semis remains positive (durability bar > 0.5, trend tag persists) and breadth does not collapse below 0.4 over the next 4 weeks, the theme is likely to maintain its leadership and avoid a severe drawdown shake-out better than any rotation alternative. Check by: 7 Aug 2026.*
+
+**If wrong?** The durability bar would break down, the trend would flip to mean-reverting, and the gate would close. At that point the discipline would move to cash (note the detector’s cash weight of 0.25). That is the point of the gate — not to be right about returns, but to be wrong small when the trend genuinely ends.
+
+---
+
+**Bottom line:** No top call, no fade, no next-narrative prediction. The discipline says: stick with the durable, broad, uncrowded trend leader until the gate says otherwise. Today, it doesn’t.

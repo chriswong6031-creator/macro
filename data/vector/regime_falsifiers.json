@@ -1,6 +1,6 @@
 {
   "schema": "btc_regime_ledger.v1",
-  "as_of": "2026-07-11",
+  "as_of": "2026-07-13",
   "horizon_days": 90,
   "n_matured": 0,
   "tiers": {

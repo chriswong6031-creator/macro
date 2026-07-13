@@ -1,16 +1,18 @@
 {
-  "cash": 0.5,
+  "cash": 0.25,
   "crash": false,
   "eligible": [
     "hk_banks",
     "hk_conglo",
-    "hk_dividend"
+    "hk_dividend",
+    "hk_tech_hardware"
   ],
   "held": [
-    "hk_banks",
+    "hk_tech_hardware",
+    "hk_conglo",
     "hk_dividend"
   ],
-  "leader": "hk_china_tech",
+  "leader": "hk_tech_hardware",
   "names": {
     "hk_banks": "Banks (H + HK)",
     "hk_biotech": "Biotech, Pharma & CXO",
@@ -24,7 +26,10 @@
     "hk_industrials": "Industrials & Infrastructure",
     "hk_insurers": "Insurers",
     "hk_materials": "Materials & Metals",
+    "hk_miners": "Diversified Miners",
+    "hk_platform_tech": "China Platform Megacaps",
     "hk_property": "Property & REITs",
+    "hk_tech_hardware": "Tech Hardware & Semis",
     "hk_telco_util": "Telecom & Utilities"
   }
 }

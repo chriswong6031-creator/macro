@@ -6,7 +6,7 @@
    "from_leg": "ai_semis",
    "to_leg": "mag7",
    "started": "2026-07-02",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-02",
@@ -28,41 +28,13 @@
     "asof": "2026-07-08"
    }
   },
-  "xlk:ai_semis->ai_software": {
-   "pair_id": "xlk:ai_semis->ai_software",
-   "sector": "xlk",
-   "from_leg": "ai_semis",
-   "to_leg": "ai_software",
-   "started": "2026-07-06",
-   "lapse_count": 4,
-   "last_receipts": {
-    "blowoff": {
-     "peak_date": "2026-06-02",
-     "runup_pct": 0.4488,
-     "runup_z": 2.27,
-     "drawdown_pct": 0.1357,
-     "qualified_by": "z"
-    },
-    "turn": {
-     "low_date": "2026-06-25",
-     "off_low_pct": 0.1244,
-     "reclaimed": true
-    },
-    "ratio": {
-     "ratio_chg_10s": 0.2719,
-     "inflected": false,
-     "ratio_20s_high": true
-    },
-    "asof": "2026-07-07"
-   }
-  },
   "xlk:memory->mag7": {
    "pair_id": "xlk:memory->mag7",
    "sector": "xlk",
    "from_leg": "memory",
    "to_leg": "mag7",
    "started": "2026-07-01",
-   "lapse_count": 2,
+   "lapse_count": 3,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-22",
@@ -90,7 +62,7 @@
    "from_leg": "memory",
    "to_leg": "ai_software",
    "started": "2026-07-06",
-   "lapse_count": 2,
+   "lapse_count": 3,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-22",
@@ -118,7 +90,7 @@
    "from_leg": "memory",
    "to_leg": "software",
    "started": "2026-07-01",
-   "lapse_count": 2,
+   "lapse_count": 3,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-22",
@@ -230,7 +202,7 @@
    "from_leg": "ai_software",
    "to_leg": "software",
    "started": "2026-06-26",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-02",
@@ -311,6 +283,7 @@
  },
  "closed": {
   "xlk:legacy_tech->software": "2026-07-06",
-  "xlk:ai_semis->software": "2026-07-10"
+  "xlk:ai_semis->software": "2026-07-10",
+  "xlk:ai_semis->ai_software": "2026-07-10"
  }
 }

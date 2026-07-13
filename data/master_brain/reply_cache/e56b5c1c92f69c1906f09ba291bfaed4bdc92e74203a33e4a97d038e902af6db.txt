@@ -1,0 +1,24 @@
+Desk Note: China A‑Shares Regime Check  
+2026-07-10 · CSI 300 universe · Trust‑graded, display‑only detector
+
+### Key regime signals (coincident, not alpha)
+- **Headline leader**: AI Compute & Optics (durability 0.75, trend intact, not crowded, weight 0.25, no cash allocation). The theme is durable but **narrow**.
+- **Rotation breadth**: Only 7 of 22 sectors eligible (0.32) — view “narrowing.” Leadership is concentrated, not broad‑based. Narrow advances are fragile in mean‑reverting markets.
+- **Absorption / one‑narrative**: 0.35, one_narrative = false. Not yet a single theme absorbing everything; still a multi‑theme but narrow world.
+- **Absolute‑trend gate**: `gate_helps = false` — historically the trend gate **has not reduced drawdown** on this market (it whipsaws). The only validated edge in the discipline is absent here. Therefore any thematic allocation must be treated as **experimental and heavily caveated**.
+- **Backtest veredict**: Momentum rank-IC ~0, rotation timing display‑only, basket extension no edge. The entire detector lacks a carry‑forward edge on China A‑shares.
+
+### Macro‑narrative backdrop (coincident, risk‑appetite lens)
+- Dominant themes: AI/tech (255), geopolitics (88), markets (60), industrial policy (16) — AI‑dominant but geopolitical noise present.
+- **Unscheduled share 0.79** — a very high proportion of headline flow is being driven by unexpected events rather than scheduled data. That kind of news structure is typical of shock‑driven, unstable risk appetite; it raises the odds of sudden reversals.
+- The geopolitical thread (88 mentions) combined with high unscheduled share warns that the tape can flip quickly.
+
+### Regime verdict: does it support risk‑on theme exposure AT ALL?
+**No, not in any high‑conviction way. The regime argues for more cash and/or smaller position sizes.**  
+
+The narrow leadership is somewhat durable, but the absolute‑trend gate has no historical drawdown‑control edge on this market. Coupled with a shock‑prone news backdrop, committing to a theme basket here is a bet on trend continuation in an environment where the system’s only protective mechanism has historically failed. The guardrails explicitly forbid reading the leader as a return forecast, and the discipline is display‑only.
+
+**Conditional lean (falsifiable, check‑by 2026-07-17):**  
+If within one week the unscheduled share halves and *breadth_of_rotation.frac* widens to at least 0.5, the regime could shift to “cautiously supportive” of a measured theme allocation (still no more than a small experimental size). Absent that, the current combination of narrow leadership, gate‑failure, and shock‑prone news argues for higher cash and reduced gross exposure.
+
+*No size, no trade, no fade, no next‑theme prediction. Just a falsifiable macro‑regime read.*

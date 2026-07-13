@@ -1,0 +1,14 @@
+**NARRATIVE-EMERGENCE SCOUT – DESK NOTE**
+Market: China A-shares (CSI 300) | 2026-07-10
+
+**EARLY-HYPOTHESIS (WATCH ONLY – NO SIZE)**
+
+**Theme:** Innovative Pharma & CXO (`cn_pharma_cxo`) – potential **leadership FADE**  
+- Currently rank 6/22, score +0.295, eligible, still in trend (Hurst=trend, durability 0.90).  
+- **Why fading?** Breadth is maxed (1.00) and crowding is flagged (z=1.21, “crowded: true”) – narratives rarely sustain when ownership is this concentrated and all constituents are already participating. Recent macro flow dominated by AI/tech, not healthcare. The absolute-trend gate provides no cushion here (gate_helps=false).  
+- **Kill-criterion (falsification):** If by 2026-07-24 the theme’s durability remains ≥0.75 AND breadth stays ≥0.8, the fading hypothesis is dead – the theme is absorbed, not unravelling.  
+- **Rationale:** No radar candidates available (`theme_candidates: null`). Guardrails permit flagging a fade as a conditional watch, not a fade trade. This is a pattern of late‑cycle coherence that often precedes mean-reversion in A‑share sector narratives. I’m not fading it; I’m watching it.
+
+**Context:** Leader remains AI Compute & Optics (score 2.87), challenger Semiconductors (2.61). Rotation narrowing (eligible 7/22), absorption 0.35, no “one narrative” extreme. All observations are coincident; no forward edge.
+
+**Reminder:** This is a fallible, falsifiable hypothesis – not a position, not a weighting, not a call. Next check: 2026-07-24.

@@ -1,0 +1,28 @@
+## Emerging‑Watch Desk Note  
+**Date:** 2026‑07‑10  
+**Role:** Narrative‑Emergence Scout (fallible, falsifiable conditional — never a size)  
+
+### Observation  
+A coherent name‑group from the noisy candidate radar (theme_candidates) not yet captured in the ranked thematic baskets:  
+- **Provisional label:** Government IT & Defence Services  
+- **Constituents:** BAH, CACI, FCN, LDOS, PSN, SAIC (6 high‑overlap industrials, primarily federal/defence tech services)  
+- **Candidate cohesion:** 0.576 (cohesion change +0.213) – suggestive of a nascent clustering, though candidate radar persistence is ~10%  
+- **Current thematic‑ranked baskets:** The nearest “Defense & Aerospace” (rank 29, score -0.43) is ineligible (durability_bar 0.24) and not capturing these names. The candidate may represent a distinct micro‑theme forming within a broader mean‑reverting sector.
+
+### Hypothesis (watch‑only)  
+**The “Government IT & Defence Services” niche is attempting to form new thematic leadership, though it has no durable score or breadth yet.**  
+The hypothesis is that this cluster may strengthen and, if sustained, eventually appear as a discrete eligible basket. It is explicitly **not** a buy – only a formation watch.
+
+### Kill‑Criterion (falsifiable within ~2 weeks)  
+1. **Relative‑strength condition:** The equal‑weighted basket of those six tickers underperforms the S&P 500 by more than 3 percentage points over the next 12 trading days, **or**  
+2. **Cohesion decay:** The average pairwise correlation of the group (as measured by a simple daily‑return correlation over the same window) falls below 0.40.
+
+If **either** condition triggers, I will mark the formation hypothesis as invalid and retire this watch; the “theme” is likely noise.
+
+### Surrounding Context (extracted from the detector, per guardrails)  
+- The dominant narrative remains “Memory, HBM & Storage” (score 5.4, durability 0.77, not crowded). No fading call is warranted – its trend‑gate helps drawdown control, and momentum is just a focus lens.  
+- Breadth of rotation is broad (74% eligible), absorption 0.38, one‑narrative flag is false. The environment allows for niche, sub‑dominant themes to emerge without challenging the semiconductor/AI infrastructure leadership.  
+- Crowding is not a sell signal; reflexivity cautions against fading the leader.
+
+### Verdict  
+A lean, conditional watch on a candidate cluster that may be forming under the surface. I will re‑evaluate against the kill‑criterion by 2026‑07‑24. No direction, no size, no fade – strictly a falsifiable emergence scout note.

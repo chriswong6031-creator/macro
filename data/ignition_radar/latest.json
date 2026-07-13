@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-11",
+  "as_of": "2026-07-13",
   "state": "off",
   "k_count": 1,
   "chips": [
@@ -286,19 +286,19 @@
         "above_200d_rising": true
       }
     ],
-    "as_of": "2026-07-11"
+    "as_of": "2026-07-13"
   },
   "narrow_top": {
     "basket_id": "XLY",
     "name": "XLY",
     "name_zh": "XLY",
     "score": 0.7666,
-    "streak_sessions": 1
+    "streak_sessions": 2
   },
   "radar_xref": {
     "state": "watch",
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 2.36
+  "_timing_s": 2.32
 }

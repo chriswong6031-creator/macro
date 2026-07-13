@@ -1,8 +1,8 @@
 {
   "schema": "macro_snapshot.v1.1",
-  "asof": "2026-07-12",
-  "oldest_component_asof": "2026-07-09",
-  "macro_context_id": "8519acbf68ceb555",
+  "asof": "2026-07-13",
+  "oldest_component_asof": "2026-07-10",
+  "macro_context_id": "38920726d4d6471a",
   "labels": {
     "us": {
       "us_quad": "Q1",
@@ -19,7 +19,7 @@
       "us_gamma_regime": "short",
       "us_repricing_state": "QUIET",
       "us_vol_ts_state": "contango",
-      "us_vrp_state": "normal",
+      "us_vrp_state": "collapsing (de-risk)",
       "cross_asset_verdict": "diverge"
     },
     "market": {
@@ -34,7 +34,7 @@
       "usd_regime": "US growth premium",
       "fx_risk": "risk-on",
       "real_rate_regime": "Restrictive real yields",
-      "fx_liquidity_dir": "supportive",
+      "fx_liquidity_dir": "soft",
       "fx_regime_radar": null
     },
     "bonds": {
@@ -79,20 +79,20 @@
     "data/regime/latest.json": "2026-07-10",
     "data/market_state/latest.json": "2026-07-10",
     "data/transmission/latest.json": "2026-07-10",
-    "data/forex/latest.json": "2026-07-12",
+    "data/forex/latest.json": "2026-07-13",
     "data/bonds/bond_health.json": "2026-07-10",
-    "data/commodity/latest.json": "2026-07-10",
+    "data/commodity/latest.json": "2026-07-13",
     "data/china_regime/latest.json": "2026-07-10",
     "data/hk_regime/latest.json": "2026-07-10",
     "data/canada_regime/latest.json": "2026-07-10",
-    "data/dispersion/regime.json": "2026-07-11",
-    "data/intl_regime/AU_history.parquet": "2026-07-10",
+    "data/dispersion/regime.json": "2026-07-13",
+    "data/intl_regime/AU_history.parquet": "2026-07-13",
     "data/intl_regime/EZ_history.parquet": "2026-07-10",
     "data/intl_regime/GB_history.parquet": "2026-07-10",
-    "data/intl_regime/IN_history.parquet": "2026-07-10",
-    "data/intl_regime/JP_history.parquet": "2026-07-10",
-    "data/intl_regime/KR_history.parquet": "2026-07-10",
-    "data/intl_regime/TW_history.parquet": "2026-07-09"
+    "data/intl_regime/IN_history.parquet": "2026-07-13",
+    "data/intl_regime/JP_history.parquet": "2026-07-13",
+    "data/intl_regime/KR_history.parquet": "2026-07-13",
+    "data/intl_regime/TW_history.parquet": "2026-07-13"
   },
   "gaps": [],
   "display_only": true

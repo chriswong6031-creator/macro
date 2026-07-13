@@ -1,20 +1,21 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.624,
+  "roro": 0.693,
   "cap_recent": true,
   "fear_built": 0.297,
-  "roro_velocity": 0.292,
-  "vel_pctile": 0.901,
-  "legs_up": 2,
+  "roro_velocity": 0.389,
+  "vel_pctile": 0.95,
+  "legs_up": 3,
   "legs_total": 7,
   "flipped_legs": [
     "vix",
-    "skew"
+    "skew",
+    "vix_term"
   ],
   "days_since_last_snap": 20,
   "fear_rebuilding": false,
-  "vix_term": null,
+  "vix_term": 0.809,
   "status": "building",
   "gates": {
     "velocity": true,
@@ -33,8 +34,29 @@
       "key": "skew",
       "en": "SKEW (tail pricing)",
       "zh": "SKEW \u5c3e\u90e8\u5b9a\u4ef7"
+    },
+    {
+      "key": "vix_term",
+      "en": "VIX term structure",
+      "zh": "VIX \u671f\u9650\u7ed3\u6784"
     }
   ],
   "magnitude_band": null,
-  "veto": null
+  "veto": {
+    "schema": "regime_snap_veto.v1",
+    "is_context_only": true,
+    "lean": "fragile",
+    "confidence": "medium",
+    "checks": {
+      "catalyst": "no structural positive shock; AI/semis momentum and liquidity impulse are not a signed deal or policy shift; US-Iran airstrike headlines persist, so upside driver is verbal/absent of durable fundament",
+      "premium": "fear_built 0.297 but relief_magnitude null; VIX term still 0.809 (backwardation), suggesting fear premium is partially unwound at best; only 3 of 7 legs flipped, so a lot of fear may remain",
+      "washout": "cap_recent true, days_since_last_snap 20, and velocity 95th percentile indicate a genuine washout/capitulation, supportive of dip-case but insufficient alone without structural catalyst",
+      "follow_through": "narrow tech-led tape (growth vs value +1.4\u03c3, cap-weight vs equal-weight +0.9\u03c3) and ongoing Iran tensions make cross-asset confirmation likely to fade on any further geopolitical flare-up or earnings disappointment"
+    },
+    "read": "Relief is driven by momentum and narrow tech leadership, not a structural de-escalation; with US-Iran airstrike headlines still flowing and VIX term in backwardation, the bounce looks vulnerable to a rapid reversal. Capitulation alone cannot anchor durability without a policy or deal catalyst.",
+    "model": "deepseek-v4-pro",
+    "generated_at": "2026-07-13T08:16:35.269931+00:00",
+    "degraded_reason": null,
+    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
+  }
 }

@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "QCOM-BULL-20260709",
-  "asof": "2026-07-11",
+  "asof": "2026-07-13",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 63.5,
-  "raw_confidence": 61.8,
-  "delta_vs_base": 3.5,
+  "management_confidence": 62.7,
+  "raw_confidence": 61.7,
+  "delta_vs_base": 2.7,
   "recommended_action": "wait",
   "human_state": "Awaiting Trigger",
   "components": {
     "validity": 81.2,
     "progress": 0.0,
-    "pace": 100.0,
+    "pace": 98.5,
     "retention": 50.0,
     "overlay": 47.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.857,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 4.4,
+    "horizon_pct_used": 8.9,
     "p1": -0.0951,
     "p2": -0.0475,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 2,
-  "tau": 0.0444
+  "days_elapsed": 4,
+  "tau": 0.0889
 }

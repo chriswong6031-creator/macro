@@ -13,9 +13,9 @@
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 92,
-          "mean": 0.007259,
-          "wilson_ci_low": 0.484831
+          "n_eff": 41,
+          "mean": -0.010455,
+          "wilson_ci_low": 0.32056
         },
         "63d": {
           "n_eff": 112,
@@ -40,7 +40,7 @@
       },
       "staleness": {
         "date_last": "2026-06-28",
-        "days_since_last_fire": 13
+        "days_since_last_fire": 15
       },
       "armed": false,
       "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
@@ -87,7 +87,7 @@
       },
       "staleness": {
         "date_last": "2026-07-03",
-        "days_since_last_fire": 8
+        "days_since_last_fire": 10
       },
       "armed": false,
       "armed_reason": "accruing: 3/12 effective events",
@@ -134,7 +134,7 @@
       },
       "staleness": {
         "date_last": "2026-06-25",
-        "days_since_last_fire": 16
+        "days_since_last_fire": 18
       },
       "armed": false,
       "armed_reason": "accruing: 7/12 effective events",
@@ -154,9 +154,9 @@
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 1806,
-          "mean": -0.001988,
-          "wilson_ci_low": 0.484702
+          "n_eff": 1659,
+          "mean": -0.002834,
+          "wilson_ci_low": 0.478072
         },
         "63d": {
           "n_eff": 1806,
@@ -181,7 +181,7 @@
       },
       "staleness": {
         "date_last": "2026-06-30",
-        "days_since_last_fire": 11
+        "days_since_last_fire": 13
       },
       "armed": false,
       "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
@@ -252,7 +252,7 @@
       },
       "staleness": {
         "date_last": "2026-06-24",
-        "days_since_last_fire": 17
+        "days_since_last_fire": 19
       },
       "armed": true,
       "armed_reason": "armed: pooled beats equal-weight on held-out tail",
@@ -305,7 +305,7 @@
       },
       "staleness": {
         "date_last": "2026-06-24",
-        "days_since_last_fire": 17
+        "days_since_last_fire": 19
       },
       "armed": true,
       "armed_reason": "armed: pooled beats equal-weight on held-out tail",
@@ -316,7 +316,7 @@
   "generated_from": "sha256:1dbc4997d59fd65237a41996ffaff513e386943b607acc583f7ad99e303b8c91",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/decay.py",
-  "produced_at": "2026-07-12T04:53:27Z",
-  "inputs_hash": "sha256:e25eb55396b916ce13831877ab9940df8f165ddc0c8844862df6c0cfd288a12c",
+  "produced_at": "2026-07-13T09:27:31Z",
+  "inputs_hash": "sha256:6089def31e40254af782ceb0f6cbf8d90ad0f39716d00667d1a62c5153508334",
   "tier": "infrastructure"
 }

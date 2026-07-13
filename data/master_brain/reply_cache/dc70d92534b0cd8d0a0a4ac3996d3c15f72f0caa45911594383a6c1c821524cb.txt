@@ -1,0 +1,78 @@
+{
+  "stance": "Flow lens is display-only with ~0 rank-IC; regime snap is coincident and fragile. Unconditional base rate for any directional sector call is near a coin flip, so no reliable edge exists from this setup.",
+  "candidates": [
+    {
+      "subject": "Utilities",
+      "lean": "none",
+      "rationale": "Base rate from this lens is ~50% hit rate with no validated forward edge.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Financials",
+      "lean": "none",
+      "rationale": "Base rate from this lens is ~50% hit rate with no validated forward edge.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Health Care",
+      "lean": "none",
+      "rationale": "Base rate from this lens is ~50% hit rate with no validated forward edge.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Real Estate",
+      "lean": "none",
+      "rationale": "Base rate from this lens is ~50% hit rate with no validated forward edge.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Industrials",
+      "lean": "none",
+      "rationale": "Base rate from this lens is ~50% hit rate with no validated forward edge.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Consumer Staples",
+      "lean": "none",
+      "rationale": "Base rate from this lens is ~50% hit rate with no validated forward edge.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Consumer Discretionary",
+      "lean": "none",
+      "rationale": "Base rate from this lens is ~50% hit rate with no validated forward edge.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Information Technology",
+      "lean": "none",
+      "rationale": "Base rate from this lens is ~50% hit rate with no validated forward edge.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Materials",
+      "lean": "none",
+      "rationale": "Base rate from this lens is ~50% hit rate with no validated forward edge.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Communication Services",
+      "lean": "none",
+      "rationale": "Base rate from this lens is ~50% hit rate with no validated forward edge.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Energy",
+      "lean": "none",
+      "rationale": "Base rate from this lens is ~50% hit rate with no validated forward edge.",
+      "strength": "weak"
+    },
+    {
+      "subject": "VIX",
+      "lean": "none",
+      "rationale": "Prior fade-fear call missed; snap is coincident and fragile. Base rate for fear fade from this lens is poor.",
+      "strength": "weak"
+    }
+  ],
+  "key_risk": "Even if a thematic concentration appears, the lens has no forward edge (rank-IC ~0) and the coincident snap is insufficient to anchor a durable call; any lean beyond 'none' would be indistinguishable from noise."
+}

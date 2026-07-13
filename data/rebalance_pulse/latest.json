@@ -1,0 +1,34 @@
+{
+  "date": "2026-07-10",
+  "class": "quiet",
+  "market_vol_ratio": 0.663,
+  "up_share": 0.634,
+  "basis": "updown",
+  "n_megacap_rvol2": 1,
+  "megacap_rvol": {
+    "META": 2.3,
+    "PG": 1.4,
+    "NFLX": 1.04,
+    "NVDA": 1.0,
+    "COST": 0.93,
+    "ORCL": 0.84,
+    "ABBV": 0.8,
+    "MRK": 0.8
+  },
+  "calendar": {
+    "is_quarter_end": false,
+    "td_to_quarter_end": -7,
+    "in_qtr_end_window": false,
+    "is_russell_recon_session": false,
+    "in_recon_week": false,
+    "is_sp_rebalance_session": false,
+    "is_month_end_session": false
+  },
+  "summary_en": "No elevated volume or scheduled rebalancing activity.",
+  "summary_zh": "无异常量能或计划中的再平衡活动。",
+  "authority": {
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false
+  }
+}

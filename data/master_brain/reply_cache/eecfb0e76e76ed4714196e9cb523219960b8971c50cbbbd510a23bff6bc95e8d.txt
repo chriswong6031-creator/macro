@@ -1,0 +1,54 @@
+**Desk Note — TREND-RIDER Thematic (Canada / TSX)**
+**As of 2026-07-10 | Execution class: CONDITIONAL, FALSIFIABLE, NEVER SIZED**
+
+**Reminder of the only validated edge**
+On Canadian sector backtests the only statistically reliable contribution comes from the absolute‑trend gate (**gate_helps = true**): it does not add mean return, but it historically cut volatility and shallower drawdowns/tail. Momentum rank is a focus lens (rank‑IC ~0). Rotation timing, crowding, and basket drawdown models have no out‑of‑sample edge for basket‑level decisions. Everything below is therefore a **fallible conditional description**, not a trade recommendation.
+
+---
+
+### 1. The dominant durable themes (where the absolute‑trend gate says “stay”)
+
+**#1 — Big Banks (ca_banks)**
+- **Rank:** 1 (score 2.105). **Durability bar:** 0.74 / 1.0 → well above the high‑durability threshold.
+- **Absolute‑trend gate:** Eligible (theme remains above its trend‑following exit line). The validated risk‑control logic says “stay unless the gate flips.”
+- **Breadth:** 1.0 (every constituent participating). **Crowding (z): 1.57, crowded.** This does **not** trigger a fade – guardrails say “cap it, do not fade it.” High crowding in a durable, leading theme is a sizing tap‑on‑the‑shoulder, not an exit signal.
+- **ETF proxy:** ZEB.TO (scorable). If one needed a vehicle to track the theme’s absolute‑trend signal, this would be the cleanest.
+
+**#2 — Insurers (ca_insurers)**
+- **Rank:** 2 (score 0.512). **Durability bar:** 0.78 → actually slightly higher than Banks.
+- **Absolute‑trend gate:** Eligible, and the Hurst tag is “trend” (smooth, persistent directional character). The trend health looks solid.
+- **Breadth:** 1.0, **crowded (z: 1.74)** – again, elevated but not a sell.
+- **Note:** No scoried ETF proxy; this theme is harder to implement mechanically, but its internal trend‑health reinforces the Financials‑complex leadership.
+
+**#3 — Pipelines & Midstream (ca_pipelines)**
+- **Rank:** 3 (score 0.393). **Durability bar:** 0.70 – durable.
+- **Absolute‑trend gate:** Eligible, with a “trend” Hurst tag.
+- **Breadth:** 0.889, **crowded (z: 1.49).** So same pattern: durable, above the gate, elevated crowding. The discipline would keep it unless the gate breaks.
+
+**Why not the others?**  
+Themes like Base Metals (durability 0.49, mixed behaviour) or Utilities (mean‑reverting, durability 0.54) either lack durability or fall into the “everything else” bucket where the absolute‑trend signal is less reliable. We do not predict the “next” narrative – guardrails forbid it – so we simply note that the top‑durable triad is Financials‑Energy (Banks, Insurers, Pipelines).
+
+---
+
+### 2. Structural texture (coincident, not predictive)
+- **Rotation margin:** 1.593 (very wide gap between #1 and #2). This suggests leadership is concentrated, but there is no validated “handoff” edge.
+- **One‑narrative flag:** false. The market is not in a single‑story regime; macro narratives are dominated by AI/tech and geopolitics, but that does **not** feed into a timing call.
+- **Absorption ratio:** 0.37 (moderate). Not signalling a regime break.
+
+---
+
+### 3. Falsifiable conditional lean (the only disciplined assertion)
+**Condition:** *If the absolute‑trend gate flips to “not eligible” for ca_banks (e.g., via its proxy ZEB.TO closing below the gate’s trailing stop level), the discipline instructs exiting the Banks theme regardless of its #1 rank, durability, or narrative appeal.*
+
+**Check‑by horizon:** Re‑evaluate on the next monthly gate update (the signal is slow‑moving; the exit is mechanical, not discretionary).
+
+---
+
+### 4. Guardrails honoured (explicit checklist)
+- [x] Not treating momentum rank as a return forecast.  
+- [x] Not treating crowding as a sell/short signal – only as a sizing caution.  
+- [x] Not fading the dominant theme (Banks) on crowding or any other flag.  
+- [x] Not predicting the next narrative.  
+- [x] Not citing ETF inflows or attention spikes as triggers.  
+
+**Bottom line:** The absolute‑trend gate says “stay” with Big Banks, Insurers, and Pipelines. Any other interpretation would be importing an edge that does not exist in this market’s detector history.

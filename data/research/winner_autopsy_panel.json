@@ -1,6 +1,6 @@
 {
   "schema": "winner_autopsy_panel.v1",
-  "generated_at": "2026-07-12T05:01:07Z",
+  "generated_at": "2026-07-13T09:36:00Z",
   "display_only": true,
   "horizon_role": "hold_thesis",
   "census": {
@@ -62,8 +62,21 @@
     ]
   },
   "cases": {
-    "n_cases": 11,
+    "n_cases": 36,
     "items": [
+      {
+        "ticker": "AFRM",
+        "episode_year": 2022,
+        "case_type": "failed_breakaway",
+        "mechanism": "turnaround",
+        "thesis_one_liner": "Affirm's deeply compressed rebound failed when rapid GMV growth could not offset credit normalization, funding sensitivity and negative operating economics.",
+        "n_catalysts": 3,
+        "case_t0": "2022-08-03",
+        "engine_t0": "2022-08-03",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/AFRM_2022.md"
+      },
       {
         "ticker": "ALNY",
         "episode_year": 2024,
@@ -104,6 +117,58 @@
         "file": "research/winners/cases/ASTS_2024.md"
       },
       {
+        "ticker": "AXON",
+        "episode_year": 2024,
+        "case_type": "winner",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Axon rerated as repeated beat-and-raise quarters showed that recurring cloud, AI and connected public-safety products could compound alongside the hardware franchise.",
+        "n_catalysts": 4,
+        "case_t0": "2024-08-07",
+        "engine_t0": "2024-08-07",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/AXON_2024.md"
+      },
+      {
+        "ticker": "BROS",
+        "episode_year": 2024,
+        "case_type": "winner",
+        "mechanism": "turnaround",
+        "thesis_one_liner": "Dutch Bros rerated when transaction recovery, mobile ordering, improving site selection, rapid unit growth, and operating leverage made the expansion model more credible.",
+        "n_catalysts": 4,
+        "case_t0": "2024-11-07",
+        "engine_t0": "2024-11-07",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/BROS_2024.md"
+      },
+      {
+        "ticker": "CAVA",
+        "episode_year": 2023,
+        "case_type": "winner",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "CAVA rerated when traffic-led same-store growth, rapid unit expansion, near-25% restaurant margins, and corporate profitability accumulated into proof of a portable fast-casual model.",
+        "n_catalysts": 4,
+        "case_t0": "2023-12-13",
+        "engine_t0": "2023-12-13",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/CAVA_2023.md"
+      },
+      {
+        "ticker": "CRWD",
+        "episode_year": 2023,
+        "case_type": "winner",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "CrowdStrike rerated as accelerating net-new ARR, multi-module platform adoption, GAAP profit, and free-cash-flow scale changed the market's estimate of durable security-platform economics.",
+        "n_catalysts": 4,
+        "case_t0": "2023-11-29",
+        "engine_t0": "2023-11-29",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/CRWD_2023.md"
+      },
+      {
         "ticker": "CVNA",
         "episode_year": 2023,
         "case_type": "winner",
@@ -115,6 +180,58 @@
         "case_joined": false,
         "reconcile": "t0_gap_days:152",
         "file": "research/winners/cases/CVNA_2023.md"
+      },
+      {
+        "ticker": "DUOL",
+        "episode_year": 2024,
+        "case_type": "winner",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Duolingo rerated as product-led engagement, paid conversion, AI-enabled Max monetization, and operating leverage compounded without breaking the free-user growth engine.",
+        "n_catalysts": 4,
+        "case_t0": "2024-09-16",
+        "engine_t0": "2024-09-16",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/DUOL_2024.md"
+      },
+      {
+        "ticker": "FSLR",
+        "episode_year": 2022,
+        "case_type": "winner",
+        "mechanism": "policy_beneficiary",
+        "thesis_one_liner": "Enacted U.S. manufacturing incentives transformed the economics of a cash-rich, capacity-constrained module producer with a record multi-year backlog.",
+        "n_catalysts": 6,
+        "case_t0": "2022-07-28",
+        "engine_t0": "2022-07-28",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/FSLR_2022.md"
+      },
+      {
+        "ticker": "HIMS",
+        "episode_year": 2024,
+        "case_type": "failed_breakaway",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Hims' delayed June signal failed on the 63-session hold because it arrived after the GLP-1 shock without fresh liquidity, even though a later Q3 acceleration launched a separate resurrection.",
+        "n_catalysts": 4,
+        "case_t0": "2024-06-04",
+        "engine_t0": "2024-06-04",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/HIMS_2024.md"
+      },
+      {
+        "ticker": "HOOD",
+        "episode_year": 2025,
+        "case_type": "winner",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Robinhood rerated as profitable account growth broadened into international crypto, tokenized assets and institutional infrastructure, with later S&P 500 inclusion amplifying liquidity.",
+        "n_catalysts": 5,
+        "case_t0": "2025-06-03",
+        "engine_t0": "2025-06-03",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/HOOD_2025.md"
       },
       {
         "ticker": "MRNA",
@@ -130,6 +247,45 @@
         "file": "research/winners/cases/MRNA_2026.md"
       },
       {
+        "ticker": "MSTR",
+        "episode_year": 2020,
+        "case_type": "winner",
+        "mechanism": "cycle_upswing",
+        "thesis_one_liner": "A profitable software chassis became a scarce high-beta Bitcoin treasury proxy, then used convertible debt to increase the exposure during a powerful asset cycle.",
+        "n_catalysts": 6,
+        "case_t0": "2020-11-10",
+        "engine_t0": "2020-11-10",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/MSTR_2020.md"
+      },
+      {
+        "ticker": "NET",
+        "episode_year": 2020,
+        "case_type": "winner",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Near-50% recurring growth and large-customer expansion combined with stateful edge compute and Zero Trust networking to reframe Cloudflare as a broad internet platform.",
+        "n_catalysts": 5,
+        "case_t0": "2020-10-09",
+        "engine_t0": "2020-10-09",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/NET_2020.md"
+      },
+      {
+        "ticker": "NIO",
+        "episode_year": 2020,
+        "case_type": "winner",
+        "mechanism": "turnaround",
+        "thesis_one_liner": "Hefei financing removed the survival cliff just as record deliveries, positive vehicle margins, and a new battery-service model established a credible EV turnaround.",
+        "n_catalysts": 8,
+        "case_t0": "2020-06-01",
+        "engine_t0": "2020-06-01",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/NIO_2020.md"
+      },
+      {
         "ticker": "NVDA",
         "episode_year": 2023,
         "case_type": "winner",
@@ -143,6 +299,58 @@
         "file": "research/winners/cases/NVDA_2023.md"
       },
       {
+        "ticker": "OKLO",
+        "episode_year": 2024,
+        "case_type": "winner",
+        "mechanism": "policy_beneficiary",
+        "thesis_one_liner": "Oklo rerated as DOE fuel-facility progress, data-center demand instruments, and balance-sheet runway raised the perceived probability of future advanced-reactor commercialization.",
+        "n_catalysts": 7,
+        "case_t0": "2024-10-15",
+        "engine_t0": "2024-10-15",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/OKLO_2024.md"
+      },
+      {
+        "ticker": "OKTA",
+        "episode_year": 2019,
+        "case_type": "winner",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Recurring identity growth, large-enterprise adoption, platform expansion, and improving cash conversion produced a durable software rerating.",
+        "n_catalysts": 6,
+        "case_t0": "2019-01-14",
+        "engine_t0": "2019-01-14",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/OKTA_2019.md"
+      },
+      {
+        "ticker": "PDD",
+        "episode_year": 2019,
+        "case_type": "winner",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Buyer growth, rising spend per buyer, and merchant monetization overcame subsidy and loss concerns to produce a durable China-internet platform rerating.",
+        "n_catalysts": 5,
+        "case_t0": "2019-08-16",
+        "engine_t0": "2019-08-16",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/PDD_2019.md"
+      },
+      {
+        "ticker": "PINS",
+        "episode_year": 2024,
+        "case_type": "failed_breakaway",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Pinterest's delayed post-Q1 signal failed when Q2 guidance showed revenue growth decelerating toward the expense-growth rate despite healthy users and cash generation.",
+        "n_catalysts": 3,
+        "case_t0": "2024-05-06",
+        "engine_t0": "2024-05-06",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/PINS_2024.md"
+      },
+      {
         "ticker": "PLTR",
         "episode_year": 2024,
         "case_type": "winner",
@@ -154,6 +362,45 @@
         "case_joined": true,
         "reconcile": "matched",
         "file": "research/winners/cases/PLTR_2024.md"
+      },
+      {
+        "ticker": "RBLX",
+        "episode_year": 2021,
+        "case_type": "failed_breakaway",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Roblox's Q3 gap failed when bookings and monetization per user decelerated far faster than lagging recognized revenue implied.",
+        "n_catalysts": 3,
+        "case_t0": "2021-11-09",
+        "engine_t0": "2021-11-09",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/RBLX_2021.md"
+      },
+      {
+        "ticker": "RBRK",
+        "episode_year": 2024,
+        "case_type": "winner",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Rubrik rerated as rapid subscription ARR growth, a widening cyber-resilience platform, and improving contribution economics converted a post-IPO growth story into observable cash generation.",
+        "n_catalysts": 6,
+        "case_t0": "2024-11-21",
+        "engine_t0": "2024-11-21",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/RBRK_2024.md"
+      },
+      {
+        "ticker": "RDDT",
+        "episode_year": 2024,
+        "case_type": "winner",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Reddit rerated when audience growth, ad acceleration, data licensing, search product optionality, and high-gross-margin cash conversion became visible together.",
+        "n_catalysts": 5,
+        "case_t0": "2024-10-14",
+        "engine_t0": "2024-10-14",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/RDDT_2024.md"
       },
       {
         "ticker": "SMCI",
@@ -182,6 +429,58 @@
         "file": "research/winners/cases/SMMT_2024.md"
       },
       {
+        "ticker": "SPOT",
+        "episode_year": 2023,
+        "case_type": "winner",
+        "mechanism": "turnaround",
+        "thesis_one_liner": "A public cost reset, accelerating user growth, improving cash economics, and later pricing power reframed Spotify from spend-heavy streamer to scalable audio platform.",
+        "n_catalysts": 5,
+        "case_t0": "2023-01-20",
+        "engine_t0": "2023-01-20",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/SPOT_2023.md"
+      },
+      {
+        "ticker": "TNDM",
+        "episode_year": 2018,
+        "case_type": "winner",
+        "mechanism": "turnaround",
+        "thesis_one_liner": "Improving pump economics reduced financing risk before Basal-IQ approval and launch expanded Tandem's attainable automated-insulin-delivery franchise.",
+        "n_catalysts": 6,
+        "case_t0": "2018-06-04",
+        "engine_t0": "2018-06-04",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/TNDM_2018.md"
+      },
+      {
+        "ticker": "TWLO",
+        "episode_year": 2024,
+        "case_type": "winner",
+        "mechanism": "turnaround",
+        "thesis_one_liner": "Twilio rerated when renewed double-digit growth combined with operating discipline, free cash flow and a credible multi-year profitability framework.",
+        "n_catalysts": 4,
+        "case_t0": "2024-10-31",
+        "engine_t0": "2024-10-31",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/TWLO_2024.md"
+      },
+      {
+        "ticker": "U",
+        "episode_year": 2021,
+        "case_type": "failed_breakaway",
+        "mechanism": "platform_rerating",
+        "thesis_one_liner": "Unity's elevated Q3 and Weta breakaway failed when flaws in its monetization stack cut Operate growth and forced a major guidance reset.",
+        "n_catalysts": 4,
+        "case_t0": "2021-11-11",
+        "engine_t0": "2021-11-11",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/U_2021.md"
+      },
+      {
         "ticker": "VKTX",
         "episode_year": 2024,
         "case_type": "winner",
@@ -206,15 +505,41 @@
         "case_joined": true,
         "reconcile": "matched",
         "file": "research/winners/cases/VRT_2023.md"
+      },
+      {
+        "ticker": "VST",
+        "episode_year": 2024,
+        "case_type": "winner",
+        "mechanism": "cycle_upswing",
+        "thesis_one_liner": "Vistra's second-leg rerating combined acquired nuclear scale, integrated retail hedging, public nuclear price discovery, rising cash-flow guidance, and continued capital return.",
+        "n_catalysts": 6,
+        "case_t0": "2024-09-20",
+        "engine_t0": "2024-09-20",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/VST_2024.md"
+      },
+      {
+        "ticker": "XPEV",
+        "episode_year": 2024,
+        "case_type": "winner",
+        "mechanism": "cycle_upswing",
+        "thesis_one_liner": "XPeng rerated when MONA M03 and P7+ converted a damaged EV prior into repeated delivery records, improving vehicle margin and a visibly broader product cycle.",
+        "n_catalysts": 7,
+        "case_t0": "2024-09-19",
+        "engine_t0": "2024-09-19",
+        "case_joined": true,
+        "reconcile": "matched",
+        "file": "research/winners/cases/XPEV_2024.md"
       }
     ]
   },
   "watch": {
     "available": true,
-    "as_of": "2026-07-11",
+    "as_of": "2026-07-13",
     "state_counts": {
       "breakaway": 13,
-      "emerging": 35,
+      "emerging": 37,
       "digestion": 47,
       "continuation": 26,
       "failed": 96
@@ -229,6 +554,25 @@
         "excess_42d_pp": 5.88,
         "new_high_63d": false,
         "dollar_vol_z21": null,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [
+          "extended_after_vertical_move"
+        ],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "CC_F",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": 51.81,
+        "excess_42d_pp": 41.56,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.76,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [
@@ -291,6 +635,23 @@
         "hazards": [
           "extended_after_vertical_move"
         ],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "KC_F",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": 37.65,
+        "excess_42d_pp": 16.05,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.61,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [],
         "context": {
           "context_only": true,
           "note": ""
@@ -3946,5 +4307,96 @@
       "note": "Winner Autopsy: per-ticker options/revisions fingerprint depth",
       "status": "accruing"
     }
-  ]
+  ],
+  "feature_coverage": {
+    "available": true,
+    "columns": {
+      "hard_event_count_126d": {
+        "non_null_total": 1204,
+        "non_null_pre_2024": 558,
+        "non_null_post_2024_a2_firewall": 646
+      },
+      "soft_event_count_126d": {
+        "non_null_total": 1204,
+        "non_null_pre_2024": 558,
+        "non_null_post_2024_a2_firewall": 646
+      },
+      "soft_then_hard": {
+        "non_null_total": 815,
+        "non_null_pre_2024": 315,
+        "non_null_post_2024_a2_firewall": 500
+      },
+      "days_soft_to_hard": {
+        "non_null_total": 262,
+        "non_null_pre_2024": 86,
+        "non_null_post_2024_a2_firewall": 176
+      },
+      "hard_event_reversed": {
+        "non_null_total": 404,
+        "non_null_pre_2024": 142,
+        "non_null_post_2024_a2_firewall": 262
+      },
+      "b1_coverage": {
+        "non_null_total": 2650,
+        "non_null_pre_2024": 1556,
+        "non_null_post_2024_a2_firewall": 1094
+      },
+      "self_funded_at_t0": {
+        "non_null_total": 661,
+        "non_null_pre_2024": 139,
+        "non_null_post_2024_a2_firewall": 522
+      },
+      "b2_cfo_y0": {
+        "non_null_total": 715,
+        "non_null_pre_2024": 155,
+        "non_null_post_2024_a2_firewall": 560
+      },
+      "b2_cfo_y1": {
+        "non_null_total": 715,
+        "non_null_pre_2024": 155,
+        "non_null_post_2024_a2_firewall": 560
+      },
+      "b2_capex_y0": {
+        "non_null_total": 670,
+        "non_null_pre_2024": 141,
+        "non_null_post_2024_a2_firewall": 529
+      },
+      "b2_capex_y1": {
+        "non_null_total": 672,
+        "non_null_pre_2024": 142,
+        "non_null_post_2024_a2_firewall": 530
+      },
+      "b2_revenue_y0": {
+        "non_null_total": 710,
+        "non_null_pre_2024": 154,
+        "non_null_post_2024_a2_firewall": 556
+      },
+      "b2_revenue_y1": {
+        "non_null_total": 709,
+        "non_null_pre_2024": 154,
+        "non_null_post_2024_a2_firewall": 555
+      },
+      "index_announce_within_63d_pre_t0": {
+        "non_null_total": 35,
+        "non_null_pre_2024": 0,
+        "non_null_post_2024_a2_firewall": 35
+      },
+      "index_announce_within_63d_post_t0": {
+        "non_null_total": 35,
+        "non_null_pre_2024": 0,
+        "non_null_post_2024_a2_firewall": 35
+      },
+      "b4_coverage": {
+        "non_null_total": 2650,
+        "non_null_pre_2024": 1556,
+        "non_null_post_2024_a2_firewall": 1094
+      }
+    },
+    "notes": [
+      "B2 (self_funded_at_t0 and legs): fundamental-family column \u2014 non_null_post_2024_a2_firewall rows must NOT appear in cross-case aggregate tables until A2 commits (WA-R7).",
+      "B1 era_cutoff=2014-01-01 (LHB-R5/WA-R4): pre-era rows are None.",
+      "B4 archive_start=2026-06-11: almost all episodes are None (pre_archive).",
+      "hard_event_count_126d omits Item 2.02 (earnings) \u2014 see extract_b1_hardening_ladder docstring."
+    ]
+  }
 }

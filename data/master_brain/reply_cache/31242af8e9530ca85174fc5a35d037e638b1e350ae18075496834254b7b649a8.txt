@@ -1,0 +1,21 @@
+{
+  "regime_context": "Hong Kong is in a narrow one-narrative regime dominated by Tech Hardware & Semis (durability 0.78, trend, not crowded). The absolute-trend gate has historically lowered drawdown for this market, but no theme provides a return forecast edge. The leading theme is unscorable; the only scorable themes are deep ineligible laggards.",
+  "theses": [
+    {
+      "subject": "China Tech & Internet",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The absolute-trend gate, the single validated edge (drawdown/volatility reduction), flags this theme as ineligible (durability_bar 0.37). Avoiding ineligible themes aligns with that risk-control objective; the underweight is a relative safety lean, not a return call.",
+      "evidence": [
+        "absolute-trend gate validated for drawdown control in HK (gate_helps=true)",
+        "theme 'China Tech & Internet' eligible=false, durability_bar=0.37",
+        "scorable via 3033.HK for accountability"
+      ],
+      "dissent": "If Chinese tech policy or earnings surprise, the theme could rally sharply and outperform despite weak trend health.",
+      "falsifier_text": "China Tech & Internet (proxied by 3033.HK) outperforms the Hang Seng Index by more than 3 percentage points over the next 20 trading days."
+    }
+  ],
+  "emerging_watch": "Monitor Tech Hardware & Semis for durability erosion. Kill criterion: durability_bar drops below 0.6 and another theme (e.g., Diversified Miners or High-Dividend) simultaneously achieves eligibility with a higher momentum score.",
+  "confidence": "low"
+}

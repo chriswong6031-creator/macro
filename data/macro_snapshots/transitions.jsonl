@@ -14,3 +14,5 @@
 {"asof": "2026-07-12", "domain": "us", "field": "cross_asset_verdict", "from_value": "mixed", "to_value": "diverge", "macro_context_id": "8519acbf68ceb555"}
 {"asof": "2026-07-12", "domain": "canada", "field": "canada_quad", "from_value": "Q4", "to_value": "Q1", "macro_context_id": "8519acbf68ceb555"}
 {"asof": "2026-07-12", "domain": "canada", "field": "canada_cycle_tag", "from_value": "late", "to_value": "mid", "macro_context_id": "8519acbf68ceb555"}
+{"asof": "2026-07-13", "domain": "us", "field": "us_vrp_state", "from_value": "normal", "to_value": "collapsing (de-risk)", "macro_context_id": "38920726d4d6471a"}
+{"asof": "2026-07-13", "domain": "fx", "field": "fx_liquidity_dir", "from_value": "supportive", "to_value": "soft", "macro_context_id": "38920726d4d6471a"}

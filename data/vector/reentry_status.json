@@ -1,6 +1,6 @@
 {
  "schema": "btc_reentry_status.v2",
- "asof": "2026-07-12",
+ "asof": "2026-07-13",
  "state": "armed_pending_window",
  "enabled": true,
  "halt_from": null,
@@ -38,7 +38,7 @@
  "accelerator": {
   "enabled": true,
   "rule": "fresh MVRV-Z<0 (>=90d above prior) OR fresh bottom_pressure>=0.45 (>=20d below prior), inside the window \u2014 pulls the NEXT scheduled tranche forward; never blocks, never vetoes, never adds size",
-  "mvrv_z_last": 0.3498,
+  "mvrv_z_last": 0.3385,
   "bottom_pressure_last": 0.0
  },
  "pre_window_mvrv_fire": null,

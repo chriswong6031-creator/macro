@@ -1,0 +1,25 @@
+**Desk note — Hong Kong market regime (2026-07-10)**  
+Assessed for risk-on theme exposure, not for individual theme selection.
+
+**Regime snapshot**  
+- Dominant narrative: Tech Hardware & Semis, with durability bar 0.78 (trend, not crowded).  
+- Rotation width: narrow (4/17 themes eligible). Absorption ~0.55, one-narrative dominant.  
+- Gate_helps = true — absolute-trend gate historically cut drawdown in this market.  
+- Headline cash weight = 0.25; regime itself already carries a significant cash buffer.
+
+**Macro backdrop (coincident, market-level)**  
+- Dominant news themes: AI/tech and geopolitics.  
+- Unscheduled share 0.79 (very high) — surprise-driven headlines dominate; macro uncertainty is elevated.  
+- This backdrop typically calls for smaller size, not full risk-on conviction.
+
+**Does the regime support risk-on theme exposure?**  
+Yes, but conditionally, and with caution. The absolute-trend gate is the validated edge, and the dominant theme is durable, trending, and not crowded. The elevated cash weight (0.25) and high unscheduled share argue against aggressive re-risking. The narrow leadership means the risk-on case is fragile — if the tech-hardware trend breaks, there is no wide rotation cushion; everything else is weak.
+
+**Accountable, falsifiable conditional**  
+Lean: the regime allows *modest* risk-on exposure within the discipline of the absolute-trend gate, but **no larger than the headline allocation itself**, and only while the dominant theme (Tech Hardware) stays above its trend durability threshold (~0.70) and the macro unscheduled share does not spike further.  
+Check-by horizon: two weeks (≈2026-07-24).  
+If by then the tech hardware durability remains ≥0.70 and unscheduled share ≤0.85, the regime’s risk-on support is unchanged.  
+If the theme breaks trend or macro shocks intensify, the call would shift to “more cash / smaller size.”
+
+**Guardrails in force**  
+Not a return forecast, not a buy trigger, not a fade call on the leader, and not a prediction of the next narrative. This note is a fallible, falsifiable regime assessment — no position size implied.

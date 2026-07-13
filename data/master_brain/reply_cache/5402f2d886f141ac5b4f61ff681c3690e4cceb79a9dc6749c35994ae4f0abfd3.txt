@@ -1,0 +1,14 @@
+**NARRATIVE-EMERGENCE WATCH — Hong Kong | 2026-07-10**
+**Watch hypothesis (single, conditional, falsifiable):**  
+The current one-narrative dominance of **Tech Hardware & Semis** (durability 0.78, Hurst “trend”, margin +1.87) may begin to crack in the coming weeks, creating a *formation* window for a leadership handoff — but no credible challenger is visible yet (theme_candidates null; ranks 2–5 below eligibility/significance).
+
+**Kill-criterion (dead by 2026-08-07, 4-week check):**  
+- If the leader’s durability_bar stays **>0.70** and its score **holds within -20% of 2.625**, *and* no other theme simultaneously crosses eligibility with a score >0.5 and breadth >0.4, then the “handoff watch” is **void** — leadership remains entrenched.
+
+**Context & discipline reminder**  
+- Detector trust-graded display-only; momentum rank-IC ~0; absolute-trend gate is the sole validated edge (risk control, not return forecast).  
+- One-narrative dominant, narrow breadth (4/17 eligible), absorption 0.55 — the market is focused and the leader is not crowded.  
+- No fading call permitted; this is a conditional watch, not a position. Any attention/inflow spike would *cap* the thesis, not trigger it.
+
+**Why nothing else**  
+No forming theme meets minimum watch criteria: Diversified Miners (score 0.755, durability 0.33, breadth 0.0), China Tech (0.415, 0.37), Biotech (0.285, 0.46) all lack the combination of trend health and participation to be plausible challengers today. The hypothesis is therefore about *potential* erosion of the incumbent, not a pick of the successor.

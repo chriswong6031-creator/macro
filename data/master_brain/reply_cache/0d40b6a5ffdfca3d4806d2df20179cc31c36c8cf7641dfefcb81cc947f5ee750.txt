@@ -1,0 +1,18 @@
+{
+  "stance": "Flow is concentrating in a cyclical cluster (Financials, Real Estate, Consumer Discretionary, Industrials) with healthy read quality. From this display-only lens, the concentration suggests an overweight lean in these sectors, though the fragile relief snap cautions durability.",
+  "candidates": [
+    {
+      "subject": "Financials",
+      "lean": "overweight",
+      "rationale": "Dominant cluster member, cohering, broad leadership, read quality 0.75; flow is concentrating here.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Real Estate",
+      "lean": "overweight",
+      "rationale": "In the dominant cluster, cohering with reasonable cohesion; flow favors this area over defensives.",
+      "strength": "weak"
+    }
+  ],
+  "key_risk": "A breakdown of the Industrials-Materials correlation (0.82) or a regime shift that fragments the cluster would break the flow concentration read."
+}

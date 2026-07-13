@@ -1,0 +1,29 @@
+{
+  "summary": "BTC $63.5k: composite state DISTRIBUTE (froth) with bear momentum and broken structure, yet valuation sits at fair/cheap (MVRV-Z 0.34, NUPL 0.17) and macro is Goldilocks with expanding global liquidity. The clash between cycle-driven markdown and improving liquidity backdrop demands caution.",
+  "regime_read": "BTC is deep in a post-halving markdown phase (cycle 55.8%, 814 days since halving) with internal risk regime registering high risk (risk index 16.5, overrides active). Momentum (-0.47) and structure are decisively bearish, while valuations have cooled markedly from froth—MVRV-Z at the 19th percentile, Mayer at 0.85—suggesting the asset is not expensive on a chain basis. Leverage is neutral: funding at 8.3% annual is moderately positive but not stretched, OI percentiles are middling, and basis is flat. Option positioning shows low vol (DVOL 8th %ile) with a put skew (25-delta risk reversal -7.07) that implies hedging demand, but no panic. On-chain flows are conflicting: ETF flows signal accumulation, but Coinbase premium is negative (-1.52) and stablecoin supply is contracting (stbl_growth_z -1.19), hinting at weak native crypto liquidity. The macro backdrop—real yields at 2.31%, tight credit, low VIX, DXY at 101, and global M2 expanding >7% YoY—would normally favor risk assets, yet BTC is not responding. This suggests the cycle/positioning headwinds are dominating the liquidity tailwind for now.",
+  "conflicts": [
+    "Fair valuation (MVRV-Z 0.34, NUPL 0.17) vs. bearish momentum and broken structure—on-chain says 'cheap', but trend says 'wait'.",
+    "Global liquidity expanding (global M2 YoY 7.4%, net liq ROC +0.94%) vs. BTC's DISTRIBUTE regime and negative trend—the liquidity transmission is not flowing through yet.",
+    "ETF flows in accumulation vs. negative Coinbase premium (-1.52) and contracting stablecoin growth—institutional buying on tradfi rails is not being echoed in on-chain US demand.",
+    "Options DVOL at 8th percentile (calm) vs. strong put skew (risk reversal -7.07)—low headline vol but relative demand for downside protection suggests a cautious positioning skew.",
+    "Macro risk low (Goldilocks quad, macro risk score 0.15) vs. BTC risk regime high (risk index 16.5)—the macro-muted risk environment is not translating into lower BTC risk perception.",
+    "Miner capitulation (hash ribbon) and low Puell (0.72) alongside fair valuation—historically, this combo can precede basing, but the markdown cycle phase and negative momentum have not yet turned."
+  ],
+  "rotation_check": "The working liquidity thesis—that BTC leads when global liquidity expands and unwinds when it contracts—is partially diverging. Global M2 is rising sharply and net liquidity is expanding, yet BTC is in a DISTRIBUTE/froth state with bearish momentum and a broken market structure. The thesis's second condition (leverage and valuation gate the risk-reward) is partially playing out: valuations are no longer extreme, but the cycle position (markdown phase after a lengthy post-halving advance) and weak on-chain native flows (contracting stablecoin supply, negative Coinbase premium) are overriding the macro tailwind. The transmission from expanding liquidity to BTC is broken for now, possibly because the asset is digesting prior leverage or because real yields remain high, muting the long-duration sensitivity.",
+  "transmission": [
+    "If real yields (currently 2.31%) decline on Fed easing signals, that would amplify the liquidity transmission to BTC—watch the 10-year TIPS yield and the rate structure.",
+    "Stablecoin supply contraction (stbl_growth_z -1.19) is a direct on-chain liquidity drain; a sharp re-expansion would signal that the native crypto bid is returning, potentially allowing the macro liquidity wave to lift BTC.",
+    "The current ETF accumulation could eventually pull spot price if it persists and begins to offset Coinbase selling; watch for the Coinbase premium to turn positive as a sign of US-native demand returning.",
+    "Leverage reset: funding at 8.3% is not alarmingly high, but a flush to neutral/negative would create a cleaner base for a rally. Similarly, a spike in DVOL from these low levels could mark a capitulation event.",
+    "Cyclical pivot: the next cycle-phase pivot is projected for early October 2026 (84 days away); a transition to accumulation phase would align with the cheapening valuations and expanding macro liquidity, potentially rehabilitating the liquidity thesis."
+  ],
+  "watch_items": [
+    "Structure repair: BTC must reclaim a key moving average or the prior range low to negate the broken structure; until then, the bearish trend is intact.",
+    "Coinbase premium turning positive and stablecoin growth rate moving above zero—these would confirm on-chain bid returning.",
+    "DVOL and risk reversal: a decline in put skew or a drop in DVOL further could signal complacency; a spike would indicate forced deleveraging that could mark a local bottom.",
+    "Real yield and DXY: a break below 2.1% real yield and DXY below 100 would be a strong macro green light; conversely, if real yields rise above 2.5% and credit widens, the macro tailwind evaporates.",
+    "ETF flow persistence: if accumulation state holds through price weakness, it suggests institutional conviction building, which together with cycle maturity could flip the regime.",
+    "Next cycle-phase pivot (est. Oct 5, 2026): a successful transition from markdown to accumulation would validate the thesis and the fair valuations."
+  ],
+  "confidence": "medium"
+}

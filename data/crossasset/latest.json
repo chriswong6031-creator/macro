@@ -1,5 +1,5 @@
 {
-  "date": "2026-07-12",
+  "date": "2026-07-13",
   "regime": "mixed / no clear trend",
   "breadth": 0.3,
   "favored": [
@@ -10,7 +10,7 @@
     "dollar"
   ],
   "correlation": "concentrated",
-  "asof": "2026-07-12",
+  "asof": "2026-07-13",
   "flows": {
     "schema": "crossasset_flows.v1",
     "display_only": true,
@@ -60,12 +60,12 @@
       },
       {
         "pair": "gold_silver",
-        "ratio": 68.62,
+        "ratio": 69.359,
         "trend": "mid"
       },
       {
         "pair": "oil_gold",
-        "ratio": 0.017,
+        "ratio": 0.018,
         "trend": "mid"
       },
       {
@@ -83,6 +83,30 @@
           "value": 0.85,
           "unit": "%",
           "state": "positive carry"
+        },
+        {
+          "key": "roll_gold",
+          "label_en": "Gold roll yield",
+          "label_zh": "gold \u5c55\u671f\u6536\u76ca",
+          "value": -0.1,
+          "unit": "%/yr",
+          "state": "contango (negative)"
+        },
+        {
+          "key": "roll_silver",
+          "label_en": "Silver roll yield",
+          "label_zh": "silver \u5c55\u671f\u6536\u76ca",
+          "value": -0.1,
+          "unit": "%/yr",
+          "state": "contango (negative)"
+        },
+        {
+          "key": "roll_copper",
+          "label_en": "Copper roll yield",
+          "label_zh": "copper \u5c55\u671f\u6536\u76ca",
+          "value": -0.1,
+          "unit": "%/yr",
+          "state": "contango (negative)"
         }
       ],
       "note": "Current-state carry context only. Rates term-spread has deep history; commodity roll-yield is reconstructed from dated futures with <2y of history, so it is NOT backtested as a factor. Context, not a buy list."

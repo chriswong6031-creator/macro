@@ -1,0 +1,52 @@
+{
+  "regime_context": "China A-shares narrative rotation shows AI Compute & Optics leading a narrow eligible set (7 of 22 themes). The absolute trend gate has not historically reduced drawdown in this market (mean-reverting tape), so trend-following signals require caution. Momentum ranks are attention lenses only, not alpha. No track record exists for this desk note, so conviction must be low.",
+  "theses": [
+    {
+      "subject": "AI Compute & Optics",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The theme holds the top rank and remains in a confirmed trend (Hurst=trend, durability=0.75, breadth 0.59), suggesting leadership concentration despite a narrowing eligible pool. However, the mean-reverting nature of this market and the gate's historical failure to protect drawdowns imply the trend could reverse without warning.",
+      "evidence": [
+        "rank=1, score=2.87",
+        "durability_bar=0.75",
+        "hurst_tag=trend",
+        "eligible=true"
+      ],
+      "dissent": "The narrow margin over Semiconductors (0.26) and the market's mean-reverting character suggest the trend is fragile and may be a late-cycle chase.",
+      "falsifier_text": "Score drops below 1.5 or durability falls below 0.5."
+    },
+    {
+      "subject": "Semiconductors",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Strong trend dynamics with high durability (0.92) and near-100% breadth (0.955), and not crowded. It is a close challenger, indicating participation in the same AI/tradeable tech theme. The caution remains the overall market's tendency to whipsaw trend signals.",
+      "evidence": [
+        "rank=2, score=2.61",
+        "durability_bar=0.92",
+        "breadth=0.955",
+        "crowding_z=0.93 but crowded=false"
+      ],
+      "dissent": "Rank 2 proximity to leader may mean relative strength is peaking; a reversal in broad tech sentiment could hit semiconductors disproportionately given high correlation.",
+      "falsifier_text": "Score drops below 1.0 or rank falls below 3."
+    },
+    {
+      "subject": "Innovative Pharma & CXO",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "While the theme is trending (hurst=trend, durability=0.9, breadth=1.0), it registers as crowded (crowded=true). Per detector rules, crowding is a sizing-down caution, not a fade. In a market where the trend gate has historically underperformed, this crowded trend could be vulnerable to sharp unwinds, warranting underweight relative to benchmark.",
+      "evidence": [
+        "rank=6, score=0.295",
+        "durability_bar=0.9",
+        "breadth=1.0",
+        "crowded=true"
+      ],
+      "dissent": "The theme has strong breadth and durability; crowding sometimes indicates persistent flows that could continue driving prices higher in the short term.",
+      "falsifier_text": "Crowding flag turns false while trend score remains positive, or score increases above 1.0 (suggesting momentum re-acceleration)."
+    }
+  ],
+  "emerging_watch": "Watch Semiconductor theme to overtake AI Compute as leader; kill criterion: AI Compute re-establishes margin above 0.5 (current margin 0.26).",
+  "confidence": "low"
+}

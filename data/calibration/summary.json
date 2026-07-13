@@ -1,12 +1,12 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-11",
+  "as_of": "2026-07-13",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
       "scored": 3,
-      "open": 25,
+      "open": 28,
       "hit_rate": 0.667,
       "dir_accuracy": 0.667,
       "conviction_monotone": null,
@@ -30,7 +30,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 169,
+      "open": 280,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -54,7 +54,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 4,
-      "open": 102,
+      "open": 105,
       "hit_rate": 0.25,
       "dir_accuracy": 0.0,
       "conviction_monotone": null,
@@ -117,6 +117,12 @@
         "itemized": 0,
         "declared": 135,
         "effective_n": 135
+      },
+      {
+        "family": "causal_scan",
+        "itemized": 106,
+        "declared": 40,
+        "effective_n": 106
       },
       {
         "family": "cross_asset_phase0",
@@ -183,12 +189,6 @@
         "itemized": 10,
         "declared": 30,
         "effective_n": 30
-      },
-      {
-        "family": "causal_scan",
-        "itemized": 24,
-        "declared": 5,
-        "effective_n": 24
       },
       {
         "family": "china_validation",
@@ -755,6 +755,12 @@
         "effective_n": 2
       },
       {
+        "family": "s10_margin_inflection",
+        "itemized": 2,
+        "declared": 2,
+        "effective_n": 2
+      },
+      {
         "family": "s11_buyback_floor",
         "itemized": 0,
         "declared": 2,
@@ -785,8 +791,32 @@
         "effective_n": 1
       }
     ],
-    "total_families": 117,
-    "total_effective_n": 2732
+    "total_families": 118,
+    "total_effective_n": 2816
   },
-  "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position."
+  "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position.",
+  "standout_tracks": [
+    {
+      "name": "US Buy Board (v1)",
+      "region": "US",
+      "rel_path": "site/factordata/us_board_track.json",
+      "board_dates": 6,
+      "graded_rows": 1095,
+      "h21_hit_rate": null,
+      "h21_n": 0,
+      "health": "cold",
+      "health_note": "only 0 matured h21 rows \u2014 ACCRUING; floor ~25 cluster-unit rows"
+    },
+    {
+      "name": "CN Standout Track",
+      "region": "CN",
+      "rel_path": "data/china_standout_track/board.parquet",
+      "board_dates": 7,
+      "graded_rows": 0,
+      "h21_hit_rate": null,
+      "h21_n": 0,
+      "health": "cold",
+      "health_note": "421 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
+    }
+  ]
 }
