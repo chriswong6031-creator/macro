@@ -1,0 +1,2159 @@
+{
+  "schema": "metabolism.organism_state.v1",
+  "as_of": "2026-07-13",
+  "produced_at": "2026-07-13T18:14:45.111704+00:00",
+  "lobes": {
+    "attention-deterministic": {
+      "lobe_id": "attention-deterministic",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "bottom-sensors-json": {
+      "lobe_id": "bottom-sensors-json",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 89.66,
+      "stale_legs": []
+    },
+    "bottom-sensors-parquet": {
+      "lobe_id": "bottom-sensors-parquet",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 0.01,
+      "stale_legs": []
+    },
+    "capability-audit": {
+      "lobe_id": "capability-audit",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "causal-brainstorm-runs": {
+      "lobe_id": "causal-brainstorm-runs",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "causal-confluence-audit": {
+      "lobe_id": "causal-confluence-audit",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.15,
+      "stale_legs": []
+    },
+    "causal-edges": {
+      "lobe_id": "causal-edges",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "causal-feature-inventory": {
+      "lobe_id": "causal-feature-inventory",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.15,
+      "stale_legs": []
+    },
+    "causal-frontier": {
+      "lobe_id": "causal-frontier",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.15,
+      "stale_legs": []
+    },
+    "causal-lab-state": {
+      "lobe_id": "causal-lab-state",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.15,
+      "stale_legs": []
+    },
+    "causal-llm-lane": {
+      "lobe_id": "causal-llm-lane",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.15,
+      "stale_legs": []
+    },
+    "causal-mechanisms": {
+      "lobe_id": "causal-mechanisms",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "causal-nulls": {
+      "lobe_id": "causal-nulls",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "causal-surprise-queue": {
+      "lobe_id": "causal-surprise-queue",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "claim-accountability": {
+      "lobe_id": "claim-accountability",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 5.15,
+      "stale_legs": []
+    },
+    "confluence-candidates": {
+      "lobe_id": "confluence-candidates",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "confluence-graph": {
+      "lobe_id": "confluence-graph",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh_partial",
+      "health_age_hours": 41.66,
+      "stale_legs": []
+    },
+    "confluence-sequence": {
+      "lobe_id": "confluence-sequence",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "confluence-strength": {
+      "lobe_id": "confluence-strength",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh_partial",
+      "health_age_hours": 281.66,
+      "stale_legs": []
+    },
+    "confluence-tape": {
+      "lobe_id": "confluence-tape",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "context-candidates": {
+      "lobe_id": "context-candidates",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "context-risk": {
+      "lobe_id": "context-risk",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.16,
+      "stale_legs": []
+    },
+    "cortex-attention-firings": {
+      "lobe_id": "cortex-attention-firings",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "cortex-attention-grades": {
+      "lobe_id": "cortex-attention-grades",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "cortex-memo": {
+      "lobe_id": "cortex-memo",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.15,
+      "stale_legs": []
+    },
+    "cortex-probation": {
+      "lobe_id": "cortex-probation",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "covariance-spine": {
+      "lobe_id": "covariance-spine",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "covariance-spine-history": {
+      "lobe_id": "covariance-spine-history",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 0.01,
+      "stale_legs": []
+    },
+    "cycle-pattern-state": {
+      "lobe_id": "cycle-pattern-state",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "dt-contra-state": {
+      "lobe_id": "dt-contra-state",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "entity-thesis-mechanism-registry": {
+      "lobe_id": "entity-thesis-mechanism-registry",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "evidence-clock": {
+      "lobe_id": "evidence-clock",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "evidence-clock-reviews": {
+      "lobe_id": "evidence-clock-reviews",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "factor-contradictions-ledger": {
+      "lobe_id": "factor-contradictions-ledger",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "factor-intelligence-state": {
+      "lobe_id": "factor-intelligence-state",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh_partial",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "feeds-plane": {
+      "lobe_id": "feeds-plane",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "not_locally_verifiable",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "fred-wresbal": {
+      "lobe_id": "fred-wresbal",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "governance-ledger": {
+      "lobe_id": "governance-ledger",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "hypothesis-inbox": {
+      "lobe_id": "hypothesis-inbox",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "kernel-decisions": {
+      "lobe_id": "kernel-decisions",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "kernel-estimates": {
+      "lobe_id": "kernel-estimates",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 0.01,
+      "stale_legs": []
+    },
+    "kernel-families": {
+      "lobe_id": "kernel-families",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 0.01,
+      "stale_legs": []
+    },
+    "kernel-half-lives": {
+      "lobe_id": "kernel-half-lives",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 0.01,
+      "stale_legs": []
+    },
+    "lagging-signals": {
+      "lobe_id": "lagging-signals",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 0.01,
+      "stale_legs": []
+    },
+    "liquidity-plumbing": {
+      "lobe_id": "liquidity-plumbing",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh_partial",
+      "health_age_hours": 89.66,
+      "stale_legs": []
+    },
+    "machine-registry": {
+      "lobe_id": "machine-registry",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "mechanism-pathways": {
+      "lobe_id": "mechanism-pathways",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "mechanism-pathways-history": {
+      "lobe_id": "mechanism-pathways-history",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "nasdaq-internals": {
+      "lobe_id": "nasdaq-internals",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 8.44,
+      "stale_legs": []
+    },
+    "neuralweb-daily-brief": {
+      "lobe_id": "neuralweb-daily-brief",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.14,
+      "stale_legs": []
+    },
+    "neuralweb-daily-brief-history": {
+      "lobe_id": "neuralweb-daily-brief-history",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "neuralweb-discovery-confluence": {
+      "lobe_id": "neuralweb-discovery-confluence",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "neuralweb-health": {
+      "lobe_id": "neuralweb-health",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.14,
+      "stale_legs": []
+    },
+    "neuralweb-market-plane": {
+      "lobe_id": "neuralweb-market-plane",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "neuralweb-mastermind-context": {
+      "lobe_id": "neuralweb-mastermind-context",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 89.66,
+      "stale_legs": []
+    },
+    "neuralweb-orchestrator-runlog": {
+      "lobe_id": "neuralweb-orchestrator-runlog",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "neuralweb-theme-clinical": {
+      "lobe_id": "neuralweb-theme-clinical",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "neuralweb-theme-options-witness": {
+      "lobe_id": "neuralweb-theme-options-witness",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "neuralweb-theme-trade-flows": {
+      "lobe_id": "neuralweb-theme-trade-flows",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "nw-health-run-history": {
+      "lobe_id": "nw-health-run-history",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "ops-push-basket-freeze": {
+      "lobe_id": "ops-push-basket-freeze",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "ops-push-healthcheck": {
+      "lobe_id": "ops-push-healthcheck",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "ops-push-nw-health": {
+      "lobe_id": "ops-push-nw-health",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "ops-push-signal-sanity": {
+      "lobe_id": "ops-push-signal-sanity",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "options-entry-gate": {
+      "lobe_id": "options-entry-gate",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "options-entry-state": {
+      "lobe_id": "options-entry-state",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "reflex-firings-commodity-shock": {
+      "lobe_id": "reflex-firings-commodity-shock",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "reflex-firings-pattern": {
+      "lobe_id": "reflex-firings-pattern",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "reflex-firings-regime-selfheal": {
+      "lobe_id": "reflex-firings-regime-selfheal",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "reflex-push-dedup-store": {
+      "lobe_id": "reflex-push-dedup-store",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "release-forecast-latest": {
+      "lobe_id": "release-forecast-latest",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 8.09,
+      "stale_legs": []
+    },
+    "research-queue": {
+      "lobe_id": "research-queue",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "risk-radar-review-log": {
+      "lobe_id": "risk-radar-review-log",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "rule-experiment-registry": {
+      "lobe_id": "rule-experiment-registry",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "rule-experiment-summaries": {
+      "lobe_id": "rule-experiment-summaries",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "site-altdata-mastermind": {
+      "lobe_id": "site-altdata-mastermind",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-artifact-manifest": {
+      "lobe_id": "site-artifact-manifest",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-attention-deterministic": {
+      "lobe_id": "site-attention-deterministic",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-causal-lab-state": {
+      "lobe_id": "site-causal-lab-state",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.15,
+      "stale_legs": []
+    },
+    "site-china-cycle-phase": {
+      "lobe_id": "site-china-cycle-phase",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-china-market-state": {
+      "lobe_id": "site-china-market-state",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-china-standouts": {
+      "lobe_id": "site-china-standouts",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 89.66,
+      "stale_legs": []
+    },
+    "site-context-risk": {
+      "lobe_id": "site-context-risk",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.16,
+      "stale_legs": []
+    },
+    "site-covariance-spine": {
+      "lobe_id": "site-covariance-spine",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-factor-intelligence-state": {
+      "lobe_id": "site-factor-intelligence-state",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh_partial",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-golden-signals": {
+      "lobe_id": "site-golden-signals",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-mechanism-pathways": {
+      "lobe_id": "site-mechanism-pathways",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-neuralweb-daily-brief": {
+      "lobe_id": "site-neuralweb-daily-brief",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.14,
+      "stale_legs": []
+    },
+    "site-neuralweb-governance-recent": {
+      "lobe_id": "site-neuralweb-governance-recent",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "unknown",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "site-neuralweb-health": {
+      "lobe_id": "site-neuralweb-health",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 7.14,
+      "stale_legs": []
+    },
+    "site-neuralweb-health-history": {
+      "lobe_id": "site-neuralweb-health-history",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "unknown",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "site-neuralweb-market-plane": {
+      "lobe_id": "site-neuralweb-market-plane",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-neuralweb-mastermind-context": {
+      "lobe_id": "site-neuralweb-mastermind-context",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 89.66,
+      "stale_legs": []
+    },
+    "site-neuralweb-orchestrator-runlog": {
+      "lobe_id": "site-neuralweb-orchestrator-runlog",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "missing",
+      "health_age_hours": null,
+      "stale_legs": []
+    },
+    "site-neuralweb-ruling-graph": {
+      "lobe_id": "site-neuralweb-ruling-graph",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "site-qledger-track-record": {
+      "lobe_id": "site-qledger-track-record",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 5.15,
+      "stale_legs": []
+    },
+    "site-radar-ticker": {
+      "lobe_id": "site-radar-ticker",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-theme-asymmetry": {
+      "lobe_id": "site-theme-asymmetry",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-theme-pathways": {
+      "lobe_id": "site-theme-pathways",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-theme-state": {
+      "lobe_id": "site-theme-state",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-theme-thesis": {
+      "lobe_id": "site-theme-thesis",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "site-us-standouts": {
+      "lobe_id": "site-us-standouts",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 89.66,
+      "stale_legs": []
+    },
+    "spine-index": {
+      "lobe_id": "spine-index",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "standouts_cn": {
+      "lobe_id": "standouts_cn",
+      "fitness_card_as_of": "2026-07-13",
+      "fitness_maturity": "accruing",
+      "sensors": {
+        "hit_quality": {
+          "value": null,
+          "n": 0,
+          "maturity": "accruing",
+          "note": "accruing: 0/25 graded rows needed"
+        },
+        "upside_capture": {
+          "value": null,
+          "n": 0,
+          "maturity": "accruing",
+          "note": "accruing: 0/25 graded rows needed"
+        },
+        "coverage_health": {
+          "value": null,
+          "n": 0,
+          "maturity": "accruing",
+          "note": "accruing: baseline not yet frozen (first maturity date not reached for count clamp)"
+        },
+        "missed_mover_rate": {
+          "value": null,
+          "n": 0,
+          "maturity": "accruing",
+          "note": "no graded rows — accruing"
+        },
+        "timing_quality": {
+          "value": null,
+          "n": 0,
+          "maturity": "accruing",
+          "note": "accruing: 0/25 graded rows needed"
+        },
+        "process_integrity": {
+          "value": null,
+          "n": 0,
+          "maturity": "accruing",
+          "note": "accruing: 0/25 graded rows needed"
+        }
+      },
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": null,
+      "health_age_hours": null,
+      "stale_legs": [
+        "hit_quality",
+        "upside_capture",
+        "coverage_health",
+        "missed_mover_rate",
+        "timing_quality",
+        "process_integrity"
+      ]
+    },
+    "standouts_us": {
+      "lobe_id": "standouts_us",
+      "fitness_card_as_of": "2026-07-13",
+      "fitness_maturity": "accruing",
+      "sensors": {
+        "hit_quality": {
+          "value": null,
+          "n": null,
+          "maturity": "accruing",
+          "note": "accruing: 0/25 matured rows"
+        },
+        "upside_capture": {
+          "value": null,
+          "n": null,
+          "maturity": "accruing",
+          "note": "accruing: 0/25 matured rows"
+        },
+        "coverage_health": {
+          "value": null,
+          "n": null,
+          "maturity": "accruing",
+          "note": "M2: value=null until frozen_baseline anchored (SA-R4). Raw trailing-4wk count in 'reading'. Scoreboard coverage_monitor carries pre-maturity all-horizon diagnostic count."
+        },
+        "missed_mover_rate": {
+          "value": null,
+          "n": null,
+          "maturity": "accruing",
+          "note": "no_21d_rows_yet"
+        },
+        "timing_quality": {
+          "value": null,
+          "n": null,
+          "maturity": "accruing",
+          "note": "accruing: 0/25 matured rows. timing_basis: ['board_tenure']."
+        },
+        "process_integrity": {
+          "value": null,
+          "n": null,
+          "maturity": "accruing",
+          "note": "accruing: 0/25 matured rows"
+        }
+      },
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": null,
+      "health_age_hours": null,
+      "stale_legs": [
+        "hit_quality",
+        "upside_capture",
+        "coverage_health",
+        "missed_mover_rate",
+        "timing_quality",
+        "process_integrity"
+      ]
+    },
+    "theme-asymmetry": {
+      "lobe_id": "theme-asymmetry",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "theme-pathways": {
+      "lobe_id": "theme-pathways",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "theme-phase-history": {
+      "lobe_id": "theme-phase-history",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "theme-state": {
+      "lobe_id": "theme-state",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 17.66,
+      "stale_legs": []
+    },
+    "theme-thesis-ledger": {
+      "lobe_id": "theme-thesis-ledger",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 2.21,
+      "stale_legs": []
+    },
+    "treasury-watch": {
+      "lobe_id": "treasury-watch",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "stale",
+      "health_age_hours": 113.66,
+      "stale_legs": []
+    },
+    "world-state": {
+      "lobe_id": "world-state",
+      "fitness_card_as_of": null,
+      "fitness_maturity": "accruing",
+      "sensors": {},
+      "composite_fitness": null,
+      "trajectory": {
+        "slope": null,
+        "label": "accruing",
+        "n_obs": 0,
+        "maturity": "accruing",
+        "note": "accruing: 0/3 observations (need 3)"
+      },
+      "health_status": "fresh",
+      "health_age_hours": 0.01,
+      "stale_legs": []
+    }
+  },
+  "whole_organism": {
+    "n_lobes": 112,
+    "label_counts": {
+      "accruing": 112
+    },
+    "biggest_gap": "insufficient data",
+    "note": "biggest_gap = deterministic pick (worst trajectory with matured data); not LLM judgment"
+  },
+  "cortex_memo": {
+    "as_of": "2026-07-13T17:56:24+00:00",
+    "status": null,
+    "n_lobes_assessed": null,
+    "overall_health": null,
+    "source": "data/neuralweb/cortex/memo.json"
+  },
+  "governance": {
+    "n_events": 5,
+    "n_grant": 0,
+    "n_deny": 0,
+    "grant_rate": 0.0,
+    "deny_rate": 0.0,
+    "source": "data/neuralweb/governance.jsonl"
+  },
+  "trial_ledger": {
+    "n_trials": 0,
+    "n_confirmed": 0,
+    "n_tripped": 0,
+    "confirmed_rate": null,
+    "source": "data/trial_ledger.jsonl"
+  },
+  "gaps": [
+    "lobe attention-deterministic: fitness card absent — honest null",
+    "lobe bottom-sensors-json: fitness card absent — honest null",
+    "lobe bottom-sensors-parquet: fitness card absent — honest null",
+    "lobe capability-audit: fitness card absent — honest null",
+    "lobe causal-brainstorm-runs: fitness card absent — honest null",
+    "lobe causal-confluence-audit: fitness card absent — honest null",
+    "lobe causal-edges: fitness card absent — honest null",
+    "lobe causal-feature-inventory: fitness card absent — honest null",
+    "lobe causal-frontier: fitness card absent — honest null",
+    "lobe causal-lab-state: fitness card absent — honest null",
+    "lobe causal-llm-lane: fitness card absent — honest null",
+    "lobe causal-mechanisms: fitness card absent — honest null",
+    "lobe causal-nulls: fitness card absent — honest null",
+    "lobe causal-surprise-queue: fitness card absent — honest null",
+    "lobe claim-accountability: fitness card absent — honest null",
+    "lobe confluence-candidates: fitness card absent — honest null",
+    "lobe confluence-graph: fitness card absent — honest null",
+    "lobe confluence-sequence: fitness card absent — honest null",
+    "lobe confluence-strength: fitness card absent — honest null",
+    "lobe confluence-tape: fitness card absent — honest null",
+    "lobe context-candidates: fitness card absent — honest null",
+    "lobe context-risk: fitness card absent — honest null",
+    "lobe cortex-attention-firings: fitness card absent — honest null",
+    "lobe cortex-attention-grades: fitness card absent — honest null",
+    "lobe cortex-memo: fitness card absent — honest null",
+    "lobe cortex-probation: fitness card absent — honest null",
+    "lobe covariance-spine: fitness card absent — honest null",
+    "lobe covariance-spine-history: fitness card absent — honest null",
+    "lobe cycle-pattern-state: fitness card absent — honest null",
+    "lobe dt-contra-state: fitness card absent — honest null",
+    "lobe entity-thesis-mechanism-registry: fitness card absent — honest null",
+    "lobe evidence-clock: fitness card absent — honest null",
+    "lobe evidence-clock-reviews: fitness card absent — honest null",
+    "lobe factor-contradictions-ledger: fitness card absent — honest null",
+    "lobe factor-intelligence-state: fitness card absent — honest null",
+    "lobe feeds-plane: fitness card absent — honest null",
+    "lobe fred-wresbal: fitness card absent — honest null",
+    "lobe governance-ledger: fitness card absent — honest null",
+    "lobe hypothesis-inbox: fitness card absent — honest null",
+    "lobe kernel-decisions: fitness card absent — honest null",
+    "lobe kernel-estimates: fitness card absent — honest null",
+    "lobe kernel-families: fitness card absent — honest null",
+    "lobe kernel-half-lives: fitness card absent — honest null",
+    "lobe lagging-signals: fitness card absent — honest null",
+    "lobe liquidity-plumbing: fitness card absent — honest null",
+    "lobe machine-registry: fitness card absent — honest null",
+    "lobe mechanism-pathways: fitness card absent — honest null",
+    "lobe mechanism-pathways-history: fitness card absent — honest null",
+    "lobe nasdaq-internals: fitness card absent — honest null",
+    "lobe neuralweb-daily-brief: fitness card absent — honest null",
+    "lobe neuralweb-daily-brief-history: fitness card absent — honest null",
+    "lobe neuralweb-discovery-confluence: fitness card absent — honest null",
+    "lobe neuralweb-health: fitness card absent — honest null",
+    "lobe neuralweb-market-plane: fitness card absent — honest null",
+    "lobe neuralweb-mastermind-context: fitness card absent — honest null",
+    "lobe neuralweb-orchestrator-runlog: fitness card absent — honest null",
+    "lobe neuralweb-theme-clinical: fitness card absent — honest null",
+    "lobe neuralweb-theme-options-witness: fitness card absent — honest null",
+    "lobe neuralweb-theme-trade-flows: fitness card absent — honest null",
+    "lobe nw-health-run-history: fitness card absent — honest null",
+    "lobe ops-push-basket-freeze: fitness card absent — honest null",
+    "lobe ops-push-healthcheck: fitness card absent — honest null",
+    "lobe ops-push-nw-health: fitness card absent — honest null",
+    "lobe ops-push-signal-sanity: fitness card absent — honest null",
+    "lobe options-entry-gate: fitness card absent — honest null",
+    "lobe options-entry-state: fitness card absent — honest null",
+    "lobe reflex-firings-commodity-shock: fitness card absent — honest null",
+    "lobe reflex-firings-pattern: fitness card absent — honest null",
+    "lobe reflex-firings-regime-selfheal: fitness card absent — honest null",
+    "lobe reflex-push-dedup-store: fitness card absent — honest null",
+    "lobe release-forecast-latest: fitness card absent — honest null",
+    "lobe research-queue: fitness card absent — honest null",
+    "lobe risk-radar-review-log: fitness card absent — honest null",
+    "lobe rule-experiment-registry: fitness card absent — honest null",
+    "lobe rule-experiment-summaries: fitness card absent — honest null",
+    "lobe site-altdata-mastermind: fitness card absent — honest null",
+    "lobe site-artifact-manifest: fitness card absent — honest null",
+    "lobe site-attention-deterministic: fitness card absent — honest null",
+    "lobe site-causal-lab-state: fitness card absent — honest null",
+    "lobe site-china-cycle-phase: fitness card absent — honest null",
+    "lobe site-china-market-state: fitness card absent — honest null",
+    "lobe site-china-standouts: fitness card absent — honest null",
+    "lobe site-context-risk: fitness card absent — honest null",
+    "lobe site-covariance-spine: fitness card absent — honest null",
+    "lobe site-factor-intelligence-state: fitness card absent — honest null",
+    "lobe site-golden-signals: fitness card absent — honest null",
+    "lobe site-mechanism-pathways: fitness card absent — honest null",
+    "lobe site-neuralweb-daily-brief: fitness card absent — honest null",
+    "lobe site-neuralweb-governance-recent: fitness card absent — honest null",
+    "lobe site-neuralweb-health: fitness card absent — honest null",
+    "lobe site-neuralweb-health-history: fitness card absent — honest null",
+    "lobe site-neuralweb-market-plane: fitness card absent — honest null",
+    "lobe site-neuralweb-mastermind-context: fitness card absent — honest null",
+    "lobe site-neuralweb-orchestrator-runlog: fitness card absent — honest null",
+    "lobe site-neuralweb-ruling-graph: fitness card absent — honest null",
+    "lobe site-qledger-track-record: fitness card absent — honest null",
+    "lobe site-radar-ticker: fitness card absent — honest null",
+    "lobe site-theme-asymmetry: fitness card absent — honest null",
+    "lobe site-theme-pathways: fitness card absent — honest null",
+    "lobe site-theme-state: fitness card absent — honest null",
+    "lobe site-theme-thesis: fitness card absent — honest null",
+    "lobe site-us-standouts: fitness card absent — honest null",
+    "lobe spine-index: fitness card absent — honest null",
+    "lobe theme-asymmetry: fitness card absent — honest null",
+    "lobe theme-pathways: fitness card absent — honest null",
+    "lobe theme-phase-history: fitness card absent — honest null",
+    "lobe theme-state: fitness card absent — honest null",
+    "lobe theme-thesis-ledger: fitness card absent — honest null",
+    "lobe treasury-watch: fitness card absent — honest null",
+    "lobe world-state: fitness card absent — honest null"
+  ],
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path"
+    ]
+  }
+}

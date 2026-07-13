@@ -1,2 +1,11 @@
 {"schema":"metabolism.key_usage.v1","ts":"2026-07-13T09:26:03+00:00","key_id":"legacy","status":403,"headers":{}}
 {"schema":"metabolism.key_usage.v1","ts":"2026-07-13T09:28:30+00:00","key_id":"legacy","status":403,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-07-13T18:14:49+00:00","key_id":"legacy","status":403,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-07-13T18:14:50+00:00","key_id":"claude_code_oauth_1","status":403,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-07-13T18:14:51+00:00","key_id":"claude_code_oauth_2","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-07-13T18:14:52+00:00","key_id":"claude_code_oauth_2","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-07-13T18:14:53+00:00","key_id":"claude_code_oauth_2","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-07-13T18:14:55+00:00","key_id":"claude_code_oauth_3","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-07-13T18:14:56+00:00","key_id":"claude_code_oauth_3","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-07-13T18:14:57+00:00","key_id":"claude_code_oauth_3","status":429,"headers":{}}
+{"schema":"metabolism.key_usage.v1","ts":"2026-07-13T18:14:58+00:00","key_id":"legacy","status":403,"headers":{}}
