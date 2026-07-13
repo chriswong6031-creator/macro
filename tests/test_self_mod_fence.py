@@ -68,15 +68,46 @@ from scripts.check_self_mod_fence import check, selftest, IMMUTABLE_PATTERNS, LO
     ),
     (
         "metabolism/adj",
-        ["settings.json"],
-        "",
-        "loop branch + settings.json",
-    ),
-    (
-        "metabolism/adj",
         ["research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md"],
         "",
         "loop branch + masterplan (tier table)",
+    ),
+    # SA-R2/SA-R4: standout ruler files must be blocked
+    (
+        "metabolism/neuter-guards",
+        [".claude/settings.json"],
+        "",
+        "loop branch + .claude/settings.json (hook-wiring guard)",
+    ),
+    (
+        "metabolism/neuter-guards",
+        [".claude/settings.local.json"],
+        "",
+        "loop branch + .claude/settings.local.json (hook-wiring guard)",
+    ),
+    (
+        "metabolism/self-tune-ruler",
+        ["engine/standout_audit.py"],
+        "",
+        "loop branch + engine/standout_audit.py (SA-R2 US taxonomy ruler)",
+    ),
+    (
+        "metabolism/self-tune-ruler",
+        ["engine/china_standout_audit.py"],
+        "",
+        "loop branch + engine/china_standout_audit.py (SA-R2 CN taxonomy ruler)",
+    ),
+    (
+        "metabolism/self-tune-ruler",
+        ["engine/standout_review.py"],
+        "",
+        "loop branch + engine/standout_review.py (SA-R4 clamp enforcement)",
+    ),
+    (
+        "metabolism/self-tune-ruler",
+        ["config/standout_review.yml"],
+        "",
+        "loop branch + config/standout_review.yml (SA-R4 clamp values)",
     ),
     (
         "claude/human-pr-with-trailer",
@@ -184,6 +215,8 @@ def test_immutable_patterns_cover_all_required_paths():
     """Every path required by the spec appears in IMMUTABLE_PATTERNS."""
     required = [
         ".claude/hooks/",
+        ".claude/settings.json",
+        ".claude/settings.local.json",
         ".github/workflows/",
         "config/grader_manifest.yml",
         "config/capability_manifest.yml",
@@ -191,8 +224,12 @@ def test_immutable_patterns_cover_all_required_paths():
         "engine/neuralweb/capability_broker.py",
         "scripts/check_self_mod_fence.py",
         "scripts/check_grader_manifest.py",
-        "settings.json",
         "research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md",
+        # SA-R2/SA-R4 standout ruler files
+        "engine/standout_audit.py",
+        "engine/china_standout_audit.py",
+        "engine/standout_review.py",
+        "config/standout_review.yml",
     ]
     for req in required:
         # At least one pattern must match the required path or be a prefix
