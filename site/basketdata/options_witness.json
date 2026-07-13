@@ -1,7 +1,7 @@
 {
   "schema": "theme_options_witness.v1",
-  "as_of": "2026-07-12",
-  "generated_at": "2026-07-12T09:59:31.904470+00:00",
+  "as_of": "2026-07-13",
+  "generated_at": "2026-07-13T00:39:02.599902+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -21,14 +21,14 @@
     "n_themes_suppressed": 3,
     "store_present": true,
     "store_path": "/Users/chriswong/theta-ops-wt/data/thetadata_eod",
-    "as_of": "2026-07-12"
+    "as_of": "2026-07-13"
   },
   "themes": {
     "ai_semiconductors": {
       "theme_id": "ai_semiconductors",
       "name_en": "AI Semiconductors",
       "name_zh": "AI半导体",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 26,
       "leg_a_call_oi_hhi": {
         "coverage_count": 26,
@@ -55,8 +55,8 @@
       "leg_c_iv_premium": {
         "coverage_count": 26,
         "coverage_total": 26,
-        "value": 0.0045,
-        "value_z252": -0.456,
+        "value": 0.0041,
+        "value_z252": -0.459,
         "band": "normal",
         "stale": false,
         "note_en": "Median IV-premium (IV/RV20-1) across 26/26 covered members. IV premium near historical norm.",
@@ -67,7 +67,7 @@
       "theme_id": "memory_storage",
       "name_en": "Memory, HBM & Storage",
       "name_zh": "存储与HBM",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 4,
       "leg_a_call_oi_hhi": {
         "coverage_count": 4,
@@ -106,7 +106,7 @@
       "theme_id": "semicap_equipment",
       "name_en": "Semiconductor Equipment (WFE)",
       "name_zh": "半导体设备（WFE）",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 16,
       "leg_a_call_oi_hhi": {
         "coverage_count": 16,
@@ -145,7 +145,7 @@
       "theme_id": "data_center_power",
       "name_en": "Data Center Power & Cooling",
       "name_zh": "数据中心电力与冷却",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 18,
       "leg_a_call_oi_hhi": {
         "coverage_count": 18,
@@ -184,7 +184,7 @@
       "theme_id": "nuclear_power",
       "name_en": "Nuclear & SMR Power",
       "name_zh": "核能与小型模块堆",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 19,
       "leg_a_call_oi_hhi": {
         "coverage_count": 18,
@@ -223,7 +223,7 @@
       "theme_id": "grid_electrification",
       "name_en": "Grid & Electrification",
       "name_zh": "电网与电气化",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 24,
       "leg_a_call_oi_hhi": {
         "coverage_count": 24,
@@ -262,7 +262,7 @@
       "theme_id": "cybersecurity",
       "name_en": "Cybersecurity",
       "name_zh": "网络安全",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 10,
       "leg_a_call_oi_hhi": {
         "coverage_count": 10,
@@ -301,7 +301,7 @@
       "theme_id": "defense_aerospace",
       "name_en": "Defense & Aerospace",
       "name_zh": "国防与航空航天",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 21,
       "leg_a_call_oi_hhi": {
         "coverage_count": 21,
@@ -340,7 +340,7 @@
       "theme_id": "robotics_automation",
       "name_en": "Robotics & Automation",
       "name_zh": "机器人与自动化",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 12,
       "leg_a_call_oi_hhi": {
         "coverage_count": 12,
@@ -379,7 +379,7 @@
       "theme_id": "glp1_obesity",
       "name_en": "GLP-1 / Obesity",
       "name_zh": "GLP-1与肥胖",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 14,
       "leg_a_call_oi_hhi": {
         "coverage_count": 13,
@@ -418,7 +418,7 @@
       "theme_id": "fintech_payments",
       "name_en": "Fintech & Payments",
       "name_zh": "金融科技与支付",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 21,
       "leg_a_call_oi_hhi": {
         "coverage_count": 21,
@@ -426,7 +426,7 @@
         "value": 0.0795,
         "value_z252": 0.464,
         "band": "normal",
-        "stale": false,
+        "stale": true,
         "note_en": "Median call-OI HHI across 21/21 covered members. HHI=0.079 — call OI distributed across strikes (no concentration hazard).",
         "note_zh": "21/21 个成员覆盖的看涨OI HHI中位数。HHI=0.079 — 看涨OI分布于多个行权价（无集中风险）。"
       },
@@ -438,7 +438,7 @@
         "pcr_5d_chg": -0.014,
         "pcr_collapse_into_strength": false,
         "band": "declining",
-        "stale": false,
+        "stale": true,
         "note_en": "Basket PCR across 21/21 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: declining.",
         "note_zh": "21/21 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: declining."
       },
@@ -448,7 +448,7 @@
         "value": 0.4611,
         "value_z252": 1.029,
         "band": "rising",
-        "stale": false,
+        "stale": true,
         "note_en": "Median IV-premium (IV/RV20-1) across 21/21 covered members. Rising IV premium vs realized.",
         "note_zh": "21/21 个成员的IV溢价中位数（IV/RV20-1）。IV溢价相对实现波动率上升。"
       }
@@ -457,7 +457,7 @@
       "theme_id": "space_satellite",
       "name_en": "Space & Satellites",
       "name_zh": "太空与卫星",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 15,
       "leg_a_call_oi_hhi": {
         "coverage_count": 3,
@@ -496,7 +496,7 @@
       "theme_id": "rare_earth_critical_min",
       "name_en": "Rare Earth & Critical Minerals",
       "name_zh": "稀土与关键矿产",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 11,
       "leg_a_call_oi_hhi": {
         "coverage_count": 7,
@@ -535,7 +535,7 @@
       "theme_id": "copper_steel_electrify",
       "name_en": "Copper, Steel & Electrification",
       "name_zh": "铜、钢铁与电气化",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 16,
       "leg_a_call_oi_hhi": {
         "coverage_count": 16,
@@ -613,7 +613,7 @@
       "theme_id": "medical_devices",
       "name_en": "Medical Devices",
       "name_zh": "医疗器械",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-13",
       "n_members": 9,
       "leg_a_call_oi_hhi": {
         "coverage_count": 9,
