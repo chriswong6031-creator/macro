@@ -293,10 +293,21 @@ def _run_single_lobe(args: "argparse.Namespace", root: Path, lobe: str, cycle_id
                 from scripts.preflight_claude_auth import check_auth  # type: ignore[import]
                 auth = check_auth(lane=args.lane, root=root)
                 if not auth.get("auth_ok"):
-                    reason = f"preflight auth failed: {auth.get('reason')}"
-                    log.warning("metabolism_propose[%s]: %s", lobe, reason)
-                    finish_stage(cycle_id, _STAGE, status="noop_paused", note=reason, root=root)
-                    return
+                    if auth.get("cli_missing"):
+                        # CLI binary absent ≠ token dead.  PROPOSE's LLM calls
+                        # go through engine.llm_auth (SDK, like AGENDA) — proceed;
+                        # the provider waterfall degrades honestly if the token
+                        # is truly dead.  (First armed cycle 2026-07-13: the
+                        # runner box has no claude CLI; only BUILD execs it.)
+                        log.warning(
+                            "metabolism_propose[%s]: preflight CLI missing (%s) — "
+                            "proceeding on SDK channel", lobe, auth.get("reason"),
+                        )
+                    else:
+                        reason = f"preflight auth failed: {auth.get('reason')}"
+                        log.warning("metabolism_propose[%s]: %s", lobe, reason)
+                        finish_stage(cycle_id, _STAGE, status="noop_paused", note=reason, root=root)
+                        return
             except Exception as exc:  # noqa: BLE001
                 log.warning("metabolism_propose[%s]: preflight error (%s) — treating as failed",
                             lobe, exc)

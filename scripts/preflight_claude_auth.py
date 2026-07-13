@@ -45,6 +45,13 @@ _PING_TIMEOUT_S = 20  # seconds
 # Prompt to use for the health-ping (cheapest possible — 1 output token target)
 _PING_PROMPT = "Reply with the single word: pong"
 
+# Reason prefix emitted when the CLI binary itself is absent (vs a live CLI
+# reporting a dead token).  SDK-channel stages (PROPOSE/ADJUDICATE call the
+# API via engine.llm_auth, never the CLI) key off check_auth()'s cli_missing
+# flag to proceed: llm_auth's provider waterfall self-protects if the token
+# is truly dead.  BUILD (which execs the CLI in sessions) must NOT proceed.
+CLI_MISSING_PREFIX = "claude CLI not found in PATH"
+
 # Known install locations for the claude CLI on the self-hosted runners.
 # The runner daemon inherits a minimal launchd PATH that omits per-user bin
 # dirs, so a bare "claude" raises FileNotFoundError even when the CLI IS
@@ -149,7 +156,14 @@ def check_auth(
                 audit(_CAPABILITY_ID, lane, workflow="metabolism-preflight", root=root)
             except Exception:  # noqa: BLE001
                 pass
-            return {"auth_ok": False, "reason": ping_reason, "ref_name": ref_name}
+            return {
+                "auth_ok": False,
+                "reason": ping_reason,
+                "ref_name": ref_name,
+                # Distinguish "binary absent" from "token dead" so SDK-channel
+                # callers can proceed on their own channel (see CLI_MISSING_PREFIX).
+                "cli_missing": ping_reason.startswith(CLI_MISSING_PREFIX),
+            }
 
         # Step 4: audit the successful use
         try:
@@ -211,7 +225,7 @@ def _run_ping_check(ref_name: str) -> tuple[bool, str]:
     except FileNotFoundError:
         return (
             False,
-            "claude CLI not found in PATH — cannot verify OAuth token health. "
+            CLI_MISSING_PREFIX + " — cannot verify OAuth token health. "
             "Ensure the claude CLI is installed on the runner.",
         )
     except subprocess.TimeoutExpired:
