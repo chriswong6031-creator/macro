@@ -400,10 +400,12 @@ def is_cooling(key_id: str, root: Path | None = None) -> bool:
         # the weekly horizon once the window expires (#2295 review F4).
         # Per horizon, take the LATEST cooling row of that kind and apply the
         # kind's clear rule:
-        #   window/auth — cleared by a later "ok" row (a confirmed successful
-        #     use proves the key works / operator rotated the secret), else by
-        #     reset_hint passage. Note "launched" rows never clear (R-V5-3 —
-        #     recorded at launch, before success is known).
+        #   auth — cleared by a later "ok" row (a confirmed successful use
+        #     proves the operator rotated the secret), else by reset_hint
+        #     passage. Note "launched" rows never clear (R-V5-3 — recorded at
+        #     launch, before success is known).
+        #   window — cleared ONLY by reset_hint passage (#2469 F4); an ok
+        #     within the same quota window does NOT restore exhausted quota.
         #   weekly — cleared ONLY by reset_hint passage; an intra-week ok does
         #     NOT restore a weekly-exhausted quota.
         ok_ts = [

@@ -2087,15 +2087,24 @@ class TestReviewFixCoolingHorizons:
         key_pool.record_session(kid, outcome="ok", root=tmp_path)
         assert key_pool.is_cooling(kid, root=tmp_path) is True
 
-    def test_window_and_auth_clear_by_ok_weekly_by_time(self, tmp_path):
+    def test_auth_clears_by_ok_window_and_weekly_by_time(self, tmp_path):
         from datetime import datetime, timedelta, timezone
         from engine.neuralweb import key_pool
         kid = "claude_code_oauth_2"
         now = datetime.now(timezone.utc)
-        key_pool.mark_cooling(kid, cool_kind="window", root=tmp_path)
+        # auth cooling clears on a later confirmed-success ok row
         key_pool.mark_cooling(kid, cool_kind="auth", root=tmp_path)
         assert key_pool.is_cooling(kid, root=tmp_path) is True
         key_pool.record_session(kid, outcome="ok", root=tmp_path)
+        assert key_pool.is_cooling(kid, root=tmp_path) is False
+        # window cooling holds despite a later ok row (#2469 F4) …
+        key_pool.mark_cooling(kid, cool_kind="window", root=tmp_path)
+        key_pool.record_session(kid, outcome="ok", root=tmp_path)
+        assert key_pool.is_cooling(kid, root=tmp_path) is True
+        # … and clears only by reset_hint passage
+        key_pool.mark_cooling(kid, cool_kind="window",
+                              reset_hint=(now - timedelta(seconds=5)).isoformat(timespec="seconds"),
+                              root=tmp_path)
         assert key_pool.is_cooling(kid, root=tmp_path) is False
         # Weekly already expired by time → not cooling
         key_pool.mark_cooling(kid, cool_kind="weekly",
