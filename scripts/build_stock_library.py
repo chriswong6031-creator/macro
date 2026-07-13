@@ -3712,6 +3712,7 @@ def main() -> int:
         _URGENCY_STATUS_MAP = {
             "buy_now": "now", "partial": "now",
             "await_confluence": "caution", "extended": "caution",
+            "bounce_wait": "caution",
         }
         _urgency_downgrade_count = 0
         for _r in wide["buy"] + wide["watch"]:

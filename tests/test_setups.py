@@ -456,6 +456,7 @@ class TestUrgencyGating:
         _URGENCY_STATUS_MAP = {
             "buy_now": "now", "partial": "now",
             "await_confluence": "caution", "extended": "caution",
+            "bounce_wait": "caution",
         }
 
         def _apply_urgency_fix(rows):

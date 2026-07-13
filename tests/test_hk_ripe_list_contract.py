@@ -22,6 +22,8 @@ from scripts import build_hk_library as B
     ({"status": "wait_pullback", "buy_zone": {"low": None, "high": 42.8}}, "pullback"),
     ({"status": "blocked", "buy_zone": {}}, "wait-for-weekly"),
     ({"status": "await_confluence", "buy_zone": {}}, "wait-for-weekly"),
+    # bounce_wait (COUNTERTREND BOUNCE wording split) = weekly unconfirmed by definition
+    ({"status": "bounce_wait", "buy_zone": {"low": 10.0, "high": 11.0}}, "wait-for-weekly"),
     ({}, "wait-for-weekly"),
 ])
 def test_entry_window_kinds(es, expected_kind):

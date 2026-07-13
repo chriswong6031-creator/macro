@@ -882,7 +882,7 @@
   .nbe-buy_now, .nbe-partial { border-top-color: var(--up);
               background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
   .nbe-buy_soon, .nbe-watch, .nbe-await_confluence { border-top-color: var(--g-cold); }
-  .nbe-wait_pullback, .nbe-hold { border-top-color: var(--warn); }
+  .nbe-wait_pullback, .nbe-hold, .nbe-bounce_wait { border-top-color: var(--warn); }
   .nbe-extended, .nbe-topping { border-top-color: var(--warn);
               background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
   .nbe-exit, .nbe-avoid, .nbe-blocked { border-top-color: var(--down);
@@ -12405,21 +12405,21 @@ document.addEventListener('click',function(e){
   var LANE_LABELS = {}; Object.keys(LANE_LABELS_EN).forEach(function(k){ LANE_LABELS[k] = [LANE_LABELS_EN[k], LANE_LABELS_ZH[k] || LANE_LABELS_EN[k]]; });
   /* ENTRY_STATUS maps: keyed on all values emitted by entry_signal.status producer.
      Vocabulary: buy_now, partial, buy_soon, await_confluence, hold, wait_pullback,
-                 extended, watch, avoid, topping, blocked, exit.
+                 extended, bounce_wait, watch, avoid, topping, blocked, exit.
      Any unmapped key falls through to the raw token (visible bug) — extend both maps
      when the producer vocabulary changes. */
   var ENTRY_STATUS_EN = {
     "buy_now":"Buy now","partial":"Partial buy",
     "buy_soon":"Buy soon","await_confluence":"Await confluence",
     "hold":"Hold","wait_pullback":"Wait — pullback",
-    "wait":"Wait","extended":"Extended",
+    "wait":"Wait","extended":"Extended","bounce_wait":"Bounce — wait",
     "watch":"Watch","avoid":"Avoid","topping":"Topping","blocked":"Blocked","exit":"Exit"
   };
   var ENTRY_STATUS_ZH = {
     "buy_now":"立即买入","partial":"分批买入",
     "buy_soon":"即将买入","await_confluence":"等待共振",
     "hold":"持有","wait_pullback":"等待回调",
-    "wait":"等待","extended":"过热",
+    "wait":"等待","extended":"过热","bounce_wait":"反弹观望",
     "watch":"观察","avoid":"回避","topping":"做顶","blocked":"封锁","exit":"退出"
   };
   var b = StockTable._bi, esc = StockTable._esc, fp = StockTable._fmtPct, fn = StockTable._fmtNum;

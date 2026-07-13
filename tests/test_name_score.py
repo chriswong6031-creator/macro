@@ -58,6 +58,18 @@ def test_washed_out_turning_is_primed_all_markets():
         assert p["tier"] in ("primed", "setting_up") and p["band"] in ("high", "constructive")
 
 
+def test_bounce_wait_scores_exactly_as_legacy_extended():
+    """The COUNTERTREND BOUNCE wording split (entry_signal 'bounce_wait', formerly
+    'extended') must move NO published score: the 0.50 confirm weight is kept
+    deliberately, and an unmapped key would silently default to 1.0 and double it."""
+    assert ns._ENTRY_CONFIRM["bounce_wait"] == ns._ENTRY_CONFIRM["extended"] == 0.50
+    bounce = ns.potential_score(_rec("COUNTERTREND BOUNCE", entry="bounce_wait"),
+                                market="CN", edge_z=0.0)
+    legacy = ns.potential_score(_rec("COUNTERTREND BOUNCE", entry="extended"),
+                                market="CN", edge_z=0.0)
+    assert bounce["score"] == legacy["score"]
+
+
 # --- the multi-market grader ----------------------------------------------------
 def test_grader_market_paths_and_keep_first(tmp_path, monkeypatch):
     monkeypatch.setattr(gr.config, "data_dir", lambda: tmp_path)
