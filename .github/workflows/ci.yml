@@ -1422,7 +1422,10 @@ jobs:
         # anthropic: test_cortex.py's rate-limit resilience test imports anthropic at
         # runtime to patch anthropic.Anthropic.__init__ (real import, not mocked).
         # pyarrow: SA-W3 accountability suite (#2451) reads parquet inside this job
-        run: pip install pytest pandas numpy pyyaml anthropic pyarrow
+        # requests: the v8 reflex-arc reping tests (#2442) patch scripts.notify.send_telegram,
+        # and scripts/notify.py does a real `import requests` at module import — without it
+        # the patch target fails to resolve and 5 reflex tests die at import, not on behavior.
+        run: pip install pytest pandas numpy pyyaml anthropic pyarrow requests
       - name: capability-redline selftest (planted secret caught; clean real files pass)
         run: python3 scripts/check_capability_redline.py --selftest
       - name: capability-redline live scan (hard fail on secret values or value-capture)
