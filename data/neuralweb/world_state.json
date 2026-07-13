@@ -5237,7 +5237,7 @@
           "dominant_member_archetypes": [
             [
               "mixed",
-              0.459
+              0.4754
             ],
             [
               "broken_growth",
@@ -5287,7 +5287,7 @@
           "dominant_member_archetypes": [
             [
               "mixed",
-              0.4444
+              0.5
             ],
             [
               "speculative_unprofitable",
@@ -5337,15 +5337,15 @@
           "dominant_member_archetypes": [
             [
               "rate_sensitive",
-              0.449
+              0.4375
             ],
             [
               "cyclical",
-              0.2449
+              0.25
             ],
             [
               "distressed",
-              0.1224
+              0.125
             ]
           ],
           "dominant_chart_labels": [
@@ -5433,15 +5433,15 @@
           "dominant_member_archetypes": [
             [
               "distressed",
-              0.3875
+              0.3924
             ],
             [
               "rate_sensitive",
-              0.275
+              0.2658
             ],
             [
               "mixed",
-              0.225
+              0.2152
             ]
           ],
           "dominant_chart_labels": [
@@ -5483,7 +5483,7 @@
           "dominant_member_archetypes": [
             [
               "cyclical",
-              0.5069
+              0.5
             ],
             [
               "rate_sensitive",
@@ -5491,7 +5491,7 @@
             ],
             [
               "mixed",
-              0.1111
+              0.1181
             ]
           ],
           "dominant_chart_labels": [
@@ -5531,42 +5531,21 @@
     "liquidity_overlay": "expanding"
   },
   "data_health": {
-    "last_run": "2026-07-13T06:28:53.340338+00:00",
+    "last_run": "2026-07-13T12:09:37.087294+00:00",
     "counts": {
-      "ok": 145,
+      "ok": 147,
       "stale": 2,
-      "failed": 4,
       "blocked": 8,
-      "no_creds": 1
+      "no_creds": 1,
+      "dead": 2
     },
-    "n_cb_failed": 4,
+    "n_cb_failed": 2,
     "n_stale_series": 123,
-    "failed_sources": [
-      {
-        "source": "intl_universe",
-        "error": "RuntimeError: intl_universe: no closes downloaded",
-        "checked_at": "2026-07-13T06:28:53.341000+00:00"
-      },
-      {
-        "source": "quiver_patents",
-        "error": "ReadTimeout: HTTPSConnectionPool(host='api.quiverquant.com', port=443): Read timed out. (read timeout=60)",
-        "checked_at": "2026-07-13T06:28:53.341527+00:00"
-      },
-      {
-        "source": "massive_stock_day",
-        "error": "RuntimeError: massive_stock_day: no_creds",
-        "checked_at": "2026-07-13T06:28:53.340915+00:00"
-      },
-      {
-        "source": "lbnl_queue",
-        "error": "RuntimeError: lbnl_queue: emp.lbl.gov unreachable (Cloudflare WAF); the committed seed JSON data/eia/interconnection_que",
-        "checked_at": "2026-07-13T06:28:53.341148+00:00"
-      }
-    ]
+    "failed_sources": []
   },
   "alerts": {
     "asof": "2026-07-10",
-    "generated_utc": "2026-07-13 08:11",
+    "generated_utc": "2026-07-13 13:05",
     "total": 60,
     "critical": 1,
     "major": 17,
@@ -5585,7 +5564,7 @@
     "ratio_qqq_spy_20d": 0.0036457728904977227,
     "ratio_iwm_spy_20d": 0.008545331590634753,
     "display_only": true,
-    "factor_state_as_of": "2026-07-12"
+    "factor_state_as_of": "2026-07-13"
   },
   "options_weather": {
     "as_of": "2026-07-13",
@@ -5878,26 +5857,26 @@
     },
     "china": {
       "market": "china",
-      "date": "2026-07-10",
+      "date": "2026-07-13",
       "quad": "Q3",
       "quad_name": "Stagflation",
       "cycle_tag": "mid",
       "liquidity_overlay": "neutral",
       "pending_quad": null,
-      "confidence": 0.078,
+      "confidence": 0.084,
       "stale": false
     },
     "hk": {
       "market": "hk",
-      "date": "2026-07-10",
+      "date": "2026-07-13",
       "quad": "Q3",
       "quad_name": "Stagflation",
       "cycle_tag": "mid",
       "liquidity_overlay": "neutral",
       "pending_quad": null,
-      "confidence": 0.083,
+      "confidence": 0.2,
       "stale": false,
-      "risk_state": "Neutral",
+      "risk_state": "Risk-on",
       "peg_state": "weak-side (outflow)"
     },
     "canada": {
@@ -5951,10 +5930,10 @@
   },
   "intelligence": {
     "as_of": "2026-07-13",
-    "n_universe": 5191,
+    "n_universe": 4915,
     "n_priority": 25,
-    "n_actionable": 12,
-    "n_divergences": 5,
+    "n_actionable": 11,
+    "n_divergences": 2,
     "macro_context": {
       "regime": "Goldilocks",
       "posture": "Goldilocks — growth improving while inflation cools. Posture: NEUTRAL — no edge either way; core holdings only, no new conviction bets.",
@@ -5963,7 +5942,7 @@
     "top_actionable": [
       {
         "ticker": "ALM",
-        "priority": 0.787,
+        "priority": 0.675,
         "lean": -1,
         "read": "fading"
       },
@@ -5974,20 +5953,20 @@
         "read": "fading"
       },
       {
-        "ticker": "LEU",
-        "priority": 0.532,
+        "ticker": "ALB",
+        "priority": 0.435,
+        "lean": -1,
+        "read": "fading"
+      },
+      {
+        "ticker": "CVS",
+        "priority": 0.42,
         "lean": -1,
         "read": "fading"
       },
       {
         "ticker": "HOOD",
-        "priority": 0.49,
-        "lean": -1,
-        "read": "fading"
-      },
-      {
-        "ticker": "TXN",
-        "priority": 0.49,
+        "priority": 0.42,
         "lean": -1,
         "read": "fading"
       }
@@ -6317,24 +6296,24 @@
     "as_of": "2026-07-10",
     "n_tickers": 1702,
     "coverage": {
-      "archetype": 0.857,
+      "archetype": 0.855,
       "dna_class": 0.474,
-      "ownership": 0.571,
+      "ownership": 0.57,
       "micro": 0.214,
       "chart": 0.759
     },
     "top_archetype_shares": [
       [
         "mixed",
-        0.1549
+        0.1525
       ],
       [
         "financial",
-        0.1515
+        0.1511
       ],
       [
         "cyclical",
-        0.148
+        0.1477
       ]
     ],
     "top_chart_shares": [
@@ -6357,7 +6336,7 @@
   },
   "context_risk": {
     "available": true,
-    "as_of": "2026-07-12T14:53Z",
+    "as_of": "2026-07-13T10:30Z",
     "board_top_overweights": [
       {
         "archetype": "deep_value",
@@ -6476,15 +6455,38 @@
     }
   },
   "china_market_state": {
-    "available": false,
+    "available": true,
+    "as_of": "2026-07-13",
+    "schema": "china_market_state.v1",
+    "phase": {
+      "label": "POLICY_PUT",
+      "confidence": 0.75
+    },
+    "participation": {
+      "regime": "dormant",
+      "who_controls": "mixed",
+      "risk": "low"
+    },
+    "policy_impulse": "targeted_support",
+    "microstructure": {
+      "limit_up_count": 11.0,
+      "limit_down_count": 38.0,
+      "sealed_up_close": 4.0,
+      "failed_up_seal_count": 7.0,
+      "lianban_max": 2.0,
+      "chase_veto_count": 4,
+      "fillable_count": 121
+    },
+    "contradictions_count": 1,
+    "top_contradiction": null,
+    "data_gaps_count": 5,
+    "top_data_gap": "participation: zt_breadth:null on 2026-07-09",
     "authority": "context_only",
-    "note": "stale: 33.6h > 30.0h SLA",
-    "as_of": "2026-07-12",
     "display_only": true
   },
   "thematic_state": {
     "available": true,
-    "as_of": "2026-07-12",
+    "as_of": "2026-07-13",
     "n_themes": 18,
     "stage_counts": {
       "RE-RATING": 2,
@@ -6511,7 +6513,7 @@
         "falsifier_id": "meddev_f1"
       }
     ],
-    "n_stale_legs": 5,
+    "n_stale_legs": 6,
     "noteworthy": [
       {
         "theme_id": "ai_semiconductors",
@@ -6623,17 +6625,17 @@
     "data/regime/latest.json": "2026-07-10",
     "data/breadth/breadth.parquet": "2026-07-10",
     "site/basketdata/oracle_state.json": "2026-07-13",
-    "data/run_status.json": "2026-07-13T06:28:53.340338+00:00",
+    "data/run_status.json": "2026-07-13T12:09:37.087294+00:00",
     "site/factordata/alerts_triage.json": "2026-07-10",
     "data/neuralweb/liquidity_plumbing.json": "2026-07-10",
     "data/rebalance_pulse/latest.json": "2026-07-10",
-    "site/chinastatedata/market_state.json": null,
-    "data/neuralweb/theme_state.json": "2026-07-12",
+    "site/chinastatedata/market_state.json": "2026-07-13",
+    "data/neuralweb/theme_state.json": "2026-07-13",
     "data/transmission/latest.json": "2026-07-10",
     "data/forex/latest.json": "2026-07-13",
     "data/bonds/bond_health.json": "2026-07-10",
-    "data/china_regime/latest.json": "2026-07-10",
-    "data/hk_regime/latest.json": "2026-07-10",
+    "data/china_regime/latest.json": "2026-07-13",
+    "data/hk_regime/latest.json": "2026-07-13",
     "data/canada_regime/latest.json": "2026-07-10",
     "data/commodity/latest.json": "2026-07-13",
     "site/intelligence/briefing.json": "2026-07-13",
@@ -6642,7 +6644,7 @@
   },
   "schema_version": 1,
   "produced_by": "engine/neuralweb/world_state.py",
-  "produced_at": "2026-07-13T09:35:29Z",
-  "inputs_hash": "sha256:ad3f6485e1224409ca8a19066a7f2d3fe267663d0d0954d8e3ea04ce4066c102",
+  "produced_at": "2026-07-13T17:38:44Z",
+  "inputs_hash": "sha256:fb3768186d8855409ce2fd6ac09fd8408b927cf8f6f2818e6e957e54f591899e",
   "tier": "infrastructure"
 }
