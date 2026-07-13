@@ -478,7 +478,15 @@ def today_views(asof=None) -> list[dict]:
     rows = df[df["date"].astype(str) == day]
     if rows.empty:
         return []
-    rows = rows.drop_duplicates(subset=["rule"], keep="last")
+    # per-rule dedup collapses same-day wording drift — EXCEPT the circuit-breaker
+    # rule, where each same-rule row is a DIFFERENT dark source: keep one row per
+    # message and let alert_views collapse them count-aware ("N HK data sources
+    # went dark").
+    is_breaker = rows["rule"] == "hk_circuit_breaker"
+    rows = pd.concat([
+        rows[~is_breaker].drop_duplicates(subset=["rule"], keep="last"),
+        rows[is_breaker].drop_duplicates(subset=["rule", "message"], keep="last"),
+    ]).sort_index()
     rows = rows.sort_values("severity", key=lambda s: s.map(lambda x: _SEV_ORDER.get(x, 9)))
     return alert_views(rows.to_dict(orient="records"))
 
@@ -502,8 +510,8 @@ def recent_alerts(days: int = 7) -> pd.DataFrame:
 # --- presentation layer -------------------------------------------------------
 _DEFAULT_META = {
     "icon": "🔔",
-    "plain_en": "HK macro signal fired",
-    "plain_zh": "香港宏观信号触发",
+    "plain_en": "An HK macro signal changed — check the dashboard read",
+    "plain_zh": "一个香港宏观信号变化 — 查看仪表盘解读",
     "what_en": "An automated HK macro signal changed state. Open the HK dashboard for "
                "the full read.",
     "what_zh": "一个自动香港宏观信号发生了状态变化。打开香港仪表盘查看完整解读。",
@@ -765,4 +773,12 @@ def alert_views(alerts) -> list[dict]:
         else:
             out.append(alert_view(a.get("rule", ""), a.get("severity", "info"),
                                   a.get("message", ""), a.get("message_zh", "")))
-    return out
+    from engine.alerts import collapse_breaker_views
+    return collapse_breaker_views(
+        out, rule="hk_circuit_breaker",
+        plural_en="{n} HK data sources went dark", plural_zh="{n} 个香港数据源中断",
+        what_en="Multiple HK feeds this dashboard relies on failed several runs in "
+                "a row, so they're paused until they recover. Signals that depend "
+                "on them lose confidence. A plumbing notice, not a market signal.",
+        what_zh="本仪表盘依赖的多个香港数据源连续多次失败，已暂停直至恢复。依赖它们的"
+                "信号会降低置信度。系统管线提示，并非市场信号。")

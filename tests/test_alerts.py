@@ -63,6 +63,87 @@ def test_oas_quiet_day_silent() -> None:
     assert hy_oas_widening(None, f) is None
 
 
+def test_breaker_views_collapse_count_aware() -> None:
+    """N same-day dark sources must render ONE count-aware headline ("6 data
+    sources went dark"), not N stacked singulars (design review 2026-07-13)."""
+    from engine.alerts import alert_views
+    msg = ("Source '{s}' marked dead after 3 consecutive failures — collector "
+           "skipped until it recovers; affected signals degrade")
+    raw = [{"rule": "hy_oas_widening", "severity": "act", "message": "HY OAS ..."}]
+    raw += [{"rule": "circuit_breaker_open", "severity": "warn",
+             "message": msg.format(s=s)} for s in ("fred", "cboe", "yahoo")]
+    views = alert_views(raw)
+    cbs = [v for v in views if v["rule"] == "circuit_breaker_open"]
+    assert len(cbs) == 1
+    assert cbs[0]["plain_en"] == "3 data sources went dark"
+    assert cbs[0]["plain_zh"] == "3 个数据源中断"
+    for s in ("fred", "cboe", "yahoo"):
+        assert f"'{s}'" in cbs[0]["message"] and f"'{s}'" in cbs[0]["message_zh"]
+    assert views[0]["rule"] == "hy_oas_widening"          # order preserved
+    assert len(views) == 2
+
+
+def test_breaker_views_single_stays_singular() -> None:
+    from engine.alerts import alert_views
+    views = alert_views([{"rule": "circuit_breaker_open", "severity": "warn",
+                          "message": "Source 'fred' marked dead after 3 consecutive "
+                                     "failures — collector skipped until it recovers; "
+                                     "affected signals degrade"}])
+    assert len(views) == 1
+    assert views[0]["plain_en"] == "A data source went dark"
+
+
+def test_every_fired_rule_has_plain_copy() -> None:
+    """No rule that can reach the macro alerts VM may fall back to the generic
+    default headline (the "Macro signal fired" class, design review 2026-07-13).
+    event_risk is appended by scripts/build_site.py, not evaluate(); the two
+    confidence-floor rules are named via an f-string the regex cannot see."""
+    import re as _re
+    from engine import alerts as A
+    src = Path(A.__file__).read_text()
+    fired = set(_re.findall(r"Alert\(\s*[\"']([a-z0-9_]+)[\"']", src))
+    fired |= {"event_risk", "growth_confidence_floor", "inflation_confidence_floor"}
+    missing_meta = sorted(fired - set(A.ALERT_META))
+    missing_conv = sorted(fired - set(A.ALERT_CONVICTION))
+    assert not missing_meta, f"rules without ALERT_META: {missing_meta}"
+    assert not missing_conv, f"rules without ALERT_CONVICTION: {missing_conv}"
+
+
+def test_regional_breaker_views_collapse(tmp_path, monkeypatch) -> None:
+    """Drive the PRODUCTION path (today_views over the append-only log): the
+    per-rule same-day dedup must NOT swallow the per-source breaker rows before
+    the count-aware collapse sees them."""
+    from engine import china_alerts, hk_alerts
+    day = "2026-07-13"
+    for mod, rule, prefix, plural_en, plural_zh in [
+            (china_alerts, "china_circuit_breaker", "China source",
+             "2 China data sources went dark", "2 个中国数据源中断"),
+            (hk_alerts, "hk_circuit_breaker", "HK source",
+             "2 HK data sources went dark", "2 个香港数据源中断")]:
+        rows = [{"date": day, "rule": "market_driver_clear", "severity": "info",
+                 "message": "wording v1", "message_zh": "旧措辞"},
+                {"date": day, "rule": "market_driver_clear", "severity": "info",
+                 "message": "wording v2", "message_zh": "新措辞"}]
+        rows += [{"date": day, "rule": rule, "severity": "high",
+                  "message": f"{prefix} '{s}' marked dead after 3 consecutive failures "
+                             f"— collector skipped until it recovers; affected signals "
+                             f"degrade",
+                  "message_zh": f"数据源 '{s}' 连续 3 次失败后被标记为中断"}
+                 for s in ("src_a", "src_b")]
+        p = tmp_path / f"{rule}_log.parquet"
+        pd.DataFrame(rows).to_parquet(p)
+        monkeypatch.setattr(mod, "_log_path", lambda p=p: p)
+        views = mod.today_views(day)
+        cbs = [v for v in views if v["rule"] == rule]
+        assert len(cbs) == 1, f"{rule}: expected one merged view, got {len(cbs)}"
+        assert cbs[0]["plain_en"] == plural_en
+        assert cbs[0]["plain_zh"] == plural_zh
+        assert "'src_a'" in cbs[0]["message"] and "'src_b'" in cbs[0]["message"]
+        # the wording-drift dedup still holds for ordinary rules
+        others = [v for v in views if v["rule"] == "market_driver_clear"]
+        assert len(others) == 1 and others[0]["message"] == "wording v2"
+
+
 def test_historical_state_changes_detectable() -> None:
     """Replay the rule at real state-change dates in stored history."""
     hist = _regime_history()
@@ -82,9 +163,13 @@ def test_historical_state_changes_detectable() -> None:
 
 
 if __name__ == "__main__":
+    # test_regional_breaker_views_collapse needs pytest fixtures — run via pytest
     for fn in [test_transition_change_fires, test_transition_no_change_silent,
                test_liquidity_flip_fires, test_oas_widening_fires,
-               test_oas_quiet_day_silent, test_historical_state_changes_detectable]:
+               test_oas_quiet_day_silent, test_breaker_views_collapse_count_aware,
+               test_breaker_views_single_stays_singular,
+               test_every_fired_rule_has_plain_copy,
+               test_historical_state_changes_detectable]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all alert tests passed")
