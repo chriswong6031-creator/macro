@@ -20,6 +20,11 @@
       "lag_days": 0,
       "state": "fresh"
     },
+    "JD": {
+      "asof": "2026-07-10",
+      "lag_days": 0,
+      "state": "fresh"
+    },
     "BIDU": {
       "asof": "2026-07-10",
       "lag_days": 0,
@@ -35,7 +40,7 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "JD": {
+    "FXI": {
       "asof": "2026-07-10",
       "lag_days": 0,
       "state": "fresh"
