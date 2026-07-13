@@ -44,7 +44,7 @@ jobs:
     # Dead-lane monitoring is UNAFFECTED by the extra quick green runs: the heartbeat
     # watches R2 anchor freshness (scripts/audit_r2.py, 26h), not run conclusions.
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 105   # ≥ MAX_FLOOR_WAIT (90m hold) + slack
+    timeout-minutes: 60    # ≥ MAX_FLOOR_WAIT (45m hold) + slack
     outputs:
       run: ${{ steps.decide.outputs.run }}
     steps:
@@ -66,7 +66,13 @@ jobs:
               sys.exit(0)
 
           FLOOR_H, FLOOR_M = 8, 25    # 08:25 UTC — HK closing auction settled (~08:10)
-          MAX_FLOOR_WAIT_S = 90 * 60  # hold a runner at most 90m waiting for the floor
+          # 45m, not 90m: the repo has only THREE runner slots total (mac-builder-1..3,
+          # one shared `macstudio` label pool) — a sleeping gate burns 1/3 of repo
+          # capacity. At the observed >=86m fire lag the 06:40 slot lands 08:06+ (hold
+          # <=19m) and the 07:20 slot lands 08:46+ (no hold), so a 45m cap keeps the
+          # ~08:25 start; only the 06:00 slot's long holds are dropped, and a later
+          # slot always covers.
+          MAX_FLOOR_WAIT_S = 45 * 60
           REAL_RUN_MIN_S = 600        # <10m completed run = a gate skip, not a real attempt
           MAX_REAL_ATTEMPTS = 2       # first try + one same-day retry, then stop
 
