@@ -1,0 +1,63 @@
+{
+  "schema": "metabolism.docket.v1",
+  "cycle_id": "cycle-2026-07-13-3198-site-us-standouts",
+  "lobe": "site-us-standouts",
+  "as_of": "2026-07-13",
+  "run_id": "29222648174-propose",
+  "generated_by": "metabolism_propose",
+  "provider": "deepseek",
+  "degraded_reason": null,
+  "proposals": [
+    {
+      "proposal_id": "2207d1880031",
+      "content_hash": "2207d1880031",
+      "lobe": "site-us-standouts",
+      "title": "Document site-us-standouts sensor definitions and derivation",
+      "tier": "T0",
+      "kind": "doc",
+      "targets_sensor": "process_integrity",
+      "rationale": "Clear documentation ensures consistent understanding and maintenance, improving process integrity.",
+      "fitness_contract": {
+        "proposal_id": "2207d1880031",
+        "lobe": "site-us-standouts",
+        "sensor": "process_integrity",
+        "expected_sign": "+",
+        "band": "0.05 to 0.15",
+        "check_by": "2026-10-15",
+        "placebo_to_beat": "implicit knowledge only",
+        "falsifier_spec": {},
+        "asof": "2026-07-13"
+      }
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Add unit tests for site-us-standouts fitness card generation",
+      "reason": "matches an ACTIVE_BUILD_MAP open lane (in-flight \u2014 avoid collision)"
+    },
+    {
+      "title": "Build a context organ displaying site-us-standouts fitness sensor history",
+      "reason": "matches a DO_NOT_REBUILD kill (topic already closed)"
+    }
+  ],
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path",
+      "auto_merge"
+    ]
+  },
+  "notes": "1 proposal(s) after dedup/cap; 2 rejected. TIL fitness accrues until 2026-10-15 \u2014 contracts minted now are shadow/display-tier and grade only after their check_by. Nothing here is a runtime signal (R-AUT-1)."
+}

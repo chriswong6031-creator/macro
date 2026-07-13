@@ -1,0 +1,57 @@
+{
+  "schema": "metabolism.til_fitness.v1",
+  "as_of": "2026-07-13",
+  "lobe": "til",
+  "maturity": "accruing",
+  "sensors": {
+    "front_run_lead": {
+      "value": null,
+      "n": 0,
+      "maturity": "accruing",
+      "source": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/foresight/earliness_grades.json",
+      "share_led": null,
+      "note": "accruing: 0/10 flags graded (need 10)"
+    },
+    "placebo_hit_rate": {
+      "value": null,
+      "n": 0,
+      "n_beats": 0,
+      "maturity": "accruing",
+      "source": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/foresight/theme_placebo_tape.jsonl",
+      "note": "accruing: 0/10 graded entries (need 10)"
+    },
+    "falsifier_honesty": {
+      "value": null,
+      "n": 0,
+      "maturity": "accruing",
+      "source": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/qledger/falsifier_evaluations.jsonl",
+      "note": "falsifier_evaluations.jsonl not yet present — nightly grade_thematic must run first"
+    },
+    "live_leg_quality": {
+      "value": null,
+      "n": 0,
+      "maturity": "accruing",
+      "source": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/qledger/claims.jsonl, /Users/chriswong/actions-runner-2/_work/macro/macro/data/qledger/falsifier_evaluations.jsonl",
+      "note": "claims.jsonl or falsifier_evaluations.jsonl absent — nightly grade_thematic must run first"
+    }
+  },
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path"
+    ]
+  },
+  "notes": "All sensors are accruing until first TIL check_by dates fire (~2026-10-15). Values are display-context only; no signal-path authority. Maturity flag is honest: do NOT promote based on pre-maturity values."
+}

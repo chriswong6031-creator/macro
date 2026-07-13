@@ -1,0 +1,54 @@
+{
+  "schema": "metabolism.docket.v1",
+  "cycle_id": "cycle-2026-07-13-3198",
+  "lobe": "til",
+  "as_of": "2026-07-13",
+  "run_id": "29222648174-propose",
+  "generated_by": "metabolism_propose",
+  "provider": "deepseek",
+  "degraded_reason": null,
+  "proposals": [
+    {
+      "proposal_id": "ced63ba39a27",
+      "content_hash": "ced63ba39a27",
+      "lobe": "til",
+      "title": "Add test for grade_thematic generating falsifier_evaluations.jsonl",
+      "tier": "T0",
+      "kind": "test",
+      "targets_sensor": "falsifier_honesty",
+      "rationale": "falsifier_evaluations.jsonl is missing, blocking falsifier_honesty and live_leg_quality accrual. A test that the nightly grade_thematic script produces a non-empty file ensures the pipeline is intact and sensors will begin accruing.",
+      "fitness_contract": {
+        "proposal_id": "ced63ba39a27",
+        "lobe": "til",
+        "sensor": "falsifier_honesty",
+        "expected_sign": "+",
+        "band": "n >= 1",
+        "check_by": "2026-10-15",
+        "placebo_to_beat": "0",
+        "falsifier_spec": {},
+        "asof": "2026-07-13"
+      }
+    }
+  ],
+  "rejected": [],
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path",
+      "auto_merge"
+    ]
+  },
+  "notes": "1 proposal(s) after dedup/cap; 0 rejected. TIL fitness accrues until 2026-10-15 \u2014 contracts minted now are shadow/display-tier and grade only after their check_by. Nothing here is a runtime signal (R-AUT-1)."
+}

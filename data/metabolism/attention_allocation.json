@@ -1,0 +1,834 @@
+{
+  "schema": "metabolism.attention.v1",
+  "cycle_id": "cycle-2026-07-13-3198",
+  "as_of": "2026-07-13",
+  "generated_by": "metabolism_attention",
+  "provider": null,
+  "degraded_reason": "no_provider",
+  "allocations": {
+    "til": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "attention-deterministic": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "bottom-sensors-json": {
+      "band": "FOCUS",
+      "weight": 1.0,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "bottom-sensors-parquet": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "capability-audit": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "causal-brainstorm-runs": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "causal-confluence-audit": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "causal-edges": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "causal-feature-inventory": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "causal-frontier": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "causal-lab-state": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "causal-llm-lane": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "causal-mechanisms": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "causal-nulls": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "causal-surprise-queue": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "claim-accountability": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "confluence-graph": {
+      "band": "FOCUS",
+      "weight": 1.0,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "context-candidates": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "context-risk": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "cortex-attention-firings": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "cortex-attention-grades": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "cortex-memo": {
+      "band": "FOCUS",
+      "weight": 1.0,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "cortex-probation": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "covariance-spine": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "covariance-spine-history": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "cycle-pattern-state": {
+      "band": "FOCUS",
+      "weight": 1.0,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "dt-contra-state": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "entity-thesis-mechanism-registry": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "evidence-clock": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "evidence-clock-reviews": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "factor-contradictions-ledger": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "factor-intelligence-state": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "feeds-plane": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "governance-ledger": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "hypothesis-inbox": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "kernel-decisions": {
+      "band": "FOCUS",
+      "weight": 1.0,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "kernel-estimates": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "kernel-families": {
+      "band": "FOCUS",
+      "weight": 1.0,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "kernel-half-lives": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "lagging-signals": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "liquidity-plumbing": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "machine-registry": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "mechanism-pathways": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "mechanism-pathways-history": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "nasdaq-internals": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "neuralweb-daily-brief": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "neuralweb-daily-brief-history": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "neuralweb-discovery-confluence": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "neuralweb-health": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "neuralweb-mastermind-context": {
+      "band": "FOCUS",
+      "weight": 1.0,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "neuralweb-theme-clinical": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "neuralweb-theme-options-witness": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "neuralweb-theme-trade-flows": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "nw-health-run-history": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "ops-push-basket-freeze": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "ops-push-healthcheck": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "ops-push-nw-health": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "ops-push-signal-sanity": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "options-entry-gate": {
+      "band": "FOCUS",
+      "weight": 1.0,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "options-entry-state": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "reflex-firings-commodity-shock": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "reflex-firings-pattern": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "reflex-firings-regime-selfheal": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "reflex-push-dedup-store": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "release-forecast-latest": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "research-queue": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "risk-radar-review-log": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "rule-experiment-registry": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "rule-experiment-summaries": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-altdata-mastermind": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-artifact-manifest": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-attention-deterministic": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-causal-lab-state": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-china-cycle-phase": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-china-market-state": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-context-risk": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-covariance-spine": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-factor-intelligence-state": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-golden-signals": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-mechanism-pathways": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-neuralweb-daily-brief": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-neuralweb-health": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-neuralweb-mastermind-context": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": true,
+      "rationale": "[focus-cap demotion]"
+    },
+    "site-neuralweb-ruling-graph": {
+      "band": "MAINTENANCE",
+      "weight": 0.2,
+      "structural_band": "ANCILLARY",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-qledger-track-record": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": true,
+      "rationale": "[focus-cap demotion]"
+    },
+    "site-radar-ticker": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-theme-asymmetry": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-theme-pathways": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-theme-state": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-theme-thesis": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "site-us-standouts": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": true,
+      "rationale": "[focus-cap demotion]"
+    },
+    "site-china-standouts": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "spine-index": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "HIGH",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "theme-asymmetry": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "theme-pathways": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "theme-phase-history": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "theme-state": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": true,
+      "rationale": "[focus-cap demotion]"
+    },
+    "theme-thesis-ledger": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "STANDARD",
+      "llm_band": null,
+      "floored": false,
+      "rationale": ""
+    },
+    "world-state": {
+      "band": "STANDARD",
+      "weight": 0.6,
+      "structural_band": "CRITICAL",
+      "llm_band": null,
+      "floored": true,
+      "rationale": "[focus-cap demotion]"
+    }
+  },
+  "focus_lobes": [
+    "bottom-sensors-json",
+    "confluence-graph",
+    "cortex-memo",
+    "cycle-pattern-state",
+    "kernel-decisions",
+    "kernel-families",
+    "neuralweb-mastermind-context",
+    "options-entry-gate"
+  ],
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path",
+      "dispatch",
+      "grant",
+      "pr_open",
+      "lobe_roster_change"
+    ]
+  }
+}
