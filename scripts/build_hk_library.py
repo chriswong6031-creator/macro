@@ -68,7 +68,10 @@ def _hk_winit(liq=None) -> None:
 def _hk_one_task(item):
     ticker, close, high, name, sector = item
     try:
-        return _one(ticker, close, high, name, sector, liquidity=_HK_SHARED.get("liq"))
+        # universe-wide opt-in: the HK search universe IS the heatmap universe,
+        # mirroring the CN build (the 46-tile dead-end class is the same pattern here)
+        return _one(ticker, close, high, name, sector, liquidity=_HK_SHARED.get("liq"),
+                    allow_limited=True)
     except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
         log.debug("hk library %s failed: %s", ticker, e)
         return None
@@ -221,6 +224,28 @@ def _safe(ticker: str) -> str:
     return ticker.replace("=", "_").replace("^", "_")
 
 
+def _limited_rec(ticker: str, c: pd.Series, name: str, sector: str) -> dict:
+    """A minimal, honest record for a name too new for the cycle model (a recent
+    HK listing under the 300-session floor). US/CN-parity port of
+    build_stock_library._limited_rec: identity, listing date, session count and
+    the LIMITED sentinel state (hk_lookup keys off `limited` before ever reading
+    the ladder), plus the TV symbol.
+
+    HK-specific: `chart` carries the inline close series because HKEX data is
+    login-gated on TradingView's free embed — hk_lookup draws its price chart from
+    the inline per-stock `chart` series, and build_chart_data.build_hk reconstructs
+    candles from the same key, so the limited card keeps its chart."""
+    return {
+        "ticker": ticker, "name": name, "sector": sector, "tv": tv_symbol(ticker),
+        "asof": str(c.index.max().date()),
+        "listed": str(c.index.min().date()),
+        "history_days": int(len(c)),
+        "limited": True,
+        "ladder": {"state": "LIMITED"},
+        "chart": chart_series(c),
+    }
+
+
 def _write_verified_index(outdir: Path, index: list[dict]) -> list[dict]:
     """Write search manifest rows only when the matching detail JSON exists."""
     verified, missing = [], []
@@ -254,13 +279,23 @@ def current_liquidity() -> str | None:
 
 
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
-         name: str, sector: str, liquidity: str | None = None) -> dict | None:
+         name: str, sector: str, liquidity: str | None = None,
+         min_days: int = 300, allow_limited: bool = False) -> dict | None:
     c = close.dropna()
-    if len(c) < 300:
+    if not len(c):
         return None
+    # The heatmap and this library read the SAME hk_search/breadth panel, so a name
+    # the tiles render must never 404 on click-through: below the 300-session cycle
+    # floor we emit an honest LIMITED record (searchable identity + listing date +
+    # chart, "analysis pending") instead of dropping the name — display-tier
+    # context ships freely; the full read unlocks as history accrues. Unlike the US
+    # build (curated extras only), allow_limited covers the WHOLE universe here because
+    # the search universe IS the heatmap universe.
+    if len(c) < min_days:
+        return _limited_rec(ticker, c, name, sector) if allow_limited else None
     res = analyze(c, high, kind="equity", liquidity=liquidity)
     if not res.get("ladder"):
-        return None
+        return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)
     seas = seasonality(c)
     # RICH close-only technicals (engine.stock_technicals: momentum / 52w-high proximity / BBWP /
@@ -1832,7 +1867,7 @@ def main(betas: dict | None = None) -> dict | None:
         _anticipate = None
         _ant_gate = None
 
-    index, built, failed = [], 0, 0
+    index, built, failed, limited = [], 0, 0, 0
     price_by: dict[str, float] = {}
     uni = universe()
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
@@ -1940,6 +1975,14 @@ def main(betas: dict | None = None) -> dict | None:
         if rec is None:
             failed += 1
             continue
+        if rec.get("limited"):
+            # recent listing under the history floor — searchable identity + honest
+            # "analysis pending" detail page (renderLimited), but it NEVER enters
+            # scoring / boards / profiles (accrual without authority).
+            (outdir / f"{_safe(ticker)}.json").write_text(json.dumps(rec, default=str))
+            index.append({"t": ticker, "n": name, "s": sector, "st": "LIMITED"})
+            limited += 1
+            continue
         # HK Confirming-Turn witness bypass: upgrade COUNTERTREND BOUNCE when
         # all three evidence witnesses are present (sb_persist, rsi_reclaim,
         # above_rising_ma10). Best-effort: never fatal, original rec kept on error.
@@ -2041,7 +2084,8 @@ def main(betas: dict | None = None) -> dict | None:
     except Exception as e:  # noqa: BLE001 — chart garnish must never break the library
         log.warning("hk reconstructed candles skipped (%s)", e)
 
-    log.info("hk library: %d analyzed, %d skipped (thin history)", built, failed)
+    log.info("hk library: %d analyzed, %d limited (recent listings), %d skipped (empty/failed)",
+             built, limited, failed)
     return betas
 
 
