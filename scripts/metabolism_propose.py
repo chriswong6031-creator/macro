@@ -160,7 +160,7 @@ def _run_all_lobes(args: "argparse.Namespace", root: Path) -> int:  # noqa: F821
             try:
                 from engine.metabolism import attention as _attn  # noqa: PLC0415
                 _attn_skip, _attn_skip_reason = _attn.propose_skip(
-                    lobe_id, root=root, allocation=_alloc,
+                    lobe_id, root=root, allocation=_alloc, cycle_id=cycle_id,
                 )
             except Exception as _ae:  # noqa: BLE001
                 log.warning(

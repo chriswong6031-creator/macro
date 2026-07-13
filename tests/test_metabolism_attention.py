@@ -1176,3 +1176,323 @@ class TestEffectiveAllocation:
         from engine.metabolism.attention import effective_allocation
         out = effective_allocation(root=tmp_path / "nonexistent")
         assert isinstance(out, dict)  # {} or degraded artifact — never raises
+
+
+# ===========================================================================
+# CADENCE — propose_skip cadence gate (operator-ratified 2026-07-13)
+# ===========================================================================
+
+import hashlib as _hashlib
+
+
+def _make_band_alloc(lobe_id: str, band: str, cycle_id: str | None = None) -> dict:
+    """Build a minimal allocation dict for propose_skip tests."""
+    alloc: dict = {
+        "allocations": {
+            lobe_id: {
+                "band": band,
+                "weight": 1.0 if band == "FOCUS" else 0.6,
+                "structural_band": "STANDARD",
+                "llm_band": None,
+                "floored": False,
+                "rationale": "",
+            }
+        }
+    }
+    if cycle_id is not None:
+        alloc["cycle_id"] = cycle_id
+    return alloc
+
+
+def _hash_skip(cycle_id: str, lobe_id: str, cadence: int) -> bool:
+    """Mirror of _cadence_hash_skip for test fixtures."""
+    digest = _hashlib.sha256(f"{cycle_id}:{lobe_id}".encode()).digest()
+    return int.from_bytes(digest[:8], "big") % cadence != 0
+
+
+def _find_skip_cycle(lobe_id: str, cadence: int, prefix: str = "cycle-cadence-test") -> str:
+    """Return the first synthetic cycle_id where hash says SKIP for this lobe/cadence."""
+    for i in range(500):
+        cid = f"{prefix}-{i:04d}"
+        if _hash_skip(cid, lobe_id, cadence):
+            return cid
+    raise RuntimeError(f"Could not find a skip cycle for {lobe_id} cadence={cadence} in 500 attempts")
+
+
+def _find_propose_cycle(lobe_id: str, cadence: int, prefix: str = "cycle-cadence-test") -> str:
+    """Return the first synthetic cycle_id where hash says PROPOSE for this lobe/cadence."""
+    for i in range(500):
+        cid = f"{prefix}-{i:04d}"
+        if not _hash_skip(cid, lobe_id, cadence):
+            return cid
+    raise RuntimeError(f"Could not find a propose cycle for {lobe_id} cadence={cadence} in 500 attempts")
+
+
+class TestProposeCadenceGate:
+    """Tests for the operator-ratified cadence gate in propose_skip."""
+
+    # ── FOCUS always proposes ────────────────────────────────────────────────
+
+    def test_focus_never_cadence_skipped(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """FOCUS lobe never cadence-skipped across 50 synthetic cycle ids."""
+        root = _make_repo(tmp_path)
+        monkeypatch.setattr(
+            "engine.metabolism.insight_bus.get_open_rows",
+            lambda root=None: [],
+        )
+        from engine.metabolism.attention import propose_skip
+        lobe_id = "focus-lobe"
+        for i in range(50):
+            cycle_id = f"cycle-focus-test-{i:04d}"
+            alloc = _make_band_alloc(lobe_id, "FOCUS")
+            skip, reason = propose_skip(lobe_id, root=root, allocation=alloc, cycle_id=cycle_id)
+            assert skip is False, f"FOCUS skipped at cycle {cycle_id}"
+
+    # ── Determinism ──────────────────────────────────────────────────────────
+
+    def test_determinism_same_inputs_same_result(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Same (cycle_id, lobe_id) → identical result on repeated calls."""
+        root = _make_repo(tmp_path)
+        monkeypatch.setattr(
+            "engine.metabolism.insight_bus.get_open_rows",
+            lambda root=None: [],
+        )
+        from engine.metabolism.attention import propose_skip
+        lobe_id = "standard-det-lobe"
+        cycle_id = "cycle-determinism-test-0001"
+        alloc = _make_band_alloc(lobe_id, "STANDARD", cycle_id=cycle_id)
+        results = [
+            propose_skip(lobe_id, root=root, allocation=alloc, cycle_id=cycle_id)
+            for _ in range(10)
+        ]
+        assert all(r == results[0] for r in results), "Results differed across repeated calls"
+
+    # ── Distribution for STANDARD ─────────────────────────────────────────────
+
+    def test_standard_distribution_400_cycles(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """STANDARD proposes in [30%, 70%] of 400 synthetic cycles."""
+        root = _make_repo(tmp_path)
+        monkeypatch.setattr(
+            "engine.metabolism.insight_bus.get_open_rows",
+            lambda root=None: [],
+        )
+        from engine.metabolism.attention import propose_skip
+        lobe_id = "dist-standard-lobe"
+        proposes = 0
+        for i in range(400):
+            cycle_id = f"cycle-synth-{i:04d}"
+            alloc = _make_band_alloc(lobe_id, "STANDARD", cycle_id=cycle_id)
+            skip, _ = propose_skip(lobe_id, root=root, allocation=alloc, cycle_id=cycle_id)
+            if not skip:
+                proposes += 1
+        rate = proposes / 400
+        assert 0.30 <= rate <= 0.70, f"STANDARD propose rate {rate:.2%} outside [30%, 70%]"
+
+    # ── Distribution for MAINTENANCE ──────────────────────────────────────────
+
+    def test_maintenance_distribution_400_cycles(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MAINTENANCE proposes in [12.5%, 40%] of 400 synthetic cycles."""
+        root = _make_repo(tmp_path)
+        monkeypatch.setattr(
+            "engine.metabolism.insight_bus.get_open_rows",
+            lambda root=None: [],
+        )
+        from engine.metabolism.attention import propose_skip
+        lobe_id = "dist-maint-lobe"
+        proposes = 0
+        for i in range(400):
+            cycle_id = f"cycle-synth-{i:04d}"
+            alloc = _make_band_alloc(lobe_id, "MAINTENANCE", cycle_id=cycle_id)
+            skip, _ = propose_skip(lobe_id, root=root, allocation=alloc, cycle_id=cycle_id)
+            if not skip:
+                proposes += 1
+        rate = proposes / 400
+        assert 0.125 <= rate <= 0.40, f"MAINTENANCE propose rate {rate:.2%} outside [12.5%, 40%]"
+
+    # ── Coverage across lobes for one fixed cycle ─────────────────────────────
+
+    def test_standard_coverage_200_lobes_fixed_cycle(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """For one fixed cycle_id, ~half of 200 STANDARD lobes propose ([30%, 70%])."""
+        root = _make_repo(tmp_path)
+        monkeypatch.setattr(
+            "engine.metabolism.insight_bus.get_open_rows",
+            lambda root=None: [],
+        )
+        from engine.metabolism.attention import propose_skip
+        cycle_id = "cycle-fixed-test-0001"
+        proposes = 0
+        for i in range(200):
+            lobe_id = f"lobe-{i:04d}"
+            alloc = _make_band_alloc(lobe_id, "STANDARD", cycle_id=cycle_id)
+            skip, _ = propose_skip(lobe_id, root=root, allocation=alloc, cycle_id=cycle_id)
+            if not skip:
+                proposes += 1
+        rate = proposes / 200
+        assert 0.30 <= rate <= 0.70, f"Cross-lobe coverage {rate:.2%} outside [30%, 70%]"
+
+    # ── DORMANT unchanged ─────────────────────────────────────────────────────
+
+    def test_dormant_still_skipped_with_cadence(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """DORMANT lobe: cadence gate is not applied; existing skip reason unchanged."""
+        root = _make_repo(tmp_path)
+        monkeypatch.setattr(
+            "engine.metabolism.insight_bus.get_open_rows",
+            lambda root=None: [],
+        )
+        from engine.metabolism.attention import propose_skip
+        lobe_id = "dormant-lobe"
+        cycle_id = "cycle-dormant-test-0001"
+        alloc = _make_band_alloc(lobe_id, "DORMANT", cycle_id=cycle_id)
+        skip, reason = propose_skip(lobe_id, root=root, allocation=alloc, cycle_id=cycle_id)
+        assert skip is True
+        assert reason == "attention_dormant"
+
+    def test_dormant_g3_exemption_still_overrides(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """DORMANT lobe with high-severity row: G3 exemption still overrides cadence."""
+        root = _make_repo(tmp_path)
+        open_rows = [
+            {"insight_id": "ins-dormant-g3", "severity": "high",
+             "entities": ["dormant-cadence-lobe"], "handled": False}
+        ]
+        monkeypatch.setattr(
+            "engine.metabolism.insight_bus.get_open_rows",
+            lambda root=None: open_rows,
+        )
+        from engine.metabolism.attention import propose_skip
+        lobe_id = "dormant-cadence-lobe"
+        cycle_id = "cycle-dormant-g3-test-0001"
+        alloc = _make_band_alloc(lobe_id, "DORMANT", cycle_id=cycle_id)
+        skip, reason = propose_skip(lobe_id, root=root, allocation=alloc, cycle_id=cycle_id)
+        assert skip is False
+        assert reason == "urgent_fix_exemption"
+
+    # ── G3 overrides a cadence skip ───────────────────────────────────────────
+
+    def test_g3_overrides_cadence_skip(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A (cycle_id, lobe) that hash-skips: high/critical insight row forces propose."""
+        root = _make_repo(tmp_path)
+        lobe_id = "standard-g3-override-lobe"
+        # Find a cycle_id where STANDARD (cadence=2) hash says SKIP
+        skip_cycle_id = _find_skip_cycle(lobe_id, cadence=2, prefix="cycle-g3-override")
+
+        open_rows = [
+            {"insight_id": "ins-g3-override", "severity": "critical",
+             "entities": [lobe_id], "handled": False}
+        ]
+        monkeypatch.setattr(
+            "engine.metabolism.insight_bus.get_open_rows",
+            lambda root=None: open_rows,
+        )
+        from engine.metabolism.attention import propose_skip
+        alloc = _make_band_alloc(lobe_id, "STANDARD", cycle_id=skip_cycle_id)
+        skip, reason = propose_skip(
+            lobe_id, root=root, allocation=alloc, cycle_id=skip_cycle_id,
+        )
+        assert skip is False, f"G3 should override cadence skip; got skip={skip}, reason={reason}"
+        assert reason == "urgent_fix_exemption"
+
+    # ── cycle_id unresolvable → fail open ────────────────────────────────────
+
+    def test_cycle_id_unresolvable_fails_open(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """No cycle_id param, allocation without cycle_id → fail open → (False, '')."""
+        root = _make_repo(tmp_path)
+        monkeypatch.setattr(
+            "engine.metabolism.insight_bus.get_open_rows",
+            lambda root=None: [],
+        )
+        from engine.metabolism.attention import propose_skip
+        lobe_id = "standard-no-cycle-lobe"
+        # No cycle_id in allocation, no explicit param
+        alloc = _make_band_alloc(lobe_id, "STANDARD")  # no cycle_id key
+        skip, reason = propose_skip(lobe_id, root=root, allocation=alloc)  # no cycle_id param
+        assert skip is False
+        assert reason == ""
+
+    # ── Config: propose_cadence absent → defaults apply ──────────────────────
+
+    def test_propose_cadence_absent_uses_defaults(self, tmp_path: Path) -> None:
+        """propose_cadence absent from yml → defaults apply."""
+        root = tmp_path / "no-cadence-repo"
+        (root / "config").mkdir(parents=True)
+        # Write config WITHOUT propose_cadence block
+        (root / "config" / "metabolism_attention.yml").write_text(
+            "schema: metabolism_attention.v1\nmax_focus_lobes: 8\n"
+            "docket_share:\n  FOCUS: 1.0\n  STANDARD: 0.6\n  MAINTENANCE: 0.2\n  DORMANT: 0.0\n"
+            "dispatch_priority:\n  FOCUS: 0\n  STANDARD: 1\n  MAINTENANCE: 2\n  DORMANT: 3\n",
+            encoding="utf-8",
+        )
+        from engine.metabolism.attention import load_attention_config
+        cfg = load_attention_config(root=root)
+        cadence = cfg["propose_cadence"]
+        assert cadence["FOCUS"] == 1
+        assert cadence["STANDARD"] == 2
+        assert cadence["MAINTENANCE"] == 4
+
+    def test_propose_cadence_zero_clamped_to_one(self, tmp_path: Path) -> None:
+        """propose_cadence STANDARD: 0 → clamped to 1 (no zero-division)."""
+        root = tmp_path / "zero-cadence-repo"
+        (root / "config").mkdir(parents=True)
+        (root / "config" / "metabolism_attention.yml").write_text(
+            "schema: metabolism_attention.v1\nmax_focus_lobes: 8\n"
+            "docket_share:\n  FOCUS: 1.0\n  STANDARD: 0.6\n  MAINTENANCE: 0.2\n  DORMANT: 0.0\n"
+            "dispatch_priority:\n  FOCUS: 0\n  STANDARD: 1\n  MAINTENANCE: 2\n  DORMANT: 3\n"
+            "propose_cadence:\n  FOCUS: 1\n  STANDARD: 0\n  MAINTENANCE: 4\n",
+            encoding="utf-8",
+        )
+        from engine.metabolism.attention import load_attention_config
+        cfg = load_attention_config(root=root)
+        assert cfg["propose_cadence"]["STANDARD"] == 1, "0 must be clamped to >= 1"
+
+    def test_propose_cadence_invalid_string_uses_default(self, tmp_path: Path) -> None:
+        """propose_cadence STANDARD: 'x' → falls back to default without raising."""
+        root = tmp_path / "bad-cadence-repo"
+        (root / "config").mkdir(parents=True)
+        (root / "config" / "metabolism_attention.yml").write_text(
+            "schema: metabolism_attention.v1\nmax_focus_lobes: 8\n"
+            "docket_share:\n  FOCUS: 1.0\n  STANDARD: 0.6\n  MAINTENANCE: 0.2\n  DORMANT: 0.0\n"
+            "dispatch_priority:\n  FOCUS: 0\n  STANDARD: 1\n  MAINTENANCE: 2\n  DORMANT: 3\n"
+            "propose_cadence:\n  FOCUS: 1\n  STANDARD: 'x'\n  MAINTENANCE: 4\n",
+            encoding="utf-8",
+        )
+        from engine.metabolism.attention import load_attention_config
+        cfg = load_attention_config(root=root)
+        # 'x' can't be cast to int → falls back to default (2)
+        assert cfg["propose_cadence"]["STANDARD"] == 2
+
+    # ── Skip reason format ────────────────────────────────────────────────────
+
+    def test_skip_reason_format(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Skip reason is 'cadence:STANDARD:1/2' for STANDARD cadence=2."""
+        root = _make_repo(tmp_path)
+        monkeypatch.setattr(
+            "engine.metabolism.insight_bus.get_open_rows",
+            lambda root=None: [],
+        )
+        from engine.metabolism.attention import propose_skip
+        lobe_id = "standard-reason-test-lobe"
+        # Find a cycle_id that hashes to SKIP for STANDARD (cadence=2)
+        skip_cycle_id = _find_skip_cycle(lobe_id, cadence=2, prefix="cycle-reason-test")
+        alloc = _make_band_alloc(lobe_id, "STANDARD", cycle_id=skip_cycle_id)
+        skip, reason = propose_skip(
+            lobe_id, root=root, allocation=alloc, cycle_id=skip_cycle_id,
+        )
+        assert skip is True
+        assert reason == "cadence:STANDARD:1/2", f"Expected 'cadence:STANDARD:1/2', got {reason!r}"

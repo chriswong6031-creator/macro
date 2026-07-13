@@ -89,7 +89,7 @@ def _make_attention_module(
         share = _BAND_WEIGHTS.get(b, 0.6)
         return max(1, int(base_size * share))
 
-    def propose_skip(lobe_id, root=None, allocation=None):
+    def propose_skip(lobe_id, root=None, allocation=None, cycle_id=None):
         b = band_for(lobe_id, root=root)
         if b == "DORMANT":
             return True, "attention_dormant"
@@ -508,7 +508,7 @@ def test_aw8_exemption_runs_normally(monkeypatch, tmp_path):
     # All lobes have propose_skip = (False, "urgent_fix_exemption")
     stub = _make_attention_module()
 
-    def _skip_override(lobe_id, root=None, allocation=None):
+    def _skip_override(lobe_id, root=None, allocation=None, cycle_id=None):
         return False, "urgent_fix_exemption"
 
     stub.propose_skip = _skip_override
