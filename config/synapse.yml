@@ -12337,6 +12337,60 @@ artifacts:
       inversion_board (IRD-R13). Display-only context artifact.
       authority.may_rank/gate/size/escalate=false.
 
+  # --- CBF-W2: Cross-Border Flow Regime organ ---
+  cbf-flow-regime-latest:
+    path: data/flow_regime/latest.json
+    format: json
+    producer: scripts/build_intl.py
+    known_extra_writers: []
+    owner_program: cbf
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CBF-W2: Cross-Border Flow Regime daily snapshot. Keys: as_of, regime
+      (state/label/guidance/days_in_state/raw_state/legs/hysteresis_pending),
+      blocs (per-bloc flow gauges with legs/direction/strength), emp_watch
+      (partial-EMP per-country composite sorted desc), discriminator
+      (idio-vs-systemic three-filter verdict), swap_lines (SWPT/WLCFLL
+      confirmation row), cross_refs (forex smile / contagion states),
+      coverage (series first/last dates), disclosures. Display-only context
+      artifact. authority.may_rank/gate/size/escalate=false.
+      templates/intl.html.j2 is NOT yet a consumer (W-slice pending); phantom
+      declaration removed per audit finding.
+
+  cbf-flow-regime-history:
+    path: data/flow_regime/history.parquet
+    format: parquet
+    producer: scripts/build_intl.py
+    known_extra_writers: []
+    owner_program: cbf
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 36
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CBF-R10: Append-only CBF regime history. Columns: date (index), state,
+      raw_state, era, spy_20d, row_20d, spy_63d, row_63d, usd_20d, usd_63d,
+      emfx_63d, vix. Backfilled once on first build; nightly is the sole
+      advancer thereafter (RC-R2 spirit). Older rows are never modified.
+      Display-only; authority.may_rank/gate/size/escalate=false.
+
   # --- SA-W1: Standout Accountability — US attribution organ ---
   us-standout-attribution:
     path: data/standout_audit/us_attribution.parquet

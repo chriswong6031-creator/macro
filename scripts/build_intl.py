@@ -264,6 +264,70 @@ def main() -> int:
     except Exception as _e:
         log.error("failed to write intl_risk/latest.json (%s)", _e)
 
+    # ---- CBF W2: Cross-Border Flow Regime organ (fail-open) ----------------
+    # compose() is pure; writes nothing itself.  We write latest.json + advance
+    # history.parquet here.  Any exception is logged (NOT swallowed silently —
+    # #2316 lesson) and execution continues so this never blocks the render.
+    #
+    # CBF_INTRADAY=1 is set by sentinel.yml when this runs as part of a flash-
+    # state-change intraday rebuild.  In that context we still run compose() and
+    # write latest.json (cross-refs are useful), but we SKIP history.parquet
+    # accrual — advancing a forward ledger intraday violates CLAUDE.md law
+    # ("nightly is the sole advancer of forward ledgers; intraday lanes discard
+    # data/ writes").  The sentinel's git-add is already scoped to data/vector/
+    # etc and would delete the intraday-written parquet before push anyway, but
+    # the run-time mutation and PIT-inconsistent row are still prohibited.
+    import os as _os
+    _cbf_intraday = _os.environ.get("CBF_INTRADAY", "").strip() not in ("", "0")
+    _cbf_dir = config.data_dir() / "flow_regime"
+    _cbf_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        from engine.flow_regime import compose as _cbf_compose, accrue_history as _cbf_accrue
+        _cbf_payload = _cbf_compose(repo_root=config.ROOT)
+        (_cbf_dir / "latest.json").write_text(
+            json.dumps(_cbf_payload, indent=2, default=str, ensure_ascii=False)
+        )
+        log.info(
+            "wrote data/flow_regime/latest.json (regime=%s, disc=%s)",
+            (_cbf_payload.get("regime") or {}).get("state"),
+            (_cbf_payload.get("discriminator") or {}).get("state"),
+        )
+        if _cbf_intraday:
+            # Intraday context (sentinel flash rebuild): skip forward-ledger advance.
+            log.info("flow_regime history accrual SKIPPED (CBF_INTRADAY=1 — nightly only)")
+        else:
+            # Nightly context: advance history.parquet (CBF-R10).
+            # compose() already ran classify_history internally — re-run here is safe
+            # because compose() is deterministic and idempotent.  This keeps history
+            # accrual decoupled from compose()'s internal history_df.
+            try:
+                from engine.flow_regime import (
+                    load_inputs_from_store as _cbf_load,
+                    build_broad_dollar as _cbf_broad,
+                    build_emfx_basket as _cbf_emfx,
+                    build_row_composite as _cbf_row,
+                    classify_history as _cbf_classify,
+                )
+                _cbf_inputs = _cbf_load()
+                _cbf_spy    = _cbf_inputs["spy_close"]
+                _cbf_idx    = _cbf_spy.dropna().index
+                _cbf_dollar = _cbf_broad(_cbf_inputs.get("dtwexbgs"), _cbf_inputs.get("dxy"), _cbf_idx)
+                _cbf_emfx_s = _cbf_emfx(_cbf_inputs.get("fx_series") or {}, _cbf_idx, negate=True)
+                _cbf_row_ret = _cbf_row(_cbf_inputs.get("row_etf_closes") or {}, _cbf_idx)
+                _cbf_row_lvl = (1 + _cbf_row_ret.fillna(0.0)).cumprod() * 100.0
+                _cbf_hist_df = _cbf_classify(
+                    spy_close=_cbf_spy,
+                    row_composite_level=_cbf_row_lvl,
+                    broad_dollar_level=_cbf_dollar,
+                    emfx_basket_daily_ret=_cbf_emfx_s,
+                    vix_close=_cbf_inputs.get("vix_close"),
+                )
+                _cbf_accrue(repo_root=config.ROOT, history_df=_cbf_hist_df)
+            except Exception as _cbf_hist_exc:
+                log.exception("flow_regime history accrual failed (non-fatal): %s", _cbf_hist_exc)
+    except Exception as _cbf_exc:
+        log.exception("flow_regime compose/write failed (non-fatal): %s", _cbf_exc)
+
     try:
         from engine import intl_stocks
         closes, members = intl_stocks.panel()

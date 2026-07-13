@@ -37,6 +37,11 @@ jobs:
       # state to know the CURRENT state, only to detect a transition.
       - name: rebuild vector + hub and commit (only on flash-state change)
         if: steps.sentinel.outputs.rc == '10'
+        env:
+          # CBF_INTRADAY=1 tells build_intl to skip history.parquet accrual (a
+          # forward-ledger advance); nightly is the sole advancer (CLAUDE.md law).
+          # compose()+latest.json still run so vector.html has fresh cross-refs.
+          CBF_INTRADAY: "1"
         run: |
           python -m scripts.build_vector
           git config user.name "dashboard-bot"
