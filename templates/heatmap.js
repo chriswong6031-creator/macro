@@ -155,10 +155,20 @@
     return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
   }
   var FG_DARK = [16, 21, 28], FG_LIGHT = [244, 247, 251];   // #10151c / #f4f7fb
+  function _relLum(c) {
+    // WCAG relative luminance from an [r,g,b] 0–255 triple.
+    var f = function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]);
+  }
   function fgFor(c) {
-    // Institutional board: white labels on every tile in both themes (tiles run
-    // saturated/dark enough that white always reads — Finviz / TradingView look).
-    return '#ffffff';
+    // Institutional board look = white labels on saturated tiles — but the
+    // brightest bins (pure green ~#1ec173) fail WCAG 4.5:1 against white text.
+    // Pick whichever of white / near-black ink gives the higher contrast on
+    // THIS fill, so every ticker/percent stays legible on any bin.
+    var L = _relLum(c);
+    var cW = 1.05 / (L + 0.05);              // contrast of #fff over the fill
+    var cB = (L + 0.05) / (0.03 + 0.05);     // contrast of near-black (#0b0d10) over the fill
+    return cB > cW ? '#0b0d10' : '#ffffff';
   }
   function neutral() {
     // flat ~0% tile: a dark slate in both themes so the white label stays legible
@@ -1209,18 +1219,20 @@
 
     function tileLabel(t, tw, th) {
       // Finviz rule, compact edition: the preview map labels only the tiles
-      // where the full ticker fits at a readable size — small tiles are pure
+      // where the full ticker fits at a READABLE size — small tiles are pure
       // colour (fewer names, zero clipping; hover / Expand carry the detail).
+      // House law: no text below 11px — a tile that can't fit an 11px ticker
+      // drops the label entirely (demote to hover) rather than shrinking it.
       if (tw < 30 || th < 16) return '';
       var nch = (t.t || '').length || 1;
       var fitF = (tw - 6) / (nch * 0.78);
       var symF = Math.min(tw / 4.2, th * 0.5, fitF, 18);
-      if (symF < 7) return '';
-      var s = '<span class="sym' + (symF < 10 ? ' sm' : '') + '" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
+      if (symF < 11) return '';
+      var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
       if (tw >= 46 && th >= 30) {
         var pcText = fmtPc(t.perf[TF]);
-        var pcF = Math.min(tw / 5.6, th * 0.32, fitTextFont(tw, pcText, 0.62, 4.8, 12));
-        if (pcF >= 6) s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + pcText + '</span>';
+        var pcF = Math.min(tw / 5.6, th * 0.32, fitTextFont(tw, pcText, 0.62, 11, 12));
+        if (pcF >= 11) s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + pcText + '</span>';
       }
       return s;
     }
@@ -1252,11 +1264,17 @@
           var nmBudget = Math.max(24, w - 18 - aggBudget);
           var nmText = (isZh() && lab.zh) ? lab.zh : lab.en;
           var nmCjk = false; for (var _j = 0; _j < nmText.length; _j++) { var _jc = nmText.charCodeAt(_j); if (_jc >= 0x3400 && _jc <= 0x9fff) { nmCjk = true; break; } }
-          var nmF = clamp(Math.min(10.5, fitTextFont(nmBudget, nmText, nmCjk ? 1.02 : 0.65, 4.1, 10.5)), 4.1, 10.5);
-          var aggF = showAgg ? clamp(Math.min(10.5, fitTextFont(aggBudget, aggText, 0.62, 7.8, 10.5)), 7.8, 10.5) : 10.5;
+          // House law ≥11px: fit at 11–12px; if the section name can't reach 11px
+          // in its width budget, drop it (hover on the tiles still carries the sector).
+          var nmFit = fitTextFont(nmBudget, nmText, nmCjk ? 1.02 : 0.65, 6, 12);
+          var nmF = clamp(nmFit, 11, 12);
+          var showNm = nmFit >= 11;
+          var aggFit = fitTextFont(aggBudget, aggText, 0.62, 6, 12);
+          var aggF = clamp(aggFit, 11, 12);
+          var showAggPc = showAgg && aggFit >= 11;
           html.push('<div class="hm-sec-hd hm-sc-sechd" data-sec-name="' + esc(s.name) + '" style="height:' + hd + 'px;line-height:' + hd + 'px">'
-            + '<span class="nm" style="font-size:' + nmF.toFixed(1) + 'px">' + L(esc(lab.en), esc(lab.zh)) + '</span>'
-            + (showAgg ? '<span class="pc ' + (agg == null ? '' : agg >= 0 ? 'up' : 'dn') + '" style="font-size:' + aggF.toFixed(1) + 'px">' + aggText + '</span>' : '')
+            + (showNm ? '<span class="nm" style="font-size:' + nmF.toFixed(1) + 'px">' + L(esc(lab.en), esc(lab.zh)) + '</span>' : '')
+            + (showAggPc ? '<span class="pc ' + (agg == null ? '' : agg >= 0 ? 'up' : 'dn') + '" style="font-size:' + aggF.toFixed(1) + 'px">' + aggText + '</span>' : '')
             + '</div>');
         }
         var innerY = hd, innerH = h - hd;

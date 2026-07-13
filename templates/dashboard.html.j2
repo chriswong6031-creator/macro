@@ -2643,7 +2643,7 @@ body.page-macro .v2chip.c-warn{background:color-mix(in srgb,var(--warn) 14%,var(
 body.page-macro .v2chip.c-info{background:color-mix(in srgb,var(--info) 14%,var(--panel));color:var(--info);border:1px solid color-mix(in srgb,var(--info) 25%,transparent)}
 body.page-macro .v2chip.c-muted{background:color-mix(in srgb,var(--muted) 12%,var(--panel));color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent)}
 body.page-macro .v2-display-badge{
-  display:inline-flex;align-items:center;font-size:9px;font-weight:600;
+  display:inline-flex;align-items:center;font-size:11px;font-weight:600;
   letter-spacing:.06em;color:var(--muted);background:var(--panel2);
   border:1px solid var(--line);border-radius:5px;padding:2px 7px;
 }
@@ -2692,7 +2692,7 @@ body.page-macro .mx2-sh-rk{font-size:10px;color:var(--muted);font-variant-numeri
 
 /* Heatmap chrome wrapper (v3) */
 body.page-macro .isle-heatmap-wrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-height:120px;margin-top:14px}
-body.page-macro .isle-heatmap-chrome-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:10px 14px 0}
+body.page-macro .isle-heatmap-chrome-head{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:10px 14px 0}
 /* MOB-05: hide heatmap sublabels at mobile — heatmap.js renders labels with inline style="font-size:Xpx"
    where X can be 4–5px on a 281px canvas at 390px viewport.
    Target via CSS attr substring matching on the inline style; silence text ≤7px while preserving ≥8px. */
@@ -3036,9 +3036,8 @@ body.page-macro.mx4-grid .sx{
   display:flex;
   flex-direction:column;
 }
-body.page-macro.mx4-grid .sx:hover .sxg-face{
-  background:color-mix(in srgb,var(--isle-color,transparent) 5%,transparent);
-}
+/* v5.3 (Order 5): per-card colored hover tint REMOVED — unified idiom is applied
+   on the interactive face element itself (see .sxg-face.mx5-card-face:hover below). */
 
 /* ── Markets face tiles ───────────────────────────────────────── */
 body.page-macro .sxg-face-tiles{
@@ -3279,6 +3278,11 @@ body.page-macro.mx4-grid {
   --mx5-accent-dim:    rgba(34,217,122,.10);
   --mx5-warn:          #f59e0b;
   --mx5-warn-dim:      rgba(245,158,11,.10);
+  /* v5.3 audit round: TEXT-role accents. Fills keep the bright hue above;
+     text uses these so light mode swaps in the darker, ≥4.5:1 accent
+     (theme.css already provides --up/--warn darkened for light). */
+  --mx5-accent-ink:    var(--mx5-accent);
+  --mx5-warn-ink:      var(--mx5-warn);
 }
 [data-theme="light"] body.page-macro.mx4-grid {
   --mx5-glass-bg:      rgba(255,255,255,.82);
@@ -3286,6 +3290,25 @@ body.page-macro.mx4-grid {
   --mx5-glass-border:  rgba(0,0,0,.06);
   --mx5-glass-shadow:  0 4px 24px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.95) inset;
   --mx5-glass-hover:   0 8px 32px rgba(0,0,0,.13), 0 1px 0 rgba(255,255,255,.95) inset;
+  /* Dedicated dark accents for TEXT on the light glass card (>=4.5:1 vs ~#f6f7fa).
+     Deliberately darker than the site-wide --up/--warn (which are tuned ~3.4:1
+     for other surfaces); fills above keep the bright #22d97a / #f59e0b. */
+  --mx5-accent-ink:    #17753f;
+  --mx5-warn-ink:      #9c6212;
+}
+/* ── v5.3 UNIFIED card hover (Order 5): ONE idiom for every grid card/face.
+   No accent-colored tints anywhere — border brightens, surface lifts ~2%,
+   translateY(-1px), soft ambient shadow. Same both directions, 200ms ease-out. */
+body.page-macro.mx4-grid {
+  --mx5-hover-bg:      rgba(255,255,255,.12);
+  --mx5-hover-border:  rgba(255,255,255,.16);
+  --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.25);
+  --mx5-focus-ring:    0 0 0 2px rgba(34,217,122,.55);
+}
+[data-theme="light"] body.page-macro.mx4-grid {
+  --mx5-hover-bg:      rgba(255,255,255,.92);
+  --mx5-hover-border:  rgba(0,0,0,.14);
+  --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.12);
 }
 
 /* ── Aurora backdrop (fixed position, grid-view only) ───────────── */
@@ -3324,6 +3347,16 @@ body.page-macro.mx4-grid .mx5-aurora .mx5-a4{
   body.page-macro.mx4-grid .mx5-aurora::before,
   body.page-macro.mx4-grid .mx5-aurora::after,
   body.page-macro.mx4-grid .mx5-aurora .mx5-a3{animation:none;}
+  /* Order 5: unified hover — no motion (instant, no lift) under reduced-motion */
+  body.page-macro.mx4-grid .sxg-face.mx5-card-face,
+  body.page-macro.mx4-grid .mx5-card[role="button"],
+  body.page-macro.mx4-grid .mx5-mkt-tile{transition:none!important;}
+  body.page-macro.mx4-grid .sx:hover .sxg-face.mx5-card-face,
+  body.page-macro.mx4-grid .sxg-face.mx5-card-face:hover,
+  body.page-macro.mx4-grid .mx5-card[role="button"]:hover,
+  body.page-macro.mx4-grid .mx5-mkt-tile:hover,
+  body.page-macro.mx4-grid .mx5-mkt-tile.up:hover,
+  body.page-macro.mx4-grid .mx5-mkt-tile.dn:hover{transform:none!important;}
 }
 
 /* ── Command Scorecard — #regime-radar restyled in grid view ─────── */
@@ -3337,7 +3370,8 @@ body.page-macro.mx4-grid #regime-radar{
   box-shadow:var(--mx5-glass-shadow);
   padding:0;overflow:visible;
   display:grid;
-  grid-template-columns:380px 1fr;
+  /* Order 2: ~30:70 left:right (more room for the command cluster, less for the chart) */
+  grid-template-columns:minmax(0,3fr) minmax(0,7fr);
   gap:0;
   min-height:320px;
   position:relative;
@@ -3347,7 +3381,7 @@ body.page-macro:not(.mx4-grid) #regime-radar{
   display:block;padding:19px 21px;
 }
 @media(max-width:1100px){
-  body.page-macro.mx4-grid #regime-radar{grid-template-columns:340px 1fr;}
+  body.page-macro.mx4-grid #regime-radar{grid-template-columns:minmax(0,34fr) minmax(0,66fr);}
 }
 @media(max-width:700px){
   body.page-macro.mx4-grid #regime-radar{grid-template-columns:1fr;}
@@ -3379,17 +3413,21 @@ body.page-macro.mx4-grid .mx5-sc-gauge-row{
   display:flex;align-items:center;gap:20px;margin-bottom:16px;
 }
 body.page-macro.mx4-grid .mx5-gauge-svg{
-  width:140px;height:88px;overflow:visible;display:block;flex-shrink:0;
+  /* Order 2: scaled up ~1.37× (viewBox unchanged → JS gauge math contract intact) */
+  width:192px;height:120px;overflow:visible;display:block;flex-shrink:0;
 }
 
-/* Regime pill */
+/* Regime pill (Order 3: smaller + never clips — sizes to content, no fixed width) */
 body.page-macro.mx4-grid .mx5-regime-pill{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:6px 14px;border-radius:var(--mx5-radius-pill);
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 11px;border-radius:var(--mx5-radius-pill);
   border:1px solid var(--mx5-accent);background:var(--mx5-accent-dim);
-  font-size:11px;font-weight:600;color:var(--mx5-accent);
-  letter-spacing:.04em;margin-bottom:10px;
+  font-size:11px;font-weight:600;color:var(--mx5-accent-ink);
+  letter-spacing:.02em;margin-bottom:10px;line-height:1.3;
+  max-width:100%;box-sizing:border-box;white-space:nowrap;width:auto;
 }
+/* The pill's text span must not be forced to shrink below its content */
+body.page-macro.mx4-grid .mx5-regime-pill > span{flex:0 0 auto;}
 body.page-macro.mx4-grid .mx5-regime-pill .mx5-dot{
   width:6px;height:6px;border-radius:50%;
   background:var(--mx5-accent);box-shadow:0 0 6px var(--mx5-accent-glow);
@@ -3397,18 +3435,20 @@ body.page-macro.mx4-grid .mx5-regime-pill .mx5-dot{
 
 /* Score + verdict beside gauge */
 body.page-macro.mx4-grid .mx5-score-line{
-  display:flex;align-items:baseline;gap:8px;
+  display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;
 }
+/* verdict word never breaks mid-word; wraps as a whole unit if the column is tight */
+body.page-macro.mx4-grid .mx5-verdict-word{white-space:nowrap;}
 body.page-macro.mx4-grid .mx5-big-score{
-  font-size:52px;font-weight:800;line-height:1;color:var(--mx5-accent);
-  text-shadow:0 0 36px var(--mx5-accent-glow);
-  letter-spacing:-.03em;font-variant-numeric:tabular-nums;
+  font-size:68px;font-weight:800;line-height:.95;color:var(--mx5-accent-ink);
+  text-shadow:0 0 40px var(--mx5-accent-glow);
+  letter-spacing:-.035em;font-variant-numeric:tabular-nums;
 }
 body.page-macro.mx4-grid .mx5-verdict-word{
-  font-size:17px;font-weight:700;color:var(--ink-1,var(--text,rgba(255,255,255,.92)));
+  font-size:19px;font-weight:700;color:var(--ink-1,var(--text,rgba(255,255,255,.92)));
 }
 body.page-macro.mx4-grid .mx5-sub-line{
-  font-size:11px;color:var(--mx5-accent);font-weight:600;margin-top:3px;
+  font-size:11px;color:var(--mx5-accent-ink);font-weight:600;margin-top:3px;
 }
 /* score color by state */
 body.page-macro.mx4-grid.ms-green-page .mx5-big-score,
@@ -3432,7 +3472,7 @@ body.page-macro.mx4-grid .mx5-flip{
   border:1px solid rgba(245,158,11,.18);
   border-radius:9px;line-height:1.5;
 }
-body.page-macro.mx4-grid .mx5-flip-arrow{color:var(--mx5-warn);}
+body.page-macro.mx4-grid .mx5-flip-arrow{color:var(--mx5-warn-ink);}
 
 /* Popover trigger buttons row */
 body.page-macro.mx4-grid .mx5-btn-row{
@@ -3460,7 +3500,7 @@ body.page-macro.mx4-grid .mx5-sc-btn[aria-expanded="true"]{
   background:rgba(255,255,255,.16);
 }
 body.page-macro.mx4-grid .mx5-sc-btn-warn{
-  color:var(--mx5-warn);
+  color:var(--mx5-warn-ink);
   border-color:rgba(245,158,11,.28);
   background:rgba(245,158,11,.07);
 }
@@ -3486,8 +3526,64 @@ body.page-macro.mx4-grid .mx5-path-title{
   text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));
 }
 body.page-macro.mx4-grid .mx5-path-meta{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
+/* Plot wrapper hosts the SVG + the screen-space JS hover overlays */
+body.page-macro.mx4-grid .mx5-path-plot{
+  position:relative;flex:1;min-height:190px;display:flex;
+}
 body.page-macro.mx4-grid .mx5-path-svg{
-  display:block;width:100%;flex:1;min-height:180px;overflow:visible;
+  display:block;width:100%;flex:1;min-height:190px;overflow:visible;
+  touch-action:pan-y;
+}
+/* ── Hover enhancement layer (Order 1c) — pure screen-space, hidden until JS shows ── */
+body.page-macro.mx4-grid .mx5-path-cross{
+  position:absolute;top:0;width:1px;height:100%;
+  background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.06));
+  opacity:0;transform:translateX(-1px);pointer-events:none;
+  transition:opacity .12s ease-out;will-change:left,opacity;
+}
+body.page-macro.mx4-grid .mx5-path-dot{
+  position:absolute;width:11px;height:11px;border-radius:50%;
+  background:var(--mx5-accent);border:2px solid var(--mx5-pop-bg,#0d121a);
+  box-shadow:0 0 10px var(--mx5-accent-glow),0 0 0 1px rgba(255,255,255,.25);
+  opacity:0;pointer-events:none;transform:translate(-50%,-50%);
+  transition:opacity .12s ease-out;will-change:left,top,opacity;
+}
+body.page-macro.mx4-grid .mx5-path-tip{
+  position:absolute;z-index:6;pointer-events:none;
+  display:flex;flex-direction:column;gap:2px;
+  padding:8px 11px;border-radius:10px;
+  background:rgba(15,19,26,.72);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 8px 30px rgba(0,0,0,.5);
+  backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);
+  opacity:0;transform:translate(-50%,calc(-100% - 14px)) translateY(4px);
+  transition:opacity .13s ease-out,transform .13s ease-out;
+  white-space:nowrap;
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  body.page-macro.mx4-grid .mx5-path-tip{background:var(--mx5-pop-bg,rgba(13,18,26,.98));}
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-path-tip{
+  background:rgba(255,255,255,.82);border-color:rgba(0,0,0,.10);
+  box-shadow:0 8px 30px rgba(0,0,0,.16);
+}
+body.page-macro.mx4-grid .mx5-path-tip.show{opacity:1;transform:translate(-50%,calc(-100% - 14px));}
+body.page-macro.mx4-grid .mx5-path-tip-date{
+  font-size:10px;font-weight:600;letter-spacing:.03em;
+  color:var(--ink-3,rgba(255,255,255,.5));text-transform:uppercase;
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-path-tip-date{color:rgba(0,0,0,.5);}
+body.page-macro.mx4-grid .mx5-path-tip-row{display:flex;align-items:baseline;gap:7px;}
+body.page-macro.mx4-grid .mx5-path-tip-score{
+  font-size:16px;font-weight:800;line-height:1;color:var(--ink-1,rgba(255,255,255,.95));
+  font-variant-numeric:tabular-nums;
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-path-tip-score{color:rgba(0,0,0,.9);}
+body.page-macro.mx4-grid .mx5-path-tip-verdict{font-size:12px;font-weight:600;}
+@media(prefers-reduced-motion:reduce){
+  body.page-macro.mx4-grid .mx5-path-cross,
+  body.page-macro.mx4-grid .mx5-path-dot,
+  body.page-macro.mx4-grid .mx5-path-tip{transition:none;}
 }
 /* Hidden on mobile (spec §0) */
 @media(max-width:700px){
@@ -3600,7 +3696,7 @@ body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
 .mx5-factor-header{display:flex;justify-content:space-between;align-items:baseline;}
 .mx5-factor-name{font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));font-weight:500;}
 .mx5-factor-score{font-size:16px;font-weight:700;color:var(--ink-1,rgba(255,255,255,.92));}
-.mx5-factor-score.weak{color:var(--mx5-warn);}
+.mx5-factor-score.weak{color:var(--mx5-warn-ink);}
 .mx5-factor-bar-track{height:7px;border-radius:4px;background:rgba(255,255,255,.07);position:relative;}
 .mx5-factor-bar-fill{height:100%;border-radius:4px;position:relative;
   background:linear-gradient(90deg,rgba(34,217,122,.45),var(--mx5-accent));}
@@ -3614,27 +3710,27 @@ body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
   background:var(--mx5-warn);box-shadow:0 0 7px rgba(245,158,11,.5);
 }
 .mx5-factor-weak-tag{
-  font-size:11px;color:var(--mx5-warn);font-weight:700;letter-spacing:.05em;margin-top:3px;
+  font-size:11px;color:var(--mx5-warn-ink);font-weight:700;letter-spacing:.05em;margin-top:3px;
 }
 
 /* ── Risk Scare Ladder (inside popover) ─────────────────────────── */
 .mx5-scare-dominant-row{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;}
-.mx5-scare-dominant-num{font-size:48px;font-weight:800;letter-spacing:-.03em;color:var(--mx5-warn);line-height:1;}
-.mx5-scare-dominant-title{font-size:15px;font-weight:700;color:var(--mx5-warn);}
+.mx5-scare-dominant-num{font-size:48px;font-weight:800;letter-spacing:-.03em;color:var(--mx5-warn-ink);line-height:1;}
+.mx5-scare-dominant-title{font-size:15px;font-weight:700;color:var(--mx5-warn-ink);}
 .mx5-scare-driver{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:20px;line-height:1.5;}
 .mx5-scare-list{display:flex;flex-direction:column;gap:13px;}
 .mx5-scare-item{display:flex;flex-direction:column;gap:4px;}
 .mx5-scare-item-header{display:flex;justify-content:space-between;align-items:baseline;}
 .mx5-scare-item-name{font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));font-weight:500;}
 .mx5-scare-item-val{font-size:14px;font-weight:700;}
-.mx5-scare-item-val.top{color:var(--mx5-warn);}
+.mx5-scare-item-val.top{color:var(--mx5-warn-ink);}
 .mx5-scare-item-val.lower{color:var(--ink-2,rgba(255,255,255,.6));}
 .mx5-scare-meter{height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden;}
 .mx5-scare-fill{height:100%;border-radius:3px;}
 .mx5-scare-fill.hi {background:linear-gradient(90deg,rgba(245,158,11,.5),var(--mx5-warn));}
 .mx5-scare-fill.mid{background:rgba(245,158,11,.55);}
 .mx5-scare-fill.lo {background:rgba(245,158,11,.35);}
-.mx5-scare-item-label{font-size:11px;color:var(--mx5-warn);font-weight:600;letter-spacing:.04em;}
+.mx5-scare-item-label{font-size:11px;color:var(--mx5-warn-ink);font-weight:600;letter-spacing:.04em;}
 
 /* Popover footer */
 .mx5-pop-footer{
@@ -3644,11 +3740,11 @@ body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
 [data-theme="light"] .mx5-pop-footer{border-top-color:rgba(0,0,0,.07);}
 .mx5-pop-footer-link{
   background:none;border:none;cursor:pointer;font-size:11px;font-weight:600;
-  color:var(--mx5-accent);font-family:inherit;padding:0;
+  color:var(--mx5-accent-ink);font-family:inherit;padding:0;
   text-decoration:underline;text-decoration-color:transparent;
   transition:text-decoration-color .15s;
 }
-.mx5-pop-footer-link:hover{text-decoration-color:var(--mx5-accent);}
+.mx5-pop-footer-link:hover{text-decoration-color:var(--mx5-accent-ink);}
 
 /* ══════════════════════════════════════════════════════════════════
    v5.1 — mx5OpenDlg centered dialog system (§2 addendum)
@@ -3657,6 +3753,12 @@ body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
    ══════════════════════════════════════════════════════════════════ */
 
 /* Scroll-lock while dialog open */
+/* v5.3 audit round M03: the document scroller is <html>, not <body>, so
+   body{overflow:hidden} alone leaked wheel/scroll to the background. Lock the
+   real scroller: html.mx5-dlg-lock pins the page while a dialog is open; JS
+   restores scrollY on close (position:fixed keeps iOS from scrolling <html>). */
+html.mx5-dlg-lock{ overflow:hidden; }
+html.mx5-dlg-lock body{ overflow:hidden; position:fixed; width:100%; }
 body.mx5-dlg-open{ overflow:hidden; }
 
 /* Backdrop dim */
@@ -3667,39 +3769,66 @@ body.mx5-dlg-open{ overflow:hidden; }
 .mx5-dlg.open{ display:flex; }
 .mx5-dlg-backdrop{
   position:absolute;inset:0;
-  background:rgba(0,0,0,.55);
-  backdrop-filter:blur(4px);
-  -webkit-backdrop-filter:blur(4px);
+  background:rgba(3,6,10,.58);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
 }
 
-/* Glass panel */
+/* ── Order 4: FROSTED glass panel ──────────────────────────────────
+   Deep blur + saturate; translucent fill (legibility verified over the hero);
+   inner hairline + deep soft shadow. @supports fallback to near-opaque fill
+   when backdrop-filter is unavailable. backdrop-filter creates a containing
+   block + its own stacking context — sticky header inside still works because
+   it is a normal-flow descendant of this scroll container. */
 .mx5-dlg-panel{
   position:relative;z-index:1;
   max-width:980px;width:calc(100% - 48px);
   max-height:82vh;
-  background:var(--mx5-pop-bg,rgba(13,18,26,.97));
-  border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));
+  background:rgba(15,19,26,.78);
+  border:1px solid rgba(255,255,255,.10);
   border-radius:var(--mx5-radius-card,18px);
-  backdrop-filter:blur(32px);
-  -webkit-backdrop-filter:blur(32px);
-  box-shadow:0 32px 96px rgba(0,0,0,.8),0 1.5px 0 rgba(255,255,255,.09) inset;
+  backdrop-filter:blur(28px) saturate(1.4);
+  -webkit-backdrop-filter:blur(28px) saturate(1.4);
+  box-shadow:0 40px 120px rgba(0,0,0,.72),
+             0 2px 0 rgba(255,255,255,.06) inset,
+             0 0 0 1px rgba(255,255,255,.04);
   overflow-y:auto;
   display:flex;flex-direction:column;
 }
 [data-theme="light"] .mx5-dlg-panel{
-  background:var(--mx5-pop-bg,rgba(255,255,255,.97));
-  box-shadow:0 16px 64px rgba(0,0,0,.15),0 1px 0 rgba(255,255,255,.9) inset;
+  background:rgba(255,255,255,.82);
+  border-color:rgba(255,255,255,.6);
+  box-shadow:0 32px 96px rgba(0,0,0,.18),
+             0 1px 0 rgba(255,255,255,.9) inset,
+             0 0 0 1px rgba(0,0,0,.04);
 }
+/* No blur support → near-opaque fill so body copy stays ≥4.5:1 over any bg */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .mx5-dlg-panel{background:var(--mx5-pop-bg,rgba(13,18,26,.98));}
+  [data-theme="light"] .mx5-dlg-panel{background:var(--mx5-pop-bg,rgba(255,255,255,.98));}
+}
+/* v5.3 audit round M09: dialogs whose whole body is one compact row (Deep
+   Context = a single strip of linked-surface shortcuts) size to their content
+   instead of the full 980px shell, so the panel isn't mostly empty. */
+.mx5-dlg-panel-narrow{ max-width:640px; }
 
-/* Dialog header (sticky) */
+/* Dialog header (sticky). Frosted panel is translucent, so the sticky header needs
+   its own denser fill + blur or scrolled body copy bleeds through the title. */
 .mx5-dlg-header{
   display:flex;align-items:center;justify-content:space-between;
   padding:20px 26px 16px;
   position:sticky;top:0;z-index:2;
-  background:inherit;
+  background:rgba(15,19,26,.86);
+  backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
   border-bottom:1px solid rgba(255,255,255,.07);
 }
-[data-theme="light"] .mx5-dlg-header{border-bottom-color:rgba(0,0,0,.07);}
+[data-theme="light"] .mx5-dlg-header{
+  background:rgba(255,255,255,.88);border-bottom-color:rgba(0,0,0,.07);
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .mx5-dlg-header{background:var(--mx5-pop-bg,rgba(13,18,26,.98));}
+  [data-theme="light"] .mx5-dlg-header{background:var(--mx5-pop-bg,rgba(255,255,255,.98));}
+}
 .mx5-dlg-title{
   font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
   color:var(--ink-3,rgba(255,255,255,.36));
@@ -3720,14 +3849,46 @@ body.mx5-dlg-open{ overflow:hidden; }
   padding:24px 26px 28px;flex:1;overflow-y:auto;
 }
 
-/* Animation (desktop) */
+/* ── Order 4: entrance / exit animation (desktop) ──────────────────
+   .open just makes it display:flex (start state painted). JS then adds
+   .mx5-dlg-in on the next frame so these transitions actually run.
+   Backdrop fades 240ms; panel opacity + translateY(14px) + scale(.965)
+   over 320ms; interior sections stagger-fade-up 40ms apart (cap 5).
+   Close reverses at ~180ms (JS removes .mx5-dlg-in, then hides). */
 @media(prefers-reduced-motion:no-preference){
-  .mx5-dlg-panel{
-    opacity:0;transform:translateY(-16px) scale(.98);
-    transition:opacity 220ms cubic-bezier(.22,.68,0,1.2),
-                transform 220ms cubic-bezier(.22,.68,0,1.2);
+  .mx5-dlg-backdrop{
+    opacity:0;transition:opacity 240ms ease-out;
   }
-  .mx5-dlg.open .mx5-dlg-panel{opacity:1;transform:translateY(0) scale(1);}
+  .mx5-dlg.mx5-dlg-in .mx5-dlg-backdrop{opacity:1;}
+  .mx5-dlg-panel{
+    opacity:0;transform:translateY(14px) scale(.965);
+    transition:opacity 320ms cubic-bezier(.22,.9,.26,1.02),
+               transform 320ms cubic-bezier(.22,.9,.26,1.02);
+  }
+  .mx5-dlg.mx5-dlg-in .mx5-dlg-panel{opacity:1;transform:translateY(0) scale(1);}
+  /* faster close */
+  .mx5-dlg.mx5-dlg-closing .mx5-dlg-backdrop{transition-duration:180ms;}
+  .mx5-dlg.mx5-dlg-closing .mx5-dlg-panel{transition-duration:180ms;}
+  /* interior stagger — first 5 direct children of the body rise in sequence */
+  .mx5-dlg-body > *{
+    opacity:0;transform:translateY(10px);
+    transition:opacity 300ms ease-out,transform 300ms cubic-bezier(.22,.9,.26,1.02);
+  }
+  .mx5-dlg.mx5-dlg-in .mx5-dlg-body > *{opacity:1;transform:translateY(0);}
+  .mx5-dlg.mx5-dlg-in .mx5-dlg-body > *:nth-child(1){transition-delay:60ms;}
+  .mx5-dlg.mx5-dlg-in .mx5-dlg-body > *:nth-child(2){transition-delay:100ms;}
+  .mx5-dlg.mx5-dlg-in .mx5-dlg-body > *:nth-child(3){transition-delay:140ms;}
+  .mx5-dlg.mx5-dlg-in .mx5-dlg-body > *:nth-child(4){transition-delay:180ms;}
+  .mx5-dlg.mx5-dlg-in .mx5-dlg-body > *:nth-child(5){transition-delay:220ms;}
+  /* cap: children 6+ simply appear with the panel (no stagger, no delay) */
+  .mx5-dlg.mx5-dlg-in .mx5-dlg-body > *:nth-child(n+6){transition-delay:0ms;}
+  .mx5-dlg-closing .mx5-dlg-body > *{transition-delay:0ms!important;}
+}
+/* Reduced-motion OR no-JS: fully visible the instant .open lands (never stuck at 0) */
+@media(prefers-reduced-motion:reduce){
+  .mx5-dlg.open .mx5-dlg-backdrop{opacity:1;}
+  .mx5-dlg.open .mx5-dlg-panel{opacity:1;transform:none;}
+  .mx5-dlg.open .mx5-dlg-body > *{opacity:1;transform:none;}
 }
 
 /* Mobile bottom sheet (≤700px) */
@@ -3744,9 +3905,17 @@ body.mx5-dlg-open{ overflow:hidden; }
   /* No horizontal overflow inside dialogs at narrow widths */
   .mx5-dlg-body{padding:20px 18px 28px;overflow-x:hidden;}
   .mx5-dlg-header{padding:16px 18px 12px;}
+  /* Order 4: bottom-sheet slide-up (translateY(100%)→0, 260ms) */
   @media(prefers-reduced-motion:no-preference){
-    .mx5-dlg-panel{ transform:translateY(24px); }
-    .mx5-dlg.open .mx5-dlg-panel{ transform:translateY(0); }
+    .mx5-dlg-panel{
+      opacity:1;transform:translateY(100%) scale(1);
+      transition:transform 260ms cubic-bezier(.22,.9,.26,1.02);
+    }
+    .mx5-dlg.mx5-dlg-in .mx5-dlg-panel{transform:translateY(0) scale(1);}
+    .mx5-dlg.mx5-dlg-closing .mx5-dlg-panel{transition-duration:200ms;}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .mx5-dlg.open .mx5-dlg-panel{transform:translateY(0);}
   }
 }
 /* Extra-narrow (320px) — prevent any horizontal bleed */
@@ -4065,9 +4234,9 @@ body.page-macro.mx4-grid .mx5-card::before{
   pointer-events:none;
 }
 /* Static-card click target (Fed / Sentiment / Sector) */
-body.page-macro.mx4-grid .mx5-card[role="button"]{cursor:pointer;transition:box-shadow .2s;}
-body.page-macro.mx4-grid .mx5-card[role="button"]:hover{box-shadow:var(--mx5-glass-hover);}
-body.page-macro.mx4-grid .mx5-card[role="button"]:focus-visible{outline:2px solid var(--mx5-accent);outline-offset:2px;}
+body.page-macro.mx4-grid .mx5-card[role="button"]{cursor:pointer;transition:background .2s ease-out,border-color .2s ease-out,box-shadow .2s ease-out,transform .2s ease-out;}
+body.page-macro.mx4-grid .mx5-card[role="button"]:hover{background:var(--mx5-hover-bg);border-color:var(--mx5-hover-border);box-shadow:var(--mx5-hover-shadow);transform:translateY(-1px);}
+body.page-macro.mx4-grid .mx5-card[role="button"]:focus-visible{outline:none;box-shadow:var(--mx5-focus-ring),var(--mx5-hover-shadow);}
 /* sxg-face in grid view = v5 card face; override default padding to match .mx5-card */
 body.page-macro.mx4-grid .sxg-face.mx5-card-face{
   background:var(--mx5-glass-bg);
@@ -4078,6 +4247,7 @@ body.page-macro.mx4-grid .sxg-face.mx5-card-face{
   padding:24px 26px!important;
   min-height:unset;
   height:100%;
+  transition:background .2s ease-out,border-color .2s ease-out,box-shadow .2s ease-out,transform .2s ease-out;
 }
 body.page-macro.mx4-grid .sxg-face.mx5-card-face::before{
   content:"";position:absolute;inset:0;
@@ -4085,8 +4255,15 @@ body.page-macro.mx4-grid .sxg-face.mx5-card-face::before{
   background:linear-gradient(135deg,rgba(255,255,255,.06) 0%,transparent 55%);
   pointer-events:none;
 }
+body.page-macro.mx4-grid .sx:hover .sxg-face.mx5-card-face,
 body.page-macro.mx4-grid .sxg-face.mx5-card-face:hover{
-  box-shadow:var(--mx5-glass-hover);
+  background:var(--mx5-hover-bg);
+  border-color:var(--mx5-hover-border);
+  box-shadow:var(--mx5-hover-shadow);
+  transform:translateY(-1px);
+}
+body.page-macro.mx4-grid .sxg-face.mx5-card-face:focus-visible{
+  outline:none;box-shadow:var(--mx5-focus-ring),var(--mx5-hover-shadow);
 }
 /* Card title row */
 body.page-macro.mx4-grid .mx5-card-title{
@@ -4133,22 +4310,32 @@ body.page-macro.mx4-grid .mx5-mkt-tile{
   box-shadow:var(--mx5-glass-shadow);
   padding:16px 18px 12px;
   position:relative;overflow:hidden;cursor:pointer;
-  transition:box-shadow .2s;
+  transition:background .2s ease-out,border-color .2s ease-out,box-shadow .2s ease-out,transform .2s ease-out;
 }
 body.page-macro.mx4-grid .mx5-mkt-tile::before{
   content:"";position:absolute;inset:0;border-radius:14px;
   background:linear-gradient(135deg,rgba(255,255,255,.038) 0%,transparent 60%);
   pointer-events:none;
 }
-body.page-macro.mx4-grid .mx5-mkt-tile:hover{box-shadow:var(--mx5-glass-hover);}
 body.page-macro.mx4-grid .mx5-mkt-tile.up{border-color:rgba(34,217,122,.26);}
 body.page-macro.mx4-grid .mx5-mkt-tile.dn{border-color:rgba(239,68,68,.26);}
+/* Unified hover (Order 5) — overrides the directional .up/.dn border on hover
+   so no accent tint survives; placed AFTER .up/.dn for cascade precedence. */
+body.page-macro.mx4-grid .mx5-mkt-tile:hover,
+body.page-macro.mx4-grid .mx5-mkt-tile.up:hover,
+body.page-macro.mx4-grid .mx5-mkt-tile.dn:hover{
+  background:var(--mx5-hover-bg);
+  border-color:var(--mx5-hover-border);
+  box-shadow:var(--mx5-hover-shadow);
+  transform:translateY(-1px);
+}
+body.page-macro.mx4-grid .mx5-mkt-tile:focus-visible{outline:none;box-shadow:var(--mx5-focus-ring),var(--mx5-hover-shadow);}
 body.page-macro.mx4-grid .mx5-mkt-ticker{
   font-size:11px;font-weight:700;letter-spacing:.07em;
   color:var(--ink-3,rgba(255,255,255,.36));text-transform:uppercase;margin-bottom:3px;
 }
 body.page-macro.mx4-grid .mx5-mkt-sub{
-  font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
   letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px;
 }
 body.page-macro.mx4-grid .mx5-mkt-price{
@@ -4235,7 +4422,7 @@ body.page-macro.mx4-grid .mx5-tl-badge{
   letter-spacing:.04em;text-align:center;
 }
 body.page-macro.mx4-grid .mx5-tl-badge.high{color:#ef4444;background:rgba(239,68,68,.10);}
-body.page-macro.mx4-grid .mx5-tl-badge.med{color:#f59e0b;background:rgba(245,158,11,.10);}
+body.page-macro.mx4-grid .mx5-tl-badge.med{color:var(--mx5-warn-ink);background:rgba(245,158,11,.10);}
 body.page-macro.mx4-grid .mx5-tl-badge.low{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.05);}
 
 /* ── FED PROBABILITY (static card) ─────────────────────────────── */
@@ -4255,7 +4442,7 @@ body.page-macro.mx4-grid .mx5-fed-pct-overlay small{
   display:block;margin-top:1px;
 }
 body.page-macro.mx4-grid .mx5-fed-verdict{
-  font-size:16px;font-weight:800;color:var(--mx5-accent);
+  font-size:16px;font-weight:800;color:var(--mx5-accent-ink);
 }
 body.page-macro.mx4-grid .mx5-fed-desc{
   font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;line-height:1.4;
@@ -4286,7 +4473,7 @@ body.page-macro.mx4-grid .mx5-sentiment-dial-wrap{
   text-align:center;margin-bottom:4px;
 }
 body.page-macro.mx4-grid .mx5-sentiment-zone-text{
-  font-size:15px;font-weight:700;color:var(--mx5-accent);
+  font-size:15px;font-weight:700;color:var(--mx5-accent-ink);
   text-align:center;margin-bottom:3px;
 }
 body.page-macro.mx4-grid .mx5-sentiment-label{
@@ -4325,11 +4512,12 @@ body.page-macro.mx4-grid .mx5-sector-heat-bars{
   display:flex;gap:3px;align-items:flex-end;
 }
 body.page-macro.mx4-grid .mx5-sector-heat-col{
-  flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;
+  flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px;align-items:center;
 }
 body.page-macro.mx4-grid .mx5-sector-heat-bar{width:100%;border-radius:3px;}
 body.page-macro.mx4-grid .mx5-sector-heat-name{
-  font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
+  max-width:100%;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;
 }
 
 /* ── ALERTS CENTRE (sx-news-v2 face) ───────────────────────────── */
@@ -4360,7 +4548,7 @@ body.page-macro.mx4-grid .mx5-alert-title{
   font-size:13px;font-weight:600;
   color:var(--ink-1,rgba(255,255,255,.92));line-height:1.4;
 }
-body.page-macro.mx4-grid .mx5-alert-title.warn{color:var(--mx5-warn);}
+body.page-macro.mx4-grid .mx5-alert-title.warn{color:var(--mx5-warn-ink);}
 body.page-macro.mx4-grid .mx5-alert-detail{
   font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
   margin-top:3px;line-height:1.5;
@@ -4372,7 +4560,7 @@ body.page-macro.mx4-grid .mx5-alert-footer{
 }
 body.page-macro.mx4-grid .mx5-alert-footer-link{
   background:none;border:none;cursor:pointer;
-  font-size:11px;font-weight:600;color:var(--mx5-accent);
+  font-size:11px;font-weight:600;color:var(--mx5-accent-ink);
   font-family:inherit;padding:0;text-decoration:none;
 }
 body.page-macro.mx4-grid .mx5-alert-footer-link:hover{text-decoration:underline;}
@@ -4396,7 +4584,7 @@ body.page-macro.mx4-grid .mx5-ai-ticker-pills{display:flex;flex-wrap:wrap;gap:5p
 body.page-macro.mx4-grid .mx5-ai-ticker-pill{
   padding:4px 10px;border-radius:var(--mx5-radius-pill);
   background:var(--mx5-accent-dim);border:1px solid rgba(34,217,122,.28);
-  font-size:11px;font-weight:700;color:var(--mx5-accent);letter-spacing:.03em;
+  font-size:11px;font-weight:700;color:var(--mx5-accent-ink);letter-spacing:.03em;
 }
 body.page-macro.mx4-grid .mx5-ai-body{
   font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));
@@ -4717,9 +4905,9 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <div class="mx5-flip">
         <span class="mx5-flip-arrow">&#8594;</span>
         <span class="l-en">{{ MS.flip_en }}</span>
-        {% if _mx5_weakest %}<span class="l-en" style="color:rgba(255,255,255,.65);font-weight:600;"> ({{ _mx5_weakest.label_en }} {{ _mx5_weakest.score }}/100)</span>{% endif %}
+        {% if _mx5_weakest %}<span class="l-en" style="color:var(--ink-2);font-weight:600;"> ({{ _mx5_weakest.label_en }} {{ _mx5_weakest.score }}/100)</span>{% endif %}
         {% if MS.flip_zh %}<span class="l-zh">{{ MS.flip_zh }}</span>{% endif %}
-        {% if _mx5_weakest and MS.flip_zh %}<span class="l-zh" style="color:rgba(255,255,255,.65);font-weight:600;">（{{ _mx5_weakest.label_zh or _mx5_weakest.label_en }} {{ _mx5_weakest.score }}/100）</span>{% endif %}
+        {% if _mx5_weakest and MS.flip_zh %}<span class="l-zh" style="color:var(--ink-2);font-weight:600;">（{{ _mx5_weakest.label_zh or _mx5_weakest.label_en }} {{ _mx5_weakest.score }}/100）</span>{% endif %}
       </div>
       {% endif %}
 
@@ -4777,7 +4965,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             {% set _fweak = (_mx5_weakest and c.label_en == _mx5_weakest.label_en) %}
             <div class="mx5-factor-row">
               <div class="mx5-factor-header">
-                <span class="mx5-factor-name{% if _fweak %}" style="color:var(--mx5-warn){% endif %}">
+                <span class="mx5-factor-name{% if _fweak %}" style="color:var(--mx5-warn-ink){% endif %}">
                   <span class="l-en">{{ c.label_en }}</span><span class="l-zh">{{ c.label_zh or c.label_en }}</span>
                 </span>
                 <span class="mx5-factor-score{% if _fweak %} weak{% endif %}">{{ c.score }}</span>
@@ -4857,47 +5045,115 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <span class="mx5-path-meta"><span class="l-en">Score vs time</span><span class="l-zh">综合评分 · 时序</span></span>
       </div>
       {% if _mx5_hist %}
-      {# Polyline geometry: viewBox 0 0 1000 200; y=(100-score)/100*200; x=i/(n-1)*1000 #}
+      {# ── Legit chart geometry (Order 1) ──────────────────────────────────
+         viewBox 0 0 1000 224.  Plot band: x∈[PX0, PX0+PXW]  y∈[PY0(score100), PYB(score0)].
+         Y map:  y = PY0 + (100-score)/100 * (PYB-PY0)
+         X map:  x = PX0 + i/(n-1) * PXW           (single point → centred)
+         Verdict bands: risk-off <42, mixed 42–60, risk-on ≥60.
+         x-axis label strip lives BELOW PYB (y≈216). #}
       {% set _ph_n = _mx5_hist | length %}
-      {% set _ph_pts_area = [] %}
+      {% set PX0 = 44 %}{% set PXW = 944 %}{% set PY0 = 10 %}{% set PYB = 194 %}
+      {% set _mx5_mos_en = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+      {# score → verdict word (matches engine band thresholds) #}
+      {% set _ph_yfor = PYB - PY0 %}
+      {# y for each score-band boundary #}
+      {% set _y100 = PY0 %}
+      {% set _y75  = (PY0 + 25.0/100 * _ph_yfor) | round(2) %}
+      {% set _y60  = (PY0 + 40.0/100 * _ph_yfor) | round(2) %}
+      {% set _y50  = (PY0 + 50.0/100 * _ph_yfor) | round(2) %}
+      {% set _y42  = (PY0 + 58.0/100 * _ph_yfor) | round(2) %}
+      {% set _y25  = (PY0 + 75.0/100 * _ph_yfor) | round(2) %}
+      {% set _y0   = PYB %}
+      {# build point list: viewBox x,y baked so the hover JS stays in perfect sync #}
       {% set _ph_pts_line = [] %}
+      {% set _ph_json = [] %}
       {% for row in _mx5_hist %}
-        {% set _ph_x = (loop.index0 / (_ph_n - 1) * 1000) | round(1) %}
-        {% set _ph_y = ((100 - row.score) / 100 * 200) | round(1) %}
+        {% set _ph_x = (PX0 + (loop.index0 / (_ph_n - 1) * PXW if _ph_n > 1 else PXW / 2)) | round(2) %}
+        {% set _ph_y = (PY0 + (100 - row.score) / 100 * _ph_yfor) | round(2) %}
+        {% set _rv = 'Risk-on' if row.score >= 60 else ('Mixed' if row.score >= 42 else 'Risk-off') %}
+        {% set _rvz = '偏多' if row.score >= 60 else ('中性' if row.score >= 42 else '偏空') %}
         {% if _ph_pts_line.append(_ph_x ~ ',' ~ _ph_y) %}{% endif %}
+        {% if _ph_json.append({'d': row.asof, 'md': (_mx5_mos_en[row.asof[5:7]|int] ~ ' ' ~ (row.asof[8:10]|int)) if (row.asof and row.asof|length >= 10) else '', 'mz': ((row.asof[5:7]|int)|string ~ '月' ~ (row.asof[8:10]|int)|string) if (row.asof and row.asof|length >= 10) else '', 's': row.score, 'v': _rv, 'vz': _rvz, 'x': _ph_x, 'y': _ph_y}) %}{% endif %}
       {% endfor %}
-      {# Build area path: line pts + close to bottom corners #}
-      {% set _ph_x_last = ((_ph_n - 1) / (_ph_n - 1) * 1000) | round(1) %}
-      <svg class="mx5-path-svg" viewBox="0 0 1000 200" preserveAspectRatio="none"
-           aria-label="Score path chart">
+      {# x-axis date ticks: pick up to 6 evenly-spaced indices (always first + last) #}
+      {% set _ph_nticks = [_ph_n, 5] | min %}
+      {% set _ph_tick_idx = [] %}
+      {% if _ph_n <= 6 %}
+        {% for i in range(_ph_n) %}{% if _ph_tick_idx.append(i) %}{% endif %}{% endfor %}
+      {% else %}
+        {% for k in range(_ph_nticks + 1) %}{% if _ph_tick_idx.append((k / _ph_nticks * (_ph_n - 1)) | round | int) %}{% endif %}{% endfor %}
+      {% endif %}
+      <div class="mx5-path-plot">
+      <svg class="mx5-path-svg" viewBox="0 0 1000 224" preserveAspectRatio="none"
+           data-points='{{ _ph_json | tojson }}'
+           data-px0="{{ PX0 }}" data-pxw="{{ PXW }}" data-py0="{{ PY0 }}" data-pyb="{{ PYB }}"
+           data-vbw="1000" data-vbh="224"
+           role="img" aria-label="{{ _mx5_hist_n }}-session macro score path, {{ _mx5_hist[0].score }} to {{ _mx5_hist[-1].score }}">
         <defs>
           <linearGradient id="mx5PathAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stop-color="{{ _mx5_sc_col }}" stop-opacity=".42"/>
-            <stop offset="65%"  stop-color="{{ _mx5_sc_col }}" stop-opacity=".07"/>
+            <stop offset="0%"   stop-color="{{ _mx5_sc_col }}" stop-opacity=".40"/>
+            <stop offset="62%"  stop-color="{{ _mx5_sc_col }}" stop-opacity=".07"/>
             <stop offset="100%" stop-color="{{ _mx5_sc_col }}" stop-opacity="0"/>
           </linearGradient>
         </defs>
-        {# Background tint #}
-        <rect x="0" y="0" width="1000" height="200" fill="rgba(34,217,122,.018)" rx="2"/>
-        {# Grid hairlines: y=50(score75), y=100(score50), y=150(score25) #}
-        <line x1="0" y1="50"  x2="1000" y2="50"  stroke="rgba(255,255,255,.045)" stroke-width="1"/>
-        <line x1="0" y1="100" x2="1000" y2="100" stroke="rgba(255,255,255,.065)" stroke-width="1" stroke-dasharray="5,5"/>
-        <line x1="0" y1="150" x2="1000" y2="150" stroke="rgba(255,255,255,.045)" stroke-width="1"/>
-        {# Y labels (spec: 42/60 band hairlines — 42/100*200=84, 60/100*200=120) #}
-        <line x1="0" y1="84"  x2="1000" y2="84"  stroke="rgba(255,255,255,.035)" stroke-width="1" stroke-dasharray="3,6"/>
-        <line x1="0" y1="120" x2="1000" y2="120" stroke="rgba(255,255,255,.035)" stroke-width="1" stroke-dasharray="3,6"/>
-        <text x="8" y="96"  fill="rgba(255,255,255,.20)" font-size="11" font-family="-apple-system,sans-serif">50</text>
-        <text x="8" y="44"  fill="rgba(255,255,255,.16)" font-size="11" font-family="-apple-system,sans-serif">75</text>
-        {# Area fill #}
-        <path d="M{{ _ph_pts_line | join(' L') }} L1000,200 L0,200 Z" fill="url(#mx5PathAreaGrad)" stroke="none"/>
-        {# Line #}
-        <polyline points="{{ _ph_pts_line | join(' ') }}" fill="none" stroke="{{ _mx5_sc_col }}" stroke-width="2" vector-effect="non-scaling-stroke" opacity=".9"/>
-        {# Today dot #}
-        {% set _ph_last_y = ((100 - _mx5_hist[-1].score) / 100 * 200) | round(1) %}
-        <line x1="1000" y1="0" x2="1000" y2="200" stroke="{{ _mx5_sc_col }}" stroke-width="1" stroke-dasharray="3,4" opacity=".45"/>
-        <circle cx="1000" cy="{{ _ph_last_y }}" r="5" fill="{{ _mx5_sc_col }}" style="filter:drop-shadow(0 0 7px {{ _mx5_sc_col }})"/>
-        <text x="990" y="{{ (_ph_last_y - 8) | round }}" fill="{{ _mx5_sc_col }}" font-size="11" text-anchor="end" font-family="-apple-system,sans-serif" font-weight="700">{{ _mx5_hist[-1].score }}</text>
+        {# ── Verdict-band tinted zones (subtle, 4%) ──
+           green risk-on: score 60–100 → y _y100.._y60 ; amber mixed: 42–60 → _y60.._y42 ;
+           red risk-off: 0–42 → _y42.._y0 . #}
+        <rect x="0" y="{{ _y100 }}" width="1000" height="{{ (_y60 - _y100) | round(2) }}" fill="rgba(34,217,122,.045)"/>
+        <rect x="0" y="{{ _y60 }}"  width="1000" height="{{ (_y42 - _y60) | round(2) }}" fill="rgba(245,158,11,.045)"/>
+        <rect x="0" y="{{ _y42 }}"  width="1000" height="{{ (_y0 - _y42) | round(2) }}" fill="rgba(239,68,68,.045)"/>
+        {# zone boundary hairlines at 42 / 60 #}
+        <line x1="0" y1="{{ _y60 }}" x2="1000" y2="{{ _y60 }}" stroke="rgba(34,217,122,.22)" stroke-width="1" stroke-dasharray="2,5"/>
+        <line x1="0" y1="{{ _y42 }}" x2="1000" y2="{{ _y42 }}" stroke="rgba(239,68,68,.20)" stroke-width="1" stroke-dasharray="2,5"/>
+        {# plain-word zone labels (≥11px), right-aligned so they clear the y-axis labels; bilingual #}
+        <text x="992" y="{{ (_y100 + 13) | round(1) }}" fill="rgba(34,217,122,.55)"  font-size="11" text-anchor="end" font-family="-apple-system,sans-serif" font-weight="600"><tspan class="l-en">Risk-on</tspan><tspan class="l-zh">偏多</tspan></text>
+        <text x="992" y="{{ ((_y60 + _y42)/2 + 4) | round(1) }}" fill="rgba(245,158,11,.60)" font-size="11" text-anchor="end" font-family="-apple-system,sans-serif" font-weight="600"><tspan class="l-en">Mixed</tspan><tspan class="l-zh">中性</tspan></text>
+        <text x="992" y="{{ (_y0 - 6) | round(1) }}"  fill="rgba(239,68,68,.55)"  font-size="11" text-anchor="end" font-family="-apple-system,sans-serif" font-weight="600"><tspan class="l-en">Risk-off</tspan><tspan class="l-zh">偏空</tspan></text>
+        {# ── Y gridlines at 0/25/50/75/100 + labels ── #}
+        <g stroke="rgba(255,255,255,.06)" stroke-width="1">
+          <line x1="{{ PX0 }}" y1="{{ _y100 }}" x2="988" y2="{{ _y100 }}"/>
+          <line x1="{{ PX0 }}" y1="{{ _y75 }}"  x2="988" y2="{{ _y75 }}"/>
+          <line x1="{{ PX0 }}" y1="{{ _y50 }}"  x2="988" y2="{{ _y50 }}" stroke-dasharray="4,5"/>
+          <line x1="{{ PX0 }}" y1="{{ _y25 }}"  x2="988" y2="{{ _y25 }}"/>
+        </g>
+        <g fill="rgba(255,255,255,.30)" font-size="11" font-family="-apple-system,sans-serif" text-anchor="start">
+          <text x="6" y="{{ (_y100 + 4) | round(1) }}">100</text>
+          <text x="6" y="{{ (_y75 + 4) | round(1) }}">75</text>
+          <text x="6" y="{{ (_y50 + 4) | round(1) }}">50</text>
+          <text x="6" y="{{ (_y25 + 4) | round(1) }}">25</text>
+          <text x="6" y="{{ (_y0 - 1) | round(1) }}">0</text>
+        </g>
+        {# ── Area fill + line ── #}
+        <path d="M{{ _ph_pts_line | join(' L') }} L{{ (PX0 + PXW) | round(2) }},{{ PYB }} L{{ PX0 }},{{ PYB }} Z" fill="url(#mx5PathAreaGrad)" stroke="none"/>
+        <polyline points="{{ _ph_pts_line | join(' ') }}" fill="none" stroke="{{ _mx5_sc_col }}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>
+        {# ── X-axis baseline hairline ── #}
+        <line x1="{{ PX0 }}" y1="{{ PYB }}" x2="988" y2="{{ PYB }}" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
+        {# ── X-axis date ticks + labels (bilingual) ── #}
+        <g font-size="11" font-family="-apple-system,sans-serif">
+        {% for _ti in _ph_tick_idx %}
+          {% set _tx = (PX0 + (_ti / (_ph_n - 1) * PXW if _ph_n > 1 else PXW / 2)) | round(2) %}
+          {% set _tanch = 'start' if loop.first else ('end' if loop.last else 'middle') %}
+          {% set _tdate = _mx5_hist[_ti].asof %}
+          <line x1="{{ _tx }}" y1="{{ PYB }}" x2="{{ _tx }}" y2="{{ (PYB + 4) | round(1) }}" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
+          {% if _tdate and _tdate|length >= 10 %}
+          <text x="{{ _tx }}" y="216" fill="rgba(255,255,255,.34)" text-anchor="{{ _tanch }}" class="l-en">{{ _mx5_mos_en[_tdate[5:7]|int] }} {{ _tdate[8:10]|int }}</text>
+          <text x="{{ _tx }}" y="216" fill="rgba(255,255,255,.34)" text-anchor="{{ _tanch }}" class="l-zh">{{ _tdate[5:7]|int }}月{{ _tdate[8:10]|int }}</text>
+          {% endif %}
+        {% endfor %}
+        </g>
+        {# ── Today marker (static; JS hover dot overlays on top) ── #}
+        {% set _ph_last_x = (PX0 + PXW) | round(2) %}
+        {% set _ph_last_y = (PY0 + (100 - _mx5_hist[-1].score) / 100 * _ph_yfor) | round(2) %}
+        <circle cx="{{ _ph_last_x }}" cy="{{ _ph_last_y }}" r="4.5" fill="{{ _mx5_sc_col }}" style="filter:drop-shadow(0 0 6px {{ _mx5_sc_col }})"/>
       </svg>
+      {# ── JS hover enhancement layer (screen-space; chart is complete without it) ── #}
+      <div class="mx5-path-cross" aria-hidden="true"></div>
+      <div class="mx5-path-dot" aria-hidden="true"></div>
+      <div class="mx5-path-tip" role="status" aria-live="off">
+        <span class="mx5-path-tip-date"></span>
+        <span class="mx5-path-tip-row"><b class="mx5-path-tip-score"></b><span class="mx5-path-tip-verdict"></span></span>
+      </div>
+      </div>{# /mx5-path-plot #}
       {% else %}
       {# Placeholder when ms_history absent or <2 points #}
       <div style="flex:1;display:flex;align-items:center;justify-content:center;">
@@ -4926,6 +5182,90 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         if((e.key==='Enter'||e.key===' ')&&e.target.closest&&e.target.closest('.ms-alerts')){
           e.preventDefault(); cb.checked=!cb.checked;
         }
+      });
+    })();
+    </script>
+
+    {# ── Path-chart hover enhancement (Order 1c) — pure progressive layer.
+       Reads data-points (viewBox x/y baked in) + the SVG's live bounding rect,
+       maps viewBox→screen so the crosshair/dot/tooltip are pixel-crisp regardless
+       of the SVG's non-uniform stretch. Chart is fully legible without this. #}
+    <script>
+    (function(){
+      var svg = document.querySelector('.mx5-sc-right .mx5-path-svg[data-points]');
+      if(!svg) return;
+      var plot = svg.closest('.mx5-path-plot'); if(!plot) return;
+      var cross = plot.querySelector('.mx5-path-cross');
+      var dot   = plot.querySelector('.mx5-path-dot');
+      var tip   = plot.querySelector('.mx5-path-tip');
+      if(!cross || !dot || !tip) return;
+      var tDate = tip.querySelector('.mx5-path-tip-date');
+      var tScore= tip.querySelector('.mx5-path-tip-score');
+      var tVerd = tip.querySelector('.mx5-path-tip-verdict');
+      var pts;
+      try { pts = JSON.parse(svg.getAttribute('data-points') || '[]'); } catch(e){ return; }
+      if(!pts.length) return;
+      var VBW = +(svg.getAttribute('data-vbw')||1000);
+      var VBH = +(svg.getAttribute('data-vbh')||224);
+      var COL = { 'Risk-on':'#22d97a', 'Mixed':'#f59e0b', 'Risk-off':'#ef4444' };
+      function isZh(){
+        var el=document.documentElement;
+        return (el.getAttribute('data-lang')||'').slice(0,2)==='zh';
+      }
+      /* nearest point index for a screen-x, using each point's baked viewBox x */
+      function nearest(clientX){
+        var r = svg.getBoundingClientRect();
+        var vx = (clientX - r.left) / r.width * VBW;   // back to viewBox space
+        var best=0, bd=Infinity;
+        for(var i=0;i<pts.length;i++){
+          var d=Math.abs(pts[i].x - vx);
+          if(d<bd){ bd=d; best=i; }
+        }
+        return best;
+      }
+      function show(i){
+        var p = pts[i]; if(!p) return;
+        var r = svg.getBoundingClientRect();
+        var pr = plot.getBoundingClientRect();
+        var sx = (p.x / VBW) * r.width  + (r.left - pr.left);
+        var sy = (p.y / VBH) * r.height + (r.top  - pr.top);
+        cross.style.left = sx + 'px';   cross.style.opacity = '1';
+        dot.style.left = sx + 'px';     dot.style.top = sy + 'px';
+        dot.style.background = COL[p.v] || '#22d97a';
+        dot.style.opacity = '1';
+        tDate.textContent = isZh() ? (p.mz || p.d) : (p.md || p.d);
+        tScore.textContent = p.s;
+        tVerd.textContent = isZh() ? (p.vz||p.v) : p.v;
+        tVerd.style.color = COL[p.v] || '#22d97a';
+        /* clamp tooltip x within the plot so it never overflows the card edge */
+        var half = tip.offsetWidth/2 || 60;
+        var clx = Math.max(half+2, Math.min(pr.width-half-2, sx));
+        tip.style.left = clx + 'px';
+        tip.style.top  = sy + 'px';
+        tip.classList.add('show');
+      }
+      function hide(){
+        cross.style.opacity='0'; dot.style.opacity='0'; tip.classList.remove('show');
+      }
+      var raf=0, lastX=0;
+      function onMove(clientX){
+        lastX=clientX;
+        if(raf) return;
+        raf=requestAnimationFrame(function(){ raf=0; show(nearest(lastX)); });
+      }
+      svg.addEventListener('mousemove', function(e){ onMove(e.clientX); });
+      svg.addEventListener('mouseleave', hide);
+      /* touch: tap/drag shows nearest point; touchend leaves it briefly then hides */
+      svg.addEventListener('touchstart', function(e){
+        if(e.touches && e.touches[0]) show(nearest(e.touches[0].clientX));
+      }, {passive:true});
+      svg.addEventListener('touchmove', function(e){
+        if(e.touches && e.touches[0]) show(nearest(e.touches[0].clientX));
+      }, {passive:true});
+      svg.addEventListener('touchend', function(){ setTimeout(hide, 1400); }, {passive:true});
+      /* keep tooltip language in sync if the user flips EN/ZH while it is open */
+      document.addEventListener('langchange', function(){
+        if(tip.classList.contains('show')) show(nearest(lastX));
       });
     })();
     </script>
@@ -5303,7 +5643,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   /* MRI-R39a compact two-number row */
   .rr-nums-row{display:flex;gap:16px;margin:5px 0 4px;align-items:flex-end}
   .rr-num-col{display:flex;flex-direction:column;min-width:52px}
-  .rr-num-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  .rr-num-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
     color:var(--muted);margin-bottom:1px;white-space:nowrap}
   .rr-num-src{font-size:8.5px;color:var(--muted);margin-left:3px;font-weight:400;text-transform:none;letter-spacing:0}
   .rr-num-val{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
@@ -7020,7 +7360,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       {% set _is_top = (oc.outcome == _fedv5_top.outcome) %}
       <div class="mx5-fed-hist-col">
         <div class="mx5-fed-hist-bar" style="height:{{ _bar_h }}px;{% if _is_top %}background:linear-gradient(180deg,rgba(34,217,122,.45) 0%,rgba(34,217,122,.18) 100%);border:1px solid rgba(34,217,122,.28);box-shadow:0 0 10px rgba(34,217,122,.18);{% else %}background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.15);{% endif %}border-radius:2px 2px 0 0;"></div>
-        <div class="mx5-fed-hist-name"{% if _is_top %} style="color:var(--mx5-accent);font-weight:700"{% endif %}>
+        <div class="mx5-fed-hist-name"{% if _is_top %} style="color:var(--mx5-accent-ink);font-weight:700"{% endif %}>
           <span class="l-en">{{ oc.outcome[:6] }}</span>
           <span class="l-zh">{{ {'No change':'不变','Rate cut':'降','Rate hike':'升','25bps cut':'-25','50bps cut':'-50','25bps hike':'+25'}.get(oc.outcome, oc.outcome[:4]) }}</span>
         </div>
@@ -7155,7 +7495,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         {% set _bar_col = 'rgba(34,217,122,' ~ ([0.72 - (_rk-1)*0.08, 0.22]|max) ~ ')' if _is_heat else 'rgba(239,68,68,' ~ ([0.65 - (_rk-1)*0.08, 0.18]|max) ~ ')' %}
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:{{ _bar_h }}px;background:{{ _bar_col }};"></div>
-          <div class="mx5-sector-heat-name">{{ s.get('ticker','??') }}</div>
+          <div class="mx5-sector-heat-name"><span class="l-en">{{ s.get('name','') }}</span><span class="l-zh">{{ s.get('name_zh') or s.get('name','') }}</span></div>
         </div>
         {% endfor %}
       </div>
@@ -7377,12 +7717,12 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         {% if _abHiCnt is not none %}
         <span class="l-en">
           <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">{{ _abHiCnt }} High-Impact Items</span><br>
-          {% if _abDomCh_clean %}Dominant channel: <span style="color:var(--mx5-accent);font-weight:600">{{ _abDomCh_clean }}</span><br>{% endif %}
+          {% if _abDomCh_clean %}Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">{{ _abDomCh_clean }}</span><br>{% endif %}
           {{ _abHiCnt }} high-impact signals across channels
         </span>
         <span class="l-zh">
           <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">{{ _abHiCnt }} 条高影响信息</span><br>
-          {% if _abDomCh_clean_zh %}主导频道：<span style="color:var(--mx5-accent);font-weight:600">{{ _abDomCh_clean_zh }}</span><br>{% endif %}
+          {% if _abDomCh_clean_zh %}主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">{{ _abDomCh_clean_zh }}</span><br>{% endif %}
           {{ _abHiCnt }} 条高影响信号
         </span>
         {% else %}
@@ -7414,7 +7754,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <div class="mx5-card-title-row">
         <div class="mx5-card-title"><span class="l-en">Alerts Centre</span><span class="l-zh">警报中心</span></div>
         {% if _alv5_total > 0 %}
-        <div class="mx5-card-badge" style="color:var(--mx5-warn);background:var(--mx5-warn-dim);border:1px solid rgba(245,158,11,.20);">
+        <div class="mx5-card-badge" style="color:var(--mx5-warn-ink);background:var(--mx5-warn-dim);border:1px solid rgba(245,158,11,.20);">
           <span class="l-en">{{ _alv5_total }} FIRED</span>
           <span class="l-zh">{{ _alv5_total }} 条触发</span>
         </div>
@@ -8286,21 +8626,21 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {# dlg-deep-context: Deep context link-out chips #}
   <div class="mx5-dlg" id="dlg-deep-context" role="dialog" aria-modal="true" tabindex="-1">
     <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
-    <div class="mx5-dlg-panel">
+    <div class="mx5-dlg-panel mx5-dlg-panel-narrow">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">Deep Context — Linked Surfaces</span><span class="l-zh">深度背景 — 关联页面</span></span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
         <div class="isle-linkouts">
-          <a class="isle-lout" href="macro_context.html"><span class="isle-lout-icon">&#127760;</span><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></a>
-          <a class="isle-lout" href="aibrief.html"><span class="isle-lout-icon">&#129302;</span><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></a>
-          <a class="isle-lout" href="sector_central.html"><span class="isle-lout-icon">&#128202;</span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
-          <a class="isle-lout" href="news.html"><span class="isle-lout-icon">&#128240;</span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></a>
-          <a class="isle-lout" href="committee.html"><span class="isle-lout-icon">&#129504;</span><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
-          <a class="isle-lout" href="macro_signals.html"><span class="isle-lout-icon">&#9889;</span><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
-          <a class="isle-lout" href="china_intel.html"><span class="isle-lout-icon">&#127464;&#127475;</span><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
-          <a class="isle-lout" href="subsector_rotation.html"><span class="isle-lout-icon">&#128302;</span><span class="l-en">Oracle Rotation</span><span class="l-zh">轮动分析</span></a>
+          <a class="isle-lout" href="macro_context.html"><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></a>
+          <a class="isle-lout" href="aibrief.html"><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></a>
+          <a class="isle-lout" href="sector_central.html"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
+          <a class="isle-lout" href="news.html"><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></a>
+          <a class="isle-lout" href="committee.html"><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
+          <a class="isle-lout" href="macro_signals.html"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
+          <a class="isle-lout" href="china_intel.html"><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
+          <a class="isle-lout" href="subsector_rotation.html"><span class="l-en">Oracle Rotation</span><span class="l-zh">轮动分析</span></a>
         </div>
       </div>
     </div>
@@ -8530,6 +8870,16 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     ─────────────────────────────────────────────────────────────── */
     var _dlgActive = null;
     var _dlgTrigger = null;
+    var _dlgScrollY = 0;   /* page scroll captured at first dialog open (M03 scroll lock) */
+
+    /* Release the document scroll lock and restore the saved scroll position.
+       Idempotent — safe to call even if no dialog locked the page. */
+    function _dlgReleaseScroll(){
+      if(!document.documentElement.classList.contains('mx5-dlg-lock')) return;
+      document.documentElement.classList.remove('mx5-dlg-lock');
+      document.body.style.top = '';
+      window.scrollTo(0, _dlgScrollY);
+    }
 
     function _focusFirst(dlg){
       var focusable = dlg.querySelectorAll('button,a[href],[tabindex]:not([tabindex="-1"])');
@@ -8546,10 +8896,26 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       else { if(document.activeElement===last){ e.preventDefault(); first.focus(); } }
     }
 
+    function _prefReduced(){
+      return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches);
+    }
+    /* Immediate teardown (no animation) — used when switching dialogs or as fallback. */
+    function _dlgTeardown(dlg, restoreFocus){
+      dlg.classList.remove('open','mx5-dlg-in','mx5-dlg-closing');
+      dlg.removeAttribute('aria-modal');
+      if(dlg._trapHandler){ dlg.removeEventListener('keydown', dlg._trapHandler); delete dlg._trapHandler; }
+      var bd = dlg.querySelector('.mx5-dlg-backdrop');
+      if(bd && bd._clickH){ bd.removeEventListener('click', bd._clickH); delete bd._clickH; }
+      if(dlg._closeTimer){ clearTimeout(dlg._closeTimer); delete dlg._closeTimer; }
+      if(dlg._endH){ var pnl0=dlg.querySelector('.mx5-dlg-panel'); if(pnl0) pnl0.removeEventListener('transitionend', dlg._endH); delete dlg._endH; }
+      if(restoreFocus && _dlgTrigger && typeof _dlgTrigger.focus === 'function') _dlgTrigger.focus();
+    }
+
     window.mx5OpenDlg = function(id){
       /* Close any open scorecard popovers first */
       if(window.mx5CloseAllPopovers) window.mx5CloseAllPopovers();
-      if(_dlgActive) window.mx5CloseDlg();
+      /* Switching dialogs: tear the previous one down instantly (no lingering animation). */
+      if(_dlgActive){ _dlgTeardown(_dlgActive, false); _dlgActive = null; }
       var dlg = document.getElementById(id);
       if(!dlg) return;
       /* Heatmap adoption: on first open of dlg-markets, move #heatmap-scorecard into the
@@ -8565,11 +8931,28 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       }
       _dlgTrigger = document.activeElement;
       _dlgActive = dlg;
+      dlg.classList.remove('mx5-dlg-closing');
+      /* 1) make it displayed (start state painted) */
       dlg.classList.add('open');
       dlg.setAttribute('aria-modal','true');
+      /* Scroll lock (M03): lock the real scroller (<html>) and freeze <body> at the
+         current scrollY so wheel/trackpad/arrow scrolling can't leak to the page
+         behind the modal. Capture only on first open (switching dialogs is a no-op). */
+      if(!document.documentElement.classList.contains('mx5-dlg-lock')){
+        _dlgScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+        document.body.style.top = (-_dlgScrollY) + 'px';
+        document.documentElement.classList.add('mx5-dlg-lock');
+      }
       document.body.classList.add('mx5-dlg-open');
-      var prefRed = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-      if(!prefRed) dlg.classList.add('anim');
+      /* 2) next frame(s): add .mx5-dlg-in so opacity/transform transitions actually run.
+         Double rAF guarantees the start state is committed before the class flips. */
+      if(_prefReduced()){
+        dlg.classList.add('mx5-dlg-in');
+      } else {
+        requestAnimationFrame(function(){ requestAnimationFrame(function(){
+          if(_dlgActive === dlg) dlg.classList.add('mx5-dlg-in');
+        }); });
+      }
       _focusFirst(dlg);
       dlg._trapHandler = function(e){ _trapTab(dlg, e); };
       dlg.addEventListener('keydown', dlg._trapHandler);
@@ -8581,14 +8964,33 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     window.mx5CloseDlg = function(){
       if(!_dlgActive) return;
       var dlg = _dlgActive;
-      dlg.classList.remove('open','anim');
-      dlg.removeAttribute('aria-modal');
+      _dlgActive = null;               /* free the slot immediately so re-entrancy is safe */
       document.body.classList.remove('mx5-dlg-open');
+      _dlgReleaseScroll();
+      dlg.removeAttribute('aria-modal');
       if(dlg._trapHandler){ dlg.removeEventListener('keydown', dlg._trapHandler); delete dlg._trapHandler; }
       var bd = dlg.querySelector('.mx5-dlg-backdrop');
       if(bd && bd._clickH){ bd.removeEventListener('click', bd._clickH); delete bd._clickH; }
-      if(_dlgTrigger && typeof _dlgTrigger.focus === 'function') _dlgTrigger.focus();
-      _dlgActive = null; _dlgTrigger = null;
+      var trig = _dlgTrigger; _dlgTrigger = null;
+      var refocus = function(){ if(trig && typeof trig.focus === 'function') trig.focus(); };
+      if(_prefReduced()){
+        _dlgTeardown(dlg, false); refocus(); return;
+      }
+      /* 3) reverse the entrance: remove .mx5-dlg-in, add .mx5-dlg-closing (faster),
+         wait for the panel's transitionend, THEN remove .open (hide). Timeout fallback
+         so a missed transitionend never leaves the dialog stuck visible. */
+      dlg.classList.add('mx5-dlg-closing');
+      dlg.classList.remove('mx5-dlg-in');
+      var pnl = dlg.querySelector('.mx5-dlg-panel');
+      var done = function(){
+        if(dlg._closeTimer){ clearTimeout(dlg._closeTimer); delete dlg._closeTimer; }
+        if(dlg._endH && pnl){ pnl.removeEventListener('transitionend', dlg._endH); delete dlg._endH; }
+        dlg.classList.remove('open','mx5-dlg-closing');
+        refocus();
+      };
+      dlg._endH = function(e){ if(e.target === pnl && (e.propertyName === 'transform' || e.propertyName === 'opacity')) done(); };
+      if(pnl) pnl.addEventListener('transitionend', dlg._endH);
+      dlg._closeTimer = setTimeout(done, 340);
     };
 
     /* Escape handler: dialog > scorecard popover > release radar modal guards */
