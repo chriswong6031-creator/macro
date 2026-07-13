@@ -1,0 +1,25 @@
+{
+  "schema": "metab_budget_status.v1",
+  "ts": "2026-07-13T13:07:15+00:00",
+  "per_key": {},
+  "verdicts": {
+    "5h_max": {
+      "eligible_keys": [],
+      "all_done": false,
+      "blocked": false,
+      "reason": "no_enabled_keys"
+    },
+    "weekly_max": {
+      "eligible_keys": [],
+      "all_done": false,
+      "blocked": false,
+      "reason": "no_enabled_keys"
+    },
+    "manual": {
+      "eligible_keys": [],
+      "all_done": false,
+      "blocked": false,
+      "reason": "no_enabled_keys"
+    }
+  }
+}
