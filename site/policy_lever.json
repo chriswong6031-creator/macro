@@ -21,9 +21,9 @@
     "last_alert_summary_zh": "\u8d22\u653f\u90e8\u5728\u5b63\u5ea6\u672b\u5411\u67af\u7aed\u7684\u9006\u56de\u8d2d\u4e2d\u6ce8\u51651750\u4ebf\u7f8e\u5143\u2014\u2014\u5de8\u989d\u51c6\u5907\u91d1\u6ce8\u5165\u652f\u6491\u5e02\u573a"
   },
   "calendar": {
-    "days_to_midterm": 114,
-    "context_note": "US midterm elections: 114 days (2026-11-03). Policy cycle context only \u2014 no directional read.",
-    "context_note_zh": "\u7f8e\u56fd\u4e2d\u671f\u9009\u4e3e\uff1a114\u5929\uff082026\u5e7411\u67083\u65e5\uff09\u3002\u4ec5\u4f5c\u653f\u7b56\u5468\u671f\u80cc\u666f\u53c2\u8003\uff0c\u4e0d\u4f5c\u65b9\u5411\u6027\u5224\u65ad\u3002"
+    "days_to_midterm": 113,
+    "context_note": "US midterm elections: 113 days (2026-11-03). Policy cycle context only \u2014 no directional read.",
+    "context_note_zh": "\u7f8e\u56fd\u4e2d\u671f\u9009\u4e3e\uff1a113\u5929\uff082026\u5e7411\u67083\u65e5\uff09\u3002\u4ec5\u4f5c\u653f\u7b56\u5468\u671f\u80cc\u666f\u53c2\u8003\uff0c\u4e0d\u4f5c\u65b9\u5411\u6027\u5224\u65ad\u3002"
   },
   "levers": [
     {

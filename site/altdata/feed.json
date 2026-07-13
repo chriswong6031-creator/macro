@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-12T23:34:28.403784+00:00",
-  "as_of": "2026-07-12",
+  "generated_utc": "2026-07-13T00:53:11.259852+00:00",
+  "as_of": "2026-07-13",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -5934,11 +5934,11 @@
         },
         {
           "ticker": "AMD",
-          "net": 16,
-          "buys": 16,
+          "net": 14,
+          "buys": 14,
           "sells": 0,
           "members": 3,
-          "est_usd": 177008.0,
+          "est_usd": 112007.0,
           "parties": "D/Democratic"
         },
         {
@@ -5969,15 +5969,6 @@
           "parties": "D/Democratic"
         },
         {
-          "ticker": "DASH",
-          "net": 11,
-          "buys": 14,
-          "sells": 3,
-          "members": 3,
-          "est_usd": 112007.0,
-          "parties": "D/Democratic/R"
-        },
-        {
           "ticker": "BEP",
           "net": 10,
           "buys": 10,
@@ -6003,6 +5994,15 @@
           "members": 1,
           "est_usd": 80005.0,
           "parties": "D"
+        },
+        {
+          "ticker": "DASH",
+          "net": 9,
+          "buys": 12,
+          "sells": 3,
+          "members": 3,
+          "est_usd": 96006.0,
+          "parties": "D/Democratic/R"
         },
         {
           "ticker": "T",
@@ -6032,15 +6032,6 @@
           "parties": "D"
         },
         {
-          "ticker": "SPGI",
-          "net": 7,
-          "buys": 10,
-          "sells": 3,
-          "members": 3,
-          "est_usd": 129005.0,
-          "parties": "Democratic/R/Republican"
-        },
-        {
           "ticker": "ST",
           "net": 7,
           "buys": 8,
@@ -6048,6 +6039,15 @@
           "members": 2,
           "est_usd": 64004.0,
           "parties": "D/Republican"
+        },
+        {
+          "ticker": "VLTO",
+          "net": 7,
+          "buys": 7,
+          "sells": 0,
+          "members": 2,
+          "est_usd": 56004.0,
+          "parties": "D/Democratic"
         }
       ],
       "sells": [
@@ -6070,15 +6070,6 @@
           "parties": "D/Democratic"
         },
         {
-          "ticker": "NVDA",
-          "net": -12,
-          "buys": 2,
-          "sells": 14,
-          "members": 6,
-          "est_usd": 16001.0,
-          "parties": "D/Democratic/R/Republican"
-        },
-        {
           "ticker": "SCI",
           "net": -12,
           "buys": 0,
@@ -6086,6 +6077,15 @@
           "members": 1,
           "est_usd": 0.0,
           "parties": "D"
+        },
+        {
+          "ticker": "NVDA",
+          "net": -10,
+          "buys": 2,
+          "sells": 12,
+          "members": 5,
+          "est_usd": 16001.0,
+          "parties": "D/Democratic/R/Republican"
         },
         {
           "ticker": "TSCO",
@@ -6151,24 +6151,6 @@
           "parties": "D"
         },
         {
-          "ticker": "INTU",
-          "net": -7,
-          "buys": 2,
-          "sells": 9,
-          "members": 5,
-          "est_usd": 16001.0,
-          "parties": "D/Democratic/R/Republican"
-        },
-        {
-          "ticker": "CMCSA",
-          "net": -7,
-          "buys": 4,
-          "sells": 11,
-          "members": 4,
-          "est_usd": 56502.0,
-          "parties": "D/Democratic/R/Republican"
-        },
-        {
           "ticker": "GOOGL",
           "net": -7,
           "buys": 2,
@@ -6185,6 +6167,24 @@
           "members": 2,
           "est_usd": 8000.0,
           "parties": "D/Democratic"
+        },
+        {
+          "ticker": "LYV",
+          "net": -7,
+          "buys": 0,
+          "sells": 7,
+          "members": 2,
+          "est_usd": 0.0,
+          "parties": "D/Democratic"
+        },
+        {
+          "ticker": "PWR",
+          "net": -6,
+          "buys": 0,
+          "sells": 6,
+          "members": 2,
+          "est_usd": 0.0,
+          "parties": "D"
         }
       ]
     },
@@ -6226,7 +6226,7 @@
         "total_usd": 24743583.0,
         "contracts": 7,
         "agencies": 2,
-        "accel_x": 0.75,
+        "accel_x": 0.77,
         "top_agency": "Department of Commerce"
       },
       {
@@ -6306,7 +6306,7 @@
         "total_usd": 11861245.0,
         "contracts": 242,
         "agencies": 1,
-        "accel_x": 6.57,
+        "accel_x": 8.22,
         "top_agency": "General Services Administration"
       }
     ],
@@ -44345,11 +44345,25 @@
         "top_issue": "Health Issues"
       },
       {
+        "ticker": "CLH",
+        "spend_usd": 90000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Environment/Superfund"
+      },
+      {
         "ticker": "VRSN",
         "spend_usd": 90000.0,
         "filings": 1,
         "spike_x": null,
         "top_issue": "Telecommunications"
+      },
+      {
+        "ticker": "CLSK",
+        "spend_usd": 80000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Banking"
       },
       {
         "ticker": "ASRT",
@@ -44364,6 +44378,13 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Taxation/Internal Revenue Code"
+      },
+      {
+        "ticker": "KGC",
+        "spend_usd": 60000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Natural Resources"
       },
       {
         "ticker": "MPT",
@@ -44396,7 +44417,7 @@
       {
         "ticker": "ALHC",
         "spend_usd": 45000.0,
-        "filings": 2,
+        "filings": 1,
         "spike_x": null,
         "top_issue": "Medicare/Medicaid"
       },
@@ -44420,27 +44441,6 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Transportation"
-      },
-      {
-        "ticker": "CSTL",
-        "spend_usd": 40000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Medicare/Medicaid"
-      },
-      {
-        "ticker": "HEI",
-        "spend_usd": 40000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Defense"
-      },
-      {
-        "ticker": "PEGA",
-        "spend_usd": 40000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Government Issues"
       }
     ],
     "offexchange": [
@@ -47828,7 +47828,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "congress_cluster: 3 members net +16 \u00b7 github_momentum: +0.21% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations"
+        "why": "congress_cluster: 3 members net +14 \u00b7 github_momentum: +0.21% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "GSK",
@@ -47871,7 +47871,7 @@
           "activist_13d",
           "gov_contract_accel"
         ],
-        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $11,861,245, 6.6x accel"
+        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $11,861,245, 8.2x accel"
       },
       {
         "ticker": "N/A",
@@ -47931,7 +47931,7 @@
           "congress_cluster",
           "trump"
         ],
-        "why": "congress_cluster: 3 members net +11 \u00b7 trump: DOORDASH INC"
+        "why": "congress_cluster: 3 members net +9 \u00b7 trump: DOORDASH INC"
       },
       {
         "ticker": "LUMN",
@@ -47963,16 +47963,6 @@
           "special_situation"
         ],
         "why": "13f_add: Sarasin & Partners LLP +$158,746,178 \u00b7 patent_cluster: 320 grants, 39 IPC classes \u00b7 special_situation: Divestitures"
-      },
-      {
-        "ticker": "SPGI",
-        "score": 2,
-        "weighted_score": 1.2,
-        "channel_list": [
-          "congress_cluster",
-          "special_situation"
-        ],
-        "why": "congress_cluster: 3 members net +7 \u00b7 special_situation: Acquisitions"
       },
       {
         "ticker": "COP",
@@ -48038,6 +48028,16 @@
           "patent_cluster"
         ],
         "why": "github_momentum: +0.37% stars \u00b7 hf_model_momentum: +11.5% model downloads \u00b7 patent_cluster: 244 grants, 36 IPC classes"
+      },
+      {
+        "ticker": "PLTR",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "gov_contract_accel",
+          "retail_buzz"
+        ],
+        "why": "gov_contract_accel: $81,413,696, 19.2x accel \u00b7 retail_buzz: 91 WSB mentions"
       }
     ]
   }

@@ -1,0 +1,2392 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Fund Directory — 13F Ownership Context</span><span class="l-zh">基金目录 — 13F 持仓背景</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+.fx { --numf:"SF Mono",ui-monospace,"DejaVu Sans Mono",monospace; max-width:1220px; margin:0 auto; }
+.fx .num { font-family:var(--numf); font-variant-numeric:tabular-nums; }
+
+/* hero */
+.fx-hero { margin:22px auto 6px; }
+.fx-hero .eyebrow { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 6px; }
+.fx-hero h1 { font-size:26px; margin:0 0 6px; }
+.fx-sub { color:var(--muted); font-size:13px; max-width:70ch; margin:0 0 12px; }
+.fx-meta { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+.fx-chip { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; padding:5px 10px; border-radius:999px;
+           background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+
+/* filter rail */
+.fx-filters { display:inline-flex; flex-wrap:wrap; gap:4px; padding:4px; border-radius:11px;
+              background:var(--panel2); border:1px solid var(--line); margin:14px 0 16px; }
+.fx-filters button { font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; border:1px solid transparent;
+                     background:transparent; color:var(--muted); padding:6px 13px; border-radius:8px; line-height:1.2;
+                     transition:all .14s ease; white-space:nowrap; }
+.fx-filters button:hover { color:var(--text); }
+.fx-filters button[aria-selected="true"] { background:var(--panel); color:var(--text); border-color:var(--line);
+                                            box-shadow:var(--popover-shadow); }
+
+/* grid of fund cards */
+.fx-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; margin:4px 0 30px; }
+.fx-card { display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 15px;
+           color:inherit; transition:border-color .14s ease, transform .14s ease, box-shadow .14s ease; }
+html body a.fx-card:hover { transform:translateY(-2px); border-color:color-mix(in srgb, var(--link) 45%, var(--line));
+                            box-shadow:0 14px 30px -16px color-mix(in srgb, var(--link) 40%, transparent); }
+.fx-card .fc-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.fx-card .fc-name { font-size:15px; font-weight:650; line-height:1.25; }
+.fx-card .fc-sub { color:var(--muted); font-size:11px; margin-top:2px; }
+.fx-card .fc-lean { font-size:12.5px; margin:10px 0 2px; color:var(--text); }
+.fx-card .fc-lean .lbl { color:var(--muted); font-size:10px; letter-spacing:.1em; text-transform:uppercase; display:block; margin-bottom:2px; }
+.fx-card .fc-stats { display:flex; gap:14px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+.fx-card .fc-stat .k { font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.fx-card .fc-stat .v { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; margin-top:2px; }
+
+.grade { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 5px;
+         border-radius:6px; font:700 12px/1 var(--numf); border:1px solid var(--line); }
+.grade.A { color:#1f9a55; border-color:#1f9a5566; background:#1f9a5514; }
+.grade.B { color:#3b82f6; border-color:#3b82f666; background:#3b82f614; }
+.grade.C { color:#c98a1a; border-color:#c98a1a66; background:#c98a1a14; }
+.grade.D { color:#d23f3f; border-color:#d23f3f66; background:#d23f3f14; }
+.grade.na { color:var(--muted); }
+html[data-theme="dark"] .grade.A { color:#3fc07e; }
+html[data-theme="dark"] .grade.C { color:#e0a93a; }
+html[data-theme="dark"] .grade.D { color:#ef6a6a; }
+
+.stylepill { font:600 9.5px/1 var(--numf); letter-spacing:.06em; text-transform:uppercase; padding:3px 7px;
+             border-radius:99px; border:1px solid var(--line); color:var(--muted); background:var(--panel2); }
+.relchip { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px; letter-spacing:.03em; white-space:nowrap; }
+.relchip.improving { color:var(--up); background:rgba(69,184,115,.1); border:1px solid rgba(69,184,115,.35); }
+.relchip.deteriorating { color:var(--down); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
+.relchip.stable, .relchip.na { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+.fx-disc { color:var(--muted); font-size:11.5px; border-left:3px solid var(--info); padding:8px 12px; margin:14px 0 8px;
+           background:var(--panel2); border-radius:0 8px 8px 0; }
+.fx-closed { opacity:.62; }
+
+</style>
+
+</head>
+<body>
+
+
+<nav class="site-nav">
+
+
+
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+          </div>
+        </div>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+        <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+        <a href="flow_leaders.html">🏆 <span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
+        <a href="leader_radar.html">📡 <span class="l-en">Leader Radar</span><span class="l-zh">领袖雷达</span><span class="d"><span class="l-en">Lifecycle board · regime · handoff watch · rerating watch</span><span class="l-zh">生命周期看板 · 领导力制度 · 交接观察 · 重估观察</span></span></a>
+        <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
+        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
+          </div>
+        </div>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="china_mechanics.html">🔬 <span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
+            <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
+            <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+            <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+            <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+            <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="hk_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
+        <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="canada_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="nav-sub-text"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="btc_strategy.html">🎛️ <span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="nav-sub-text"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
+    <div class="nav-dd nav-mega-dd">
+      <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu nav-mega" role="menu">
+        
+        <div class="nav-mega-feat">
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+        </div>
+        <div class="nav-mega-grid">
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic">🚀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic">💼</span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic">🐳</span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic">🗳️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic">⚡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic">🆕</span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic">📈</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+
+
+
+<div class="fx">
+
+  <section class="fx-hero">
+    <p class="eyebrow">💼 <span class="l-en">Institutional 13F · super-investor track record</span><span class="l-zh">机构 13F · 超级投资者业绩记录</span></p>
+    <h1><span class="l-en">Fund Directory</span><span class="l-zh">基金目录</span></h1>
+    <p class="fx-sub"><span class="l-en">Open any tracked fund for its full resolved book, transparent conviction scores, sector &amp; theme rotation, grade history, and core lean. Grades rank a curated survivor cohort on public 13F filing dates vs SPY — descriptive, never a forecast.</span><span class="l-zh">打开任一追踪基金，查看其完整解析持仓、透明的信念评分、行业与主题轮动、评级历史及核心倾向。评级基于13F公开申报日、以精选幸存者队列相对标普评分——描述性，非预测。</span></p>
+    <div class="fx-meta">
+      <span class="fx-chip">51 <span class="l-en">funds tracked</span><span class="l-zh">家追踪基金</span></span>
+      <span class="fx-chip"><span class="l-en">13F lane · filing-date clock · ~45d lag</span><span class="l-zh">13F通道 · 申报日时钟 · 约45天滞后</span></span>
+      <a class="fx-chip" href="smart_money.html">← <span class="l-en">Ownership Intelligence Desk</span><span class="l-zh">持仓情报台</span></a>
+    </div>
+  </section>
+
+  <div class="fx-filters" id="fx-seg" role="tablist">
+    <button aria-selected="true" data-grade="all"><span class="l-en">All</span><span class="l-zh">全部</span></button>
+    <button data-grade="A">A</button>
+    <button data-grade="B">B</button>
+    <button data-grade="C">C</button>
+    <button data-grade="D">D</button>
+  </div>
+
+  <div class="fx-grid" id="fx-grid">
+  
+    
+    
+    <a class="fx-card "
+       href="fund_berkshire.html"
+       data-grade="C">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Berkshire Hathaway (Buffett)</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            
+          </div>
+        </div>
+        <span class="grade C">C</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Communication Services (Equal-Weight)</span><span class="l-zh">通信服务（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$263.1B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">29</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_tci.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">TCI Fund Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">quality growth</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Financials (Equal-Weight)</span><span class="l-zh">金融（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$45.2B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">10</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip deteriorating"><span class="l-en">Deteriorating</span><span class="l-zh">走弱</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_viking.html"
+       data-grade="C">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Viking Global (Halvorsen)</div>
+          <div class="fc-sub">
+            <span class="stylepill">tiger crossover</span>
+            
+          </div>
+        </div>
+        <span class="grade C">C</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Financials (Equal-Weight)</span><span class="l-zh">金融（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$35.7B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">77</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_gates.html"
+       data-grade="C">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Gates Foundation Trust</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            
+          </div>
+        </div>
+        <span class="grade C">C</span>
+      </div>
+
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$31.7B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">22</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_coatue.html"
+       data-grade="C">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Coatue Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">tiger crossover</span>
+            
+          </div>
+        </div>
+        <span class="grade C">C</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Real Estate (Equal-Weight)</span><span class="l-zh">房地产（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$29.1B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">62</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_tigerglobal.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Tiger Global (Coleman)</div>
+          <div class="fc-sub">
+            <span class="stylepill">tiger crossover</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Compute</span><span class="l-zh">Compute</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$22.8B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">54</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_elliott.html"
+       data-grade="A">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Elliott Investment Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">activist</span>
+            
+          </div>
+        </div>
+        <span class="grade A">A</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Non-AI Tech & Hardware</span><span class="l-zh">非AI科技与硬件</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$20.1B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">30</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_bakerbros.html"
+       data-grade="A">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Baker Bros. Advisors</div>
+          <div class="fc-sub">
+            <span class="stylepill">sector healthcare</span>
+            
+          </div>
+        </div>
+        <span class="grade A">A</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Therapeutics</span><span class="l-zh">Therapeutics</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$17.4B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">84</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_polen.html"
+       data-grade="C">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Polen Capital Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">quality growth</span>
+            
+          </div>
+        </div>
+        <span class="grade C">C</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">AI Software & Platforms</span><span class="l-zh">AI 软件与平台</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$14.5B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">221</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_pershing.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Pershing Square (Ackman)</div>
+          <div class="fc-sub">
+            <span class="stylepill">activist</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$13.7B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">11</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_lonepine.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Lone Pine Capital</div>
+          <div class="fc-sub">
+            <span class="stylepill">tiger crossover</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Technology (Equal-Weight)</span><span class="l-zh">信息技术（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$12.5B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">36</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_d1capital.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">D1 Capital Partners</div>
+          <div class="fc-sub">
+            <span class="stylepill">tiger crossover</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Technology (Equal-Weight)</span><span class="l-zh">信息技术（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$11.2B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">44</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_rtw.html"
+       data-grade="C">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">RTW Investments</div>
+          <div class="fc-sub">
+            <span class="stylepill">sector healthcare</span>
+            
+          </div>
+        </div>
+        <span class="grade C">C</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Oncology</span><span class="l-zh">Oncology</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$10.0B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">88</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_durable.html"
+       data-grade="D">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Durable Capital Partners</div>
+          <div class="fc-sub">
+            <span class="stylepill">quality growth</span>
+            
+          </div>
+        </div>
+        <span class="grade D">D</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Consumer Discretionary (Equal-Weight)</span><span class="l-zh">非必需消费（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$9.7B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">37</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_racapital.html"
+       data-grade="A">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">RA Capital Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">sector healthcare</span>
+            
+          </div>
+        </div>
+        <span class="grade A">A</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">IT & Data</span><span class="l-zh">IT & Data</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$9.4B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">85</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_egerton.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Egerton Capital</div>
+          <div class="fc-sub">
+            <span class="stylepill">quality growth</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Financials (Equal-Weight)</span><span class="l-zh">金融（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$9.0B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">24</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_icahn.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Icahn (Carl Icahn)</div>
+          <div class="fc-sub">
+            <span class="stylepill">activist</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$8.6B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">12</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_whalerock.html"
+       data-grade="A">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Whale Rock Capital</div>
+          <div class="fc-sub">
+            <span class="stylepill">tiger crossover</span>
+            
+          </div>
+        </div>
+        <span class="grade A">A</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$7.7B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">35</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip deteriorating"><span class="l-en">Deteriorating</span><span class="l-zh">走弱</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_soros.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Soros Fund Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">macro satellite</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$7.4B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">234</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_akre.html"
+       data-grade="D">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Akre Capital Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">quality growth</span>
+            
+          </div>
+        </div>
+        <span class="grade D">D</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Technology (Equal-Weight)</span><span class="l-zh">信息技术（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$6.1B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">19</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_appaloosa.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Appaloosa (Tepper)</div>
+          <div class="fc-sub">
+            <span class="stylepill">event distressed</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$5.9B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">31</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_valueact.html"
+       data-grade="C">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">ValueAct Capital</div>
+          <div class="fc-sub">
+            <span class="stylepill">activist</span>
+            
+          </div>
+        </div>
+        <span class="grade C">C</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Payments & Fintech</span><span class="l-zh">支付与金融科技</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$5.7B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">18</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_altimeter.html"
+       data-grade="A">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Altimeter Capital</div>
+          <div class="fc-sub">
+            <span class="stylepill">tiger crossover</span>
+            
+          </div>
+        </div>
+        <span class="grade A">A</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">AI Infrastructure</span><span class="l-zh">AI 基础设施</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$5.7B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">13</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_perceptive.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Perceptive Advisors</div>
+          <div class="fc-sub">
+            <span class="stylepill">sector healthcare</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Health Care (Equal-Weight)</span><span class="l-zh">医疗保健（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$5.1B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">93</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_oaktree.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Oaktree Capital Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">event distressed</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">AI Neoclouds & HPC Hosting</span><span class="l-zh">AI 新云与高性能算力托管</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$4.7B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">51</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_starboard.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Starboard Value</div>
+          <div class="fc-sub">
+            <span class="stylepill">activist</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">AI Neoclouds & HPC Hosting</span><span class="l-zh">AI 新云与高性能算力托管</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$4.6B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">25</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_sachem.html"
+       data-grade="A">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Sachem Head Capital</div>
+          <div class="fc-sub">
+            <span class="stylepill">activist</span>
+            
+          </div>
+        </div>
+        <span class="grade A">A</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Power & Grid Buildout</span><span class="l-zh">电力与电网</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$4.2B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">19</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip deteriorating"><span class="l-en">Deteriorating</span><span class="l-zh">走弱</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_altarock.html"
+       data-grade="D">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">AltaRock Partners</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            
+          </div>
+        </div>
+        <span class="grade D">D</span>
+      </div>
+
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$4.1B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">8</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_trian.html"
+       data-grade="D">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Trian Fund Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">activist</span>
+            
+          </div>
+        </div>
+        <span class="grade D">D</span>
+      </div>
+
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$3.9B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">8</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_himalaya.html"
+       data-grade="A">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Himalaya Capital (Li Lu)</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            
+          </div>
+        </div>
+        <span class="grade A">A</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Financials (Equal-Weight)</span><span class="l-zh">金融（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$3.2B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">14</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_dragoneer.html"
+       data-grade="D">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Dragoneer Investment Group</div>
+          <div class="fc-sub">
+            <span class="stylepill">tiger crossover</span>
+            
+          </div>
+        </div>
+        <span class="grade D">D</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$3.0B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">17</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_giverny.html"
+       data-grade="C">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Giverny Capital</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            
+          </div>
+        </div>
+        <span class="grade C">C</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Industrials (Equal-Weight)</span><span class="l-zh">工业（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$2.7B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">51</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_corvex.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Corvex Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">activist</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Real Estate (Equal-Weight)</span><span class="l-zh">房地产（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$2.5B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">25</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip deteriorating"><span class="l-en">Deteriorating</span><span class="l-zh">走弱</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_basswood.html"
+       data-grade="A">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Basswood Capital Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">sector other</span>
+            
+          </div>
+        </div>
+        <span class="grade A">A</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Financials (Equal-Weight)</span><span class="l-zh">金融（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$2.1B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">107</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_thirdpoint.html"
+       data-grade="C">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Third Point (Loeb)</div>
+          <div class="fc-sub">
+            <span class="stylepill">activist</span>
+            
+          </div>
+        </div>
+        <span class="grade C">C</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$2.1B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">33</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_jana.html"
+       data-grade="D">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">JANA Partners Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">activist</span>
+            
+          </div>
+        </div>
+        <span class="grade D">D</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Payments</span><span class="l-zh">Payments</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$1.6B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">10</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_fairholme.html"
+       data-grade="A">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Fairholme Capital (Berkowitz)</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            
+          </div>
+        </div>
+        <span class="grade A">A</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$1.5B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">10</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card fx-closed"
+       href="fund_scion.html"
+       data-grade="C">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Scion Asset Mgmt (Burry)</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            <span class="stylepill"><span class="l-en">closed</span><span class="l-zh">已关闭</span></span>
+          </div>
+        </div>
+        <span class="grade C">C</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Technology (Equal-Weight)</span><span class="l-zh">信息技术（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$1.4B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">8</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_casdin.html"
+       data-grade="A">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Casdin Capital</div>
+          <div class="fc-sub">
+            <span class="stylepill">sector healthcare</span>
+            
+          </div>
+        </div>
+        <span class="grade A">A</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Genomics</span><span class="l-zh">Genomics</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$1.3B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">40</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_dorsey.html"
+       data-grade="D">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Dorsey Asset Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            
+          </div>
+        </div>
+        <span class="grade D">D</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">AI Software & Platforms</span><span class="l-zh">AI 软件与平台</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$1.3B</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">11</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip deteriorating"><span class="l-en">Deteriorating</span><span class="l-zh">走弱</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_lightstreet.html"
+       data-grade="A">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Light Street Capital</div>
+          <div class="fc-sub">
+            <span class="stylepill">tiger crossover</span>
+            
+          </div>
+        </div>
+        <span class="grade A">A</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Compute</span><span class="l-zh">Compute</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$534M</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">23</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_pabrai.html"
+       data-grade="D">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Dalal Street (Mohnish Pabrai)</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            
+          </div>
+        </div>
+        <span class="grade D">D</span>
+      </div>
+
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$423M</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">3</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_greenlea.html"
+       data-grade="D">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Greenlea Lane Capital</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            
+          </div>
+        </div>
+        <span class="grade D">D</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Communication Services (Equal-Weight)</span><span class="l-zh">通信服务（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$344M</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">9</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_engaged.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Engaged Capital</div>
+          <div class="fc-sub">
+            <span class="stylepill">activist</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$303M</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">8</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_kimmeridge.html"
+       data-grade="D">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Kimmeridge Energy Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">sector other</span>
+            
+          </div>
+        </div>
+        <span class="grade D">D</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Gas & LNG</span><span class="l-zh">Gas & LNG</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$299M</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">1</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_punchcard.html"
+       data-grade="D">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Punch Card Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            
+          </div>
+        </div>
+        <span class="grade D">D</span>
+      </div>
+
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$271M</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">5</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_mudrick.html"
+       data-grade="n/a">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Mudrick Capital Management</div>
+          <div class="fc-sub">
+            <span class="stylepill">event distressed</span>
+            
+          </div>
+        </div>
+        <span class="grade na">—</span>
+      </div>
+
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$174M</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">3</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip na"><span class="l-en">n/a</span><span class="l-zh">n/a</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_baupost.html"
+       data-grade="B">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Baupost Group (Klarman)</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            
+          </div>
+        </div>
+        <span class="grade B">B</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Consumer Discretionary (Equal-Weight)</span><span class="l-zh">非必需消费（等权）</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$5M</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">22</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_ako.html"
+       data-grade="D">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">AKO Capital</div>
+          <div class="fc-sub">
+            <span class="stylepill">quality growth</span>
+            
+          </div>
+        </div>
+        <span class="grade D">D</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Travel & Experiences</span><span class="l-zh">旅行与体验</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$5M</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">27</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_duquesne.html"
+       data-grade="A">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Duquesne Family Office (Druckenmiller)</div>
+          <div class="fc-sub">
+            <span class="stylepill">macro satellite</span>
+            
+          </div>
+        </div>
+        <span class="grade A">A</span>
+      </div>
+
+      
+      <div class="fc-lean">
+        <span class="lbl"><span class="l-en">Core lean</span><span class="l-zh">核心倾向</span></span>
+        <span class="l-en">Diagnostics</span><span class="l-zh">Diagnostics</span>
+      </div>
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$3M</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">68</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip deteriorating"><span class="l-en">Deteriorating</span><span class="l-zh">走弱</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+    
+    
+    <a class="fx-card "
+       href="fund_aquamarine.html"
+       data-grade="n/a">
+      <div class="fc-top">
+        <div>
+          <div class="fc-name">Aquamarine Zurich AG (Spier)</div>
+          <div class="fc-sub">
+            <span class="stylepill">superinvestor value</span>
+            
+          </div>
+        </div>
+        <span class="grade na">—</span>
+      </div>
+
+      
+
+      <div class="fc-stats">
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Book</span><span class="l-zh">账面</span></div>
+          <div class="v num">$144091</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Positions</span><span class="l-zh">持仓</span></div>
+          <div class="v num">7</div>
+        </div>
+        <div class="fc-stat">
+          <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
+          <div class="v"><span class="relchip na"><span class="l-en">n/a</span><span class="l-zh">n/a</span></span></div>
+        </div>
+      </div>
+    </a>
+  
+  </div>
+
+  <div class="fx-disc"><span class="l-en">Context only — never a buy list. 13F is quarterly, ~45-day lag, long-only US-listed ≥$100M: no shorts, no cash, no non-US positions. A grade ranks trade quality within this curated cohort; it is not a recommendation.</span><span class="l-zh">仅供背景参考——绝非买入清单。13F为季度披露、约45天滞后、仅含美股多头且≥1亿美元：不含空头、现金或非美股仓位。评级衡量该精选队列内的交易质量，并非投资建议。</span></div>
+
+  <p class="sub" style="color:var(--muted);font-size:11px;margin-top:8px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-13 00:54 UTC</p>
+</div>
+
+
+<footer class="rfoot">
+  <span class="l-en">Research Reports are read-only analysis for informational purposes only — not investment advice. Figures are point-in-time and may change.</span><span class="l-zh">研究报告仅为信息性分析，不构成投资建议。数据为特定时点快照，可能调整。</span>
+</footer>
+
+<script>
+(function(){
+  var seg = document.getElementById('fx-seg');
+  var grid = document.getElementById('fx-grid');
+  if(!seg || !grid) return;
+  seg.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-grade]');
+    if(!btn) return;
+    var g = btn.getAttribute('data-grade');
+    seg.querySelectorAll('button').forEach(function(b){ b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
+    grid.querySelectorAll('a.fx-card').forEach(function(card){
+      card.style.display = (g === 'all' || card.getAttribute('data-grade') === g) ? '' : 'none';
+    });
+  });
+})();
+</script>
+
+<script src="theme.js"></script>
+</body>
+</html>
