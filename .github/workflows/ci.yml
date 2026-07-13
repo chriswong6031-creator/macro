@@ -516,6 +516,10 @@ on:
       - "tests/test_admin_metabolism_ux.py"
       - ".github/workflows/metabolism-cycle.yml"
       - ".github/workflows/key-pool-probe.yml"
+      # CBF-W1 regime census: classifier engine + test suite.
+      # Any change to the flow regime engine or test file re-proves the contract.
+      - "engine/flow_regime.py"
+      - "tests/test_flow_regime.py"
   workflow_dispatch:
 
 permissions:
@@ -1914,3 +1918,25 @@ jobs:
         run: python -m pytest tests/test_metabolism_rununtil.py -q
       - name: admin metabolism UX panel tests
         run: python -m pytest tests/test_admin_metabolism_ux.py -q
+
+  cbf-regime:
+    # CBF-W1 Cross-Border Flow Regime Census (CBF-R1..R12):
+    # Classifier engine: pure functions, strictly causal rolling windows,
+    # 5-session hysteresis, era split, EM FX sign normalization.
+    # Test coverage:
+    #   test_flow_regime.py — FX direction normalization (USDXXX negate contract),
+    #                         causality (future mutation unchanged past),
+    #                         hysteresis (no switch < 5 sessions, day-1 immediate),
+    #                         determinism, rule precedence (risk_off beats exception),
+    #                         dollar splice (pre/post 2006-01-01).
+    # Zero store reads; no network calls; all synthetic DataFrames.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow
+      - name: CBF regime classifier contract tests
+        run: python -m pytest tests/test_flow_regime.py -v
