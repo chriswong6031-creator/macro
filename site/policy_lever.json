@@ -36,8 +36,8 @@
         "stoch_curl": false,
         "macd_curl": false,
         "basing": false,
-        "days_in_base": 0,
-        "flatness": 0.0725,
+        "days_in_base": 27,
+        "flatness": 0.165,
         "armed": false,
         "params": {
           "stoch_k_period": 14,
