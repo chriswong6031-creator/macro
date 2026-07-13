@@ -1,6 +1,6 @@
 {
   "as_of_trade_date": "10072026",
-  "freshness": "fresh",
+  "freshness": "slow",
   "bellwethers": [
     {
       "ticker": "^HSI",
