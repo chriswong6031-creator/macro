@@ -116,10 +116,19 @@ def main(argv: list[str] | None = None) -> int:
             from scripts.preflight_claude_auth import check_auth  # type: ignore[import]
             auth = check_auth(lane=args.lane, root=root)
             if not auth.get("auth_ok"):
-                reason = f"preflight auth failed: {auth.get('reason')}"
-                log.warning("metabolism_adjudicate[%s]: %s", role, reason)
-                finish_stage(cycle_id, stage, status="noop_paused", note=reason, root=root)
-                return 0
+                if auth.get("cli_missing"):
+                    # CLI binary absent ≠ token dead: adjudicate LLM roles call
+                    # the API via engine.llm_auth (SDK), never the CLI — proceed
+                    # (mirror of the PROPOSE gate; llm_auth self-protects).
+                    log.warning(
+                        "metabolism_adjudicate[%s]: preflight CLI missing (%s) — "
+                        "proceeding on SDK channel", role, auth.get("reason"),
+                    )
+                else:
+                    reason = f"preflight auth failed: {auth.get('reason')}"
+                    log.warning("metabolism_adjudicate[%s]: %s", role, reason)
+                    finish_stage(cycle_id, stage, status="noop_paused", note=reason, root=root)
+                    return 0
         except Exception as exc:  # noqa: BLE001
             log.warning("metabolism_adjudicate[%s]: preflight error (%s)", role, exc)
             finish_stage(cycle_id, stage, status="noop_paused",
