@@ -736,7 +736,7 @@
       <!-- unified Conviction Profile hero — populated only as a FALLBACK if stockview.js fails -->
       <div id="r_conviction" class="conv" style="display:none"></div>
       <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
-      <details class="sv-deep"><summary><span class="l-en">Cycle &amp; timing detail</span><span class="l-zh">周期与时机详情</span></summary>
+      <details class="sv-deep" id="panel_deep"><summary><span class="l-en">Cycle &amp; timing detail</span><span class="l-zh">周期与时机详情</span></summary>
         <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
         <p id="r_age" class="agewhen" style="display:none"></p>
         <p id="r_early" class="early" style="display:none"></p>
@@ -752,7 +752,7 @@
       <div id="tvbox"></div>
     </div>
     <!-- ===== Momentum across timeframes — paired right under the chart ===== -->
-    <div class="panel">
+    <div class="panel" id="panel_mtf">
       <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span></h2>
       <div id="r_mtf"></div>
     </div>
@@ -788,7 +788,7 @@
     </div>
     </details>
     <!-- Trust-the-state: standalone panel at the page bottom (per revamp) -->
-    <div class="panel">
+    <div class="panel" id="panel_cal">
       <h2><span class="l-en">How much to trust the state — measured 2008→2026</span><span class="l-zh">这个状态有多可信 — 实测 2008→2026</span><span class="help">?<span class="tip"><span class="l-en">A-shares drift up over a month from every state (the market's long upward bias); the spread between
         states is small, and the "scary" states measured slightly better forward returns — markets mean-revert
         and full confirmation costs part of the bounce. Use the state for <b>structure</b> (cycle position,
@@ -860,8 +860,9 @@
   function L(k) { return (T[lang()] || T.en)[k]; }
   function lz(en, zh) { return lang() === 'zh' && zh ? zh : (en || ''); }
   var DISP = {"DECLINE": {"label": "DOWNTREND", "action": "AVOID", "dir": "down", "label_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "action_zh": "\u56de\u907f"}, "BOTTOM WATCH": {"label": "NEARING A LOW", "action": "GET READY", "dir": "down", "label_zh": "\u63a5\u8fd1\u4f4e\u70b9", "action_zh": "\u51c6\u5907"}, "TURN SIGNALED": {"label": "BOTTOMING", "action": "BUY SETUP", "dir": "up", "label_zh": "\u7b51\u5e95\u4e2d", "action_zh": "\u4e70\u5165\u9884\u5907"}, "FRESH BUY": {"label": "BUY ZONE", "action": "BUY", "dir": "up", "label_zh": "\u4e70\u5165\u533a", "action_zh": "\u4e70\u5165"}, "RALLY ON": {"label": "UPTREND", "action": "HOLD", "dir": "up", "label_zh": "\u4e0a\u6da8\u8d8b\u52bf", "action_zh": "\u6301\u6709"}, "TOP WATCH": {"label": "NEARING A HIGH", "action": "TAKE PROFITS", "dir": "caution", "label_zh": "\u63a5\u8fd1\u9ad8\u70b9", "action_zh": "\u6b62\u76c8"}, "ROLLING OVER": {"label": "TOPPING", "action": "SELL SETUP", "dir": "down", "label_zh": "\u505a\u9876\u4e2d", "action_zh": "\u5356\u51fa\u9884\u5907"}, "COUNTERTREND BOUNCE": {"label": "UNCONFIRMED TURN", "action": "HIGH-RISK \u00b7 NIMBLE ONLY", "dir": "caution", "label_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "action_zh": "\u9ad8\u98ce\u9669 \u00b7 \u4ec5\u9650\u7075\u6d3b\u64cd\u4f5c"}, "CONFIRMING TURN": {"label": "TURN IN PROGRESS", "action": "WATCH \u2014 DON'T CHASE", "dir": "caution", "label_zh": "\u8f6c\u5411\u8fdb\u884c\u4e2d", "action_zh": "\u89c2\u5bdf \u2014 \u52ff\u8ffd\u9ad8"}};
-  function dlabel(s) { var d = DISP[s]; if (!d) return s; return lang() === 'zh' ? (d.label_zh || d.label) : d.label; }
+  function dlabel(s) { if (s === 'LIMITED') return lang() === 'zh' ? '历史不足' : 'limited history'; var d = DISP[s]; if (!d) return s; return lang() === 'zh' ? (d.label_zh || d.label) : d.label; }
   function disp(s) {
+    if (s === 'LIMITED') return lang() === 'zh' ? '新上市 · 历史不足' : 'new listing · limited history';
     var d = DISP[s]; if (!d) return s;
     return lang() === 'zh' ? (d.label_zh || d.label) + ' · ' + (d.action_zh || d.action)
                            : d.label + ' · ' + d.action;
@@ -1007,9 +1008,51 @@
     box.style.display = '';
   }
 
+  // A recent listing has no computable cycle ladder yet (the model needs ~300
+  // sessions ≈ a year of trading). Show an honest limited card — identity, listing
+  // date, an "analysis pending" banner and the price chart — instead of the old
+  // NOT-IN-LIBRARY dead end every young heatmap tile hit. Mirrors stock.html's
+  // renderLimited; hides every analysis panel so nothing stale leaks through.
+  function renderLimited(d) {
+    var st = document.getElementById('r_state');
+    st.textContent = lang() === 'zh' ? '历史不足' : 'LIMITED';
+    st.className = 'state';
+    document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
+    document.getElementById('r_points').innerHTML = '';
+    document.getElementById('r_cyclebox').innerHTML = '';
+    document.getElementById('r_flags').textContent = '';
+    document.getElementById('r_why').textContent = '';
+    document.getElementById('r_cal').innerHTML = '';
+    document.getElementById('r_mtf').innerHTML = '';
+    ['sv-decision', 'sv-fingerprint', 'sv-honesty', 'sv-evidence', 'sv-country']
+      .forEach(function (id) { var el = document.getElementById(id); if (el) el.innerHTML = ''; });
+    ['r_conviction', 'r_eq', 'r_age', 'r_early', 'r_stale_banner',
+     'r_alpha_panel', 'r_fund_panel', 'r_vband_panel', 'r_analyst_panel',
+     'r_earn_panel', 'r_pos_panel', 'panel_deep', 'panel_mtf', 'panel_cal']
+      .forEach(function (id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    document.getElementById('r_summary').textContent = '';
+    var n = d.history_days || 0;
+    // the banner takes the decision-band slot (the page's "one call" position);
+    // #r_summary is display:none by the page polish CSS, so it can't host this
+    document.getElementById('sv-decision').innerHTML = '<div class="cyclebox">🆕 ' + esc(lz(
+      'New listing — first traded ' + d.listed + ', only ' + n + ' session' + (n === 1 ? '' : 's') +
+      ' of history so far. The cycle & momentum model needs about a year of trading, so the full analysis unlocks as data accrues. Watch — don\'t chase. Price chart below.',
+      '新上市 —— 首个交易日 ' + d.listed + '，目前仅有 ' + n + ' 个交易日。周期与动量模型需约一年历史，完整分析将随数据积累解锁。宜观察，勿追高。下方为价格走势图。')) + '</div>';
+    if (window.StockChart) {
+      try { window.StockChart.mount(document.getElementById('tvbox'), d.ticker, {name: d.name, ohlcDir: 'chinaohlc'}); }
+      catch (e) { /* chart is garnish — the banner above stands alone */ }
+    }
+    hideEmptyGroups();
+  }
+
   function render(d) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
+    if (d.limited) { renderLimited(d); return; }
+    // a full record may follow a limited one — re-show the panels it hid and drop
+    // its banner (SV.mount rebuilds sv-decision only when the view-model mounts)
+    ['panel_deep', 'panel_mtf', 'panel_cal'].forEach(function (id) { var el = document.getElementById(id); if (el) el.style.display = ''; });
+    document.getElementById('sv-decision').innerHTML = '';
     var st = document.getElementById('r_state');
     st.textContent = dlabel(d.ladder.state) || d.ladder.label;
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
@@ -1345,7 +1388,7 @@
     else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
 </script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-13 05:06 UTC UTC · <span class="l-en">charts by TradingView · curated A-share universe, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 精选 A 股范围，非全市场</span></p>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-13 06:00 UTC UTC · <span class="l-en">charts by TradingView · curated A-share universe, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 精选 A 股范围，非全市场</span></p>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
