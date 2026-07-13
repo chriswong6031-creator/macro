@@ -1,9 +1,9 @@
 {
   "schema": "claim_accountability.v1",
-  "generated_at": "2026-07-13T10:12:55.301560+00:00",
+  "generated_at": "2026-07-13T12:30:21.119081+00:00",
   "global": {
     "n_claims": 15763,
-    "n_grades": 7008,
+    "n_grades": 6716,
     "n_with_falsifier": 187,
     "falsifier_coverage": 0.011863,
     "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure"
@@ -767,7 +767,7 @@
     }
   },
   "track_record_ref": {
-    "generated_at": "2026-07-13T10:12:41.078150+00:00",
+    "generated_at": "2026-07-13T12:30:07.621843+00:00",
     "grade_horizons": [
       5,
       21,

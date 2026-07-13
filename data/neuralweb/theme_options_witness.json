@@ -1,7 +1,7 @@
 {
   "schema": "theme_options_witness.v1",
   "as_of": "2026-07-13",
-  "generated_at": "2026-07-13T07:13:34.367973+00:00",
+  "generated_at": "2026-07-13T13:00:37.595062+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -20,7 +20,7 @@
     "n_themes_any_coverage": 0,
     "n_themes_suppressed": 18,
     "store_present": true,
-    "store_path": "/Users/chriswong/actions-runner-1/_work/macro/macro/data/thetadata_eod",
+    "store_path": "/Users/chriswong/actions-runner-3/_work/macro/macro/data/thetadata_eod",
     "as_of": "2026-07-13"
   },
   "oi_timing_law": "OI[t] = positions as of EOD t-1 (OPRA reports ~06:30 ET). Leg B applies explicit shift(1) to the daily OI series (doi_series law). Leg A reads only the asof-date snapshot row, which per OPRA schedule already represents EOD t-1 positions — no additional shift required.",
