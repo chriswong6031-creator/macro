@@ -784,6 +784,7 @@ jobs:
           tests/test_standout_audit.py
           tests/test_altdata_hygiene.py
           tests/test_china_news_engine.py
+          tests/test_china_library_limited.py
           tests/test_aibrief_page.py
           tests/test_aibrief_w4_panels.py
           tests/test_sa_w5_v2_grader_hook.py

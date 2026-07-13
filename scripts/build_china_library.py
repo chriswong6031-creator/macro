@@ -102,7 +102,8 @@ def _cn_one_task(item):
     its one-bad-ticker-can't-kill-the-library guard."""
     ticker, close, high, name, sector = item
     try:
-        return _one(ticker, close, high, name, sector, liquidity=_CN_SHARED.get("liq"))
+        return _one(ticker, close, high, name, sector, liquidity=_CN_SHARED.get("liq"),
+                    allow_limited=True)
     except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
         log.debug("china library %s failed: %s", ticker, e)
         return None
@@ -145,6 +146,22 @@ def _safe(ticker: str) -> str:
     return ticker.replace("=", "_").replace("^", "_")
 
 
+def _limited_rec(ticker: str, c: pd.Series, name: str, sector: str) -> dict:
+    """A minimal, honest record for a name too new for the cycle model (a recent
+    A-share listing under the 300-session floor). US-parity port of
+    build_stock_library._limited_rec: identity, listing date, session count and
+    the LIMITED sentinel state (china_lookup keys off `limited` before ever
+    reading the ladder), plus the TV symbol so the page can chart it."""
+    return {
+        "ticker": ticker, "name": name, "sector": sector, "tv": tv_symbol(ticker),
+        "asof": str(c.index.max().date()),
+        "listed": str(c.index.min().date()),
+        "history_days": int(len(c)),
+        "limited": True,
+        "ladder": {"state": "LIMITED"},
+    }
+
+
 def _write_verified_index(outdir: Path, index: list[dict]) -> list[dict]:
     """Write search manifest rows only when the matching detail JSON exists."""
     verified, missing = [], []
@@ -180,16 +197,27 @@ def current_liquidity() -> str | None:
 
 
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
-         name: str, sector: str, liquidity: str | None = None) -> dict | None:
+         name: str, sector: str, liquidity: str | None = None,
+         min_days: int = 300, allow_limited: bool = False) -> dict | None:
     c = close.dropna()
-    if len(c) < 300:
+    if not len(c):
         return None
+    # The heatmap and this library read the SAME china_search panel, so a name the
+    # tiles render must never 404 on click-through: below the 300-session cycle
+    # floor we emit an honest LIMITED record (searchable identity + listing date +
+    # chart, "analysis pending") instead of dropping the name — display-tier
+    # context ships freely; the full read unlocks as history accrues. Unlike the
+    # US build (curated extras only), allow_limited covers the WHOLE universe here
+    # because the search universe IS the heatmap universe (the 46-tile dead-end
+    # class, 2026-07-12).
+    if len(c) < min_days:
+        return _limited_rec(ticker, c, name, sector) if allow_limited else None
     # China net-liquidity is a single market-wide regime applying to every A-share
     # name (mirrors the US build); the CN regime carries no macro_risk/VIX leg, so
     # liquidity is the only macro conviction modifier threaded into the ladder.
     res = analyze(c, high, kind="equity", liquidity=liquidity)
     if not res.get("ladder"):
-        return None
+        return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)
     seas = seasonality(c)
     # RICH close-only technicals (engine.stock_technicals: momentum / 52w-high proximity / BBWP /
@@ -948,7 +976,7 @@ def main(alpha: dict | None = None) -> dict | None:
     _tick("alpha + reversal-z legs")
     basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
 
-    index, cand, built, failed = [], [], 0, 0
+    index, cand, built, failed, limited = [], [], 0, 0, 0
     price_by: dict[str, float] = {}
     sector_by: dict[str, str] = {}
     # unified Conviction profiles per name + the DEFERRED per-stock JSON writes —
@@ -1034,6 +1062,14 @@ def main(alpha: dict | None = None) -> dict | None:
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
+            continue
+        if rec.get("limited"):
+            # recent listing under the history floor — searchable identity + honest
+            # "analysis pending" detail page (renderLimited), but it NEVER enters
+            # scoring / boards / profiles (accrual without authority).
+            to_write.append((_safe(ticker), rec))
+            index.append({"t": ticker, "n": name, "s": sector, "st": "LIMITED"})
+            limited += 1
             continue
         # COMBINE: the confluence T1->T4 cascade is computed alongside main's bottoming-alignment
         # gate. It NEVER changes which names are eligible (alignment stays the inclusion gate) —
@@ -2217,8 +2253,8 @@ def main(alpha: dict | None = None) -> dict | None:
                  len(_ripening_rows), len(_ready_capped), len(_basing_capped),
                  len(_ripening_falling), len(_ran_rows),
                  len(eligible_rows), len(cand))
-    log.info("china library: %d analyzed, %d skipped (thin history), %d setups",
-             built, failed, len(cand))
+    log.info("china library: %d analyzed, %d limited (recent listings), %d skipped (empty/failed), %d setups",
+             built, limited, failed, len(cand))
     _tick("boards + ledgers + manifest")
 
     # ── CN Pick Lab snapshot producer + Flagship-2 Reversion Desk ────────────
