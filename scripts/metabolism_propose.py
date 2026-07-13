@@ -435,9 +435,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--today", default=None, help="Override today (YYYY-MM-DD)")
     parser.add_argument("--max-docket-size", type=int, default=None)
     parser.add_argument("--lane", default="metabolism-propose")
-    parser.add_argument("--lobe", default=None,
+    parser.add_argument("--lobe", default="",
                         help="Lobe to drive (default: til). Use a different lobe id to run "
-                             "the charter-driven prompt and accrual-honesty gate for that lobe.")
+                             "the charter-driven prompt and accrual-honesty gate for that lobe. "
+                             "When non-empty the lobe is validated as loop-managed before running.")
     parser.add_argument("--all-lobes", action="store_true",
                         help=(
                             "Iterate ALL loop-managed lobes (structured sensors + active/probation). "
@@ -465,6 +466,22 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     lobe = args.lobe or _LOBE
+
+    # ── Validate --lobe is loop-managed when explicitly specified ────────────
+    # When the caller passes a non-empty --lobe (e.g. from metabolism-cycle.yml),
+    # confirm the lobe id is loop-managed before running.  'til' is always valid
+    # (backward compat guarantee inside _discover_loop_managed_lobes).
+    # NEVER raises — on discovery error we proceed optimistically.
+    if args.lobe:
+        loop_managed = _discover_loop_managed_lobes(root)
+        if lobe not in loop_managed:
+            log.info(
+                "metabolism_propose --lobe %s: lobe is not loop-managed "
+                "(loop_managed=%s) — clean no-op.",
+                lobe, loop_managed,
+            )
+            return 0
+
     _run_single_lobe(args, root, lobe, cycle_id)
     return 0
 

@@ -322,6 +322,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(_alerts_mod.panel(limit=limit))
             if path == "/api/metabolism":
                 return self._json(metabolism_panel.panel())
+            if path == "/api/metabolism/keys":
+                return self._json(metabolism_panel.keys())
             if path == "/api/metabolism/history":
                 limit = int((q.get("limit") or ["100"])[0])
                 return self._json(metabolism_history.history(limit=limit))
@@ -434,6 +436,47 @@ class Handler(BaseHTTPRequestHandler):
                                        "error": "Failed to update AUTONOMY_PAUSED — check that "
                                                 "GH_TOKEN has Variables write permission."}, 500)
                 return self._json({"ok": True, "armed": arm, "variable_value": new_value})
+
+            if path == "/api/metabolism/throttle":
+                if not b.get("confirm"):
+                    return self._json({"ok": False, "error": "confirm required"}, 400)
+                if not github_api.token():
+                    return self._json({"ok": False,
+                                       "error": "No GitHub token configured. Set GH_TOKEN in "
+                                                "/etc/macro-admin.env (needs Variables read/write) "
+                                                "to set throttle variables."}, 503)
+                ok_v, errors, to_set = metabolism_panel.validate_throttle_body(b)
+                if not ok_v:
+                    return self._json({"ok": False, "errors": errors}, 400)
+                if not to_set:
+                    return self._json({"ok": False,
+                                       "error": "no valid fields provided; supply intensity, "
+                                                "pace, or keys_enabled"}, 400)
+                set_results: dict[str, bool] = {}
+                for var_name, value in to_set.items():
+                    set_results[var_name] = github_api.set_repo_variable(var_name, value)
+                failed = {k: v for k, v in set_results.items() if not v}
+                if failed:
+                    return self._json({"ok": False,
+                                       "error": f"Failed to set variable(s): {list(failed)}; "
+                                                "check GH_TOKEN has Variables write permission.",
+                                       "set": set_results}, 500)
+                return self._json({"ok": True, "set": set_results})
+
+            if path == "/api/metabolism/run":
+                if not b.get("confirm"):
+                    return self._json({"ok": False, "error": "confirm required"}, 400)
+                if not github_api.token():
+                    return self._json({"ok": False,
+                                       "error": "No GitHub token configured. Set GH_TOKEN in "
+                                                "/etc/macro-admin.env (needs Actions write) "
+                                                "to dispatch workflows."}, 503)
+                ok_v, err_msg, workflow, inputs = metabolism_panel.validate_run_body(b)
+                if not ok_v:
+                    return self._json({"ok": False, "error": err_msg}, 400)
+                result = github_api.dispatch(workflow=workflow, ref="main",
+                                             inputs=inputs or None)
+                return self._json(result)
 
             return self._json({"error": f"unknown route {path}"}, 404)
         except Exception as e:  # noqa: BLE001

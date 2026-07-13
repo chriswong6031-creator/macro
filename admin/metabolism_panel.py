@@ -12,18 +12,41 @@ Pause semantics mirror scripts/metabolism_guard.py exactly:
 from __future__ import annotations
 
 import json
+import logging
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
 from . import github_api
 from .paths import ROOT
 
+_log = logging.getLogger(__name__)
+
 _VAR_NAME = "AUTONOMY_PAUSED"
 _ARMED_VALUE = "false"
 
 # Metabolism data directory
 _MET_DIR = ROOT / "data" / "metabolism"
+
+# ---------------------------------------------------------------------------
+# V10 Throttle constants (mirrors engine.metabolism.throttle)
+# ---------------------------------------------------------------------------
+_INTENSITY_ALLOWED = {"low", "normal", "high", "max"}
+_PACE_ALLOWED = {"single", "2x", "4x"}
+_KEYS_ENABLED_RE = re.compile(r"^[0-9a-z,]{0,64}$")
+
+# Workflow filename map for run mode dispatch
+_RUN_MODE_WORKFLOWS = {
+    "cycle": "metabolism-cycle.yml",
+    "agenda": "metabolism-agenda.yml",
+    "propose": "metabolism-propose.yml",
+    "adjudicate": "metabolism-adjudicate.yml",
+    "build": "metabolism-build.yml",
+}
+
+_STAGES_ALLOWED = {"full", "sense", "through-adjudicate"}
+_LOBE_RE = re.compile(r"^[a-z0-9-]{0,40}$")
 
 
 def _armed_state(variable_value: str | None) -> tuple[bool, str]:
@@ -143,6 +166,222 @@ def _freezes_7d() -> int:
         return 0
 
 
+# ---------------------------------------------------------------------------
+# V10 Throttle & Key Economy
+# ---------------------------------------------------------------------------
+
+def throttle(root: Path | None = None) -> dict:  # noqa: ARG001
+    """Return the current METAB_* throttle variable state.
+
+    Reads METAB_INTENSITY, METAB_PACE, METAB_KEYS_ENABLED from GitHub repo
+    variables (fail-soft: each None-tolerates).  Resolves effective values
+    via engine.metabolism.throttle helpers (guarded import; fails to defaults
+    + note string).  Never raises.
+    """
+    # Read raw variable values from GitHub — each None when absent/error.
+    intensity_raw = github_api.get_repo_variable("METAB_INTENSITY")
+    pace_raw = github_api.get_repo_variable("METAB_PACE")
+    keys_raw = github_api.get_repo_variable("METAB_KEYS_ENABLED")
+
+    # Resolve effective values via throttle engine helpers.
+    engine_note: str | None = None
+    effective_intensity = "normal"
+    effective_pace = "single"
+    extra_cycles = 0
+    try:
+        from engine.metabolism.throttle import (  # noqa: PLC0415
+            intensity,
+            intensity_multiplier,
+            pace,
+            pace_extra_cycles,
+        )
+        import os as _os  # noqa: PLC0415
+        # Temporarily inject raw values so the helpers read them.
+        _saved_i = _os.environ.get("METAB_INTENSITY")
+        _saved_p = _os.environ.get("METAB_PACE")
+        try:
+            if intensity_raw is not None:
+                _os.environ["METAB_INTENSITY"] = intensity_raw
+            elif "METAB_INTENSITY" in _os.environ:
+                del _os.environ["METAB_INTENSITY"]
+            if pace_raw is not None:
+                _os.environ["METAB_PACE"] = pace_raw
+            elif "METAB_PACE" in _os.environ:
+                del _os.environ["METAB_PACE"]
+            effective_intensity = intensity()
+            effective_pace = pace()
+            extra_cycles = pace_extra_cycles(effective_pace)
+        finally:
+            # Restore original env
+            if _saved_i is not None:
+                _os.environ["METAB_INTENSITY"] = _saved_i
+            elif "METAB_INTENSITY" in _os.environ:
+                del _os.environ["METAB_INTENSITY"]
+            if _saved_p is not None:
+                _os.environ["METAB_PACE"] = _saved_p
+            elif "METAB_PACE" in _os.environ:
+                del _os.environ["METAB_PACE"]
+    except ImportError:
+        engine_note = "engine.metabolism.throttle not available; showing raw values"
+        # Resolve manually with fail-open defaults
+        effective_intensity = intensity_raw if intensity_raw in _INTENSITY_ALLOWED else "normal"
+        effective_pace = pace_raw if pace_raw in _PACE_ALLOWED else "single"
+        extra_cycles = {"single": 0, "2x": 1, "4x": 3}.get(effective_pace, 0)
+    except Exception as exc:  # noqa: BLE001
+        engine_note = f"throttle engine error: {exc}"
+        effective_intensity = intensity_raw if intensity_raw in _INTENSITY_ALLOWED else "normal"
+        effective_pace = pace_raw if pace_raw in _PACE_ALLOWED else "single"
+        extra_cycles = {"single": 0, "2x": 1, "4x": 3}.get(effective_pace, 0)
+
+    # Resolve effective_ids for METAB_KEYS_ENABLED
+    keys_enabled_note: str | None = None
+    effective_ids: list[str] | None = None  # None = all keys
+    try:
+        from engine.neuralweb.key_pool import enabled_key_ids  # noqa: PLC0415
+        import os as _os  # noqa: PLC0415
+        _saved_k = _os.environ.get("METAB_KEYS_ENABLED")
+        try:
+            if keys_raw is not None:
+                _os.environ["METAB_KEYS_ENABLED"] = keys_raw
+            elif "METAB_KEYS_ENABLED" in _os.environ:
+                del _os.environ["METAB_KEYS_ENABLED"]
+            result = enabled_key_ids()
+            effective_ids = list(result) if result is not None else None
+        finally:
+            if _saved_k is not None:
+                _os.environ["METAB_KEYS_ENABLED"] = _saved_k
+            elif "METAB_KEYS_ENABLED" in _os.environ:
+                del _os.environ["METAB_KEYS_ENABLED"]
+    except ImportError:
+        keys_enabled_note = "engine.neuralweb.key_pool not available"
+    except Exception as exc:  # noqa: BLE001
+        keys_enabled_note = f"key_pool error: {exc}"
+
+    result_dict: dict = {
+        "intensity": {
+            "value": intensity_raw,
+            "effective": effective_intensity,
+            "allowed": ["low", "normal", "high", "max"],
+        },
+        "pace": {
+            "value": pace_raw,
+            "effective": effective_pace,
+            "allowed": ["single", "2x", "4x"],
+            "extra_cycles": extra_cycles,
+        },
+        "keys_enabled": {
+            "value": keys_raw,
+            "effective_ids": effective_ids,
+        },
+    }
+    if engine_note:
+        result_dict["note"] = engine_note
+    if keys_enabled_note:
+        result_dict["keys_enabled"]["note"] = keys_enabled_note
+    return result_dict
+
+
+def keys(root: Path | None = None) -> list[dict] | dict:
+    """Return per-key usage snapshot from key_pool.usage_snapshot().
+
+    Fail-soft: on any import or runtime error returns {"error": <note>}.
+    Never raises.
+    """
+    try:
+        from engine.neuralweb.key_pool import usage_snapshot  # noqa: PLC0415
+        return usage_snapshot(root=root)
+    except ImportError:
+        return {"error": "engine.neuralweb.key_pool not available in this environment"}
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"key_pool.usage_snapshot error: {exc}"}
+
+
+# ---------------------------------------------------------------------------
+# V10 Validators (pure functions — called by server routes + tests)
+# ---------------------------------------------------------------------------
+
+def validate_throttle_body(body: dict) -> tuple[bool, dict, dict]:
+    """Validate a POST /api/metabolism/throttle request body.
+
+    Returns (ok, errors, to_set) where:
+      ok     — True when no validation errors
+      errors — dict of field -> error message (empty when ok)
+      to_set — dict of {var_name: value} pairs that passed validation
+                 (only fields present in the body and valid)
+    """
+    errors: dict[str, str] = {}
+    to_set: dict[str, str] = {}
+
+    if "intensity" in body:
+        v = body["intensity"]
+        if v not in _INTENSITY_ALLOWED:
+            errors["intensity"] = f"intensity must be one of {sorted(_INTENSITY_ALLOWED)}, got {v!r}"
+        else:
+            to_set["METAB_INTENSITY"] = v
+
+    if "pace" in body:
+        v = body["pace"]
+        if v not in _PACE_ALLOWED:
+            errors["pace"] = f"pace must be one of {sorted(_PACE_ALLOWED)}, got {v!r}"
+        else:
+            to_set["METAB_PACE"] = v
+
+    if "keys_enabled" in body:
+        v = body["keys_enabled"]
+        if not isinstance(v, str):
+            errors["keys_enabled"] = "keys_enabled must be a string"
+        elif not _KEYS_ENABLED_RE.match(v):
+            errors["keys_enabled"] = (
+                "keys_enabled must match ^[0-9a-z,]{0,64}$ (csv of 1/2/3/legacy, or empty)"
+            )
+        else:
+            to_set["METAB_KEYS_ENABLED"] = v
+
+    return (len(errors) == 0, errors, to_set)
+
+
+def validate_run_body(body: dict) -> tuple[bool, str | None, str | None, dict]:
+    """Validate a POST /api/metabolism/run request body.
+
+    Returns (ok, error, workflow_filename, inputs_dict).
+      ok               — True when valid
+      error            — error message string or None
+      workflow_filename — e.g. "metabolism-cycle.yml" or None on error
+      inputs_dict      — dict to pass as workflow inputs (may be empty)
+    """
+    mode = body.get("mode")
+    if mode not in _RUN_MODE_WORKFLOWS:
+        allowed = sorted(_RUN_MODE_WORKFLOWS)
+        return (False, f"mode must be one of {allowed}, got {mode!r}", None, {})
+
+    workflow = _RUN_MODE_WORKFLOWS[mode]
+    inputs: dict[str, str] = {}
+
+    lobe = body.get("lobe")
+    if lobe is not None:
+        lobe_str = str(lobe)
+        if not _LOBE_RE.match(lobe_str):
+            return (False, f"lobe must match ^[a-z0-9-]{{0,40}}$, got {lobe_str!r}", None, {})
+        # lobe is valid for cycle and propose
+        if mode in ("cycle", "propose"):
+            inputs["lobe"] = lobe_str
+
+    stages = body.get("stages")
+    if stages is not None:
+        stages_str = str(stages)
+        if stages_str not in _STAGES_ALLOWED:
+            return (
+                False,
+                f"stages must be one of {sorted(_STAGES_ALLOWED)}, got {stages_str!r}",
+                None,
+                {},
+            )
+        if mode == "cycle":
+            inputs["stages"] = stages_str
+
+    return (True, None, workflow, inputs)
+
+
 def panel(root: Path | None = None) -> dict:
     """Return the metabolism panel data dict.
 
@@ -155,6 +394,7 @@ def panel(root: Path | None = None) -> dict:
       organism        — organism_state.json scalar summary or None
       keys            — list of key health dicts, or a note string
       freezes_7d      — count of freeze_*.json files in last 7 days
+      throttle        — V10 throttle state dict (see throttle())
 
     Never raises.
     """
@@ -164,8 +404,9 @@ def panel(root: Path | None = None) -> dict:
         armed, state = _armed_state(variable_value)
         runs = _recent_metabolism_runs()
         organism = _organism_summary()
-        keys = _key_health(root)
+        key_health = _key_health(root)
         freezes = _freezes_7d()
+        throttle_data = throttle(root)
 
         return {
             "variable_value": variable_value,
@@ -174,8 +415,9 @@ def panel(root: Path | None = None) -> dict:
             "has_token": has_token,
             "runs": runs,
             "organism": organism,
-            "keys": keys,
+            "keys": key_health,
             "freezes_7d": freezes,
+            "throttle": throttle_data,
         }
     except Exception as exc:  # noqa: BLE001
         return {
@@ -187,4 +429,5 @@ def panel(root: Path | None = None) -> dict:
             "organism": None,
             "keys": f"panel error: {exc}",
             "freezes_7d": 0,
+            "throttle": {},
         }

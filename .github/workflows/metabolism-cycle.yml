@@ -1,0 +1,294 @@
+name: metabolism-cycle
+# Metabolism V10 — Chain Runner.  INERT by default.
+#
+# Orchestrates the full agenda→propose→adjudicate→build chain by dispatching
+# the existing stage workflows sequentially (R-V10-5: no stage logic duplicated).
+#
+# Inputs:
+#   lobe   — single lobe id (empty = all loop-managed lobes; "til" = main lobe)
+#   stages — full | sense | through-adjudicate (default: full)
+#   force_run — bypass AUTONOMY_PAUSED (ops verification only)
+#
+# Cron: every 6h at :35 (offset from the daily chain) — gated by METAB_PACE:
+#   single → extra crons always no-op (today's behavior preserved)
+#   2x     → 1 extra cycle per day
+#   4x     → 3 extra cycles per day
+# Per-cycle budget caps (IMMUTABLE from V9) still bound each cycle.
+#
+# KILL SWITCH — the AUTONOMY_PAUSED repo variable (R-AUT-2):
+#   gh variable set AUTONOMY_PAUSED --body true    # re-arm the pause (default-safe)
+#   gh variable set AUTONOMY_PAUSED --body false   # arm the loop (operator-only)
+# Absent OR anything other than the literal 'false' → clean no-op.
+#
+# Double-gated: if: vars.AUTONOMY_PAUSED != 'true' in the job condition
+# AND the script itself re-checks AUTONOMY_PAUSED=='false' before proceeding.
+
+on:
+  schedule:
+    # Every 6h at :35 — staggered from the daily chain (:15/:45/:15/:45)
+    - cron: "35 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      lobe:
+        description: "Single lobe id; empty = all loop-managed lobes; til = main lobe"
+        type: string
+        default: ""
+      stages:
+        description: "Which stages to run"
+        type: choice
+        options:
+          - full
+          - sense
+          - through-adjudicate
+        default: full
+      force_run:
+        description: "Force even when AUTONOMY_PAUSED=true (ops verification only)"
+        type: boolean
+        default: false
+
+permissions:
+  actions: write    # dispatch sub-workflows + poll run list
+  contents: read
+
+concurrency:
+  group: metabolism-cycle
+  cancel-in-progress: false
+
+jobs:
+  cycle:
+    # KILL SWITCH — absent variable → treated as paused (default-safe).
+    if: vars.AUTONOMY_PAUSED != 'true'
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - name: install deps
+        run: pip install --quiet pyyaml anthropic
+
+      - name: CYCLE (chain runner — agenda→propose→adjudicate→build)
+        env:
+          AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          METAB_PACE: ${{ vars.METAB_PACE }}
+          METAB_INTENSITY: ${{ vars.METAB_INTENSITY }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
+          FORCE_RUN: ${{ github.event.inputs.force_run }}
+          LOBE_INPUT: ${{ github.event.inputs.lobe }}
+          STAGES_INPUT: ${{ github.event.inputs.stages }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+
+          # ── Gate 1: AUTONOMY_PAUSED double-gate ─────────────────────────
+          AP="$(printf '%s' "${AUTONOMY_PAUSED:-}" | tr '[:upper:]' '[:lower:]')"
+          FR="$(printf '%s' "${FORCE_RUN:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "$AP" != "false" ] && [ "$FR" != "true" ]; then
+            echo "AUTONOMY_PAUSED not 'false' (=${AUTONOMY_PAUSED:-<unset>}) — clean no-op."
+            exit 0
+          fi
+
+          # ── Gate 2: PACE GATE (schedule events only; dispatch/button skips) ──
+          # Map METAB_PACE → allowed extra cycles per UTC day:
+          #   single → 0 (extra crons always no-op)
+          #   2x     → 1 extra cycle
+          #   4x     → 3 extra cycles
+          # Count today's completed schedule-event runs of THIS workflow (excluding
+          # current run) via gh run list.
+          EVENT="${GITHUB_EVENT_NAME:-}"
+          if [ "$EVENT" = "schedule" ]; then
+            _PACE="${METAB_PACE:-single}"
+            case "$_PACE" in
+              "2x")  _ALLOWED=1 ;;
+              "4x")  _ALLOWED=3 ;;
+              *)     _ALLOWED=0 ;;
+            esac
+
+            if [ "$_ALLOWED" -eq 0 ]; then
+              echo "METAB_PACE=single — schedule no-op (extra cron suppressed)."
+              exit 0
+            fi
+
+            # Count schedule-event runs today (UTC), excluding the current run.
+            _TODAY="$(date -u +%Y-%m-%d)"
+            _CURRENT_RUN="${GITHUB_RUN_ID:-}"
+            _COUNT="$(gh run list \
+              --workflow metabolism-cycle.yml \
+              --created "$_TODAY" \
+              --json databaseId,event \
+              --jq "[.[] | select(.event==\"schedule\" and (.databaseId | tostring) != \"$_CURRENT_RUN\")] | length" \
+              2>/dev/null || echo 0)"
+
+            echo "METAB_PACE=$_PACE allowed_extra=$_ALLOWED completed_schedule_runs_today=$_COUNT"
+            if [ "${_COUNT:-0}" -ge "$_ALLOWED" ]; then
+              echo "pace gate: $_COUNT/$_ALLOWED schedule runs already completed today — no-op."
+              exit 0
+            fi
+            echo "pace gate: $_COUNT/$_ALLOWED — proceeding."
+          else
+            echo "dispatch/button event — pace gate skipped."
+          fi
+
+          # ── Mint CYCLE_ID ─────────────────────────────────────────────────
+          CYCLE_ID="$(python -c 'from scripts.metabolism_journal import new_cycle_id; print(new_cycle_id())')"
+          echo "cycle_id=$CYCLE_ID"
+
+          STAGES="${STAGES_INPUT:-full}"
+          LOBE="${LOBE_INPUT:-}"
+          echo "stages=$STAGES lobe=${LOBE:-<all>}"
+
+          # ── Helper: dispatch a stage workflow and poll to completion ──────
+          # dispatch_and_wait <workflow_file> [<key=value> ...]
+          # Passes key=value pairs as -f flags to gh workflow run.
+          # Polls every 30s; times out after ~35 min (70 iterations).
+          # On failure: logs and continues (never silently wedges the chain).
+          _STAGE_CONCLUSIONS=""
+
+          dispatch_and_wait() {
+            local _WF="$1"
+            shift
+            local _FLAGS=""
+            for _kv in "$@"; do
+              _FLAGS="$_FLAGS -f $_kv"
+            done
+
+            echo "--- dispatching $_WF $_FLAGS ---"
+            local _BEFORE
+            _BEFORE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+            # shellcheck disable=SC2086
+            gh workflow run "$_WF" $_FLAGS --repo "$GITHUB_REPOSITORY" || {
+              echo "::warning::dispatch failed for $_WF — skipping wait"
+              _STAGE_CONCLUSIONS="${_STAGE_CONCLUSIONS}${_WF}=dispatch_failed "
+              return 0
+            }
+
+            # Brief pause so the run appears in the list
+            sleep 15
+
+            # Find the newest run of this workflow created after $_BEFORE.
+            # NOTE: a bare timestamp in --created is an EXACT-instant match;
+            # the ">=" prefix makes it a created-at-or-after range filter.
+            local _RUN_ID=""
+            local _ATTEMPTS=0
+            while [ -z "$_RUN_ID" ] && [ "$_ATTEMPTS" -lt 10 ]; do
+              _RUN_ID="$(gh run list \
+                --workflow "$_WF" \
+                --repo "$GITHUB_REPOSITORY" \
+                --created ">=$_BEFORE" \
+                --json databaseId,createdAt,status \
+                --jq 'sort_by(.createdAt) | reverse | .[0].databaseId // empty' \
+                2>/dev/null || true)"
+              _ATTEMPTS=$((_ATTEMPTS + 1))
+              [ -z "$_RUN_ID" ] && sleep 10
+            done
+
+            if [ -z "$_RUN_ID" ]; then
+              echo "::warning::could not find run for $_WF — assuming dispatched"
+              _STAGE_CONCLUSIONS="${_STAGE_CONCLUSIONS}${_WF}=run_not_found "
+              return 0
+            fi
+
+            echo "found run id=$_RUN_ID for $_WF — polling..."
+
+            # Poll to completion (30s interval, max 70 iterations = ~35 min)
+            local _ITER=0
+            local _CONCLUSION=""
+            while [ "$_ITER" -lt 70 ]; do
+              local _STATUS
+              _STATUS="$(gh run view "$_RUN_ID" \
+                --repo "$GITHUB_REPOSITORY" \
+                --json status,conclusion \
+                --jq '[.status, (.conclusion // "")] | join(":")' \
+                2>/dev/null || echo "unknown:")"
+              local _S
+              _S="${_STATUS%%:*}"
+              _CONCLUSION="${_STATUS##*:}"
+
+              if [ "$_S" = "completed" ]; then
+                echo "$_WF run=$_RUN_ID completed conclusion=$_CONCLUSION"
+                _STAGE_CONCLUSIONS="${_STAGE_CONCLUSIONS}${_WF}=${_CONCLUSION} "
+                return 0
+              fi
+
+              echo "$_WF run=$_RUN_ID status=$_S (iter=$_ITER)..."
+              _ITER=$((_ITER + 1))
+              sleep 30
+            done
+
+            echo "::warning::$_WF run=$_RUN_ID timed out after ~35 min — continuing chain"
+            _STAGE_CONCLUSIONS="${_STAGE_CONCLUSIONS}${_WF}=timeout "
+          }
+
+          # ── Stage chain ───────────────────────────────────────────────────
+          # force_run propagates to every stage (each re-gates on
+          # AUTONOMY_PAUSED itself; without propagation a forced cycle would
+          # dispatch four clean no-ops — misleading for ops verification).
+          # Plain string + unquoted expansion (word-splits away when empty):
+          # macOS bash 3.2 errors on empty-array "${a[@]}" under set -u.
+          _FR_FLAG=""
+          if [ "$FR" = "true" ]; then
+            _FR_FLAG="force_run=true"
+          fi
+
+          # agenda always runs (sense stage = stop after agenda)
+          # shellcheck disable=SC2086
+          dispatch_and_wait "metabolism-agenda.yml" \
+            "cycle_id=$CYCLE_ID" $_FR_FLAG
+
+          if [ "$STAGES" = "sense" ]; then
+            echo "stages=sense — stopping after agenda."
+          else
+            # propose: pass lobe when non-empty
+            # shellcheck disable=SC2086
+            if [ -n "$LOBE" ]; then
+              dispatch_and_wait "metabolism-propose.yml" \
+                "cycle_id=$CYCLE_ID" \
+                "lobe=$LOBE" $_FR_FLAG
+            else
+              dispatch_and_wait "metabolism-propose.yml" \
+                "cycle_id=$CYCLE_ID" $_FR_FLAG
+            fi
+
+            # shellcheck disable=SC2086
+            dispatch_and_wait "metabolism-adjudicate.yml" \
+              "cycle_id=$CYCLE_ID" $_FR_FLAG
+
+            if [ "$STAGES" = "through-adjudicate" ]; then
+              echo "stages=through-adjudicate — stopping after adjudicate."
+            else
+              # shellcheck disable=SC2086
+              dispatch_and_wait "metabolism-build.yml" \
+                "cycle_id=$CYCLE_ID" $_FR_FLAG
+            fi
+          fi
+
+          # ── Final summary ─────────────────────────────────────────────────
+          echo "--- metabolism-cycle $CYCLE_ID complete ---"
+          echo "stage conclusions: ${_STAGE_CONCLUSIONS:-none}"
+
+      - name: notify on failure
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$TOKEN" ] || exit 0
+          curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            -d chat_id="$CHAT_ID" \
+            -d text="[Metabolism] metabolism-cycle run failed: ${RUN_URL}" || true

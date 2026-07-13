@@ -91,6 +91,10 @@ _SAFE_ENV_KEYS = frozenset({
     # triggering the environ_value_capture redline rule.
     "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
     "DISCORD_WEBHOOK_URL", "DISCORD_WEBHOOK_WATCHLIST",
+    # V10 operator throttle (R-V10-1): a repo VARIABLE (csv of key ids like
+    # "1,3,legacy"), never a token value — key_pool.enabled_key_ids() reads it
+    # to filter the pool to operator-enabled keys.
+    "METAB_KEYS_ENABLED",
 })
 
 # ── Entropy pattern ───────────────────────────────────────────────────────────
