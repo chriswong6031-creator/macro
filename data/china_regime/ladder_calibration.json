@@ -1,0 +1,82 @@
+{
+  "DECLINE": {
+    "n": 7062,
+    "hit_pct": 52.6,
+    "avg_fwd_pct": 1.72,
+    "dd_med_pct": -4.48,
+    "dd_p10_pct": -14.71,
+    "dd_bad_pct": 21.4
+  },
+  "BOTTOM WATCH": {
+    "n": 3517,
+    "hit_pct": 44.8,
+    "avg_fwd_pct": 1.66,
+    "dd_med_pct": -3.56,
+    "dd_p10_pct": -14.4,
+    "dd_bad_pct": 19.4
+  },
+  "TURN SIGNALED": {
+    "n": 11315,
+    "hit_pct": 48.5,
+    "avg_fwd_pct": 1.27,
+    "dd_med_pct": -4.52,
+    "dd_p10_pct": -14.73,
+    "dd_bad_pct": 21.5
+  },
+  "FRESH BUY": {
+    "n": 2367,
+    "hit_pct": 52.3,
+    "avg_fwd_pct": 2.16,
+    "dd_med_pct": -4.43,
+    "dd_p10_pct": -13.7,
+    "dd_bad_pct": 19.3
+  },
+  "RALLY ON": {
+    "n": 2381,
+    "hit_pct": 50.9,
+    "avg_fwd_pct": 1.58,
+    "dd_med_pct": -4.27,
+    "dd_p10_pct": -14.24,
+    "dd_bad_pct": 20.8
+  },
+  "TOP WATCH": {
+    "n": 6378,
+    "hit_pct": 51.3,
+    "avg_fwd_pct": 2.59,
+    "dd_med_pct": -4.92,
+    "dd_p10_pct": -15.69,
+    "dd_bad_pct": 24.5
+  },
+  "ROLLING OVER": {
+    "n": 219,
+    "hit_pct": 47.0,
+    "avg_fwd_pct": 0.47,
+    "dd_med_pct": -4.53,
+    "dd_p10_pct": -13.52,
+    "dd_bad_pct": 19.6
+  },
+  "COUNTERTREND BOUNCE": {
+    "n": 10904,
+    "hit_pct": 51.7,
+    "avg_fwd_pct": 1.32,
+    "dd_med_pct": -4.22,
+    "dd_p10_pct": -15.01,
+    "dd_bad_pct": 21.3
+  },
+  "BOTTOM WATCH +early-bull": {
+    "n": 132,
+    "hit_pct": 48.5,
+    "avg_fwd_pct": 1.8,
+    "dd_med_pct": -2.16,
+    "dd_p10_pct": -13.52,
+    "dd_bad_pct": 20.5
+  },
+  "BOTTOM WATCH no-early": {
+    "n": 3385,
+    "hit_pct": 44.6,
+    "avg_fwd_pct": 1.66,
+    "dd_med_pct": -3.59,
+    "dd_p10_pct": -14.42,
+    "dd_bad_pct": 19.3
+  }
+}
