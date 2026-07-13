@@ -1489,19 +1489,7 @@
   .st-chip-lane { background:color-mix(in srgb,var(--link) 14%,transparent);
     color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,transparent); }
   /* filter row */
-  .st-filters { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:8px 0 10px; }
-  .st-filter-sel { font:inherit; font-size:12px; background:var(--panel); color:var(--text);
-    border:1px solid var(--line); border-radius:7px; padding:4px 8px; cursor:pointer;
-    min-width:90px; }
-  .st-filter-txt { font:inherit; font-size:12px; background:var(--panel); color:var(--text);
-    border:1px solid var(--line); border-radius:7px; padding:4px 8px; outline:none; }
-  .st-filter-txt:focus { border-color:var(--link); }
-  .st-filter-chk { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px;
-    cursor:pointer; user-select:none; }
-  .st-reset-btn, .st-col-btn { font:inherit; font-size:12px; font-weight:700; cursor:pointer;
-    border:1px solid var(--line); background:var(--panel); color:var(--muted);
-    padding:4px 10px; border-radius:7px; white-space:nowrap; transition:color .12s; }
-  .st-reset-btn:hover, .st-col-btn:hover { color:var(--text); border-color:var(--link); }
+  /* filter-row + column-chooser chrome (.stf-*) is injected by stocktable.js since v3 */
   /* table wrapper — horizontal scroll, sticky first col */
   .st-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%;
     border:1px solid var(--line); border-radius:9px; }
@@ -1543,27 +1531,6 @@
   .st-new-dot::before { content:"NEW"; display:inline-block; font-size:8px; font-weight:800;
     background:var(--up); color:#fff; padding:0 4px; border-radius:4px; margin-right:4px;
     vertical-align:1px; }
-  /* column chooser panel */
-  .st-chooser-wrap { position:relative; }
-  .st-chooser { position:absolute; top:0; right:0; z-index:20; min-width:240px;
-    background:var(--panel); border:1px solid var(--line); border-radius:10px;
-    box-shadow:0 8px 28px rgba(0,0,0,.22); padding:0; overflow:hidden; }
-  .st-chooser-hidden .st-chooser { display:none; }
-  .st-chooser-hdr { display:flex; align-items:center; gap:8px; padding:10px 12px 8px;
-    border-bottom:1px solid var(--line); font-weight:700; font-size:12.5px; }
-  .st-chooser-note { font-size:10.5px; color:var(--muted); font-weight:400; margin-left:auto; }
-  .st-chooser-close { font:inherit; font-size:15px; cursor:pointer; background:none;
-    border:none; color:var(--muted); padding:0 2px; line-height:1; }
-  .st-chooser-list { max-height:340px; overflow-y:auto; padding:6px 0; }
-  .st-chooser-row { display:flex; align-items:center; gap:8px; padding:5px 12px;
-    cursor:grab; user-select:none; font-size:12px; }
-  .st-chooser-row:hover { background:var(--panel2,color-mix(in srgb,var(--muted) 7%,var(--panel))); }
-  .st-chooser-row.st-dragging { opacity:.5; }
-  .st-drag-handle { color:var(--muted); font-size:11px; flex:none; }
-  .st-chooser-footer { padding:8px 12px; border-top:1px solid var(--line); }
-  .st-chooser-reset { font:inherit; font-size:12px; cursor:pointer; background:none;
-    border:1px solid var(--line); border-radius:7px; padding:4px 10px; color:var(--muted); }
-  .st-chooser-reset:hover { color:var(--text); border-color:var(--link); }
   /* th tooltip */
   .st-th-tip { display:inline-flex; align-items:center; justify-content:center;
     width:13px; height:13px; border-radius:50%; border:1px solid var(--muted);
@@ -1580,8 +1547,6 @@
   @media (max-width:680px) {
     .st-table { font-size:11px; }
     .st-table td, .st-table th { padding:5px 7px; }
-    .st-filters { gap:4px; }
-    .st-filter-sel { font-size:11px; min-width:70px; padding:3px 6px; }
   }
 
   /* ======================================================================
@@ -3265,7 +3230,7 @@ body.page-macro .v2chip.c-warn{background:color-mix(in srgb,var(--warn) 14%,var(
 body.page-macro .v2chip.c-info{background:color-mix(in srgb,var(--info) 14%,var(--panel));color:var(--info);border:1px solid color-mix(in srgb,var(--info) 25%,transparent)}
 body.page-macro .v2chip.c-muted{background:color-mix(in srgb,var(--muted) 12%,var(--panel));color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent)}
 body.page-macro .v2-display-badge{
-  display:inline-flex;align-items:center;font-size:9px;font-weight:600;
+  display:inline-flex;align-items:center;font-size:11px;font-weight:600;
   letter-spacing:.06em;color:var(--muted);background:var(--panel2);
   border:1px solid var(--line);border-radius:5px;padding:2px 7px;
 }
@@ -3314,7 +3279,7 @@ body.page-macro .mx2-sh-rk{font-size:10px;color:var(--muted);font-variant-numeri
 
 /* Heatmap chrome wrapper (v3) */
 body.page-macro .isle-heatmap-wrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-height:120px;margin-top:14px}
-body.page-macro .isle-heatmap-chrome-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:10px 14px 0}
+body.page-macro .isle-heatmap-chrome-head{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:10px 14px 0}
 /* MOB-05: hide heatmap sublabels at mobile — heatmap.js renders labels with inline style="font-size:Xpx"
    where X can be 4–5px on a 281px canvas at 390px viewport.
    Target via CSS attr substring matching on the inline style; silence text ≤7px while preserving ≥8px. */
@@ -3900,6 +3865,11 @@ body.page-macro.mx4-grid {
   --mx5-accent-dim:    rgba(34,217,122,.10);
   --mx5-warn:          #f59e0b;
   --mx5-warn-dim:      rgba(245,158,11,.10);
+  /* v5.3 audit round: TEXT-role accents. Fills keep the bright hue above;
+     text uses these so light mode swaps in the darker, ≥4.5:1 accent
+     (theme.css already provides --up/--warn darkened for light). */
+  --mx5-accent-ink:    var(--mx5-accent);
+  --mx5-warn-ink:      var(--mx5-warn);
 }
 [data-theme="light"] body.page-macro.mx4-grid {
   --mx5-glass-bg:      rgba(255,255,255,.82);
@@ -3907,6 +3877,11 @@ body.page-macro.mx4-grid {
   --mx5-glass-border:  rgba(0,0,0,.06);
   --mx5-glass-shadow:  0 4px 24px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.95) inset;
   --mx5-glass-hover:   0 8px 32px rgba(0,0,0,.13), 0 1px 0 rgba(255,255,255,.95) inset;
+  /* Dedicated dark accents for TEXT on the light glass card (>=4.5:1 vs ~#f6f7fa).
+     Deliberately darker than the site-wide --up/--warn (which are tuned ~3.4:1
+     for other surfaces); fills above keep the bright #22d97a / #f59e0b. */
+  --mx5-accent-ink:    #17753f;
+  --mx5-warn-ink:      #9c6212;
 }
 /* ── v5.3 UNIFIED card hover (Order 5): ONE idiom for every grid card/face.
    No accent-colored tints anywhere — border brightens, surface lifts ~2%,
@@ -4034,7 +4009,7 @@ body.page-macro.mx4-grid .mx5-regime-pill{
   display:inline-flex;align-items:center;gap:6px;
   padding:4px 11px;border-radius:var(--mx5-radius-pill);
   border:1px solid var(--mx5-accent);background:var(--mx5-accent-dim);
-  font-size:10px;font-weight:600;color:var(--mx5-accent);
+  font-size:11px;font-weight:600;color:var(--mx5-accent-ink);
   letter-spacing:.02em;margin-bottom:10px;line-height:1.3;
   max-width:100%;box-sizing:border-box;white-space:nowrap;width:auto;
 }
@@ -4052,7 +4027,7 @@ body.page-macro.mx4-grid .mx5-score-line{
 /* verdict word never breaks mid-word; wraps as a whole unit if the column is tight */
 body.page-macro.mx4-grid .mx5-verdict-word{white-space:nowrap;}
 body.page-macro.mx4-grid .mx5-big-score{
-  font-size:68px;font-weight:800;line-height:.95;color:var(--mx5-accent);
+  font-size:68px;font-weight:800;line-height:.95;color:var(--mx5-accent-ink);
   text-shadow:0 0 40px var(--mx5-accent-glow);
   letter-spacing:-.035em;font-variant-numeric:tabular-nums;
 }
@@ -4060,7 +4035,7 @@ body.page-macro.mx4-grid .mx5-verdict-word{
   font-size:19px;font-weight:700;color:var(--ink-1,var(--text,rgba(255,255,255,.92)));
 }
 body.page-macro.mx4-grid .mx5-sub-line{
-  font-size:11px;color:var(--mx5-accent);font-weight:600;margin-top:3px;
+  font-size:11px;color:var(--mx5-accent-ink);font-weight:600;margin-top:3px;
 }
 /* score color by state */
 body.page-macro.mx4-grid.ms-green-page .mx5-big-score,
@@ -4084,7 +4059,7 @@ body.page-macro.mx4-grid .mx5-flip{
   border:1px solid rgba(245,158,11,.18);
   border-radius:9px;line-height:1.5;
 }
-body.page-macro.mx4-grid .mx5-flip-arrow{color:var(--mx5-warn);}
+body.page-macro.mx4-grid .mx5-flip-arrow{color:var(--mx5-warn-ink);}
 
 /* Popover trigger buttons row */
 body.page-macro.mx4-grid .mx5-btn-row{
@@ -4112,7 +4087,7 @@ body.page-macro.mx4-grid .mx5-sc-btn[aria-expanded="true"]{
   background:rgba(255,255,255,.16);
 }
 body.page-macro.mx4-grid .mx5-sc-btn-warn{
-  color:var(--mx5-warn);
+  color:var(--mx5-warn-ink);
   border-color:rgba(245,158,11,.28);
   background:rgba(245,158,11,.07);
 }
@@ -4308,7 +4283,7 @@ body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
 .mx5-factor-header{display:flex;justify-content:space-between;align-items:baseline;}
 .mx5-factor-name{font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));font-weight:500;}
 .mx5-factor-score{font-size:16px;font-weight:700;color:var(--ink-1,rgba(255,255,255,.92));}
-.mx5-factor-score.weak{color:var(--mx5-warn);}
+.mx5-factor-score.weak{color:var(--mx5-warn-ink);}
 .mx5-factor-bar-track{height:7px;border-radius:4px;background:rgba(255,255,255,.07);position:relative;}
 .mx5-factor-bar-fill{height:100%;border-radius:4px;position:relative;
   background:linear-gradient(90deg,rgba(34,217,122,.45),var(--mx5-accent));}
@@ -4322,27 +4297,27 @@ body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
   background:var(--mx5-warn);box-shadow:0 0 7px rgba(245,158,11,.5);
 }
 .mx5-factor-weak-tag{
-  font-size:11px;color:var(--mx5-warn);font-weight:700;letter-spacing:.05em;margin-top:3px;
+  font-size:11px;color:var(--mx5-warn-ink);font-weight:700;letter-spacing:.05em;margin-top:3px;
 }
 
 /* ── Risk Scare Ladder (inside popover) ─────────────────────────── */
 .mx5-scare-dominant-row{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;}
-.mx5-scare-dominant-num{font-size:48px;font-weight:800;letter-spacing:-.03em;color:var(--mx5-warn);line-height:1;}
-.mx5-scare-dominant-title{font-size:15px;font-weight:700;color:var(--mx5-warn);}
+.mx5-scare-dominant-num{font-size:48px;font-weight:800;letter-spacing:-.03em;color:var(--mx5-warn-ink);line-height:1;}
+.mx5-scare-dominant-title{font-size:15px;font-weight:700;color:var(--mx5-warn-ink);}
 .mx5-scare-driver{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:20px;line-height:1.5;}
 .mx5-scare-list{display:flex;flex-direction:column;gap:13px;}
 .mx5-scare-item{display:flex;flex-direction:column;gap:4px;}
 .mx5-scare-item-header{display:flex;justify-content:space-between;align-items:baseline;}
 .mx5-scare-item-name{font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));font-weight:500;}
 .mx5-scare-item-val{font-size:14px;font-weight:700;}
-.mx5-scare-item-val.top{color:var(--mx5-warn);}
+.mx5-scare-item-val.top{color:var(--mx5-warn-ink);}
 .mx5-scare-item-val.lower{color:var(--ink-2,rgba(255,255,255,.6));}
 .mx5-scare-meter{height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden;}
 .mx5-scare-fill{height:100%;border-radius:3px;}
 .mx5-scare-fill.hi {background:linear-gradient(90deg,rgba(245,158,11,.5),var(--mx5-warn));}
 .mx5-scare-fill.mid{background:rgba(245,158,11,.55);}
 .mx5-scare-fill.lo {background:rgba(245,158,11,.35);}
-.mx5-scare-item-label{font-size:11px;color:var(--mx5-warn);font-weight:600;letter-spacing:.04em;}
+.mx5-scare-item-label{font-size:11px;color:var(--mx5-warn-ink);font-weight:600;letter-spacing:.04em;}
 
 /* Popover footer */
 .mx5-pop-footer{
@@ -4352,11 +4327,11 @@ body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
 [data-theme="light"] .mx5-pop-footer{border-top-color:rgba(0,0,0,.07);}
 .mx5-pop-footer-link{
   background:none;border:none;cursor:pointer;font-size:11px;font-weight:600;
-  color:var(--mx5-accent);font-family:inherit;padding:0;
+  color:var(--mx5-accent-ink);font-family:inherit;padding:0;
   text-decoration:underline;text-decoration-color:transparent;
   transition:text-decoration-color .15s;
 }
-.mx5-pop-footer-link:hover{text-decoration-color:var(--mx5-accent);}
+.mx5-pop-footer-link:hover{text-decoration-color:var(--mx5-accent-ink);}
 
 /* ══════════════════════════════════════════════════════════════════
    v5.1 — mx5OpenDlg centered dialog system (§2 addendum)
@@ -4365,6 +4340,12 @@ body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
    ══════════════════════════════════════════════════════════════════ */
 
 /* Scroll-lock while dialog open */
+/* v5.3 audit round M03: the document scroller is <html>, not <body>, so
+   body{overflow:hidden} alone leaked wheel/scroll to the background. Lock the
+   real scroller: html.mx5-dlg-lock pins the page while a dialog is open; JS
+   restores scrollY on close (position:fixed keeps iOS from scrolling <html>). */
+html.mx5-dlg-lock{ overflow:hidden; }
+html.mx5-dlg-lock body{ overflow:hidden; position:fixed; width:100%; }
 body.mx5-dlg-open{ overflow:hidden; }
 
 /* Backdrop dim */
@@ -4413,6 +4394,10 @@ body.mx5-dlg-open{ overflow:hidden; }
   .mx5-dlg-panel{background:var(--mx5-pop-bg,rgba(13,18,26,.98));}
   [data-theme="light"] .mx5-dlg-panel{background:var(--mx5-pop-bg,rgba(255,255,255,.98));}
 }
+/* v5.3 audit round M09: dialogs whose whole body is one compact row (Deep
+   Context = a single strip of linked-surface shortcuts) size to their content
+   instead of the full 980px shell, so the panel isn't mostly empty. */
+.mx5-dlg-panel-narrow{ max-width:640px; }
 
 /* Dialog header (sticky). Frosted panel is translucent, so the sticky header needs
    its own denser fill + blur or scrolled body copy bleeds through the title. */
@@ -4937,7 +4922,7 @@ body.page-macro.mx4-grid .mx5-mkt-ticker{
   color:var(--ink-3,rgba(255,255,255,.36));text-transform:uppercase;margin-bottom:3px;
 }
 body.page-macro.mx4-grid .mx5-mkt-sub{
-  font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
   letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px;
 }
 body.page-macro.mx4-grid .mx5-mkt-price{
@@ -5024,7 +5009,7 @@ body.page-macro.mx4-grid .mx5-tl-badge{
   letter-spacing:.04em;text-align:center;
 }
 body.page-macro.mx4-grid .mx5-tl-badge.high{color:#ef4444;background:rgba(239,68,68,.10);}
-body.page-macro.mx4-grid .mx5-tl-badge.med{color:#f59e0b;background:rgba(245,158,11,.10);}
+body.page-macro.mx4-grid .mx5-tl-badge.med{color:var(--mx5-warn-ink);background:rgba(245,158,11,.10);}
 body.page-macro.mx4-grid .mx5-tl-badge.low{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.05);}
 
 /* ── FED PROBABILITY (static card) ─────────────────────────────── */
@@ -5044,7 +5029,7 @@ body.page-macro.mx4-grid .mx5-fed-pct-overlay small{
   display:block;margin-top:1px;
 }
 body.page-macro.mx4-grid .mx5-fed-verdict{
-  font-size:16px;font-weight:800;color:var(--mx5-accent);
+  font-size:16px;font-weight:800;color:var(--mx5-accent-ink);
 }
 body.page-macro.mx4-grid .mx5-fed-desc{
   font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;line-height:1.4;
@@ -5075,7 +5060,7 @@ body.page-macro.mx4-grid .mx5-sentiment-dial-wrap{
   text-align:center;margin-bottom:4px;
 }
 body.page-macro.mx4-grid .mx5-sentiment-zone-text{
-  font-size:15px;font-weight:700;color:var(--mx5-accent);
+  font-size:15px;font-weight:700;color:var(--mx5-accent-ink);
   text-align:center;margin-bottom:3px;
 }
 body.page-macro.mx4-grid .mx5-sentiment-label{
@@ -5114,11 +5099,12 @@ body.page-macro.mx4-grid .mx5-sector-heat-bars{
   display:flex;gap:3px;align-items:flex-end;
 }
 body.page-macro.mx4-grid .mx5-sector-heat-col{
-  flex:1;display:flex;flex-direction:column;gap:3px;align-items:center;
+  flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px;align-items:center;
 }
 body.page-macro.mx4-grid .mx5-sector-heat-bar{width:100%;border-radius:3px;}
 body.page-macro.mx4-grid .mx5-sector-heat-name{
-  font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
+  max-width:100%;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;
 }
 
 /* ── ALERTS CENTRE (sx-news-v2 face) ───────────────────────────── */
@@ -5149,7 +5135,7 @@ body.page-macro.mx4-grid .mx5-alert-title{
   font-size:13px;font-weight:600;
   color:var(--ink-1,rgba(255,255,255,.92));line-height:1.4;
 }
-body.page-macro.mx4-grid .mx5-alert-title.warn{color:var(--mx5-warn);}
+body.page-macro.mx4-grid .mx5-alert-title.warn{color:var(--mx5-warn-ink);}
 body.page-macro.mx4-grid .mx5-alert-detail{
   font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
   margin-top:3px;line-height:1.5;
@@ -5161,7 +5147,7 @@ body.page-macro.mx4-grid .mx5-alert-footer{
 }
 body.page-macro.mx4-grid .mx5-alert-footer-link{
   background:none;border:none;cursor:pointer;
-  font-size:11px;font-weight:600;color:var(--mx5-accent);
+  font-size:11px;font-weight:600;color:var(--mx5-accent-ink);
   font-family:inherit;padding:0;text-decoration:none;
 }
 body.page-macro.mx4-grid .mx5-alert-footer-link:hover{text-decoration:underline;}
@@ -5185,7 +5171,7 @@ body.page-macro.mx4-grid .mx5-ai-ticker-pills{display:flex;flex-wrap:wrap;gap:5p
 body.page-macro.mx4-grid .mx5-ai-ticker-pill{
   padding:4px 10px;border-radius:var(--mx5-radius-pill);
   background:var(--mx5-accent-dim);border:1px solid rgba(34,217,122,.28);
-  font-size:11px;font-weight:700;color:var(--mx5-accent);letter-spacing:.03em;
+  font-size:11px;font-weight:700;color:var(--mx5-accent-ink);letter-spacing:.03em;
 }
 body.page-macro.mx4-grid .mx5-ai-body{
   font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));
@@ -5511,9 +5497,9 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <div class="mx5-flip">
         <span class="mx5-flip-arrow">&#8594;</span>
         <span class="l-en">→ Mixed if breadth & participation rolls over (now 59/100, the weakest leg).</span>
-        <span class="l-en" style="color:rgba(255,255,255,.65);font-weight:600;"> (Breadth & participation 59/100)</span>
+        <span class="l-en" style="color:var(--ink-2);font-weight:600;"> (Breadth & participation 59/100)</span>
         <span class="l-zh">→ 若广度与参与转弱（现 59/100，最弱项）则转为「混合」。</span>
-        <span class="l-zh" style="color:rgba(255,255,255,.65);font-weight:600;">（广度与参与 59/100）</span>
+        <span class="l-zh" style="color:var(--ink-2);font-weight:600;">（广度与参与 59/100）</span>
       </div>
       
 
@@ -5607,7 +5593,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             
             <div class="mx5-factor-row">
               <div class="mx5-factor-header">
-                <span class="mx5-factor-name" style="color:var(--mx5-warn)">
+                <span class="mx5-factor-name" style="color:var(--mx5-warn-ink)">
                   <span class="l-en">Breadth & participation</span><span class="l-zh">广度与参与</span>
                 </span>
                 <span class="mx5-factor-score weak">59</span>
@@ -6446,7 +6432,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   /* MRI-R39a compact two-number row */
   .rr-nums-row{display:flex;gap:16px;margin:5px 0 4px;align-items:flex-end}
   .rr-num-col{display:flex;flex-direction:column;min-width:52px}
-  .rr-num-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  .rr-num-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
     color:var(--muted);margin-bottom:1px;white-space:nowrap}
   .rr-num-src{font-size:8.5px;color:var(--muted);margin-left:3px;font-weight:400;text-transform:none;letter-spacing:0}
   .rr-num-val{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
@@ -8202,7 +8188,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       
       <div class="mx5-fed-hist-col">
         <div class="mx5-fed-hist-bar" style="height:42px;background:linear-gradient(180deg,rgba(34,217,122,.45) 0%,rgba(34,217,122,.18) 100%);border:1px solid rgba(34,217,122,.28);box-shadow:0 0 10px rgba(34,217,122,.18);border-radius:2px 2px 0 0;"></div>
-        <div class="mx5-fed-hist-name" style="color:var(--mx5-accent);font-weight:700">
+        <div class="mx5-fed-hist-name" style="color:var(--mx5-accent-ink);font-weight:700">
           <span class="l-en">No cha</span>
           <span class="l-zh">不变</span>
         </div>
@@ -8345,7 +8331,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:28px;background:rgba(34,217,122,0.72);"></div>
-          <div class="mx5-sector-heat-name">??</div>
+          <div class="mx5-sector-heat-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></div>
         </div>
         
         
@@ -8355,7 +8341,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:25px;background:rgba(34,217,122,0.64);"></div>
-          <div class="mx5-sector-heat-name">??</div>
+          <div class="mx5-sector-heat-name"><span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span></div>
         </div>
         
         
@@ -8365,7 +8351,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:22px;background:rgba(34,217,122,0.5599999999999999);"></div>
-          <div class="mx5-sector-heat-name">??</div>
+          <div class="mx5-sector-heat-name"><span class="l-en">GLP-1 & Obesity</span><span class="l-zh">GLP-1 与减肥药</span></div>
         </div>
         
         
@@ -8375,7 +8361,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:19px;background:rgba(34,217,122,0.48);"></div>
-          <div class="mx5-sector-heat-name">??</div>
+          <div class="mx5-sector-heat-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></div>
         </div>
         
         
@@ -8385,7 +8371,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:11px;background:rgba(239,68,68,0.18);"></div>
-          <div class="mx5-sector-heat-name">??</div>
+          <div class="mx5-sector-heat-name"><span class="l-en">Memory, HBM & Storage</span><span class="l-zh">内存、HBM 与存储</span></div>
         </div>
         
         
@@ -8395,7 +8381,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:11px;background:rgba(239,68,68,0.18);"></div>
-          <div class="mx5-sector-heat-name">??</div>
+          <div class="mx5-sector-heat-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></div>
         </div>
         
         
@@ -8405,7 +8391,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:11px;background:rgba(239,68,68,0.18);"></div>
-          <div class="mx5-sector-heat-name">??</div>
+          <div class="mx5-sector-heat-name"><span class="l-en">Managed Care & Insurers</span><span class="l-zh">管理式医疗与保险</span></div>
         </div>
         
         
@@ -8415,7 +8401,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:11px;background:rgba(239,68,68,0.18);"></div>
-          <div class="mx5-sector-heat-name">??</div>
+          <div class="mx5-sector-heat-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></div>
         </div>
         
       </div>
@@ -9039,12 +9025,12 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         
         <span class="l-en">
           <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 High-Impact Items</span><br>
-          Dominant channel: <span style="color:var(--mx5-accent);font-weight:600">rates</span><br>
+          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">rates</span><br>
           5 high-impact signals across channels
         </span>
         <span class="l-zh">
           <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 条高影响信息</span><br>
-          主导频道：<span style="color:var(--mx5-accent);font-weight:600">利率</span><br>
+          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">利率</span><br>
           5 条高影响信号
         </span>
         
@@ -9073,7 +9059,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <div class="mx5-card-title-row">
         <div class="mx5-card-title"><span class="l-en">Alerts Centre</span><span class="l-zh">警报中心</span></div>
         
-        <div class="mx5-card-badge" style="color:var(--mx5-warn);background:var(--mx5-warn-dim);border:1px solid rgba(245,158,11,.20);">
+        <div class="mx5-card-badge" style="color:var(--mx5-warn-ink);background:var(--mx5-warn-dim);border:1px solid rgba(245,158,11,.20);">
           <span class="l-en">5 FIRED</span>
           <span class="l-zh">5 条触发</span>
         </div>
@@ -10614,21 +10600,21 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   
   <div class="mx5-dlg" id="dlg-deep-context" role="dialog" aria-modal="true" tabindex="-1">
     <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
-    <div class="mx5-dlg-panel">
+    <div class="mx5-dlg-panel mx5-dlg-panel-narrow">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title"><span class="l-en">Deep Context — Linked Surfaces</span><span class="l-zh">深度背景 — 关联页面</span></span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
         <div class="isle-linkouts">
-          <a class="isle-lout" href="macro_context.html"><span class="isle-lout-icon">&#127760;</span><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></a>
-          <a class="isle-lout" href="aibrief.html"><span class="isle-lout-icon">&#129302;</span><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></a>
-          <a class="isle-lout" href="sector_central.html"><span class="isle-lout-icon">&#128202;</span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
-          <a class="isle-lout" href="news.html"><span class="isle-lout-icon">&#128240;</span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></a>
-          <a class="isle-lout" href="committee.html"><span class="isle-lout-icon">&#129504;</span><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
-          <a class="isle-lout" href="macro_signals.html"><span class="isle-lout-icon">&#9889;</span><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
-          <a class="isle-lout" href="china_intel.html"><span class="isle-lout-icon">&#127464;&#127475;</span><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
-          <a class="isle-lout" href="subsector_rotation.html"><span class="isle-lout-icon">&#128302;</span><span class="l-en">Oracle Rotation</span><span class="l-zh">轮动分析</span></a>
+          <a class="isle-lout" href="macro_context.html"><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></a>
+          <a class="isle-lout" href="aibrief.html"><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></a>
+          <a class="isle-lout" href="sector_central.html"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
+          <a class="isle-lout" href="news.html"><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></a>
+          <a class="isle-lout" href="committee.html"><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
+          <a class="isle-lout" href="macro_signals.html"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
+          <a class="isle-lout" href="china_intel.html"><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
+          <a class="isle-lout" href="subsector_rotation.html"><span class="l-en">Oracle Rotation</span><span class="l-zh">轮动分析</span></a>
         </div>
       </div>
     </div>
@@ -11295,6 +11281,16 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     ─────────────────────────────────────────────────────────────── */
     var _dlgActive = null;
     var _dlgTrigger = null;
+    var _dlgScrollY = 0;   /* page scroll captured at first dialog open (M03 scroll lock) */
+
+    /* Release the document scroll lock and restore the saved scroll position.
+       Idempotent — safe to call even if no dialog locked the page. */
+    function _dlgReleaseScroll(){
+      if(!document.documentElement.classList.contains('mx5-dlg-lock')) return;
+      document.documentElement.classList.remove('mx5-dlg-lock');
+      document.body.style.top = '';
+      window.scrollTo(0, _dlgScrollY);
+    }
 
     function _focusFirst(dlg){
       var focusable = dlg.querySelectorAll('button,a[href],[tabindex]:not([tabindex="-1"])');
@@ -11350,6 +11346,14 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       /* 1) make it displayed (start state painted) */
       dlg.classList.add('open');
       dlg.setAttribute('aria-modal','true');
+      /* Scroll lock (M03): lock the real scroller (<html>) and freeze <body> at the
+         current scrollY so wheel/trackpad/arrow scrolling can't leak to the page
+         behind the modal. Capture only on first open (switching dialogs is a no-op). */
+      if(!document.documentElement.classList.contains('mx5-dlg-lock')){
+        _dlgScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+        document.body.style.top = (-_dlgScrollY) + 'px';
+        document.documentElement.classList.add('mx5-dlg-lock');
+      }
       document.body.classList.add('mx5-dlg-open');
       /* 2) next frame(s): add .mx5-dlg-in so opacity/transform transitions actually run.
          Double rAF guarantees the start state is committed before the class flips. */
@@ -11373,6 +11377,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       var dlg = _dlgActive;
       _dlgActive = null;               /* free the slot immediately so re-entrancy is safe */
       document.body.classList.remove('mx5-dlg-open');
+      _dlgReleaseScroll();
       dlg.removeAttribute('aria-modal');
       if(dlg._trapHandler){ dlg.removeEventListener('keydown', dlg._trapHandler); delete dlg._trapHandler; }
       var bd = dlg.querySelector('.mx5-dlg-backdrop');
