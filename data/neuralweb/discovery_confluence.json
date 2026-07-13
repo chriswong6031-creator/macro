@@ -1,7 +1,7 @@
 {
   "schema": "discovery_confluence.v1",
-  "as_of": "2026-07-09",
-  "generated_at": "2026-07-09T20:57:25.648738+00:00",
+  "as_of": "2026-07-13",
+  "generated_at": "2026-07-13T07:13:34.765744+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -15,8 +15,8 @@
   },
   "honesty_header": "Two-source confluence: EDGAR phrase acceleration + GitHub adoption velocity. Both legs must accelerate for a confluence flag. Detection is noisy — ~half of flags are real. Early-entry edge ≈ 0. Candidate for curated review only — never auto-promoted.",
   "sources": {
-    "phrase_velocity": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/til-prw9/site/basketdata/phrase_velocity.json",
-    "github_adoption": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/til-prw9/site/basketdata/github_adoption.json"
+    "phrase_velocity": "/Users/chriswong/actions-runner-1/_work/macro/macro/site/basketdata/phrase_velocity.json",
+    "github_adoption": "/Users/chriswong/actions-runner-1/_work/macro/macro/site/basketdata/github_adoption.json"
   },
   "confluence_candidates": [
     {
@@ -39,8 +39,8 @@
         }
       ],
       "basket_z_scores": {
-        "ai_semiconductors": 0.716,
-        "ai_infra": 0.716
+        "ai_semiconductors": 0.627,
+        "ai_infra": 0.627
       },
       "confidence": "both_legs"
     }
@@ -55,10 +55,10 @@
         {
           "phrase": "capacity constrained",
           "recent_count": 4,
-          "prior_count": 3,
+          "prior_count": 2,
           "recent_filers": 4,
-          "prior_filers": 3,
-          "velocity_z": 0.3333333333333333,
+          "prior_filers": 2,
+          "velocity_z": 1.0,
           "is_affinity_phrase": false
         }
       ],
@@ -74,10 +74,10 @@
         {
           "phrase": "capacity constrained",
           "recent_count": 4,
-          "prior_count": 3,
+          "prior_count": 2,
           "recent_filers": 4,
-          "prior_filers": 3,
-          "velocity_z": 0.3333333333333333,
+          "prior_filers": 2,
+          "velocity_z": 1.0,
           "is_affinity_phrase": true
         }
       ],
@@ -93,10 +93,10 @@
         {
           "phrase": "capacity constrained",
           "recent_count": 4,
-          "prior_count": 3,
+          "prior_count": 2,
           "recent_filers": 4,
-          "prior_filers": 3,
-          "velocity_z": 0.3333333333333333,
+          "prior_filers": 2,
+          "velocity_z": 1.0,
           "is_affinity_phrase": false
         }
       ],
@@ -114,18 +114,29 @@
       "adoption_positive": true,
       "top_phrases": [],
       "basket_z_scores": {
-        "cybersecurity": 2.162
+        "cybersecurity": 4.232
       },
       "confidence": "adoption_only"
     }
   ],
-  "novel_phrase_clusters": [],
+  "novel_phrase_clusters": [
+    {
+      "phrase": "capacity constrained",
+      "recent_count": 3,
+      "prior_count": 2,
+      "recent_filers": 3,
+      "prior_filers": 2,
+      "velocity_z": 0.5,
+      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
+      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
+    }
+  ],
   "summary": {
     "both_legs_count": 1,
     "single_leg_phrase_count": 3,
     "single_leg_adoption_count": 1,
-    "novel_phrase_count": 0,
+    "novel_phrase_count": 1,
     "themes_evaluated": 18,
-    "note": "1 themes show confluence (both legs accelerating). 3 show phrase-only acceleration. 1 show adoption-only positive. 0 novel phrase clusters with no theme home."
+    "note": "1 themes show confluence (both legs accelerating). 3 show phrase-only acceleration. 1 show adoption-only positive. 1 novel phrase clusters with no theme home."
   }
 }

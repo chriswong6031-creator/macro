@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-12T11:25:04.143378+00:00",
+  "generated_at": "2026-07-13T06:45:27.828138+00:00",
   "grade_horizons": [
     5,
     21,
@@ -203,7 +203,7 @@
     }
   },
   "counts": {
-    "n_claims": 13693,
+    "n_claims": 13795,
     "n_grades": 6716,
     "n_placebo": 342,
     "n_rejected": 0,
@@ -532,9 +532,38 @@
         "demote": false,
         "pinned_reason": ""
       }
+    },
+    "whitehouse": {
+      "5": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      },
+      "21": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      },
+      "63": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      }
     }
   },
-  "ladder_states_at": "2026-07-12T11:25:07.903802+00:00",
+  "ladder_states_at": "2026-07-13T06:45:32.063371+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -1211,7 +1240,7 @@
         "ready": false,
         "approaching": false,
         "projected_ready_date": null,
-        "reason": "No claims found for claim_family='whitehouse'"
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
       },
       "21": {
         "n_dates": 0,
@@ -1222,7 +1251,7 @@
         "ready": false,
         "approaching": false,
         "projected_ready_date": null,
-        "reason": "No claims found for claim_family='whitehouse'"
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
       },
       "63": {
         "n_dates": 0,
@@ -1233,7 +1262,7 @@
         "ready": false,
         "approaching": false,
         "projected_ready_date": null,
-        "reason": "No claims found for claim_family='whitehouse'"
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
       }
     },
     "_duel_context": {
@@ -1359,5 +1388,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-07-12T11:25:15.142157+00:00"
+  "promotion_readiness_at": "2026-07-13T06:45:39.529233+00:00"
 }
