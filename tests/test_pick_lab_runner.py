@@ -220,6 +220,12 @@ class TestWithSnapshot:
         }
         missing = required_keys - set(data.keys())
         assert not missing, f"pick_lab.json missing keys: {missing}"
+        # The template's regime chips read calm/stress/liquidity — the summary
+        # must ALWAYS carry the keys (None when unknown). Regression for the
+        # 2026-07-12 nightly render death on a missing `stress` key.
+        chip_keys = {"calm", "stress", "liquidity"}
+        missing_chips = chip_keys - set(data["regime"])
+        assert not missing_chips, f"regime summary missing chip keys: {missing_chips}"
         assert data["authority"] == "display_only"
         assert isinstance(data["scoreboard"], list)
         assert isinstance(data["books"], dict)

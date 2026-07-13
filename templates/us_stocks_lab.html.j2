@@ -194,9 +194,10 @@
     {% if as_of %}<p class="pl-asof">{{ t('As of', '截至') }} {{ as_of }} · {{ t('Built', '生成时间') }} {{ built }}</p>{% endif %}
     {% if not empty and regime %}
     <div class="pl-regime">
-      {% if regime.calm is not none %}<span class="rg-chip">{{ t('Calm', '平静') }} <b>{{ "%.0f"|format(regime.calm * 100) }}%</b></span>{% endif %}
-      {% if regime.stress is not none %}<span class="rg-chip">{{ t('Stress', '压力') }} <b>{{ "%.0f"|format(regime.stress * 100) }}%</b></span>{% endif %}
-      {% if regime.liquidity is not none %}<span class="rg-chip">{{ t('Liquidity', '流动性') }} <b>{{ regime.liquidity }}</b></span>{% endif %}
+      {# regime.get() not attribute access — a missing key crashes `is not none` (UndefinedError) #}
+      {% if regime.get('calm') is not none %}<span class="rg-chip">{{ t('Calm', '平静') }} <b>{{ "%.0f"|format(regime.get('calm') * 100) }}%</b></span>{% endif %}
+      {% if regime.get('stress') is not none %}<span class="rg-chip">{{ t('Stress', '压力') }} <b>{{ "%.0f"|format(regime.get('stress') * 100) }}%</b></span>{% endif %}
+      {% if regime.get('liquidity') is not none %}<span class="rg-chip">{{ t('Liquidity', '流动性') }} <b>{{ regime.get('liquidity') }}</b></span>{% endif %}
     </div>
     {% endif %}
   </div>
