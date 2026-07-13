@@ -1703,6 +1703,33 @@ def run_build_lane(
         proposals = docket.get("proposals") or []
         lobe = docket.get("lobe", "unknown")
 
+        # ── R-V9-9: sort by attention dispatch priority before iterating ─────
+        # Stable-sort by (dispatch_priority, original_index) so FOCUS lobes
+        # are dispatched first, adjudication order is preserved within a band,
+        # and ZERO rows are dropped.  Guarded: any failure leaves order unchanged.
+        try:
+            from engine.metabolism import attention as _att_build  # noqa: PLC0415
+            _keyed: list[tuple[int, int, dict[str, Any]]] = []
+            for _orig_idx, _prop in enumerate(proposals):
+                _prop_lobe = str(_prop.get("lobe") or lobe)
+                try:
+                    _prio = _att_build.dispatch_priority(_prop_lobe, root=root)
+                except Exception:  # noqa: BLE001
+                    _prio = 1  # STANDARD default
+                _keyed.append((_prio, _orig_idx, _prop))
+            _keyed.sort(key=lambda t: (t[0], t[1]))
+            proposals = [t[2] for t in _keyed]
+            _order_summary = " ".join(
+                f"{t[2].get('lobe', lobe)}:{t[2].get('proposal_id', '?')}"
+                for t in _keyed
+            )
+            log.info("BUILD: dispatch order (attention): %s", _order_summary)
+        except Exception as _sort_exc:  # noqa: BLE001
+            log.warning(
+                "BUILD: attention dispatch sort failed (%s) — using adjudication order",
+                _sort_exc,
+            )
+
         for prop in proposals:
             pid = str(prop.get("proposal_id") or "")
             if not pid:

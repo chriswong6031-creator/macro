@@ -399,6 +399,7 @@ def _build_orchestrator_system(
                 {"name": "lessons",        "source": "data/metabolism/lessons.jsonl",         "text": ""},
                 {"name": "case_law",       "source": "config/ruling_graph.yml",               "text": ""},
                 {"name": "trajectory",     "source": "data/metabolism/trajectory.jsonl",      "text": ""},
+                {"name": "attention",      "source": "data/metabolism/attention_allocation.json", "text": ""},
             ]
             if lobe:
                 _freshness_blocks.append(
@@ -507,6 +508,53 @@ def _build_orchestrator_system(
         except Exception as _exc:  # noqa: BLE001
             log.warning("orchestrator_brain: mission/strategic memory failed — %s", _exc)
             parts.append("## Mission\n\n(unavailable)")
+
+        # ── Part 5h: Attention Allocation (lobe focus map) ──────────────────────
+        try:
+            _alloc_path = repo / "data" / "metabolism" / "attention_allocation.json"
+            if _alloc_path.exists():
+                import json as _json  # noqa: PLC0415
+                _alloc_raw = _json.loads(_alloc_path.read_text(encoding="utf-8"))
+                _allocations = _alloc_raw.get("allocations") or {}
+                _focus: list[str] = _alloc_raw.get("focus_lobes") or []
+                _degraded_reason: str | None = _alloc_raw.get("degraded_reason")
+
+                # Group lobes by band.
+                _by_band: dict[str, list[str]] = {
+                    "FOCUS": [], "MAINTENANCE": [], "DORMANT": [], "STANDARD": [],
+                }
+                for _lid, _entry in _allocations.items():
+                    _band = str((_entry or {}).get("band") or "STANDARD").upper()
+                    _by_band.setdefault(_band, []).append(_lid)
+
+                _alloc_lines: list[str] = []
+                if _by_band.get("FOCUS"):
+                    _alloc_lines.append("FOCUS: " + ", ".join(sorted(_by_band["FOCUS"])))
+                if _by_band.get("MAINTENANCE"):
+                    _alloc_lines.append("MAINTENANCE: " + ", ".join(sorted(_by_band["MAINTENANCE"])))
+                if _by_band.get("DORMANT"):
+                    _alloc_lines.append("DORMANT: " + ", ".join(sorted(_by_band["DORMANT"])))
+                _n_std = len(_by_band.get("STANDARD", []))
+                if _n_std:
+                    _alloc_lines.append(f"STANDARD: {_n_std} lobes (default)")
+                if _degraded_reason:
+                    _alloc_lines.append(f"(degraded: {_degraded_reason})")
+
+                _alloc_text = "\n".join(_alloc_lines) if _alloc_lines else "(no allocations)"
+                _alloc_section = f"## Attention Allocation\n\n{_alloc_text}"
+                _alloc_section = _byte_cap(_alloc_section, 1200)
+            else:
+                _alloc_section = (
+                    "## Attention Allocation\n\n"
+                    "(attention allocation absent — accruing)"
+                )
+            parts.append(_alloc_section)
+        except Exception as _exc:  # noqa: BLE001
+            log.warning("orchestrator_brain: attention allocation load failed — %s", _exc)
+            parts.append(
+                "## Attention Allocation\n\n"
+                "(attention allocation absent — accruing)"
+            )
 
         # ── ACTIVE_BUILD_MAP collision check ────────────────────────────────────
         abm_path = repo / "docs" / "ACTIVE_BUILD_MAP.md"

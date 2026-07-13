@@ -31,6 +31,16 @@ RECALL PARITY (R-V8-12):
     agenda.py calls recall.recall_lessons() directly (mirror of propose.py)
     and threads the result into the user prompt context.
 
+ATTENTION ORDERING (R-V9):
+    After the severity-floor and prior de-rank, a deterministic post-pass
+    stable-sorts the "regular" items (not forced_floor, not prior_demoted) by
+    descending attention weight of their target_lobe, reinserting them into the
+    exact index positions they originally occupied so forced-floor and
+    prior-demoted items keep their absolute positions.  At the max_docket_size
+    trim step, regular items are also sorted by descending weight so lower-
+    attention items are trimmed first.  Absent or broken allocation → items
+    unchanged.  NEVER raises.
+
 DEDUP:
     A content_hash (sha256[:12] of normalized title) is checked against
     DO_NOT_REBUILD.md and ACTIVE_BUILD_MAP.  Killed or in-flight topics
@@ -338,6 +348,70 @@ def _demote_prior_buckets(
         return list(items)
 
 
+# ── Attention ordering (R-V9) ─────────────────────────────────────────────────
+
+def _apply_attention_ordering(items: list[dict], allocation: dict | None) -> list[dict]:
+    """Stable-sort regular items by descending attention weight, reinserting into
+    their original absolute positions.
+
+    "Regular" items are those where forced_floor is falsy AND prior_demoted is
+    falsy.  Forced-floor and prior-demoted items keep their exact absolute
+    positions (severity-floor and de-rank semantics untouched).
+
+    The weight for each item's target_lobe is read from the allocation via
+    attention.weight_for.  Items with no target_lobe default to 0.6.
+
+    Returns a new list.  NEVER raises.
+    """
+    try:
+        if not items:
+            return list(items)
+
+        # Try to import attention module — absent is a normal condition (sibling
+        # not yet built).  Any import failure → skip ordering unchanged.
+        try:
+            from engine.metabolism import attention as _att  # noqa: PLC0415
+        except Exception:  # noqa: BLE001
+            return list(items)
+
+        # Identify which positions hold regular items vs pinned items.
+        # pinned = forced_floor OR prior_demoted.
+        regular_positions: list[int] = []
+        regular_items: list[dict] = []
+
+        for idx, item in enumerate(items):
+            if item.get("forced_floor") or item.get("prior_demoted"):
+                continue
+            regular_positions.append(idx)
+            regular_items.append(item)
+
+        if not regular_items:
+            return list(items)
+
+        # Stable-sort regular items by descending weight.
+        def _weight(item: dict) -> float:
+            try:
+                lobe_id = item.get("target_lobe") or None
+                if lobe_id is None:
+                    return 0.6
+                return _att.weight_for(lobe_id, allocation=allocation)
+            except Exception:  # noqa: BLE001
+                return 0.6
+
+        sorted_regular = sorted(regular_items, key=_weight, reverse=True)
+
+        # Reinsert sorted regular items into the original positions.
+        result = list(items)
+        for pos, sorted_item in zip(regular_positions, sorted_regular):
+            result[pos] = sorted_item
+
+        return result
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("agenda._apply_attention_ordering: %s — returning items unchanged", exc)
+        return list(items)
+
+
 # ── LLM agenda call ───────────────────────────────────────────────────────────
 
 _AGENDA_PROMPT_TEMPLATE = """\
@@ -618,17 +692,46 @@ def _build_agenda_inner(
     except Exception as exc:  # noqa: BLE001
         log.warning("agenda: prior de-rank failed (non-fatal) — %s", exc)
 
+    # 9c. DETERMINISTIC ATTENTION ORDERING (R-V9) — stable-sort regular items by
+    # descending attention weight within their existing absolute positions.
+    # Forced-floor and prior-demoted items keep their positions unchanged.
+    _attention_allocation: dict | None = None
+    try:
+        from engine.metabolism import attention as _attention  # noqa: PLC0415
+        _attention_allocation = _attention.load_allocation(root=repo)
+        if _attention_allocation:
+            items = _apply_attention_ordering(items, _attention_allocation)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("agenda: attention ordering failed (non-fatal) — %s", exc)
+
     # 10. Cap at max_docket_size (floor items count first, then demoted items, trim regular last).
     # FIX-5 (R-V8-11): demoted-with-flag items are protected from silent trim — they carry
     # visibility signal and must not be the silent casualty of the cap.  Trim order:
     #   1. forced-floor items (always kept, count first)
     #   2. prior-demoted items (kept unless forced-floor alone exceeds the cap)
-    #   3. regular items (trimmed from the tail first)
+    #   3. regular items (trimmed from the tail first, lowest-attention first per R-V9)
     if len(items) > max_docket_size:
         forced_items = [i for i in items if i.get("forced_floor")]
         demoted_items = [i for i in items if not i.get("forced_floor") and i.get("prior_demoted")]
         regular_items = [i for i in items if not i.get("forced_floor") and not i.get("prior_demoted")]
         remaining = max(0, max_docket_size - len(forced_items))
+        # Stable-sort regular items by descending attention weight so lower-attention
+        # items are trimmed first (R-V9).  Guarded — on any failure use original order.
+        try:
+            from engine.metabolism import attention as _att_trim  # noqa: PLC0415
+
+            def _trim_weight(item: dict) -> float:
+                try:
+                    lobe_id = item.get("target_lobe") or None
+                    if lobe_id is None:
+                        return 0.6
+                    return _att_trim.weight_for(lobe_id, allocation=_attention_allocation)
+                except Exception:  # noqa: BLE001
+                    return 0.6
+
+            regular_items = sorted(regular_items, key=_trim_weight, reverse=True)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("agenda: attention trim-sort failed (non-fatal) — %s", exc)
         # Fit as many regular items as possible, then append all demoted (visibility law).
         n_regular = max(0, remaining - len(demoted_items))
         items = forced_items + regular_items[:n_regular] + demoted_items
