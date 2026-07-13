@@ -492,7 +492,7 @@ def all_etf_signals() -> list[dict]:
     out: list[dict] = []
     for etf, spec in cfg["etf_holdings"].get("universe", {}).items():
         try:
-            out.extend(etf_signals(etf, is_active=False, meta=spec))
+            out.extend(etf_signals(etf, is_active=bool(spec.get("active", False)), meta=spec))
         except Exception as e:  # noqa: BLE001 — one fund must not kill the rest
             log.error("etf_signals %s failed: %s", etf, e)
     holdings_dir = config.ROOT / cfg["storage"]["holdings_dir"]

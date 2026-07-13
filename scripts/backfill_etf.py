@@ -138,8 +138,61 @@ def backfill_roundhill(days_back: int = 60) -> dict[str, int]:
     return written
 
 
+def backfill_amplify(days_back: int = 300) -> dict[str, int]:
+    """Backfill Amplify funds from the public Firestore feed: the collection lists
+    ~9 months of dated holdings docs, so pull every date within the window that we
+    don't already have. Reuses the live adapter's doc parser."""
+    adapter = EtfHoldingsAdapter()
+    universe = config.load()["etf_holdings"]["universe"]
+    amp = [t for t, s in universe.items() if s.get("sponsor") == "amplify"]
+    if not amp:
+        return {}
+    outroot = config.data_dir() / "etf_holdings"
+    written: dict[str, int] = {}
+    cutoff = (pd.Timestamp(date.today()) - pd.Timedelta(days=days_back)).date()
+    for ticker in amp:
+        d = outroot / ticker
+        d.mkdir(parents=True, exist_ok=True)
+        existing = {p.stem for p in d.glob("*.parquet")}
+        base = ("https://firestore.googleapis.com/v1/projects/amplify-etfs-data-feed/"
+                f"databases/(default)/documents/funds/{ticker}/holdings")
+        key = universe[ticker].get("api_key", "AIzaSyCibhGo4lu8ZALtBvf_ZT351BDMUPqOYjc")
+        try:
+            listing = adapter._ua_get(
+                f"{base}?mask.fieldPaths=asOfDate&pageSize=400&key={key}", timeout=45).json()
+        except Exception as e:  # noqa: BLE001
+            log.warning("amplify %s: listing failed: %s", ticker, e)
+            continue
+        got = 0
+        for doc in (listing.get("documents") or []):
+            did = doc.get("name", "").rsplit("/", 1)[-1]
+            if not did or did in existing:
+                continue
+            try:
+                if pd.to_datetime(did).date() < cutoff:
+                    continue
+            except (ValueError, TypeError):
+                continue
+            try:
+                full = adapter._ua_get(f"{base}/{did}?key={key}", timeout=45).json()
+                snap = EtfHoldingsAdapter._parse_amplify_doc(full, ticker, did)
+            except Exception:  # noqa: BLE001 — one date must not kill the rest
+                continue
+            if snap is None or snap.empty:
+                continue
+            asof = str(snap["as_of"].iloc[0]) if "as_of" in snap.columns else did
+            if asof in existing:
+                continue
+            snap.to_parquet(d / f"{asof}.parquet")
+            existing.add(asof)
+            got += 1
+        written[ticker] = got
+        log.info("%s: +%d snapshots (%d total)", ticker, got, len(list(d.glob('*.parquet'))))
+    return written
+
+
 if __name__ == "__main__":
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 60
-    res = {**backfill(n), **backfill_roundhill(n)}
+    res = {**backfill(n), **backfill_roundhill(n), **backfill_amplify(max(n, 300))}
     print("backfilled:", {k: v for k, v in res.items()})
     print("total new snapshots:", sum(res.values()))

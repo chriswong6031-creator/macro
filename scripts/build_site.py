@@ -2225,9 +2225,20 @@ def build_etf_page(env: Environment, site: Path, generated: str,
             log.error("etf signals failed: %s", e)
             rows = []
     split = split_by_conviction(rows)
+    try:
+        from engine.etf_consensus import consensus_favored, fund_coverage, attach_trajectories
+        attach_trajectories(split["accumulation"],
+                            cap=config.load()["etf_holdings"].get("sparkline_cap", 60))
+        attach_trajectories(split["trims"],
+                            cap=config.load()["etf_holdings"].get("sparkline_cap", 60))
+        favored = consensus_favored(rows)
+        coverage = fund_coverage()
+    except Exception as e:  # noqa: BLE001 — consensus/coverage are additive, never fatal
+        log.error("etf consensus/coverage failed: %s", e)
+        favored, coverage = [], []
     html = env.get_template("etfs.html.j2").render(
         accumulation=split["accumulation"], trims=split["trims"],
-        generated_utc=generated)
+        favored=favored, coverage=coverage, generated_utc=generated)
     write_page(site / "etfs.html", html)
     # per-stock feed (built before the stock library so it can be attached there)
     outdir = site / "stockdata"
