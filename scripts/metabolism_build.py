@@ -618,14 +618,23 @@ def _build_session_cmd(task_prompt: str) -> list[str]:
     CLAUDE_CODE_OAUTH_TOKEN via indirect expansion, so the token VALUE never
     transits this module (REDLINE).  The task prompt stays a plain argv
     element — it is never shell-parsed.
+
+    The binary is resolved via preflight's resolve_claude_bin(): the runner
+    daemon's launchd PATH omits per-user bin dirs, so a bare "claude" fails
+    even when the CLI is installed.
     """
+    try:
+        from scripts.preflight_claude_auth import resolve_claude_bin  # noqa: PLC0415
+        _claude_bin = resolve_claude_bin()
+    except Exception:  # noqa: BLE001
+        _claude_bin = "claude"
     return [
         "bash", "-c",
         'if [ -n "${METABOLISM_KEY_REF:-}" ]; then '
         'export CLAUDE_CODE_OAUTH_TOKEN="${!METABOLISM_KEY_REF}"; fi; '
         'exec "$@"',
         "metabolism-build",
-        "claude",
+        _claude_bin,
         "--model", _BUILD_SESSION_MODEL,
         "--print",           # non-interactive: print final answer only
         "--dangerously-skip-permissions",  # headless build — no interactive prompts

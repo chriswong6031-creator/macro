@@ -1480,6 +1480,8 @@ jobs:
         run: python -m pytest tests/test_metabolism_attention.py -q
       - name: metabolism V9 attention wiring suite (agenda+brain+propose+build integration)
         run: python -m pytest tests/test_metabolism_attention_wiring.py -q
+      - name: preflight claude CLI resolution suite (runner launchd-PATH fallback)
+        run: python -m pytest tests/test_preflight_claude_resolve.py -q
       - name: metabolism gc+merge lifecycle suite (propose-branch deletion + reaper + audit max-age)
         run: python -m pytest tests/test_metabolism_gc_and_merge_lifecycle.py -q
       - name: self-mod fence selftest

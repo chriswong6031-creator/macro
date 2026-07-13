@@ -1625,7 +1625,9 @@ class TestKeyFailoverHelpers:
         cmd = mb._build_session_cmd("do the thing")
         assert cmd[0] == "bash" and cmd[1] == "-c"
         assert "${!METABOLISM_KEY_REF}" in cmd[2]
-        assert "claude" in cmd
+        # The binary is PATH-or-install-dir resolved (launchd PATH fix); on a
+        # dev box this is an absolute path, on a bare env the literal "claude".
+        assert any(c == "claude" or c.endswith("/claude") for c in cmd), cmd
         assert cmd[-1] == "do the thing", "prompt must stay a plain argv element"
 
     def test_bash_wrapper_maps_key_ref(self):
