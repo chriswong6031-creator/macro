@@ -1019,6 +1019,20 @@ lanes:
           outputs: [data/neuralweb/daily_brief.json,
                     site/neuralwebdata/daily_brief.json,
                     data/neuralweb/daily_brief_history.jsonl]
+      - id: build_orchestrator_log
+        module: scripts.build_orchestrator_log
+        note: >
+          W-AI orchestrator run log — one deterministic run-log entry per pipeline
+          run (+ every-N-runs review row) composed from artifacts the run already
+          produced. Runs AFTER build_neuralweb_brief --finalize so the entry records
+          the run's final state; committed in the cortex commit lane. Runs with
+          `if: always()`. Deterministic, no LLM. Non-fatal (always exits 0).
+          inputs: [data/neuralweb/health.json,
+                   data/neuralweb/daily_brief.json,
+                   data/governance/mastermind_feedback_summary.json]
+          outputs: [data/neuralweb/orchestrator_runlog.jsonl,
+                    data/neuralweb/orchestrator_reviews.jsonl,
+                    site/neuralwebdata/orchestrator_runlog.json]
 
   # ── daily.yml / active_build_map ─────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
