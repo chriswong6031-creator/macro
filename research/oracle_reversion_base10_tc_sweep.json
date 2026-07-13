@@ -1,0 +1,909 @@
+{
+  "meta": {
+    "date": "2026-07-07",
+    "seed": 20260705,
+    "n_draws": 2000,
+    "window": 25,
+    "exit": 21,
+    "cooldown": 10,
+    "old_bar_draws": 500,
+    "old_bar_seed": 42,
+    "authority": "RC-RUL-5 items 4+5 (research/TIME_CONFOUND_RECHECK_ADJUDICATION.md)",
+    "script": "scripts/research/oracle_reversion_base10_tc_sweep.py",
+    "signals": [
+      "A15_WASHOUT_OPP_OUT_2NODE",
+      "B4_WASHOUT_DOLLAR_RELIEF",
+      "B4_EP_SAME_OUT_CREDIT_EASE",
+      "R16_VBOT_ACCELZ_NEG2_K_LOW",
+      "E_DOLLAR_EASE_TLT_POS_K25",
+      "R3_B2_ACCELZ_NEG15_K20",
+      "R4_E10_OIL_EASE_K30_VIX40",
+      "M1_OIL_DOWN_K30_RS_NEG",
+      "SRM_BEARTAPE_ACCEL_K20",
+      "RSLAG_OVERSOLD_K20"
+    ],
+    "per_row_rng": "np.random.default_rng([seed, row_index])"
+  },
+  "results": [
+    {
+      "signal_id": "A15_WASHOUT_OPP_OUT_2NODE",
+      "tier": "s",
+      "single_regime": false,
+      "operating_regime": null,
+      "split_date": "2019-12-31",
+      "reproduction_gate": {
+        "n": 2357,
+        "wr": 0.7374,
+        "asym": 1.8346,
+        "ret_exit": 0.0305,
+        "holdout_n": 669,
+        "holdout_wr": 0.7818,
+        "holdout_ret_exit": 0.046,
+        "shipped": {
+          "n": 2357,
+          "wr": 0.737,
+          "asym": 1.835,
+          "ret_exit": 0.0305,
+          "holdout_n": 669,
+          "holdout_wr": 0.782,
+          "holdout_ret_exit": 0.046,
+          "placebo_kind": "independent_draw",
+          "placebo_p95": 0.0105
+        },
+        "match": true
+      },
+      "episode_coverage": {
+        "n_fires": 2357,
+        "n_episodes": 190,
+        "n_months": 88,
+        "month_range": [
+          "2000-01",
+          "2026-04"
+        ],
+        "fires_per_episode_min": 1,
+        "fires_per_episode_max": 38,
+        "fires_per_episode_mean": 12.41,
+        "fires_per_episode_median": 11.0,
+        "n_episodes_dev": 137,
+        "n_episodes_hold": 53,
+        "n_months_dev": 62,
+        "n_months_hold": 26
+      },
+      "episode_cluster_ci_full": {
+        "wr_point": 0.7374,
+        "wr_ci": [
+          0.6885,
+          0.784
+        ],
+        "wr_ci_lower_clears_leg2": true,
+        "ret_exit_point": 0.0305,
+        "ret_exit_ci": [
+          0.0212,
+          0.0394
+        ],
+        "ret_exit_ci_excludes_zero": true,
+        "asym_point": 1.8346,
+        "asym_ci": [
+          1.4393,
+          2.3545
+        ],
+        "asym_ci_lower_clears_leg3": false
+      },
+      "episode_cluster_ci_holdout": {
+        "n_fires": 669,
+        "n_episodes": 53,
+        "wr_point": 0.7818,
+        "wr_ci": [
+          0.7053,
+          0.8562
+        ],
+        "wr_ci_lower_clears_leg5": true,
+        "ret_exit_ci": [
+          0.0327,
+          0.0605
+        ]
+      },
+      "leg6_side_by_side": {
+        "observed_ret_exit": 0.0305,
+        "old_bar_kind": "independent_draw",
+        "old_bar_published_p95": 0.0105,
+        "old_bar_reproduced_p95": 0.0105,
+        "timeshift_p95": 0.0496,
+        "timeshift_p": 0.184,
+        "observed_clears_timeshift_p95": false
+      }
+    },
+    {
+      "signal_id": "B4_WASHOUT_DOLLAR_RELIEF",
+      "tier": "s",
+      "single_regime": false,
+      "operating_regime": null,
+      "split_date": "2019-12-31",
+      "reproduction_gate": {
+        "n": 641,
+        "wr": 0.6833,
+        "asym": 1.5492,
+        "ret_exit": 0.0207,
+        "holdout_n": 244,
+        "holdout_wr": 0.7336,
+        "holdout_ret_exit": 0.0357,
+        "shipped": {
+          "n": 641,
+          "wr": 0.683,
+          "asym": 1.549,
+          "ret_exit": 0.0207,
+          "holdout_n": 244,
+          "holdout_wr": 0.734,
+          "holdout_ret_exit": 0.0357,
+          "placebo_kind": "independent_draw",
+          "placebo_p95": 0.0119
+        },
+        "match": true
+      },
+      "episode_coverage": {
+        "n_fires": 641,
+        "n_episodes": 440,
+        "n_months": 116,
+        "month_range": [
+          "2006-02",
+          "2026-05"
+        ],
+        "fires_per_episode_min": 1,
+        "fires_per_episode_max": 6,
+        "fires_per_episode_mean": 1.46,
+        "fires_per_episode_median": 1.0,
+        "n_episodes_dev": 276,
+        "n_episodes_hold": 164,
+        "n_months_dev": 74,
+        "n_months_hold": 42
+      },
+      "episode_cluster_ci_full": {
+        "wr_point": 0.6833,
+        "wr_ci": [
+          0.6427,
+          0.7241
+        ],
+        "wr_ci_lower_clears_leg2": true,
+        "ret_exit_point": 0.0207,
+        "ret_exit_ci": [
+          0.0147,
+          0.0267
+        ],
+        "ret_exit_ci_excludes_zero": true,
+        "asym_point": 1.5492,
+        "asym_ci": [
+          1.2884,
+          1.8667
+        ],
+        "asym_ci_lower_clears_leg3": false
+      },
+      "episode_cluster_ci_holdout": {
+        "n_fires": 244,
+        "n_episodes": 164,
+        "wr_point": 0.7336,
+        "wr_ci": [
+          0.6709,
+          0.7903
+        ],
+        "wr_ci_lower_clears_leg5": true,
+        "ret_exit_ci": [
+          0.0252,
+          0.0465
+        ]
+      },
+      "leg6_side_by_side": {
+        "observed_ret_exit": 0.0207,
+        "old_bar_kind": "independent_draw",
+        "old_bar_published_p95": 0.0119,
+        "old_bar_reproduced_p95": 0.0119,
+        "timeshift_p95": 0.038,
+        "timeshift_p": 0.2575,
+        "observed_clears_timeshift_p95": false
+      }
+    },
+    {
+      "signal_id": "B4_EP_SAME_OUT_CREDIT_EASE",
+      "tier": "s",
+      "single_regime": false,
+      "operating_regime": null,
+      "split_date": "2019-12-31",
+      "reproduction_gate": {
+        "n": 392,
+        "wr": 0.7245,
+        "asym": 1.5605,
+        "ret_exit": 0.0212,
+        "holdout_n": 134,
+        "holdout_wr": 0.7164,
+        "holdout_ret_exit": 0.0228,
+        "shipped": {
+          "n": 392,
+          "wr": 0.724,
+          "asym": 1.561,
+          "ret_exit": 0.0212,
+          "holdout_n": 134,
+          "holdout_wr": 0.716,
+          "holdout_ret_exit": 0.0228,
+          "placebo_kind": "independent_draw",
+          "placebo_p95": 0.0127
+        },
+        "match": true
+      },
+      "episode_coverage": {
+        "n_fires": 392,
+        "n_episodes": 301,
+        "n_months": 110,
+        "month_range": [
+          "1999-08",
+          "2026-05"
+        ],
+        "fires_per_episode_min": 1,
+        "fires_per_episode_max": 4,
+        "fires_per_episode_mean": 1.3,
+        "fires_per_episode_median": 1.0,
+        "n_episodes_dev": 192,
+        "n_episodes_hold": 109,
+        "n_months_dev": 74,
+        "n_months_hold": 36
+      },
+      "episode_cluster_ci_full": {
+        "wr_point": 0.7245,
+        "wr_ci": [
+          0.6719,
+          0.7756
+        ],
+        "wr_ci_lower_clears_leg2": true,
+        "ret_exit_point": 0.0212,
+        "ret_exit_ci": [
+          0.0148,
+          0.0276
+        ],
+        "ret_exit_ci_excludes_zero": true,
+        "asym_point": 1.5605,
+        "asym_ci": [
+          1.2676,
+          1.9618
+        ],
+        "asym_ci_lower_clears_leg3": false
+      },
+      "episode_cluster_ci_holdout": {
+        "n_fires": 134,
+        "n_episodes": 109,
+        "wr_point": 0.7164,
+        "wr_ci": [
+          0.6296,
+          0.7941
+        ],
+        "wr_ci_lower_clears_leg5": true,
+        "ret_exit_ci": [
+          0.0079,
+          0.0353
+        ]
+      },
+      "leg6_side_by_side": {
+        "observed_ret_exit": 0.0212,
+        "old_bar_kind": "independent_draw",
+        "old_bar_published_p95": 0.0127,
+        "old_bar_reproduced_p95": 0.0127,
+        "timeshift_p95": 0.0418,
+        "timeshift_p": 0.283,
+        "observed_clears_timeshift_p95": false
+      }
+    },
+    {
+      "signal_id": "R16_VBOT_ACCELZ_NEG2_K_LOW",
+      "tier": "s",
+      "single_regime": false,
+      "operating_regime": null,
+      "split_date": "2019-12-31",
+      "reproduction_gate": {
+        "n": 442,
+        "wr": 0.6833,
+        "asym": 1.5793,
+        "ret_exit": 0.027,
+        "holdout_n": 112,
+        "holdout_wr": 0.6696,
+        "holdout_ret_exit": 0.0362,
+        "shipped": {
+          "n": 442,
+          "wr": 0.683,
+          "asym": 1.579,
+          "ret_exit": 0.027,
+          "holdout_n": 112,
+          "holdout_wr": 0.67,
+          "holdout_ret_exit": 0.0362,
+          "placebo_kind": "independent_draw",
+          "placebo_p95": 0.0129
+        },
+        "match": true
+      },
+      "episode_coverage": {
+        "n_fires": 442,
+        "n_episodes": 335,
+        "n_months": 114,
+        "month_range": [
+          "1999-08",
+          "2026-05"
+        ],
+        "fires_per_episode_min": 1,
+        "fires_per_episode_max": 5,
+        "fires_per_episode_mean": 1.32,
+        "fires_per_episode_median": 1.0,
+        "n_episodes_dev": 252,
+        "n_episodes_hold": 83,
+        "n_months_dev": 88,
+        "n_months_hold": 26
+      },
+      "episode_cluster_ci_full": {
+        "wr_point": 0.6833,
+        "wr_ci": [
+          0.633,
+          0.7338
+        ],
+        "wr_ci_lower_clears_leg2": true,
+        "ret_exit_point": 0.027,
+        "ret_exit_ci": [
+          0.0179,
+          0.0359
+        ],
+        "ret_exit_ci_excludes_zero": true,
+        "asym_point": 1.5793,
+        "asym_ci": [
+          1.2823,
+          1.962
+        ],
+        "asym_ci_lower_clears_leg3": false
+      },
+      "episode_cluster_ci_holdout": {
+        "n_fires": 112,
+        "n_episodes": 83,
+        "wr_point": 0.6696,
+        "wr_ci": [
+          0.5714,
+          0.76
+        ],
+        "wr_ci_lower_clears_leg5": false,
+        "ret_exit_ci": [
+          0.0162,
+          0.0559
+        ]
+      },
+      "leg6_side_by_side": {
+        "observed_ret_exit": 0.027,
+        "old_bar_kind": "independent_draw",
+        "old_bar_published_p95": 0.0129,
+        "old_bar_reproduced_p95": 0.0129,
+        "timeshift_p95": 0.0384,
+        "timeshift_p": 0.1425,
+        "observed_clears_timeshift_p95": false
+      }
+    },
+    {
+      "signal_id": "E_DOLLAR_EASE_TLT_POS_K25",
+      "tier": "s",
+      "single_regime": false,
+      "operating_regime": null,
+      "split_date": "2019-12-31",
+      "reproduction_gate": {
+        "n": 416,
+        "wr": 0.6923,
+        "asym": 1.8376,
+        "ret_exit": 0.0231,
+        "holdout_n": 149,
+        "holdout_wr": 0.7181,
+        "holdout_ret_exit": 0.0277,
+        "shipped": {
+          "n": 416,
+          "wr": 0.692,
+          "asym": 1.838,
+          "ret_exit": 0.0231,
+          "holdout_n": 149,
+          "holdout_wr": 0.718,
+          "holdout_ret_exit": 0.0277,
+          "placebo_kind": "independent_draw",
+          "placebo_p95": 0.0134
+        },
+        "match": true
+      },
+      "episode_coverage": {
+        "n_fires": 416,
+        "n_episodes": 340,
+        "n_months": 82,
+        "month_range": [
+          "2006-02",
+          "2026-04"
+        ],
+        "fires_per_episode_min": 1,
+        "fires_per_episode_max": 6,
+        "fires_per_episode_mean": 1.22,
+        "fires_per_episode_median": 1.0,
+        "n_episodes_dev": 209,
+        "n_episodes_hold": 131,
+        "n_months_dev": 53,
+        "n_months_hold": 29
+      },
+      "episode_cluster_ci_full": {
+        "wr_point": 0.6923,
+        "wr_ci": [
+          0.6395,
+          0.7415
+        ],
+        "wr_ci_lower_clears_leg2": true,
+        "ret_exit_point": 0.0231,
+        "ret_exit_ci": [
+          0.0165,
+          0.0296
+        ],
+        "ret_exit_ci_excludes_zero": true,
+        "asym_point": 1.8376,
+        "asym_ci": [
+          1.471,
+          2.355
+        ],
+        "asym_ci_lower_clears_leg3": false
+      },
+      "episode_cluster_ci_holdout": {
+        "n_fires": 149,
+        "n_episodes": 131,
+        "wr_point": 0.7181,
+        "wr_ci": [
+          0.6351,
+          0.7935
+        ],
+        "wr_ci_lower_clears_leg5": true,
+        "ret_exit_ci": [
+          0.014,
+          0.0408
+        ]
+      },
+      "leg6_side_by_side": {
+        "observed_ret_exit": 0.0231,
+        "old_bar_kind": "independent_draw",
+        "old_bar_published_p95": 0.0134,
+        "old_bar_reproduced_p95": 0.0134,
+        "timeshift_p95": 0.0396,
+        "timeshift_p": 0.22,
+        "observed_clears_timeshift_p95": false
+      }
+    },
+    {
+      "signal_id": "R3_B2_ACCELZ_NEG15_K20",
+      "tier": "s",
+      "single_regime": false,
+      "operating_regime": null,
+      "split_date": "2019-12-31",
+      "reproduction_gate": {
+        "n": 565,
+        "wr": 0.7097,
+        "asym": 1.688,
+        "ret_exit": 0.0279,
+        "holdout_n": 146,
+        "holdout_wr": 0.7192,
+        "holdout_ret_exit": 0.0436,
+        "shipped": {
+          "n": 565,
+          "wr": 0.71,
+          "asym": 1.688,
+          "ret_exit": 0.0279,
+          "holdout_n": 146,
+          "holdout_wr": 0.719,
+          "holdout_ret_exit": 0.0436,
+          "placebo_kind": "independent_draw",
+          "placebo_p95": 0.0122
+        },
+        "match": true
+      },
+      "episode_coverage": {
+        "n_fires": 565,
+        "n_episodes": 415,
+        "n_months": 143,
+        "month_range": [
+          "1999-08",
+          "2026-05"
+        ],
+        "fires_per_episode_min": 1,
+        "fires_per_episode_max": 7,
+        "fires_per_episode_mean": 1.36,
+        "fires_per_episode_median": 1.0,
+        "n_episodes_dev": 305,
+        "n_episodes_hold": 110,
+        "n_months_dev": 108,
+        "n_months_hold": 35
+      },
+      "episode_cluster_ci_full": {
+        "wr_point": 0.7097,
+        "wr_ci": [
+          0.6642,
+          0.7517
+        ],
+        "wr_ci_lower_clears_leg2": true,
+        "ret_exit_point": 0.0279,
+        "ret_exit_ci": [
+          0.0199,
+          0.0351
+        ],
+        "ret_exit_ci_excludes_zero": true,
+        "asym_point": 1.688,
+        "asym_ci": [
+          1.3833,
+          2.0661
+        ],
+        "asym_ci_lower_clears_leg3": false
+      },
+      "episode_cluster_ci_holdout": {
+        "n_fires": 146,
+        "n_episodes": 110,
+        "wr_point": 0.7192,
+        "wr_ci": [
+          0.6326,
+          0.7976
+        ],
+        "wr_ci_lower_clears_leg5": true,
+        "ret_exit_ci": [
+          0.0284,
+          0.0584
+        ]
+      },
+      "leg6_side_by_side": {
+        "observed_ret_exit": 0.0279,
+        "old_bar_kind": "independent_draw",
+        "old_bar_published_p95": 0.0122,
+        "old_bar_reproduced_p95": 0.0122,
+        "timeshift_p95": 0.0369,
+        "timeshift_p": 0.1435,
+        "observed_clears_timeshift_p95": false
+      }
+    },
+    {
+      "signal_id": "R4_E10_OIL_EASE_K30_VIX40",
+      "tier": "s",
+      "single_regime": false,
+      "operating_regime": null,
+      "split_date": "2019-12-31",
+      "reproduction_gate": {
+        "n": 765,
+        "wr": 0.685,
+        "asym": 1.5158,
+        "ret_exit": 0.027,
+        "holdout_n": 226,
+        "holdout_wr": 0.7478,
+        "holdout_ret_exit": 0.0371,
+        "shipped": {
+          "n": 765,
+          "wr": 0.685,
+          "asym": 1.516,
+          "ret_exit": 0.027,
+          "holdout_n": 226,
+          "holdout_wr": 0.748,
+          "holdout_ret_exit": 0.0371,
+          "placebo_kind": "independent_draw",
+          "placebo_p95": 0.0116
+        },
+        "match": true
+      },
+      "episode_coverage": {
+        "n_fires": 765,
+        "n_episodes": 527,
+        "n_months": 118,
+        "month_range": [
+          "1999-10",
+          "2026-05"
+        ],
+        "fires_per_episode_min": 1,
+        "fires_per_episode_max": 6,
+        "fires_per_episode_mean": 1.45,
+        "fires_per_episode_median": 1.0,
+        "n_episodes_dev": 356,
+        "n_episodes_hold": 171,
+        "n_months_dev": 78,
+        "n_months_hold": 40
+      },
+      "episode_cluster_ci_full": {
+        "wr_point": 0.685,
+        "wr_ci": [
+          0.6454,
+          0.7233
+        ],
+        "wr_ci_lower_clears_leg2": true,
+        "ret_exit_point": 0.027,
+        "ret_exit_ci": [
+          0.0214,
+          0.0321
+        ],
+        "ret_exit_ci_excludes_zero": true,
+        "asym_point": 1.5158,
+        "asym_ci": [
+          1.2917,
+          1.7707
+        ],
+        "asym_ci_lower_clears_leg3": false
+      },
+      "episode_cluster_ci_holdout": {
+        "n_fires": 226,
+        "n_episodes": 171,
+        "wr_point": 0.7478,
+        "wr_ci": [
+          0.6833,
+          0.8035
+        ],
+        "wr_ci_lower_clears_leg5": true,
+        "ret_exit_ci": [
+          0.0273,
+          0.046
+        ]
+      },
+      "leg6_side_by_side": {
+        "observed_ret_exit": 0.027,
+        "old_bar_kind": "independent_draw",
+        "old_bar_published_p95": 0.0116,
+        "old_bar_reproduced_p95": 0.0116,
+        "timeshift_p95": 0.0379,
+        "timeshift_p": 0.1495,
+        "observed_clears_timeshift_p95": false
+      }
+    },
+    {
+      "signal_id": "M1_OIL_DOWN_K30_RS_NEG",
+      "tier": "m",
+      "single_regime": false,
+      "operating_regime": null,
+      "split_date": "2023-12-31",
+      "reproduction_gate": {
+        "n": 674,
+        "wr": 0.6899,
+        "asym": 3.3967,
+        "ret_exit": 0.1224,
+        "holdout_n": 407,
+        "holdout_wr": 0.6486,
+        "holdout_ret_exit": 0.1255,
+        "shipped": {
+          "n": 674,
+          "wr": 0.69,
+          "asym": 3.397,
+          "ret_exit": 0.1224,
+          "holdout_n": 407,
+          "holdout_wr": 0.649,
+          "holdout_ret_exit": 0.1255,
+          "placebo_kind": "independent_draw",
+          "placebo_p95": 0.0613
+        },
+        "match": true
+      },
+      "episode_coverage": {
+        "n_fires": 674,
+        "n_episodes": 522,
+        "n_months": 45,
+        "month_range": [
+          "2022-02",
+          "2026-05"
+        ],
+        "fires_per_episode_min": 1,
+        "fires_per_episode_max": 7,
+        "fires_per_episode_mean": 1.29,
+        "fires_per_episode_median": 1.0,
+        "n_episodes_dev": 215,
+        "n_episodes_hold": 307,
+        "n_months_dev": 20,
+        "n_months_hold": 25
+      },
+      "episode_cluster_ci_full": {
+        "wr_point": 0.6899,
+        "wr_ci": [
+          0.6445,
+          0.7319
+        ],
+        "wr_ci_lower_clears_leg2": true,
+        "ret_exit_point": 0.1224,
+        "ret_exit_ci": [
+          0.0821,
+          0.1697
+        ],
+        "ret_exit_ci_excludes_zero": true,
+        "asym_point": 3.3967,
+        "asym_ci": [
+          2.5728,
+          4.4707
+        ],
+        "asym_ci_lower_clears_leg3": true
+      },
+      "episode_cluster_ci_holdout": {
+        "n_fires": 407,
+        "n_episodes": 307,
+        "wr_point": 0.6486,
+        "wr_ci": [
+          0.5876,
+          0.7083
+        ],
+        "wr_ci_lower_clears_leg5": true,
+        "ret_exit_ci": [
+          0.069,
+          0.1998
+        ]
+      },
+      "leg6_side_by_side": {
+        "observed_ret_exit": 0.1224,
+        "old_bar_kind": "independent_draw",
+        "old_bar_published_p95": 0.0613,
+        "old_bar_reproduced_p95": 0.0613,
+        "timeshift_p95": 0.1138,
+        "timeshift_p": 0.041,
+        "observed_clears_timeshift_p95": true
+      }
+    },
+    {
+      "signal_id": "SRM_BEARTAPE_ACCEL_K20",
+      "tier": "m",
+      "single_regime": true,
+      "operating_regime": "risk_off",
+      "split_date": "2023-12-31",
+      "reproduction_gate": {
+        "n": 1403,
+        "wr": 0.6793,
+        "asym": 1.8639,
+        "ret_exit": 0.0557,
+        "holdout_n": 547,
+        "holdout_wr": 0.8007,
+        "holdout_ret_exit": 0.116,
+        "shipped": {
+          "n": 1403,
+          "wr": 0.679,
+          "asym": 1.864,
+          "ret_exit": 0.0557,
+          "holdout_n": 547,
+          "holdout_wr": 0.801,
+          "holdout_ret_exit": 0.116,
+          "placebo_kind": "regime_matched",
+          "placebo_p95": 0.0318
+        },
+        "match": true
+      },
+      "episode_coverage": {
+        "n_fires": 1403,
+        "n_episodes": 1079,
+        "n_months": 16,
+        "month_range": [
+          "2022-02",
+          "2026-04"
+        ],
+        "fires_per_episode_min": 1,
+        "fires_per_episode_max": 4,
+        "fires_per_episode_mean": 1.3,
+        "fires_per_episode_median": 1.0,
+        "n_episodes_dev": 677,
+        "n_episodes_hold": 402,
+        "n_months_dev": 12,
+        "n_months_hold": 4
+      },
+      "episode_cluster_ci_full": {
+        "wr_point": 0.6793,
+        "wr_ci": [
+          0.6508,
+          0.7062
+        ],
+        "wr_ci_lower_clears_leg2": true,
+        "ret_exit_point": 0.0557,
+        "ret_exit_ci": [
+          0.0484,
+          0.0629
+        ],
+        "ret_exit_ci_excludes_zero": true,
+        "asym_point": 1.8639,
+        "asym_ci": [
+          1.7005,
+          2.0438
+        ],
+        "asym_ci_lower_clears_leg3": true
+      },
+      "episode_cluster_ci_holdout": {
+        "n_fires": 547,
+        "n_episodes": 402,
+        "wr_point": 0.8007,
+        "wr_ci": [
+          0.7641,
+          0.8355
+        ],
+        "wr_ci_lower_clears_leg5": true,
+        "ret_exit_ci": [
+          0.1053,
+          0.1268
+        ]
+      },
+      "leg6_side_by_side": {
+        "observed_ret_exit": 0.0557,
+        "old_bar_kind": "regime_matched",
+        "old_bar_published_p95": 0.0318,
+        "old_bar_reproduced_p95": 0.0318,
+        "timeshift_p95": 0.0435,
+        "timeshift_p": 0.019,
+        "observed_clears_timeshift_p95": true
+      }
+    },
+    {
+      "signal_id": "RSLAG_OVERSOLD_K20",
+      "tier": "m",
+      "single_regime": false,
+      "operating_regime": null,
+      "split_date": "2023-12-31",
+      "reproduction_gate": {
+        "n": 1004,
+        "wr": 0.6255,
+        "asym": 2.7418,
+        "ret_exit": 0.0979,
+        "holdout_n": 593,
+        "holdout_wr": 0.6526,
+        "holdout_ret_exit": 0.1276,
+        "shipped": {
+          "n": 1004,
+          "wr": 0.625,
+          "asym": 2.742,
+          "ret_exit": 0.0979,
+          "holdout_n": 593,
+          "holdout_wr": 0.653,
+          "holdout_ret_exit": 0.1276,
+          "placebo_kind": "independent_draw",
+          "placebo_p95": 0.0557
+        },
+        "match": true
+      },
+      "episode_coverage": {
+        "n_fires": 1004,
+        "n_episodes": 703,
+        "n_months": 50,
+        "month_range": [
+          "2022-01",
+          "2026-05"
+        ],
+        "fires_per_episode_min": 1,
+        "fires_per_episode_max": 15,
+        "fires_per_episode_mean": 1.43,
+        "fires_per_episode_median": 1.0,
+        "n_episodes_dev": 283,
+        "n_episodes_hold": 420,
+        "n_months_dev": 22,
+        "n_months_hold": 28
+      },
+      "episode_cluster_ci_full": {
+        "wr_point": 0.6255,
+        "wr_ci": [
+          0.5907,
+          0.6613
+        ],
+        "wr_ci_lower_clears_leg2": false,
+        "ret_exit_point": 0.0979,
+        "ret_exit_ci": [
+          0.0568,
+          0.1603
+        ],
+        "ret_exit_ci_excludes_zero": true,
+        "asym_point": 2.7418,
+        "asym_ci": [
+          1.9403,
+          4.453
+        ],
+        "asym_ci_lower_clears_leg3": true
+      },
+      "episode_cluster_ci_holdout": {
+        "n_fires": 593,
+        "n_episodes": 420,
+        "wr_point": 0.6526,
+        "wr_ci": [
+          0.6076,
+          0.6945
+        ],
+        "wr_ci_lower_clears_leg5": true,
+        "ret_exit_ci": [
+          0.0619,
+          0.2334
+        ]
+      },
+      "leg6_side_by_side": {
+        "observed_ret_exit": 0.0979,
+        "old_bar_kind": "independent_draw",
+        "old_bar_published_p95": 0.0557,
+        "old_bar_reproduced_p95": 0.0557,
+        "timeshift_p95": 0.1028,
+        "timeshift_p": 0.058,
+        "observed_clears_timeshift_p95": false
+      }
+    }
+  ]
+}
