@@ -3473,12 +3473,14 @@
 
     var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') +
              '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';
+    var _calRows = 0;
     if (cal) {
       // Current cycle state (raw internal key, e.g. 'TOP WATCH') — used to flag "you are here".
       var curState = (d.ladder && d.ladder.state) || null;
       var curLabel = (curState && DISP[curState]) ? disp(curState) : null;
       Object.keys(cal).forEach(function (s) {
         if (!DISP[s]) return;   // canonical display states only — drop raw research sub-buckets
+        _calRows++;
         var v = cal[s];
         var dipMed = v.dd_med_pct != null ? v.dd_med_pct + '%' : '—';
         var dipBad = v.dd_p10_pct != null ? v.dd_p10_pct + '%' : '—';
@@ -3490,6 +3492,12 @@
               (v.avg_fwd_pct > 0 ? 'pos' : 'neg') + '">' + v.avg_fwd_pct + '%</td>' +
               '<td class="neg">' + dipMed + '</td><td class="neg">' + dipBad + '</td></tr>';
       });
+    }
+    // Nulls printed, not hidden: no measured record -> plain-word note, never a hollow header-only table.
+    if (!_calRows) {
+      cs = '<tr><td class="muted" style="padding:10px 4px;font-size:12.5px">' + (lang() === 'zh'
+        ? '实测记录暂时缺失——本表的历史数据未能加载。上方状态仍可用于结构判断；在记录恢复前请谨慎控制仓位。'
+        : 'No measured record available right now — the history behind this table did not load. The state above still works for structure; size cautiously until the record is back.') + '</td></tr>';
     }
     document.getElementById('r_cal').innerHTML = cs;
 
