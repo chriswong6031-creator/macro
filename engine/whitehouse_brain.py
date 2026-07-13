@@ -272,12 +272,13 @@ def _wh_reply_cache_put(prompt_hash: str, text: str, cfg: dict) -> None:
 def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | None]:
     """(reply_text, degraded_reason). Never raises.
 
-    Determinism kit: temperature=0 to make significance/activation judgments
-    reproducible. The Anthropic SDK does NOT support a `seed` parameter on
-    messages.create() — the parameter was never added to the API (verified W5);
-    passing it raises TypeError. Content-hash cache provides the idempotency
-    guarantee instead: the same announcement body always yields the same graded
-    record so the banner can't toggle between runs.
+    Determinism: tight prompts + content-hash cache provide the idempotency
+    guarantee — the same announcement body always yields the same graded
+    record so the banner can't toggle between runs. temperature is NOT passed
+    (removed: rejected with 400 on opus-4.7+ per Anthropic API; determinism
+    is not guaranteed by temperature=0 anyway). The Anthropic SDK does NOT
+    support a `seed` parameter on messages.create() — the parameter was never
+    added to the API (verified W5); passing it raises TypeError.
 
     W5 ITEM 1 — 401-fallback: uses engine.llm_auth.make_call() so that an expired
     OAuth token (HTTP 401) marks that provider dead and retries with the next
@@ -310,7 +311,7 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
             max_tokens=max_tokens,
             system=system,
             messages=[{"role": "user", "content": user}],
-            temperature=0,
+            # temperature removed — rejected (400) on opus-4.7+ per Anthropic API
         )
         sr = getattr(resp, "stop_reason", None)
         if sr == "refusal":

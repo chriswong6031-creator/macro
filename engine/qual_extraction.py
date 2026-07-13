@@ -359,7 +359,7 @@ def _call_model(body: str, context: str, cfg: dict, model: str) -> tuple[str | N
             "max_tokens": int(cfg.get("max_tokens", 1500)),
             "system": _EXTRACTION_SYSTEM,
             "messages": [{"role": "user", "content": user}],
-            "temperature": 0,
+            # temperature removed — rejected (400) on opus-4.7+ per Anthropic API
         }
         try:
             kw["seed"] = 0
