@@ -3534,6 +3534,32 @@ body.page-macro.mx4-grid .mx5-path-svg{
   display:block;width:100%;flex:1;min-height:190px;overflow:visible;
   touch-action:pan-y;
 }
+/* Axis-label + today-marker overlay — screen-space HTML so glyphs and the dot are
+   never distorted by the SVG's preserveAspectRatio="none" fill-stretch. Positioned
+   by % of the plot box (which the SVG fills exactly) so they track the gridlines. */
+body.page-macro.mx4-grid .mx5-path-labels{
+  position:absolute;inset:0;pointer-events:none;
+  font-family:-apple-system,Inter,sans-serif;font-size:11px;line-height:1;
+}
+body.page-macro.mx4-grid .mx5-path-labels span{position:absolute;white-space:nowrap;}
+body.page-macro.mx4-grid .mx5-pl-y{
+  left:6px;transform:translateY(-50%);
+  color:var(--ink-3,rgba(255,255,255,.32));font-variant-numeric:tabular-nums;
+}
+body.page-macro.mx4-grid .mx5-pl-zone{
+  right:8px;transform:translateY(-50%);font-weight:600;
+}
+body.page-macro.mx4-grid .mx5-pl-zone.on{color:rgba(34,217,122,.62);}
+body.page-macro.mx4-grid .mx5-pl-zone.mid{color:rgba(245,158,11,.66);}
+body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(239,68,68,.60);}
+body.page-macro.mx4-grid .mx5-pl-x{
+  top:96.4%;color:var(--ink-3,rgba(255,255,255,.34));
+}
+body.page-macro.mx4-grid .mx5-pl-today{
+  width:9px;height:9px;border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:currentColor;box-shadow:0 0 6px currentColor;
+}
 /* ── Hover enhancement layer (Order 1c) — pure screen-space, hidden until JS shows ── */
 body.page-macro.mx4-grid .mx5-path-cross{
   position:absolute;top:0;width:1px;height:100%;
@@ -5106,10 +5132,11 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         {# zone boundary hairlines at 42 / 60 #}
         <line x1="0" y1="{{ _y60 }}" x2="1000" y2="{{ _y60 }}" stroke="rgba(34,217,122,.22)" stroke-width="1" stroke-dasharray="2,5"/>
         <line x1="0" y1="{{ _y42 }}" x2="1000" y2="{{ _y42 }}" stroke="rgba(239,68,68,.20)" stroke-width="1" stroke-dasharray="2,5"/>
-        {# plain-word zone labels (≥11px), right-aligned so they clear the y-axis labels; bilingual #}
-        <text x="992" y="{{ (_y100 + 13) | round(1) }}" fill="rgba(34,217,122,.55)"  font-size="11" text-anchor="end" font-family="-apple-system,sans-serif" font-weight="600"><tspan class="l-en">Risk-on</tspan><tspan class="l-zh">偏多</tspan></text>
-        <text x="992" y="{{ ((_y60 + _y42)/2 + 4) | round(1) }}" fill="rgba(245,158,11,.60)" font-size="11" text-anchor="end" font-family="-apple-system,sans-serif" font-weight="600"><tspan class="l-en">Mixed</tspan><tspan class="l-zh">中性</tspan></text>
-        <text x="992" y="{{ (_y0 - 6) | round(1) }}"  fill="rgba(239,68,68,.55)"  font-size="11" text-anchor="end" font-family="-apple-system,sans-serif" font-weight="600"><tspan class="l-en">Risk-off</tspan><tspan class="l-zh">偏空</tspan></text>
+        {# NB: zone labels, y-axis numbers, x-axis dates and the today dot are NOT
+           drawn in-SVG — this SVG uses preserveAspectRatio="none" (the plot band
+           must stretch to fill the card), which would warp any glyph/circle. They
+           are rendered as a screen-space HTML overlay (.mx5-path-labels) below,
+           positioned by % of the plot box so they track these gridlines exactly. #}
         {# ── Y gridlines at 0/25/50/75/100 + labels ── #}
         <g stroke="rgba(255,255,255,.06)" stroke-width="1">
           <line x1="{{ PX0 }}" y1="{{ _y100 }}" x2="988" y2="{{ _y100 }}"/>
@@ -5117,36 +5144,52 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <line x1="{{ PX0 }}" y1="{{ _y50 }}"  x2="988" y2="{{ _y50 }}" stroke-dasharray="4,5"/>
           <line x1="{{ PX0 }}" y1="{{ _y25 }}"  x2="988" y2="{{ _y25 }}"/>
         </g>
-        <g fill="rgba(255,255,255,.30)" font-size="11" font-family="-apple-system,sans-serif" text-anchor="start">
-          <text x="6" y="{{ (_y100 + 4) | round(1) }}">100</text>
-          <text x="6" y="{{ (_y75 + 4) | round(1) }}">75</text>
-          <text x="6" y="{{ (_y50 + 4) | round(1) }}">50</text>
-          <text x="6" y="{{ (_y25 + 4) | round(1) }}">25</text>
-          <text x="6" y="{{ (_y0 - 1) | round(1) }}">0</text>
-        </g>
+        {# y-axis number labels → HTML overlay (see .mx5-path-labels below) #}
         {# ── Area fill + line ── #}
         <path d="M{{ _ph_pts_line | join(' L') }} L{{ (PX0 + PXW) | round(2) }},{{ PYB }} L{{ PX0 }},{{ PYB }} Z" fill="url(#mx5PathAreaGrad)" stroke="none"/>
         <polyline points="{{ _ph_pts_line | join(' ') }}" fill="none" stroke="{{ _mx5_sc_col }}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>
         {# ── X-axis baseline hairline ── #}
         <line x1="{{ PX0 }}" y1="{{ PYB }}" x2="988" y2="{{ PYB }}" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
-        {# ── X-axis date ticks + labels (bilingual) ── #}
+        {# ── X-axis tick marks (date labels live in the HTML overlay below) ── #}
         <g font-size="11" font-family="-apple-system,sans-serif">
         {% for _ti in _ph_tick_idx %}
           {% set _tx = (PX0 + (_ti / (_ph_n - 1) * PXW if _ph_n > 1 else PXW / 2)) | round(2) %}
-          {% set _tanch = 'start' if loop.first else ('end' if loop.last else 'middle') %}
-          {% set _tdate = _mx5_hist[_ti].asof %}
           <line x1="{{ _tx }}" y1="{{ PYB }}" x2="{{ _tx }}" y2="{{ (PYB + 4) | round(1) }}" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
-          {% if _tdate and _tdate|length >= 10 %}
-          <text x="{{ _tx }}" y="216" fill="rgba(255,255,255,.34)" text-anchor="{{ _tanch }}" class="l-en">{{ _mx5_mos_en[_tdate[5:7]|int] }} {{ _tdate[8:10]|int }}</text>
-          <text x="{{ _tx }}" y="216" fill="rgba(255,255,255,.34)" text-anchor="{{ _tanch }}" class="l-zh">{{ _tdate[5:7]|int }}月{{ _tdate[8:10]|int }}</text>
-          {% endif %}
         {% endfor %}
         </g>
-        {# ── Today marker (static; JS hover dot overlays on top) ── #}
+        {# today marker → HTML overlay (a round dot; an in-SVG circle would render
+           as an ellipse under preserveAspectRatio="none") #}
         {% set _ph_last_x = (PX0 + PXW) | round(2) %}
         {% set _ph_last_y = (PY0 + (100 - _mx5_hist[-1].score) / 100 * _ph_yfor) | round(2) %}
-        <circle cx="{{ _ph_last_x }}" cy="{{ _ph_last_y }}" r="4.5" fill="{{ _mx5_sc_col }}" style="filter:drop-shadow(0 0 6px {{ _mx5_sc_col }})"/>
       </svg>
+      {# ── Axis labels + today marker: screen-space HTML overlay ───────────────
+         The SVG fills this .mx5-path-plot box exactly, so a label at viewBox
+         (vx,vy) sits at left:vx/1000·100% / top:vy/224·100% and tracks the SVG
+         gridlines/points — but as normal HTML it is never stretched by the SVG's
+         non-uniform scale. Percentages are baked from the same y-band constants. #}
+      <div class="mx5-path-labels" aria-hidden="true">
+        {# y-axis scale (centred on each gridline) #}
+        <span class="mx5-pl-y" style="top:{{ (_y100 / 224 * 100) | round(2) }}%">100</span>
+        <span class="mx5-pl-y" style="top:{{ (_y75  / 224 * 100) | round(2) }}%">75</span>
+        <span class="mx5-pl-y" style="top:{{ (_y50  / 224 * 100) | round(2) }}%">50</span>
+        <span class="mx5-pl-y" style="top:{{ (_y25  / 224 * 100) | round(2) }}%">25</span>
+        <span class="mx5-pl-y" style="top:{{ (_y0   / 224 * 100) | round(2) }}%">0</span>
+        {# plain-word verdict-zone labels (right-aligned) #}
+        <span class="mx5-pl-zone on"  style="top:{{ ((_y100 + 13) / 224 * 100) | round(2) }}%"><span class="l-en">Risk-on</span><span class="l-zh">偏多</span></span>
+        <span class="mx5-pl-zone mid" style="top:{{ (((_y60 + _y42) / 2) / 224 * 100) | round(2) }}%"><span class="l-en">Mixed</span><span class="l-zh">中性</span></span>
+        <span class="mx5-pl-zone off" style="top:{{ ((_y0 - 7) / 224 * 100) | round(2) }}%"><span class="l-en">Risk-off</span><span class="l-zh">偏空</span></span>
+        {# x-axis date ticks (bilingual; anchored start / middle / end) #}
+        {% for _ti in _ph_tick_idx %}
+          {% set _tx = (PX0 + (_ti / (_ph_n - 1) * PXW if _ph_n > 1 else PXW / 2)) | round(2) %}
+          {% set _txf = 'translate(0,-50%)' if loop.first else ('translate(-100%,-50%)' if loop.last else 'translate(-50%,-50%)') %}
+          {% set _tdate = _mx5_hist[_ti].asof %}
+          {% if _tdate and _tdate|length >= 10 %}
+          <span class="mx5-pl-x" style="left:{{ (_tx / 1000 * 100) | round(3) }}%;transform:{{ _txf }}"><span class="l-en">{{ _mx5_mos_en[_tdate[5:7]|int] }} {{ _tdate[8:10]|int }}</span><span class="l-zh">{{ _tdate[5:7]|int }}月{{ _tdate[8:10]|int }}</span></span>
+          {% endif %}
+        {% endfor %}
+        {# today marker (round dot; JS hover dot overlays on top) #}
+        <span class="mx5-pl-today" style="left:{{ (_ph_last_x / 1000 * 100) | round(3) }}%;top:{{ (_ph_last_y / 224 * 100) | round(3) }}%;color:{{ _mx5_sc_col }}"></span>
+      </div>{# /mx5-path-labels #}
       {# ── JS hover enhancement layer (screen-space; chart is complete without it) ── #}
       <div class="mx5-path-cross" aria-hidden="true"></div>
       <div class="mx5-path-dot" aria-hidden="true"></div>

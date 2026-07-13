@@ -4121,6 +4121,32 @@ body.page-macro.mx4-grid .mx5-path-svg{
   display:block;width:100%;flex:1;min-height:190px;overflow:visible;
   touch-action:pan-y;
 }
+/* Axis-label + today-marker overlay — screen-space HTML so glyphs and the dot are
+   never distorted by the SVG's preserveAspectRatio="none" fill-stretch. Positioned
+   by % of the plot box (which the SVG fills exactly) so they track the gridlines. */
+body.page-macro.mx4-grid .mx5-path-labels{
+  position:absolute;inset:0;pointer-events:none;
+  font-family:-apple-system,Inter,sans-serif;font-size:11px;line-height:1;
+}
+body.page-macro.mx4-grid .mx5-path-labels span{position:absolute;white-space:nowrap;}
+body.page-macro.mx4-grid .mx5-pl-y{
+  left:6px;transform:translateY(-50%);
+  color:var(--ink-3,rgba(255,255,255,.32));font-variant-numeric:tabular-nums;
+}
+body.page-macro.mx4-grid .mx5-pl-zone{
+  right:8px;transform:translateY(-50%);font-weight:600;
+}
+body.page-macro.mx4-grid .mx5-pl-zone.on{color:rgba(34,217,122,.62);}
+body.page-macro.mx4-grid .mx5-pl-zone.mid{color:rgba(245,158,11,.66);}
+body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(239,68,68,.60);}
+body.page-macro.mx4-grid .mx5-pl-x{
+  top:96.4%;color:var(--ink-3,rgba(255,255,255,.34));
+}
+body.page-macro.mx4-grid .mx5-pl-today{
+  width:9px;height:9px;border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:currentColor;box-shadow:0 0 6px currentColor;
+}
 /* ── Hover enhancement layer (Order 1c) — pure screen-space, hidden until JS shows ── */
 body.page-macro.mx4-grid .mx5-path-cross{
   position:absolute;top:0;width:1px;height:100%;
@@ -5807,9 +5833,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <line x1="0" y1="83.6" x2="1000" y2="83.6" stroke="rgba(34,217,122,.22)" stroke-width="1" stroke-dasharray="2,5"/>
         <line x1="0" y1="116.72" x2="1000" y2="116.72" stroke="rgba(239,68,68,.20)" stroke-width="1" stroke-dasharray="2,5"/>
         
-        <text x="992" y="23" fill="rgba(34,217,122,.55)"  font-size="11" text-anchor="end" font-family="-apple-system,sans-serif" font-weight="600"><tspan class="l-en">Risk-on</tspan><tspan class="l-zh">偏多</tspan></text>
-        <text x="992" y="104.2" fill="rgba(245,158,11,.60)" font-size="11" text-anchor="end" font-family="-apple-system,sans-serif" font-weight="600"><tspan class="l-en">Mixed</tspan><tspan class="l-zh">中性</tspan></text>
-        <text x="992" y="188"  fill="rgba(239,68,68,.55)"  font-size="11" text-anchor="end" font-family="-apple-system,sans-serif" font-weight="600"><tspan class="l-en">Risk-off</tspan><tspan class="l-zh">偏空</tspan></text>
         
         <g stroke="rgba(255,255,255,.06)" stroke-width="1">
           <line x1="44" y1="10" x2="988" y2="10"/>
@@ -5817,13 +5840,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <line x1="44" y1="102.0"  x2="988" y2="102.0" stroke-dasharray="4,5"/>
           <line x1="44" y1="148.0"  x2="988" y2="148.0"/>
         </g>
-        <g fill="rgba(255,255,255,.30)" font-size="11" font-family="-apple-system,sans-serif" text-anchor="start">
-          <text x="6" y="14">100</text>
-          <text x="6" y="60.0">75</text>
-          <text x="6" y="106.0">50</text>
-          <text x="6" y="152.0">25</text>
-          <text x="6" y="193">0</text>
-        </g>
+        
         
         <path d="M44.0,142.48 L148.89,131.44 L253.78,142.48 L358.67,102.0 L463.56,120.4 L568.44,90.96 L673.33,120.4 L778.22,90.96 L883.11,52.32 L988.0,52.32 L988,194 L44,194 Z" fill="url(#mx5PathAreaGrad)" stroke="none"/>
         <polyline points="44.0,142.48 148.89,131.44 253.78,142.48 358.67,102.0 463.56,120.4 568.44,90.96 673.33,120.4 778.22,90.96 883.11,52.32 988.0,52.32" fill="none" stroke="#22d97a" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>
@@ -5833,65 +5850,87 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <g font-size="11" font-family="-apple-system,sans-serif">
         
           
-          
-          
           <line x1="44.0" y1="194" x2="44.0" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
-          
-          <text x="44.0" y="216" fill="rgba(255,255,255,.34)" text-anchor="start" class="l-en">Jun 26</text>
-          <text x="44.0" y="216" fill="rgba(255,255,255,.34)" text-anchor="start" class="l-zh">6月26</text>
-          
         
-          
-          
           
           <line x1="253.78" y1="194" x2="253.78" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
-          
-          <text x="253.78" y="216" fill="rgba(255,255,255,.34)" text-anchor="middle" class="l-en">Jun 30</text>
-          <text x="253.78" y="216" fill="rgba(255,255,255,.34)" text-anchor="middle" class="l-zh">6月30</text>
-          
         
-          
-          
           
           <line x1="463.56" y1="194" x2="463.56" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
-          
-          <text x="463.56" y="216" fill="rgba(255,255,255,.34)" text-anchor="middle" class="l-en">Jul 2</text>
-          <text x="463.56" y="216" fill="rgba(255,255,255,.34)" text-anchor="middle" class="l-zh">7月2</text>
-          
         
-          
-          
           
           <line x1="568.44" y1="194" x2="568.44" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
-          
-          <text x="568.44" y="216" fill="rgba(255,255,255,.34)" text-anchor="middle" class="l-en">Jul 6</text>
-          <text x="568.44" y="216" fill="rgba(255,255,255,.34)" text-anchor="middle" class="l-zh">7月6</text>
-          
         
-          
-          
           
           <line x1="778.22" y1="194" x2="778.22" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
-          
-          <text x="778.22" y="216" fill="rgba(255,255,255,.34)" text-anchor="middle" class="l-en">Jul 8</text>
-          <text x="778.22" y="216" fill="rgba(255,255,255,.34)" text-anchor="middle" class="l-zh">7月8</text>
-          
         
           
-          
-          
           <line x1="988.0" y1="194" x2="988.0" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
-          
-          <text x="988.0" y="216" fill="rgba(255,255,255,.34)" text-anchor="end" class="l-en">Jul 10</text>
-          <text x="988.0" y="216" fill="rgba(255,255,255,.34)" text-anchor="end" class="l-zh">7月10</text>
-          
         
         </g>
         
         
         
-        <circle cx="988" cy="52.32" r="4.5" fill="#22d97a" style="filter:drop-shadow(0 0 6px #22d97a)"/>
       </svg>
+      
+      <div class="mx5-path-labels" aria-hidden="true">
+        
+        <span class="mx5-pl-y" style="top:4.46%">100</span>
+        <span class="mx5-pl-y" style="top:25.0%">75</span>
+        <span class="mx5-pl-y" style="top:45.54%">50</span>
+        <span class="mx5-pl-y" style="top:66.07%">25</span>
+        <span class="mx5-pl-y" style="top:86.61%">0</span>
+        
+        <span class="mx5-pl-zone on"  style="top:10.27%"><span class="l-en">Risk-on</span><span class="l-zh">偏多</span></span>
+        <span class="mx5-pl-zone mid" style="top:44.71%"><span class="l-en">Mixed</span><span class="l-zh">中性</span></span>
+        <span class="mx5-pl-zone off" style="top:83.48%"><span class="l-en">Risk-off</span><span class="l-zh">偏空</span></span>
+        
+        
+          
+          
+          
+          
+          <span class="mx5-pl-x" style="left:4.4%;transform:translate(0,-50%)"><span class="l-en">Jun 26</span><span class="l-zh">6月26</span></span>
+          
+        
+          
+          
+          
+          
+          <span class="mx5-pl-x" style="left:25.378%;transform:translate(-50%,-50%)"><span class="l-en">Jun 30</span><span class="l-zh">6月30</span></span>
+          
+        
+          
+          
+          
+          
+          <span class="mx5-pl-x" style="left:46.356%;transform:translate(-50%,-50%)"><span class="l-en">Jul 2</span><span class="l-zh">7月2</span></span>
+          
+        
+          
+          
+          
+          
+          <span class="mx5-pl-x" style="left:56.844%;transform:translate(-50%,-50%)"><span class="l-en">Jul 6</span><span class="l-zh">7月6</span></span>
+          
+        
+          
+          
+          
+          
+          <span class="mx5-pl-x" style="left:77.822%;transform:translate(-50%,-50%)"><span class="l-en">Jul 8</span><span class="l-zh">7月8</span></span>
+          
+        
+          
+          
+          
+          
+          <span class="mx5-pl-x" style="left:98.8%;transform:translate(-100%,-50%)"><span class="l-en">Jul 10</span><span class="l-zh">7月10</span></span>
+          
+        
+        
+        <span class="mx5-pl-today" style="left:98.8%;top:23.357%;color:#22d97a"></span>
+      </div>
       
       <div class="mx5-path-cross" aria-hidden="true"></div>
       <div class="mx5-path-dot" aria-hidden="true"></div>
