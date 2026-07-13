@@ -33,3 +33,18 @@ dispatch_priority:
   STANDARD: 1
   MAINTENANCE: 2
   DORMANT: 3
+
+# propose_cadence — operator-ratified 2026-07-13
+# Controls how often each band fires a PROPOSE LLM call within the
+# _run_all_lobes loop.  A lobe proposes in a given cycle iff
+#   int.from_bytes(sha256(f"{cycle_id}:{lobe_id}").digest()[:8], "big") % cadence == 0
+# This gives an AVERAGE rate of 1/cadence proposals per cycle (not strict
+# alternation — every lobe sees an independent, reproducible coin flip per
+# cycle so the same (cycle_id, lobe_id) pair always yields the same decision).
+# cadence 1 → always propose.  DORMANT never proposes regardless (existing
+# band rule unchanged).
+# Expected effect: ~99 → ~45 propose calls per loop (8×1 + 59×0.5 + 32×0.25).
+propose_cadence:
+  FOCUS: 1        # every loop
+  STANDARD: 2     # on average every 2nd loop (deterministic per-cycle sampling, not strict alternation)
+  MAINTENANCE: 4  # on average every 4th loop

@@ -22,6 +22,7 @@ NEVER-RAISE CONTRACT: every public function catches all exceptions, logs, return
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -82,6 +83,14 @@ _DEFAULT_CONFIG: dict[str, Any] = {
         "MAINTENANCE": 2,
         "DORMANT": 3,
     },
+    # propose_cadence — operator-ratified 2026-07-13
+    # cadence N → lobe proposes iff sha256(cycle_id:lobe_id) % N == 0 (average 1/N rate).
+    # cadence 1 → always propose.  DORMANT is excluded by the existing band rule.
+    "propose_cadence": {
+        "FOCUS": 1,
+        "STANDARD": 2,
+        "MAINTENANCE": 4,
+    },
 }
 
 
@@ -113,10 +122,22 @@ def load_attention_config(root: Path | None = None) -> dict:
         data = yaml.safe_load(p.read_text(encoding="utf-8"))
         if not data:
             return _DEFAULT_CONFIG.copy()
+        # Parse propose_cadence block with defensive int() and clamp >= 1
+        _default_cadence = _DEFAULT_CONFIG["propose_cadence"]
+        _raw_cadence = data.get("propose_cadence") or {}
+        _parsed_cadence: dict[str, int] = {}
+        for _band in ("FOCUS", "STANDARD", "MAINTENANCE"):
+            try:
+                _raw_val = _raw_cadence.get(_band)
+                _v = int(_raw_val if _raw_val is not None else _default_cadence[_band])
+                _parsed_cadence[_band] = max(1, _v)
+            except Exception:  # noqa: BLE001
+                _parsed_cadence[_band] = _default_cadence[_band]
         cfg: dict[str, Any] = {
             "max_focus_lobes": int(data.get("max_focus_lobes") or _DEFAULT_CONFIG["max_focus_lobes"]),
             "docket_share": dict(data.get("docket_share") or _DEFAULT_CONFIG["docket_share"]),
             "dispatch_priority": dict(data.get("dispatch_priority") or _DEFAULT_CONFIG["dispatch_priority"]),
+            "propose_cadence": _parsed_cadence,
         }
         return cfg
     except Exception as exc:  # noqa: BLE001
@@ -539,36 +560,102 @@ def effective_docket_size(
         return base_size
 
 
+def _g3_urgent_fix_exemption(lobe_id: str, root: Path | None = None) -> tuple[bool, str]:
+    """Check G3 urgent-fix exemption: high/critical insight row targeting lobe.
+
+    Returns (exempted, reason).  On insight_bus error, returns (True, "attention_error")
+    so the caller can fail open.  NEVER raises.
+    """
+    try:
+        from engine.metabolism.insight_bus import get_open_rows  # noqa: PLC0415
+        open_rows = get_open_rows(root=root)
+        for row in open_rows:
+            if row.get("severity") in ("high", "critical"):
+                entities = row.get("entities") or []
+                if lobe_id in entities:
+                    return (True, "urgent_fix_exemption")
+        return (False, "")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("attention._g3_urgent_fix_exemption: insight_bus error (fail open) — %s", exc)
+        return (True, "attention_error")
+
+
+def _cadence_hash_skip(cycle_id: str, lobe_id: str, cadence: int) -> bool:
+    """Return True if the lobe should be skipped this cycle based on cadence hash.
+
+    Deterministic: same (cycle_id, lobe_id) always returns the same result.
+    cadence <= 1 always returns False (never skip).
+    NEVER raises.
+    """
+    if cadence <= 1:
+        return False
+    try:
+        digest = hashlib.sha256(f"{cycle_id}:{lobe_id}".encode()).digest()
+        val = int.from_bytes(digest[:8], "big")
+        return val % cadence != 0
+    except Exception as exc:  # noqa: BLE001
+        log.debug("attention._cadence_hash_skip: %s — fail open", exc)
+        return False
+
+
 def propose_skip(
     lobe_id: str,
     root: Path | None = None,
     allocation: dict | None = None,
+    cycle_id: str | None = None,
 ) -> tuple[bool, str]:
     """Return (skip, reason) for the PROPOSE stage.
 
-    (False, "") when band != DORMANT.
-    When DORMANT: checks G3 exemption (high/critical insight row targeting this lobe).
-    Any error → (False, "attention_error") — fail open, never block work. NEVER raises.
+    DORMANT band: checks G3 exemption; if not exempted → (True, "attention_dormant").
+    Non-DORMANT band: applies cadence gate (operator-ratified 2026-07-13):
+      - FOCUS (cadence 1) → always propose.
+      - STANDARD (cadence 2) → propose ~every 2nd loop on average.
+      - MAINTENANCE (cadence 4) → propose ~every 4th loop on average.
+      Cadence gate is deterministic: sha256(cycle_id:lobe_id) % cadence == 0 → propose.
+      If cadence gate says skip, G3 urgent-fix exemption overrides (high/critical row).
+      cycle_id is resolved from: explicit param → allocation["cycle_id"] → None.
+      cycle_id None → fail open (propose), logs debug.
+    Any error → (False, "attention_error") — never block work. NEVER raises.
     """
     try:
         b = band_for(lobe_id, allocation=allocation, root=root)
-        if b != "DORMANT":
+
+        if b == "DORMANT":
+            # G3 — urgent-fix supremacy exemption check (existing behaviour)
+            exempted, ex_reason = _g3_urgent_fix_exemption(lobe_id, root=root)
+            if exempted:
+                return (False, ex_reason)
+            return (True, "attention_dormant")
+
+        # Non-DORMANT: apply cadence gate
+        cfg = load_attention_config(root=root)
+        default_cadence = _DEFAULT_CONFIG["propose_cadence"]
+        cadence = int(cfg.get("propose_cadence", {}).get(b) or default_cadence.get(b, 1))
+        cadence = max(1, cadence)
+
+        if cadence <= 1:
             return (False, "")
 
-        # G3 — urgent-fix supremacy exemption check
-        try:
-            from engine.metabolism.insight_bus import get_open_rows  # noqa: PLC0415
-            open_rows = get_open_rows(root=root)
-            for row in open_rows:
-                if row.get("severity") in ("high", "critical"):
-                    entities = row.get("entities") or []
-                    if lobe_id in entities:
-                        return (False, "urgent_fix_exemption")
-        except Exception as exc:  # noqa: BLE001
-            log.warning("attention.propose_skip: insight_bus error (fail open) — %s", exc)
-            return (False, "attention_error")
+        # Resolve cycle_id: explicit param → allocation["cycle_id"] → None
+        resolved_cycle_id = cycle_id
+        if resolved_cycle_id is None and allocation is not None:
+            resolved_cycle_id = (allocation or {}).get("cycle_id")
+        if resolved_cycle_id is None:
+            log.debug(
+                "attention.propose_skip: lobe=%s band=%s cycle_id unresolvable — fail open",
+                lobe_id, b,
+            )
+            return (False, "")
 
-        return (True, "attention_dormant")
+        if not _cadence_hash_skip(resolved_cycle_id, lobe_id, cadence):
+            return (False, "")
+
+        # Cadence says skip — check G3 override before returning skip
+        exempted, ex_reason = _g3_urgent_fix_exemption(lobe_id, root=root)
+        if exempted:
+            return (False, ex_reason)
+
+        return (True, f"cadence:{b}:1/{cadence}")
     except Exception as exc:  # noqa: BLE001
         log.warning("attention.propose_skip: error (fail open) — %s", exc)
         return (False, "attention_error")
