@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.health.v1",
-  "produced_at": "2026-07-13T09:36:04.579070+00:00",
+  "produced_at": "2026-07-13T10:30:42.156061+00:00",
   "as_of": "2026-07-10",
   "overall_status": "warn",
   "lobes": [
@@ -2293,8 +2293,8 @@
     }
   ],
   "cortex": {
-    "cortex_source": "previous_run",
-    "memo_as_of": "2026-07-12T20:12:55+00:00",
+    "cortex_source": "current_run",
+    "memo_as_of": "2026-07-13T10:30:39+00:00",
     "run_status": {
       "status": "degraded",
       "degraded": true,
@@ -2306,71 +2306,23 @@
           "model": "claude-opus-4-8",
           "attempted": true,
           "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CcxmrpcrUHAeqLEKgWzSe'}"
-        },
-        {
-          "provider": "oauth",
-          "model": "claude-opus-4-8",
-          "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ccxmt7riKMdggwcubD6sc'}"
-        },
-        {
-          "provider": "oauth",
-          "model": "claude-opus-4-8",
-          "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CcxmxmieTX5ma4TX8pC8A'}"
-        },
-        {
-          "provider": "oauth",
-          "model": "claude-opus-4-8",
-          "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CcxnCF4JiUhNk8dcGDHMW'}"
+          "error_type": "auth",
+          "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.'}, 'request_id': 'req_011CcyuGKfJbQMfdttPqb1bk'}"
         },
         {
           "provider": "oauth",
           "model": "claude-sonnet-4-6",
           "attempted": true,
           "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CcxnCRwQZCx4ULCCZBgar'}"
-        },
-        {
-          "provider": "oauth",
-          "model": "claude-sonnet-4-6",
-          "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CcxnDwUwXryDsrQzEr8qd'}"
-        },
-        {
-          "provider": "oauth",
-          "model": "claude-sonnet-4-6",
-          "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CcxnGMgn5UddtJwzxhAcr'}"
-        },
-        {
-          "provider": "oauth",
-          "model": "claude-sonnet-4-6",
-          "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CcxnGWoDBMGkKVhvMts9P'}"
+          "error_type": "auth",
+          "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.'}, 'request_id': 'req_011CcyuGMMkUbQCQ4BSEdiWY'}"
         }
       ],
       "tool_call_batches": 0,
       "individual_tool_calls": 0,
       "expected_min_tool_calls": 1,
       "context_stale": false,
-      "context_as_of": "2026-07-12T05:00:32Z"
+      "context_as_of": "2026-07-13T09:35:29Z"
     },
     "probation": {
       "granted": false,
