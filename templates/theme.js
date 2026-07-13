@@ -484,6 +484,16 @@
      (--grid/--card). */
   var NAV_MOBILE_CSS = [
     ".nav-toggle{display:none}",
+    /* back-to-top — shared skin for the two homes of one action: a sticky chip
+       in the open flyout's lower-right (all collapsed-menu widths) and a
+       floating chip fixed at the screen's lower-right (phones, below). Hidden
+       by default everywhere; each home opts in with display:flex. */
+    ".nav-totop{display:none;align-items:center;justify-content:center;width:40px;height:40px;padding:0;border:0;border-radius:50%;cursor:pointer;color:#fff;background:linear-gradient(140deg,#5b9dff,#3b82f6 40%,#6366f1 72%,#7c5cff);box-shadow:0 8px 20px -6px rgba(99,102,241,.65),0 3px 8px rgba(16,24,40,.35),inset 0 1px 0 rgba(255,255,255,.38);-webkit-tap-highlight-color:transparent;transition:opacity .3s ease,filter .3s ease,transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease}",
+    ".nav-totop::before{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(120% 90% at 30% 12%,rgba(255,255,255,.4),rgba(255,255,255,0) 55%);pointer-events:none}",
+    ".nav-totop svg{width:17px;height:17px;position:relative}",
+    ".nav-totop.is-live svg{animation:nav-totop-bob 2.4s ease-in-out .8s infinite}",
+    /* extra specificity so the tap-flight beats the idle bob above */
+    "button.nav-totop.launch svg{animation:nav-totop-launch .5s cubic-bezier(.5,0,.6,1)}",
     "@media (max-width:1259px){",
       ".nav-toggle{display:inline-flex;align-items:center;justify-content:center;width:42px;height:34px;padding:0;flex:none;cursor:pointer;border-radius:10px;border:1px solid var(--line,var(--grid));background:var(--panel2,var(--card));color:var(--text,var(--ink));-webkit-tap-highlight-color:transparent}",
       ".nav-toggle-bars,.nav-toggle-bars::before,.nav-toggle-bars::after{content:'';display:block;width:18px;height:2px;border-radius:2px;background:currentColor;transition:transform .22s ease,opacity .2s ease}",
@@ -526,8 +536,8 @@
       ".has-nav-toggle .nav-links .nav-dd>a.nav-link .caret{display:inline-block;transition:transform .2s}",
       ".has-nav-toggle .nav-links .nav-dd.open>a.nav-link .caret{transform:rotate(180deg)}",
       ".has-nav-toggle .nav-links .nav-dd::after{display:none}",
-      ".has-nav-toggle .nav-links .nav-dd-menu{position:static;transform:none;min-width:0;margin:0;padding:0;border:none;box-shadow:none;background:transparent;max-height:0;overflow:hidden;opacity:0;visibility:visible;transition:max-height .28s ease,opacity .18s ease}",
-      ".has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu{max-height:600px;opacity:1;padding:0 0 6px 12px}",
+      ".has-nav-toggle .nav-links .nav-dd-menu{position:static;transform:none;min-width:0;margin:0;padding:0;border:none;box-shadow:none;background:transparent;max-height:0;overflow:hidden;opacity:0;visibility:visible;transition:max-height .28s ease,opacity .18s ease,padding .28s ease}",
+      ".has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu{max-height:600px;opacity:1;padding:8px 0 6px 12px}",
       ".has-nav-toggle .nav-links .nav-dd-menu a{display:block;padding:9px 12px;font-size:14px;font-weight:500;white-space:normal}",
       ".has-nav-toggle .nav-links .nav-dd-menu a .d{display:block;font-size:11px;opacity:.65;font-weight:400}",
       /* 3rd-tier accordion (Other Assets ▸ Bitcoin Vector / Commodities ▸ …):
@@ -537,7 +547,33 @@
       ".has-nav-toggle .nav-links .nav-sub>a.nav-sub-trig .caret-r{margin-left:auto;display:inline-block;transition:transform .2s}",
       ".has-nav-toggle .nav-links .nav-sub.open>a.nav-sub-trig .caret-r{transform:rotate(90deg)}",
       ".has-nav-toggle .nav-links .nav-sub::after{display:none}",
+      /* back-to-top, flyout home: pinned (sticky) to the open menu's lower-right.
+         Muted while the page is already at the top; lit + gently bobbing once
+         there is somewhere to go. Lives inside .nav-links, so it only ever
+         exists in the collapsed menu. */
+      ".has-nav-toggle .nav-links .nav-totop{display:flex;position:sticky;bottom:6px;z-index:6;align-self:flex-end;flex:none;margin:10px 8px 2px 0;opacity:.45;filter:saturate(.35)}",
+      ".has-nav-toggle .nav-links .nav-totop.is-live{opacity:1;filter:none}",
+      ".has-nav-toggle .nav-links .nav-totop.is-live:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 12px 26px -8px rgba(99,102,241,.8),0 4px 10px rgba(16,24,40,.4),inset 0 1px 0 rgba(255,255,255,.38)}",
+      ".has-nav-toggle .nav-links .nav-totop.is-live:active{transform:scale(.86)}",
+      ".has-nav-toggle.nav-open .nav-links .nav-totop{animation:nav-totop-pop .5s cubic-bezier(.22,1,.36,1)}",
     "}",
+    /* back-to-top, floating home (phones): fixed at the viewport's lower-right,
+       springs in once there's page to climb, yields while the menu flyout is
+       open (the flyout's own chip takes over). --sp = scroll progress, painted
+       by JS into the thin halo ring (@supports-guarded so browsers without
+       mask never show an unmasked disc over the arrow). */
+    "@media (max-width:700px){",
+      ".nav-totop-fab{display:flex;position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:960;opacity:0;transform:scale(.4) translateY(14px);pointer-events:none}",
+      "@supports ((-webkit-mask:radial-gradient(#000,#000)) or (mask:radial-gradient(#000,#000))){",
+        ".nav-totop-fab::after{content:'';position:absolute;inset:-3.5px;border-radius:50%;background:conic-gradient(rgba(255,255,255,.95) var(--sp,0%),rgba(148,163,184,.28) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 2px));mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 2px));pointer-events:none}",
+      "}",
+      ".nav-totop-fab.is-live{opacity:1;transform:none;pointer-events:auto}",
+      ".nav-totop-fab.is-live:active{transform:scale(.86)}",
+    "}",
+    "@keyframes nav-totop-pop{0%{transform:scale(.3) rotate(-90deg)}62%{transform:scale(1.09) rotate(5deg)}100%{transform:scale(1) rotate(0)}}",
+    "@keyframes nav-totop-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}",
+    "@keyframes nav-totop-launch{0%{transform:translateY(0);opacity:1}45%{transform:translateY(-22px);opacity:0}55%{transform:translateY(22px);opacity:0}100%{transform:translateY(0);opacity:1}}",
+    "@media (prefers-reduced-motion:reduce){.nav-totop,.nav-totop svg{animation:none!important}}",
     "@media (max-width:560px){",
       /* phone: KEEP the Mastermind / Terminal labels — the lone icons were cryptic,
          and the row has room to spare once the theme + language toggles collapse
@@ -582,11 +618,13 @@
       nav.classList.remove('nav-open');
       btn.setAttribute('aria-expanded', 'false');
       links.querySelectorAll('.nav-dd.open').forEach(function(d) { d.classList.remove('open'); });
+      paintTotop();                              // floating chip may return
     }
     btn.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
       var open = nav.classList.toggle('nav-open');
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      paintTotop();                              // floating chip yields to the flyout
     });
     // accordion: tap a dropdown parent to toggle its submenu (mobile only).
     // Works at any depth (Other Assets ▸ Commodities ▸ …): tapping closes only
@@ -610,6 +648,47 @@
         }
       });
     });
+    // back-to-top — one action, two homes (see .nav-totop CSS): a sticky chip
+    // at the open flyout's lower-right (all collapsed-menu widths, since the
+    // nav itself scrolls away with the page), and a floating twin fixed at the
+    // screen's lower-right on phones that springs in once the page is scrolled
+    // and yields while the flyout is open. Tapping launches the arrow and
+    // glides the page home; the flyout chip also closes the menu.
+    function makeTotop(cls) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = cls;
+      b.setAttribute('aria-label', 'Back to top');
+      b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V6"/><path d="m5 12 7-7 7 7"/></svg>';
+      b.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        b.classList.remove('launch');
+        void b.offsetWidth;                      // restart the flight animation
+        b.classList.add('launch');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        links.scrollTop = 0;
+        setTimeout(function () {
+          b.classList.remove('launch');
+          if (nav.classList.contains('nav-open')) closeNav();
+        }, 260);
+      });
+      return b;
+    }
+    var menuTotop = makeTotop('nav-totop');
+    var fabTotop = makeTotop('nav-totop nav-totop-fab');
+    links.appendChild(menuTotop);
+    document.body.appendChild(fabTotop);
+    function paintTotop() {
+      var doc = document.documentElement;
+      var y = window.scrollY || doc.scrollTop || 0;
+      var live = y > 240;
+      menuTotop.classList.toggle('is-live', live);
+      fabTotop.classList.toggle('is-live', live && !nav.classList.contains('nav-open'));
+      var span = Math.max(1, doc.scrollHeight - window.innerHeight);
+      fabTotop.style.setProperty('--sp', Math.min(100, y / span * 100).toFixed(1) + '%');
+    }
+    window.addEventListener('scroll', paintTotop, { passive: true });
+    paintTotop();
     // close after a destination link is picked, on Escape, on outside tap, on widen
     links.addEventListener('click', function (e) {
       var a = e.target.closest('a');
