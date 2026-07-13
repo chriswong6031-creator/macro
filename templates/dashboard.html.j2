@@ -3265,7 +3265,7 @@ body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:70
 
 /* ── v5 glass tokens (grid view override layer) ─────────────────── */
 body.page-macro.mx4-grid {
-  --mx5-glass-bg:      rgba(255,255,255,.10);
+  --mx5-glass-bg:      rgba(16,22,30,.55);
   --mx5-pop-bg:        rgba(13,18,26,.96);
   --mx5-glass-border:  rgba(255,255,255,.12);
   --mx5-glass-shadow:  0 8px 32px rgba(0,0,0,.55), 0 1.5px 0 rgba(255,255,255,.07) inset;
@@ -3300,7 +3300,7 @@ body.page-macro.mx4-grid {
    No accent-colored tints anywhere — border brightens, surface lifts ~2%,
    translateY(-1px), soft ambient shadow. Same both directions, 200ms ease-out. */
 body.page-macro.mx4-grid {
-  --mx5-hover-bg:      rgba(255,255,255,.12);
+  --mx5-hover-bg:      rgba(22,29,38,.62);
   --mx5-hover-border:  rgba(255,255,255,.16);
   --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.25);
   --mx5-focus-ring:    0 0 0 2px rgba(34,217,122,.55);
@@ -3547,7 +3547,7 @@ body.page-macro.mx4-grid .mx5-pl-y{
   color:var(--ink-3,rgba(255,255,255,.32));font-variant-numeric:tabular-nums;
 }
 body.page-macro.mx4-grid .mx5-pl-zone{
-  right:8px;transform:translateY(-50%);font-weight:600;
+  right:14px;transform:translateY(-50%);font-weight:600;
 }
 body.page-macro.mx4-grid .mx5-pl-zone.on{color:rgba(34,217,122,.62);}
 body.page-macro.mx4-grid .mx5-pl-zone.mid{color:rgba(245,158,11,.66);}
@@ -3595,7 +3595,7 @@ body.page-macro.mx4-grid .mx5-path-tip{
 }
 body.page-macro.mx4-grid .mx5-path-tip.show{opacity:1;transform:translate(-50%,calc(-100% - 14px));}
 body.page-macro.mx4-grid .mx5-path-tip-date{
-  font-size:10px;font-weight:600;letter-spacing:.03em;
+  font-size:11px;font-weight:600;letter-spacing:.03em;
   color:var(--ink-3,rgba(255,255,255,.5));text-transform:uppercase;
 }
 [data-theme="light"] body.page-macro.mx4-grid .mx5-path-tip-date{color:rgba(0,0,0,.5);}
@@ -3810,7 +3810,7 @@ body.mx5-dlg-open{ overflow:hidden; }
   position:relative;z-index:1;
   max-width:980px;width:calc(100% - 48px);
   max-height:82vh;
-  background:rgba(15,19,26,.78);
+  background:rgba(13,17,24,.88);
   border:1px solid rgba(255,255,255,.10);
   border-radius:var(--mx5-radius-card,18px);
   backdrop-filter:blur(28px) saturate(1.4);
@@ -3844,7 +3844,7 @@ body.mx5-dlg-open{ overflow:hidden; }
   display:flex;align-items:center;justify-content:space-between;
   padding:20px 26px 16px;
   position:sticky;top:0;z-index:2;
-  background:rgba(15,19,26,.86);
+  background:rgba(13,17,24,.92);
   backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
   border-bottom:1px solid rgba(255,255,255,.07);
 }
@@ -3955,7 +3955,7 @@ body.mx5-dlg-open{ overflow:hidden; }
 
 /* Section eyebrow inside dialogs */
 .mx5-dlg-eyebrow{
-  font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
   color:var(--ink-3,rgba(255,255,255,.36));margin:0 0 14px;
 }
 [data-theme="light"] .mx5-dlg-eyebrow{color:rgba(0,0,0,.38);}
@@ -3970,7 +3970,7 @@ body.mx5-dlg-open{ overflow:hidden; }
 .mx5-dlg-driver-hd{
   display:flex;align-items:center;gap:14px;margin-bottom:20px;
   padding:16px 18px;
-  background:rgba(255,255,255,.04);border-radius:14px;
+  background:rgba(255,255,255,.04);border-radius:12px;
   border:1px solid rgba(255,255,255,.09);
 }
 [data-theme="light"] .mx5-dlg-driver-hd{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
@@ -4005,12 +4005,12 @@ body.mx5-dlg-open{ overflow:hidden; }
 }
 [data-theme="light"] .mx5-dlg-dd-box{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06);}
 .mx5-dlg-dd-horizon{
-  font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:6px;
 }
 [data-theme="light"] .mx5-dlg-dd-horizon{color:rgba(0,0,0,.38);}
-.mx5-dlg-dd-val{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:4px;}
-.mx5-dlg-dd-sub{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));}
+.mx5-dlg-dd-val{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:4px;}
+.mx5-dlg-dd-sub{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
 [data-theme="light"] .mx5-dlg-dd-sub{color:rgba(0,0,0,.38);}
 
 /* Six-factor deep rows (SIGNALS dialog) */
@@ -4025,14 +4025,14 @@ body.mx5-dlg-open{ overflow:hidden; }
 [data-theme="light"] .mx5-dlg-factor-row{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.06);}
 .mx5-dlg-factor-row.weakest{border-color:rgba(245,158,11,.25);}
 .mx5-dlg-factor-name{font-size:12px;font-weight:700;}
-.mx5-dlg-factor-read{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;line-height:1.4;}
+.mx5-dlg-factor-read{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;line-height:1.4;}
 [data-theme="light"] .mx5-dlg-factor-read{color:rgba(0,0,0,.42);}
 .mx5-dlg-factor-bar{position:relative;height:7px;border-radius:4px;background:rgba(255,255,255,.08);}
 [data-theme="light"] .mx5-dlg-factor-bar{background:rgba(0,0,0,.09);}
 .mx5-dlg-factor-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;opacity:.85;}
-.mx5-dlg-factor-score{font-size:16px;font-weight:900;text-align:right;font-variant-numeric:tabular-nums;}
+.mx5-dlg-factor-score{font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;}
 /* Bar tick labels (0 / 50 / 100) */
-.mx5-dlg-bar-ticks{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--ink-3,rgba(255,255,255,.36));}
+.mx5-dlg-bar-ticks{display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
 @media(max-width:700px){.mx5-dlg-bar-ticks{display:none;}}
 
 /* Weakest-leg callout (SIGNALS dialog) */
@@ -4054,7 +4054,7 @@ body.mx5-dlg-open{ overflow:hidden; }
 /* MTF tape table (inside SIGNALS dialog) */
 .mx5-dlg-mtf-tbl{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:10px;}
 .mx5-dlg-mtf-tbl th{
-  text-align:left;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  text-align:left;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--ink-3,rgba(255,255,255,.36));padding:0 0 8px;
 }
 [data-theme="light"] .mx5-dlg-mtf-tbl th{color:rgba(0,0,0,.38);}
@@ -4074,21 +4074,21 @@ body.mx5-dlg-open{ overflow:hidden; }
 @media(max-width:700px){.mx5-dlg-idx-grid{grid-template-columns:repeat(2,1fr);}}
 .mx5-dlg-idx-card{
   padding:14px 14px 12px;
-  background:rgba(255,255,255,.04);border-radius:14px;
+  background:rgba(255,255,255,.04);border-radius:12px;
   border:1px solid rgba(255,255,255,.08);
 }
 [data-theme="light"] .mx5-dlg-idx-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
 .mx5-dlg-idx-ticker{font-size:12px;font-weight:700;margin-bottom:1px;}
-.mx5-dlg-idx-name{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mx5-dlg-idx-name{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 [data-theme="light"] .mx5-dlg-idx-name{color:rgba(0,0,0,.42);}
-.mx5-dlg-idx-px{font-size:20px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:3px;}
+.mx5-dlg-idx-px{font-size:20px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:3px;}
 .mx5-dlg-idx-chg{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:10px;}
 .mx5-dlg-idx-chg.up{color:var(--up,#22d97a);}
 .mx5-dlg-idx-chg.dn{color:var(--down,#ef4444);}
 .mx5-dlg-idx-chips{display:flex;flex-wrap:wrap;gap:4px;}
 .mx5-dlg-idx-chip{
   display:inline-flex;align-items:center;padding:2px 7px;
-  border-radius:5px;font-size:9.5px;font-weight:600;
+  border-radius:6px;font-size:11px;font-weight:600;
 }
 .mx5-dlg-idx-chip.ok{color:var(--up,#22d97a);background:rgba(62,200,122,.1);border:1px solid rgba(62,200,122,.2);}
 .mx5-dlg-idx-chip.wn{color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);}
@@ -4098,7 +4098,7 @@ body.mx5-dlg-open{ overflow:hidden; }
 /* Sector columns (MARKETS dialog) */
 .mx5-dlg-sector-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
 .mx5-dlg-sector-col-head{
-  font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px;
 }
 [data-theme="light"] .mx5-dlg-sector-col-head{color:rgba(0,0,0,.38);}
@@ -4111,7 +4111,7 @@ body.mx5-dlg-open{ overflow:hidden; }
 .mx5-dlg-sector-arr.heat{color:var(--down,#ef4444);}
 .mx5-dlg-sector-arr.cool{color:var(--up,#22d97a);}
 .mx5-dlg-sector-name{flex:1;font-weight:500;}
-.mx5-dlg-sector-rk{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));font-variant-numeric:tabular-nums;}
+.mx5-dlg-sector-rk{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));font-variant-numeric:tabular-nums;}
 [data-theme="light"] .mx5-dlg-sector-rk{color:rgba(0,0,0,.38);}
 
 /* Asset tiles (MARKETS dialog) */
@@ -4126,10 +4126,10 @@ body.mx5-dlg-open{ overflow:hidden; }
   text-align:center;
 }
 [data-theme="light"] .mx5-dlg-asset-tile{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);}
-.mx5-dlg-asset-lbl{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:6px;}
+.mx5-dlg-asset-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:6px;}
 [data-theme="light"] .mx5-dlg-asset-lbl{color:rgba(0,0,0,.38);}
-.mx5-dlg-asset-val{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:3px;}
-.mx5-dlg-asset-ctx{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));}
+.mx5-dlg-asset-val{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:3px;}
+.mx5-dlg-asset-ctx{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
 [data-theme="light"] .mx5-dlg-asset-ctx{color:rgba(0,0,0,.38);}
 
 /* Events calendar cards (EVENTS dialog) */
@@ -4149,11 +4149,11 @@ body.mx5-dlg-open{ overflow:hidden; }
 [data-theme="light"] .mx5-dlg-cal-date{color:rgba(0,0,0,.42);}
 .mx5-dlg-cal-title{font-size:13px;font-weight:700;margin-bottom:6px;line-height:1.3;}
 .mx5-dlg-cal-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-.mx5-dlg-cal-time{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));}
+.mx5-dlg-cal-time{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
 [data-theme="light"] .mx5-dlg-cal-time{color:rgba(0,0,0,.4);}
 .mx5-dlg-cal-badge{
-  display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;
-  font-size:9.5px;font-weight:700;
+  display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;
+  font-size:11px;font-weight:700;
 }
 .mx5-dlg-cal-badge.high{color:var(--down,#ef4444);background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);}
 .mx5-dlg-cal-badge.med{color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.18);}
@@ -4177,7 +4177,7 @@ body.mx5-dlg-open{ overflow:hidden; }
 .mx5-dlg-fed-val{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--link,#22d97a);white-space:nowrap;}
 .mx5-dlg-fed-chg{font-size:11px;font-variant-numeric:tabular-nums;margin-left:6px;}
 .mx5-dlg-fed-chg.pos{color:var(--up,#22d97a);}.mx5-dlg-fed-chg.neg{color:var(--down,#ef4444);}
-.mx5-dlg-fed-src{font-size:9px;color:var(--ink-3,rgba(255,255,255,.36));text-align:right;padding-top:6px;}
+.mx5-dlg-fed-src{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));text-align:right;padding-top:6px;}
 [data-theme="light"] .mx5-dlg-fed-src{color:rgba(0,0,0,.35);}
 
 /* RR link chip (EVENTS dialog — open release-radar from inside dialog) */
@@ -4194,18 +4194,13 @@ body.mx5-dlg-open{ overflow:hidden; }
 .mx5-dlg-rr-link:hover{border-color:var(--link,#22d97a);color:var(--text);}
 [data-theme="light"] .mx5-dlg-rr-link{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.09);color:rgba(0,0,0,.55);}
 
-/* Heatmap wrap inside dialog (same IDs as island, just cloned — heatmap.js mounts on first instance) */
+/* Heatmap wrap inside dialog — chromeless spacer (1.2 de-chrome) */
 .mx5-dlg-heatmap-wrap{
-  background:rgba(255,255,255,.03);border-radius:12px;
-  border:1px solid rgba(255,255,255,.07);
-  overflow:hidden;margin-bottom:20px;min-height:120px;
+  background:none;border:none;border-radius:0;
+  overflow:visible;margin-bottom:20px;min-height:120px;
 }
-[data-theme="light"] .mx5-dlg-heatmap-wrap{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);}
-.mx5-dlg-heatmap-head{
-  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
-  color:var(--ink-3,rgba(255,255,255,.36));padding:10px 14px 0;
-}
-[data-theme="light"] .mx5-dlg-heatmap-head{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-heatmap-wrap{background:none;border:none;}
+/* .mx5-dlg-heatmap-head rules removed (1.2) */
 
 /* ── Gauge SVG glow (JS patchable via data attrs) ───────────────── */
 /* Arc and needle updated by risk_state_live.js; see §3.1 */
@@ -4218,7 +4213,9 @@ body.page-macro.mx4-grid #mx5-gauge-needle{
 body.page-macro.mx4-grid #mx5-score-numeral{
   /* font-size 24px; glow filter via inline style */
   filter:drop-shadow(0 0 10px rgba(34,217,122,.7));
+  display:none; /* 2.2: one glow remains on .mx5-big-score; DOM kept for risk_state_live.js */
 }
+body.page-macro.mx4-grid #mx5-score-numeral + text{display:none;} /* hides /100 sublabel */
 
 /* ══════════════════════════════════════════════════════════════════
    S2 — v5 card face styles (ALL scoped body.page-macro.mx4-grid)
@@ -4256,7 +4253,7 @@ body.page-macro.mx4-grid .mx5-card{
 body.page-macro.mx4-grid .mx5-card::before{
   content:"";position:absolute;inset:0;
   border-radius:var(--mx5-radius-card);
-  background:linear-gradient(135deg,rgba(255,255,255,.06) 0%,transparent 55%);
+  background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 55%);
   pointer-events:none;
 }
 /* Static-card click target (Fed / Sentiment / Sector) */
@@ -4278,7 +4275,7 @@ body.page-macro.mx4-grid .sxg-face.mx5-card-face{
 body.page-macro.mx4-grid .sxg-face.mx5-card-face::before{
   content:"";position:absolute;inset:0;
   border-radius:inherit;
-  background:linear-gradient(135deg,rgba(255,255,255,.06) 0%,transparent 55%);
+  background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 55%);
   pointer-events:none;
 }
 body.page-macro.mx4-grid .sx:hover .sxg-face.mx5-card-face,
@@ -4330,11 +4327,11 @@ body.page-macro.mx4-grid .mx5-mkt-grid{
 }
 body.page-macro.mx4-grid .mx5-mkt-tile{
   /* v5.3.1: tiles are NESTED inside an already-glass card — glass-on-glass at .1 over .1
-     compounded to ~19% white ("too bright"). Inner surfaces use a subtle 4% fill, no
+     compounded to ~19% white ("too bright"). Inner surfaces use a subtle 3% fill, no
      second blur, hairline border, no drop shadow. */
-  background:rgba(255,255,255,.04);
+  background:rgba(255,255,255,.03);
   border:1px solid rgba(255,255,255,.08);
-  border-radius:14px;
+  border-radius:12px;
   padding:16px 18px 12px;
   position:relative;overflow:hidden;cursor:pointer;
   transition:background .2s ease-out,border-color .2s ease-out,box-shadow .2s ease-out,transform .2s ease-out;
@@ -4465,7 +4462,7 @@ body.page-macro.mx4-grid .mx5-fed-pct-overlay{
   text-align:center;line-height:1.1;
 }
 body.page-macro.mx4-grid .mx5-fed-pct-overlay small{
-  font-size:10px;font-weight:500;color:var(--ink-3,rgba(255,255,255,.36));
+  font-size:11px;font-weight:500;color:var(--ink-3,rgba(255,255,255,.36));
   display:block;margin-top:1px;
 }
 body.page-macro.mx4-grid .mx5-fed-verdict{
@@ -4539,13 +4536,10 @@ body.page-macro.mx4-grid .mx5-sector-heat-bars{
   display:flex;gap:3px;align-items:flex-end;
 }
 body.page-macro.mx4-grid .mx5-sector-heat-col{
-  flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px;align-items:center;
+  flex:1 1 0;min-width:14px;display:flex;flex-direction:column;gap:3px;align-items:center;
 }
 body.page-macro.mx4-grid .mx5-sector-heat-bar{width:100%;border-radius:3px;}
-body.page-macro.mx4-grid .mx5-sector-heat-name{
-  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
-  max-width:100%;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;
-}
+/* .mx5-sector-heat-name removed (2.5 — truncation at every width; full names in chip lists) */
 
 /* ── ALERTS CENTRE (sx-news-v2 face) ───────────────────────────── */
 body.page-macro.mx4-grid #sx-news-v2 .sxg-face.mx5-card-face .mx5-alerts-list{
@@ -4653,6 +4647,18 @@ body.page-macro.mx4-grid .mx5-spark-up polyline{stroke:#22d97a;}
 body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-area{fill:rgba(239,68,68,.08);}
 body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-line,
 body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
+
+/* ── 1.2 heatmap scorecard title hidden (eyebrow already names it) ── */
+body.page-macro.mx4-grid #dlg-heatmap-scorecard .hm-sc-tit{display:none}
+
+/* ── 1.3 expanded overlay de-chrome (body.page-macro scoping; no heatmap.js edit) ── */
+body.page-macro .hm-ov .hm-bar{background:none;border:none;padding:0;border-radius:0}
+body.page-macro .hm-ov .hm-tm-wrap{background:transparent;border:none;border-radius:0}
+
+/* ── 2.5 mobile-only full heatmap link (hidden on wider screens) ── */
+body.page-macro .mx5-dlg-hm-mobile-link{display:none;margin-top:10px;text-align:center;}
+body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97a);font-weight:600;}
+@media(max-width:700px){body.page-macro .mx5-dlg-hm-mobile-link{display:block;}}
 
 </style>
 {% endif %}
@@ -4932,9 +4938,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <div class="mx5-flip">
         <span class="mx5-flip-arrow">&#8594;</span>
         <span class="l-en">{{ MS.flip_en }}</span>
-        {% if _mx5_weakest %}<span class="l-en" style="color:var(--ink-2);font-weight:600;"> ({{ _mx5_weakest.label_en }} {{ _mx5_weakest.score }}/100)</span>{% endif %}
         {% if MS.flip_zh %}<span class="l-zh">{{ MS.flip_zh }}</span>{% endif %}
-        {% if _mx5_weakest and MS.flip_zh %}<span class="l-zh" style="color:var(--ink-2);font-weight:600;">（{{ _mx5_weakest.label_zh or _mx5_weakest.label_en }} {{ _mx5_weakest.score }}/100）</span>{% endif %}
       </div>
       {% endif %}
 
@@ -5036,15 +5040,16 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           {% endif %}
           <div class="mx5-scare-list">
             {% for sc in latest.risk_radar.scares[:4] %}
-            {% set _sclevel = 'hi' if sc.score >= 60 else ('mid' if sc.score >= 40 else 'lo') %}
+            {% set _sc_s = sc.score if (sc.score is defined and sc.score is not none) else 0 %}
+            {% set _sclevel = 'hi' if _sc_s >= 60 else ('mid' if _sc_s >= 40 else 'lo') %}
             {% set _scistop = loop.index == 1 %}
             <div class="mx5-scare-item">
               <div class="mx5-scare-item-header">
                 <span class="mx5-scare-item-name"><span class="l-en">{{ sc.label_en if sc.label_en is defined else sc.name }}</span><span class="l-zh">{{ sc.label_zh if sc.label_zh is defined else (sc.name_zh if sc.name_zh is defined else sc.name) }}</span></span>
                 <span class="mx5-scare-item-val {% if _scistop %}top{% else %}lower{% endif %}">{{ sc.score }}</span>
               </div>
-              <div class="mx5-scare-meter"><div class="mx5-scare-fill {{ _sclevel }}" style="width:{{ [sc.score, 100] | min }}%"></div></div>
-              {% if _scistop and sc.score >= 50 %}<div class="mx5-scare-item-label"><span class="l-en">ELEVATED</span><span class="l-zh">偏高</span></div>{% endif %}
+              <div class="mx5-scare-meter"><div class="mx5-scare-fill {{ _sclevel }}" style="width:{{ [_sc_s, 100] | min }}%"></div></div>
+              {% if _scistop and _sc_s >= 50 %}<div class="mx5-scare-item-label"><span class="l-en">ELEVATED</span><span class="l-zh">偏高</span></div>{% endif %}
             </div>
             {% endfor %}
           </div>
@@ -5096,9 +5101,10 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       {% set _ph_json = [] %}
       {% for row in _mx5_hist %}
         {% set _ph_x = (PX0 + (loop.index0 / (_ph_n - 1) * PXW if _ph_n > 1 else PXW / 2)) | round(2) %}
-        {% set _ph_y = (PY0 + (100 - row.score) / 100 * _ph_yfor) | round(2) %}
-        {% set _rv = 'Risk-on' if row.score >= 60 else ('Mixed' if row.score >= 42 else 'Risk-off') %}
-        {% set _rvz = '偏多' if row.score >= 60 else ('中性' if row.score >= 42 else '偏空') %}
+        {% set _row_s = row.score if (row.score is defined and row.score is not none) else 50 %}
+        {% set _ph_y = (PY0 + (100 - _row_s) / 100 * _ph_yfor) | round(2) %}
+        {% set _rv = 'Risk-on' if _row_s >= 60 else ('Mixed' if _row_s >= 42 else 'Risk-off') %}
+        {% set _rvz = '偏多' if _row_s >= 60 else ('中性' if _row_s >= 42 else '偏空') %}
         {% if _ph_pts_line.append(_ph_x ~ ',' ~ _ph_y) %}{% endif %}
         {% if _ph_json.append({'d': row.asof, 'md': (_mx5_mos_en[row.asof[5:7]|int] ~ ' ' ~ (row.asof[8:10]|int)) if (row.asof and row.asof|length >= 10) else '', 'mz': ((row.asof[5:7]|int)|string ~ '月' ~ (row.asof[8:10]|int)|string) if (row.asof and row.asof|length >= 10) else '', 's': row.score, 'v': _rv, 'vz': _rvz, 'x': _ph_x, 'y': _ph_y}) %}{% endif %}
       {% endfor %}
@@ -7475,9 +7481,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               filter="url(#dialGlow5)"/>
         <circle cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke="{{ _fgv5_col }}" stroke-width="2.5"/>
         <circle cx="190" cy="185" r="4"  fill="{{ _fgv5_col }}"/>
-        {# Zone labels (≥11px per spec) #}
+        {# Zone labels (≥11px per spec); NEUTRAL arc apex removed — zone word below already names state #}
         <text x="20"  y="196" fill="#ef4444" font-size="13" font-family="-apple-system,sans-serif" font-weight="700">PANIC</text>
-        <text x="190" y="18"  fill="rgba(255,255,255,.36)" font-size="12" font-family="-apple-system,sans-serif" text-anchor="middle">NEUTRAL</text>
         <text x="360" y="196" fill="#22d97a" font-size="13" font-family="-apple-system,sans-serif" text-anchor="end" font-weight="700">EUPHORIA</text>
       </svg>
     </div>
@@ -7539,7 +7544,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         {% set _bar_col = 'rgba(34,217,122,' ~ ([0.72 - (_rk-1)*0.08, 0.22]|max) ~ ')' if _is_heat else 'rgba(239,68,68,' ~ ([0.65 - (_rk-1)*0.08, 0.18]|max) ~ ')' %}
         <div class="mx5-sector-heat-col">
           <div class="mx5-sector-heat-bar" style="height:{{ _bar_h }}px;background:{{ _bar_col }};"></div>
-          <div class="mx5-sector-heat-name"><span class="l-en">{{ s.get('name','') }}</span><span class="l-zh">{{ s.get('name_zh') or s.get('name','') }}</span></div>
         </div>
         {% endfor %}
       </div>
@@ -7562,20 +7566,20 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   <div class="sx" id="sx-markets-v2" style="--isle-color:var(--isle-markets)">
     {# v5 face — MARKETS (S2: four glass tiles with price/delta/sparkline; data-bare ids preserved) #}
     {% set _ix_names = {'SPY': 'US Equities', 'QQQ': 'Nasdaq', 'DJI': 'Dow Jones', '_DJI': 'Dow Jones', 'RUT': 'Small Cap', '_RUT': 'Small Cap'} %}
-    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-markets')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-markets');}">
-      {# Eyebrow hidden in v5 card face — card-title replaces it #}
-      <div class="mx5-card-title"><span class="l-en">Markets</span><span class="l-zh">市场行情</span></div>
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Markets" onclick="mx5OpenDlg('dlg-markets')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-markets');}">
+      {# Eyebrow hidden in v5 card face — card-title removed (1.1); aria-label carries accessible name #}
       <div class="mx5-mkt-grid">
         {% for ix in index_health[:4] %}
         {% set _ixsym = ix.ticker | replace('_','') %}
-        {% set _ixdir = 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') %}
+        {% set _ixchg = ix.chg if (ix.chg is defined and ix.chg is not none) else none %}
+        {% set _ixdir = ('up' if _ixchg > 0 else ('dn' if _ixchg < 0 else '')) if _ixchg is not none else '' %}
         {# idx_spark: list of closes for this ticker; graceful if absent #}
         {% set _ixspk = (idx_spark.get(_ixsym) or idx_spark.get('^' ~ _ixsym) or []) if (idx_spark is defined and idx_spark) else [] %}
         <div class="mx5-mkt-tile {{ _ixdir }}" data-sym="{{ _ixsym }}" data-mkt="us">
           <div class="mx5-mkt-ticker">{{ _ixsym }}</div>
           <div class="mx5-mkt-sub">{{ _ix_names.get(ix.ticker, _ixsym) }}</div>
           <div class="mx5-mkt-price nb-px" data-sym="{{ _ixsym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
-          <div class="mx5-mkt-delta {{ _ixdir }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</div>
+          <div class="mx5-mkt-delta {{ _ixdir }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{% if _ixchg is not none %}{{ '%+.2f'|format(_ixchg) }}%{% else %}—{% endif %}</div>
           {# Sparkline — Jinja static SVG from idx_spark; absent = no spark box #}
           {% if _ixspk and _ixspk | length >= 3 %}
           {% set _spk_n = _ixspk | length %}
@@ -7614,7 +7618,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     {# Heatmap staging: heatmap.js mounts on first #heatmap-scorecard at DOMContentLoaded;
        this div sits outside any dialog, height-collapsed so it doesn't affect layout.
        On first open of dlg-markets, mx5OpenDlg adopts the node into #dlg-heatmap-scorecard. #}
-    <div class="mx5-hm-stage" style="height:0;overflow:hidden;width:920px" aria-hidden="true">
+    <div class="mx5-hm-stage" style="height:0;overflow:hidden;width:min(920px,calc(100vw - 100px))" aria-hidden="true">
       <div class="isle-heatmap-chrome-head"><span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span></div>
       <div id="heatmap-scorecard" style="min-height:120px"></div>
     </div>
@@ -7903,16 +7907,16 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       </div>
       <div class="mx5-dlg-body">
 
-        {# — Composite read — #}
-        {% if MS2 %}
+        {# — Composite read — bind to MS (same object as hero) so glance and drill-down never disagree #}
+        {% if MS %}
         <div class="mx5-dlg-eyebrow"><span class="l-en">Composite Score</span><span class="l-zh">综合评分</span></div>
         <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:20px">
-          {% set _dlge_col = 'var(--up)' if MS2.score >= 60 else ('var(--warn)' if MS2.score >= 42 else 'var(--down)') %}
-          <span style="font-size:40px;font-weight:900;font-variant-numeric:tabular-nums;color:{{ _dlge_col }};line-height:1">{{ MS2.score }}</span>
+          {% set _dlge_col = 'var(--up)' if MS.score >= 60 else ('var(--warn)' if MS.score >= 42 else 'var(--down)') %}
+          <span style="font-size:40px;font-weight:900;font-variant-numeric:tabular-nums;color:{{ _dlge_col }};line-height:1">{{ MS.score }}</span>
           <div>
             <div style="font-size:14px;font-weight:700;color:{{ _dlge_col }}">
-              <span class="l-en">{{ 'Risk-On' if MS2.score >= 60 else ('Mixed' if MS2.score >= 42 else 'Risk-Off') }}</span>
-              <span class="l-zh">{{ '偏多' if MS2.score >= 60 else ('混合' if MS2.score >= 42 else '避险') }}</span>
+              <span class="l-en">{{ MS.label_en }}</span>
+              <span class="l-zh">{{ MS.label_zh or MS.label_en }}</span>
             </div>
             <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px">
               <span class="l-en">Blended 0–100 · ≥60 risk-on · 42–59 mixed · &lt;42 risk-off</span>
@@ -8050,6 +8054,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         {% endif %}
 
         {# — Fed prediction market pricing — #}
+        {# Outcome enum → ZH display map, shared by this strip and dlg-fed below #}
+        {% set _fed_out_zh = {'No change':'按兵不动','Rate cut':'降息','Rate hike':'加息','25bps cut':'降息25bp','50bps cut':'降息50bp','25bps hike':'加息25bp','25 bps increase':'加息25bp','25 bps decrease':'降息25bp','50+ bps increase':'加息50bp以上','50+ bps decrease':'降息50bp以上','0.1%':'0.1%','0.2%':'0.2%','0.3%':'0.3%','0.4%':'0.4%'} %}
         {% if prediction_markets and prediction_markets.events %}
         <div class="mx5-dlg-eyebrow"><span class="l-en">Fed · Market Pricing</span><span class="l-zh">美联储 · 市场定价</span></div>
         <div class="mx5-dlg-fed-strip">
@@ -8058,8 +8064,18 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <div class="mx5-dlg-fed-item">
             <span class="mx5-dlg-fed-desc"><span class="l-en">{{ e.label_en if e.label_en is defined else e.name }}</span><span class="l-zh">{{ e.label_zh if e.label_zh is defined else (e.label_en if e.label_en is defined else e.name) }}</span></span>
             <span class="mx5-dlg-fed-val"><span class="num">{{ _top.outcome }} {{ _top.prob }}%</span></span>
-            {% if _top.chg_pp is not none and _top.chg_pp != 0 %}<span class="mx5-dlg-fed-chg {{ 'pos' if _top.chg_pp > 0 else 'neg' }}">{{ '%+.1f'|format(_top.chg_pp) }}pp</span>{% endif %}
+            {% if _top.chg_pp is not none and _top.chg_pp != 0 %}<span class="mx5-dlg-fed-chg {{ 'pos' if _top.chg_pp > 0 else 'neg' }}"><span class="l-en">{{ '%+.1f'|format(_top.chg_pp) }} pts</span><span class="l-zh">{{ '%+.1f'|format(_top.chg_pp) }} 个百分点</span></span>{% endif %}
           </div>
+          {% if loop.first and _top.prob is defined and _top.prob is not none %}
+          {# Plain read for headline row — derive odds in plain "X in N" language #}
+          {% set _fed_prob = _top.prob | float %}
+          {% set _fed_odds_n = ((_fed_prob / 10) | round | int) %}
+          {% set _fed_zh_digit = {1:'一',2:'两',3:'三',4:'四',5:'五',6:'六',7:'七',8:'八',9:'九'}.get(_fed_odds_n) %}
+          <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));padding:4px 0 2px;line-height:1.4">
+            <span class="l-en">Market sees ~{{ _fed_odds_n }} in 10 odds of &ldquo;{{ _top.outcome }}&rdquo;.</span>
+            <span class="l-zh">市场认为「{{ _fed_out_zh.get(_top.outcome, _top.outcome) }}」的概率{% if _fed_zh_digit %}约{{ _fed_zh_digit }}成{% else %}约为{{ _fed_prob | round | int }}%{% endif %}。</span>
+          </div>
+          {% endif %}
           {% endfor %}
           <div class="mx5-dlg-fed-src">Polymarket</div>
         </div>
@@ -8103,23 +8119,25 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <div class="mx5-dlg-idx-grid">
           {% for ix in index_health %}
           {% set _dlgm_sym = ix.ticker | replace('_','') %}
-          {% set _dlgm_dir = 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') %}
-          {% set _dlgm_col = 'var(--up)' if ix.chg > 0 else ('var(--down)' if ix.chg < 0 else 'var(--text)') %}
+          {% set _dlgm_chg = ix.chg if (ix.chg is defined and ix.chg is not none) else none %}
+          {% set _dlgm_dir = ('up' if _dlgm_chg > 0 else ('dn' if _dlgm_chg < 0 else '')) if _dlgm_chg is not none else '' %}
+          {% set _dlgm_col = ('var(--up)' if _dlgm_chg > 0 else ('var(--down)' if _dlgm_chg < 0 else 'var(--text)')) if _dlgm_chg is not none else 'var(--text)' %}
           <div class="mx5-dlg-idx-card">
             <div class="mx5-dlg-idx-ticker">{{ _dlgm_sym }}</div>
             <div class="mx5-dlg-idx-name">{{ _dlgm_ix_nm.get(ix.ticker, ix.label if ix.label is defined else _dlgm_sym) }}</div>
             <div class="mx5-dlg-idx-px nb-px" data-sym="{{ _dlgm_sym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
-            <div class="mx5-dlg-idx-chg {{ _dlgm_dir }} nb-chg" data-sym="{{ _dlgm_sym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</div>
+            <div class="mx5-dlg-idx-chg {{ _dlgm_dir }} nb-chg" data-sym="{{ _dlgm_sym }}" data-mkt="us">{% if _dlgm_chg is not none %}{{ '%+.2f'|format(_dlgm_chg) }}%{% else %}—{% endif %}</div>
             <div class="mx5-dlg-idx-chips">
               {# Distance from high — plain words #}
-              <span class="mx5-dlg-idx-chip {{ 'ok' if ix.dd >= -1 else ('wn' if ix.dd >= -10 else 'mt') }}" title="Distance from 52-week high">{{ '%+.1f'|format(ix.dd) }}% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              {% set _dlgm_dd = ix.dd if (ix.dd is defined and ix.dd is not none) else none %}
+              {% if _dlgm_dd is not none %}<span class="mx5-dlg-idx-chip {{ 'ok' if _dlgm_dd >= -1 else ('wn' if _dlgm_dd >= -10 else 'mt') }}" title="Distance from 52-week high">{{ '%+.1f'|format(_dlgm_dd) }}% <span class="l-en">off high</span><span class="l-zh">距高</span></span>{% endif %}
               {# Trend vs 50d MA #}
               {% if ix.above50 is defined %}
-              <span class="mx5-dlg-idx-chip {{ 'ok' if ix.above50 else 'mt' }}" title="vs 50-day moving average">50d {{ '✓' if ix.above50 else '✕' }}</span>
+              <span class="mx5-dlg-idx-chip {{ 'ok' if ix.above50 else 'mt' }}" title="vs 50-day moving average"><span class="l-en">{{ 'Above' if ix.above50 else 'Below' }} 50-day {{ '✓' if ix.above50 else '✕' }}</span><span class="l-zh">{{ '高于' if ix.above50 else '低于' }}50日线 {{ '✓' if ix.above50 else '✕' }}</span></span>
               {% endif %}
               {# Trend vs 200d MA #}
               {% if ix.above200 is defined %}
-              <span class="mx5-dlg-idx-chip {{ 'ok' if ix.above200 else 'mt' }}" title="vs 200-day moving average">200d {{ '✓' if ix.above200 else '✕' }}</span>
+              <span class="mx5-dlg-idx-chip {{ 'ok' if ix.above200 else 'mt' }}" title="vs 200-day moving average"><span class="l-en">{{ 'Above' if ix.above200 else 'Below' }} 200-day {{ '✓' if ix.above200 else '✕' }}</span><span class="l-zh">{{ '高于' if ix.above200 else '低于' }}200日线 {{ '✓' if ix.above200 else '✕' }}</span></span>
               {% endif %}
               {# RSI — plain-word read, not raw number #}
               {% if ix.rsi is not none %}
@@ -8169,9 +8187,13 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <div class="mx5-dlg-sep"></div>
         <div class="mx5-dlg-eyebrow"><span class="l-en">S&amp;P 500 Sector Heatmap</span><span class="l-zh">标普500板块热力图</span></div>
         <div class="mx5-dlg-heatmap-wrap">
-          <div class="mx5-dlg-heatmap-head"><span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span></div>
+          {# mx5-dlg-heatmap-head removed (1.2); eyebrow above already names section #}
           {# Point to the canonical heatmap-scorecard in the island; dialog delegates to it #}
           <div id="dlg-heatmap-scorecard" style="min-height:120px"></div>
+          {# Mobile-only full heatmap link (hidden >700px; heatmap.js hides Expand on touch/small screens) #}
+          <div class="mx5-dlg-hm-mobile-link">
+            <a href="sector_heatmap.html"><span class="l-en">Full heatmap page →</span><span class="l-zh">完整热力图页 →</span></a>
+          </div>
         </div>
 
         {# — Cross-asset tiles — 8 key macro variables — #}
@@ -8224,7 +8246,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <div class="mx5-dlg-asset-ctx"><span class="l-en">index</span><span class="l-zh">指数</span></div>
           </div>
           {% endif %}
-          {% if vix is defined and vix is not none and vix.last is defined %}
+          {% if vix is defined and vix is not none and vix.last is defined and vix.last is not none %}
           {% set _dlgm_vixlv = vix.last %}
           {% set _dlgm_vixc = 'var(--down)' if _dlgm_vixlv > 25 else ('var(--warn)' if _dlgm_vixlv > 18 else 'var(--up)') %}
           <div class="mx5-dlg-asset-tile">
@@ -8327,8 +8349,9 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <div class="mx5-dlg-eyebrow"><span class="l-en">Risk Ladder — What to Watch</span><span class="l-zh">风险梯度 — 需关注的因素</span></div>
         <div class="scare-ladder" style="margin-bottom:0">
           {% for sc in latest.risk_radar.scares %}
-          {% set _scc = ('sc-band-high' if sc.score >= 70 else ('sc-band-watch' if sc.score >= 50 else ('sc-band-elev' if sc.score >= 35 else 'sc-band-calm'))) %}
-          {% set _scband = (sc.band if sc.band is defined and sc.band else ('WATCH' if sc.score >= 50 else ('ELEVATED' if sc.score >= 35 else 'CALM'))) %}
+          {% set _sc_s2 = sc.score if (sc.score is defined and sc.score is not none) else 0 %}
+          {% set _scc = ('sc-band-high' if _sc_s2 >= 70 else ('sc-band-watch' if _sc_s2 >= 50 else ('sc-band-elev' if _sc_s2 >= 35 else 'sc-band-calm'))) %}
+          {% set _scband = (sc.band if sc.band is defined and sc.band else ('WATCH' if _sc_s2 >= 50 else ('ELEVATED' if _sc_s2 >= 35 else 'CALM'))) %}
           {% set _scband_zh = {'WATCH':'警惕','ELEVATED':'走高','CALM':'平静','HIGH':'高危'}.get(_scband, _scband) %}
           <div class="scare-row">
             <span class="sc-name">
@@ -8342,8 +8365,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               </div>
               {% endif %}
             </span>
-            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ [sc.score,100]|min }}%;background:{{ 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 35 else 'var(--muted)') }}"></div></div>
-            <span class="sc-score" style="color:{{ 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 35 else 'var(--muted)') }}">{{ sc.score }}</span>
+            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ [_sc_s2,100]|min }}%;background:{{ 'var(--down)' if _sc_s2 >= 70 else ('var(--warn)' if _sc_s2 >= 35 else 'var(--muted)') }}"></div></div>
+            <span class="sc-score" style="color:{{ 'var(--down)' if _sc_s2 >= 70 else ('var(--warn)' if _sc_s2 >= 35 else 'var(--muted)') }}">{{ sc.score }}</span>
             <span class="sc-band {{ _scc }}">
               <span class="l-en">{{ _scband }}</span>
               <span class="l-zh">{{ _scband_zh }}</span>
@@ -8569,8 +8592,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           {# Disclaimer #}
           <div class="mx5-dlg-sep"></div>
           <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));line-height:1.6">
-            <span class="l-en">Display-only context — W2-F. This is not a forecast of Fed intent or policy timing.</span>
-            <span class="l-zh">仅供展示参考 — W2-F。这不是对美联储意图或政策时机的预测。</span>
+            <span class="l-en">Context only — not a forecast.</span>
+            <span class="l-zh">仅供参考 — 非预测。</span>
           </div>
         </div>
       </div>
@@ -8578,7 +8601,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   </div>
   {% endif %}{# /policy_lever — dlg-policy #}
 
-  {# dlg-aibrief: AI Brief synthesis #}
+  {# dlg-aibrief: AI Brief synthesis (v5.2 rebuild 1.5) #}
   {% if mode != 'stocks' %}
   <div class="mx5-dlg" id="dlg-aibrief" role="dialog" aria-modal="true" tabindex="-1">
     <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
@@ -8588,28 +8611,109 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
-        <a class="isle-aibrief-card aibrief-card" href="aibrief.html" style="display:block">
-          <div class="isle-aibrief-hdr">
-            <div class="isle-aibrief-icon">AI</div>
-            <div>
-              <div style="font-size:13px;font-weight:700;color:var(--text)">{{ t('AI Daily Brief · cross-asset synthesis', 'AI 每日简报 · 跨资产综合') }}</div>
-              <div class="num" style="font-size:11px;color:var(--muted)">{{ latest.date if latest.date else generated_utc[:10] }}</div>
-            </div>
-            <span class="isle-aibrief-badge">{{ t('display-only synthesis of existing signals — not a signal source','仅展示层综合读数 — 非信号来源') }}</span>
+        {# Header row: icon + title + date + badge. No outer <a> wrapper. #}
+        <div class="isle-aibrief-hdr">
+          <div class="isle-aibrief-icon">AI</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)"><span class="l-en">AI Daily Brief · cross-asset synthesis</span><span class="l-zh">AI 每日简报 · 跨资产综合</span></div>
+            <div class="num" style="font-size:11px;color:var(--muted)">{% if master_brief is defined and master_brief and master_brief.get('state_asof') %}{{ master_brief.get('state_asof') }}{% else %}{{ latest.date if latest.date else generated_utc[:10] }}{% endif %}</div>
           </div>
-          {% if macro_news and macro_news.synthesis and macro_news.synthesis.get('read') %}
-          {% set _dlg_syn = macro_news.synthesis %}
-          {% set _dlg_ch_zh = {'monetary':'美联储与利率','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','fiscal_trade':'财政与贸易','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股快讯'} %}
-          {% set _dlg_ch_en = {'capital_return':'buybacks','fiscal_trade':'fiscal & trade','stock_wire':'stock wire','monetary':'Fed & rates'} %}
-          <div class="isle-aibrief-body">
-            <span class="l-en">{{ _dlg_syn.get('high_impact_count', 0) }} high-impact item{{ 's' if _dlg_syn.get('high_impact_count', 0) != 1 }} today{% if _dlg_syn.get('dominant_channel') %} · dominant: <strong>{{ _dlg_ch_en.get(_dlg_syn.dominant_channel, _dlg_syn.dominant_channel|replace('_',' ')) }}</strong>{% endif %}</span>
-            <span class="l-zh">今日 {{ _dlg_syn.get('high_impact_count', 0) }} 条高影响信息{% if _dlg_syn.get('dominant_channel') %} · 主导：<strong>{{ _dlg_ch_zh.get(_dlg_syn.dominant_channel, _dlg_syn.dominant_channel) }}</strong>{% endif %}</span>
+          {# Mandatory house-law note — never delete #}
+          <span class="isle-aibrief-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
+        </div>
+        {# Full brief body when master_brief is present #}
+        {% if master_brief is defined and master_brief and master_brief.get('summary') %}
+        {% set _mb_zh = master_brief.get('zh') or {} %}
+        {# 1. Summary — lead paragraph #}
+        <div style="font-size:14px;font-weight:600;color:var(--text);line-height:1.7;margin-bottom:14px">
+          <span class="l-en">{{ master_brief.get('summary') }}</span>
+          <span class="l-zh">{{ _mb_zh.get('summary') or master_brief.get('summary') }}</span>
+        </div>
+        {# 2. Regime read #}
+        {% if master_brief.get('regime_read') is not none and master_brief.get('regime_read') %}
+        <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:14px">
+          <span class="l-en">{{ master_brief.get('regime_read') }}</span>
+          <span class="l-zh">{{ _mb_zh.get('regime_read') or master_brief.get('regime_read') }}</span>
+        </div>
+        {% endif %}
+        {# 3. Conflicts #}
+        {% if master_brief.get('conflicts') is not none and master_brief.get('conflicts') %}
+        {% set _mb_conflicts_zh = _mb_zh.get('conflicts') or [] %}
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Where signals disagree</span><span class="l-zh">信号分歧</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+          {% for _ci in master_brief.get('conflicts') %}
+          {% set _ci_zh = _mb_conflicts_zh[loop.index0] if _mb_conflicts_zh and loop.index0 < _mb_conflicts_zh|length else _ci %}
+          <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
+            <span class="l-en">{{ _ci }}</span>
+            <span class="l-zh">{{ _ci_zh }}</span>
           </div>
-          {% else %}
-          <div class="isle-aibrief-body">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假设与后续关注。仅供研究参考，绝非交易信号。') }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {# 4. Rotation check #}
+        {% if master_brief.get('rotation_check') is not none and master_brief.get('rotation_check') %}
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Rotation</span><span class="l-zh">轮动</span></div>
+        <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:14px">
+          <span class="l-en">{{ master_brief.get('rotation_check') }}</span>
+          <span class="l-zh">{{ _mb_zh.get('rotation_check') or master_brief.get('rotation_check') }}</span>
+        </div>
+        {% endif %}
+        {# 5. Transmission #}
+        {% if master_brief.get('transmission') is not none and master_brief.get('transmission') %}
+        {% set _mb_tx_zh = _mb_zh.get('transmission') or [] %}
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Transmission</span><span class="l-zh">传导</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+          {% for _ti in master_brief.get('transmission') %}
+          {% set _ti_zh = _mb_tx_zh[loop.index0] if _mb_tx_zh and loop.index0 < _mb_tx_zh|length else _ti %}
+          <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
+            <span class="l-en">{{ _ti }}</span>
+            <span class="l-zh">{{ _ti_zh }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {# 6. Watch items #}
+        {% if master_brief.get('watch_items') is not none and master_brief.get('watch_items') %}
+        {% set _mb_wi_zh = _mb_zh.get('watch_items') or [] %}
+        <div class="mx5-dlg-eyebrow"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+          {% for _wi in master_brief.get('watch_items') %}
+          {% set _wi_zh = _mb_wi_zh[loop.index0] if _mb_wi_zh and loop.index0 < _mb_wi_zh|length else _wi %}
+          <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
+            <span class="l-en">{{ _wi }}</span>
+            <span class="l-zh">{{ _wi_zh }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {# 7. Footer receipt line — confidence + asof + degraded_reason #}
+        {% set _mb_conf = master_brief.get('confidence') %}
+        {% set _mb_deg = master_brief.get('degraded_reason') %}
+        <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:12px">
+          {% if _mb_conf is not none and _mb_conf %}<span class="l-en">Confidence: {{ _mb_conf }}</span><span class="l-zh">置信度：{{ _mb_conf }}</span>{% endif %}
+          {% if _mb_conf is not none and _mb_conf and master_brief.get('state_asof') %} · {% endif %}
+          {% if master_brief.get('state_asof') is not none and master_brief.get('state_asof') %}<span>as of {{ master_brief.get('state_asof') }}</span>{% endif %}
+          {% if _mb_deg is not none and _mb_deg %}
+          <div style="margin-top:4px"><span class="l-en">Today's brief ran degraded: {{ _mb_deg }}</span><span class="l-zh">今日简报为降级运行：{{ _mb_deg }}</span></div>
           {% endif %}
-          <div class="isle-aibrief-footer"><span></span><span class="isle-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span></div>
-        </a>
+        </div>
+        {# 8. Footer link to full brief page #}
+        <div class="isle-aibrief-footer"><span></span><a href="aibrief.html" class="isle-aibrief-link"><span class="l-en">Full brief page (China &amp; Bitcoin lenses) →</span><span class="l-zh">完整简报页（中国与比特币视角）→</span></a></div>
+        {% else %}
+        {# Fallback teaser when master_brief is absent #}
+        {% if macro_news is defined and macro_news and macro_news.synthesis and macro_news.synthesis.get('read') %}
+        {% set _dlg_syn = macro_news.synthesis %}
+        {% set _dlg_ch_zh = {'monetary':'美联储与利率','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','fiscal_trade':'财政与贸易','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股快讯'} %}
+        {% set _dlg_ch_en = {'capital_return':'buybacks','fiscal_trade':'fiscal & trade','stock_wire':'stock wire','monetary':'Fed & rates'} %}
+        <div class="isle-aibrief-body">
+          <span class="l-en">{{ _dlg_syn.get('high_impact_count', 0) }} high-impact item{{ 's' if _dlg_syn.get('high_impact_count', 0) != 1 }} today{% if _dlg_syn.get('dominant_channel') %} · dominant: <strong>{{ _dlg_ch_en.get(_dlg_syn.dominant_channel, _dlg_syn.dominant_channel|replace('_',' ')) }}</strong>{% endif %}</span>
+          <span class="l-zh">今日 {{ _dlg_syn.get('high_impact_count', 0) }} 条高影响信息{% if _dlg_syn.get('dominant_channel') %} · 主导：<strong>{{ _dlg_ch_zh.get(_dlg_syn.dominant_channel, _dlg_syn.dominant_channel) }}</strong>{% endif %}</span>
+        </div>
+        {% else %}
+        <div class="isle-aibrief-body">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假设与后续关注。仅供研究参考，绝非交易信号。') }}</div>
+        {% endif %}
+        <div class="isle-aibrief-footer"><span></span><a href="aibrief.html" class="isle-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</a></div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -8701,7 +8805,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         {% if prediction_markets and prediction_markets.events %}
         {% for _fed_ev in prediction_markets.events %}
         {% set _fed_top = _fed_ev.outcomes | sort(attribute='prob',reverse=true) | first %}
-        {% set _fed_out_zh = {'No change':'按兵不动','Rate cut':'降息','Rate hike':'加息','25bps cut':'降息25bp','50bps cut':'降息50bp','25bps hike':'加息25bp','25 bps increase':'加息25bp','25 bps decrease':'降息25bp','50+ bps increase':'加息50bp以上','50+ bps decrease':'降息50bp以上','0.1%':'0.1%','0.2%':'0.2%','0.3%':'0.3%','0.4%':'0.4%'} %}
+        {# _fed_out_zh outcome→ZH map is defined once above (Fed · Market Pricing strip) #}
         <div style="margin-bottom:24px">
           <div class="mx5-dlg-eyebrow"><span class="l-en">{{ _fed_ev.label_en }}</span><span class="l-zh">{{ _fed_ev.label_zh }}</span></div>
           <div class="mx5-dlg-sep"></div>
@@ -8723,7 +8827,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
               <span style="font-size:12px;font-weight:{{ '700' if _is_top2 else '400' }};color:{{ 'var(--mx5-accent,#22d97a)' if _is_top2 else 'var(--ink-2,rgba(255,255,255,.6))' }}">
                 <span class="l-en">{{ oc.outcome }}</span><span class="l-zh">{{ _fed_out_zh.get(oc.outcome, oc.outcome) }}</span>
               </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:{{ 'var(--mx5-accent)' if _is_top2 else 'var(--ink-2,rgba(255,255,255,.6))' }}">{{ _ocp | int }}%{% if oc.chg_pp is defined and oc.chg_pp != 0 %}<span style="font-size:10px;margin-left:4px;color:{{ 'var(--up,#22d97a)' if oc.chg_pp > 0 else 'var(--down,#ef4444)' }}">{{ '%+.1f' | format(oc.chg_pp) }}pp</span>{% endif %}</span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:{{ 'var(--mx5-accent)' if _is_top2 else 'var(--ink-2,rgba(255,255,255,.6))' }}">{{ _ocp | int }}%{% if oc.chg_pp is defined and oc.chg_pp is not none and oc.chg_pp != 0 %}<span style="font-size:10px;margin-left:4px;color:{{ 'var(--up,#22d97a)' if oc.chg_pp > 0 else 'var(--down,#ef4444)' }}">{{ '%+.1f' | format(oc.chg_pp) }}pp</span>{% endif %}</span>
             </div>
             <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
               <div style="height:100%;width:{{ _ocp }}%;background:{{ 'var(--mx5-accent,#22d97a)' if _is_top2 else 'rgba(255,255,255,.22)' }};border-radius:3px;transition:width .4s"></div>
@@ -8971,6 +9075,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           hmDst.appendChild(hmSrc);
           var stage = document.querySelector('.mx5-hm-stage');
           if(stage && stage.parentNode) stage.parentNode.removeChild(stage);
+          window.dispatchEvent(new Event('resize'));
         }
       }
       _dlgTrigger = document.activeElement;
@@ -10941,7 +11046,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
                dates tie → no sort), and the Status dot cell has no text to sort on. Give
                both an explicit numeric key: YYYYMMDD for Surfaced, running>flat>stopped rank. #}
             <td class="muted" style="font-size:10.5px" data-sort="{{ oc.get('first_surfaced','')|replace('-','') }}">{{ oc.get('first_surfaced','') }}</td>
-            <td class="r" data-sort="{{ oc.pct_since }}"><span class="oc-pct {{ 'az-up' if oc.pct_since > 0 else ('az-dn' if oc.pct_since < 0 else 'muted') }}">{{ '%+.1f'|format(oc.pct_since) }}%</span></td>
+            <td class="r" data-sort="{{ oc.pct_since if (oc.pct_since is defined and oc.pct_since is not none) else 0 }}"><span class="oc-pct {{ 'az-up' if (oc.pct_since is defined and oc.pct_since is not none and oc.pct_since > 0) else ('az-dn' if (oc.pct_since is defined and oc.pct_since is not none and oc.pct_since < 0) else 'muted') }}">{% if oc.pct_since is defined and oc.pct_since is not none %}{{ '%+.1f'|format(oc.pct_since) }}%{% else %}—{% endif %}</span></td>
             <td data-sort="{{ {'running':2,'flat':1,'stopped':0}.get(oc.get('status','flat'),1) }}"><span class="oc-dot {{ oc.get('status','flat') }}"></span></td>
           </tr>
           {% endfor %}
