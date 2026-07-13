@@ -40,7 +40,9 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from datetime import datetime, timezone
+import os
+import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -507,6 +509,179 @@ def comeback_clock_emitter(root: Path | None = None, cycle_id: str | None = None
     except Exception as exc:  # noqa: BLE001
         log.warning("comeback_clock_emitter: failed — %s", exc)
         return []
+
+
+# ── Bus compaction ────────────────────────────────────────────────────────────
+
+_ARCHIVE_DIR_REL = Path("data") / "metabolism" / "insight_bus_archive"
+
+
+def compact_bus(
+    root: Path | None = None,
+    retention_days: int = 90,
+    max_open_rows: int = 500,
+) -> dict:
+    """Compact insight_bus.jsonl: archive handled/superseded/stale rows.
+
+    Keeps the live bus file bounded and removes noise that would otherwise
+    accumulate for the loop's lifetime.  Safe to call repeatedly (idempotent).
+
+    Rules (applied in order; first match wins for each row):
+      1. handled rows (handled=True or referenced by a later handler row) → archive
+      2. superseded rows — same (emitter, kind, entities) tuple with a newer row
+         present → archive the older one
+      3. rows older than retention_days → archive regardless of handled status
+      4. if live file still > max_open_rows after the above → archive oldest surplus
+
+    Archive target: data/metabolism/insight_bus_archive/<YYYY-MM>.jsonl
+
+    Writes are atomic (write temp, os.replace).  Skips silently when the bus
+    file is absent.  NEVER raises.
+
+    Returns a summary dict: {retained, archived, errors}.
+    """
+    summary: dict = {"retained": 0, "archived": 0, "errors": []}
+    try:
+        repo = _repo_root(root)
+        bus_path = repo / BUS_PATH
+        if not bus_path.exists():
+            return summary
+
+        rows = _load_bus_rows(bus_path)
+        if not rows:
+            return summary
+
+        cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+
+        # Build set of handled insight_ids (any row that has a handler row)
+        handled_ids: set[str] = set()
+        for r in rows:
+            if r.get("handled") and r.get("entities"):
+                for eid in r["entities"]:
+                    handled_ids.add(str(eid))
+
+        # Build superseded index: keep only the LATEST row per (emitter, kind, entities_key)
+        _seen_emitter_kind: dict[str, str] = {}  # key → latest ts
+        # First pass: find latest ts per key
+        for r in rows:
+            if r.get("handled"):
+                continue  # handler rows have a different shape; skip
+            ek = f"{r.get('emitter','')}\x00{r.get('kind','')}\x00{'|'.join(sorted(str(e) for e in (r.get('entities') or [])))}"
+            ts_str = str(r.get("ts") or "")
+            prev = _seen_emitter_kind.get(ek, "")
+            if ts_str > prev:
+                _seen_emitter_kind[ek] = ts_str
+
+        def _is_superseded(r: dict) -> bool:
+            if r.get("handled"):
+                return False
+            ek = f"{r.get('emitter','')}\x00{r.get('kind','')}\x00{'|'.join(sorted(str(e) for e in (r.get('entities') or [])))}"
+            latest = _seen_emitter_kind.get(ek, "")
+            return str(r.get("ts") or "") < latest
+
+        def _is_stale(r: dict) -> bool:
+            try:
+                ts_str = str(r.get("ts") or "")
+                if not ts_str:
+                    return True
+                ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                return ts < cutoff
+            except Exception:  # noqa: BLE001
+                return False
+
+        # Partition rows
+        to_archive: list[dict] = []
+        to_keep: list[dict] = []
+        for r in rows:
+            iid = str(r.get("insight_id") or "")
+            if iid in handled_ids and not r.get("handled"):
+                # This row was handled by a later handler row
+                to_archive.append(r)
+            elif r.get("handled"):
+                # Handler rows themselves: archive once they reference a handled row
+                to_archive.append(r)
+            elif _is_superseded(r):
+                to_archive.append(r)
+            elif _is_stale(r):
+                to_archive.append(r)
+            else:
+                to_keep.append(r)
+
+        # Surplus cap: if still too many open rows, archive oldest first
+        if len(to_keep) > max_open_rows:
+            # Sort by ts ascending (oldest first)
+            to_keep_sorted = sorted(to_keep, key=lambda r: str(r.get("ts") or ""))
+            surplus_count = len(to_keep) - max_open_rows
+            to_archive.extend(to_keep_sorted[:surplus_count])
+            to_keep = to_keep_sorted[surplus_count:]
+
+        # Write archive rows grouped by month
+        archive_dir = repo / _ARCHIVE_DIR_REL
+        try:
+            archive_dir.mkdir(parents=True, exist_ok=True)
+            by_month: dict[str, list[dict]] = {}
+            for r in to_archive:
+                try:
+                    ts_str = str(r.get("ts") or "")
+                    if ts_str:
+                        month = ts_str[:7]  # "YYYY-MM"
+                    else:
+                        month = datetime.now(timezone.utc).strftime("%Y-%m")
+                except Exception:  # noqa: BLE001
+                    month = datetime.now(timezone.utc).strftime("%Y-%m")
+                by_month.setdefault(month, []).append(r)
+
+            for month, month_rows in by_month.items():
+                archive_path = archive_dir / f"{month}.jsonl"
+                with archive_path.open("a", encoding="utf-8") as fh:
+                    for r in month_rows:
+                        fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+        except Exception as exc:  # noqa: BLE001
+            log.warning("compact_bus: archive write failed — %s", exc)
+            summary["errors"].append(str(exc))
+            # Don't compact the live file if archive failed
+            summary["retained"] = len(rows)
+            summary["archived"] = 0
+            return summary
+
+        # Atomically rewrite the live bus file with only kept rows
+        try:
+            new_content = "".join(
+                json.dumps(r, ensure_ascii=False) + "\n" for r in to_keep
+            )
+            tmp_fd, tmp_name = tempfile.mkstemp(dir=bus_path.parent, suffix=".tmp")
+            try:
+                with os.fdopen(tmp_fd, "w", encoding="utf-8") as fh:
+                    fh.write(new_content)
+                os.replace(tmp_name, bus_path)
+            except Exception:  # noqa: BLE001
+                try:
+                    os.unlink(tmp_name)
+                except Exception:  # noqa: BLE001
+                    pass
+                raise
+        except Exception as exc:  # noqa: BLE001
+            log.warning("compact_bus: live-file rewrite failed — %s", exc)
+            summary["errors"].append(str(exc))
+            summary["retained"] = len(rows)
+            summary["archived"] = 0
+            return summary
+
+        summary["retained"] = len(to_keep)
+        summary["archived"] = len(to_archive)
+        log.info(
+            "compact_bus: retained=%d archived=%d",
+            summary["retained"],
+            summary["archived"],
+        )
+        return summary
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("compact_bus: unexpected error — %s", exc)
+        summary["errors"].append(str(exc))
+        return summary
 
 
 # ── Main runner ────────────────────────────────────────────────────────────────

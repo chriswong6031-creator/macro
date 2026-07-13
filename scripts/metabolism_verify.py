@@ -300,6 +300,7 @@ def _run_single(
             context=triage_context,
             root=root,
             today=today,
+            dry_run=dry_run,
         )
 
         if dry_run:

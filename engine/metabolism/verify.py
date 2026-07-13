@@ -211,12 +211,74 @@ def parse_check_by(s: str) -> date | None:
 
 # ── Main verify function ───────────────────────────────────────────────────────
 
+def _lesson_dedup_key(cycle_id: str, proposal_id: str | None) -> str:
+    """Return a (cycle_id, proposal_id) dedup key for lessons.jsonl rows."""
+    return f"{cycle_id}|{proposal_id or ''}"
+
+
+def _lessons_existing_keys(root: Path) -> set[str]:
+    """Scan lessons.jsonl and return the set of (cycle_id|proposal_id) keys present.
+
+    NEVER raises.
+    """
+    try:
+        from engine.metabolism.memory import LESSONS_PATH  # noqa: PLC0415
+        p = root.joinpath(*LESSONS_PATH)
+        if not p.exists():
+            return set()
+        keys: set[str] = set()
+        for line in p.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+                cid = str(row.get("cycle_id") or "")
+                pid = str(row.get("proposal_id") or "")
+                keys.add(f"{cid}|{pid}")
+            except Exception:  # noqa: BLE001
+                continue
+        return keys
+    except Exception as exc:  # noqa: BLE001
+        log.warning("verify._lessons_existing_keys: %s", exc)
+        return set()
+
+
+def _strategic_memory_existing_keys(root: Path) -> set[str]:
+    """Scan strategic_memory.jsonl and return the set of (cycle_id|sensor) keys present.
+
+    NEVER raises.
+    """
+    try:
+        from engine.metabolism.mission import STRATEGIC_MEMORY_PATH  # noqa: PLC0415
+        p = root.joinpath(*STRATEGIC_MEMORY_PATH)
+        if not p.exists():
+            return set()
+        keys: set[str] = set()
+        for line in p.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+                cid = str(row.get("cycle_id") or "")
+                pid = str(row.get("proposal_id") or "")
+                keys.add(f"{cid}|{pid}")
+            except Exception:  # noqa: BLE001
+                continue
+        return keys
+    except Exception as exc:  # noqa: BLE001
+        log.warning("verify._strategic_memory_existing_keys: %s", exc)
+        return set()
+
+
 def verify_proposal(
     cycle_id: str,
     contract: dict,
     root: Path,
     today: str | None = None,
     context: dict | None = None,
+    dry_run: bool = False,
 ) -> dict[str, Any]:
     """Verify a proposal's realized fitness delta vs its registered contract.
 
@@ -229,6 +291,10 @@ def verify_proposal(
     root      : Path — repo root
     today     : str | None — ISO date; defaults to today()
     context   : dict | None — optional regime context for triage
+    dry_run   : bool — when True, skip ALL durable side-effect writes
+                (lessons, strategic_memory, agenda_archive, governance tap).
+                The verify record itself is returned but not written to disk
+                (write_verify_record is the lane caller's responsibility).
 
     Returns
     -------
@@ -272,7 +338,7 @@ def verify_proposal(
                 "authority": AUTHORITY_BLOCK,
                 "ts": ts,
             }
-            if triage["action"] == "operator_tap":
+            if not dry_run and triage["action"] == "operator_tap":
                 _append_governance_tap(cycle_id, contract, triage, root)
             return record
 
@@ -308,18 +374,37 @@ def verify_proposal(
             "ts": ts,
         }
 
-        # If operator tap required, also append a governance row (NEVER-RAISE)
-        if triage["action"] == "operator_tap":
-            _append_governance_tap(cycle_id, contract, triage, root)
+        if not dry_run:
+            # If operator tap required, also append a governance row (NEVER-RAISE)
+            if triage["action"] == "operator_tap":
+                _append_governance_tap(cycle_id, contract, triage, root)
 
-        # Append a lesson to lessons.jsonl so PROPOSE stops repeating dead constructions
-        _append_lesson_from_verify(cycle_id, contract, triage, outcome, root)
+            # Idempotency: only append if this (cycle_id, proposal_id) key is absent
+            proposal_id_str = str(contract.get("proposal_id") or contract.get("dedup_hash") or "")
+            dedup_key = _lesson_dedup_key(cycle_id, proposal_id_str)
 
-        # Append a strategic memory row so the steering loop remembers outcomes (R-V4-3e)
-        _append_strategic_memory_from_verify(cycle_id, contract, triage, outcome, root)
+            existing_lesson_keys = _lessons_existing_keys(root)
+            if dedup_key not in existing_lesson_keys:
+                # Append a lesson to lessons.jsonl so PROPOSE stops repeating dead constructions
+                _append_lesson_from_verify(cycle_id, contract, triage, outcome, root)
+            else:
+                log.info(
+                    "verify_proposal: lessons dedup hit for cycle=%s proposal=%s — skipping",
+                    cycle_id, proposal_id_str,
+                )
 
-        # Archive-on-verify: save the contract + outcome to agenda_archive/ for dream cycle
-        _archive_on_verify(cycle_id, contract, record, root)
+            existing_strategic_keys = _strategic_memory_existing_keys(root)
+            if dedup_key not in existing_strategic_keys:
+                # Append a strategic memory row so the steering loop remembers outcomes (R-V4-3e)
+                _append_strategic_memory_from_verify(cycle_id, contract, triage, outcome, root)
+            else:
+                log.info(
+                    "verify_proposal: strategic_memory dedup hit for cycle=%s proposal=%s — skipping",
+                    cycle_id, proposal_id_str,
+                )
+
+            # Archive-on-verify: save the contract + outcome to agenda_archive/ for dream cycle
+            _archive_on_verify(cycle_id, contract, record, root)
 
         # R-V8-7 / R-V8-9: Side-effect INTENTS are returned to the LANE CALLER
         # (scripts/metabolism_verify.py) so that --dry-run produces zero durable
@@ -365,13 +450,82 @@ def _evaluate_contract(
     check_by: str,
     root: Path,
 ) -> tuple[str, str]:
-    """Delegate to qledger_falsifier.evaluate_check().  Returns (outcome, detail)."""
+    """Delegate to qledger_falsifier.evaluate_check().  Returns (outcome, detail).
+
+    F4a staleness guard: for rel_return checks, verify that the price store has a
+    close within N=1 trading session of check_by before grading.  If the most-recent
+    close for the subject ticker is more than 1 session before check_by (stale exit),
+    return UNVERIFIABLE with a staleness note rather than grading on stale data.
+    """
     try:
         from engine.qledger_falsifier import evaluate_check  # type: ignore[import]
-        return evaluate_check(falsifier_spec or None, asof, check_by, root)
+        outcome, detail = evaluate_check(falsifier_spec or None, asof, check_by, root)
+
+        # F4a: post-check exit-close staleness for rel_return
+        if outcome not in (_UNVERIFIABLE,) and isinstance(falsifier_spec, dict):
+            if str(falsifier_spec.get("kind") or "").strip() == "rel_return":
+                stale_flag, stale_note = _check_exit_staleness(
+                    falsifier_spec, check_by, root
+                )
+                if stale_flag:
+                    return _UNVERIFIABLE, stale_note
+
+        return outcome, detail
     except Exception as exc:  # noqa: BLE001
         log.warning("metabolism_verify._evaluate_contract: %s", exc)
         return _UNVERIFIABLE, f"evaluate_check raised: {exc}"
+
+
+def _check_exit_staleness(falsifier_spec: dict, check_by: str, root: Path) -> tuple[bool, str]:
+    """Return (is_stale, note) for rel_return exit-close staleness.
+
+    Stale = the most-recent available close for subject_ticker is more than
+    1 calendar day before check_by.  Uses a 1-day tolerance (1 session).
+    NEVER raises; returns (False, '') on any error (fail-open: don't block grading).
+    """
+    try:
+        subject = str(falsifier_spec.get("subject_ticker") or "").strip()
+        if not subject:
+            return False, ""
+        # Read the price store for the subject
+        price_path = root / "data" / "yahoo" / f"{subject}.parquet"
+        if not price_path.exists():
+            price_path = root / "data" / "yahoo" / f"{subject}.csv"
+        if not price_path.exists():
+            return False, ""
+
+        check_by_date = parse_check_by(check_by)
+        if check_by_date is None:
+            return False, ""
+
+        # Load the last available close date
+        try:
+            import pandas as pd  # noqa: PLC0415
+            if str(price_path).endswith(".parquet"):
+                df = pd.read_parquet(price_path)
+            else:
+                df = pd.read_csv(price_path, index_col=0, parse_dates=True)
+            df.index = pd.to_datetime(df.index, utc=False, errors="coerce")
+            df = df.dropna(how="all")
+            if df.empty:
+                return False, ""
+            last_close_ts = df.index.max()
+            last_close_date = last_close_ts.date() if hasattr(last_close_ts, "date") else date.fromisoformat(str(last_close_ts)[:10])
+            days_before = (check_by_date - last_close_date).days
+            if days_before > 1:
+                return True, (
+                    f"rel_return exit staleness: last close {last_close_date} is "
+                    f"{days_before}d before check_by {check_by} (>1 session tolerance). "
+                    f"UNVERIFIABLE — price store may be stale for {subject!r}."
+                )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("verify._check_exit_staleness: %s", exc)
+            return False, ""  # fail-open
+
+        return False, ""
+    except Exception as exc:  # noqa: BLE001
+        log.warning("verify._check_exit_staleness outer: %s", exc)
+        return False, ""  # fail-open
 
 
 def _delta_summary(outcome: str, contract: dict) -> str | None:
@@ -510,6 +664,7 @@ def _append_strategic_memory_from_verify(
         row: dict = {
             "lobe": contract.get("lobe") or contract.get("lobe_id") or "",
             "cycle_id": cycle_id,
+            "proposal_id": str(contract.get("proposal_id") or contract.get("dedup_hash") or ""),
             "sensor": str(contract.get("sensor") or ""),
             "verdict": outcome,                    # verbatim from verify
             "measurement_lens_class": classification,  # verbatim from triage
