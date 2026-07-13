@@ -330,7 +330,7 @@ _ENTRY_STATE = {
     "wait_pullback": "pullback", "hold": "pullback",
     "buy_soon": "wait", "watch": "wait", "await_confluence": "wait",
     "extended": "wait", "topping": "wait", "exit": "wait", "avoid": "wait",
-    "blocked": "wait",
+    "blocked": "wait", "bounce_wait": "wait",
 }
 
 

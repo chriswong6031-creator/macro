@@ -59,7 +59,13 @@ _TRIGGER = {
     "ROLLING OVER": 0.05, "DECLINE": 0.00,
 }
 _ENTRY_CONFIRM = {"buy_now": 1.00, "wait_pullback": 0.88, "hold": 0.90,
-                  "extended": 0.50, "later": 0.80}
+                  "extended": 0.50, "later": 0.80,
+                  # bounce_wait = the COUNTERTREND BOUNCE wording split off 'extended'
+                  # (regime gate: daily buy fired, weekly unconfirmed). 0.50 kept
+                  # DELIBERATELY: the halving prices "turn not confirmed", not extension,
+                  # and _TRIGGER already discounts the state to 0.30 — so the split moves
+                  # no published score. Omitting the key would default to 1.0 and double it.
+                  "bounce_wait": 0.50}
 
 # (cutoff, css_band_key, tier, EN words, 中文 words). css_band_key REUSES the existing
 # conviction colour scale (high=green … low=grey) so no template/CSS change is needed.

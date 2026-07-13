@@ -43,6 +43,9 @@ _HEADLINE = {
     "wait_pullback": ("Wait for the pullback", "等待回撤"),
     "hold":          ("Hold — don't add here", "持有 — 此处不宜加仓"),
     "extended":      ("Extended — wait for a pullback", "过度拉伸 — 等待回撤"),
+    # a regime-gate COUNTERTREND BOUNCE carries urgency 'caution' meaning "the turn is
+    # NOT confirmed" — often a washed-out name far BELOW trend, the opposite of extended.
+    "bounce_wait":   ("Bounce — turn not confirmed; wait", "反弹 — 转向未确认，先观望"),
     "topping":       ("Topping — protect gains", "见顶 — 保护利润"),
     "exit":          ("Exit / reduce — rolling over", "离场/减仓 — 掉头向下"),
     "avoid":         ("Avoid — downtrend", "回避 — 下行趋势"),
@@ -157,6 +160,12 @@ def assess(close: pd.Series, high: pd.Series | None, rec: dict, *,
     # the cycle-top "don't chase" routes to extended/topping by lateness
     if tag == "DON'T CHASE" or state == "TOP WATCH":
         status = "topping" if cyc.get("dc_phase") == "stretched" else "extended"
+    # COUNTERTREND BOUNCE (regime-gate demotion of a fired daily buy) also carries
+    # urgency 'caution', but there it means "the turn is not confirmed", NOT
+    # "stretched" — the name is typically washed out far BELOW its 200dma. Route it
+    # to its own honest status so it never prints "Extended — wait for a pullback".
+    if state == "COUNTERTREND BOUNCE" and status == "extended":
+        status = "bounce_wait"
     if state == "DECLINE":
         status = "blocked"
     # CONFLUENCE GATE — the daily-cycle ladder above can read an OPEN entry while the validated
@@ -184,7 +193,7 @@ def assess(close: pd.Series, high: pd.Series | None, rec: dict, *,
         zone_hi = _round_px(spot)
         zone_lo = _round_px(max(dcl, spot - 1.5 * atr)) if dcl else _round_px(spot - 1.5 * atr)
         chase_above = _round_px(spot + 0.6 * atr)
-    elif status in ("extended", "topping", "wait_pullback", "watch", "hold"):
+    elif status in ("extended", "topping", "wait_pullback", "watch", "hold", "bounce_wait"):
         # a pullback is the constructive entry — target the DAILY-CYCLE supports below
         # spot: the 10-day then 20-day MA. The 50-day is the trend stop, NOT a
         # daily-dip entry, so it is excluded (a vertically-extended name's 50-day can

@@ -140,3 +140,32 @@ def test_horizon_read_penalizes_stretched_position() -> None:
 
 def test_no_ladder_returns_none() -> None:
     assert entry_signal.assess(_uptrend(), None, {"ladder": {}}) is None
+
+
+# ---- countertrend bounce (regime-gate demotion) ------------------------------
+
+def test_countertrend_bounce_reads_bounce_wait_not_extended() -> None:
+    """A COUNTERTREND BOUNCE (regime gate demoted a fired daily buy) carries urgency
+    'caution' meaning 'turn not confirmed' — for a washed-out name far BELOW its
+    200dma (the 600519.SS 2026-07-10 case) the headline must never claim 'Extended'."""
+    close = _uptrend()
+    spot = float(close.iloc[-1])
+    rec = _rec("COUNTERTREND BOUNCE", "caution", "UNCONFIRMED — HIGH RISK",
+               dcl=spot * 0.9, eq=-10, pv200=-12.5, pv50=-3.0)
+    es = entry_signal.assess(close, None, rec)
+    assert es["status"] == "bounce_wait"
+    assert "extended" not in es["headline"].lower()
+    assert "过度拉伸" not in es["headline_zh"]
+    assert "not confirmed" in es["headline"].lower()
+    assert es["act_level"] == 0                          # unchanged: stand aside
+    # the wait-state price plan still renders (zone below spot, don't chase the bounce)
+    assert es["buy_zone"]["high"] < spot
+    assert es["chase_above"] <= spot * 1.001
+
+
+def test_true_extended_still_reads_extended() -> None:
+    # the split is bounce-specific: a genuinely stretched TOP WATCH keeps 'extended'
+    close = _uptrend()
+    rec = _rec("TOP WATCH", "caution", "DON'T CHASE", dcl=float(close.iloc[-1]) * 0.85,
+               eq=-25, pv200=30.0)
+    assert entry_signal.assess(close, None, rec)["status"] == "extended"
