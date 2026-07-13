@@ -420,10 +420,16 @@ def is_cooling(key_id: str, root: Path | None = None) -> bool:
                 continue  # unparseable hint → treat this horizon as resolved
             if now >= reset_dt:
                 continue  # horizon expired by time
-            if kind != "weekly":
+            # F4 FIX: only 'auth' cooling (revoked/expired token) can be cleared
+            # early by a later 'ok' row — a confirmed success proves the operator
+            # rotated the secret.  A 'window' (429) cooling MUST wait for
+            # reset_hint to elapse: a successful call within the same quota window
+            # does NOT restore exhausted quota, so clearing the cooling would
+            # cause the key to be re-selected before the window expires.
+            if kind == "auth":
                 cooling_ts = _ts_key(cool_row)
                 if any(t >= cooling_ts for t in ok_ts):
-                    continue  # window/auth horizon cleared by a later ok row
+                    continue  # auth horizon cleared by a later ok row (secret rotated)
             return True  # at least one horizon still active
 
         return False

@@ -345,6 +345,89 @@ class TestAuditDue:
         assert result["schema"] == "standout_auditor.audit_due.v1"
         assert result["market"] == "cn"
 
+    # F1 regression tests: CN schema uses 'date' column, not 'as_of'
+
+    def _make_cn_attribution_parquet(self, tmp_path: Path, date_strings: list[str]) -> Path:
+        """Write a CN-schema attribution parquet with a 'date' column (not 'as_of')."""
+        import pandas as pd
+        p = tmp_path / "data" / "standout_audit" / "cn_attribution.parquet"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        df = pd.DataFrame({"date": pd.to_datetime(date_strings)})
+        df.to_parquet(str(p))
+        return p
+
+    def test_cn_date_column_counts_matured_rows(self, tmp_path: Path) -> None:
+        """F1: audit_due('cn') correctly counts rows from 'date' column parquet."""
+        from engine.metabolism.standout_auditor import audit_due  # type: ignore[import]
+
+        # Write 15 CN rows using 'date' column (the real CN schema)
+        last_graded = "2026-01-01"
+        dates = [(datetime(2026, 1, 2) + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(15)]
+        self._make_cn_attribution_parquet(tmp_path, dates)
+        self._make_audit_state(tmp_path, "cn", {"last_audit_graded_as_of": last_graded})
+
+        result = audit_due("cn", root=tmp_path)
+        assert result["due"] is True, (
+            f"F1 regression: CN audit_due should fire with 15 'date'-column rows; got: {result}"
+        )
+        assert result["newly_matured_rows"] >= 15, (
+            f"F1 regression: should count 15 rows, got: {result['newly_matured_rows']}"
+        )
+
+    def test_cn_wrong_column_gives_schema_error_not_zero(self, tmp_path: Path) -> None:
+        """F1: a parquet with wrong schema (only 'as_of', not 'date') for CN gives
+        schema_error status and due=False, never silently triggers due=False (fake safe)."""
+        import pandas as pd
+        from engine.metabolism.standout_auditor import audit_due  # type: ignore[import]
+
+        # Write a CN parquet with WRONG schema (has 'as_of' instead of 'date')
+        p = tmp_path / "data" / "standout_audit" / "cn_attribution.parquet"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        df = pd.DataFrame({"as_of": pd.to_datetime(["2026-01-15"] * 20)})
+        df.to_parquet(str(p))
+
+        result = audit_due("cn", root=tmp_path)
+        # Must return schema_error, not due=False silently
+        assert result.get("status") == "schema_error", (
+            f"F1 regression: wrong-schema parquet should give status='schema_error'; got: {result}"
+        )
+        assert result["due"] is False  # blocked, not triggered
+        assert "schema_error" in result.get("reason", "").lower()
+
+    # F2 regression tests: cursor round-trip (organ stamp → audit_due sees advanced cursor)
+
+    def test_organ_stamp_alias_advances_cursor(self, tmp_path: Path) -> None:
+        """F2: organ writes 'last_graded_asof'; audit_due should read it as the cursor."""
+        import pandas as pd
+        from engine.metabolism.standout_auditor import audit_due  # type: ignore[import]
+
+        # Organ stamp uses 'last_graded_asof' (not the auditor's 'last_audit_graded_as_of')
+        last_graded_str = "2026-06-01"
+        # Write US parquet with 10 rows, all BEFORE the organ-stamped date
+        dates = [(datetime(2026, 5, 1) + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(10)]
+        p = tmp_path / "data" / "standout_audit" / "us_attribution.parquet"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        df = pd.DataFrame({"as_of": pd.to_datetime(dates)})
+        df.to_parquet(str(p))
+
+        # Write state with ONLY the organ alias key (not the auditor's canonical key)
+        state_p = tmp_path / "data" / "standout_audit" / "us_audit_state.json"
+        state_p.write_text(
+            json.dumps({"last_graded_asof": last_graded_str, "schema": "standout_audit.state.v1"}),
+            encoding="utf-8",
+        )
+
+        result = audit_due("us", root=tmp_path)
+        # All 10 rows are BEFORE 2026-06-01, so 0 newly matured rows → not due
+        assert result["due"] is False, (
+            f"F2 regression: organ alias 'last_graded_asof' should advance cursor; "
+            f"got newly_matured_rows={result['newly_matured_rows']}, due={result['due']}"
+        )
+        assert result["newly_matured_rows"] == 0, (
+            f"F2 regression: cursor from organ stamp should see 0 new rows; "
+            f"got {result['newly_matured_rows']}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # 5. Context assembler
