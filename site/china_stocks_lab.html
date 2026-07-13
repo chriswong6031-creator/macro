@@ -131,6 +131,33 @@
     margin:12px 0;font-size:13px;color:var(--muted)}
   .method-body .kill-law b{color:var(--down)}
 
+  /* ── accountability tab (SA-W5) ── */
+  .acct-header{padding:0 0 16px;border-bottom:1px solid var(--line);margin-bottom:20px}
+  .acct-title{font-size:18px;font-weight:700;margin:0 0 4px}
+  .acct-sub{font-size:13px;color:var(--muted);max-width:72ch;margin:0 0 8px}
+  .acct-clock{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:7px;
+    border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));
+    color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
+  .acct-card{border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+    background:var(--panel);margin:0 0 16px;position:relative;overflow:hidden}
+  .acct-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--link),color-mix(in srgb,var(--link) 40%,transparent))}
+  .acct-card-title{font-size:13px;font-weight:700;margin:0 0 10px;color:var(--text)}
+  .acct-empty-state{text-align:center;padding:32px 16px;color:var(--muted);font-size:13px}
+  .acct-tbl{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+  .acct-tbl th{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);
+    color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .acct-tbl td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
+  .acct-tbl th:first-child,.acct-tbl td:first-child{text-align:left}
+  .acct-muted{color:var(--muted)}
+  .acct-gap-note{font-size:11.5px;color:var(--muted);font-style:italic;padding:6px 0}
+  .acct-cov-row{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0}
+  .acct-cov-chip{font-size:12px;padding:3px 9px;border-radius:7px;border:1px solid var(--line);
+    color:var(--muted);background:var(--panel)}
+  .acct-cov-chip b{color:var(--text)}
+  .acct-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 16px}
+  @media(max-width:600px){.acct-row-grid{grid-template-columns:1fr}}
+
   /* ── responsive ── */
   @media(max-width:700px){
     .pl-wrap{padding:0 12px 60px}
@@ -435,7 +462,7 @@
     <p class="pl-eyebrow"><span class="l-en">CN Pick Lab · Display-only · ACCRUING</span><span class="l-zh">CN选股实验室 · 仅展示 · 累积中</span></p>
     <h1 class="pl-title">🧪 <span class="l-en">A-Share Candidate Pick Engines</span><span class="l-zh">A股候选选股引擎</span></h1>
     <p class="pl-sub"><span class="l-en">20 shadow books running on forward ledgers — measured against a random-control yardstick and the CSI 300. Ruler: 21-session CSI 300 excess (T+1 fill, hl2 proxy). All data is display-only; nothing here drives live selection or gating.</span><span class="l-zh">20个影子书在前向账本上运行 — 与随机控制基准和沪深300对比衡量。标尺：21节沪深300超额（T+1入场，最高最低均价代理）。所有数据仅供展示；这里没有任何内容驱动实时选股或门控。</span></p>
-    <p class="pl-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-10 · <span class="l-en">Built</span><span class="l-zh">生成时间</span> 2026-07-12 12:32 UTC</p>
+    <p class="pl-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-10 · <span class="l-en">Built</span><span class="l-zh">生成时间</span> 2026-07-13 11:11 UTC</p>
     <a class="pl-back" href="china_stocks.html">← <span class="l-en">Back to A-Share Dashboard</span><span class="l-zh">返回A股看板</span></a>
   </div>
 
@@ -444,6 +471,7 @@
     <button class="tabbtn on" data-tab="scoreboard" role="tab"><span class="l-en">Scoreboard</span><span class="l-zh">记分板</span></button>
     <button class="tabbtn" data-tab="velocity" role="tab"><span class="l-en">1D Velocity CN</span><span class="l-zh">1日速度A股</span></button>
     <button class="tabbtn" data-tab="allbooks" role="tab"><span class="l-en">All Books</span><span class="l-zh">全部书本</span></button>
+    <button class="tabbtn" data-tab="accountability" role="tab"><span class="l-en">Record</span><span class="l-zh">记录</span></button>
     <button class="tabbtn" data-tab="method" role="tab"><span class="l-en">Method</span><span class="l-zh">方法</span></button>
   </div>
 
@@ -7451,6 +7479,88 @@
   </section>
 
   <!-- ================================================================ -->
+  <!-- TAB: ACCOUNTABILITY (SA-W5)                                      -->
+  <!-- Schema: cn_audit_scoreboard.v1 (cells / outcome_cause_mix /      -->
+  <!--          process_fault_mix).  NOT the US schema (strata /         -->
+  <!--          coverage_monitor / buy_lane_rows).                       -->
+  <!-- ================================================================ -->
+  <section data-tab-panel="accountability" style="display:none">
+    <div class="acct-header">
+      <div class="acct-title">
+        <span class="l-en">Board Record</span>
+        <span class="l-zh">选板记录</span>
+      </div>
+      <p class="acct-sub">
+        <span class="l-en">How well has the CN Buy Board identified winners before they moved? Record is measuring — first read expected ~Oct 15 2026 when cluster-unit floors are met (SA-R10).</span>
+        <span class="l-zh">中国买入板过去是否提前识别到赢家？记录正在累积中——首次读取预计2026年10月15日（集群单元下限达到，SA-R10）。</span>
+      </p>
+      <span class="acct-clock">
+        <span class="l-en">ACCRUING — first read ~Oct 15 2026</span>
+        <span class="l-zh">累积中 — 首次读取约2026年10月15日</span>
+      </span>
+    </div>
+
+    
+
+    <!-- ── Stratified cells (cn_audit_scoreboard.v1 schema) ── -->
+    <div class="acct-card">
+      <div class="acct-card-title">
+        <span class="l-en">Stratified Cells</span>
+        <span class="l-zh">分层单元格</span>
+      </div>
+      
+      <div class="acct-empty-state">
+        <div style="font-size:32px;margin-bottom:8px">📊</div>
+        <p>
+          <span class="l-en">No matured rows yet. Rows accrue as 21d windows close — first read ~Oct 15 2026.</span>
+          <span class="l-zh">暂无成熟行。行随21日窗口关闭而累积——首次读取约2026年10月15日。</span>
+        </p>
+        
+        <p style="font-size:11px;color:var(--muted);margin-top:8px">
+          Pre-store rows (own_market_regime=null) carry stratum=&#39;us_proxy&#39;. They are never pooled with own-market cells in any significance claim. Seam date: first row in data/china_regime/regime_daily.parquet.
+        </p>
+        
+      </div>
+      
+    </div>
+
+    <!-- ── Two-axis failure-mode mix (cn_audit_scoreboard.v1) ── -->
+    <div class="acct-row-grid">
+      <div class="acct-card">
+        <div class="acct-card-title">
+          <span class="l-en">Outcome Causes</span>
+          <span class="l-zh">结果原因</span>
+        </div>
+        
+        <div class="acct-empty-state" style="padding:20px 12px">
+          <span class="l-en">Measuring — outcome-cause breakdown available once attribution rows mature.</span>
+          <span class="l-zh">测量中——结果原因分解在归因行成熟后可用。</span>
+        </div>
+        
+      </div>
+      <div class="acct-card">
+        <div class="acct-card-title">
+          <span class="l-en">Process Faults</span>
+          <span class="l-zh">流程缺陷</span>
+        </div>
+        
+        <div class="acct-empty-state" style="padding:20px 12px">
+          <span class="l-en">Measuring — process-fault breakdown available once attribution rows mature.</span>
+          <span class="l-zh">测量中——流程缺陷分解在归因行成熟后可用。</span>
+        </div>
+        
+      </div>
+    </div>
+
+    <p style="margin-top:16px;font-size:11.5px;color:var(--muted)">
+      <span class="l-en">Authority: display_only. All numbers from committed CN audit artifacts (SA-W2). Cluster-unit CIs per SA-R10. No verdict language before floor.</span>
+      <span class="l-zh">授权：仅展示。所有数字来自已提交CN审计工件（SA-W2）。集群单元置信区间按SA-R10。下限前无结论语言。</span>
+       · taxonomy v2
+      · <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-13
+    </p>
+  </section>
+
+  <!-- ================================================================ -->
   <!-- TAB 4: METHOD                                                      -->
   <!-- ================================================================ -->
   <section data-tab-panel="method" style="display:none">
@@ -7513,7 +7623,7 @@
 
       <p style="margin-top:20px;font-size:11.5px;color:var(--muted)">
         <span class="l-en">Authority: display_only. All rows carry authority: &#34;display_only&#34; per CNPL-R1.</span><span class="l-zh">授权：仅展示。所有行按照CNPL-R1携带授权：&#34;display_only&#34;。</span>
-        · <span class="l-en">Built</span><span class="l-zh">生成时间</span> 2026-07-12 12:32 UTC
+        · <span class="l-en">Built</span><span class="l-zh">生成时间</span> 2026-07-13 11:11 UTC
       </p>
     </div>
   </section>
@@ -7552,6 +7662,5 @@
 })();
 </script>
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

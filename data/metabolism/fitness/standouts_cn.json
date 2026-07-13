@@ -1,70 +1,55 @@
 {
-  "schema": "metabolism.standout_fitness.v1",
-  "as_of": "2026-07-12",
+  "schema": "metabolism.standouts_cn.v1",
+  "as_of": "2026-07-13",
   "lobe": "site-china-standouts",
-  "status": "pre_accrual",
   "maturity": "accruing",
   "sensors": {
     "hit_quality": {
-      "id": "hit_quality",
       "value": null,
-      "raw_n": 0,
+      "n": 0,
       "effective_n": 0,
       "maturity": "accruing",
-      "note": "accruing: sensors accumulating from 2026-10-15",
-      "store": "data/standout_audit/cn_attribution.parquet"
+      "source": "data/china_standout_track/board.parquet",
+      "note": "accruing: 0/25 graded rows needed"
     },
     "upside_capture": {
-      "id": "upside_capture",
       "value": null,
-      "raw_n": 0,
+      "n": 0,
       "effective_n": 0,
       "maturity": "accruing",
-      "note": "accruing: sensors accumulating from 2026-10-15",
-      "store": "data/standout_audit/cn_attribution.parquet"
+      "source": "data/china_standout_track/board.parquet",
+      "note": "accruing: 0/25 graded rows needed"
     },
     "coverage_health": {
-      "id": "coverage_health",
       "value": null,
-      "raw_n": 0,
+      "n": 0,
       "effective_n": 0,
       "maturity": "accruing",
-      "note": "accruing: value=null until frozen_baseline anchored (SA-R4). Scoreboard coverage_monitor carries pre-maturity all-horizon diagnostic count.",
-      "store": "data/standout_audit/cn_attribution.parquet",
-      "reading": null,
-      "trailing_4wk_buy_count": null,
-      "frozen_baseline": null
+      "source": "data/china_standout_track/board.parquet",
+      "note": "accruing: baseline not yet frozen (first maturity date not reached for count clamp)"
     },
     "missed_mover_rate": {
-      "id": "missed_mover_rate",
       "value": null,
-      "raw_n": 0,
-      "effective_n": 0,
+      "n": 0,
       "maturity": "accruing",
-      "note": "accruing: no_21d_rows_yet",
-      "store": "data/standout_audit/cn_attribution.parquet",
-      "n_episodes": null,
-      "n_missed": null,
-      "pipeline_recall": null,
-      "raw_miss_rate": null
+      "source": "data/china_standout_track/board.parquet",
+      "note": "no graded rows \u2014 accruing"
     },
     "timing_quality": {
-      "id": "timing_quality",
       "value": null,
-      "raw_n": 0,
+      "n": 0,
       "effective_n": 0,
       "maturity": "accruing",
-      "note": "accruing: sensors accumulating from 2026-10-15",
-      "store": "data/standout_audit/cn_attribution.parquet"
+      "source": "data/china_standout_track/board.parquet",
+      "note": "accruing: 0/25 graded rows needed"
     },
     "process_integrity": {
-      "id": "process_integrity",
       "value": null,
-      "raw_n": 0,
+      "n": 0,
       "effective_n": 0,
       "maturity": "accruing",
-      "note": "accruing: sensors accumulating from 2026-10-15",
-      "store": "data/standout_audit/cn_attribution.parquet"
+      "source": "data/china_standout_track/board.parquet",
+      "note": "accruing: 0/25 graded rows needed"
     }
   },
   "authority": {
@@ -85,5 +70,10 @@
       "scored_path"
     ]
   },
-  "notes": "CN standout board fitness card — pre-accrual stub. Producer: engine/china_standout_audit.py (accruing from 2026-10-15). All sensors null; accumulation begins at CN board maturity date. Schema mirrors standouts_us.json exactly."
+  "taxonomy_version": "v2",
+  "taxonomy_notes": {
+    "premature_stop_noise": "unimplemented: premature_stop_noise requires a stop-date column + post-stop window not derivable from the current ledger (fwd_mfe_21 and terminal_state_clean8_21 share the same 21-session entry window; no post-stop observation is possible). PREMATURE_STOP_IMPLEMENTED=False. CN rows never emit this code.",
+    "sector_leg": "no_sector_leg: sector_rotated_out/beta_tailwind require a genuine industry grouping column (e.g. CITIC level-1 industry). narr_theme is 89% null and is a basket theme, not an industry classification. tier is a rank-quality band, not a sector. Degrades to mixed until a real sector store is joinable at append time."
+  },
+  "notes": "CN standout fitness card. All sensors accruing until SA-R10 floors met (currently 0/25 matured rows, 0/10 distinct dates, 0/3 non-overlapping windows). Expected first reads: ~2026-10-15. No 'validated' claim \u2014 pre-maturity values are display context only. premature_stop_noise: UNIMPLEMENTED (no stop-date column in ledger). sector_rotated_out/beta_tailwind: DEGRADED to mixed (no genuine sector grouping)."
 }

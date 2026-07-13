@@ -2,8 +2,8 @@
   "display_only": true,
   "organ": "hk_narrative",
   "as_of": "2026-07-13",
-  "generated_utc": "2026-07-13T08:47:02+00:00",
-  "freshness": "stale",
+  "generated_utc": "2026-07-13T11:06:45+00:00",
+  "freshness": "degraded",
   "entities": [
     {
       "slug": "alibaba",
@@ -62,12 +62,12 @@
       "ticker": "9888.HK",
       "name_en": "Baidu",
       "name_zh": "\u767e\u5ea6",
-      "attention_shock_z": 1.349,
+      "attention_shock_z": 1.002,
       "tone_pctile": null,
       "narrative_state": "quiet",
       "young": false,
       "n_obs": 86,
-      "as_of_date": "2026-07-10",
+      "as_of_date": "2026-07-13",
       "no_data_reason": null
     },
     {
@@ -88,26 +88,26 @@
       "ticker": "1024.HK",
       "name_en": "Kuaishou",
       "name_zh": "\u5feb\u624b",
-      "attention_shock_z": null,
+      "attention_shock_z": -0.554,
       "tone_pctile": null,
-      "narrative_state": null,
-      "young": true,
-      "n_obs": 0,
-      "as_of_date": null,
-      "no_data_reason": "store missing or empty"
+      "narrative_state": "quiet",
+      "young": false,
+      "n_obs": 86,
+      "as_of_date": "2026-07-13",
+      "no_data_reason": null
     },
     {
       "slug": "smic",
       "ticker": "0981.HK",
       "name_en": "SMIC",
       "name_zh": "\u4e2d\u82af\u56fd\u9645",
-      "attention_shock_z": null,
+      "attention_shock_z": 1.477,
       "tone_pctile": null,
-      "narrative_state": null,
-      "young": true,
-      "n_obs": 0,
-      "as_of_date": null,
-      "no_data_reason": "store missing or empty"
+      "narrative_state": "quiet",
+      "young": false,
+      "n_obs": 86,
+      "as_of_date": "2026-07-13",
+      "no_data_reason": null
     }
   ],
   "note": "context, not a signal / \u8206\u60c5\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7",
