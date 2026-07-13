@@ -1,7 +1,9 @@
 name: metabolism-merge
 # Metabolism Phase V2-B — SERIALIZED MERGE LANE (R-V2-5).  INERT.
 #
-# Reads DRAFT PRs from the build lane that have BOTH:
+# Sweeps EVERY docket riding each propose branch — the base docket
+# (<cycle>.json, til) plus per-lobe dockets (<cycle>-<lobe>.json, R-V6-5
+# multi-lobe propose).  Reads DRAFT PRs from the build lane that have BOTH:
 #   (i)  CI green
 #   (ii) A resolve_two_key AUTHORIZED grant in governance.jsonl
 #
@@ -146,17 +148,60 @@ jobs:
             git fetch origin "$_BRANCH" || { echo "branch $_BRANCH not on origin — skip"; continue; }
             git checkout "$_BRANCH" 2>/dev/null || git checkout -B "$_BRANCH" "origin/$_BRANCH" 2>/dev/null || { echo "checkout failed $_BRANCH — skip"; continue; }
 
-            _DOCKET="data/metabolism/dockets/$_CID.json"
-            if [ ! -f "$_DOCKET" ]; then
-              echo "docket $_DOCKET not found — skip."
+            # R-V6-5 multi-lobe PROPOSE puts ALL of a cycle's dockets on ONE branch:
+            # the base docket ($_CID.json, til) plus per-lobe dockets
+            # ($_CID-<lobe>.json).  Enumerate every one (#2481 primitive) — the
+            # branch name carries only the base id, so merging $_CID.json alone
+            # silently strands authorized per-lobe build PRs.
+            # Fallback: a propose branch cut before the primitive merged lacks
+            # --list-dockets on its checkout — fall back to the base docket
+            # (pre-fan-out behavior) instead of stranding the whole branch.
+            _DOCKETS="$(python -m scripts.metabolism_adjudicate --list-dockets --cycle-id "$_CID")" \
+              || _DOCKETS="data/metabolism/dockets/$_CID.json"
+            if [ -z "$_DOCKETS" ]; then
+              echo "no dockets for $_CID on this ref — skip."
               continue
             fi
+            echo "dockets for $_CID: $(echo "$_DOCKETS" | tr '\n' ' ')"
 
-            # Run MERGE lane — single-threaded by the concurrency group above
-            python -m scripts.metabolism_merge \
-              --cycle-id "$_CID" \
-              --docket-file "$_DOCKET" \
-              || { echo "merge script failed for $_CID — continuing"; continue; }
+            # Per-docket merge sweep — single-threaded by the concurrency group
+            # above.  --keep-propose-branch: the branch hosts ALL sibling dockets,
+            # so the script's own F3(a) deletion (fires after the FIRST docket's
+            # merge) would strand un-merged siblings; the workflow owns deletion
+            # at branch granularity below.
+            _merged_any=0
+            _inflight=0
+            _docket_fail=0
+            while IFS= read -r _DOCKET; do
+              [ -n "$_DOCKET" ] && [ -f "$_DOCKET" ] || continue
+              _DCID="$(basename "$_DOCKET" .json)"
+              echo "--- merge docket cycle_id=$_DCID file=$_DOCKET ---"
+              _OUT="$(python -m scripts.metabolism_merge \
+                --cycle-id "$_DCID" \
+                --docket-file "$_DOCKET" \
+                --keep-propose-branch)" \
+                || { echo "merge script failed for $_DCID — continuing"; _docket_fail=1; continue; }
+              printf '%s\n' "$_OUT"
+              if printf '%s\n' "$_OUT" | grep -q '"status": "merged"'; then
+                _merged_any=1
+              fi
+              if printf '%s\n' "$_OUT" | grep -Eq '"status": "(ci_not_green|ci_not_green_at_audited_sha|audit_not_approved|merge_failed|noop_paused)"'; then
+                _inflight=1
+              fi
+            done <<< "$_DOCKETS"
+
+            # F3(a) at BRANCH granularity: delete the propose branch only when this
+            # sweep merged something, saw nothing still in flight (CI pending /
+            # audit pending / merge retryable), and no docket invocation crashed.
+            # Anything retained is reaped by the GC propose-branch reaper (F3(b))
+            # once the cycle journal is terminal and the retention window passes.
+            if [ "$_merged_any" -eq 1 ] && [ "$_inflight" -eq 0 ] && [ "$_docket_fail" -eq 0 ]; then
+              git push origin --delete "$_BRANCH" \
+                && echo "propose branch $_BRANCH deleted (branch sweep terminal)" \
+                || echo "could not delete $_BRANCH (non-fatal — GC reaper will catch it)"
+            else
+              echo "propose branch $_BRANCH retained (merged_any=$_merged_any inflight=$_inflight docket_fail=$_docket_fail)"
+            fi
           done
           echo "merge sweep complete."
 

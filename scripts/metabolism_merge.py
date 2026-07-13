@@ -348,16 +348,22 @@ def _resolve_proposal_id_for_branch(
     test (startswith "metabolism/build-") is NEVER used — that would let any build PR
     inherit any proposal's two-key grant, defeating write-serialization (R-V2-5).
 
+    The build lane names branches _build_branch_name(lobe, cycle_id, proposal_id=pid)
+    — WITH the proposal_id suffix (metabolism_build.py run_build_lane).  Both steps
+    below compute that suffixed form per candidate proposal; the un-suffixed legacy
+    form is also accepted for PRs opened by pre-suffix build lanes.  Either way the
+    comparison is full-string equality against a per-proposal expected name.
+
     Resolution order:
       1. claims.jsonl (authoritative — written atomically by the build lane):
-         find a row with cycle_id == cycle_id and lobe such that
-         _build_branch_name(row["lobe"], cycle_id) == pr_branch, and whose
+         find a row with cycle_id == cycle_id whose expected branch (suffixed with
+         the row's own proposal_id, or legacy un-suffixed) == pr_branch, and whose
          proposal_id exists in the docket's prop_index.
-      2. Docket-level lobe (same source the build lane uses): compute
-         _build_branch_name(docket["lobe"], cycle_id) and require exact equality.
-         If matched, return the first uncollided proposal_id from the docket
-         (the build lane skips collided proposals in order, so first-in-docket
-         is the one that would have been built).
+      2. Docket-level lobe (same source the build lane uses): per proposal in the
+         docket, compute the pid-suffixed expected branch and require exact
+         equality.  The legacy un-suffixed form falls back to the first proposal
+         in the docket (the build lane processes in order, so first-in-docket is
+         the one a pre-suffix lane would have built).
 
     If neither step produces an exact match, returns None.
     NEVER raises.
@@ -386,9 +392,14 @@ def _resolve_proposal_id_for_branch(
                     row_lobe = row.get("lobe") or ""
                     if not row_lobe:
                         continue
-                    expected = _build_branch_name(row_lobe, cycle_id)
-                    if expected == pr_branch:
-                        pid = str(row.get("proposal_id") or "")
+                    row_pid = str(row.get("proposal_id") or "")
+                    expected_suffixed = (
+                        _build_branch_name(row_lobe, cycle_id, proposal_id=row_pid)
+                        if row_pid else ""
+                    )
+                    expected_legacy = _build_branch_name(row_lobe, cycle_id)
+                    if pr_branch in (expected_suffixed, expected_legacy):
+                        pid = row_pid
                         if pid and pid in prop_index:
                             log.info(
                                 "MERGE: branch %s → proposal %s (via claims.jsonl)", pr_branch, pid
@@ -401,10 +412,23 @@ def _resolve_proposal_id_for_branch(
         # Step 2: docket-level lobe — same source the build lane uses
         docket_lobe = docket.get("lobe") or ""
         if docket_lobe:
+            # Pid-suffixed form (what run_build_lane actually creates): per
+            # proposal, exact-match the branch the build lane would have named.
+            for prop in (docket.get("proposals") or []):
+                pid = str(prop.get("proposal_id") or "")
+                if not pid or pid not in prop_index:
+                    continue
+                expected = _build_branch_name(docket_lobe, cycle_id, proposal_id=pid)
+                if expected == pr_branch:
+                    log.info(
+                        "MERGE: branch %s → proposal %s (via docket lobe, pid-suffixed)",
+                        pr_branch, pid,
+                    )
+                    return pid
+            # Legacy un-suffixed form: first proposal in the docket (a pre-suffix
+            # build lane processed in order, so first-in-docket is what it built).
             expected = _build_branch_name(docket_lobe, cycle_id)
             if expected == pr_branch:
-                # Return the proposal_id of the first proposal in the docket that
-                # is present in prop_index (the build lane processes in order).
                 for prop in (docket.get("proposals") or []):
                     pid = str(prop.get("proposal_id") or "")
                     if pid and pid in prop_index:
@@ -511,6 +535,7 @@ def run_merge_lane(
     *,
     root: Path | None = None,
     dry_run: bool = False,
+    delete_propose_branch: bool = True,
 ) -> list[dict[str, Any]]:
     """Execute the SERIALIZED MERGE LANE for a cycle.
 
@@ -526,6 +551,14 @@ def run_merge_lane(
       5. Verify check_self_mod_fence passes (refuse if not).
       5.5. Verify AUDIT-APPROVE record exists and matches current head SHA (R-V7-3).
       6. Mark PR ready + rebase-merge.
+
+    delete_propose_branch: when False, the F3(a) propose-branch deletion after a
+    successful merge is suppressed.  R-V6-5 multi-lobe PROPOSE rides MANY dockets
+    on ONE branch metabolism/propose-<base>; a per-docket caller (the merge
+    workflow) must not delete the shared branch after the FIRST docket's merge —
+    that would strand un-merged sibling dockets.  The workflow owns deletion at
+    branch granularity; the GC propose-branch reaper (F3(b)) is the safety net.
+    Default True preserves the single-docket CLI behavior.
 
     Returns list of per-PR result dicts.  Zero merges while paused.
     NEVER raises.
@@ -692,8 +725,18 @@ def run_merge_lane(
         # adjudicate/merge/audit rescans don't accumulate unbounded branch lists.
         # Tolerate failure with a warning — never fatal (branch may be absent or
         # already deleted by a concurrent run).
+        # Suppressed for per-docket callers (delete_propose_branch=False): the
+        # propose branch hosts ALL of a base cycle's dockets (R-V6-5), and a
+        # per-lobe cycle_id would derive a branch name that never existed anyway.
         if merged_count > 0:
-            _delete_remote_propose_branch(cycle_id, root=root, dry_run=dry_run)
+            if delete_propose_branch:
+                _delete_remote_propose_branch(cycle_id, root=root, dry_run=dry_run)
+            else:
+                log.info(
+                    "MERGE: propose-branch deletion suppressed for cycle=%s "
+                    "(per-docket caller — branch lifecycle owned by the workflow)",
+                    cycle_id,
+                )
 
     except Exception as exc:  # noqa: BLE001
         log.warning("metabolism_merge.run_merge_lane: %s", exc)
@@ -748,6 +791,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--docket-file", required=True, help="Path to the docket JSON.")
     ap.add_argument("--dry-run", action="store_true", help="Print what would happen; no merges.")
     ap.add_argument("--root", default=None, help="Repo root (default: auto-detect).")
+    ap.add_argument("--keep-propose-branch", action="store_true",
+                    help=(
+                        "Do NOT delete the propose branch after a successful merge. "
+                        "Required for per-docket invocations over an R-V6-5 "
+                        "multi-docket branch — the workflow owns branch deletion "
+                        "after the full sweep; the GC reaper (F3(b)) is the net."
+                    ))
     args = ap.parse_args(argv)
 
     root = Path(args.root) if args.root else None
@@ -756,6 +806,7 @@ def main(argv: list[str] | None = None) -> int:
         args.docket_file,
         root=root,
         dry_run=args.dry_run,
+        delete_propose_branch=not args.keep_propose_branch,
     )
     print(json.dumps(results, indent=2, default=str))
     return 0
