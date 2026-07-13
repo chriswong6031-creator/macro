@@ -99,11 +99,23 @@ jobs:
             exit 0
           fi
 
+          # Commit ONCE before the retry loop — mirrors heartbeat.yml / dream.yml idiom.
+          # git commit inside the &&-chain would exit 1 on iteration 2+ (nothing staged),
+          # killing the chain silently while the workflow stays green (F1 fix).
           COMMIT_MSG="chore(immune): update ci_status + immune journals [skip ci]"
+          git commit -m "$COMMIT_MSG"
+          # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
+          # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
+          # refuses ("untracked working tree files would be overwritten") and --autostash can't
+          # clear it (it parks tracked modifications only), so every retry dies identically.
+          # Everything this step publishes is already committed above, so a path untracked HERE
+          # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
+          git fetch origin main || true
+          comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                   <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+            | while IFS= read -r f; do rm -f -- "$f" || true; done
           for _i in 1 2 3; do
-            if git pull --rebase --autostash origin main && \
-               git commit -m "$COMMIT_MSG" && \
-               git push origin HEAD:main; then
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
               echo "ci_status committed on attempt $_i"
               exit 0
             fi
