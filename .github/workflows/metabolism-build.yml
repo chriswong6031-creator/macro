@@ -90,9 +90,16 @@ jobs:
           CYCLE_ID: ${{ github.event.inputs.cycle_id }}
           DOCKET_BRANCH_INPUT: ${{ github.event.inputs.docket_branch }}
           # OAuth pool (capability_ids only — dispatcher reads env-var NAMES)
+          # Keys can be added one at a time; absent secrets resolve to empty env
+          # = "not present" — presence-based discovery handles partial sets with
+          # no code change required (pool comment in engine/neuralweb/key_pool.py).
           CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
           CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
           CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           # Fallback single-key (V2-A compat)
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -1,5 +1,5 @@
 name: key-pool-probe
-# Operator diagnostics: verify each CLAUDE_CODE_OAUTH_TOKEN_1/2/3 (+ legacy)
+# Operator diagnostics: verify each CLAUDE_CODE_OAUTH_TOKEN_1..7 (+ legacy)
 # secret actually authenticates, with one minimal (max_tokens=1) API call per
 # present key. Run after setting/rotating keys (arming checklist Act 1).
 #
@@ -54,5 +54,9 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
           CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
           CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: python -m scripts.key_pool_probe

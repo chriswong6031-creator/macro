@@ -26,6 +26,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from . import (actions, ai_cost, alerts as _alerts_mod, auth, brief, causal_lab,
+               codex_panel,
                config_store,
                content, context_lobe, experiments,
                flags, ga4, github_api, github_config, gitops, health, long_hold,
@@ -320,6 +321,8 @@ class Handler(BaseHTTPRequestHandler):
                 # Operator capture feed (RUL-8: authed only, no public write endpoint).
                 limit = int((q.get("limit") or ["60"])[0])
                 return self._json(_alerts_mod.panel(limit=limit))
+            if path == "/api/codex":
+                return self._json(codex_panel.panel())
             if path == "/api/metabolism":
                 return self._json(metabolism_panel.panel())
             if path == "/api/metabolism/keys":
@@ -475,6 +478,47 @@ class Handler(BaseHTTPRequestHandler):
                 if not ok_v:
                     return self._json({"ok": False, "error": err_msg}, 400)
                 result = github_api.dispatch(workflow=workflow, ref="main",
+                                             inputs=inputs or None)
+                return self._json(result)
+
+            if path == "/api/codex/mode":
+                if not b.get("confirm"):
+                    return self._json({"ok": False, "error": "confirm required"}, 400)
+                if not github_api.token():
+                    return self._json({"ok": False,
+                                       "error": "No GitHub token configured. Set GH_TOKEN in "
+                                                "/etc/macro-admin.env (needs Variables read/write) "
+                                                "to set Codex mode variables."}, 503)
+                ok_v, errors, to_set = codex_panel.validate_mode_body(b)
+                if not ok_v:
+                    return self._json({"ok": False, "errors": errors}, 400)
+                if not to_set:
+                    return self._json({"ok": False,
+                                       "error": "no valid fields provided; supply mode, "
+                                                "interval_hours, or lanes"}, 400)
+                set_results: dict[str, bool] = {}
+                for var_name, value in to_set.items():
+                    set_results[var_name] = github_api.set_repo_variable(var_name, value)
+                failed = {k: v for k, v in set_results.items() if not v}
+                if failed:
+                    return self._json({"ok": False,
+                                       "error": f"Failed to set variable(s): {list(failed)}; "
+                                                "check GH_TOKEN has Variables write permission.",
+                                       "set": set_results}, 500)
+                return self._json({"ok": True, "set": set_results})
+
+            if path == "/api/codex/run":
+                if not b.get("confirm"):
+                    return self._json({"ok": False, "error": "confirm required"}, 400)
+                if not github_api.token():
+                    return self._json({"ok": False,
+                                       "error": "No GitHub token configured. Set GH_TOKEN in "
+                                                "/etc/macro-admin.env (needs Actions write) "
+                                                "to dispatch workflows."}, 503)
+                ok_v, err_msg, inputs = codex_panel.validate_run_body(b)
+                if not ok_v:
+                    return self._json({"ok": False, "error": err_msg}, 400)
+                result = github_api.dispatch(workflow="codex-research.yml", ref="main",
                                              inputs=inputs or None)
                 return self._json(result)
 

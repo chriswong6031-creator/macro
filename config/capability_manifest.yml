@@ -146,8 +146,108 @@ capabilities:
     rotation_state: active
     kill_state: active
     notes: >
-      V2-B pool key 3 of 3. Optional — pool works with only _1 present.
+      V2-B pool key 3 of 7. Optional — pool works with only _1 present.
       Same ledger / cooling semantics as claude_code_oauth_1 and _2.
+
+  - capability_id: claude_code_oauth_4
+    kind: llm_oauth
+    secret_ref: CLAUDE_CODE_OAUTH_TOKEN_4
+    scope: >
+      Quaternary Metabolism OAuth key for the multi-key pool (V2-B).
+      Added by operator to further spread load across a 5h window.
+    storage_locus: gh-secret
+    allowed_lanes:
+      - metabolism-dispatch
+      - metabolism-agenda
+      - metabolism-propose
+      - metabolism-adjudicate
+      - metabolism-build
+      - metabolism-dream
+      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
+    allowed_tiers:
+      - T0
+      - T1
+      - T2
+    rotation_state: active
+    kill_state: active
+    notes: >
+      V2-B pool key 4 of 7. Optional — pool works with only _1 present.
+      Same ledger / cooling semantics as claude_code_oauth_1.
+
+  - capability_id: claude_code_oauth_5
+    kind: llm_oauth
+    secret_ref: CLAUDE_CODE_OAUTH_TOKEN_5
+    scope: >
+      Quinary Metabolism OAuth key for the multi-key pool (V2-B).
+      Added by operator to further spread load across a 5h window.
+    storage_locus: gh-secret
+    allowed_lanes:
+      - metabolism-dispatch
+      - metabolism-agenda
+      - metabolism-propose
+      - metabolism-adjudicate
+      - metabolism-build
+      - metabolism-dream
+      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
+    allowed_tiers:
+      - T0
+      - T1
+      - T2
+    rotation_state: active
+    kill_state: active
+    notes: >
+      V2-B pool key 5 of 7. Optional — pool works with only _1 present.
+      Same ledger / cooling semantics as claude_code_oauth_1.
+
+  - capability_id: claude_code_oauth_6
+    kind: llm_oauth
+    secret_ref: CLAUDE_CODE_OAUTH_TOKEN_6
+    scope: >
+      Senary Metabolism OAuth key for the multi-key pool (V2-B).
+      Added by operator to further spread load across a 5h window.
+    storage_locus: gh-secret
+    allowed_lanes:
+      - metabolism-dispatch
+      - metabolism-agenda
+      - metabolism-propose
+      - metabolism-adjudicate
+      - metabolism-build
+      - metabolism-dream
+      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
+    allowed_tiers:
+      - T0
+      - T1
+      - T2
+    rotation_state: active
+    kill_state: active
+    notes: >
+      V2-B pool key 6 of 7. Optional — pool works with only _1 present.
+      Same ledger / cooling semantics as claude_code_oauth_1.
+
+  - capability_id: claude_code_oauth_7
+    kind: llm_oauth
+    secret_ref: CLAUDE_CODE_OAUTH_TOKEN_7
+    scope: >
+      Septenary Metabolism OAuth key for the multi-key pool (V2-B).
+      Added by operator to further spread load across a 5h window.
+    storage_locus: gh-secret
+    allowed_lanes:
+      - metabolism-dispatch
+      - metabolism-agenda
+      - metabolism-propose
+      - metabolism-adjudicate
+      - metabolism-build
+      - metabolism-dream
+      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
+    allowed_tiers:
+      - T0
+      - T1
+      - T2
+    rotation_state: active
+    kill_state: active
+    notes: >
+      V2-B pool key 7 of 7. Optional — pool works with only _1 present.
+      Same ledger / cooling semantics as claude_code_oauth_1.
 
   # ── GitHub token (read/write for PR operations) ──────────────────────────
 

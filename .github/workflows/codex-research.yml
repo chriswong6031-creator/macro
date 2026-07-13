@@ -1,0 +1,183 @@
+name: codex-research
+# Codex Research Engine (CRX) — autonomous winner-case + signal brainstorm lane.
+# Ships DARK by default (CODEX_MODE absent or off → clean no-op for schedule events).
+#
+# KILL SWITCH — CODEX_MODE repo variable (CRX-R7):
+#   gh variable set CODEX_MODE --body off       # disable (default-safe; absent=off)
+#   gh variable set CODEX_MODE --body interval  # run when hours since last loop >= CODEX_INTERVAL_HOURS
+#   gh variable set CODEX_MODE --body auto      # run always; budget gate handles 85%/pause logic
+# dispatch events SKIP the mode gate entirely (button always runs).
+#
+# INERTNESS GUARANTEE (CRX-R7):
+#   - Schedule: off/absent → clean no-op.  interval → time-gate inside script.  auto → budget gate.
+#   - Commits ONLY data/codex_lane/**, data/signal_foundry/**, data/trial_ledger.jsonl.
+#   - research/winners/ changes ship via the case lane's own draft PRs — NEVER in this commit.
+#   - Never touches engine/, config/, scripts/, or site/ outputs.
+#
+# Auth (CRX-R8): codex CLI auth lives in ~/.codex/auth.json on the runner box.
+# Tokens never transit logs, ledgers, or GH secrets.
+on:
+  schedule:
+    - cron: "20 */2 * * *"   # every 2h at :20 (staggered from metabolism :35)
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: "Which lane to run"
+        type: choice
+        options:
+          - both
+          - cases
+          - signals
+        default: both
+      iterations:
+        description: "Number of loop iterations (default 1)"
+        type: string
+        default: "1"
+      force:
+        description: "Force run (reserved — documents intent; budget gate still applies)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write   # case lane opens draft PRs (CRX-R6)
+
+concurrency:
+  group: codex-research
+  cancel-in-progress: false
+
+jobs:
+  research-loop:
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 170
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - name: install deps
+        run: pip install --quiet pyyaml pandas pyarrow
+
+      - name: mode gate + research loop
+        env:
+          CODEX_MODE: ${{ vars.CODEX_MODE }}
+          CODEX_INTERVAL_HOURS: ${{ vars.CODEX_INTERVAL_HOURS }}
+          CODEX_LANES: ${{ vars.CODEX_LANES }}
+          SIGNAL_FOUNDRY_PAUSED: ${{ vars.SIGNAL_FOUNDRY_PAUSED }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -uo pipefail
+
+          EVENT="${GITHUB_EVENT_NAME:-}"
+          _MODE="$(printf '%s' "${CODEX_MODE:-}" | tr '[:upper:]' '[:lower:]')"
+          _INTERVAL_HOURS="${CODEX_INTERVAL_HOURS:-6}"
+
+          # ── Inputs for dispatch; defaults for schedule ──────────────────────
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            LANE="${{ github.event.inputs.lane }}"
+            ITERS="${{ github.event.inputs.iterations }}"
+            LANE="${LANE:-both}"
+            ITERS="${ITERS:-1}"
+            echo "dispatch event — mode gate skipped; lane=$LANE iters=$ITERS"
+          else
+            # ── Schedule: MODE GATE ─────────────────────────────────────────
+            if [ -z "$_MODE" ] || [ "$_MODE" = "off" ]; then
+              echo "CODEX_MODE=${CODEX_MODE:-<unset>} — schedule no-op (fail-closed for token-spending lane)."
+              exit 0
+            fi
+
+            if [ "$_MODE" = "interval" ]; then
+              # Check hours since last loop_journal.jsonl entry.
+              # Absent journal -> proceed (first run).
+              _JOURNAL="data/codex_lane/loop_journal.jsonl"
+              if [ -f "$_JOURNAL" ]; then
+                _LAST_TS="$(python -c "import json,sys; lines=[l for l in open('$_JOURNAL') if l.strip()]; last=json.loads(lines[-1]) if lines else {}; print(last.get('ts',''))" 2>/dev/null || true)"
+                if [ -n "$_LAST_TS" ]; then
+                  _HOURS_SINCE="$(python -c "from datetime import datetime,timezone; ts='$_LAST_TS'; now=datetime.now(timezone.utc); last=datetime.fromisoformat(ts.replace('Z','+00:00')); diff=(now-last).total_seconds()/3600; print(f'{diff:.2f}')" 2>/dev/null || echo 0)"
+                  _OK="$(python -c "print('yes' if float('$_HOURS_SINCE') >= float('$_INTERVAL_HOURS') else 'no')" 2>/dev/null || echo yes)"
+                  echo "interval gate: hours_since_last=$_HOURS_SINCE threshold=$_INTERVAL_HOURS ok=$_OK"
+                  if [ "$_OK" = "no" ]; then
+                    echo "interval gate: too soon — clean no-op."
+                    exit 0
+                  fi
+                else
+                  echo "interval gate: journal has no ts field — proceeding (first-run path)."
+                fi
+              else
+                echo "interval gate: no journal found — proceeding (first run)."
+              fi
+              LANE="${CODEX_LANES:-both}"
+              ITERS="1"
+            elif [ "$_MODE" = "auto" ]; then
+              # auto mode: budget gate inside the loop driver handles 85%/pause logic.
+              LANE="${CODEX_LANES:-both}"
+              ITERS="8"
+            else
+              echo "CODEX_MODE=$_MODE unrecognised — fail-closed, treating as off."
+              exit 0
+            fi
+            echo "schedule event — mode=$_MODE lane=$LANE iters=$ITERS"
+          fi
+
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            python -m scripts.codex_research_loop --lane "$LANE" --iterations "$ITERS" --force
+          else
+            python -m scripts.codex_research_loop --lane "$LANE" --iterations "$ITERS"
+          fi
+
+      - name: narrow commit and push (codex_lane + sf stores only)
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Guard: research/winners/ ships via the lane's own draft PRs (CRX-R6) — never here.
+          git checkout -- research/winners/ 2>/dev/null || true
+
+          git add data/codex_lane data/signal_foundry data/trial_ledger.jsonl 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "no codex_lane/sf output changes to commit"
+            exit 0
+          fi
+
+          git commit -m "codex-research: loop outputs $(date -u +%F)"
+
+          # Retry-rebase push loop with --autostash (stranded-data law #1823)
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "pushed codex outputs on attempt $i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "codex push attempt $i lost a race; re-syncing"
+            sleep $((i * 7))
+          done
+
+          echo "could not push codex outputs after 5 attempts (non-fatal)"
+          exit 0
+
+      - name: summary
+        if: always()
+        run: |
+          echo "--- codex-research run complete ---"
+          if [ -f data/codex_lane/loop_journal.jsonl ]; then
+            python -c "import json; lines=[l for l in open('data/codex_lane/loop_journal.jsonl') if l.strip()]; last=json.loads(lines[-1]) if lines else {}; print('last entry:', json.dumps(last, indent=2))" 2>/dev/null || true
+          fi
