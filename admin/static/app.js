@@ -1988,19 +1988,46 @@ RENDER.metabolism = async () => {
     </tbody></table>`;
   })();
 
-  // --- Throttle section (V10) ---
+  // --- Throttle section (V11) ---
   const thr = d.throttle || {};
   const thrIntensity = thr.intensity || {};
   const thrPace = thr.pace || {};
   const thrKeys = thr.keys_enabled || {};
 
-  function thrSelectorHtml(id, label, options, currentEffective) {
-    return `<div style="margin-bottom:10px"><span class="sub">${esc(label)}</span><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">` +
-      options.map(opt =>
-        `<button class="btn${opt === currentEffective ? " primary" : ""}" data-thr-sel="${esc(id)}" data-thr-val="${esc(opt)}" style="min-width:60px">${esc(opt)}</button>`
-      ).join("") +
+  // Intensity selector: display label, value sent to API, sublabel
+  const INTENSITY_OPTS = [
+    { label: "Low",    val: "low",    sub: "≈ half-size docket" },
+    { label: "Normal", val: "normal", sub: "standard docket" },
+    { label: "High",   val: "high",   sub: "1.5× docket" },
+    { label: "Max",    val: "max",    sub: "2× docket" },
+  ];
+  const PACE_OPTS = [
+    { label: "Low",    val: "low",    sub: "1 loop / 5h" },
+    { label: "Medium", val: "medium", sub: "2 loops / 5h" },
+    { label: "High",   val: "high",   sub: "3 loops / 5h" },
+    { label: "Max",    val: "max",    sub: "4 loops / 5h" },
+  ];
+
+  // Map legacy effective pace to the new ladder value for button highlighting.
+  const PACE_LEGACY_MAP = { single: "low", "2x": "medium", "4x": "high" };
+
+  function thrSelectorHtmlV11(id, label, opts, currentEffective) {
+    const effectiveMapped = PACE_LEGACY_MAP[currentEffective] || currentEffective;
+    return `<div style="margin-bottom:14px">` +
+      `<span class="sub" style="font-weight:600">${esc(label)}</span>` +
+      `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">` +
+      opts.map(opt => {
+        const active = (id === "pace" ? opt.val : opt.val) === (id === "pace" ? effectiveMapped : currentEffective);
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">` +
+          `<button class="btn${active ? " primary" : ""}" data-thr-sel="${esc(id)}" data-thr-val="${esc(opt.val)}" style="min-width:70px">${esc(opt.label)}</button>` +
+          `<span class="sub muted" style="font-size:11px;text-align:center">${esc(opt.sub)}</span>` +
+          `</div>`;
+      }).join("") +
       `</div></div>`;
   }
+
+  const loopDur = d.loop_duration || {};
+  const durLabel = loopDur.label || "No completed live loops yet — worst case ≈ 2.5h";
 
   const throttleHtml = `
     <div style="margin-bottom:8px">
@@ -2009,8 +2036,9 @@ RENDER.metabolism = async () => {
       ${thrKeys.value != null ? `<div class="kv"><span>METAB_KEYS_ENABLED (repo var)</span><b class="mono">${esc(thrKeys.value) || "(empty = all keys)"}</b></div>` : ""}
       ${thr.note ? `<div class="sub muted" style="margin-top:4px">${esc(thr.note)}</div>` : ""}
     </div>
-    ${thrSelectorHtml("intensity", "Intensity", thrIntensity.allowed || ["low","normal","high","max"], thrIntensity.effective || "normal")}
-    ${thrSelectorHtml("pace", "Pace", thrPace.allowed || ["single","2x","4x"], thrPace.effective || "single")}
+    <div class="kv" style="margin-bottom:8px"><span class="sub" title="Median wall-clock from last completed runs, excluding pace-gate skips">Loop timing</span><b>${esc(durLabel)}</b></div>
+    ${thrSelectorHtmlV11("intensity", "Ideas per loop", INTENSITY_OPTS, thrIntensity.effective || "normal")}
+    ${thrSelectorHtmlV11("pace", "Loops per 5-hour window", PACE_OPTS, thrPace.effective_ladder || thrPace.effective || "low")}
     <div style="margin-bottom:10px">
       <span class="sub">Keys enabled (csv of 1/2/3/legacy — empty = all)</span>
       <div style="display:flex;gap:8px;margin-top:4px;align-items:center;flex-wrap:wrap">
@@ -2020,7 +2048,14 @@ RENDER.metabolism = async () => {
       <div class="sub muted" style="margin-top:4px">1=claude_code_oauth_1, 2=claude_code_oauth_2, 3=claude_code_oauth_3, legacy=CLAUDE_CODE_OAUTH_TOKEN</div>
     </div>`;
 
-  // --- Run-now section (V10) ---
+  // --- Run-now section (V11) ---
+  const RUN_MODE_DESCRIPTIONS = {
+    cycle:      "Runs the whole loop in order: Agenda → Propose → Adjudicate → Build",
+    agenda:     "Scans the system and ranks what deserves attention",
+    propose:    "Drafts new experiment/upgrade proposals (the docket)",
+    adjudicate: "Judges each proposal — approve, revise, or kill",
+    build:      "Turns approved proposals into code in draft PRs (never merges)",
+  };
   const lobeDatalist = `<datalist id="lobeList"><option value="til"><option value="site-us-standouts"><option value="site-china-standouts"></datalist>`;
   const runNowHtml = `
     ${lobeDatalist}
@@ -2042,13 +2077,95 @@ RENDER.metabolism = async () => {
         </select>
       </div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn primary" data-run-mode="cycle">▶ Full cycle</button>
-      <button class="btn" data-run-mode="agenda">Agenda</button>
-      <button class="btn" data-run-mode="propose">Propose</button>
-      <button class="btn" data-run-mode="adjudicate">Adjudicate</button>
-      <button class="btn" data-run-mode="build">Build</button>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${[
+        { mode: "cycle",      label: "▶ Full cycle", primary: true },
+        { mode: "agenda",     label: "Agenda",       primary: false },
+        { mode: "propose",    label: "Propose",      primary: false },
+        { mode: "adjudicate", label: "Adjudicate",   primary: false },
+        { mode: "build",      label: "Build",        primary: false },
+      ].map(item => `<div>
+        <button class="btn${item.primary ? " primary" : ""}" data-run-mode="${esc(item.mode)}">${esc(item.label)}</button>
+        <div class="sub muted" style="margin-top:3px">${esc(RUN_MODE_DESCRIPTIONS[item.mode] || "")}</div>
+      </div>`).join("")}
     </div>`;
+
+  // --- Auto-run section (V11) ---
+  const runUntil = d.run_until || "off";
+  const autoRunArmedLabel = runUntil === "5h_max" ? "AUTO-RUN ARMED — 5H MAX"
+                          : runUntil === "weekly_max" ? "AUTO-RUN ARMED — WEEKLY MAX"
+                          : "";
+  const autoRunStatusHtml = autoRunArmedLabel
+    ? `<div class="statpill s-warn" style="margin-bottom:10px;font-size:13px;padding:4px 10px">${esc(autoRunArmedLabel)}</div>`
+    : "";
+  const autoRunHtml = d.has_token ? `
+    ${autoRunStatusHtml}
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <button class="btn primary" id="rununtil5hBtn">⚡ Max out 5-hour windows</button>
+        <div class="sub muted" style="margin-top:3px">Loops until every key reaches 80% of its 5-hour window, then stops.</div>
+      </div>
+      <div>
+        <button class="btn" id="rununtiWkBtn">📅 Max out weekly budget</button>
+        <div class="sub muted" style="margin-top:3px">Keeps looping as 5-hour windows reset; stops adding work to a key at 85% weekly; fully stops when all keys hit 80% weekly.</div>
+      </div>
+      <div>
+        <button class="btn" id="rununtiStopBtn">⏹ Stop auto-run</button>
+        <div class="sub muted" style="margin-top:3px">Disarms auto-run after the current loop.</div>
+      </div>
+    </div>` : `<div class="sub muted">GitHub token required to set auto-run mode.</div>`;
+
+  // --- Budget status section (V11) ---
+  const bs = d.budget_status || null;
+  const bsTs = bs && bs.ts ? bs.ts : null;
+  let budgetHtml;
+  if (!bs) {
+    budgetHtml = `<div class="sub muted">No usage snapshot yet — the next loop or key probe publishes one.</div>`;
+  } else {
+    const perKey = bs.per_key || {};
+    const verdicts = bs.verdicts || {};
+    const tsAgo = (() => {
+      if (!bsTs) return "";
+      try {
+        const diff = (Date.now() - new Date(bsTs).getTime()) / 3600000;
+        return diff < 1 ? `as of ${Math.round(diff * 60)}m ago` : `as of ${diff.toFixed(1)}h ago`;
+      } catch(e) { return ""; }
+    })();
+    const manualBlocked = (verdicts.manual || {}).blocked;
+    const manualBlockedHtml = manualBlocked
+      ? `<div class="statpill s-warn" style="margin-bottom:8px">Manual runs blocked — all keys ≥90% weekly. Wait for a weekly reset.</div>`
+      : "";
+    const barHtml = (pct, src) => {
+      if (pct == null) return `<span class="sub muted">unknown</span>`;
+      const fill = Math.min(100, Math.max(0, pct));
+      const color = fill >= 90 ? "var(--err,#e84855)" : fill >= 80 ? "var(--warn,#f4a261)" : "var(--ok,#3cb371)";
+      const badge = src === "reported" ? `<span class="statpill s-ok" style="font-size:10px;padding:1px 5px">reported</span>`
+                  : src === "est"      ? `<span class="statpill s-mut" style="font-size:10px;padding:1px 5px">est</span>`
+                  :                     `<span class="statpill" style="font-size:10px;padding:1px 5px">unknown</span>`;
+      return `<div style="display:flex;align-items:center;gap:6px">
+        <div style="flex:1;background:var(--bg3,#2a2a3a);border-radius:3px;height:8px;min-width:60px">
+          <div style="width:${fill}%;background:${color};height:8px;border-radius:3px"></div>
+        </div>
+        <span class="sub" style="min-width:36px">${fill.toFixed(0)}%</span>${badge}
+      </div>`;
+    };
+    const keyRows = Object.entries(perKey).map(([kid, kb]) => {
+      const k = kb || {};
+      return `<div style="margin-bottom:8px;padding:8px;background:var(--bg2,#1e1e2e);border-radius:4px">
+        <div class="sub" style="font-weight:600;margin-bottom:4px">${esc(kid)}</div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div><span class="sub muted" style="min-width:80px;display:inline-block">5h window</span>${barHtml(k.pct_5h, k.src_5h)}</div>
+          <div><span class="sub muted" style="min-width:80px;display:inline-block">Weekly</span>${barHtml(k.pct_weekly, k.src_weekly)}</div>
+          ${k.reset_5h ? `<div class="sub muted" style="font-size:11px">5h resets: ${esc(k.reset_5h)}</div>` : ""}
+          ${k.reset_weekly ? `<div class="sub muted" style="font-size:11px">Weekly resets: ${esc(k.reset_weekly)}</div>` : ""}
+        </div>
+      </div>`;
+    }).join("");
+    budgetHtml = `
+      ${manualBlockedHtml}
+      ${tsAgo ? `<div class="sub muted" style="margin-bottom:8px">${esc(tsAgo)}</div>` : ""}
+      ${keyRows || `<div class="sub muted">No per-key data in snapshot.</div>`}`;
+  }
 
   v.innerHTML = `
     <div class="section">Autonomous Loop Switch</div>
@@ -2058,16 +2175,20 @@ RENDER.metabolism = async () => {
       <div class="kv" style="margin-top:12px"><span>AUTONOMY_PAUSED variable</span><b class="mono">${esc(d.variable_value != null ? String(d.variable_value) : "(not set)")}</b></div>
       <div class="kv"><span>Freezes (last 7d)</span><b>${d.freezes_7d != null ? d.freezes_7d : "—"}</b></div>
     </div>
+    <div class="section">Auto-Run</div>
+    <div class="card" id="metAutoRunCard">${autoRunHtml}</div>
     <div class="section">Metabolism Throttle</div>
     <div class="card" id="metThrCard">${d.has_token ? throttleHtml : `<div class="sub muted">GitHub token required to read/set throttle variables.</div>`}</div>
     <div class="section">Run Now</div>
     <div class="card" id="metRunCard">${d.has_token ? runNowHtml : `<div class="sub muted">GitHub token required to dispatch workflows.</div>`}</div>
+    <div class="section">Key Usage</div>
+    <div class="card" id="metBudgetCard">${budgetHtml}</div>
     <div class="section">Organism State</div>
     <div class="card">${orgHtml}</div>
     <div class="section">Key Pool</div>
     <div class="card">${keysHtml}</div>
-    <div class="section">Key Usage</div>
-    <div class="card" id="metKeysCard"><div class="sub muted">Loading key usage…</div></div>
+    <div class="section">Raw Key Usage (rate-limit headers)</div>
+    <div class="card" id="metKeysCard"><div class="sub muted">Loading…</div></div>
     <div class="section">Recent Metabolism Runs <span class="cnt">${(d.runs || []).length}</span></div>
     <div class="card">${runsHtml}</div>
     <div class="section">Change History <span class="cnt" id="mhCnt"></span></div>
@@ -2135,11 +2256,37 @@ RENDER.metabolism = async () => {
         if (r.ok) {
           toast(`Dispatched ${label}${lobeNote}`);
         } else {
-          alert(`Dispatch failed: ${r.error || "unknown error"}`);
+          alert(`Dispatch failed: ${r.error || (r.blocked ? "All keys at or above weekly limit — wait for a reset." : "unknown error")}`);
         }
         btn.disabled = false;
       });
     });
+
+    // Wire auto-run buttons
+    async function postRununtil(mode, label) {
+      const msg = mode === "off"
+        ? "Stop auto-run? The current loop (if any) will finish normally."
+        : `Arm auto-run: ${label}? This will dispatch a loop immediately.`;
+      if (!window.confirm(msg)) return;
+      const btn5h = $("#rununtil5hBtn", v);
+      const btnWk = $("#rununtiWkBtn", v);
+      const btnStop = $("#rununtiStopBtn", v);
+      [btn5h, btnWk, btnStop].forEach(b => { if (b) b.disabled = true; });
+      const r = await post("/api/metabolism/rununtil", { mode, confirm: true });
+      if (r.ok) {
+        toast(mode === "off" ? "Auto-run stopped." : `Auto-run armed: ${label}`);
+        RENDER.metabolism();
+      } else {
+        alert(`Failed: ${r.error || "unknown error"}`);
+        [btn5h, btnWk, btnStop].forEach(b => { if (b) b.disabled = false; });
+      }
+    }
+    const ar5h = $("#rununtil5hBtn", v);
+    if (ar5h) ar5h.addEventListener("click", () => postRununtil("5h_max", "Max out 5-hour windows"));
+    const arWk = $("#rununtiWkBtn", v);
+    if (arWk) arWk.addEventListener("click", () => postRununtil("weekly_max", "Max out weekly budget"));
+    const arStop = $("#rununtiStopBtn", v);
+    if (arStop) arStop.addEventListener("click", () => postRununtil("off", "Stop"));
   }
 
   // Async Key Usage loader (V10)

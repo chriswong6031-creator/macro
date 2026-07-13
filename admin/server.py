@@ -477,9 +477,68 @@ class Handler(BaseHTTPRequestHandler):
                 ok_v, err_msg, workflow, inputs = metabolism_panel.validate_run_body(b)
                 if not ok_v:
                     return self._json({"ok": False, "error": err_msg}, 400)
+                # Manual run: check if all keys are >=90% weekly (manual_floor_pct).
+                # Fail-soft — if budget_gate unavailable, allow the run.
+                try:
+                    from engine.metabolism.budget_gate import gate_verdict  # noqa: PLC0415
+                    verdict = gate_verdict("manual")
+                    if verdict.get("blocked"):
+                        reason = verdict.get("reason") or "All keys ≥90% weekly — wait for a weekly reset."
+                        return self._json({"ok": False, "error": reason, "blocked": True}, 409)
+                except ImportError:
+                    pass  # budget_gate not available; allow the run
+                except Exception:  # noqa: BLE001
+                    pass  # fail-soft
                 result = github_api.dispatch(workflow=workflow, ref="main",
                                              inputs=inputs or None)
                 return self._json(result)
+
+            if path == "/api/metabolism/rununtil":
+                if not b.get("confirm"):
+                    return self._json({"ok": False, "error": "confirm required"}, 400)
+                if not github_api.token():
+                    return self._json({"ok": False,
+                                       "error": "No GitHub token configured. Set GH_TOKEN in "
+                                                "/etc/macro-admin.env (needs Variables read/write + "
+                                                "Actions write) to set auto-run mode."}, 503)
+                ok_v, err_msg, mode = metabolism_panel.validate_rununtil_body(b)
+                if not ok_v:
+                    return self._json({"ok": False, "error": err_msg}, 400)
+                # For arm modes, check manual block (budget_gate) fail-soft.
+                if mode != "off":
+                    try:
+                        from engine.metabolism.budget_gate import gate_verdict  # noqa: PLC0415
+                        verdict = gate_verdict("manual")
+                        if verdict.get("blocked"):
+                            reason = verdict.get("reason") or "All keys ≥90% weekly — wait for a weekly reset."
+                            # 409 intentional: arm-time manual-floor refusal — sessions likely
+                            # cannot finish when all keys are ≥90% weekly.  Operator must wait
+                            # for a weekly window to reset before re-arming.
+                            return self._json({"ok": False, "error": reason, "blocked": True}, 409)
+                    except ImportError:
+                        pass
+                    except Exception:  # noqa: BLE001
+                        pass
+                # Set the METAB_RUN_UNTIL repo variable.
+                set_ok = github_api.set_repo_variable("METAB_RUN_UNTIL", mode)
+                if not set_ok:
+                    return self._json({"ok": False,
+                                       "error": "Failed to set METAB_RUN_UNTIL — check that "
+                                                "GH_TOKEN has Variables write permission."}, 500)
+                # For arm modes, dispatch metabolism-cycle.yml to start the first loop.
+                # Pass run_until_continue=true and depth=0 so the chain takes the
+                # auto budget-gate branch (not the manual-floor branch).
+                dispatch_result: dict | None = None
+                if mode != "off":
+                    dispatch_result = github_api.dispatch(
+                        workflow="metabolism-cycle.yml", ref="main",
+                        inputs={"run_until_continue": "true", "depth": "0"},
+                    )
+                return self._json({
+                    "ok": True,
+                    "mode": mode,
+                    "dispatched": dispatch_result is not None and bool(dispatch_result.get("ok")),
+                })
 
             if path == "/api/codex/mode":
                 if not b.get("confirm"):

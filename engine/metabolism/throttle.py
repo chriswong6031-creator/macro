@@ -1,4 +1,4 @@
-"""engine.metabolism.throttle — Operator throttle variables (Metabolism V10).
+"""engine.metabolism.throttle — Operator throttle variables (Metabolism V10/V11).
 
 Reads METAB_INTENSITY and METAB_PACE from the environment on every call
 (no caching) so that workflow-injected env overrides are always honoured.
@@ -9,6 +9,11 @@ Rulings:
     R-V10-2: Absent/invalid variable values resolve to today's behaviour exactly
               (normal intensity, single pace, all keys). A misconfiguration can
               never brick the loop.
+
+V11 note: _PACE_EXTRA (single/2x/4x → extra-chain-runs-per-day) is kept for
+backward compatibility with metabolism-cycle.yml pace gate; it has no new
+callers after V11.  The new vocabulary is the LOOPS LADDER accessed via
+pace_loops_per_window() — low=1, medium=2, high=3, max=4 loops per 5h window.
 
 NEVER-RAISE CONTRACT: every public function catches all exceptions and returns
 the safe fail-open default. Token values are never logged.
@@ -40,6 +45,20 @@ _DEFAULT_PACE = "single"
 _PACE_EXTRA: dict[str, int] = {
     "single": 0,
     "2x": 1,
+    "4x": 3,
+}
+
+# V11 loops ladder: METAB_PACE vocabulary -> loops per 5-hour window.
+# V11 vocab:   low=1, medium=2, high=3, max=4
+# Legacy compat: single->1, 2x->2, 4x->3 (kept for metabolism-cycle.yml pace gate)
+_PACE_LOOPS: dict[str, int] = {
+    "low": 1,
+    "medium": 2,
+    "high": 3,
+    "max": 4,
+    # Legacy tokens (V10 and earlier)
+    "single": 1,
+    "2x": 2,
     "4x": 3,
 }
 
@@ -103,6 +122,47 @@ def pace_extra_cycles(p: str | None = None) -> int:
     except Exception as exc:  # noqa: BLE001
         log.warning("throttle.pace_extra_cycles: error %s — returning 0", exc)
         return 0
+
+
+def pace_loops_per_window(p: str | None = None) -> int:
+    """Return the number of metabolism loops allowed per 5-hour window.
+
+    V11 LOOPS LADDER (METAB_PACE vocabulary):
+        low    → 1 loop per 5h window
+        medium → 2 loops per 5h window
+        high   → 3 loops per 5h window
+        max    → 4 loops per 5h window
+
+    Legacy compat (kept for metabolism-cycle.yml pace gate — no new callers):
+        single → 1   (maps to low)
+        2x     → 2   (maps to medium)
+        4x     → 3   (maps to high)
+
+    Absent or invalid METAB_PACE resolves to 1 (safe minimum). NEVER raises.
+
+    Parameters
+    ----------
+    p : str | None
+        Explicit pace string; None → read from METAB_PACE env var directly
+        (bypasses the legacy pace() validator so V11 vocab is accepted).
+    """
+    try:
+        if p is not None:
+            resolved = str(p).strip().lower()
+        else:
+            resolved = os.environ.get("METAB_PACE", "").strip().lower()
+        result = _PACE_LOOPS.get(resolved)
+        if result is not None:
+            return result
+        if resolved:
+            log.warning(
+                "throttle.pace_loops_per_window: unknown pace %r — defaulting to 1",
+                resolved,
+            )
+        return 1
+    except Exception as exc:  # noqa: BLE001
+        log.warning("throttle.pace_loops_per_window: error %s — returning 1", exc)
+        return 1
 
 
 def describe() -> dict:

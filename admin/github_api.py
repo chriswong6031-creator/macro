@@ -15,6 +15,11 @@ from .paths import ROOT
 API = "https://api.github.com"
 _REPO_CACHE: tuple[str, str] | None = None
 
+# Last actionable error from set_repo_variable, for callers that surface details.
+# Reset to None on success; set to a plain-English message on HTTP 403/error.
+# Never contains the token value.
+_last_set_variable_error: str | None = None
+
 try:
     import requests  # already a project dependency
 except Exception:  # noqa: BLE001
@@ -137,8 +142,13 @@ def set_repo_variable(name: str, value: str) -> bool:
 
     PATCHes the variable if it exists; POSTs to create it on a 404 response.
     Returns True on success, False on any error.  Never logs the token value.
-    Requires a token with Variables: write permission.
+    Requires a token with Variables: Read & write permission.
+
+    On HTTP 403 or other actionable errors, sets the module-level
+    _last_set_variable_error string so callers can surface a friendly message.
     """
+    global _last_set_variable_error
+    _last_set_variable_error = None
     if requests is None:
         return False
     if not token():
@@ -154,11 +164,28 @@ def set_repo_variable(name: str, value: str) -> bool:
                               json=body, timeout=12)
         if resp.status_code in (204, 200):
             return True
+        if resp.status_code == 403:
+            _last_set_variable_error = (
+                "HTTP 403 — the GitHub token can't write repository variables. "
+                "It needs Variables: Read & write (fine-grained PAT) or the repo "
+                "scope (classic PAT). Update GH_TOKEN in /etc/macro-admin.env on "
+                "the admin host, then restart the admin service."
+            )
+            return False
         if resp.status_code == 404:
             # Variable does not exist yet — create via POST
             resp2 = requests.post(base, headers=_headers(),
                                   json=body, timeout=12)
-            return resp2.status_code in (201, 204, 200)
+            if resp2.status_code in (201, 204, 200):
+                return True
+            if resp2.status_code == 403:
+                _last_set_variable_error = (
+                    "HTTP 403 — the GitHub token can't write repository variables. "
+                    "It needs Variables: Read & write (fine-grained PAT) or the repo "
+                    "scope (classic PAT). Update GH_TOKEN in /etc/macro-admin.env on "
+                    "the admin host, then restart the admin service."
+                )
+            return False
         return False
     except Exception:  # noqa: BLE001
         return False
@@ -216,6 +243,26 @@ def dispatch(workflow: str = "daily.yml", ref: str = "main",
         resp = requests.post(url, headers=_headers(), json=body, timeout=12)
         if resp.status_code == 204:
             return {"ok": True, "workflow": workflow, "ref": ref}
+        if resp.status_code == 403:
+            return {
+                "ok": False,
+                "error": (
+                    "HTTP 403 — the GitHub token can't dispatch workflows. "
+                    "It needs Actions: Read & write (fine-grained PAT) or the "
+                    "workflow scope (classic PAT). Update GH_TOKEN in "
+                    "/etc/macro-admin.env on the admin host, then restart the admin service."
+                ),
+            }
+        if resp.status_code == 404:
+            return {
+                "ok": False,
+                "error": (
+                    "HTTP 404 — workflow not found or the GitHub token cannot see this "
+                    "repository. For fine-grained PATs the repo must be explicitly selected. "
+                    "Update GH_TOKEN in /etc/macro-admin.env on the admin host, "
+                    "then restart the admin service."
+                ),
+            }
         msg = ""
         try:
             msg = resp.json().get("message", "")

@@ -138,6 +138,63 @@ prior_demote_min_n: 5
 #   Demoted items remain visible with prior_demoted:true.
 #   IMMUTABLE: loop PRs may NOT modify this value.
 prior_demote_hit_rate: 0.25
+
+# ── V11 UX gate policy (Metabolism Throttle UX v11) ──────────────────────────
+#
+# OPERATOR-RATIFIED POLICY — IMMUTABLE.
+# These thresholds control the two auto-run modes and the manual hard floor
+# exposed in the admin UX.  Loop PRs may NOT modify these values.
+# All percentages are 0-100 (100 = fully exhausted).
+#
+# gate_policy sub-section is read by engine/metabolism/budget_gate.py.
+# Hardcoded defaults match these values; operator edits here take priority.
+gate_policy:
+
+  # Auto mode cutoff: 80% of the 5-hour window.
+  # "5H MAX" stops scheduling onto a key once it reaches this utilisation.
+  # Keys whose KNOWN pct_weekly >= manual_floor_pct (90%) are also excluded in
+  # 5H MAX mode (operator rule: no sessions on keys past the weekly floor regardless
+  # of mode; unknown weekly does not exclude — fail-open until a reading is available).
+  # "WEEKLY MAX" also respects this per 5h sub-window — it waits for the
+  # window to reset before running the next loop on a saturated key.
+  fivehour_done_pct: 80
+
+  # Auto mode cutoff: 80% of the weekly quota.
+  # "WEEKLY MAX" enters all_done and disarms once every enabled key is at or
+  # above this threshold with a *known* utilisation figure.  A key whose
+  # utilisation is unknown (no headers captured yet) never triggers disarm on
+  # its own — at least one key must have a known reading.
+  weekly_done_pct: 80
+
+  # Per-key weekly stop: 85%.
+  # In WEEKLY MAX mode, a key whose weekly utilisation reaches this value is
+  # removed from the eligible set for the rest of the week (even if its 5h
+  # window resets).  5% headroom prevents a loop that starts near the boundary
+  # from overrunning the quota inside a single session.
+  weekly_key_stop_pct: 85
+
+  # Manual hard floor: 90% weekly.
+  # When ALL enabled keys with known weekly utilisation are at or above this
+  # value, the "Run Now" buttons are disabled with a clear message.  Any key
+  # with unknown utilisation keeps manual runs open — the floor only applies
+  # when we have a reading for every key.
+  manual_floor_pct: 90
+
+  # Estimated 5h token budget (null = disabled).
+  # When the Anthropic API does not return ratelimit headers for a key,
+  # budget_gate.py falls back to est_tokens from the key ledger divided by
+  # this number.  Leave null until you know your actual quota.
+  est_budget_5h_tokens: null
+
+  # Estimated weekly token budget (null = disabled).
+  # Same fallback mechanic for the weekly window.
+  est_budget_weekly_tokens: null
+
+  # Minimum loop duration (seconds) below which a run is treated as a no-op
+  # for the purpose of the "median loop duration" display.  Prevents a failed
+  # fast-exit from pulling the median down to near-zero.
+  duration_noop_floor_s: 300
+
 # ── Reflex-arc config (R-V8-6..R-V8-9) ──────────────────────────────────────
 #
 # max_open_revert_prs: maximum simultaneously open DRAFT revert PRs that

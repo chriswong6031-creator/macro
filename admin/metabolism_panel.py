@@ -33,8 +33,25 @@ _MET_DIR = ROOT / "data" / "metabolism"
 # V10 Throttle constants (mirrors engine.metabolism.throttle)
 # ---------------------------------------------------------------------------
 _INTENSITY_ALLOWED = {"low", "normal", "high", "max"}
-_PACE_ALLOWED = {"single", "2x", "4x"}
+# New vocab (low/medium/high/max = loops per window); legacy single/2x/4x still accepted.
+_PACE_ALLOWED_NEW = {"low", "medium", "high", "max"}
+_PACE_ALLOWED_LEGACY = {"single", "2x", "4x"}
+_PACE_ALLOWED = _PACE_ALLOWED_NEW | _PACE_ALLOWED_LEGACY
+_RUNUNTIL_ALLOWED = {"off", "5h_max", "weekly_max"}
 _KEYS_ENABLED_RE = re.compile(r"^[0-9a-z,]{0,64}$")
+
+# Map legacy pace values to the new ladder label for display.
+_PACE_LEGACY_MAP: dict[str, str] = {
+    "single": "low",
+    "2x": "medium",
+    "4x": "high",
+}
+
+# Budget status snapshot (written by workflows; fail-soft when absent).
+_BUDGET_STATUS_PATH = _MET_DIR / "key_budget_status.json"
+
+# Minimum real-run duration to count for median (pace-gate no-ops are shorter).
+_DURATION_NOOP_FLOOR_S = 300
 
 # Workflow filename map for run mode dispatch
 _RUN_MODE_WORKFLOWS = {
@@ -79,6 +96,8 @@ def _recent_metabolism_runs(cap: int = 15) -> list[dict]:
                     "status": r.get("status"),
                     "conclusion": r.get("conclusion"),
                     "created_at": r.get("created_at"),
+                    "updated_at": r.get("updated_at"),
+                    "run_started_at": r.get("run_started_at"),
                     "html_url": r.get("html_url"),
                 })
             if len(filtered) >= cap:
@@ -188,12 +207,16 @@ def throttle(root: Path | None = None) -> dict:  # noqa: ARG001
     effective_intensity = "normal"
     effective_pace = "single"
     extra_cycles = 0
+    loops_per_window = 1
+    _loops_map = {"low": 1, "medium": 2, "high": 3, "max": 4,
+                  "single": 1, "2x": 2, "4x": 3}
     try:
         from engine.metabolism.throttle import (  # noqa: PLC0415
             intensity,
-            intensity_multiplier,
+            intensity_multiplier,  # noqa: F401
             pace,
             pace_extra_cycles,
+            pace_loops_per_window,
         )
         import os as _os  # noqa: PLC0415
         # Temporarily inject raw values so the helpers read them.
@@ -211,6 +234,7 @@ def throttle(root: Path | None = None) -> dict:  # noqa: ARG001
             effective_intensity = intensity()
             effective_pace = pace()
             extra_cycles = pace_extra_cycles(effective_pace)
+            loops_per_window = pace_loops_per_window()
         finally:
             # Restore original env
             if _saved_i is not None:
@@ -227,11 +251,13 @@ def throttle(root: Path | None = None) -> dict:  # noqa: ARG001
         effective_intensity = intensity_raw if intensity_raw in _INTENSITY_ALLOWED else "normal"
         effective_pace = pace_raw if pace_raw in _PACE_ALLOWED else "single"
         extra_cycles = {"single": 0, "2x": 1, "4x": 3}.get(effective_pace, 0)
+        loops_per_window = _loops_map.get(effective_pace, 1)
     except Exception as exc:  # noqa: BLE001
         engine_note = f"throttle engine error: {exc}"
         effective_intensity = intensity_raw if intensity_raw in _INTENSITY_ALLOWED else "normal"
         effective_pace = pace_raw if pace_raw in _PACE_ALLOWED else "single"
         extra_cycles = {"single": 0, "2x": 1, "4x": 3}.get(effective_pace, 0)
+        loops_per_window = _loops_map.get(effective_pace, 1)
 
     # Resolve effective_ids for METAB_KEYS_ENABLED
     keys_enabled_note: str | None = None
@@ -257,6 +283,9 @@ def throttle(root: Path | None = None) -> dict:  # noqa: ARG001
     except Exception as exc:  # noqa: BLE001
         keys_enabled_note = f"key_pool error: {exc}"
 
+    # Map legacy pace raw value to new ladder label for display.
+    effective_pace_ladder = _PACE_LEGACY_MAP.get(effective_pace, effective_pace)
+
     result_dict: dict = {
         "intensity": {
             "value": intensity_raw,
@@ -266,7 +295,10 @@ def throttle(root: Path | None = None) -> dict:  # noqa: ARG001
         "pace": {
             "value": pace_raw,
             "effective": effective_pace,
-            "allowed": ["single", "2x", "4x"],
+            "effective_ladder": effective_pace_ladder,
+            "loops_per_window": loops_per_window,
+            "allowed": ["low", "medium", "high", "max"],
+            "allowed_legacy": ["single", "2x", "4x"],
             "extra_cycles": extra_cycles,
         },
         "keys_enabled": {
@@ -322,7 +354,11 @@ def validate_throttle_body(body: dict) -> tuple[bool, dict, dict]:
     if "pace" in body:
         v = body["pace"]
         if v not in _PACE_ALLOWED:
-            errors["pace"] = f"pace must be one of {sorted(_PACE_ALLOWED)}, got {v!r}"
+            allowed_display = sorted(_PACE_ALLOWED_NEW) + sorted(_PACE_ALLOWED_LEGACY)
+            errors["pace"] = (
+                f"pace must be one of {allowed_display} (new: low/medium/high/max, "
+                f"legacy: single/2x/4x), got {v!r}"
+            )
         else:
             to_set["METAB_PACE"] = v
 
@@ -382,6 +418,120 @@ def validate_run_body(body: dict) -> tuple[bool, str | None, str | None, dict]:
     return (True, None, workflow, inputs)
 
 
+def validate_rununtil_body(body: dict) -> tuple[bool, str | None, str | None]:
+    """Validate a POST /api/metabolism/rununtil request body.
+
+    Returns (ok, error, mode) where:
+      ok    — True when valid
+      error — error message string or None
+      mode  — one of "off" | "5h_max" | "weekly_max" or None on error
+
+    Never raises.
+    """
+    try:
+        mode = body.get("mode")
+        if mode not in _RUNUNTIL_ALLOWED:
+            return (False, f"mode must be one of {sorted(_RUNUNTIL_ALLOWED)}, got {mode!r}", None)
+        return (True, None, mode)
+    except Exception as exc:  # noqa: BLE001
+        return (False, f"validate_rununtil_body error: {exc}", None)
+
+
+def _median_cycle_duration(runs: list[dict], cap: int = 10,
+                            floor_s: int = _DURATION_NOOP_FLOOR_S) -> dict:
+    """Compute median wall-clock duration of successful metabolism-cycle runs.
+
+    Considers only metabolism-cycle.yml runs with conclusion == "success" and
+    duration >= floor_s (excludes pace-gate no-ops and failed/cancelled runs).
+    Returns up to `cap` most recent qualifying runs.  Honest measure of how long
+    a successful loop takes — not skewed by fast-exit failures.
+
+    Returns dict:
+      {"median_s": float|None, "n": int, "label": str}
+
+    Never raises.
+    """
+    try:
+        qualifying: list[float] = []
+        for r in runs:
+            wf = (r.get("workflow") or "").lower()
+            if "metabolism-cycle" not in wf:
+                continue
+            if r.get("conclusion") != "success":
+                continue
+            created = r.get("created_at")
+            updated = r.get("updated_at")
+            if not created or not updated:
+                continue
+            try:
+                t0 = datetime.fromisoformat(created.replace("Z", "+00:00"))
+                t1 = datetime.fromisoformat(updated.replace("Z", "+00:00"))
+                duration = (t1 - t0).total_seconds()
+            except Exception:  # noqa: BLE001
+                continue
+            if duration < floor_s:
+                continue
+            qualifying.append(duration)
+            if len(qualifying) >= cap:
+                break
+
+        if not qualifying:
+            return {
+                "median_s": None,
+                "n": 0,
+                "label": "No completed live loops yet — worst case ≈ 2.5h",
+            }
+
+        n = len(qualifying)
+        sorted_q = sorted(qualifying)
+        mid = n // 2
+        if n % 2 == 0:
+            median_s = (sorted_q[mid - 1] + sorted_q[mid]) / 2.0
+        else:
+            median_s = float(sorted_q[mid])
+
+        mins = int(round(median_s / 60))
+        label = f"Recent loops: ~{mins}m median (of {n})"
+        return {"median_s": median_s, "n": n, "label": label}
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("_median_cycle_duration error: %s", exc)
+        return {
+            "median_s": None,
+            "n": 0,
+            "label": "No completed live loops yet — worst case ≈ 2.5h",
+        }
+
+
+def _budget_status(root: Path | None = None) -> dict | None:
+    """Read data/metabolism/key_budget_status.json fail-soft.
+
+    Returns the parsed dict or None when absent or unreadable.  Never raises.
+    """
+    try:
+        p = (root or ROOT) / "data" / "metabolism" / "key_budget_status.json"
+        if not p.exists():
+            return None
+        raw = json.loads(p.read_text(encoding="utf-8"))
+        return raw
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("_budget_status read error: %s", exc)
+        return None
+
+
+def _run_until_value(root: Path | None = None) -> str:  # noqa: ARG001
+    """Return the current METAB_RUN_UNTIL repo variable value.
+
+    Returns "off" when absent or unreadable.  Never raises.
+    """
+    try:
+        v = github_api.get_repo_variable("METAB_RUN_UNTIL")
+        if v in _RUNUNTIL_ALLOWED:
+            return v
+        return "off"
+    except Exception:  # noqa: BLE001
+        return "off"
+
+
 def panel(root: Path | None = None) -> dict:
     """Return the metabolism panel data dict.
 
@@ -394,7 +544,10 @@ def panel(root: Path | None = None) -> dict:
       organism        — organism_state.json scalar summary or None
       keys            — list of key health dicts, or a note string
       freezes_7d      — count of freeze_*.json files in last 7 days
-      throttle        — V10 throttle state dict (see throttle())
+      throttle        — V11 throttle state dict (see throttle())
+      loop_duration   — {"median_s", "n", "label"} from completed cycle runs
+      budget_status   — parsed key_budget_status.json or None
+      run_until       — current METAB_RUN_UNTIL value ("off"|"5h_max"|"weekly_max")
 
     Never raises.
     """
@@ -402,11 +555,15 @@ def panel(root: Path | None = None) -> dict:
         has_token = bool(github_api.token())
         variable_value = github_api.get_repo_variable(_VAR_NAME)
         armed, state = _armed_state(variable_value)
-        runs = _recent_metabolism_runs()
+        # Fetch enough runs to feed the duration calculator (needs completed cycle runs)
+        runs = _recent_metabolism_runs(cap=15)
         organism = _organism_summary()
         key_health = _key_health(root)
         freezes = _freezes_7d()
         throttle_data = throttle(root)
+        loop_dur = _median_cycle_duration(runs)
+        budget_st = _budget_status(root)
+        run_until_val = _run_until_value(root)
 
         return {
             "variable_value": variable_value,
@@ -418,6 +575,9 @@ def panel(root: Path | None = None) -> dict:
             "keys": key_health,
             "freezes_7d": freezes,
             "throttle": throttle_data,
+            "loop_duration": loop_dur,
+            "budget_status": budget_st,
+            "run_until": run_until_val,
         }
     except Exception as exc:  # noqa: BLE001
         return {
@@ -430,4 +590,8 @@ def panel(root: Path | None = None) -> dict:
             "keys": f"panel error: {exc}",
             "freezes_7d": 0,
             "throttle": {},
+            "loop_duration": {"median_s": None, "n": 0,
+                               "label": "No completed live loops yet — worst case ≈ 2.5h"},
+            "budget_status": None,
+            "run_until": "off",
         }

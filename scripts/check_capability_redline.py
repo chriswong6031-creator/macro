@@ -95,6 +95,10 @@ _SAFE_ENV_KEYS = frozenset({
     # "1,3,legacy"), never a token value — key_pool.enabled_key_ids() reads it
     # to filter the pool to operator-enabled keys.
     "METAB_KEYS_ENABLED",
+    # V11 auto-run mode (R-V11-1): an operator mode string (off|5h_max|weekly_max),
+    # never a secret — metabolism_dispatch reads it to select the run-until budget
+    # gate branch.
+    "METAB_RUN_UNTIL",
 })
 
 # ── Entropy pattern ───────────────────────────────────────────────────────────

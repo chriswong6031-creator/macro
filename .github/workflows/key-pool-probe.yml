@@ -25,7 +25,7 @@ on:
           - ubuntu-latest
 
 permissions:
-  contents: read
+  contents: write   # narrow-commit key_budget_status.json after probe
 
 jobs:
   probe:
@@ -37,6 +37,7 @@ jobs:
       # blew the old 10-minute timeout during checkout (run 29182955692).
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 1
           # cone-mode sparse checkout accepts DIRECTORIES only (config.yml
           # broke run 29183504267); the probe never reads config.yml — the
           # auth path (lib.config.secret) is env-var only.
@@ -44,6 +45,8 @@ jobs:
             engine
             lib
             scripts
+            config
+            data/metabolism
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -60,3 +63,33 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: python -m scripts.key_pool_probe
+      - name: write budget status snapshot
+        run: python -m engine.metabolism.budget_gate --mode manual --write-status 2>/dev/null || true
+      - name: narrow-commit key_budget_status.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/metabolism/key_budget_status.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "key_budget_status.json unchanged — nothing to commit"
+            exit 0
+          fi
+          git commit -m "probe: update key_budget_status.json [skip ci]"
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "pushed key_budget_status.json on attempt $i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "push attempt $i lost race; re-syncing"
+            sleep $((i * 5))
+          done
+          echo "could not push key_budget_status.json after 5 attempts (non-fatal)"
+          exit 0

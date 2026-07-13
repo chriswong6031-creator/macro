@@ -137,9 +137,12 @@ class TestThrottleShape:
         assert set(result["intensity"]["allowed"]) == {"low", "normal", "high", "max"}
 
     def test_allowed_pace_list(self):
+        # V11: new vocab ladder is low/medium/high/max; legacy list in allowed_legacy.
         mp = _mp()
         result = self._call(mp)
-        assert set(result["pace"]["allowed"]) == {"single", "2x", "4x"}
+        assert set(result["pace"]["allowed"]) == {"low", "medium", "high", "max"}
+        # Legacy values remain in allowed_legacy for backward compat display.
+        assert set(result["pace"]["allowed_legacy"]) == {"single", "2x", "4x"}
 
 
 class TestThrottleEngineAbsent:
