@@ -1,7 +1,9 @@
 name: metabolism-adjudicate
 # Metabolism Phase A (A5) — ADJUDICATE row-pair (the two-key, R-AUT-6).  INERT.
 #
-# Rules on a PROPOSE docket with THREE distinct-run_id passes and writes the
+# Rules on EVERY PROPOSE docket riding the propose branch — the base docket
+# (<cycle>.json, til) plus per-lobe dockets (<cycle>-<lobe>.json, R-V6-5
+# multi-lobe propose) — with THREE distinct-run_id passes each and writes the
 # governance ROW-PAIR to data/neuralweb/governance.jsonl:
 #   1. orchestrator  → grant/deny rows
 #   2. adversary     → veto/non-veto rows + data/metabolism/adversary_ledger.jsonl
@@ -124,29 +126,52 @@ jobs:
             git fetch origin "$_BRANCH" || { echo "branch $_BRANCH not on origin — skip"; continue; }
             git checkout "$_BRANCH" 2>/dev/null || git checkout -B "$_BRANCH" "origin/$_BRANCH" 2>/dev/null || { echo "checkout failed $_BRANCH — skip"; continue; }
 
-            _DOCKET="data/metabolism/dockets/$_CID.json"
-            if [ ! -f "$_DOCKET" ]; then
-              echo "docket $_DOCKET not found on this ref — skip."
+            # R-V6-5 multi-lobe PROPOSE puts ALL of a cycle's dockets on ONE branch:
+            # the base docket ($_CID.json, til) plus per-lobe dockets
+            # ($_CID-<lobe>.json).  Enumerate every one — the branch name carries
+            # only the base id, so ruling on $_CID.json alone silently strands the
+            # per-lobe dockets (first armed cycle 2026-07-13, run 29223044833:
+            # us/cn standout dockets never adjudicated).
+            _DOCKETS="$(python -m scripts.metabolism_adjudicate --list-dockets --cycle-id "$_CID")" \
+              || { echo "docket enumeration failed for $_CID — skip"; continue; }
+            if [ -z "$_DOCKETS" ]; then
+              echo "no dockets for $_CID on this ref — skip."
               continue
             fi
+            echo "dockets for $_CID: $(echo "$_DOCKETS" | tr '\n' ' ')"
 
-            # Three DISTINCT-run_id passes (R-AUT-6 row-pair + two-key resolution).
-            python -m scripts.metabolism_adjudicate --cycle-id "$_CID" --role orchestrator \
-              --docket-file "$_DOCKET" --run-id "${GITHUB_RUN_ID}-orchestrator" \
-              || { echo "orchestrator pass failed $_CID — skip"; continue; }
-            python -m scripts.metabolism_adjudicate --cycle-id "$_CID" --role adversary \
-              --docket-file "$_DOCKET" --run-id "${GITHUB_RUN_ID}-adversary" \
-              || { echo "adversary pass failed $_CID — skip"; continue; }
-            python -m scripts.metabolism_adjudicate --cycle-id "$_CID" --role resolve \
-              --docket-file "$_DOCKET" \
-              || { echo "resolve pass failed $_CID — skip"; continue; }
+            # Per-docket isolation: one bad docket never strands its siblings.
+            _docket_ok=0
+            while IFS= read -r _DOCKET; do
+              [ -n "$_DOCKET" ] && [ -f "$_DOCKET" ] || continue
+              _DCID="$(basename "$_DOCKET" .json)"
+              echo "--- docket cycle_id=$_DCID file=$_DOCKET ---"
+
+              # Three DISTINCT-run_id passes (R-AUT-6 row-pair + two-key resolution).
+              python -m scripts.metabolism_adjudicate --cycle-id "$_DCID" --role orchestrator \
+                --docket-file "$_DOCKET" --run-id "${GITHUB_RUN_ID}-orchestrator" \
+                || { echo "orchestrator pass failed $_DCID — skip docket"; continue; }
+              python -m scripts.metabolism_adjudicate --cycle-id "$_DCID" --role adversary \
+                --docket-file "$_DOCKET" --run-id "${GITHUB_RUN_ID}-adversary" \
+                || { echo "adversary pass failed $_DCID — skip docket"; continue; }
+              python -m scripts.metabolism_adjudicate --cycle-id "$_DCID" --role resolve \
+                --docket-file "$_DOCKET" \
+                || { echo "resolve pass failed $_DCID — skip docket"; continue; }
+              _docket_ok=$((_docket_ok + 1))
+            done <<< "$_DOCKETS"
+
+            if [ "$_docket_ok" -eq 0 ]; then
+              echo "no docket completed the row-pair for $_CID — skip commit."
+              continue
+            fi
+            echo "row-pair passes done for $_docket_ok docket(s) on $_CID"
 
             # FIX-4: `data/metabolism` glob covers key_ledger.jsonl (key pool durability).
             git add data/neuralweb/governance.jsonl data/metabolism 2>/dev/null || true
             if git diff --cached --quiet; then
               echo "no governance changes for $_CID (already adjudicated — resume no-op)."
             else
-              git commit -m "metabolism: ADJUDICATE row-pair $_CID [Phase A]" \
+              git commit -m "metabolism: ADJUDICATE row-pair $_CID ($_docket_ok docket(s)) [Phase A]" \
                          -m "Loop-Authored: til run=${GITHUB_RUN_ID:-local}"
               # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/$_BRANCH can
               # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then

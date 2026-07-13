@@ -1613,3 +1613,151 @@ class TestCHFStructureLearnerTokens:
         prop = _charter_proposal_dict(title="Structure learner for market microstructure")
         r = _genesis_screen(prop, cycle_id="c1", docket=_empty_docket(), root=tmp_path)
         assert r["allow"] is False
+
+
+# ===========================================================================
+# R-V6-5 — multi-lobe propose: ONE branch, MANY dockets (dead-wire fix)
+# ===========================================================================
+
+class TestMultiDocketBranch:
+    """First armed cycle (2026-07-13, cycle-2026-07-13-3198): --all-lobes wrote
+    the base docket (til) PLUS per-lobe dockets (<base>-site-us-standouts.json,
+    <base>-site-china-standouts.json) onto ONE propose branch, but ADJUDICATE
+    derived a single cycle id from the branch NAME — the per-lobe dockets were
+    silently never ruled on (run 29223044833: "1 cycle(s) processed", 3 dockets
+    present).  These tests pin the docket enumeration and the per-docket
+    row-pair flow the workflow now runs."""
+
+    _BASE = "cycle-2026-07-13-3198"
+    _LOBES = ("site-china-standouts", "site-us-standouts")
+
+    def _branch_shape(self, root):
+        """Recreate the docket set metabolism_propose --all-lobes leaves on the
+        propose branch: base (til) first, then one docket per loop-managed lobe,
+        each under cycle_id=<base>-<lobe> and carrying a registered proposal."""
+        from engine.metabolism.propose import build_docket, write_docket
+        paths = [_docket_on_disk(root, self._BASE, [_sample_proposal()])]
+        for lobe in self._LOBES:
+            prop = _sample_proposal(
+                title=f"Add trial-ledger coverage for the {lobe} auditor leg",
+                tier="T1", kind="engine")
+            d = build_docket(f"{self._BASE}-{lobe}", [prop], root=root,
+                             max_docket_size=10, lobe=lobe)
+            paths.append(write_docket(d, root=root))
+        return paths
+
+    def test_discovery_returns_every_docket_base_first(self):
+        from scripts.metabolism_adjudicate import discover_cycle_dockets
+        root = _tmp_root()
+        expected = self._branch_shape(root)
+        # Distractors riding the same checkout: an unrelated cycle, and a
+        # sibling cycle whose id is a strict PREFIX of the base id.
+        _docket_on_disk(root, "cycle-2026-07-12-aaaa", [_sample_proposal()])
+        _docket_on_disk(root, "cycle-2026-07-13-31", [_sample_proposal()])
+        got = discover_cycle_dockets(root, self._BASE)
+        assert got == expected
+        assert [p.name for p in got] == [
+            f"{self._BASE}.json",
+            f"{self._BASE}-site-china-standouts.json",
+            f"{self._BASE}-site-us-standouts.json",
+        ]
+
+    def test_discovery_prefix_sibling_isolated(self):
+        # cycle-…-31 must NOT sweep up cycle-…-3198's dockets (and vice versa).
+        from scripts.metabolism_adjudicate import discover_cycle_dockets
+        root = _tmp_root()
+        self._branch_shape(root)
+        p31 = _docket_on_disk(root, "cycle-2026-07-13-31", [_sample_proposal()])
+        assert discover_cycle_dockets(root, "cycle-2026-07-13-31") == [p31]
+
+    def test_discovery_per_lobe_survive_missing_base(self):
+        # A failed til propose must not strand the per-lobe dockets.
+        from scripts.metabolism_adjudicate import discover_cycle_dockets
+        root = _tmp_root()
+        paths = self._branch_shape(root)
+        paths[0].unlink()
+        assert discover_cycle_dockets(root, self._BASE) == paths[1:]
+
+    def test_cli_list_dockets_prints_workflow_paths(self, capsys):
+        from scripts.metabolism_adjudicate import main
+        root = _tmp_root()
+        self._branch_shape(root)
+        rc = main(["--list-dockets", "--cycle-id", self._BASE, "--root", str(root)])
+        assert rc == 0
+        lines = capsys.readouterr().out.strip().splitlines()
+        assert lines == [
+            f"data/metabolism/dockets/{self._BASE}.json",
+            f"data/metabolism/dockets/{self._BASE}-site-china-standouts.json",
+            f"data/metabolism/dockets/{self._BASE}-site-us-standouts.json",
+        ]
+
+    def test_cli_list_dockets_empty_cycle_clean_noop(self, capsys):
+        from scripts.metabolism_adjudicate import main
+        root = _tmp_root()
+        rc = main(["--list-dockets", "--cycle-id", "cycle-2099-01-01-dead",
+                   "--root", str(root)])
+        assert rc == 0
+        assert capsys.readouterr().out.strip() == ""
+
+    def test_row_pair_flow_rules_every_docket(self):
+        """The workflow-shaped loop: every discovered docket gets orchestrator +
+        adversary + resolve; the per-lobe T1 proposals — the ones the
+        branch-name path lost — end AUTHORIZED, with governance rows under
+        their own cycle ids."""
+        from engine.metabolism.adjudicate import adjudicate_role, resolve_two_key
+        from engine.neuralweb.governance import load_events
+        from scripts.metabolism_adjudicate import discover_cycle_dockets
+        root = _tmp_root()
+        self._branch_shape(root)
+        resolutions = {}
+        for i, p in enumerate(discover_cycle_dockets(root, self._BASE)):
+            dcid = p.stem
+            pids = [pr["proposal_id"] for pr in json.loads(p.read_text())["proposals"]]
+            grant = {pid: {"grant": True, "rationale": "ok"} for pid in pids}
+            nonveto = {pid: {"veto": False, "findings": [],
+                             "tripwire_predictions": [], "rationale": "no defect"}
+                       for pid in pids}
+            adjudicate_role("orchestrator", dcid, p, run_id=f"run-{i}-orch",
+                            root=root, injected=grant)
+            adjudicate_role("adversary", dcid, p, run_id=f"run-{i}-adv",
+                            root=root, injected=nonveto)
+            resolutions[dcid] = resolve_two_key(dcid, p, root=root)
+        assert set(resolutions) == {
+            self._BASE,
+            f"{self._BASE}-site-china-standouts",
+            f"{self._BASE}-site-us-standouts",
+        }
+        for dcid, res in resolutions.items():
+            assert res, f"no resolution for {dcid}"
+            assert all(v["authorized"] for v in res.values()), dcid
+        # Row-pairs landed under the per-lobe cycle ids, not just the base.
+        evs = load_events(root=root, event_type="metabolism_adjudication")
+        targets = {e["target"] for e in evs}
+        for lobe in self._LOBES:
+            assert any(f":{self._BASE}-{lobe}:" in t for t in targets), lobe
+
+    def test_gate2_breaker_uses_docket_lobe(self, monkeypatch):
+        """A tripped per-lobe circuit breaker no-ops ONLY that lobe's docket;
+        the sibling base (til) docket still adjudicates.  Uses the resolve role
+        (deterministic — no LLM, no preflight)."""
+        monkeypatch.setenv("AUTONOMY_PAUSED", "false")
+        from scripts.metabolism_adjudicate import main
+        from scripts.metabolism_journal import load_journal
+        root = _tmp_root()
+        paths = self._branch_shape(root)
+        (root / "data" / "metabolism" / "budget_ledger.json").write_text(json.dumps(
+            {"lobes": {"site-us-standouts": {"paused": True}}}))
+        us_cid = f"{self._BASE}-site-us-standouts"
+        us_path = next(p for p in paths if p.stem == us_cid)
+        rc = main(["--cycle-id", us_cid, "--role", "resolve",
+                   "--docket-file", str(us_path), "--root", str(root)])
+        assert rc == 0
+        stage = load_journal(us_cid, root=root)["stages"]["adjudicate_resolve"]
+        assert stage["status"] == "noop_paused"
+        assert "site-us-standouts" in (stage.get("note") or "")
+        # The base docket is NOT blocked by the sibling lobe's breaker.
+        rc = main(["--cycle-id", self._BASE, "--role", "resolve",
+                   "--docket-file", str(paths[0]), "--root", str(root)])
+        assert rc == 0
+        stage = load_journal(self._BASE, root=root)["stages"]["adjudicate_resolve"]
+        assert stage["status"] == "done"
