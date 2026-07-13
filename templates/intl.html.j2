@@ -1098,6 +1098,11 @@
   {%- set VULN = RD.get('vulnerability') %}
   {%- if VULN and VULN.get('countries') %}
     {%- set flagged = VULN.get('countries') | selectattr('fragile', 'equalto', true) | list %}
+    {%- if not flagged %}
+    <p class="muted" style="font-size:13px;line-height:1.6;padding:12px 0;">
+      {{ t('No economy currently shows three or more concurrent structural warnings — the fragility map is clear.', '目前没有经济体同时亮起三项及以上结构性预警——脆弱性地图暂无标记。') }}
+    </p>
+    {%- endif %}
     {%- for c in flagged[:3] %}
     <div class="ird-frag-row">
       <span style="font-size:20px;flex-shrink:0;">{{ c.get('flag', '🌐') }}</span>
@@ -1115,7 +1120,7 @@
     {%- if flagged | length > 3 %}
     <details style="margin-top:8px;">
       <summary class="more-btn" style="list-style:none;cursor:pointer;">
-        {{ t('View all ' + (VULN.get('countries')|length|string) + ' countries →', '查看全部' + (VULN.get('countries')|length|string) + '个国家 →') }}
+        {{ t('View all ' + (flagged|length|string) + ' flagged countries →', '查看全部' + (flagged|length|string) + '个预警国家 →') }}
       </summary>
       <div style="margin-top:8px;">
         {%- for c in flagged[3:] %}
