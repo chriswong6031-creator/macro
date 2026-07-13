@@ -56,6 +56,12 @@ def _site_dir() -> Path:
     return d
 
 
+def _funddata_dir() -> Path:
+    d = config.ROOT / "site" / "funddata"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 # --------------------------------------------------------------------------- #
 # Board assembly helpers (pure given resolved data)                             #
 # --------------------------------------------------------------------------- #
@@ -523,18 +529,145 @@ def main() -> int:
         log.warning("managers build failed: %s", e)
         managers = {}
 
+    # ---- Phase 4.2: insider intelligence (two lanes, two clocks — SM2-R3) ----
+    t42 = time.monotonic()
+    insider_intel: dict = {}
+    try:
+        from engine.insider_intel import build_insider_intel
+        # Roster = tickers currently held (non-exit holder) by any tracked fund.
+        # Lets the market-wide quiver lane carry an honest "held by tracked funds"
+        # flag (roster_hit) without blending lanes numerically. Empty → None so
+        # "unknown" is never displayed as "not held".
+        roster: set[str] = set()
+        try:
+            roster = {
+                tk for tk, rec in ((sm or {}).get("by_ticker", {}) or {}).items()
+                if any(h.get("action") != "exit" for h in rec.get("holders", []))
+            }
+        except Exception as e:  # noqa: BLE001
+            log.warning("insider roster derivation failed — roster_hit degrades: %s", e)
+        try:
+            insider_intel = build_insider_intel(sm_cfg, roster=roster or None) or {}
+        except TypeError:
+            # Older engine signature without the roster kwarg — degrade politely.
+            insider_intel = build_insider_intel(sm_cfg) or {}
+        if not insider_intel:
+            log.info("insider_intel: no data — desk section degrades to hidden")
+    except Exception as e:  # noqa: BLE001
+        log.warning("insider_intel build failed — continuing: %s", e)
+        insider_intel = {}
+    phase_times["insider_intel"] = round(time.monotonic() - t42, 2)
+
+    # ---- Phase 4.3: per-fund intelligence (full books / conviction / theme reads) ----
+    t43 = time.monotonic()
+    fund_intel: dict = {}
+    fund_intel_index: dict = {}
+    try:
+        from engine.fund_intelligence import build_fund_intel
+        fund_intel = build_fund_intel(sm_cfg, tracker) or {}
+    except Exception as e:  # noqa: BLE001
+        log.warning("fund_intel build failed — continuing: %s", e)
+        fund_intel = {}
+    if fund_intel.get("funds"):
+        _lb_grades = {r.get("slug"): r.get("grade")
+                      for r in (tracker or {}).get("leaderboard", [])}
+        for slug, fi in (fund_intel.get("funds") or {}).items():
+            # Per-fund JSON page payload — the 50 full books never ride in the
+            # desk JSON (small pages; the dossier/template hydrates from here).
+            try:
+                (_funddata_dir() / f"{slug}.json").write_text(_jdump(fi))
+            except Exception as e:  # noqa: BLE001
+                log.warning("write funddata/%s.json failed: %s", slug, e)
+            # Compact index row for the desk payload (directory grid + links).
+            try:
+                meta = fi.get("book_meta") or {}
+                core = (fi.get("theme_read") or {}).get("core") or {}
+                series = fi.get("sector_series") or []
+                weights = ((series[-1] or {}).get("weights") or {}) if series else {}
+                top_sector = max(weights, key=weights.get) if weights else None
+                fund_intel_index[slug] = {
+                    "core_lean_label": core.get("label"),
+                    "core_lean_label_zh": core.get("label_zh"),
+                    "book_value_usd": meta.get("book_value_usd"),
+                    "n_positions": meta.get("n_positions"),
+                    "top_sector": top_sector,
+                    "grade": _lb_grades.get(slug),
+                }
+            except Exception as e:  # noqa: BLE001
+                log.warning("fund_intel_index row failed for %s: %s", slug, e)
+    phase_times["fund_intel"] = round(time.monotonic() - t43, 2)
+
+    # ---- Phase 4.4: consolidated cross-fund flow + descriptive models ----
+    t44 = time.monotonic()
+    flow: dict = {}
+    try:
+        from engine.ownership_flow import (group_flow, models, rotation_history,
+                                           stock_flow)
+        flow_cfg = sm_cfg.get("flow", {}) or {}
+        top_grades = flow_cfg.get("top_grades", ["A", "B"]) or ["A", "B"]
+        top_slugs = [r.get("slug") for r in (tracker or {}).get("leaderboard", [])
+                     if r.get("grade") in set(top_grades)]
+
+        cls = None
+        try:
+            from engine.fund_intelligence import load_classifications
+            cls = load_classifications()
+        except Exception as e:  # noqa: BLE001
+            log.warning("load_classifications failed — models degrade: %s", e)
+
+        def _flow_part(name: str, default, fn, *args, **kwargs):
+            """One flow sub-board; degrades honestly on failure (NEVER-BREAK)."""
+            try:
+                out = fn(*args, **kwargs)
+                return out if out is not None else default
+            except Exception as e_part:  # noqa: BLE001
+                log.warning("flow.%s failed — continuing: %s", name, e_part)
+                return default
+
+        stock_flow_d = _flow_part("stock", {}, stock_flow, sm or {}, tracker or {})
+        flow = {
+            "stock": stock_flow_d,
+            "sector": _flow_part("sector", {}, group_flow, fund_intel,
+                                 tracker or {}, level="sector"),
+            "theme": _flow_part("theme", {}, group_flow, fund_intel,
+                                tracker or {}, level="theme"),
+            "sector_top": _flow_part("sector_top", {}, group_flow, fund_intel,
+                                     tracker or {}, level="sector",
+                                     top_grades=top_grades),
+            "theme_top": _flow_part("theme_top", {}, group_flow, fund_intel,
+                                    tracker or {}, level="theme",
+                                    top_grades=top_grades),
+            "history": _flow_part("history", [], rotation_history, fund_intel),
+            "history_top": _flow_part("history_top", [], rotation_history,
+                                      fund_intel, top_slugs=top_slugs),
+            "models": _flow_part("models", {}, models, sm or {}, tracker or {},
+                                 stock_flow_d, crowding, fund_intel, cls),
+        }
+    except Exception as e:  # noqa: BLE001
+        log.warning("flow build failed — continuing: %s", e)
+        flow = {}
+    phase_times["flow"] = round(time.monotonic() - t44, 2)
+
     # ---- Phase 5: ledger advance (nightly-only) ----
     t5 = time.monotonic()
     ledger_added: dict = {}
     try:
         from engine.ownership_ledger import advance_ledgers, ledger_summary
-        ledger_added = advance_ledgers(funds, sm)
+        # L5 cohort: the conviction-buys composite earns a forward record
+        # (additive kwarg — advance_ledgers(funds, sm) still works without it).
+        ledger_added = advance_ledgers(funds, sm, models=flow.get("models"))
         ledger = ledger_summary()
     except Exception as e:  # noqa: BLE001
         log.warning("ledger advance/summary failed: %s", e)
         ledger = {}
     phase_times["ledger"] = round(time.monotonic() - t5, 2)
-    phase_times["boards"] = round(time.monotonic() - t4 - phase_times["ledger"], 2)
+    # "boards" keeps meaning the Phase-4 board assembly only — the new v3
+    # phases are timed separately and subtracted so the benchmark stays honest.
+    phase_times["boards"] = round(
+        time.monotonic() - t4 - phase_times["ledger"]
+        - phase_times.get("insider_intel", 0)
+        - phase_times.get("fund_intel", 0)
+        - phase_times.get("flow", 0), 2)
 
     built = datetime.now(timezone.utc).isoformat()
 
@@ -566,6 +699,11 @@ def main() -> int:
         ax_rows = [r for r in wire if _axis_norm(r) == ax_key]
         wire_display.extend(ax_rows[:cap])
     wire_display.sort(key=lambda r: r.get("date", ""), reverse=True)
+    # F4: fold marking — these rows are the SAME dict objects as in `wire`, so
+    # the flag lands in both lists. The template renders the FULL wire and folds
+    # to data-fold="1" rows by default; "See more" reveals the rest client-side.
+    for _r in wire_display:
+        _r["_fold"] = 1
 
     desk: dict = {
         "built": built,
@@ -577,6 +715,9 @@ def main() -> int:
         "crowding": crowding,
         "activists": activists,
         "managers": managers,
+        "insider_intel": insider_intel,
+        "flow": flow,
+        "fund_intel_index": fund_intel_index,
         "ledger": ledger,
     }
 
@@ -605,23 +746,95 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("smart-money render failed — JSONs written, page skipped: %s", e)
 
+    # ---- Phase 6.5: fund dossier pages AT SITE ROOT (F6: report_base.html.j2
+    # hardcodes root-relative theme.css/theme.js, so site/fund_<slug>.html needs
+    # no nav_prefix). Per-fund try/except — one bad book never kills the rest. ----
+    t65 = time.monotonic()
+    n_dossiers = 0
+    if ((sm_cfg.get("dossier", {}) or {}).get("enabled", True)) and fund_intel.get("funds"):
+        _lb_rows = {r.get("slug"): r for r in (tracker or {}).get("leaderboard", [])}
+        _by_fund = (tracker or {}).get("by_fund", {}) or {}
+        dossier_tpl = None
+        try:
+            dossier_tpl = env.get_template("fund_dossier.html.j2")
+        except Exception as e:  # noqa: BLE001
+            log.warning("fund_dossier template unavailable — dossiers skipped: %s", e)
+        if dossier_tpl is not None:
+            for slug, fi in (fund_intel.get("funds") or {}).items():
+                try:
+                    html_fund = dossier_tpl.render(
+                        slug=slug,
+                        fi=fi,
+                        lb_row=_lb_rows.get(slug) or {},
+                        bf=_by_fund.get(slug) or {},
+                        desk=desk,
+                        generated_utc=generated_utc,
+                        active_section="us",
+                        active_page="smart_money",
+                    )
+                    write_page(config.ROOT / "site" / f"fund_{slug}.html", html_fund)
+                    n_dossiers += 1
+                except Exception as e:  # noqa: BLE001
+                    log.warning("fund dossier render failed for %s: %s", slug, e)
+        # Fund directory page — own try/except, degrades to no page.
+        try:
+            index_rows = []
+            for slug, fi in (fund_intel.get("funds") or {}).items():
+                lb = _lb_rows.get(slug) or {}
+                sc = (_by_fund.get(slug) or {}).get("scorecard") or {}
+                meta = fi.get("book_meta") or {}
+                core = (fi.get("theme_read") or {}).get("core") or {}
+                index_rows.append({
+                    "slug": slug,
+                    "name": (funds.get(slug) or {}).get("name", slug),
+                    "style": (funds.get(slug) or {}).get("style"),
+                    "status": (funds.get(slug) or {}).get("status"),
+                    "grade": lb.get("grade"),
+                    "reliability": lb.get("reliability") or sc.get("reliability"),
+                    "core_lean_label": core.get("label"),
+                    "core_lean_label_zh": core.get("label_zh"),
+                    "book_value_usd": meta.get("book_value_usd"),
+                    "n_positions": meta.get("n_positions"),
+                    "href": f"fund_{slug}.html",
+                })
+            index_rows.sort(key=lambda r: -(r.get("book_value_usd") or 0))
+            html_idx = env.get_template("fund_index.html.j2").render(
+                rows=index_rows,
+                desk=desk,
+                generated_utc=generated_utc,
+                active_section="us",
+                active_page="smart_money",
+            )
+            write_page(config.ROOT / "site" / "fund_index.html", html_idx)
+            log.info("wrote fund_index.html (%d funds) + %d dossier pages",
+                     len(index_rows), n_dossiers)
+        except Exception as e:  # noqa: BLE001
+            log.warning("fund_index render failed — directory page skipped: %s", e)
+    phase_times["dossiers"] = round(time.monotonic() - t65, 2)
+
     # Benchmark log (SM2-R12)
     log.info(
         "build_smart_money BENCHMARK: total=%.1fs | tracker=%.1fs smart_money=%.1fs "
-        "wire=%.1fs boards=%.1fs ledger=%.1fs | "
+        "wire=%.1fs boards=%.1fs insider_intel=%.1fs fund_intel=%.1fs flow=%.1fs "
+        "ledger=%.1fs dossiers=%.1fs | "
         "desk=%dKB wire_rows=%d initiations=%d crowding=%d activists=%d "
-        "ledger_added=%s",
+        "dossier_pages=%d ledger_added=%s",
         phase_times["total"],
         phase_times.get("tracker", 0),
         phase_times.get("smart_money", 0),
         phase_times.get("wire", 0),
         phase_times.get("boards", 0),
+        phase_times.get("insider_intel", 0),
+        phase_times.get("fund_intel", 0),
+        phase_times.get("flow", 0),
         phase_times.get("ledger", 0),
+        phase_times.get("dossiers", 0),
         desk_kb,
         len(wire),
         len(initiations),
         len(crowding),
         len(activists),
+        n_dossiers,
         ledger_added,
     )
 

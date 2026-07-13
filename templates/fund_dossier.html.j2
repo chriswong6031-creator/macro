@@ -1,0 +1,749 @@
+{% extends "report_base.html.j2" %}
+{#
+  Fund dossier — per-fund deep page for the Ownership Intelligence Desk (smart-money v3).
+  Rendered once per tracked fund at SITE ROOT (site/fund_<slug>.html — F6: report_base
+  hardcodes root-relative theme.css/theme.js, so no nav_prefix is needed or used).
+
+  Context contract (all optional — every access is guarded so an empty fund renders):
+    fi            fund_intel entry: {book: [...], sector_series: [...], sector_rotation: {...},
+                  theme_read: {...}, book_meta: {...}}
+    lb_row        tracker leaderboard row incl. quarter_history / reliability / trade_log
+    bf            trk.by_fund entry: {slug, name, period_end, filing_date, book_value_usd,
+                  rotation: {into, out, top_holdings}, ...}
+    generated_utc build timestamp string
+    active_section / active_page ride through to the site nav include.
+
+  House rules honoured here: every UI string bilingual via the inherited t(en, zh) macro
+  (defined at the top of report_base.html.j2 — extends-inherited, no import needed);
+  numbers tabular monospace; SM2-R3: this page is 13F-lane only, one clock (filing_date),
+  no cross-axis blends; descriptive framing everywhere — never a forecast.
+#}
+
+{% block title %}{{ (bf or {}).get('name') or (lb_row or {}).get('name') or t('Fund','基金') }} — {{ t('Fund Dossier — 13F Ownership Context','基金档案 — 13F 持仓背景') }}{% endblock %}
+
+{% block base_css %}
+/* ---- core tokens (mirrors the desk page so the visual language matches) ---- */
+.fd { --numf:"SF Mono",ui-monospace,"DejaVu Sans Mono",monospace; max-width:1220px; margin:0 auto; }
+.fd .num { font-family:var(--numf); font-variant-numeric:tabular-nums; }
+.grade { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px;
+         padding:0 5px; border-radius:6px; font:700 12px/1 var(--numf); border:1px solid var(--line); }
+.grade.A { color:#1f9a55; border-color:#1f9a5566; background:#1f9a5514; }
+.grade.B { color:#3b82f6; border-color:#3b82f666; background:#3b82f614; }
+.grade.C { color:#c98a1a; border-color:#c98a1a66; background:#c98a1a14; }
+.grade.D { color:#d23f3f; border-color:#d23f3f66; background:#d23f3f14; }
+.grade.na { color:var(--muted); }
+html[data-theme="dark"] .grade.A { color:#3fc07e; }
+html[data-theme="dark"] .grade.C { color:#e0a93a; }
+html[data-theme="dark"] .grade.D { color:#ef6a6a; }
+
+/* ---- pills / chips ---- */
+.tier { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px;
+        letter-spacing:.05em; text-transform:uppercase; }
+.tier.elevated { color:var(--down); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
+.tier.moderate { color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
+.tier.low { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+.tier.conv-high { color:var(--up); background:rgba(69,184,115,.1); border:1px solid rgba(69,184,115,.35); }
+.tier.conv-moderate { color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
+.tier.conv-low { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+.act-pill { font:600 9px/1 var(--numf); padding:3px 6px; border-radius:5px; border:1px solid var(--line);
+            color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.act-pill.new,.act-pill.add { color:var(--up); border-color:rgba(69,184,115,.4); }
+.act-pill.trim,.act-pill.exit { color:var(--down); border-color:rgba(224,100,100,.4); }
+.chip-fresh { display:inline-flex; align-items:center; gap:5px; padding:2px 9px;
+              border-radius:100px; font:600 10.5px/1.6 var(--numf); letter-spacing:.03em;
+              white-space:nowrap; border:1px solid var(--line); color:var(--muted); background:var(--panel2); }
+.chip-fresh .fdot { width:7px; height:7px; border-radius:50%; display:inline-block; }
+.t-amber { color:#e0a030; } .t-amber .fdot { background:#e0a030; }
+.t-red { color:var(--down); } .t-red .fdot { background:var(--down); }
+.stylepill { font:600 10px/1 var(--numf); letter-spacing:.08em; text-transform:uppercase;
+             padding:4px 9px; border-radius:99px; border:1px solid var(--line);
+             color:var(--muted); background:var(--panel2); }
+.rel-chip { font:600 10px/1 var(--numf); letter-spacing:.05em; text-transform:uppercase;
+            padding:4px 9px; border-radius:99px; border:1px solid var(--line); }
+.rel-chip.improving { color:var(--up); border-color:rgba(69,184,115,.4); background:rgba(69,184,115,.08); }
+.rel-chip.stable { color:var(--muted); background:var(--panel2); }
+.rel-chip.deteriorating { color:var(--down); border-color:rgba(224,100,100,.4); background:rgba(224,100,100,.08); }
+
+/* ---- hero header ---- */
+.fd-crumb { font-size:12px; color:var(--muted); margin:4px 0 10px; }
+.fd-crumb a { color:var(--muted); }
+.fd-crumb a:hover { color:var(--link); }
+.fd-hero { background:var(--panel); border:1px solid var(--line); border-radius:16px;
+           padding:20px 22px; display:flex; align-items:flex-start; justify-content:space-between;
+           gap:18px; flex-wrap:wrap; }
+.fd-hero .eyebrow { font:600 11px/1 var(--numf); letter-spacing:.14em; text-transform:uppercase;
+                    color:var(--muted); margin-bottom:8px; }
+.fd-hero h1 { font-size:clamp(22px,3vw,30px); margin:.1em 0 .3em; letter-spacing:-.01em; }
+.fd-hero .pillrow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.fd-hero .metacol { display:flex; flex-direction:column; align-items:flex-end; gap:7px; }
+@media(max-width:760px){ .fd-hero .metacol { align-items:flex-start; } }
+
+/* ---- KPI strip (.cg-stats idiom from the congress desk) ---- */
+.fd-stats { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin:12px 0 4px; }
+@media(max-width:960px){ .fd-stats { grid-template-columns:repeat(3,1fr); } }
+@media(max-width:560px){ .fd-stats { grid-template-columns:repeat(2,1fr); } }
+.fd-stat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+.fd-stat .k { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+.fd-stat .v { font-size:22px; font-weight:650; font-variant-numeric:tabular-nums; margin-top:6px;
+              font-family:var(--numf); }
+.fd-stat .s { font-size:10.5px; color:var(--muted); margin-top:3px; }
+
+/* ---- core lean hero card ---- */
+.lean-hero { background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--info);
+             border-radius:14px; padding:18px 20px; margin-top:12px; }
+.lean-hero .eyebrow { font:600 10.5px/1 var(--numf); letter-spacing:.14em; text-transform:uppercase;
+                      color:var(--info); margin-bottom:8px; }
+.lean-narr { font-size:15.5px; line-height:1.55; max-width:900px; }
+.lean-chips { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
+@media(max-width:960px){ .lean-chips { grid-template-columns:repeat(2,1fr); } }
+@media(max-width:600px){ .lean-chips { grid-template-columns:1fr; } }
+.lean-chip { border:1px solid var(--line); border-radius:11px; background:var(--panel2); padding:10px 12px; }
+.lean-chip .lc-h { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.lean-chip .lc-name { font-weight:700; font-size:13px; }
+.lean-chip .lc-pp { font:700 13px/1 var(--numf); color:var(--up); white-space:nowrap; }
+.lean-chip .lc-sub { font-size:10.5px; color:var(--muted); margin-top:3px; }
+.lean-chip .lc-tks { display:flex; flex-wrap:wrap; gap:7px; margin-top:8px; align-items:center; }
+.lean-chip .lc-tk { font:700 11px/1 var(--numf); display:inline-flex; align-items:center; gap:4px; }
+.lean-note { font-size:11px; color:var(--muted); margin-top:12px; border-top:1px solid var(--line); padding-top:9px; }
+
+/* ---- ticker logos (nvstly CDN, eager, onerror→hide) ---- */
+.tklogo { width:16px; height:16px; border-radius:4px; vertical-align:-3px; }
+
+/* ---- section headers / cards (desk idiom) ---- */
+.sm-sec { margin:34px 0 10px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.sm-sec::after { content:''; flex:1; height:1px; background:var(--line); align-self:center; }
+.sm-sec h2 { font-size:17px; margin:0; }
+.sm-sec .h-note { font-size:12px; color:var(--muted); font-weight:400; }
+.sm-card { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:14px 16px; margin-top:10px; overflow-x:auto; }
+.banner { font-size:11.5px; color:var(--muted); background:var(--panel2); border:1px solid var(--line);
+          border-left:3px solid var(--info); border-radius:9px; padding:8px 12px; margin:8px 0 4px;
+          line-height:1.55; }
+.disc { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info);
+        border-radius:10px; padding:11px 14px; margin:14px 0 4px; font-size:12px;
+        line-height:1.55; color:var(--muted); }
+.cnt { font-size:11.5px; color:var(--muted); margin:6px 0 2px; }
+
+/* ---- tables ---- */
+table.sm-t { width:100%; border-collapse:collapse; font-size:12.3px; margin-top:6px; }
+table.sm-t th { text-align:right; font:600 9.5px/1.25 var(--numf); letter-spacing:.05em;
+                text-transform:uppercase; color:var(--muted); padding:6px 8px 7px;
+                border-bottom:1px solid var(--line); white-space:nowrap; }
+table.sm-t th.l, table.sm-t td.l { text-align:left; }
+table.sm-t td { padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+table.sm-t tbody tr:hover { background:var(--panel2); }
+table.sm-t td .tk { font:700 12.3px/1 var(--numf); }
+table.sm-t .rk { color:var(--muted); font-family:var(--numf); }
+table.sm-t th.sortable { cursor:pointer; user-select:none; }
+table.sm-t th.sortable:hover { color:var(--text); }
+table.sm-t th.sorted { color:var(--text); }
+.sort-ind { opacity:.7; font-weight:400; }
+.sub { font-size:10.5px; color:var(--muted); }
+.sub2 { opacity:.72; font-weight:500; }
+.spark { font-family:var(--numf); font-size:11px; letter-spacing:1px; color:var(--info); }
+
+/* ---- sector exposure bars ---- */
+.fd-2col { display:grid; grid-template-columns:1.25fr 1fr; gap:16px; }
+@media(max-width:860px){ .fd-2col { grid-template-columns:1fr; } }
+.sxrow { display:grid; grid-template-columns:150px 1fr 58px 74px; gap:9px; align-items:center;
+         padding:4px 0; font-size:12px; }
+@media(max-width:560px){ .sxrow { grid-template-columns:110px 1fr 50px 64px; } }
+.sxrow .sx-name { color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sbar { position:relative; height:8px; background:var(--panel2); border:1px solid var(--line);
+        border-radius:99px; overflow:hidden; }
+.sbar i { position:absolute; left:0; top:0; height:100%; border-radius:99px; background:var(--info); opacity:.75; }
+.rotchips { display:flex; flex-wrap:wrap; gap:7px; margin-top:6px; }
+.rotchip { font:600 10.5px/1 var(--numf); padding:4px 9px; border-radius:99px; border:1px solid var(--line);
+           background:var(--panel2); display:inline-flex; gap:5px; align-items:center; }
+.rotchip.into { color:var(--up); border-color:rgba(69,184,115,.4); }
+.rotchip.outof { color:var(--down); border-color:rgba(224,100,100,.4); }
+.qh-mini { font-size:11.5px; }
+.qh-mini td { padding:4px 6px; border-top:1px solid var(--line); white-space:nowrap; }
+.qh-mini td.l { text-align:left; }
+
+/* ---- rotation detail ---- */
+.rot-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:680px){ .rot-grid { grid-template-columns:1fr; } }
+.rot-h { font:600 9.5px/1 var(--numf); letter-spacing:.1em; text-transform:uppercase;
+         color:var(--muted); margin:4px 0 2px; }
+.rot-h.into { color:var(--up); } .rot-h.out { color:var(--down); }
+.mini { width:100%; border-collapse:collapse; font-size:12px; }
+.mini td { padding:4px 6px; border-top:1px solid var(--line); text-align:right; white-space:nowrap; }
+.mini td.l { text-align:left; }
+.mini .tk { font:700 12px/1 var(--numf); }
+{% endblock %}
+
+{% block content %}
+{#- ===== macro helpers (desk idiom — defined inside the block, t() inherited) ===== -#}
+{% macro exret(v, dp=0) -%}
+  {%- if v is none -%}<span class="mut">—</span>
+  {%- else -%}<span class="num {{ 'r-pos' if v >= 0 else 'r-neg' }}">{{ "%+.{}f".format(dp) | format(v * 100) }}%</span>
+  {%- endif -%}
+{%- endmacro %}
+{% macro pctf(v, dp=1) -%}{%- if v is none -%}—{%- else -%}{{ "%.{}f".format(dp) | format(v) }}%{%- endif -%}{%- endmacro %}
+{% macro hit(v) -%}{%- if v is none -%}—{%- else -%}{{ "%.0f" | format(v * 100) }}%{%- endif -%}{%- endmacro %}
+{% macro gradeb(g) -%}<span class="grade {{ g if g in ['A','B','C','D'] else 'na' }}">{{ g if g and g != 'n/a' else '—' }}</span>{%- endmacro %}
+{% macro usd(v) -%}
+  {%- if not v -%}—{%- elif v >= 1e9 -%}${{ "%.1f" | format(v / 1e9) }}B{%- elif v >= 1e6 -%}${{ "%.0f" | format(v / 1e6) }}M{%- else -%}${{ "%.0f" | format(v) }}{%- endif -%}
+{%- endmacro %}
+{% macro tklogo(tk) -%}
+  {%- if tk -%}<img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/{{ tk | upper }}.png" alt="" loading="eager" onerror="this.style.display='none'">{%- endif -%}
+{%- endmacro %}
+{% macro dv(v) -%}{{ v if v is not none else '' }}{%- endmacro %}
+{#- negative-capable text sparkbar: shift by min so sub-zero excess still renders -#}
+{% macro sparkneg(series) -%}
+{%- set chars = ['▁','▂','▃','▄','▅','▆','▇','█'] -%}
+{%- set vals = namespace(v=[]) -%}
+{%- for x in series or [] -%}{%- if x is number -%}{%- set vals.v = vals.v + [x] -%}{%- endif -%}{%- endfor -%}
+{%- if vals.v -%}
+{%- set mn = vals.v | min -%}{%- set mx = vals.v | max -%}{%- set span = mx - mn -%}
+{%- set out = namespace(s='') -%}
+{%- for x in vals.v[-12:] -%}
+  {%- if span > 0 -%}
+    {%- set idx = (((x - mn) / span) * 7) | int -%}
+    {%- set out.s = out.s ~ chars[idx if idx < 8 else 7] -%}
+  {%- else -%}
+    {%- set out.s = out.s ~ '▄' -%}
+  {%- endif -%}
+{%- endfor -%}
+{{ out.s }}
+{%- else -%}—{%- endif -%}
+{%- endmacro %}
+
+{#- ===== guarded context shorthands — an empty fund must render gracefully ===== -#}
+{% set FI = fi or {} %}
+{% set LB = lb_row or {} %}
+{% set BF = bf or {} %}
+{% set BM = FI.get('book_meta') or {} %}
+{% set BOOK = FI.get('book') or [] %}
+{% set SERIES = FI.get('sector_series') or [] %}
+{% set ROT = FI.get('sector_rotation') or {} %}
+{% set TREAD = FI.get('theme_read') or {} %}
+{% set REL = LB.get('reliability') or {} %}
+{% set QH = LB.get('quarter_history') or [] %}
+{% set TLOG = LB.get('trade_log') or BF.get('trade_log') or [] %}
+{% set FNAME = BF.get('name') or LB.get('name') or BM.get('name') %}
+{% set SLUG = BF.get('slug') or LB.get('slug') or '' %}
+{% set FILED = BM.get('filing_date') or BF.get('filing_date') or '' %}
+{% set PEND = BM.get('period_end') or BF.get('period_end') or '' %}
+{% set BOOKUSD = BM.get('book_value_usd') or BF.get('book_value_usd') %}
+{% set NPOS = BM.get('n_positions') if BM.get('n_positions') is not none else (BOOK | length if BOOK else None) %}
+{% set TREND = REL.get('trend') or '' %}
+
+<div class="fd">
+
+<div class="fd-crumb">
+  <a href="smart_money.html">&larr; {{ t('Ownership Intelligence Desk','持仓情报台') }}</a>
+  &nbsp;·&nbsp; <a href="fund_index.html">{{ t('All fund dossiers','全部基金档案') }}</a>
+</div>
+
+{# ======================================================================== #}
+{# HEADER — name + style pill + grade + reliability chip + status            #}
+{# ======================================================================== #}
+<div class="fd-hero">
+  <div>
+    <div class="eyebrow">{{ t('Institutional 13F · Context Only · Never a Buy List','机构 13F · 仅供背景参考 · 非买入清单') }}</div>
+    <h1>{% if FNAME %}{{ FNAME }}{% else %}{{ t('Fund dossier','基金档案') }}{% endif %}</h1>
+    <div class="pillrow">
+      {% if LB.get('style') %}<span class="stylepill">{{ LB.get('style') }}</span>{% endif %}
+      {{ gradeb(LB.get('grade')) }}
+      {% if TREND == 'improving' %}<span class="rel-chip improving">{{ t('Reliability improving','可靠性走强') }}</span>
+      {% elif TREND == 'deteriorating' %}<span class="rel-chip deteriorating">{{ t('Reliability deteriorating','可靠性走弱') }}</span>
+      {% elif TREND == 'stable' %}<span class="rel-chip stable">{{ t('Reliability stable','可靠性稳定') }}</span>
+      {% endif %}
+      {% if LB.get('status') == 'closed' %}<span class="chip-fresh">{{ t('closed','已关闭') }}</span>{% endif %}
+      {% if LB.get('rank') %}<span class="chip-fresh">{{ t('leaderboard rank','榜单排名') }} <b class="num">#{{ LB.get('rank') }}</b></span>{% endif %}
+    </div>
+  </div>
+  <div class="metacol">
+    <span class="chip-fresh t-amber"><span class="fdot"></span>{{ t('13F · quarterly · ~45-day lag','13F · 季度披露 · 约45天滞后') }}</span>
+    {% if FILED %}<span class="chip-fresh">{{ t('filed','申报日') }} <b class="num">{{ FILED }}</b>{% if PEND %} · {{ t('period end','期末') }} <b class="num">{{ PEND }}</b>{% endif %}</span>{% endif %}
+    {% if generated_utc %}<span class="chip-fresh">{{ t('generated','生成于') }} <span class="num">{{ generated_utc }}</span></span>{% endif %}
+    {% if SLUG %}<a class="chip-fresh" href="funddata/{{ SLUG }}.json">{{ t('Data (JSON)','数据 (JSON)') }}</a>{% endif %}
+  </div>
+</div>
+
+{# ======================================================================== #}
+{# KPI STRIP (.cg-stats idiom)                                              #}
+{# ======================================================================== #}
+<div class="fd-stats">
+  <div class="fd-stat">
+    <div class="k">{{ t('Book','持仓规模') }}</div>
+    <div class="v">{{ usd(BOOKUSD) }}</div>
+    <div class="s">{{ t('long US listed only','仅美股多头') }}</div>
+  </div>
+  <div class="fd-stat">
+    <div class="k">{{ t('Positions','持仓数') }}</div>
+    <div class="v">{{ NPOS if NPOS is not none else '—' }}</div>
+    {% if BM.get('resolution_pct') is not none %}<div class="s">{{ pctf(BM.get('resolution_pct'), 0) }} {{ t('resolved','已解析') }}</div>{% endif %}
+  </div>
+  <div class="fd-stat">
+    <div class="k">{{ t('Top-10 concentration','前十集中度') }}</div>
+    <div class="v">{{ pctf(LB.get('concentration_pct'), 0) if LB.get('concentration_pct') is not none else '—' }}</div>
+    <div class="s">{{ t('% of book','占组合%') }}</div>
+  </div>
+  <div class="fd-stat">
+    <div class="k">{{ t('Turnover','换手') }}</div>
+    <div class="v">
+      {% set tt = LB.get('turnover_tier') or '' %}
+      {% if tt == 'low' %}<span class="tier low">LOW</span>
+      {% elif tt == 'med' %}<span class="tier moderate">MED</span>
+      {% elif tt == 'high' %}<span class="tier elevated">HIGH</span>
+      {% else %}—{% endif %}
+    </div>
+    {% if LB.get('turnover_pct') is not none %}<div class="s">{{ pctf(LB.get('turnover_pct')) }} {{ t('per quarter','每季') }}</div>{% endif %}
+  </div>
+  <div class="fd-stat">
+    <div class="k">{{ t('Median excess','中位超额') }}</div>
+    <div class="v">{{ exret(LB.get('median_buy_excess')) }}</div>
+    <div class="s">{{ t('buys vs SPY, since filing','买入相对SPY，自申报起') }}{% if LB.get('n_buys') %} · n {{ LB.get('n_buys') }}{% endif %}</div>
+  </div>
+  <div class="fd-stat">
+    <div class="k">{{ t('Hit rate','胜率') }}</div>
+    <div class="v">{{ hit(LB.get('buy_hit_rate')) }}</div>
+    <div class="s">{{ t('share of buys beating SPY','跑赢SPY的买入占比') }}</div>
+  </div>
+</div>
+
+{# ======================================================================== #}
+{# CORE LEAN — the 10-second read (hero card directly under the KPI strip)   #}
+{# ======================================================================== #}
+<div class="lean-hero" id="fd-lean">
+  <div class="eyebrow">{{ t('Core lean — the 10-second read','核心倾向 — 10秒速读') }}</div>
+  {% set LEANS = TREAD.get('leans') or [] %}
+  {% if TREAD.get('narrative_en') or LEANS %}
+    {% if TREAD.get('narrative_en') %}
+      <div class="lean-narr">{{ t(TREAD.get('narrative_en'), TREAD.get('narrative_zh') or TREAD.get('narrative_en')) }}</div>
+    {% endif %}
+    {% if LEANS %}
+    <div class="lean-chips">
+      {% for lean in LEANS %}
+      <div class="lean-chip">
+        <div class="lc-h">
+          <span class="lc-name">{{ t(lean.get('label') or lean.get('theme_key') or '—', lean.get('label_zh') or lean.get('label') or lean.get('theme_key') or '—') }}</span>
+          <span class="lc-pp num">{% if lean.get('added_pp') is not none %}{{ "%+.1f" | format(lean.get('added_pp')) }}pp{% else %}—{% endif %}</span>
+        </div>
+        <div class="lc-sub">
+          {% if lean.get('held_pp') is not none %}{{ pctf(lean.get('held_pp')) }} {{ t('of book held','占组合持有') }}{% endif %}
+          {% if lean.get('n_names') %} · {{ lean.get('n_names') }} {{ t('names','标的') }}{% endif %}
+          {% if lean.get('category') %} · {{ lean.get('category') }}{% endif %}
+        </div>
+        {% set tks = lean.get('tickers') or [] %}
+        {% if tks %}
+        <div class="lc-tks">
+          {% for tk in tks[:8] %}<span class="lc-tk">{{ tklogo(tk) }}{{ tk }}</span>{% endfor %}
+          {% if tks | length > 8 %}<span class="sub">+{{ tks | length - 8 }} {{ t('more','更多') }}</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% else %}
+    <div class="lean-narr mut">{{ t('No classified buys in the latest quarter — core lean unavailable.','最新季度无可分类的买入——核心倾向不可用。') }}</div>
+  {% endif %}
+  <div class="lean-note">{{ t(
+    'Descriptive read of the latest filing — themes clustered from curated baskets (Finviz fallback), added-pp = Σ % of book bought this quarter. Not a forecast.',
+    '基于最新申报的描述性解读——主题按精选篮子聚类（Finviz 兜底），added-pp = 本季度买入占组合百分比之和。非预测。'
+  ) }}</div>
+</div>
+
+{# ======================================================================== #}
+{# GRADE & EXCESS HISTORY                                                    #}
+{# ======================================================================== #}
+<div class="sm-sec" id="fd-history">
+  <h2>{{ t('Grade &amp; excess history','评级与超额历史') }}</h2>
+  <span class="h-note">{{ t('per-quarter buy cohorts, scored on public filing dates vs SPY — descriptive ranks in a curated survivor cohort','按季度买入队列，以公开申报日为锚相对SPY评分——精选幸存者队列中的描述性排名') }}</span>
+</div>
+
+<div class="sm-card">
+  {% if QH %}
+    <p class="cnt">
+      {{ t('Reliability','可靠性') }}:
+      {% if TREND == 'improving' %}<span class="rel-chip improving">{{ t('improving','走强') }}</span>
+      {% elif TREND == 'deteriorating' %}<span class="rel-chip deteriorating">{{ t('deteriorating','走弱') }}</span>
+      {% elif TREND == 'stable' %}<span class="rel-chip stable">{{ t('stable','稳定') }}</span>
+      {% else %}—{% endif %}
+      {% if REL.get('n_q') is not none %} · {{ REL.get('n_q') }} {{ t('scored quarters','已评分季度') }}{% endif %}
+      {% if REL.get('pos_share') is not none %} · {{ hit(REL.get('pos_share')) }} {{ t('positive','为正') }}{% endif %}
+      {% if REL.get('recent4_median') is not none %} · {{ t('recent-4 median','近4季中位') }} {{ exret(REL.get('recent4_median')) }}{% endif %}
+      {% if REL.get('alltime_median') is not none %} {{ t('vs all-time','对全期') }} {{ exret(REL.get('alltime_median')) }}{% endif %}
+    </p>
+    <p class="cnt">{{ t('Median excess by quarter','各季度中位超额') }}:
+      <span class="spark">{{ sparkneg(QH | map(attribute='median_excess') | list) }}</span>
+      <span class="sub">({{ t('oldest → newest, shifted by the series minimum so negatives render','由旧到新，按序列最小值平移以呈现负值') }})</span>
+    </p>
+    <table class="sm-t">
+      <thead><tr>
+        <th class="l">{{ t('Quarter','季度') }}</th>
+        <th>{{ t('Buys','买入数') }}</th>
+        <th>{{ t('Median excess','中位超额') }}</th>
+        <th>{{ t('Hit','胜率') }}</th>
+        <th>{{ t('Median fwd 63d','中位前瞻63日') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for q in QH %}
+        <tr>
+          <td class="l num">{{ q.get('period_end') or '—' }}</td>
+          <td class="num">{{ q.get('n_buys') if q.get('n_buys') is not none else '—' }}</td>
+          <td><b>{{ exret(q.get('median_excess')) }}</b></td>
+          <td class="num">{{ hit(q.get('hit_rate')) }}</td>
+          <td>{{ exret(q.get('median_fwd63')) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="cnt">{{ t('No quarter history available for this fund.','该基金暂无季度历史数据。') }}</p>
+  {% endif %}
+</div>
+
+{# ======================================================================== #}
+{# SECTOR EXPOSURE & ROTATION                                                #}
+{# ======================================================================== #}
+<div class="sm-sec" id="fd-sector">
+  <h2>{{ t('Sector exposure &amp; rotation','行业配置与轮动') }}</h2>
+  <span class="h-note">{{ t('value-weighted, latest filing; QoQ deltas vs prior quarter','按市值加权，最新申报；季度环比变化对上季') }}</span>
+</div>
+
+<div class="banner">{{ t(
+  'Method note: the current sector/theme map is applied to historical quarters — classification is as-of today, not point-in-time (survivorship-lite). Unresolved names are bucketed as Unclassified.',
+  '方法说明：历史季度使用当前的行业/主题映射——分类以今日为准，非时点分类（轻度幸存者偏差）。未解析标的归入“未分类”。'
+) }}</div>
+
+<div class="sm-card">
+  {% set LATESTQ = SERIES[-1] if SERIES else {} %}
+  {% set WEIGHTS = LATESTQ.get('weights') or {} %}
+  {% set DELTAS = ROT.get('deltas') or {} %}
+  {% if WEIGHTS %}
+  <div class="fd-2col">
+    <div>
+      <div class="rot-h">{{ t('Current weights','当前权重') }}{% if LATESTQ.get('period_end') %} · <span class="num">{{ LATESTQ.get('period_end') }}</span>{% endif %}</div>
+      {# number-filtered tuple sort — a stray None weight must degrade, never raise #}
+      {% set wp = namespace(v=[]) %}
+      {% for sec, w in WEIGHTS.items() %}{% if w is number %}{% set wp.v = wp.v + [(w, sec)] %}{% endif %}{% endfor %}
+      {% for w, sec in wp.v | sort(reverse=true) %}
+      <div class="sxrow">
+        <span class="sx-name">{{ sec }}</span>
+        <span class="sbar"><i style="width:{{ [w or 0, 100] | min }}%"></i></span>
+        <span class="num" style="text-align:right">{{ pctf(w) }}</span>
+        <span class="num" style="text-align:right">
+          {% set dpp = DELTAS.get(sec) %}
+          {% if dpp is not none %}
+            <span class="{{ 'r-pos' if dpp >= 0 else 'r-neg' }}">{{ '▲' if dpp >= 0 else '▼' }} {{ "%+.1f" | format(dpp) }}pp</span>
+          {% else %}<span class="mut">—</span>{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+      {% set THW = LATESTQ.get('top_theme_weights') or {} %}
+      {% if THW %}
+      <div class="rot-h" style="margin-top:12px">{{ t('Theme categories','主题类别') }}</div>
+      <div class="rotchips">
+        {% set tp = namespace(v=[]) %}
+        {% for cat, w in THW.items() %}{% if w is number %}{% set tp.v = tp.v + [(w, cat)] %}{% endif %}{% endfor %}
+        {% for w, cat in tp.v | sort(reverse=true) %}
+          <span class="rotchip">{{ cat }} <b class="num">{{ pctf(w) }}</b></span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div>
+      {% set R_IN = ROT.get('into') or [] %}
+      {% set R_OUT = ROT.get('out_of') or [] %}
+      <div class="rot-h into">{{ t('Rotating into (QoQ)','轮入（环比）') }}</div>
+      <div class="rotchips">
+        {% for r in R_IN %}
+          <span class="rotchip into">{{ r.get('sector') or '—' }} <b class="num">{{ "%+.1f" | format(r.get('delta_pp') or 0) }}pp</b></span>
+        {% else %}<span class="sub">{{ t('no QoQ increases','无环比增持') }}</span>{% endfor %}
+      </div>
+      <div class="rot-h out" style="margin-top:10px">{{ t('Rotating out of (QoQ)','轮出（环比）') }}</div>
+      <div class="rotchips">
+        {% for r in R_OUT %}
+          <span class="rotchip outof">{{ r.get('sector') or '—' }} <b class="num">{{ "%+.1f" | format(r.get('delta_pp') or 0) }}pp</b></span>
+        {% else %}<span class="sub">{{ t('no QoQ decreases','无环比减持') }}</span>{% endfor %}
+      </div>
+      {% if SERIES | length > 1 %}
+      <div class="rot-h" style="margin-top:14px">{{ t('Quarter history — top-3 sectors','季度历史 — 前三大行业') }}</div>
+      <table class="qh-mini" style="width:100%;border-collapse:collapse">
+        <tbody>
+        {% for q in SERIES[-12:] | reverse %}
+          {% set qp = namespace(v=[]) %}
+          {% for sec, w in (q.get('weights') or {}).items() %}{% if w is number %}{% set qp.v = qp.v + [(w, sec)] %}{% endif %}{% endfor %}
+          <tr>
+            <td class="l num">{{ q.get('period_end') or '—' }}</td>
+            <td class="l">
+              {% for w, sec in qp.v | sort(reverse=true) %}
+                {%- if loop.index <= 3 -%}
+                  <span class="sub2">{{ sec }} <b class="num">{{ pctf(w, 0) }}</b>{{ ' · ' if loop.index < 3 else '' }}</span>
+                {%- endif -%}
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <p class="cnt">{{ t('No sector series available for this fund.','该基金暂无行业序列数据。') }}</p>
+  {% endif %}
+</div>
+
+{# ======================================================================== #}
+{# FULL BOOK — sortable table                                                #}
+{# ======================================================================== #}
+<div class="sm-sec" id="fd-book-sec">
+  <h2>{{ t('Full book','完整持仓') }}</h2>
+  <span class="h-note">{{ t('every resolved position as filed — click a column header to sort. Conviction is a descriptive composite, not a forecast.','截至申报日的全部已解析持仓——点击列头排序。信念分为描述性综合指标，非预测。') }}</span>
+</div>
+
+<div class="sm-card">
+  {% if BOOK %}
+  <p class="cnt">
+    {{ BOOK | length }} {{ t('positions shown','项持仓') }}
+    {% if BM.get('n_resolved') is not none and BM.get('n_positions') is not none %}
+      · {{ t('resolved','已解析') }} {{ BM.get('n_resolved') }}/{{ BM.get('n_positions') }}
+      {% if BM.get('resolution_pct') is not none %}({{ pctf(BM.get('resolution_pct'), 0) }}){% endif %}
+    {% endif %}
+    · {{ t('unresolved CUSIPs are excluded from this table but counted in book totals','未解析CUSIP不列入本表，但计入组合总额') }}
+  </p>
+  <table class="sm-t" id="fd-book">
+    <thead><tr>
+      <th data-col="rank" class="sortable" onclick="fdSort('rank')">#<span class="sort-ind">↕</span></th>
+      <th class="l sortable" data-col="ticker" onclick="fdSort('ticker')">{{ t('Ticker','标的') }} <span class="sort-ind">↕</span></th>
+      <th class="l sortable" data-col="issuer" onclick="fdSort('issuer')">{{ t('Company','公司') }} <span class="sort-ind">↕</span></th>
+      <th class="sortable" data-col="pct" onclick="fdSort('pct')">{{ t('% book','仓位%') }} <span class="sort-ind">↕</span></th>
+      <th class="sortable" data-col="val" onclick="fdSort('val')">{{ t('Value','金额') }} <span class="sort-ind">↕</span></th>
+      <th class="sortable" data-col="act" onclick="fdSort('act')">{{ t('Action','动作') }} <span class="sort-ind">↕</span></th>
+      <th class="sortable" data-col="chg" onclick="fdSort('chg')">{{ t('Δ shares','Δ股数') }} <span class="sort-ind">↕</span></th>
+      <th class="sortable" data-col="streak" onclick="fdSort('streak')"
+          data-tip-en="Consecutive quarters of new/add action in this name."
+          data-tip-zh="该标的连续新建/加仓的季度数。">{{ t('Add streak','连加季数') }} <span class="sort-ind">↕</span></th>
+      <th class="sortable" data-col="conv" onclick="fdSort('conv')"
+          data-tip-en="Descriptive conviction composite (0–100): pct-of-book percentile, top-10 rank, tilt, add streak, new-at-size, persistence. Pre-registered as ledger cohort L5 — not a forecast."
+          data-tip-zh="描述性信念综合分（0–100）：仓位百分位、前十排名、倾斜、连续加仓、新建即重仓、持续持有。已预注册为账本队列L5——非预测。">{{ t('Conviction','信念分') }} <span class="sort-ind">↕</span></th>
+      <th class="l sortable" data-col="sector" onclick="fdSort('sector')">{{ t('Sector','行业') }} <span class="sort-ind">↕</span></th>
+      <th class="l">{{ t('Themes','主题') }}</th>
+      <th class="sortable" data-col="since" onclick="fdSort('since')"
+          data-tip-en="Excess vs SPY since this fund's filing date (variable hold — same convention as the tracker)."
+          data-tip-zh="自该基金申报日起相对SPY的超额（持有期不定——与追踪器口径一致）。">{{ t('Since filing','自申报') }} <span class="sort-ind">↕</span></th>
+    </tr></thead>
+    <tbody id="fd-book-body">
+    {% for p in BOOK %}
+      {% set conv = p.get('conviction') or {} %}
+      {% set cscore = conv.get('score') %}
+      {% set ctier = conv.get('tier') or '' %}
+      {% set comps = conv.get('components') or {} %}
+      {% set tip = namespace(s='') %}
+      {% if comps is mapping %}
+        {% for ck, cvv in comps.items() %}
+          {% set cpts = cvv.get('points') if cvv is mapping else cvv %}
+          {% set tip.s = tip.s ~ (' · ' if tip.s else '') ~ ck ~ ' ' ~ (cpts if cpts is not none else '—') %}
+        {% endfor %}
+      {% endif %}
+      <tr data-rank="{{ dv(p.get('position_rank')) }}"
+          data-ticker="{{ p.get('ticker') or '' }}"
+          data-issuer="{{ p.get('issuer') or '' }}"
+          data-pct="{{ dv(p.get('pct_book')) }}"
+          data-val="{{ dv(p.get('value_usd')) }}"
+          data-act="{{ p.get('action') or '' }}"
+          data-chg="{{ dv(p.get('shares_change_pct')) }}"
+          data-streak="{{ dv(p.get('add_streak_q')) }}"
+          data-conv="{{ dv(cscore) }}"
+          data-sector="{{ p.get('sector') or '' }}"
+          data-since="{{ dv(p.get('since_excess')) }}">
+        <td class="rk num">{{ p.get('position_rank') if p.get('position_rank') is not none else '—' }}</td>
+        <td class="l">{{ tklogo(p.get('ticker')) }} <span class="tk">{{ p.get('ticker') or '—' }}</span></td>
+        <td class="l mut">{{ p.get('issuer') | title if p.get('issuer') else '—' }}</td>
+        <td class="num"><b>{{ pctf(p.get('pct_book')) }}</b></td>
+        <td class="num">{{ usd(p.get('value_usd')) }}</td>
+        <td>{% if p.get('action') %}<span class="act-pill {{ p.get('action') }}">{{ p.get('action') }}</span>{% else %}<span class="mut">—</span>{% endif %}</td>
+        <td class="num">{% if p.get('shares_change_pct') is not none %}{{ "%+.0f" | format(p.get('shares_change_pct')) }}%{% else %}—{% endif %}</td>
+        <td class="num">{% if p.get('add_streak_q') %}{{ p.get('add_streak_q') }}q{% else %}—{% endif %}</td>
+        <td>
+          {% if cscore is not none %}
+            <span class="tier conv-{{ ctier if ctier in ['high','moderate','low'] else 'low' }}"
+                  {% if tip.s %}data-tip-en="Components: {{ tip.s }}" data-tip-zh="构成：{{ tip.s }}"{% endif %}
+                  >{{ cscore | round | int }} · {{ ctier | upper if ctier else '—' }}</span>
+          {% else %}<span class="mut">—</span>{% endif %}
+        </td>
+        <td class="l sub2">{{ p.get('sector') or '—' }}</td>
+        <td class="l sub">
+          {%- set ths = p.get('themes') or [] -%}
+          {%- for th in ths[:3] -%}
+            {{- (th.get('name') or th.get('label') or th.get('slug')) if th is mapping else th -}}{{ ', ' if not loop.last else '' }}
+          {%- else -%}—{%- endfor -%}
+        </td>
+        <td>{{ exret(p.get('since_excess')) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="cnt">{{ t('No resolved book available for this fund.','该基金暂无已解析持仓数据。') }}</p>
+  {% endif %}
+</div>
+
+{# ======================================================================== #}
+{# ROTATION DETAIL — full lists                                              #}
+{# ======================================================================== #}
+<div class="sm-sec" id="fd-rotation">
+  <h2>{{ t('Rotation detail','轮动明细') }}</h2>
+  <span class="h-note">{{ t('this filing cycle, uncapped — adds/new and trims from the resolved book, exits from the rotation feed','本申报周期，不设上限——新建/加仓与减持取自已解析持仓，清仓取自轮动数据') }}</span>
+</div>
+
+<div class="sm-card">
+  {% set BROT = BF.get('rotation') or {} %}
+  {% set exi = namespace(v=[]) %}
+  {% for r in BROT.get('out') or [] %}{% if r.get('action') == 'exit' %}{% set exi.v = exi.v + [r] %}{% endif %}{% endfor %}
+  {% set EXITS = exi.v %}
+  <div class="rot-grid">
+    <div>
+      {% set ins = namespace(v=[]) %}
+      {% for p in BOOK %}{% if p.get('action') in ('new','add') %}{% set ins.v = ins.v + [p] %}{% endif %}{% endfor %}
+      {% set INS = ins.v %}
+      <div class="rot-h into">{{ t('Rotated into','轮入') }} ({{ INS | length }})</div>
+      <table class="mini"><tbody>
+      {% for p in INS %}
+        <tr>
+          <td class="l">{{ tklogo(p.get('ticker')) }} <span class="tk">{{ p.get('ticker') or '—' }}</span> <span class="act-pill {{ p.get('action') }}">{{ p.get('action') }}</span></td>
+          <td>{{ pctf(p.get('pct_book')) }}</td>
+          <td>{{ exret(p.get('since_excess')) }}</td>
+        </tr>
+      {% else %}
+        <tr><td class="l sub">{{ t('no new buys this cycle','本周期无新买入') }}</td></tr>
+      {% endfor %}
+      </tbody></table>
+    </div>
+    <div>
+      {% set trm = namespace(v=[]) %}
+      {% for p in BOOK %}{% if p.get('action') == 'trim' %}{% set trm.v = trm.v + [p] %}{% endif %}{% endfor %}
+      {% set TRIMS = trm.v %}
+      <div class="rot-h out">{{ t('Rotated out of','轮出') }} ({{ TRIMS | length + EXITS | length }})</div>
+      <table class="mini"><tbody>
+      {% for p in TRIMS %}
+        <tr>
+          <td class="l">{{ tklogo(p.get('ticker')) }} <span class="tk">{{ p.get('ticker') or '—' }}</span> <span class="act-pill trim">trim</span></td>
+          <td class="sub">{% if p.get('shares_change_pct') is not none %}{{ "%+.0f" | format(p.get('shares_change_pct')) }}%{% endif %}</td>
+          <td>{{ exret(p.get('since_excess')) }}</td>
+        </tr>
+      {% endfor %}
+      {% for r in EXITS %}
+        <tr>
+          <td class="l">{{ tklogo(r.get('ticker')) }} <span class="tk">{{ r.get('ticker') or '—' }}</span> <span class="act-pill exit">exit</span></td>
+          <td class="sub">{% if r.get('shares_change_pct') is not none %}{{ "%+.0f" | format(r.get('shares_change_pct')) }}%{% endif %}</td>
+          <td>{{ exret(r.get('since_excess')) }}</td>
+        </tr>
+      {% endfor %}
+      {% if not TRIMS and not EXITS %}
+        <tr><td class="l sub">{{ t('no sells this cycle','本周期无卖出') }}</td></tr>
+      {% endif %}
+      </tbody></table>
+    </div>
+  </div>
+</div>
+
+{# ======================================================================== #}
+{# TRADE LOG                                                                 #}
+{# ======================================================================== #}
+<div class="sm-sec" id="fd-trades">
+  <h2>{{ t('Trade log','交易记录') }}</h2>
+  <span class="h-note">{{ t('last 40 graded trades, filing-date anchored, newest first — variable hold vs SPY','最近40笔已评分交易，以申报日为锚，最新在前——持有期不定，相对SPY') }}</span>
+</div>
+
+<div class="sm-card">
+  {% if TLOG %}
+  <table class="sm-t">
+    <thead><tr>
+      <th class="l">{{ t('Filed','申报日') }}</th>
+      <th class="l">{{ t('Ticker','标的') }}</th>
+      <th>{{ t('Action','动作') }}</th>
+      <th>{{ t('% book','仓位%') }}</th>
+      <th>{{ t('Since excess','自申报超额') }}</th>
+      <th>{{ t('Abs / SPY','绝对/SPY') }}</th>
+      <th>{{ t('Hold','持有') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for tr in TLOG[:40] %}
+      <tr>
+        <td class="l num">{{ tr.get('filing_date') or tr.get('period_end') or '—' }}</td>
+        <td class="l"><span class="tk">{{ tr.get('ticker') or '—' }}</span>{% if tr.get('issuer') %} <span class="sub">{{ tr.get('issuer') | title }}</span>{% endif %}</td>
+        <td>{% if tr.get('action') %}<span class="act-pill {{ tr.get('action') }}">{{ tr.get('action') }}</span>{% else %}—{% endif %}</td>
+        <td class="num">{{ pctf(tr.get('pct_portfolio')) }}</td>
+        <td><b>{{ exret(tr.get('since_excess')) }}</b></td>
+        <td class="num sub">
+          {% if tr.get('since_abs') is not none %}
+            {{ "%+.0f" | format((tr.get('since_abs') or 0) * 100) }}% / {{ "%+.0f" | format((tr.get('spy_since') or 0) * 100) }}%
+          {% else %}—{% endif %}
+        </td>
+        <td class="num">{% if tr.get('hold_days') is not none %}{{ tr.get('hold_days') }}{{ t('d','天') }}{% else %}—{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="cnt">{{ t('No graded trades available for this fund.','该基金暂无已评分交易。') }}</p>
+  {% endif %}
+</div>
+
+{# ======================================================================== #}
+{# CAVEATS                                                                   #}
+{# ======================================================================== #}
+<div class="disc" id="fd-caveats">
+  <b>{{ t('Caveats','注意事项') }}</b> —
+  {{ t(
+    '13F = quarterly, ~45-day lag, long-only US listed ≥$100M. No shorts, no cash, no non-US positions. This desk is context — ownership is never a directional signal here.',
+    '13F = 季度披露，约45天滞后，仅含美股多头且持仓≥1亿美元。不含空头、现金或非美股仓位。本台仅为背景参考——持仓数据在此永远不是方向性信号。'
+  ) }}
+  {{ t(
+    'Grades and reliability are descriptive ranks within a curated survivor cohort — they measure what filings did after their filing dates, not a manager-selection edge. Conviction and core-lean reads are descriptive composites earning a forward record via the pre-registered ledger (L5); sector/theme classification applies the current map to history.',
+    '评级与可靠性为精选幸存者队列中的描述性排名——衡量申报日之后持仓的表现，而非经理选择能力。信念分与核心倾向为描述性综合指标，通过预注册账本（L5）积累前瞻记录；行业/主题分类将当前映射应用于历史。'
+  ) }}
+</div>
+
+</div>{# /fd #}
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+/* Full-book column sort — the th data-col + tr data-attr idiom (desk convention:
+   sort by row dataset values, numeric when parseable, re-append rows in order;
+   rows with missing values always sink to the bottom). */
+(function () {
+  var tbody = document.getElementById('fd-book-body');
+  if (!tbody) return;
+  var TEXT_COLS = { ticker: 1, issuer: 1, act: 1, sector: 1 };
+  var sortCol = null, sortAsc = true;
+  window.fdSort = function (col) {
+    if (sortCol === col) { sortAsc = !sortAsc; }
+    else { sortCol = col; sortAsc = !!TEXT_COLS[col]; } /* text asc-first, numeric desc-first */
+    document.querySelectorAll('#fd-book th').forEach(function (th) {
+      th.classList.remove('sorted');
+      var ind = th.querySelector('.sort-ind');
+      if (ind) ind.textContent = '↕';
+    });
+    var th = document.querySelector('#fd-book th[data-col="' + col + '"]');
+    if (th) {
+      th.classList.add('sorted');
+      var ind = th.querySelector('.sort-ind');
+      if (ind) ind.textContent = sortAsc ? '↑' : '↓';
+    }
+    var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+    rows.sort(function (a, b) {
+      var av = a.dataset[col] || '', bv = b.dataset[col] || '';
+      var an = parseFloat(av), bn = parseFloat(bv);
+      var aBad = isNaN(an), bBad = isNaN(bn);
+      if (!aBad && !bBad) return sortAsc ? an - bn : bn - an;
+      if (aBad && bBad) {
+        if (av < bv) return sortAsc ? -1 : 1;
+        if (av > bv) return sortAsc ? 1 : -1;
+        return 0;
+      }
+      return aBad ? 1 : -1; /* missing values sink regardless of direction */
+    });
+    rows.forEach(function (r) { tbody.appendChild(r); });
+  };
+})();
+</script>
+{% endblock %}

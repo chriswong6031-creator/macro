@@ -56,6 +56,7 @@ _NATURAL_KEYS: dict[str, list[str]] = {
     "L2": ["ticker", "anchor_date"],
     "L3": ["ticker", "anchor_date", "filer"],
     "L4": ["ticker", "anchor_date"],
+    "L5": ["ticker", "anchor_date"],
 }
 
 # Grading horizons (trading days) — §5 of masterplan
@@ -483,13 +484,101 @@ def _l4_entries(sm_payload: dict | None, panel: Any) -> list[dict]:
     return entries
 
 
+_L5_RULE = ("top conviction_buys composite at each filing cycle "
+            "(conviction×grade composite, weights v2026-07); "
+            "anchor = max buying-fund filing_date; descriptive composite earning a "
+            "forward record — pre-registered before any performance claim")
+
+
+def _l5_entries(models: dict | None, panel: Any) -> list[dict]:
+    """L5: composite conviction-buys (the v3 models board, pre-registered).
+
+    Entry rule: every ticker on the engine.ownership_flow ``models["conviction_buys"]``
+    board at this filing cycle (conviction×grade composite, weights v2026-07 — see
+    _L5_RULE, which versions the formula so a future weight change stays legible in
+    the record). Anchor = the MAX buying-fund filing_date across that ticker's board
+    rows — the latest PIT-honest moment the composite could have been computed
+    (filing_date only, never period_end). Natural key (ticker, anchor_date): seeing
+    the same board on consecutive nightly runs is idempotent; a re-entry at a new
+    filing cycle is a new row.
+
+    The composite is DESCRIPTIVE — this cohort exists so the board earns a forward
+    track record the honest way; nothing is promoted off it.
+    """
+    if not models:
+        return []
+
+    board = models.get("conviction_buys") or {}
+    board_rows = board.get("rows") if isinstance(board, dict) else board
+    if not board_rows:
+        return []
+
+    # A ticker may appear on several board rows (one per buying fund) — collapse to
+    # one entry per ticker; anchor = max filing_date across its buying funds.
+    per_ticker: dict[str, dict] = {}
+    for r in board_rows:
+        if not isinstance(r, dict):
+            continue
+        ticker = str(r.get("ticker", "") or "").strip().upper()
+        if not ticker:
+            continue
+        dates: list[str] = []
+        fund_ids: set[str] = set()
+        if r.get("filing_date"):
+            dates.append(str(r["filing_date"]))
+        for k in ("slug", "fund", "name"):
+            if r.get(k):
+                fund_ids.add(str(r[k]))
+                break
+        for key in ("buy_funds", "buyers", "funds"):
+            for f in (r.get(key) or []):
+                if not isinstance(f, dict):
+                    continue
+                if f.get("filing_date"):
+                    dates.append(str(f["filing_date"]))
+                fid = f.get("slug") or f.get("name")
+                if fid:
+                    fund_ids.add(str(fid))
+        if not dates:
+            continue                                 # no PIT anchor — null-honest skip
+        rec = per_ticker.setdefault(
+            ticker, {"anchor_date": "", "issuer": "", "funds": set()})
+        rec["anchor_date"] = max(rec["anchor_date"], max(dates))
+        rec["issuer"] = rec["issuer"] or str(r.get("issuer", "") or "")
+        rec["funds"] |= fund_ids
+
+    entries: list[dict] = []
+    for ticker, rec in per_ticker.items():
+        anchor_date = rec["anchor_date"]
+        m = _grade_entry(ticker, anchor_date, panel)
+        spy_m = _spy_grade(anchor_date, panel)
+        row: dict = {
+            "cohort": "L5",
+            "ticker": ticker,
+            "issuer": rec["issuer"],
+            "anchor_date": anchor_date,
+            "n_buying_funds": int(len(rec["funds"])),
+            "composite_version": "v2026-07",
+            "entry_price": m.get("entry_price"),
+            "fill_date": m.get("fill_date"),
+        }
+        for h in _HORIZONS:
+            row[f"fwd_ret_{h}"] = m.get(f"fwd_ret_{h}")
+            row[f"fwd_mdd_{h}"] = m.get(f"fwd_mdd_{h}")
+            row[f"excess_{h}"] = _excess(m, spy_m, h)
+        entries.append(row)
+
+    return entries
+
+
 # --------------------------------------------------------------------------- #
 # Advance (nightly-only writer)                                                 #
 # --------------------------------------------------------------------------- #
 
 def advance_ledgers(funds: dict[str, dict],
                     sm_payload: dict | None,
-                    root: Path | None = None) -> dict[str, int]:
+                    root: Path | None = None,
+                    models: dict | None = None) -> dict[str, int]:
     """Compute and append new cohort entries. Nightly-only (COLLECT_LANE guard).
 
     Parameters
@@ -497,6 +586,9 @@ def advance_ledgers(funds: dict[str, dict],
     funds      : {slug: spec} roster from config.
     sm_payload : output of compute_smart_money() — used for L2 (crowding) and L4 (consensus).
     root       : project root override (for tests that want a tmp dir).
+    models     : output of engine.ownership_flow.models() — used for L5 (composite
+                 conviction-buys). None (the default) skips L5 — additive, existing
+                 callers unchanged.
 
     Returns
     -------
@@ -504,7 +596,7 @@ def advance_ledgers(funds: dict[str, dict],
     """
     if not _ledger_advance_enabled():
         log.debug("ownership_ledger.advance_ledgers: skipped (COLLECT_LANE != nightly)")
-        return {"L1": 0, "L2": 0, "L3": 0, "L4": 0}
+        return {"L1": 0, "L2": 0, "L3": 0, "L4": 0, "L5": 0}
 
     try:
         from engine.manager_trades import ClosePanel
@@ -554,6 +646,19 @@ def advance_ledgers(funds: dict[str, dict],
         log.warning("ownership_ledger L4 failed", exc_info=True)
         results["L4"] = 0
 
+    # L5 — additive: only when the caller supplies the models payload (the
+    # composite conviction-buys cohort, pre-registered via _L5_RULE).
+    if models:
+        try:
+            l5 = _l5_entries(models, panel)
+            results["L5"] = _append_rows("L5", l5, root)
+            log.info("ownership_ledger L5: %d new entries appended", results["L5"])
+        except Exception:  # noqa: BLE001
+            log.warning("ownership_ledger L5 failed", exc_info=True)
+            results["L5"] = 0
+    else:
+        results["L5"] = 0
+
     return results
 
 
@@ -571,6 +676,7 @@ _COHORT_RULES = {
            "question: classified feed reproduces announcement + drift on live data"),
     "L4": ("top-20 by #funds holding at each filing cycle; "
            "baseline for L1–L3 comparisons; anchor = latest filing_date"),
+    "L5": _L5_RULE,
 }
 
 
@@ -588,7 +694,7 @@ def ledger_summary(root: Path | None = None) -> dict[str, dict]:
     today = date.today()
     summary: dict[str, dict] = {}
 
-    for cohort in ("L1", "L2", "L3", "L4"):
+    for cohort in ("L1", "L2", "L3", "L4", "L5"):
         df = _load_ledger(cohort, root)
         n_total = len(df) if not df.empty else 0
 

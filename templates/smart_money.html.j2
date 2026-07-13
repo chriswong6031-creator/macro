@@ -204,6 +204,88 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
         line-height:1.55; color:var(--muted); }
 .sm-2col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
 @media(max-width:820px){ .sm-2col { grid-template-columns:1fr; } }
+
+/* ---- v3: sticky section rail ---- */
+.sm-rail { position:sticky; top:0; z-index:30; display:flex; gap:6px; flex-wrap:wrap;
+           padding:9px 2px 8px; margin:2px 0 0; background:var(--bg);
+           border-bottom:1px solid var(--line); }
+.sm-rail a { font:600 11px/1.8 var(--numf); padding:2px 11px; border-radius:99px;
+             border:1px solid var(--line); color:var(--muted); text-decoration:none;
+             white-space:nowrap; }
+.sm-rail a:hover { color:var(--text); border-color:var(--info); }
+.sm-sec[id] { scroll-margin-top:56px; }
+
+/* ---- v3: ticker logos (big boards only — never wire rows / leaderboard) ---- */
+.tlogo { width:18px; height:18px; border-radius:4px; vertical-align:-4px; margin-right:6px;
+         background:var(--panel2); object-fit:contain; }
+
+/* ---- v3: S1.5 / S2.5 boards ---- */
+.ii-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px; }
+@media(max-width:960px){ .ii-grid { grid-template-columns:1fr; } }
+.board-h { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.board-h .bt { font-weight:700; font-size:13px; }
+.board-h .chip-fresh { margin-left:auto; }
+.board-note { font-size:10.5px; color:var(--muted); margin:3px 0 4px; line-height:1.5; }
+details.fullboard > summary { list-style:none; cursor:pointer; padding:7px 2px 3px;
+                              font:600 11px/1.6 var(--numf); color:var(--muted); }
+details.fullboard > summary::-webkit-details-marker { display:none; }
+details.fullboard > summary:hover { color:var(--text); }
+.role-pill { font:600 9px/1 var(--numf); padding:3px 6px; border-radius:5px; letter-spacing:.04em;
+             text-transform:uppercase; color:#5b9bf0; border:1px solid #5b9bf055; }
+.ip-score { font:600 10px/1.4 var(--numf); padding:2px 7px; border-radius:5px;
+            border:1px solid var(--line); color:var(--muted); background:var(--panel2); }
+.mchip { display:inline-block; font:600 9.5px/1.4 var(--numf); padding:2px 6px; margin:1px 2px 1px 0;
+         border-radius:5px; border:1px solid var(--line); color:var(--muted);
+         background:var(--panel2); white-space:nowrap; }
+
+/* ---- v3: flow breadth mini-bar ---- */
+.bbar { display:inline-flex; width:56px; height:7px; border-radius:4px; overflow:hidden;
+        background:var(--panel2); vertical-align:middle; }
+.bbar i { display:block; height:100%; }
+.bbar .bi { background:var(--up); }
+.bbar .bo { background:var(--down); }
+
+/* ---- v3: rotation bars (zero-centred) ---- */
+.rotbars { list-style:none; margin:6px 0 0; padding:0; }
+.rotbars li { display:flex; align-items:center; gap:9px; padding:4px 0; font-size:12px;
+              border-top:1px solid var(--line); }
+.rotbars .rb-lab { min-width:132px; font-size:11.5px; }
+.rotbars .rb-track { flex:1; height:9px; border-radius:5px; background:var(--panel2);
+                     position:relative; overflow:hidden; }
+.rotbars .rb-track::after { content:''; position:absolute; left:50%; top:0; bottom:0;
+                            width:1px; background:var(--line); }
+.rotbars .rb-fill { position:absolute; top:0; bottom:0; }
+.rotbars .rb-fill.pos { left:50%; background:var(--up); border-radius:0 5px 5px 0; }
+.rotbars .rb-fill.neg { right:50%; background:var(--down); border-radius:5px 0 0 5px; }
+.rotbars .rb-val { min-width:58px; text-align:right; }
+
+/* ---- v3: model segmented panels + flow scope toggle (prebuilt DOM, class/attr swap) ---- */
+.model-panel { display:none; }
+.model-panel.on { display:block; }
+.rot-list { display:none; }
+#rot-wrap[data-scope="all"] .rot-list[data-scope="all"] { display:block; }
+#rot-wrap[data-scope="top"] .rot-list[data-scope="top"] { display:block; }
+
+/* ---- v3: wire see-more ---- */
+.wire-more-row { display:flex; gap:8px; align-items:center; margin-top:8px;
+                 padding-top:9px; border-top:1px solid var(--line); }
+.wire-more { font:600 11.5px/1.8 var(--numf); padding:3px 14px; border-radius:99px;
+             border:1px solid var(--line); background:var(--panel2); color:var(--text);
+             cursor:pointer; }
+.wire-more:hover { border-color:var(--info); }
+
+/* ---- v3: reliability chip + fund links + inline fund-list details ---- */
+.rely { font:600 9.5px/1.4 var(--numf); padding:2px 7px; border-radius:5px; letter-spacing:.03em;
+        text-transform:uppercase; border:1px solid var(--line); }
+.rely.up { color:var(--up); border-color:rgba(69,184,115,.4); background:rgba(69,184,115,.08); }
+.rely.down { color:var(--down); border-color:rgba(224,100,100,.4); background:rgba(224,100,100,.08); }
+.rely.flat { color:var(--muted); background:var(--panel2); }
+.fund-link { color:inherit; text-decoration:none; border-bottom:1px dotted var(--line); }
+.fund-link:hover { color:var(--info); border-bottom-color:var(--info); }
+details.fl > summary { list-style:none; cursor:pointer; color:var(--info);
+                       font:600 10.5px/1.6 var(--numf); white-space:nowrap; }
+details.fl > summary::-webkit-details-marker { display:none; }
+details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; max-width:340px; }
 {% endblock %}
 
 {% block content %}
@@ -311,10 +393,26 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 
 </div>{# /sm-deck #}
 
+{# ---- v3: sticky section rail — pure CSS anchors, no JS ---- #}
+{% set _has_ii = (desk.get('insider_intel') or {}) | length > 0 %}
+{% set _has_flow = (desk.get('flow') or {}) | length > 0 %}
+<nav class="sm-rail" aria-label="{{ t('sections','章节') }}">
+  <a href="#sec-wire">{{ t('Wire','播报') }}</a>
+  {% if _has_ii %}<a href="#sec-insider">{{ t('Insider','内部人') }}</a>{% endif %}
+  <a href="#sec-managers">{{ t('Managers','经理台') }}</a>
+  {% if _has_flow %}<a href="#sec-flow">{{ t('Flow','资金流') }}</a>{% endif %}
+  <a href="#sec-portfolio">{{ t('Portfolio','总组合') }}</a>
+  <a href="#sec-crowding">{{ t('Crowding','拥挤度') }}</a>
+  <a href="#sec-initiations">{{ t('Initiations','新建仓') }}</a>
+  <a href="#sec-activists">{{ t('Activists','维权') }}</a>
+  <a href="#sec-dossier">{{ t('Dossier','档案') }}</a>
+  <a href="#sec-ledger">{{ t('Ledger','账本') }}</a>
+</nav>
+
 {# ======================================================================== #}
 {# S1 OWNERSHIP EVENT WIRE                                                   #}
 {# ======================================================================== #}
-<div class="sm-sec">
+<div class="sm-sec" id="sec-wire">
   <h2>{{ t('Ownership event wire','持仓事件播报') }}</h2>
   <span class="h-note">{{ t('newest events per axis (of ' ~ (d_wire | length) ~ ' in the feed) — each row carries its own clock', '各轴最新事件（数据流共' ~ (d_wire | length) ~ '条）——每行带独立时间戳') }}</span>
 </div>
@@ -328,9 +426,17 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 </div>
 
 <div class="sm-card">
-  <p class="wire-count">{{ t('Showing ' ~ (d_wire_show | length) ~ ' of ' ~ (d_wire | length) ~ ' (balanced per axis) — full feed in the data file','展示' ~ (d_wire_show | length) ~ '条，共' ~ (d_wire | length) ~ '条（按轴均衡）——完整记录见数据文件') }}</p>
+  <p class="wire-count">{{ t('Showing','展示') }} <span class="num" id="wire-shown-n">{{ d_wire_show | length }}</span> / <span class="num" id="wire-total-n">{{ d_wire | length }}</span> {{ t('— the fold is the newest per axis (balanced); the full feed is loaded on this page','——默认按轴均衡显示最新事件；完整数据流已加载于本页') }}</p>
   <ul class="wire" id="wire-list">
-  {% for row in d_wire_show %}
+  {#- v3: render the FULL wire with progressive disclosure. wire_display rows are
+      the same dict objects as in wire, stamped _fold=1 by the build; if no stamps
+      are present (stale data file) fall back to treating the first
+      len(wire_display) rows as the fold so the default view never renders empty. -#}
+  {% set _wf = namespace(any=false) %}
+  {% for _r in d_wire %}{% if _r.get('_fold') %}{% set _wf.any = true %}{% endif %}{% endfor %}
+  {% set _fold_n = d_wire_show | length %}
+  {% for row in d_wire %}
+    {% set _fold01 = 1 if (row.get('_fold') or (not _wf.any and loop.index0 < _fold_n)) else 0 %}
     {% set ax_raw = row.get('axis') or '' %}
     {% set is_amend = row.get('type') == '13f_amendment' %}
     {% set ax = 'insider' if ax_raw[:5] == 'form4' else ('13fa' if is_amend else ax_raw) %}
@@ -363,7 +469,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
     {% set asof_note = row.get('asof_note') or '' %}
     {% set ax_tier = 'green' if ax in ('13dg','insider','short') else ('amber' if ax == '13fa' else ('amber' if ax == 'short_interest' else 'red')) %}
 
-    <li data-axis="{{ ax }}">
+    <li data-axis="{{ ax }}" data-fold="{{ _fold01 }}"{% if not _fold01 %} style="display:none"{% endif %}>
       <span class="wd num">{{ row.get('date') or '' }}</span>
       <span class="axis-tag {{ axis_class }}">{{ axis_label }}</span>
       <span class="wtk num">{{ row.get('ticker') or '' }}</span>
@@ -374,12 +480,196 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
     <li><span class="sub">{{ t('No wire events available.','暂无播报事件。') }}</span></li>
   {% endfor %}
   </ul>
+  {% set _wire_hidden0 = (d_wire | length) - (d_wire_show | length) %}
+  <div class="wire-more-row" id="wire-more-row"{% if _wire_hidden0 <= 0 %} style="display:none"{% endif %}>
+    <button type="button" class="wire-more" id="wire-more-btn">{{ t('See more','展开更多') }} (<span class="num" id="wire-hidden-n">{{ _wire_hidden0 }}</span>)</button>
+    <button type="button" class="wire-more" id="wire-all-btn">{{ t('Show all','全部展开') }}</button>
+    <button type="button" class="wire-more" id="wire-fewer-btn" style="display:none">{{ t('Show fewer','收起') }}</button>
+  </div>
 </div>
+
+{# ======================================================================== #}
+{# S1.5 INSIDER INTELLIGENCE (v3)                                            #}
+{# ======================================================================== #}
+{#- v3 macros — defined OUTSIDE the section guard so a missing data key never
+    leaves a macro undefined. Logos per F10: yes here, never on wire rows. -#}
+{%- macro ii_logo(tk) -%}
+<img class="tlogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/{{ tk }}.png" loading="eager" onerror="this.style.display='none'" alt="">
+{%- endmacro -%}
+{%- macro ii_usdn(v) -%}
+  {%- if v is none -%}—{%- else -%}
+    {%- set a = v | abs -%}
+    {{- '−' if v < 0 else '+' -}}
+    {%- if a >= 1000000000 -%}${{ "%.1f" | format(a / 1000000000) }}B
+    {%- elif a >= 1000000 -%}${{ "%.1f" | format(a / 1000000) }}M
+    {%- elif a >= 1000 -%}${{ "%.0f" | format(a / 1000) }}K
+    {%- else -%}${{ "%.0f" | format(a) }}
+    {%- endif -%}
+  {%- endif -%}
+{%- endmacro -%}
+{% macro ii_flow_row(row, i) %}
+    {# SM2-R3: quiver (daily Form-4) and panel (SEC bulk role) stay as separate
+       sub-dicts, each with its own clock — never summed. The $ columns read the
+       quiver lane; the score column reads the panel lane, side by side only. #}
+    {% set _q = row.get('quiver') or {} %}
+    {% set _ps = row.get('panel') or {} %}
+    <tr>
+      <td class="l rk num">{{ i }}</td>
+      <td class="l">{{ ii_logo(row.get('ticker') or '') }}<span class="tk">{{ row.get('ticker') or '—' }}</span>{% if row.get('roster_hit') %} <span class="mchip" title="{{ t('held by tracked 13F funds','受追踪13F基金持有') }}">13F</span>{% endif %}</td>
+      <td class="num {{ 'r-pos' if (_q.get('net_usd') or 0) >= 0 else 'r-neg' }}">{{ ii_usdn(_q.get('net_usd')) }}</td>
+      <td class="num">{{ _q.get('n_buys') or 0 }}/{{ _q.get('n_sells') or 0 }}</td>
+      <td class="num">{{ _q.get('n_buyers') if _q.get('n_buyers') is not none else '—' }}</td>
+      <td class="num sub">{{ _q.get('last_date') or '—' }}</td>
+      <td>{% if _ps.get('score') is not none %}<span class="ip-score" title="{{ t('insider-power score — SEC panel lane, own clock, never summed with the $ columns','内部人力度分——SEC面板通道，独立时钟，绝不与金额列相加') }}">{{ _ps.get('score') | round(0) | int }}{% if _ps.get('signal') %} · {{ _ps.get('signal') }}{% endif %}</span>{% else %}<span class="sub">—</span>{% endif %}</td>
+    </tr>
+{% endmacro %}
+{% macro ii_cs_row(row, i) %}
+    <tr>
+      <td class="l rk num">{{ i }}</td>
+      <td class="l">{{ ii_logo(row.get('ticker') or '') }}<span class="tk">{{ row.get('ticker') or '—' }}</span></td>
+      <td class="l"><span class="role-pill">{{ row.get('role_label') or '—' }}</span>{% if row.get('title') %} <span class="sub2">{{ row.get('title') }}</span>{% endif %}</td>
+      <td class="num">{{ usd(row.get('usd')) }}</td>
+      <td class="num">{% if row.get('price') %}${{ "%.2f" | format(row.get('price')) }}{% else %}—{% endif %}</td>
+      <td class="num sub">{{ row.get('trans_date') or '—' }}</td>
+      <td class="num sub">{{ row.get('filing_date') or '—' }}</td>
+    </tr>
+{% endmacro %}
+{% macro ii_cl_row(row, i) %}
+    <tr>
+      <td class="l rk num">{{ i }}</td>
+      <td class="l">{{ ii_logo(row.get('ticker') or '') }}<span class="tk">{{ row.get('ticker') or '—' }}</span></td>
+      <td class="num">{{ row.get('n_officer_buyers') or 0 }}</td>
+      <td class="num">{{ usd(row.get('buy_usd')) }}</td>
+      <td class="num sub">{{ row.get('last_date') or '—' }}</td>
+    </tr>
+{% endmacro %}
+{% set d_ii = desk.get('insider_intel') or {} %}
+{% if d_ii %}
+{% set ii_q = d_ii.get('quiver') or {} %}
+{% set ii_p = d_ii.get('panel') or {} %}
+<div class="sm-sec" id="sec-insider">
+  <h2>{{ t('Insider intelligence','内部人情报') }}</h2>
+  <span class="h-note">{{ t('two lanes, two clocks — daily Form-4 flow vs the SEC bulk role panel — side by side only, never blended','两条通道、两个时钟——每日Form-4资金流与SEC批量角色面板——仅并列展示，绝不混合') }}</span>
+</div>
+
+<div class="banner">{{ t(
+  'Descriptive flow, not a signal. Open-market trades only (P/S transaction codes) — grants and awards are excluded. The Form-4 lane is daily; the SEC role panel lags ~45 days. Each board carries its own clock; nothing is combined across lanes.',
+  '描述性资金流，并非信号。仅含公开市场交易（P/S交易代码）——不含授予与奖励。Form-4通道为日频；SEC角色面板滞后约45天。每个榜单带各自时钟；不同通道的数据绝不合并。'
+) }}</div>
+
+<div class="ii-grid">
+
+  {# -- Form-4 lane (daily): top net buys -- #}
+  <div class="sm-card">
+    <div class="board-h">
+      <span class="bt">{{ t('Top net buys','净买入榜') }}</span>
+      <span class="chip-fresh t-green"><span class="fdot"></span>{{ t('Form 4 daily · as of','Form 4 日频 · 截至') }} {{ ii_q.get('asof') or '—' }} · {{ ii_q.get('window_days') or 90 }}{{ t('d','天') }}</span>
+    </div>
+    <div class="board-note">{{ t('Ranked by net open-market $ over the window. The panel-score column is the SEC-panel lane shown side by side — never summed with the $ columns.','按窗口期公开市场净买入金额排名。面板分列来自SEC面板通道，仅并列展示——绝不与金额列相加。') }}{% if ii_q.get('filter') == 'ad_code_only' %} <span class="mchip">{{ t('A/D-code fallback — grants may leak in','A/D代码回退——可能混入授予') }}</span>{% endif %}</div>
+    {% set _tnb = d_ii.get('top_net_buys') or [] %}
+    {% if _tnb %}
+    <table class="sm-t">
+      <thead><tr><th class="l">#</th><th class="l">{{ t('Ticker','标的') }}</th><th>{{ t('Net $','净额') }}</th><th>{{ t('B/S','买/卖') }}</th><th>{{ t('Buyers','买入人') }}</th><th>{{ t('Last','最新') }}</th><th>{{ t('Panel score','面板分') }}</th></tr></thead>
+      <tbody>
+      {% for row in _tnb[:8] %}{{ ii_flow_row(row, loop.index) }}{% endfor %}
+      </tbody>
+    </table>
+    {% if _tnb | length > 8 %}
+    <details class="fullboard">
+      <summary>{{ t('Full board','完整榜单') }} ({{ _tnb | length }})</summary>
+      <table class="sm-t"><tbody>
+      {% for row in _tnb[8:] %}{{ ii_flow_row(row, loop.index + 8) }}{% endfor %}
+      </tbody></table>
+    </details>
+    {% endif %}
+    {% else %}<p class="sub">{{ t('Form-4 lane unavailable this build.','本次构建Form-4通道不可用。') }}</p>{% endif %}
+  </div>
+
+  {# -- Form-4 lane (daily): top net sells -- #}
+  <div class="sm-card">
+    <div class="board-h">
+      <span class="bt">{{ t('Top net sells','净卖出榜') }}</span>
+      <span class="chip-fresh t-green"><span class="fdot"></span>{{ t('Form 4 daily · as of','Form 4 日频 · 截至') }} {{ ii_q.get('asof') or '—' }} · {{ ii_q.get('window_days') or 90 }}{{ t('d','天') }}</span>
+    </div>
+    <div class="board-note">{{ t('Ranked by most-negative net open-market $. Insider selling is weak evidence — much of it is planned (10b5-1) or diversification; context only.','按公开市场净卖出金额排名。内部人卖出证据较弱——多为预设计划（10b5-1）或分散化操作；仅作背景参考。') }}</div>
+    {% set _tns = d_ii.get('top_net_sells') or [] %}
+    {% if _tns %}
+    <table class="sm-t">
+      <thead><tr><th class="l">#</th><th class="l">{{ t('Ticker','标的') }}</th><th>{{ t('Net $','净额') }}</th><th>{{ t('B/S','买/卖') }}</th><th>{{ t('Buyers','买入人') }}</th><th>{{ t('Last','最新') }}</th><th>{{ t('Panel score','面板分') }}</th></tr></thead>
+      <tbody>
+      {% for row in _tns[:8] %}{{ ii_flow_row(row, loop.index) }}{% endfor %}
+      </tbody>
+    </table>
+    {% if _tns | length > 8 %}
+    <details class="fullboard">
+      <summary>{{ t('Full board','完整榜单') }} ({{ _tns | length }})</summary>
+      <table class="sm-t"><tbody>
+      {% for row in _tns[8:] %}{{ ii_flow_row(row, loop.index + 8) }}{% endfor %}
+      </tbody></table>
+    </details>
+    {% endif %}
+    {% else %}<p class="sub">{{ t('Form-4 lane unavailable this build.','本次构建Form-4通道不可用。') }}</p>{% endif %}
+  </div>
+
+  {# -- SEC panel lane (~45d lag): C-suite open-market buys -- #}
+  <div class="sm-card">
+    <div class="board-h">
+      <span class="bt">{{ t('C-suite open-market buys','高管公开市场买入') }}</span>
+      <span class="chip-fresh t-amber"><span class="fdot"></span>{{ t('SEC bulk panel · through','SEC批量面板 · 截至') }} {{ ii_p.get('asof') or '—' }} · {{ t('~45d publication lag','约45天发布滞后') }}</span>
+    </div>
+    <div class="board-note">{{ t('Top-role (CEO / CFO / President / Chair) open-market purchases. The panel lags — filings through ' ~ (ii_p.get('asof') or '—') ~ ' only; recent weeks are structurally missing here, not absent in reality.','最高层（CEO/CFO/总裁/董事长）公开市场买入。面板有滞后——仅含截至' ~ (ii_p.get('asof') or '—') ~ '的申报；最近数周为结构性缺失，并非市场无交易。') }}</div>
+    {% set _csb = ii_p.get('csuite_buys') or [] %}
+    {% if _csb %}
+    <table class="sm-t">
+      <thead><tr><th class="l">#</th><th class="l">{{ t('Ticker','标的') }}</th><th class="l">{{ t('Role','职务') }}</th><th>{{ t('$','金额') }}</th><th>{{ t('Price','价格') }}</th><th>{{ t('Trade','交易日') }}</th><th>{{ t('Filed','申报日') }}</th></tr></thead>
+      <tbody>
+      {% for row in _csb[:8] %}{{ ii_cs_row(row, loop.index) }}{% endfor %}
+      </tbody>
+    </table>
+    {% if _csb | length > 8 %}
+    <details class="fullboard">
+      <summary>{{ t('Full board','完整榜单') }} ({{ _csb | length }})</summary>
+      <table class="sm-t"><tbody>
+      {% for row in _csb[8:] %}{{ ii_cs_row(row, loop.index + 8) }}{% endfor %}
+      </tbody></table>
+    </details>
+    {% endif %}
+    {% else %}<p class="sub">{{ t('Panel lane unavailable this build.','本次构建面板通道不可用。') }}</p>{% endif %}
+  </div>
+
+  {# -- SEC panel lane (~45d lag): cluster buys -- #}
+  <div class="sm-card">
+    <div class="board-h">
+      <span class="bt">{{ t('Cluster buys','集群买入') }}</span>
+      <span class="chip-fresh t-amber"><span class="fdot"></span>{{ t('SEC bulk panel · through','SEC批量面板 · 截至') }} {{ ii_p.get('asof') or '—' }} · {{ t('~45d publication lag','约45天发布滞后') }}</span>
+    </div>
+    <div class="board-note">{{ t('≥3 distinct officer/director buyers within the window — clusters are rarer and less plan-driven than single buys. Descriptive, not a signal.','窗口期内≥3名不同高管/董事买入——集群买入比单人买入更罕见、更少出于预设计划。描述性数据，并非信号。') }}</div>
+    {% set _clb = ii_p.get('cluster_buys') or [] %}
+    {% if _clb %}
+    <table class="sm-t">
+      <thead><tr><th class="l">#</th><th class="l">{{ t('Ticker','标的') }}</th><th>{{ t('Officer buyers','高管买入人数') }}</th><th>{{ t('Buy $','买入金额') }}</th><th>{{ t('Last','最新') }}</th></tr></thead>
+      <tbody>
+      {% for row in _clb[:8] %}{{ ii_cl_row(row, loop.index) }}{% endfor %}
+      </tbody>
+    </table>
+    {% if _clb | length > 8 %}
+    <details class="fullboard">
+      <summary>{{ t('Full board','完整榜单') }} ({{ _clb | length }})</summary>
+      <table class="sm-t"><tbody>
+      {% for row in _clb[8:] %}{{ ii_cl_row(row, loop.index + 8) }}{% endfor %}
+      </tbody></table>
+    </details>
+    {% endif %}
+    {% else %}<p class="sub">{{ t('Panel lane unavailable this build.','本次构建面板通道不可用。') }}</p>{% endif %}
+  </div>
+
+</div>{# /ii-grid #}
+{% endif %}
 
 {# ======================================================================== #}
 {# S2 MANAGER DESK                                                           #}
 {# ======================================================================== #}
-<div class="sm-sec">
+<div class="sm-sec" id="sec-managers">
   <h2>{{ t('Manager desk','基金经理台') }}</h2>
   <span class="h-note">{{ t('track record on public 13F filing dates, scored vs SPY — grades are descriptive ranks within a curated survivor cohort', '以13F公开申报日为锚的业绩记录，相对标普评分——评级为精选幸存者队列中的描述性排名') }}</span>
 </div>
@@ -448,6 +738,8 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
     <th>{{ t('Hold (q)','持有(季)') }}</th>
     <th>{{ t('Top-10 %','前10%') }}</th>
     <th>{{ t('Decay 21→126d','衰减 21→126天') }}</th>
+    <th>{{ t('Qtr history','分季历史') }}</th>
+    <th>{{ t('Reliability','稳定性') }}</th>
     <th class="l">{{ t('Style','风格') }}</th>
   </tr></thead>
   <tbody>
@@ -457,7 +749,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
       <td class="l rk num">{{ r.rank if r.get('rank') else '—' }}</td>
       <td class="l">
         {% if r.featured %}<span class="star">&#9733;</span> {% endif %}
-        {{ r.name }}
+        <a class="fund-link" href="fund_{{ r.slug }}.html">{{ r.name }}</a>
         {% if is_closed %}<span class="chip-fresh" style="margin-left:4px">{{ t('closed','已关闭') }}</span>{% endif %}
       </td>
       <td>{{ gradeb(r.grade) }}</td>
@@ -484,6 +776,27 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
           {% else %}—{% endif %}
         {% else %}—{% endif %}
       </td>
+      <td>
+        {#- v3: per-quarter median-excess sparkbar. sparkbar() assumes a
+            non-negative series, so values are shifted by the series min
+            (v - min) before rendering — shape only, zero line not preserved. -#}
+        {% set _qv = namespace(vals=[]) %}
+        {% for _q in (r.get('quarter_history') or []) %}{% if _q.get('median_excess') is not none %}{% set _qv.vals = _qv.vals + [_q.get('median_excess')] %}{% endif %}{% endfor %}
+        {% if _qv.vals | length >= 2 %}
+          {% set _qmin = _qv.vals | min %}
+          {% set _qs = namespace(vals=[]) %}
+          {% for _v in _qv.vals %}{% set _qs.vals = _qs.vals + [_v - _qmin] %}{% endfor %}
+          <span class="spark" title="{{ t('median buy excess by quarter — min-shifted shape, not a zero-based scale','分季买入中位超额——按最小值平移的形态图，非零基准') }}">{{ sparkbar(_qs.vals) }}</span>
+        {% else %}<span class="sub">—</span>{% endif %}
+      </td>
+      <td>
+        {% set _rel = r.get('reliability') or {} %}
+        {% set _rtr = _rel.get('trend') %}
+        {% if _rtr in ('improving','stable','deteriorating') %}
+          {% set _rcls = 'up' if _rtr == 'improving' else ('down' if _rtr == 'deteriorating' else 'flat') %}
+          <span class="rely {{ _rcls }}" title="{{ t('recent 4q vs all-time median excess','最近4季对全期中位超额') }}: {{ "%+.1f" | format((_rel.get('recent4_median') or 0) * 100) }}% vs {{ "%+.1f" | format((_rel.get('alltime_median') or 0) * 100) }}% · {{ t('positive-quarter share','正超额季占比') }} {{ "%.0f" | format((_rel.get('pos_share') or 0) * 100) }}%">{{ t('improving','走强') if _rtr == 'improving' else (t('deteriorating','走弱') if _rtr == 'deteriorating' else t('stable','稳定')) }}</span>
+        {% else %}<span class="sub">—</span>{% endif %}
+      </td>
       <td class="l sub">{{ r.get('style') or '—' }}</td>
     </tr>
   {% endfor %}
@@ -509,6 +822,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
       {% if tt2 %}<span class="tier {{ 'low' if tt2 == 'low' else ('moderate' if tt2 == 'med' else 'elevated') }}" style="font-size:9px">{{ tt2 | upper }}</span>{% endif %}
       <span class="sub">{{ t('median','中位') }} {{ exret(r.median_buy_excess) }} · {{ t('hit','胜率') }} {{ hit(r.buy_hit_rate) }} · {{ r.n_buys }} {{ t('buys','买入') }}</span>
       <span class="sub" style="margin-left:auto">{{ usd(f.book_value_usd) }} · {{ t('filed','申报') }} {{ f.filing_date }}</span>
+      <a class="fund-link sub" href="fund_{{ r.slug }}.html">{{ t('Full dossier','完整档案') }} &rarr;</a>
     </summary>
     <div class="f-body">
       <div class="rot-grid">
@@ -545,9 +859,245 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 {% endfor %}
 
 {# ======================================================================== #}
+{# S2.5 CONSENSUS FLOW (v3)                                                  #}
+{# ======================================================================== #}
+{#- v3 macros — defined OUTSIDE the section guard (see S1.5 note). -#}
+{%- macro fl_logo(tk) -%}
+<img class="tlogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/{{ tk }}.png" loading="eager" onerror="this.style.display='none'" alt="">
+{%- endmacro -%}
+{%- macro fl_usdn(v) -%}
+  {%- if v is none -%}—{%- else -%}
+    {%- set a = v | abs -%}
+    {{- '−' if v < 0 else '+' -}}
+    {%- if a >= 1000000000 -%}${{ "%.1f" | format(a / 1000000000) }}B
+    {%- elif a >= 1000000 -%}${{ "%.1f" | format(a / 1000000) }}M
+    {%- elif a >= 1000 -%}${{ "%.0f" | format(a / 1000) }}K
+    {%- else -%}${{ "%.0f" | format(a) }}
+    {%- endif -%}
+  {%- endif -%}
+{%- endmacro -%}
+{%- macro fl_comp(v) -%}
+  {%- if v is mapping -%}
+    {%- set v = v.get('value') if v.get('value') is not none else v.get('points') -%}
+  {%- endif -%}
+  {%- if v is none -%}—
+  {%- elif v is number -%}
+    {%- if v == (v | round(0)) -%}{{ v | int }}{%- else -%}{{ "%.2f" | format(v) }}{%- endif -%}
+  {%- else -%}{{ v }}
+  {%- endif -%}
+{%- endmacro -%}
+{% macro flow_row(row, i) %}
+    {% set _nb = row.get('n_buying') or 0 %}
+    {% set _ns = row.get('n_selling') or 0 %}
+    {% set _tot = _nb + _ns %}
+    <tr>
+      <td class="l rk num">{{ i }}</td>
+      <td class="l">{{ fl_logo(row.get('ticker') or '') }}<span class="tk">{{ row.get('ticker') or '—' }}</span> <span class="sub2">{{ (row.get('issuer') or '') | title }}</span></td>
+      <td><span class="bbar" title="{{ _nb }} {{ t('buying','买入') }} · {{ _ns }} {{ t('selling','卖出') }}">{% if _tot > 0 %}<i class="bi" style="width:{{ ((_nb / _tot) * 100) | round(1) }}%"></i><i class="bo" style="width:{{ ((_ns / _tot) * 100) | round(1) }}%"></i>{% endif %}</span> <span class="num sub">{{ _nb }}/{{ _ns }}</span></td>
+      <td class="num">{{ "%+.1f" | format(row.get('gw_breadth') or 0) }}</td>
+      <td class="num">{{ "%+d" | format(row.get('d_funds_qoq') or 0) }}</td>
+      <td class="num">{{ fl_usdn(row.get('est_flow_usd')) }}</td>
+      <td class="l">
+        {% set _bf = row.get('buy_funds') or [] %}
+        {% set _sf = row.get('sell_funds') or [] %}
+        <details class="fl">
+          <summary>{{ _bf | length }} {{ t('in','入') }} / {{ _sf | length }} {{ t('out','出') }}</summary>
+          <div class="fl-body">
+            {% for _f in _bf %}<span class="mchip">{{ _f.get('name') or _f.get('slug') or '—' }} · {{ _f.get('grade') or '—' }} · {{ _f.get('action') or '' }} {{ pctf(_f.get('pct_book')) }}</span>{% endfor %}
+            {% for _f in _sf %}<span class="mchip">{{ _f.get('name') or _f.get('slug') or '—' }} · {{ _f.get('grade') or '—' }} · {{ _f.get('action') or '' }}</span>{% endfor %}
+          </div>
+        </details>
+      </td>
+    </tr>
+{% endmacro %}
+{% macro rot_bars(groups) %}
+  {% if groups %}
+  {% set _mx = namespace(v=0.0) %}
+  {% for _g in groups %}{% set _a = (_g.get('net_pp') or 0) | abs %}{% if _a > _mx.v %}{% set _mx.v = _a %}{% endif %}{% endfor %}
+  <ul class="rotbars">
+  {% for _g in groups %}
+    {% set _npp = _g.get('net_pp') or 0 %}
+    {% set _w = (((_npp | abs) / _mx.v) * 50) | round(1) if _mx.v > 0 else 0 %}
+    <li title="{{ t('into','轮入') }}: {{ (_g.get('top_names_in') or []) | map(attribute='ticker') | join(', ') or '—' }} · {{ t('out of','轮出') }}: {{ (_g.get('top_names_out') or []) | map(attribute='ticker') | join(', ') or '—' }}">
+      <span class="rb-lab">{{ t(_g.get('label') or _g.get('key') or '—', _g.get('label_zh') or _g.get('label') or _g.get('key') or '—') }}</span>
+      <span class="rb-track"><i class="rb-fill {{ 'pos' if _npp >= 0 else 'neg' }}" style="width:{{ _w }}%"></i></span>
+      <span class="rb-val num {{ 'r-pos' if _npp >= 0 else 'r-neg' }}">{{ "%+.1f" | format(_npp) }}pp</span>
+      <span class="sub num">{{ _g.get('n_funds_in') or 0 }}/{{ _g.get('n_funds_out') or 0 }}</span>
+    </li>
+  {% endfor %}
+  </ul>
+  {% else %}<p class="sub">{{ t('Unavailable this build.','本次构建不可用。') }}</p>{% endif %}
+{% endmacro %}
+{% set d_flow = desk.get('flow') or {} %}
+{% if d_flow %}
+{% set fl_stock = d_flow.get('stock') or {} %}
+{% set fl_models = d_flow.get('models') or {} %}
+<div class="sm-sec" id="sec-flow">
+  <h2>{{ t('Consensus flow','共识资金流') }}</h2>
+  <span class="h-note">{{ t('what the tracked cohort is rotating into and out of — 13F lane, filing-date clock, ~45-day lag','追踪队列的轮入与轮出——13F通道，申报日时钟，约45天滞后') }}</span>
+</div>
+
+<div class="banner">{{ t(
+  'Descriptive rank — not a forecast. Grade-weighted breadth (GW) = Σ w(grade) over buying funds − Σ w(grade) over selling funds, w: A=2, B=1.5, C=1, D/n·a=0.75. Every number on this board is 13F-lane on the filing-date clock; index ETFs excluded; nothing here blends with insider or short axes.',
+  '描述性排名——并非预测。评级加权广度（GW）= 买入基金Σw(评级) − 卖出基金Σw(评级)，w：A=2、B=1.5、C=1、D/无评级=0.75。本板块所有数字均属13F通道、以申报日为时钟；已剔除指数ETF；不与内部人或空头视角混合。'
+) }}</div>
+
+{# -- a) stock flow: buying vs selling tables -- #}
+{% set _fin = fl_stock.get('in') or [] %}
+{% set _fout = fl_stock.get('out') or [] %}
+{% if _fin or _fout %}
+<div class="sm-card">
+  <div class="board-h">
+    <span class="bt">{{ t('Stock flow — cohort buying vs selling','个股资金流——队列买入与卖出') }}</span>
+    <span class="chip-fresh t-red"><span class="fdot"></span>{{ t('13F lane · filing-date clock · ~45d lag','13F通道 · 申报日时钟 · 约45天滞后') }}</span>
+  </div>
+  <div class="board-note">{{ t('Breadth bar = buying vs selling funds this cycle. Est $ = Σ Δ position value between filings — includes price drift, not pure flow.','广度条 = 本周期买入与卖出的基金数。估算$ = 申报间持仓价值变化合计——含价格漂移，并非纯资金流。') }}</div>
+  <div class="sm-2col">
+    <div>
+      <div class="rot-h into">{{ t('Buying','买入') }} ({{ _fin | length }})</div>
+      <table class="sm-t">
+        <thead><tr><th class="l">#</th><th class="l">{{ t('Ticker','标的') }}</th><th>{{ t('Breadth','广度') }}</th><th>{{ t('GW','加权广度') }}</th><th>{{ t('Δ funds','基金Δ') }}</th><th>{{ t('Est $','估算$') }}</th><th class="l">{{ t('Funds','基金') }}</th></tr></thead>
+        <tbody>
+        {% for row in _fin[:10] %}{{ flow_row(row, loop.index) }}{% endfor %}
+        </tbody>
+      </table>
+      {% if _fin | length > 10 %}
+      <details class="fullboard">
+        <summary>{{ t('Full board','完整榜单') }} ({{ _fin | length }})</summary>
+        <table class="sm-t"><tbody>
+        {% for row in _fin[10:] %}{{ flow_row(row, loop.index + 10) }}{% endfor %}
+        </tbody></table>
+      </details>
+      {% endif %}
+    </div>
+    <div>
+      <div class="rot-h out">{{ t('Selling','卖出') }} ({{ _fout | length }})</div>
+      <table class="sm-t">
+        <thead><tr><th class="l">#</th><th class="l">{{ t('Ticker','标的') }}</th><th>{{ t('Breadth','广度') }}</th><th>{{ t('GW','加权广度') }}</th><th>{{ t('Δ funds','基金Δ') }}</th><th>{{ t('Est $','估算$') }}</th><th class="l">{{ t('Funds','基金') }}</th></tr></thead>
+        <tbody>
+        {% for row in _fout[:10] %}{{ flow_row(row, loop.index) }}{% endfor %}
+        </tbody>
+      </table>
+      {% if _fout | length > 10 %}
+      <details class="fullboard">
+        <summary>{{ t('Full board','完整榜单') }} ({{ _fout | length }})</summary>
+        <table class="sm-t"><tbody>
+        {% for row in _fout[10:] %}{{ flow_row(row, loop.index + 10) }}{% endfor %}
+        </tbody></table>
+      </details>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# -- b) sector + theme rotation bars with All | Top-funds toggle -- #}
+{% set fl_sec_all = (d_flow.get('sector') or {}).get('groups') or [] %}
+{% set fl_sec_top = (d_flow.get('sector_top') or {}).get('groups') or [] %}
+{% set fl_th_all = (d_flow.get('theme') or {}).get('groups') or [] %}
+{% set fl_th_top = (d_flow.get('theme_top') or {}).get('groups') or [] %}
+{% if fl_sec_all or fl_th_all %}
+<div class="sm-card">
+  <div class="board-h">
+    <span class="bt">{{ t('Sector &amp; theme rotation','行业与主题轮动') }}</span>
+    <div class="filters" id="flow-scope-seg" style="margin:0">
+      <span class="fpill on" data-scope="all">{{ t('All funds','全部基金') }}</span>
+      <span class="fpill" data-scope="top">{{ t('Top funds','头部基金') }}</span>
+    </div>
+    {% set _rasof = (d_flow.get('sector') or {}).get('asof') %}
+    {% if _rasof %}<span class="chip-fresh t-red"><span class="fdot"></span>{{ t('13F · as of','13F · 截至') }} {{ _rasof }}</span>{% endif %}
+  </div>
+  <div class="board-note">{{ t('Net pp = Σ per-fund QoQ weight change (pp of book). Current sector/theme map applied to history. Top funds = grade A/B. Descriptive rank — not a forecast.','净pp = 各基金季度权重变化合计（占账面pp）。历史数据使用当前行业/主题映射。头部基金 = 评级A/B。描述性排名——并非预测。') }}</div>
+  <div id="rot-wrap" data-scope="all">
+    <div class="sm-2col">
+      <div>
+        <div class="rot-h">{{ t('Sectors','行业') }}</div>
+        <div class="rot-list" data-scope="all">{{ rot_bars(fl_sec_all) }}</div>
+        <div class="rot-list" data-scope="top">{{ rot_bars(fl_sec_top) }}</div>
+      </div>
+      <div>
+        <div class="rot-h">{{ t('Themes','主题') }}</div>
+        <div class="rot-list" data-scope="all">{{ rot_bars(fl_th_all) }}</div>
+        <div class="rot-list" data-scope="top">{{ rot_bars(fl_th_top) }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# -- c) models card: one visible board via segmented control (prebuilt DOM) -- #}
+{% if fl_models %}
+<div class="sm-card">
+  <div class="board-h">
+    <span class="bt">{{ t('Models — descriptive boards','模型——描述性榜单') }}</span>
+    <span class="chip-fresh t-red"><span class="fdot"></span>{{ t('13F lane · filing-date clock','13F通道 · 申报日时钟') }}</span>
+  </div>
+  <div class="filters" id="model-seg" style="margin:8px 0 2px">
+    <span class="fpill on" data-model="most_favored">{{ t('Most favored','最受青睐') }}</span>
+    <span class="fpill" data-model="conviction_buys">{{ t('Conviction buys','高信念买入') }}</span>
+    <span class="fpill" data-model="asymmetric">{{ t('Uncrowded conviction','冷门高信念') }}</span>
+    <span class="fpill" data-model="rotating_out">{{ t('Rotating out','轮出榜') }}</span>
+  </div>
+  <div class="board-note">{{ t('Descriptive rank — not a forecast. These composites earn a forward record through the pre-registered L5 ledger cohort; no performance claim is made before it matures.','描述性排名——并非预测。这些合成指标通过预登记的L5账本队列积累前瞻记录；在其成熟前不作任何表现声明。') }}</div>
+  <div id="model-panels">
+    {% for _mkey in ['most_favored','conviction_buys','asymmetric','rotating_out'] %}
+    {% set _mb = fl_models.get(_mkey) or {} %}
+    {% set _mrows = _mb.get('rows') or [] %}
+    <div class="model-panel{{ ' on' if loop.first else '' }}" data-model="{{ _mkey }}">
+      {% if _mb.get('method_en') %}<div class="board-note">{{ t(_mb.get('method_en'), _mb.get('method_zh') or _mb.get('method_en')) }}{% if _mb.get('asof') %} · {{ t('as of','截至') }} {{ _mb.get('asof') }}{% endif %}</div>{% endif %}
+      {% if _mrows %}
+      <table class="sm-t">
+        {% if _mkey == 'conviction_buys' %}
+        <thead><tr><th class="l">#</th><th class="l">{{ t('Ticker','标的') }}</th><th class="l">{{ t('Buyer','买家') }}</th><th>{{ t('Grade','评级') }}</th><th>{{ t('Conviction','信念分') }}</th><th>{{ t('Buyer record','买家历史') }}</th><th class="l">{{ t('Components','构成') }}</th></tr></thead>
+        {% elif _mkey == 'asymmetric' %}
+        <thead><tr><th class="l">#</th><th class="l">{{ t('Ticker','标的') }}</th><th>{{ t('Conviction','信念分') }}</th><th>{{ t('Holders','持有基金数') }}</th><th>{{ t('Crowding','拥挤度') }}</th><th class="l">{{ t('Components','构成') }}</th></tr></thead>
+        {% elif _mkey == 'rotating_out' %}
+        <thead><tr><th class="l">#</th><th class="l">{{ t('Ticker','标的') }}</th><th>{{ t('GW breadth','加权广度') }}</th><th>{{ t('Sellers','卖出基金数') }}</th><th>{{ t('Intensity','强度') }}</th><th class="l">{{ t('Components','构成') }}</th></tr></thead>
+        {% else %}
+        <thead><tr><th class="l">#</th><th class="l">{{ t('Ticker','标的') }}</th><th>{{ t('Composite','综合分') }}</th><th class="l">{{ t('Components','构成') }}</th></tr></thead>
+        {% endif %}
+        <tbody>
+        {% for row in _mrows %}
+          <tr>
+            <td class="l rk num">{{ loop.index }}</td>
+            <td class="l">{{ fl_logo(row.get('ticker') or '') }}<span class="tk">{{ row.get('ticker') or '—' }}</span> <span class="sub2">{{ (row.get('issuer') or '') | title }}</span></td>
+            {% if _mkey == 'conviction_buys' %}
+              {% set _cv = row.get('conviction') %}
+              {% set _br = row.get('buyer_base_rate') or {} %}
+              <td class="l sub">{{ row.get('fund_name') or row.get('fund') or row.get('slug') or '—' }}</td>
+              <td>{{ gradeb(row.get('grade') or 'n/a') }}</td>
+              <td class="num">{% if _cv is mapping %}{{ fl_comp(_cv.get('score')) }}{% if _cv.get('tier') %} <span class="mchip">{{ _cv.get('tier') }}</span>{% endif %}{% else %}{{ fl_comp(_cv) }}{% endif %}</td>
+              <td class="num">{% if _br %}{{ exret(_br.get('median_excess')) }} · {{ hit(_br.get('hit_rate')) }} <span class="sub">(n {{ _br.get('n') or 0 }})</span>{% else %}—{% endif %}</td>
+            {% elif _mkey == 'asymmetric' %}
+              {% set _cv = row.get('conviction') %}
+              <td class="num">{% if _cv is mapping %}{{ fl_comp(_cv.get('score')) }}{% if _cv.get('tier') %} <span class="mchip">{{ _cv.get('tier') }}</span>{% endif %}{% else %}{{ fl_comp(_cv) }}{% endif %}</td>
+              <td class="num">{{ row.get('n_funds') if row.get('n_funds') is not none else '—' }}</td>
+              {% set _ctier = row.get('crowding_tier') or 'unavail' %}
+              <td><span class="tier {{ _ctier }}">{{ _ctier | upper }}</span></td>
+            {% elif _mkey == 'rotating_out' %}
+              <td class="num">{{ "%+.1f" | format(row.get('gw_breadth') or 0) }}</td>
+              <td class="num">{{ row.get('n_selling') or 0 }}</td>
+              <td class="num">{{ fl_comp(row.get('intensity')) }}</td>
+            {% else %}
+              <td class="num">{{ fl_comp(row.get('composite') if row.get('composite') is not none else row.get('score')) }}</td>
+            {% endif %}
+            <td class="l">{% for _ck, _cvv in (row.get('components') or {}).items() %}<span class="mchip">{{ _ck }} {{ fl_comp(_cvv) }}</span>{% endfor %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="sub">{{ t('Board unavailable this build.','本次构建该榜单不可用。') }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endif %}
+
+{# ======================================================================== #}
 {# S3 GRAND PORTFOLIO                                                        #}
 {# ======================================================================== #}
-<div class="sm-sec">
+<div class="sm-sec" id="sec-portfolio">
   <h2>{{ t('Grand portfolio','总持仓组合') }}</h2>
   <span class="h-note">{{ t('what the tracked cohort owns, share-class collapsed, index/sector ETFs excluded — sorted by aggregate $ (a size fact, not a ranking)','所追踪队列持有的仓位，合并股票类别、剔除指数/行业ETF——按总美元金额排序（反映规模，非排名）') }}</span>
 </div>
@@ -591,7 +1141,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 {# ======================================================================== #}
 {# S4 CROWDING & UNWIND RADAR                                                #}
 {# ======================================================================== #}
-<div class="sm-sec">
+<div class="sm-sec" id="sec-crowding">
   <h2>{{ t('Crowding &amp; unwind radar','拥挤度与平仓预警') }}</h2>
   <span class="h-note">{{ t('the one direction standing law permits: hazard / de-escalation','现行规则唯一允许的方向性读法：危险/降温') }}</span>
 </div>
@@ -651,7 +1201,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 {# ======================================================================== #}
 {# S5 INITIATIONS (RESEARCH QUEUE)                                           #}
 {# ======================================================================== #}
-<div class="sm-sec">
+<div class="sm-sec" id="sec-initiations">
   <h2>{{ t('Initiations — research queue','新建仓——研究队列') }}</h2>
   <span class="h-note">{{ t('every new position / material add ≥ 1% of book this cycle, newest filings first','本周期所有新建仓/重大加仓（≥账面1%），最新申报排前') }}</span>
 </div>
@@ -725,7 +1275,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 {# ======================================================================== #}
 {# S6 ACTIVIST SITUATION MONITOR                                             #}
 {# ======================================================================== #}
-<div class="sm-sec">
+<div class="sm-sec" id="sec-activists">
   <h2>{{ t('Activist situation monitor','维权情况监控') }}</h2>
   <span class="h-note">{{ t('13D/G stream, ~5–10 day lag — the timeliest ownership lens on this desk','13D/G数据流，约5–10天滞后——本台最及时的持仓视角') }}</span>
 </div>
@@ -808,7 +1358,7 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 {# ======================================================================== #}
 {# S7 TICKER DOSSIER                                                         #}
 {# ======================================================================== #}
-<div class="sm-sec">
+<div class="sm-sec" id="sec-dossier">
   <h2>{{ t('Ticker dossier','个股档案') }}</h2>
   <span class="h-note">{{ t('one name, every lens — independent blocks, independent clocks, no composite','单个标的，所有视角——独立数据块，独立时间戳，无合成指标') }}</span>
 </div>
@@ -984,7 +1534,7 @@ inp.addEventListener('keydown',function(e){if(e.key==='Enter'){var v=inp.value.t
 {# ======================================================================== #}
 {# S8 FORWARD LEDGER STRIP                                                   #}
 {# ======================================================================== #}
-<div class="sm-sec">
+<div class="sm-sec" id="sec-ledger">
   <h2>{{ t('Forward ledger','前瞻账本') }}</h2>
   <span class="h-note">{{ t('pre-registered display-only cohorts — evidence accrual, no authority, nulls printed','预登记的纯展示队列——积累证据，不具权威，空值照实显示') }}</span>
 </div>
@@ -1083,23 +1633,90 @@ inp.addEventListener('keydown',function(e){if(e.key==='Enter'){var v=inp.value.t
 {% block body_scripts %}
 <script>
 (function(){
-/* Wire filter pills */
+/* v3 wire view — the ONE owner of wire-row visibility: axis filter × stepped
+   see-more expansion. Applied via INLINE style only; CSS-class visibility would
+   fight the inline styles (tape-band lesson). */
 var filters = document.getElementById('wire-filters');
 var wireList = document.getElementById('wire-list');
+var wireMoreRow = document.getElementById('wire-more-row');
+var wireMoreBtn = document.getElementById('wire-more-btn');
+var wireAllBtn = document.getElementById('wire-all-btn');
+var wireFewerBtn = document.getElementById('wire-fewer-btn');
+var wireShownN = document.getElementById('wire-shown-n');
+var wireTotalN = document.getElementById('wire-total-n');
+var wireHiddenN = document.getElementById('wire-hidden-n');
+var WIRE_STEP = 40;
+var wireAxis = 'all';
+var wireExtra = 0; /* non-fold rows revealed beyond the balanced fold */
+
+function applyWireView(){
+  if(!wireList) return;
+  var shownExtra = 0, visible = 0, matching = 0;
+  wireList.querySelectorAll('li[data-axis]').forEach(function(li){
+    var axisMatch = (wireAxis === 'all') || (li.getAttribute('data-axis') === wireAxis);
+    var show = false;
+    if(axisMatch){
+      matching++;
+      if(li.getAttribute('data-fold') === '1'){
+        show = true;
+      } else if(shownExtra < wireExtra){
+        show = true; shownExtra++;
+      }
+    }
+    li.style.display = show ? '' : 'none';
+    if(show) visible++;
+  });
+  var hidden = matching - visible;
+  if(wireShownN) wireShownN.textContent = String(visible);
+  if(wireTotalN) wireTotalN.textContent = String(matching);
+  if(wireHiddenN) wireHiddenN.textContent = String(hidden);
+  if(wireMoreBtn) wireMoreBtn.style.display = hidden > 0 ? '' : 'none';
+  if(wireAllBtn) wireAllBtn.style.display = hidden > 0 ? '' : 'none';
+  if(wireFewerBtn) wireFewerBtn.style.display = (hidden === 0 && wireExtra > 0) ? '' : 'none';
+  if(wireMoreRow) wireMoreRow.style.display = (hidden > 0 || wireExtra > 0) ? '' : 'none';
+}
+
 if(filters && wireList){
   filters.addEventListener('click', function(e){
     var pill = e.target.closest('.fpill');
     if(!pill) return;
-    var ax = pill.getAttribute('data-axis');
+    wireAxis = pill.getAttribute('data-axis') || 'all';
     filters.querySelectorAll('.fpill').forEach(function(p){ p.classList.remove('on'); });
     pill.classList.add('on');
-    wireList.querySelectorAll('li[data-axis]').forEach(function(li){
-      if(ax === 'all'){
-        li.style.display = '';
-      } else {
-        li.style.display = (li.getAttribute('data-axis') === ax) ? '' : 'none';
-      }
+    applyWireView();
+  });
+}
+if(wireMoreBtn) wireMoreBtn.addEventListener('click', function(){ wireExtra += WIRE_STEP; applyWireView(); });
+if(wireAllBtn) wireAllBtn.addEventListener('click', function(){ wireExtra = 1e9; applyWireView(); });
+if(wireFewerBtn) wireFewerBtn.addEventListener('click', function(){ wireExtra = 0; applyWireView(); });
+if(wireList) applyWireView();
+
+/* v3 models segmented control — prebuilt panels, class swap only */
+var modelSeg = document.getElementById('model-seg');
+var modelPanels = document.getElementById('model-panels');
+if(modelSeg && modelPanels){
+  modelSeg.addEventListener('click', function(e){
+    var pill = e.target.closest('.fpill');
+    if(!pill) return;
+    var key = pill.getAttribute('data-model');
+    modelSeg.querySelectorAll('.fpill').forEach(function(p){ p.classList.remove('on'); });
+    pill.classList.add('on');
+    modelPanels.querySelectorAll('.model-panel').forEach(function(p){
+      p.classList.toggle('on', p.getAttribute('data-model') === key);
     });
+  });
+}
+
+/* v3 flow scope toggle (All funds | Top funds) — prebuilt lists, data-attr swap only */
+var flowSeg = document.getElementById('flow-scope-seg');
+var rotWrap = document.getElementById('rot-wrap');
+if(flowSeg && rotWrap){
+  flowSeg.addEventListener('click', function(e){
+    var pill = e.target.closest('.fpill');
+    if(!pill) return;
+    flowSeg.querySelectorAll('.fpill').forEach(function(p){ p.classList.remove('on'); });
+    pill.classList.add('on');
+    rotWrap.setAttribute('data-scope', pill.getAttribute('data-scope') || 'all');
   });
 }
 

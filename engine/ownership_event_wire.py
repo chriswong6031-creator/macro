@@ -50,6 +50,20 @@ _13DG_LOOKBACK_ACTIVISTS = 45
 # Minimum absolute % of fund book to surface on the wire (new/add rows).
 _MIN_BOOK_PCT = 0.0    # surface all; the board filters by action
 
+# Per-trade USD sanity cap for quiver insider rows: a single Form-4 print above this
+# is a data artefact (re-filed/fat-fingered — the -$6.2B OLPX cluster), and the row
+# is DROPPED, never clipped. Same per-trade default as engine.insider_intel
+# (config: smart_money.insider_intel.usd_sanity_cap).
+_TRADE_USD_CAP = 500_000_000
+
+# Re-filed Form 4s land as exact duplicates on these columns in the quiver store
+# (fileDate is part of the collector's dedup key — F1), so the wire must collapse
+# them before clustering.
+_QUIVER_DEDUP_COLS = ("Ticker", "Date", "Name", "TransactionCode", "Shares")
+
+# One-shot latch: the TransactionCode fallback warns once per process, not per call.
+_TXN_CODE_WARNED = False
+
 # Keys expected on a wire row — strict schema so the template and tests can rely on it.
 WIRE_SCHEMA = (
     "date", "axis", "type", "slug", "fund", "ticker", "issuer",
@@ -510,11 +524,49 @@ def _insider_rows_quiver(roster: set[str], asof: str, note: str,
     if df.empty:
         return []
 
+    # Re-filed Form 4s DUPLICATE in the quiver store (fileDate is part of the
+    # collector's dedup key, so an amended filing lands as a second identical row) —
+    # collapse them before clustering so a re-file never double-counts a trade.
+    # Name is required as the disambiguator: without it two same-day, same-size
+    # trades by DIFFERENT insiders would be wrongly merged, so the dedup is skipped
+    # (degrade, don't guess).
+    dedup_cols = [c for c in _QUIVER_DEDUP_COLS if c in df.columns]
+    if "Name" in dedup_cols and {"Ticker", "Date", "Shares"} <= set(dedup_cols):
+        df = df.drop_duplicates(subset=dedup_cols)
+
+    # Open-market only: TransactionCode P (purchase) / S (sale). Grants, awards and
+    # option exercises are compensation plumbing, not conviction — counting them as
+    # buys is how a routine stock award reads as a giant insider buy. When the
+    # column is absent (older store / test frames) keep the A/D behaviour, warn
+    # once, and leave the note unchanged so the page never claims a filter that
+    # did not run.
+    global _TXN_CODE_WARNED
+    if "TransactionCode" in df.columns:
+        df = df[df["TransactionCode"].astype(str).str.upper().isin({"P", "S"})]
+        if df.empty:
+            return []
+        note = note + " · open-market only"
+    elif not _TXN_CODE_WARNED:
+        log.warning("quiver insiders: TransactionCode column absent — falling back "
+                    "to AcquiredDisposedCode only (grants/awards not excluded)")
+        _TXN_CODE_WARNED = True
+
     # Classify: AcquiredDisposedCode A=Buy, D=Sell
     df["is_buy"] = df["AcquiredDisposedCode"].astype(str).str.upper() == "A"
     df["is_sell"] = df["AcquiredDisposedCode"].astype(str).str.upper() == "D"
     df["trade_usd"] = (pd.to_numeric(df.get("Shares", 0), errors="coerce").fillna(0)
                        * pd.to_numeric(df.get("PricePerShare", 0), errors="coerce").fillna(0))
+
+    # Per-trade sanity (F1): positive price and share count, and a hard per-trade
+    # USD cap — an absurd print (re-file artefact / fat finger) is DROPPED, never
+    # clipped, so one bad row cannot mint a billion-dollar phantom cluster.
+    if "PricePerShare" in df.columns and "Shares" in df.columns:
+        px = pd.to_numeric(df["PricePerShare"], errors="coerce").fillna(0)
+        sh = pd.to_numeric(df["Shares"], errors="coerce").fillna(0)
+        df = df[(px > 0) & (sh > 0)]
+    df = df[df["trade_usd"].abs() <= _TRADE_USD_CAP]
+    if df.empty:
+        return []
 
     rows: list[dict] = []
     for ticker, g in df.groupby("Ticker"):

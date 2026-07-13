@@ -290,6 +290,89 @@ def score_fund_trades(slug: str, name: str, panel: ClosePanel,
     return rows
 
 
+# reliability trend gate: the recent-4-quarter median excess must move at least this
+# much (excess-return units; 0.01 = 1.0pp) vs the fund's all-time median to leave
+# "stable" — the improving / deteriorating chip threshold.
+RELIABILITY_TREND_PP = 0.01
+
+
+def quarter_cohorts(trades: list[dict]) -> list[dict]:
+    """Per-quarter BUY cohorts from a fund's scored trades. PURE.
+
+    Groups the buys (new/add) by `period_end` and summarises how each quarter's
+    cohort has done: `median_excess` / `hit_rate` are the SINCE-filing
+    (variable-hold) realised figures; `median_fwd63` is the fixed-horizon skill
+    leg (None until any 63-session window has matured). Cohorts with fewer than
+    2 priced buys are EXCLUDED — one trade is an anecdote, not a cohort.
+    Ascending by period_end, so the last element is the newest quarter (the
+    reliability read and the leaderboard sparkbar rely on that ordering).
+
+    Returns [{period_end, n_buys, median_excess, hit_rate, median_fwd63}, ...].
+    """
+    import statistics as _st
+    by_pe: dict[str, list[dict]] = {}
+    for t in trades:
+        if t.get("action") not in _BUY:
+            continue
+        pe = str(t.get("period_end") or "")
+        if not pe:
+            continue
+        by_pe.setdefault(pe, []).append(t)
+    out: list[dict] = []
+    for pe in sorted(by_pe):
+        ex = [t["since_excess"] for t in by_pe[pe] if t.get("since_excess") is not None]
+        if len(ex) < 2:
+            continue                                 # too thin to summarise honestly
+        fwd = [t["fwd_excess"] for t in by_pe[pe] if t.get("fwd_excess") is not None]
+        out.append({
+            "period_end": pe,
+            "n_buys": len(ex),
+            "median_excess": round(_st.median(ex), 4),
+            "hit_rate": round(sum(1 for x in ex if x > 0) / len(ex), 3),
+            "median_fwd63": round(_st.median(fwd), 4) if fwd else None,
+        })
+    return out
+
+
+def reliability_read(qh: list[dict]) -> dict:
+    """Trend read over a fund's quarter cohorts (from `quarter_cohorts`). PURE.
+
+    Compares the median of the most recent 4 quarterly `median_excess` values
+    against the all-time median: a move beyond ``RELIABILITY_TREND_PP`` (1.0pp)
+    either way labels the record 'improving' / 'deteriorating', else 'stable'.
+    `pos_share` is the share of quarters whose cohort median beat SPY. With no
+    usable history the trend is None and both labels degrade to 'n/a' — never a
+    fake verdict on an empty record.
+
+    Returns {n_q, pos_share, recent4_median, alltime_median, trend,
+    label_en, label_zh}.
+    """
+    import statistics as _st
+    meds = [q["median_excess"] for q in (qh or [])
+            if q.get("median_excess") is not None]
+    if not meds:
+        return {"n_q": 0, "pos_share": None, "recent4_median": None,
+                "alltime_median": None, "trend": None,
+                "label_en": "n/a", "label_zh": "n/a"}
+    recent4 = round(_st.median(meds[-4:]), 4)
+    alltime = round(_st.median(meds), 4)
+    if recent4 - alltime > RELIABILITY_TREND_PP:
+        trend, label_en, label_zh = "improving", "Improving", "走强"
+    elif recent4 - alltime < -RELIABILITY_TREND_PP:
+        trend, label_en, label_zh = "deteriorating", "Deteriorating", "走弱"
+    else:
+        trend, label_en, label_zh = "stable", "Stable", "稳定"
+    return {
+        "n_q": len(meds),
+        "pos_share": round(sum(1 for m in meds if m > 0) / len(meds), 3),
+        "recent4_median": recent4,
+        "alltime_median": alltime,
+        "trend": trend,
+        "label_en": label_en,
+        "label_zh": label_zh,
+    }
+
+
 def fund_scorecard(trades: list[dict]) -> dict:
     """Aggregate one fund's scored trades into a scorecard. PURE.
 
@@ -395,6 +478,12 @@ def rank_leaderboard(scorecards: dict[str, dict], min_buys: int = MIN_RANKED_BUY
             "status": sc.get("status"),
             # Decay chips at horizons 21/63/126 (252 omitted — frozen-until-matured)
             "decay": sc.get("decay"),
+            # v3 Signal Desk: quarter-cohort history (S2 sparkbar) + reliability chip.
+            # trade_log intentionally NOT copied here — it already rides in
+            # by_fund[slug]["scorecard"] and duplicating 40 rows x 50 funds would
+            # bloat the desk payload for no reader.
+            "quarter_history": sc.get("quarter_history", []),
+            "reliability": sc.get("reliability"),
         })
     # eligible funds first (by robust median excess, then hit-rate), then the rest
     board.sort(key=lambda r: (
@@ -586,6 +675,17 @@ def compute_tracker(cfg: dict | None = None) -> dict | None:
             sc["decay"] = decay
         except Exception:  # noqa: BLE001
             log.debug("decay chips failed for %s", slug, exc_info=True)
+        # ---- v3 Signal Desk: quarter cohorts + reliability read + slim trade log ----
+        try:
+            sc["quarter_history"] = quarter_cohorts(trades)
+            sc["reliability"] = reliability_read(sc["quarter_history"])
+            sc["trade_log"] = [_slim(t) for t in sorted(
+                trades, key=lambda x: x.get("filing_date") or "", reverse=True)[:40]]
+        except Exception:  # noqa: BLE001
+            log.debug("quarter cohorts failed for %s", slug, exc_info=True)
+            sc.setdefault("quarter_history", [])
+            sc.setdefault("reliability", None)
+            sc.setdefault("trade_log", [])
         scorecards[slug] = sc
         # latest-quarter action map (for tagging current holdings) + top book
         latest_period = max((t["period_end"] for t in trades), default="")
