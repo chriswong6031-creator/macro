@@ -43,6 +43,84 @@ QUAD_MEANING = {
                      "增长 ↓ 通胀 ↓ — 债券与防御优于股票"),
 }
 
+# ---- IRD-R8 display shim: iso3 → name/flag for the fragility-map panel --------
+# (same idiom as the IRD-W3 _TRANSMITTER_NAMES shim; covers engine.intl_risk._IMF_COUNTRIES)
+_VULN_COUNTRY_NAMES: dict[str, dict[str, str]] = {
+    "AUS": {"en": "Australia",      "zh": "澳大利亚",   "flag": "🇦🇺"},
+    "BRA": {"en": "Brazil",         "zh": "巴西",       "flag": "🇧🇷"},
+    "CAN": {"en": "Canada",         "zh": "加拿大",     "flag": "🇨🇦"},
+    "CHL": {"en": "Chile",          "zh": "智利",       "flag": "🇨🇱"},
+    "CHN": {"en": "China",          "zh": "中国",       "flag": "🇨🇳"},
+    "COL": {"en": "Colombia",       "zh": "哥伦比亚",   "flag": "🇨🇴"},
+    "DEU": {"en": "Germany",        "zh": "德国",       "flag": "🇩🇪"},
+    "EGY": {"en": "Egypt",          "zh": "埃及",       "flag": "🇪🇬"},
+    "ESP": {"en": "Spain",          "zh": "西班牙",     "flag": "🇪🇸"},
+    "FRA": {"en": "France",         "zh": "法国",       "flag": "🇫🇷"},
+    "GBR": {"en": "United Kingdom", "zh": "英国",       "flag": "🇬🇧"},
+    "HUN": {"en": "Hungary",        "zh": "匈牙利",     "flag": "🇭🇺"},
+    "IDN": {"en": "Indonesia",      "zh": "印尼",       "flag": "🇮🇩"},
+    "IND": {"en": "India",          "zh": "印度",       "flag": "🇮🇳"},
+    "ITA": {"en": "Italy",          "zh": "意大利",     "flag": "🇮🇹"},
+    "JPN": {"en": "Japan",          "zh": "日本",       "flag": "🇯🇵"},
+    "KOR": {"en": "South Korea",    "zh": "韩国",       "flag": "🇰🇷"},
+    "MEX": {"en": "Mexico",         "zh": "墨西哥",     "flag": "🇲🇽"},
+    "MYS": {"en": "Malaysia",       "zh": "马来西亚",   "flag": "🇲🇾"},
+    "PHL": {"en": "Philippines",    "zh": "菲律宾",     "flag": "🇵🇭"},
+    "POL": {"en": "Poland",         "zh": "波兰",       "flag": "🇵🇱"},
+    "THA": {"en": "Thailand",       "zh": "泰国",       "flag": "🇹🇭"},
+    "TUR": {"en": "Turkey",         "zh": "土耳其",     "flag": "🇹🇷"},
+    "USA": {"en": "United States",  "zh": "美国",       "flag": "🇺🇸"},
+    "ZAF": {"en": "South Africa",   "zh": "南非",       "flag": "🇿🇦"},
+}
+
+
+def _enrich_vulnerability(vuln: dict | None) -> dict | None:
+    """Annotate vulnerability_table() rows with the display fields the fragility-map
+    panel reads (flag emoji, EN/ZH names, plain-word chip tags, one-line desc).
+
+    Analytic keys (iso3, values, raw flag slugs, fragile) are preserved for the
+    Tier-2 receipt; enrichment is additive and fail-open per row. Raw engine slugs
+    like 'debt>70.0%_rising' never reach the glance tier (Design Doctrine Law 2).
+    """
+    if not vuln or not vuln.get("countries"):
+        return vuln
+    for row in vuln["countries"]:
+        try:
+            iso3 = row.get("iso3", "")
+            info = _VULN_COUNTRY_NAMES.get(iso3, {})
+            row["cc"] = iso3
+            row["flag"] = info.get("flag", "🌐")
+            row["name_en"] = info.get("en", iso3)
+            row["name_zh"] = info.get("zh", iso3)
+            tags: list[dict[str, str]] = []
+            for f in row.get("flags") or []:
+                if f.startswith("debt>") and row.get("debt_gdp") is not None:
+                    tags.append({"en": f"Debt {row['debt_gdp']:.0f}% of GDP & rising",
+                                 "zh": f"债务占GDP {row['debt_gdp']:.0f}% 且上升"})
+                elif f.startswith("CA<") and row.get("current_account") is not None:
+                    tags.append({"en": f"Current account {row['current_account']:+.1f}% of GDP",
+                                 "zh": f"经常账户 {row['current_account']:+.1f}% GDP"})
+                elif f.startswith("fiscal<") and row.get("fiscal_balance") is not None:
+                    tags.append({"en": f"Fiscal balance {row['fiscal_balance']:+.1f}% of GDP",
+                                 "zh": f"财政余额 {row['fiscal_balance']:+.1f}% GDP"})
+                elif f.startswith("credit_gap>") and row.get("bis_credit_gap") is not None:
+                    tags.append({"en": f"Credit gap {row['bis_credit_gap']:.1f}pp above trend",
+                                 "zh": f"信用缺口高于趋势 {row['bis_credit_gap']:.1f}pp"})
+                else:
+                    # future engine flag with no mapping yet — plain words, never the raw slug
+                    tags.append({"en": "Structural warning", "zh": "结构性预警"})
+            row["tags"] = tags
+            n_flags = len(row.get("flags") or [])
+            if n_flags:
+                row["desc_en"] = f"{n_flags} of 4 structural warnings concurrent"
+                row["desc_zh"] = f"4项结构性预警中{n_flags}项并发"
+            else:
+                row["desc_en"] = "No structural warnings"
+                row["desc_zh"] = "无结构性预警"
+        except Exception:  # noqa: BLE001 — display shim never blocks the artifact
+            continue
+    return vuln
+
 
 def main() -> int:
     try:
@@ -98,6 +176,14 @@ def main() -> int:
         em_stress_result = _em_stress()
     except Exception as _e:
         log.error("intl_risk em_stress failed (%s)", _e)
+
+    # IRD-R8 slow fragility map — annual IMF WEO/BIS data, cheap store reads (<1s)
+    vulnerability_result = None
+    try:
+        from engine.intl_risk import vulnerability_table as _vulnerability_table
+        vulnerability_result = _enrich_vulnerability(_vulnerability_table())
+    except Exception as _e:
+        log.error("intl_risk vulnerability_table failed (%s)", _e)
 
     spillover_result = None
     try:
@@ -241,7 +327,7 @@ def main() -> int:
         "built": datetime.now(timezone.utc).isoformat(),
         "timing_sec": round(_ird_elapsed, 2),
         "em_stress": em_stress_result,
-        "vulnerability": None,   # slow table — not computed in daily path
+        "vulnerability": vulnerability_result,   # IRD-R8 fragility map (display-enriched rows)
         "spillover": spillover_result,
         "corr_tightening": corr_result,
         "two_tier": two_tier_result,
@@ -259,8 +345,9 @@ def main() -> int:
         (_ird_dir / "latest.json").write_text(
             json.dumps(_intl_risk_payload, indent=2, default=str, ensure_ascii=False)
         )
-        log.info("wrote data/intl_risk/latest.json (em_stress=%s, contagion=%s)",
-                 (em_stress_result or {}).get("state"), contagion_state)
+        log.info("wrote data/intl_risk/latest.json (em_stress=%s, contagion=%s, vuln_fragile=%s)",
+                 (em_stress_result or {}).get("state"), contagion_state,
+                 (vulnerability_result or {}).get("n_fragile"))
     except Exception as _e:
         log.error("failed to write intl_risk/latest.json (%s)", _e)
 

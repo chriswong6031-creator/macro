@@ -476,3 +476,111 @@ def test_build_intl_risk_card_in_weather_board():
     assert len(ird_cards) == 1, f"Expected exactly 1 intl_risk card; got {len(ird_cards)}"
     assert ird_cards[0]["domain"] == "intl_risk"
     assert ird_cards[0]["detail_href"] == "intl.html"
+
+
+# ---------------------------------------------------------------------------
+# Test 10: IRD-R8 vulnerability table wired into build_intl (dead-wire regression)
+# ---------------------------------------------------------------------------
+
+def test_build_intl_vulnerability_wired():
+    """Regression for the dead-wire class (#2353→#2360): _intl_risk_payload must not
+    hardcode 'vulnerability': None — the IRD-R8 table has to be computed and wired."""
+    import ast
+
+    src = (Path(__file__).resolve().parent.parent / "scripts" / "build_intl.py").read_text()
+    tree = ast.parse(src)
+
+    hits = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Dict):
+            for k, v in zip(node.keys, node.values):
+                if isinstance(k, ast.Constant) and k.value == "vulnerability":
+                    hits.append(v)
+
+    assert hits, "no dict literal with a 'vulnerability' key found in build_intl.py"
+    for v in hits:
+        assert not (isinstance(v, ast.Constant) and v.value is None), (
+            "build_intl.py hardcodes 'vulnerability': None — IRD-R8 table is dead-wired"
+        )
+    # And the engine function must actually be referenced somewhere in the builder
+    assert "vulnerability_table" in src, (
+        "build_intl.py never references engine.intl_risk.vulnerability_table"
+    )
+
+
+def test_vuln_country_names_cover_imf_roster():
+    """Every country the engine emits has a display name/flag — no raw iso3 or 🌐
+    fallbacks on the panel when the roster grows."""
+    from engine.intl_risk import _IMF_COUNTRIES
+    from scripts.build_intl import _VULN_COUNTRY_NAMES
+
+    missing = [c for c in _IMF_COUNTRIES if c not in _VULN_COUNTRY_NAMES]
+    assert not missing, f"_VULN_COUNTRY_NAMES missing display entries for: {missing}"
+    for iso3, info in _VULN_COUNTRY_NAMES.items():
+        assert info.get("en") and info.get("zh") and info.get("flag"), (
+            f"incomplete display entry for {iso3}: {info}"
+        )
+
+
+def test_enrich_vulnerability_display_shape():
+    """Enrichment adds the template-facing keys (flag/name/desc/tags) with plain
+    bilingual words — never the raw engine slugs — and preserves analytic keys."""
+    from scripts.build_intl import _enrich_vulnerability
+
+    vuln = {
+        "countries": [
+            {"iso3": "USA", "debt_gdp": 123.9, "debt_trend_3y": "rising",
+             "fiscal_balance": -6.8, "current_account": -3.6, "bis_credit_gap": -11.5,
+             "flags": ["debt>70.0%_rising", "CA<-3.0%GDP", "fiscal<-5.0%GDP"],
+             "fragile": True, "asof_year": 2025},
+            {"iso3": "AUS", "debt_gdp": 50.0, "debt_trend_3y": "stable",
+             "fiscal_balance": -1.0, "current_account": 1.0, "bis_credit_gap": None,
+             "flags": [], "fragile": False, "asof_year": 2025},
+        ],
+        "n_countries": 2, "fragile": ["USA"], "n_fragile": 1, "gaps": [],
+    }
+    out = _enrich_vulnerability(vuln)
+
+    usa = out["countries"][0]
+    assert usa["cc"] == "USA"
+    assert usa["flag"] == "🇺🇸"
+    assert usa["name_en"] == "United States" and usa["name_zh"] == "美国"
+    assert len(usa["tags"]) == 3
+    for tag in usa["tags"]:
+        assert tag["en"] and tag["zh"], f"empty tag side: {tag}"
+        # raw engine slugs are banned from the glance tier (Design Doctrine Law 2)
+        for raw in ("debt>", "_rising", "CA<", "fiscal<", "credit_gap>"):
+            assert raw not in tag["en"] and raw not in tag["zh"], (
+                f"raw engine slug leaked into display tag: {tag}"
+            )
+    assert "Debt 124% of GDP" in usa["tags"][0]["en"]
+    assert usa["desc_en"] == "3 of 4 structural warnings concurrent"
+    assert "3" in usa["desc_zh"]
+    # analytic keys preserved for the Tier-2 receipt
+    assert usa["fragile"] is True and usa["debt_gdp"] == 123.9
+    assert usa["flags"] == ["debt>70.0%_rising", "CA<-3.0%GDP", "fiscal<-5.0%GDP"]
+
+    aus = out["countries"][1]
+    assert aus["tags"] == []
+    assert aus["desc_en"] == "No structural warnings"
+    assert aus["fragile"] is False
+
+
+def test_enrich_vulnerability_fail_open():
+    """None/empty/malformed inputs never raise — the display shim is fail-open."""
+    from scripts.build_intl import _enrich_vulnerability
+
+    assert _enrich_vulnerability(None) is None
+    assert _enrich_vulnerability({}) == {}
+
+    # malformed row (None) + unknown iso3 + unknown future flag slug
+    out = _enrich_vulnerability({
+        "countries": [
+            None,
+            {"iso3": "XXX", "flags": ["reer_dev>10%"], "fragile": False},
+        ],
+    })
+    row = out["countries"][1]
+    assert row["name_en"] == "XXX"          # iso3 fallback when no display entry
+    assert row["tags"][0]["en"] == "Structural warning"  # plain words, not the slug
+    assert "reer_dev" not in row["tags"][0]["en"]
