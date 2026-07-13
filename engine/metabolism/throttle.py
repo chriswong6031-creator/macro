@@ -39,13 +39,23 @@ INTENSITY_MULT: dict[str, float] = {
 _VALID_INTENSITIES = frozenset(INTENSITY_MULT)
 _DEFAULT_INTENSITY = "normal"
 
-_VALID_PACES = frozenset({"single", "2x", "4x"})
+_VALID_PACES = frozenset({"single", "2x", "4x", "low", "medium", "high", "max"})
 _DEFAULT_PACE = "single"
 
+# Extra chain-runner cycles (legacy V10 API — no production caller since V11).
+# Ladder vocab maps analogously to legacy: low->0, medium->1, high->2, max->3.
+# This keeps the function consistent even though pace_loops_per_window() is
+# the canonical V11 accessor.
 _PACE_EXTRA: dict[str, int] = {
+    # Legacy tokens
     "single": 0,
     "2x": 1,
     "4x": 3,
+    # V11 ladder (analogous mapping)
+    "low": 0,
+    "medium": 1,
+    "high": 2,
+    "max": 3,
 }
 
 # V11 loops ladder: METAB_PACE vocabulary -> loops per 5-hour window.
@@ -92,8 +102,10 @@ def intensity_multiplier() -> float:
 def pace() -> str:
     """Return the current pace setting.
 
-    Reads env METAB_PACE in {"single","2x","4x"}; invalid/absent -> "single".
-    NEVER raises.
+    Reads env METAB_PACE; valid values are the V11 ladder vocab
+    {"low","medium","high","max"} (canonical) and legacy {"single","2x","4x"}
+    (accepted for backward compatibility).  The raw value is returned for any
+    valid member — no remapping.  Invalid/absent -> "single".  NEVER raises.
     """
     try:
         raw = os.environ.get("METAB_PACE", "").strip().lower()
@@ -110,7 +122,14 @@ def pace() -> str:
 def pace_extra_cycles(p: str | None = None) -> int:
     """Return the number of extra chain-runner cycles allowed today.
 
-    single->0, 2x->1, 4x->3. Pass p=None to read from env. NEVER raises.
+    Legacy mapping: single->0, 2x->1, 4x->3.
+    Ladder mapping: low->0, medium->1, high->2, max->3.
+
+    Note: this daily-extras API has no production caller since V11; it is
+    retained for backward compatibility with metabolism-cycle.yml pace gate.
+    The canonical V11 accessor is pace_loops_per_window().
+
+    Pass p=None to read from env. NEVER raises.
     """
     try:
         resolved = p if p is not None else pace()

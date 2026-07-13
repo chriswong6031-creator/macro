@@ -509,3 +509,91 @@ class TestValidateRunBody:
         ok, err, wf, inputs = self._v({"mode": "build"})
         assert ok is True
         assert inputs == {}
+
+
+# ---------------------------------------------------------------------------
+# 6. throttle() pace vocab — V11 ladder end-to-end via admin panel
+# ---------------------------------------------------------------------------
+
+class TestThrottlePaceLadderEndToEnd:
+    """throttle() must correctly surface V11 ladder vocab (low/medium/high/max).
+
+    Before the throttle.py fix, _VALID_PACES only contained the legacy set so
+    pace("medium") collapsed to "single", loops_per_window stayed 1, and the
+    effective_ladder field was always "low".  After the fix every valid member
+    passes through unchanged.
+    """
+
+    def _call(self, mp, pace=None):
+        with _mock_github(mp, pace=pace):
+            return mp.throttle()
+
+    def test_pace_medium_effective_and_loops(self):
+        """METAB_PACE=medium -> effective=medium, loops_per_window=2."""
+        mp = _mp()
+        result = self._call(mp, pace="medium")
+        assert result["pace"]["effective"] == "medium"
+        assert result["pace"]["loops_per_window"] == 2
+
+    def test_pace_medium_effective_ladder(self):
+        """METAB_PACE=medium -> effective_ladder=medium (not low)."""
+        mp = _mp()
+        result = self._call(mp, pace="medium")
+        assert result["pace"]["effective_ladder"] == "medium"
+
+    def test_pace_high_effective_and_loops(self):
+        """METAB_PACE=high -> effective=high, loops_per_window=3."""
+        mp = _mp()
+        result = self._call(mp, pace="high")
+        assert result["pace"]["effective"] == "high"
+        assert result["pace"]["loops_per_window"] == 3
+
+    def test_pace_high_effective_ladder(self):
+        """METAB_PACE=high -> effective_ladder=high."""
+        mp = _mp()
+        result = self._call(mp, pace="high")
+        assert result["pace"]["effective_ladder"] == "high"
+
+    def test_pace_max_effective_and_loops(self):
+        """METAB_PACE=max -> effective=max, loops_per_window=4."""
+        mp = _mp()
+        result = self._call(mp, pace="max")
+        assert result["pace"]["effective"] == "max"
+        assert result["pace"]["loops_per_window"] == 4
+
+    def test_pace_low_effective_and_loops(self):
+        """METAB_PACE=low -> effective=low, loops_per_window=1."""
+        mp = _mp()
+        result = self._call(mp, pace="low")
+        assert result["pace"]["effective"] == "low"
+        assert result["pace"]["loops_per_window"] == 1
+
+    def test_pace_legacy_2x_maps_to_medium_ladder(self):
+        """METAB_PACE=2x -> effective=2x, effective_ladder=medium."""
+        mp = _mp()
+        result = self._call(mp, pace="2x")
+        assert result["pace"]["effective"] == "2x"
+        assert result["pace"]["effective_ladder"] == "medium"
+
+    def test_pace_legacy_single_maps_to_low_ladder(self):
+        """METAB_PACE=single -> effective=single, effective_ladder=low."""
+        mp = _mp()
+        result = self._call(mp, pace="single")
+        assert result["pace"]["effective"] == "single"
+        assert result["pace"]["effective_ladder"] == "low"
+
+    def test_pace_legacy_4x_maps_to_high_ladder(self):
+        """METAB_PACE=4x -> effective=4x, effective_ladder=high."""
+        mp = _mp()
+        result = self._call(mp, pace="4x")
+        assert result["pace"]["effective"] == "4x"
+        assert result["pace"]["effective_ladder"] == "high"
+
+    def test_invalid_pace_falls_back_safely(self):
+        """Garbage METAB_PACE -> effective=single (safe fallback), loops_per_window=1."""
+        mp = _mp()
+        result = self._call(mp, pace="turbo")
+        # effective must be a valid member, never the garbage value
+        valid_paces = {"single", "2x", "4x", "low", "medium", "high", "max"}
+        assert result["pace"]["effective"] in valid_paces
+        assert result["pace"]["loops_per_window"] >= 1

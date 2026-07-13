@@ -152,6 +152,196 @@ const TAB_LABELS = Object.fromEntries(NAV_GROUPS.flatMap(g => g.items));
 let CURRENT = "overview";
 let SUMMARY = null;
 let RT_TIMER = null;
+let LOOP_TIMER = null;   /* live-runs poll interval (metabolism + mastermind_ai tabs) */
+let LOOP_TICK  = null;   /* 1-second elapsed-counter tick for the loop strip */
+
+/* ---- live-runs helpers --------------------------------------------------- */
+/* Map workflow names (no .yml suffix) to plain-word stage labels. */
+const LOOP_STAGE_WORD_NAME = {
+  "metabolism-agenda":     "scanning & ranking",
+  "metabolism-propose":    "drafting proposals",
+  "metabolism-adjudicate": "judging proposals",
+  "metabolism-build":      "building approved work",
+  "metabolism-cycle":      "full loop (chain runner)",
+};
+
+function loopStageWord(run) {
+  const wf = (run && (run.workflow || "")).replace(/\.yml$/, "");
+  return LOOP_STAGE_WORD_NAME[wf] || wf || "unknown stage";
+}
+
+function fmtElapsedSec(totalSec) {
+  if (totalSec == null || totalSec < 0) return "0s";
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = Math.floor(totalSec % 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function fmtLoopDurationMin(startStr, endStr) {
+  try {
+    const dur = (new Date(endStr) - new Date(startStr)) / 60000;
+    return dur > 0 ? dur.toFixed(0) : "0";
+  } catch (e) { return "?"; }
+}
+
+/* Render the live-loop status strip HTML from /api/live_runs response.
+   metabolism = runs.metabolism  ({active, queued, last_completed, heartbeat})
+   codex      = runs.codex       ({active, queued, last_completed})
+   Returns an HTML string. Called from metabolism, mastermind_ai, and orchestrator tabs. */
+function liveLoopStripHtml(metabolism, codex) {
+  /* metabolism.active is an array; prefer the first (most recent) entry. */
+  const metab = (metabolism && typeof metabolism === "object") ? metabolism : {};
+  const active  = (Array.isArray(metab.active)  && metab.active.length)  ? metab.active[0]  : null;
+  const queued  = (Array.isArray(metab.queued)  && metab.queued.length)  ? metab.queued[0]  : null;
+  const last    = metab.last_completed || null;
+
+  let html = "";
+
+  /* ---- main loop strip line ---- */
+  if (active) {
+    const stage = loopStageWord(active);
+    const startTs = active.run_started_at || active.created_at || "";
+    const elSec = startTs ? Math.max(0, Math.floor((Date.now() - new Date(startTs).getTime()) / 1000)) : 0;
+    const elTxt = fmtElapsedSec(elSec);
+    const ghLink = active.html_url ? ` &mdash; <a href="${esc(active.html_url)}" target="_blank" rel="noopener">watch on GitHub</a>` : "";
+    const currentStep = (Array.isArray(active.jobs) && active.jobs.length) ? active.jobs[0].current_step : null;
+    const stepLine = currentStep ? `<div class="loop-strip-step sub">building: ${esc(currentStep)}</div>` : "";
+    html += `<div class="loop-strip loop-strip-active">
+      <span class="loop-dot">&#9679;</span>
+      <div>
+        <div>Loop running &mdash; <span class="loop-stage">${esc(stage)}</span> &middot; started <span class="loop-elapsed" data-loop-start="${esc(startTs)}">${esc(elTxt)}</span> ago${ghLink}</div>
+        ${stepLine}
+      </div>
+    </div>`;
+  } else if (queued) {
+    const startTs = queued.created_at || "";
+    const elSec = startTs ? Math.max(0, Math.floor((Date.now() - new Date(startTs).getTime()) / 1000)) : 0;
+    const elTxt = fmtElapsedSec(elSec);
+    html += `<div class="loop-strip loop-strip-queued">
+      <span class="loop-dot loop-dot-queued">&#9684;</span>
+      Loop queued behind other runner work &mdash; waiting <span class="loop-elapsed" data-loop-start="${esc(startTs)}">${esc(elTxt)}</span>
+    </div>`;
+  } else if (last) {
+    const outcome = last.conclusion || last.status || "done";
+    const outcomeWord = outcome === "success" ? "completed" : outcome === "failure" ? "failed" : outcome === "cancelled" ? "cancelled" : outcome;
+    const endTs = last.updated_at || last.run_started_at || "";
+    const startTs = last.created_at || last.run_started_at || "";
+    const agoSec = endTs ? Math.max(0, Math.floor((Date.now() - new Date(endTs).getTime()) / 1000)) : null;
+    const agoTxt = agoSec != null ? fmtElapsedSec(agoSec) : "—";
+    const durTxt = last.duration_s != null ? (last.duration_s / 60).toFixed(0) : "?";
+    html += `<div class="loop-strip loop-strip-idle">
+      <span class="loop-dot loop-dot-idle">&#9675;</span>
+      No loop running &mdash; last loop ${esc(outcomeWord)} ${esc(agoTxt)} ago, took ${esc(durTxt)}m
+    </div>`;
+  } else {
+    html += `<div class="loop-strip loop-strip-idle">
+      <span class="loop-dot loop-dot-idle">&#9675;</span>
+      No loop running
+    </div>`;
+  }
+
+  /* ---- codex lane line (only when active/queued) ---- */
+  const cdx = (codex && typeof codex === "object") ? codex : {};
+  const cdxActive = (Array.isArray(cdx.active) && cdx.active.length) ? cdx.active[0] : null;
+  const cdxQueued = (Array.isArray(cdx.queued) && cdx.queued.length) ? cdx.queued[0] : null;
+  if (cdxActive) {
+    const startTs = cdxActive.run_started_at || cdxActive.created_at || "";
+    const elSec = startTs ? Math.max(0, Math.floor((Date.now() - new Date(startTs).getTime()) / 1000)) : 0;
+    const ghLink = cdxActive.html_url ? ` &mdash; <a href="${esc(cdxActive.html_url)}" target="_blank" rel="noopener">watch ↗</a>` : "";
+    html += `<div class="loop-strip loop-strip-active loop-strip-secondary">
+      <span class="loop-dot">&#9679;</span>
+      Codex research: running &mdash; ${esc(fmtElapsedSec(elSec))} ago${ghLink}
+    </div>`;
+  } else if (cdxQueued) {
+    const startTs = cdxQueued.created_at || "";
+    const elSec = startTs ? Math.max(0, Math.floor((Date.now() - new Date(startTs).getTime()) / 1000)) : 0;
+    html += `<div class="loop-strip loop-strip-queued loop-strip-secondary">
+      <span class="loop-dot loop-dot-queued">&#9684;</span>
+      Codex research: queued &mdash; waiting ${esc(fmtElapsedSec(elSec))}
+    </div>`;
+  }
+
+  return html;
+}
+
+/* Render the daily-pipeline strip line (used in orchestrator hero).
+   nightly is runs.nightly ({active, queued, last_completed}) from /api/live_runs.
+   Returns HTML string or "". */
+function dailyPipelineStripLine(nightly) {
+  if (!nightly || typeof nightly !== "object") return "";
+  const activeRun = (Array.isArray(nightly.active) && nightly.active.length) ? nightly.active[0] : null;
+  const queuedRun = (Array.isArray(nightly.queued) && nightly.queued.length) ? nightly.queued[0] : null;
+  if (activeRun) {
+    const startTs = activeRun.run_started_at || activeRun.created_at || "";
+    const elSec = startTs ? Math.max(0, Math.floor((Date.now() - new Date(startTs).getTime()) / 1000)) : 0;
+    return `<div class="loop-strip loop-strip-active" style="margin-top:8px">
+      <span class="loop-dot">&#9679;</span>
+      Nightly pipeline running &mdash; <span class="loop-elapsed" data-loop-start="${esc(startTs)}">${esc(fmtElapsedSec(elSec))}</span>
+    </div>`;
+  }
+  if (queuedRun) {
+    return `<div class="loop-strip loop-strip-queued" style="margin-top:8px">
+      <span class="loop-dot loop-dot-queued">&#9684;</span>
+      Nightly pipeline queued
+    </div>`;
+  }
+  return "";
+}
+
+/* Start the live-runs poll for a tab.
+   tabId: the CURRENT tab id, used to auto-cancel when tab changes.
+   wrapId: id of the container element where the strip HTML will be injected.
+   dailyMode: when true, also renders the daily-pipeline strip line inside the strip. */
+function startLoopPoll(tabId, wrapId, dailyMode) {
+  /* Clear any previous loop timers. */
+  if (LOOP_TIMER) { clearInterval(LOOP_TIMER); LOOP_TIMER = null; }
+  if (LOOP_TICK)  { clearInterval(LOOP_TICK);  LOOP_TICK  = null; }
+
+  const doFetch = async () => {
+    if (CURRENT !== tabId) {
+      if (LOOP_TIMER) { clearInterval(LOOP_TIMER); LOOP_TIMER = null; }
+      if (LOOP_TICK)  { clearInterval(LOOP_TICK);  LOOP_TICK  = null; }
+      return;
+    }
+    let runs;
+    try { runs = await api("/api/live_runs"); } catch (e) { return; }
+    if (CURRENT !== tabId) return;
+    const wrap = $("#" + (wrapId || "loopStripWrap"));
+    if (!wrap) return;
+    let stripHtml = liveLoopStripHtml(
+      (runs && runs.metabolism) || {},
+      (runs && runs.codex) || {},
+    );
+    if (dailyMode && runs && runs.nightly) {
+      stripHtml += dailyPipelineStripLine(runs.nightly);
+    }
+    wrap.innerHTML = stripHtml;
+    /* Restart the tick timer to count elapsed time. */
+    if (LOOP_TICK) { clearInterval(LOOP_TICK); LOOP_TICK = null; }
+    LOOP_TICK = setInterval(() => tickLoopElapsed(), 1000);
+  };
+
+  /* Initial fetch immediately, then every 20 seconds. */
+  doFetch();
+  LOOP_TIMER = setInterval(doFetch, 20000);
+  /* Also start the client-side tick immediately. */
+  LOOP_TICK = setInterval(() => tickLoopElapsed(), 1000);
+}
+
+/* Update the elapsed timer display(s) without a network fetch. */
+function tickLoopElapsed() {
+  document.querySelectorAll(".loop-elapsed[data-loop-start]").forEach(el => {
+    const startStr = el.dataset.loopStart;
+    if (!startStr) return;
+    try {
+      const elSec = Math.max(0, Math.floor((Date.now() - new Date(startStr).getTime()) / 1000));
+      el.textContent = fmtElapsedSec(elSec);
+    } catch (e) { /* ignore bad dates */ }
+  });
+}
 
 function renderSidebar() {
   const nav = $("#sidenav"); if (!nav) return; nav.innerHTML = "";
@@ -176,7 +366,9 @@ function setTopbarTitle(t) { const el = $("#topbar-title"); if (el) el.textConte
 function go(id) {
   if (currentLobeId()) history.replaceState(null, "", location.pathname + location.search);
   CURRENT = id;
-  if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
+  if (RT_TIMER)   { clearInterval(RT_TIMER);   RT_TIMER   = null; }
+  if (LOOP_TIMER) { clearInterval(LOOP_TIMER); LOOP_TIMER = null; }
+  if (LOOP_TICK)  { clearInterval(LOOP_TICK);  LOOP_TICK  = null; }
   hideLobeTip();
   setActiveNav(id);
   setTopbarTitle(TAB_LABELS[id] || id);
@@ -1362,7 +1554,9 @@ function nwCrumbs(current) {
 async function renderLobeDetail(id) {
   CURRENT = "neural_web"; setActiveNav("neural_web");
   hideLobeTip();  // clear any map-node hover popup left over from the click that navigated here
-  if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
+  if (RT_TIMER)   { clearInterval(RT_TIMER);   RT_TIMER   = null; }
+  if (LOOP_TIMER) { clearInterval(LOOP_TIMER); LOOP_TIMER = null; }
+  if (LOOP_TICK)  { clearInterval(LOOP_TICK);  LOOP_TICK  = null; }
   setTopbarTitle("Neural Web");
   const v = $("#view");
   v.innerHTML = nwCrumbs(id) + `<div class="skeleton skeleton-title"></div>
@@ -1499,19 +1693,39 @@ RENDER.orchestrator = async () => {
   const ack = dia.ack || {}; const codesSeen = ack.nudge_codes_seen || []; const idsSeen = ack.directive_ids_seen || [];
   const prob = cx.probation || {};
 
+  /* Map cortex status codes to plain-word labels for display. Raw code kept in title=. */
+  const CORTEX_STATUS_WORD = { ok: "healthy", degraded: "ran without AI review", warn: "needs a look" };
+  const cortexWord = (code) => CORTEX_STATUS_WORD[String(code || "").toLowerCase()] || String(code || "unknown");
+
+  /* Render what_changed_kinds as a readable phrase. */
+  function changedKindsPhrase(kinds) {
+    if (!kinds || typeof kinds !== "object" || !Object.keys(kinds).length) return null;
+    const parts = Object.entries(kinds).map(([k, n]) => `${n} ${k.replace(/_/g, " ")}`);
+    return parts.join(", ");
+  }
+
+  /* Kind-to-description map for nudge/dialogue kinds. */
+  const NUDGE_KIND_DESC = {
+    contract_drift:  "data shape drifted from what the bot expects",
+    coverage_gap:    "the bot wants context we don't produce",
+    staleness:       "a feed it relies on has gone stale",
+    lobe_request:    "the bot asked for a new feed",
+  };
+
   const heroHtml = `<div class="mb-hero">
     <div class="mb-hero-top">
       <span class="mb-hero-kicker">Master Brain</span>
       <span class="mb-hero-name">Neural Web Orchestrator</span>
-      <span class="statpill ${ORCH_STATUS_CLS(st)}">${esc(st)}</span>
+      <span class="statpill ${ORCH_STATUS_CLS(st)}" title="${esc(st)}">${esc(cortexWord(st))}</span>
       <span class="spacer"></span>
-      <button class="btn" id="orchWake" title="workflow_dispatch daily.yml — runs the full nightly pipeline now">⏰ Wake orchestrator</button>
+      <button class="btn" id="orchWake" title="workflow_dispatch daily.yml — runs the full nightly pipeline now">&#9201; Wake orchestrator</button>
     </div>
     <div class="sub" style="margin-top:6px">${esc(hero.summary || "No run recorded yet — the first nightly pipeline run writes the orchestrator run log.")}</div>
+    <div id="orchDailyStrip"></div>
     <div class="mb-hero-chips">
-      <span class="statpill s-mut">${hero.lobes_stale != null ? hero.lobes_stale : "—"}/${hero.lobes_total != null ? hero.lobes_total : "—"} lobes stale</span>
+      <span class="statpill s-mut" title="lobes whose data contract is out of date">${hero.lobes_stale != null ? hero.lobes_stale : "—"}/${hero.lobes_total != null ? hero.lobes_total : "—"} stale feeds</span>
       <span class="statpill s-mut">${hero.what_changed_n != null ? hero.what_changed_n : "—"} changes</span>
-      <span class="statpill ${ORCH_STATUS_CLS(cx.status)}">cortex ${esc(cx.status || "unknown")}</span>
+      <span class="statpill ${ORCH_STATUS_CLS(cx.status)}" title="cortex status: ${esc(cx.status || "unknown")}">cortex ${esc(cortexWord(cx.status || "unknown"))}</span>
       <span class="statpill ${hero.nudges_n ? "s-warn" : "s-mut"}">${hero.nudges_n || 0} bot nudge${hero.nudges_n === 1 ? "" : "s"}</span>
       <span class="statpill s-mut">${hero.directives_n || 0} directive${hero.directives_n === 1 ? "" : "s"}</span>
       <span class="statpill s-mut">feedback ${esc(hero.feedback_state || "absent")}</span>
@@ -1521,28 +1735,31 @@ RENDER.orchestrator = async () => {
 
   const numInput = (key, val, lo, hi) => `<input type="number" data-orchset="${key}" data-prev="${val}" min="${lo}" max="${hi}" value="${val}" style="width:86px">`;
   const boolSwitch = (key, val) => `<label class="switch"><input type="checkbox" data-orchsetb="${key}" ${val ? "checked" : ""}><span class="slider"></span></label>`;
-  const settingsHtml = `<div class="section">Settings <span class="cnt">config.yml · orchestrator</span></div>
+  const settingsHtml = `<div class="section">Settings <span class="cnt">config.yml &middot; orchestrator</span></div>
     <div class="row">${boolSwitch("ingest_bot_feedback", s.ingest_bot_feedback)}
-      <div><div class="lab">Ingest bot feedback</div><div class="note">Read the Mastermind bot's nudges + directives (site/mastermind/nw_feedback.json) during the nightly build. <code class="muted">orchestrator.ingest_bot_feedback</code></div></div></div>
+      <div><div class="lab">Ingest bot feedback</div><div class="note">Read the Mastermind bot's nudges and directives into the nightly build so Master Brain can acknowledge them. <code class="muted">orchestrator.ingest_bot_feedback</code></div></div></div>
     <div class="row">${boolSwitch("brief_attention_nudges", s.brief_attention_nudges)}
-      <div><div class="lab">Surface nudges in the daily brief</div><div class="note">Pending bot nudges/directives appear as operator-attention items. <code class="muted">orchestrator.brief_attention_nudges</code></div></div></div>
-    <div class="row"><div class="lab" style="min-width:220px">Review every N runs</div>${numInput("review_every_n_runs", s.review_every_n_runs, 2, 50)}
-      <div class="note">Roll-up review + progress assessment cadence (2–50).</div></div>
+      <div><div class="lab">Flag nudges in the daily brief</div><div class="note">Pending bot requests show up as items for you to review in the morning brief. <code class="muted">orchestrator.brief_attention_nudges</code></div></div></div>
+    <div class="row"><div class="lab" style="min-width:220px">Review cadence</div>${numInput("review_every_n_runs", s.review_every_n_runs, 2, 50)}
+      <div class="note">How often Master Brain writes its report card (every N runs). Range 2&#x2013;50.</div></div>
     <div class="row"><div class="lab" style="min-width:220px">Site rows</div>${numInput("site_rows", s.site_rows, 10, 365)}
-      <div class="note">Run-log entries kept in the published site artifact (10–365).</div></div>`;
+      <div class="note">How many run-log rows to keep in the published site artifact (10&#x2013;365).</div></div>`;
 
   const entries = d.entries || [];
-  const runlogHtml = `<div class="section">Run log <span class="cnt">${entries.length}</span></div>` + (entries.length
-    ? `<table><thead><tr><th>Run</th><th>Workflow</th><th>Status</th><th>Lobes stale</th><th>Changes</th><th>Cortex</th><th>Nudges</th><th>Summary</th></tr></thead><tbody>
+  const runlogHtml = `<div class="section">Run log <span class="cnt">${entries.length}</span></div>
+    <div class="sub muted" style="margin-bottom:8px">One row per nightly pipeline run &mdash; what Master Brain saw and what changed.</div>`
+    + (entries.length
+    ? `<table><thead><tr><th>Run</th><th>Workflow</th><th>Status</th><th title="lobes whose data contract is out of date">Stale feeds</th><th>Changes</th><th>Cortex</th><th>Nudges</th><th>Summary</th></tr></thead><tbody>
       ${entries.map(e => {
-        const kinds = e.what_changed_kinds && Object.keys(e.what_changed_kinds).length ? Object.entries(e.what_changed_kinds).map(([k, n]) => `${k}:${n}`).join(", ") : "";
+        const rawKinds = e.what_changed_kinds && Object.keys(e.what_changed_kinds).length ? Object.entries(e.what_changed_kinds).map(([k, n]) => `${k}:${n}`).join(", ") : "";
+        const kindsPhrase = changedKindsPhrase(e.what_changed_kinds);
         return `<tr>
           <td class="mono"><b>${esc(e.run_date || "—")}</b></td>
           <td class="sub">${esc(e.workflow || "—")}</td>
           <td><span class="statpill ${ORCH_STATUS_CLS(e.overall_status)}">${esc(e.overall_status || "—")}</span></td>
-          <td class="r mono">${e.lobes_stale != null ? e.lobes_stale : "—"}/${e.lobes_total != null ? e.lobes_total : "—"}</td>
-          <td class="r mono" title="${esc(kinds)}">${e.what_changed_n != null ? e.what_changed_n : "—"}</td>
-          <td><span class="statpill ${ORCH_STATUS_CLS(e.cortex_status)}">${esc(e.cortex_status || "—")}</span></td>
+          <td class="r mono" title="lobes whose data contract is out of date">${e.lobes_stale != null ? e.lobes_stale : "—"}/${e.lobes_total != null ? e.lobes_total : "—"}</td>
+          <td class="r mono" title="${esc(rawKinds)}">${kindsPhrase ? `<span title="${esc(rawKinds)}">${esc(orchTrunc(kindsPhrase, 40))}</span>` : (e.what_changed_n != null ? e.what_changed_n : "—")}</td>
+          <td><span class="statpill ${ORCH_STATUS_CLS(e.cortex_status)}" title="${esc(e.cortex_status || "")}">${esc(cortexWord(e.cortex_status || "unknown"))}</span></td>
           <td class="r mono" title="${esc((e.nudge_codes || []).join(", "))}">${e.nudges_n != null ? e.nudges_n : 0}</td>
           <td class="sub" title="${esc(e.summary || "")}">${esc(orchTrunc(e.summary, 90))}</td>
         </tr>`;
@@ -1550,33 +1767,40 @@ RENDER.orchestrator = async () => {
     : `<div class="sub muted">No run-log entries yet. The nightly pipeline (daily.yml, 02:00 UTC) writes the first one.</div>`);
 
   const reviews = d.reviews || [];
-  const reviewsHtml = `<div class="section">Reviews <span class="cnt">every ${esc(String(s.review_every_n_runs || 5))} runs</span></div>` + (reviews.length
+  const reviewsHtml = `<div class="section">Reviews <span class="cnt">every ${esc(String(s.review_every_n_runs || 5))} runs</span></div>
+    <div class="sub muted" style="margin-bottom:8px">Every ${esc(String(s.review_every_n_runs || 5))} runs, Master Brain writes itself a report card.</div>`
+    + (reviews.length
     ? reviews.map(r => {
       const c = r.completed || {};
       return `<div class="card" style="margin-bottom:10px">
         <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
-          <b>${esc(r.from_run || "?")} → ${esc(r.to_run || "?")}</b>
+          <b>${esc(r.from_run || "?")} &#8594; ${esc(r.to_run || "?")}</b>
           <span class="statpill s-mut">${r.window_runs || "?"} runs</span>
           <span class="sub">${esc(String(r.produced_at || "").slice(0, 16).replace("T", " "))}</span>
         </div>
-        <div class="sub" style="margin:6px 0 4px">${c.what_changed_total != null ? c.what_changed_total : "—"} changes · ${c.directives_seen != null ? c.directives_seen : "—"} directives seen ${countChips(c.what_changed_kinds)}</div>
-        ${(r.assessment || []).map(a => `<div class="note" style="margin-top:3px">• ${esc(a)}</div>`).join("")}
+        <div class="sub" style="margin:6px 0 4px">${c.what_changed_total != null ? c.what_changed_total : "—"} changes &middot; ${c.directives_seen != null ? c.directives_seen : "—"} directives seen ${countChips(c.what_changed_kinds)}</div>
+        ${(r.assessment || []).map(a => `<div class="note" style="margin-top:3px">&bull; ${esc(a)}</div>`).join("")}
       </div>`;
     }).join("")
-    : `<div class="sub muted">No reviews yet — the first roll-up is written after ${esc(String(s.review_every_n_runs || 5))} logged runs.</div>`);
+    : `<div class="sub muted">No reviews yet &mdash; the first roll-up is written after ${esc(String(s.review_every_n_runs || 5))} logged runs.</div>`);
 
   const nudges = dia.nudges || [];
   const directives = dia.operator_directives || [];
   const dialogueHtml = `<div class="section">Bot dialogue <span class="cnt">${esc(dia.feedback_state || "absent")}</span></div>
+    <div class="sub muted" style="margin-bottom:8px">What the trading bot asked for &mdash; and whether it was heard.</div>
     ${nudges.length ? `<table><thead><tr><th>Code</th><th>Kind</th><th>Severity</th><th>Detail</th><th class="r">Builds seen</th><th>Ack</th></tr></thead><tbody>
-      ${nudges.map(n => `<tr>
-        <td class="mono"><b>${esc(n.code || "—")}</b></td>
-        <td class="sub">${esc(n.kind || "—")}</td>
-        <td><span class="statpill ${NUDGE_SEV_CLS(n.severity)}">${esc(n.severity || "—")}</span></td>
-        <td class="sub" style="max-width:320px">${esc(n.detail || "")}</td>
-        <td class="r mono">${n.builds_seen != null ? n.builds_seen : "—"}</td>
-        <td>${codesSeen.includes(n.code) ? '<span class="statpill s-ok">ack</span>' : '<span class="statpill s-mut">pending</span>'}</td>
-      </tr>`).join("")}</tbody></table>`
+      ${nudges.map(n => {
+        const kindCode = String(n.kind || "");
+        const kindDesc = NUDGE_KIND_DESC[kindCode] || "";
+        return `<tr>
+          <td class="mono"><b>${esc(n.code || "—")}</b><div class="note muted" style="font-size:11px">${esc(kindCode)}</div></td>
+          <td class="sub">${kindDesc ? `${esc(kindDesc)}` : esc(kindCode || "—")}</td>
+          <td><span class="statpill ${NUDGE_SEV_CLS(n.severity)}">${esc(n.severity || "—")}</span></td>
+          <td class="sub" style="max-width:320px">${esc(n.detail || "")}</td>
+          <td class="r mono">${n.builds_seen != null ? n.builds_seen : "—"}</td>
+          <td>${codesSeen.includes(n.code) ? '<span class="statpill s-ok">ack</span>' : '<span class="statpill s-mut">pending</span>'}</td>
+        </tr>`;
+      }).join("")}</tbody></table>`
       : `<div class="sub muted">No nudges from the bot in the current feedback artifact.</div>`}
     ${directives.length ? `<div class="section" style="margin-top:14px">Operator directives <span class="cnt">${directives.length}</span></div>
       ${directives.map(dd => `<div class="card" style="margin-bottom:8px">
@@ -1586,16 +1810,17 @@ RENDER.orchestrator = async () => {
         </div>
         <div class="sub" style="margin-top:4px">${esc(dd.text || "")}</div>
       </div>`).join("")}` : ""}
-    <div class="note muted" style="margin-top:8px">New directives are composed on the <a href="#" id="orchToMai">Mastermind AI</a> page — the orchestrator only observes and acknowledges them.</div>`;
+    <div class="note muted" style="margin-top:8px">New directives are composed on the <a href="#" id="orchToMai">Mastermind AI</a> page &mdash; the orchestrator only observes and acknowledges them.</div>`;
 
-  const chatHtml = `<div class="section">Chat with the orchestrator</div>
+  const chatHtml = `<div class="section">Chat</div>
+    <div class="sub muted" style="margin-bottom:8px">Ask Master Brain about its recent runs. Plain answers from the run log.</div>
     <div class="card chat-box">
       <div class="chat-msgs" id="orchChatMsgs">${orchChatMsgsHtml()}</div>
       <div class="chat-input">
         <textarea id="orchChatIn" rows="2" maxlength="2000" placeholder="e.g. What did you complete last night, and what's still stale?"></textarea>
         <button class="btn primary" id="orchChatSend">Send</button>
       </div>
-      <div class="note muted" style="margin-top:6px">Read-only pipeline persona — never trading advice. Without an LLM key it degrades to a deterministic run-log digest.</div>
+      <div class="note muted" style="margin-top:6px">Read-only pipeline persona &mdash; never trading advice. Without an LLM key it degrades to a deterministic run-log digest.</div>
     </div>`;
 
   v.innerHTML = heroHtml + settingsHtml + runlogHtml + reviewsHtml + dialogueHtml + chatHtml;
@@ -1644,6 +1869,22 @@ RENDER.orchestrator = async () => {
   };
   if (sendBtn) sendBtn.onclick = sendChat;
   if (inp) inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); } });
+
+  /* Hero: live daily-pipeline strip — one-shot fetch, fill #orchDailyStrip. */
+  (async () => {
+    const dailyStrip = $("#orchDailyStrip");
+    if (!dailyStrip) return;
+    let lr;
+    try { lr = await api("/api/live_runs"); } catch (e) { return; }
+    if (!lr || CURRENT !== "orchestrator") return;
+    const line = dailyPipelineStripLine(lr.nightly || null);
+    dailyStrip.innerHTML = line;
+    if (line) {
+      /* Start ticking the elapsed counter inside the strip. */
+      if (LOOP_TICK) { clearInterval(LOOP_TICK); LOOP_TICK = null; }
+      LOOP_TICK = setInterval(() => tickLoopElapsed(), 1000);
+    }
+  })();
 };
 
 /* ---- MASTERMIND AI (bot proxy) — W-AI ------------------------------------ */
@@ -1662,8 +1903,31 @@ RENDER.mastermind_ai = async () => {
   v.innerHTML = `<div class="spin">loading…</div>`;
   const d = await api("/api/mastermind_ai");
   if (!d || d.error) {
-    v.innerHTML = card("Mastermind AI", `<div class="sub" style="color:var(--bad)">Bot unreachable${d && d.detail ? " — " + esc(orchTrunc(d.detail, 200)) : ""}</div>
-      <div class="note muted" style="margin-top:8px">The trading bot is a separate FastAPI service (default <code>http://127.0.0.1:8000</code>; override with <code>MASTERMIND_BOT_BASE</code> on the admin server). Start it, then reload this page.</div>`);
+    /* Prominent, honest unreachable banner per the operator-facing spec.
+       Resolve the bot base URL from /api/live_runs so we show the actual
+       configured address instead of a hardcoded fallback. */
+    const detailSnip = (d && d.detail) ? esc(orchTrunc(String(d.detail), 160)) : "connection refused or timeout";
+    /* Async: fetch live_runs to get the real bot base; render the banner
+       immediately with a placeholder, then patch it once we know the base. */
+    let botBase = "http://127.0.0.1:8000";  /* default shown immediately */
+    v.innerHTML = `<div class="banner show" style="position:static;margin-bottom:16px;padding:12px 16px;border-radius:6px;display:block">
+      <div style="font-size:15px;font-weight:700;margin-bottom:6px">Bot service unreachable (<span id="maiBotBase">${esc(botBase)}</span>)</div>
+      <div>The Mastermind bot runs on the operator&#39;s Mac, not this server. Run cycle and settings will fail until <code>MASTERMIND_BOT_BASE</code> points at a reachable bot API.</div>
+      <div class="sub muted" style="margin-top:6px">Detail: ${detailSnip}</div>
+    </div>
+    <div id="loopStripWrap"></div>`;
+    /* Patch the base URL from live_runs when available. */
+    (async () => {
+      let lr;
+      try { lr = await api("/api/live_runs"); } catch (e) { /* proxy error — keep placeholder */ return; }
+      if (!lr || CURRENT !== "mastermind_ai") return;
+      const base = (lr.mastermind_bot && lr.mastermind_bot.base) ? lr.mastermind_bot.base : null;
+      if (base) {
+        const el = $("#maiBotBase");
+        if (el) el.textContent = base;
+      }
+    })();
+    startLoopPoll("mastermind_ai", "loopStripWrap", false);
     return;
   }
   const st = d.settings || {}, flagsObj = d.flags || {};
@@ -1699,7 +1963,7 @@ RENDER.mastermind_ai = async () => {
   };
   const settingsHtml = `<div class="section">Settings <span class="cnt">bot-side</span></div>` + MAI_SETTING_FIELDS.map(settingRow).join("");
 
-  v.innerHTML = heroHtml + settingsHtml
+  v.innerHTML = `<div id="loopStripWrap"></div>` + heroHtml + settingsHtml
     + `<div class="section">Loop log &amp; reviews</div><div id="maiLoopLog"><div class="spin">loading…</div></div>
        <div class="section">Improvements</div><div id="maiImprovements"><div class="spin">loading…</div></div>
        <div class="section">Reflection &amp; dialogue</div><div id="maiReflection"><div class="spin">loading…</div></div>`;
@@ -1716,14 +1980,46 @@ RENDER.mastermind_ai = async () => {
     }
   });
   const runBtn = $("#maiRun");
-  if (runBtn) runBtn.onclick = async () => {
-    if (!confirm("Run one Mastermind improvement cycle now?")) return;
-    runBtn.disabled = true; runBtn.textContent = "running…";
-    const r = await post("/api/mastermind_ai/run", {});
-    runBtn.disabled = false; runBtn.textContent = "▶ Run cycle now";
-    if (r && !r.error && r.ok !== false) { toast("Cycle triggered"); setTimeout(() => { if (CURRENT === "mastermind_ai") RENDER.mastermind_ai(); }, 1500); }
-    else toast((r && (r.error || r.detail)) || "run failed", true);
-  };
+  if (runBtn) {
+    let _runElapsed = null;
+    runBtn.onclick = async () => {
+      if (!confirm("Run one Mastermind improvement cycle now?")) return;
+      runBtn.disabled = true;
+      const runStart = Date.now();
+      /* Show elapsed counter up to the 30s proxy timeout. */
+      _runElapsed = setInterval(() => {
+        const sec = Math.floor((Date.now() - runStart) / 1000);
+        runBtn.textContent = `running… ${sec}s`;
+      }, 1000);
+      let r;
+      try { r = await post("/api/mastermind_ai/run", {}); } catch (e) { r = { error: String(e) }; }
+      clearInterval(_runElapsed); _runElapsed = null;
+      runBtn.disabled = false;
+      runBtn.textContent = "▶ Run cycle now";
+      if (r && !r.error && r.ok !== false) {
+        /* Show inline success — no blind reload. */
+        const heroSub = v.querySelector(".mb-hero .sub");
+        if (heroSub) heroSub.textContent = "Cycle started — refresh to see updated loop log.";
+        toast("Cycle started");
+        /* Soft refresh of the data panels after a short delay. */
+        setTimeout(() => { if (CURRENT === "mastermind_ai") RENDER.mastermind_ai(); }, 2000);
+      } else {
+        /* Show the server's error text inline under the button. */
+        const errMsg = (r && (r.error || r.detail)) || "run failed";
+        let errEl = v.querySelector("#maiRunErr");
+        if (!errEl) {
+          errEl = document.createElement("div");
+          errEl.id = "maiRunErr";
+          errEl.className = "note";
+          errEl.style.color = "var(--bad)";
+          errEl.style.marginTop = "6px";
+          runBtn.parentElement.appendChild(errEl);
+        }
+        errEl.textContent = errMsg;
+        toast(errMsg, true);
+      }
+    };
+  }
 
   /* async sub-panels */
   (async () => {
@@ -1821,6 +2117,9 @@ RENDER.mastermind_ai = async () => {
     box.innerHTML = html;
     wireDirectiveComposer(box);
   })();
+
+  /* Live-loop strip poll (20s while on mastermind_ai tab). */
+  startLoopPoll("mastermind_ai", "loopStripWrap", false);
 };
 
 function maiDirectiveComposer() {
@@ -2588,6 +2887,7 @@ RENDER.metabolism = async () => {
   }
 
   v.innerHTML = `
+    <div id="loopStripWrap"></div>
     <div class="section">Autonomous Loop Switch</div>
     <div class="card">
       ${heroHtml}
@@ -2708,6 +3008,9 @@ RENDER.metabolism = async () => {
     const arStop = $("#rununtiStopBtn", v);
     if (arStop) arStop.addEventListener("click", () => postRununtil("off", "Stop"));
   }
+
+  // Live-loop strip poll (20s interval while on metabolism tab)
+  startLoopPoll("metabolism", "loopStripWrap", false);
 
   // Async Key Usage loader (V10)
   (async () => {
