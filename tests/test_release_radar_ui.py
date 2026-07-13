@@ -90,13 +90,29 @@ def _render(mode: str = "macro") -> str:
 
 
 def _rr_section_src() -> str:
-    """Return the Release Radar CSS+script block from the template source."""
+    """Return the Release Radar CSS+markup+script block from the template source.
+
+    Anchored on stable functional markers, not prose: the section starts at the
+    RR stylesheet (`<style id="rr-css">`, immediately followed by the
+    `id="release-radar"` panel and its script IIFE) and ends at the closing
+    `</script>` after the RR script's last symbol (`window.mmOpenFirstRR`).
+    Anchoring on the first "RELEASE RADAR" occurrence previously matched an
+    unrelated CSS comment and silently widened the scan to ~7200 lines of
+    non-RR surfaces (spurious MRI-R5 hit, fixed in PR #2508).
+    """
     src = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
-    idx_start = src.find("RELEASE RADAR")
-    idx_end = src.find("Week ahead", idx_start) if idx_start >= 0 else -1
+    idx_start = src.find('<style id="rr-css">')
     if idx_start < 0:
-        pytest.skip("RELEASE RADAR block not found in template source")
-    return src[idx_start:idx_end] if idx_end > idx_start else src[idx_start:idx_start + 80000]
+        pytest.skip('Release Radar block (<style id="rr-css">) not found in template source')
+    idx_tail = src.find("window.mmOpenFirstRR = function", idx_start)
+    assert idx_tail > idx_start, "RR script tail marker (window.mmOpenFirstRR) not found after rr-css"
+    idx_end = src.find("</script>", idx_tail)
+    assert idx_end > idx_tail, "closing </script> after RR script tail not found"
+    section = src[idx_start:idx_end + len("</script>")]
+    # Guard against the window silently shrinking past the panel or script body.
+    assert 'id="release-radar"' in section, "RR panel div missing from anchored section"
+    assert "function renderModal" in section, "RR renderModal missing from anchored section"
+    return section
 
 
 def _fixture() -> dict:
