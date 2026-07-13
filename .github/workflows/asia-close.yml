@@ -9,20 +9,131 @@ name: asia-close
 # dependency on the US regime write.
 on:
   schedule:
-    - cron: "30 8 * * *"   # 08:30 UTC — after the HK cash close (08:00 UTC)
+    # GitHub fires this repo's schedules VERY late (measured 07-01..07-12: every scheduled
+    # run of the old single "30 8" slot was created +86..+233 min after it, i.e. 09:56-12:22
+    # UTC — and even */5 crons like live-quotes get coalesced to a handful of fires/day).
+    # So: several slots race to be the first fire, and the `gate` job below turns every
+    # slot after the day's first real run into a seconds-long green no-op. The EARLY-BIRD
+    # slots (06:00-07:20) exist because a fire is never early, only late: fired +86m they
+    # land 07:26-08:46, and the gate holds the start until the 08:25 UTC data floor
+    # (HK closing auction prints ~08:10 UTC = 16:10 HKT; mainland vendor EOD ~08:00-08:30)
+    # instead of waiting for a late 08:30-slot fire at ~10:00. The late slots are
+    # backstops for dropped/coalesced fires. Net effect: start ≈ the close, not +2-4h.
+    - cron: "0 6 * * *"    # early bird — expected to LAND ~07:30-10:00 given fire lag
+    - cron: "40 6 * * *"   # early bird
+    - cron: "20 7 * * *"   # early bird
+    - cron: "30 8 * * *"   # the original on-time slot (fires ~10:00-12:20 in practice)
+    - cron: "30 9 * * *"   # backstop
+    - cron: "30 10 * * *"  # backstop
+    - cron: "15 11 * * *"  # last-chance backstop
   workflow_dispatch:
 
 permissions:
   contents: write
-
-concurrency:
-  # its own lane; the rebase-retry push loop makes concurrent commits with the
-  # US-evening / slow shards race-safe.
-  group: pipeline-asia
-  cancel-in-progress: false
+  actions: read   # gate job lists today's runs of this workflow for dedup
 
 jobs:
+  gate:
+    # Dedup + data-floor + retry-cap for the multi-slot schedule above. Decides whether
+    # THIS fire should run the lane: skips if an older run is already alive or a real run
+    # already succeeded today; allows one same-day retry after a real failure (the 07-11
+    # R2-tripwire failure would have been retried the same day); holds early-bird fires
+    # until the 08:25 UTC floor. workflow_dispatch bypasses everything (operator intent).
+    # Fails OPEN (run=true) on API errors — a duplicate idempotent run beats a dead lane;
+    # the job-level pipeline-asia concurrency group still serializes the real work.
+    # Dead-lane monitoring is UNAFFECTED by the extra quick green runs: the heartbeat
+    # watches R2 anchor freshness (scripts/audit_r2.py, 26h), not run conclusions.
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 105   # ≥ MAX_FLOOR_WAIT (90m hold) + slack
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - name: decide (no checkout needed — pure GitHub API + clock)
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          /opt/homebrew/bin/python3.12 - <<'PY'
+          import json, os, sys, time, urllib.request
+          from datetime import datetime, timezone
+
+          def out(decision, reason):
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write(f"run={'true' if decision else 'false'}\n")
+              print(f"::notice title=asia-close gate::run={decision} — {reason}")
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+                  f.write(f"gate: `run={decision}` — {reason}\n")
+              sys.exit(0)
+
+          FLOOR_H, FLOOR_M = 8, 25    # 08:25 UTC — HK closing auction settled (~08:10)
+          MAX_FLOOR_WAIT_S = 90 * 60  # hold a runner at most 90m waiting for the floor
+          REAL_RUN_MIN_S = 600        # <10m completed run = a gate skip, not a real attempt
+          MAX_REAL_ATTEMPTS = 2       # first try + one same-day retry, then stop
+
+          if os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
+              out(True, "workflow_dispatch — operator override, gate bypassed")
+
+          now = datetime.now(timezone.utc)
+          reason = "first real run of the day"
+          try:
+              my_id = int(os.environ["GITHUB_RUN_ID"])
+              my_number = int(os.environ["GITHUB_RUN_NUMBER"])
+              url = (f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}"
+                     f"/actions/workflows/asia-close.yml/runs"
+                     f"?created=%3E%3D{now.strftime('%Y-%m-%d')}&per_page=100")
+              req = urllib.request.Request(url, headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json"})
+              runs = json.load(urllib.request.urlopen(req, timeout=60)).get("workflow_runs", [])
+
+              def dur_s(r):
+                  try:
+                      a = datetime.fromisoformat((r.get("run_started_at") or r["created_at"]).replace("Z", "+00:00"))
+                      b = datetime.fromisoformat(r["updated_at"].replace("Z", "+00:00"))
+                      return (b - a).total_seconds()
+                  except Exception:
+                      return 0.0
+
+              # Oldest-alive-wins: exactly one winner even when several slots fire together
+              # (the newer of two simultaneous gates always sees the older one alive).
+              alive_older = [r for r in runs if r["id"] != my_id
+                             and r["status"] in ("queued", "in_progress", "waiting", "pending", "requested")
+                             and r["run_number"] < my_number]
+              if alive_older:
+                  out(False, f"older run #{alive_older[0]['run_number']} already alive — it owns today")
+
+              real = [r for r in runs if r["id"] != my_id and r["status"] == "completed"
+                      and dur_s(r) >= REAL_RUN_MIN_S]
+              if any(r["conclusion"] == "success" for r in real):
+                  out(False, "a real run already succeeded today")
+              if len(real) >= MAX_REAL_ATTEMPTS:
+                  print(f"::warning title=asia-close gate::{len(real)} real attempts today, none succeeded — retry budget spent, lane needs eyes")
+                  out(False, f"{len(real)} failed real attempts today — no more retries")
+          except Exception as e:  # noqa: BLE001 — fail OPEN: duplicate idempotent run > dead lane
+              print(f"::warning title=asia-close gate::gate check failed ({e!r}) — failing OPEN")
+              reason = f"gate error, fail-open ({e!r})"
+
+          # Data floor applies to every scheduled GO (including fail-open): never start
+          # collecting before the HK close has settled prints.
+          floor = now.replace(hour=FLOOR_H, minute=FLOOR_M, second=0, microsecond=0)
+          wait = (floor - now).total_seconds()
+          if wait > MAX_FLOOR_WAIT_S:
+              out(False, f"{wait/60:.0f}m before the 08:25 UTC floor — too early to hold a runner; a later slot covers")
+          if wait > 0:
+              print(f"::notice title=asia-close gate::early-bird fire — holding {wait/60:.0f}m until the 08:25 UTC data floor")
+              time.sleep(wait)
+          out(True, reason)
+          PY
+
   asia:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    concurrency:
+      # its own lane; the rebase-retry push loop makes concurrent commits with the
+      # US-evening / slow shards race-safe. JOB-level (not workflow-level) so the
+      # multi-slot gate jobs above never queue/cancel behind a 90-150m real run.
+      group: pipeline-asia
+      cancel-in-progress: false
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 165   # was 90 -> 120 -> 165. EVERY run 07-03..07-10 died at the cap: measured 07-10 (run 29089281652) collect --group asia = 68m + build_china alone = 36m, so the kill lands mid-chain — everything after build_subsector_confluence (build_hk, build_china_news ingest, all CN-SYS lobes, masterminds) had been DEAD for 8 days while the run reads "cancelled" not "failed". Last natural success 07-02 at ~86m; the lane grew ~+35m in a week as W8/CN-SYS modules landed. 165m restores the full chain; the runtime diet landed 2026-07-11 — collect-path (us_scope tail gate + pure-REST pool moves + CNInfo caps, #2199) and build-path (skip the duplicate library rebuild + [timing] section ticks in build_china_library, this PR). Target ~110m steady-state; keep 165m as headroom against CNInfo/GDELT bad days.
     steps:
