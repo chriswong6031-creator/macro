@@ -490,3 +490,68 @@ class TestNeverRaise:
             assert "multiplier" in d
             assert "pace" in d
             assert "extra_cycles" in d
+
+
+# ===========================================================================
+# PACE VOCAB — V11 ladder vocab accepted by pace() and pace_extra_cycles()
+# ===========================================================================
+
+class TestPaceLadderVocab:
+    """V11 ladder values (low/medium/high/max) must be accepted by pace().
+
+    Before this fix, _VALID_PACES only contained {"single","2x","4x"} so
+    pace("medium") collapsed to "single", making the UI highlight immovable.
+    """
+
+    def test_pace_low_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("METAB_PACE", "low")
+        from engine.metabolism.throttle import pace
+        assert pace() == "low"
+
+    def test_pace_medium_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("METAB_PACE", "medium")
+        from engine.metabolism.throttle import pace
+        assert pace() == "medium"
+
+    def test_pace_high_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("METAB_PACE", "high")
+        from engine.metabolism.throttle import pace
+        assert pace() == "high"
+
+    def test_pace_max_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("METAB_PACE", "max")
+        from engine.metabolism.throttle import pace
+        assert pace() == "max"
+
+    def test_pace_ladder_case_insensitive(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """env value is lowercased before matching."""
+        monkeypatch.setenv("METAB_PACE", "MEDIUM")
+        from engine.metabolism.throttle import pace
+        assert pace() == "medium"
+
+    def test_invalid_pace_still_falls_back(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Garbage values still collapse to 'single'."""
+        monkeypatch.setenv("METAB_PACE", "overdrive")
+        from engine.metabolism.throttle import pace
+        assert pace() == "single"
+
+    def test_pace_extra_cycles_ladder_low(self) -> None:
+        from engine.metabolism.throttle import pace_extra_cycles
+        assert pace_extra_cycles("low") == 0
+
+    def test_pace_extra_cycles_ladder_medium(self) -> None:
+        from engine.metabolism.throttle import pace_extra_cycles
+        assert pace_extra_cycles("medium") == 1
+
+    def test_pace_extra_cycles_ladder_high(self) -> None:
+        from engine.metabolism.throttle import pace_extra_cycles
+        assert pace_extra_cycles("high") == 2
+
+    def test_pace_extra_cycles_ladder_max(self) -> None:
+        from engine.metabolism.throttle import pace_extra_cycles
+        assert pace_extra_cycles("max") == 3
+
+    def test_valid_paces_contains_union(self) -> None:
+        """_VALID_PACES must be the union of legacy and ladder vocabs."""
+        from engine.metabolism.throttle import _VALID_PACES
+        assert _VALID_PACES >= {"single", "2x", "4x", "low", "medium", "high", "max"}

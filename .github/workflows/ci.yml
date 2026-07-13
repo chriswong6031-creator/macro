@@ -524,6 +524,9 @@ on:
       - "tests/test_admin_metabolism_ux.py"
       - ".github/workflows/metabolism-cycle.yml"
       - ".github/workflows/key-pool-probe.yml"
+      # admin live-runs feed: server-side snapshot for the live-runs panel.
+      - "admin/live_runs.py"
+      - "tests/test_admin_live_runs.py"
       # CBF-W1 regime census: classifier engine + test suite.
       # Any change to the flow regime engine or test file re-proves the contract.
       - "engine/flow_regime.py"
@@ -1930,6 +1933,25 @@ jobs:
         run: python -m pytest tests/test_metabolism_rununtil.py -q
       - name: admin metabolism UX panel tests
         run: python -m pytest tests/test_admin_metabolism_ux.py -q
+
+  admin-live-runs:
+    # Live-runs feed: server-side snapshot for the admin live-runs panel.
+    # Covers: snapshot() shape, active/queued split, elapsed_s computation,
+    # last_completed duration + html_url, jobs API budget cap (≤2 calls),
+    # queued runs never get a jobs call, mastermind bot probe (200→True,
+    # 404/timeout/exception→False, no-requests-lib→False), heartbeat tail
+    # parsing (last valid line, malformed skipped, absent→None), and
+    # snapshot() never-raise when all mocks throw. Zero network calls.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest requests pyyaml pandas numpy
+      - name: admin live-runs snapshot tests
+        run: python -m pytest tests/test_admin_live_runs.py -q
 
   cbf-regime:
     # CBF-W1 Cross-Border Flow Regime Census (CBF-R1..R12):

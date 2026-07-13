@@ -30,6 +30,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, auth, brief, causal_lab,
                config_store,
                content, context_lobe, experiments,
                flags, ga4, github_api, github_config, gitops, health, long_hold,
+               live_runs,
                mastermind_proxy,
                metabolism_history,
                metabolism_panel,
@@ -363,6 +364,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(_alerts_mod.panel(limit=limit))
             if path == "/api/codex":
                 return self._json(codex_panel.panel())
+            if path == "/api/live_runs":
+                return self._json(live_runs.snapshot())
             if path == "/api/metabolism":
                 return self._json(metabolism_panel.panel())
             if path == "/api/metabolism/keys":

@@ -225,6 +225,53 @@ def list_prs(per_page: int = 100) -> dict:
         return {"ok": False, "error": str(e), "prs": []}
 
 
+def run_jobs(run_id: int | str, cap: int = 10) -> list[dict]:
+    """Slim job list for a single workflow run.
+
+    Returns a list of dicts (up to *cap* jobs):
+        {name, status, conclusion, started_at, completed_at,
+         current_step: str | None, steps_done: int, steps_total: int}
+
+    Fail-soft: returns [] on any error (no token, requests unavailable,
+    API error, network failure). Never raises.
+    """
+    if requests is None:
+        return []
+    owner, name = repo()
+    if not (owner and name):
+        return []
+    url = f"{API}/repos/{owner}/{name}/actions/runs/{run_id}/jobs"
+    try:
+        resp = requests.get(url, headers=_headers(),
+                            params={"per_page": cap}, timeout=12)
+        if resp.status_code != 200:
+            return []
+        jobs_raw = resp.json().get("jobs", [])[:cap]
+        out = []
+        for j in jobs_raw:
+            steps = j.get("steps") or []
+            steps_done = sum(1 for s in steps if s.get("status") == "completed")
+            steps_total = len(steps)
+            current_step: str | None = None
+            for s in steps:
+                if s.get("status") == "in_progress":
+                    current_step = s.get("name")
+                    break
+            out.append({
+                "name": j.get("name"),
+                "status": j.get("status"),
+                "conclusion": j.get("conclusion"),
+                "started_at": j.get("started_at"),
+                "completed_at": j.get("completed_at"),
+                "current_step": current_step,
+                "steps_done": steps_done,
+                "steps_total": steps_total,
+            })
+        return out
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def dispatch(workflow: str = "daily.yml", ref: str = "main",
              inputs: dict | None = None) -> dict:
     """Trigger a workflow_dispatch. Requires a token with Actions: write."""
