@@ -1230,7 +1230,7 @@
   .nbe-buy_now, .nbe-partial { border-top-color: var(--up);
               background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
   .nbe-buy_soon, .nbe-watch, .nbe-await_confluence { border-top-color: var(--g-cold); }
-  .nbe-wait_pullback, .nbe-hold { border-top-color: var(--warn); }
+  .nbe-wait_pullback, .nbe-hold, .nbe-bounce_wait { border-top-color: var(--warn); }
   .nbe-extended, .nbe-topping { border-top-color: var(--warn);
               background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
   .nbe-exit, .nbe-avoid, .nbe-blocked { border-top-color: var(--down);
@@ -4332,7 +4332,7 @@
           "conviction_score": 23,
           "alpha":         1.68,
           "off_high":      -5.8,
-          "factor_z":      -0.386,
+          "factor_z":      -0.392,
           "sue_z":         1.8,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4348,7 +4348,7 @@
           "conviction_score": 48,
           "alpha":         1.33,
           "off_high":      -0.0,
-          "factor_z":      -0.077,
+          "factor_z":      0.096,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4364,7 +4364,7 @@
           "conviction_score": 50,
           "alpha":         1.12,
           "off_high":      -2.1,
-          "factor_z":      -0.31,
+          "factor_z":      -0.463,
           "sue_z":         1.2,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4396,7 +4396,7 @@
           "conviction_score": 20,
           "alpha":         0.93,
           "off_high":      -8.3,
-          "factor_z":      -0.024,
+          "factor_z":      -0.054,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4412,7 +4412,7 @@
           "conviction_score": 19,
           "alpha":         0.82,
           "off_high":      -2.7,
-          "factor_z":      -0.515,
+          "factor_z":      -0.386,
           "sue_z":         null,
           "insider_buyers": 2,
           "sig_tier":      "",
@@ -4428,7 +4428,7 @@
           "conviction_score": 21,
           "alpha":         0.78,
           "off_high":      -5.2,
-          "factor_z":      -0.379,
+          "factor_z":      -0.326,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4444,7 +4444,7 @@
           "conviction_score": 39,
           "alpha":         0.77,
           "off_high":      -5.4,
-          "factor_z":      -0.002,
+          "factor_z":      0.076,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4460,7 +4460,7 @@
           "conviction_score": 38,
           "alpha":         0.74,
           "off_high":      0.0,
-          "factor_z":      -0.246,
+          "factor_z":      -0.236,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "T1",
@@ -4492,7 +4492,7 @@
           "conviction_score": 32,
           "alpha":         0.62,
           "off_high":      -6.7,
-          "factor_z":      -0.642,
+          "factor_z":      -0.768,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4508,7 +4508,7 @@
           "conviction_score": 29,
           "alpha":         0.37,
           "off_high":      -1.2,
-          "factor_z":      -0.163,
+          "factor_z":      0.124,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4524,7 +4524,7 @@
           "conviction_score": 72,
           "alpha":         0.37,
           "off_high":      -22.2,
-          "factor_z":      -0.073,
+          "factor_z":      -0.204,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4540,7 +4540,7 @@
           "conviction_score": 19,
           "alpha":         0.33,
           "off_high":      -15.2,
-          "factor_z":      -0.972,
+          "factor_z":      -0.971,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4556,7 +4556,7 @@
           "conviction_score": 57,
           "alpha":         0.23,
           "off_high":      -30.0,
-          "factor_z":      -0.735,
+          "factor_z":      -0.674,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4572,8 +4572,8 @@
           "conviction_score": 31,
           "alpha":         0.14,
           "off_high":      -2.3,
-          "factor_z":      -0.524,
-          "sue_z":         1.74,
+          "factor_z":      -0.52,
+          "sue_z":         1.73,
           "insider_buyers": null,
           "sig_tier":      "",
           "entry_status":  "hold",
@@ -4588,7 +4588,7 @@
           "conviction_score": 75,
           "alpha":         0.1,
           "off_high":      -24.6,
-          "factor_z":      -0.018,
+          "factor_z":      0.031,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4604,7 +4604,7 @@
           "conviction_score": 23,
           "alpha":         -0.08,
           "off_high":      -9.8,
-          "factor_z":      0.232,
+          "factor_z":      0.234,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4620,8 +4620,8 @@
           "conviction_score": 46,
           "alpha":         -0.09,
           "off_high":      -11.8,
-          "factor_z":      -0.416,
-          "sue_z":         2.25,
+          "factor_z":      -0.485,
+          "sue_z":         2.24,
           "insider_buyers": null,
           "sig_tier":      "",
           "entry_status":  "await_confluence",
@@ -4636,7 +4636,7 @@
           "conviction_score": 44,
           "alpha":         -0.2,
           "off_high":      -10.3,
-          "factor_z":      -0.55,
+          "factor_z":      -0.539,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4652,7 +4652,7 @@
           "conviction_score": 53,
           "alpha":         -0.24,
           "off_high":      -13.8,
-          "factor_z":      1.5,
+          "factor_z":      1.289,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4668,7 +4668,7 @@
           "conviction_score": 36,
           "alpha":         -0.43,
           "off_high":      -19.9,
-          "factor_z":      0.09,
+          "factor_z":      -0.094,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4684,7 +4684,7 @@
           "conviction_score": 23,
           "alpha":         -0.46,
           "off_high":      -11.8,
-          "factor_z":      -0.98,
+          "factor_z":      -1.191,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4700,7 +4700,7 @@
           "conviction_score": 28,
           "alpha":         -0.5,
           "off_high":      -4.7,
-          "factor_z":      -0.571,
+          "factor_z":      -0.608,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4716,7 +4716,7 @@
           "conviction_score": 63,
           "alpha":         -0.58,
           "off_high":      -21.7,
-          "factor_z":      -0.249,
+          "factor_z":      -0.289,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4732,8 +4732,8 @@
           "conviction_score": 32,
           "alpha":         -0.58,
           "off_high":      -7.7,
-          "factor_z":      -0.709,
-          "sue_z":         1.24,
+          "factor_z":      -0.809,
+          "sue_z":         1.23,
           "insider_buyers": null,
           "sig_tier":      "",
           "entry_status":  "hold",
@@ -4748,7 +4748,7 @@
           "conviction_score": 75,
           "alpha":         -0.84,
           "off_high":      -28.4,
-          "factor_z":      -0.938,
+          "factor_z":      -0.565,
           "sue_z":         null,
           "insider_buyers": 2,
           "sig_tier":      "T2",
@@ -4764,7 +4764,7 @@
           "conviction_score": 71,
           "alpha":         -0.85,
           "off_high":      -44.1,
-          "factor_z":      -0.178,
+          "factor_z":      -0.257,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4780,7 +4780,7 @@
           "conviction_score": 42,
           "alpha":         -0.97,
           "off_high":      -9.8,
-          "factor_z":      0.011,
+          "factor_z":      -0.004,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4796,7 +4796,7 @@
           "conviction_score": 72,
           "alpha":         -1.26,
           "off_high":      -29.4,
-          "factor_z":      -0.018,
+          "factor_z":      -0.184,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4812,7 +4812,7 @@
           "conviction_score": 76,
           "alpha":         -1.64,
           "off_high":      -45.7,
-          "factor_z":      0.146,
+          "factor_z":      0.145,
           "sue_z":         null,
           "insider_buyers": null,
           "sig_tier":      "",
@@ -4905,7 +4905,7 @@
             
             
             
-            
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — long-gamma — dealer hedging dampens the move (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 多头 Gamma — 做市商对冲抑制波动（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -5162,7 +5162,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">20</span>
-            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">68<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">69<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
           </div>
           
@@ -5409,7 +5409,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-low" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">21</span>
-            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">65<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">66<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
           </div>
           
@@ -5723,9 +5723,9 @@
             </div>
             
             
-            <div class="nb-ax" title="QUAL 48/100">
+            <div class="nb-ax" title="QUAL 49/100">
               <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-              <div class="axt"><div class="axf" style="width:48%"></div></div>
+              <div class="axt"><div class="axf" style="width:49%"></div></div>
             </div>
             
           </div>
@@ -6405,7 +6405,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+7.7% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +7.7%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+7.4% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +7.4%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -6921,7 +6921,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">72</span>
-            <span class="nb-edge-pct edge-lo" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">54<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">55<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
           </div>
           
@@ -7188,7 +7188,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">19</span>
-            <span class="nb-edge-pct edge-lo" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">22<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-lo" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">23<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
           </div>
           
@@ -7357,6 +7357,11 @@
                 data-tip-zh="图形个性：混合图形 — 仅供参考，不参与排名（R-SP13）"
               ><span class="l-en">Mixed chart</span><span class="l-zh">混合图形</span></span>
               
+              
+              <span class="nb-sp-mode"
+                data-tip-en="Current mode: Options pin — fast-layer state, context only"
+                data-tip-zh="当前模式：期权钉住 — 快速层，仅供参考"
+              ><span class="l-en">Options pin</span><span class="l-zh">期权钉住</span></span>
               
             </div>
             
@@ -8442,7 +8447,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Retail) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（零售）已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+3.2% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +3.2%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts richer than calls by -3.3 vol pts vs peers — protection strongly bid (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌比看涨贵 -3.3 个波动点（相对同业） — 保护性看跌被大力买入（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Retail) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（零售）已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts richer than calls by -3.3 vol pts vs peers — protection strongly bid (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌比看涨贵 -3.3 个波动点（相对同业） — 保护性看跌被大力买入（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -8452,7 +8457,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">36</span>
-            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">75<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">76<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
           </div>
           
@@ -8950,7 +8955,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (US Energy Complex) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（美国能源综合）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+17.7% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +17.7%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (US Energy Complex) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（美国能源综合）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+17.6% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +17.6%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -9744,7 +9749,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">earnings in 2d — binary event, size down</span><span class="l-zh">2天后财报 — 二元事件，减仓</span></span><span class="cau-row"><span class="l-en">weak fundamentals</span><span class="l-zh">基本面偏弱</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+8.2% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +8.2%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">earnings in 2d — binary event, size down</span><span class="l-zh">2天后财报 — 二元事件，减仓</span></span><span class="cau-row"><span class="l-en">weak fundamentals</span><span class="l-zh">基本面偏弱</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+7.9% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +7.9%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -10079,9 +10084,9 @@
             </div>
             
             
-            <div class="nb-ax" title="QUAL 32/100">
+            <div class="nb-ax" title="QUAL 31/100">
               <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-              <div class="axt"><div class="axf" style="width:32%"></div></div>
+              <div class="axt"><div class="axf" style="width:31%"></div></div>
             </div>
             
           </div>
@@ -10268,7 +10273,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">19</span>
-            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">78<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-mid" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">58<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
           </div>
           
@@ -10337,9 +10342,9 @@
             </div>
             
             
-            <div class="nb-ax" title="QUAL 57/100">
+            <div class="nb-ax" title="QUAL 45/100">
               <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-              <div class="axt"><div class="axf" style="width:57%"></div></div>
+              <div class="axt"><div class="axf" style="width:45%"></div></div>
             </div>
             
           </div>
@@ -10517,7 +10522,7 @@
           
           <div class="nb-conv">
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">31</span>
-            <span class="nb-edge-pct edge-hi" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">87<span class="ep-u">%ile</span></span></span>
+            <span class="nb-edge-pct edge-hi" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">88<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
           </div>
           
@@ -11292,7 +11297,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+7.8% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +7.8%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+7.9% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +7.9%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -13379,7 +13384,7 @@
               <td><span class="ts-buy ok" data-tip-en="Confirmed: 2D MACD-RSI × 3D StochRSI crossed within ~6 days, still constructive" data-tip-zh="已确认：2日MACD-RSI×3日StochRSI约近6日内交叉、仍具建设性"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span></td>
               <td><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></td>
               <td><span class="muted">intact</span></td>
-              <td class="r az-dn">-0.7</td>
+              <td class="r az-dn">-0.8</td>
               <td class="r"><b>+1.48</b></td>
             </tr>
           
@@ -13391,7 +13396,7 @@
               <td><span class="ts-buy ok" data-tip-en="Confirmed: 2D MACD-RSI × 3D StochRSI crossed within ~6 days, still constructive" data-tip-zh="已确认：2日MACD-RSI×3日StochRSI约近6日内交叉、仍具建设性"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span></td>
               <td><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></td>
               <td><span class="muted">intact</span></td>
-              <td class="r az-dn">-0.7</td>
+              <td class="r az-dn">-0.6</td>
               <td class="r"><b>+1.30</b></td>
             </tr>
           
@@ -13403,7 +13408,7 @@
               <td><span class="ts-buy ok" data-tip-en="Confirmed: 2D MACD-RSI × 3D StochRSI crossed within ~6 days, still constructive" data-tip-zh="已确认：2日MACD-RSI×3日StochRSI约近6日内交叉、仍具建设性"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span></td>
               <td><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></td>
               <td><span class="muted">intact</span></td>
-              <td class="r az-dn">-0.0</td>
+              <td class="r az-dn">-0.3</td>
               <td class="r"><b>+1.14</b></td>
             </tr>
           
@@ -13451,7 +13456,7 @@
               <td><span class="ts-buy ok" data-tip-en="Confirmed early tier (T2) — completed-bar cross that typically fills nearer the trough than the master signal." data-tip-zh="T2已确认的提前层——基于已完成K线的交叉，成交价通常比主信号更贴近低点。"><span class="l-en">Early buy</span><span class="l-zh">提前买点</span></span></td>
               <td><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></td>
               <td><span class="muted">intact</span></td>
-              <td class="r az-up">+0.1</td>
+              <td class="r az-up">+0.0</td>
               <td class="r"><b>+0.80</b></td>
             </tr>
           
@@ -13463,7 +13468,7 @@
               <td><span class="ts-buy ok" data-tip-en="Confirmed: 2D MACD-RSI × 3D StochRSI crossed within ~6 days, still constructive" data-tip-zh="已确认：2日MACD-RSI×3日StochRSI约近6日内交叉、仍具建设性"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span></td>
               <td><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></td>
               <td><span class="muted">neutral</span></td>
-              <td class="r az-up">+1.4</td>
+              <td class="r az-up">+1.7</td>
               <td class="r"><b>+1.55</b></td>
             </tr>
           
@@ -15227,21 +15232,21 @@ document.addEventListener('click',function(e){
   var LANE_LABELS = {}; Object.keys(LANE_LABELS_EN).forEach(function(k){ LANE_LABELS[k] = [LANE_LABELS_EN[k], LANE_LABELS_ZH[k] || LANE_LABELS_EN[k]]; });
   /* ENTRY_STATUS maps: keyed on all values emitted by entry_signal.status producer.
      Vocabulary: buy_now, partial, buy_soon, await_confluence, hold, wait_pullback,
-                 extended, watch, avoid, topping, blocked, exit.
+                 extended, bounce_wait, watch, avoid, topping, blocked, exit.
      Any unmapped key falls through to the raw token (visible bug) — extend both maps
      when the producer vocabulary changes. */
   var ENTRY_STATUS_EN = {
     "buy_now":"Buy now","partial":"Partial buy",
     "buy_soon":"Buy soon","await_confluence":"Await confluence",
     "hold":"Hold","wait_pullback":"Wait — pullback",
-    "wait":"Wait","extended":"Extended",
+    "wait":"Wait","extended":"Extended","bounce_wait":"Bounce — wait",
     "watch":"Watch","avoid":"Avoid","topping":"Topping","blocked":"Blocked","exit":"Exit"
   };
   var ENTRY_STATUS_ZH = {
     "buy_now":"立即买入","partial":"分批买入",
     "buy_soon":"即将买入","await_confluence":"等待共振",
     "hold":"持有","wait_pullback":"等待回调",
-    "wait":"等待","extended":"过热",
+    "wait":"等待","extended":"过热","bounce_wait":"反弹观望",
     "watch":"观察","avoid":"回避","topping":"做顶","blocked":"封锁","exit":"退出"
   };
   var b = StockTable._bi, esc = StockTable._esc, fp = StockTable._fmtPct, fn = StockTable._fmtNum;
