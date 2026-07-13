@@ -515,12 +515,12 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     {% set _ps = row.get('panel') or {} %}
     <tr>
       <td class="l rk num">{{ i }}</td>
-      <td class="l">{{ ii_logo(row.get('ticker') or '') }}<span class="tk">{{ row.get('ticker') or '—' }}</span>{% if row.get('roster_hit') %} <span class="mchip" title="{{ t('held by tracked 13F funds','受追踪13F基金持有') }}">13F</span>{% endif %}</td>
+      <td class="l">{{ ii_logo(row.get('ticker') or '') }}<span class="tk">{{ row.get('ticker') or '—' }}</span>{% if row.get('roster_hit') %} <span class="mchip" data-tip-en="held by tracked 13F funds" data-tip-zh="受追踪13F基金持有">13F</span>{% endif %}</td>
       <td class="num {{ 'r-pos' if (_q.get('net_usd') or 0) >= 0 else 'r-neg' }}">{{ ii_usdn(_q.get('net_usd')) }}</td>
       <td class="num">{{ _q.get('n_buys') or 0 }}/{{ _q.get('n_sells') or 0 }}</td>
       <td class="num">{{ _q.get('n_buyers') if _q.get('n_buyers') is not none else '—' }}</td>
       <td class="num sub">{{ _q.get('last_date') or '—' }}</td>
-      <td>{% if _ps.get('score') is not none %}<span class="ip-score" title="{{ t('insider-power score — SEC panel lane, own clock, never summed with the $ columns','内部人力度分——SEC面板通道，独立时钟，绝不与金额列相加') }}">{{ _ps.get('score') | round(0) | int }}{% if _ps.get('signal') %} · {{ _ps.get('signal') }}{% endif %}</span>{% else %}<span class="sub">—</span>{% endif %}</td>
+      <td>{% if _ps.get('score') is not none %}<span class="ip-score" data-tip-en="insider-power score — SEC panel lane, own clock, never summed with the $ columns" data-tip-zh="内部人力度分——SEC面板通道，独立时钟，绝不与金额列相加">{{ _ps.get('score') | round(0) | int }}{% if _ps.get('signal') %} · {{ _ps.get('signal') }}{% endif %}</span>{% else %}<span class="sub">—</span>{% endif %}</td>
     </tr>
 {% endmacro %}
 {% macro ii_cs_row(row, i) %}
@@ -786,7 +786,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
           {% set _qmin = _qv.vals | min %}
           {% set _qs = namespace(vals=[]) %}
           {% for _v in _qv.vals %}{% set _qs.vals = _qs.vals + [_v - _qmin] %}{% endfor %}
-          <span class="spark" title="{{ t('median buy excess by quarter — min-shifted shape, not a zero-based scale','分季买入中位超额——按最小值平移的形态图，非零基准') }}">{{ sparkbar(_qs.vals) }}</span>
+          <span class="spark" data-tip-en="median buy excess by quarter — min-shifted shape, not a zero-based scale" data-tip-zh="分季买入中位超额——按最小值平移的形态图，非零基准">{{ sparkbar(_qs.vals) }}</span>
         {% else %}<span class="sub">—</span>{% endif %}
       </td>
       <td>
@@ -794,7 +794,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         {% set _rtr = _rel.get('trend') %}
         {% if _rtr in ('improving','stable','deteriorating') %}
           {% set _rcls = 'up' if _rtr == 'improving' else ('down' if _rtr == 'deteriorating' else 'flat') %}
-          <span class="rely {{ _rcls }}" title="{{ t('recent 4q vs all-time median excess','最近4季对全期中位超额') }}: {{ "%+.1f" | format((_rel.get('recent4_median') or 0) * 100) }}% vs {{ "%+.1f" | format((_rel.get('alltime_median') or 0) * 100) }}% · {{ t('positive-quarter share','正超额季占比') }} {{ "%.0f" | format((_rel.get('pos_share') or 0) * 100) }}%">{{ t('improving','走强') if _rtr == 'improving' else (t('deteriorating','走弱') if _rtr == 'deteriorating' else t('stable','稳定')) }}</span>
+          <span class="rely {{ _rcls }}" data-tip-en="recent 4q vs all-time median excess: {{ "%+.1f" | format((_rel.get('recent4_median') or 0) * 100) }}% vs {{ "%+.1f" | format((_rel.get('alltime_median') or 0) * 100) }}% · positive-quarter share {{ "%.0f" | format((_rel.get('pos_share') or 0) * 100) }}%" data-tip-zh="最近4季对全期中位超额：{{ "%+.1f" | format((_rel.get('recent4_median') or 0) * 100) }}% vs {{ "%+.1f" | format((_rel.get('alltime_median') or 0) * 100) }}% · 正超额季占比 {{ "%.0f" | format((_rel.get('pos_share') or 0) * 100) }}%">{{ t('improving','走强') if _rtr == 'improving' else (t('deteriorating','走弱') if _rtr == 'deteriorating' else t('stable','稳定')) }}</span>
         {% else %}<span class="sub">—</span>{% endif %}
       </td>
       <td class="l sub">{{ r.get('style') or '—' }}</td>
@@ -893,7 +893,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     <tr>
       <td class="l rk num">{{ i }}</td>
       <td class="l">{{ fl_logo(row.get('ticker') or '') }}<span class="tk">{{ row.get('ticker') or '—' }}</span> <span class="sub2">{{ (row.get('issuer') or '') | title }}</span></td>
-      <td><span class="bbar" title="{{ _nb }} {{ t('buying','买入') }} · {{ _ns }} {{ t('selling','卖出') }}">{% if _tot > 0 %}<i class="bi" style="width:{{ ((_nb / _tot) * 100) | round(1) }}%"></i><i class="bo" style="width:{{ ((_ns / _tot) * 100) | round(1) }}%"></i>{% endif %}</span> <span class="num sub">{{ _nb }}/{{ _ns }}</span></td>
+      <td><span class="bbar" data-tip-en="{{ _nb }} buying · {{ _ns }} selling" data-tip-zh="{{ _nb }} 买入 · {{ _ns }} 卖出">{% if _tot > 0 %}<i class="bi" style="width:{{ ((_nb / _tot) * 100) | round(1) }}%"></i><i class="bo" style="width:{{ ((_ns / _tot) * 100) | round(1) }}%"></i>{% endif %}</span> <span class="num sub">{{ _nb }}/{{ _ns }}</span></td>
       <td class="num">{{ "%+.1f" | format(row.get('gw_breadth') or 0) }}</td>
       <td class="num">{{ "%+d" | format(row.get('d_funds_qoq') or 0) }}</td>
       <td class="num">{{ fl_usdn(row.get('est_flow_usd')) }}</td>
@@ -918,7 +918,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
   {% for _g in groups %}
     {% set _npp = _g.get('net_pp') or 0 %}
     {% set _w = (((_npp | abs) / _mx.v) * 50) | round(1) if _mx.v > 0 else 0 %}
-    <li title="{{ t('into','轮入') }}: {{ (_g.get('top_names_in') or []) | map(attribute='ticker') | join(', ') or '—' }} · {{ t('out of','轮出') }}: {{ (_g.get('top_names_out') or []) | map(attribute='ticker') | join(', ') or '—' }}">
+    <li data-tip-en="into: {{ (_g.get('top_names_in') or []) | map(attribute='ticker') | join(', ') or '—' }} · out of: {{ (_g.get('top_names_out') or []) | map(attribute='ticker') | join(', ') or '—' }}" data-tip-zh="轮入：{{ (_g.get('top_names_in') or []) | map(attribute='ticker') | join(', ') or '—' }} · 轮出：{{ (_g.get('top_names_out') or []) | map(attribute='ticker') | join(', ') or '—' }}">
       <span class="rb-lab">{{ t(_g.get('label') or _g.get('key') or '—', _g.get('label_zh') or _g.get('label') or _g.get('key') or '—') }}</span>
       <span class="rb-track"><i class="rb-fill {{ 'pos' if _npp >= 0 else 'neg' }}" style="width:{{ _w }}%"></i></span>
       <span class="rb-val num {{ 'r-pos' if _npp >= 0 else 'r-neg' }}">{{ "%+.1f" | format(_npp) }}pp</span>
