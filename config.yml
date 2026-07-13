@@ -1456,9 +1456,6 @@ holdings:
     ARKW:
       sponsor: ark
       url: https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_NEXT_GENERATION_INTERNET_ETF_ARKW_HOLDINGS.csv
-    WGMI:
-      sponsor: coinshares
-      url: ""                     # resolved at runtime by collectors/holdings.py wgmi adapter
   active_change_alert_pct: 20     # alert if manager add/cut >= 20% of position
   active_change_window_d: 5
   retries: 3
@@ -1508,6 +1505,9 @@ etf_holdings:
                                   # min_position_pct (weight), not this share-fraction floor.
   page_top_n: 40                  # accumulation rows on the radar page
   trims_top_n: 12                 # secondary (de-emphasized) trim rows
+  consensus_top_n: 40             # favored-stocks (cross-fund consensus) rows shown
+  consensus_min_funds: 2          # min # funds touching a name to appear (page copy promises 2+)
+  sparkline_cap: 60               # rows that get a weight-trajectory sparkline (bounds parquet reads)
   universe:
     # --- SPDR / State Street (VERIFIED: daily XLSX incl. Shares Held) ----------
     XBI:  {sponsor: ssga, name: "SPDR S&P Biotech", category: "Biotech"}
@@ -1542,6 +1542,73 @@ etf_holdings:
     BETZ: {sponsor: roundhill, name: "Roundhill Sports Betting & iGaming", category: "Sports Betting"}
     MARS: {sponsor: roundhill, name: "Roundhill Space", category: "Space"}
     OZEM: {sponsor: roundhill, name: "Roundhill GLP-1 & Weight Loss", category: "Obesity / GLP-1"}
+    # ======================= 2026-07-12 full-sweep additions =======================
+    # --- Roundhill (additional CLEAN physical baskets; swap-implemented MAGS/DRAM/
+    #     WEED/UX/MAGC deferred — they need per-underlying-CUSIP TRS aggregation) ---
+    NERD: {sponsor: roundhill, name: "Roundhill Video Games", category: "Video Games"}
+    CABZ: {sponsor: roundhill, name: "Roundhill Robotaxi & Autonomous", category: "Autonomous / AI"}
+    HUMN: {sponsor: roundhill, name: "Roundhill Humanoid Robotics", category: "Robotics / AI"}
+    # --- Global X (dated full-holdings CSV; backfillable via scripts/backfill_etf) --
+    AIQ:  {sponsor: globalx, name: "Global X AI & Technology", category: "AI & Big Data"}
+    SNSR: {sponsor: globalx, name: "Global X Internet of Things", category: "IoT"}
+    FINX: {sponsor: globalx, name: "Global X FinTech", category: "FinTech"}
+    DTCR: {sponsor: globalx, name: "Global X Data Center & Digital Infra", category: "Data Centers"}
+    SHLD: {sponsor: globalx, name: "Global X Defense Tech", category: "Defense Tech"}
+    HYDR: {sponsor: globalx, name: "Global X Hydrogen", category: "Hydrogen"}
+    EBIZ: {sponsor: globalx, name: "Global X E-commerce", category: "E-commerce"}
+    # --- SSGA / SPDR (daily XLSX incl. Shares Held) ----------------------------
+    XSW:  {sponsor: ssga, name: "SPDR S&P Software & Services", category: "Software"}
+    XTN:  {sponsor: ssga, name: "SPDR S&P Transportation", category: "Transportation"}
+    XPH:  {sponsor: ssga, name: "SPDR S&P Pharmaceuticals", category: "Pharmaceuticals"}
+    XES:  {sponsor: ssga, name: "SPDR S&P Oil & Gas Equipment & Services", category: "Oil Services"}
+    KCE:  {sponsor: ssga, name: "SPDR S&P Capital Markets", category: "Capital Markets"}
+    XHE:  {sponsor: ssga, name: "SPDR S&P Health Care Equipment", category: "Health Care Equipment"}
+    XTL:  {sponsor: ssga, name: "SPDR S&P Telecom", category: "Telecom"}
+    # --- Invesco (dng-api JSON, idType=cusip; interval=monthly in URL is daily-fresh) -
+    TAN:  {sponsor: invesco, cusip: "46138G706", name: "Invesco Solar", category: "Solar"}
+    PBW:  {sponsor: invesco, cusip: "46137V134", name: "Invesco WilderHill Clean Energy", category: "Clean Energy"}
+    PSI:  {sponsor: invesco, cusip: "46137V647", name: "Invesco Semiconductors", category: "Semiconductors"}
+    PPA:  {sponsor: invesco, cusip: "46137V100", name: "Invesco Aerospace & Defense", category: "Aerospace & Defense"}
+    PHO:  {sponsor: invesco, cusip: "46137V142", name: "Invesco Water Resources", category: "Water"}
+    # --- ARK (per-fund CSV; active=true; _assert_recent guards the rename ghost) -
+    ARKG: {sponsor: ark, active: true, name: "ARK Genomic Revolution", category: "Genomics", url: "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_GENOMIC_REVOLUTION_ETF_ARKG_HOLDINGS.csv"}
+    ARKQ: {sponsor: ark, active: true, name: "ARK Autonomous Tech & Robotics", category: "Autonomous / Robotics", url: "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_AUTONOMOUS_TECH._%26_ROBOTICS_ETF_ARKQ_HOLDINGS.csv"}
+    ARKF: {sponsor: ark, active: true, name: "ARK Blockchain & Fintech Innovation", category: "Fintech / Blockchain", url: "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_BLOCKCHAIN_%26_FINTECH_INNOVATION_ETF_ARKF_HOLDINGS.csv"}
+    ARKX: {sponsor: ark, active: true, name: "ARK Space & Defense Innovation", category: "Space / Defense", url: "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_SPACE_%26_DEFENSE_INNOVATION_ETF_ARKX_HOLDINGS.csv"}
+    PRNT: {sponsor: ark, name: "The 3D Printing ETF", category: "3D Printing", url: "https://assets.ark-funds.com/fund-documents/funds-etf-csv/THE_3D_PRINTING_ETF_PRNT_HOLDINGS.csv"}
+    IZRL: {sponsor: ark, name: "ARK Israel Innovative Technology", category: "Israel Tech", url: "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_ISRAEL_INNOVATIVE_TECHNOLOGY_ETF_IZRL_HOLDINGS.csv"}
+    # --- VanEck (XLSX; slug per fund; soft-404 guard on PK magic) ---------------
+    SMH:  {sponsor: vaneck, slug: "semiconductor-etf-smh", name: "VanEck Semiconductor", category: "Semiconductors"}
+    GDX:  {sponsor: vaneck, slug: "gold-miners-etf-gdx", name: "VanEck Gold Miners", category: "Gold Miners"}
+    GDXJ: {sponsor: vaneck, slug: "junior-gold-miners-etf-gdxj", name: "VanEck Junior Gold Miners", category: "Junior Gold Miners"}
+    NLR:  {sponsor: vaneck, slug: "uranium-nuclear-energy-etf-nlr", name: "VanEck Uranium & Nuclear", category: "Uranium / Nuclear"}
+    REMX: {sponsor: vaneck, slug: "rare-earth-strategic-metals-etf-remx", name: "VanEck Rare Earth & Strategic Metals", category: "Rare Earth"}
+    MOAT: {sponsor: vaneck, slug: "morningstar-wide-moat-etf-moat", name: "VanEck Morningstar Wide Moat", category: "Wide Moat"}
+    OIH:  {sponsor: vaneck, slug: "oil-services-etf-oih", name: "VanEck Oil Services", category: "Oil Services"}
+    DAPP: {sponsor: vaneck, slug: "digital-transformation-etf-dapp", name: "VanEck Digital Transformation", category: "Crypto Industry"}
+    # --- First Trust (server-rendered HTML table) ------------------------------
+    SKYY: {sponsor: firsttrust, name: "First Trust Cloud Computing", category: "Cloud"}
+    CIBR: {sponsor: firsttrust, name: "First Trust NASDAQ Cybersecurity", category: "Cybersecurity"}
+    FDN:  {sponsor: firsttrust, name: "First Trust Dow Jones Internet", category: "Internet"}
+    GRID: {sponsor: firsttrust, name: "First Trust Clean Edge Smart Grid", category: "Smart Grid"}
+    # --- Sprott (data-URI CSV embedded in fund page) ---------------------------
+    URNM: {sponsor: sprott, slug: "urnm-sprott-uranium-miners-etf", name: "Sprott Uranium Miners", category: "Uranium Miners"}
+    URNJ: {sponsor: sprott, slug: "urnj-sprott-junior-uranium-miners-etf", name: "Sprott Junior Uranium Miners", category: "Junior Uranium"}
+    COPP: {sponsor: sprott, slug: "copp-sprott-copper-miners-etf", name: "Sprott Copper Miners", category: "Copper Miners"}
+    LITP: {sponsor: sprott, slug: "litp-sprott-lithium-miners-etf", name: "Sprott Lithium Miners", category: "Lithium Miners"}
+    # --- Amplify (Firestore REST; backfillable ~9mo) ---------------------------
+    BLOK: {sponsor: amplify, active: true, name: "Amplify Transformational Data Sharing", category: "Blockchain"}
+    # --- Defiance (dated XLSX) --------------------------------------------------
+    QTUM: {sponsor: defiance, slug: "qtum", name: "Defiance Quantum", category: "Quantum"}
+    # --- Bitwise (HTML table) --------------------------------------------------
+    BITQ: {sponsor: bitwise, url: "https://bitqetf.com/holdings", active: true, name: "Bitwise Crypto Industry Innovators", category: "Crypto Industry"}
+    # --- Procure (Filepoint CSV; scrape href) ----------------------------------
+    UFO:  {sponsor: procure, page: "https://procureetfs.com/ufo/", name: "Procure Space", category: "Space"}
+    # --- Exchange Traded Concepts / Range (JSON CMS) ---------------------------
+    NUKZ: {sponsor: etc, name: "Range Nuclear Renaissance", category: "Nuclear"}
+    # --- stockanalysis.com — NON-OFFICIAL third-party fallback (Finnhub-sourced),
+    #     used only where the issuer feed is JS/anti-bot walled. Labelled on the page. -
+    WGMI: {sponsor: stockanalysis, unofficial: true, name: "CoinShares Bitcoin Mining (WGMI)", category: "Bitcoin Miners"}
     # iShares/BlackRock (IVV/IWM/EFA...) and Invesco non-flagship: Akamai/consent
     # walls block direct HTTP (recon 2026-06-13, D71) — need a headless browser, so
     # they are intentionally NOT seeded. Vanguard publishes no free daily feed.
