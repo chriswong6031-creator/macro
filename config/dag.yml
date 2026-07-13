@@ -407,6 +407,14 @@ lanes:
         module: scripts.build_polygon_universe
       - id: mirror_flow_idx
         module: scripts.mirror_flow_idx
+      - id: build_flow_signals
+        module: scripts.build_flow_signals
+        note: >-
+          FS-0 (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE §5) flow-event ledger harvest
+          + outcome grader (#2493). Runs AFTER mirror_flow_idx so live_flow
+          poller R2 archive blobs are available. R2-creds-gated, graceful no-op
+          without creds, non-fatal. Nightly is the sole advancer of
+          data/flow_signals/ (forward-ledger law).
       - id: build_vector
         module: scripts.build_vector
       - id: master_brain_scorer
