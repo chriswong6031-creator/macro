@@ -11100,9 +11100,11 @@ artifacts:
       runner lacks the ThetaData store, so the nightly write is the designed
       honest-null artifact (store_present:false printed) — as_of stays current
       but legs are null. Real legs require the theta-ops launchd lane
-      (ops/launchd/com.macro.theme-options-witness.plist), NOT yet installed
-      as of 2026-07-12; its run_theme_options_witness.sh wrapper commits+pushes
-      the two artifacts from flow-ops-wt. Two-writer coexistence = engine
+      (ops/launchd/com.macro.theme-options-witness.plist), INSTALLED
+      2026-07-12; its run_theme_options_witness.sh wrapper commits+pushes the
+      two artifacts via the standalone $HOME sparse push repo
+      (witness-push-repo) — git inside flow-ops-wt is TCC-dead under launchd
+      (gitdir under ~/Documents). Two-writer coexistence = engine
       keep-last-real law: a store-less run keeps committed real legs newer
       than 6d (skips its write) and only null-refreshes past that — so a dead
       launchd lane is disclosed inside this lobe's 168h SLA.
