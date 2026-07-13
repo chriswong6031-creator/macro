@@ -403,6 +403,12 @@ on:
       - "scripts/build_flow_signals.py"
       - "config/flow_detector.yml"
       - "tests/test_flow_signals.py"
+      # FS-1 historical flow cohorts (ops lane, off-render):
+      # ops entrypoint, ladder config, sample fixture, and test file.
+      - "scripts/ops_flow_cohorts.py"
+      - "config/flow_recon_ladder.yml"
+      - "tests/fixtures/_sample_V_2026-07-02.json"
+      - "tests/test_fs1_flow_cohorts.py"
       # FL-A EOD flow backfill (FC-R4/R11): backfill script, build_options_flow staleness
       # warning, and the test suite that pins idempotence + schema-variant handling.
       - "scripts/backfill_options_flow.py"
@@ -1221,6 +1227,27 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml boto3
       - name: flow-signals ledger + grader unit tests
+        run: python -m pytest tests/test_flow_signals.py -q
+
+  flow-signal-cohorts:
+    # FS-1 historical flow cohorts (ops lane, off-render):
+    # Covers detector parity, eod_proxy PIT leak-injection, cohort separation guard,
+    # tz-aware UTC round-trip, resume idempotence, concurrency cap, terminal-down.
+    # CI is hermetic: no ThetaTerminal, no thetadata_eod store — all tests use
+    # fixtures/tmp_path and mock the network (FS-0 CI-null pattern).
+    # Triggers on ops_flow_cohorts.py, flow_recon_ladder.yml, sample fixture,
+    # test file, and all FS-0 seams (shared detector/grader).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pytest-mock pandas numpy pyarrow pyyaml requests boto3
+      - name: FS-1 flow cohorts unit tests
+        run: python -m pytest tests/test_fs1_flow_cohorts.py -q
+      - name: FS-0 downstream suite (shared seams)
         run: python -m pytest tests/test_flow_signals.py -q
 
   broad-etf-flows:

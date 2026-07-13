@@ -1,0 +1,112 @@
+{
+  "underlying": "V",
+  "date": "2026-07-02",
+  "spot_price_eodc_prior": 362.13,
+  "total_raw_rows": 12037,
+  "buy_count": 1909,
+  "sell_count": 1641,
+  "excluded_count": 8487,
+  "note": "Representative 10-row sample: 4 BUY, 3 SELL, 3 EXCLUDED. side=BUY: price>=ask; side=SELL: price<=bid; side=null: midpoint/excluded. Captured live 2026-07-07 from the same build session (ThetaTerminal UP). buy_count=1909 independently verified by reviewer.",
+  "rows": [
+    {
+      "price": 32.0,
+      "bid": 30.2,
+      "ask": 32.0,
+      "strike": 330.0,
+      "right": "CALL",
+      "size": 1,
+      "side": "BUY",
+      "delta_proxy": 0.5
+    },
+    {
+      "price": 34.0,
+      "bid": 32.25,
+      "ask": 34.0,
+      "strike": 330.0,
+      "right": "CALL",
+      "size": 4,
+      "side": "BUY",
+      "delta_proxy": 0.5
+    },
+    {
+      "price": 34.1,
+      "bid": 33.05,
+      "ask": 34.1,
+      "strike": 330.0,
+      "right": "CALL",
+      "size": 1,
+      "side": "BUY",
+      "delta_proxy": 0.5
+    },
+    {
+      "price": 5.4,
+      "bid": 5.15,
+      "ask": 5.4,
+      "strike": 305.0,
+      "right": "PUT",
+      "size": 1,
+      "side": "BUY",
+      "delta_proxy": 0.3
+    },
+    {
+      "price": 3.45,
+      "bid": 3.45,
+      "ask": 3.65,
+      "strike": 330.0,
+      "right": "PUT",
+      "size": 4,
+      "side": "SELL",
+      "delta_proxy": 0.3
+    },
+    {
+      "price": 3.15,
+      "bid": 3.15,
+      "ask": 3.4,
+      "strike": 330.0,
+      "right": "PUT",
+      "size": 3,
+      "side": "SELL",
+      "delta_proxy": 0.3
+    },
+    {
+      "price": 12.1,
+      "bid": 12.1,
+      "ask": 12.35,
+      "strike": 385.0,
+      "right": "CALL",
+      "size": 2,
+      "side": "SELL",
+      "delta_proxy": 0.3
+    },
+    {
+      "price": 4.14,
+      "bid": 3.8,
+      "ask": 4.55,
+      "strike": 330.0,
+      "right": "PUT",
+      "size": 2,
+      "side": null,
+      "delta_proxy": 0.3
+    },
+    {
+      "price": 4.1,
+      "bid": 3.8,
+      "ask": 4.45,
+      "strike": 330.0,
+      "right": "PUT",
+      "size": 4,
+      "side": null,
+      "delta_proxy": 0.3
+    },
+    {
+      "price": 4.1,
+      "bid": 3.8,
+      "ask": 4.45,
+      "strike": 330.0,
+      "right": "PUT",
+      "size": 3,
+      "side": null,
+      "delta_proxy": 0.3
+    }
+  ]
+}
