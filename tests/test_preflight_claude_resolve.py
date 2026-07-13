@@ -54,6 +54,39 @@ def test_never_raises(monkeypatch) -> None:
     assert resolve_claude_bin() == "claude"
 
 
+def test_check_auth_flags_cli_missing(monkeypatch) -> None:
+    """FileNotFoundError ping → auth_ok=False AND cli_missing=True, so
+    SDK-channel stages (PROPOSE/ADJUDICATE) can proceed on their own channel."""
+    import scripts.preflight_claude_auth as pf
+    import engine.neuralweb.capability_broker as cb
+    monkeypatch.setattr(cb, "resolve", lambda cid, lane, root=None: {
+        "allowed": True, "reason": "ok", "ref_name": "FAKE_TOKEN_ENV"})
+    monkeypatch.setattr(cb, "audit", lambda *a, **k: None)
+    monkeypatch.setenv("FAKE_TOKEN_ENV", "tok")
+    monkeypatch.setattr(pf, "_run_ping_check", lambda ref: (
+        False, pf.CLI_MISSING_PREFIX + " — cannot verify OAuth token health."))
+    monkeypatch.setattr(pf, "_notify_auth_failure", lambda reason: None)
+    result = pf.check_auth(lane="test-lane")
+    assert result["auth_ok"] is False
+    assert result["cli_missing"] is True
+
+
+def test_check_auth_dead_token_not_cli_missing(monkeypatch) -> None:
+    """A live CLI reporting a dead token must stay fail-closed (no flag)."""
+    import scripts.preflight_claude_auth as pf
+    import engine.neuralweb.capability_broker as cb
+    monkeypatch.setattr(cb, "resolve", lambda cid, lane, root=None: {
+        "allowed": True, "reason": "ok", "ref_name": "FAKE_TOKEN_ENV"})
+    monkeypatch.setattr(cb, "audit", lambda *a, **k: None)
+    monkeypatch.setenv("FAKE_TOKEN_ENV", "tok")
+    monkeypatch.setattr(pf, "_run_ping_check", lambda ref: (
+        False, "claude -p ping exited 1: authentication_error"))
+    monkeypatch.setattr(pf, "_notify_auth_failure", lambda reason: None)
+    result = pf.check_auth(lane="test-lane")
+    assert result["auth_ok"] is False
+    assert result.get("cli_missing") is False
+
+
 def test_build_session_cmd_uses_resolved_bin(monkeypatch) -> None:
     """metabolism_build._build_session_cmd embeds the resolved binary."""
     import scripts.preflight_claude_auth as pf
