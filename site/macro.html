@@ -3058,37 +3058,7 @@ body.page-macro.has-open-island .sx:not([data-open]){
   opacity:.55;filter:saturate(.5) brightness(.93);
 }
 
-body.page-macro .sx-sum{
-  display:flex;align-items:center;gap:14px;
-  padding:18px 6px 18px 0;cursor:pointer;
-  user-select:none;-webkit-tap-highlight-color:transparent;
-  border-radius:6px;transition:background .12s;outline:none;
-  position:relative;z-index:2;
-}
-body.page-macro .sx-sum:hover{background:color-mix(in srgb,var(--muted) 5%,transparent)}
-body.page-macro .sx-sum:focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:6px}
-body.page-macro .sx-label{
-  font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;
-  color:var(--muted);min-width:90px;flex-shrink:0;
-  transition:color .3s;
-}
-body.page-macro .sx[data-open] .sx-label{color:var(--isle-color,var(--info))}
-body.page-macro .sx-glance{flex:1;min-width:0;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-body.page-macro .sx-chev{
-  flex-shrink:0;width:22px;height:22px;border-radius:50%;
-  border:1.5px solid var(--muted);
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;color:var(--muted);
-  transition:transform .40s cubic-bezier(.34,1.08,.64,1),border-color .2s,background .2s,color .2s;
-  background:color-mix(in srgb,var(--muted) 6%,transparent);
-}
-body.page-macro .sx[data-open] .sx-chev{
-  transform:rotate(180deg);
-  border-color:var(--isle-color,var(--info));
-  background:color-mix(in srgb,var(--isle-color,var(--info)) 14%,transparent);
-  color:var(--isle-color,var(--info));
-}
-body.page-macro .sx-sum:hover .sx-chev{border-color:var(--isle-color,var(--info));color:var(--isle-color,var(--info))}
+/* sx-sum / sx-label / sx-chev / sx-glance CSS removed (v5.1: ledger rows retired) */
 
 /* ── v3 ISLAND TRAY — grid-template-rows expand mechanism ── */
 body.page-macro .sx-tray{
@@ -3712,39 +3682,10 @@ body.page-macro .evs-flat{color:var(--warn)}
    Ledger view (no .mx4-grid) = pixel-faithful to v3 HEAD.
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── Segmented view control ──────────────────────────────────── */
-body.page-macro .mx4-view-seg{
-  display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;
-  flex-shrink:0;
-}
-body.page-macro .mx4-seg-btn{
-  appearance:none;border:none;background:transparent;cursor:pointer;
-  padding:5px 13px;font-size:12px;font-weight:600;letter-spacing:.01em;
-  color:var(--ink-2);line-height:1.4;
-  transition:background .15s,color .15s;
-  min-height:32px;
-}
-body.page-macro .mx4-seg-btn[aria-pressed="true"]{
-  background:var(--tile);color:var(--ink-1);
-}
-body.page-macro .mx4-seg-btn:hover:not([aria-pressed="true"]){
-  background:color-mix(in srgb,var(--tile) 50%,transparent);
-}
-@media(max-width:700px){
-  body.page-macro .mx4-seg-btn{min-height:44px;padding:5px 16px;}
-  body.page-macro .mx2-expand-btn{min-height:44px;} /* MOB-04: touch target */
-}
-
-/* ── LEDGER VIEW — unchanged look (no .mx4-grid = ledger) ──── */
-/* .mx4-rack in ledger = plain block flow, same as current */
+/* v5.1: Segmented control + ledger-view CSS removed (grid is the permanent view) */
 body.page-macro .mx4-rack{display:block;}
-
-/* sxg-face hidden in ledger view */
+/* sxg-face hidden outside grid context — overridden below in .mx4-grid */
 body.page-macro .sxg-face{display:none;}
-
-/* footer hints: ledger shows ledger hint, grid shows grid hint */
-body.page-macro .mx4-hint-grid{display:none;}
-body.page-macro .mx4-hint-ledger{display:inline;}
 
 /* ── GRID VIEW — .mx4-grid body class ───────────────────────── */
 
@@ -3756,13 +3697,8 @@ body.page-macro.mx4-grid .mx4-rack{
   padding:12px 0;
 }
 
-/* Hide ledger glance row in grid view; show face */
-body.page-macro.mx4-grid .sx-sum{display:none;}
+/* Show face in grid view (.mx4-grid is permanent in macro mode) */
 body.page-macro.mx4-grid .sxg-face{display:flex;}
-
-/* Footer hint swap */
-body.page-macro.mx4-grid .mx4-hint-grid{display:inline;}
-body.page-macro.mx4-grid .mx4-hint-ledger{display:none;}
 
 /* ── Card spans (desktop ≥1100px) ───────────────────────────── */
 /* v5 layout:
@@ -3972,7 +3908,7 @@ body.page-macro .sxg-deep-chip:hover{border-color:var(--link);color:var(--link);
 /* sx-risk-v2: face and sum hidden — band zone-2 (S2/S3) is its card face.
    The .sx element collapses to zero height when not open; when open (data-open),
    it spans 1/-1 at order:-1 top of rack showing the full island. */
-body.page-macro.mx4-grid #sx-risk-v2 .sx-sum{display:none;}
+/* sx-risk-v2 sx-sum{display:none} — removed (sx-sum rows retired v5.1) */
 /* Collapse the risk card when not expanded — it has no face in grid view */
 body.page-macro.mx4-grid #sx-risk-v2:not([data-open]){
   min-height:0;
@@ -4567,10 +4503,21 @@ body.mx5-dlg-open{ overflow:hidden; }
     border-radius:var(--mx5-radius-card,18px) var(--mx5-radius-card,18px) 0 0;
     margin:0 12px;
   }
+  /* 44px min-touch on header close button */
+  .mx5-dlg-close{width:44px;height:44px;font-size:22px;}
+  /* No horizontal overflow inside dialogs at narrow widths */
+  .mx5-dlg-body{padding:20px 18px 28px;overflow-x:hidden;}
+  .mx5-dlg-header{padding:16px 18px 12px;}
   @media(prefers-reduced-motion:no-preference){
     .mx5-dlg-panel{ transform:translateY(24px); }
     .mx5-dlg.open .mx5-dlg-panel{ transform:translateY(0); }
   }
+}
+/* Extra-narrow (320px) — prevent any horizontal bleed */
+@media(max-width:360px){
+  .mx5-dlg-panel{margin:0 6px;width:calc(100% - 12px);}
+  .mx5-dlg-idx-grid{grid-template-columns:1fr!important;}
+  .mx5-dlg-dd-row{grid-template-columns:1fr 1fr!important;}
 }
 
 /* ── S2: Dialog interior components ─────────────────────────────── */
@@ -4881,6 +4828,10 @@ body.page-macro.mx4-grid .mx5-card::before{
   background:linear-gradient(135deg,rgba(255,255,255,.06) 0%,transparent 55%);
   pointer-events:none;
 }
+/* Static-card click target (Fed / Sentiment / Sector) */
+body.page-macro.mx4-grid .mx5-card[role="button"]{cursor:pointer;transition:box-shadow .2s;}
+body.page-macro.mx4-grid .mx5-card[role="button"]:hover{box-shadow:var(--mx5-glass-hover);}
+body.page-macro.mx4-grid .mx5-card[role="button"]:focus-visible{outline:2px solid var(--mx5-accent);outline-offset:2px;}
 /* sxg-face in grid view = v5 card face; override default padding to match .mx5-card */
 body.page-macro.mx4-grid .sxg-face.mx5-card-face{
   background:var(--mx5-glass-bg);
@@ -8261,7 +8212,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   
   
   
-  <div class="mx5-card">
+  <div class="mx5-card" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-fed')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-fed');}">
     <div class="mx5-card-title"><span class="l-en">Fed Probability Instrument</span><span class="l-zh">美联储概率仪</span></div>
     <div class="mx5-fed-main-row">
       <div class="mx5-fed-donut-wrap">
@@ -8370,7 +8321,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   
   
   
-  <div class="mx5-card">
+  <div class="mx5-card" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-sentiment')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-sentiment');}">
     <div class="mx5-card-title"><span class="l-en">Market Sentiment</span><span class="l-zh">市场情绪</span></div>
     <div class="mx5-sentiment-dial-wrap">
       <svg viewBox="0 0 380 200" style="width:100%;max-width:340px;height:180px;display:inline-block;overflow:visible">
@@ -8413,7 +8364,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
   
   <div class="sx-v5-static" id="sx-v5-sector">
-  <div class="mx5-card">
+  <div class="mx5-card" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-sector')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-sector');}">
     <div class="mx5-card-title"><span class="l-en">Sector Temperature</span><span class="l-zh">板块温度</span></div>
     
     
@@ -11588,14 +11539,66 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           
           
           
-          <div style="margin-bottom:20px">
-            <div style="font-size:13px;font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));margin-bottom:12px"><span class="l-en">Policy Lever</span><span class="l-zh">政策杠杆</span></div>
-            <span class="chip c-muted" style="font-size:13px;padding:4px 12px">
+          
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+            <span class="chip c-muted" style="font-size:15px;padding:6px 16px;font-weight:700">
               <span class="l-en">QUIET</span><span class="l-zh">平静</span>
             </span>
+            <div>
+              <div style="font-size:13px;font-weight:600"><span class="l-en">No active policy pressure</span><span class="l-zh">当前无积极政策压力</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">As of 2026-07-09</span><span class="l-zh">截至 2026-07-09</span></div>
+            </div>
           </div>
           
           
+          <div style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.6;margin-bottom:16px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:8px">
+            <span class="l-en">Conditions under which violent reversals are more likely — not intent, not timing.</span><span class="l-zh">衡量剧烈反转更可能发生的条件——不是意图，也不是时点。</span>
+          </div>
+          
+          
+          
+          
+          
+          
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:8px">
+            <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Fed stance</span><span class="l-zh">美联储立场</span></span>
+            <span style="font-size:12px;font-weight:600"><span class="l-en">Neutral — no clear lean</span><span class="l-zh">中性 — 无明确倾向</span></span>
+          </div>
+          
+          
+          
+          
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:8px">
+            <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Last confirmed flip</span><span class="l-zh">最近确认翻转</span></span>
+            <span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums">2026-07-02</span>
+          </div>
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          <div class="mx5-dlg-sep"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:8px">
+            <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Jawboning events (7 day / 30 day)</span><span class="l-zh">政策发声次数（7日 / 30日）</span></span>
+            <span style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums">0 / 4</span>
+          </div>
+          
+          <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.6;padding-left:4px">
+            <span class="l-en">Trump's NEPA overhaul unlocks federal land & permits — tailwind for energy, construction, defense & data centers</span><span class="l-zh">特朗普NEPA改革放开联邦土地和许可——能源、建筑、国防和数据中心获提振</span>
+          </div>
+          
+          
+          
+          
+          <div class="mx5-dlg-sep"></div>
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));line-height:1.6">
+            <span class="l-en">Display-only context — W2-F. This is not a forecast of Fed intent or policy timing.</span>
+            <span class="l-zh">仅供展示参考 — W2-F。这不是对美联储意图或政策时机的预测。</span>
+          </div>
         </div>
       </div>
     </div>
@@ -11846,6 +11849,645 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       </div>
     </div>
   </div>
+  
+  <div class="mx5-dlg" id="dlg-fed" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Fed Probability — Full Outlook</span><span class="l-zh">美联储概率 — 完整展望</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        
+        
+        
+        
+        <div style="margin-bottom:24px">
+          <div class="mx5-dlg-eyebrow"><span class="l-en">Next Fed decision</span><span class="l-zh">下次美联储决议</span></div>
+          <div class="mx5-dlg-sep"></div>
+          
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">84<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
+            <div>
+              <div style="font-size:14px;font-weight:700"><span class="l-en">No change</span><span class="l-zh">按兵不动</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; Fed Decision in July?</span><span class="l-zh">市场最高概率结果 &middot; Fed Decision in July?</span></div>
+            </div>
+          </div>
+          
+          
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:700;color:var(--mx5-accent,#22d97a)">
+                <span class="l-en">No change</span><span class="l-zh">按兵不动</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">84%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+7.0pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:84.5%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">25 bps increase</span><span class="l-zh">加息25bp</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">14%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-6.0pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:14.6%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">25 bps decrease</span><span class="l-zh">降息25bp</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%</span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:0.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">50+ bps increase</span><span class="l-zh">加息50bp以上</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-0.1pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:0.2%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">50+ bps decrease</span><span class="l-zh">降息50bp以上</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%</span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:0.1%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">Source: Polymarket</span><span class="l-zh">来源: Polymarket</span></div>
+          
+          
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right"><span class="l-en">Resolves 2026-07-29</span><span class="l-zh">结算日 2026-07-29</span></div>
+          
+        </div>
+        
+        
+        
+        <div style="margin-bottom:24px">
+          <div class="mx5-dlg-eyebrow"><span class="l-en">Fed cuts this year</span><span class="l-zh">今年降息次数</span></div>
+          <div class="mx5-dlg-sep"></div>
+          
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">77<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
+            <div>
+              <div style="font-size:14px;font-weight:700"><span class="l-en">0 (0 bps)</span><span class="l-zh">0 (0 bps)</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; How many Fed rate cuts in 2026?</span><span class="l-zh">市场最高概率结果 &middot; How many Fed rate cuts in 2026?</span></div>
+            </div>
+          </div>
+          
+          
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:700;color:var(--mx5-accent,#22d97a)">
+                <span class="l-en">0 (0 bps)</span><span class="l-zh">0 (0 bps)</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">77%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-1.4pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:77.5%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">1 (25 bps)</span><span class="l-zh">1 (25 bps)</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">14%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-1.0pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:14.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">2 (50 bps)</span><span class="l-zh">2 (50 bps)</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">3%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+1.0pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:3.8%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">3 (75 bps)</span><span class="l-zh">3 (75 bps)</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">1%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+0.5pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:1.9%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">12+ (300+ bps)</span><span class="l-zh">12+ (300+ bps)</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+0.2pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:0.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">4 (100 bps)</span><span class="l-zh">4 (100 bps)</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+0.1pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:0.4%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">Source: Polymarket</span><span class="l-zh">来源: Polymarket</span></div>
+          
+          
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right"><span class="l-en">Resolves 2026-12-31</span><span class="l-zh">结算日 2026-12-31</span></div>
+          
+        </div>
+        
+        
+        
+        <div style="margin-bottom:24px">
+          <div class="mx5-dlg-eyebrow"><span class="l-en">CPI outcome market</span><span class="l-zh">CPI市场预期</span></div>
+          <div class="mx5-dlg-sep"></div>
+          
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">53<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
+            <div>
+              <div style="font-size:14px;font-weight:700"><span class="l-en">2.8%</span><span class="l-zh">2.8%</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; Core CPI YoY - June 2026</span><span class="l-zh">市场最高概率结果 &middot; Core CPI YoY - June 2026</span></div>
+            </div>
+          </div>
+          
+          
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:700;color:var(--mx5-accent,#22d97a)">
+                <span class="l-en">2.8%</span><span class="l-zh">2.8%</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">53%</span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:53.5%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">2.9%</span><span class="l-zh">2.9%</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">34%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+2.5pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:34.0%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">2.7%</span><span class="l-zh">2.7%</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">12%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-1.5pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:12.0%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">3.0%</span><span class="l-zh">3.0%</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">1%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+1.0pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:1.8%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">3.1%</span><span class="l-zh">3.1%</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">1%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+0.1pp</span></span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:1.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
+                <span class="l-en">3.2%</span><span class="l-zh">3.2%</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">1%</span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:1.1%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">Source: Polymarket</span><span class="l-zh">来源: Polymarket</span></div>
+          
+          
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right"><span class="l-en">Resolves 2026-07-15</span><span class="l-zh">结算日 2026-07-15</span></div>
+          
+        </div>
+        
+        
+        
+        
+        
+        <div class="mx5-dlg-sep"></div>
+        <div style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.6">
+          <strong><span class="l-en">Policy Lever</span><span class="l-zh">政策杠杆</span></strong> &mdash;
+          <span class="l-en">No active policy pressure at this time.</span>
+          <span class="l-zh">当前无积极政策压力。</span>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="mx5-dlg" id="dlg-sentiment" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Market Sentiment — Breakdown</span><span class="l-zh">市场情绪 — 详细分解</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        
+        
+        
+        
+        
+        
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+          <div style="font-size:40px;font-weight:800;color:#f59e0b;line-height:1;font-variant-numeric:tabular-nums">55</div>
+          <div>
+            <div style="font-size:18px;font-weight:700;color:#f59e0b"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+            <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Composite sentiment · 0 = Extreme Fear · 100 = Extreme Greed</span><span class="l-zh">综合情绪 · 0=极度恐慌 · 100=极度贪婪</span></div>
+          </div>
+        </div>
+        <div class="mx5-dlg-sep"></div>
+        
+        
+        
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px"><span class="l-en">What the composite measures</span><span class="l-zh">综合指数的构成</span></div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">SPX momentum (vs 125d MA)</span><span class="l-zh">标普动量（对比125日均线）</span></div>
+            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:77.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">77</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">52-week strength (new-high ratio)</span><span class="l-zh">52周强势（新高比例）</span></div>
+            <div class="mx5-dlg-factor-read" style="color:#f59e0b"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:58.0%;background:#f59e0b"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#f59e0b">58</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">McClellan oscillator</span><span class="l-zh">麦克莱伦振荡器</span></div>
+            <div class="mx5-dlg-factor-read" style="color:#f59e0b"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:49.0%;background:#f59e0b"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#f59e0b">49</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">Junk demand (HY OAS)</span><span class="l-zh">高收益需求（HY 利差）</span></div>
+            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:97.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">97</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">Safe haven demand (SPY − TLT 20d)</span><span class="l-zh">避险需求（SPY−TLT 20日）</span></div>
+            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:62.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">62</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">VIX level</span><span class="l-zh">VIX 水平</span></div>
+            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:62.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">62</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">VIX trend (20d change)</span><span class="l-zh">VIX 趋势（20日变动）</span></div>
+            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:94.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">94</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">VIX term structure (VIX/VIX3M)</span><span class="l-zh">VIX 期限结构（VIX/VIX3M）</span></div>
+            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:77.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">77</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">CBOE SKEW (tail risk pricing)</span><span class="l-zh">CBOE SKEW（尾部风险定价）</span></div>
+            <div class="mx5-dlg-factor-read" style="color:#ef4444"><span class="l-en">Fear zone</span><span class="l-zh">恐慌区间</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:6.0%;background:#ef4444"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#ef4444">6</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">NAAIM exposure</span><span class="l-zh">NAAIM 仓位敞口</span></div>
+            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:70.0%;background:#22d97a"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#22d97a">70</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">Insider demand (quarterly net buy $)</span><span class="l-zh">内部人需求（季度净购入）</span></div>
+            <div class="mx5-dlg-factor-read" style="color:#ef4444"><span class="l-en">Fear zone</span><span class="l-zh">恐慌区间</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:19.0%;background:#ef4444"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:#ef4444">19</div>
+        </div>
+        
+        
+        
+        
+        
+        
+        
+        <div class="mx5-dlg-sep"></div>
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));line-height:1.6">
+          <span class="l-en">Sentiment context only — display-only composite of public market indicators. Never scored, never feeds the regime engine, no forward claim. Greed/fear readings are not contrarian signals without regime context.</span>
+          <span class="l-zh">仅为情绪参考 — 公开市场指标的仅展示合成。不计分，不进入周期引擎，无前瞻性判断。贪婪/恐惧读数若无周期背景，不构成反向信号。</span>
+        </div>
+        
+        
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of 2026-07-11</span><span class="l-zh">数据日期 2026-07-11</span></div>
+        
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="mx5-dlg" id="dlg-sector" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Sector Temperature — Full Detail</span><span class="l-zh">板块温度 — 完整详情</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        
+        
+        
+        
+        
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(34,217,122,.7);margin-bottom:10px"><span class="l-en">Leading sectors &mdash; rotating into</span><span class="l-zh">领跑板块 — 资金流入方向</span></div>
+        <div class="mx5-dlg-sector-cols" style="grid-template-columns:1fr;margin-bottom:16px">
+          
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr heat">&#9650;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+8<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+            
+            
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">dominant</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr heat">&#9650;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-1<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+            
+            
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">dominant</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr heat">&#9650;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">GLP-1 & Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-1<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+            
+            
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">dominant</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr heat">&#9650;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+11<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+            
+            
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">dominant</span></span>
+            
+          </div>
+          
+        </div>
+        
+        
+        
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(239,68,68,.7);margin-bottom:10px"><span class="l-en">Lagging sectors &mdash; losing momentum</span><span class="l-zh">落后板块 — 动能减弱</span></div>
+        <div class="mx5-dlg-sector-cols" style="grid-template-columns:1fr;margin-bottom:16px">
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr cool">&#9660;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Memory, HBM & Storage</span><span class="l-zh">内存、HBM 与存储</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+10<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+          </div>
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr cool">&#9660;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-5<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+          </div>
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr cool">&#9660;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Managed Care & Insurers</span><span class="l-zh">管理式医疗与保险</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-7<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+          </div>
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr cool">&#9660;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-13<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+          </div>
+          
+        </div>
+        
+        
+        <div class="mx5-dlg-sep"></div>
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.6">
+          <span class="l-en">Sector rankings update nightly. Leading sectors show sustained money flow in; lagging sectors are seeing consistent outflows. Rankings reflect relative strength, not an absolute view.</span>
+          <span class="l-zh">板块排名每晚更新。领跑板块显示持续资金流入；落后板块持续资金外流。排名反映相对强弱，非绝对判断。</span>
+        </div>
+        
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of 2026-07-09</span><span class="l-zh">数据日期 2026-07-09</span></div>
+        
+        
+      </div>
+    </div>
+  </div>
+
   
 
   

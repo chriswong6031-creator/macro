@@ -2471,37 +2471,7 @@ body.page-macro.has-open-island .sx:not([data-open]){
   opacity:.55;filter:saturate(.5) brightness(.93);
 }
 
-body.page-macro .sx-sum{
-  display:flex;align-items:center;gap:14px;
-  padding:18px 6px 18px 0;cursor:pointer;
-  user-select:none;-webkit-tap-highlight-color:transparent;
-  border-radius:6px;transition:background .12s;outline:none;
-  position:relative;z-index:2;
-}
-body.page-macro .sx-sum:hover{background:color-mix(in srgb,var(--muted) 5%,transparent)}
-body.page-macro .sx-sum:focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:6px}
-body.page-macro .sx-label{
-  font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;
-  color:var(--muted);min-width:90px;flex-shrink:0;
-  transition:color .3s;
-}
-body.page-macro .sx[data-open] .sx-label{color:var(--isle-color,var(--info))}
-body.page-macro .sx-glance{flex:1;min-width:0;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-body.page-macro .sx-chev{
-  flex-shrink:0;width:22px;height:22px;border-radius:50%;
-  border:1.5px solid var(--muted);
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;color:var(--muted);
-  transition:transform .40s cubic-bezier(.34,1.08,.64,1),border-color .2s,background .2s,color .2s;
-  background:color-mix(in srgb,var(--muted) 6%,transparent);
-}
-body.page-macro .sx[data-open] .sx-chev{
-  transform:rotate(180deg);
-  border-color:var(--isle-color,var(--info));
-  background:color-mix(in srgb,var(--isle-color,var(--info)) 14%,transparent);
-  color:var(--isle-color,var(--info));
-}
-body.page-macro .sx-sum:hover .sx-chev{border-color:var(--isle-color,var(--info));color:var(--isle-color,var(--info))}
+/* sx-sum / sx-label / sx-chev / sx-glance CSS removed (v5.1: ledger rows retired) */
 
 /* ── v3 ISLAND TRAY — grid-template-rows expand mechanism ── */
 body.page-macro .sx-tray{
@@ -3125,39 +3095,10 @@ body.page-macro .evs-flat{color:var(--warn)}
    Ledger view (no .mx4-grid) = pixel-faithful to v3 HEAD.
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── Segmented view control ──────────────────────────────────── */
-body.page-macro .mx4-view-seg{
-  display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;
-  flex-shrink:0;
-}
-body.page-macro .mx4-seg-btn{
-  appearance:none;border:none;background:transparent;cursor:pointer;
-  padding:5px 13px;font-size:12px;font-weight:600;letter-spacing:.01em;
-  color:var(--ink-2);line-height:1.4;
-  transition:background .15s,color .15s;
-  min-height:32px;
-}
-body.page-macro .mx4-seg-btn[aria-pressed="true"]{
-  background:var(--tile);color:var(--ink-1);
-}
-body.page-macro .mx4-seg-btn:hover:not([aria-pressed="true"]){
-  background:color-mix(in srgb,var(--tile) 50%,transparent);
-}
-@media(max-width:700px){
-  body.page-macro .mx4-seg-btn{min-height:44px;padding:5px 16px;}
-  body.page-macro .mx2-expand-btn{min-height:44px;} /* MOB-04: touch target */
-}
-
-/* ── LEDGER VIEW — unchanged look (no .mx4-grid = ledger) ──── */
-/* .mx4-rack in ledger = plain block flow, same as current */
+/* v5.1: Segmented control + ledger-view CSS removed (grid is the permanent view) */
 body.page-macro .mx4-rack{display:block;}
-
-/* sxg-face hidden in ledger view */
+/* sxg-face hidden outside grid context — overridden below in .mx4-grid */
 body.page-macro .sxg-face{display:none;}
-
-/* footer hints: ledger shows ledger hint, grid shows grid hint */
-body.page-macro .mx4-hint-grid{display:none;}
-body.page-macro .mx4-hint-ledger{display:inline;}
 
 /* ── GRID VIEW — .mx4-grid body class ───────────────────────── */
 
@@ -3169,13 +3110,8 @@ body.page-macro.mx4-grid .mx4-rack{
   padding:12px 0;
 }
 
-/* Hide ledger glance row in grid view; show face */
-body.page-macro.mx4-grid .sx-sum{display:none;}
+/* Show face in grid view (.mx4-grid is permanent in macro mode) */
 body.page-macro.mx4-grid .sxg-face{display:flex;}
-
-/* Footer hint swap */
-body.page-macro.mx4-grid .mx4-hint-grid{display:inline;}
-body.page-macro.mx4-grid .mx4-hint-ledger{display:none;}
 
 /* ── Card spans (desktop ≥1100px) ───────────────────────────── */
 /* v5 layout:
@@ -3385,7 +3321,7 @@ body.page-macro .sxg-deep-chip:hover{border-color:var(--link);color:var(--link);
 /* sx-risk-v2: face and sum hidden — band zone-2 (S2/S3) is its card face.
    The .sx element collapses to zero height when not open; when open (data-open),
    it spans 1/-1 at order:-1 top of rack showing the full island. */
-body.page-macro.mx4-grid #sx-risk-v2 .sx-sum{display:none;}
+/* sx-risk-v2 sx-sum{display:none} — removed (sx-sum rows retired v5.1) */
 /* Collapse the risk card when not expanded — it has no face in grid view */
 body.page-macro.mx4-grid #sx-risk-v2:not([data-open]){
   min-height:0;
@@ -3980,10 +3916,21 @@ body.mx5-dlg-open{ overflow:hidden; }
     border-radius:var(--mx5-radius-card,18px) var(--mx5-radius-card,18px) 0 0;
     margin:0 12px;
   }
+  /* 44px min-touch on header close button */
+  .mx5-dlg-close{width:44px;height:44px;font-size:22px;}
+  /* No horizontal overflow inside dialogs at narrow widths */
+  .mx5-dlg-body{padding:20px 18px 28px;overflow-x:hidden;}
+  .mx5-dlg-header{padding:16px 18px 12px;}
   @media(prefers-reduced-motion:no-preference){
     .mx5-dlg-panel{ transform:translateY(24px); }
     .mx5-dlg.open .mx5-dlg-panel{ transform:translateY(0); }
   }
+}
+/* Extra-narrow (320px) — prevent any horizontal bleed */
+@media(max-width:360px){
+  .mx5-dlg-panel{margin:0 6px;width:calc(100% - 12px);}
+  .mx5-dlg-idx-grid{grid-template-columns:1fr!important;}
+  .mx5-dlg-dd-row{grid-template-columns:1fr 1fr!important;}
 }
 
 /* ── S2: Dialog interior components ─────────────────────────────── */
@@ -4294,6 +4241,10 @@ body.page-macro.mx4-grid .mx5-card::before{
   background:linear-gradient(135deg,rgba(255,255,255,.06) 0%,transparent 55%);
   pointer-events:none;
 }
+/* Static-card click target (Fed / Sentiment / Sector) */
+body.page-macro.mx4-grid .mx5-card[role="button"]{cursor:pointer;transition:box-shadow .2s;}
+body.page-macro.mx4-grid .mx5-card[role="button"]:hover{box-shadow:var(--mx5-glass-hover);}
+body.page-macro.mx4-grid .mx5-card[role="button"]:focus-visible{outline:2px solid var(--mx5-accent);outline-offset:2px;}
 /* sxg-face in grid view = v5 card face; override default padding to match .mx5-card */
 body.page-macro.mx4-grid .sxg-face.mx5-card-face{
   background:var(--mx5-glass-bg);
@@ -7331,7 +7282,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {% set _fedv5_arc_gap = (_fedv5_arc_total - _fedv5_arc_fill) | round(1) %}
   {% set _fedv5_outcome_zh = {'No change':'按兵不动','Rate cut':'降息','Rate hike':'加息','25bps cut':'降息25bp','50bps cut':'降息50bp','25bps hike':'加息25bp'}.get(_fedv5_top.outcome, _fedv5_top.outcome) %}
   {% set _fedv5_is_hold = 'change' in _fedv5_top.outcome | lower or 'hold' in _fedv5_top.outcome | lower %}
-  <div class="mx5-card">
+  <div class="mx5-card" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-fed')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-fed');}">
     <div class="mx5-card-title"><span class="l-en">Fed Probability Instrument</span><span class="l-zh">美联储概率仪</span></div>
     <div class="mx5-fed-main-row">
       <div class="mx5-fed-donut-wrap">
@@ -7390,7 +7341,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   </div>
   {% else %}
   {# Graceful absent: simple placeholder card #}
-  <div class="mx5-card">
+  <div class="mx5-card" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-fed')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-fed');}">
     <div class="mx5-card-title"><span class="l-en">Fed Probability Instrument</span><span class="l-zh">美联储概率仪</span></div>
     <div style="flex:1;display:flex;align-items:center;justify-content:center">
       <span style="font-size:12px;color:var(--ink-3,rgba(255,255,255,.36))">
@@ -7412,7 +7363,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {# Needle: SVG rotate transform — angle=dial/100*180, needle points from center (190,185) upward.
      rotate(angle-90, cx, cy) maps 0→left, 100→right; no trig needed in Jinja. #}
   {% set _fg_needle_rot = (_fgv5_dial / 100 * 180 - 90) | round(1) %}
-  <div class="mx5-card">
+  <div class="mx5-card" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-sentiment')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-sentiment');}">
     <div class="mx5-card-title"><span class="l-en">Market Sentiment</span><span class="l-zh">市场情绪</span></div>
     <div class="mx5-sentiment-dial-wrap">
       <svg viewBox="0 0 380 200" style="width:100%;max-width:340px;height:180px;display:inline-block;overflow:visible">
@@ -7455,7 +7406,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
   {# ── Sector Temperature ── #}
   <div class="sx-v5-static" id="sx-v5-sector">
-  <div class="mx5-card">
+  <div class="mx5-card" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-sector')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-sector');}">
     <div class="mx5-card-title"><span class="l-en">Sector Temperature</span><span class="l-zh">板块温度</span></div>
     {% if sector_heat %}
     {% set _shv5_hot = (sector_heat.get('heating') or [])[:3] %}
@@ -9186,27 +9137,84 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       </div>
       <div class="mx5-dlg-body">
         <div id="dlg-policy-lever-card">
-          {% set _PL = policy_lever %}
-          {% set _pl_s = _PL.get('state') or 'QUIET' %}
-          {% set _plc2 = 'c-down' if _pl_s == 'ARMED' else ('c-warn' if _pl_s == 'ELEVATED' else 'c-muted') %}
-          <div style="margin-bottom:20px">
-            <div style="font-size:13px;font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));margin-bottom:12px"><span class="l-en">Policy Lever</span><span class="l-zh">政策杠杆</span></div>
-            <span class="chip {{ _plc2 }}" style="font-size:13px;padding:4px 12px">
-              <span class="l-en">{{ _pl_s }}</span><span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_pl_s, _pl_s) }}</span>
+          {% set _DPL = policy_lever %}
+          {% set _dpl_s = _DPL.get('state') or 'QUIET' %}
+          {% set _dplc = 'c-down' if _dpl_s == 'ARMED' else ('c-warn' if _dpl_s == 'ELEVATED' else 'c-muted') %}
+          {# State header #}
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+            <span class="chip {{ _dplc }}" style="font-size:15px;padding:6px 16px;font-weight:700">
+              <span class="l-en">{{ _dpl_s }}</span><span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_dpl_s, _dpl_s) }}</span>
             </span>
+            <div>
+              <div style="font-size:13px;font-weight:600"><span class="l-en">{{ {'ARMED':'Active repricing in progress','ELEVATED':'Elevated — watch for market repricing','QUIET':'No active policy pressure'}.get(_dpl_s,'') }}</span><span class="l-zh">{{ {'ARMED':'重定价进行中','ELEVATED':'警戒 — 留意市场重定价','QUIET':'当前无积极政策压力'}.get(_dpl_s,'') }}</span></div>
+              {% if _DPL.get('as_of') %}<div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">As of {{ _DPL.as_of }}</span><span class="l-zh">截至 {{ _DPL.as_of }}</span></div>{% endif %}
+            </div>
           </div>
-          {% set _plrepr2 = _PL.get('repricing_components') %}
-          {% if _plrepr2 %}
-          <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Repricing Components</span><span class="l-zh">重定价组件</span></span><div class="isle-head-line"></div></div>
+          {# Framing note (plain-word) #}
+          {% if _DPL.get('framing') %}
+          <div style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.6;margin-bottom:16px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:8px">
+            <span class="l-en">{{ _DPL.framing }}</span><span class="l-zh">{{ _DPL.get('framing_zh') or _DPL.framing }}</span>
+          </div>
+          {% endif %}
+          {# Fed stance row #}
+          {% set _dpl_fed = (latest.fed_stance.stance if (latest is defined and latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.stance is defined and latest.fed_stance.stance != 'unknown') else none) %}
+          {% if _dpl_fed %}
+          {% set _dpl_fsl = {'hawkish':'Hawkish — leaning toward tighter policy','very-hawkish':'Very Hawkish — strong tightening bias','dovish':'Dovish — leaning toward rate cuts','very-dovish':'Very Dovish — strong easing bias','neutral':'Neutral — no clear lean'} %}
+          {% set _dpl_fsl_zh = {'hawkish':'鹰派 — 倾向收紧政策','very-hawkish':'超鹰派 — 强烈收紧倾向','dovish':'鸽派 — 倾向降息','very-dovish':'超鸽派 — 强烈宽松倾向','neutral':'中性 — 无明确倾向'} %}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:8px">
+            <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Fed stance</span><span class="l-zh">美联储立场</span></span>
+            <span style="font-size:12px;font-weight:600"><span class="l-en">{{ _dpl_fsl.get(_dpl_fed, _dpl_fed) }}</span><span class="l-zh">{{ _dpl_fsl_zh.get(_dpl_fed, _dpl_fed) }}</span></span>
+          </div>
+          {% endif %}
+          {# Flip confirmation #}
+          {% if flip_confirmation is defined and flip_confirmation and flip_confirmation.last_event is defined %}
+          {% set _DFC = flip_confirmation %}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:8px">
+            <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Last confirmed flip</span><span class="l-zh">最近确认翻转</span></span>
+            <span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums">{{ _DFC.last_event.event_date }}</span>
+          </div>
+          {% if _DFC.last_event.get('description') or _DFC.last_event.get('description_zh') %}
+          <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.6;margin-bottom:8px;padding-left:4px">
+            <span class="l-en">{{ _DFC.last_event.get('description','') }}</span><span class="l-zh">{{ _DFC.last_event.get('description_zh') or _DFC.last_event.get('description','') }}</span>
+          </div>
+          {% endif %}
+          {% endif %}
+          {# Repricing components #}
+          {% set _dplrepr = _DPL.get('repricing_components') %}
+          {% if _dplrepr %}
+          <div class="mx5-dlg-sep"></div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px"><span class="l-en">Active repricing channels</span><span class="l-zh">活跃重定价渠道</span></div>
           <div style="display:flex;flex-direction:column;gap:8px">
-            {% for r in _plrepr2 %}
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px">
+            {% for r in _dplrepr %}
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.14);border-radius:8px">
               <span style="font-size:12px"><span class="l-en">{{ r.label_en if r.label_en is defined else r.name }}</span><span class="l-zh">{{ r.label_zh if r.label_zh is defined else (r.name_zh if r.name_zh is defined else r.name) }}</span></span>
               <span class="chip c-warn" style="font-size:11px;padding:2px 8px"><span class="l-en">Active</span><span class="l-zh">活跃</span></span>
             </div>
             {% endfor %}
           </div>
           {% endif %}
+          {# Jawboning counts #}
+          {% if _DPL.get('jawboning') %}
+          {% set _DJW = _DPL.jawboning %}
+          {% if _DJW.get('n_7d') is not none %}
+          <div class="mx5-dlg-sep"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:8px">
+            <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Jawboning events (7 day / 30 day)</span><span class="l-zh">政策发声次数（7日 / 30日）</span></span>
+            <span style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums">{{ _DJW.n_7d }} / {{ _DJW.n_30d }}</span>
+          </div>
+          {% if _DJW.get('last_alert_summary') %}
+          <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.6;padding-left:4px">
+            <span class="l-en">{{ _DJW.last_alert_summary }}</span><span class="l-zh">{{ _DJW.get('last_alert_summary_zh') or _DJW.last_alert_summary }}</span>
+          </div>
+          {% endif %}
+          {% endif %}
+          {% endif %}
+          {# Disclaimer #}
+          <div class="mx5-dlg-sep"></div>
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));line-height:1.6">
+            <span class="l-en">Display-only context — W2-F. This is not a forecast of Fed intent or policy timing.</span>
+            <span class="l-zh">仅供展示参考 — W2-F。这不是对美联储意图或政策时机的预测。</span>
+          </div>
         </div>
       </div>
     </div>
@@ -9324,6 +9332,208 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       </div>
     </div>
   </div>
+  {# dlg-fed: Fed Probability detail — outcome distribution + upcoming meetings #}
+  <div class="mx5-dlg" id="dlg-fed" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Fed Probability — Full Outlook</span><span class="l-zh">美联储概率 — 完整展望</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        {% if prediction_markets and prediction_markets.events %}
+        {% for _fed_ev in prediction_markets.events %}
+        {% set _fed_top = _fed_ev.outcomes | sort(attribute='prob',reverse=true) | first %}
+        {% set _fed_out_zh = {'No change':'按兵不动','Rate cut':'降息','Rate hike':'加息','25bps cut':'降息25bp','50bps cut':'降息50bp','25bps hike':'加息25bp','25 bps increase':'加息25bp','25 bps decrease':'降息25bp','50+ bps increase':'加息50bp以上','50+ bps decrease':'降息50bp以上','0.1%':'0.1%','0.2%':'0.2%','0.3%':'0.3%','0.4%':'0.4%'} %}
+        <div style="margin-bottom:24px">
+          <div class="mx5-dlg-eyebrow"><span class="l-en">{{ _fed_ev.label_en }}</span><span class="l-zh">{{ _fed_ev.label_zh }}</span></div>
+          <div class="mx5-dlg-sep"></div>
+          {# Lead: top outcome #}
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">{{ _fed_top.prob | int }}<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
+            <div>
+              <div style="font-size:14px;font-weight:700"><span class="l-en">{{ _fed_top.outcome }}</span><span class="l-zh">{{ _fed_out_zh.get(_fed_top.outcome, _fed_top.outcome) }}</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; {{ _fed_ev.title }}</span><span class="l-zh">市场最高概率结果 &middot; {{ _fed_ev.title }}</span></div>
+            </div>
+          </div>
+          {# All outcomes as horizontal bar rows #}
+          {% set _fed_sorted_outs = _fed_ev.outcomes | sort(attribute='prob',reverse=true) %}
+          {% for oc in _fed_sorted_outs %}
+          {% set _ocp = oc.prob | float %}
+          {% set _is_top2 = (oc.outcome == _fed_top.outcome) %}
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:{{ '700' if _is_top2 else '400' }};color:{{ 'var(--mx5-accent,#22d97a)' if _is_top2 else 'var(--ink-2,rgba(255,255,255,.6))' }}">
+                <span class="l-en">{{ oc.outcome }}</span><span class="l-zh">{{ _fed_out_zh.get(oc.outcome, oc.outcome) }}</span>
+              </span>
+              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:{{ 'var(--mx5-accent)' if _is_top2 else 'var(--ink-2,rgba(255,255,255,.6))' }}">{{ _ocp | int }}%{% if oc.chg_pp is defined and oc.chg_pp != 0 %}<span style="font-size:10px;margin-left:4px;color:{{ 'var(--up,#22d97a)' if oc.chg_pp > 0 else 'var(--down,#ef4444)' }}">{{ '%+.1f' | format(oc.chg_pp) }}pp</span>{% endif %}</span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
+              <div style="height:100%;width:{{ _ocp }}%;background:{{ 'var(--mx5-accent,#22d97a)' if _is_top2 else 'rgba(255,255,255,.22)' }};border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+          {% endfor %}
+          {# Attribution #}
+          {% if prediction_markets.source is defined %}
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">Source: {{ prediction_markets.source }}</span><span class="l-zh">来源: {{ prediction_markets.source }}</span></div>
+          {% endif %}
+          {% if _fed_ev.end_date is defined %}
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right"><span class="l-en">Resolves {{ _fed_ev.end_date }}</span><span class="l-zh">结算日 {{ _fed_ev.end_date }}</span></div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <div style="text-align:center;padding:40px 0;color:var(--ink-3,rgba(255,255,255,.36));font-size:13px">
+          <span class="l-en">Fed pricing data is accruing — check back after the next nightly update.</span>
+          <span class="l-zh">美联储定价数据积累中 — 请在下次每晚更新后查看。</span>
+        </div>
+        {% endif %}
+        {# Policy lever note #}
+        {% if policy_lever is defined and policy_lever %}
+        {% set _dlg_PL = policy_lever %}
+        <div class="mx5-dlg-sep"></div>
+        <div style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.6">
+          <strong><span class="l-en">Policy Lever</span><span class="l-zh">政策杠杆</span></strong> &mdash;
+          <span class="l-en">{{ {'QUIET':'No active policy pressure at this time.','ELEVATED':'Elevated — watch for repricing.','ARMED':'Active — policy repricing underway.'}.get(_dlg_PL.get('state','QUIET'), 'Quiet.') }}</span>
+          <span class="l-zh">{{ {'QUIET':'当前无积极政策压力。','ELEVATED':'警戒 — 留意重定价风险。','ARMED':'已触发 — 政策重定价进行中。'}.get(_dlg_PL.get('state','QUIET'), '平静。') }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# dlg-sentiment: Market Sentiment legs breakdown + dial #}
+  <div class="mx5-dlg" id="dlg-sentiment" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Market Sentiment — Breakdown</span><span class="l-zh">市场情绪 — 详细分解</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        {% set _dlg_fg = fear_greed if (fear_greed is defined and fear_greed) else {} %}
+        {% set _dlg_fg_dial = (_dlg_fg.get('dial') or 50) | float %}
+        {% set _dlg_fg_label_en = _dlg_fg.get('label_en') or 'Neutral' %}
+        {% set _dlg_fg_label_zh = _dlg_fg.get('label_zh') or '中性' %}
+        {% set _dlg_fg_col = '#22d97a' if _dlg_fg_dial > 60 else ('#ef4444' if _dlg_fg_dial < 40 else '#f59e0b') %}
+        {# Header: composite score #}
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+          <div style="font-size:40px;font-weight:800;color:{{ _dlg_fg_col }};line-height:1;font-variant-numeric:tabular-nums">{{ _dlg_fg_dial | int }}</div>
+          <div>
+            <div style="font-size:18px;font-weight:700;color:{{ _dlg_fg_col }}"><span class="l-en">{{ _dlg_fg_label_en }}</span><span class="l-zh">{{ _dlg_fg_label_zh }}</span></div>
+            <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Composite sentiment · 0 = Extreme Fear · 100 = Extreme Greed</span><span class="l-zh">综合情绪 · 0=极度恐慌 · 100=极度贪婪</span></div>
+          </div>
+        </div>
+        <div class="mx5-dlg-sep"></div>
+        {# Legs included #}
+        {% set _dlg_fg_legs = _dlg_fg.get('legs_included') or [] %}
+        {% if _dlg_fg_legs %}
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px"><span class="l-en">What the composite measures</span><span class="l-zh">综合指数的构成</span></div>
+        {% for leg in _dlg_fg_legs %}
+        {% set _lgp = (leg.pct or 50) | float %}
+        {% set _lgcol = '#22d97a' if _lgp > 60 else ('#ef4444' if _lgp < 40 else '#f59e0b') %}
+        <div class="mx5-dlg-factor-row">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">{{ leg.name_en }}</span><span class="l-zh">{{ leg.name_zh or leg.name_en }}</span></div>
+            <div class="mx5-dlg-factor-read" style="color:{{ _lgcol }}"><span class="l-en">{{ 'Greed zone' if _lgp > 60 else ('Fear zone' if _lgp < 40 else 'Neutral') }}</span><span class="l-zh">{{ '贪婪区间' if _lgp > 60 else ('恐慌区间' if _lgp < 40 else '中性') }}</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:{{ _lgp }}%;background:{{ _lgcol }}"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:{{ _lgcol }}">{{ _lgp | int }}</div>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {# Young / excluded legs #}
+        {% set _dlg_fg_young = _dlg_fg.get('legs_excluded_young') or [] %}
+        {% if _dlg_fg_young %}
+        <div class="mx5-dlg-sep"></div>
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.6">
+          <span class="l-en">{{ _dlg_fg_young | length }} leg(s) are still collecting history and will join the composite once they have enough data: {% for y in _dlg_fg_young %}{{ y.name_en }}{{ ', ' if not loop.last }}{% endfor %}.</span>
+          <span class="l-zh">{{ _dlg_fg_young | length }} 个分项仍在积累历史数据，待数据充足后将加入综合指数：{% for y in _dlg_fg_young %}{{ y.name_zh or y.name_en }}{{ '、' if not loop.last }}{% endfor %}。</span>
+        </div>
+        {% endif %}
+        {# Disclaimer #}
+        {% if _dlg_fg.get('disclaimer_en') %}
+        <div class="mx5-dlg-sep"></div>
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));line-height:1.6">
+          <span class="l-en">{{ _dlg_fg.disclaimer_en }}</span>
+          <span class="l-zh">{{ _dlg_fg.get('disclaimer_zh') or _dlg_fg.disclaimer_en }}</span>
+        </div>
+        {% endif %}
+        {% if _dlg_fg.get('as_of') %}
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of {{ _dlg_fg.as_of }}</span><span class="l-zh">数据日期 {{ _dlg_fg.as_of }}</span></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# dlg-sector: Full sector heat detail #}
+  <div class="mx5-dlg" id="dlg-sector" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
+    <div class="mx5-dlg-panel">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title"><span class="l-en">Sector Temperature — Full Detail</span><span class="l-zh">板块温度 — 完整详情</span></span>
+        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+      </div>
+      <div class="mx5-dlg-body">
+        {% if sector_heat %}
+        {% set _dlg_sh_hot = sector_heat.get('heating') or [] %}
+        {% set _dlg_sh_cold = sector_heat.get('cooling') or [] %}
+        {# Hot sectors #}
+        {% if _dlg_sh_hot %}
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(34,217,122,.7);margin-bottom:10px"><span class="l-en">Leading sectors &mdash; rotating into</span><span class="l-zh">领跑板块 — 资金流入方向</span></div>
+        <div class="mx5-dlg-sector-cols" style="grid-template-columns:1fr;margin-bottom:16px">
+          {% for s in _dlg_sh_hot %}
+          {% set _srk = s.get('rank', loop.index) %}
+          {% set _sdelta = s.get('rank_delta_5d') %}
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr heat">&#9650;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">{{ s.get('name','') }}</span><span class="l-zh">{{ s.get('name_zh') or s.get('name','') }}</span></span>
+            {% if _sdelta is not none and _sdelta is not undefined %}
+            <span class="mx5-dlg-sector-rk" style="color:{{ 'rgba(34,217,122,.7)' if (_sdelta | float) > 0 else 'rgba(239,68,68,.7)' if (_sdelta | float) < 0 else 'var(--ink-3)' }}">{{ '+' if (_sdelta | float) > 0 }}{{ _sdelta | int }}<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            {% endif %}
+            {% set _slabel = s.get('label') or s.get('reco') %}
+            {% if _slabel %}
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">{{ _slabel }}</span></span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {# Cold sectors #}
+        {% if _dlg_sh_cold %}
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(239,68,68,.7);margin-bottom:10px"><span class="l-en">Lagging sectors &mdash; losing momentum</span><span class="l-zh">落后板块 — 动能减弱</span></div>
+        <div class="mx5-dlg-sector-cols" style="grid-template-columns:1fr;margin-bottom:16px">
+          {% for s in _dlg_sh_cold %}
+          {% set _sdelta2 = s.get('rank_delta_5d') %}
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr cool">&#9660;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">{{ s.get('name','') }}</span><span class="l-zh">{{ s.get('name_zh') or s.get('name','') }}</span></span>
+            {% if _sdelta2 is not none and _sdelta2 is not undefined %}
+            <span class="mx5-dlg-sector-rk" style="color:{{ 'rgba(34,217,122,.7)' if (_sdelta2 | float) > 0 else 'rgba(239,68,68,.7)' if (_sdelta2 | float) < 0 else 'var(--ink-3)' }}">{{ '+' if (_sdelta2 | float) > 0 }}{{ _sdelta2 | int }}<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {# What to watch #}
+        <div class="mx5-dlg-sep"></div>
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.6">
+          <span class="l-en">Sector rankings update nightly. Leading sectors show sustained money flow in; lagging sectors are seeing consistent outflows. Rankings reflect relative strength, not an absolute view.</span>
+          <span class="l-zh">板块排名每晚更新。领跑板块显示持续资金流入；落后板块持续资金外流。排名反映相对强弱，非绝对判断。</span>
+        </div>
+        {% if sector_heat.get('as_of') %}
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of {{ sector_heat.as_of }}</span><span class="l-zh">数据日期 {{ sector_heat.as_of }}</span></div>
+        {% endif %}
+        {% else %}
+        <div style="text-align:center;padding:40px 0;color:var(--ink-3,rgba(255,255,255,.36));font-size:13px">
+          <span class="l-en">Sector data is accruing from the nightly pulse engine.</span>
+          <span class="l-zh">板块数据从每晚脉冲引擎积累中。</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
   {% endif %}{# /mode != stocks — dialogs #}
 
   {% endif %}{# /mode != stocks #}
