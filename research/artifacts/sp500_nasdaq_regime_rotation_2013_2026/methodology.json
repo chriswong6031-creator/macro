@@ -1,0 +1,95 @@
+{
+  "schema_version": 2,
+  "generated_from": "repo-local committed data stores",
+  "market_data_as_of": "2026-07-10",
+  "price_basis": "data/yahoo/<ticker>.parquet close (split+dividend adjusted total return)",
+  "index_proxies": {
+    "S&P 500": "SPY",
+    "Nasdaq-100": "QQQ"
+  },
+  "macd": {
+    "frequency": "weekly Friday-labeled close",
+    "parameters": [
+      12,
+      26,
+      9
+    ],
+    "partial_week_policy": "drop incomplete final bins; allow common Friday market closures after a Thursday final session",
+    "event_and_strategy_execution": "next trading session close after completed weekly signal",
+    "event_horizons_trading_sessions": {
+      "4w": 20,
+      "8w": 40,
+      "13w": 65,
+      "26w": 130,
+      "52w": 252
+    },
+    "event_inference": "descriptive only; overlapping forward windows are serially dependent and no naive IID confidence intervals are reported",
+    "strategy_cash_variants": [
+      "zero_yield",
+      "effective_federal_funds_rate"
+    ],
+    "cost_bps_per_one_way_switch": 10,
+    "signal_price_bases": [
+      "adjusted_total_return",
+      "raw_close_price"
+    ],
+    "strategy_return_price_basis": "adjusted_total_return"
+  },
+  "defensive_basket": {
+    "members": [
+      "XLV",
+      "XLP",
+      "XLU"
+    ],
+    "construction": "equal-weight daily-rebalanced total-return index"
+  },
+  "seasonality_multiple_testing": {
+    "qvalue_asset": "Benjamini-Hochberg across 12 months within each sample/asset",
+    "qvalue_family": "Benjamini-Hochberg across all asset-month tests within each sample",
+    "samples": [
+      "modern_2013_2025",
+      "expanded_1999_2025",
+      "pre_modern_1999_2012"
+    ]
+  },
+  "election_permutation": {
+    "seed": 20260712,
+    "n_permutations": 20000,
+    "qvalues": "Benjamini-Hochberg within sample and across the full reported family",
+    "exchangeability_caveat": "four-year calendar labels are deterministic; permutation results are exploratory"
+  },
+  "breadth": {
+    "membership": "current constituents only",
+    "eligibility_50d": "valid latest observation and 50 valid daily observations",
+    "eligibility_200d": "valid latest observation and 200 valid daily observations",
+    "historical_use": "prohibited because membership is survivorship-bound"
+  },
+  "regime_boundaries": "ex-post descriptive; not a real-time signal",
+  "sector_inception_caveats": {
+    "XLRE": "2015-10-07/08; partial 2015 excluded from annual ranks",
+    "XLC": "2018-06-18/19; partial 2018 excluded from annual ranks",
+    "GICS_2018": "major names migrated among XLK/XLY/XLC; pre/post sector leadership is not compositionally identical"
+  },
+  "outputs": [
+    "annual_index_sector_scoreboard.csv",
+    "cross_year_regime_bridges.csv",
+    "current_breadth_snapshot.csv",
+    "current_macro_snapshot.csv",
+    "current_market_snapshot.csv",
+    "defensive_beta_decomposition.csv",
+    "defensive_contemporaneous_vs_predictive.csv",
+    "election_cycle_phase_summary.csv",
+    "election_cycle_yearly_observations.csv",
+    "midterm_permutation_tests.csv",
+    "monthly_total_returns.csv",
+    "quarterly_total_returns.csv",
+    "regime_rotation_spans.csv",
+    "sector_month_seasonality.csv",
+    "weekly_macd_bear_to_bull_episodes.csv",
+    "weekly_macd_current_state.csv",
+    "weekly_macd_event_summary.csv",
+    "weekly_macd_events.csv",
+    "weekly_macd_price_basis_robustness.csv",
+    "weekly_macd_strategy_comparison.csv"
+  ]
+}
