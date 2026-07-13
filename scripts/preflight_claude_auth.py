@@ -45,6 +45,38 @@ _PING_TIMEOUT_S = 20  # seconds
 # Prompt to use for the health-ping (cheapest possible — 1 output token target)
 _PING_PROMPT = "Reply with the single word: pong"
 
+# Known install locations for the claude CLI on the self-hosted runners.
+# The runner daemon inherits a minimal launchd PATH that omits per-user bin
+# dirs, so a bare "claude" raises FileNotFoundError even when the CLI IS
+# installed (first armed PROPOSE cycle, 2026-07-13: ~/.local/bin/claude
+# present but invisible to actions-runner-2).  PATH still wins when set.
+_CLAUDE_BIN_CANDIDATES: tuple[str, ...] = (
+    "~/.local/bin/claude",
+    "~/.claude/local/claude",
+    "/opt/homebrew/bin/claude",
+    "/usr/local/bin/claude",
+)
+
+
+def resolve_claude_bin() -> str:
+    """Resolve the claude CLI binary: PATH first, then known install dirs.
+
+    Falls back to the bare name, preserving the original FileNotFoundError
+    path and its operator-facing message.  NEVER raises.
+    """
+    try:
+        import shutil  # noqa: PLC0415
+        found = shutil.which("claude")
+        if found:
+            return found
+        for cand in _CLAUDE_BIN_CANDIDATES:
+            p = Path(cand).expanduser()
+            if p.is_file() and os.access(p, os.X_OK):
+                return str(p)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("preflight: resolve_claude_bin failed (%s) — using bare name", exc)
+    return "claude"
+
 
 def _notify_auth_failure(reason: str) -> None:
     """Best-effort Telegram notification on auth failure.  Never raises."""
@@ -155,7 +187,7 @@ def _run_ping_check(ref_name: str) -> tuple[bool, str]:
     """
     try:
         result = subprocess.run(
-            ["claude", "-p", _PING_PROMPT],
+            [resolve_claude_bin(), "-p", _PING_PROMPT],
             capture_output=True,
             text=True,
             timeout=_PING_TIMEOUT_S,
