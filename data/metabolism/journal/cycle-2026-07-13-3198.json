@@ -1,20 +1,38 @@
 {
   "schema": "metabolism.journal.v1",
   "cycle_id": "cycle-2026-07-13-3198",
-  "stage": "propose",
+  "stage": "adjudicate_resolve",
   "status": "done",
   "auth_ok": null,
   "artifacts": [
     "/Users/chriswong/actions-runner-2/_work/macro/macro/data/metabolism/dockets/cycle-2026-07-13-3198.json"
   ],
-  "next_stage": "adjudicate",
-  "ts": "2026-07-13T03:54:18+00:00",
+  "next_stage": "build",
+  "ts": "2026-07-13T04:05:19+00:00",
   "stages": {
     "propose": {
       "status": "done",
       "started_at": "2026-07-13T03:53:36+00:00",
       "finished_at": "2026-07-13T03:54:18+00:00",
       "note": "docket 1 proposal(s); lobe=til; provider=deepseek"
+    },
+    "adjudicate_orchestrator": {
+      "status": "done",
+      "started_at": "2026-07-13T04:04:22+00:00",
+      "finished_at": "2026-07-13T04:04:43+00:00",
+      "note": "orchestrator ruled 1 proposal(s)"
+    },
+    "adjudicate_adversary": {
+      "status": "done",
+      "started_at": "2026-07-13T04:04:44+00:00",
+      "finished_at": "2026-07-13T04:05:19+00:00",
+      "note": "adversary ruled 1 proposal(s)"
+    },
+    "adjudicate_resolve": {
+      "status": "done",
+      "started_at": "2026-07-13T04:05:19+00:00",
+      "finished_at": "2026-07-13T04:05:19+00:00",
+      "note": "two_key resolved: 0/1 authorized"
     }
   }
 }

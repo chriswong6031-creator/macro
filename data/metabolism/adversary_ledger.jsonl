@@ -1,0 +1,1 @@
+{"schema":"metabolism.adversary_ledger.v1","cycle_id":"cycle-2026-07-13-3198","proposal_id":"ced63ba39a27","run_id":"29223044833-adversary","ts":"2026-07-13T04:05:19+00:00","veto":true,"findings":["collides with a DO_NOT_REBUILD kill"],"tripwire_predictions":[],"rationale":"deterministic case-law collision"}

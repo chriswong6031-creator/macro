@@ -1,19 +1,26 @@
 {
   "schema": "metabolism.budget_ledger.v1",
-  "cycle_id": "cycle-2026-07-13-3198-site-china-standouts",
-  "started_at": "2026-07-13T03:55:06+00:00",
-  "updated_at": "2026-07-13T03:56:20+00:00",
+  "cycle_id": "cycle-2026-07-13-3198",
+  "started_at": "2026-07-13T04:04:21+00:00",
+  "updated_at": "2026-07-13T04:05:19+00:00",
   "usd_cap": 25.0,
   "token_cap": 25000000,
   "usd_spent": 0.0,
-  "token_spent": 30000,
+  "token_spent": 60000,
   "entries": [
     {
-      "stage": "propose",
-      "ts": "2026-07-13T03:56:20+00:00",
+      "stage": "adjudicate_orchestrator",
+      "ts": "2026-07-13T04:04:43+00:00",
       "usd": 0.0,
       "tokens": 30000,
-      "note": "propose lobe=site-china-standouts n=0"
+      "note": "orchestrator n=1"
+    },
+    {
+      "stage": "adjudicate_adversary",
+      "ts": "2026-07-13T04:05:19+00:00",
+      "usd": 0.0,
+      "tokens": 30000,
+      "note": "adversary n=1"
     }
   ],
   "lobes": {}
