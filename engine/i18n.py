@@ -81,6 +81,10 @@ LEX: dict[str, str] = {
     # rotation stages
     "leading": "领先",
     "weakening": "走弱",
+    "strengthening": "走强",
+    "rising": "上行",
+    "falling": "下行",
+    "flat": "持平",
     "improving": "改善",
     "lagging": "落后",
     # cycle-ladder state labels (STATE_DISPLAY 'label')
