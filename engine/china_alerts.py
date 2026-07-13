@@ -515,8 +515,15 @@ def today_views(asof=None) -> list[dict]:
         return []
     # one alert per rule per day — collapse same-day re-runs whose message wording
     # drifted (the (date, rule, message) log key would otherwise double-show a rule;
-    # keep the most-recently-logged wording).
-    rows = rows.drop_duplicates(subset=["rule"], keep="last")
+    # keep the most-recently-logged wording). EXCEPT the circuit-breaker rule: there
+    # each same-rule row is a DIFFERENT dark source, not wording drift — those keep
+    # one row per message and alert_views collapses them into one count-aware view
+    # ("N China data sources went dark").
+    is_breaker = rows["rule"] == "china_circuit_breaker"
+    rows = pd.concat([
+        rows[~is_breaker].drop_duplicates(subset=["rule"], keep="last"),
+        rows[is_breaker].drop_duplicates(subset=["rule", "message"], keep="last"),
+    ]).sort_index()
     rows = rows.sort_values("severity", key=lambda s: s.map(lambda x: _SEV_ORDER.get(x, 9)))
     return alert_views(rows.to_dict(orient="records"))
 
@@ -547,8 +554,8 @@ def recent_alerts(days: int = 7) -> pd.DataFrame:
 
 _DEFAULT_META = {
     "icon": "🔔",
-    "plain_en": "China macro signal fired",
-    "plain_zh": "中国宏观信号触发",
+    "plain_en": "A China macro signal changed — check the dashboard read",
+    "plain_zh": "一个中国宏观信号变化 — 查看仪表盘解读",
     "what_en": "An automated A-share macro signal changed state. Open the China "
                "dashboard for the full read.",
     "what_zh": "一个自动 A 股宏观信号发生了状态变化。打开中国仪表盘查看完整解读。",
@@ -881,4 +888,13 @@ def alert_views(alerts) -> list[dict]:
         else:
             out.append(alert_view(a.get("rule", ""), a.get("severity", "info"),
                                   a.get("message", ""), a.get("message_zh", "")))
-    return out
+    from engine.alerts import collapse_breaker_views
+    return collapse_breaker_views(
+        out, rule="china_circuit_breaker",
+        plural_en="{n} China data sources went dark", plural_zh="{n} 个中国数据源中断",
+        what_en="Multiple China feeds this dashboard relies on failed several runs "
+                "in a row, so they're paused until they recover. Any signals that "
+                "depend on them lose confidence until they're back. This is a "
+                "plumbing notice, not a market signal.",
+        what_zh="本仪表盘依赖的多个中国数据源连续多次失败，已暂停直至恢复。依赖它们的"
+                "信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。")

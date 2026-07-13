@@ -12,6 +12,7 @@ message, it does not gate anything.
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 
 import numpy as np
@@ -538,8 +539,8 @@ def recent_alerts(days: int = 7) -> pd.DataFrame:
 
 _DEFAULT_META = {
     "icon": "🔔",
-    "plain_en": "Macro signal fired",
-    "plain_zh": "宏观信号触发",
+    "plain_en": "A macro signal changed — check the dashboard read",
+    "plain_zh": "一个宏观信号变化 — 查看仪表盘解读",
     "what_en": "An automated macro signal changed state. Open the dashboard for the "
                "full read.",
     "what_zh": "一个自动宏观信号发生了状态变化。打开仪表盘查看完整解读。",
@@ -726,6 +727,103 @@ ALERT_META: dict[str, dict] = {
                    "降低置信度，直到其恢复。这是系统管线提示，并非市场信号。",
         "anchor": "health",
     },
+    # The six conditions-layer rules + event_risk below previously had no META entry
+    # and rendered as the bare "Macro signal fired" default with no plain-word
+    # consequence (adversarial design review, 2026-07-13). Anchors are "" — their
+    # panels live inside dialogs on the v5 board, so there is no in-page id to jump to.
+    "conditions_recession_state_change": {
+        "icon": "🌡️",
+        "plain_en": "Recession risk changed level — re-check how defensive to be",
+        "plain_zh": "衰退风险等级变动 — 重新评估防御程度",
+        "what_en": "The slow macro/credit recession gauge (0–100) moved between its "
+                   "low / elevated / high bands. It lags price and moves slowly, so treat "
+                   "it as backdrop — lean more defensive as it rises, less as it falls — "
+                   "not a timing signal on its own.",
+        "what_zh": "缓慢的宏观／信用衰退指标（0–100）在低／偏高／高等级之间移动。它滞后于"
+                   "价格且变化缓慢，应视为背景 — 上升时更防御、下降时可放松 — 本身并非择时信号。",
+        "anchor": "",
+    },
+    "nfci_tightening": {
+        "icon": "🧊",
+        "plain_en": "Financial conditions crossed into tight — a broad headwind",
+        "plain_zh": "金融条件转紧 — 广泛逆风",
+        "what_en": "The Fed's national financial-conditions index crossed its tight "
+                   "threshold — credit, leverage and risk appetite are all getting more "
+                   "expensive at once. A slow, broad headwind for risk assets: lean "
+                   "cautious rather than trade it.",
+        "what_zh": "美联储全国金融条件指数上穿收紧阈值 — 信用、杠杆与风险偏好同时变贵。"
+                   "对风险资产是缓慢而广泛的逆风：应更谨慎，而非据此直接交易。",
+        "anchor": "",
+    },
+    "sahm_trigger": {
+        "icon": "👷",
+        "plain_en": "Unemployment tripped the recession rule — defense first",
+        "plain_zh": "失业率触发衰退法则 — 防御优先",
+        "what_en": "The Sahm rule fires when the 3-month average unemployment rate rises "
+                   "half a point off its low — it has flagged every US recession since 1970 "
+                   "with few false alarms. It says a recession is likely already underway; "
+                   "favor capital preservation until the labor data improves.",
+        "what_zh": "当失业率三个月均值较低点回升 0.5 个百分点时，Sahm 法则触发 — 自 1970 年"
+                   "以来它标记了每次美国衰退且误报很少。它意味着衰退可能已经开始；在就业数据"
+                   "好转前以保住本金为先。",
+        "anchor": "",
+    },
+    "ebp_widening": {
+        "icon": "🏦",
+        "plain_en": "Credit risk appetite dropped sharply — lenders getting picky",
+        "plain_zh": "信用风险偏好骤降 — 资金趋于挑剔",
+        "what_en": "The Excess Bond Premium measures what investors charge for corporate "
+                   "credit risk beyond what defaults justify — a clean read on risk "
+                   "appetite. A sharp monthly jump has historically led growth slowdowns "
+                   "and equity weakness. A caution flag: slower than the daily HY spread, "
+                   "but deeper.",
+        "what_zh": "超额债券溢价衡量投资者对企业信用风险要求的、超出违约率所能解释的补偿 —"
+                   "是风险偏好的干净读数。其单月急升在历史上领先于增长放缓与股市走弱。"
+                   "属警示信号：比每日高收益利差更慢，但更深层。",
+        "anchor": "",
+    },
+    "drawdown_risk_high": {
+        "icon": "🛡️",
+        "plain_en": "Macro stress hit the high zone — trim risk, widen stops",
+        "plain_zh": "宏观压力进入高位 — 减仓并放宽止损",
+        "what_en": "The slow macro/credit stress gauge (recession risk, financial "
+                   "conditions, credit spreads) crossed into its high band. In this zone "
+                   "roughly 1 in 3 past episodes saw a 10%+ drawdown within three months, "
+                   "versus about 1 in 5 normally. It lags price — use it to size down, "
+                   "not to time entries.",
+        "what_zh": "缓慢的宏观／信用压力指标（衰退风险、金融条件、信用利差）进入高位区。"
+                   "在该区间，历史上约三分之一的情形在三个月内出现 10% 以上回撤，而平常约为"
+                   "五分之一。它滞后于价格 — 用于降低仓位，而非择时进场。",
+        "anchor": "",
+    },
+    "capitulation_signal": {
+        "icon": "🩸",
+        "plain_en": "Panic hit washout levels — a contrarian setup, not a floor",
+        "plain_zh": "恐慌达到极端 — 属逆向信号，并非确认见底",
+        "what_en": "Multiple panic gauges fired together. Historically these washouts "
+                   "resolved higher — S&P up about 9% over the next three months, positive "
+                   "in about 6 of 7 cases, versus about 3% normally. It measures fear, not "
+                   "a guaranteed floor: scale in rather than dive, and stand aside when "
+                   "the Fed-put check says a recession or inflation is blocking rescue.",
+        "what_zh": "多个恐慌指标同时触发。历史上这类恐慌性抛售多以走高收场 — 标普未来三个月"
+                   "平均上涨约 9%，七次中约六次为正（平常约 3%）。它衡量的是恐慌而非确定的底部："
+                   "应分批而非一次性进场；若美联储托底判断显示衰退或通胀阻碍救市，则应观望。",
+        "anchor": "",
+    },
+    "event_risk": {
+        "icon": "📅",
+        "plain_en": "Major event on deck — expect bigger swings either way",
+        "plain_zh": "重大事件临近 — 双向波动或加大",
+        "what_en": "A high-impact scheduled release (CPI, Fed decision, jobs report) lands "
+                   "in the coming sessions — the message says which and when. Moves around "
+                   "these prints are two-sided and often retraced — a volatility warning, "
+                   "not a directional call. Size positions for the noise; avoid forcing new "
+                   "trades right into the print.",
+        "what_zh": "未来数个交易日内将有高影响力的既定事件（CPI、美联储决议、就业报告）——"
+                   "具体是哪个、何时，见提示内容。事件前后的波动是双向的、常被回补 —"
+                   "这是波动性提示，并非方向判断。按噪声调整仓位，避免在数据公布前强行开新仓。",
+        "anchor": "",
+    },
 }
 
 
@@ -786,6 +884,27 @@ ALERT_CONVICTION: dict[str, dict] = {
     "breadth_divergence": {"tier": "watch",
         "edge_en": "Medium — fewer names carrying the index; a thinning-tape caution, not a timer.",
         "edge_zh": "中 — 抬指数的个股在减少；属于宽度变薄的警示，而非择时。"},
+    "conditions_recession_state_change": {"tier": "watch",
+        "edge_en": "Medium — slow and lagging, but a band shift re-prices the defensive posture.",
+        "edge_zh": "中 — 缓慢且滞后，但等级变动会重新定价防御姿态。"},
+    "nfci_tightening": {"tier": "watch",
+        "edge_en": "Medium — slow-moving but broad; tightening regimes are hostile to risk.",
+        "edge_zh": "中 — 变化缓慢但覆盖面广；金融条件收紧期对风险资产不利。"},
+    "sahm_trigger": {"tier": "act",
+        "edge_en": "High — one of the most reliable recession confirms; a confirm, not an early warning.",
+        "edge_zh": "高 — 最可靠的衰退确认信号之一；属确认而非预警。"},
+    "ebp_widening": {"tier": "watch",
+        "edge_en": "Medium — monthly and slow, but jumps have led growth slowdowns.",
+        "edge_zh": "中 — 月度且缓慢，但其跳升在历史上领先于增长放缓。"},
+    "drawdown_risk_high": {"tier": "act",
+        "edge_en": "High — measured drawdown odds roughly double in this band; the response is sizing.",
+        "edge_zh": "高 — 实测回撤概率在该区间约翻倍；应对是调整仓位。"},
+    "capitulation_signal": {"tier": "watch",
+        "edge_en": "Medium — a measured contrarian bounce, but entries into panic need staging.",
+        "edge_zh": "中 — 有实测的逆向反弹，但在恐慌中进场需分批。"},
+    "event_risk": {"tier": "context",
+        "edge_en": "Context — a volatility window, not a direction call. Size for the noise.",
+        "edge_zh": "背景 — 波动窗口而非方向判断。按噪声调整仓位。"},
 }
 
 
@@ -810,4 +929,57 @@ def alert_views(alerts) -> list[dict]:
         else:
             out.append(alert_view(a.get("rule", ""), a.get("severity", "info"),
                                   a.get("message", ""), a.get("message_zh", "")))
+    return collapse_breaker_views(
+        out, rule="circuit_breaker_open",
+        plural_en="{n} data sources went dark", plural_zh="{n} 个数据源中断",
+        what_en="Multiple feeds this dashboard relies on failed several runs in a "
+                "row, so they're paused until they recover. Any signals that depend "
+                "on them automatically lose confidence until they're back. This is "
+                "a plumbing notice, not a market signal.",
+        what_zh="本仪表盘依赖的多个数据源连续多次失败，已暂停直至恢复。依赖它们的信号"
+                "会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。")
+
+
+# matches the source slug in every breaker message variant this repo authors:
+# "Source 'fred'…", "China source 'china_margin'…", "HK source 'hkma'…"
+_BREAKER_SRC_RE = re.compile(r"ource '([^']+)'")
+
+
+def collapse_breaker_views(views: list[dict], rule: str, plural_en: str,
+                           plural_zh: str, what_en: str, what_zh: str) -> list[dict]:
+    """Collapse same-day duplicate data-source breaker views into ONE count-aware
+    view: six dark feeds must read "6 data sources went dark", not six stacked
+    copies of the singular headline (adversarial design review, 2026-07-13).
+    Presentation-tier only — the per-source rows in the alert ledger are untouched.
+    Shared by the US / China / HK view builders; ``plural_en``/``plural_zh`` are
+    ``str.format`` templates taking ``n``; a single firing keeps the singular META
+    headline unchanged."""
+    cbs = [v for v in views if v["rule"] == rule]
+    if len(cbs) <= 1:
+        return views
+    n = len(cbs)
+    srcs = [m.group(1) for v in cbs
+            if (m := _BREAKER_SRC_RE.search(v.get("message", "")))]
+    if len(srcs) == n:
+        # every per-source message parsed — compose one clean sentence
+        msg = (f"Sources {', '.join(repr(s) for s in srcs)} marked dead after "
+               f"repeated failures — collectors skipped until they recover; "
+               f"affected signals degrade")
+        msg_zh = (f"数据源 {'、'.join(repr(s) for s in srcs)} 连续多次失败后被标记为中断 — "
+                  f"采集器暂停直至恢复；相关信号置信度下降")
+    else:  # unexpected message shape — degrade to joining, never drop information
+        msg = " · ".join(v.get("message", "") for v in cbs)
+        msg_zh = " · ".join((v.get("message_zh") or v.get("message", "")) for v in cbs)
+    merged = {**cbs[0], "plain_en": plural_en.format(n=n),
+              "plain_zh": plural_zh.format(n=n),
+              "what_en": what_en, "what_zh": what_zh,
+              "message": msg, "message_zh": msg_zh}
+    out, first = [], True
+    for v in views:
+        if v["rule"] == rule:
+            if first:
+                out.append(merged)
+                first = False
+        else:
+            out.append(v)
     return out
