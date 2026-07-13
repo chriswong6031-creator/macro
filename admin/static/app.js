@@ -137,10 +137,12 @@ const ICONS = {
   context_lobe:  NAV_ICO('<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>'),
   causal_lab:    NAV_ICO('<path d="M9 3h6M10 3v5.5L5.4 17.6A2 2 0 0 0 7.2 20.5h9.6a2 2 0 0 0 1.8-2.9L14 8.5V3"/><path d="M8 14h8"/><circle cx="17" cy="7" r="3"/><path d="M15.5 5.5l3 3"/>'),
   metabolism:    NAV_ICO('<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/><circle cx="12" cy="12" r="3"/>'),
+  orchestrator:  NAV_ICO('<circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v2.6M12 17.9v2.6M3.5 12h2.6M17.9 12h2.6"/>'),
+  mastermind_ai: NAV_ICO('<rect x="5" y="7" width="14" height="12" rx="2.5"/><circle cx="9.5" cy="12.5" r="1.2"/><circle cx="14.5" cy="12.5" r="1.2"/><path d="M12 7V4M12 4h.01M9 16h6"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
-  { label: "Neural Web", items: [["neural_web", "Observatory"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
+  { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -1227,13 +1229,38 @@ function nwLobeCard(l) {
   </a>`;
 }
 
+/* W-AI: pinned Master Brain card — the orchestrator (nightly pipeline) itself.
+   Renders nothing when orchestrator_hero is absent (older payloads). */
+function mbHeroCard(o) {
+  if (!o) return "";
+  const st = o.overall_status || "unknown";
+  const stCls = st === "ok" ? "s-ok" : (st === "unknown" ? "s-mut" : (st === "degraded" ? "s-bad" : "s-warn"));
+  const chips = [
+    o.run_date ? `<span class="statpill s-mut">last run ${esc(o.run_date)}</span>` : "",
+    `<span class="statpill ${o.nudges_n ? "s-warn" : "s-mut"}">${o.nudges_n != null ? o.nudges_n : 0} bot nudge${o.nudges_n === 1 ? "" : "s"}</span>`,
+    `<span class="statpill s-mut">${o.directives_n != null ? o.directives_n : 0} directive${o.directives_n === 1 ? "" : "s"}</span>`,
+    o.last_review_at ? `<span class="statpill s-mut">review ${esc(String(o.last_review_at).slice(0, 10))}</span>` : "",
+  ].filter(Boolean).join(" ");
+  return `<div class="mb-hero">
+    <div class="mb-hero-top">
+      <span class="mb-hero-kicker">Master Brain</span>
+      <span class="mb-hero-name">Neural Web Orchestrator</span>
+      <span class="statpill ${stCls}">${esc(st)}</span>
+      <span class="spacer"></span>
+      <button class="btn primary" id="mb-open">Open Master Brain →</button>
+    </div>
+    <div class="sub" style="margin-top:6px">${esc(o.summary || "No run recorded yet — the first nightly pipeline run writes the orchestrator run log.")}</div>
+    <div class="mb-hero-chips">${chips}</div>
+  </div>`;
+}
+
 RENDER.neural_web = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="skeleton skeleton-title"></div><div class="skeleton skeleton-card"></div>
     <div class="lobe-grid">${'<div class="skeleton skeleton-card"></div>'.repeat(8)}</div>`;
   const d = await api("/api/neural_web/lobes");
   if (!d.ok) { v.innerHTML = nwEmpty("Could not load the lobe map", d.error || "panel error"); return; }
-  let html = nwHero(d) + nwSystemMap(d);
+  let html = nwHero(d) + mbHeroCard(d.orchestrator_hero) + nwSystemMap(d);
   (d.groups || []).forEach(g => {
     if (!g.lobes || !g.lobes.length) return;
     html += `<div class="section">${esc(g.label)} <span class="cnt">${g.lobes.length}</span></div>
@@ -1248,6 +1275,7 @@ RENDER.neural_web = async () => {
   (d.groups || []).forEach(g => (g.lobes || []).forEach(l => { NW_LOBE_BY_ID[l.id] = l; }));
 
   v.innerHTML = html;
+  const mbBtn = $("#mb-open"); if (mbBtn) mbBtn.onclick = () => go("orchestrator");
   v.querySelectorAll(".map-node[data-lobe]").forEach(el => {
     el.addEventListener("click", () => gotoLobe(el.dataset.lobe));
     wireLobeTipNode(el);
@@ -1426,6 +1454,398 @@ async function renderLobeDetail(id) {
     <div class="section">Recent activity <span class="cnt">${recent.length}</span></div>
     ${timeline}`;
   wireBack();
+}
+
+/* ---- MASTER BRAIN (orchestrator) — W-AI ---------------------------------- */
+const ORCH_STATUS_CLS = (st) => st === "ok" ? "s-ok" : st === "unknown" ? "s-mut" : (st === "degraded" || st === "bad") ? "s-bad" : "s-warn";
+const NUDGE_SEV_CLS = (sev) => {
+  const s = String(sev || "").toLowerCase();
+  if (["block", "high", "critical", "error"].includes(s)) return "s-bad";
+  if (["warn", "warning", "medium"].includes(s)) return "s-warn";
+  return "s-mut";
+};
+const orchTrunc = (s, n) => { s = String(s == null ? "" : s); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+/* generic tolerant renderers for loosely-shaped bot payloads */
+function kvRows(obj) {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return "";
+  return Object.entries(obj).map(([k, val]) => {
+    const vv = (val != null && typeof val === "object") ? `<code style="font-size:11px">${esc(orchTrunc(JSON.stringify(val), 120))}</code>` : esc(val == null ? "—" : String(val));
+    return `<div class="kv"><span>${esc(k)}</span><b>${vv}</b></div>`;
+  }).join("");
+}
+function countChips(obj, cls) {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return "";
+  return Object.entries(obj).map(([k, n]) => `<span class="statpill ${cls || "s-mut"}">${esc(k)} · ${esc(String(n))}</span>`).join(" ");
+}
+
+let ORCH_CHAT = [];   // [{role, content, degraded?}] — page-lifetime chat history
+
+function orchChatMsgsHtml() {
+  if (!ORCH_CHAT.length) return `<div class="sub muted">Ask the pipeline what it did last night, what's stale, or what the bot nudged.</div>`;
+  return ORCH_CHAT.map(m => `<div class="chat-msg ${m.role === "user" ? "user" : "bot"}">
+      <div class="chat-msg-role">${m.role === "user" ? "you" : "orchestrator"}${m.degraded ? ' <span class="statpill s-warn">degraded</span>' : ""}</div>
+      <div class="chat-msg-body">${esc(m.content)}</div>
+    </div>`).join("");
+}
+
+RENDER.orchestrator = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/orchestrator");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Master Brain unavailable", (d && d.error) || "panel error"); return; }
+  const hero = d.status_hero || {}, s = d.settings || {}, dia = d.dialogue || {}, cx = d.cortex || {};
+  const st = hero.overall_status || "unknown";
+  const ack = dia.ack || {}; const codesSeen = ack.nudge_codes_seen || []; const idsSeen = ack.directive_ids_seen || [];
+  const prob = cx.probation || {};
+
+  const heroHtml = `<div class="mb-hero">
+    <div class="mb-hero-top">
+      <span class="mb-hero-kicker">Master Brain</span>
+      <span class="mb-hero-name">Neural Web Orchestrator</span>
+      <span class="statpill ${ORCH_STATUS_CLS(st)}">${esc(st)}</span>
+      <span class="spacer"></span>
+      <button class="btn" id="orchWake" title="workflow_dispatch daily.yml — runs the full nightly pipeline now">⏰ Wake orchestrator</button>
+    </div>
+    <div class="sub" style="margin-top:6px">${esc(hero.summary || "No run recorded yet — the first nightly pipeline run writes the orchestrator run log.")}</div>
+    <div class="mb-hero-chips">
+      <span class="statpill s-mut">${hero.lobes_stale != null ? hero.lobes_stale : "—"}/${hero.lobes_total != null ? hero.lobes_total : "—"} lobes stale</span>
+      <span class="statpill s-mut">${hero.what_changed_n != null ? hero.what_changed_n : "—"} changes</span>
+      <span class="statpill ${ORCH_STATUS_CLS(cx.status)}">cortex ${esc(cx.status || "unknown")}</span>
+      <span class="statpill ${hero.nudges_n ? "s-warn" : "s-mut"}">${hero.nudges_n || 0} bot nudge${hero.nudges_n === 1 ? "" : "s"}</span>
+      <span class="statpill s-mut">${hero.directives_n || 0} directive${hero.directives_n === 1 ? "" : "s"}</span>
+      <span class="statpill s-mut">feedback ${esc(hero.feedback_state || "absent")}</span>
+    </div>
+    <div class="note muted" style="margin-top:8px">${esc(hero.next_run_note || "")} · ${hero.n_entries || 0} run${hero.n_entries === 1 ? "" : "s"} logged${hero.last_review_at ? ` · last review ${esc(String(hero.last_review_at).slice(0, 16).replace("T", " "))}` : ""}${prob.tier ? ` · cortex probation ${esc(prob.tier)}${prob.granted ? "" : " (not granted)"}` : ""}</div>
+  </div>`;
+
+  const numInput = (key, val, lo, hi) => `<input type="number" data-orchset="${key}" data-prev="${val}" min="${lo}" max="${hi}" value="${val}" style="width:86px">`;
+  const boolSwitch = (key, val) => `<label class="switch"><input type="checkbox" data-orchsetb="${key}" ${val ? "checked" : ""}><span class="slider"></span></label>`;
+  const settingsHtml = `<div class="section">Settings <span class="cnt">config.yml · orchestrator</span></div>
+    <div class="row">${boolSwitch("ingest_bot_feedback", s.ingest_bot_feedback)}
+      <div><div class="lab">Ingest bot feedback</div><div class="note">Read the Mastermind bot's nudges + directives (site/mastermind/nw_feedback.json) during the nightly build. <code class="muted">orchestrator.ingest_bot_feedback</code></div></div></div>
+    <div class="row">${boolSwitch("brief_attention_nudges", s.brief_attention_nudges)}
+      <div><div class="lab">Surface nudges in the daily brief</div><div class="note">Pending bot nudges/directives appear as operator-attention items. <code class="muted">orchestrator.brief_attention_nudges</code></div></div></div>
+    <div class="row"><div class="lab" style="min-width:220px">Review every N runs</div>${numInput("review_every_n_runs", s.review_every_n_runs, 2, 50)}
+      <div class="note">Roll-up review + progress assessment cadence (2–50).</div></div>
+    <div class="row"><div class="lab" style="min-width:220px">Site rows</div>${numInput("site_rows", s.site_rows, 10, 365)}
+      <div class="note">Run-log entries kept in the published site artifact (10–365).</div></div>`;
+
+  const entries = d.entries || [];
+  const runlogHtml = `<div class="section">Run log <span class="cnt">${entries.length}</span></div>` + (entries.length
+    ? `<table><thead><tr><th>Run</th><th>Workflow</th><th>Status</th><th>Lobes stale</th><th>Changes</th><th>Cortex</th><th>Nudges</th><th>Summary</th></tr></thead><tbody>
+      ${entries.map(e => {
+        const kinds = e.what_changed_kinds && Object.keys(e.what_changed_kinds).length ? Object.entries(e.what_changed_kinds).map(([k, n]) => `${k}:${n}`).join(", ") : "";
+        return `<tr>
+          <td class="mono"><b>${esc(e.run_date || "—")}</b></td>
+          <td class="sub">${esc(e.workflow || "—")}</td>
+          <td><span class="statpill ${ORCH_STATUS_CLS(e.overall_status)}">${esc(e.overall_status || "—")}</span></td>
+          <td class="r mono">${e.lobes_stale != null ? e.lobes_stale : "—"}/${e.lobes_total != null ? e.lobes_total : "—"}</td>
+          <td class="r mono" title="${esc(kinds)}">${e.what_changed_n != null ? e.what_changed_n : "—"}</td>
+          <td><span class="statpill ${ORCH_STATUS_CLS(e.cortex_status)}">${esc(e.cortex_status || "—")}</span></td>
+          <td class="r mono" title="${esc((e.nudge_codes || []).join(", "))}">${e.nudges_n != null ? e.nudges_n : 0}</td>
+          <td class="sub" title="${esc(e.summary || "")}">${esc(orchTrunc(e.summary, 90))}</td>
+        </tr>`;
+      }).join("")}</tbody></table>`
+    : `<div class="sub muted">No run-log entries yet. The nightly pipeline (daily.yml, 02:00 UTC) writes the first one.</div>`);
+
+  const reviews = d.reviews || [];
+  const reviewsHtml = `<div class="section">Reviews <span class="cnt">every ${esc(String(s.review_every_n_runs || 5))} runs</span></div>` + (reviews.length
+    ? reviews.map(r => {
+      const c = r.completed || {};
+      return `<div class="card" style="margin-bottom:10px">
+        <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
+          <b>${esc(r.from_run || "?")} → ${esc(r.to_run || "?")}</b>
+          <span class="statpill s-mut">${r.window_runs || "?"} runs</span>
+          <span class="sub">${esc(String(r.produced_at || "").slice(0, 16).replace("T", " "))}</span>
+        </div>
+        <div class="sub" style="margin:6px 0 4px">${c.what_changed_total != null ? c.what_changed_total : "—"} changes · ${c.directives_seen != null ? c.directives_seen : "—"} directives seen ${countChips(c.what_changed_kinds)}</div>
+        ${(r.assessment || []).map(a => `<div class="note" style="margin-top:3px">• ${esc(a)}</div>`).join("")}
+      </div>`;
+    }).join("")
+    : `<div class="sub muted">No reviews yet — the first roll-up is written after ${esc(String(s.review_every_n_runs || 5))} logged runs.</div>`);
+
+  const nudges = dia.nudges || [];
+  const directives = dia.operator_directives || [];
+  const dialogueHtml = `<div class="section">Bot dialogue <span class="cnt">${esc(dia.feedback_state || "absent")}</span></div>
+    ${nudges.length ? `<table><thead><tr><th>Code</th><th>Kind</th><th>Severity</th><th>Detail</th><th class="r">Builds seen</th><th>Ack</th></tr></thead><tbody>
+      ${nudges.map(n => `<tr>
+        <td class="mono"><b>${esc(n.code || "—")}</b></td>
+        <td class="sub">${esc(n.kind || "—")}</td>
+        <td><span class="statpill ${NUDGE_SEV_CLS(n.severity)}">${esc(n.severity || "—")}</span></td>
+        <td class="sub" style="max-width:320px">${esc(n.detail || "")}</td>
+        <td class="r mono">${n.builds_seen != null ? n.builds_seen : "—"}</td>
+        <td>${codesSeen.includes(n.code) ? '<span class="statpill s-ok">ack</span>' : '<span class="statpill s-mut">pending</span>'}</td>
+      </tr>`).join("")}</tbody></table>`
+      : `<div class="sub muted">No nudges from the bot in the current feedback artifact.</div>`}
+    ${directives.length ? `<div class="section" style="margin-top:14px">Operator directives <span class="cnt">${directives.length}</span></div>
+      ${directives.map(dd => `<div class="card" style="margin-bottom:8px">
+        <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
+          <code>${esc(dd.id || "—")}</code><span class="sub">${esc(dd.created || "")}</span>
+          ${idsSeen.includes(dd.id) ? '<span class="statpill s-ok">ack</span>' : '<span class="statpill s-mut">pending</span>'}
+        </div>
+        <div class="sub" style="margin-top:4px">${esc(dd.text || "")}</div>
+      </div>`).join("")}` : ""}
+    <div class="note muted" style="margin-top:8px">New directives are composed on the <a href="#" id="orchToMai">Mastermind AI</a> page — the orchestrator only observes and acknowledges them.</div>`;
+
+  const chatHtml = `<div class="section">Chat with the orchestrator</div>
+    <div class="card chat-box">
+      <div class="chat-msgs" id="orchChatMsgs">${orchChatMsgsHtml()}</div>
+      <div class="chat-input">
+        <textarea id="orchChatIn" rows="2" maxlength="2000" placeholder="e.g. What did you complete last night, and what's still stale?"></textarea>
+        <button class="btn primary" id="orchChatSend">Send</button>
+      </div>
+      <div class="note muted" style="margin-top:6px">Read-only pipeline persona — never trading advice. Without an LLM key it degrades to a deterministic run-log digest.</div>
+    </div>`;
+
+  v.innerHTML = heroHtml + settingsHtml + runlogHtml + reviewsHtml + dialogueHtml + chatHtml;
+
+  /* wiring */
+  const meta = (SUMMARY && SUMMARY.meta) || {};
+  const writable = !meta.deployed || (meta.integrations && meta.integrations.github_write);
+  v.querySelectorAll("[data-orchset],[data-orchsetb]").forEach(el => { if (!writable) el.disabled = true; });
+  v.querySelectorAll("[data-orchsetb]").forEach(cb => cb.onchange = async () => {
+    const r = await post("/api/orchestrator/settings", { key: cb.dataset.orchsetb, value: cb.checked });
+    if (r.ok) toast(`${cb.dataset.orchsetb} → ${r.new}`);
+    else { cb.checked = !cb.checked; toast(r.error || "failed", true); }
+  });
+  v.querySelectorAll("[data-orchset]").forEach(inp => inp.onchange = async () => {
+    const r = await post("/api/orchestrator/settings", { key: inp.dataset.orchset, value: Number(inp.value) });
+    if (r.ok) { inp.dataset.prev = String(r.new); toast(`${inp.dataset.orchset} → ${r.new}`); }
+    else { inp.value = inp.dataset.prev; toast(r.error || "failed", true); }
+  });
+  const wakeBtn = $("#orchWake");
+  if (wakeBtn) wakeBtn.onclick = async () => {
+    if (!confirm("Wake the orchestrator now? This dispatches daily.yml (full pipeline run) on GitHub Actions.")) return;
+    wakeBtn.disabled = true;
+    const r = await post("/api/orchestrator/wake", {});
+    wakeBtn.disabled = false;
+    if (r.ok) toast("Orchestrator woken — daily.yml dispatched");
+    else toast((r.error || "wake failed") + (r.hint ? ` — ${r.hint}` : ""), true);
+  };
+  const toMai = $("#orchToMai"); if (toMai) toMai.onclick = (e) => { e.preventDefault(); go("mastermind_ai"); };
+  const sendBtn = $("#orchChatSend"), inp = $("#orchChatIn");
+  const sendChat = async () => {
+    const msg = (inp.value || "").trim();
+    if (!msg) return;
+    inp.value = "";
+    ORCH_CHAT.push({ role: "user", content: msg });
+    const history = ORCH_CHAT.slice(0, -1).map(m => ({ role: m.role, content: m.content }));
+    const box = $("#orchChatMsgs");
+    box.innerHTML = orchChatMsgsHtml() + `<div class="chat-msg bot"><div class="chat-msg-role">orchestrator</div><div class="chat-msg-body muted">thinking…</div></div>`;
+    box.scrollTop = box.scrollHeight;
+    sendBtn.disabled = true;
+    const r = await post("/api/orchestrator/chat", { message: msg, history });
+    sendBtn.disabled = false;
+    if (r && r.reply) ORCH_CHAT.push({ role: "assistant", content: r.reply, degraded: !!r.degraded });
+    else ORCH_CHAT.push({ role: "assistant", content: (r && r.error) || "chat failed", degraded: true });
+    box.innerHTML = orchChatMsgsHtml();
+    box.scrollTop = box.scrollHeight;
+  };
+  if (sendBtn) sendBtn.onclick = sendChat;
+  if (inp) inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); } });
+};
+
+/* ---- MASTERMIND AI (bot proxy) — W-AI ------------------------------------ */
+const MAI_SETTING_FIELDS = [
+  ["loop_enabled", "bool", "Self-improvement loop", "Main switch for the bot's improvement loop."],
+  ["llm_review", "bool", "LLM review", "Use the LLM for the every-N-loops review pass."],
+  ["review_every_n_loops", "int", "Review every N loops", "Roll-up review cadence."],
+  ["nudges_max", "int", "Max nudges", "Cap on coded nudges published to the macro repo."],
+  ["attribution_min_n", "int", "Attribution min n", "Minimum sample size before attribution claims."],
+  ["directives_max_open", "int", "Max open directives", "Cap on concurrently open operator directives."],
+];
+const MAI_DIRECTIVE_CLS = { queued: "s-warn", published: "s-mut", acknowledged: "s-ok", done: "s-ok" };
+
+RENDER.mastermind_ai = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/mastermind_ai");
+  if (!d || d.error) {
+    v.innerHTML = card("Mastermind AI", `<div class="sub" style="color:var(--bad)">Bot unreachable${d && d.detail ? " — " + esc(orchTrunc(d.detail, 200)) : ""}</div>
+      <div class="note muted" style="margin-top:8px">The trading bot is a separate FastAPI service (default <code>http://127.0.0.1:8000</code>; override with <code>MASTERMIND_BOT_BASE</code> on the admin server). Start it, then reload this page.</div>`);
+    return;
+  }
+  const st = d.settings || {}, flagsObj = d.flags || {};
+  const lastLoops = d.last_loops || [];
+  const lastLoop = lastLoops[lastLoops.length - 1] || {};   /* status().last_loops is oldest-first */
+  const refl = d.reflection || {};
+
+  const heroHtml = `<div class="mb-hero">
+    <div class="mb-hero-top">
+      <span class="mb-hero-kicker">Mastermind AI</span>
+      <span class="mb-hero-name">Bot self-improvement loop</span>
+      <span class="statpill ${st.loop_enabled === false ? "s-warn" : "s-ok"}">${st.loop_enabled === false ? "loop off" : "loop on"}</span>
+      <span class="spacer"></span>
+      <button class="btn primary" id="maiRun" title="POST /api/mastermind_ai/run — trigger one improvement cycle">▶ Run cycle now</button>
+    </div>
+    <div class="sub" style="margin-top:6px">${esc(lastLoop.summary || (d.last_review && d.last_review.summary) || "No loop summary reported yet.")}</div>
+    <div class="mb-hero-chips">
+      <span class="statpill s-mut">loop #${d.loop_n != null ? d.loop_n : "—"}</span>
+      ${refl.nudges != null ? `<span class="statpill ${(Array.isArray(refl.nudges) ? refl.nudges.length : refl.nudges) ? "s-warn" : "s-mut"}">${Array.isArray(refl.nudges) ? refl.nudges.length : refl.nudges} nudges</span>` : ""}
+      ${refl.contract_drift_n != null ? `<span class="statpill ${refl.contract_drift_n ? "s-bad" : "s-mut"}">${refl.contract_drift_n} contract drift</span>` : ""}
+      ${countChips(typeof flagsObj === "object" && !Array.isArray(flagsObj) ? flagsObj : null)}
+    </div>
+  </div>`;
+
+  const settingRow = ([key, kind, label, note]) => {
+    const val = st[key];
+    if (kind === "bool")
+      return `<div class="row"><label class="switch"><input type="checkbox" data-maiset="${key}" data-kind="bool" ${val ? "checked" : ""}><span class="slider"></span></label>
+        <div><div class="lab">${esc(label)}</div><div class="note">${esc(note)} <code class="muted">${esc(key)}</code>${val == null ? ' <span class="tag inert">not reported</span>' : ""}</div></div></div>`;
+    return `<div class="row"><div class="lab" style="min-width:220px">${esc(label)}</div>
+      <input type="number" data-maiset="${key}" data-kind="int" data-prev="${val != null ? val : ""}" value="${val != null ? val : ""}" style="width:86px">
+      <div class="note">${esc(note)} <code class="muted">${esc(key)}</code></div></div>`;
+  };
+  const settingsHtml = `<div class="section">Settings <span class="cnt">bot-side</span></div>` + MAI_SETTING_FIELDS.map(settingRow).join("");
+
+  v.innerHTML = heroHtml + settingsHtml
+    + `<div class="section">Loop log &amp; reviews</div><div id="maiLoopLog"><div class="spin">loading…</div></div>
+       <div class="section">Improvements</div><div id="maiImprovements"><div class="spin">loading…</div></div>
+       <div class="section">Reflection &amp; dialogue</div><div id="maiReflection"><div class="spin">loading…</div></div>`;
+
+  /* wiring: settings + run */
+  v.querySelectorAll("[data-maiset]").forEach(el => el.onchange = async () => {
+    const key = el.dataset.maiset;
+    const value = el.dataset.kind === "bool" ? el.checked : Number(el.value);
+    const r = await post("/api/mastermind_ai/settings", { settings: { [key]: value } });
+    if (r && !r.error && r.ok !== false) toast(`${key} → ${value}`);
+    else {
+      if (el.dataset.kind === "bool") el.checked = !el.checked; else el.value = el.dataset.prev;
+      toast((r && (r.error || r.detail)) || "settings update failed", true);
+    }
+  });
+  const runBtn = $("#maiRun");
+  if (runBtn) runBtn.onclick = async () => {
+    if (!confirm("Run one Mastermind improvement cycle now?")) return;
+    runBtn.disabled = true; runBtn.textContent = "running…";
+    const r = await post("/api/mastermind_ai/run", {});
+    runBtn.disabled = false; runBtn.textContent = "▶ Run cycle now";
+    if (r && !r.error && r.ok !== false) { toast("Cycle triggered"); setTimeout(() => { if (CURRENT === "mastermind_ai") RENDER.mastermind_ai(); }, 1500); }
+    else toast((r && (r.error || r.detail)) || "run failed", true);
+  };
+
+  /* async sub-panels */
+  (async () => {
+    const box = $("#maiLoopLog"); if (!box) return;
+    const d2 = await api("/api/mastermind_ai/loop_log?n=30");
+    if (!d2 || d2.error) { box.innerHTML = `<div class="sub muted">loop log unavailable${d2 && d2.detail ? " — " + esc(orchTrunc(d2.detail, 120)) : ""}</div>`; return; }
+    /* bot returns {loop_log: [...oldest-first tail...], reviews: [...]} — render newest-first */
+    const rows = (d2.loop_log || d2.loops || d2.rows || d2.entries || (Array.isArray(d2) ? d2 : [])).slice().reverse();
+    const reviews = d2.reviews || [];
+    let html = rows.length
+      ? `<table><thead><tr><th>Ts</th><th>As of</th><th class="r">Loop</th><th>Trigger</th><th>Summary</th></tr></thead><tbody>
+        ${rows.map(r => `<tr>
+          <td class="mono sub">${esc(String(r.ts || "").slice(0, 16).replace("T", " "))}</td>
+          <td class="mono sub">${esc(r.asof || r.as_of || "—")}</td>
+          <td class="r mono">${r.loop_n != null ? r.loop_n : "—"}</td>
+          <td class="sub">${esc(r.trigger || "—")}</td>
+          <td class="sub" title="${esc(r.summary || "")}">${esc(orchTrunc(r.summary, 110))}</td>
+        </tr>`).join("")}</tbody></table>`
+      : `<div class="sub muted">No loop entries reported.</div>`;
+    if (reviews.length) {
+      html += `<div class="section" style="margin-top:14px">Loop reviews <span class="cnt">${reviews.length}</span></div>`
+        + reviews.map(r => `<div class="card" style="margin-bottom:8px">
+            <div class="sub"><b>${esc(r.from_loop != null ? `loop ${r.from_loop} → ${r.to_loop}` : String(r.ts || r.produced_at || "review").slice(0, 16))}</b></div>
+            ${(r.assessment || []).map(a => `<div class="note" style="margin-top:3px">• ${esc(a)}</div>`).join("") || `<div class="note muted">${esc(orchTrunc(r.summary || JSON.stringify(r), 200))}</div>`}
+          </div>`).join("");
+    }
+    box.innerHTML = html;
+  })();
+
+  (async () => {
+    const box = $("#maiImprovements"); if (!box) return;
+    const d3 = await api("/api/mastermind_ai/improvements");
+    if (!d3 || d3.error) { box.innerHTML = `<div class="sub muted">improvements unavailable${d3 && d3.detail ? " — " + esc(orchTrunc(d3.detail, 120)) : ""}</div>`; return; }
+    let html = "";
+    /* pinned rules by seat — tolerate {seat: [rules]} or a flat list with .seat
+       (bot improvements() ships the flat list under `pins`, rows carry .seat/.rule/.status) */
+    let bySeat = d3.pinned_by_seat || d3.pinned_rules_by_seat;
+    if (!bySeat) {
+      const flat = [d3.pins, d3.pinned_rules].find(Array.isArray);
+      if (flat) {
+        bySeat = {};
+        flat.forEach(r => { const seat = (r && r.seat) || "unassigned"; (bySeat[seat] = bySeat[seat] || []).push(r); });
+      }
+    }
+    if (bySeat && typeof bySeat === "object") {
+      html += Object.entries(bySeat).map(([seat, rules]) => `<div class="card" style="margin-bottom:8px">
+        <div class="sub"><b>${esc(seat)}</b> <span class="cnt">${(rules || []).length}</span></div>
+        ${(rules || []).map(r => {
+          const status = (r && (r.status || (r.pinned === false ? "unpinned" : "active"))) || "active";
+          return `<div class="note" style="margin-top:4px"><span class="statpill ${status === "active" ? "s-ok" : "s-mut"}">${esc(status)}</span> ${esc(orchTrunc((r && (r.rule || r.text || r.lesson)) || JSON.stringify(r), 180))}</div>`;
+        }).join("")}
+      </div>`).join("");
+    }
+    if (d3.lessons_by_taxonomy) html += `<div class="card" style="margin-bottom:8px"><div class="sub"><b>Lessons by taxonomy</b></div><div style="margin-top:6px">${countChips(d3.lessons_by_taxonomy)}</div></div>`;
+    if (d3.self_tune) html += `<div class="card" style="margin-bottom:8px"><div class="sub"><b>Self-tune</b></div>${kvRows(d3.self_tune)}</div>`;
+    if (Array.isArray(d3.agenda_top) && d3.agenda_top.length) html += `<div class="card" style="margin-bottom:8px"><div class="sub"><b>Agenda</b></div>${d3.agenda_top.map(a => `<div class="note" style="margin-top:3px">• ${esc(orchTrunc(typeof a === "string" ? a : (a.title || a.summary || JSON.stringify(a)), 160))}</div>`).join("")}</div>`;
+    box.innerHTML = html || `<div class="sub muted">No improvements reported.</div>`;
+  })();
+
+  (async () => {
+    const box = $("#maiReflection"); if (!box) return;
+    /* directive queue lives on the STATUS payload (rows {id,ts,text,status}) —
+       the raw nw_reflection.v1 artifact carries no directives key */
+    const dirs = Array.isArray(d.directives) ? d.directives : [];
+    const dirsHtml = dirs.length
+      ? `<div class="section" style="margin-top:14px">Directives <span class="cnt">${dirs.length}</span></div>`
+        + dirs.map(dd => `<div class="card" style="margin-bottom:8px">
+            <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
+              <code>${esc(dd.id || "—")}</code><span class="sub">${esc(String(dd.ts || dd.created || "").slice(0, 16).replace("T", " "))}</span>
+              <span class="statpill ${MAI_DIRECTIVE_CLS[dd.status] || "s-mut"}">${esc(dd.status || "—")}</span>
+            </div>
+            <div class="sub" style="margin-top:4px">${esc(dd.text || "")}</div>
+          </div>`).join("")
+      : "";
+    const d4 = await api("/api/mastermind_ai/reflection");
+    if (!d4 || d4.error) { box.innerHTML = `<div class="sub muted">reflection unavailable${d4 && d4.detail ? " — " + esc(orchTrunc(d4.detail, 120)) : ""}</div>` + dirsHtml + maiDirectiveComposer(); wireDirectiveComposer(box); return; }
+    const nudges = d4.nudges || [];
+    let html = "";
+    html += nudges.length
+      ? `<table><thead><tr><th>Code</th><th>Kind</th><th>Severity</th><th>Detail</th></tr></thead><tbody>
+        ${nudges.map(n => `<tr><td class="mono"><b>${esc(n.code || "—")}</b></td><td class="sub">${esc(n.kind || "—")}</td>
+          <td><span class="statpill ${NUDGE_SEV_CLS(n.severity)}">${esc(n.severity || "—")}</span></td>
+          <td class="sub" style="max-width:340px">${esc(n.detail || "")}</td></tr>`).join("")}</tbody></table>`
+      : `<div class="sub muted">No active nudges.</div>`;
+    const statChips = [];
+    const driftN = (d4.contract_drift || []).length;   /* nw_reflection.v1: contract_drift is a LIST */
+    statChips.push(`<span class="statpill ${driftN ? "s-bad" : "s-mut"}">contract drift · ${driftN}</span>`);
+    if (d4.coverage && typeof d4.coverage === "object") statChips.push(countChips(d4.coverage));
+    else if (d4.coverage != null) statChips.push(`<span class="statpill s-mut">coverage · ${esc(String(d4.coverage))}</span>`);
+    if (d4.context_quality != null) statChips.push(`<span class="statpill s-mut">context quality · ${esc(typeof d4.context_quality === "object" ? orchTrunc(JSON.stringify(d4.context_quality), 60) : String(d4.context_quality))}</span>`);
+    if (d4.attribution != null) statChips.push(`<span class="statpill s-mut">attribution · ${esc(typeof d4.attribution === "object" ? orchTrunc(JSON.stringify(d4.attribution), 60) : String(d4.attribution))}</span>`);
+    if (statChips.length) html += `<div style="margin-top:10px">${statChips.join(" ")}</div>`;
+    html += dirsHtml;
+    html += maiDirectiveComposer();
+    box.innerHTML = html;
+    wireDirectiveComposer(box);
+  })();
+};
+
+function maiDirectiveComposer() {
+  return `<div class="card" style="margin-top:14px">
+    <div class="sub"><b>New directive</b> — a plain-English instruction the bot's reflection loop reads on its next cycle.</div>
+    <div class="chat-input" style="margin-top:8px">
+      <textarea id="maiDirText" rows="2" maxlength="280" placeholder="e.g. Stop citing the ETF lobe until its feed heals."></textarea>
+      <button class="btn primary" id="maiDirSend">Send directive</button>
+    </div>
+    <div class="note muted" style="margin-top:4px"><span id="maiDirCount">0</span>/280</div>
+  </div>`;
+}
+function wireDirectiveComposer(scope) {
+  const ta = $("#maiDirText", scope), btn = $("#maiDirSend", scope), cnt = $("#maiDirCount", scope);
+  if (!ta || !btn) return;
+  ta.addEventListener("input", () => { if (cnt) cnt.textContent = String(ta.value.length); });
+  btn.onclick = async () => {
+    const text = (ta.value || "").trim();
+    if (!text) { toast("directive text required", true); return; }
+    if (text.length > 280) { toast("directive too long (max 280 chars)", true); return; }
+    btn.disabled = true;
+    const r = await post("/api/mastermind_ai/directive", { text });
+    btn.disabled = false;
+    if (r && !r.error && r.ok !== false) { ta.value = ""; if (cnt) cnt.textContent = "0"; toast("Directive queued"); setTimeout(() => { if (CURRENT === "mastermind_ai") RENDER.mastermind_ai(); }, 1200); }
+    else toast((r && (r.error || r.detail)) || "directive failed", true);
+  };
 }
 
 /* ---- ALERTS (operator capture) ------------------------------------------ */

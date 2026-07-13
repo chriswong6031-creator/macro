@@ -1195,6 +1195,8 @@ def lobes_panel() -> dict:
         "groups": groups,
         "lobes": lobes_flat,
         "independence": independence,
+        # W-AI: Master Brain pin (additive — groups/lobes contract unchanged)
+        "orchestrator_hero": _orchestrator_hero(),
     }
 
 
@@ -1708,6 +1710,163 @@ def _section_mechanism_pathways() -> dict:
         "schema": mp.get("schema"),
         "display_only": True,
         "not_a_signal": True,
+    }
+
+
+# ---- Section J: Master Brain / orchestrator (W-AI) ---------------------------
+# The Neural Web's "master brain" is the nightly pipeline itself (daily.yml over
+# config/synapse.yml). engine/neuralweb/orchestrator_log.py gives it a face: one
+# run-log entry per pipeline run + an every-N-runs review. This section surfaces
+# that face to the admin. The engine module is lazy-loaded via importlib (same
+# pattern as _load_support_map — no top-level engine imports) and every read
+# fails open: no artifacts → honest empties, never an exception.
+
+_ORCH_RUNLOG_REL = Path("data") / "neuralweb" / "orchestrator_runlog.jsonl"
+_ORCH_REVIEWS_REL = Path("data") / "neuralweb" / "orchestrator_reviews.jsonl"
+_FEEDBACK_SUMMARY_REL = Path("data") / "governance" / "mastermind_feedback_summary.json"
+_ORCH_NEXT_RUN_NOTE = "next scheduled run: daily.yml cron 02:00 UTC"
+
+_ORCH_DEFAULT_SETTINGS = {
+    "review_every_n_runs": 5,
+    "site_rows": 60,
+    "ingest_bot_feedback": True,
+    "brief_attention_nudges": True,
+}
+
+
+def _orch_settings(repo: Path) -> dict:
+    """config.yml ``orchestrator:`` block (all four keys), degrade-safe to defaults."""
+    out = dict(_ORCH_DEFAULT_SETTINGS)
+    try:
+        import yaml  # noqa: PLC0415
+        cfg = yaml.safe_load((repo / "config.yml").read_text(encoding="utf-8")) or {}
+        block = cfg.get("orchestrator") or {}
+        n = block.get("review_every_n_runs")
+        if isinstance(n, int) and not isinstance(n, bool) and 2 <= n <= 50:
+            out["review_every_n_runs"] = n
+        rows = block.get("site_rows")
+        if isinstance(rows, int) and not isinstance(rows, bool) and 10 <= rows <= 365:
+            out["site_rows"] = rows
+        for key in ("ingest_bot_feedback", "brief_attention_nudges"):
+            if isinstance(block.get(key), bool):
+                out[key] = block[key]
+    except Exception:  # noqa: BLE001
+        pass
+    return out
+
+
+def _load_orchestrator_log():
+    """Lazy-import engine.neuralweb.orchestrator_log via importlib (mirrors
+    _load_support_map so the no-engine-imports contract stays satisfied)."""
+    import importlib  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+    if str(_ROOT) not in sys.path:
+        sys.path.insert(0, str(_ROOT))
+    return importlib.import_module("engine.neuralweb.orchestrator_log")
+
+
+def _orch_load(repo: Path, limit: int = 60) -> dict:
+    """{entries, reviews, settings} — via the engine module when importable,
+    else a direct fail-open read of the committed JSONL ledgers.
+    entries/reviews are oldest-first (the ledger order)."""
+    try:
+        mod = _load_orchestrator_log()
+        data = mod.load(repo, limit=limit)
+        entries = data.get("entries") or []
+        reviews = data.get("reviews") or []
+    except Exception:  # noqa: BLE001
+        entries = list(reversed(_tail_jsonl(repo / _ORCH_RUNLOG_REL, limit)))
+        reviews = list(reversed(_tail_jsonl(repo / _ORCH_REVIEWS_REL, 12)))
+    return {"entries": entries, "reviews": reviews, "settings": _orch_settings(repo)}
+
+
+def _orch_dialogue(repo: Path) -> dict:
+    """Bot↔orchestrator dialogue state from the governed feedback summary."""
+    fb = _read_json(repo / _FEEDBACK_SUMMARY_REL) or {}
+    return {
+        "feedback_state": fb.get("state") or "absent",
+        "generated_utc": fb.get("generated_utc"),
+        "nudges": fb.get("nudges") or [],
+        "operator_directives": fb.get("operator_directives") or [],
+        "ack": fb.get("ack") or {"nudge_codes_seen": [], "directive_ids_seen": []},
+        "reflection": fb.get("reflection"),
+    }
+
+
+def _orch_cortex(repo: Path) -> dict:
+    """Cortex status (health.json run_status) + probation.json, fail-open."""
+    prob = _read_json(repo / "data" / "neuralweb" / "cortex" / "probation.json")
+    health = _read_json(repo / "data" / "neuralweb" / "health.json") or {}
+    run_status = (health.get("cortex") or {}).get("run_status") or {}
+    return {
+        "status": run_status.get("status") or "unknown",
+        "degradation_reason": run_status.get("degradation_reason"),
+        "model_used": run_status.get("model_used"),
+        "probation": prob or {"missing": True,
+                              "note": "data/neuralweb/cortex/probation.json not yet written"},
+    }
+
+
+def orchestrator_panel(root=None) -> dict:
+    """Master Brain page payload (GET /api/orchestrator).
+
+    Reads committed artifacts only; every section fails open. ``root`` defaults
+    to the repo root (tests pass a fixture root).
+    """
+    repo = Path(root) if root is not None else _ROOT
+    data = _orch_load(repo, limit=60)
+    entries_desc = list(reversed(data["entries"]))[:30]   # newest-first for display
+    reviews_desc = list(reversed(data["reviews"]))[:12]
+    dialogue = _orch_dialogue(repo)
+    cortex = _orch_cortex(repo)
+    latest = entries_desc[0] if entries_desc else {}
+    status_hero = {
+        "id": "orchestrator",
+        "label": "Neural Web Orchestrator",
+        "run_date": latest.get("run_date"),
+        "workflow": latest.get("workflow"),
+        "summary": latest.get("summary"),
+        "overall_status": latest.get("overall_status") or "unknown",
+        "next_run_note": _ORCH_NEXT_RUN_NOTE,
+        "lobes_total": latest.get("lobes_total"),
+        "lobes_stale": latest.get("lobes_stale"),
+        "what_changed_n": latest.get("what_changed_n"),
+        "cortex_status": cortex.get("status"),
+        "feedback_state": dialogue["feedback_state"],
+        "nudges_n": len(dialogue["nudges"]),
+        "directives_n": len(dialogue["operator_directives"]),
+        "n_entries": len(data["entries"]),
+        "last_review_at": reviews_desc[0].get("produced_at") if reviews_desc else None,
+    }
+    return {
+        "ok": True,
+        "status_hero": status_hero,
+        "entries": entries_desc,
+        "reviews": reviews_desc,
+        "settings": data["settings"],
+        "dialogue": dialogue,
+        "cortex": cortex,
+    }
+
+
+def _orchestrator_hero() -> dict:
+    """Compact Master-Brain pin for the Observatory page (lobes_panel).
+
+    Additive: the existing groups/lobes contract is untouched; older payload
+    consumers simply ignore this key. Fail-open on every read."""
+    latest_rows = _tail_jsonl(_ROOT / _ORCH_RUNLOG_REL, 1)
+    latest = latest_rows[0] if latest_rows else {}
+    reviews = _tail_jsonl(_ROOT / _ORCH_REVIEWS_REL, 1)
+    fb = _read_json(_ROOT / _FEEDBACK_SUMMARY_REL) or {}
+    return {
+        "id": "orchestrator",
+        "label": "Neural Web Orchestrator",
+        "run_date": latest.get("run_date"),
+        "summary": latest.get("summary"),
+        "overall_status": latest.get("overall_status") or "unknown",
+        "nudges_n": len(fb.get("nudges") or []),
+        "directives_n": len(fb.get("operator_directives") or []),
+        "last_review_at": reviews[0].get("produced_at") if reviews else None,
     }
 
 

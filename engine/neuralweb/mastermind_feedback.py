@@ -21,9 +21,11 @@ with gap_notes explaining the degraded state.
 
 SCHEMA TOLERANCE
 ----------------
-Accepts mastermind_nw_feedback.v1 and .v2 (additive: decision_flow,
-outcome_mix, context_audit, metric_families blocks). Unknown schema string →
-treat as absent with a gap note naming the schema seen.
+Accepts mastermind_nw_feedback.v1, .v2 (additive: decision_flow, outcome_mix,
+context_audit, metric_families blocks) and .v3 (W-AI dialogue: reflection,
+nudges, operator_directives — the Mastermind AI reflection lobe's coded asks
+plus operator-authored, bot-side-scrubbed directives, re-scrubbed here).
+Unknown schema string → treat as absent with a gap note naming the schema seen.
 
 LEAK-PROOF BY CONSTRUCTION (FB-R8, test-enforced)
 ---------------------------------------------------
@@ -59,6 +61,13 @@ ARTIFACT_ID = "mastermind-feedback-summary"
 _ACCEPTED_SOURCE_SCHEMAS = frozenset({
     "mastermind_nw_feedback.v1",
     "mastermind_nw_feedback.v2",
+    "mastermind_nw_feedback.v3",
+})
+
+# Schemas that carry the v2 additive blocks (v3 is a superset of v2)
+_V2_PLUS_SCHEMAS = frozenset({
+    "mastermind_nw_feedback.v2",
+    "mastermind_nw_feedback.v3",
 })
 
 # Staleness threshold: generated_at older than this many calendar days → stale
@@ -104,6 +113,24 @@ _METRIC_FAMILIES_STATUS: list[dict] = [
             "(outcome field), n_resolved"
         ),
         "notes": "Live in W-M.",
+    },
+    {
+        "family": "nw_reflection",
+        "status": "live",
+        "definition": (
+            "Mastermind AI reflection over the context bridge: contract-drift codes, "
+            "coverage counts, context-quality counts, attribution state (v3 source block)"
+        ),
+        "notes": "Live in W-AI (bot-side brain/nw_reflection.py).",
+    },
+    {
+        "family": "orchestrator_dialogue",
+        "status": "live",
+        "definition": (
+            "Coded nudges + operator directives from the bot, acknowledged per build "
+            "via the ack block → lobes.mastermind_ai in mastermind_context (v3 source blocks)"
+        ),
+        "notes": "Live in W-AI. Acknowledgement ≠ action; actions are operator/cortex items.",
     },
     {
         "family": "warning_interaction",
@@ -442,14 +469,171 @@ def _extract_context_audit(raw: dict, gap_notes: list[str]) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# v3 blocks (W-AI dialogue) — whitelist extraction + directive text re-scrub
+# ---------------------------------------------------------------------------
+
+_MAX_NUDGES = 10
+_MAX_DIRECTIVES = 10
+_NUDGE_DETAIL_MAX = 160
+_DIRECTIVE_TEXT_MAX = 280
+_DIRECTIVE_ID_RE = re.compile(r'^[0-9a-f]{6,16}$')
+_SEVERITY_ALLOWED = frozenset({"high", "medium", "low"})
+_NUDGE_KIND_ALLOWED = frozenset({"contract_drift", "coverage_gap", "staleness",
+                                 "lobe_request", "other"})
+_DRIFT_STATUS_ALLOWED = frozenset({"dead", "partial", "ok", "unknown"})
+# Directive text re-scrub (defence-in-depth — the bot refuses these at intake too).
+# Any match → the directive is DROPPED with a gap note, never partially copied.
+_DIRECTIVE_DENY = [
+    re.compile(r'MASTERMIND_[A-Z_]+'),
+    re.compile(r'\$[\d,]+'),
+    re.compile(r'(?i)\b[A-Za-z0-9+/]{40,}\b'),
+    re.compile(r'(?i)(api[_-]?key|token|secret|password)\s*[:=]'),
+]
+
+
+def _clean_date_str(v: object) -> str | None:
+    if isinstance(v, str) and re.match(r'^\d{4}-\d{2}-\d{2}$', v[:10]):
+        return v[:10]
+    return None
+
+
+def _extract_reflection(raw: dict, gap_notes: list[str]) -> dict | None:
+    """Whitelist-extract the v3 reflection block (codes + counts only)."""
+    rf = raw.get("reflection")
+    if not isinstance(rf, dict):
+        return None
+    out: dict = {}
+    state = rf.get("state")
+    out["state"] = state if state in ("ok", "absent") else "absent"
+    if out["state"] != "ok":
+        return out
+    asof = _clean_date_str(rf.get("asof"))
+    if asof:
+        out["asof"] = asof
+    drift_out: list[dict] = []
+    for d in (rf.get("contract_drift") or [])[:_MAX_NUDGES] if isinstance(rf.get("contract_drift"), list) else []:
+        if not isinstance(d, dict):
+            continue
+        code = str(d.get("code", "")).lower()
+        if not _LABEL_RE.match(code[:40]):
+            continue
+        status = d.get("status") if d.get("status") in _DRIFT_STATUS_ALLOWED else "unknown"
+        sev = d.get("severity") if d.get("severity") in _SEVERITY_ALLOWED else "low"
+        drift_out.append({"code": code[:40], "status": status, "severity": sev})
+    if drift_out:
+        out["contract_drift"] = drift_out
+    for block_name, keys in (
+        ("coverage", ("open_theses_n", "resolved_recent_n", "with_context_row_n")),
+        ("context_quality", ("window_runs", "n_present", "n_stale", "n_absent")),
+        ("attribution", ("n_resolved", "joinable_n")),
+    ):
+        src = rf.get(block_name)
+        if not isinstance(src, dict):
+            continue
+        blk: dict = {}
+        for k in keys:
+            v = _int_or_none(src.get(k))
+            if v is not None:
+                blk[k] = v
+        for rate_key in ("coverage_rate", "seen_rate"):
+            rv = src.get(rate_key)
+            if isinstance(rv, (int, float)) and not isinstance(rv, bool) and 0.0 <= float(rv) <= 1.0:
+                blk[rate_key] = float(rv)
+        if block_name == "attribution":
+            st = src.get("state")
+            if isinstance(st, str) and _LABEL_RE.match(st.lower()[:40]):
+                blk["state"] = st.lower()[:40]
+        if blk:
+            out[block_name] = blk
+    return out
+
+
+def _extract_nudges(raw: dict, gap_notes: list[str]) -> list[dict]:
+    """Whitelist-extract the v3 nudges list (≤10 coded rows; detail length-capped and
+    deny-scrubbed — a nudge whose detail matches a deny pattern is dropped whole)."""
+    src = raw.get("nudges")
+    if not isinstance(src, list):
+        return []
+    out: list[dict] = []
+    dropped = 0
+    for n in src:
+        if not isinstance(n, dict):
+            dropped += 1
+            continue
+        code = str(n.get("code", "")).lower()
+        if not _LABEL_RE.match(code[:40]):
+            dropped += 1
+            continue
+        detail = str(n.get("detail", ""))[:_NUDGE_DETAIL_MAX]
+        if any(p.search(detail) for p in _DIRECTIVE_DENY):
+            dropped += 1
+            continue
+        out.append({
+            "code": code[:40],
+            "kind": (n.get("kind") if n.get("kind") in _NUDGE_KIND_ALLOWED else "other"),
+            "severity": (n.get("severity") if n.get("severity") in _SEVERITY_ALLOWED else "low"),
+            "detail": detail,
+            "first_seen": _clean_date_str(n.get("first_seen")),
+            "builds_seen": _int_or_none(n.get("builds_seen")),
+        })
+        if len(out) >= _MAX_NUDGES:
+            break
+    if dropped:
+        gap_notes.append(f"nudges: dropped {dropped} row(s) failing whitelist/scrub")
+    return out
+
+
+def _extract_operator_directives(raw: dict, gap_notes: list[str]) -> list[dict]:
+    """Whitelist-extract v3 operator directives (≤10). The text is operator-authored and
+    bot-side scrubbed; re-scrubbed here (deny patterns → drop whole row + gap note)."""
+    src = raw.get("operator_directives")
+    if not isinstance(src, list):
+        return []
+    out: list[dict] = []
+    dropped = 0
+    for d in src:
+        if not isinstance(d, dict):
+            dropped += 1
+            continue
+        rid = str(d.get("id", "")).lower()
+        text = str(d.get("text", "")).strip()[:_DIRECTIVE_TEXT_MAX]
+        if not _DIRECTIVE_ID_RE.match(rid) or not text:
+            dropped += 1
+            continue
+        if any(p.search(text) for p in _DIRECTIVE_DENY):
+            dropped += 1
+            continue
+        out.append({"id": rid, "created": _clean_date_str(d.get("created")), "text": text})
+        if len(out) >= _MAX_DIRECTIVES:
+            break
+    if dropped:
+        gap_notes.append(f"operator_directives: dropped {dropped} row(s) failing whitelist/scrub")
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Main read + build functions
 # ---------------------------------------------------------------------------
+
+def _ingest_enabled(repo: Path) -> bool:
+    """config.yml orchestrator.ingest_bot_feedback — the operator's ingestion switch (W-AI).
+
+    Default True; any read failure degrades to enabled (the switch must fail open, never
+    silently disable the contract)."""
+    try:
+        import yaml  # noqa: PLC0415
+        cfg = yaml.safe_load((repo / "config.yml").read_text(encoding="utf-8")) or {}
+        v = (cfg.get("orchestrator") or {}).get("ingest_bot_feedback")
+        return v if isinstance(v, bool) else True
+    except Exception:  # noqa: BLE001
+        return True
+
 
 def read_feedback(root: Path | str | None = None) -> dict:
     """Read and parse site/mastermind/nw_feedback.json.
 
     Returns a dict with:
-        state: "present" | "stale" | "absent"
+        state: "present" | "stale" | "absent" | "disabled"
         raw:   the parsed source dict (only when state == "present")
         gap_notes: list of str
         source_schema: str or None
@@ -457,6 +641,14 @@ def read_feedback(root: Path | str | None = None) -> dict:
     repo = _repo_root(root)
     source_path = repo / _SOURCE_PATH
     gap_notes: list[str] = []
+
+    # Operator switch (W-AI): config.yml orchestrator.ingest_bot_feedback=false → the build
+    # ignores the bot artifact entirely (state 'disabled', never fabricated counts).
+    if not _ingest_enabled(repo):
+        gap_notes.append(
+            "ingestion disabled by operator (config.yml orchestrator.ingest_bot_feedback=false)"
+        )
+        return {"state": "disabled", "raw": None, "gap_notes": gap_notes, "source_schema": None}
 
     if not source_path.exists():
         gap_notes.append(
@@ -667,8 +859,8 @@ def build_summary(root: Path | str | None = None) -> dict:
     }
     payload["per_book"] = per_book_out
 
-    # ── v2 passthrough blocks (counts-only) ───────────────────────────────────
-    if source_schema == "mastermind_nw_feedback.v2":
+    # ── v2 passthrough blocks (counts-only; v3 is a superset of v2) ────────────
+    if source_schema in _V2_PLUS_SCHEMAS:
         df = _extract_decision_flow(raw, gap_notes)
         if df is not None:
             payload["decision_flow"] = df
@@ -680,6 +872,24 @@ def build_summary(root: Path | str | None = None) -> dict:
         ca = _extract_context_audit(raw, gap_notes)
         if ca is not None:
             payload["context_audit"] = ca
+
+    # ── v3 dialogue blocks (W-AI: reflection / nudges / operator directives) ──
+    if source_schema == "mastermind_nw_feedback.v3":
+        rf = _extract_reflection(raw, gap_notes)
+        if rf is not None:
+            payload["reflection"] = rf
+        nudges = _extract_nudges(raw, gap_notes)
+        if nudges:
+            payload["nudges"] = nudges
+        directives = _extract_operator_directives(raw, gap_notes)
+        if directives:
+            payload["operator_directives"] = directives
+        # The ACK the bot reads back through the context bridge (lobes.mastermind_ai):
+        # every ingested code/id is acknowledged — action status is the operator's/cortex's.
+        payload["ack"] = {
+            "nudge_codes_seen": [n["code"] for n in nudges],
+            "directive_ids_seen": [d["id"] for d in directives],
+        }
 
     return payload
 
