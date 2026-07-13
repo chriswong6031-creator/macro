@@ -408,3 +408,170 @@ def test_discover_recent_cycles_no_date_passes_through():
 
     # Undated cycles are not excluded (we can't determine age)
     assert undated_cid in cycle_ids
+
+
+# ── R-V6-5 multi-docket branch: merge fan-out + branch-deletion ownership ──────
+
+def _merge_mock_pr(number: int, branch: str) -> dict:
+    return {
+        "number": number,
+        "headRefName": branch,
+        "statusCheckRollup": [{"state": "SUCCESS"}],
+        "isDraft": True,
+        "files": [{"path": "data/metabolism/proposals/p1.json"}],
+    }
+
+
+def _run_merge_lane_all_green(cycle_id: str, dp: Path, root: Path, mock_pr: dict,
+                              **lane_kwargs):
+    """Drive run_merge_lane through the full all-green mock stack."""
+    from scripts.metabolism_merge import run_merge_lane
+    with patch("scripts.metabolism_merge._is_paused", return_value=False):
+        with patch("scripts.metabolism_merge._list_build_draft_prs", return_value=[mock_pr]):
+            with patch("scripts.metabolism_merge._is_two_key_granted", return_value=True):
+                with patch("scripts.metabolism_merge._pr_ci_green", return_value=True):
+                    with patch("scripts.metabolism_merge._get_pr_files",
+                               return_value=["data/metabolism/proposals/p1.json"]):
+                        with patch("scripts.metabolism_merge._fence_check_pr",
+                                   return_value=(True, "ok")):
+                            with patch("scripts.metabolism_merge._audit_approved",
+                                       return_value=(True, "approved")):
+                                with patch("scripts.metabolism_merge._pr_ci_green_at_sha",
+                                           return_value=True):
+                                    with patch("scripts.metabolism_merge._mark_pr_ready",
+                                               return_value=True):
+                                        with patch("scripts.metabolism_merge._rebase_merge_pr",
+                                                   return_value={"merged": True, "attempts": 1,
+                                                                 "error": None}):
+                                            with patch("scripts.metabolism_merge."
+                                                       "_delete_remote_propose_branch") as mock_del:
+                                                with patch("subprocess.run") as mock_sp:
+                                                    mock_sp.return_value = MagicMock(
+                                                        returncode=0,
+                                                        stdout=json.dumps({"headRefOid": "abc123"}),
+                                                    )
+                                                    results = run_merge_lane(
+                                                        cycle_id, dp, root=root, dry_run=False,
+                                                        **lane_kwargs,
+                                                    )
+    return results, mock_del
+
+
+def test_run_merge_lane_keep_propose_branch_suppresses_deletion():
+    """delete_propose_branch=False: merge fires but the shared R-V6-5 propose
+    branch is NOT deleted (per-docket workflow caller owns branch lifecycle)."""
+    root = _tmp_root()
+    cid = "cycle-2026-07-01-x-site-us-standouts"   # per-lobe docket cycle id
+    docket = {"lobe": "site-us-standouts", "proposals": [{"proposal_id": "p1"}]}
+    dp = root / "data" / "metabolism" / "dockets" / f"{cid}.json"
+    dp.write_text(json.dumps(docket))
+
+    from scripts.metabolism_build import _build_branch_name
+    mock_pr = _merge_mock_pr(43, _build_branch_name("site-us-standouts", cid,
+                                                    proposal_id="p1"))
+    results, mock_del = _run_merge_lane_all_green(
+        cid, dp, root, mock_pr, delete_propose_branch=False)
+
+    assert any(r.get("status") == "merged" for r in results), (
+        f"per-lobe docket PR did not merge: {results}"
+    )
+    mock_del.assert_not_called()
+
+
+def test_merge_cli_keep_propose_branch_flag():
+    """--keep-propose-branch plumbs delete_propose_branch=False; absent → True."""
+    import scripts.metabolism_merge as mm
+    root = _tmp_root()
+    dp = root / "data" / "metabolism" / "dockets" / "c1.json"
+    dp.write_text(json.dumps({"lobe": "til", "proposals": []}))
+
+    with patch.object(mm, "run_merge_lane", return_value=[]) as mock_lane:
+        mm.main(["--cycle-id", "c1", "--docket-file", str(dp),
+                 "--keep-propose-branch"])
+    assert mock_lane.call_args.kwargs["delete_propose_branch"] is False
+
+    with patch.object(mm, "run_merge_lane", return_value=[]) as mock_lane:
+        mm.main(["--cycle-id", "c1", "--docket-file", str(dp)])
+    assert mock_lane.call_args.kwargs["delete_propose_branch"] is True
+
+
+# ── pid-suffixed build-branch resolution (the branch the build lane REALLY creates)
+
+def test_resolve_pid_suffixed_branch_via_claims():
+    """run_build_lane names branches with the proposal_id suffix; the claims-row
+    resolution must exact-match that form (was: un-suffixed only → every real
+    build PR skipped as no_matching_proposal)."""
+    from scripts.metabolism_merge import _resolve_proposal_id_for_branch
+    from scripts.metabolism_build import _build_branch_name
+    root = _tmp_root()
+    cid = "cycle-2026-07-01-x"
+    docket = {"lobe": "til", "proposals": [{"proposal_id": "p1"}]}
+    dp = root / "data" / "metabolism" / "dockets" / f"{cid}.json"
+    dp.write_text(json.dumps(docket))
+    claims = root / "data" / "metabolism" / "claims.jsonl"
+    claims.write_text(json.dumps({
+        "schema": "metabolism.build_claims.v1", "cycle_id": cid,
+        "proposal_id": "p1", "lobe": "til",
+        "target_files": ["engine/x.py"], "ts": "2026-07-01T00:00:00+00:00",
+    }) + "\n")
+
+    branch = _build_branch_name("til", cid, proposal_id="p1")
+    assert _resolve_proposal_id_for_branch(branch, cid, docket, dp, root=root) == "p1"
+
+
+def test_resolve_pid_suffixed_branch_via_docket_fallback():
+    """Without claims.jsonl, the docket fallback must match the pid-suffixed
+    branch per proposal — not just first-in-docket."""
+    from scripts.metabolism_merge import _resolve_proposal_id_for_branch
+    from scripts.metabolism_build import _build_branch_name
+    root = _tmp_root()
+    cid = "cycle-2026-07-01-x"
+    docket = {"lobe": "til",
+              "proposals": [{"proposal_id": "p1"}, {"proposal_id": "p2"}]}
+    dp = root / "data" / "metabolism" / "dockets" / f"{cid}.json"
+    dp.write_text(json.dumps(docket))
+
+    branch_p2 = _build_branch_name("til", cid, proposal_id="p2")
+    assert _resolve_proposal_id_for_branch(branch_p2, cid, docket, dp, root=root) == "p2"
+    # Legacy un-suffixed branches (pre-suffix build lanes) still resolve.
+    legacy = _build_branch_name("til", cid)
+    assert _resolve_proposal_id_for_branch(legacy, cid, docket, dp, root=root) == "p1"
+
+
+def test_resolve_per_lobe_cycle_isolation():
+    """A per-lobe docket's build branch must NOT resolve under the BASE cycle id
+    (exact-match invariant — base sweeps list per-lobe PRs by substring and must
+    skip them; the per-lobe docket's own sweep merges them)."""
+    from scripts.metabolism_merge import _resolve_proposal_id_for_branch
+    from scripts.metabolism_build import _build_branch_name
+    root = _tmp_root()
+    base = "cycle-2026-07-01-x"
+    docket = {"lobe": "til", "proposals": [{"proposal_id": "p1"}]}
+    dp = root / "data" / "metabolism" / "dockets" / f"{base}.json"
+    dp.write_text(json.dumps(docket))
+
+    per_lobe_branch = _build_branch_name(
+        "site-us-standouts", f"{base}-site-us-standouts", proposal_id="p1")
+    assert _resolve_proposal_id_for_branch(
+        per_lobe_branch, base, docket, dp, root=root) is None
+
+
+def test_merge_workflow_yaml_enumerates_dockets_and_keeps_branch():
+    """The merge workflow must fan out per docket (--list-dockets), suppress the
+    script's per-docket branch deletion (--keep-propose-branch), and own the
+    branch delete behind the sweep-terminal guard."""
+    wf = (_ROOT / ".github" / "workflows" / "metabolism-merge.yml").read_text()
+    assert "--list-dockets" in wf, (
+        "metabolism-merge.yml must enumerate the branch's dockets via "
+        "scripts.metabolism_adjudicate --list-dockets (R-V6-5)"
+    )
+    assert "--keep-propose-branch" in wf, (
+        "per-docket merge invocations must suppress the script's F3(a) branch "
+        "deletion — first docket's merge would strand un-merged siblings"
+    )
+    assert 'basename "$_DOCKET" .json' in wf, (
+        "per-docket cycle id must be the docket filename stem"
+    )
+    assert '"$_merged_any" -eq 1' in wf and '"$_inflight" -eq 0' in wf, (
+        "workflow-owned branch deletion must be gated on sweep-terminal state"
+    )

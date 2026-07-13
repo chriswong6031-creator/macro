@@ -1094,3 +1094,126 @@ class TestRunBuildLaneThreading:
             assert f in threaded, (
                 f"Declared file {f!r} not in threaded target_files: {threaded}"
             )
+
+
+# ── 16. R-V6-5 multi-docket branch: BUILD fans out over every docket ──────────
+
+class TestMultiDocketBuildFanout:
+    """R-V6-5 multi-lobe PROPOSE writes ALL of a base cycle's dockets onto ONE
+    propose branch: the base docket (<base>.json, til) plus per-lobe dockets
+    (<base>-<lobe>.json).  The build workflow enumerates them via
+    scripts.metabolism_adjudicate --list-dockets and runs run_build_lane once
+    per docket with cycle_id = the docket filename stem.  These tests reproduce
+    that workflow shape and pin the per-docket threading contract.
+    """
+
+    def _write_lobe_docket(self, d: Path, cycle_id: str, lobe: str,
+                           proposals: list[dict]) -> Path:
+        path = d / "data" / "metabolism" / "dockets" / f"{cycle_id}.json"
+        path.write_text(json.dumps({
+            "schema": "metabolism.docket.v1",
+            "cycle_id": cycle_id,      # per-docket cycle id (filename stem)
+            "lobe": lobe,              # per-lobe dockets carry their OWN lobe
+            "proposals": proposals,
+        }))
+        return path
+
+    def test_workflow_shape_builds_every_docket_on_branch(self):
+        """Enumerate base + per-lobe dockets and run the build lane per docket:
+        every docket dispatches under its own cycle id, with its own lobe in the
+        claims row and in the build branch name."""
+        d = _tmp_root()
+        import scripts.metabolism_build as mb
+        importlib.reload(mb)
+        from scripts.metabolism_adjudicate import discover_cycle_dockets
+
+        base = "cycle-2026-07-13-3198"
+        self._write_lobe_docket(
+            d, base, "til",
+            [_production_docket_proposal("p_til", ["engine/til_sensor.py"])])
+        self._write_lobe_docket(
+            d, f"{base}-site-china-standouts", "site-china-standouts",
+            [_production_docket_proposal("p_cn", ["site/china_standouts.html"])])
+        self._write_lobe_docket(
+            d, f"{base}-site-us-standouts", "site-us-standouts",
+            [_production_docket_proposal("p_us", ["site/us_standouts.html"])])
+
+        dockets = discover_cycle_dockets(d, base)
+        assert len(dockets) == 3, f"expected 3 dockets on the branch, got {dockets}"
+        # Base docket first (workflow processes it first), then per-lobe sorted.
+        assert dockets[0].name == f"{base}.json"
+
+        dispatch_calls: list[dict] = []
+        branches: list[str] = []
+
+        def fake_dispatch(proposal, wt_path, branch, cap_id, *, cycle_id=None,
+                          target_files=None, root=None, dry_run=False, **kw):
+            dispatch_calls.append({
+                "cycle_id": cycle_id,
+                "pid": proposal.get("proposal_id"),
+            })
+            return {"dispatched": True, "reason": "dispatched",
+                    "proposal_id": proposal.get("proposal_id")}
+
+        def fake_create_worktree(branch, **kwargs):
+            branches.append(branch)
+            return {"wt_path": tempfile.mkdtemp(prefix="fake_wt_"), "error": None}
+
+        env = {"AUTONOMY_PAUSED": "false"}
+        with patch.dict(os.environ, env, clear=False):
+            with patch.object(mb, "_is_two_key_granted", return_value=True):
+                with patch.object(mb, "_dispatch_build_session", side_effect=fake_dispatch):
+                    with patch.object(mb, "_open_draft_pr", return_value={"opened": True}):
+                        with patch.object(mb, "_create_build_worktree",
+                                          side_effect=fake_create_worktree):
+                            with patch.object(mb, "_gc_worktree"):
+                                with patch.object(mb, "_pick_build_key",
+                                                  return_value="claude_code_oauth_1"):
+                                    with patch.object(mb, "_regen_active_build_map"):
+                                        # The workflow loop: one run_build_lane per
+                                        # docket, cycle_id = filename stem.
+                                        for docket_path in dockets:
+                                            dcid = docket_path.stem
+                                            mb.run_build_lane(dcid, docket_path, root=d)
+
+        # Every docket dispatched under its OWN per-docket cycle id.
+        dispatched_cids = {c["cycle_id"] for c in dispatch_calls}
+        assert dispatched_cids == {
+            base,
+            f"{base}-site-china-standouts",
+            f"{base}-site-us-standouts",
+        }, f"per-lobe dockets not dispatched under their own cycle ids: {dispatched_cids}"
+
+        # Claims rows carry the per-docket cycle id AND the docket-body lobe.
+        claims_rows = [
+            json.loads(l) for l in
+            (d / "data" / "metabolism" / "claims.jsonl").read_text().splitlines()
+            if l.strip()
+        ]
+        by_pid = {r["proposal_id"]: r for r in claims_rows}
+        assert by_pid["p_til"]["cycle_id"] == base
+        assert by_pid["p_til"]["lobe"] == "til"
+        assert by_pid["p_cn"]["cycle_id"] == f"{base}-site-china-standouts"
+        assert by_pid["p_cn"]["lobe"] == "site-china-standouts"
+        assert by_pid["p_us"]["cycle_id"] == f"{base}-site-us-standouts"
+        assert by_pid["p_us"]["lobe"] == "site-us-standouts"
+
+        # Build branch names embed the docket lobe + per-docket cycle id + pid.
+        assert mb._build_branch_name(
+            "site-china-standouts", f"{base}-site-china-standouts",
+            proposal_id="p_cn") in branches
+
+    def test_build_workflow_yaml_enumerates_dockets(self):
+        """The build workflow must enumerate dockets via --list-dockets, iterate
+        with the filename-stem cycle id, and keep the pre-primitive fallback."""
+        wf = (_ROOT / ".github" / "workflows" / "metabolism-build.yml").read_text()
+        assert "--list-dockets" in wf, (
+            "metabolism-build.yml must enumerate the branch's dockets via "
+            "scripts.metabolism_adjudicate --list-dockets (R-V6-5)"
+        )
+        assert 'basename "$_DOCKET" .json' in wf, (
+            "per-docket cycle id must be the docket filename stem"
+        )
+        assert 'dockets/$CYCLE_ID.json"' in wf, (
+            "pre-primitive propose branches need the base-docket fallback"
+        )

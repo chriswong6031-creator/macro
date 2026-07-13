@@ -1,7 +1,9 @@
 name: metabolism-build
 # Metabolism Phase V2-B — BUILD lane (write-serialization, R-V2-5).  INERT.
 #
-# For each ADJUDICATE-granted proposal in the docket:
+# Builds EVERY docket riding the selected propose branch — the base docket
+# (<cycle>.json, til) plus per-lobe dockets (<cycle>-<lobe>.json, R-V6-5
+# multi-lobe propose).  For each ADJUDICATE-granted proposal in each docket:
 #   (a) CLAIMS its target_files → data/metabolism/claims.jsonl + regen ACTIVE_BUILD_MAP
 #   (b) SKIPS if target_files already claimed this cycle (collision → later cycle)
 #   (c) Creates a git worktree on metabolism/build-<lobe>-<cycle> off FRESH origin/main
@@ -138,19 +140,42 @@ jobs:
           git fetch origin "$BRANCH" || echo "branch $BRANCH not on origin — using current ref"
           git checkout "$BRANCH" 2>/dev/null || git checkout -B "$BRANCH" "origin/$BRANCH" 2>/dev/null || true
 
-          DOCKET="data/metabolism/dockets/$CYCLE_ID.json"
-          if [ ! -f "$DOCKET" ]; then
-            echo "docket $DOCKET not found on this ref — clean no-op."
+          # R-V6-5 multi-lobe PROPOSE puts ALL of a cycle's dockets on ONE branch:
+          # the base docket ($CYCLE_ID.json, til) plus per-lobe dockets
+          # ($CYCLE_ID-<lobe>.json).  Enumerate every one (#2481 primitive) — the
+          # branch name carries only the base id, so building $CYCLE_ID.json alone
+          # silently strands ADJUDICATE-authorized per-lobe proposals at BUILD.
+          # Fallback: a propose branch cut before the primitive merged lacks
+          # --list-dockets on its checkout — fall back to the base docket
+          # (pre-fan-out behavior) instead of stranding the whole branch.
+          _DOCKETS="$(python -m scripts.metabolism_adjudicate --list-dockets --cycle-id "$CYCLE_ID")" \
+            || _DOCKETS="data/metabolism/dockets/$CYCLE_ID.json"
+          if [ -z "$_DOCKETS" ]; then
+            echo "no dockets for $CYCLE_ID on this ref — clean no-op."
             exit 0
           fi
+          echo "dockets for $CYCLE_ID: $(echo "$_DOCKETS" | tr '\n' ' ')"
 
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
 
-          # Run BUILD lane
-          python -m scripts.metabolism_build \
-            --cycle-id "$CYCLE_ID" \
-            --docket-file "$DOCKET"
+          # Run BUILD lane per docket.  Per-docket cycle id = docket filename stem
+          # (journal, claims, budget, and governance rows are keyed on it by
+          # PROPOSE/ADJUDICATE).  Per-docket failure isolation: one bad docket
+          # never strands its siblings; journal/claims writes from every docket
+          # are committed together below (durability, #2295).
+          _built_ok=0
+          while IFS= read -r _DOCKET; do
+            [ -n "$_DOCKET" ] && [ -f "$_DOCKET" ] || continue
+            _DCID="$(basename "$_DOCKET" .json)"
+            echo "--- build docket cycle_id=$_DCID file=$_DOCKET ---"
+            python -m scripts.metabolism_build \
+              --cycle-id "$_DCID" \
+              --docket-file "$_DOCKET" \
+              || { echo "build lane failed for $_DCID — skip docket"; continue; }
+            _built_ok=$((_built_ok + 1))
+          done <<< "$_DOCKETS"
+          echo "build lane done for $_built_ok docket(s) on $CYCLE_ID"
 
           # Commit any new claims.jsonl rows + ACTIVE_BUILD_MAP updates.
           # FIX-4: key_ledger.jsonl included — key pool durability (no prior workflow committed it).
@@ -160,7 +185,7 @@ jobs:
           # park/re-attempt mechanism is dead code.
           git add data/metabolism/claims.jsonl data/metabolism/key_ledger.jsonl data/metabolism/journal docs/ACTIVE_BUILD_MAP.md 2>/dev/null || true
           if ! git diff --cached --quiet; then
-            git commit -m "metabolism: BUILD claims + ACTIVE_BUILD_MAP $CYCLE_ID [Phase V2-B]" \
+            git commit -m "metabolism: BUILD claims + ACTIVE_BUILD_MAP $CYCLE_ID ($_built_ok docket(s)) [Phase V2-B]" \
                        -m "Loop-Authored: build run=${GITHUB_RUN_ID:-local}"
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/$BRANCH can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
