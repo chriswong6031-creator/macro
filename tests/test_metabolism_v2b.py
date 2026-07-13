@@ -8,7 +8,8 @@ COVERAGE:
   2. window_load / weekly_load math on synthetic ledger.
   3. record_session: appends a row; row contains key_id (not a token value).
   4. mark_cooling / is_cooling: mark → is_cooling True; after reset_hint
-     expires → is_cooling False; subsequent ok row clears cooling.
+     expires → is_cooling False; subsequent ok row clears auth cooling only
+     (#2469 F4: window/weekly clear by reset_hint passage, never by ok).
   5. REDLINE: no token value in output.  get_secret_ref() returns env-var
      NAME only.  record_session row does NOT contain the token value.
   6. dispatcher.pick_key:
@@ -377,16 +378,27 @@ class TestCooling:
         kp = _fresh_pool(d)
         assert kp.is_cooling("claude_code_oauth_1", root=d) is True
 
-    def test_subsequent_ok_clears_cooling(self):
+    def test_subsequent_ok_clears_auth_cooling(self):
         d = _make_tmp()
         _write_manifest(d)
         kp = _fresh_pool(d)
-        # Mark as cooling first
-        kp.mark_cooling("claude_code_oauth_1", cool_kind="window", root=d)
-        # Then record a successful session (ts > cooling ts → clears cooling)
+        # Mark as auth-cooling first (revoked/expired token)
+        kp.mark_cooling("claude_code_oauth_1", cool_kind="auth", root=d)
+        # Then record a successful session — proves the operator rotated the
+        # secret, so the auth cooling clears (ok ts >= cooling ts)
         kp.record_session("claude_code_oauth_1", outcome="ok", root=d)
         # Should no longer be cooling
         assert kp.is_cooling("claude_code_oauth_1", root=d) is False
+
+    def test_subsequent_ok_does_not_clear_window_cooling(self):
+        # #2469 F4: an ok row does NOT restore a 429-exhausted window quota —
+        # a window cooling holds until its reset_hint passes.
+        d = _make_tmp()
+        _write_manifest(d)
+        kp = _fresh_pool(d)
+        kp.mark_cooling("claude_code_oauth_1", cool_kind="window", root=d)
+        kp.record_session("claude_code_oauth_1", outcome="ok", root=d)
+        assert kp.is_cooling("claude_code_oauth_1", root=d) is True
 
     def test_no_cooling_row_returns_false(self):
         d = _make_tmp()
@@ -991,8 +1003,9 @@ class TestSynapseCount:
 # ===========================================================================
 
 class TestCoolingHorizonSemantics:
-    """R-V5-3: weekly cooling must NOT be cleared by a later ok row;
-    window/auth coolings ARE cleared by a later ok row;
+    """R-V5-3 + #2469 F4: weekly and window coolings must NOT be cleared by a
+    later ok row (only reset_hint passage clears them); auth cooling IS cleared
+    by a later ok row (operator rotated the secret);
     'launched' rows never clear any cooling."""
 
     def _make_ledger(self, root: Path, rows: list[dict]) -> None:
@@ -1055,8 +1068,11 @@ class TestCoolingHorizonSemantics:
             "Weekly cooling must NOT be cleared by a subsequent ok row"
         )
 
-    def test_window_cooling_cleared_by_ok_row(self):
-        """A 'window' cooling IS cleared by a subsequent ok row."""
+    def test_window_cooling_not_cleared_by_ok_row(self):
+        """A 'window' (429) cooling is NOT cleared by a subsequent ok row (#2469 F4).
+
+        A successful call after the 429 does not restore the exhausted quota
+        window — the cooling holds until reset_hint passes."""
         from engine.neuralweb.key_pool import is_cooling
         d = _make_tmp()
         key_id = "claude_code_oauth_1"
@@ -1066,9 +1082,9 @@ class TestCoolingHorizonSemantics:
             self._session_row(key_id, outcome="ok", offset_s=5),  # ok AFTER cooling
         ]
         self._make_ledger(d, rows)
-        # Window cooling cleared by ok row
-        assert is_cooling(key_id, root=d) is False, (
-            "Window cooling must be cleared by a subsequent ok row"
+        # Window cooling persists despite the ok row
+        assert is_cooling(key_id, root=d) is True, (
+            "Window cooling must NOT be cleared by a subsequent ok row (#2469 F4)"
         )
 
     def test_auth_cooling_cleared_by_ok_row(self):
