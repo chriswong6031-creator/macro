@@ -281,3 +281,72 @@ def test_freshness_degrade_on_import_failure():
     assert r["fail_reasons"] == []
     assert len(r["warnings"]) == 1
     assert "skipped" in r["warnings"][0]
+
+
+# ---------------------------------------------------------------------------
+# check_weekly_lane — dead-lane tripwire for weekly.yml (#2193 class)
+# ---------------------------------------------------------------------------
+
+from scripts.healthcheck import check_weekly_lane  # noqa: E402
+
+# Reference "now": Monday 2026-07-20 14:30 UTC — the heartbeat slot after a
+# hypothetically missed Saturday 07-18 run.
+_NOW_WK = datetime(2026, 7, 20, 14, 30, tzinfo=timezone.utc)
+
+
+def _stamp(tmp_path, iso: str):
+    p = tmp_path / "weekly_status.json"
+    p.write_text(f'{{"last_run": "{iso}", "run_id": "t", "workflow": "weekly"}}')
+    return p
+
+
+def test_weekly_lane_fresh_stamp_is_ok(tmp_path):
+    """Saturday-run stamp read the following Monday: ~2 days old — healthy."""
+    p = _stamp(tmp_path, "2026-07-18T16:30:00+00:00")
+    r = check_weekly_lane(_NOW_WK, {}, status_path=p)
+    assert r["ok"] is True and not r["fail_reasons"]
+
+
+def test_weekly_lane_healthy_friday_worst_case_is_ok(tmp_path):
+    """Stalest healthy read: Friday heartbeat vs last Saturday's stamp ≈ 6.0d < 7.5d."""
+    p = _stamp(tmp_path, "2026-07-11T14:45:00+00:00")
+    friday = datetime(2026, 7, 17, 14, 30, tzinfo=timezone.utc)
+    r = check_weekly_lane(friday, {}, status_path=p)
+    assert r["ok"] is True and not r["fail_reasons"]
+
+
+def test_weekly_lane_missed_saturday_fails_by_monday(tmp_path):
+    """A timeout-killed Saturday leaves last week's stamp: ~9d by Monday — DEAD."""
+    p = _stamp(tmp_path, "2026-07-11T14:45:00+00:00")
+    r = check_weekly_lane(_NOW_WK, {}, status_path=p)
+    assert r["ok"] is False
+    assert any("WEEKLY LANE DEAD" in f for f in r["fail_reasons"])
+
+
+def test_weekly_lane_missing_stamp_fails(tmp_path):
+    r = check_weekly_lane(_NOW_WK, {}, status_path=tmp_path / "weekly_status.json")
+    assert r["ok"] is False
+    assert any("never completed" in f for f in r["fail_reasons"])
+
+
+def test_weekly_lane_naive_stamp_treated_as_utc(tmp_path):
+    """Naive timestamps must not TypeError against aware `now` (#2463 class) —
+    they are assumed UTC and evaluated normally."""
+    p = _stamp(tmp_path, "2026-07-18T16:30:00")
+    r = check_weekly_lane(_NOW_WK, {}, status_path=p)
+    assert r["ok"] is True and not r["fail_reasons"]
+
+
+def test_weekly_lane_torn_stamp_fails(tmp_path):
+    """A half-written/corrupt stamp is a definitive failure, not a degrade."""
+    p = tmp_path / "weekly_status.json"
+    p.write_text('{"last_run": "2026-07-1')
+    r = check_weekly_lane(_NOW_WK, {}, status_path=p)
+    assert r["ok"] is False
+    assert any("unreadable" in f for f in r["fail_reasons"])
+
+
+def test_weekly_lane_config_threshold_respected(tmp_path):
+    p = _stamp(tmp_path, "2026-07-18T16:30:00+00:00")   # ~1.9d old
+    r = check_weekly_lane(_NOW_WK, {"max_age_hours": 24}, status_path=p)
+    assert r["ok"] is False

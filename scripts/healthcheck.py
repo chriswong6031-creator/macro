@@ -20,6 +20,13 @@ the pipeline keeps running but collected bars stop landing in git (e.g. a failed
 loop after collection).  It reads a small set of witness parquet files from the
 committed tree and fails when any witness is more than fail_after_sessions business
 days stale.
+
+A fourth tripwire, check_weekly_lane, is the dead-lane guard for weekly.yml (the
+#2193 class: a job killed at timeout-minutes concludes "cancelled" — not "failed" —
+so GitHub sends no notification; weekly was timeout-killed every Saturday
+2026-06-13..07-11 unnoticed).  weekly.yml stamps data/weekly_status.json only after
+its build chain completes and commits it with the outputs, so a timeout kill, a dead
+runner, or a lost push race all leave the committed stamp stale and fail this check.
 """
 from __future__ import annotations
 
@@ -222,6 +229,55 @@ def check_committed_data_freshness(now: datetime, cfg: dict | None = None) -> di
         return {"ok": True, "fail_reasons": [], "warnings": [f"data freshness check skipped: {e!r}"]}
 
 
+def check_weekly_lane(now: datetime, cfg: dict | None = None,
+                      status_path: Path | None = None) -> dict:
+    """DEAD-LANE tripwire for weekly.yml (calibrations + deep-dive builds).
+
+    A job killed at timeout-minutes concludes "cancelled", not "failed", so no
+    GitHub notification fires — weekly.yml died at its cap every Saturday
+    2026-06-13..07-11 (5+ weeks, no calibrate_* ran) before anyone noticed, the
+    same silent-death class asia-close hit for 8 days (#2193).
+
+    weekly.yml writes data/weekly_status.json ONLY after its full build chain
+    completes (the stamp step has no `if: always()`), and the stamp lands on main
+    via the same commit step as the outputs.  So a timeout kill (stamp step never
+    reached), a dead runner (job never starts), and a 5x-lost push race (outputs
+    discarded) all leave the committed stamp stale — and this probe fails the
+    heartbeat, which pings Telegram/Discord.
+
+    Default max_age_hours=180 (7.5 days): the lane runs Saturdays 14:00 UTC and
+    the heartbeat weekdays 14:30 UTC, so a healthy stamp reads at most ~6.0 days
+    (Friday check) while a missed Saturday reads ~9 days by the Monday check.
+    A missing or unparseable stamp is a definitive failure, not a degrade — it
+    means the lane has never completed since the stamp shipped, or the file was
+    deleted."""
+    if cfg is None:
+        cfg = (config.load().get("healthcheck", {}) or {}).get("weekly_lane", {}) or {}
+    max_age_h = float(cfg.get("max_age_hours", 180.0))
+    p = status_path if status_path is not None else (config.data_dir() / "weekly_status.json")
+    if not p.exists():
+        return {"ok": False, "warnings": [], "fail_reasons": [
+            "WEEKLY LANE: no data/weekly_status.json — weekly.yml has never completed"
+            " its chain since the stamp shipped (or the stamp was deleted)"]}
+    try:
+        lr = json.loads(p.read_text()).get("last_run")
+        dt = datetime.fromisoformat(lr)
+        if dt.tzinfo is None:                      # naive stamps are UTC by contract (#2463 class)
+            dt = dt.replace(tzinfo=timezone.utc)
+        age_h = (now - dt).total_seconds() / 3600.0
+    except (ValueError, TypeError) as e:           # json.JSONDecodeError is a ValueError
+        return {"ok": False, "warnings": [], "fail_reasons": [
+            f"WEEKLY LANE: unreadable stamp data/weekly_status.json — {e!r}"]}
+    fail = []
+    if age_h > max_age_h:
+        fail.append(
+            f"WEEKLY LANE DEAD: last completed weekly.yml chain {age_h / 24:.1f}d ago"
+            f" (limit {max_age_h / 24:.1f}d). Timeout-killed runs conclude 'cancelled' and"
+            f" send NO notification (#2193 class) — check"
+            f" `gh run list --workflow=weekly.yml` for cancelled conclusions")
+    return {"ok": not fail, "fail_reasons": fail, "warnings": []}
+
+
 def _notify(report: dict) -> None:
     """Best-effort outbound alert via the W6b push spine.
     The non-zero exit is the primary signal; push_ops_alert() dispatches raw
@@ -290,9 +346,17 @@ def main(argv: list[str] | None = None) -> int:
     report["fail_reasons"] = report["fail_reasons"] + freshness["fail_reasons"]
     report["warnings"] = report["warnings"] + freshness["warnings"]
     report["ok"] = report["ok"] and freshness["ok"]
+    # Dead-lane tripwire: weekly.yml stamps only on a completed chain; a timeout kill
+    # concludes "cancelled" with no GitHub notification (#2193 class), so staleness of
+    # the committed stamp is the only reliable death signal.
+    weekly = check_weekly_lane(now, cfg.get("weekly_lane", None))
+    report["fail_reasons"] = report["fail_reasons"] + weekly["fail_reasons"]
+    report["warnings"] = report["warnings"] + weekly["warnings"]
+    report["ok"] = report["ok"] and weekly["ok"]
     print(f"last_run age: {report['age_hours']}h | circuit-broken: {report['tripped'] or 'none'} "
           f"| signals: {'ok' if sanity['ok'] else 'FAIL'} | r2: {'ok' if r2['ok'] else 'FAIL'} "
-          f"| data-freeze: {'ok' if freshness['ok'] else 'FAIL'}")
+          f"| data-freeze: {'ok' if freshness['ok'] else 'FAIL'} "
+          f"| weekly-lane: {'ok' if weekly['ok'] else 'FAIL'}")
     for w in report["warnings"]:
         print(f"::warning::{w}")
     if report["ok"]:

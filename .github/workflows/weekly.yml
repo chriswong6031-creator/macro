@@ -18,7 +18,17 @@ concurrency:
 jobs:
   weekly-report:
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 120    # weekly does collectors + all calibrations + every dashboard build; 45m was too tight on congested 2-core runners
+    timeout-minutes: 300   # was 45 -> 120 -> 300. EVERY archived run (10/10, 2026-06-13..07-11) died at the cap:
+                           # a timeout kill concludes "cancelled" not "failed", so GitHub never notified (#2193 class —
+                           # same as asia-close's 8-day silent death). Measured 07-11 (run 29156750557): at the 120m kill
+                           # the chain was mid-`build china` with ~15 sub-steps never reached (all of HK, commodities,
+                           # bonds, transmission, vector, aibrief + library rebuild + commit). Measured segments:
+                           # collectors+dead-name+IC ~18m, recalibrate 26m, build_site 25m, china fundamentals 29m,
+                           # calibrate china 10m; asia-close measured build_china alone at 36m on the same congested
+                           # 2-core runners, and build_vector also builds canada/intl via hooks — full chain ≈ 250-270m.
+                           # 300m restores the whole chain with headroom. Future outgrowth is no longer silent: the
+                           # "stamp weekly lane alive" step below + scripts.healthcheck check_weekly_lane (heartbeat.yml)
+                           # alert when the committed stamp exceeds 7.5 days.
     steps:
       - uses: actions/checkout@v4
       - name: python 3.12 (Homebrew venv - self-hosted runner)
@@ -156,6 +166,19 @@ jobs:
             fi
           done
           exit 0
+      - name: stamp weekly lane alive (dead-man's switch)
+        # #2193-class guard: a timeout kill concludes "cancelled" (not "failed"), so GitHub
+        # sends no notification — this lane was dead EVERY Saturday 2026-06-13..07-11 at the
+        # old 120m cap before anyone noticed. This stamp is only written when the whole build
+        # chain above actually completed (no `if: always()` — a cancelled run must NOT stamp),
+        # and it rides to main via the commit step below. scripts.healthcheck check_weekly_lane
+        # (heartbeat.yml, weekdays 14:30 UTC) FAILS + pings Telegram/Discord when the committed
+        # stamp exceeds 7.5 days — catching a timeout kill, a dead runner, and a 5x-lost push
+        # race alike (healthy worst case reads ~6 days on Friday; a missed Saturday reads ~9
+        # days by the Monday check).
+        run: |
+          printf '{"last_run": "%s", "run_id": "%s", "workflow": "weekly"}\n' \
+            "$(date -u +%FT%T+00:00)" "${GITHUB_RUN_ID:-local}" > data/weekly_status.json
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
         run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
       - name: commit weekly outputs
@@ -178,13 +201,24 @@ jobs:
           # is harmless for the asia data plane. Path derivation matches #1963: asia group
           # = adapters starting with `china` or `hk` (scripts/collect.py group_members);
           # data/hkma adapter key `hkma` also starts with `hk`.
-          # Trade-off: weekly's calibration outputs at data/china_regime/ and
-          # data/hk_regime/ are also excluded, so they stay at last Saturday's state on
-          # main until next Saturday. This is acceptable: calibration is designed to be
-          # weekly-stable, and preventing a stale-overwrite of fresh market data is the
-          # higher-priority safety invariant. (asia-close does not run calibrate_china/
-          # calibrate_hk, so there is no daily lane to carry these forward.)
           git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
+          # W0b carve-out: re-add the four weekly-OWNED outputs the reset above just
+          # unstaged. These are produced by THIS job in THIS run — calibrate_china /
+          # calibrate_hk ladder records and the china/hk fundamentals collector caches —
+          # not checkout-stale copies of asia-close's market stores. weekly.yml is their
+          # ONLY producer (asia-close runs build_china/build_hk but never calibrate_* or
+          # the fundamentals collectors), so the #1963 stale-clobber rationale does not
+          # apply and `-X theirs` can never overwrite fresher asia-close data through
+          # them. Without this carve-out they freeze FOREVER, not "until next Saturday"
+          # as the original W0b comment claimed (observed: hk ladder frozen since its
+          # 06-13 initial commit, both fundamentals parquets since 06-18, and the china
+          # ladder had to be hand-seeded in #2483 to unblock the A-share record table).
+          # If a calibrate/collector sub-step failed this run, its file is unchanged in
+          # the working tree and this add stages nothing — last good state persists.
+          git add -- data/china_regime/ladder_calibration.json \
+                     data/hk_regime/ladder_calibration.json \
+                     data/china_fundamentals/fundamentals.parquet \
+                     data/hk_fundamentals/fundamentals.parquet 2>/dev/null || true
           # Stock-search libraries are gitignored — force-add so the committed-tree
           # deploy ships their index/detail JSON. See daily.yml.
           if git diff --cached --quiet; then echo "no weekly changes to commit"; exit 0; fi
