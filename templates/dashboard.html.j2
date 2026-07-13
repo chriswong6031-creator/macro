@@ -2630,30 +2630,6 @@ body.page-macro .isle-s6{transition-delay:.36s}
 body.page-macro .isle-s7{transition-delay:.42s}
 body.page-macro .isle-s8{transition-delay:.48s}
 
-/* per-child-type nth-child stagger for idx-cards */
-body.page-macro .idx-card{
-  opacity:0;transform:translateY(6px);
-  transition:opacity .28s ease,transform .30s cubic-bezier(.34,1.08,.64,1);
-}
-body.page-macro .sx[data-open] .idx-card{opacity:1;transform:none}
-body.page-macro .idx-card:nth-child(1){transition-delay:.04s}
-body.page-macro .idx-card:nth-child(2){transition-delay:.09s}
-body.page-macro .idx-card:nth-child(3){transition-delay:.14s}
-body.page-macro .idx-card:nth-child(4){transition-delay:.19s}
-/* asset tiles */
-body.page-macro .asset-tile-anim{
-  opacity:0;transform:translateY(4px);
-  transition:opacity .24s ease,transform .26s cubic-bezier(.34,1.06,.64,1);
-}
-body.page-macro .sx[data-open] .asset-tile-anim{opacity:1;transform:none}
-body.page-macro .asset-tile-anim:nth-child(1){transition-delay:.06s}
-body.page-macro .asset-tile-anim:nth-child(2){transition-delay:.09s}
-body.page-macro .asset-tile-anim:nth-child(3){transition-delay:.12s}
-body.page-macro .asset-tile-anim:nth-child(4){transition-delay:.15s}
-body.page-macro .asset-tile-anim:nth-child(5){transition-delay:.18s}
-body.page-macro .asset-tile-anim:nth-child(6){transition-delay:.21s}
-body.page-macro .asset-tile-anim:nth-child(7){transition-delay:.24s}
-body.page-macro .asset-tile-anim:nth-child(8){transition-delay:.27s}
 
 /* reduced-motion */
 @media(prefers-reduced-motion:reduce){
@@ -2662,10 +2638,9 @@ body.page-macro .asset-tile-anim:nth-child(8){transition-delay:.27s}
     transform:translateY(-2px) scale(1.005)!important;
   }
   body.page-macro .sx-island::before,body.page-macro .sx-island::after{animation:none!important}
-  body.page-macro .isle-stagger,body.page-macro .idx-card,body.page-macro .asset-tile-anim{
+  body.page-macro .isle-stagger{
     transition:none!important;opacity:1!important;transform:none!important;
   }
-  body.page-macro .sx-tray{transition:none!important}
 }
 
 /* @property for aurora conic-gradient animation (guarded by try/catch in JS) */
@@ -2697,71 +2672,9 @@ body.page-macro .v2-display-badge{
   border:1px solid var(--line);border-radius:5px;padding:2px 7px;
 }
 
-/* ── EVIDENCE TRAY (v3 island design) ── */
-body.page-macro .isle-ev-factors{display:flex;flex-direction:column;gap:6px}
-body.page-macro .isle-ev-row{
-  display:grid;grid-template-columns:24px 1fr 140px 38px;
-  align-items:center;gap:12px;
-  padding:12px 14px;
-  background:var(--panel2);border:1px solid var(--line);border-radius:11px;
-  position:relative;overflow:hidden;
-}
-body.page-macro .isle-ev-row::before{
-  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
-  background:var(--factor-color,var(--muted));border-radius:3px 0 0 3px;opacity:.7;
-}
-body.page-macro .isle-ev-row.ev-weakest{
-  border-color:color-mix(in srgb,var(--warn) 35%,var(--line));
-  background:color-mix(in srgb,var(--warn) 4%,var(--panel2));
-}
-body.page-macro .isle-ev-row.ev-weakest::before{background:var(--warn)!important}
-body.page-macro .isle-ev-dir{font-size:15px;font-weight:900;text-align:center;line-height:1}
-body.page-macro .isle-ev-name{font-size:12px;font-weight:700;color:var(--ink,var(--text));display:block;margin-bottom:2px}
-body.page-macro .isle-ev-subtext{font-size:10px;color:var(--muted);line-height:1.45;display:block}
-body.page-macro .isle-ev-bar-area{}
-body.page-macro .isle-ev-bar-label-row{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:4px}
-body.page-macro .isle-ev-bar-track{height:5px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:3px;overflow:hidden}
-body.page-macro .isle-ev-bar-fill{height:5px;border-radius:3px;transition:width .7s cubic-bezier(.4,0,.2,1)}
-body.page-macro .isle-ev-score{font-size:16px;font-weight:900;text-align:right;line-height:1}
-body.page-macro .isle-ev-weakest-callout{
-  background:color-mix(in srgb,var(--warn) 7%,var(--panel));
-  border:1px solid color-mix(in srgb,var(--warn) 22%,transparent);
-  border-radius:10px;padding:11px 15px;
-  font-size:11px;color:var(--muted);line-height:1.55;margin-top:2px;
-}
-body.page-macro .isle-ev-weakest-callout strong{color:var(--warn)}
-body.page-macro .isle-ev-tape-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px;margin-top:18px}
-body.page-macro .isle-ev-tape-table{width:100%;border-collapse:collapse}
-body.page-macro .isle-ev-tape-table th{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
-body.page-macro .isle-ev-tape-table th:not(:first-child){text-align:center}
-body.page-macro .isle-ev-tape-table td{font-size:11px;font-weight:600;padding:6px 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
-body.page-macro .isle-ev-tape-table td:not(:first-child){text-align:center}
-body.page-macro .isle-ev-tape-table tr:last-child td{border-bottom:none}
-body.page-macro .isle-ev-footnote{
-  font-size:10px;color:var(--muted);line-height:1.55;
-  padding:10px 14px;
-  background:color-mix(in srgb,var(--info) 4%,var(--panel));
-  border:1px solid color-mix(in srgb,var(--info) 14%,transparent);
-  border-radius:9px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:8px;
-}
 
 /* ── EVENTS TRAY (v3 island design) ── */
 body.page-macro .mx2-events-glance{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-/* Day-card grid */
-body.page-macro .isle-event-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-body.page-macro .isle-ev-cal-card{
-  background:var(--panel2);border:1px solid var(--line);border-radius:12px;
-  padding:14px 16px;position:relative;overflow:hidden;
-}
-body.page-macro .isle-ev-cal-card.hot{
-  border-color:color-mix(in srgb,var(--warn) 38%,var(--line));
-  background:color-mix(in srgb,var(--warn) 4%,var(--panel2));
-}
-body.page-macro .isle-ev-cal-card.hot::before{
-  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
-  background:var(--warn);border-radius:3px 0 0 3px;
-}
-body.page-macro .isle-ev-cal-date{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
 
 /* ── MARKETS TRAY ── */
 body.page-macro .mx2-mkt-glance{display:flex;gap:8px;flex-wrap:wrap}
@@ -2776,23 +2689,6 @@ body.page-macro .mx2-mkt-chg{font-size:11px;font-weight:700}
 body.page-macro .mx2-mkt-chg.up{color:var(--up)} body.page-macro .mx2-mkt-chg.dn{color:var(--down)}
 body.page-macro .mx2-mkt-px{font-size:18px;font-weight:800;color:var(--ink,var(--text));line-height:1.1;margin-top:2px;font-variant-numeric:tabular-nums}
 
-/* Tray inner — index health grid (v3 idx-card style) */
-body.page-macro .mx2-mkt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-/* idx-card: stagger animation defined in island stagger block above */
-body.page-macro .idx-card{
-  background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px;
-  position:relative;overflow:hidden;
-}
-body.page-macro .idx-ticker{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px}
-body.page-macro .idx-name{font-size:11px;color:var(--muted);margin-bottom:6px}
-body.page-macro .idx-px{font-size:22px;font-weight:900;color:var(--ink,var(--text));line-height:1;font-variant-numeric:tabular-nums}
-body.page-macro .idx-chg{font-size:12px;font-weight:700;margin-top:3px;margin-bottom:8px;font-variant-numeric:tabular-nums}
-body.page-macro .idx-chg.up{color:var(--up)} body.page-macro .idx-chg.dn{color:var(--down)}
-body.page-macro .idx-stats{display:flex;flex-wrap:wrap;gap:4px;padding-top:8px;border-top:1px solid var(--line)}
-body.page-macro .idx-stat{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px}
-body.page-macro .idx-stat.ok{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent)}
-body.page-macro .idx-stat.wn{color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
-body.page-macro .idx-stat.mt{color:var(--muted);background:color-mix(in srgb,var(--muted) 10%,transparent)}
 
 /* Legacy mkt-detail for backward compat */
 body.page-macro .mx2-mkt-detail{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px}
@@ -2807,10 +2703,6 @@ body.page-macro .mx2-stat.ok{color:var(--up);background:color-mix(in srgb,var(--
 body.page-macro .mx2-stat.wn{color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
 body.page-macro .mx2-stat.mt{color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent)}
 
-/* Sector heat columns inside markets tray (v3 design) */
-body.page-macro .isle-sector-block{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-body.page-macro .isle-sector-col{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px 16px}
-body.page-macro .isle-sector-col-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px}
 /* Legacy sector */
 body.page-macro .mx2-sh-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 body.page-macro .mx2-sh-col{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
@@ -2848,48 +2740,6 @@ body.page-macro .mx2-tray-stamp{font-size:10px;color:var(--muted);padding:8px 0 
 /* Section eyebrow label */
 body.page-macro .isle-section-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
 
-/* Index card grid (v3) */
-body.page-macro .idx-card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
-body.page-macro .idx-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 13px}
-body.page-macro .idx-card-top{display:flex;flex-direction:column;gap:1px;margin-bottom:6px}
-body.page-macro .idx-card-ticker{font-size:12px;font-weight:700;color:var(--ink,var(--text))}
-body.page-macro .idx-card-name{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-body.page-macro .idx-card-px{font-size:18px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:2px}
-body.page-macro .idx-card-chg{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:8px}
-body.page-macro .idx-card-chg.up{color:var(--up)} body.page-macro .idx-card-chg.dn{color:var(--down)}
-body.page-macro .idx-card-chips{display:flex;flex-wrap:wrap;gap:3px}
-body.page-macro .idx-stat-lbl{font-size:9px;color:var(--muted)}
-
-/* Sector rows (v3) */
-body.page-macro .isle-sector-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 45%,transparent)}
-body.page-macro .isle-sector-row:last-child{border-bottom:none}
-body.page-macro .isle-sector-arr{font-size:12px}
-body.page-macro .isle-sector-arr.heat{color:var(--down)} body.page-macro .isle-sector-arr.cool{color:var(--up)}
-body.page-macro .isle-sector-name{flex:1;font-size:12px;font-weight:600}
-body.page-macro .isle-sector-rk{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
-
-/* Fed strip (v3 — inline item layout used in events tray) */
-body.page-macro .isle-fed-strip{border:1px solid color-mix(in srgb,var(--isle-color,var(--info)) 18%,transparent);border-radius:10px;padding:10px 14px;margin-top:12px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
-body.page-macro .isle-fed-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);width:100%;margin-bottom:2px}
-body.page-macro .isle-fed-item{display:flex;gap:6px;align-items:baseline}
-body.page-macro .isle-fed-desc{font-size:11px;color:var(--muted)}
-body.page-macro .isle-fed-val{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
-body.page-macro .isle-fed-src{font-size:9px;color:var(--muted);margin-left:auto}
-
-/* Asset tile inner labels (v3) */
-body.page-macro .isle-asset-tile-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px}
-body.page-macro .isle-asset-tile-val{font-size:18px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-body.page-macro .isle-asset-tile-ctx{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.3}
-
-/* Cal-card inner elements (v3) */
-body.page-macro .isle-ev-cal-title{font-size:13px;font-weight:700;color:var(--ink,var(--text));line-height:1.3;margin-bottom:5px}
-body.page-macro .isle-ev-cal-meta{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
-/* Factor row name-wrap */
-body.page-macro .isle-ev-name-wrap{display:flex;flex-direction:column;gap:2px}
-
-/* Asset strip — v3 style (8 tiles, 4-col grid) */
-body.page-macro .isle-asset-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
-body.page-macro .isle-asset-tile{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 13px}
 
 /* ── Hide old macro sections replaced by v2 ── */
 body.page-macro #sector-heat.mx2-hidden,
@@ -2965,9 +2815,6 @@ body.page-macro .fe-synth{display:flex;align-items:center;gap:12px;flex-wrap:wra
 body.page-macro .sent-card{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:16px}
 body.page-macro .sent-card-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
 body.page-macro .sent-num{font-size:32px;font-weight:900;line-height:1;margin-bottom:8px}
-body.page-macro .grad-track{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--down) 0%,var(--warn) 50%,var(--up) 100%);margin-bottom:4px;position:relative}
-body.page-macro .grad-marker{position:absolute;top:-4px;width:5px;height:16px;background:var(--ink,var(--text));border-radius:3px;border:2px solid var(--bg)}
-body.page-macro .grad-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:2px;margin-bottom:8px}
 body.page-macro .froth-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(36,43,56,.5)}
 body.page-macro .froth-row:last-child{border-bottom:none}
 body.page-macro .froth-lbl{font-size:11px;color:var(--muted);flex:1}
@@ -5351,88 +5198,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
       </div>{# /mx5-action-list #}
     </div>{# /sxg-face WTD #}
-    <div class="sx-tray"><div class="sx-tray-inner-wrap"><div class="sx-island">
-      {# Island header beacon #}
-      <div class="isle-head">
-        <div class="isle-head-dot"></div>
-        <span class="isle-head-label"><span class="l-en">Evidence — Six-Factor Breakdown</span><span class="l-zh">依据 — 六因子分析</span></span>
-        <div class="isle-head-line"></div>
-        <span class="v2-display-badge" style="margin-left:8px"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span>
-      </div>
-
-      {# Factor rows #}
-      <div class="isle-ev-factors">
-        {% set _ev_stags = ['isle-s1','isle-s2','isle-s3','isle-s4','isle-s5','isle-s6'] %}
-        {% for c in (MS2.components if MS2 and MS2.components else []) %}
-        {% set _ec = 'var(--up)' if c.tone == 'good' else ('var(--down)' if c.tone == 'bad' else 'var(--warn)') %}
-        {% set _et = 'evs-good' if c.tone == 'good' else ('evs-bad' if c.tone == 'bad' else 'evs-flat') %}
-        {% set _is_weakest = (_weakest and c.label_en == _weakest.label_en) %}
-        {% set _stag = _ev_stags[loop.index0] if loop.index0 < _ev_stags|length else 'isle-s6' %}
-        <div class="isle-ev-row isle-stagger {{ _stag }}{{ ' ev-weakest' if _is_weakest }}" style="--factor-color:{{ _ec }}">
-          <span class="isle-ev-dir {{ _et }}">{{ c.arrow }}</span>
-          <div class="isle-ev-name-wrap">
-            <span class="isle-ev-name" style="{{ 'color:var(--warn)' if _is_weakest }}">
-              {{ t(c.label_en, c.label_zh) }}
-              {% if _is_weakest %}<span class="v2chip c-warn" style="font-size:9px;padding:1px 5px;margin-left:4px"><span class="l-en">WEAKEST LEG</span><span class="l-zh">最弱分项</span></span>{% endif %}
-            </span>
-            <span class="isle-ev-subtext">{{ t(c.read_en, c.read_zh) if (c.read_en is defined and c.read_en) else '' }}</span>
-          </div>
-          <div class="isle-ev-bar-area">
-            <div class="isle-ev-bar-label-row"><span>0</span><span>50</span><span>100</span></div>
-            <div class="isle-ev-bar-track"><div class="isle-ev-bar-fill" style="width:{{ c.score }}%;background:{{ _ec }}"></div></div>
-          </div>
-          <span class="isle-ev-score {{ _et }}">{{ c.score }}</span>
-        </div>
-        {% endfor %}
-      </div>
-
-      {# Weakest leg spotlight callout #}
-      {% if _weakest %}
-      <div class="isle-ev-weakest-callout isle-stagger isle-s7">
-        <span class="l-en"><strong>{{ t('Weakest leg spotlight','最弱分项') }}:</strong> {{ _weakest.label_en }} at {{ _weakest.score }}/100 is the closest flip-trigger. {{ t('Confirms what has already turned; does not forecast.','确认已转向信号，不预测未来。') }}</span>
-        <span class="l-zh"><strong>最弱分项:</strong> {{ _weakest.label_zh or _weakest.label_en }} 现 {{ _weakest.score }}/100，最接近翻转触发点。确认已转向信号，不预测未来。</span>
-      </div>
-      {% endif %}
-
-      {# Multi-timeframe tape #}
-      {% if MS2 and MS2.mtf and MS2.mtf.indices %}
-      <div class="isle-stagger isle-s7" style="margin-top:18px">
-        <div class="isle-sub-head">{{ t('Multi-timeframe tape · the broad US market','多周期趋势 · 美股大盘') }}</div>
-        <table class="isle-ev-tape-table">
-          <thead><tr>
-            <th class="l">{{ t('Index','指数') }}</th>
-            <th>1D</th><th>3D</th><th>7D</th><th>30D</th>
-            <th style="text-align:right">{{ t('Confluence','合流') }}</th>
-          </tr></thead>
-          <tbody>
-          {% for r in MS2.mtf.indices %}
-            <tr>
-              <td class="l t-inst" style="color:var(--muted)">{{ t(r.label_en, r.label_zh) }}</td>
-              {% for tf in ['D','3D','W','M'] %}{% set cell = r.cells[tf] %}
-              <td style="text-align:center">{% if cell %}<span class="ms-cell2 {{ cell.tone }}"><span class="ar">{{ cell.arrow }}</span><span class="rsi">{{ cell.rsi|round|int if cell.rsi is not none else '·' }}</span></span>{% else %}<span class="ms-cell2 flat"><span class="ar">·</span></span>{% endif %}</td>
-              {% endfor %}
-              <td style="text-align:right"><span class="ms-conf {{ r.tone }}">{{ t(r.confluence_en, r.confluence_zh) }}</span></td>
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% endif %}
-
-      {# Footnote #}
-      <div class="isle-ev-footnote isle-stagger isle-s8">
-        <span>
-          <span class="l-en">Blended 0–100. ≥60 = risk-on · 42–59 = mixed · &lt;42 = risk-off.{% if _weakest %} Flip trigger: {{ _weakest.label_en }} (now {{ _weakest.score }}/100).{% endif %} Confirms what has already turned; does not forecast. Gauntlet applies at promotion only.</span>
-          <span class="l-zh">合成 0-100 分。≥60 偏好 · 42-59 混合 · &lt;42 避险。{% if _weakest %}翻转触发：{{ _weakest.label_zh or _weakest.label_en }}（现 {{ _weakest.score }}/100）。{% endif %}确认已转向信号，不预测未来。</span>
-        </span>
-        <span class="v2-display-badge" style="flex-shrink:0"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span>
-      </div>
-
-      <div class="isle-stamp">
-        <span class="l-en">as of {{ MS2.asof if MS2 and MS2.asof is defined else '' }}</span>
-        <span class="l-zh">{{ MS2.asof if MS2 and MS2.asof is defined else '' }}</span>
-      </div>
-    </div></div></div>
   </div>{# /sx-evidence #}
 
   {# 2. EVENTS row + tray (contains Release Radar + week-ahead band) #}
@@ -5482,48 +5247,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       </div>
       {% endif %}
     </div>
-    <div class="sx-tray"><div class="sx-tray-inner-wrap"><div class="sx-island">
-      {# Island header beacon #}
-      <div class="isle-head">
-        <div class="isle-head-dot"></div>
-        <span class="isle-head-label"><span class="l-en">Events — Catalysts &amp; Release Radar</span><span class="l-zh">事件 — 催化剂与数据发布雷达</span></span>
-        <div class="isle-head-line"></div>
-      </div>
-
-      {# THIS WEEK catalyst day-cards #}
-      {% if macro_catalysts or (prediction_markets and prediction_markets.events) or (event_risk and event_risk.show) %}
-      <div id="week-ahead" class="isle-stagger isle-s1" style="margin-bottom:16px">
-        <div class="isle-section-eyebrow">{{ t('This Week','本周') }}</div>
-        <div class="isle-event-grid">
-          {% for c in macro_catalysts[:8] %}
-          <div class="isle-ev-cal-card{{ ' hot' if c.impact == 'high' else '' }} isle-stagger isle-s{{ loop.index if loop.index <= 4 else '4' }}">
-            <div class="isle-ev-cal-date">{{ _mos2[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</div>
-            <div class="isle-ev-cal-title"><span class="l-en">{{ c.label }}</span><span class="l-zh">{{ c.get('label_zh') or c.label }}</span></div>
-            <div class="isle-ev-cal-meta">
-              {% if c.time_et %}<span style="color:var(--muted);font-size:10px">{{ c.time_et }} ET</span>{% endif %}
-              {% if c.impact == 'high' %}<span class="v2chip c-warn" style="font-size:9px;padding:1px 5px">{{ t('HIGH','高') }}</span>{% elif c.impact == 'med' %}<span class="v2chip c-info" style="font-size:9px;padding:1px 5px">{{ t('MED','中') }}</span>{% endif %}
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-
-        {# Fed strip from prediction markets #}
-        {% if prediction_markets and prediction_markets.events %}
-        <div class="isle-fed-strip isle-stagger isle-s4">
-          <span class="isle-fed-label">{{ t('Fed · Market Pricing','美联储 · 市场定价') }}</span>
-          {% for e in prediction_markets.events[:3] %}
-          {% set _top = (e.outcomes|sort(attribute='prob',reverse=true))|first %}
-          <div class="isle-fed-item">
-            <span class="isle-fed-desc">{{ t(e.label_en, e.label_zh) }}</span>
-            <b class="isle-fed-val num">{{ _top.outcome }} {{ _top.prob }}%</b>
-            {% if _top.chg_pp is not none and _top.chg_pp != 0 %}<span class="{{ 'pos' if _top.chg_pp > 0 else 'neg' }}" style="font-size:11px">{{ '%+.1f'|format(_top.chg_pp) }}pp</span>{% endif %}
-          </div>
-          {% endfor %}
-          <span class="isle-fed-src">Polymarket</span>
-        </div>
-        {% endif %}
-      </div>
-      {% endif %}
+    {# Release Radar + RR modals live here — outside any sx-tray so they persist in DOM #}
   {% if mode != 'stocks' %}
   <style id="rr-css">
   /* ---- Release Radar MRI-R39: minimalist card + 5-tab modal ---- */
@@ -7260,10 +6984,14 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       .then(function(r){ return r.ok ? r.json() : null; })
       .catch(function(){ return null; })
       .then(renderRadar);
+
+    /* Expose opener for dlg-events "Open Release Radar" button — opens first item's detail modal */
+    window.mmOpenFirstRR = function(){
+      if (_rrItems && _rrItems.length) openModal(_rrItems[0]);
+    };
   })();
   </script>
   {% endif %}
-    </div></div></div>
   </div>{# /sx-events-v2 #}
 
   {# ── v5 STATIC CARDS — Fed Probability, Market Sentiment, Sector Temperature ── #}
@@ -7523,180 +7251,13 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         {% endfor %}
       </div>
     </div>
-    <div class="sx-tray"><div class="sx-tray-inner-wrap"><div class="sx-island">
-      {# Island header beacon #}
-      <div class="isle-head">
-        <div class="isle-head-dot"></div>
-        <span class="isle-head-label"><span class="l-en">Markets — Index Health &amp; Cross-Asset</span><span class="l-zh">市场 — 指数健康度与跨资产</span></span>
-        <div class="isle-head-line"></div>
-      </div>
-
-      {# Index health cards grid #}
-      {% if index_health %}
-      {% set _ix_names = {'SPY': 'S&P 500', 'QQQ': 'Nasdaq 100', 'DJI': 'Dow Jones', '_DJI': 'Dow Jones', 'RUT': 'Russell 2000', '_RUT': 'Russell 2000'} %}
-      <div class="idx-card-grid isle-stagger isle-s1" id="index-health">
-        {% for ix in index_health %}
-        {% set _ixsym = ix.ticker | replace('_','') %}
-        <div class="idx-card isle-stagger isle-s{{ loop.index if loop.index <= 4 else '4' }}" data-sym="{{ _ixsym }}" data-mkt="us">
-          <div class="idx-card-top">
-            <span class="idx-card-ticker">{{ _ixsym }}</span>
-            <span class="idx-card-name">{{ _ix_names.get(ix.ticker, ix.label if ix.label is defined else _ixsym) }}</span>
-          </div>
-          <div class="idx-card-px nb-px" data-sym="{{ _ixsym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
-          <div class="idx-card-chg {{ 'up' if ix.chg > 0 else ('dn' if ix.chg < 0 else '') }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{{ '%+.2f'|format(ix.chg) }}%</div>
-          <div class="idx-card-chips">
-            <span class="idx-stat {{ 'ok' if ix.dd >= -1 else ('wn' if ix.dd >= -10 else 'mt') }}">{{ '%+.1f'|format(ix.dd) }}%</span>
-            <span class="idx-stat-lbl"><span class="l-en">off high</span><span class="l-zh">距高</span></span>
-            {% if ix.rsi is not none %}<span class="idx-stat mt">RSI {{ ix.rsi }}</span>{% endif %}
-            {% if ix.above200 %}<span class="idx-stat ok">200d ✓</span>{% else %}<span class="idx-stat mt">200d ✕</span>{% endif %}
-            {% if ix.above50 %}<span class="idx-stat ok">50d ✓</span>{% else %}<span class="idx-stat mt">50d ✕</span>{% endif %}
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-
-      {# Sector heat: hot/cold columns #}
-      {% if sector_heat %}
-      {% set _sh2 = sector_heat %}
-      <div class="isle-sector-block isle-stagger isle-s2" id="sector-heat">
-        <div class="isle-sector-col">
-          <div class="isle-sector-col-head"><span class="l-en">Hot sectors</span><span class="l-zh">热门板块</span></div>
-          {% for _ht in (_sh2.get('heating') or [])[:4] %}
-          <div class="isle-sector-row">
-            <span class="isle-sector-arr heat">&#9650;</span>
-            <span class="isle-sector-name"><span class="l-en">{{ _ht.get('name') }}</span><span class="l-zh">{{ _ht.get('name_zh') or _ht.get('name') }}</span></span>
-            <span class="isle-sector-rk">#{{ _ht.get('rank') }}</span>
-          </div>
-          {% endfor %}
-        </div>
-        <div class="isle-sector-col">
-          <div class="isle-sector-col-head"><span class="l-en">Cold sectors</span><span class="l-zh">低迷板块</span></div>
-          {% for _ct in (_sh2.get('cooling') or [])[:4] %}
-          <div class="isle-sector-row">
-            <span class="isle-sector-arr cool">&#9661;</span>
-            <span class="isle-sector-name"><span class="l-en">{{ _ct.get('name') }}</span><span class="l-zh">{{ _ct.get('name_zh') or _ct.get('name') }}</span></span>
-            <span class="isle-sector-rk">#{{ _ct.get('rank') }}</span>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-
-      {# Heatmap chrome — #heatmap-scorecard must remain EMPTY (heatmap.js mount) #}
-      <div class="isle-heatmap-wrap isle-stagger isle-s3">
-        <div class="isle-heatmap-chrome-head"><span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span></div>
-        <div id="heatmap-scorecard" style="min-height:120px"></div>
-      </div>
-
-      {# Asset tile strip — 8 key macro variables #}
-      {% set _mca = latest.cross_asset if (latest.cross_asset is defined and latest.cross_asset) else {} %}
-      <div class="isle-asset-strip isle-stagger isle-s4">
-        {# 10Y Treasury #}
-        {% if _mca.get('us10y') is not none %}
-        <div class="isle-asset-tile asset-tile-anim">
-          <div class="isle-asset-tile-lbl"><span class="l-en">10Y Treasury</span><span class="l-zh">10年期国债</span></div>
-          <div class="isle-asset-tile-val" style="color:var(--text)">{{ '%.2f'|format(_mca.get('us10y')) }}%</div>
-          <div class="isle-asset-tile-ctx"><span class="l-en">rate</span><span class="l-zh">利率</span></div>
-        </div>
-        {% endif %}
-        {# 2Y Treasury #}
-        {% if _mca.get('us2y') is not none %}
-        <div class="isle-asset-tile asset-tile-anim">
-          <div class="isle-asset-tile-lbl"><span class="l-en">2Y Treasury</span><span class="l-zh">2年期国债</span></div>
-          <div class="isle-asset-tile-val" style="color:var(--text)">{{ '%.2f'|format(_mca.get('us2y')) }}%</div>
-          <div class="isle-asset-tile-ctx"><span class="l-en">rate</span><span class="l-zh">利率</span></div>
-        </div>
-        {% endif %}
-        {# Fed Funds #}
-        {% if _mca.get('fed_funds') is not none %}
-        <div class="isle-asset-tile asset-tile-anim">
-          <div class="isle-asset-tile-lbl"><span class="l-en">Fed Funds</span><span class="l-zh">联邦基金</span></div>
-          <div class="isle-asset-tile-val" style="color:var(--text)">{{ '%.2f'|format(_mca.get('fed_funds')) }}%</div>
-          <div class="isle-asset-tile-ctx"><span class="l-en">target</span><span class="l-zh">目标利率</span></div>
-        </div>
-        {% endif %}
-        {# Real 10Y #}
-        {% if _mca.get('real10y') is not none %}
-        {% set _r10c = 'var(--down)' if _mca.get('real10y') > 2.0 else ('var(--warn)' if _mca.get('real10y') > 0.5 else 'var(--up)') %}
-        <div class="isle-asset-tile asset-tile-anim">
-          <div class="isle-asset-tile-lbl"><span class="l-en">Real 10Y</span><span class="l-zh">实际10Y</span></div>
-          <div class="isle-asset-tile-val" style="color:{{ _r10c }}">{{ '%.2f'|format(_mca.get('real10y')) }}%</div>
-          <div class="isle-asset-tile-ctx">TIPS</div>
-        </div>
-        {% endif %}
-        {# 2s10s curve #}
-        {% if _mca.get('curve_2s10s') is not none %}
-        {% set _curc = 'var(--down)' if _mca.get('curve_2s10s') < 0 else 'var(--up)' %}
-        <div class="isle-asset-tile asset-tile-anim">
-          <div class="isle-asset-tile-lbl">2s10s</div>
-          <div class="isle-asset-tile-val" style="color:{{ _curc }}">{{ '%+.0f'|format(_mca.get('curve_2s10s') * 100) }}bp</div>
-          <div class="isle-asset-tile-ctx"><span class="l-en">{{ 'inverted' if _mca.get('curve_2s10s') < 0 else 'normal' }}</span><span class="l-zh">{{ '倒挂' if _mca.get('curve_2s10s') < 0 else '正常' }}</span></div>
-        </div>
-        {% endif %}
-        {# DXY #}
-        {% if _mca.get('dxy') is not none %}
-        <div class="isle-asset-tile asset-tile-anim">
-          <div class="isle-asset-tile-lbl">DXY</div>
-          <div class="isle-asset-tile-val" style="color:var(--text)">{{ '%.1f'|format(_mca.get('dxy')) }}</div>
-          <div class="isle-asset-tile-ctx"><span class="l-en">Dollar</span><span class="l-zh">美元</span></div>
-        </div>
-        {% endif %}
-        {# VIX #}
-        {% if vix is defined and vix is not none and vix.last is defined %}
-        {% set _vixlv = vix.last %}
-        {% set _vixc = 'var(--down)' if _vixlv > 25 else ('var(--warn)' if _vixlv > 18 else 'var(--up)') %}
-        <div class="isle-asset-tile asset-tile-anim">
-          <div class="isle-asset-tile-lbl">VIX</div>
-          <div class="isle-asset-tile-val" style="color:{{ _vixc }}">{{ '%.1f'|format(_vixlv) }}</div>
-          <div class="isle-asset-tile-ctx"><span class="l-en">{{ 'stress' if _vixlv > 25 else ('watch' if _vixlv > 18 else 'calm') }}</span><span class="l-zh">{{ '紧张' if _vixlv > 25 else ('警惕' if _vixlv > 18 else '平静') }}</span></div>
-        </div>
-        {% endif %}
-        {# HY OAS #}
-        {% if _mca.get('hy_oas') is not none %}
-        {% set _hyc = 'var(--down)' if _mca.get('hy_oas') > 5.0 else ('var(--warn)' if _mca.get('hy_oas') > 3.5 else 'var(--up)') %}
-        <div class="isle-asset-tile asset-tile-anim">
-          <div class="isle-asset-tile-lbl"><span class="l-en">HY OAS</span><span class="l-zh">HY利差</span></div>
-          <div class="isle-asset-tile-val" style="color:{{ _hyc }}">{{ '%.0f'|format(_mca.get('hy_oas') * 100) }}bp</div>
-          <div class="isle-asset-tile-ctx"><span class="l-en">credit</span><span class="l-zh">信用</span></div>
-        </div>
-        {% endif %}
-      </div>
-
-      {# Plotly index-deep details — preserved with original IDs for chart resize #}
-      {% set _idx_deep = ((risk_model and risk_model.legs) or chart_risk_model or chart_curve or chart_vix_term) %}
-      {% if _idx_deep %}
-      <details class="jarg" id="idx-deep" style="margin-top:14px"><summary>{{ t('Risk-model breakdown + recession, yield-curve &amp; volatility charts','风险模型拆解 + 衰退、收益率曲线与波动率图表') }}</summary>
-      {% endif %}
-      {% if risk_model and risk_model.legs %}
-      <h3 style="margin-top:16px">{{ t('Index risk model — what is driving de-risk','指数风险模型 — 降险信号由什么驱动') }}</h3>
-      <div class="rm-bar">{% for lg in risk_model.legs %}{% if lg.active and lg.points %}<div style="width:{{ lg.points }}%;background:{{ lg.color }}" title="{{ lg.label }}: {{ lg.points }}"></div>{% endif %}{% endfor %}</div>
-      <table class="rm-tbl">
-        <tr><th class="l">{{ t('Risk leg','风险分项') }}</th><th>{{ t('Intensity','强度') }}</th><th>{{ t('Weight','权重') }}</th><th>{{ t('Pub lag','发布滞后') }}</th><th>{{ t('Points','贡献') }}</th></tr>
-        {% for lg in risk_model.legs %}
-        <tr><td class="l"><span class="rm-dot" style="background:{{ lg.color }}"></span>{{ t(lg.label, lg.label_zh) }}</td>
-        <td><b class="{{ 'pos' if lg.active else 'neg' }}">{{ lg.intensity }}</b></td>
-        <td>{{ lg.weight }}</td>
-        <td>{{ lg.pub_lag }}</td>
-        <td><b>{{ lg.points }}</b></td></tr>
-        {% endfor %}
-      </table>
-      {% endif %}
-      {% for _cid, _cv in [('chart_risk_model', chart_risk_model), ('chart_curve', chart_curve), ('chart_vix_term', chart_vix_term)] %}
-      {% if _cv %}
-      {% if _cv is string %}
-      <div id="{{ _cid }}" class="{{ 'chart-block' if mode != 'stocks' else '' }}" style="height:180px">{{ _cv | safe }}</div>
-      {% endif %}
-      {% endif %}
-      {% endfor %}
-      {% if _idx_deep %}
-      </details>
-      {% endif %}
-
-      <div class="isle-stamp">
-        {% if MS2 and MS2.asof is defined %}<span class="l-en">as of {{ MS2.asof }}</span><span class="l-zh">{{ MS2.asof }} 数据</span>{% endif %}
-      </div>
-    </div></div></div>
+    {# Heatmap staging: heatmap.js mounts on first #heatmap-scorecard at DOMContentLoaded;
+       this div sits outside any dialog, height-collapsed so it doesn't affect layout.
+       On first open of dlg-markets, mx5OpenDlg adopts the node into #dlg-heatmap-scorecard. #}
+    <div class="mx5-hm-stage" style="height:0;overflow:hidden;width:920px" aria-hidden="true">
+      <div class="isle-heatmap-chrome-head"><span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span></div>
+      <div id="heatmap-scorecard" style="min-height:120px"></div>
+    </div>
   </div>{# /sx-markets-v2 #}
 
   {# ── 4. RISK row + tray (Stage B) ── #}
@@ -7720,217 +7281,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       {% if _rdr_score is not none %}
       <div class="sxg-face-sub"><span class="l-en">Intensity {{ _rdr_score }}/100</span><span class="l-zh">强度 {{ _rdr_score }}/100</span></div>
       {% endif %}
-    </div>
-    <div class="sx-tray">
-      <div class="sx-tray-inner-wrap"><div class="sx-island">
-        <div class="isle-head isle-stagger isle-s1">
-          <div class="isle-head-dot"></div>
-          <span class="isle-head-label"><span class="l-en">Risk — Scare Ladder &amp; Sentiment</span><span class="l-zh">风险 — 压力梯度与情绪</span></span>
-          <div class="isle-head-line"></div>
-        </div>
-        {# Radar banner cards — v2 home: the loud/state cards live at the top of the RISK tray. #}
-        {% if MS.radar and MS.radar.state %}{{ rrc.risk_radar_card(MS.radar, latest.risk_radar.scares if latest.risk_radar else none) }}{% endif %}
-        {% if latest.ignition_radar %}{{ igc.ignition_radar_card(latest.ignition_radar) }}{% endif %}
-        <div class="mx2-risk-tray isle-stagger isle-s2">
-
-          {# Heads-up chips: fed_stance + turning_point (relocated from old heads-up block) #}
-          {% set _fed_st = (latest.fed_stance.stance if (latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.stance is defined and latest.fed_stance.stance != 'unknown') else none) %}
-          {% set _tp_p = (latest.turning_point if (latest.turning_point is defined and latest.turning_point and latest.turning_point.present is defined and latest.turning_point.present) else none) %}
-          {% if _fed_st or _tp_p %}
-          <div class="heads-up" style="margin-bottom:10px">
-            {% if _fed_st %}
-            {% set _fsc = 'var(--down)' if _fed_st in ('hawkish','very-hawkish') else ('var(--up)' if _fed_st in ('dovish','very-dovish') else 'var(--warn)') %}
-            {% set _fsl = {'hawkish':'Hawkish','very-hawkish':'Very Hawkish','dovish':'Dovish','very-dovish':'Very Dovish','neutral':'Neutral'} %}
-            {% set _fszh = {'hawkish':'鹰派','very-hawkish':'强鹰','dovish':'鸽派','very-dovish':'强鸽','neutral':'中性'} %}
-            <span class="hu-chip" id="fed-stance" style="--hc:{{ _fsc }}">
-              <span class="l-en">Fed: <b>{{ _fsl.get(_fed_st, _fed_st) }}</b></span>
-              <span class="l-zh">美联储：<b>{{ _fszh.get(_fed_st, _fed_st) }}</b></span>
-            </span>
-            {% endif %}
-            {% if _tp_p %}
-            <span class="hu-chip" id="turning-point" style="--hc:var(--warn)">
-              <span class="l-en">Turning point watch</span>
-              <span class="l-zh">拐点观察</span>
-            </span>
-            {% endif %}
-          </div>
-          {% endif %}
-
-          {# (a) Scares ladder v3 — mockup .scare-ladder design #}
-          {% if latest.risk_radar and latest.risk_radar.scares %}
-          <div class="scare-ladder">
-            {% for sc in latest.risk_radar.scares %}
-            {% set _scc = ('sc-band-high' if sc.score >= 70 else ('sc-band-watch' if sc.score >= 50 else ('sc-band-elev' if sc.score >= 35 else 'sc-band-calm'))) %}
-            {% set _scband = (sc.band if sc.band is defined and sc.band else ('WATCH' if sc.score >= 50 else ('ELEVATED' if sc.score >= 35 else 'CALM'))) %}
-            <div class="scare-row isle-stagger isle-s{{ loop.index if loop.index <= 7 else '7' }}">
-              <span class="sc-name"><span class="l-en">{{ sc.label_en if sc.label_en is defined else (sc.name_en if sc.name_en is defined else sc.name) }}</span><span class="l-zh">{{ sc.label_zh if sc.label_zh is defined else (sc.name_zh if sc.name_zh is defined else sc.name) }}</span></span>
-              <div class="sc-bar-track"><div class="sc-bar-fill" style="width:{{ [sc.score,100]|min }}%;background:{{ 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 35 else 'var(--muted)') }}"></div></div>
-              <span class="sc-score" style="color:{{ 'var(--down)' if sc.score >= 70 else ('var(--warn)' if sc.score >= 35 else 'var(--muted)') }}">{{ sc.score }}</span>
-              <span class="sc-band {{ _scc }}">{{ _scband }}</span>
-            </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          {# No scares in current data: show radar state card #}
-          <div class="mx2-risk-section isle-stagger isle-s2">
-            <div class="mx2-risk-section-hd"><span class="l-en">Radar read</span><span class="l-zh">雷达读数</span></div>
-            <div style="font-size:14px;font-weight:700;color:{{ _rdr_col }}">
-              <span class="l-en">{{ _rdr.label_en if _rdr.label_en is defined else _rdr_state }}</span>
-              <span class="l-zh">{{ _rdr.label_zh if _rdr.label_zh is defined else _rdr_state }}</span>
-            </div>
-            {% if _rdr.do_en is defined %}
-            <div class="muted sm" style="margin-top:6px"><span class="l-en">{{ _rdr.do_en }}</span><span class="l-zh">{{ _rdr.do_zh if _rdr.do_zh is defined else _rdr.do_en }}</span></div>
-            {% endif %}
-          </div>
-          {% endif %}
-
-          {# (b) Drawdown ladder v3 — 4-tile .dd-ladder: H5 / H10 / H21 / Peak #}
-          {% if _rdr.dd5 is defined or _rdr.dd10 is defined or _rdr.dd21 is defined %}
-          <div class="dd-ladder isle-stagger isle-s8">
-            {% if _rdr.dd5 is defined and _rdr.dd5 is not none %}
-            <div class="dd-box">
-              <div class="dd-horizon">H5</div>
-              <div class="dd-val" style="color:{{ 'var(--down)' if _rdr.dd5 > 0.15 else ('var(--warn)' if _rdr.dd5 > 0.06 else 'var(--up)') }}">{{ (_rdr.dd5 * 100)|round|int }}%</div>
-              <div class="dd-sub"><span class="l-en">≥5% SPY odds</span><span class="l-zh">≥5% 概率</span></div>
-            </div>
-            {% endif %}
-            {% if _rdr.dd10 is defined and _rdr.dd10 is not none %}
-            <div class="dd-box">
-              <div class="dd-horizon">H10</div>
-              <div class="dd-val" style="color:{{ 'var(--down)' if _rdr.dd10 > 0.20 else ('var(--warn)' if _rdr.dd10 > 0.10 else 'var(--up)') }}">{{ (_rdr.dd10 * 100)|round|int }}%</div>
-              <div class="dd-sub"><span class="l-en">≥5% SPY odds</span><span class="l-zh">≥5% 概率</span></div>
-            </div>
-            {% endif %}
-            {% if _rdr.dd21 is defined and _rdr.dd21 is not none %}
-            {% set _dd21_base = (_rdr.drawdown_prob.base * 100)|round(1) if (_rdr.drawdown_prob is defined and _rdr.drawdown_prob and _rdr.drawdown_prob.base is not none) else none %}
-            {% set _dd21_traj = _rdr.drawdown_prob.trajectory if (_rdr.drawdown_prob is defined and _rdr.drawdown_prob and _rdr.drawdown_prob.trajectory is not none) else none %}
-            <div class="dd-box" style="{{ 'border-color:rgba(224,160,48,.35)' if _rdr.dd21 > 0.12 else '' }}">
-              <div class="dd-horizon">H21</div>
-              <div class="dd-val" style="color:{{ 'var(--down)' if _rdr.dd21 > 0.25 else ('var(--warn)' if _rdr.dd21 > 0.12 else 'var(--up)') }}">{{ (_rdr.dd21 * 100)|round|int }}%</div>
-              <div class="dd-sub">{% if _dd21_base is not none %}<span class="l-en">base {{ _dd21_base }}%{% if _dd21_traj %} · {{ _dd21_traj }}{% endif %}</span><span class="l-zh">基准 {{ _dd21_base }}%</span>{% else %}<span class="l-en">≥10% odds</span><span class="l-zh">≥10% 概率</span>{% endif %}</div>
-            </div>
-            {% endif %}
-            {# Peak drawdown box #}
-            {% set _pk = _rdr.drawdown_prob.peak if (_rdr.drawdown_prob is defined and _rdr.drawdown_prob) else none %}
-            {% set _pk_ago = _rdr.drawdown_prob.peak_days_ago if (_rdr.drawdown_prob is defined and _rdr.drawdown_prob) else none %}
-            {% set _pk_off = _rdr.drawdown_prob.off_peak if (_rdr.drawdown_prob is defined and _rdr.drawdown_prob) else none %}
-            {% if _pk is not none %}
-            <div class="dd-box">
-              <div class="dd-horizon"><span class="l-en">Peak</span><span class="l-zh">峰值</span></div>
-              <div class="dd-val">{{ (_pk * 100)|round|int }}%</div>
-              <div class="dd-sub">{% if _pk_ago is not none %}<span class="l-en">{{ _pk_ago }}d ago{% if _pk_off is not none %} · −{{ (_pk_off * 100)|round|int }}% off peak{% endif %}</span><span class="l-zh">{{ _pk_ago }}天前</span>{% endif %}</div>
-            </div>
-            {% endif %}
-          </div>
-          <div class="dd-caveat isle-stagger isle-s8"><span class="l-en">Drawdown odds are model estimates, not forecasts. SPY proxy. Display-only — calibrated against historical base rates; no directional signal implied.</span><span class="l-zh">回撤概率为模型估计，非预测。以SPY为代理。仅供展示，依历史基准率校准，不含方向信号。</span></div>
-          {% endif %}
-
-          {# MX2-SENTIMENT-START #}
-          {# (c) SENTIMENT panel v3 — 2-card .sentiment-grid; CI-pinned strings and ids preserved #}
-          {% if froth_fragility or fear_euphoria or fear_greed %}
-          {% set ff = froth_fragility %}
-          {% set FE = fear_euphoria %}
-          {% set FG = fear_greed %}
-          {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
-          {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
-
-          {# heads-up chips: fed_stance / turning_point — keep rendering near sentiment #}
-
-          <div class="sentiment-section" id="sentiment-regime">
-            <div class="sent-head">{{ t('Fear ↔ Euphoria: regime synthesis','恐惧 ↔ 欣喜：周期综合') }}</div>
-            {# FE synthesis strip — the section's own read (score + 5-band scale), gated on its data #}
-            {% if fear_euphoria %}
-            {% set FE = fear_euphoria %}
-            {% set _fec = 'var(--down)' if FE.fe_score < 30 else ('var(--warn)' if FE.fe_score < 50 else ('var(--up)' if FE.fe_score > 70 else 'var(--muted)')) %}
-            <div class="fe-synth isle-stagger isle-s6">
-              <span class="sent-num num" style="font-size:22px;color:{{ _fec }}">{{ FE.fe_score }}</span>
-              <span class="chip {{ 'c-down' if FE.band in ['Panic','Fear'] else ('c-up' if FE.band in ['Greed','Euphoria'] else 'c-muted') }}" style="font-size:10px;padding:2px 8px">{{ t(FE.band, _bandzh.get(FE.band, FE.band)) }}</span>
-              <div style="flex:1;min-width:160px">
-                <div class="grad-track"><div class="grad-marker" style="left:calc({{ FE.fe_score }}% - 2.5px)"></div></div>
-                <div class="grad-labels">
-                  <span>{{ t('Panic','恐慌') }}</span><span>{{ t('Fear','恐惧') }}</span><span>{{ t('Neutral','中性') }}</span><span>{{ t('Greed','贪婪') }}</span><span>{{ t('Euphoria','欣喜') }}</span>
-                </div>
-              </div>
-              {% if FE.roro is not none %}<span class="muted sm">RORO {{ '%+.2f'|format(FE.roro) }}{% if FE.roro_state %} · {{ td(FE.roro_state) }}{% endif %}</span>{% endif %}
-            </div>
-            {% endif %}
-            <div class="sentiment-grid">
-
-              {# Card 1: Fear / Greed #}
-              <div class="sent-card isle-stagger isle-s7" id="fear-greed">
-                <div class="sent-card-label">{{ t('Fear / Greed sentiment context','恐惧/贪婪情绪参考') }}</div>
-                {% if fear_greed %}
-                {% set FG = fear_greed %}
-                {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
-                {% set _fgc = 'var(--down)' if FG.dial < 30 else ('var(--warn)' if FG.dial < 45 else ('var(--up)' if FG.dial > 55 else 'var(--muted)')) %}
-                <div class="sent-num num" style="color:{{ _fgc }}">{{ FG.dial }} <span style="font-size:14px;font-weight:400;color:var(--muted)">/100</span></div>
-                <div style="font-size:11px;color:var(--muted);margin-bottom:10px">{{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }} · {{ FG.n_legs_qualifying }} {{ t('legs','分量') }}</div>
-                <div class="grad-track"><div class="grad-marker" style="left:calc({{ FG.dial }}% - 2.5px)"></div></div>
-                <div class="grad-labels">
-                  <span>{{ t('Extreme Fear','极度恐惧') }}</span><span>{{ t('Neutral','中性') }}</span><span>{{ t('Extreme Greed','极度贪婪') }}</span>
-                </div>
-                {% if FG.young_tiles is defined and FG.young_tiles %}
-                <div style="margin-top:6px">
-                  <div class="sent-card-label" style="margin-bottom:3px">{{ t('Context tiles','背景指标') }}</div>
-                  {% for tile in FG.young_tiles %}
-                  <div style="font-size:10.5px;color:var(--muted)"><span class="l-en">{{ tile.name_en }}</span><span class="l-zh">{{ tile.name_zh or tile.name_en }}</span>{% if tile.value is not none %}: {{ tile.value }}{% endif %}</div>
-                  {% endfor %}
-                </div>
-                {% endif %}
-                <a href="macro_signals.html#fear-greed-detail" class="muted sm" style="display:inline-block;margin-top:8px">{{ t('full →','完整 →') }}</a>
-                {% else %}
-                <div class="muted sm">{{ t('—','—') }}</div>
-                {% endif %}
-              </div>
-
-              {# Card 2: Froth & Fragility — whole card gated (absence contract:
-                 test_froth_fragility::test_render_absent_when_none requires NO id/label leak) #}
-              {% if froth_fragility %}
-              <div class="sent-card isle-stagger isle-s8" id="froth-fragility">
-                <div class="sent-card-label">{{ t('Froth & Fragility','狂热与脆弱') }}</div>
-                {% set ff = froth_fragility %}
-                {% set ffc = 'var(--up)' if ff.band == 'calm' else ('var(--warn)' if ff.band in ['watch','elevated'] else 'var(--down)') %}
-                {% set ax = ff.face_a.score if ff.face_a.score is not none else 0 %}
-                {% set bx = ff.face_b.score if ff.face_b.score is not none else 0 %}
-                {% if ff.headline is not none %}
-                <div class="sent-num num" style="color:{{ ffc }}">{{ ff.headline|round|int }} <span style="font-size:14px;font-weight:400;color:var(--muted)">/100</span></div>
-                <div style="margin-bottom:10px">
-                  <span class="chip {{ 'c-warn' if ff.band in ['watch','elevated'] else ('c-down' if ff.band == 'extreme' else 'c-up') }}" style="font-size:10px;padding:2px 8px">{{ t(ff.band|capitalize, ff.band_zh) }}</span>
-                  {% if ff.provisional %}<span class="chip c-muted" style="font-size:10px;padding:2px 8px">{{ t('provisional','暂定') }}</span>{% endif %}
-                </div>
-                {% else %}
-                <div class="sent-num num" style="color:var(--muted)">— <span style="font-size:14px;font-weight:400;color:var(--muted)">/100</span></div>
-                <div style="margin-bottom:10px"><span class="chip c-muted" style="font-size:10px;padding:2px 8px">{{ t('provisional','暂定') }}</span></div>
-                {% endif %}
-                {% if ff.quadrant_en %}
-                <div style="font-size:12px;font-weight:700;color:{{ ffc }};margin-bottom:8px">{{ t(ff.quadrant_en, ff.quadrant_zh) }}{% if ff.unwind_risk %} <span style="color:var(--down)">⚠</span>{% endif %}</div>
-                {% endif %}
-                <div class="froth-row">
-                  <span class="froth-lbl">{{ t('Fragility / distribution','脆弱／派发') }}</span>
-                  <div class="froth-bar-wrap"><div class="froth-bar" style="width:{{ [bx,100]|min }}%;background:var(--down)"></div></div>
-                  <span class="froth-val">{{ bx|round|int }}</span>
-                </div>
-                <div class="froth-split">
-                  <div class="froth-split-item"><div class="froth-split-lbl">{{ t('Euphoria','欣喜') }}</div><div class="froth-split-val">{{ ax|round|int }}</div></div>
-                  <div class="froth-split-item"><div class="froth-split-lbl">{{ t('Fragility','脆弱') }}</div><div class="froth-split-val">{{ bx|round|int }}</div></div>
-                </div>
-                <div class="muted sm" style="margin-top:8px">{% if ff.track_record and ff.track_record.n %}{{ t('Forward record','前瞻记录') }}: {{ ff.track_record.n }} {{ t('firings','次触发') }} · {{ (ff.track_record.hit_rate * 100)|round|int }}% {{ t('hit','命中') }}. {% else %}{{ t('Forward record accruing.','前瞻记录积累中。') }} {% endif %}{{ t('Display-only — the response is sizing, not selection.','仅供展示——应对是调整仓位，而非选股。') }}</div>
-              </div>
-              {% endif %}{# /froth_fragility card gate #}
-
-            </div>
-            <a href="macro_signals.html" class="muted sm" style="display:inline-block;margin-top:12px">{{ t('Full breakdown →','完整拆解 →') }}</a>
-          </div>
-          {% endif %}
-          {# MX2-SENTIMENT-END #}
-
-          {# (d) risk_radar_card: rendered via rrc partial — KEPT in hero above (rrx); no duplicate here #}
-
-        </div>{# /mx2-risk-tray #}
-        <div class="isle-stamp">
-          {% if _rdr.as_of is defined and _rdr.as_of %}<span class="l-en">as of {{ _rdr.as_of }}</span><span class="l-zh">{{ _rdr.as_of }} 数据</span>{% elif latest and latest.date %}<span class="l-en">as of {{ latest.date }}</span><span class="l-zh">{{ latest.date }} 数据</span>{% endif %}
-        </div>
-      </div></div>{# /sx-island + sx-tray-inner-wrap #}
     </div>
   </div>{# /sx-risk-v2 #}
   {% endif %}{# /market_state #}
@@ -8005,212 +7355,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         {% endif %}
       </div>
     </div>
-    <div class="sx-tray">
-      <div class="sx-tray-inner-wrap"><div class="sx-island">
-        <div class="isle-head isle-stagger isle-s1">
-          <div class="isle-head-dot"></div>
-          <span class="isle-head-label"><span class="l-en">Policy — Lever State &amp; Repricing</span><span class="l-zh">政策 — 杠杆状态与重定价</span></span>
-          <div class="isle-head-line"></div>
-        </div>
-        <div class="mx2-policy-tray isle-stagger isle-s2">
-
-          {# id="policy-lever-card" — CI test (tests/test_policy_lever.py) checks string presence in macro, absence in stocks #}
-          <div id="policy-lever-card">
-            {# 3-col policy grid per v3 mockup #}
-            <div class="policy-grid">
-
-              {# COL 1 — Policy Lever: state chip hero + key rows + lever-arming rows #}
-              <div class="policy-col isle-stagger isle-s1">
-                <div class="pc-head">{{ t('Policy Lever','政策杠杆') }}</div>
-                <div class="pc-val">
-                  <span class="chip {{ 'c-down' if _pl_state == 'ARMED' else ('c-warn' if _pl_state == 'ELEVATED' else 'c-muted') }}" style="font-size:13px;padding:4px 12px">
-                    <span class="l-en">{{ _pl_state }}</span><span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_pl_state, _pl_state) }}</span>
-                  </span>
-                </div>
-                {# Shock coherence score #}
-                {% set _plcoh = PL.get('repricing_coherence') or {} %}
-                {% if _plcoh.get('score') is not none %}
-                <div class="pc-row">
-                  <span class="pc-key">{{ t('Shock coherence','冲击一致性') }}</span>
-                  <span class="pc-chip {{ 'pc-warn' if _plcoh.score >= 50 else 'pc-mt' }}">{{ _plcoh.score }}/100</span>
-                </div>
-                {% endif %}
-                {# Last event #}
-                {% if flip_confirmation and flip_confirmation.last_event %}
-                <div class="pc-row">
-                  <span class="pc-key">{{ t('Last event','最近事件') }}</span>
-                  <span class="pc-chip pc-mt num">{{ flip_confirmation.last_event.event_date }}</span>
-                </div>
-                {% endif %}
-                {# Fed stance #}
-                {% set _fed_st2 = (latest.fed_stance.stance if (latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.stance is defined and latest.fed_stance.stance != 'unknown') else none) %}
-                {% if _fed_st2 %}
-                {% set _fsl2 = {'hawkish':'Hawkish','very-hawkish':'Very Hawkish','dovish':'Dovish','very-dovish':'Very Dovish','neutral':'Neutral / hold'} %}
-                <div class="pc-row">
-                  <span class="pc-key">{{ t('Fed stance','美联储立场') }}</span>
-                  <span class="pc-chip pc-mt">{{ _fsl2.get(_fed_st2, _fed_st2) }}</span>
-                </div>
-                {% endif %}
-                {# Re-escalation / de-escalation notes from framing #}
-                {% if PL.get('favored_complex') %}
-                {% set _FC = PL.get('favored_complex') or {} %}
-                {% if _FC.get('drawdown_pct') is not none %}
-                <div class="pc-row">
-                  <span class="pc-key">{{ t('Complex dd','板块回撤') }}</span>
-                  <span class="pc-chip {{ 'pc-warn' if _FC.drawdown_pct <= -10 else 'pc-mt' }}">{{ _FC.get('basket', [])|join('/') }} {{ '%+.1f'|format(_FC.drawdown_pct) }}%</span>
-                </div>
-                {% endif %}
-                {% if _FC.get('basket_caveat') %}
-                <div class="pc-note" style="color:var(--warn)"><span class="l-en">{{ _FC.basket_caveat }}</span><span class="l-zh">{{ _FC.get('basket_caveat_zh') or _FC.basket_caveat }}</span></div>
-                {% endif %}
-                {% endif %}
-                {# Lever arming rows (days_in_base + flatness progress bars) #}
-                {% if PL.get('levers') %}
-                {% for lv in PL.levers %}
-                {% set _arm = lv.get('arming') %}
-                {% set _is_armed = _arm.get('armed') if _arm is not none else false %}
-                <div class="pc-row" style="flex-direction:column;align-items:flex-start;gap:3px">
-                  <div style="display:flex;justify-content:space-between;width:100%">
-                    <span class="pc-key"><span class="l-en">{{ lv.get('name') or '' }}</span><span class="l-zh">{{ lv.get('name_zh') or lv.get('name') or '' }}</span>{% if lv.get('asset') %} <span style="font-size:9px">({{ lv.asset }})</span>{% endif %}</span>
-                    {% if _arm is not none %}
-                    <span class="pc-chip {{ 'pc-warn' if _is_armed else 'pc-mt' }}"><span class="l-en">{{ 'ARMED' if _is_armed else 'quiet' }}</span><span class="l-zh">{{ '已触发' if _is_armed else '平静' }}</span></span>
-                    {% else %}
-                    <span class="pc-chip pc-mt">n/a</span>
-                    {% endif %}
-                  </div>
-                  {% if _arm is not none %}
-                  {% if _arm.get('days_in_base') is not none or _arm.get('flatness') is not none %}
-                  <div style="font-size:10px;color:var(--muted)">{% if _arm.get('days_in_base') is not none %}{{ _arm.days_in_base }}d base{% endif %}{% if _arm.get('flatness') is not none %} · flat={{ '%.2f'|format(_arm.flatness) }}{% endif %}</div>
-                  {% endif %}
-                  {% if _arm.get('basing') or _arm.get('stoch_curl') or _arm.get('macd_curl') %}
-                  <div style="font-size:10px;color:var(--up)">{% if _arm.get('basing') %}basing {% endif %}{% if _arm.get('stoch_curl') %}stoch↑ {% endif %}{% if _arm.get('macd_curl') %}macd↑{% endif %}</div>
-                  {% endif %}
-                  {% endif %}
-                  {% if lv.get('watch') %}
-                  <div style="font-size:10px;color:var(--muted)"><span class="l-en">{{ lv.get('watch') or '' }}</span><span class="l-zh">{{ lv.get('watch_zh') or lv.get('watch') or '' }}</span></div>
-                  {% endif %}
-                </div>
-                {% endfor %}
-                {% endif %}
-                {# Jawboning counts #}
-                {% if PL.get('jawboning') %}
-                {% set _JW = PL.get('jawboning') or {} %}
-                {% if _JW.get('n_7d') is not none %}
-                <div class="pc-row">
-                  <span class="pc-key">{{ t('Jawboning 7d/30d','政策发声 7日/30日') }}</span>
-                  <span class="pc-chip pc-mt">{{ _JW.n_7d }} / {{ _JW.n_30d }}</span>
-                </div>
-                {% endif %}
-                {% if _JW.get('last_alert_summary') %}
-                <div class="pc-note"><span class="l-zh">{{ _JW.get('last_alert_summary_zh') or '' }}</span><span class="l-en">{{ _JW.get('last_alert_summary') or '' }}</span></div>
-                {% endif %}
-                {% endif %}
-                {# Calendar context #}
-                {% if PL.get('calendar') %}
-                {% set _CAL = PL.get('calendar') or {} %}
-                {% if _CAL.get('context_note') %}
-                <div class="pc-note"><span class="l-en">{{ _CAL.get('context_note') or '' }}</span><span class="l-zh">{{ _CAL.get('context_note_zh') or _CAL.get('context_note') or '' }}</span></div>
-                {% endif %}
-                {% endif %}
-                {% if PL.get('framing') %}
-                <div class="pc-note"><span class="l-en">{{ PL.framing }}</span><span class="l-zh">{{ PL.get('framing_zh') or '' }}</span></div>
-                {% endif %}
-                <div class="pc-note">{{ t('Display-only · W2-F · as of','仅供展示 · W2-F · 截至') }} {{ PL.get('as_of') or '' }}</div>
-              </div>
-
-              {# COL 2 — REPRICING COHERENCE meter #}
-              <div class="policy-col isle-stagger isle-s2">
-                <div class="pc-head">{{ t('Repricing Coherence','重定价一致性') }}</div>
-                {% set _plcoh2 = PL.get('repricing_coherence') or {} %}
-                {% if _plcoh2.get('score') is not none %}
-                <div class="pc-val num {{ 'wn-c' if _plcoh2.score >= 50 else 'mt-c' }}">{{ _plcoh2.score }}<span style="font-size:13px;font-weight:500;color:var(--muted)">/100</span></div>
-                {% set _coh_comps = _plcoh2.get('components') or {} %}
-                {% if _coh_comps %}
-                <div style="margin-top:4px">
-                  {% for ckey, cval in _coh_comps.items() %}
-                  {% set _clbl = {'driver_flip':'Driver flip','strength_extreme':'Strength extreme','absorption_spike':'Absorption spike','repricing_breadth':'Repricing breadth'}.get(ckey, ckey) %}
-                  {% set _cv = cval if cval is not none else 0 %}
-                  <div class="lever-bar-row">
-                    <span class="lever-bar-lbl">{{ _clbl }}</span>
-                    <div class="lever-bar-track"><div class="lever-bar-fill" style="width:{{ [(_cv / 30 * 100)|round|int, 100]|min if _cv > 0 else 0 }}%;background:{{ 'var(--warn)' if _cv > 0 else 'var(--muted)' }}"></div></div>
-                    <span class="lever-bar-val {{ 'wn-c' if _cv > 0 else 'mt-c' }}">{{ _cv }}</span>
-                  </div>
-                  {% endfor %}
-                </div>
-                {% endif %}
-                {% if _plcoh2.get('note') %}
-                <div class="pc-note"><span class="l-en">{{ _plcoh2.note }}</span><span class="l-zh">{{ _plcoh2.get('note_zh') or _plcoh2.note }}</span></div>
-                {% endif %}
-                {% else %}
-                {# Fall back to repricing_components count from top-level PL #}
-                {% if _plrepr_count > 0 %}
-                <div class="pc-val num">{{ _plrepr_count }}<span style="font-size:13px;font-weight:500;color:var(--muted)">/4</span></div>
-                <div class="pc-note">{{ t('repricing components active','重定价组件激活') }}</div>
-                {% else %}
-                <div class="pc-val mt-c">0<span style="font-size:13px;font-weight:500;color:var(--muted)">/4</span></div>
-                <div class="pc-note">{{ t('No repricing components confirmed.','无重定价组件确认。') }}</div>
-                {% endif %}
-                {% endif %}
-              </div>
-
-              {# COL 3 — Flip Confirmation #}
-              <div class="policy-col isle-stagger isle-s3" id="flip-confirmation">
-                <div class="pc-head">{{ t('Flip Confirmation','翻转确认') }}</div>
-                {% if flip_confirmation and flip_confirmation.last_event %}
-                {% set _FC3 = flip_confirmation %}
-                {% set _FEV3 = _FC3.last_event %}
-                {% set _fv3_en = _FEV3.verdict if _FEV3.verdict else 'Pending' %}
-                {% set _fv3_zh = {'CONFIRMED':'已确认','FADED':'已消退','MIXED':'混合','Pending':'待定'}.get(_fv3_en, _fv3_en) %}
-                {% set _fvc3 = 'pc-up' if _FEV3.verdict == 'CONFIRMED' else ('pc-warn' if _FEV3.verdict == 'FADED' else 'pc-mt') %}
-                <div class="pc-row">
-                  <span class="pc-key">{{ t('Last flip','最近翻转') }}</span>
-                  <span class="pc-chip pc-info num">{{ _FEV3.event_date }}</span>
-                </div>
-                <div class="pc-row">
-                  <span class="pc-key">{{ t('z-score','z 分数') }}</span>
-                  <span class="pc-chip pc-mt">{{ _FEV3.z }}</span>
-                </div>
-                {% if _FC3.base_rates %}
-                {% set _BR3 = _FC3.base_rates %}
-                <div class="pc-row">
-                  <span class="pc-key">{{ t('Flips catalogued','翻转记录') }}</span>
-                  <span class="pc-chip pc-mt">{{ _BR3.n_events }} {{ t('total','次') }}</span>
-                </div>
-                <div class="pc-row">
-                  <span class="pc-key">{{ t('Fade rate','消退率') }}</span>
-                  <span class="pc-chip pc-warn">{{ ((_BR3.faded / _BR3.n_events * 100)|round|int if _BR3.n_events else 0) }}%</span>
-                </div>
-                {% endif %}
-                <div class="pc-row">
-                  <span class="pc-key">{{ t('Confirm window','确认窗口') }}</span>
-                  <span class="pc-chip pc-mt"><span class="l-en">1–3d post-event</span><span class="l-zh">事后1–3天</span></span>
-                </div>
-                <div class="pc-row">
-                  <span class="pc-key">{{ t('Status','状态') }}</span>
-                  <span class="pc-chip {{ _fvc3 }}">{{ t(_fv3_en, _fv3_zh) }}</span>
-                </div>
-                <div class="pc-note">{{ t('as of','截至') }} {{ _FC3.asof }} · {{ t('Display-only (W2-F)','仅供展示 (W2-F)') }} · {{ t('Admin-timing predictors forbidden.','禁止行政时点预测。') }}</div>
-                {% else %}
-                <div class="muted sm">{{ t('No flip data yet','暂无翻转数据') }}</div>
-                {% endif %}
-              </div>
-
-            </div>{# /policy-grid #}
-
-            {# Base-effect 'Where the regime is headed' — full-width row below 3-col grid #}
-            <div class="regime-path-row">
-              <div class="regime-path-eyebrow">{{ t('Regime path','周期路径') }}</div>
-              {% include "_regime_read_panel.html.j2" %}
-            </div>
-
-          </div>{# /policy-lever-card #}
-
-        </div>{# /mx2-policy-tray #}
-        <div class="isle-stamp">
-          {% if PL.get('as_of') %}<span class="l-en">as of {{ PL.get('as_of') }}</span><span class="l-zh">{{ PL.get('as_of') }} 数据</span>{% endif %}
-        </div>
-      </div></div>{# /sx-island + sx-tray-inner-wrap #}
-    </div>
   </div>{# /sx-policy-v2 #}
   {% endif %}{# /policy_lever #}
 
@@ -8275,65 +7419,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <span class="l-en">A read-through of existing signals &mdash; not a signal source.</span>
         <span class="l-zh">仅为现有信号的汇总解读 &mdash; 非独立信号源。</span>
       </div>
-    </div>
-    <div class="sx-tray">
-      <div class="sx-tray-inner-wrap"><div class="sx-island">
-        <div class="isle-head isle-stagger isle-s1">
-          <div class="isle-head-dot"></div>
-          <span class="isle-head-label"><span class="l-en">AI Brief — Synthesis</span><span class="l-zh">AI简报 — 综合</span></span>
-          <div class="isle-head-line"></div>
-          <span class="isle-head-badge"><span class="l-en">DISPLAY-ONLY</span><span class="l-zh">仅展示</span></span>
-        </div>
-        <div class="mx2-aibrief-tray isle-stagger isle-s2">
-          <a class="isle-aibrief-card aibrief-card" href="aibrief.html">
-            <div class="isle-aibrief-hdr">
-              <div class="isle-aibrief-icon">AI</div>
-              <div>
-                <div style="font-size:13px;font-weight:700;color:var(--text)">{{ t('AI Daily Brief · cross-asset synthesis', 'AI 每日简报 · 跨资产综合') }}</div>
-                <div class="num" style="font-size:11px;color:var(--muted)">{{ latest.date if latest.date else generated_utc[:10] }}</div>
-              </div>
-              <span class="isle-aibrief-badge">{{ t('display-only synthesis of existing signals — not a signal source','仅展示层综合读数 — 非信号来源') }}</span>
-            </div>
-            {% if macro_news and macro_news.synthesis and macro_news.synthesis.get('read') %}
-            {# BIL-01/COPY-03: body built from the STRUCTURED synthesis fields — the raw
-               `read` string leaks internal slugs (stock_wire) and has no ZH twin. #}
-            {% set _syn = macro_news.synthesis %}
-            {% set _syn_ch_zh = {'monetary':'美联储与利率','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','fiscal_trade':'财政与贸易','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股快讯'} %}
-            {% set _syn_ch_en = {'capital_return':'buybacks','fiscal_trade':'fiscal & trade','stock_wire':'stock wire','monetary':'Fed & rates'} %}
-            {% set _tier_en = {'stock_wire':'stock wire','official':'official releases','tier1':'tier-1 press','quality':'quality press'} %}
-            {% set _tier_zh = {'stock_wire':'个股快讯','official':'官方发布','tier1':'一线媒体','quality':'优质媒体'} %}
-            <div class="isle-aibrief-body">
-              <span class="l-en">{{ _syn.get('high_impact_count', 0) }} high-impact item{{ 's' if _syn.get('high_impact_count', 0) != 1 }} today{% if _syn.get('dominant_channel') %} · dominant channel: <strong>{{ _syn_ch_en.get(_syn.dominant_channel, _syn.dominant_channel|replace('_',' ')) }}</strong>{% endif %}{% if _syn.get('source_mix') %} · sources: {% for s in _syn.source_mix[:4] %}{{ _tier_en.get(s.tier, s.tier|replace('_',' ')) }} {{ s.count }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>
-              <span class="l-zh">今日 {{ _syn.get('high_impact_count', 0) }} 条高影响信息{% if _syn.get('dominant_channel') %} · 主导渠道：<strong>{{ _syn_ch_zh.get(_syn.dominant_channel, _syn.dominant_channel) }}</strong>{% endif %}{% if _syn.get('source_mix') %} · 来源：{% for s in _syn.source_mix[:4] %}{{ _tier_zh.get(s.tier, s.tier) }} {{ s.count }}{% if not loop.last %}、{% endif %}{% endfor %}{% endif %}</span>
-              {% if _syn.get('top_tickers') %}
-               · <span class="l-en">Top tickers: {% for tk in _syn.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}, {% endif %}{% endfor %}</span><span class="l-zh">主要标的：{% for tk in _syn.top_tickers[:3] %}{{ tk.ticker }}{% if not loop.last %}、{% endif %}{% endfor %}</span>
-              {% endif %}
-            </div>
-            <div class="isle-aibrief-footer">
-              <div class="isle-aibrief-chips">
-                {% if macro_news.synthesis.get('high_impact_count') is not none %}
-                <span class="mx-chip mx-c-warn">{{ macro_news.synthesis.high_impact_count }} {{ t('high-impact','高影响') }}</span>
-                {% endif %}
-                {% for ch in (macro_news.synthesis.get('top_channels') or [])[:3] %}
-                {# engine label_en/label_zh preferred (single source of truth); inline maps stay as fallback for stale VM pickles #}
-                <span class="mx-chip mx-c-muted"><span class="l-en">{{ ch.get('label_en') or _syn_ch_en.get(ch.name, ch.name|replace('_',' ')) }}</span><span class="l-zh">{{ ch.get('label_zh') or _syn_ch_zh.get(ch.name, ch.name) }}</span> {{ ch.count }}</span>
-                {% endfor %}
-              </div>
-              <span class="isle-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span>
-            </div>
-            {% else %}
-            <div class="isle-aibrief-body">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假设与后续关注。仅供研究参考，绝非交易信号。') }}</div>
-            <div class="isle-aibrief-footer">
-              <span></span>
-              <span class="isle-aibrief-link">{{ t('Full AI brief →','完整 AI 简报 →') }}</span>
-            </div>
-            {% endif %}
-          </a>
-        </div>
-        <div class="isle-stamp">
-          {% if latest and latest.date %}<span class="l-en">as of {{ latest.date }}</span><span class="l-zh">{{ latest.date }} 数据</span>{% endif %}
-        </div>
-      </div></div>{# /sx-island + sx-tray-inner-wrap #}
     </div>
   </div>{# /sx-aibrief-v2 #}
   {% endif %}{# /mode != stocks #}
@@ -8423,76 +7508,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       </div>
       {% endif %}
     </div>
-    <div class="sx-tray">
-      <div class="sx-tray-inner-wrap"><div class="sx-island">
-        <div class="isle-head isle-stagger isle-s1">
-          <div class="isle-head-dot"></div>
-          <span class="isle-head-label"><span class="l-en">News — Market Intelligence</span><span class="l-zh">新闻 — 市场情报</span></span>
-          <div class="isle-head-line"></div>
-        </div>
-        <div class="mx2-news-tray isle-stagger isle-s2" id="now-board">
-          <div class="mx-panel-hdr" style="margin-bottom:10px">
-            <span class="mx-panel-eyebrow">{{ t('News & Catalysts','新闻与日程') }}</span>
-            <a href="news.html" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--link)">{{ t('Full feed →','完整新闻 →') }}</a>
-          </div>
-
-          <div class="nb-strip">
-            <span class="nb-strip-h">{{ t('Next 14d','未来14天') }}</span>
-            {% for s in event_strip[:8] %}<span class="nb-ev" title="{{ s.label }}{% if s.time_et %} · {{ s.time_et }} ET{% endif %}"><b>{{ s.type }}</b> {{ s.dow }} {{ s.md }}</span>
-            {% else %}<span class="muted">{{ t('Clear — no top-tier US prints in the window.','空窗 — 窗口内无一线美国数据。') }}</span>{% endfor %}
-          </div>
-
-          {% if regime_snap and regime_snap.status in ('firing','building') %}
-          {% set RS_nb = regime_snap %}
-          <div class="nb-relief {{ RS_nb.status }}">⚡ <b>{{ t('Relief radar','反弹雷达') }}:</b>
-            {% if RS_nb.status == 'firing' %}{{ t('a risk-on snap is FIRING','风险偏好急转 触发中') }}{% else %}{{ t('a snap is building — watch','急转酝酿 — 留意') }}{% endif %}
-            <span class="muted" style="font-weight:400">· {{ RS_nb.legs_up }}/{{ RS_nb.legs_total }} {{ t('legs risk-on','项转向') }} · {{ t('velocity','速度') }} {{ ((RS_nb.vel_pctile*100)|round|int) if RS_nb.vel_pctile is not none else '—' }}%ile · {{ t('coincident, not a buy signal','同步信号，非买入') }}</span>
-          </div>
-          {% endif %}
-
-          {% if macro_news and macro_news.headlines %}
-          <div class="nb-acc">
-            {% for h in macro_news.headlines[:6] %}
-            {% set tl_nb = TL_nb.get(h.theme, [h.theme, h.theme]) %}
-            <details class="nb-item"{% if loop.first %} open{% endif %}>
-              <summary class="nb-sum">
-                <span class="nb-theme">{{ t(tl_nb[0], tl_nb[1]) }}</span>
-                <span class="nb-htitle"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span>
-                <span class="nb-meta">{% if h.importance in ['high','critical'] %}<span class="mx-ni-impact high">{{ t('HIGH','高') }}</span>{% elif h.importance == 'medium' %}<span class="mx-ni-impact med">{{ t('MED','中') }}</span>{% endif %}{% if h.pub_date %}<span class="mx-ni-date">{{ h.pub_date[:10] }}</span>{% endif %} {{ h.source_name or h.domain }}{% if h.importance_score %} · {{ h.importance_score }}{% endif %} <span class="nb-chev">▾</span></span>
-              </summary>
-              <div class="nb-body">
-                <p class="nb-sumtext">
-                  <span class="l-en">A <b>{{ h.importance }}</b>-impact <b>{{ tl_nb[0] }}</b> headline{% if h.tickers %} in focus on {{ h.tickers[:3]|join(', ') }}{% endif %}{% if h.channels %}, touching {{ (h.channels[:3]|map('replace','_',' ')|list)|join(', ') }}{% endif %}. — {{ h.source_name or h.domain }}</span>
-                  {# BIL-02: translate EN importance + channel slugs in ZH body #}
-                  {% set _imp_zh = {'high':'高','critical':'极高','medium':'中','low':'低'} %}
-                  {% set _ch_zh_nb = {'monetary':'利率政策','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股'} %}
-                  <span class="l-zh">一条<b>{{ _imp_zh.get(h.importance, h.importance) }}</b>影响级的<b>{{ tl_nb[1] }}</b>新闻{% if h.tickers %}，聚焦 {{ h.tickers[:3]|join('、') }}{% endif %}{% if h.channels %}，涉及 {% for _ch in h.channels[:3] %}{{ _ch_zh_nb.get(_ch, _ch|replace('_',' ')) }}{% if not loop.last %}、{% endif %}{% endfor %}{% endif %}。 — {{ h.source_name or h.domain }}</span>
-                </p>
-                {% if h.channels or h.tickers %}
-                <div class="nb-tags">
-                  {% for c in h.channels[:4] %}<span class="nb-pill">{{ c|replace('_',' ') }}</span>{% endfor %}
-                  {% for tk in h.tickers[:5] %}<span class="nb-pill tk">{{ tk }}</span>{% endfor %}
-                </div>
-                {% endif %}
-                <a class="nb-read" href="{{ h.url }}" target="_blank" rel="noopener">{{ t('Read source','阅读原文') }} →</a>
-              </div>
-            </details>
-            {% endfor %}
-          </div>
-          <div class="nb-foot">
-            <a href="news.html" style="color:var(--link);font-weight:700">{{ t('Open the full news feed','打开完整新闻流') }} →</a>
-            {% if macro_news.n_kept %}<span>{{ macro_news.n_kept }} {{ t('stories kept','保留条目') }}{% if macro_news.n_raw %} · {{ macro_news.n_raw }} {{ t('scanned','已扫描') }}{% endif %}</span>{% endif %}
-            {% if macro_catalysts %}<span class="nb-cat" style="margin-left:auto">{{ t('Next catalyst','下个催化') }}: <b>{{ macro_catalysts[0].date }}</b> {{ macro_catalysts[0].type }} <span class="l-en">{{ macro_catalysts[0].label }}</span><span class="l-zh">{{ macro_catalysts[0].get('label_zh') or macro_catalysts[0].label }}</span></span>{% endif %}
-          </div>
-          {% else %}
-          <p class="muted sm">{{ t('No macro headlines right now — the fetch is off or the tape is quiet. Catalysts above remain live.','暂无宏观头条 — 抓取关闭或行情平静。上方日程仍保持更新。') }}</p>
-          {% endif %}
-        </div>{# /now-board #}
-        <div class="isle-stamp">
-          {% if macro_news and macro_news.generated_at %}<span class="l-en">as of {{ macro_news.generated_at[:10] }}</span><span class="l-zh">{{ macro_news.generated_at[:10] }} 数据</span>{% elif latest and latest.date %}<span class="l-en">as of {{ latest.date }}</span><span class="l-zh">{{ latest.date }} 数据</span>{% endif %}
-        </div>
-      </div></div>{# /sx-island + sx-tray-inner-wrap #}
-    </div>
   </div>{# /sx-news-v2 #}
   {% endif %}{# /mode != stocks #}
 
@@ -8509,38 +7524,6 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <a class="mx5-deep-chip" href="macro_signals.html"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
         <a class="mx5-deep-chip" href="china_intel.html"><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
       </div>
-    </div>
-    <div class="sx-tray">
-      <div class="sx-tray-inner-wrap"><div class="sx-island">
-        <div class="isle-head isle-stagger isle-s1">
-          <div class="isle-head-dot"></div>
-          <span class="isle-head-label"><span class="l-en">Deep Context — Linked Surfaces</span><span class="l-zh">深度背景 — 关联页面</span></span>
-          <div class="isle-head-line"></div>
-        </div>
-        <div class="isle-linkouts isle-stagger isle-s2">
-          <a class="isle-lout" href="macro_context.html"><span class="isle-lout-icon">🌐</span><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></a>
-          <a class="isle-lout" href="aibrief.html"><span class="isle-lout-icon">🤖</span><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></a>
-          <a class="isle-lout" href="sector_central.html"><span class="isle-lout-icon">📊</span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
-          <a class="isle-lout" href="news.html"><span class="isle-lout-icon">📰</span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></a>
-          <a class="isle-lout" href="committee.html"><span class="isle-lout-icon">🧠</span><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
-          <a class="isle-lout" href="macro_signals.html"><span class="isle-lout-icon">⚡</span><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
-          <a class="isle-lout" href="china_intel.html"><span class="isle-lout-icon">🇨🇳</span><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
-          {# INT-01dt: oracle.html does not exist in site/ — link to subsector_rotation.html (oracle's surface) #}
-          <a class="isle-lout" href="subsector_rotation.html"><span class="isle-lout-icon">🔮</span><span class="l-en">Oracle Rotation</span><span class="l-zh">轮动分析</span></a>
-        </div>
-        {# Data health anchor — #health id is on the standalone health panel below for deep-link #}
-        {% if health %}
-        {% set _bad_h = health|rejectattr('status','equalto','ok')|rejectattr('status','equalto','blocked')|list %}
-        <div class="isle-deep-health isle-stagger isle-s3" id="health-summary">
-          {# INT-04: clicking 'details ↓' opens the health <details> then scrolls (INT-05: reduced-motion gate) #}
-          <span class="l-en">Data health: {% if _bad_h %}{{ _bad_h|length }} sources need attention{% else %}all sources OK{% endif %} · {{ health|length }} sources · <a href="#health" class="muted" onclick="var d=document.getElementById('health');if(d){d.open=true;var pr=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;d.scrollIntoView({behavior:pr?'auto':'smooth',block:'start'});}return false;">details ↓</a></span>
-          <span class="l-zh">数据健康度：{% if _bad_h %}{{ _bad_h|length }} 个来源需关注{% else %}全部正常{% endif %} · {{ health|length }} 个来源 · <a href="#health" class="muted" onclick="var d=document.getElementById('health');if(d){d.open=true;var pr=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;d.scrollIntoView({behavior:pr?'auto':'smooth',block:'start'});}return false;">详情 ↓</a></span>
-        </div>
-        {% endif %}
-        <div class="isle-stamp">
-          {% if latest and latest.date %}<span class="l-en">as of {{ latest.date }}</span><span class="l-zh">{{ latest.date }} 数据</span>{% endif %}
-        </div>
-      </div></div>{# /sx-island + sx-tray-inner-wrap #}
     </div>
   </div>{# /sx-deep-context #}
 
@@ -8729,11 +7712,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <span class="l-en">For consensus vs trend skew, revision expectations, and historical reaction patterns — open the Release Radar below.</span>
           <span class="l-zh">如需查看共识预期偏差、修订预期和历史反应规律，请在下方打开数据发布雷达。</span>
         </div>
-        <button class="mx5-dlg-rr-link" type="button" onclick="
-          mx5CloseDlg();
-          var rrSec = document.getElementById('release-radar');
-          if(rrSec){ rrSec.scrollIntoView({behavior:'smooth',block:'start'}); }
-        " aria-label="Open Release Radar">
+        <button class="mx5-dlg-rr-link" type="button" onclick="mx5CloseDlg(); if(window.mmOpenFirstRR) window.mmOpenFirstRR();" aria-label="Open Release Radar">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
           <span class="l-en">Open Release Radar</span>
           <span class="l-zh">打开数据发布雷达</span>
@@ -9069,19 +8048,31 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         {% set fe = fear_euphoria if fear_euphoria is defined else none %}
         {% set fg = fear_greed if fear_greed is defined else none %}
         {% if ff is not none or fe is not none or fg is not none %}
-          {% set _ff_score = ff.score if (ff is not none and ff.score is defined and ff.score is not none) else none %}
+          {% set _ff_score = (ff.score if (ff.score is defined and ff.score is not none) else (ff.headline if (ff.headline is defined and ff.headline is not none) else none)) if ff is not none else none %}
           {% set _ff_x = ff.euphoria_z if (ff is not none and ff.euphoria_z is defined) else none %}
           {% set _ff_y = ff.fragility_z if (ff is not none and ff.fragility_z is defined) else none %}
-          {% set ax = (_ff_x * 16.67 + 50) | round | int if _ff_x is not none else none %}
-          {% set bx = (_ff_y * 16.67 + 50) | round | int if _ff_y is not none else none %}
+          {% set ax = (_ff_x * 16.67 + 50) | round | int if _ff_x is not none else ((ff.face_a.score | round | int) if (ff is not none and ff.face_a is defined and ff.face_a.score is defined and ff.face_a.score is not none) else none) %}
+          {% set bx = (_ff_y * 16.67 + 50) | round | int if _ff_y is not none else ((ff.face_b.score | round | int) if (ff is not none and ff.face_b is defined and ff.face_b.score is defined and ff.face_b.score is not none) else none) %}
           {% set _fg_val = fg.dial if (fg and fg.dial is defined and fg.dial is not none) else none %}
           {% set _fg_zone = fg.label_en if (fg and fg.label_en is defined) else 'Neutral' %}
           {% set _fg_zh = fg.label_zh if (fg and fg.label_zh is defined) else _fg_zone %}
           {% set _fe_bull = fe.bull_pct if (fe and fe.bull_pct is defined and fe.bull_pct is not none) else none %}
           {% set _fe_bear = fe.bear_pct if (fe and fe.bear_pct is defined and fe.bear_pct is not none) else none %}
 
-          <div class="mx2-risk-section">
-            <div class="mx2-risk-section-hd"><span class="l-en">Market Sentiment</span><span class="l-zh">市场情绪</span></div>
+          <div class="mx2-risk-section" id="sentiment-regime">
+            <div class="mx2-risk-section-hd">{{ t('Fear ↔ Euphoria: regime synthesis','恐惧 ↔ 欣喜：周期综合') }}</div>
+            {% if fe is not none and fe.fe_score is defined and fe.fe_score is not none %}
+            {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
+            <div class="mx2-sent-row">
+              <div class="mx2-sent-key"><span class="num">{{ fe.fe_score }}</span>
+                <span class="chip {{ 'c-down' if fe.band in ['Panic','Fear'] else ('c-up' if fe.band in ['Greed','Euphoria'] else 'c-muted') }}">{{ t(fe.band, _bandzh.get(fe.band, fe.band)) }}</span>
+              </div>
+              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:{{ fe.fe_score }}%;background:{{ 'var(--down)' if fe.fe_score < 30 else ('var(--warn)' if fe.fe_score < 50 else 'var(--up)') }}"></div></div>
+            </div>
+            <div class="grad-labels" style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:6px">
+              <span>{{ t('Panic','恐慌') }}</span><span>{{ t('Fear','恐惧') }}</span><span>{{ t('Neutral','中性') }}</span><span>{{ t('Greed','贪婪') }}</span><span>{{ t('Euphoria','欣喜') }}</span>
+            </div>
+            {% endif %}
 
             {% if _fg_val is not none %}
             <div class="mx2-sent-row">
@@ -9093,10 +8084,13 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             {% endif %}
 
             {% if _ff_score is not none %}
-            <div class="mx2-sent-row">
-              <div class="mx2-sent-key">{{ t('Froth/Fragility','泡沫/脆弱') }}</div>
+            <div class="mx2-sent-row" id="froth-fragility">
+              <div class="mx2-sent-key">{{ t('Froth & Fragility','狂热与脆弱') }}</div>
               <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:{{ _ff_score }}%;background:{{ 'var(--warn)' if _ff_score >= 60 else 'var(--muted)' }}"></div></div>
-              <div class="mx2-sent-val"><span class="num">{{ _ff_score }}</span></div>
+              <div class="mx2-sent-val"><span class="num">{{ _ff_score|round|int }}</span>
+                {% if ff.band is defined and ff.band %}<span class="l-en">{{ ff.band|capitalize }}</span><span class="l-zh">{{ ff.band_zh if (ff.band_zh is defined and ff.band_zh) else ff.band }}</span>{% endif %}
+                {% if ff.provisional is defined and ff.provisional %}<span class="l-en muted"> provisional</span><span class="l-zh muted"> 暂定</span>{% endif %}
+              </div>
             </div>
             {% endif %}
 
@@ -9108,10 +8102,13 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             </div>
             {% endif %}
 
+            {% if ff is not none and ff.quadrant_en is defined and ff.quadrant_en %}
+            <div class="muted sm" style="margin:4px 0"><span class="l-en">{{ ff.quadrant_en }}</span><span class="l-zh">{{ ff.quadrant_zh if (ff.quadrant_zh is defined and ff.quadrant_zh) else ff.quadrant_en }}</span></div>
+            {% endif %}
             {% if ax is not none and bx is not none %}
             <div class="froth-split">
               <div class="froth-split-item"><div class="froth-split-lbl">{{ t('Euphoria','欣喜') }}</div><div class="froth-split-val">{{ ax|round|int }}</div></div>
-              <div class="froth-split-item"><div class="froth-split-lbl">{{ t('Fragility','脆弱') }}</div><div class="froth-split-val">{{ bx|round|int }}</div></div>
+              <div class="froth-split-item"><div class="froth-split-lbl"><span class="l-en">Fragility / distribution</span><span class="l-zh">脆弱／派发</span></div><div class="froth-split-val">{{ bx|round|int }}</div></div>
             </div>
             <div class="muted sm" style="margin-top:8px">{% if ff.track_record and ff.track_record.n %}{{ t('Forward record','前瞻记录') }}: {{ ff.track_record.n }} {{ t('firings','次触发') }} · {{ (ff.track_record.hit_rate * 100)|round|int }}% {{ t('hit','命中') }}. {% else %}{{ t('Forward record accruing.','前瞻记录积累中。') }} {% endif %}{{ t('Display-only — the response is sizing, not selection.','仅供展示——应对是调整仓位，而非选股。') }}</div>
             {% endif %}
@@ -9579,6 +8576,17 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       if(_dlgActive) window.mx5CloseDlg();
       var dlg = document.getElementById(id);
       if(!dlg) return;
+      /* Heatmap adoption: on first open of dlg-markets, move #heatmap-scorecard into the
+         dialog placeholder so it renders at 920px dialog scale (idempotent). */
+      if(id === 'dlg-markets'){
+        var hmSrc = document.getElementById('heatmap-scorecard');
+        var hmDst = document.getElementById('dlg-heatmap-scorecard');
+        if(hmSrc && hmDst && hmDst !== hmSrc.parentNode){
+          hmDst.appendChild(hmSrc);
+          var stage = document.querySelector('.mx5-hm-stage');
+          if(stage && stage.parentNode) stage.parentNode.removeChild(stage);
+        }
+      }
       _dlgTrigger = document.activeElement;
       _dlgActive = dlg;
       dlg.classList.add('open');
