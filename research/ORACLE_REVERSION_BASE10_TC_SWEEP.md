@@ -1,6 +1,6 @@
 # Oracle Reversion Base (10 non-SEQ rows) — Time-Shift Placebo Sweep + Episode-Cluster CIs
 
-**RE-CHECK — adjudication pending (Fable). No verdict is changed by this document.**
+**RE-CHECK — ADJUDICATED 2026-07-13: RC-RUL-6 (`research/TIME_CONFOUND_RECHECK_ADJUDICATION.md`). No verdict was changed by this document; see the adjudication postscript at the bottom.**
 
 Date: 2026-07-07  |  Seed: 20260705  |  Draws: 2000  |  Script: `scripts/research/oracle_reversion_base10_tc_sweep.py`
 
@@ -123,6 +123,42 @@ survives temporal-structure preservation.
 - Heavy panels are read from the main checkout's `data/` (gitignored stores; asof 2026-07-05,
   the same stores the published blocks were re-verified against).
 
-*RE-CHECK artifact. No verdict is changed. Display statuses stay `screened`. Adjudication
-pending (Fable). Per RC-RUL-5 ruling 5 and the time-preserving-null standing law, this sweep
-is the pre-condition for any future promotion of these rows beyond display.*
+---
+
+## Adjudication postscript (RC-RUL-6, 2026-07-13)
+
+Adjudicated by Fable after independent implementation review and statistical red-team. Full
+ruling text: `research/TIME_CONFOUND_RECHECK_ADJUDICATION.md` RC-RUL-6. Outcome: all 10 rows
+stay `screened`; affirmative time-preserving timing evidence NOT ESTABLISHED for 8/10 rows
+(7 tier-S + RSLAG p=.058); M1 (p=.041) and SRM (p=.019) clears are promotion-ENABLING only,
+with M1 ranked first for any future prereg; promotion stays blocked for all 10 pending a
+pre-registered adequately-powered time-preserving placebo.
+
+### Holdout coverage disclosure (RC-RUL-6 ruling 6 — required alongside any holdout CI)
+
+The holdout table above prints episode counts but suppressed the independent-time columns the
+JSON artifact carries. Corrective disclosure (holdout calendar months from
+`episode_coverage.n_months_hold`):
+
+| row | holdout episodes | holdout months |
+|---|---|---|
+| A15_WASHOUT_OPP_OUT_2NODE | 53 | 26 |
+| B4_WASHOUT_DOLLAR_RELIEF | 164 | 42 |
+| B4_EP_SAME_OUT_CREDIT_EASE | 109 | 36 |
+| R16_VBOT_ACCELZ_NEG2_K_LOW | 83 | 26 |
+| E_DOLLAR_EASE_TLT_POS_K25 | 131 | 29 |
+| R3_B2_ACCELZ_NEG15_K20 | 110 | 35 |
+| R4_E10_OIL_EASE_K30_VIX40 | 171 | 40 |
+| M1_OIL_DOWN_K30_RS_NEG | 307 | 25 |
+| SRM_BEARTAPE_ACCEL_K20 | 402 | **4** |
+| RSLAG_OVERSOLD_K20 | 420 | 28 |
+
+**SRM_BEARTAPE_ACCEL_K20 in particular:** its holdout WR CI [0.764, 0.836] is bootstrapped
+over 402 node-episodes spanning **4 calendar months / 23 distinct risk-off dates** (median 11
+nodes co-firing per date, per registry `reversion.oos_holdout`). Read as 402 independent units
+it is drastically anti-conservative; it must never be cited without this coverage line.
+
+*RE-CHECK artifact, adjudicated (RC-RUL-6). No verdict was changed. Display statuses stay
+`screened`. Per RC-RUL-5 ruling 5 and the time-preserving-null standing law, this sweep is the
+pre-condition for any future promotion of these rows beyond display — and per RC-RUL-6 it does
+not itself authorize any.*
