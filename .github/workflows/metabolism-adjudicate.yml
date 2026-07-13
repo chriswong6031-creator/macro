@@ -70,6 +70,8 @@ jobs:
       - name: ADJUDICATE (orchestrator + adversary + resolve → governance row-pair)
         env:
           AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          METAB_INTENSITY: ${{ vars.METAB_INTENSITY }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           FORCE_RUN: ${{ github.event.inputs.force_run }}
           CYCLE_ID: ${{ github.event.inputs.cycle_id }}
           BRANCH_INPUT: ${{ github.event.inputs.branch }}

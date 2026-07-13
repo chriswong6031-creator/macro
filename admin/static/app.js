@@ -1987,6 +1987,68 @@ RENDER.metabolism = async () => {
     </tbody></table>`;
   })();
 
+  // --- Throttle section (V10) ---
+  const thr = d.throttle || {};
+  const thrIntensity = thr.intensity || {};
+  const thrPace = thr.pace || {};
+  const thrKeys = thr.keys_enabled || {};
+
+  function thrSelectorHtml(id, label, options, currentEffective) {
+    return `<div style="margin-bottom:10px"><span class="sub">${esc(label)}</span><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">` +
+      options.map(opt =>
+        `<button class="btn${opt === currentEffective ? " primary" : ""}" data-thr-sel="${esc(id)}" data-thr-val="${esc(opt)}" style="min-width:60px">${esc(opt)}</button>`
+      ).join("") +
+      `</div></div>`;
+  }
+
+  const throttleHtml = `
+    <div style="margin-bottom:8px">
+      ${thrIntensity.value != null ? `<div class="kv"><span>METAB_INTENSITY (repo var)</span><b class="mono">${esc(thrIntensity.value)}</b></div>` : ""}
+      ${thrPace.value != null ? `<div class="kv"><span>METAB_PACE (repo var)</span><b class="mono">${esc(thrPace.value)}</b></div>` : ""}
+      ${thrKeys.value != null ? `<div class="kv"><span>METAB_KEYS_ENABLED (repo var)</span><b class="mono">${esc(thrKeys.value) || "(empty = all keys)"}</b></div>` : ""}
+      ${thr.note ? `<div class="sub muted" style="margin-top:4px">${esc(thr.note)}</div>` : ""}
+    </div>
+    ${thrSelectorHtml("intensity", "Intensity", thrIntensity.allowed || ["low","normal","high","max"], thrIntensity.effective || "normal")}
+    ${thrSelectorHtml("pace", "Pace", thrPace.allowed || ["single","2x","4x"], thrPace.effective || "single")}
+    <div style="margin-bottom:10px">
+      <span class="sub">Keys enabled (csv of 1/2/3/legacy — empty = all)</span>
+      <div style="display:flex;gap:8px;margin-top:4px;align-items:center;flex-wrap:wrap">
+        <input id="thrKeysInput" type="text" value="${esc(thrKeys.value || "")}" placeholder="e.g. 1,2,3,legacy or empty for all" style="padding:4px 8px;background:var(--bg2,#1e1e2e);border:1px solid var(--border,#333);color:var(--text,#ccc);border-radius:4px;width:240px">
+        <button class="btn" id="thrKeysSetBtn">Set keys_enabled</button>
+      </div>
+      <div class="sub muted" style="margin-top:4px">1=claude_code_oauth_1, 2=claude_code_oauth_2, 3=claude_code_oauth_3, legacy=CLAUDE_CODE_OAUTH_TOKEN</div>
+    </div>`;
+
+  // --- Run-now section (V10) ---
+  const lobeDatalist = `<datalist id="lobeList"><option value="til"><option value="site-us-standouts"><option value="site-china-standouts"></datalist>`;
+  const runNowHtml = `
+    ${lobeDatalist}
+    <div style="margin-bottom:10px">
+      <span class="sub">Lobe (optional — empty = all managed lobes)</span>
+      <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;align-items:center">
+        <input id="runLobeInput" type="text" list="lobeList" placeholder="e.g. til" style="padding:4px 8px;background:var(--bg2,#1e1e2e);border:1px solid var(--border,#333);color:var(--text,#ccc);border-radius:4px;width:180px">
+        <button class="btn" onclick="document.getElementById('runLobeInput').value='til'">Main lobe (til)</button>
+      </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <span class="sub">Stages (for Full cycle only)</span>
+      <div style="margin-top:4px">
+        <select id="runStagesSelect" style="padding:4px 8px;background:var(--bg2,#1e1e2e);border:1px solid var(--border,#333);color:var(--text,#ccc);border-radius:4px">
+          <option value="">full (default)</option>
+          <option value="full">full</option>
+          <option value="sense">sense</option>
+          <option value="through-adjudicate">through-adjudicate</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn primary" data-run-mode="cycle">▶ Full cycle</button>
+      <button class="btn" data-run-mode="agenda">Agenda</button>
+      <button class="btn" data-run-mode="propose">Propose</button>
+      <button class="btn" data-run-mode="adjudicate">Adjudicate</button>
+      <button class="btn" data-run-mode="build">Build</button>
+    </div>`;
+
   v.innerHTML = `
     <div class="section">Autonomous Loop Switch</div>
     <div class="card">
@@ -1995,10 +2057,16 @@ RENDER.metabolism = async () => {
       <div class="kv" style="margin-top:12px"><span>AUTONOMY_PAUSED variable</span><b class="mono">${esc(d.variable_value != null ? String(d.variable_value) : "(not set)")}</b></div>
       <div class="kv"><span>Freezes (last 7d)</span><b>${d.freezes_7d != null ? d.freezes_7d : "—"}</b></div>
     </div>
+    <div class="section">Metabolism Throttle</div>
+    <div class="card" id="metThrCard">${d.has_token ? throttleHtml : `<div class="sub muted">GitHub token required to read/set throttle variables.</div>`}</div>
+    <div class="section">Run Now</div>
+    <div class="card" id="metRunCard">${d.has_token ? runNowHtml : `<div class="sub muted">GitHub token required to dispatch workflows.</div>`}</div>
     <div class="section">Organism State</div>
     <div class="card">${orgHtml}</div>
     <div class="section">Key Pool</div>
     <div class="card">${keysHtml}</div>
+    <div class="section">Key Usage</div>
+    <div class="card" id="metKeysCard"><div class="sub muted">Loading key usage…</div></div>
     <div class="section">Recent Metabolism Runs <span class="cnt">${(d.runs || []).length}</span></div>
     <div class="card">${runsHtml}</div>
     <div class="section">Change History <span class="cnt" id="mhCnt"></span></div>
@@ -2009,6 +2077,123 @@ RENDER.metabolism = async () => {
     </div>
     <div class="section" style="margin-top:20px">Break-glass</div>
     <div class="card sub muted">Emergency stop: this switch, or <code>gh variable set AUTONOMY_PAUSED --body true</code>, or disable the metabolism workflows in GitHub Actions.</div>`;
+
+  // Wire throttle selector buttons
+  if (d.has_token) {
+    v.querySelectorAll("[data-thr-sel]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const field = btn.dataset.thrSel;
+        const val = btn.dataset.thrVal;
+        if (!window.confirm(`Set ${field} = "${val}"?`)) return;
+        btn.disabled = true;
+        const r = await post("/api/metabolism/throttle", { [field]: val, confirm: true });
+        if (r.ok) {
+          toast(`Set ${field} = ${val}`);
+          RENDER.metabolism();
+        } else {
+          const errMsg = r.errors ? JSON.stringify(r.errors) : (r.error || "unknown error");
+          alert(`Failed: ${errMsg}`);
+          btn.disabled = false;
+        }
+      });
+    });
+
+    const keysSetBtn = $("#metKeysSetBtn", v);
+    if (keysSetBtn) {
+      keysSetBtn.addEventListener("click", async () => {
+        const val = ($("#thrKeysInput", v) || {}).value || "";
+        if (!window.confirm(`Set keys_enabled = "${val || "(empty = all keys)"}"?`)) return;
+        keysSetBtn.disabled = true;
+        const r = await post("/api/metabolism/throttle", { keys_enabled: val, confirm: true });
+        if (r.ok) {
+          toast(`Set METAB_KEYS_ENABLED = "${val || ""}"`);
+          RENDER.metabolism();
+        } else {
+          const errMsg = r.errors ? JSON.stringify(r.errors) : (r.error || "unknown error");
+          alert(`Failed: ${errMsg}`);
+          keysSetBtn.disabled = false;
+        }
+      });
+    }
+
+    v.querySelectorAll("[data-run-mode]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const mode = btn.dataset.runMode;
+        const lobe = ($("#runLobeInput", v) || {}).value || "";
+        const stagesEl = $("#runStagesSelect", v);
+        const stages = stagesEl ? stagesEl.value : "";
+        const label = mode === "cycle" ? "Full cycle" : mode.charAt(0).toUpperCase() + mode.slice(1);
+        const lobeNote = lobe ? ` (lobe: ${lobe})` : "";
+        const stagesNote = (mode === "cycle" && stages) ? ` stages: ${stages}` : "";
+        if (!window.confirm(`Dispatch ${label}${lobeNote}${stagesNote}?`)) return;
+        btn.disabled = true;
+        const body = { mode, confirm: true };
+        if (lobe) body.lobe = lobe;
+        if (stages && mode === "cycle") body.stages = stages;
+        const r = await post("/api/metabolism/run", body);
+        if (r.ok) {
+          toast(`Dispatched ${label}${lobeNote}`);
+        } else {
+          alert(`Dispatch failed: ${r.error || "unknown error"}`);
+        }
+        btn.disabled = false;
+      });
+    });
+  }
+
+  // Async Key Usage loader (V10)
+  (async () => {
+    const keysCard = $("#metKeysCard");
+    if (!keysCard) return;
+    let ku;
+    try {
+      ku = await api("/api/metabolism/keys");
+    } catch (e) {
+      const kc = $("#metKeysCard");
+      if (kc) kc.innerHTML = `<div class="sub muted">Could not load key usage: ${esc(String(e))}</div>`;
+      return;
+    }
+    const kc = $("#metKeysCard");
+    if (!kc) return;
+    if (ku && ku.error) {
+      kc.innerHTML = `<div class="sub muted">${esc(ku.error)}</div>`;
+      return;
+    }
+    const rows = Array.isArray(ku) ? ku : [];
+    if (!rows.length) {
+      kc.innerHTML = `<div class="sub muted">No key usage data available.</div>`;
+      return;
+    }
+    const fmtTokens = (n) => n == null ? "—" : Number(n) >= 1000 ? `${(Number(n)/1000).toFixed(1)}k` : String(n);
+    kc.innerHTML = `<table><thead><tr>
+      <th>Key ID</th><th>Enabled</th><th>Cooling</th><th>Reset hint</th>
+      <th class="r">5h est tokens</th><th class="r">5h sessions</th>
+      <th class="r">7d est tokens</th><th class="r">7d sessions</th>
+      <th>Last outcome</th><th>Reported rate-limit headers</th>
+    </tr></thead><tbody>
+    ${rows.map(k => {
+      const coolLabel = k.cooling ? (k.cool_kind ? `<span class="statpill s-warn">${esc(k.cool_kind)}</span>` : `<span class="statpill s-warn">cooling</span>`) : `<span class="statpill s-ok">ok</span>`;
+      const enabledLabel = k.enabled ? `<span class="statpill s-ok">on</span>` : `<span class="statpill s-bad">off</span>`;
+      const presentLabel = k.present ? "" : ` <span class="statpill s-mut">absent</span>`;
+      const headers = k.ratelimit_headers && typeof k.ratelimit_headers === "object"
+        ? Object.entries(k.ratelimit_headers).map(([h, hv]) => `<div class="sub mono">${esc(h)}: <b>${esc(String(hv))}</b> <span class="muted">(reported)</span></div>`).join("")
+        : `<span class="muted sub">—</span>`;
+      return `<tr>
+        <td class="mono">${esc(k.key_id || "—")}${presentLabel}</td>
+        <td>${enabledLabel}</td>
+        <td>${coolLabel}</td>
+        <td class="sub mono">${esc(k.reset_hint || "—")}</td>
+        <td class="r">${fmtTokens(k.window_5h_est_tokens)} <span class="muted sub">est.</span></td>
+        <td class="r">${k.window_5h_sessions != null ? k.window_5h_sessions : "—"}</td>
+        <td class="r">${fmtTokens(k.weekly_est_tokens)} <span class="muted sub">est.</span></td>
+        <td class="r">${k.weekly_sessions != null ? k.weekly_sessions : "—"}</td>
+        <td>${k.last_outcome ? `<span class="statpill ${k.last_outcome === "ok" ? "s-ok" : "s-bad"}">${esc(k.last_outcome)}</span>` : `<span class="muted sub">—</span>`}</td>
+        <td style="max-width:320px">${headers}</td>
+      </tr>`;
+    }).join("")}
+    </tbody></table>
+    <div class="sub muted" style="margin-top:8px">est. = locally-observed rolling window estimate · reported = Anthropic response header value</div>`;
+  })();
 
   const btn = $("#metToggleBtn");
   if (btn) {

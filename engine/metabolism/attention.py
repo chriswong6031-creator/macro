@@ -499,9 +499,21 @@ def effective_docket_size(
     root: Path | None = None,
     allocation: dict | None = None,
 ) -> int:
-    """Scale base_size by docket_share for the lobe's band.
+    """Scale base_size by docket_share for the lobe's band, then apply V10 intensity.
 
-    DORMANT → 0. Never exceeds base_size (G5). NEVER raises.
+    DORMANT → 0 (at every intensity level, per G5/R-V10-1).
+
+    Non-DORMANT computation (V10):
+        scaled = floor(base_size * share * intensity_multiplier())
+        result = min(max(1, scaled), base_size)
+
+    G5 clamp: intensity can only fill up to the immutable cap (base_size), never
+    past it.  The intensity multiplier is applied AFTER the attention share so
+    that operator throttle and attention-band share compose multiplicatively.
+
+    Throttle import failures fall back to multiplier 1.0 (V9 behaviour preserved).
+
+    NEVER raises.
     """
     try:
         b = band_for(lobe_id, allocation=allocation, root=root)
@@ -509,8 +521,18 @@ def effective_docket_size(
             return 0
         cfg = load_attention_config(root=root)
         share = cfg["docket_share"].get(b, 0.6)
-        scaled = floor(base_size * share)
+
+        # V10: apply intensity multiplier after attention share (fail-open)
+        try:
+            from engine.metabolism import throttle  # noqa: PLC0415
+            mult = throttle.intensity_multiplier()
+        except Exception as exc:  # noqa: BLE001
+            log.debug("attention.effective_docket_size: throttle import failed (%s) — mult=1.0", exc)
+            mult = 1.0
+
+        scaled = floor(base_size * share * mult)
         result = max(1, scaled)
+        # G5 clamp: intensity never exceeds the immutable base_size cap
         return min(result, base_size)
     except Exception as exc:  # noqa: BLE001
         log.debug("attention.effective_docket_size: %s", exc)

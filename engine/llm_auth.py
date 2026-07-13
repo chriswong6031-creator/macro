@@ -428,12 +428,63 @@ def build_providers(
         if tok is None:
             return None
         try:
-            import anthropic
+            import anthropic  # noqa: PLC0415
+            import httpx  # noqa: PLC0415
             hdrs = {"anthropic-beta": OAUTH_BETA}
             if extra_headers:
                 hdrs.update(extra_headers)
-            client = anthropic.Anthropic(api_key=None, auth_token=tok,
-                                         default_headers=hdrs)
+
+            # V10 usage-header capture: attach a response event hook that
+            # records anthropic-ratelimit-* headers from every response.
+            # The key identity for the hook is cap_id (pool key) or "legacy".
+            _hook_key_id = cap_id if cap_id else "legacy"
+
+            def _usage_hook(response: httpx.Response) -> None:  # type: ignore[name-defined]
+                try:
+                    from engine.neuralweb import key_pool as _kp  # noqa: PLC0415
+                    _kp.record_usage_headers(
+                        _hook_key_id,
+                        dict(response.headers),
+                        response.status_code,
+                    )
+                except Exception as _hook_exc:  # noqa: BLE001
+                    log.debug(
+                        "llm_auth: usage hook failed for key_id=%s (%s)",
+                        _hook_key_id, _hook_exc,
+                    )
+
+            # Build the httpx client with the usage hook.  Both construction
+            # paths are wrapped: if the hook-bearing client cannot be built
+            # (e.g. mocked SDK in tests, env without httpx), we fall back to
+            # no custom http_client so existing call paths remain unaffected.
+            http_client = None
+            try:
+                http_client = anthropic.DefaultHttpxClient(
+                    event_hooks={"response": [_usage_hook]}
+                )
+            except Exception:  # noqa: BLE001
+                try:
+                    # Fallback: plain httpx.Client mirroring the SDK's default
+                    # timeout (600s read) so long Opus completions are not
+                    # silently truncated; getattr guards stubbed SDK in tests.
+                    http_client = httpx.Client(
+                        timeout=getattr(
+                            anthropic, "DEFAULT_TIMEOUT",
+                            httpx.Timeout(600.0, connect=5.0),
+                        ),
+                        event_hooks={"response": [_usage_hook]},
+                    )
+                except Exception:  # noqa: BLE001
+                    http_client = None  # give up on the hook; call still works
+
+            client_kwargs: dict = {
+                "api_key": None,
+                "auth_token": tok,
+                "default_headers": hdrs,
+            }
+            if http_client is not None:
+                client_kwargs["http_client"] = http_client
+            client = anthropic.Anthropic(**client_kwargs)
             prov = {"name": "oauth", "env_var": env, "cred": tok,
                     "client": client, "model": opus}
             if cap_id:
@@ -461,9 +512,24 @@ def build_providers(
                         out.append(prov)
             env = cfg.get("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN")
             if env and env not in pool_envs:
-                prov = _mk_oauth_provider(env)
-                if prov is not None:
-                    out.append(prov)
+                # V10: skip the legacy single-token provider when the operator
+                # has explicitly disabled it via METAB_KEYS_ENABLED.  Scoped to
+                # POOL-AWARE (metabolism) lanes only — callers without
+                # oauth_pool_lane (cortex, whitehouse, altdata, …) are W2 scope
+                # and must be provably unaffected even if the env var leaks
+                # into their environment.  Any error → include (fail-open,
+                # R-V10-2).
+                _legacy_enabled = True
+                if lane:
+                    try:
+                        from engine.neuralweb import key_pool as _kp  # noqa: PLC0415
+                        _legacy_enabled = _kp.is_enabled("legacy")
+                    except Exception as _e:  # noqa: BLE001
+                        log.debug("llm_auth: key_pool.is_enabled('legacy') failed (%s) — including legacy provider", _e)
+                if _legacy_enabled:
+                    prov = _mk_oauth_provider(env)
+                    if prov is not None:
+                        out.append(prov)
 
         elif p == "anthropic":
             env = cfg.get("api_key_env", "ANTHROPIC_API_KEY")

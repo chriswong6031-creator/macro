@@ -59,6 +59,8 @@ jobs:
       - name: AGENDA (build organism_state → run all emitters → set agenda)
         env:
           AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          METAB_INTENSITY: ${{ vars.METAB_INTENSITY }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           FORCE_RUN: ${{ github.event.inputs.force_run }}
           CYCLE_INPUT: ${{ github.event.inputs.cycle_id }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

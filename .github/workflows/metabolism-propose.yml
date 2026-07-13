@@ -25,6 +25,10 @@ on:
         description: "Cycle id (default: a fresh one is generated)"
         type: string
         default: ""
+      lobe:
+        description: "Single lobe id to propose (empty = all loop-managed lobes)"
+        type: string
+        default: ""
       force_run:
         description: "Force even when AUTONOMY_PAUSED=true (ops verification only)"
         type: boolean
@@ -69,7 +73,10 @@ jobs:
       - name: PROPOSE (build docket + register contracts + draft PR)
         env:
           AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          METAB_INTENSITY: ${{ vars.METAB_INTENSITY }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           FORCE_RUN: ${{ github.event.inputs.force_run }}
+          LOBE_INPUT: ${{ github.event.inputs.lobe }}
           CYCLE_INPUT: ${{ github.event.inputs.cycle_id }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
@@ -104,11 +111,16 @@ jobs:
           # SENSE (A3): refresh the TIL fitness card the proposer reads. Best-effort.
           python -m scripts.build_til_fitness || echo "SENSE fitness build degraded (continuing)"
 
-          # PROPOSE (A4, R-V6-5): iterates ALL loop-managed lobes (--all-lobes).
-          # Today that set is exactly {til}, so behavior is byte-identical to --lobe til
+          # PROPOSE (A4, R-V6-5): iterates ALL loop-managed lobes (--all-lobes) by default.
+          # When LOBE_INPUT is set (chain-runner single-lobe mode), run --lobe <id> instead.
+          # Today the full set is exactly {til}, so --all-lobes is byte-identical to --lobe til
           # until the first genesis lobe matures. Per-lobe failures isolate (continue).
           # The first lobe (til) keeps the bare cycle_id for backward compat.
-          DOCKET="$(python -m scripts.metabolism_propose --all-lobes --cycle-id "$CYCLE_ID" | tail -n 1 || true)"
+          if [ -n "${LOBE_INPUT:-}" ]; then
+            DOCKET="$(python -m scripts.metabolism_propose --lobe "$LOBE_INPUT" --cycle-id "$CYCLE_ID" | tail -n 1 || true)"
+          else
+            DOCKET="$(python -m scripts.metabolism_propose --all-lobes --cycle-id "$CYCLE_ID" | tail -n 1 || true)"
+          fi
           echo "docket=$DOCKET"
 
           # Only open a DRAFT PR when the docket carries at least one proposal.

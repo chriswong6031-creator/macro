@@ -74,6 +74,8 @@ log = logging.getLogger(__name__)
 _MANIFEST_REL = "config/capability_manifest.yml"
 _LEDGER_REL = "data/metabolism/key_ledger.jsonl"
 _SCHEMA = "metabolism.key_ledger.v1"
+_USAGE_LEDGER_REL = "data/metabolism/key_usage.jsonl"
+_USAGE_SCHEMA = "metabolism.key_usage.v1"
 
 # The capability_ids this pool manages (in order).
 # Operator adds keys by setting CLAUDE_CODE_OAUTH_TOKEN_1/_2/_3 as GH secrets
@@ -106,6 +108,11 @@ def _manifest_path(root: Path | None = None) -> Path:
 def _ledger_path(root: Path | None = None) -> Path:
     base = root if root is not None else _repo_root()
     return base / _LEDGER_REL
+
+
+def _usage_ledger_path(root: Path | None = None) -> Path:
+    base = root if root is not None else _repo_root()
+    return base / _USAGE_LEDGER_REL
 
 
 # ── Manifest helpers ─────────────────────────────────────────────────────────
@@ -171,6 +178,261 @@ def _parse_ts(ts: str) -> datetime | None:
         return None
 
 
+# ── V10 key-economy helpers ───────────────────────────────────────────────────
+
+def enabled_key_ids() -> set[str] | None:
+    """Return the enabled capability-id set from METAB_KEYS_ENABLED, or None.
+
+    None means "all keys enabled" (fail-open default for absent/empty env var).
+
+    METAB_KEYS_ENABLED is a csv of numeric ids and/or "legacy":
+        "1,3"      -> {"claude_code_oauth_1", "claude_code_oauth_3"}
+        "legacy,2" -> {"legacy", "claude_code_oauth_2"}
+        garbage tokens are silently ignored.
+
+    Returns None on error (NEVER-RAISE).
+    """
+    try:
+        raw = os.environ.get("METAB_KEYS_ENABLED", "").strip()
+        if not raw:
+            return None
+        enabled: set[str] = set()
+        for token in raw.split(","):
+            token = token.strip()
+            if not token:
+                continue
+            if token == "legacy":
+                enabled.add("legacy")
+            elif token.isdigit():
+                enabled.add(f"claude_code_oauth_{token}")
+            else:
+                log.debug("key_pool.enabled_key_ids: ignoring unknown token %r", token)
+        # If we got tokens but none were valid, treat as absent (fail-open)
+        return enabled if enabled else None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("key_pool.enabled_key_ids: %s", exc)
+        return None
+
+
+def is_enabled(key_id: str) -> bool:
+    """Return True when key_id is in the enabled set (or all are enabled).
+
+    key_id is a capability id like "claude_code_oauth_2" or "legacy".
+    Returns True on error (fail-open — NEVER-RAISE).
+    """
+    try:
+        ids = enabled_key_ids()
+        if ids is None:
+            return True  # all enabled
+        return key_id in ids
+    except Exception as exc:  # noqa: BLE001
+        log.warning("key_pool.is_enabled(%s): %s", key_id, exc)
+        return True  # fail-open
+
+
+def record_usage_headers(
+    key_id: str,
+    headers: dict,
+    status_code: int,
+    root: Path | None = None,
+) -> None:
+    """Append one header-capture row to data/metabolism/key_usage.jsonl.
+
+    Only headers whose names start with "anthropic-ratelimit" are stored.
+    Token values are never stored (REDLINE).  NEVER raises.
+
+    Parameters
+    ----------
+    key_id : str
+        Capability id ("claude_code_oauth_1", "claude_code_oauth_2", etc.) or
+        "legacy" for the single CLAUDE_CODE_OAUTH_TOKEN provider.
+    headers : dict
+        Response headers dict.  Keys/values are strings.
+    status_code : int
+        HTTP response status code.
+    root : Path | None
+        Repo root override (for tests).
+    """
+    try:
+        ratelimit_headers = {
+            k: v for k, v in headers.items()
+            if k.lower().startswith("anthropic-ratelimit")
+        }
+        row: dict[str, Any] = {
+            "schema": _USAGE_SCHEMA,
+            "ts": _now_ts(),
+            "key_id": key_id,
+            "status": status_code,
+            "headers": ratelimit_headers,
+        }
+        p = _usage_ledger_path(root)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with p.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row, separators=(",", ":")) + "\n")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("key_pool.record_usage_headers(%s): %s", key_id, exc)
+
+
+def _read_usage_ledger(root: Path | None = None) -> list[dict[str, Any]]:
+    """Read all usage-header ledger rows.  Returns [] on error (NEVER-RAISE)."""
+    try:
+        p = _usage_ledger_path(root)
+        if not p.exists():
+            return []
+        rows: list[dict[str, Any]] = []
+        for line in p.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                pass
+        return rows
+    except Exception as exc:  # noqa: BLE001
+        log.warning("key_pool._read_usage_ledger: %s", exc)
+        return []
+
+
+def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
+    """Return per-key usage rows for the admin panel.
+
+    Each row covers one key_id and has fields:
+        key_id, present, enabled, cooling, cool_kind, reset_hint,
+        window_5h_est_tokens, weekly_est_tokens,
+        window_5h_sessions, weekly_sessions,
+        last_outcome, last_ts,
+        ratelimit_headers, headers_ts.
+
+    Covers POOL_CAPABILITY_IDS + "legacy".
+    Returns [] on error (NEVER-RAISE).
+    """
+    try:
+        now = datetime.now(timezone.utc)
+        window_cutoff = now - timedelta(seconds=_WINDOW_SECONDS)
+        week_cutoff = now - timedelta(seconds=_WEEK_SECONDS)
+
+        all_rows = _read_ledger(root)
+        usage_rows = _read_usage_ledger(root)
+
+        # Build per-key aggregates from the main ledger
+        per_key: dict[str, dict[str, Any]] = {}
+
+        def _ensure(kid: str) -> dict[str, Any]:
+            if kid not in per_key:
+                per_key[kid] = {
+                    "window_5h_est_tokens": 0,
+                    "weekly_est_tokens": 0,
+                    "window_5h_sessions": 0,
+                    "weekly_sessions": 0,
+                    "last_outcome": None,
+                    "last_ts": None,
+                    "_last_dt": None,
+                    "cool_kind": None,
+                    "reset_hint": None,
+                }
+            return per_key[kid]
+
+        for row in all_rows:
+            kid = row.get("key_id")
+            if not kid:
+                continue
+            d = _ensure(kid)
+            ts = _parse_ts(row.get("ts", ""))
+            if ts is None:
+                continue
+            tokens = int(row.get("est_tokens", 0) or 0)
+            if ts >= window_cutoff:
+                d["window_5h_est_tokens"] += tokens
+                d["window_5h_sessions"] += 1
+            if ts >= week_cutoff:
+                d["weekly_est_tokens"] += tokens
+                d["weekly_sessions"] += 1
+            if d["_last_dt"] is None or ts > d["_last_dt"]:
+                d["_last_dt"] = ts
+                d["last_outcome"] = row.get("outcome")
+                d["last_ts"] = row.get("ts")
+
+        # Extract cooling state from per-key agg (re-derive from ledger for accuracy)
+        # We use is_cooling() for correctness; pull reset_hint + cool_kind from latest
+        # cooling row (rate_limited/auth_failed) for display.
+        cooling_info: dict[str, dict[str, Any]] = {}
+        for row in all_rows:
+            kid = row.get("key_id")
+            if not kid:
+                continue
+            outcome = row.get("outcome", "")
+            if outcome in ("rate_limited", "auth_failed") and row.get("reset_hint"):
+                ts = _parse_ts(row.get("ts", ""))
+                if kid not in cooling_info or (
+                    ts is not None
+                    and (cooling_info[kid].get("_dt") is None or ts > cooling_info[kid]["_dt"])
+                ):
+                    cooling_info[kid] = {
+                        "_dt": ts,
+                        "cool_kind": row.get("cool_kind"),
+                        "reset_hint": row.get("reset_hint"),
+                    }
+
+        # Build latest header capture per key
+        latest_usage: dict[str, dict[str, Any]] = {}
+        for row in usage_rows:
+            kid = row.get("key_id")
+            if not kid:
+                continue
+            ts = _parse_ts(row.get("ts", ""))
+            if kid not in latest_usage or (
+                ts is not None
+                and (latest_usage[kid].get("_dt") is None or ts > latest_usage[kid]["_dt"])
+            ):
+                latest_usage[kid] = {
+                    "_dt": ts,
+                    "ratelimit_headers": row.get("headers", {}),
+                    "headers_ts": row.get("ts"),
+                }
+
+        # Determine which keys are present
+        present_set: set[str] = set(discover_present_keys(root))
+        # Legacy token presence (REDLINE: check only, never read value)
+        try:
+            from lib import config as _config  # noqa: PLC0415
+            legacy_present = bool(_config.secret("CLAUDE_CODE_OAUTH_TOKEN"))
+        except Exception:  # noqa: BLE001
+            legacy_present = bool(os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", ""))
+
+        all_ids = list(POOL_CAPABILITY_IDS) + ["legacy"]
+        enabled_ids = enabled_key_ids()  # None = all enabled
+
+        result: list[dict[str, Any]] = []
+        for kid in all_ids:
+            present = (legacy_present if kid == "legacy" else kid in present_set)
+            enabled = (enabled_ids is None or kid in enabled_ids)
+            cooling = is_cooling(kid, root) if kid != "legacy" else False
+            ci = cooling_info.get(kid, {})
+            agg = per_key.get(kid, {})
+            lu = latest_usage.get(kid, {})
+            result.append({
+                "key_id": kid,
+                "present": present,
+                "enabled": enabled,
+                "cooling": cooling,
+                "cool_kind": ci.get("cool_kind"),
+                "reset_hint": ci.get("reset_hint"),
+                "window_5h_est_tokens": agg.get("window_5h_est_tokens", 0),
+                "weekly_est_tokens": agg.get("weekly_est_tokens", 0),
+                "window_5h_sessions": agg.get("window_5h_sessions", 0),
+                "weekly_sessions": agg.get("weekly_sessions", 0),
+                "last_outcome": agg.get("last_outcome"),
+                "last_ts": agg.get("last_ts"),
+                "ratelimit_headers": lu.get("ratelimit_headers", {}),
+                "headers_ts": lu.get("headers_ts"),
+            })
+        return result
+    except Exception as exc:  # noqa: BLE001
+        log.warning("key_pool.usage_snapshot: %s", exc)
+        return []
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def discover_present_keys(root: Path | None = None) -> list[str]:
@@ -202,6 +464,23 @@ def discover_present_keys(root: Path | None = None) -> list[str]:
             # REDLINE: check presence only — never read or store the value
             if os.environ.get(ref_name, ""):
                 present.append(cap_id)
+
+        # R-V10-3: filter present keys to the enabled set.
+        # If the filter yields zero keys while unfiltered keys exist, log and
+        # fall back to the unfiltered list — never strand the loop silently.
+        ids = enabled_key_ids()
+        if ids is not None and present:
+            filtered = [k for k in present if k in ids]
+            if not filtered:
+                log.warning(
+                    "key_pool.discover_present_keys: enabled-set %r filtered all "
+                    "present keys %r — falling back to unfiltered list (R-V10-3)",
+                    ids,
+                    present,
+                )
+                return present
+            return filtered
+
         return present
     except Exception as exc:  # noqa: BLE001
         log.warning("key_pool.discover_present_keys: %s", exc)

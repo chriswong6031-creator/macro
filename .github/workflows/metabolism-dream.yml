@@ -68,6 +68,8 @@ jobs:
       - name: DREAM (preference_prior + anti-rot resummary)
         env:
           AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          METAB_INTENSITY: ${{ vars.METAB_INTENSITY }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           FORCE_RUN: ${{ github.event.inputs.force_run }}
           TODAY_INPUT: ${{ github.event.inputs.today }}
           DRY_RUN_INPUT: ${{ github.event.inputs.dry_run }}
