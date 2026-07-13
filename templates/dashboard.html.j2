@@ -96,7 +96,7 @@
 {%- endmacro %}
 {# the mini history chart + stats shown inside a nowcast hover popover #}
 {% macro nchart(nh) -%}
-{% if nh and nh.svg %}{{ nh.svg }}
+{% if nh and nh.svg %}{{ nh.svg|safe }}
 <span class="npstat"><span>{{ nh.years }}y</span><span><span class="l-en">range</span><span class="l-zh">区间</span> {{ nh.lo }}–{{ nh.hi }}%</span><span><span class="l-en">now</span><span class="l-zh">现值</span> <b>{{ nh.last }}%</b></span></span>
 <span class="muted" style="font-size:10px;display:block;margin-top:2px">{% if nh.kind=='inflation' %}<span class="l-en">Dashed line = 2% Fed target · trend vs ~3 months ago.</span><span class="l-zh">虚线＝美联储 2% 目标 · 趋势对比约三个月前。</span>{% else %}<span class="l-en">Dashed line = 0% (stall) · trend = recent direction.</span><span class="l-zh">虚线＝0%（停滞）· 趋势＝近期方向。</span>{% endif %}</span>{% endif %}
 {%- endmacro %}
@@ -4631,7 +4631,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 </style>
 {% endif %}
     {% set _ol = {
-      'Q1': ('Falling inflation with steady growth — the friendliest backdrop for tech &amp; quality. Trust the radar, not just the label.', '通胀回落、增长平稳 — 对科技与质量最友好的环境。盯住雷达，而非仅看标签。'),
+      'Q1': ('Falling inflation with steady growth — the friendliest backdrop for tech & quality. Trust the radar, not just the label.', '通胀回落、增长平稳 — 对科技与质量最友好的环境。盯住雷达，而非仅看标签。'),
       'Q2': ('Growth and inflation both firming — favour cyclicals, energy and banks.', '增长与通胀同步走强 — 偏好周期股、能源与银行。'),
       'Q3': ('Sticky inflation into slowing growth — the dangerous regime; defend capital first.', '通胀粘性叠加增长放缓 — 最危险的周期；优先保住本金。'),
       'Q4': ('A growth scare with cooling inflation — lean defensive, bonds over stocks.', '增长恐慌伴随通胀降温 — 偏防御，债优于股。')
@@ -9033,7 +9033,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {# MX POLICY BAND — 3-col layout: col1=Policy Lever state+rows, col2=lever details (repricing-style), col3=flip confirmation summary.
      id="policy-lever-card" is preserved here for deep-link + CI test (tests/test_policy_lever.py checks string presence). #}
   <div class="panel span12" id="policy-lever-card">
-    <div class="mx-eyebrow">{{ t('Policy-Lever Conditions &amp; Repricing','政策杠杆条件与重新定价') }}
+    <div class="mx-eyebrow">{{ t('Policy-Lever Conditions & Repricing','政策杠杆条件与重新定价') }}
       {{ help("Conditions that make violent overnight reversals more likely — not a forecast, not a signal. ARMED = semis drawdown deep (≤−15%) AND an oil technical curl; ELEVATED = one of the two; QUIET = neither. Display-only context (Policy-Shock W2-F). Drawdown and arming are descriptive; no probabilities.", "使剧烈隔夜反转更可能发生的条件 — 不是预测，不是信号。触发=半导体回撤深（≤−15%）且石油技术卷曲；警戒=两者之一；平静=均无。仅供展示（政策冲击 W2-F）。回撤和触发均为描述性指标，不含概率。") }}
     </div>
     <div class="mx-policy-band">
@@ -9328,7 +9328,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
   {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
   <details class="panel span12 fold mx-sent-band" id="sentiment-regime">
-    <summary>{{ t('Sentiment &amp; Froth','情绪与狂热') }}
+    <summary>{{ t('Sentiment & Froth','情绪与狂热') }}
       {{ help("Sentiment context lenses — Fear/Greed composite, froth/fragility gauge, and fear↔euphoria synthesis. None of these call direction or size trades.","情绪背景视角 — 恐惧/贪婪合成、狂热/脆弱指标及恐惧↔欣喜综合。均不判断方向或决定仓位。") }}
       <span class="fold-stat">{% if FG %}{{ t('Fear/Greed','恐惧/贪婪') }} {{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }} {{ FG.dial }}/100{% endif %}{% if ff and ff.band %} · {{ t('Froth','狂热') }} {{ t(ff.band|capitalize, ff.band_zh) }}{% endif %}{% if FE %} · {{ t('Fear↔Euphoria','恐惧↔欣喜') }} {{ t(FE.band, _bandzh.get(FE.band, FE.band)) }}{% endif %}</span>
       <span class="fold-caret">▾</span>
@@ -9432,7 +9432,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <span class="mx-panel-eyebrow">{{ t('Cross-Asset Check','跨资产校验') }}</span>
       <a href="transmission.html" style="margin-left:auto;font-size:12px;font-weight:600">{{ t('Transmission →', '传导 →') }}</a>
     </div>
-    <h2 style="margin-top:0">{{ t('Rates, bonds &amp; FX — cross-asset check', '利率、债券与外汇 — 跨资产校验') }}
+    <h2 style="margin-top:0">{{ t('Rates, bonds & FX — cross-asset check', '利率、债券与外汇 — 跨资产校验') }}
       {{ help("Context only. Rates & inflation: who today's rates and inflation help or hurt (green = tailwind, red = headwind). Bonds & FX: bonds and the dollar move first, so do they confirm the stock read? Agree = support; diverge = a yellow flag. Full cause-and-effect on the Transmission page.", "仅供参考。利率与通胀：当前利率与通胀利好或利空谁（绿＝顺风，红＝逆风）。债券与外汇：债券和美元先动，它们是否确认股市？一致＝有支撑；背离＝黄旗。完整因果见“传导”页面。") }}
     </h2>
     <div class="mx-asset-grid" style="grid-template-columns:1fr 1fr">
@@ -9586,7 +9586,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
        tiles, drawdown/recession/allocation gauges and radar note above stay at a glance.
        Charts are responsive:true, so re-fire a resize when the fold opens (Plotly sizes at
        0-width while display:none). Stocks keeps everything inline. #}
-    <details class="jarg" id="idx-deep" style="margin-top:14px"><summary>{{ t('Risk-model breakdown + recession, yield-curve &amp; volatility charts','风险模型拆解 + 衰退、收益率曲线与波动率图表') }}</summary>
+    <details class="jarg" id="idx-deep" style="margin-top:14px"><summary>{{ t('Risk-model breakdown + recession, yield-curve & volatility charts','风险模型拆解 + 衰退、收益率曲线与波动率图表') }}</summary>
     {% endif %}
     {% if risk_model and risk_model.legs %}
     <h3 style="margin-top:16px">{{ t('Index risk model — what is driving de-risk', '指数风险模型 — 降险信号由什么驱动') }}
@@ -9851,7 +9851,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <span class="mx-panel-eyebrow">{{ t('News & Catalysts','新闻与日程') }}</span>
       <a href="news.html" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--link)">{{ t('Full feed →','完整新闻 →') }}</a>
     </div>
-    <h2 style="margin-top:0">{{ t('Market news &amp; catalysts','市场新闻与日程') }}
+    <h2 style="margin-top:0">{{ t('Market news & catalysts','市场新闻与日程') }}
       {{ help("Reputable, macro-relevant headlines — filtered, theme-tagged and ranked by impact. Press a story to open a condensed read. Plus the US high-impact event window and any active relief-radar snap. All CONTEXT — never scored; the mechanical model never reads it.", "可靠、与宏观相关的头条 — 经筛选、标注主题并按影响排序。点按展开精简解读。另含美国高影响事件窗口与正在触发的反弹雷达。全部为背景 — 从不评分，机械模型从不读取。") }}
     </h2>
 
@@ -9932,7 +9932,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
     {% if mode == 'stocks' %}
     <div id="dash-tw-strip" class="dash-tw-strip">
       <div class="dash-tw-hdr">
-        <span class="dash-tw-title">{{ t('&#9889; Early turn signs','&#9889; 早期拐点迹象') }}</span>
+        <span class="dash-tw-title">{{ t('⚡ Early turn signs','⚡ 早期拐点迹象') }}</span>
         {{ help('Not a buy signal: in 26 past cases, about 6 in 10 of these early signs faded within a day. If the turn is real, the lanes below upgrade on their own.', '非买入信号：历史26次中约六成的早期迹象在一天内消退。若拐点为真，下方泳道会自行升级。') }}
         <span class="dash-tw-asof" id="dash-tw-asof"></span>
       </div>
@@ -10233,7 +10233,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       </div>
     </div>
     {# board footer — ONE sentence (Law 4); the epistemics detail lives in row popovers #}
-    <p class="muted" style="font-size:11.5px; margin-top:8px">⚠ {{ t("Cycle timing shows <i>where in the cycle</i> a sector sits — use it for structure and defined exits, not as a return forecast.", "周期择时显示板块<i>处于周期的哪个位置</i> — 用于结构与明确出场，而非收益预测。") }}</p>
+    <p class="muted" style="font-size:11.5px; margin-top:8px">⚠ {{ t("Cycle timing shows <i>where in the cycle</i> a sector sits — use it for structure and defined exits, not as a return forecast."|safe, "周期择时显示板块<i>处于周期的哪个位置</i> — 用于结构与明确出场，而非收益预测。"|safe) }}</p>
   </div>{# /panel — What to act on now (standouts split into their own panel 2026-07-11) #}
     {% set _su = us_standouts if (us_standouts and us_standouts.buy) else None %}
     {% if _su or action_board.notable %}
@@ -10521,7 +10521,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
              info the sector-basket chips don't) + the 52-week-high gap. #}
           {% set _ewsec = _th.name and ' (Equal-Weight)' in _th.name %}
           <div class="nb-sub"><span class="nb-nm">{{ n.name }}</span>{% if _th.name and not _ewsec %}<span class="nb-gics">{{ td(n.sector) }}</span>{% endif %}{% if n.get('off_high') is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
-          {{ n.spark_svg }}
+          {{ n.spark_svg|safe }}
           {# --- EDGE line (at rest): score pill · Edge%ile · verdict. Per spec §4.
              Valuation band demoted to expander. W6-US RAISE invariants guard verdict/band at
              build time regardless of display — EDGE line reflects the same fields. #}
@@ -10795,7 +10795,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           <div class="nb-sub"><span>{{ td(n.sector) }}</span>{% if n.get('off_high') is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
-          {{ n.spark_svg }}
+          {{ n.spark_svg|safe }}
           <div class="nb-bot">
             <span class="nb-state">{{ td(n.label) }}</span>
             {% if n.urgency == 'imminent' and n.days %}<span class="nb-eta">~{{ n.days }}d</span>{% endif %}
@@ -10970,11 +10970,11 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   <!-- ===================== US EQUITY SCOREBOARD (size + breadth + internals) ===================== -->
   <div class="panel span12" id="equity-scoreboard">
     <span id="size-style"></span><span id="breadth"></span><span id="advanced-breadth"></span>
-    <h2>{{ t('US equity scoreboard — size, breadth &amp; internals', '美股计分板 — 规模、广度与内部结构') }}
+    <h2>{{ t('US equity scoreboard — size, breadth & internals', '美股计分板 — 规模、广度与内部结构') }}
       {{ help("Three reads of how broad the US equity advance is, in one board. (1) SIZE & STYLE — small caps (Russell 2000) and mid caps measured against the large-cap S&P 500 (rising = participation broadening/risk-on, falling = a narrow mega-cap-led tape) plus the growth-vs-value style rotation; direction over the last 20 trading days, size ratios coloured by risk-on direction, growth/value left neutral. (2) MARKET BREADTH — across the full S&P Composite 1500 (large = S&P 500, mid = S&P 400, small = S&P 600): how many stocks are advancing, how many hold above their 50- and 200-day lines, and net new 52-week highs; the % above the 50-day line also feeds the regime model's growth axis, so this is the same breadth the model reads, just made legible. (3) MARKET INTERNALS — the classic desk internals beyond the %-above-MA snapshot: the McClellan Oscillator & Summation Index (breadth momentum), the Zweig Breadth Thrust gauge, the High-Low Index, whether the advance/decline line confirms price, and where participation sits in its own multi-decade history; computed on the DEEP S&P 500 breadth series (1962-). Internals are SECOND-DERIVATIVE, display-only reads — coincident with price by construction, they explain the tape, they do not forecast it (survivorship caveat: the deep series is rebuilt from today's members, so percentile context is over the mature-universe window only).", "把美股上涨的广度用三种读数汇于一板。(1) 规模与风格 —— 小盘（罗素2000）与中盘对大盘标普500衡量（上行 = 参与度扩散／风险偏好，下行 = 狭窄、由超大盘主导的盘面），并含成长对价值的风格轮动；看过去20个交易日的方向，规模比率按风险偏好方向着色，成长／价值保持中性。(2) 市场广度 —— 覆盖整个标普综合1500（大盘=标普500、中盘=标普400、小盘=标普600）：多少股票上涨、多少守在其50日与200日均线之上，以及净创52周新高；高于50日线的占比也进入周期模型的增长轴，与模型读取的是同一广度，只是更直观。(3) 市场内部结构 —— 超越「高于均线占比」快照的经典桌面内部指标：麦克莱伦振荡指标与累积指标（广度动量）、兹威格广度脉冲、新高—新低指数、腾落线是否确认价格，以及当前参与度在其数十年历史中的分位；基于标普500深度广度序列（1962年起）计算。内部结构是二阶、仅作展示的读数 —— 与价格同步，用于解释盘面而非预测（幸存者偏差提示：深度序列以当前成分股重建，故分位背景仅取成熟样本区间）。") }}
     </h2>
 
-    <div class="sb-section-lbl">{{ t('Size &amp; style', '规模与风格') }}</div>
+    <div class="sb-section-lbl">{{ t('Size & style', '规模与风格') }}</div>
     <table>
       <tr><th class="l">{{ t('lens', '维度') }}</th><th>{{ t('past month', '过去一月') }}</th><th class="l">{{ t("what it's saying", '它在说什么') }}</th></tr>
       {% for r in size_style %}
@@ -10998,8 +10998,8 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
       <tr>
         <th class="l">{{ t('size tier', '规模层级') }}</th>
         <th class="l">{{ t('adv / dec', '涨／跌') }}</th>
-        <th>{{ t('&gt;50d', '&gt;50日') }}</th>
-        <th>{{ t('&gt;200d', '&gt;200日') }}</th>
+        <th>{{ t('>50d', '>50日') }}</th>
+        <th>{{ t('>200d', '>200日') }}</th>
         <th>{{ t('net NH', '净新高') }}
           {{ help("52-week highs minus 52-week lows today. Positive = expansion (healthy); negative = more stocks making new lows than highs (deteriorating).", "今日创 52 周新高减去创 52 周新低的数量。正 = 扩张（健康）；负 = 创新低的股票多于创新高（恶化）。") }}
         </th>

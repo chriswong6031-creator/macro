@@ -614,7 +614,7 @@
       <!-- W0c — government-funding exposure chip (fingerprint-class, display-only) -->
       <div id="r_govexp" class="macro-sens" style="display:none"></div>
       <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
-      <details class="sv-deep"><summary>{{ t('Cycle &amp; timing detail', '周期与时机详情') }}</summary>
+      <details class="sv-deep"><summary>{{ t('Cycle & timing detail', '周期与时机详情') }}</summary>
         <div id="r_bc" class="bcbox" style="display:none"></div>
         <p id="r_age" class="agewhen" style="display:none"></p>
         <p id="r_early" class="early" style="display:none"></p>
@@ -639,7 +639,7 @@
     <div id="sv-evidence"></div>
     <div id="sv-country"></div>
     <!-- ===== Deep layer — collapsed disclosure groups (off the glance path) ===== -->
-    <details class="sv-group"><summary>{{ t('🔮 Outlook &amp; AI view', '🔮 前瞻与 AI 观点') }}</summary>
+    <details class="sv-group"><summary>{{ t('🔮 Outlook & AI view', '🔮 前瞻与 AI 观点') }}</summary>
     <div class="panel" id="panel_anticipation" style="display:none">
       <h2>🔮 {{ t('Anticipation — multi-horizon outcome cone', '预判 — 多周期结果锥') }}
         <a href="anticipation.html" class="muted" style="font-size:12px;font-weight:400;margin-left:6px">{{ t('all assets →', '全部标的 →') }}</a></h2>
@@ -658,7 +658,7 @@
       <div id="stock-brief-body"></div>
     </div>
     </details>
-    <details class="sv-group"><summary>{{ t('📊 Fundamentals &amp; financials', '📊 基本面与财务') }}</summary>
+    <details class="sv-group"><summary>{{ t('📊 Fundamentals & financials', '📊 基本面与财务') }}</summary>
     <!-- ===== Fundamentals suite (Phase 1: surface what we already compute) ===== -->
     <div class="panel" id="panel_profile" style="display:none">
       <h2>🏢 {{ t('Business profile', '公司概况') }}</h2>
@@ -683,19 +683,19 @@
     </div>
 
     <div class="panel" id="panel_fin" style="display:none">
-      <h2>📊 {{ t('Financials &amp; growth', '财务与增长') }}
+      <h2>📊 {{ t('Financials & growth', '财务与增长') }}
         {{ help('Latest fiscal year from SEC EDGAR XBRL; multi-year trends, growth (CAGR) and the Piotroski-F / Altman-Z health scores from SEC companyfacts. All lagged to the filing date. Diluted EPS is as-reported — not split-adjusted across years.',
           '最新财年来自SEC EDGAR XBRL；多年趋势、增长（CAGR）与 Piotroski-F／Altman-Z 健康分数来自SEC companyfacts。均滞后至申报日。摊薄EPS为申报口径，未跨年做拆股调整。') }}</h2>
       <div id="r_multiyear" style="margin-bottom:8px"></div>
       <div id="r_finrows"></div>
-      <details><summary>{{ t('more metrics &amp; financial health', '更多指标与财务健康') }}</summary>
+      <details><summary>{{ t('more metrics & financial health', '更多指标与财务健康') }}</summary>
         <div id="r_finmore" style="margin-top:6px"></div>
       </details>
     </div>
 
     <div class="panel" id="panel_aq" style="display:none">
       <h2>🧾 {{ t('Accounting quality', '会计质量') }}
-        {{ help('A plain-language read on whether the accounting is deteriorating — composed from this name\'s accruals (are earnings backed by cash?), working-capital trends (inventory &amp; receivables vs sales), gross profitability, capital discipline (asset growth / dilution) and balance-sheet safety, using the same SEC-derived factor ranks shown below plus multi-year SEC companyfacts trends where they exist. DISPLAY-ONLY context: it is NOT part of any score, ranking or trading signal, and it deliberately does NOT change the technical / alpha call above — it is a fundamental cross-check for you to weigh. Lagged to the filing date; annual data, sparse for some filers.',
+        {{ help('A plain-language read on whether the accounting is deteriorating — composed from this name\'s accruals (are earnings backed by cash?), working-capital trends (inventory & receivables vs sales), gross profitability, capital discipline (asset growth / dilution) and balance-sheet safety, using the same SEC-derived factor ranks shown below plus multi-year SEC companyfacts trends where they exist. DISPLAY-ONLY context: it is NOT part of any score, ranking or trading signal, and it deliberately does NOT change the technical / alpha call above — it is a fundamental cross-check for you to weigh. Lagged to the filing date; annual data, sparse for some filers.',
           '用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、营运资本趋势（存货与应收对销售）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅作背景展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至申报日；年度数据，对部分公司不全。') }}</h2>
       <div id="r_aq"></div>
     </div>
@@ -740,15 +740,15 @@
     </div>
 
     <div class="panel" id="panel_alpha" style="display:none">
-      <h2>📈 {{ t('Alpha vs sector &amp; index', '相对板块与大盘的阿尔法') }}
+      <h2>📈 {{ t('Alpha vs sector & index', '相对板块与大盘的阿尔法') }}
         {{ help("This stock's return with its MARKET and SECTOR beta removed — sector-neutral residual momentum over a 12-1-month window (research/RESIDUAL_ALPHA_MOMENTUM.md). 'alpha z' is its rank vs the whole S&P 1500 cross-section (0 = average, +2 = top of the pack); 'sector rank' is its place among its GICS peers; 'idiosyncratic' is the annualized beta-stripped return. The entry tag flags whether a leader just spiked ('extended' = short-term reversal risk) or is on a recent dip ('pullback' = constructive). Phase-0 validated as a MODEST, regime-decayed edge — context for stock selection, not a standalone buy signal.",
           "该股票剔除其市场与板块贝塔后的收益 —— 12-1 个月的板块中性残差动量。“阿尔法 z”是其在整个标普1500横截面中的排名（0＝平均，+2＝领先）；“板块排名”是其在 GICS 同业中的位次；“特异收益”为年化的剔除贝塔后收益。入场标签标记领跑股是刚急涨（“extended”＝短期反转风险）还是处于近期回调（“pullback”＝较佳入场）。第 0 阶段验证为温和、随周期衰减的优势 —— 仅为选股参考，并非独立买入信号。") }}</h2>
       <div id="r_alpha"></div>
     </div>
     </details>
-    <details class="sv-group"><summary>{{ t('🏦 Options, positioning &amp; ownership', '🏦 期权、持仓与机构') }}</summary>
+    <details class="sv-group"><summary>{{ t('🏦 Options, positioning & ownership', '🏦 期权、持仓与机构') }}</summary>
     <div class="panel" id="panel_gex" style="display:none">
-      <h2>🎯 {{ t('Options &amp; dealer gamma (GEX)', '期权与做市商Gamma') }}</h2>
+      <h2>🎯 {{ t('Options & dealer gamma (GEX)', '期权与做市商Gamma') }}</h2>
       <div id="r_gex"></div>
     </div>
 
@@ -766,7 +766,7 @@
     </div>
 
     <div class="panel" id="panel_analyst" style="display:none">
-      <h2>👔 {{ t('Analyst &amp; estimates', '分析师与预期') }}</h2>
+      <h2>👔 {{ t('Analyst & estimates', '分析师与预期') }}</h2>
       <div id="r_analyst"></div>
     </div>
 
@@ -778,7 +778,7 @@
     </div>
 
     <div class="panel" id="panel_fragility" style="display:none">
-      <h2>⚠️ {{ t('Crowded &amp; fragile', '拥挤且脆弱') }}
+      <h2>⚠️ {{ t('Crowded & fragile', '拥挤且脆弱') }}
         {{ help("A contrarian RISK flag: this name is at once a crowded leader (high relative-strength percentile), a crowded short (high days-to-cover in the latest FINRA snapshot), AND stretched well above its 50-day average. That conjunction is a fragile set-up — prone to a sharp unwind or short squeeze either way. DISPLAY-ONLY context, never in the conviction score: our Phase-0 found crowding carries NO forward-return edge (only a marginal, statistically-weak worse drawdown), and short interest has no point-in-time history to validate. Context on fragility, NOT a sell.",
           "一个逆向风险标记：该股同时是拥挤的领涨股（相对强弱百分位高）、拥挤的空头（最新 FINRA 快照中回补天数高），且远高于其 50 日均线。这种组合是一种脆弱形态 —— 易于双向剧烈回吐或逼空。仅作背景展示，绝不计入信念评分：我们的 Phase-0 发现拥挤本身没有前瞻收益优势（仅有边际且统计上微弱的更深回撤），且空头数据没有可供验证的时点历史。仅作脆弱性背景，而非卖出信号。") }}</h2>
       <div id="r_fragility"></div>
@@ -810,13 +810,13 @@
         <b>Typical dip</b> = the median worst drop over the next month; <b>bad-case dip</b> = the
         worst 1-in-10 month (10th percentile) — the drawdown lens matters more than average return for
         risk states like UNCONFIRMED TURN, since the danger is the path, not the endpoint. (Measured
-        on equities at a 1-month horizon — crypto tails are fatter, so treat these as a floor on the risk.)',
+        on equities at a 1-month horizon — crypto tails are fatter, so treat these as a floor on the risk.)'|safe,
         '从任何状态出发，股票在一个月内都倾向于上涨（市场长期向上的偏向）；各状态之间的差距很小，而那些
         "吓人"的状态实测前瞻收益反而略好 — 市场会均值回归，等到完全确认时已错过部分反弹。请把状态用于
         <b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。
         <b>典型回撤</b> = 未来一个月最大跌幅的中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）—
         对于未确认转向这类风险状态，回撤视角比平均收益更重要，因为危险在于过程，而非终点。（基于股票的一个月
-        周期实测 — 加密货币的尾部更肥，故请将其视为风险下限。）') }}</h2>
+        周期实测 — 加密货币的尾部更肥，故请将其视为风险下限。）'|safe) }}</h2>
       <table id="r_cal"></table>
     </div>
     <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0">{{ t(

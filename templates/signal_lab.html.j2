@@ -308,7 +308,7 @@
     </span>
     {%- endfor %}
     {%- if adj.get('moratorium') %}
-    <span style="color:var(--muted)">{{ t('generation moratorium in force until wave-1 + spike verdicts booked and queue &lt; 3','生成暂停令生效——第一波+尖峰候选裁决登记且排队数降至3以下前不启动新波次') }}.</span>
+    <span style="color:var(--muted)">{{ t('generation moratorium in force until wave-1 + spike verdicts booked and queue < 3','生成暂停令生效——第一波+尖峰候选裁决登记且排队数降至3以下前不启动新波次') }}.</span>
     {%- endif %}
     {%- endif %}
     {%- if adj.get('day3_results') %}

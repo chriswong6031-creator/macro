@@ -3229,7 +3229,8 @@ def main() -> int:
     from engine.conditions import conditions_frame
     _cf = conditions_frame(f)  # shared by the integrated index risk-model panel
 
-    env = Environment(loader=FileSystemLoader(config.ROOT / "templates"))
+    env = Environment(loader=FileSystemLoader(config.ROOT / "templates"),
+                      autoescape=True)
     env.filters["min"] = lambda seq: min(seq)
     from engine import i18n
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)  # bilingual helpers for templates
