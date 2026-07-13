@@ -29,6 +29,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, auth, brief, causal_lab,
                config_store,
                content, context_lobe, experiments,
                flags, ga4, github_api, github_config, gitops, health, long_hold,
+               metabolism_history,
                metabolism_panel,
                neural_web,
                services, settings, system, umami, uptime_board, users, vector_override)
@@ -321,6 +322,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(_alerts_mod.panel(limit=limit))
             if path == "/api/metabolism":
                 return self._json(metabolism_panel.panel())
+            if path == "/api/metabolism/history":
+                limit = int((q.get("limit") or ["100"])[0])
+                return self._json(metabolism_history.history(limit=limit))
 
             return self._json({"error": f"unknown route {path}"}, 404)
         except Exception as e:  # noqa: BLE001
