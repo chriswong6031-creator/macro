@@ -2021,7 +2021,7 @@
   body.page-macro .ms-pop-title{font-size:13.5px;font-weight:800;color:var(--ink-1);line-height:1.25}
   body.page-macro .ms-pop-sub{font-size:11px;color:var(--ink-3);line-height:1.45;margin-top:3px}
   body.page-macro .ms-pop-body{display:flex;flex-direction:column;gap:9px}
-  body.page-macro .ms-sig{display:block;border:var(--rule) solid var(--hair);border-left:3px solid var(--sgc,var(--ink-3));
+  body.page-macro .ms-sig{display:block;border:var(--rule) solid var(--hair);
     border-radius:10px;background:var(--tile);padding:12px 14px;color:var(--ink-1);transition:transform .12s,box-shadow .12s}
   body.page-macro a.ms-sig:hover{transform:translateX(-2px);box-shadow:0 4px 16px -8px rgba(0,0,0,.4)}
   body.page-macro .ms-sig.sev-act{--sgc:var(--act)}
@@ -2166,6 +2166,11 @@ body.page-macro .mx-pcol-sub{font-size:11px;color:var(--muted);margin-top:8px;li
 body.page-macro .rr-card{background:color-mix(in srgb,var(--panel2) 90%,var(--panel));border-color:var(--line)}
 body.page-macro .rr-card:hover{border-color:color-mix(in srgb,var(--info) 45%,var(--line));box-shadow:0 2px 12px color-mix(in srgb,var(--info) 8%,transparent)}
 body.page-macro #release-radar{background:var(--panel)}
+/* v5.2: the rack wrapper is NOT a container — cards sit directly on the canvas */
+body.page-macro.mx4-grid .mx5-rack-panel{background:none!important;border:none!important;box-shadow:none!important;border-radius:0;padding:0;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+/* v5.2: no colored left accents on the radar/ignition banner cards inside dialogs */
+body.page-macro.mx4-grid .rrx{border-left:1px solid var(--line)!important}
+body.page-macro.mx4-grid .rrx-rec{border-left:1px solid var(--line)!important}
 /* v5.1: the standalone Release Radar panel does not render on the grid page — its cards
    are the data source for the RR modal, reachable from the Events dialog (mmOpenFirstRR).
    Offscreen + visibility (NOT display:none) so the position:fixed modal overlay nested
@@ -3056,7 +3061,7 @@ body.page-macro .sxg-face-sub{
 
 /* 3px left accent edge per card (graft 3) */
 body.page-macro.mx4-grid .sx{
-  border-left:3px solid var(--isle-color,var(--line));
+  /* v5.2: no colored left accents on containers (operator order) */
   border-radius:10px;
   background:var(--panel);
   box-shadow:0 1px 4px rgba(0,0,0,.08);
@@ -5023,7 +5028,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {% if mode != 'stocks' %}
   {% set MS2 = market_state %}
   {% set _mos2 = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
-  <div class="panel span12" style="padding:0 20px">
+  <div class="panel span12 mx5-rack-panel">
 
   {# v2 topbar: brand + as-of date (Grid/Ledger toggle and Expand-all removed — grid is permanent) #}
   <div class="mx2-topbar">
@@ -8825,7 +8830,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   {% if mode == 'stocks' and (macro_catalysts or (prediction_markets and prediction_markets.events)) %}
   <style id="cal-css">
   #week-ahead .cal-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
-  #week-ahead .cal-ev{flex:1 1 0;min-width:124px;border:1px solid var(--line);border-left:3px solid var(--muted);
+  #week-ahead .cal-ev{flex:1 1 0;min-width:124px;border:1px solid var(--line);
     border-radius:8px;padding:8px 11px;background:var(--panel2)}
   #week-ahead .cal-ev.cal-high{border-left-color:var(--down)}
   #week-ahead .cal-ev.cal-med{border-left-color:var(--warn)}
@@ -9097,7 +9102,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
           <span class="badge tone-{{ _cvtone }}">{{ t(cac.verdict, cac.verdict_zh) }}{% if cac.agree_pct is not none %} · {{ cac.agree_pct }}%{% endif %}</span>
           {{ help("Bonds and the dollar move faster than stocks, so this checks whether they agree with the stock-market read. They AGREE = the move has support; they DIVERGE = a yellow flag worth watching. Context only, never a buy/sell signal.", "债券与美元比股票反应更快，因此本面板检查它们是否认同股市读数。一致＝走势有支撑；背离＝值得留意的黄旗。仅供参考，绝非买卖信号。") }}
         </h3>
-        <div style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid var({{ '--up' if _cvtone=='up' else ('--down' if _cvtone=='down' else '--muted') }});border-radius:8px;padding:10px 12px;font-weight:600">
+        <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-weight:600">
           {{ t(cac.headline_en, cac.headline_zh) }}
         </div>
         {% if cac.cycle %}
@@ -9119,7 +9124,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
         <div style="margin-top:10px">
           <div class="sm" style="font-weight:600;margin-bottom:4px">{{ t('Watch flags', '关注信号') }}</div>
           {% for f in cac.caution_flags %}
-          <div class="sm" style="padding:4px 8px;margin:3px 0;border-left:3px solid var({{ '--down' if f.severity=='high' else ('--warn' if f.severity=='medium' else '--muted') }});background:var(--panel2);border-radius:4px">{{ t(f.en, f.zh) }}</div>
+          <div class="sm" style="padding:4px 8px;margin:3px 0;background:var(--panel2);border-radius:4px">{{ t(f.en, f.zh) }}</div>
           {% endfor %}
         </div>
         {% endif %}
@@ -12000,7 +12005,7 @@ document.addEventListener('click',function(e){
 </script>
 {% endif %}
 <footer class="site-footer">
-  <span class="made">© 2026 MastermindX Inc</span>
+  <span class="made">© 2026 Mastermind Inc</span>
 </footer>
 </body>
 </html>

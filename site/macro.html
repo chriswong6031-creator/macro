@@ -2608,7 +2608,7 @@
   body.page-macro .ms-pop-title{font-size:13.5px;font-weight:800;color:var(--ink-1);line-height:1.25}
   body.page-macro .ms-pop-sub{font-size:11px;color:var(--ink-3);line-height:1.45;margin-top:3px}
   body.page-macro .ms-pop-body{display:flex;flex-direction:column;gap:9px}
-  body.page-macro .ms-sig{display:block;border:var(--rule) solid var(--hair);border-left:3px solid var(--sgc,var(--ink-3));
+  body.page-macro .ms-sig{display:block;border:var(--rule) solid var(--hair);
     border-radius:10px;background:var(--tile);padding:12px 14px;color:var(--ink-1);transition:transform .12s,box-shadow .12s}
   body.page-macro a.ms-sig:hover{transform:translateX(-2px);box-shadow:0 4px 16px -8px rgba(0,0,0,.4)}
   body.page-macro .ms-sig.sev-act{--sgc:var(--act)}
@@ -2753,6 +2753,11 @@ body.page-macro .mx-pcol-sub{font-size:11px;color:var(--muted);margin-top:8px;li
 body.page-macro .rr-card{background:color-mix(in srgb,var(--panel2) 90%,var(--panel));border-color:var(--line)}
 body.page-macro .rr-card:hover{border-color:color-mix(in srgb,var(--info) 45%,var(--line));box-shadow:0 2px 12px color-mix(in srgb,var(--info) 8%,transparent)}
 body.page-macro #release-radar{background:var(--panel)}
+/* v5.2: the rack wrapper is NOT a container — cards sit directly on the canvas */
+body.page-macro.mx4-grid .mx5-rack-panel{background:none!important;border:none!important;box-shadow:none!important;border-radius:0;padding:0;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+/* v5.2: no colored left accents on the radar/ignition banner cards inside dialogs */
+body.page-macro.mx4-grid .rrx{border-left:1px solid var(--line)!important}
+body.page-macro.mx4-grid .rrx-rec{border-left:1px solid var(--line)!important}
 /* v5.1: the standalone Release Radar panel does not render on the grid page — its cards
    are the data source for the RR modal, reachable from the Events dialog (mmOpenFirstRR).
    Offscreen + visibility (NOT display:none) so the position:fixed modal overlay nested
@@ -3643,7 +3648,7 @@ body.page-macro .sxg-face-sub{
 
 /* 3px left accent edge per card (graft 3) */
 body.page-macro.mx4-grid .sx{
-  border-left:3px solid var(--isle-color,var(--line));
+  /* v5.2: no colored left accents on containers (operator order) */
   border-radius:10px;
   background:var(--panel);
   box-shadow:0 1px 4px rgba(0,0,0,.08);
@@ -5717,7 +5722,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
   
   
   
-  <div class="panel span12" style="padding:0 20px">
+  <div class="panel span12 mx5-rack-panel">
 
   
   <div class="mx2-topbar">
@@ -13671,7 +13676,7 @@ window.__CHART_SWAP__ = {
 </script>
 
 <footer class="site-footer">
-  <span class="made">© 2026 MastermindX Inc</span>
+  <span class="made">© 2026 Mastermind Inc</span>
 </footer>
 </body>
 </html>
