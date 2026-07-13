@@ -517,11 +517,18 @@ jobs:
           echo "::endgroup::"
           if [ "$vrc" -ne 0 ]; then
             # Discard the drifted/malformed write so neither the commit-to-main nor the Pages
-            # artifact can ship it. Leaf is tracked -> restore last-good; per-ticker files are
-            # untracked -> remove (chart renders no markers until the next clean run).
+            # artifact can ship it. Leaf AND per-ticker files are tracked on main (per-ticker
+            # tracked since 2026-06-28 via the render lane) -> restore last-good committed
+            # copies; git clean sweeps only untracked strays (e.g. a new ticker's first write).
+            # NEVER `rm` the tracked per-ticker files here: the 226 staged deletions ride the
+            # broad `git add site/` into the engine commit and modify/delete-conflict with the
+            # intraday render lane's signal commits — the rebase-push then fails every retry
+            # and the WHOLE nightly engine commit (regime update + forward ledgers) is dropped
+            # (2026-07-12 incident: pick-lab ledgers lost).
             git checkout -- data/signal_archive/mtf_signals_latest.json 2>/dev/null || true
-            rm -f site/signals/*.json 2>/dev/null || true
-            echo "::error title=signal §7 contract gate FAILED::malformed/drifted signal write discarded (last-good leaf restored); see data/quality/signals_audit.json"
+            git checkout -- site/signals/ 2>/dev/null || true
+            git clean -fq -- site/signals/ 2>/dev/null || true
+            echo "::error title=signal §7 contract gate FAILED::malformed/drifted signal write discarded (leaf + per-ticker files restored to last-good committed copies); see data/quality/signals_audit.json"
             { echo "### ❌ signal §7 contract gate failed — bad write discarded";
               echo '<details><summary>validator output</summary>'; echo; echo '```';
               tail -n 40 "$RUNNER_TEMP/sigv.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"

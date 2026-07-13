@@ -544,13 +544,22 @@ def _build_entry_site_payload(
     lanes = _build_entry_lanes(snap, fires_entry, asof)
 
     # ── regime scalar summary ─────────────────────────────────────────────────
+    # The template's regime chips read calm/stress/liquidity — every key must
+    # exist even when its value is null (a missing key raises UndefinedError
+    # inside `{% if regime.stress is not none %}` and kills the page render).
     vol_regime = regime.get("vol_regime") or {}
+    risk_state = regime.get("risk_state") or {}
+    stress = vol_regime.get("stress")
+    if stress is None:
+        stress = risk_state.get("stress")
     regime_summary = {
         "quad": regime.get("quad"),
         "quad_name": regime.get("quad_name"),
         "liquidity_overlay": regime.get("liquidity_overlay"),
         "vol_state": vol_regime.get("state"),
         "calm": vol_regime.get("calm"),
+        "stress": stress,
+        "liquidity": regime.get("liquidity_overlay"),
     }
 
     # ── scoreboard (entry only) with name/family denormalized ────────────────

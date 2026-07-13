@@ -446,6 +446,20 @@ class TestTemplateRender:
         html = self._render_empty()
         assert len(html) > 1000
 
+    def test_render_regime_missing_chip_keys_does_not_raise(self):
+        """Regression (2026-07-12 nightly): the regime summary shipped WITHOUT
+        stress/liquidity keys — dict-attribute access on a missing key passes
+        `is not none` (Undefined) then explodes in the format filter, killing
+        the page render. Chips must degrade to absent, never crash."""
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        pl = dict(pl)
+        pl["regime"] = {"calm": 0.5}  # no stress / liquidity keys at all
+        vm = build_vm(pl, lh)
+        html = _env().get_template("us_stocks_lab.html.j2").render(**vm)
+        assert len(html) > 5000
+        assert "Calm" in html
+
     def test_no_validated_word(self):
         """CI-enforced invariant: the word 'validated' must never appear."""
         html = self._render_full()

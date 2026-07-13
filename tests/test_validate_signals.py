@@ -68,6 +68,27 @@ def test_pending_quality_is_accepted():
     assert vs.validate_ticker_doc(doc, SCHEMA, "fix") == []
 
 
+def test_pit_disclosure_is_accepted():
+    # RC-R2 (engine/marker_integrity.py) appends a `pit` drift-disclosure dict to
+    # every per-ticker file. The 2026-07-12 nightlies failed the §7 gate wholesale
+    # (226/226 files) because the schema lagged the writer — pit MUST validate.
+    doc = _valid_ticker()
+    doc["pit"] = {
+        "kept_frozen": 3906, "refined": 0, "appended": 0, "drift_lost": 0,
+        "drift_deep_new": 0, "relabel_blocked": 0, "prev_asof": "2026-07-09",
+        "last_night": {"kept_frozen": 279, "refined": 0, "appended": 0,
+                       "drift_lost": 0, "drift_deep_new": 0, "relabel_blocked": 0},
+    }
+    assert vs.validate_ticker_doc(doc, SCHEMA, "fix") == []
+
+
+def test_pit_first_write_null_prev_asof_accepted():
+    # First-ever write has no prior vintage: merge_payload sets prev_asof=None.
+    doc = _valid_ticker()
+    doc["pit"] = {"kept_frozen": 0, "prev_asof": None, "last_night": {}}
+    assert vs.validate_ticker_doc(doc, SCHEMA, "fix") == []
+
+
 def test_engine_analyze_output_conforms_to_schema():
     """The live engine's analyze() output MUST validate against the schema.
 

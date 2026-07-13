@@ -85,6 +85,18 @@
           "type": "array",
           "description": "Chronological (ascending) chart markers. validate_signals.py asserts strict ascending order.",
           "items": {"$ref": "#/$defs/marker"}
+        },
+        "pit": {
+          "type": "object",
+          "description": "RC-R2 append-only marker-integrity disclosure (engine/marker_integrity.py): cumulative drift counters accrued across nightly recomputes (kept_frozen / refined / appended / drift_lost / drift_deep_new / relabel_blocked), `prev_asof` of the prior vintage, and a `last_night` sub-dict holding the same counters for the latest merge only. Engine-side bookkeeping the chart does NOT read — kept open (additionalProperties true) so new counters never break the contract gate, unlike the chart-facing shapes above.",
+          "properties": {
+            "prev_asof": {
+              "anyOf": [{"$ref": "#/$defs/date"}, {"type": "null"}],
+              "description": "asof of the prior vintage merged against; null on the first-ever write (no prior file)."
+            },
+            "last_night": {"type": "object"}
+          },
+          "additionalProperties": true
         }
       }
     },
