@@ -50,7 +50,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | momoedge | 8 |
 | narrative-ignition | 5 |
 | nasdaq-internals | 1 |
-| neural-web | 55 |
+| neural-web | 57 |
 | next3 | 3 |
 | nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 5 |
@@ -86,7 +86,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 267 |
+| display | 269 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -95,7 +95,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 417 |
+| git | 419 |
 | gitignored-local | 11 |
 | r2 | 7 |
 
@@ -553,6 +553,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | mechanism-pathways-history | `data/neuralweb/mechanism_pathways_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | neuralweb-daily-brief | `data/neuralweb/daily_brief.json` | json | daily-engine | display | 1 | 0 |
 | neuralweb-daily-brief-history | `data/neuralweb/daily_brief_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
+| neuralweb-orchestrator-runlog | `data/neuralweb/orchestrator_runlog.jsonl` | jsonl | nightly-cortex | display | 1 | 0 |
 | ops-push-basket-freeze | `data/alert_triage/push_sent_basket_freeze.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-healthcheck | `data/alert_triage/push_sent_healthcheck.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-nw-health | `data/alert_triage/push_sent_nw_health.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
@@ -565,6 +566,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-neuralweb-daily-brief | `site/neuralwebdata/daily_brief.json` | json | daily-engine | display | 1 | 0 |
 | site-neuralweb-governance-recent | `site/neuralwebdata/governance_recent.json` | json | daily-engine | display | 1 | 0 |
 | site-neuralweb-health-history | `site/neuralwebdata/health_history.json` | json | daily-engine | display | 1 | 0 |
+| site-neuralweb-orchestrator-runlog | `site/neuralwebdata/orchestrator_runlog.json` | json | nightly-cortex | display | 1 | 0 |
 | causal-feature-inventory | `data/neuralweb/causal_feature_inventory.json` | json | daily-engine | infrastructure | 0 | 0 |
 | confluence-candidates | `data/neuralweb/confluence_candidates.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | entity-thesis-mechanism-registry | `data/neuralweb/entity_thesis_mechanism_registry.json` | json | daily-engine | infrastructure | 0 | 0 |
@@ -1432,6 +1434,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - engine/neuralweb/mastermind_context.py — build_and_write() writes both canonical and site copy
 
+### neuralweb-orchestrator-runlog
+
+- **path:** `data/neuralweb/orchestrator_runlog.jsonl`
+- **declared producer:** `scripts/build_orchestrator_log.py`
+- **extra writers:**
+  - engine/neuralweb/orchestrator_log.py — record_run() appends entries + reviews, publishes site copy
+
 ### options-flow-cohorts-json
 
 - **path:** `site/flowdata/cohorts.json`
@@ -1565,6 +1574,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `scripts/build_nw_mastermind_context.py`
 - **extra writers:**
   - engine/neuralweb/mastermind_context.py — build_and_write() writes both canonical and site copy
+
+### site-neuralweb-orchestrator-runlog
+
+- **path:** `site/neuralwebdata/orchestrator_runlog.json`
+- **declared producer:** `scripts/build_orchestrator_log.py`
+- **extra writers:**
+  - engine/neuralweb/orchestrator_log.py — _publish_site() writes the stamped site copy
 
 ### site-phrase-velocity
 

@@ -73,10 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 435, (
-        f"Expected 435 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 437, (
+        f"Expected 437 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        "(RC-R14 HK added site-marketdata-rotation-events-hk,"
+        "(W-AI orchestrator face added neuralweb-orchestrator-runlog,"
+        " site-neuralweb-orchestrator-runlog = 435->437;"
+        " (RC-R14 HK added site-marketdata-rotation-events-hk,"
         " data-rotation-events-hk-ledger = 433->435;"
         " (LHB-W3 A2 pilot added edgar-statements-quarterly, pricing-power-states,"
         " pricing-power-manifest = 430->433;"

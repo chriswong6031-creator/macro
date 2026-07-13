@@ -2951,6 +2951,15 @@ notify:
   # have to watch the admin Experiments tab. Fires once per experiment, on transition only.
   experiments_alerts: true
 
+# ---- W-AI: the Neural Web orchestrator's face (run log / reviews / dialogue) ----
+# Settings for engine/neuralweb/orchestrator_log.py and the admin Observatory's Master Brain
+# page. The orchestrator itself stays the daily.yml pipeline — these only shape its telemetry.
+orchestrator:
+  review_every_n_runs: 5      # every N pipeline runs, write a roll-up review + progress assessment
+  site_rows: 60               # run-log entries kept in the published site artifact
+  ingest_bot_feedback: true   # read site/mastermind/nw_feedback.json (v3 dialogue) in the build
+  brief_attention_nudges: true  # surface pending bot nudges/directives in daily_brief operator_attention
+
 # Neural Web W6a — Push spine (engine/alert_triage.py:push_priority_alerts).
 # CONFIG-GATED OFF by default.  Enabling this is an operator + Article-2 event:
 # it converts the display-only triage priority score into automated outbound

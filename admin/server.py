@@ -30,9 +30,11 @@ from . import (actions, ai_cost, alerts as _alerts_mod, auth, brief, causal_lab,
                config_store,
                content, context_lobe, experiments,
                flags, ga4, github_api, github_config, gitops, health, long_hold,
+               mastermind_proxy,
                metabolism_history,
                metabolism_panel,
                neural_web,
+               orchestrator_chat,
                services, settings, system, umami, uptime_board, users, vector_override)
 from .paths import STATIC
 
@@ -41,6 +43,38 @@ _CTYPES = {".html": "text/html; charset=utf-8",
            ".js": "application/javascript; charset=utf-8"}
 
 _LOOPBACK_NAMES = {"localhost", "127.0.0.1", "::1"}
+
+# W-AI: orchestrator settings editable from the Master Brain page.
+# key → (kind, lo, hi); ints are REJECTED (400) outside [lo, hi], never clamped.
+_ORCH_SETTINGS_SPEC = {
+    "review_every_n_runs": ("int", 2, 50),
+    "site_rows": ("int", 10, 365),
+    "ingest_bot_feedback": ("bool", None, None),
+    "brief_attention_nudges": ("bool", None, None),
+}
+
+
+def validate_orchestrator_setting(key, value) -> tuple[bool, str | None, object]:
+    """Server-side validation for POST /api/orchestrator/settings.
+    Returns (ok, error, coerced_value)."""
+    spec = _ORCH_SETTINGS_SPEC.get(key or "")
+    if not spec:
+        return False, (f"unknown orchestrator setting {key!r}; "
+                       f"allowed: {sorted(_ORCH_SETTINGS_SPEC)}"), None
+    kind, lo, hi = spec
+    if kind == "bool":
+        if not isinstance(value, bool):
+            return False, f"{key} must be a boolean", None
+        return True, None, value
+    if isinstance(value, bool):
+        return False, f"{key} must be an integer", None
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    if not isinstance(value, int):
+        return False, f"{key} must be an integer", None
+    if not (lo <= value <= hi):
+        return False, f"{key} must be between {lo} and {hi}", None
+    return True, None, value
 
 
 def is_loopback_host(host: str) -> bool:
@@ -274,6 +308,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(neural_web.lobes_panel())
             if path == "/api/neural_web/lobe":
                 return self._json(neural_web.lobe_detail((q.get("id") or [""])[0]))
+            # W-AI: Master Brain (orchestrator) page + Mastermind AI bot proxy
+            if path == "/api/orchestrator":
+                return self._json(neural_web.orchestrator_panel())
+            if path in mastermind_proxy.GET_PATHS:
+                payload, code = mastermind_proxy.forward_get(path, u.query)
+                return self._json(payload, code)
             if path == "/api/health":
                 return self._json(health.summary())
             if path == "/api/cost":
@@ -381,6 +421,33 @@ class Handler(BaseHTTPRequestHandler):
                 if settings.deployed():
                     return self._json(github_config.set_int(dotted, b.get("days"), 1, 7))
                 return self._json(config_store.set_int(dotted, b.get("days"), 1, 7))
+
+            # W-AI: Master Brain (orchestrator) surface
+            if path == "/api/orchestrator/settings":
+                key = b.get("key")
+                ok, err, value = validate_orchestrator_setting(key, b.get("value"))
+                if not ok:
+                    return self._json({"ok": False, "error": err}, 400)
+                dotted = f"orchestrator.{key}"
+                kind, lo, hi = _ORCH_SETTINGS_SPEC[key]
+                if kind == "bool":
+                    if settings.deployed():
+                        return self._json(github_config.set_bool(dotted, value))
+                    return self._json(config_store.set_bool(dotted, value))
+                if settings.deployed():
+                    return self._json(github_config.set_int(dotted, value, lo, hi))
+                return self._json(config_store.set_int(dotted, value, lo, hi))
+
+            if path == "/api/orchestrator/chat":
+                return self._json(orchestrator_chat.chat(b.get("message", ""),
+                                                         history=b.get("history")))
+
+            if path == "/api/orchestrator/wake":
+                return self._json(orchestrator_chat.wake())
+
+            if path in mastermind_proxy.POST_PATHS:
+                payload, code = mastermind_proxy.forward_post(path, b)
+                return self._json(payload, code)
 
             if path == "/api/deploy/dispatch":
                 if not b.get("confirm"):

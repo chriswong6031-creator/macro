@@ -1114,6 +1114,39 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
             })
             operator_attention.sort(key=lambda x: x["priority"])
 
+    # P2: Mastermind AI dialogue pending (W-AI) — high-severity nudges or operator directives
+    # awaiting a look. Fail-open: absent/old feedback summary contributes nothing. Gated by the
+    # operator switch config.yml orchestrator.brief_attention_nudges (default true, fails open).
+    try:
+        _nudges_enabled = True
+        try:
+            import yaml as _yaml  # noqa: PLC0415
+            _ocfg = (_yaml.safe_load((root / "config.yml").read_text(encoding="utf-8"))
+                     or {}).get("orchestrator") or {}
+            if isinstance(_ocfg.get("brief_attention_nudges"), bool):
+                _nudges_enabled = _ocfg["brief_attention_nudges"]
+        except Exception:  # noqa: BLE001
+            pass
+        _fb = _read_json(root / "data" / "governance" / "mastermind_feedback_summary.json") or {}
+        if _nudges_enabled and _fb.get("state") == "present":
+            _n_hi = sum(1 for n in (_fb.get("nudges") or [])
+                        if isinstance(n, dict) and n.get("severity") == "high")
+            _n_dir = len(_fb.get("operator_directives") or [])
+            if _n_hi or _n_dir:
+                operator_attention.append({
+                    "priority": 2,
+                    "area": "mastermind_dialogue",
+                    "summary": (
+                        f"Mastermind bot dialogue pending: {_n_hi} high-severity nudge"
+                        f"{'s' if _n_hi != 1 else ''}, {_n_dir} operator directive"
+                        f"{'s' if _n_dir != 1 else ''} — see admin Observatory Master Brain"
+                    ),
+                    "action_type": "follow_up",
+                })
+                operator_attention.sort(key=lambda x: x["priority"])
+    except Exception:  # noqa: BLE001
+        pass
+
     candidate_watch = _build_candidate_watch(health)
 
     brief_status = _brief_status(health, brain_run)

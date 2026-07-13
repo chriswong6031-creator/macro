@@ -1476,3 +1476,160 @@ class TestMarketPlane:
         build_and_write_market_plane(root=tmp_path, now=_NOW)
         size = (tmp_path / "data" / "neuralweb" / "market_plane.json").stat().st_size
         assert size <= 8 * 1024, f"market_plane.json too large: {size} bytes"
+
+
+# ---------------------------------------------------------------------------
+# 16. mastermind_ai lobe (W-AI — the trading bot as a lobe of the web)
+# ---------------------------------------------------------------------------
+
+def _minimal_feedback_summary(tmp_path: Path, *, state: str = "present",
+                              with_ack: bool = True) -> Path:
+    """Write a minimal data/governance/mastermind_feedback_summary.json fixture
+    (the reverse-bridge artifact built by engine/neuralweb/mastermind_feedback.py)."""
+    (tmp_path / "data" / "governance").mkdir(parents=True, exist_ok=True)
+    obj: dict = {
+        "schema": "neuralweb.mastermind_feedback_summary.v1",
+        "generated_utc": "2026-07-05T12:00:00Z",
+        "state": state,
+        "source_schema": "mastermind_nw_feedback.v3",
+        "is_context_only": True,
+        "gap_notes": [],
+    }
+    if state == "present":
+        obj["asof"] = "2026-07-05"
+        obj["nudges"] = [
+            {"code": "ctx_stale_run", "kind": "staleness", "severity": "high",
+             "detail": "context stale on 2 of 14 runs"},
+            {"code": "lobe_request_theme", "kind": "lobe_request", "severity": "low",
+             "detail": "want a theme lobe"},
+        ]
+        obj["operator_directives"] = [
+            {"id": "deadbeef01", "created": "2026-07-05", "text": "check the radar contract"},
+        ]
+        obj["reflection"] = {
+            "state": "ok",
+            "contract_drift": [{"code": "radar_ticker_gap", "status": "dead",
+                                "severity": "high"}],
+            "coverage": {"open_theses_n": 4, "coverage_rate": 0.75},
+            "context_quality": {"window_runs": 14, "seen_rate": 0.7142},
+            "attribution": {"n_resolved": 2, "state": "accruing"},
+        }
+        if with_ack:
+            obj["ack"] = {
+                "nudge_codes_seen": ["ctx_stale_run", "lobe_request_theme"],
+                "directive_ids_seen": ["deadbeef01"],
+            }
+    p = tmp_path / "data" / "governance" / "mastermind_feedback_summary.json"
+    p.write_text(json.dumps(obj))
+    return p
+
+
+class TestMastermindAiLobe:
+    """W-AI: lobes.mastermind_ai carries the bot dialogue state + the ACK block."""
+
+    def test_registered_in_lobe_summarizers(self):
+        from engine.neuralweb.mastermind_context import LOBE_SUMMARIZERS  # noqa: PLC0415
+        assert "mastermind_ai" in LOBE_SUMMARIZERS
+
+    def test_lobe_present_state_and_identity(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        _minimal_feedback_summary(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        lobe = payload["lobes"]["mastermind_ai"]
+        assert lobe["state"] == "present"
+        assert lobe["source_schema"] == "mastermind_nw_feedback.v3"
+        assert lobe["as_of"] == "2026-07-05"
+
+    def test_lobe_nudges_block(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        _minimal_feedback_summary(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        nudges = payload["lobes"]["mastermind_ai"]["nudges"]
+        assert nudges["n"] == 2
+        assert nudges["by_severity"] == {"high": 1, "low": 1}
+        assert nudges["top_codes"] == ["ctx_stale_run", "lobe_request_theme"]
+
+    def test_lobe_directives_block(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        _minimal_feedback_summary(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        directives = payload["lobes"]["mastermind_ai"]["directives"]
+        assert directives["n"] == 1
+        assert directives["ids"] == ["deadbeef01"]
+
+    def test_lobe_reflection_block(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        _minimal_feedback_summary(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        rf = payload["lobes"]["mastermind_ai"]["reflection"]
+        assert rf["state"] == "ok"
+        assert rf["contract_drift_n"] == 1
+        assert rf["coverage_rate"] == pytest.approx(0.75)
+        assert rf["context_seen_rate"] == pytest.approx(0.7142)
+        assert rf["attribution_state"] == "accruing"
+
+    def test_lobe_carries_ack(self, tmp_path):
+        """THE ACK — the bot keys directive/nudge status advancement off this."""
+        _build_minimal_tree(tmp_path)
+        _minimal_feedback_summary(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert payload["lobes"]["mastermind_ai"]["ack"] == {
+            "nudge_codes_seen": ["ctx_stale_run", "lobe_request_theme"],
+            "directive_ids_seen": ["deadbeef01"],
+        }
+
+    def test_lobe_ack_defaults_empty_when_missing(self, tmp_path):
+        """Summary present but no ack key → empty ack lists, never a raise."""
+        _build_minimal_tree(tmp_path)
+        _minimal_feedback_summary(tmp_path, with_ack=False)
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert payload["lobes"]["mastermind_ai"]["ack"] == {
+            "nudge_codes_seen": [], "directive_ids_seen": [],
+        }
+
+    def test_lobe_absent_gap_note_and_empty_lobe(self, tmp_path):
+        """No feedback summary → gap_note 'lobe.mastermind_ai: ...' + empty lobe."""
+        _build_minimal_tree(tmp_path)
+        # Deliberately do NOT write mastermind_feedback_summary.json
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert payload["lobes"]["mastermind_ai"] == {}
+        assert any(g.startswith("lobe.mastermind_ai:") for g in payload["gap_notes"]), (
+            f"Expected 'lobe.mastermind_ai:' gap note; got: {payload['gap_notes']}"
+        )
+
+    def test_lobe_summary_state_absent_no_dialogue_blocks(self, tmp_path):
+        """Summary file present but state=absent → identity fields only."""
+        _build_minimal_tree(tmp_path)
+        _minimal_feedback_summary(tmp_path, state="absent")
+        payload = build_context(root=tmp_path, now=_NOW)
+        lobe = payload["lobes"]["mastermind_ai"]
+        assert lobe["state"] == "absent"
+        for key in ("nudges", "directives", "reflection", "ack"):
+            assert key not in lobe, f"unexpected key {key!r} on absent-state lobe"
+
+    def test_freshness_map_excludes_mastermind_ai(self, tmp_path):
+        """Deliberately NOT in _build_freshness asof_sources — the governance
+        artifact must not drag the artifact-level as_of."""
+        _build_minimal_tree(tmp_path)
+        _minimal_feedback_summary(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert "mastermind_ai" not in payload["freshness"]
+
+    def test_freshness_map_excludes_mastermind_ai_when_absent(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert "mastermind_ai" not in payload["freshness"]
+
+    def test_as_of_not_dragged_by_old_feedback_summary(self, tmp_path):
+        """An old feedback-summary asof must not lower the artifact as_of
+        (governance cadence ≠ market-data cadence)."""
+        _build_minimal_tree(tmp_path)
+        p = _minimal_feedback_summary(tmp_path)
+        obj = json.loads(p.read_text())
+        obj["asof"] = "2026-06-01"  # much older than every market lobe
+        p.write_text(json.dumps(obj))
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert payload["as_of"] == "2026-07-05", (
+            "old mastermind_ai asof dragged the artifact as_of — it must be "
+            "excluded from the freshness min()"
+        )

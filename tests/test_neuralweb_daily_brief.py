@@ -1166,3 +1166,209 @@ def test_evidence_clock_morning_line_no_artifact_passthrough(tmp_path):
     assert "overdue" in ec["morning_line"] or "due" in ec["morning_line"], (
         f"morning_line should be reconstructed from counts, got: {ec['morning_line']!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# W-AI: mastermind_dialogue P2 operator_attention item
+# ---------------------------------------------------------------------------
+
+def _make_feedback_summary(
+    tmp_path: Path,
+    *,
+    state: str = "present",
+    nudges: list[dict] | None = None,
+    directives: list[dict] | None = None,
+) -> dict:
+    """Write data/governance/mastermind_feedback_summary.json (reverse-bridge)."""
+    fb = {
+        "schema": "neuralweb.mastermind_feedback_summary.v1",
+        "state": state,
+        "gap_notes": [],
+        "nudges": nudges or [],
+        "operator_directives": directives or [],
+    }
+    p = tmp_path / "data" / "governance" / "mastermind_feedback_summary.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(fb), encoding="utf-8")
+    return fb
+
+
+def _make_standard_brief_root(tmp_path: Path) -> None:
+    _make_minimal_root(tmp_path)
+    _make_health(tmp_path)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    _make_graph(tmp_path)
+    _make_mastermind_context(tmp_path)
+
+
+def _dialogue_items(brief: dict) -> list[dict]:
+    return [a for a in brief["operator_attention"] if a.get("area") == "mastermind_dialogue"]
+
+
+def test_mastermind_dialogue_p2_high_nudge_and_directive(tmp_path):
+    """present + 1 high-severity nudge + 1 directive → priority-2 item."""
+    _make_standard_brief_root(tmp_path)
+    _make_feedback_summary(
+        tmp_path,
+        nudges=[{"code": "ctx_stale_run", "severity": "high"}],
+        directives=[{"id": "deadbeef01", "text": "check the radar contract"}],
+    )
+
+    brief = build(root=tmp_path)
+
+    items = _dialogue_items(brief)
+    assert len(items) == 1, (
+        f"Expected one mastermind_dialogue item; got: {brief['operator_attention']}"
+    )
+    item = items[0]
+    assert item["priority"] == 2
+    assert item["action_type"] == "follow_up"
+    assert "1 high-severity nudge" in item["summary"]
+    assert "1 operator directive" in item["summary"]
+
+
+def test_mastermind_dialogue_high_nudge_only(tmp_path):
+    """OR condition: a high nudge alone (no directives) triggers the item."""
+    _make_standard_brief_root(tmp_path)
+    _make_feedback_summary(
+        tmp_path,
+        nudges=[{"code": "ctx_stale_run", "severity": "high"},
+                {"code": "minor_thing", "severity": "low"}],
+    )
+    brief = build(root=tmp_path)
+    items = _dialogue_items(brief)
+    assert len(items) == 1
+    assert "1 high-severity nudge" in items[0]["summary"]
+    assert "0 operator directives" in items[0]["summary"]
+
+
+def test_mastermind_dialogue_directive_only(tmp_path):
+    """OR condition: a directive alone (no high nudges) triggers the item."""
+    _make_standard_brief_root(tmp_path)
+    _make_feedback_summary(
+        tmp_path,
+        nudges=[{"code": "minor_thing", "severity": "low"}],
+        directives=[{"id": "deadbeef01", "text": "look at radar"}],
+    )
+    brief = build(root=tmp_path)
+    items = _dialogue_items(brief)
+    assert len(items) == 1
+    assert "0 high-severity nudges" in items[0]["summary"]
+    assert "1 operator directive" in items[0]["summary"]
+
+
+def test_no_mastermind_dialogue_when_only_low_nudges(tmp_path):
+    """present but no high nudge and no directive → no item."""
+    _make_standard_brief_root(tmp_path)
+    _make_feedback_summary(
+        tmp_path,
+        nudges=[{"code": "minor_a", "severity": "low"},
+                {"code": "minor_b", "severity": "medium"}],
+    )
+    brief = build(root=tmp_path)
+    assert _dialogue_items(brief) == []
+
+
+def test_no_mastermind_dialogue_when_feedback_absent(tmp_path):
+    """No feedback summary file → no item, build never raises."""
+    _make_standard_brief_root(tmp_path)
+    # Deliberately do NOT write mastermind_feedback_summary.json
+    brief = build(root=tmp_path)
+    assert brief["schema"] == "neuralweb.daily_brief.v1"
+    assert _dialogue_items(brief) == []
+
+
+def test_no_mastermind_dialogue_when_state_not_present(tmp_path):
+    """state=stale/absent must contribute nothing, even with pending directives."""
+    _make_standard_brief_root(tmp_path)
+    _make_feedback_summary(
+        tmp_path,
+        state="stale",
+        nudges=[{"code": "ctx_stale_run", "severity": "high"}],
+        directives=[{"id": "deadbeef01", "text": "x"}],
+    )
+    brief = build(root=tmp_path)
+    assert _dialogue_items(brief) == []
+
+
+def test_mastermind_dialogue_attention_stays_sorted(tmp_path):
+    """The P2 dialogue item must not break priority-sorted operator_attention."""
+    _make_standard_brief_root(tmp_path)
+    _make_feedback_summary(
+        tmp_path,
+        nudges=[{"code": "ctx_stale_run", "severity": "high"}],
+        directives=[{"id": "deadbeef01", "text": "x"}],
+    )
+    brief = build(root=tmp_path)
+    priorities = [a["priority"] for a in brief["operator_attention"]]
+    assert priorities == sorted(priorities), (
+        f"operator_attention no longer priority-sorted: {priorities}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# W-AI operator switch: config.yml orchestrator.brief_attention_nudges
+# ---------------------------------------------------------------------------
+
+def _make_pending_dialogue(tmp_path: Path) -> None:
+    """present feedback with a high nudge AND a directive — the strongest
+    trigger for the P2 item."""
+    _make_feedback_summary(
+        tmp_path,
+        nudges=[{"code": "ctx_stale_run", "severity": "high"}],
+        directives=[{"id": "deadbeef01", "text": "check the radar contract"}],
+    )
+
+
+def _write_brief_config(tmp_path: Path, body: str) -> None:
+    (tmp_path / "config.yml").write_text(body, encoding="utf-8")
+
+
+def test_no_mastermind_dialogue_when_toggle_false(tmp_path):
+    """brief_attention_nudges: false → NO P2 item even with a high nudge +
+    directive pending."""
+    _make_standard_brief_root(tmp_path)
+    _make_pending_dialogue(tmp_path)
+    _write_brief_config(tmp_path, "orchestrator:\n  brief_attention_nudges: false\n")
+    brief = build(root=tmp_path)
+    assert _dialogue_items(brief) == []
+
+
+def test_mastermind_dialogue_when_toggle_absent(tmp_path):
+    """config.yml exists but has no orchestrator.brief_attention_nudges →
+    default true → item appears (existing behavior)."""
+    _make_standard_brief_root(tmp_path)
+    _make_pending_dialogue(tmp_path)
+    _write_brief_config(tmp_path, "other_section:\n  x: 1\n")
+    brief = build(root=tmp_path)
+    assert len(_dialogue_items(brief)) == 1
+
+
+def test_mastermind_dialogue_when_toggle_true(tmp_path):
+    """Explicit brief_attention_nudges: true → item appears."""
+    _make_standard_brief_root(tmp_path)
+    _make_pending_dialogue(tmp_path)
+    _write_brief_config(tmp_path, "orchestrator:\n  brief_attention_nudges: true\n")
+    brief = build(root=tmp_path)
+    items = _dialogue_items(brief)
+    assert len(items) == 1
+    assert items[0]["priority"] == 2
+
+
+def test_mastermind_dialogue_toggle_fails_open_on_malformed_config(tmp_path):
+    """Unparseable config.yml → default true (fail-open), item appears."""
+    _make_standard_brief_root(tmp_path)
+    _make_pending_dialogue(tmp_path)
+    _write_brief_config(tmp_path, ": not valid yaml : [")
+    brief = build(root=tmp_path)
+    assert len(_dialogue_items(brief)) == 1
+
+
+def test_mastermind_dialogue_toggle_non_bool_fails_open(tmp_path):
+    """A string 'false' is not a boolean — the nudge item still appears."""
+    _make_standard_brief_root(tmp_path)
+    _make_pending_dialogue(tmp_path)
+    _write_brief_config(tmp_path, "orchestrator:\n  brief_attention_nudges: 'false'\n")
+    brief = build(root=tmp_path)
+    assert len(_dialogue_items(brief)) == 1
