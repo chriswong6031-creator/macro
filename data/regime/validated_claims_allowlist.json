@@ -1063,20 +1063,6 @@
    ]
   },
   {
-   "match": "scored — validated & wired",
-   "backing": "dashboard 'Scored — validated & wired into a number' section header — the objects that are engine-scored (signal_lab-validated families).",
-   "surfaces": [
-    "dashboard"
-   ]
-  },
-  {
-   "match": "validated & wired into a number",
-   "backing": "dashboard — the validated (signal_lab) + wired-into-a-number objects.",
-   "surfaces": [
-    "dashboard"
-   ]
-  },
-  {
    "match": "validated, served masterminds",
    "backing": "cross-asset trend = the validated, live masterminds GTAA primary factor (W_REGIME 0.45).",
    "surfaces": [
