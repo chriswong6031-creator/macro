@@ -3126,6 +3126,37 @@ window.__CHART_SWAP__ = {
   var TIER_ZH = {"PRIME":"极佳","CONFIRMED":"确认","CONFIRMING":"确认中","APPROACHING":"临近","FIRST SPARK":"首信号"};
   var b = StockTable._bi, esc = StockTable._esc, fp = StockTable._fmtPct, fn = StockTable._fmtNum, mg = StockTable._macdGlyph;
 
+  function setupRank(r) {
+    /* Setup strength (display context): blends stage, buy-readiness, washout depth and
+       turn signals from fields already shipped on the row. Client-side ordering only —
+       board shelves and production rank weights untouched (CN-SYS-R7). */
+    var st = r.stage || r._stage, zone = r.zone, v;
+    if (st === 'ENTRY') {
+      v = (r.conviction != null ? parseFloat(r.conviction) : 45);
+      if (r.days_since_signal != null && r.days_since_signal <= 2) v += 8;
+      if (r.washout_2w) v += 4;
+      if (r.coiled) v += 2;
+    } else if (st === 'RIPENING' && zone === 'READY') {
+      v = 55;
+      if (r.imminence != null) v += Math.max(0, 18 - 8 * r.imminence);
+      if (r.w2_stoch != null) v += r.w2_stoch <= 20 ? 10 : (r.w2_stoch <= 35 ? 6 : 0);
+      if (r.w2_stoch_arrow === 1) v += 4;
+      if (r.macd_hist_d != null && r.macd_hist_d > 0) v += 3;
+    } else if (st === 'RIPENING' && zone === 'BASING') {
+      v = 35;
+      if (r.w2_stoch != null) v += r.w2_stoch <= 20 ? 12 : (r.w2_stoch <= 35 ? 7 : 0);
+      if (r.w2_stoch_arrow === 1) v += 5;
+      if (r.macd_hist_d != null && r.macd_hist_d > 0) v += 3;
+      if (r.spot_pct_in_range != null) v += r.spot_pct_in_range <= 15 ? 6 : (r.spot_pct_in_range <= 30 ? 3 : 0);
+    } else if (st === 'RIPENING') {   // FALLING — knife; stays near the bottom
+      v = 8;
+      if (r.w2_stoch_arrow === 1) v += 4;
+    } else {                          // RAN_LATE — signal spent
+      v = 2;
+    }
+    return Math.max(0, Math.min(100, v));
+  }
+
   function stageBadge(stage, zone) {
     if (!stage) return '<span class="st-muted">—</span>';
     var cls = stage === 'ENTRY' ? 'st-chip-entry' : stage === 'RAN_LATE' ? 'st-chip-ran' : zone === 'FALLING' ? 'st-chip-knife' : 'st-chip-rip';
@@ -3172,6 +3203,11 @@ window.__CHART_SWAP__ = {
         var n = parseInt(v); var cls = n>=70?'st-pos':n>=40?'':'st-neg';
         return '<span class="' + cls + '">' + n + '</span>'; },
       tip:{en:'Buy-readiness 0–100 (ENTRY rows only)',zh:'买入就绪度0–100（仅入场行）'} },
+    { key:'_rank', labelEn:'Setup', labelZh:'形态', default:true, sortable:true, right:true,
+      fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
+        var n = Math.round(v); var cls = n>=70?'st-pos':n>=40?'':'st-muted';
+        return '<span class="' + cls + '">' + n + '</span>'; },
+      tip:{en:'Setup strength 0–100 — blends stage, buy-readiness score, washout depth and turn signals (context ordering, evidence accruing). Rows sort by this by default; click Reset to restore board order',zh:'形态强度0–100——综合阶段、买入就绪度、洗盘深度与转向信号（情境排序，证据积累中）。默认按此排序；点击重置恢复榜单顺序'} },
     { key:'mcap', labelEn:'Mkt cap', labelZh:'市值(亿)', default:true, sortable:true, right:true, cls:'st-hide-sm',
       fmt:function(v,r){ if(v==null) return '<span class="st-muted">—</span>';
         var b2 = r.cap_bucket; var cls = b2==='large'?'st-pos':b2==='small'?'st-neg':'';
@@ -3196,7 +3232,9 @@ window.__CHART_SWAP__ = {
     { key:'macd_hist_d', labelEn:'MACD D/2D/3D', labelZh:'MACD多周期', default:false, sortable:false,
       fmt:function(v,r){ return mg(r.macd_hist_d, r.macd_d2, r.macd_d3); },
       tip:{en:'Daily / 2D / 3D MACD histogram direction (▲ pos / ▼ neg / · unknown)',zh:'日线/2日/3日MACD柱方向（▲正 / ▼负 / ·未知）'} },
-    { key:'days_since_signal', labelEn:'Days', labelZh:'信号天数', default:true, sortable:true, right:true, cls:'st-hide-sm',
+    /* days_since_signal demoted to non-default: recency is carried by the NEW-dot on the
+       ticker cell; Setup column now holds the 9th default slot (operator no-scroll request 2026-07-10). */
+    { key:'days_since_signal', labelEn:'Days', labelZh:'信号天数', default:false, sortable:true, right:true, cls:'st-hide-sm',
       fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
         var n = parseInt(v);
         return n<=2 ? '<span class="st-pos">' + n + '</span>' : String(n); },
@@ -3264,6 +3302,7 @@ window.__CHART_SWAP__ = {
     columns: cols,
     optionLabels: OPTION_LABELS,
     searchPlaceholder: ['Search name or theme…','搜索名称或主题…'],
+    rankFn: setupRank,
   });
 
   /* restore persisted view */
