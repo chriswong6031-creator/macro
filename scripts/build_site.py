@@ -3225,6 +3225,24 @@ def chart_vix_term(f: pd.DataFrame, cf: pd.DataFrame) -> str:
     return _html(fig)
 
 
+def _master_brief_vm() -> dict:
+    """Read site/master_brief.json (fallback data/regime/master_brief.json).
+    Returns {'master_brief': <dict>} on success, {} on any failure (fail-open).
+    Never fatal — a missing/malformed file simply omits the key from the VM."""
+    import json as _json
+    _candidates = [
+        Path(__file__).parent.parent / "site" / "master_brief.json",
+        Path(__file__).parent.parent / "data" / "regime" / "master_brief.json",
+    ]
+    for _p in _candidates:
+        try:
+            if _p.exists():
+                return {"master_brief": _json.loads(_p.read_text(encoding="utf-8"))}
+        except Exception:  # noqa: BLE001 — display-only; never fatal
+            pass
+    return {}
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -3733,7 +3751,9 @@ def main() -> int:
         policy_lever=_policy_lever_view(),  # Policy-Shock W2-F lever card (display-only, PS-R3)
         flip_confirmation=_flip_confirmation_view(),  # T+1 sector-flip confirmation lens (Policy-Shock W1-C, display-only)
         shock_state=_dash_shock_state,  # policy-shock de-escalation (PS-R3, display-only)
+        **_master_brief_vm(),
     )
+
     # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled
     # view-model so scripts/render_macro_fast.py can re-render macro.html /
     # us_stocks.html from the SAME data in <1s while iterating on the template/CSS
