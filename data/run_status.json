@@ -1859,6 +1859,14 @@
       "probed_at": null,
       "elapsed_sec": 2.3,
       "checked_at": "2026-07-13T06:28:53.341329+00:00"
+    },
+    "flow_signals": {
+      "status": "ok",
+      "n_new": 0,
+      "n_graded_ok": 0,
+      "elapsed_sec": 0.5,
+      "last_date": "2026-07-13",
+      "checked_at": "2026-07-13T07:14:48.459684+00:00"
     }
   },
   "circuit_breaker": {

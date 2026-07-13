@@ -950,6 +950,27 @@ jobs:
           python -m scripts.mirror_flow_idx || echo "::warning::flow_idx R2 mirror failed (non-fatal)"
           python -m scripts.mirror_flow_idx --leaders || echo "::warning::flow leaders R2 mirror failed (non-fatal)"
           python -m scripts.mirror_flow_idx --radar || echo "::warning::leader radar R2 mirror failed (non-fatal)"
+      - name: flow-signal ledger harvest + outcome grader (FS-0)
+        # FS-0 (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE §5): append-only per-event
+        # flow ledger (collectors/flow_signals.py) + outcome grader
+        # (engine/flow_signals_grade.py). Runs AFTER the flow_idx mirror steps
+        # so that R2 archive blobs from the live_flow poller are available.
+        # US engine job, R2-creds-gated, no-ops without creds. (There is no
+        # us_scope gate in this job — step is unconditional but gracefully
+        # degrades when R2_ENDPOINT/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY are
+        # absent.) Nightly is the sole advancer of this ledger (forward-ledger
+        # law): intraday lanes must not write to data/flow_signals/. Output
+        # covered by 'git add data/' in the 'commit engine outputs' step below.
+        # Graceful: absent R2 creds → clean no-op (harvest returns 0). Never
+        # fails the nightly.
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          python -m scripts.build_flow_signals || echo "::warning::build_flow_signals failed (non-fatal — keeping last committed ledger)"
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes

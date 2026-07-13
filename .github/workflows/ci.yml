@@ -396,6 +396,13 @@ on:
       - "scripts/build_flow_desk.py"
       - "templates/flow_desk.html.j2"
       - "tests/test_flow_cohorts.py"
+      # FS-0 flow-signal ledger + outcome grader (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE):
+      # collector, grader engine, build script, detector config, and test file.
+      - "collectors/flow_signals.py"
+      - "engine/flow_signals_grade.py"
+      - "scripts/build_flow_signals.py"
+      - "config/flow_detector.yml"
+      - "tests/test_flow_signals.py"
       # FL-A EOD flow backfill (FC-R4/R11): backfill script, build_options_flow staleness
       # warning, and the test suite that pins idempotence + schema-variant handling.
       - "scripts/backfill_options_flow.py"
@@ -1181,6 +1188,26 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: flow-cohorts unit tests
         run: python -m pytest tests/test_flow_cohorts.py -q
+
+  flow-signals-ledger:
+    # FS-0 flow-signal ledger + outcome grader (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE):
+    # keep-first dedup, tz-normalization (aware-UTC enforcement),
+    # PIT leak-injection (no future-data lookahead), split-seam guard,
+    # CI-null (no creds / absent stores → clean no-op), grader parity
+    # (outputs match engine/grading.py primitives directly), tz-aware parquet
+    # round-trip (avoids the LETHAL naive/aware datetime64 mismatch class).
+    # Triggers on collectors/flow_signals.py, engine/flow_signals_grade.py,
+    # scripts/build_flow_signals.py, config/flow_detector.yml, and test file.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml boto3
+      - name: flow-signals ledger + grader unit tests
+        run: python -m pytest tests/test_flow_signals.py -q
 
   broad-etf-flows:
     # RLT-R3: broad-market index ETF creation/redemption proxy.
