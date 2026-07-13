@@ -462,6 +462,47 @@ def _audit_approved(pr_number: int, head_sha: str, root: Path | None = None) -> 
         return False, f"audit gate error (fail-closed): {exc}"
 
 
+# ── Propose-branch lifecycle ──────────────────────────────────────────────────
+
+def _delete_remote_propose_branch(
+    cycle_id: str,
+    *,
+    root: Path | None = None,
+    dry_run: bool = False,
+) -> bool:
+    """Delete the remote metabolism/propose-<cycle_id> branch after a successful merge.
+
+    F3(a): adjudicate/merge/audit rescans enumerate ALL open propose-* branches;
+    without cleanup they grow unboundedly.  A merged cycle's propose branch is
+    terminal — delete it so future rescans never touch it again.
+
+    Tolerates failure with a warning — never fatal (branch may be absent or
+    already deleted by a concurrent run).  NEVER raises.  Returns True on success.
+    """
+    branch = f"metabolism/propose-{cycle_id}"
+    r = root or _ROOT
+    try:
+        if dry_run:
+            log.info("MERGE [DRY-RUN]: would delete remote branch %s", branch)
+            return True
+        result = subprocess.run(
+            ["git", "push", "origin", "--delete", branch],
+            cwd=str(r), capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode == 0:
+            log.info("MERGE: deleted remote propose branch %s", branch)
+            return True
+        # Non-fatal: already deleted or never existed
+        log.warning(
+            "MERGE: could not delete remote branch %s (non-fatal): %s",
+            branch, result.stderr[:200],
+        )
+        return False
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_merge._delete_remote_propose_branch: %s (non-fatal)", exc)
+        return False
+
+
 # ── Main merge loop ───────────────────────────────────────────────────────────
 
 def run_merge_lane(
@@ -646,6 +687,13 @@ def run_merge_lane(
                 per["reason"] = merge_result.get("error", "unknown")
 
             results.append(per)
+
+        # F3(a): After a successful merge, delete the remote propose-* branch so
+        # adjudicate/merge/audit rescans don't accumulate unbounded branch lists.
+        # Tolerate failure with a warning — never fatal (branch may be absent or
+        # already deleted by a concurrent run).
+        if merged_count > 0:
+            _delete_remote_propose_branch(cycle_id, root=root, dry_run=dry_run)
 
     except Exception as exc:  # noqa: BLE001
         log.warning("metabolism_merge.run_merge_lane: %s", exc)

@@ -48,6 +48,11 @@ _WATCHED_PATTERNS = ("wf_*", "metabolism-*", "claude/loop-*", "metabolism/*")
 
 _TERMINAL_STATUSES = frozenset({"done", "failed"})
 
+# F3(b): propose-branch reaper retention window (days).  Propose branches whose
+# cycle_id is parseable as a date and older than this threshold are eligible for
+# deletion when they also have a terminal journal record.
+_PROPOSE_BRANCH_RETENTION_DAYS = 7
+
 
 # ── Safety guards ────────────────────────────────────────────────────────────
 
@@ -269,6 +274,162 @@ def sweep_stale_running_markers(repo_root: Path, dry_run: bool = False) -> dict:
     return summary
 
 
+# ── Propose-branch reaper (F3b) ──────────────────────────────────────────────
+
+def _is_paused() -> bool:
+    """Return True unless AUTONOMY_PAUSED is the exact string 'false'. NEVER raises."""
+    try:
+        from scripts.metabolism_guard import is_paused  # type: ignore[import]
+        return is_paused()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("GC: _is_paused: %s — treating as paused", exc)
+        return True
+
+
+def _parse_cycle_date(cycle_id: str) -> datetime | None:
+    """Extract a UTC date from a cycle_id with a date-like prefix (YYYY-MM-DD...).
+
+    Returns None if the cycle_id does not begin with a parseable date.
+    NEVER raises.
+    """
+    try:
+        # Cycle IDs typically look like "cycle-2026-07-10-abc123" or "2026-07-10-abc".
+        # Walk through the parts to find a YYYY-MM-DD segment.
+        for i in range(min(len(cycle_id), 20)):
+            candidate = cycle_id[i:i+10]
+            if len(candidate) < 10:
+                break
+            try:
+                return datetime.strptime(candidate, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            except ValueError:
+                continue
+        return None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def reap_propose_branches(repo_root: Path, dry_run: bool = False) -> dict:
+    """Delete remote metabolism/propose-* branches for terminal cycles older than
+    _PROPOSE_BRANCH_RETENTION_DAYS.
+
+    GATE: this function is a WRITE action — it is gated on AUTONOMY_PAUSED being
+    the exact string 'false' (same gate the other autonomous stages use).  When
+    the loop is paused, propose-branch deletion is suppressed; worktree reaping
+    (which is read-only discovery + local-fs removal, not a remote write) stays
+    ungated.
+
+    Eligibility criteria for deletion:
+      - Remote branch name matches metabolism/propose-<cycle_id>
+      - cycle_id has a parseable date prefix AND that date is older than the
+        retention window  (prevents deleting very fresh cycles whose PRs may still
+        be in flight)
+      - The corresponding journal record in data/metabolism/journal/<cycle_id>.json
+        has a terminal top-level status ("done" or "failed") or at least one
+        terminal stage — confirms the cycle actually completed before deletion
+
+    Returns a summary dict: {"deleted": list[str], "skipped": list[str], "errors": list[str]}.
+    NEVER raises.
+    """
+    summary: dict = {"deleted": [], "skipped": [], "errors": []}
+
+    # GATE: branch deletion is a write action — respect the autonomous loop pause.
+    if _is_paused():
+        log.info("GC propose-branch reaper: AUTONOMY_PAUSED — skipping branch deletion (ungated worktree reap still runs)")
+        return summary
+
+    try:
+        now = datetime.now(timezone.utc)
+        retention = timedelta(days=_PROPOSE_BRANCH_RETENTION_DAYS)
+
+        # Enumerate all remote propose-* branches
+        result = subprocess.run(
+            ["git", "ls-remote", "--heads", "origin", "refs/heads/metabolism/propose-*"],
+            cwd=str(repo_root), capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode != 0:
+            log.warning("GC propose-branch reaper: git ls-remote failed: %s", result.stderr[:200])
+            return summary
+
+        for line in result.stdout.splitlines():
+            parts = line.strip().split()
+            if len(parts) < 2:
+                continue
+            ref = parts[1]  # refs/heads/metabolism/propose-<cycle_id>
+            if not ref.startswith("refs/heads/metabolism/propose-"):
+                continue
+            cycle_id = ref[len("refs/heads/metabolism/propose-"):]
+            if not cycle_id:
+                continue
+
+            # Age filter: only delete branches whose cycle_id date prefix is older
+            # than the retention window.  Fresh or undated cycles are always skipped.
+            cycle_date = _parse_cycle_date(cycle_id)
+            if cycle_date is None:
+                log.info("GC propose-branch reaper: %s — no parseable date prefix, skipping", cycle_id)
+                summary["skipped"].append(cycle_id)
+                continue
+            age = now - cycle_date
+            if age < retention:
+                log.info(
+                    "GC propose-branch reaper: %s — age %.1fd < retention %dd, skipping",
+                    cycle_id, age.days + age.seconds / 86400, _PROPOSE_BRANCH_RETENTION_DAYS,
+                )
+                summary["skipped"].append(cycle_id)
+                continue
+
+            # Terminal check: require a journal record with terminal status.
+            journal_path = repo_root / "data" / "metabolism" / "journal" / f"{cycle_id}.json"
+            if not journal_path.exists():
+                log.info("GC propose-branch reaper: %s — no journal record, skipping", cycle_id)
+                summary["skipped"].append(cycle_id)
+                continue
+            try:
+                jdata = json.loads(journal_path.read_text(encoding="utf-8"))
+            except Exception as exc:  # noqa: BLE001
+                log.warning("GC propose-branch reaper: %s — journal read error: %s", cycle_id, exc)
+                summary["errors"].append(f"{cycle_id}: journal read error: {exc}")
+                continue
+
+            is_terminal = (
+                jdata.get("status") in _TERMINAL_STATUSES
+                or any(
+                    s.get("status") in _TERMINAL_STATUSES
+                    for s in (jdata.get("stages") or {}).values()
+                )
+            )
+            if not is_terminal:
+                log.info("GC propose-branch reaper: %s — journal not terminal, skipping", cycle_id)
+                summary["skipped"].append(cycle_id)
+                continue
+
+            # Eligible — delete the remote branch
+            branch = f"metabolism/propose-{cycle_id}"
+            if dry_run:
+                log.info("GC propose-branch reaper [DRY-RUN]: would delete remote %s", branch)
+                summary["deleted"].append(branch)
+                continue
+            del_result = subprocess.run(
+                ["git", "push", "origin", "--delete", branch],
+                cwd=str(repo_root), capture_output=True, text=True, timeout=60,
+            )
+            if del_result.returncode == 0:
+                log.info("GC propose-branch reaper: deleted remote %s", branch)
+                summary["deleted"].append(branch)
+            else:
+                # Non-fatal: branch may have been deleted already by merge lane
+                log.warning(
+                    "GC propose-branch reaper: could not delete %s (non-fatal): %s",
+                    branch, del_result.stderr[:200],
+                )
+                summary["errors"].append(f"{branch}: {del_result.stderr[:100]}")
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_gc.reap_propose_branches: %s", exc)
+        summary["errors"].append(str(exc))
+
+    return summary
+
+
 # ── Main GC loop ─────────────────────────────────────────────────────────────
 
 def gc(repo_root: Path, dry_run: bool = False) -> dict:
@@ -389,6 +550,16 @@ def main(argv: list[str] | None = None) -> int:
             sweep_result["swept"],
             len(sweep_result["errors"]),
         )
+
+    # F3(b): propose-branch reaper — gated on AUTONOMY_PAUSED='false' (write action).
+    # Runs alongside every GC invocation; always exits 0 on failure (never fatal).
+    propose_result = reap_propose_branches(repo_root, dry_run=args.dry_run)
+    log.info(
+        "GC propose-branch reaper: deleted=%d skipped=%d errors=%d",
+        len(propose_result["deleted"]),
+        len(propose_result["skipped"]),
+        len(propose_result["errors"]),
+    )
 
     result = gc(repo_root, dry_run=args.dry_run)
 

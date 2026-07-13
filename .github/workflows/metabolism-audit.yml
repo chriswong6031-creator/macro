@@ -111,15 +111,30 @@ jobs:
           if git diff --cached --quiet; then
             echo "no new audit records to commit."
           else
+            # Commit ONCE before the retry loop (F2 fix: commit-once-retry-push idiom).
             git commit -m "metabolism: AUDIT records [V7]" \
                        -m "Loop-Authored: til run=${GITHUB_RUN_ID:-local}"
-            git fetch origin HEAD 2>/dev/null || true
+            # F2(a): actions/checkout@v4 does NOT set origin/HEAD — key the collision sweep
+            # on origin/main (fetched explicitly) so the sweep is never a silent no-op.
+            git fetch origin main || true
             # pre-sync collision sweep (mirrors adjudicate.yml pattern)
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
-                     <(git ls-tree -r --name-only "origin/HEAD" 2>/dev/null | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only "origin/main" | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            git pull --rebase --autostash origin HEAD 2>/dev/null || true
-            git push origin HEAD:main || echo "push failed — audit records logged locally"
+            # F2(b): replace single-shot push with 5-attempt retry loop so a lost race
+            # does not silently drop audit/governance records on the ephemeral runner.
+            for _i in 1 2 3 4 5; do
+              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+                echo "audit records pushed on attempt $_i"
+                break
+              fi
+              git rebase --abort 2>/dev/null || true
+              echo "audit push attempt $_i lost a race; re-syncing"
+              sleep $((_i * 7))
+              if [ "$_i" -eq 5 ]; then
+                echo "::warning::could not push audit records after 5 attempts — logged locally"
+              fi
+            done
           fi
 
       - name: notify on failure

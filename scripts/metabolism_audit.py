@@ -29,6 +29,7 @@ import json
 import logging
 import subprocess
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -179,8 +180,37 @@ def _already_audited(pr_number: int, head_sha: str, root: Path) -> bool:
 
 # ── Recent cycle discovery (for scan mode) ────────────────────────────────────
 
+# F3 bound: max age for propose-* branch discovery in scan mode.  Branches
+# whose cycle_id date prefix is older than this are skipped — bounding the scan
+# regardless of whether the gc reaper has run yet.
+_DISCOVER_MAX_AGE_DAYS = 30
+
+
+def _parse_cycle_date(cycle_id: str) -> datetime | None:
+    """Extract a UTC datetime from a date-prefixed cycle_id (YYYY-MM-DD...).
+
+    Returns None if no parseable date is found.  NEVER raises.
+    """
+    try:
+        for i in range(min(len(cycle_id), 20)):
+            candidate = cycle_id[i:i + 10]
+            if len(candidate) < 10:
+                break
+            try:
+                return datetime.strptime(candidate, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            except ValueError:
+                continue
+        return None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _discover_recent_cycle_ids() -> list[str]:
     """Discover cycle IDs from open metabolism/propose-* and metabolism/build-* branches.
+
+    F3 max-age filter: cycle IDs whose date prefix is older than
+    _DISCOVER_MAX_AGE_DAYS are excluded from the scan — bounding discovery
+    even when the gc propose-branch reaper has not run yet.
 
     NEVER raises. Returns a deduplicated list (most recent first heuristic).
     """
@@ -193,6 +223,8 @@ def _discover_recent_cycle_ids() -> list[str]:
         )
         if result.returncode != 0:
             return []
+        now = datetime.now(timezone.utc)
+        max_age = timedelta(days=_DISCOVER_MAX_AGE_DAYS)
         cycle_ids: list[str] = []
         seen: set[str] = set()
         for line in result.stdout.splitlines():
@@ -216,9 +248,18 @@ def _discover_recent_cycle_ids() -> list[str]:
                     continue
             else:
                 continue
-            if cid and cid not in seen:
-                seen.add(cid)
-                cycle_ids.append(cid)
+            if not cid or cid in seen:
+                continue
+            # Max-age filter: skip cycles whose date prefix is too old.
+            cycle_date = _parse_cycle_date(cid)
+            if cycle_date is not None and (now - cycle_date) > max_age:
+                log.info(
+                    "metabolism_audit._discover_recent_cycle_ids: %s is >%dd old — skipping",
+                    cid, _DISCOVER_MAX_AGE_DAYS,
+                )
+                continue
+            seen.add(cid)
+            cycle_ids.append(cid)
         return cycle_ids
     except Exception as exc:  # noqa: BLE001
         log.warning("metabolism_audit._discover_recent_cycle_ids: %s", exc)
