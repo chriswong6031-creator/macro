@@ -12,6 +12,19 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/blocklist_regen_guard.py\"",
+            "timeout": 30,
+            "statusMessage": "Recompiling kill-registry blocklists"
+          }
+        ]
+      }
     ]
   }
 }

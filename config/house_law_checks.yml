@@ -1492,14 +1492,20 @@ checks:
     summary: >
       One kill-registry, compiled everywhere (R-V4-5).  research/DO_NOT_REBUILD.md
       is the single source of standing kills; scripts/compile_loop_blocklists.py
-      deterministically compiles it to config/compiled_kill_registry.yml (and
-      generated additions for loop-native blocklists).  This check recompiles and
-      byte-diffs against the committed artifact — drift (editing DO_NOT_REBUILD.md
-      without regenerating, or hand-editing the compiled file) is a hard CI failure.
+      deterministically compiles it to config/compiled_kill_registry.yml plus the
+      generated block of config/signal_foundry_blocklist.yml.  This check
+      recompiles and byte-diffs BOTH committed artifacts, and hard-fails on table
+      rows outside DO_NOT_REBUILD.md sections 1-4 (the compiler parses only 1-4;
+      a row elsewhere silently never reaches enforcement — MRI-R38 CPI row, found
+      live).  Drift heals with `--fix`; prevention is the PostToolUse hook
+      .claude/hooks/blocklist_regen_guard.py, which auto-regens on any harness
+      Edit/Write to DO_NOT_REBUILD.md in the editing session's own tree.
     source_ref:
       - scripts/check_blocklist_drift.py
       - scripts/compile_loop_blocklists.py
       - config/compiled_kill_registry.yml
+      - config/signal_foundry_blocklist.yml
+      - .claude/hooks/blocklist_regen_guard.py
       - research/METABOLISM_V4_FIRST_BREATH_BY_FABLE.md
     severity: hard
     check_script: scripts/check_blocklist_drift.py
@@ -1507,10 +1513,14 @@ checks:
       - workflow: .github/workflows/ci.yml
         job: capability-broker
         lane: pr_ci
+      - workflow: .claude/settings.json
+        job: PostToolUse
+        lane: hook
     selftest: false
     selftest_exempt_reason: >
-      Pure recompile-and-byte-diff against a committed artifact — the discriminating
-      failure mode (tampered compiled output goes red) is covered by
+      Pure recompile-and-byte-diff against committed artifacts — the discriminating
+      failure modes (tampered compiled output, tampered SF generated block,
+      misplaced row, --fix heal, hook end-to-end) are covered by
       tests/test_metabolism_v4_w3_mission.py in the metabolism v4 W3 CI suite.
     allowlist: null
     ratchet: null
@@ -1518,8 +1528,12 @@ checks:
       - The compiler's topic→pattern heuristic (3 significant words) provides
         baseline mechanical coverage of killed topics; hand-curated loop
         blocklist entries remain authoritative for phrasings it cannot match.
-      - Byte-diff scope is the compiled registry artifact; consumers' own
-        hand-curated files are not regenerated and so are not drift-checked here.
+      - The auto-regen hook fires only on harness Edit/Write tool calls; shell
+        appends (cat >>) bypass it — the CI byte-diff remains the backstop, and
+        the immune blocklist-drift recipe remains the heal path for main.
+      - A misplaced row is detected but not auto-fixable (--fix and the immune
+        heal_cmd cannot move a row between sections); the immune lane will
+        bounce off it bounded-then-park per R-V7-7.
     owner_program: metabolism-v4
     notes: >
       Established by the v4 sweep finding F1: five propose-test-learn loops held

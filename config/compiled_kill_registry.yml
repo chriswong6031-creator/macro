@@ -330,6 +330,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'CPI revision-direction model (first→latest MoM revision prediction)'
+    verdict: 'KILLED before attempt — CPI revisions are annual seasonal-recalc only, tiny magnitude; empirics on our own vintage store show no exploitable structure'
+    source: 'MRI-R38, `MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md` §12.3'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Ticker-cluster bootstrap CIs without time control'
     verdict: 'FORBIDDEN estimator — anti-conservative, effective N = months'
     source: 'DT-R14; `TIME_CONFOUND_EXPOSURE_AUDIT` (#1755)'
