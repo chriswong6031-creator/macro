@@ -1,0 +1,35 @@
+# config/metabolism_attention.yml — Metabolism attention allocation policy (V9).
+#
+# OPERATOR-RATIFIED POLICY — IMMUTABLE.
+# Loop-authored PRs may NOT modify this file (R-V9-8).
+# Changes require a T2 operator tap.
+#
+# This file controls how the attention allocator scales loop resources per band.
+# The LLM may deviate from structural defaults within guardrails G1/G2;
+# these values define the resource levers the loop actually pulls.
+#
+# Schema: metabolism_attention.v1
+schema: metabolism_attention.v1
+generated_at: "2026-07-12"
+owner_program: metabolism-v9
+
+# Maximum number of lobes that may sit in the FOCUS band simultaneously (G2).
+# Focus only means something if it is scarce.
+max_focus_lobes: 8
+
+# docket_share: scales the per-lobe max_docket_size DOWN only (G5).
+# FOCUS → full docket; DORMANT → 0 (PROPOSE call skipped, R-V9-7 journaled).
+# Attention may never raise a cap past metabolism_budget.yml values.
+docket_share:
+  FOCUS: 1.0        # full docket — max_docket_size × 1.0
+  STANDARD: 0.6     # reduced docket — max_docket_size × 0.6 → ~3 slots
+  MAINTENANCE: 0.2  # minimal docket — max_docket_size × 0.2 → 1 slot
+  DORMANT: 0.0      # DORMANT skips the PROPOSE LLM call (R-V9-7 journaled)
+
+# dispatch_priority: BUILD dispatch order within a window (lower = dispatched first).
+# Within a band, adjudication order is preserved (no starvation, R-V9-9).
+dispatch_priority:
+  FOCUS: 0
+  STANDARD: 1
+  MAINTENANCE: 2
+  DORMANT: 3

@@ -10,11 +10,13 @@ GUARD ORDER (fail-closed at every gate; NEVER raises; always exits 0):
   2. metabolism_budget.is_lobe_paused(til) → circuit-breaker paused → no-op
   3. metabolism_budget over-cap check      → over budget → no-op
   4. preflight_claude_auth.check_auth()    → token unhealthy → no-op + operator alert
+  4.5 attention.propose_skip(lobe)        → DORMANT skip: write empty docket, journal; skip LLM
   5. engine.metabolism.propose.propose()   → build docket, register contracts, write
+     (with max_docket_size scaled by attention.effective_docket_size for non-DORMANT lobes)
 
 The heavy logic lives in engine.metabolism.propose (pure, hermetic-testable).
-This wrapper owns the kill-switch, budget, preflight, and journal, mirroring
-scripts/metabolism_verify.py.
+This wrapper owns the kill-switch, budget, preflight, attention gate, and journal,
+mirroring scripts/metabolism_verify.py.
 
 Usage:
     python -m scripts.metabolism_propose
@@ -137,7 +139,29 @@ def _run_all_lobes(args: "argparse.Namespace", root: Path) -> int:  # noqa: F821
                 "metabolism_propose --all-lobes: running lobe=%s cycle_id=%s",
                 lobe_id, cycle_id,
             )
-            # Build a namespace that matches single-lobe path expectations
+
+            # ── Attention gate (R-V9-3): check if lobe should be skipped ────────
+            _attn_skip = False
+            _attn_skip_reason = ""
+            try:
+                from engine.metabolism import attention as _attn  # noqa: PLC0415
+                _attn_skip, _attn_skip_reason = _attn.propose_skip(lobe_id, root=root)
+            except Exception as _ae:  # noqa: BLE001
+                log.warning(
+                    "metabolism_propose --all-lobes: attention.propose_skip failed for "
+                    "lobe=%s (%s) — proceeding", lobe_id, _ae,
+                )
+                _attn_skip, _attn_skip_reason = False, "attention_error"
+
+            if _attn_skip:
+                log.info(
+                    "metabolism_propose --all-lobes: lobe=%s ATTENTION SKIP reason=%s — "
+                    "writing empty docket", lobe_id, _attn_skip_reason,
+                )
+                _write_attention_skip_docket(cycle_id, lobe_id, _attn_skip_reason, root=root)
+                continue
+
+            # ── Normal single-lobe path ──────────────────────────────────────────
             import copy  # noqa: PLC0415
             lobe_args = copy.copy(args)
             lobe_args.lobe = lobe_id
@@ -152,6 +176,74 @@ def _run_all_lobes(args: "argparse.Namespace", root: Path) -> int:  # noqa: F821
             # Per-lobe failure isolates — continue to next lobe
 
     return 0
+
+
+def _write_attention_skip_docket(
+    cycle_id: str,
+    lobe_id: str,
+    skip_reason: str,
+    *,
+    root: Path,
+) -> None:
+    """Write an empty docket for a DORMANT-skipped lobe and journal the skip.
+
+    The empty docket (proposals=[]) is required so downstream ADJUDICATE
+    discovery (which reads data/metabolism/dockets/<cycle_id>.json) never
+    breaks on a missing file.  NEVER raises.
+    """
+    try:
+        from engine.metabolism.propose import build_docket, write_docket  # type: ignore[import]
+        empty_docket = build_docket(
+            cycle_id,
+            [],
+            root=root,
+            max_docket_size=0,
+            lobe=lobe_id,
+            degraded_reason=f"attention_dormant_skip:{skip_reason}",
+        )
+        # Override notes to reflect the skip clearly.
+        empty_docket["notes"] = (
+            f"attention_dormant_skip: lobe={lobe_id} reason={skip_reason} "
+            "— no LLM call made (R-V9-3 / R-V9-7)"
+        )
+        written = write_docket(empty_docket, root=root)
+        log.info(
+            "metabolism_propose: attention skip docket written: lobe=%s path=%s",
+            lobe_id, written,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning(
+            "metabolism_propose: _write_attention_skip_docket lobe=%s: %s", lobe_id, exc,
+        )
+
+    # Journal the skip (R-V9-7: never silent).
+    try:
+        from scripts.metabolism_journal import finish_stage  # type: ignore[import]
+        finish_stage(
+            cycle_id, "propose", "done",
+            note=f"attention_skip lobe={lobe_id} reason={skip_reason}",
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        # Fallback: append to data/metabolism/attention_skips.jsonl
+        try:
+            import json as _json  # noqa: PLC0415
+            from datetime import datetime, timezone  # noqa: PLC0415
+            skips_path = root / "data" / "metabolism" / "attention_skips.jsonl"
+            skips_path.parent.mkdir(parents=True, exist_ok=True)
+            row = {
+                "cycle_id": cycle_id,
+                "lobe": lobe_id,
+                "reason": skip_reason,
+                "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            }
+            with skips_path.open("a", encoding="utf-8") as _fh:
+                _fh.write(_json.dumps(row, separators=(",", ":")) + "\n")
+        except Exception as _fe:  # noqa: BLE001
+            log.warning(
+                "metabolism_propose: attention skip journal fallback also failed: %s / %s",
+                exc, _fe,
+            )
 
 
 def _run_single_lobe(args: "argparse.Namespace", root: Path, lobe: str, cycle_id: str) -> None:  # noqa: F821
@@ -215,6 +307,31 @@ def _run_single_lobe(args: "argparse.Namespace", root: Path, lobe: str, cycle_id
         # ── Stage start ───────────────────────────────────────────────────
         start_stage(cycle_id, _STAGE, root=root)
         max_docket_size = _load_max_docket_size(root, args.max_docket_size, lobe=lobe)
+
+        # ── Attention docket scaling (R-V9, G5 cap-asymmetry) ────────────
+        # Scale the base docket size down by the lobe's attention band.
+        # Guarded: on any failure, use the unscaled base size.
+        _base_docket_size = max_docket_size
+        try:
+            from engine.metabolism import attention as _attn_scale  # noqa: PLC0415
+            max_docket_size = _attn_scale.effective_docket_size(
+                lobe, _base_docket_size, root=root,
+            )
+            if max_docket_size != _base_docket_size:
+                try:
+                    _band = _attn_scale.band_for(lobe, root=root)
+                except Exception:  # noqa: BLE001
+                    _band = "STANDARD"
+                log.info(
+                    "metabolism_propose[%s]: attention band=%s docket %d→%d",
+                    lobe, _band, _base_docket_size, max_docket_size,
+                )
+        except Exception as _ae:  # noqa: BLE001
+            log.warning(
+                "metabolism_propose[%s]: attention docket scaling failed (%s) — "
+                "using base size %d", lobe, _ae, _base_docket_size,
+            )
+            max_docket_size = _base_docket_size
 
         # ── PROPOSE ───────────────────────────────────────────────────────
         from engine.metabolism.propose import propose  # type: ignore[import]

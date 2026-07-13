@@ -87,6 +87,10 @@ IMMUTABLE_PATTERNS: list[str] = [
     # Fenced NOW so R-V8-3b auto-merge inherits the guarantee that the loop
     # cannot expand its own auto-merge allowlist or remove spurious-check filters.
     "config/metabolism_immune.yml",
+    # V9 addition (R-V9-8): attention-economy policy (band→resource shares,
+    # max_focus_lobes, dispatch priorities).  A loop that could edit its own
+    # docket_share could grant itself more tokens — operator T2 only.
+    "config/metabolism_attention.yml",
 ]
 
 # ── Loop namespace markers ────────────────────────────────────────────────────

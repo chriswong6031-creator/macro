@@ -114,18 +114,21 @@ jobs:
             exit 0
           fi
 
-          # FIX-1: When running on schedule (cycle_id input is empty), discover the most-recent
-          # adjudicated propose branch.  The build script is idempotent via journal claims, so
+          # FIX-1: When running on schedule (cycle_id input is empty), discover the propose
+          # branch to build.  The build script is idempotent via journal claims, so
           # re-running on an already-built cycle is a safe no-op.
+          # R-V9-9: the pick is attention-aware — within the newest cycle date, dockets
+          # for FOCUS lobes dispatch first (rank_cycle_ids falls back to the pre-V9
+          # lexicographic-last pick on any error, so this can never block the lane).
           if [ -z "${CYCLE_ID:-}" ]; then
             CYCLE_ID="$(git ls-remote --heads origin 'refs/heads/metabolism/propose-*' \
               | awk '{print $2}' | sed 's|refs/heads/metabolism/propose-||' \
-              | sort | tail -n 1)"
+              | python -c 'import sys; sys.path.insert(0, "."); from engine.metabolism.attention import rank_cycle_ids; ids = [line.strip() for line in sys.stdin if line.strip()]; ranked = rank_cycle_ids(ids); print(ranked[0] if ranked else "")')"
             if [ -z "$CYCLE_ID" ]; then
               echo "no open propose branch found — clean no-op (schedule)."
               exit 0
             fi
-            echo "schedule: discovered cycle_id=$CYCLE_ID"
+            echo "schedule: discovered cycle_id=$CYCLE_ID (attention-ranked)"
           fi
 
           BRANCH="${DOCKET_BRANCH_INPUT:-metabolism/propose-$CYCLE_ID}"

@@ -133,6 +133,11 @@ jobs:
                 f"{len(result.get('covered', []))} covered")
           PY
 
+          # Step 3.7: Criticality + attention allocation (V9 — R-V9-2). Deterministic
+          # evidence + bounded-discretion allocation; PROPOSE (09:45) reads the fresh
+          # allocation. Best-effort; agenda proceeds even if degraded.
+          python -m scripts.metabolism_attention --cycle-id "$CYCLE_ID" || echo "attention degraded (continuing)"
+
           # Step 4: Build agenda (INERT — writes artifact only)
           AGENDA="$(python -m scripts.metabolism_agenda --cycle-id "$CYCLE_ID" | tail -n 1 || true)"
           echo "agenda=$AGENDA"
