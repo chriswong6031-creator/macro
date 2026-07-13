@@ -1,0 +1,46 @@
+{
+  "activate": true,
+  "importance": 70,
+  "banner_days": 3,
+  "tone": "tailwind",
+  "banner_title": "Trump shrinks Grand Staircase-Escalante 90%, unleashing critical mineral mining",
+  "banner_title_zh": "特朗普将大阶梯-埃斯卡兰特纪念地缩减90%，释放关键矿产开采",
+  "summary": "President Trump reduced the Grand Staircase-Escalante National Monument from 1.87M acres to ~181K acres, opening vast federal lands in Utah to exploration and mining of uranium, copper, cobalt, and other critical minerals.",
+  "summary_zh": "特朗普总统将大阶梯-埃斯卡兰特国家纪念地从187万英亩缩减至约18.15万英亩，开放犹他州大片联邦土地用于铀、铜、钴等关键矿产的勘探和开采。",
+  "analysis": "The proclamation removes monument protections from approximately 1.69 million acres, explicitly citing national-security concerns over foreign dependence on critical minerals. The area contains known deposits of uranium, vanadium, copper, cobalt, manganese, and rare earths, positioning the region for a burst of claim staking and potential mine development.\n\nFor markets, the action signals a clear policy pivot toward domestic resource extraction over conservation. Companies with existing Utah operations—especially uranium and vanadium producers reliant on regional ore—stand to benefit from reduced federal hurdles and newly accessible deposits. The move also aligns with broader efforts to reshore minerals supply chains for defense and energy.\n\nTransmission runs through exploration and production economics: reduced land-use restrictions lower the cost and time to develop new mineral resources, potentially expanding domestic output and alleviating supply constraints. This could soften global prices for affected commodities over time if production scales meaningfully.\n\nKey uncertainty stems from likely legal challenges by environmental groups and possible state actions, mirroring previous monument battles. Court injunctions could delay implementation, while actual mine development remains capital-intensive and commodity-price dependent. Investor enthusiasm may be tempered until any new leases are issued and upheld.",
+  "sectors": [
+    {
+      "name": "Critical Minerals Mining",
+      "impact": "tailwind",
+      "rationale": "Federally restricted land now open to exploration for uranium, vanadium, copper, cobalt, manganese, and rare earths."
+    },
+    {
+      "name": "Uranium Miners",
+      "impact": "tailwind",
+      "rationale": "Region holds significant uranium deposits; reduced monument boundaries ease access for producers and juniors with nearby projects."
+    },
+    {
+      "name": "Industrial Metals",
+      "impact": "tailwind",
+      "rationale": "Copper, zinc, nickel, and other base metals become more accessible, lowering long-term supply risks."
+    },
+    {
+      "name": "Defense & Manufacturing",
+      "impact": "tailwind",
+      "rationale": "Increased domestic critical mineral supply supports defense and manufacturing sectors reliant on these inputs."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "UUUU",
+      "direction": "benefit",
+      "rationale": "Operates the only conventional uranium mill in the US (White Mesa, Utah) and owns nearby projects; direct beneficiary of newly accessible ore."
+    },
+    {
+      "symbol": "CCJ",
+      "direction": "benefit",
+      "rationale": "Largest uranium producer in North America; positive sentiment spillover from US policy shift toward domestic uranium supply."
+    }
+  ],
+  "confidence": "medium"
+}

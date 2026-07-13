@@ -137,6 +137,36 @@
       "at": "2026-07-13T21:12:45.139245+00:00",
       "activated": false,
       "importance": 10
+    },
+    "https://www.whitehouse.gov/?p=44835": {
+      "id": "wh-2026-07-13-fact-sheet-president-donald-j-trump-grants-further-regulatory-relief-from-burden",
+      "at": "2026-07-13T23:12:50.619851+00:00",
+      "activated": false,
+      "importance": 35
+    },
+    "https://www.whitehouse.gov/?p=44836": {
+      "id": "wh-2026-07-13-regulatory-relief-for-certain-stationary-sources-to-promote-american-chemical-ma",
+      "at": "2026-07-13T23:13:28.561026+00:00",
+      "activated": true,
+      "importance": 65
+    },
+    "https://www.whitehouse.gov/?p=44831": {
+      "id": "wh-2026-07-13-modifying-the-bears-ears-national-monument",
+      "at": "2026-07-13T23:14:14.871950+00:00",
+      "activated": true,
+      "importance": 65
+    },
+    "https://www.whitehouse.gov/?p=44824": {
+      "id": "wh-2026-07-13-fact-sheet-president-donald-j-trump-modifies-two-national-monuments-restoring-se",
+      "at": "2026-07-13T23:14:23.246988+00:00",
+      "activated": false,
+      "importance": 35
+    },
+    "https://www.whitehouse.gov/?p=44829": {
+      "id": "wh-2026-07-13-modifying-the-grand-staircase-escalante-national-monument",
+      "at": "2026-07-13T23:15:07.044712+00:00",
+      "activated": true,
+      "importance": 70
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."

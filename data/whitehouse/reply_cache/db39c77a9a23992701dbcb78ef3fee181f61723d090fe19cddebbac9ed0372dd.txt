@@ -1,0 +1,46 @@
+{
+  "activate": true,
+  "importance": 65,
+  "banner_days": 5,
+  "tone": "tailwind",
+  "banner_title": "Bears Ears Monument cut by 1.2M acres — uranium, copper, silver miners gain access to Utah federal lands",
+  "banner_title_zh": "熊耳国家纪念碑缩编，美国铀铜银矿企获准进入联邦土地",
+  "summary": "President Trump's proclamation reduces Bears Ears National Monument from 1.36M acres to ~121K acres, opening over a million acres to potential mining of critical minerals like uranium, copper, and silver.",
+  "summary_zh": "特朗普总统公告将熊耳国家纪念碑面积从136万英亩减至约12.1万英亩，为铀、铜、银等关键矿产的潜在开采放开了超百万英亩土地。",
+  "analysis": "The proclamation radically shrinks the Bears Ears National Monument in Utah, removing protections from roughly 1.2 million acres and returning them to multiple-use federal land management. It explicitly cites the need to access critical minerals—including uranium, copper, silver, molybdenum, lead, vanadium, and zinc—to boost domestic supply and national security.\n\nBy reverting these lands to standard BLM and USFS oversight, the action clears a major regulatory hurdle for future mineral exploration and development. This directly benefits companies with nearby uranium processing infrastructure or those exploring the Colorado Plateau's historic mining districts, potentially expanding the domestic resource pipeline.\n\nThe most immediate market beneficiaries are uranium producers, particularly those with milling capacity in Utah. Copper and silver miners also stand to gain, although new project timelines are long. The move aligns with broader Goldilocks-era themes of deregulation and resource independence, offering a tailwind to mining and critical-mineral equities.\n\nKey uncertainty remains around legal challenges from tribes and environmental groups, which have successfully delayed previous monument boundary changes. Additionally, actual development will depend on commodity prices, permitting timelines, and the next administration's stance, limiting the near-term impact to sentiment rather than immediate revenue.",
+  "sectors": [
+    {
+      "name": "Uranium Mining",
+      "impact": "tailwind",
+      "rationale": "Opening previously restricted federal lands in a uranium-rich region boosts domestic supply potential."
+    },
+    {
+      "name": "Copper Mining",
+      "impact": "tailwind",
+      "rationale": "Access to land with known copper deposits and broad critical-minerals mandate supports exploration."
+    },
+    {
+      "name": "Silver and Critical Minerals Mining",
+      "impact": "tailwind",
+      "rationale": "Proclamation explicitly names silver, molybdenum, lead, vanadium, zinc; benefits companies with US-focused portfolios."
+    },
+    {
+      "name": "Defense & Manufacturing",
+      "impact": "tailwind",
+      "rationale": "Securing domestic sources of critical minerals reduces supply-chain risks for defense and manufacturing."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "UUUU",
+      "direction": "benefit",
+      "rationale": "Energy Fuels' White Mesa uranium mill in Utah could process ore from newly accessible Colorado Plateau deposits."
+    },
+    {
+      "symbol": "URA",
+      "direction": "benefit",
+      "rationale": "Global X Uranium ETF holds uranium miners that may gain from expanded US exploration and development."
+    }
+  ],
+  "confidence": "medium"
+}
