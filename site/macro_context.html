@@ -883,7 +883,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
          taller, so raise the cap for it (0,6,0 wins) — the parent flyout
          (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
          Same specificity trick overrides theme.js's generic accordion-panel
-         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
          submenus) with symmetric sides + top breathing room, so the feature
          cards read centered under the trigger instead of crooked. */
       .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
@@ -1008,7 +1008,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             &bull; <span class="l-en">TRANSITIONING</span><span class="l-zh">转换中</span>
             &bull; <span class="l-en">conf</span><span class="l-zh">置信</span> 29%
             &bull; <span class="l-en">stress-expansion</span><span class="l-zh">stress-expansion</span>
-            &bull; VIX 16.15
+            &bull; VIX 15.03
           </div>
           
           <div class="display-badge">&#9432; <span class="l-en">Display-only context — not signals</span><span class="l-zh">仅展示背景 — 非信号</span></div>
@@ -1016,7 +1016,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <div class="hero-score-box">
           <div class="hero-score-label"><span class="l-en">Risk Score</span><span class="l-zh">风险评分</span></div>
-          <div class="hero-score-num c-up">80</div>
+          <div class="hero-score-num c-up">81</div>
           <div class="hero-score-tag c-up"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span></div>
         </div>
         
@@ -1041,7 +1041,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <div class="kpi-chip">
           <span class="kpi-label">VIX</span>
-          <span class="kpi-val c-up">16.15</span>
+          <span class="kpi-val c-up">15.03</span>
           <span class="kpi-sub"><span class="l-en">normalizing</span><span class="l-zh">normalizing</span></span>
         </div>
         
@@ -1219,6 +1219,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </div>
       
       <div class="scare-tile band-calm">
+        <div class="scare-name"><span class="l-en">Rates / inflation shock</span><span class="l-zh">利率/通胀冲击</span></div>
+        <div class="scare-score band-calm">29</div>
+        <div class="scare-band band-calm">CALM</div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:29%"></div></div>
+      </div>
+      
+      <div class="scare-tile band-calm">
         <div class="scare-name"><span class="l-en">Breadth internals deterioration</span><span class="l-zh">内部广度恶化</span></div>
         <div class="scare-score band-calm">27</div>
         <div class="scare-band band-calm">CALM</div>
@@ -1226,17 +1233,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </div>
       
       <div class="scare-tile band-calm">
-        <div class="scare-name"><span class="l-en">Rates / inflation shock</span><span class="l-zh">利率/通胀冲击</span></div>
-        <div class="scare-score band-calm">22</div>
-        <div class="scare-band band-calm">CALM</div>
-        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:22%"></div></div>
-      </div>
-      
-      <div class="scare-tile band-calm">
         <div class="scare-name"><span class="l-en">Volatility event</span><span class="l-zh">波动率事件</span></div>
-        <div class="scare-score band-calm">3</div>
+        <div class="scare-score band-calm">1</div>
         <div class="scare-band band-calm">CALM</div>
-        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:3%"></div></div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:1%"></div></div>
       </div>
       
     </div>
@@ -1789,7 +1789,24 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
         </div>
         
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px"><span class="l-en">No data yet — updates tonight</span><span class="l-zh">暂无数据，今晚更新</span></div>
+        <!-- State line: plain-word contagion read -->
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--warn)">
+          <span class="l-en">Foreign stress not reaching US markets</span><span class="l-zh">境外压力未传导至美国市场</span>
+        </div>
+        <!-- Stat row 1: EM stress -->
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px">
+          <span style="color:var(--muted)"><span class="l-en">EM stress</span><span class="l-zh">新兴市场</span></span>
+          <span style="font-weight:600;color:var(--muted)"><span class="l-en">EM showing strain</span><span class="l-zh">新兴市场显现压力</span></span>
+        </div>
+        <!-- Stat row 2: Dollar regime -->
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:10px">
+          <span style="color:var(--muted)"><span class="l-en">Dollar</span><span class="l-zh">美元</span></span>
+          <span style="font-weight:600;color:var(--muted)"><span class="l-en">updates tonight</span><span class="l-zh">今晚更新</span></span>
+        </div>
+        <!-- Stance line -->
+        <div style="font-size:11px;padding:7px 10px;background:var(--panel2);border-radius:7px;border-left:3px solid var(--line);line-height:1.4;margin-bottom:10px">
+          <span class="l-en">Monitor — stress contained but not resolved</span><span class="l-zh">监控中——压力受控，但尚未消除</span>
+        </div>
         
         <!-- Detail link -->
         <a href="intl.html" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--link);text-decoration:none">
@@ -2753,7 +2770,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
 
         
-        <div style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.5">Net liquidity is technically expanding but RRP is near-exhausted or stress indicators are confirming — expansion quality is poor; treat with caution, not as a clean tailwind.</div>
+        <div style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.5">Net liquidity is expanding on Treasury/RRP plumbing (e.g. the Treasury spending down its cash account), not Fed asset growth — a real but transient tailwind. Credit and funding stress gauges are not confirming stress. RRP buffer is empty — the next liquidity drain hits bank reserves directly.</div>
         
         
       </div>
@@ -2859,7 +2876,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         
         
-        <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-12</div>
+        <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-13</div>
       </div>
     </div>
   </div>
@@ -3096,7 +3113,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         </div>
         
         
-        <div class="contra-sub"><span class="l-en">Intelligence divergences</span><span class="l-zh">情报分歧</span>: 11</div>
+        <div class="contra-sub"><span class="l-en">Intelligence divergences</span><span class="l-zh">情报分歧</span>: 5</div>
         
         
         <div class="contra-pairs">
@@ -3134,7 +3151,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
       <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-13 09:26 UTC</div>
+    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-13 13:40 UTC</div>
   </div>
 
 </div><!-- /page-wrap -->
@@ -3145,6 +3162,5 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
 </footer>
 
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
