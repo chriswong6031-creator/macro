@@ -1,0 +1,54 @@
+{
+  "schema": "metabolism.docket.v1",
+  "cycle_id": "cycle-2026-07-13-e159",
+  "lobe": "til",
+  "as_of": "2026-07-13",
+  "run_id": "29225590942-propose",
+  "generated_by": "metabolism_propose",
+  "provider": "deepseek",
+  "degraded_reason": null,
+  "proposals": [
+    {
+      "proposal_id": "4a862b78abba",
+      "content_hash": "4a862b78abba",
+      "lobe": "til",
+      "title": "Add integration test for grade_thematic ensuring falsifier_evaluations.jsonl is produced, unblocking falsifier_honesty accrual",
+      "tier": "T0",
+      "kind": "test",
+      "targets_sensor": "falsifier_honesty",
+      "rationale": "Sensor falsifier_honesty is stuck accruing because grade_thematic has never run (file absent). A test that validates the script's output under a controlled input ensures the data path is functional, allowing the sensor to begin accruing real data once the nightly job runs. This is a low-risk, high-leverage fix to unblock the sensor without altering signal paths.",
+      "fitness_contract": {
+        "proposal_id": "4a862b78abba",
+        "lobe": "til",
+        "sensor": "falsifier_honesty",
+        "expected_sign": "+",
+        "band": "low",
+        "check_by": "2026-10-16",
+        "placebo_to_beat": "baseline null (no file present)",
+        "falsifier_spec": {},
+        "asof": "2026-07-13"
+      }
+    }
+  ],
+  "rejected": [],
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path",
+      "auto_merge"
+    ]
+  },
+  "notes": "1 proposal(s) after dedup/cap; 0 rejected. TIL fitness accrues until 2026-10-15 \u2014 contracts minted now are shadow/display-tier and grade only after their check_by. Nothing here is a runtime signal (R-AUT-1)."
+}

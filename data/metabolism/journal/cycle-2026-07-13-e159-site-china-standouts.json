@@ -1,0 +1,20 @@
+{
+  "schema": "metabolism.journal.v1",
+  "cycle_id": "cycle-2026-07-13-e159-site-china-standouts",
+  "stage": "propose",
+  "status": "done",
+  "auth_ok": null,
+  "artifacts": [
+    "/Users/chriswong/actions-runner-1/_work/macro/macro/data/metabolism/dockets/cycle-2026-07-13-e159-site-china-standouts.json"
+  ],
+  "next_stage": "adjudicate",
+  "ts": "2026-07-13T05:12:32+00:00",
+  "stages": {
+    "propose": {
+      "status": "done",
+      "started_at": "2026-07-13T05:11:38+00:00",
+      "finished_at": "2026-07-13T05:12:32+00:00",
+      "note": "docket 3 proposal(s); lobe=site-china-standouts; provider=deepseek"
+    }
+  }
+}

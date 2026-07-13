@@ -1,0 +1,63 @@
+{
+  "schema": "metabolism.docket.v1",
+  "cycle_id": "cycle-2026-07-13-e159-site-us-standouts",
+  "lobe": "site-us-standouts",
+  "as_of": "2026-07-13",
+  "run_id": "29225590942-propose",
+  "generated_by": "metabolism_propose",
+  "provider": "deepseek",
+  "degraded_reason": null,
+  "proposals": [
+    {
+      "proposal_id": "f87b9ea48a8f",
+      "content_hash": "f87b9ea48a8f",
+      "lobe": "site-us-standouts",
+      "title": "Add unit tests for missed_mover_rate calculation to enforce accurate mover detection",
+      "tier": "T0",
+      "kind": "test",
+      "targets_sensor": "missed_mover_rate",
+      "rationale": "The missed_mover_rate sensor depends on correctly identifying missing standouts versus market movers. Without tests, false positives due to ticker mismatches or stale price windows can silently inflate the rate, undermining the fitness signal.",
+      "fitness_contract": {
+        "proposal_id": "f87b9ea48a8f",
+        "lobe": "site-us-standouts",
+        "sensor": "missed_mover_rate",
+        "expected_sign": "+",
+        "band": "0.02-0.05 reduction in average false-negative rate across 10 cycles",
+        "check_by": "2026-10-15",
+        "placebo_to_beat": "raw missed_mover_rate from the 10 cycles preceding test deployment",
+        "falsifier_spec": {},
+        "asof": "2026-07-13"
+      }
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Add a display-tier fitness widget on the US Standouts page to surface live sensor values",
+      "reason": "matches a DO_NOT_REBUILD kill (topic already closed)"
+    },
+    {
+      "title": "Add a coverage-universe sanity test to keep coverage_health honest against the target index",
+      "reason": "matches a DO_NOT_REBUILD kill (topic already closed)"
+    }
+  ],
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path",
+      "auto_merge"
+    ]
+  },
+  "notes": "1 proposal(s) after dedup/cap; 2 rejected. TIL fitness accrues until 2026-10-15 \u2014 contracts minted now are shadow/display-tier and grade only after their check_by. Nothing here is a runtime signal (R-AUT-1)."
+}

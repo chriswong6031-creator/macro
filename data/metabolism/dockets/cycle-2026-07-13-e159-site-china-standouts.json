@@ -1,0 +1,96 @@
+{
+  "schema": "metabolism.docket.v1",
+  "cycle_id": "cycle-2026-07-13-e159-site-china-standouts",
+  "lobe": "site-china-standouts",
+  "as_of": "2026-07-13",
+  "run_id": "29225590942-propose",
+  "generated_by": "metabolism_propose",
+  "provider": "deepseek",
+  "degraded_reason": null,
+  "proposals": [
+    {
+      "proposal_id": "2f8372700438",
+      "content_hash": "2f8372700438",
+      "lobe": "site-china-standouts",
+      "title": "test: nightly grade_thematic produces falsifier_evaluations.jsonl (idempotent)",
+      "tier": "T0",
+      "kind": "test",
+      "targets_sensor": "falsifier_honesty",
+      "rationale": "The falsifier_honesty sensor is blocked because falsifier_evaluations.jsonl is absent. This test exercises the grade_thematic script (or a minimal stub) and asserts that the output file is created with the expected schema, enabling the sensor to begin accruing once real data flows. High-leverage: a single test unblocks the entire sensor.",
+      "fitness_contract": {
+        "proposal_id": "2f8372700438",
+        "lobe": "site-china-standouts",
+        "sensor": "falsifier_honesty",
+        "expected_sign": "+",
+        "band": "sensor non-null within 10 graded entries (n >= 10)",
+        "check_by": "2026-10-15",
+        "placebo_to_beat": "null sensor (0 observations)",
+        "falsifier_spec": {},
+        "asof": "2026-07-13"
+      }
+    },
+    {
+      "proposal_id": "efc74203235d",
+      "content_hash": "efc74203235d",
+      "lobe": "site-china-standouts",
+      "title": "doc: TIL sensor data runbook (how to run grade_thematic, expected files, manual fallback)",
+      "tier": "T0",
+      "kind": "doc",
+      "targets_sensor": "falsifier_honesty",
+      "rationale": "All four TIL sensors are halted waiting for nightly grading output. A concise runbook ensures any operator can manually trigger grade_thematic if the automated job fails, preventing prolonged zero-observation periods. This directly improves coverage_health and falsifier_honesty by reducing the risk of inert pipeline.",
+      "fitness_contract": {
+        "proposal_id": "efc74203235d",
+        "lobe": "site-china-standouts",
+        "sensor": "falsifier_honesty",
+        "expected_sign": "+",
+        "band": "manual run completes within 24h of doc merge (file present)",
+        "check_by": "2026-10-15",
+        "placebo_to_beat": "file absent prior to doc merge",
+        "falsifier_spec": {},
+        "asof": "2026-07-13"
+      }
+    },
+    {
+      "proposal_id": "af86c540c6cf",
+      "content_hash": "af86c540c6cf",
+      "lobe": "site-china-standouts",
+      "title": "test: theme_placebo_tape generation produces valid JSONL with required fields",
+      "tier": "T0",
+      "kind": "test",
+      "targets_sensor": "placebo_hit_rate",
+      "rationale": "The placebo_hit_rate sensor depends on theme_placebo_tape.jsonl having at least 10 graded entries. A unit test for the placebo-generation script (if existing) or a schema validator ensures the tape file is structurally correct before nightly grading fires, preventing silent sensor accrual failures.",
+      "fitness_contract": {
+        "proposal_id": "af86c540c6cf",
+        "lobe": "site-china-standouts",
+        "sensor": "placebo_hit_rate",
+        "expected_sign": "+",
+        "band": "valid tape with 10 entries after first successful generation",
+        "check_by": "2026-10-15",
+        "placebo_to_beat": "empty/invalid tape (0 graded entries)",
+        "falsifier_spec": {},
+        "asof": "2026-07-13"
+      }
+    }
+  ],
+  "rejected": [],
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path",
+      "auto_merge"
+    ]
+  },
+  "notes": "3 proposal(s) after dedup/cap; 0 rejected. TIL fitness accrues until 2026-10-15 \u2014 contracts minted now are shadow/display-tier and grade only after their check_by. Nothing here is a runtime signal (R-AUT-1)."
+}
