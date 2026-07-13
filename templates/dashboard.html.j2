@@ -4303,22 +4303,23 @@ body.page-macro.mx4-grid .mx5-mkt-grid{
   body.page-macro.mx4-grid .mx5-mkt-grid{grid-template-columns:1fr 1fr;}
 }
 body.page-macro.mx4-grid .mx5-mkt-tile{
-  background:var(--mx5-glass-bg);
-  border:1px solid var(--mx5-glass-border);
+  /* v5.3.1: tiles are NESTED inside an already-glass card — glass-on-glass at .1 over .1
+     compounded to ~19% white ("too bright"). Inner surfaces use a subtle 4% fill, no
+     second blur, hairline border, no drop shadow. */
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
   border-radius:14px;
-  backdrop-filter:var(--mx5-blur);
-  box-shadow:var(--mx5-glass-shadow);
   padding:16px 18px 12px;
   position:relative;overflow:hidden;cursor:pointer;
   transition:background .2s ease-out,border-color .2s ease-out,box-shadow .2s ease-out,transform .2s ease-out;
 }
-body.page-macro.mx4-grid .mx5-mkt-tile::before{
-  content:"";position:absolute;inset:0;border-radius:14px;
-  background:linear-gradient(135deg,rgba(255,255,255,.038) 0%,transparent 60%);
-  pointer-events:none;
+[data-theme="light"] body.page-macro.mx4-grid .mx5-mkt-tile{
+  background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);
 }
-body.page-macro.mx4-grid .mx5-mkt-tile.up{border-color:rgba(34,217,122,.26);}
-body.page-macro.mx4-grid .mx5-mkt-tile.dn{border-color:rgba(239,68,68,.26);}
+/* v5.3.1: tiles sit calm — neutral border like every other card; direction color
+   lives on the delta text and a dimmed sparkline only (operator: too bright) */
+body.page-macro.mx4-grid .mx5-mkt-tile.up,
+body.page-macro.mx4-grid .mx5-mkt-tile.dn{border-color:var(--glass-border,rgba(255,255,255,.12));}
 /* Unified hover (Order 5) — overrides the directional .up/.dn border on hover
    so no accent tint survives; placed AFTER .up/.dn for cascade precedence. */
 body.page-macro.mx4-grid .mx5-mkt-tile:hover,
@@ -4620,10 +4621,10 @@ body.page-macro.mx4-grid .mx5-deep-chip:hover{
 
 /* ── Sparkline (idx_spark, static SVG) ─────────────────────────── */
 /* spark colors match sign: .up or .dn set on the tile */
-body.page-macro.mx4-grid .mx5-spark-up path.mx5-spark-area{fill:rgba(34,217,122,.22);}
+body.page-macro.mx4-grid .mx5-spark-up path.mx5-spark-area{fill:rgba(34,217,122,.10);}
 body.page-macro.mx4-grid .mx5-spark-up path.mx5-spark-line,
 body.page-macro.mx4-grid .mx5-spark-up polyline{stroke:#22d97a;}
-body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-area{fill:rgba(239,68,68,.16);}
+body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-area{fill:rgba(239,68,68,.08);}
 body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-line,
 body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
 
@@ -7550,7 +7551,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
             <svg viewBox="0 0 120 34" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="spkGrad_{{ _ixsym }}" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="{{ _spk_color }}" stop-opacity=".26"/>
+                  <stop offset="0%" stop-color="{{ _spk_color }}" stop-opacity=".12"/>
                   <stop offset="100%" stop-color="{{ _spk_color }}" stop-opacity="0"/>
                 </linearGradient>
               </defs>
@@ -7559,7 +7560,7 @@ body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
                 fill="url(#spkGrad_{{ _ixsym }})" stroke="none"/>
               <polyline class="mx5-spark-line"
                 points="{{ _spk_pts | join(' ') }}"
-                fill="none" stroke="{{ _spk_color }}" stroke-width="1.5"/>
+                fill="none" stroke="{{ _spk_color }}" stroke-width="1.5" opacity=".75"/>
             </svg>
           </div>
           {% endif %}
