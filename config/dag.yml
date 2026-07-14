@@ -29,12 +29,39 @@ lanes:
           at the end of this lane is gated on this step's outcome.
       - id: collect_us
         module: scripts.collect
-        args: [--exclude-group, asia]
+        args: [--exclude-group, asia, --skip-shadow-importance]
         note: >
           fetch_finviz_themes also runs in this step but is called as
           'python scripts/fetch_finviz_themes.py' (not python -m), so the
           conformance parser cannot extract it via _PYTHON_M_RE. It is intentionally
           omitted from the declared module list to keep parser output consistent.
+          --skip-shadow-importance (2026-07-14 collect split): the ~13-14m
+          shadow_importance_v0 + _pit passes run standalone in the collect_tail
+          lane below, off the engine job's critical path. The forward-ledger
+          graders (grade_breadth_divergence / grade_policy_calendar /
+          grade_qledger) STAY inside this step (COLLECT_LANE=nightly) — the
+          nightly sole-advancer law is untouched by the split.
+      - id: publish_r2_attention
+        module: scripts.publish_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention publish-back (#1677) — the day's upserted increments
+          ride back to R2 so tomorrow's restore + the render-side restores read a
+          CURRENT deep store. Gated on fetch_r2_attention's outcome (a shallow
+          rebuild after a failed restore must never clobber 11y of history; the
+          append-only guard + bytes floor in publish_r2 are the second fence).
+          Runs AFTER "commit data" so the data commit is never delayed. Non-fatal.
+
+  # ── daily.yml / collect_tail ─────────────────────────────────────────────
+  # 2026-07-14 collect split: the slow post-adapter accrual band (ThetaData
+  # tape-flow, TIL organs, shadow-importance, qledger backfill) moved here from
+  # the collect job so the engine job (needs: collect) starts ~30-75m earlier.
+  # needs: collect → a fresh checkout+pull reads tonight's committed stores.
+  # Engine does NOT wait on this job; every same-night reader of these outputs
+  # tolerates ≤1-run-stale data (the factor_series sibling contract).
+  - workflow: .github/workflows/daily.yml
+    job: collect_tail
+    steps:
       - id: tape_flow_forward
         module: scripts.build_tape_flow_daily
         args: [--mode, forward]
@@ -193,25 +220,33 @@ lanes:
           NO LLM. Deterministic n-gram/statistics only.
           DISPLAY/WATCHLIST — all outputs may_rank/may_gate/may_size/may_escalate=false.
           Always exits 0 (tolerant; absent stores → honest nulls written).
+      - id: shadow_importance_v0
+        module: scripts.shadow_importance_v0
+        note: >
+          importance_v0 SHADOW lane (W3) — scores the full US+CN qbus store and
+          registers HIGH/LOW band claims (idempotent salts). Moved out of
+          scripts.collect 2026-07-14 (collect split; collect-core passes
+          --skip-shadow-importance) — ~13-14m combined with the _pit pass, the
+          spike leg of the old 98.5m collectors step. Ordering vs grade_qledger
+          is NOT load-bearing: the grader only grades claims matured ≥5d
+          (engine/qledger._matured), so one-job-later registration never changes
+          grading arithmetic. __main__ uses lib.procutil.hard_exit (#2196 —
+          parquet one-shots can deadlock in pyarrow shutdown). Non-fatal.
+      - id: shadow_importance_v0_pit
+        module: scripts.shadow_importance_v0_pit
+        note: >
+          importance_v0 PIT-correct tape (W4) — the _pit families are the PRIMARY
+          leak-free tape on the duel scoreboard; accrues nightly alongside W3.
+          Same move/idempotency/hard_exit rationale as shadow_importance_v0 above.
       - id: backfill_qledger_us
         module: scripts.backfill_qledger_us
         note: >
           ALTDATA_REBOOT W2 (#2397) — per-channel qledger claim backfill: one
           claim family per real altdata claim; also registers new radar
           edge_snapshots and policy theses as qledger claims. Idempotent
-          (stable claim_ids prevent duplicates). Runs AFTER collectors
-          (data/altdata/theses.jsonl must be fresh) and BEFORE commit data so
+          (stable claim_ids prevent duplicates). Reads data/altdata/theses.jsonl
+          from tonight's collect-core commit; runs BEFORE "commit tail data" so
           claims.jsonl rides the same push. Non-fatal (step always exits 0).
-      - id: publish_r2_attention
-        module: scripts.publish_r2
-        args: [--dirs, attention]
-        note: >
-          SLF-048 attention publish-back (#1677) — the day's upserted increments
-          ride back to R2 so tomorrow's restore + the render-side restores read a
-          CURRENT deep store. Gated on fetch_r2_attention's outcome (a shallow
-          rebuild after a failed restore must never clobber 11y of history; the
-          append-only guard + bytes floor in publish_r2 are the second fence).
-          Runs AFTER "commit data" so the data commit is never delayed. Non-fatal.
 
   # ── daily.yml / engine ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
@@ -1745,14 +1780,16 @@ divergences:
       If these are intentionally omitted for the same reason as policy_intent_desk (LLM/secret
       dependency or long-running), add a comment and a documented divergence entry here.
 
-  - lanes: [collect]
+  - lanes: [collect_tail]
     differs: >
       scripts.collect_dol_certs and scripts.build_hiring_velocity are declared in
-      dag.yml collect lane (TIL W7 PR-W7) but are NOT yet present in the live
-      .github/workflows/daily.yml collect job.
+      the dag.yml collect_tail lane (TIL W7 PR-W7) but are NOT yet present in the
+      live .github/workflows/daily.yml collect_tail job.
     reason: >
-      New collect-lane steps (TIL W7 DOL PERM/LCA hiring-intent leg). The dag.yml
-      entry registers the intended placement (collect lane, before publish_r2_attention).
+      New accrual-lane steps (TIL W7 DOL PERM/LCA hiring-intent leg). The dag.yml
+      entry registers the intended placement (collect_tail lane since the
+      2026-07-14 collect split — TIL organs live there now; previously the
+      collect lane, before publish_r2_attention).
       The daily.yml wiring is a follow-on ops step per the warn_notices.py pattern:
       "Do NOT edit scripts/collect.py to include this collector — the family is
       still in ACCRUAL phase." These steps are safe to invoke standalone; the
