@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 
 import pandas as pd
 
@@ -65,7 +66,64 @@ def confirming_contradicting(regime: pd.DataFrame, asof: pd.Timestamp) -> tuple[
     return confirming, contradicting
 
 
-def run() -> dict:
+def _persisted_latest() -> dict | None:
+    """The on-disk data/regime/latest.json (None if absent/unreadable)."""
+    try:
+        p = config.data_dir() / "regime" / "latest.json"
+        if p.exists():
+            d = json.loads(p.read_text())
+            return d if isinstance(d, dict) else None
+    except Exception as e:  # noqa: BLE001 — an unreadable file never blocks the recompute
+        log.warning("regime latest.json unreadable (%s) — no-regress guard off", e)
+    return None
+
+
+def _store_spy_date() -> str | None:
+    """The last SPY daily close in the price store — the session a recompute would stamp.
+    Same reader as scripts/refresh_regime_if_stale._store_close_date (kept local: engine
+    must not import from scripts)."""
+    try:
+        df = store.read("yahoo", "SPY")
+        if df is None or "close" not in df.columns:
+            return None
+        s = df["close"].dropna()
+        if s.empty:
+            return None
+        return str(pd.to_datetime(s.index).max().date())
+    except Exception as e:  # noqa: BLE001 — a store hiccup never blocks the recompute
+        log.warning("store SPY read failed (%s) — no-regress guard off", e)
+        return None
+
+
+def run(force: bool = False) -> dict:
+    # NO-REGRESS GUARD (2026-07-13 earlyclose↔render flip-flop): in the post-close window
+    # the committed data/regime/latest.json can be AHEAD of the committed price store —
+    # the earlyclose lane and the intraday fast-path self-heal both recompute from an
+    # ephemeral keyless store heal and commit ONLY the snapshot pointers, while the store
+    # itself advances at the nightly collect. A render lane recomputing here (engine-render
+    # fires on every engine/** push) would faithfully re-stamp the PRIOR session over the
+    # fresh one and every market-state surface it renders would regress until the nightly.
+    # The recompute date can never exceed the store's last SPY close, so
+    # latest.json ahead of the store == a guaranteed regression: keep the committed
+    # snapshot untouched (no writes at all — the early exit also stops the stale
+    # regime_history/site-mirror side-effect writes below) and return it. Extends
+    # engine.market_state.persist's asof no-regress from that one write to the whole
+    # recompute (side-effect writes have no per-file guard). Escape hatch for an operator who
+    # wants new engine logic reflected on the old session anyway: force=True or
+    # REGIME_FORCE_RECOMPUTE=1 (engine-render's force_recompute dispatch input).
+    # ISO date strings compare lexicographically. Degrade-never-raise: either side
+    # missing -> guard off, behavior exactly as before.
+    if not force and os.environ.get("REGIME_FORCE_RECOMPUTE") != "1":
+        existing = _persisted_latest()
+        existing_date = str((existing or {}).get("date") or "")
+        store_date = _store_spy_date()
+        if existing and existing_date and store_date and existing_date > store_date:
+            log.warning(
+                "regime recompute SKIPPED (no-regress guard): latest.json asof %s is AHEAD "
+                "of the price store's last SPY close %s — recomputing would regress the "
+                "session. Keeping the committed snapshot; set REGIME_FORCE_RECOMPUTE=1 "
+                "to override.", existing_date, store_date)
+            return existing
     f = build_features()
     regime = classify(f)
     flags = compute_flags(f, regime)
