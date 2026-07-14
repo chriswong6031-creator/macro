@@ -109,8 +109,14 @@ LLM-originated anything.
 
 ### 1.3 Collisions declared (ACTIVE_BUILD_MAP 2026-07-13, 0 open PRs)
 
-No open PRs at charter time. Standing adjacent programs whose territory this program
-touches read-only or extends by amendment: MRI (extend via §6 W10 amendment under MRI
+No open PRs at charter time. **Same-day concurrent merge checked (2026-07-14 pre-merge
+sweep):** #2525 chartered the VSB program (Vol Suppression & AI Bifurcation) — verified
+complementary: VSB owns vol-suppression flow regimes / sentiment composite / AI-adjacency
+lens and repairs the ^COR1M/^COR3M collectors; RIC owns OPEX-window/dealer-surface/event
+risk, release-radar accuracy, yield momentum, and the transmission merge. Shared reads
+(gex context, 0DTE facts) are consistent across both adjudications; neither builds the
+other's organs. Standing adjacent programs whose territory this program touches read-only
+or extends by amendment: MRI (extend via §6 W10 amendment under MRI
 law), OPTIONS_ALPHA / OPTIONS_NW (W1 executes their registered docket verbatim; W-F stays
 PARKED — its preconditions are NOT satisfied by this program and nothing here claims them),
 RLT (rebalance/liquidity — boundary: RIC owns rate/inflation/event-window state; RLT owns
