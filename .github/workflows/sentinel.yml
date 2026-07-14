@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   flash-crash:
-    runs-on: [self-hosted, macstudio]
+    runs-on: [self-hosted, macstudio-light]   # light runner — 30-min flash-crash watch must not queue behind the heavy pool
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4

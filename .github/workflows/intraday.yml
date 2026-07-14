@@ -29,7 +29,7 @@ concurrency:
 
 jobs:
   bars:
-    runs-on: [self-hosted, macstudio]
+    runs-on: [self-hosted, macstudio-light]   # light runner — hourly ~2.5m bar accrual must not queue behind the heavy pool
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4

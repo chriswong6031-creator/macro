@@ -48,7 +48,7 @@ concurrency:
 
 jobs:
   fastpath:
-    runs-on: [self-hosted, macstudio]
+    runs-on: [self-hosted, macstudio-light]   # dedicated light runner: live ticks must never queue behind nightly/asia/render holds on the 3-slot macstudio pool (observed 47-144m queue waits for 0.4m of work)
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
