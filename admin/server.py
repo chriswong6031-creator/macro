@@ -373,6 +373,18 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/metabolism/history":
                 limit = int((q.get("limit") or ["100"])[0])
                 return self._json(metabolism_history.history(limit=limit))
+            if path == "/api/metabolism/achievements":
+                try:
+                    from admin import metabolism_achievements  # noqa: PLC0415
+                    return self._json(metabolism_achievements.achievements())
+                except ImportError:
+                    return self._json(
+                        {"error": "achievements module not yet available", "cycles": []}, 503
+                    )
+                except Exception as _ae:  # noqa: BLE001
+                    return self._json(
+                        {"error": f"achievements unavailable: {_ae}", "cycles": []}, 503
+                    )
 
             return self._json({"error": f"unknown route {path}"}, 404)
         except Exception as e:  # noqa: BLE001

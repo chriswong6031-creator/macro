@@ -637,3 +637,299 @@ class TestMixedTimezoneFormats:
         for src, meta in result["sources"].items():
             if src != "pr":
                 assert meta["note"] is None, f"{src}: {meta['note']}"
+
+
+# ---------------------------------------------------------------------------
+# (f) Governance title translation for article3_review and authority_lapse
+# ---------------------------------------------------------------------------
+
+class TestGovernanceTitleTranslation:
+    """article3_review rows get a plain-word title; malformed reason falls back."""
+
+    def _call_governance(self, tmp_path, rows):
+        import admin.github_api as gha
+        import admin.metabolism_history as mh
+
+        nw = tmp_path / "data" / "neuralweb"
+        _write_jsonl(nw / "governance.jsonl", rows)
+
+        with mock.patch.object(gha, "token", return_value=None), \
+             _stub_requests(gha):
+            result = mh.history(limit=100, root=tmp_path)
+
+        return [e for e in result["events"] if e["source"] == "governance"]
+
+    def test_article3_review_with_n_and_min_n(self, tmp_path):
+        """Standard article3_review: extracts n and min_n from reason string."""
+        rows = [{
+            "schema": "neuralweb.governance.v1",
+            "ts": "2026-07-10T10:00:00+00:00",
+            "event_type": "article3_review",
+            "target": "altdata_brain.actionable",
+            "granted": False,
+            "reason": "insufficient-n: n=9 < min_n=25",
+        }]
+        evts = self._call_governance(tmp_path, rows)
+        assert len(evts) == 1
+        title = evts[0]["title"]
+        assert "Authority earn-in" in title
+        assert "altdata_brain.actionable" in title
+        assert "9" in title
+        assert "25" in title
+        assert "still in shadow" in title
+
+    def test_article3_review_granted_true(self, tmp_path):
+        """article3_review with granted=True shows 'granted' in title."""
+        rows = [{
+            "schema": "neuralweb.governance.v1",
+            "ts": "2026-07-10T10:00:00+00:00",
+            "event_type": "article3_review",
+            "target": "some_lobe.scoring",
+            "granted": True,
+            "reason": "insufficient-n: n=30 < min_n=25",
+        }]
+        evts = self._call_governance(tmp_path, rows)
+        assert len(evts) == 1
+        title = evts[0]["title"]
+        assert "granted" in title
+        assert "still in shadow" not in title
+
+    def test_article3_review_malformed_reason_fallback(self, tmp_path):
+        """Malformed reason string falls back to plain title without crashing."""
+        rows = [{
+            "schema": "neuralweb.governance.v1",
+            "ts": "2026-07-10T10:00:00+00:00",
+            "event_type": "article3_review",
+            "target": "some_lobe.scoring",
+            "granted": False,
+            "reason": "no-match-pattern-here",
+        }]
+        evts = self._call_governance(tmp_path, rows)
+        assert len(evts) == 1
+        title = evts[0]["title"]
+        # Must still produce a title mentioning the target and earn-in concept
+        assert "Authority earn-in" in title
+        assert "some_lobe.scoring" in title
+        # Must not crash; still in shadow because granted=False
+        assert "still in shadow" in title
+
+    def test_article3_review_empty_reason_fallback(self, tmp_path):
+        """Empty reason string falls back gracefully."""
+        rows = [{
+            "schema": "neuralweb.governance.v1",
+            "ts": "2026-07-10T10:00:00+00:00",
+            "event_type": "article3_review",
+            "target": "foo.bar",
+            "granted": None,
+            "reason": "",
+        }]
+        evts = self._call_governance(tmp_path, rows)
+        assert len(evts) == 1
+        title = evts[0]["title"]
+        assert "Authority earn-in" in title
+        assert "foo.bar" in title
+
+    def test_authority_lapse_title(self, tmp_path):
+        """authority_lapse event gets the lapse plain-word title."""
+        rows = [{
+            "schema": "neuralweb.governance.v1",
+            "ts": "2026-07-10T10:00:00+00:00",
+            "event_type": "authority_lapse",
+            "target": "altdata_brain.scoring",
+        }]
+        evts = self._call_governance(tmp_path, rows)
+        assert len(evts) == 1
+        title = evts[0]["title"]
+        assert "Authority lapsed" in title
+        assert "altdata_brain.scoring" in title
+        assert "earn-in floor" in title
+
+    def test_other_event_type_unchanged(self, tmp_path):
+        """Other event types keep the legacy '{event_type}: {target}' title."""
+        rows = [{
+            "schema": "neuralweb.governance.v1",
+            "ts": "2026-07-10T10:00:00+00:00",
+            "event_type": "config_arm",
+            "target": "engine/foo",
+        }]
+        evts = self._call_governance(tmp_path, rows)
+        assert len(evts) == 1
+        title = evts[0]["title"]
+        assert title == "config_arm: engine/foo"
+
+    # FIX 4: new tests matching the REAL writer shape (granted/reason nested under evidence).
+    def test_article3_review_evidence_nested_not_granted(self, tmp_path):
+        """Real writer shape: granted/reason nested under evidence key (altdata_brain.py:585-593)."""
+        rows = [{
+            "schema": "neuralweb.governance.v1",
+            "ts": "2026-07-10T10:00:00+00:00",
+            "event_type": "article3_review",
+            "target": "altdata_brain.actionable",
+            "evidence": {
+                "granted": False,
+                "reason": "insufficient-n: n=9 < min_n=25",
+            },
+        }]
+        evts = self._call_governance(tmp_path, rows)
+        assert len(evts) == 1
+        title = evts[0]["title"]
+        assert "Authority earn-in" in title
+        assert "altdata_brain.actionable" in title
+        assert "9" in title
+        assert "25" in title
+        assert "still in shadow" in title
+
+    def test_article3_review_evidence_nested_granted_true(self, tmp_path):
+        """Real writer shape: granted=True nested under evidence — shows 'granted' in title."""
+        rows = [{
+            "schema": "neuralweb.governance.v1",
+            "ts": "2026-07-10T10:00:00+00:00",
+            "event_type": "article3_review",
+            "target": "some_lobe.scoring",
+            "evidence": {
+                "granted": True,
+                "reason": "insufficient-n: n=30 < min_n=25",
+            },
+        }]
+        evts = self._call_governance(tmp_path, rows)
+        assert len(evts) == 1
+        title = evts[0]["title"]
+        assert "granted" in title
+        assert "still in shadow" not in title
+
+    def test_article3_review_top_level_legacy_tolerance(self, tmp_path):
+        """Legacy tolerance: granted/reason at row top level (existing test fixtures shape)."""
+        rows = [{
+            "schema": "neuralweb.governance.v1",
+            "ts": "2026-07-10T10:00:00+00:00",
+            "event_type": "article3_review",
+            "target": "altdata_brain.actionable",
+            "granted": False,
+            "reason": "insufficient-n: n=5 < min_n=25",
+        }]
+        evts = self._call_governance(tmp_path, rows)
+        assert len(evts) == 1
+        title = evts[0]["title"]
+        assert "Authority earn-in" in title
+        assert "5" in title
+        assert "still in shadow" in title
+
+
+# ---------------------------------------------------------------------------
+# (g) heartbeat_default_excluded flag in history() payload
+# ---------------------------------------------------------------------------
+
+class TestHeartbeatDefaultExcludedFlag:
+    """history() payload must carry heartbeat_default_excluded=True."""
+
+    def test_flag_present_empty_root(self, tmp_path):
+        import admin.github_api as gha
+        import admin.metabolism_history as mh
+
+        with mock.patch.object(gha, "token", return_value=None), \
+             _stub_requests(gha):
+            result = mh.history(limit=100, root=tmp_path)
+
+        assert "heartbeat_default_excluded" in result
+        assert result["heartbeat_default_excluded"] is True
+
+    def test_flag_present_populated_root(self, tmp_path):
+        import admin.github_api as gha
+        import admin.metabolism_history as mh
+
+        met = tmp_path / "data" / "metabolism"
+        met.mkdir(parents=True, exist_ok=True)
+        _write_jsonl(met / "heartbeat.jsonl", [
+            {"ts": "2026-07-10T00:00:00Z", "phase": "P0", "note": "hb"},
+        ])
+
+        with mock.patch.object(gha, "token", return_value=None), \
+             _stub_requests(gha):
+            result = mh.history(limit=100, root=tmp_path)
+
+        assert result.get("heartbeat_default_excluded") is True
+
+
+# ---------------------------------------------------------------------------
+# (h) achievements route smoke test (monkeypatched module)
+# ---------------------------------------------------------------------------
+
+class TestAchievementsRouteSmoke:
+    """GET /api/metabolism/achievements returns 503 when the module is absent,
+    and 200 with cycles when a stub module is injected."""
+
+    @staticmethod
+    def _server():
+        import threading
+        from http.server import ThreadingHTTPServer
+        from admin.server import Handler
+
+        httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        t = threading.Thread(target=httpd.serve_forever, daemon=True)
+        t.start()
+        return httpd, httpd.server_address[1]
+
+    @staticmethod
+    def _get(port, path):
+        import urllib.request
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}{path}", timeout=10) as r:
+            return r.status, json.loads(r.read())
+
+    def test_returns_503_when_module_absent(self):
+        """When metabolism_achievements is not importable, route returns 503.
+
+        The server route does 'from admin import metabolism_achievements' lazily.
+        Monkeypatch the admin package's attribute directly (plus sys.modules) so
+        that the server thread — which shares sys.modules in CPython — cannot
+        resolve the module, causing the except ImportError branch to fire → 503.
+        """
+        import urllib.error
+        import admin as _admin_pkg
+        import admin.metabolism_achievements as _real_ach
+
+        # Force the admin package attribute lookup to fail by temporarily removing
+        # the attribute and setting sys.modules entry to None (ImportError sentinel).
+        with mock.patch.dict(sys.modules, {"admin.metabolism_achievements": None}), \
+             mock.patch.object(_admin_pkg, "metabolism_achievements", None,
+                               create=True):
+            httpd, port = self._server()
+            try:
+                try:
+                    self._get(port, "/api/metabolism/achievements")
+                    raise AssertionError("expected 503 but got 200")
+                except urllib.error.HTTPError as e:
+                    assert e.code == 503, f"expected 503, got {e.code}"
+                    body = json.loads(e.read())
+                    assert "cycles" in body
+            finally:
+                httpd.shutdown()
+                httpd.server_close()
+
+    def test_returns_200_with_stub_module(self):
+        """When a stub achievements module is injected, route returns 200 with cycles.
+
+        Patch both sys.modules and the admin package attribute so that the server
+        thread (same process, shared sys.modules) resolves the stub on its lazy
+        'from admin import metabolism_achievements' call.
+        """
+        import admin as _admin_pkg
+
+        stub_mod = types.ModuleType("admin.metabolism_achievements")
+        stub_mod.achievements = lambda: {
+            "cycles": [{"cycle_id": "test-cycle-1"}],
+            "generated_at": "2026-07-13T00:00:00+00:00",
+        }
+
+        with mock.patch.dict(sys.modules, {"admin.metabolism_achievements": stub_mod}), \
+             mock.patch.object(_admin_pkg, "metabolism_achievements", stub_mod,
+                               create=True):
+            httpd, port = self._server()
+            try:
+                code, body = self._get(port, "/api/metabolism/achievements")
+                assert code == 200
+                assert "cycles" in body
+                assert len(body["cycles"]) == 1
+                assert body["cycles"][0]["cycle_id"] == "test-cycle-1"
+            finally:
+                httpd.shutdown()
+                httpd.server_close()

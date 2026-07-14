@@ -529,6 +529,9 @@ on:
       - "tests/test_admin_metabolism_ux.py"
       - ".github/workflows/metabolism-cycle.yml"
       - ".github/workflows/key-pool-probe.yml"
+      # achievements observability: per-cycle rollup from journals + verify + PR list.
+      - "tests/test_metabolism_achievements.py"
+      - ".github/workflows/metabolism-dream.yml"
       # admin live-runs feed: server-side snapshot for the live-runs panel.
       - "admin/live_runs.py"
       - "tests/test_admin_live_runs.py"
@@ -1596,6 +1599,8 @@ jobs:
         run: python -m pytest tests/test_metabolism_throttle.py -q
       - name: metabolism V11 budget gate suite (auto-run gate verdicts + header parsing)
         run: python -m pytest tests/test_metabolism_budget_gate.py -q
+      - name: metabolism achievements observability suite (per-cycle rollup from journals + verify)
+        run: python -m pytest tests/test_metabolism_achievements.py -q
       - name: metabolism V10 key pool economy suite (enabled-set + header capture + usage snapshot)
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: metabolism V10 admin throttle suite (admin routes + UI bindings)
