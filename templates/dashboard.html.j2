@@ -4327,9 +4327,12 @@ body.page-macro.mx4-grid #sx-markets-v2 .sxg-face.mx5-card-face{
   padding:18px 20px 14px!important;
 }
 body.page-macro.mx4-grid .mx5-mkt-grid{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+  display:grid;grid-template-columns:repeat(6,1fr);gap:16px;
 }
-@media(max-width:900px){
+@media(max-width:1100px){
+  body.page-macro.mx4-grid .mx5-mkt-grid{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:700px){
   body.page-macro.mx4-grid .mx5-mkt-grid{grid-template-columns:1fr 1fr;}
 }
 body.page-macro.mx4-grid .mx5-mkt-tile{
@@ -7594,6 +7597,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   <div class="sx" id="sx-markets-v2" style="--isle-color:var(--isle-markets)">
     {# v5 face — MARKETS (S2: four glass tiles with price/delta/sparkline; data-bare ids preserved) #}
     {% set _ix_names = {'SPY': 'US Equities', 'QQQ': 'Nasdaq', 'DJI': 'Dow Jones', '_DJI': 'Dow Jones', 'RUT': 'Small Cap', '_RUT': 'Small Cap'} %}
+    {% set _ix_names_zh = {'SPY': '美股', 'QQQ': '纳指', 'DJI': '道琼斯', 'RUT': '小盘股'} %}
+    {# Live-feed symbol per tile: the DJI/RUT store keys are NOT valid Yahoo symbols, so
+       live.js's direct quotes[sym] lookup could never patch those two tiles (feed carries
+       ^DJI/^RUT). data-sym gets the feed key; the visible ticker label keeps the store key. #}
+    {% set _ix_live = {'DJI': '^DJI', 'RUT': '^RUT'} %}
     <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Markets" onclick="mx5OpenDlg('dlg-markets')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-markets');}">
       {# Eyebrow hidden in v5 card face — card-title removed (1.1); aria-label carries accessible name #}
       <div class="mx5-mkt-grid">
@@ -7603,11 +7611,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _ixdir = ('up' if _ixchg > 0 else ('dn' if _ixchg < 0 else '')) if _ixchg is not none else '' %}
         {# idx_spark: list of closes for this ticker; graceful if absent #}
         {% set _ixspk = (idx_spark.get(_ixsym) or idx_spark.get('^' ~ _ixsym) or []) if (idx_spark is defined and idx_spark) else [] %}
-        <div class="mx5-mkt-tile {{ _ixdir }}" data-sym="{{ _ixsym }}" data-mkt="us">
+        {% set _ixlive = _ix_live.get(_ixsym, _ixsym) %}
+        <div class="mx5-mkt-tile {{ _ixdir }}" data-sym="{{ _ixlive }}" data-mkt="us">
           <div class="mx5-mkt-ticker">{{ _ixsym }}</div>
-          <div class="mx5-mkt-sub">{{ _ix_names.get(ix.ticker, _ixsym) }}</div>
-          <div class="mx5-mkt-price nb-px" data-sym="{{ _ixsym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
-          <div class="mx5-mkt-delta {{ _ixdir }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{% if _ixchg is not none %}{{ '%+.2f'|format(_ixchg) }}%{% else %}—{% endif %}</div>
+          <div class="mx5-mkt-sub"><span class="l-en">{{ _ix_names.get(ix.ticker, _ixsym) }}</span><span class="l-zh">{{ _ix_names_zh.get(_ixsym, _ixsym) }}</span></div>
+          <div class="mx5-mkt-price nb-px" data-sym="{{ _ixlive }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
+          <div class="mx5-mkt-delta {{ _ixdir }} nb-chg" data-sym="{{ _ixlive }}" data-mkt="us">{% if _ixchg is not none %}{{ '%+.2f'|format(_ixchg) }}%{% else %}—{% endif %}</div>
           {# Sparkline — Jinja static SVG from idx_spark; absent = no spark box #}
           {% if _ixspk and _ixspk | length >= 3 %}
           {% set _spk_n = _ixspk | length %}
@@ -7641,6 +7650,23 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% endif %}
         </div>
         {% endfor %}
+        {# Futures tiles — ES=F and NQ=F; live.js patches price/delta; no sparkline (no
+           nightly store for futures). Tiles are display-only context; data-bare opts out
+           of the "$" prefix so the level reads as a futures contract level, not an ETF
+           price. Both symbols are in build_live_quotes CORE_SYMBOLS (US_FUTURES) so they
+           are always covered by the snapshot regardless of site data-sym scraping. #}
+        <div class="mx5-mkt-tile" data-sym="ES=F" data-mkt="us">
+          <div class="mx5-mkt-ticker">ES</div>
+          <div class="mx5-mkt-sub"><span class="l-en">S&amp;P Futures</span><span class="l-zh">标普期货</span></div>
+          <div class="mx5-mkt-price nb-px" data-sym="ES=F" data-mkt="us" data-bare>—</div>
+          <div class="mx5-mkt-delta nb-chg" data-sym="ES=F" data-mkt="us">—</div>
+        </div>
+        <div class="mx5-mkt-tile" data-sym="NQ=F" data-mkt="us">
+          <div class="mx5-mkt-ticker">NQ</div>
+          <div class="mx5-mkt-sub"><span class="l-en">Nasdaq Futures</span><span class="l-zh">纳指期货</span></div>
+          <div class="mx5-mkt-price nb-px" data-sym="NQ=F" data-mkt="us" data-bare>—</div>
+          <div class="mx5-mkt-delta nb-chg" data-sym="NQ=F" data-mkt="us">—</div>
+        </div>
       </div>
     </div>
     {# Heatmap staging: heatmap.js mounts on first #heatmap-scorecard at DOMContentLoaded;
