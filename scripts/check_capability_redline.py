@@ -36,6 +36,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import re
 import sys
 import tempfile
@@ -76,6 +77,7 @@ SCAN_IF_PRESENT = [
     "data/neuralweb/capability_audit.jsonl",
     "data/metabolism/key_ledger.jsonl",   # V2-B: key usage belief-state (NEVER a token value)
     "data/metabolism/journal/*.json",     # V2-B: freeze/stage journals (committed; symmetry w/ ledger)
+                                          #   (base64 rule path-stripped here — see _PATH_TELEMETRY_GLOBS)
 ]
 
 # The ONLY env keys the broker may legitimately READ (non-secret attribution
@@ -176,6 +178,41 @@ def _strip_known_names(line: str) -> str:
     return line
 
 
+# ── Filesystem-path telemetry (base64 rule only) ──────────────────────────────
+
+# Some committed artifacts legitimately embed FILESYSTEM PATHS. The metabolism
+# journal `artifacts` array records docket paths on the self-hosted runner, e.g.
+#   "/Users/…/data/metabolism/dockets/cycle-2026-07-13-e159-…-standouts.json"
+# '/' is a base64 char, so a slash-joined path ≥20 chars is a run of base64-valid
+# characters and false-positives the base64 entropy heuristic (a digit elsewhere
+# on the line satisfies the digit requirement). A repo-RELATIVE path trips it too
+# ("data/metabolism/dockets/cycle" is 29 base64 chars), so this cannot be fixed
+# by rewriting the writer to store relative paths — it must be handled here.
+#
+# For the files matched below ONLY, path tokens are stripped before the base64
+# check. This is NOT a blanket base64 disable: the 40-hex, secrets.* and
+# environ-capture rules still run in full, AND a non-path base64 blob (no '/',
+# so not a path token) in a journal is still caught. Mirrors the existing
+# _strip_known_names() path-substring stripping, and is stricter than the
+# precedent that omits governance.jsonl / dockets from scanning entirely.
+_PATH_TELEMETRY_GLOBS = ("data/metabolism/journal/*.json",)
+
+# A filesystem-path token: one or more `<seg>/` groups then a final segment.
+# Path chars only — deliberately EXCLUDES '+' and '=' so a genuine base64 secret
+# (which uses '+' / '=' padding) is never mistaken for a path and stripped.
+_PATH_TOKEN = re.compile(r"(?:[A-Za-z0-9_.\-]*/)+[A-Za-z0-9_.\-]+")
+
+
+def _is_path_telemetry(rel_path: str) -> bool:
+    """True if rel_path is a committed artifact that legitimately embeds paths."""
+    return any(fnmatch.fnmatch(rel_path, g) for g in _PATH_TELEMETRY_GLOBS)
+
+
+def _strip_path_tokens(line: str) -> str:
+    """Remove filesystem-path tokens so a path is not read as base64 entropy."""
+    return _PATH_TOKEN.sub(" ", line)
+
+
 # ── Scanner ───────────────────────────────────────────────────────────────────
 
 def scan(root: Path | None = None) -> list[dict]:
@@ -222,14 +259,22 @@ def _scan_file(abs_path: Path, rel_path: str) -> list[dict]:
     except Exception as e:
         raise RuntimeError(f"Could not read {rel_path}: {e}") from e
 
+    # Path-telemetry files (journal artifacts) embed filesystem paths that read
+    # as base64 entropy; strip path tokens before the base64 check for those ONLY.
+    path_telemetry = _is_path_telemetry(rel_path)
+
     out: list[dict] = []
     for i, line in enumerate(content.splitlines(), 1):
         # --- High-entropy check (names stripped token-wise first) ---
         stripped_for_entropy = _strip_known_names(line)
+        # 40-hex still scans the un-path-stripped text (a hex secret inside a path
+        # segment must still be caught); base64 drops path tokens for telemetry.
+        base64_input = (_strip_path_tokens(stripped_for_entropy)
+                        if path_telemetry else stripped_for_entropy)
         for _ in _HEX_40.finditer(stripped_for_entropy):
             out.append({"file": rel_path, "line_no": i,
                         "kind": "high_entropy_hex40", "text": line.strip()[:160]})
-        for _ in _BASE64_20.finditer(stripped_for_entropy):
+        for _ in _BASE64_20.finditer(base64_input):
             out.append({"file": rel_path, "line_no": i,
                         "kind": "high_entropy_base64", "text": line.strip()[:160]})
 
@@ -380,6 +425,71 @@ def selftest() -> int:
         else:
             failures.append(
                 "Planted fake token in key_ledger.jsonl NOT caught — SCAN_IF_PRESENT may not cover it"
+            )
+
+    # Test 6: journal path-telemetry exemption — the base64 rule ignores
+    # filesystem paths BUT the stronger rules (and non-path base64) still fire.
+    with tempfile.TemporaryDirectory(prefix="capability_redline_journal_selftest_") as tmpdir3:
+        tmp3 = Path(tmpdir3)
+        (tmp3 / "config").mkdir()
+        for rel in SCAN_PATHS:
+            p3 = tmp3 / rel
+            p3.parent.mkdir(parents=True, exist_ok=True)
+            p3.write_text("# clean stub — names only\n")
+        jdir = tmp3 / "data" / "metabolism" / "journal"
+        jdir.mkdir(parents=True)
+        import json as _json
+
+        # 6a: a journal whose ONLY entropy is a filesystem-path artifact (exactly
+        #     the real-world shape) must produce NO base64 finding.
+        (jdir / "cycle-2026-07-13-e159-site-us-standouts.json").write_text(_json.dumps({
+            "schema": "metabolism.journal.v1",
+            "cycle_id": "cycle-2026-07-13-e159-site-us-standouts",
+            "artifacts": ["/Users/x/actions-runner-1/_work/macro/macro/data/"
+                          "metabolism/dockets/cycle-2026-07-13-e159-site-us-standouts.json"],
+        }, indent=2))
+        try:
+            found3 = scan(root=tmp3)
+        except RuntimeError:
+            found3 = []
+        if any(f["kind"] == "high_entropy_base64" for f in found3):
+            failures.append(
+                "Filesystem path in journal artifacts STILL flagged base64 — path strip ineffective"
+            )
+        else:
+            print("  [PASS] journal filesystem-path artifact is NOT a base64 false-positive")
+
+        # 6b: a NON-path base64 blob planted in a journal is STILL caught
+        #     (proves the exemption is a path strip, not a blanket base64 disable).
+        (jdir / "cycle-2026-07-13-e159-site-us-standouts.json").write_text(_json.dumps({
+            "schema": "metabolism.journal.v1",
+            "leak": "Zm9vYmFyMTIzNDU2Nzg5MGFiY2RlZmdo",  # 33 base64 chars, digits, no '/'
+        }, indent=2))
+        try:
+            found3b = scan(root=tmp3)
+        except RuntimeError:
+            found3b = []
+        if any(f["kind"] == "high_entropy_base64" for f in found3b):
+            print("  [PASS] non-path base64 blob in a journal is STILL caught (not a blanket disable)")
+        else:
+            failures.append(
+                "Non-path base64 blob in a journal NOT caught — exemption over-broadened to a blanket disable"
+            )
+
+        # 6c: a 40-hex token planted in a journal is STILL caught (hex40 unaffected).
+        fake_tok3 = "a" * 5 + "1" + "b" * 34  # 40-char hex-like, no '/'
+        (jdir / "cycle-2026-07-13-e159-site-us-standouts.json").write_text(_json.dumps({
+            "schema": "metabolism.journal.v1", "leak": fake_tok3,
+        }, indent=2))
+        try:
+            found3c = scan(root=tmp3)
+        except RuntimeError:
+            found3c = []
+        if any(f["kind"] == "high_entropy_hex40" for f in found3c):
+            print("  [PASS] 40-hex token in a journal is STILL caught (hex40 rule unaffected)")
+        else:
+            failures.append(
+                "40-hex token in a journal NOT caught — path strip wrongly weakened the hex40 rule"
             )
 
     # Test 5: real production files pass (no planted violations)
