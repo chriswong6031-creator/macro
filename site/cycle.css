@@ -720,3 +720,113 @@ html[data-theme="light"] .cyc-chip.on { color: #fff; }
   background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; }
 .cyc-hz-headline-row .cc-hz-headline { font-size: 14px; }
 .cyc-hz-headline-row .cc-proj-ref { font-size: 11px; }
+
+/* ============================================================================
+   cyc-main — mobile UX idioms (Cycle Intelligence page only)
+   ALL rules scoped to html.cyc-main so they cannot leak to markets.html
+   (which also carries .cyc-page and its own #cyc-detail, but NOT .cyc-main).
+   Mobile-only rules additionally gated under @media (max-width: 880px).
+   Desktop ≥ 881px behaviour is pixel-identical to before.
+   ========================================================================== */
+
+/* ── 1. Multi-detent bottom sheet geometry (mobile) ────────────────────────
+   Three detents: peek (126px visible = unchanged rest look), half (52vh),
+   full (modal, sheet top at 8vh ≈ height 92vh starting from bottom).
+   The pre-JS state (translateY(calc(100% - 126px))) is identical to the
+   existing base rule, so there is no FOUC. cy-half / cy-full are applied
+   by JS; cy-dragging disables the CSS transition during 1:1 drag. */
+@media (max-width: 880px) {
+  html.cyc-main .cyc-detail {
+    height: 92vh;
+    max-height: 92vh;
+    z-index: 60;
+  }
+  /* rest state: peek 126px — must match the base rule's translateY exactly */
+  html.cyc-main .cyc-detail.cy-half  { transform: translateY(calc(100% - 52vh)); }
+  html.cyc-main .cyc-detail.cy-full  { transform: translateY(0); }
+  html.cyc-main .cyc-detail.cy-dragging { transition: none; will-change: transform; }
+
+  html.cyc-main .cyc-panels { overscroll-behavior: contain; }
+
+  /* larger grab zone for the handle */
+  html.cyc-main .cyc-handle {
+    min-height: 22px; padding: 13px 0 9px; position: relative; touch-action: none;
+  }
+
+  /* ✕ close button injected into the handle by JS */
+  html.cyc-main .cy-sheet-x {
+    position: absolute; top: 7px; right: 12px; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border: 0; cursor: pointer;
+    background: var(--panel2); color: var(--muted); border-radius: 50%;
+    font-size: 17px; line-height: 1;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25); z-index: 2;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html.cyc-main .cy-sheet-x:active { transform: scale(.92); }
+}
+
+/* scrim — shown only at the full (modal) detent; z-index 55 = under sheet (60) */
+html.cyc-main .cyc-scrim {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.46);
+  opacity: 0; pointer-events: none;
+  transition: opacity .32s var(--ease);
+  z-index: 55;
+}
+
+/* ── 2. Mobile category filter: hide non-matching items (not just dim) ──── */
+@media (max-width: 880px) {
+  html.cyc-main .cyc-chip.gdim,
+  html.cyc-main .cyc-card.gdim { display: none; }
+
+  /* picker row: one horizontally-scrollable row */
+  html.cyc-main .cyc-groups {
+    flex-wrap: nowrap; overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 2px 2px 9px;
+  }
+  html.cyc-main .cyc-groups::-webkit-scrollbar { display: none; }
+  html.cyc-main .cyc-glabel { display: none; }
+  html.cyc-main .cyc-gchip,
+  html.cyc-main .cyc-gall  { flex: 0 0 auto; }
+
+  /* touch targets */
+  html.cyc-main .cyc-gchip { min-height: 40px; display: inline-flex; align-items: center; }
+  html.cyc-main .cyc-chip  { min-height: 42px; display: inline-flex; align-items: center; }
+  html.cyc-main .cyc-zbtn  { min-height: 38px; display: inline-flex; align-items: center; }
+}
+
+/* ── 3. Fullscreen chart mode (mobile) ─────────────────────────────────── */
+@media (max-width: 880px) {
+  /* anchor for the ⤢ button; kept in CSS (not an inline style) so the
+     .cyc-fs { position:fixed } rule below can win when fullscreen is on */
+  html.cyc-main .cyc-chartwrap { position: relative; }
+  /* ⤢ expand button injected into .cyc-chartwrap by JS */
+  html.cyc-main .cyc-chart-fs-btn {
+    position: absolute; top: 8px; right: 8px; z-index: 5;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    border: 1px solid var(--line); border-radius: 11px;
+    color: var(--text); font-size: 16px; line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+    background: color-mix(in srgb, var(--panel) 80%, transparent);
+    backdrop-filter: blur(6px);
+  }
+  html.cyc-main .cyc-chart-fs-btn:active { transform: scale(.94); }
+
+  /* fullscreen wrapper fills the viewport */
+  html.cyc-main .cyc-chartwrap.cyc-fs {
+    position: fixed; inset: 0; z-index: 80;
+    background: var(--bg); display: flex;
+    padding: env(safe-area-inset-top) 4px calc(4px + env(safe-area-inset-bottom));
+  }
+  html.cyc-main .cyc-chartwrap.cyc-fs #cyc-chart {
+    width: 100%; height: 100%;
+  }
+  html.cyc-main .cyc-chartwrap.cyc-fs .cyc-chart-fs-btn {
+    top: calc(10px + env(safe-area-inset-top)); right: 12px; z-index: 6;
+  }
+}

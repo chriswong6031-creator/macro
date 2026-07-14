@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="cyc-page">
+<html lang="en" class="cyc-page cyc-main">
 {# Cycle Intelligence — flagship cross-cycle dashboard. Bespoke SVG charts via the
    reusable mm_charts.js engine (NOT Plotly). Data + logic + styles are committed
    site/ assets (cycle_data.js / cycle_app.js / cycle.css / mm_charts.js); this
@@ -13,7 +13,7 @@
 {% set seo_title = 'Cycle Intelligence — 15 Boom-Bust Cycles on One Clock | Mastermind' %}{% set seo_desc = 'Fifteen boom-bust cycles on one clock — observed history and regime-conditioned projections, so you can see exactly where each asset sits in its lifespan.' %}{% set seo_path = 'cycle.html' %}
 {% include "_seo_head.html.j2" %}
 <link rel="stylesheet" href="theme.css">
-<link rel="stylesheet" href="cycle.css?v=2">
+<link rel="stylesheet" href="cycle.css?v=3">
 </head>
 <body>
 {% include "_site_nav.html.j2" %}
@@ -72,9 +72,9 @@
 <script src="regimedata/regime_prior.js"></script>
 <script src="cycle_data.js"></script>
 <script src="cycledata/cycle_engine.js"></script>
-<script src="mm_charts.js"></script>
+<script src="mm_charts.js?v=4"></script>
 <script src="cycle_i18n.js"></script>
-<script src="cycle_app.js"></script>
+<script src="cycle_app.js?v=2"></script>
 <script>try{document.getElementById('cyc-asof').textContent=(window.CYCLE_ENGINE||window.CYCLE_META||{}).as_of||(window.CYCLE_META||{}).asOf||'';}catch(e){}</script>
 <script>
 /* W4.5 regime-prior reconciliation banner — rendered after all data scripts load.

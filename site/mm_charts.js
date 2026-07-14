@@ -566,7 +566,14 @@
     var t = null;
     var onTStart = function (e) {
       if (e.touches.length === 1) t = { mode: "pan", px: e.touches[0].clientX, py: e.touches[0].clientY, axis: null, view: (self._view || self._fullX).slice() };
-      else if (e.touches.length === 2) { var a = e.touches[0], b = e.touches[1]; t = { mode: "pinch", dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), midPx: (a.clientX + b.clientX) / 2, view: (self._view || self._fullX).slice() }; }
+      else if (e.touches.length === 2) {
+        var a = e.touches[0], b = e.touches[1];
+        t = { mode: "pinch", dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), midPx: (a.clientX + b.clientX) / 2, view: (self._view || self._fullX).slice() };
+        // Claim the pinch from the browser immediately so iOS/Android don't
+        // take it for viewport-zoom before the chart sees the first move event.
+        // passive:false (see addEventListener below) is required to call this.
+        if (e.cancelable) e.preventDefault();
+      }
     };
     var onTMove = function (e) {
       if (!t) return; var r = sv.getBoundingClientRect(), p = self._plot;
@@ -574,18 +581,23 @@
         // phone: a vertical-dominant swipe should scroll the PAGE, not pan the chart.
         // Lock the axis once the finger has moved far enough to disambiguate, then bail
         // (return) on vertical so the gesture bubbles to native scroll (listener is
-        // passive + we never preventDefault, so it bubbles cleanly).
+        // passive:false but we deliberately skip preventDefault for vertical, so it
+        // still bubbles to the browser's native scroll).
         if (window.innerWidth <= 880) {
           if (t.axis === null) {
             var adx = Math.abs(e.touches[0].clientX - t.px), ady = Math.abs(e.touches[0].clientY - t.py);
             if (adx < 6 && ady < 6) return;
             t.axis = ady > adx ? "v" : "h";
           }
-          if (t.axis === "v") return;
+          if (t.axis === "v") return; // let the page scroll — no preventDefault
+          // Horizontal-locked: stop simultaneous micro-scroll so the pan tracks 1:1.
+          if (e.cancelable) e.preventDefault();
         }
         var span = t.view[1] - t.view[0], dxUnits = (e.touches[0].clientX - t.px) / (p.x1 - p.x0) * span;
         self.setView([t.view[0] - dxUnits, t.view[1] - dxUnits], false);
       } else if (t.mode === "pinch" && e.touches.length === 2) {
+        // Keep the pinch owned by the chart throughout; passive:false allows this.
+        if (e.cancelable) e.preventDefault();
         var a = e.touches[0], b = e.touches[1], d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
         var span0 = t.view[1] - t.view[0], full = self._fullX;
         var cx = t.view[0] + (clamp(t.midPx - r.left, p.x0, p.x1) - p.x0) / (p.x1 - p.x0) * span0;
@@ -594,16 +606,30 @@
         self.setView([cx - ratio * ns, cx - ratio * ns + ns], false);
       }
     };
-    var onTEnd = function (e) { if (e.touches.length === 0) { t = null; self._dragging = false; } };
+    var onTEnd = function (e) {
+      if (e.touches.length === 0) { t = null; self._dragging = false; return; }
+      // Pinch → pan handoff: lifting one finger after a pinch would otherwise
+      // leave a dead gesture. Re-seed as a horizontal-locked pan from the
+      // remaining finger so the user can slide without restarting the gesture.
+      if (e.touches.length === 1 && t && t.mode === "pinch") {
+        t = { mode: "pan", px: e.touches[0].clientX, py: e.touches[0].clientY, axis: "h", view: (self._view || self._fullX).slice() };
+      }
+    };
+    // touchcancel: browser stole the gesture (e.g. notification centre, iOS
+    // scroll takeover). Reset state so the next gesture starts clean.
+    var onTCancel = function () { t = null; self._dragging = false; };
 
     sv.addEventListener("wheel", onWheel, { passive: false });
     sv.addEventListener("mousedown", onDown);
     window.addEventListener("mousemove", onWinMove);
     window.addEventListener("mouseup", onWinUp);
     sv.addEventListener("dblclick", onDbl);
-    sv.addEventListener("touchstart", onTStart, { passive: true });
-    sv.addEventListener("touchmove", onTMove, { passive: true });
+    // passive:false is required so preventDefault() inside handlers can claim
+    // pinch and horizontal-pan gestures before the browser's scroll/zoom wins.
+    sv.addEventListener("touchstart", onTStart, { passive: false });
+    sv.addEventListener("touchmove", onTMove, { passive: false });
     sv.addEventListener("touchend", onTEnd);
+    sv.addEventListener("touchcancel", onTCancel);
     this._zoomCleanup = function () { window.removeEventListener("mousemove", onWinMove); window.removeEventListener("mouseup", onWinUp); };
   };
 
