@@ -64,6 +64,15 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     "federal_register": "federalregister",  # federalregister.gov — distinct host, runs in parallel
     "cleveland_nowcast": "clevelandfed",    # clevelandfed.org — distinct host, runs in parallel (MRI-PR-A)
     "kalshi_releases": "kalshi",           # api.elections.kalshi.com — keyless, distinct host (MRI PR-K)
+    # api.openfigi.com — keyless CUSIP→ticker mapper, pure requests.post with its own
+    # in-adapter pacing (25 req/min keyless => ~10 min when a mapping backlog exists).
+    # Writes only data/openfigi/*. It READS data/smart_money/ snapshots (written by
+    # edgar_13f in the 'sec' group), but that's safe to overlap: snapshots are
+    # immutable-once-written, every snapshot read is try/except-skipped, and the old
+    # serial slot ran BEFORE the concurrent 'sec' refresh anyway — same-night 13F
+    # lines were never visible to it; unmapped CUSIPs retry next nightly (cache is
+    # idempotent, stale_after_days=30).
+    "openfigi": "openfigi",
     # Asia-lane pure-REST movers (2026-07-11 runtime diet; #2193 timeout incident).
     # Verified requests-only (no akshare/yfinance), each writes its own store; the two
     # CBBC adapters share the HKEX host so they stay serial within one group. Moving
