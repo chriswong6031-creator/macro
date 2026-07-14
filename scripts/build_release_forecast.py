@@ -59,6 +59,9 @@ _SHADOW_BRIDGE_TARGETS = {"cpi_headline"}  # cpi_core bridge killed/closed (MRI-
 # W11-G: mf_energy shadow (Track T, MRI-R36) — cpi_headline only
 _SHADOW_MF_ENERGY_TARGETS = {"cpi_headline"}
 
+# MRI-R40: combined_v1 combination layer — cpi_headline + cpi_core only (prereg §2.1)
+_SHADOW_COMBINED_V1_TARGETS = {"cpi_headline", "cpi_core"}
+
 # MRI-R21: NFP v3_factor warning (trails champion; sub-naive on full 2010+ window)
 _NFP_V3_WARNING = (
     "trails champion; sub-naive on full-window backtest (2010+ MAE v3=527.9 vs naive=459.8), "
@@ -939,6 +942,116 @@ def _attach_shadows_to_items(upcoming_block: list[dict], root: Path, today: date
             item["shadows"] = shadows
 
 
+def _attach_combined_to_items(
+    upcoming_block: list[dict],
+    existing_ledger: list[dict],
+    root: Path,
+    today: date,
+) -> None:
+    """MRI-R40: attach item["combined"] for cpi_headline and cpi_core. In-place.
+
+    Runs AFTER _attach_shadows_to_items so shadow points are available.
+    Reads scored errors from existing_ledger to compute shrunk inverse-MAE weights.
+
+    Sets item["combined"] = {
+        "combined_point", "p10", "p25", "p50", "p75", "p90",
+        "combined_components", "n_scored_basis",
+        "display_only": True, "authority": False,
+    }
+    or item["combined"] = None when <2 non-null inputs are available.
+    """
+    try:
+        from engine.release_combined import (
+            compute_combined_point,
+            extract_scored_errors,
+        )
+    except Exception as exc:
+        log.warning("release_combined import failed — combined_v1 skipped: %s", exc)
+        return
+
+    for item in upcoming_block:
+        rt = item.get("release_type", "")
+        if rt not in _SHADOW_COMBINED_V1_TARGETS:
+            continue
+
+        period_str = item.get("period")
+
+        # --- Gather tonight's input points ---
+        proj_block = item.get("projection") or {}
+        shadows = item.get("shadows") or {}
+
+        # Champion point
+        champ_pt = proj_block.get("point")
+
+        # Shadow points
+        v3_pt = (shadows.get("v3_factor") or {}).get("point")
+        bridge_pt = (shadows.get("cpi_bridge") or {}).get("point")
+        mfe_pt = (shadows.get("mf_energy") or {}).get("point")
+
+        # Cleveland: already fetched into benchmark_set
+        bench = item.get("benchmark_set") or {}
+        cleveland_pt = bench.get("cleveland_nowcast")
+
+        inputs: dict = {
+            "champion":  champ_pt,
+            "v3_factor": v3_pt,
+        }
+        # cpi_bridge and mf_energy: cpi_headline only per prereg §2.2
+        if rt == "cpi_headline":
+            inputs["cpi_bridge"] = bridge_pt
+            inputs["mf_energy"] = mfe_pt
+        inputs["cleveland"] = cleveland_pt
+
+        # sigma_champion: from surprise_skew (sigma_scale_pp)
+        skew = item.get("surprise_skew") or {}
+        sigma_champion = skew.get("sigma_scale_pp")
+
+        # --- Scored errors from existing ledger ---
+        try:
+            scored_errors = extract_scored_errors(existing_ledger, rt)
+        except Exception as exc:
+            log.warning("extract_scored_errors failed for %s: %s", rt, exc)
+            scored_errors = {}
+
+        # n_scored_basis: number of champion scored rows for this release
+        n_scored_basis = sum(
+            1 for r in existing_ledger
+            if r.get("row_type") == "scored"
+            and r.get("release") == rt
+            and r.get("model") is None
+        )
+
+        # --- Compute combined ---
+        try:
+            result = compute_combined_point(inputs, scored_errors, sigma_champion)
+        except Exception as exc:
+            log.warning("compute_combined_point raised for %s/%s: %s", rt, period_str, exc)
+            result = None
+
+        if result is not None:
+            item["combined"] = {
+                "combined_point": result["combined_point"],
+                "p10": result["p10"],
+                "p25": result["p25"],
+                "p50": result["p50"],
+                "p75": result["p75"],
+                "p90": result["p90"],
+                "combined_components": result["combined_components"],
+                "n_scored_basis": n_scored_basis,
+                "display_only": True,
+                "authority": False,
+            }
+            log.debug(
+                "combined_v1 %s/%s: point=%.4f n_active=%d cold_start=%s",
+                rt, period_str, result["combined_point"],
+                len(result["combined_components"].get("inputs_used", [])),
+                result["combined_components"].get("cold_start"),
+            )
+        else:
+            item["combined"] = None
+            log.debug("combined_v1 %s/%s: None (<2 inputs)", rt, period_str)
+
+
 def _build_shadow_ledger_rows(
     today: date,
     upcoming_block: list[dict],
@@ -959,7 +1072,10 @@ def _build_shadow_ledger_rows(
     asof_night = today.isoformat()
     rows = []
 
-    _all_shadow_targets = _SHADOW_V3_TARGETS | _SHADOW_BRIDGE_TARGETS | _SHADOW_MF_ENERGY_TARGETS
+    _all_shadow_targets = (
+        _SHADOW_V3_TARGETS | _SHADOW_BRIDGE_TARGETS
+        | _SHADOW_MF_ENERGY_TARGETS | _SHADOW_COMBINED_V1_TARGETS
+    )
     for item in upcoming_block:
         release_type = item.get("release_type")
         period_str = item.get("period")
@@ -1115,6 +1231,48 @@ def _build_shadow_ledger_rows(
                 rows.append(row_mfe)
             else:
                 log.debug("shadow_projection mf_energy skipped for %s/%s (None result)", release_type, period_str)
+
+        # MRI-R40: combined_v1 shadow row (cpi_headline + cpi_core)
+        # combined data was attached by _attach_combined_to_items before this call.
+        if release_type in _SHADOW_COMBINED_V1_TARGETS:
+            combined_data = item.get("combined")
+            if combined_data is not None:
+                try:
+                    _pred_id_cv1 = make_prediction_id(
+                        _release_id, f"{asof_night}:combined_v1"
+                    ) if _release_id else None
+                except Exception:
+                    _pred_id_cv1 = None
+
+                row_cv1: dict = {
+                    "schema": 2,
+                    "row_type": "shadow_projection",
+                    "model": "combined_v1",
+                    "asof_night": asof_night,
+                    "release": release_type,
+                    "period": period_str,
+                    "release_date": release_date_str,
+                    "release_id": _release_id,
+                    "prediction_id": _pred_id_cv1,
+                    "horizon_days": _horizon_days,
+                    "projection_point": combined_data.get("combined_point"),
+                    "projection_p10": combined_data.get("p10"),
+                    "projection_p25": combined_data.get("p25"),
+                    "projection_p50": combined_data.get("p50"),
+                    "projection_p75": combined_data.get("p75"),
+                    "projection_p90": combined_data.get("p90"),
+                    "combined_components": combined_data.get("combined_components"),
+                    "n_scored_basis": combined_data.get("n_scored_basis"),
+                    "display_only": True,
+                    "authority": False,
+                }
+                rows.append(row_cv1)
+                log.debug(
+                    "shadow_projection combined_v1 built for %s/%s: point=%.4f",
+                    release_type, period_str, combined_data.get("combined_point") or float("nan"),
+                )
+            else:
+                log.debug("shadow_projection combined_v1 skipped for %s/%s (null result)", release_type, period_str)
 
     return rows
 
@@ -2296,6 +2454,56 @@ def _build_scoreboard(
     for (rt, mdl), g in per_shadow.items():
         shadow_stats[f"{rt}:{mdl}"] = _agg_to_stats(rt, g, model_label=mdl)
 
+    # MRI-R40 §5: promotion_review entries — annotation only, no metric changes.
+    # At n >= 12 scored combined_v1 prints AND any single input's forward MAE < combined's:
+    # emit an entry naming the input. Pure adjudication trigger.
+    promotion_review: list[dict] = []
+    for (rt, mdl), g in per_shadow.items():
+        if mdl != "combined_v1":
+            continue
+        combined_mae = (_agg_to_stats(rt, g, model_label=mdl).get("mae_ours"))
+        combined_n = g["n"]
+        if combined_n < 12 or combined_mae is None:
+            continue
+        # Compare against each candidate input's MAE from shadow scoreboard.
+        # "cleveland" has no shadow scoreboard entry — compute its standalone forward
+        # MAE from champion scored rows' surprise_vs_cleveland field (same source as
+        # extract_scored_errors uses), requiring n>=12 cleveland rows per prereg §5.
+        candidate_models = ["champion", "v3_factor", "cpi_bridge", "mf_energy", "cleveland"]
+        for cand_model in candidate_models:
+            if cand_model == "champion":
+                # Champion MAE from champion scoreboard
+                cand_stats = release_stats.get(rt)
+                cand_mae = cand_stats.get("mae_ours") if cand_stats else None
+                cand_n = cand_stats.get("n") if cand_stats else 0
+            elif cand_model == "cleveland":
+                # Cleveland has no shadow projection track — compute directly from
+                # champion rows' cleveland_abs_errors (surprise_vs_cleveland field).
+                cle_errs = (per_release.get(rt) or {}).get("cleveland_abs_errors", [])
+                cand_n = len(cle_errs)
+                cand_mae = float(sum(cle_errs) / cand_n) if cand_n >= 12 else None
+            else:
+                cand_key = (rt, cand_model)
+                cand_g = per_shadow.get(cand_key)
+                if cand_g is None:
+                    continue
+                cand_s = _agg_to_stats(rt, cand_g, model_label=cand_model)
+                cand_mae = cand_s.get("mae_ours")
+                cand_n = cand_g["n"]
+            if cand_mae is not None and cand_mae < combined_mae:
+                promotion_review.append({
+                    "release": rt,
+                    "input": cand_model,
+                    "mae_input": round(cand_mae, 4),
+                    "mae_combined": round(combined_mae, 4),
+                    "n_combined": combined_n,
+                    "n_input": cand_n,
+                    "note": (
+                        "MRI-R40 §5: input MAE < combined MAE at n>=12. "
+                        "Mandatory adjudication trigger — no automatic change."
+                    ),
+                })
+
     # FIX 5: load defect_notices.json and pass through as annotation (no metric change)
     defect_notices = _load_defect_notices(root)
 
@@ -2306,6 +2514,7 @@ def _build_scoreboard(
         "note": "Forward-only: no backtest rows enter this scoreboard (MRI-R8).",
         "by_release": release_stats,
         "by_shadow": shadow_stats,  # Round-2b: per-(release, model) shadow track records
+        "promotion_review": promotion_review,  # MRI-R40 §5: annotation, no metric changes
         "defect_notices": defect_notices,  # annotation only; no metric computation changed
     }
 
@@ -2857,6 +3066,14 @@ def build(root: Path, dry_run: bool = False) -> dict:
                      for item in upcoming_block if item.get("shadows")}
     log.info("shadow projections attached (incl. mf_energy): %s", shadow_counts)
 
+    # 3c-R40: MRI-R40 combined_v1 combination layer (cpi_headline + cpi_core).
+    # Must run AFTER _attach_shadows_to_items (needs tonight's shadow points) and
+    # AFTER ledger load (needs scored errors for weight computation).
+    _attach_combined_to_items(upcoming_block, existing_ledger, root, today)
+    combined_counts = {item.get("release_type", "?"): (item.get("combined") is not None)
+                       for item in upcoming_block if item.get("release_type") in _SHADOW_COMBINED_V1_TARGETS}
+    log.info("combined_v1 attached: %s", combined_counts)
+
     # 3d. MRI-R35: assign cutoff_label to each upcoming item before ledger rows freeze them.
     _assign_cutoff_labels(upcoming_block)
     log.info("cutoff labels assigned to %d items", len(upcoming_block))
@@ -2944,6 +3161,8 @@ def build(root: Path, dry_run: bool = False) -> dict:
             "shadows", "cutoff_label",
             # W11-G additions
             "print_integrity", "revision_context",
+            # MRI-R40: combined_v1 combination layer
+            "combined",
         ],
         "upcoming": upcoming_block,
         "last_scored": last_scored,

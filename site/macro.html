@@ -7473,10 +7473,18 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           +'</div>';
       }
 
+      /* --- MRI-R40: resolve display point (combined when available, else champion) --- */
+      var comb = item.combined || null;
+      var displayPoint = (comb && comb.combined_point != null) ? comb.combined_point : proj.point;
+      var displayP10 = (comb && comb.p10 != null) ? comb.p10 : proj.p10;
+      var displayP90 = (comb && comb.p90 != null) ? comb.p90 : proj.p90;
+      var displayP25 = (comb && comb.p25 != null) ? comb.p25 : proj.p25;
+      var displayP75 = (comb && comb.p75 != null) ? comb.p75 : proj.p75;
+
       /* --- OURS column --- */
       var oursVal = '—';
-      if (!isBenchmarkOnly && proj.point != null){
-        oursVal = useK ? fmtK(proj.point) : fmtNum(proj.point,2)+'pp';
+      if (!isBenchmarkOnly && displayPoint != null){
+        oursVal = useK ? fmtK(displayPoint) : fmtNum(displayPoint,2)+'pp';
       }
       /* for NFP None-point: ours = '—' (fall through) */
 
@@ -7757,24 +7765,50 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       var sk = item.surprise_skew;
       var pi = item.print_integrity || null;
       var piRegime = pi ? (pi.regime || 'normal') : null;
+      /* MRI-R40: combined block */
+      var comb = item.combined || null;
+      var dispPt = (comb && comb.combined_point != null) ? comb.combined_point : proj.point;
+      var dispP10 = (comb && comb.p10 != null) ? comb.p10 : proj.p10;
+      var dispP90 = (comb && comb.p90 != null) ? comb.p90 : proj.p90;
+      var dispP25 = (comb && comb.p25 != null) ? comb.p25 : proj.p25;
+      var dispP75 = (comb && comb.p75 != null) ? comb.p75 : proj.p75;
+      /* build a display-proj object for intervalConeSVG */
+      var dispProj = comb ? {
+        point: dispPt, p10: dispP10, p25: dispP25,
+        p50: (comb.p50 != null ? comb.p50 : proj.p50),
+        p75: dispP75, p90: dispP90
+      } : proj;
 
       /* ---- TAB 0: OVERVIEW ---- */
       var tab0 = '';
       {
-        /* large point */
+        /* large point — sources combined when available, else champion */
         var ptStr = '—';
-        if (!isBenchmarkOnly && !isNoData && proj.point != null)
-          ptStr = useK ? fmtK(proj.point) : fmtNum(proj.point,2)+(rt.indexOf('nfp')===-1?'pp':'');
+        if (!isBenchmarkOnly && !isNoData && dispPt != null)
+          ptStr = useK ? fmtK(dispPt) : fmtNum(dispPt,2)+(rt.indexOf('nfp')===-1?'pp':'');
+        /* "Blend of N models" receipt line — plain words per DESIGN_DOCTRINE Tier 1 */
+        var combNStr = '';
+        if (comb && comb.combined_components){
+          var combN = (comb.combined_components.inputs_used || []).length;
+          if (combN > 0) combNStr = String(combN);
+        }
+        var combSubtitle = combNStr
+          ? '<div style="font-size:10px;color:var(--muted);margin-top:1px">'
+            +'<span class="l-en">Blend of '+esc(combNStr)+' models</span>'
+            +'<span class="l-zh">'+combNStr+'模型混合</span>'
+            +'</div>'
+          : '';
         tab0 += '<div class="rr-grp">'
           +'<div style="font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1">'+esc(ptStr)+'</div>'
           +'<div style="font-size:10px;color:var(--muted);margin-top:2px">'
           +'<span class="l-en">Our projection · '+esc(item.period||'')+(item.release_date?' · '+esc(item.release_date):'')+'</span>'
           +'<span class="l-zh">本方预测 · '+esc(item.period||'')+(item.release_date?' · '+esc(item.release_date):'')+'</span>'
           +'</div>'
+          +combSubtitle
           +'</div>';
-        /* SVG cone */
-        if (!isBenchmarkOnly && !isNoData && proj.p10 != null){
-          tab0 += '<div class="rr-grp">'+intervalConeSVG(proj, item.benchmark_set, rel)+'</div>';
+        /* SVG cone — use combined interval when available */
+        if (!isBenchmarkOnly && !isNoData && dispP10 != null){
+          tab0 += '<div class="rr-grp">'+intervalConeSVG(dispProj, item.benchmark_set, rel)+'</div>';
         }
         /* chips + coverage */
         var chips = '';
@@ -7784,15 +7818,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           chips += coverageChip(cf||null);
         }
         if (chips) tab0 += '<div class="rr-grp"><div class="rr-chips-row">'+chips+'</div></div>';
-        /* vs strongest benchmark delta */
-        if (!isBenchmarkOnly && !isNoData && proj.point != null && item.benchmark_set){
+        /* vs strongest benchmark delta — use display point */
+        if (!isBenchmarkOnly && !isNoData && dispPt != null && item.benchmark_set){
           var bs2 = item.benchmark_set;
           var bVals = [bs2.naive_prior, bs2.trailing_3m, bs2.ar_model, bs2.cleveland_nowcast, bs2.expanding_mean];
           bVals = bVals.filter(function(v){return v != null;});
           if (bVals.length){
-            var bMax = Math.max.apply(null,bVals.map(Math.abs));
             var bMedian = bVals.slice().sort(function(a,b){return a-b;})[Math.floor(bVals.length/2)];
-            var delta = proj.point - bMedian;
+            var delta = dispPt - bMedian;
             var dSign = delta >= 0 ? '+' : '';
             var dStr = useK ? dSign+fmtNum(delta,0)+'k' : dSign+fmtNum(delta,2)+'pp';
             tab0 += '<div style="font-size:10.5px;color:var(--muted)">'
@@ -7862,6 +7895,35 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         /* v3_factor shadow */
         if (!isBenchmarkOnly && v3){
           tab1 += '<div class="rr-grp">'+v3FactorRow(v3, isClaims, isNfp)+'</div>';
+        }
+        /* MRI-R40: combined_v1 weight receipt (technical detail — hover/receipt per DESIGN_DOCTRINE) */
+        if (!isBenchmarkOnly && comb && comb.combined_components){
+          var cc = comb.combined_components;
+          var ccInputs = cc.inputs_used || [];
+          var ccWeights = cc.weights || {};
+          var ccPoints = cc.points || {};
+          var ccMAE = cc.MAE_shrunk_i || {};
+          var ccCold = cc.cold_start;
+          var ccRows = ccInputs.map(function(iid){
+            var w = ccWeights[iid]; var pt = ccPoints[iid];
+            var wStr = w != null ? (Math.round(w*1000)/10).toFixed(1)+'%' : '—';
+            var ptStr2 = pt != null ? fmtNum(pt,2) : '—';
+            return '<div class="rr-bench-row"><span class="rr-bench-name">'+esc(iid)+'</span>'
+              +'<span class="rr-bench-val">'+esc(ptStr2)+'pp &nbsp; <span style="color:var(--muted)">w='+esc(wStr)+'</span></span></div>';
+          }).join('');
+          var coldNote = ccCold
+            ? '<div style="font-size:9.5px;color:var(--muted);margin-top:3px">'
+              +'<span class="l-en">Equal weights (cold start — no scored prints yet)</span>'
+              +'<span class="l-zh">等权重（冷启动，尚无评分数据）</span>'
+              +'</div>'
+            : '';
+          tab1 += '<div class="rr-grp"><div class="rr-grp-label">'
+            +'<span class="l-en">Blend weights (display-only receipt)</span>'
+            +'<span class="l-zh">混合权重（仅展示收据）</span>'
+            +'</div>'
+            +ccRows
+            +coldNote
+            +'</div>';
         }
         /* market-implied: already rendered inside modelDotPlot() with basis tag — do NOT add again here */
         /* surprise distribution — gated on !isBenchmarkOnly */

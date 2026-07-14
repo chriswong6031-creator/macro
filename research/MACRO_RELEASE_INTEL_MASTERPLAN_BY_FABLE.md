@@ -914,3 +914,32 @@ that does. All other cards hidden behind "See more (N) 显示更多" / "See less
 "consensus/共识" is banned from all card strings (MRI-R5 standing).
 
 **MRI-R39a W11 panel cleanup (2026-07-10):** Inline track-record section (TRACK RECORD header + "Forward accrual began … no scored prints yet." line), the "as of &lt;timestamp&gt;" line, and the redundant footer disclosure ("Model projections · display-only · not investment advice · scored forward in public") removed from the panel body. Track record moved to a top-right button ("Track record ↗" / "评分记录 ↗", id=rr-tr-btn) in the h2 header row; clicking opens a panel-level overlay (rr-tr-overlay) populated via scoreboardBlock(). Panel after change: header (title + track-record button + subline disclosure) → default cards → See more → hidden cards. Path taken: new overlay (no existing standalone track-record page found). MRI-R5/R7 honesty satisfied by retained rr-subline.
+
+---
+
+## Amendment 2026-07-14 — MRI-R40: input tier + combination layer (post June-2026 CPI post-mortem)
+
+**Trigger:** June-2026 CPI cold print (−0.4 actual vs champion +0.0818; see
+defect_notices.json DN-001/DN-002 and PR #2574). The system carried five point estimates
+into the print with no mechanism for them to combine: §7's graduation endpoint grants a
+badge and never changes the displayed number, and the only promotion concept was full
+champion replacement. Working signals (mf_energy, Cleveland) had no pathway to matter.
+
+**Ruling (MRI-R40):**
+
+1. **Input-tier doctrine.** The gauntlet gates OUTPUTS and AUTHORITY, never model inputs.
+   A signal may be consumed as a model input without any authority change; the output
+   carries whatever authority the output has. "display_only" continues to mean "no
+   gate/size/trade authority" — it does not mean "may not be consumed upstream".
+2. **Combination layer chartered.** `combined_v1` per PREREG_COMBINED_POINT_V1.md
+   (frozen 2026-07-14): shrunk inverse-MAE blend of champion + shadows + Cleveland,
+   weights learned on forward scored rows only; dispersion-aware interval (a new
+   construction — the executed W11-F interval recal one-shot is untouched). The
+   displayed card point sources the blend when available; champion demoted to the
+   receipt breakdown. Authority booleans unchanged (all false).
+3. **§7 extension — promotion reviews get a clock.** In addition to the §7 badge, the
+   scoreboard emits a mandatory `promotion_review` adjudication ticket when any single
+   input beats the combined point on n ≥ 12 scored prints. Display-tier is a waiting
+   room with scheduled review, not a terminal state. Nothing here changes authority
+   booleans (unchanged from §7's final sentence).
+
