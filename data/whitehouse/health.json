@@ -1,10 +1,23 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-14T18:16:21.788695+00:00",
-  "posts_seen": 10,
-  "seen_total": 28,
-  "evaluated": 0,
+  "as_of": "2026-07-14T20:32:08.962560+00:00",
+  "posts_seen": 12,
+  "seen_total": 30,
+  "evaluated": 2,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-07-14-white-house-launches-gold-eagle-initiative-for-unprecedented-cybersecurity-vulne",
+      "importance": 35,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    },
+    {
+      "id": "wh-2026-07-14-nominations-and-withdrawals-sent-to-the-senate-e958",
+      "importance": 5,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    }
+  ]
 }
