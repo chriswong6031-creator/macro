@@ -843,7 +843,7 @@
         {# reco chip (theme rows) #}
         {% if row.reco_en %}<span class="anv2-chip anv2-chip-reco-{{ row.reco or 'hold' }}">{{ t(row.reco_en, row.reco_zh or row.reco_en) }}</span>{% endif %}
         {# sector urgency/tag chip #}
-        {% if row.tag and row.kind != 'THEME' %}<span class="anv2-chip anv2-chip-tag">{{ row.tag }}</span>{% endif %}
+        {% if row.tag and row.kind != 'THEME' %}<span class="anv2-chip anv2-chip-tag">{{ t(row.tag, row.tag_zh or row.tag) }}</span>{% endif %}
         {# dual-read chip on reduce lane #}
         {% if lane == 'reduce' and row.dual_read %}
         <span class="anv2-chip anv2-chip-washout" data-tip-en="Mixed picture: the longer trend still says reduce, but the recent price action shows early signs of a bottom. This name also appears in Bottoming Watch — both reads are shown so you see the disagreement." data-tip-zh="信号矛盾：长期趋势仍建议减仓，但近期价格已初现筑底迹象。该名称同时出现在洗盘观察栏——两种判读并列显示，便于看清分歧。">{{ t(row.dual_chip_en, row.dual_chip_zh) }}</span>
