@@ -22,7 +22,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | codex-docket-b6 | 3 |
 | cycle-intelligence | 14 |
 | dannytrades | 1 |
-| engine-fix | 16 |
+| engine-fix | 18 |
 | entry-stack-expansion | 2 |
 | factor-intelligence | 5 |
 | fast-turn | 4 |
@@ -87,7 +87,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 271 |
+| display | 273 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -96,7 +96,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 421 |
+| git | 423 |
 | gitignored-local | 11 |
 | r2 | 7 |
 
@@ -242,8 +242,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | market-state-forward-log | `data/market_state/forward_log.jsonl` | jsonl | daily-engine | display | 3 | 0 |
 | regime-base-effect-fwd | `data/regime/base_effect_fwd.jsonl` | jsonl | daily-engine | display | 3 | 0 |
 | site-factors | `site/factordata/factors.json` | json | daily-engine | display | 3 | 0 |
+| data-risk-radar-scorecard | `data/risk_radar/scorecard.json` | json | daily-engine | display | 2 | 0 |
 | site-allocation | `site/allocationdata/allocation.json` | json | daily-engine | display | 1 | 1 |
 | site-regime-prior-js | `site/regimedata/regime_prior.js` | js | daily-engine | display | 2 | 0 |
+| site-riskdata-scorecard | `site/riskdata/scorecard.json` | json | daily-engine | display | 1 | 1 |
 | site-macro-signals | `site/macrodata/macro_signals.json` | json | daily-engine | display | 0 | 1 |
 
 ### entry-stack-expansion
