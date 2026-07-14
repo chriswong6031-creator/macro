@@ -1,0 +1,8 @@
+sample,asset,n,mean_return,median_return,positive_rate,mean_excess_spy,excess_hit_rate,interpretation,exact_pvalue_absolute_return,exact_pvalue_excess_spy
+past_20_years_2006_2022,SPY,5,0.0738662978333666,0.0609059766161479,0.8,0.0,,small-sample calendar prior; not a standalone trade rule,,
+past_20_years_2006_2022,XLK,5,0.07369780467771322,0.0885001909509748,0.6,-0.00016849315565341944,0.6,small-sample calendar prior; not a standalone trade rule,,
+past_20_years_2006_2022,XLV,5,0.09786047424911444,0.1151597420632757,1.0,0.023994176415747824,0.6,small-sample calendar prior; not a standalone trade rule,,
+expanded_2002_2022,SPY,6,0.04488373213481964,0.04173756940239465,0.6666666666666666,0.0,,small-sample calendar prior; not a standalone trade rule,,
+expanded_2002_2022,XLK,6,0.05108983453106044,0.0363263005193246,0.5,0.006206102396240765,0.6666666666666666,small-sample calendar prior; not a standalone trade rule,,
+expanded_2002_2022,XLV,6,0.07584343883150581,0.0915526135923834,0.8333333333333334,0.030959706696686153,0.6666666666666666,small-sample calendar prior; not a standalone trade rule,,
+2003_2025_exact_permutation,XLV,5,0.09786047424911444,0.1151597420632757,1.0,0.02399417641574784,0.6,two-sided exact label permutation; unadjusted exploratory p-values,0.24042319236827245,0.2172724300870754
