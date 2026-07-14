@@ -350,6 +350,22 @@ fires per condition bucket._
 > uniqueness-weight scheme, deflated-stats trial budget, calibration criteria, n floors, and kill
 > criteria are in the amendment §4–§8.
 
+### Shadow-stamp cross-registration (FS-4 flow-score, 2026-07-14 — DRAFT, date-gated)
+
+> **Registered here, NOT yet written anywhere.** Per FS-R8/RO-12 (all fire-ledger stamp columns
+> belong to this program) and FS-R11 (shadow is gate-governed), FS-4 cross-registers one future
+> shadow-stamp column on the fire ledger: **`opt_flowml_score`** (nullable float 0–1 — the
+> calibrated S-FLOWML-* score of the fire's underlying's most recent detector-fired flow event as
+> of the fire date, PIT; null when no scored event exists or the bucket's artifact is not
+> deployable). Writer: **ONLY the A9 single writer `scripts/stamp_options_state.py`** — no new
+> writer, schema-union / no-overwrite idiom as with every `opt_*` column. **DATE GATE: no qledger
+> write of this column before the QI co-sign window (~2026-08-29).** Until then the column exists
+> only as this registration; the FS-4 code writes scores solely to the flow-signal sidecar
+> (`data/flow_signals/scores.parquet`). Shadow-stamp values are display/evidence-tier only
+> (FS-R3): never a rank/size/gate input pre-FS-5-gate. Implementing the stamp = a small
+> options-alpha-lane PR extending the A9 writer after the date gate opens; it adds NO new FDR
+> cell (the score's cells are the 8 registered above).
+
 Every gate emits a machine-readable `gate.json` in its data dir (`scored:false` until pass),
 mirroring `data/gex/gate.json`. Score wiring happens ONLY in W5 and only for passed gates.
 

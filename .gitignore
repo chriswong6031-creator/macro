@@ -374,3 +374,9 @@ site/oddsmatrix/
 # The negation keeps the small _meta.json manifest tracked.
 data/odds_ohlcv/*.parquet
 !data/odds_ohlcv/_meta.json
+
+# FS-4 flow-score model artifacts (GITIGNORED per A4 — versioned joblib artifacts
+# never committed; served from Cloudflare R2 and local models_dir in config/flow_score.yml).
+# data/flow_signals/scores.parquet IS committed (like grades.parquet — covered by
+# the nightly `git add data/` commit glob; see .github/workflows/daily.yml).
+data/flow_signals/models/

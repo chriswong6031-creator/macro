@@ -467,6 +467,105 @@ def build_etf_tile(data_dir: Path) -> dict | None:
         return None
 
 
+# ── flow score glance panel (FS-4 Lane C) ──────────────────────────────────────
+
+def build_flow_score_panel(data_dir: Path) -> dict | None:
+    """Build the flow-score glance panel from gate.json.
+
+    Returns None when gate.json is absent (panel omitted from payload entirely).
+    All fields are derived defensively — the scoring block may be absent (Lane B
+    adds it later); never raises.
+
+    Copy laws (DESIGN_DOCTRINE + amendment §2.3 / §9):
+    - Glance tier: plain words, unsigned outcome only — no directional/bullish/bearish wording.
+    - Banned at glance tier: ECE, isotonic, AUC, cohort, era, calibration, S-FLOWML,
+      model names, competitor names (MomoEdge debrand law), untranslated stats.
+    - "validated" never in affirmative copy (CI-enforced).
+    - PRE-GATE LAW (FS-R3): score is display-only — must not feed any ranker/sizer/gate.
+    - ZH copy written only via Write/Edit tools (not bash heredoc — mojibake law).
+    """
+    try:
+        gate_path = data_dir / "flow_signals" / "gate.json"
+        if not gate_path.exists():
+            log.info("flow_score panel: gate.json absent — panel omitted")
+            return None
+        gate = json.loads(gate_path.read_text())
+        ledger_block = gate.get("ledger") or {}
+        n_total = int(ledger_block.get("n_rows") or 0)
+        n_sessions = int(ledger_block.get("n_sessions") or 0)
+        last_ts = ledger_block.get("last_ts")
+        n_by_dte = ledger_block.get("n_by_dte_bucket") or {}
+        asof = gate.get("asof") or ""
+
+        # Derive since date: earliest session from events_per_day keys if present,
+        # else fall back to asof (both acceptable for the display copy).
+        events_per_day = ledger_block.get("events_per_day") or {}
+        since_date = min(events_per_day.keys()) if events_per_day else asof
+
+        # ── scoring block — defensive: may be absent (Lane B writes it) ────────────
+        scoring = gate.get("scoring") or {}          # .get() everywhere; never crash on missing
+        is_scored = bool(scoring.get("enabled"))
+        n_scored_total = scoring.get("n_scored_total")
+        n_scored_this_run = scoring.get("n_scored_this_run")
+        by_status = scoring.get("by_status") or {}
+        cal_by_bucket = scoring.get("calibration") or {}
+
+        # Per-DTE-bucket event counts (for Tier-2 hover receipt)
+        # Bilingual bucket labels (FS4-C1 fix): emit en/zh twins so the CSS-driven
+        # bilingual idiom works (html[data-lang=zh] .l-en{display:none}).
+        _BUCKET_LABEL: dict[str, tuple[str, str]] = {
+            "0d":    ("Same-day (0DTE)", "当日到期 (0DTE)"),
+            "1_7d":  ("1–7 days", "1–7天"),
+            "8_30d": ("8–30 days", "8–30天"),
+            "31_90d": ("31–90 days", "31–90天"),
+        }
+        # Sort by numeric DTE order, not lexicographic string order
+        _BUCKET_ORDER = {"0d": 0, "1_7d": 1, "8_30d": 2, "31_90d": 3}
+        bucket_receipt: list[dict] = [
+            {
+                "bucket_en": _BUCKET_LABEL.get(k, (k, k))[0],
+                "bucket_zh": _BUCKET_LABEL.get(k, (k, k))[1],
+                "n": int(v),
+            }
+            for k, v in sorted(
+                n_by_dte.items(),
+                key=lambda x: _BUCKET_ORDER.get(x[0], 99),
+            )
+            if v
+        ]
+
+        # ── glance copy: building-history (today's state) ───────────────────────────
+        # If scoring block present and has scored events, use scored copy; else building-history.
+        # Amendment §2.3: outcome is UNSIGNED — copy must not assert directional thesis.
+        if is_scored and n_scored_total:
+            # Future branch — defended now but will only show once Lane B runs
+            status = "scored"
+        else:
+            status = "building_history"
+
+        panel: dict[str, Any] = {
+            "schema": "flow_score.panel/v1",
+            "status": status,
+            "n_events_total": n_total,
+            "n_sessions": n_sessions,
+            "since": since_date,
+            "asof": asof,
+            "last_ts": last_ts,
+            "bucket_receipt": bucket_receipt,
+            # Scoring fields — all defensive; only populated when Lane B has run
+            "n_scored_total": n_scored_total,
+            "n_scored_this_run": n_scored_this_run,
+            "by_status": by_status,
+            "calibration_by_bucket": cal_by_bucket,
+        }
+        log.info("flow_score panel: status=%s, n_events=%d, n_sessions=%d",
+                 status, n_total, n_sessions)
+        return panel
+    except Exception as e:  # noqa: BLE001 — additive; never fatal
+        log.warning("flow_score panel build failed (non-fatal): %s", e)
+        return None
+
+
 # ── kill-switch & stub ─────────────────────────────────────────────────────────
 
 def _write_noindex_stub(site_dir: Path) -> None:
@@ -521,6 +620,9 @@ def build() -> dict:
         log.warning("flow_desk: cohort build failed (non-fatal): %s", e)
         cohorts = []
 
+    # FS-4 Lane C: flow-score glance panel (display-only; never feeds rank/gate)
+    flow_score_panel = build_flow_score_panel(data_dir)
+
     payload = {
         "schema": "flow_desk.v1",
         "built": str(date.today()),
@@ -534,6 +636,7 @@ def build() -> dict:
         "sector_heatmap": sector_heatmap,
         "top_movers": top_movers,
         "etf_tile": etf_tile,
+        "flow_score": flow_score_panel,
     }
 
     out_path = site_dir / "flow_desk.json"

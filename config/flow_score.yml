@@ -1,0 +1,147 @@
+# config/flow_score.yml — FS-4 flow-score trainer configuration
+#
+# REGISTERED HYPERPARAMETER GRID (amendment §4.5 — FROZEN):
+#   Expanding this grid requires an amendment that restates N_trials.
+#   Cardinality of the grid below is 24 combos (4 × 2 × 3):
+#     learning_rate: 4 values
+#     max_iter: 2 values
+#     max_leaf_nodes: 3 values
+#   For S-FLOWML-8_90 only: DTE-interaction on/off × 2 (see dte_interaction below).
+#   Total N_trials per bucket is computed at training time as:
+#     N_trials(0_7)   = 24 × 1 × n_cpcv_paths
+#     N_trials(8_90)  = 24 × 2 × n_cpcv_paths
+#     N_trials(90p)   = 24 × 1 × n_cpcv_paths
+#   where n_cpcv_paths = C(n_groups, k_test) from the CPCV section below.
+#
+# MONOTONE FEATURES (mechanism-known only, amendment §4.5 / FS-R7):
+#   Only features where economic mechanism predicts a known monotone direction:
+#     at_ask_share: higher aggression share → stronger flow conviction (+1)
+#     vol_gt_oi_ratio: vol/OI ratio proxy → higher ratio → stronger signal (+1)
+#   All other features: no monotone constraint (feature_monotone_constraints = {})
+
+# ── kill-switch (P3.6 pattern) ──────────────────────────────────────────────────
+scoring:
+  enabled: false        # MUST stay false until FS-5 gauntlet passes (FS-R3, PRE-GATE LAW)
+                        # Scored field in gate.json mirrors this: never true pre-gate.
+  note: >
+    Pre-gate law (amendment §9 / FS-R3): the score is display-only. It may not feed
+    any ranker, sizer, sorter, or gate anywhere. Flip to true ONLY after FS-5 gauntlet.
+
+# ── artifact paths ──────────────────────────────────────────────────────────────
+models_dir: data/flow_signals/models   # GITIGNORED — artifacts never committed (A4)
+
+# ── model buckets (maps to scores.parquet model_bucket column) ──────────────────
+# Authoritative bucket derivation in collectors/flow_signals.py (dte_bucket values
+# from engine/live_flow.py): 0d → 0_7, 1_7d → 0_7, 8_30d → 8_90, 31_90d → 8_90, 90p → 90p
+model_bucket_map:
+  "0d":    "0_7"
+  "1_7d":  "0_7"
+  "8_30d": "8_90"
+  "31_90d": "8_90"
+  "90p":   "90p"
+
+# ── embargo days per bucket (≥ primary ruler horizon, amendment §4.1) ────────────
+embargo_days:
+  "0_7":  5     # ≥ 5d primary ruler (S-FLOWML-0_7)
+  "8_90": 21    # ≥ 21d primary ruler (S-FLOWML-8_90)
+  "90p":  63    # ≥ 63d primary ruler / 90p; 126d secondary not embargoed separately
+                # (126d cell flagged building_history until ≥126d embargo clean)
+  # Secondary bucket for 90p (used only where the 126d ruler has matured):
+  "90p_secondary": 126
+
+# ── CV parameters (amendment §4) ────────────────────────────────────────────────
+k_folds: 5           # purged K-fold K=5 (amendment §4.1)
+n_groups: 6          # CPCV n_groups (partition into 6 time groups)
+k_test:   2          # CPCV test groups per combo → C(6,2)=15 paths per split
+                     # Total CPCV paths recorded in manifest per amendment §4.3
+random_seed: 42      # fixed seed — changing this requires amendment
+
+# ── n floors (amendment §7) ─────────────────────────────────────────────────────
+n_floors:
+  bucket: 30         # ≥30 effective observations per condition bucket
+  era_cell: 20       # ≥20 effective observations per era cell; below → ERA-SPARSE
+
+# ── calibration criteria (amendment §5) ─────────────────────────────────────────
+ece_threshold: 0.05  # ECE < 0.05 per bucket on temporal holdout → deployable
+n_bins: 10           # equal-mass bins for ECE + reliability table
+                     # (equal_mass=True; amendment §5 / FS-R5)
+
+# ── registered hyperparameter grid (amendment §4.5 — FROZEN; 24 combos) ────────
+# CARDINALITY = len(learning_rate) × len(max_iter) × len(max_leaf_nodes) = 4×2×3 = 24
+# DO NOT expand without amending N_trials in the amendment doc.
+hyperparameter_grid:
+  learning_rate: [0.02, 0.05, 0.1, 0.2]   # 4 values
+  max_iter:      [200, 400]                 # 2 values
+  max_leaf_nodes: [15, 31, 63]             # 3 values
+  # Fixed (not grid-searched):
+  min_samples_leaf: 20                     # reasonable leaf floor for financial data
+  max_bins: 255                            # HistGB default
+  early_stopping: false                    # deterministic; no val split in CV
+  class_weight: "balanced"                 # handles label imbalance (amendment §2.2)
+
+# ── DTE-interaction (8_90 bucket only, amendment §2.1) ──────────────────────────
+# S-FLOWML-8_90 is a single model with a DTE interaction term (volume-weighted
+# pragmatism ruling). Toggle is part of the registered trial budget.
+dte_interaction:
+  "0_7":  false   # no interaction; separate model
+  "8_90": true    # DTE interaction feature included; toggle adds ×2 to N_trials
+  "90p":  false   # no interaction; separate model
+
+# ── monotone constraints (mechanism-known only, amendment §4.5 / masterplan FS-4 row) ──
+# Only at-ask/aggression share and vol-over-OI ratio qualify as mechanism-known
+# monotone features. All other features have no registered constraint.
+monotone_constraints:
+  at_ask_share: 1      # higher aggression share → stronger conviction; +1 = non-decreasing
+  vol_gt_oi_ratio: 1   # higher vol/OI → more notable; +1 = non-decreasing
+
+# ── decay-monitor window (amendment §8 #4 — shadow calibration-decay sentinel) ──
+decay_monitor:
+  window_days: 90      # rolling window for realized-vs-predicted ECE monitoring
+  ece_breach_threshold: 0.05  # ECE crossing this and staying → demotion trigger
+
+# ── label definition (amendment §2.1 / §2.2) ────────────────────────────────────
+# Decision ruler = excess-vs-SPY basis (NOT absolute). Grade store column per bucket:
+#   0_7  → spy_excess_5    (5d horizon)
+#   8_90 → spy_excess_21   (21d horizon)
+#   90p  → spy_excess_63   (63d primary), spy_excess_126 (secondary)
+# Label = 1 if spy_excess > 0, else 0 (underlying outperformed SPY on that horizon).
+# If spy_excess column is absent (no SPY price data), trainer halts — never silently
+# substitutes absolute return (see ops_train_flow_score.py deviation handling).
+label_columns:
+  "0_7":  "spy_excess_5"
+  "8_90": "spy_excess_21"
+  "90p":  "spy_excess_63"
+  "90p_secondary": "spy_excess_126"
+
+# ── feature spec (amendment §3.4 / FS-R9) ───────────────────────────────────────
+# Ledger event-time columns only; quote-rule execution features legal;
+# NO tape-signed direction; NO outcome/grade-derived features (PIT).
+# Crowdedness features admitted as within-root/interaction inputs (FS-R9).
+# This list is informational; the trainer reads available columns + filters.
+feature_columns:
+  # Quote-rule execution (FS-R6(a), legal measurement):
+  - at_ask_share          # fraction of batch premium at ask
+  - at_bid_share          # fraction at bid
+  - aggression_share      # computed from at_ask vs at_bid
+  # Unsigned magnitude (never suspended):
+  - premium               # notional premium (USD)
+  - premium_z             # z-score vs 252d baseline
+  - vol_gt_oi             # boolean flag (vol>OI)
+  - vol_gt_oi_ratio       # vol/OI ratio (if available)
+  - size                  # contract size
+  - n_prints              # print count
+  # DTE / structural:
+  - dte                   # raw DTE
+  - zerodte               # boolean flag
+  - repeated              # repeated-hit flag
+  - swept                 # sweep-like pattern flag
+  # Crowdedness (FS-R9; within-root/interaction only, not standalone ranker):
+  - signal_count_7d       # ledger event count in trailing 7 days for same root
+  - bull_premium_share_14d # share of 14d gross premium from ~buy prints
+  # DTE interaction term (8_90 only, when dte_interaction.8_90=true):
+  # - dte_X_premium_z     # computed at training time if dte_interaction enabled
+
+# ── ops-lane R2 upload (optional; silently skipped when unconfigured) ─────────────
+r2_upload:
+  enabled_env: "R2_ENDPOINT"   # upload only when this env var is set
+  prefix: "flow_signals/models" # R2 key prefix for model artifacts
