@@ -7469,7 +7469,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   <style>
   /* zh 红涨绿跌 for the Fear & Greed gauge: Greed=bullish→red, Fear=bearish→green (neutral amber).
      --fg-col routes through --up/--warn/--down so it auto-flips in zh; SVG marks + zone word read it. */
-  #sx-v5-sentiment.fg-greed{--fg-col:var(--up)} #sx-v5-sentiment.fg-fear{--fg-col:var(--down)} #sx-v5-sentiment.fg-neutral{--fg-col:var(--warn)}
+  .fg-greed{--fg-col:var(--up)} .fg-fear{--fg-col:var(--down)} .fg-neutral{--fg-col:var(--warn)}
   #sx-v5-sentiment .fg-mark-s{stroke:var(--fg-col)} #sx-v5-sentiment .fg-mark-f{fill:var(--fg-col)}
   #sx-v5-sentiment .fg-lab-panic{fill:var(--down)} #sx-v5-sentiment .fg-lab-euph{fill:var(--up)}
   </style>
@@ -8903,10 +8903,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _dlg_fg_label_zh = _dlg_fg.get('label_zh') or '中性' %}
         {% set _dlg_fg_col = '#22d97a' if _dlg_fg_dial > 60 else ('#ef4444' if _dlg_fg_dial < 40 else '#f59e0b') %}
         {# Header: composite score #}
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-          <div style="font-size:40px;font-weight:800;color:{{ _dlg_fg_col }};line-height:1;font-variant-numeric:tabular-nums">{{ _dlg_fg_dial | int }}</div>
+        <div class="{{ 'fg-greed' if _dlg_fg_dial > 60 else ('fg-fear' if _dlg_fg_dial < 40 else 'fg-neutral') }}" style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+          <div style="font-size:40px;font-weight:800;color:var(--fg-col, {{ _dlg_fg_col }});line-height:1;font-variant-numeric:tabular-nums">{{ _dlg_fg_dial | int }}</div>
           <div>
-            <div style="font-size:18px;font-weight:700;color:{{ _dlg_fg_col }}"><span class="l-en">{{ _dlg_fg_label_en }}</span><span class="l-zh">{{ _dlg_fg_label_zh }}</span></div>
+            <div style="font-size:18px;font-weight:700;color:var(--fg-col, {{ _dlg_fg_col }})"><span class="l-en">{{ _dlg_fg_label_en }}</span><span class="l-zh">{{ _dlg_fg_label_zh }}</span></div>
             <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Composite sentiment · 0 = Extreme Fear · 100 = Extreme Greed</span><span class="l-zh">综合情绪 · 0=极度恐慌 · 100=极度贪婪</span></div>
           </div>
         </div>
@@ -8918,13 +8918,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% for leg in _dlg_fg_legs %}
         {% set _lgp = (leg.pct or 50) | float %}
         {% set _lgcol = '#22d97a' if _lgp > 60 else ('#ef4444' if _lgp < 40 else '#f59e0b') %}
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row {{ 'fg-greed' if _lgp > 60 else ('fg-fear' if _lgp < 40 else 'fg-neutral') }}">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">{{ leg.name_en }}</span><span class="l-zh">{{ leg.name_zh or leg.name_en }}</span></div>
-            <div class="mx5-dlg-factor-read" style="color:{{ _lgcol }}"><span class="l-en">{{ 'Greed zone' if _lgp > 60 else ('Fear zone' if _lgp < 40 else 'Neutral') }}</span><span class="l-zh">{{ '贪婪区间' if _lgp > 60 else ('恐慌区间' if _lgp < 40 else '中性') }}</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, {{ _lgcol }})"><span class="l-en">{{ 'Greed zone' if _lgp > 60 else ('Fear zone' if _lgp < 40 else 'Neutral') }}</span><span class="l-zh">{{ '贪婪区间' if _lgp > 60 else ('恐慌区间' if _lgp < 40 else '中性') }}</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:{{ _lgp }}%;background:{{ _lgcol }}"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:{{ _lgcol }}">{{ _lgp | int }}</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:{{ _lgp }}%;background:var(--fg-col, {{ _lgcol }})"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, {{ _lgcol }})">{{ _lgp | int }}</div>
         </div>
         {% endfor %}
         {% endif %}

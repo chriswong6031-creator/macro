@@ -1537,7 +1537,7 @@ window.tlComboChartDraw = function() {
     }
     if (fallback) fallback.style.display = 'none';
     var lw = LightweightCharts.createChart(container, tlChartOpts());
-    var series = lw.addCandlestickSeries(tlCandleColors());
+    var series = tlAddCandles(lw);
     series.setData(bars);
     var dirUp = c.dir >= 0;
     var markers = (c.recent_fires || []).filter(function(f) { return f.ticker === tk; })
@@ -1916,6 +1916,22 @@ function tlCandleColors() {
   var dn = tlCssVar('--down') || '#d23f3f';
   return { upColor:up, downColor:dn, borderUpColor:up, borderDownColor:dn, wickUpColor:up, wickDownColor:dn };
 }
+/* Registry of live candle series so a zh/en toggle re-applies the swapped --up/--down.
+   Candle colours are baked at series-creation; without this, existing charts keep the
+   pre-toggle palette (green-up in a red-up zh session). Stale series (removed charts)
+   throw on applyOptions and are pruned. */
+window._tlCandleSeries = window._tlCandleSeries || [];
+function tlAddCandles(lw) {
+  var s = lw.addCandlestickSeries(tlCandleColors());
+  window._tlCandleSeries.push(s);
+  return s;
+}
+function tlRefreshCandleColors() {
+  var cols = tlCandleColors();
+  window._tlCandleSeries = window._tlCandleSeries.filter(function(s) {
+    try { s.applyOptions(cols); return true; } catch(e) { return false; }
+  });
+}
 
 function tlFetchOhlc(ticker, cb) {
   // Uses the same dbase-resolved URL as stock pages: ohlc/<T>.json
@@ -2007,7 +2023,7 @@ function tlDrawChart(containerId, fallbackId, noteId, ticker, sigId, ohlcData, e
   }
 
   var lw = LightweightCharts.createChart(container, tlChartOpts());
-  var series = lw.addCandlestickSeries(tlCandleColors());
+  var series = tlAddCandles(lw);
   series.setData(bars);
 
   // Fire markers from tech_events
@@ -2179,7 +2195,7 @@ window.tlOpenProfile = function(tk) {
       }
 
       var lw = LightweightCharts.createChart(container, tlChartOpts());
-      var series = lw.addCandlestickSeries(tlCandleColors());
+      var series = tlAddCandles(lw);
       series.setData(bars);
 
       // ALL signals' fire markers clustered
@@ -2272,6 +2288,7 @@ document.addEventListener('langchange', function(e) {
   tlRenderComboRail();
   tlBuildBuilderChips();
   if (_cbActiveCombo) tlOpenCombo(_cbActiveCombo.id);
+  tlRefreshCandleColors();   // 红涨绿跌: re-apply swapped --up/--down to live candle charts
 });
 
 /* ─── Data load ─────────────────────────────────────────────────────────── */
