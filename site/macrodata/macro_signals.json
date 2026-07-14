@@ -1,6 +1,6 @@
 {
   "date": "2026-07-14",
-  "generated_utc": "2026-07-14 22:20",
+  "generated_utc": "2026-07-14 22:38",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -4114,7 +4114,7 @@
       "skew_pctile": 0.45337301587301587,
       "stock_bond_corr": 0.5697954160609259,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.5493584699460838,
+      "roro": 0.5508438732120332,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.984007697430446,
       "news_sentiment": 0.12348560243844986,
@@ -4223,9 +4223,9 @@
     }
   },
   "fear_euphoria": {
-    "fe_score": 90,
-    "band": "Euphoria",
-    "roro": 0.5493584699460838,
+    "fe_score": 73,
+    "band": "Greed",
+    "roro": 0.5508438732120332,
     "roro_state": "risk-on",
     "legs": [
       {
@@ -5316,7 +5316,7 @@
     {
       "ticker": "GC=F",
       "name": "Gold",
-      "price": 4058.0,
+      "price": 4058.3,
       "above50": false,
       "above200": false,
       "pct_vs_50dma": -6.1,
@@ -5326,22 +5326,22 @@
       "off_52w_high_pct": -23.7,
       "season_this": "Jul: +1.0% avg, up 58% of years (n=26)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.0%\uff0c58% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -14.3
+      "mom_60d_pct": -14.2
     },
     {
       "ticker": "CL=F",
       "name": "Crude Oil",
-      "price": 80.09,
+      "price": 79.83,
       "above50": false,
       "above200": true,
-      "pct_vs_50dma": -5.4,
-      "pct_vs_200dma": 7.4,
+      "pct_vs_50dma": -5.7,
+      "pct_vs_200dma": 7.0,
       "rsi14": 57.0,
       "macd_pos": true,
-      "off_52w_high_pct": -29.1,
+      "off_52w_high_pct": -29.3,
       "season_this": "Jul: +1.3% avg, up 69% of years (n=26)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.3%\uff0c69% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -13.8
+      "mom_60d_pct": -14.1
     },
     {
       "ticker": "HG=F",
@@ -5353,7 +5353,7 @@
       "pct_vs_200dma": 11.1,
       "rsi14": 57.0,
       "macd_pos": true,
-      "off_52w_high_pct": -4.3,
+      "off_52w_high_pct": -4.2,
       "season_this": "Jul: +1.5% avg, up 62% of years (n=26)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.5%\uff0c62% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
       "mom_60d_pct": 4.0
@@ -5361,11 +5361,11 @@
     {
       "ticker": "DX-Y.NYB",
       "name": "US Dollar",
-      "price": 100.94,
+      "price": 100.93,
       "above50": true,
       "above200": true,
       "pct_vs_50dma": 1.0,
-      "pct_vs_200dma": 2.0,
+      "pct_vs_200dma": 1.9,
       "rsi14": 55.0,
       "macd_pos": false,
       "off_52w_high_pct": -0.7,
