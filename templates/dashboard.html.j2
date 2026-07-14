@@ -7512,6 +7512,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <span class="l-en">Composite at {{ _fgv5_dial | int }} &middot; {{ _fgv5_label_en | lower }} zone</span>
       <span class="l-zh">综合指数 {{ _fgv5_dial | int }} &middot; {{ _fgv5_label_zh }}区间</span>
     </div>
+    {# VSB W5: AI breadth caveat — only when spread_50 is meaningful (|spread|>=15) #}
+    {% if breadth_split is defined and breadth_split %}
+    {% set _bsv5_spread = breadth_split.get('latest', {}).get('spread_50') %}
+    {% if _bsv5_spread is not none and (_bsv5_spread | float | abs) >= 15 %}
+    <div id="vsb-sentiment-caveat" style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.4));margin-top:6px;line-height:1.4">
+      <span class="l-en">{{ breadth_split.get('stance_en') or '' }}</span>
+      <span class="l-zh">{{ breadth_split.get('stance_zh') or '' }}</span>
+    </div>
+    {% endif %}
+    {% endif %}
   </div>
   </div>{# /sx-v5-sentiment #}
 
@@ -8930,6 +8940,112 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="l-zh">{{ _dlg_fg_young | length }} 个分项仍在积累历史数据，待数据充足后将加入综合指数：{% for y in _dlg_fg_young %}{{ y.name_zh or y.name_en }}{{ '、' if not loop.last }}{% endfor %}。</span>
         </div>
         {% endif %}
+
+        {# VSB W3: Volatility weather strip #}
+        {% if vol_weather is defined and vol_weather %}
+        {% set _vw_chips_all = vol_weather.get('chips') or [] %}
+        {% set _vw_order = ['vix_level','vix_velocity','term_slope','vvix_vix','vix1d','cor1m','cor3m','dspx'] %}
+        {% set _vw_map = {} %}
+        {% for c in _vw_chips_all %}{% if _vw_map.update({c.get('key', ''): c}) %}{% endif %}{% endfor %}
+        <div class="mx5-dlg-sep"></div>
+        <div id="vsb-vol-weather-section" style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px">
+          <span class="l-en">Volatility weather</span><span class="l-zh">波动率天气</span>
+        </div>
+        {% for key in _vw_order %}
+        {% set _chip = _vw_map.get(key) %}
+        {% if _chip %}
+        {% set _chip_fresh = _chip.get('freshness') %}
+        {% set _chip_pctile = _chip.get('pctile') %}
+        <div class="mx5-dlg-factor-row" data-vsb-chip="{{ key }}">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">{{ _chip.get('name_en') or key }}</span><span class="l-zh">{{ _chip.get('name_zh') or _chip.get('name_en') or key }}</span></div>
+            {% if _chip_fresh in ('young', 'missing') %}
+            <div class="mx5-dlg-factor-read"><span class="l-en">Still collecting — check back soon</span><span class="l-zh">仍在积累数据，稍后再看</span></div>
+            {% else %}
+            <div class="mx5-dlg-factor-read">
+              <span class="l-en">{{ _chip.get('plain_en') or _chip.get('state') or '' }}{% if _chip_pctile is not none %} &middot; {% if _chip_pctile >= 50 %}higher than {{ _chip_pctile }}% of days{% else %}lower than {{ 100 - _chip_pctile }}% of days{% endif %}{% endif %}</span>
+              <span class="l-zh">{{ _chip.get('plain_zh') or _chip.get('state') or '' }}{% if _chip_pctile is not none %} &middot; {% if _chip_pctile >= 50 %}高于历史 {{ _chip_pctile }}% 的交易日{% else %}低于历史 {{ 100 - _chip_pctile }}% 的交易日{% endif %}{% endif %}</span>
+            </div>
+            {% endif %}
+          </div>
+          <div></div>
+          <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
+            {% if _chip_fresh in ('young', 'missing') %}
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))">—</span>
+            {% else %}
+            {{ _chip.get('value') if _chip.get('value') is not none else '—' }}
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% if vol_weather.get('as_of') %}
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:2px"><span class="l-en">As of {{ vol_weather.as_of }}</span><span class="l-zh">数据日期 {{ vol_weather.as_of }}</span></div>
+        {% endif %}
+        {% endif %}
+
+        {# VSB W4: AI names vs the rest #}
+        {% if breadth_split is defined and breadth_split %}
+        {% set _bs = breadth_split %}
+        {% set _bs_lat = _bs.get('latest') or {} %}
+        {% set _bs_cs = _bs.get('cohort_sizes') or {} %}
+        <div class="mx5-dlg-sep"></div>
+        <div id="vsb-breadth-split-section" style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px">
+          <span class="l-en">AI names vs the rest</span><span class="l-zh">AI 相关个股 vs 其他</span>
+        </div>
+        {# Stance line #}
+        {% if _bs.get('stance_en') %}
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--ink-1,rgba(255,255,255,.85))">
+          <span class="l-en">{{ _bs.stance_en }}</span><span class="l-zh">{{ _bs.get('stance_zh') or _bs.stance_en }}</span>
+        </div>
+        {% endif %}
+        {# Receipt lines #}
+        {% set _bs_ai50 = _bs_lat.get('ai_pct50') %}
+        {% set _bs_nonai50 = _bs_lat.get('nonai_pct50') %}
+        {% if _bs_ai50 is not none %}
+        <div class="mx5-dlg-factor-row" data-vsb-bs="ai">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">AI-linked names above their 50-day trend</span><span class="l-zh">AI 相关个股站上 50 日均线</span></div>
+          </div>
+          <div></div>
+          <div style="font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-1,rgba(255,255,255,.85))">{{ _bs_ai50 | round(0) | int }}%</div>
+        </div>
+        {% endif %}
+        {% if _bs_nonai50 is not none %}
+        <div class="mx5-dlg-factor-row" data-vsb-bs="nonai">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">Everyone else</span><span class="l-zh">其他个股</span></div>
+          </div>
+          <div></div>
+          <div style="font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-1,rgba(255,255,255,.85))">{{ _bs_nonai50 | round(0) | int }}%</div>
+        </div>
+        {% endif %}
+        {# Cohort size note #}
+        {% set _bs_ai_n = _bs_cs.get('ai_total') %}
+        {% set _bs_univ = _bs_cs.get('universe') %}
+        {% if _bs_ai_n is not none and _bs_univ is not none %}
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:6px;line-height:1.5">
+          <span class="l-en">{{ _bs_ai_n }} AI-linked names out of {{ _bs_univ }} tracked</span>
+          <span class="l-zh">{{ _bs_univ }} 只跟踪个股中有 {{ _bs_ai_n }} 只 AI 相关</span>
+        </div>
+        {% endif %}
+        {# Young note #}
+        {% if _bs.get('young') %}
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:4px">
+          <span class="l-en">Still building history — readings will stabilise over time.</span>
+          <span class="l-zh">历史数据仍在积累，读数将随时间趋于稳定。</span>
+        </div>
+        {% endif %}
+        {# Static circularity-watch note #}
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:8px;line-height:1.5;border-top:1px solid rgba(255,255,255,.06);padding-top:8px">
+          <span class="l-en">Watch: the AI buildout recycles capital among related names. If stocks start moving together again, the calm can break quickly — watch, don't chase.</span>
+          <span class="l-zh">注意：AI 基础设施建设在相关个股间循环资金。若股票重新同步波动，表面平静可能迅速打破，保持观察而非追高。</span>
+        </div>
+        {% if _bs.get('as_of') %}
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">As of {{ _bs.as_of }}</span><span class="l-zh">数据日期 {{ _bs.as_of }}</span></div>
+        {% endif %}
+        {% endif %}
+
         {# Disclaimer #}
         {% if _dlg_fg.get('disclaimer_en') %}
         <div class="mx5-dlg-sep"></div>
