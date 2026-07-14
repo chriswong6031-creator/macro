@@ -927,3 +927,9 @@ already near-saturated) gains nothing from this program except the DGS20/ACM FRE
   lawful sensor action space in P7; MOVE rewording; transmission-registration wording;
   W10 de-coupled non-blocking; Tier-1 stance-verb copy spec). T1 store coverage
   host-verified same day (roster greeks 2017→2026 present; 380 roots, 60 GB).
+- 2026-07-14 — **DGS20 enrollment ceded to CCW-W1** (Corporate Credit Watch masterplan,
+  CCW-R7, chartered same day): the DGS20 FRED config add ships in CCW-W1 with frozen
+  alias `us20y`, group `curve`. The P4 roster is unchanged (RIC still consumes DGS20);
+  the W5 YIELD wave's fred-config edit must be a **no-op on DGS20** — consume the
+  existing `us20y` series. Coordination recorded bilaterally to prevent a duplicate-
+  enrollment alias KeyError (kills the whole FRED adapter).
