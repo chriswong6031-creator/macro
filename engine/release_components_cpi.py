@@ -94,6 +94,28 @@ _FEATURE_BOUNDS: dict[str, tuple[float, float]] = {
     "gasoline_mom":        (-40.0, 40.0),
     # Shelter nowcast — blend of ZORI+BLS shelter, ±3 pp is generous
     "shelter_nowcast":     (-3.0, 3.0),
+    # --- v11 target-family features (engine/release_targets_v11.py builders) ---
+    # PCE own-lag MoM % (PCEPI / PCEPILFE first prints). Real extremes in
+    # vintages.parquet: PCEPI -1.146 (2008-11) / +0.969 (2008-06); PCEPILFE
+    # -0.836 (2001-09) / +1.204 (2001-10). ±3.0 keeps every real crisis reading
+    # with >2x headroom while fencing NIPA comprehensive-revision rebase seams
+    # (2003-11 / 2009-06 / 2013-06 / 2018-06 / 2023-08 first-print MoM prints
+    # -4.4..-10.1 — pct_change across an index re-base, not real inflation).
+    "pce_hl_mom_lag1":     (-3.0, 3.0),
+    "pce_hl_mom_lag2":     (-3.0, 3.0),
+    "pce_hl_mom_lag3":     (-3.0, 3.0),
+    "pce_core_mom_lag1":   (-3.0, 3.0),
+    "pce_core_mom_lag2":   (-3.0, 3.0),
+    "pce_core_mom_lag3":   (-3.0, 3.0),
+    # PPI Final Demand / ex-F&E MoM % — same physical series as ppi_mom_lag1
+    # above (PPIFIS; vintages from 2014-02, no re-base seams). Extremes:
+    # PPIFIS -1.266 (2020-04) / +1.630 (2022-03); PPIFES -0.459 / +1.269.
+    # ±5 matches the existing PPI family bound.
+    "ppi_hl_mom_lag1":     (-5.0, 5.0),
+    "ppi_hl_mom_lag2":     (-5.0, 5.0),
+    "ppi_hl_mom_lag3":     (-5.0, 5.0),
+    "ppifis_mom_lag1":     (-5.0, 5.0),
+    "ppifes_mom_lag1":     (-5.0, 5.0),
 }
 
 

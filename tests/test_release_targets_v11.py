@@ -7,6 +7,7 @@ Covers:
   - retail_sales no_data scaffold path
   - Feature builder key presence
   - PIT contract (no future data leak)
+  - Range guard (FIX 2 follow-up): PCE/PPI bounds + NIPA re-base seam fencing
 
 Usage:
   pytest tests/test_release_targets_v11.py -v
@@ -39,6 +40,10 @@ from engine.release_targets_v11 import (
     project_retail_sales,
 )
 from engine.release_forecast import load_vintages
+from engine.release_components_cpi import (
+    _apply_range_guard,
+    _FEATURE_BOUNDS,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -380,3 +385,133 @@ class TestBacktestSmoke:
         from engine.release_targets_v11 import build_wf_pce_headline
         wf = build_wf_pce_headline(root)
         assert wf["feature_names"] == PCE_HEADLINE_FEATURE_NAMES
+
+
+# ---------------------------------------------------------------------------
+# Range guard (FIX 2 follow-up — mirrors tests/test_cpi_postmortem_fixes.py B-tests)
+# ---------------------------------------------------------------------------
+
+def _make_vintages(
+    series: str,
+    periods: list[pd.Timestamp],
+    values: list[float],
+    release_delays_days: list[int],
+) -> pd.DataFrame:
+    rows = []
+    for p, v, d in zip(periods, values, release_delays_days):
+        rows.append({
+            "series": series,
+            "period": p,
+            "value": v,
+            "realtime_start": p + pd.Timedelta(days=d),
+            "realtime_end": pd.Timestamp("2099-12-31"),
+        })
+    return pd.DataFrame(rows)
+
+
+class TestRangeGuardV11:
+    """v11 feature builders apply _apply_range_guard (PCE/PPI bounds)."""
+
+    def test_G1_bounds_cover_all_v11_features(self):
+        """Every v11 model feature has a plausibility bound (anti-drift)."""
+        all_names = (
+            set(PCE_HEADLINE_FEATURE_NAMES)
+            | set(PCE_CORE_FEATURE_NAMES)
+            | set(PPI_FINALDEMAND_FEATURE_NAMES)
+        )
+        missing = all_names - set(_FEATURE_BOUNDS.keys())
+        assert not missing, f"v11 features without _FEATURE_BOUNDS keys: {missing}"
+
+    def test_G2_in_bounds_values_unchanged(self):
+        """Typical PCE/PPI readings pass through the guard untouched."""
+        features = {
+            "pce_hl_mom_lag1": 0.20,
+            "pce_core_mom_lag1": 0.17,
+            "ppi_hl_mom_lag1": 1.63,     # PPIFIS 2022-03 real extreme
+            "ppifes_mom_lag1": 1.27,     # PPIFES 2022-03 real extreme
+            "pce_hl_mom_lag2": -1.15,    # PCEPI 2008-11 real crisis extreme
+        }
+        prov: dict = {}
+        result = _apply_range_guard(features, prov)
+        assert result["pce_hl_mom_lag1"] == pytest.approx(0.20)
+        assert result["pce_core_mom_lag1"] == pytest.approx(0.17)
+        assert result["ppi_hl_mom_lag1"] == pytest.approx(1.63)
+        assert result["ppifes_mom_lag1"] == pytest.approx(1.27)
+        assert result["pce_hl_mom_lag2"] == pytest.approx(-1.15)
+        assert prov.get("range_violation_legs", []) == []
+
+    def test_G3_rebase_seam_values_set_to_none_and_tagged(self):
+        """NIPA re-base seam magnitudes (the 2009-06 first-print artifact) are fenced."""
+        features = {
+            "pce_hl_mom_lag1": -10.128,   # PCEPI 2009-06 cross-base artifact
+            "pce_core_mom_lag1": -8.452,  # PCEPILFE 2009-06 cross-base artifact
+            "pce_hl_mom_lag2": 0.25,
+        }
+        prov: dict = {}
+        result = _apply_range_guard(features, prov)
+        assert result["pce_hl_mom_lag1"] is None
+        assert result["pce_core_mom_lag1"] is None
+        assert result["pce_hl_mom_lag2"] == pytest.approx(0.25)
+        assert "pce_hl_mom_lag1" in prov["range_violation_legs"]
+        assert "pce_core_mom_lag1" in prov["range_violation_legs"]
+        assert "pce_hl_mom_lag2" not in prov["range_violation_legs"]
+
+    def test_G4_bounds_constants_plausible(self):
+        """Bounds keep every real crisis reading, fence every re-base seam.
+
+        Audit source: data/fred_vintage/vintages.parquet first-print MoM,
+        full history (PCEPI/PCEPILFE 2000-07..2026-05, PPIFIS/PPIFES 2014-02..).
+        """
+        # PCEPI: real extremes -1.146 (2008-11) / +0.969 (2008-06); smallest
+        # seam magnitude -5.094 (2023-08)
+        lo, hi = _FEATURE_BOUNDS["pce_hl_mom_lag1"]
+        assert lo < -1.146 and 0.969 < hi
+        assert -5.094 < lo
+        # PCEPILFE: real extremes -0.836 (2001-09) / +1.204 (2001-10); smallest
+        # seam magnitude -4.440 (2018-06)
+        lo, hi = _FEATURE_BOUNDS["pce_core_mom_lag1"]
+        assert lo < -0.836 and 1.204 < hi
+        assert -4.440 < lo
+        # PPIFIS: real extremes -1.266 (2020-04) / +1.630 (2022-03); no seams
+        lo, hi = _FEATURE_BOUNDS["ppi_hl_mom_lag1"]
+        assert lo < -1.266 and 1.630 < hi
+        lo, hi = _FEATURE_BOUNDS["ppifis_mom_lag1"]
+        assert lo < -1.266 and 1.630 < hi
+        # PPIFES: real extremes -0.459 (2015-02) / +1.269 (2022-03)
+        lo, hi = _FEATURE_BOUNDS["ppifes_mom_lag1"]
+        assert lo < -0.459 and 1.269 < hi
+
+    def test_G5_builder_fences_synthetic_rebase_seam(self, tmp_path: Path):
+        """build_pce_headline_features nulls a re-base-style level jump end-to-end."""
+        periods = list(pd.date_range("2020-01-01", periods=6, freq="MS"))
+        # Last level drops ~10.7% in one month — an index re-base, not inflation
+        values = [100.0, 100.2, 100.4, 100.6, 100.8, 90.0]
+        vdf = _make_vintages("PCEPI", periods, values, [30] * 6)
+        asof = date(2020, 8, 15)  # all prints knowable
+        feats, prov = build_pce_headline_features(asof, vdf, tmp_path)
+        assert feats["pce_hl_mom_lag1"] is None
+        assert "pce_hl_mom_lag1" in prov["range_violation_legs"]
+        # Adjacent same-base lag untouched
+        assert feats["pce_hl_mom_lag2"] == pytest.approx(100.8 / 100.6 * 100 - 100, abs=1e-6)
+
+    def test_G6_real_vintages_2009_seam_fenced(self, vintages: pd.DataFrame, root: Path):
+        """Real 2009-08-04 comprehensive-revision vintage: lag1 fenced for both PCE targets."""
+        asof = date(2009, 8, 5)  # day after the NIPA comprehensive-revision print
+        feats_hl, prov_hl = build_pce_headline_features(asof, vintages, root)
+        assert feats_hl["pce_hl_mom_lag1"] is None
+        assert "pce_hl_mom_lag1" in prov_hl["range_violation_legs"]
+        feats_core, prov_core = build_pce_core_features(asof, vintages, root)
+        assert feats_core["pce_core_mom_lag1"] is None
+        assert "pce_core_mom_lag1" in prov_core["range_violation_legs"]
+
+    def test_G7_no_violation_at_recent_asof(
+        self, vintages: pd.DataFrame, root: Path, asof_pce: date
+    ):
+        """Clean recent asof: guard present but silent in all three builders."""
+        for builder in (
+            build_pce_headline_features,
+            build_pce_core_features,
+            build_ppi_finaldemand_features,
+        ):
+            _, prov = builder(asof_pce, vintages, root)
+            assert prov.get("range_violation_legs", []) == [], builder.__name__
