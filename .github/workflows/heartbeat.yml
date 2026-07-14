@@ -20,6 +20,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100   # light-lane dead-man below greps recent main history for `live:` ticks
       - name: python 3.12 (Homebrew venv - self-hosted runner)
         run: |
           VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
@@ -36,3 +38,37 @@ jobs:
           # DISCORD_WEBHOOK_URL when present, else uses this).
           DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
         run: python -m scripts.healthcheck
+      - name: light-lane dead-man (fastpath ticks on the macstudio-light runner)
+        # The live lanes (intraday-fastpath / intraday-bars / the three sentinels) are
+        # pinned to the single dedicated `macstudio-light` runner so they never queue
+        # behind the heavy 3-slot macstudio pool. Single-runner label = if that runner
+        # goes offline the lanes queue/cancel SILENTLY (no failed runs, no alert — the
+        # weekly.yml 06-13..07-11 death mode). This check runs from the MAIN pool: on a
+        # NYSE session day at 14:30 UTC, intraday-fastpath (RTH steps arm at 13:00 UTC,
+        # tick every 30 min) must have landed a `live:` commit on main within the last
+        # 90 minutes. Holidays skip (fastpath provably commits nothing on holidays —
+        # zero `live:` commits on 2026-06-19 Juneteenth). Failure trips the workflow's
+        # GitHub notification like every other heartbeat leg.
+        run: |
+          python - <<'PY'
+          import datetime as dt, subprocess, sys
+          from lib.nyse_calendar import is_session
+          now = dt.datetime.now(dt.timezone.utc)
+          if not is_session(now.date()):
+              print(f"{now.date()} is not a NYSE session day - skipping dead-man check")
+              sys.exit(0)
+          if now.hour < 14:   # manual dispatch before the 13:00 UTC RTH arm + one full tick
+              print("before 14:00 UTC - fastpath may not have ticked yet, skipping")
+              sys.exit(0)
+          out = subprocess.run(
+              ["git", "log", "--since=90 minutes ago", "--grep=^live:", "--oneline"],
+              capture_output=True, text=True, check=True).stdout.strip()
+          if out:
+              print("light lane alive:\n" + out)
+              sys.exit(0)
+          print("DEAD-MAN TRIPPED: no `live:` commit on main in 90 min on a session day.\n"
+                "The macstudio-light runner (mac-builder-light) or the intraday-fastpath\n"
+                "lane is down. Check runner: gh api repos/<owner>/<repo>/actions/runners\n"
+                "On the box: launchctl + ~/actions-runner-4 (service actions.runner.*mac-builder-light).")
+          sys.exit(1)
+          PY
