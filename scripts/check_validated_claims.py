@@ -19,6 +19,9 @@ forced to cite an artifact.
 
 The gate is phrase-scoped, not file:line-scoped, so it survives page regeneration (the
 per-basket/per-stock pages repeat one template phrase; one allowlist entry covers them all).
+Rendered site HTML is autoescaped ('&' -> '&amp;', quotes -> '&#39;'/'&#34;'), so token,
+negation, and allowlist matching all run on the html.unescape()d text of each line; the
+raw line is kept for error reporting.
 Its real power: a NEW affirmative 'validated' claim that matches no allowlisted justification
 FAILS the build — which is exactly the discipline BC-2 buys.
 
@@ -29,6 +32,7 @@ Run:  python -m scripts.check_validated_claims          # scan; exit 1 on any un
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import re
 import sys
@@ -136,6 +140,28 @@ def _allow_match(line: str, allow: list[dict]) -> dict | None:
     return None
 
 
+def _scan_line(line: str, allow: list[dict]) -> tuple[int, list[tuple[bool, dict | None]]]:
+    """Evaluate one raw line. Returns (n_negated, hits) — one (backed, allow_entry) per
+    affirmative token occurrence. Token/negation/allowlist matching runs on the
+    html.unescape()d text: rendered site HTML is autoescaped, so an allowlist entry
+    containing '&' can never match its '&amp;' rendered form, and an entity-bearing
+    negation prefix ("isn&#39;t a validated") reads as an affirmative claim. Callers
+    keep the raw line for reporting."""
+    if any(sp.search(line) for sp in _STRUCTURAL):
+        return 0, []                                    # structural non-claim line
+    norm = html.unescape(line)
+    n_negated = 0
+    hits: list[tuple[bool, dict | None]] = []
+    for m in TOKEN.finditer(norm):
+        if _is_negated(norm, m.start()):
+            n_negated += 1
+            continue
+        entry = _allow_match(norm, allow)
+        backed = entry is not None or _artifact_backed(norm)
+        hits.append((backed, entry))
+    return n_negated, hits
+
+
 def scan(list_all: bool = False) -> list[dict]:
     """Return the list of UNEARNED affirmative 'validated' claims. Prints per-claim status
     when list_all. Each unearned finding is {file, line_no, text}."""
@@ -155,15 +181,10 @@ def scan(list_all: bool = False) -> list[dict]:
                 except Exception:  # noqa: BLE001
                     continue
                 for i, line in enumerate(lines, 1):
-                    if any(sp.search(line) for sp in _STRUCTURAL):
-                        continue                                # structural non-claim line
-                    for m in TOKEN.finditer(line):
-                        if _is_negated(line, m.start()):
-                            n_negated += 1
-                            continue
+                    n_neg, hits = _scan_line(line, allow)
+                    n_negated += n_neg
+                    for backed, entry in hits:
                         n_claims += 1
-                        entry = _allow_match(line, allow)
-                        backed = entry is not None or _artifact_backed(line)
                         if backed:
                             n_backed += 1
                             if list_all:
@@ -182,26 +203,31 @@ def scan(list_all: bool = False) -> list[dict]:
 
 
 def selftest() -> int:
-    """Prove the gate FIRES on a synthetic unearned 'validated' in EN and in zh, and does
-    NOT fire on a negated use. Uses a temp dir so it never touches the tree."""
-    import tempfile
+    """Prove the gate FIRES on a synthetic unearned 'validated' in EN and in zh, does NOT
+    fire on negated uses, and matches through HTML autoescaping ('&' vs '&amp;').
+    Synthetic lines only — never touches the tree."""
     allow = _load_allowlist()
+    # Synthetic allowlist for the autoescape cases: an '&'-bearing match string must cover
+    # its '&amp;' rendered form. Deliberately NOT in the real allowlist — it exercises
+    # _scan_line's html.unescape normalization, nothing on the tree cites it.
+    amp_allow = [{"match": "validated & wired for selftest"}]
     cases = [
-        ("EN affirmative unearned", "This signal is validated as a real cross-sectional alpha.", True),
-        ("zh affirmative unearned", "该信号是已验证的方向性优势。", True),
-        ("EN negated (disclaimer)", "The rank has no validated forward edge here.", False),
-        ("zh negated (disclaimer)", "此处无已验证方向信号。", False),
-        ("EN allowlisted", "gated by the validated MACD-2D × StochRSI-3D confluence.", False),
+        ("EN affirmative unearned", "This signal is validated as a real cross-sectional alpha.", True, allow),
+        ("zh affirmative unearned", "该信号是已验证的方向性优势。", True, allow),
+        ("EN negated (disclaimer)", "The rank has no validated forward edge here.", False, allow),
+        ("zh negated (disclaimer)", "此处无已验证方向信号。", False, allow),
+        ("EN allowlisted", "gated by the validated MACD-2D × StochRSI-3D confluence.", False, allow),
+        ("allowlisted '&' entry matches rendered '&amp;'",
+         "<h2>Scored — validated &amp; wired for selftest</h2>", False, amp_allow),
+        ("unearned claim behind '&amp;' still fires",
+         "This edge is validated &amp; deployed everywhere.", True, amp_allow),
+        ("negation behind entity apostrophe ignored",
+         "This isn&#39;t a validated edge.", False, allow),
     ]
     ok = True
-    for name, line, should_fire in cases:
-        fired = False
-        for m in TOKEN.finditer(line):
-            if _is_negated(line, m.start()):
-                continue
-            entry = _allow_match(line, allow)
-            if entry is None and not _artifact_backed(line):
-                fired = True
+    for name, line, should_fire, allow_entries in cases:
+        _, hits = _scan_line(line, allow_entries)
+        fired = any(not backed for backed, _ in hits)
         status = "PASS" if fired == should_fire else "FAIL"
         if fired != should_fire:
             ok = False
