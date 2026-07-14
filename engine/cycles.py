@@ -913,6 +913,10 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     _d3, _wk = mtf.get("3D", {}), mtf.get("W", {})
     _rsi_d = d.get("rsi14") or 50
     htf_rollover = bool(_d3.get("macd_cross_dn") or _wk.get("macd_cross_dn"))
+    # HTF momentum CURLING down (histogram declining, no completed cross yet).
+    # Kept separate from htf_rollover so the below-MA10 de-escalation gate can
+    # distinguish "curl only" from "full cross" in its diagnostic copy.
+    _htf_curl_dn = bool(_d3.get("macd_curl_dn") or _wk.get("macd_curl_dn"))
     daily_rollover = bool(d.get("macd_cross_dn") or d.get("macd_curl_dn")
                           or d.get("macd_approaching_dn"))
     # Balanced veto (user-tuned): a real momentum turn-down that should stop a fresh
@@ -1392,12 +1396,19 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     # this branch entirely, even when rollover_veto is True (daily MACD near/at a
     # bearish cross, late) or when oscillators flag the move as overextended.
     # De-escalation ONLY (house law): when the buy-side state landed here AND
-    # rollover_veto OR oscillator overextension is True, downgrade urgency to
-    # "caution" (bucketer → take_profits / hold) and tag to "BOTTOMING · EXTENDED — WAIT".
+    # rollover_veto OR _htf_curl_dn OR oscillator overextension is True, downgrade
+    # urgency to "caution" (bucketer → take_profits / hold).
     # State label is kept as-is (TURN SIGNALED / BOTTOMING). Never escalates.
+    #
+    # 2026-07-14: China semis ETF 512760.SS, -12% rolloff (below 10dma AND 200dma,
+    # lower highs), 3D MACD curling down (macd_curl_dn=True) with no completed
+    # 3D/W down-cross yet — rollover_veto stayed False, gate did not fire, and the
+    # below-MA10 BUY SOON (urgency=imminent) printed. Below-MA10 late-cycle BUY SOON
+    # during fading higher-TF momentum must read as UNCONFIRMED-WAIT regardless of
+    # whether the cross has completed.
     if (state in ("FRESH BUY", "TURN SIGNALED")
             and not cyc.get("above_ma10")
-            and (rollover_veto or _overextended(mtf))
+            and (rollover_veto or _htf_curl_dn or _overextended(mtf))
             and entry.get("urgency") in ("now", "imminent", "soon")):
         if _overextended(mtf):
             # Oscillators genuinely overbought — price has run too far, not a safe entry.
@@ -1412,11 +1423,17 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                      "text_zh": ("筑底形态尚未确认（价格仍位于 10 日均线下方），且摆动指标已过热——"
                                  "此处入场风险较高。等待价格收复 10 日均线且动量趋于稳定后再考虑建仓。")}
         else:
-            # Fired via rollover_veto only — higher-TF momentum is rolling over, but
-            # oscillators are not overbought. The setup is unconfirmed, not "extended".
+            # Fired via rollover_veto or _htf_curl_dn — higher-TF momentum is rolling
+            # over (completed cross) or curling down (no cross yet), but oscillators are
+            # not overbought. Three-case discriminant for diagnostic copy:
+            #   1. htf_rollover  → completed 3-day/weekly down-cross
+            #   2. _htf_curl_dn  → histogram turning, cross not yet complete
+            #   3. else          → daily-only rollover
             tf_word = ("the 3-day/weekly momentum has crossed down" if htf_rollover
+                       else "the 3-day/weekly momentum is rolling over" if _htf_curl_dn
                        else "the daily momentum is already rolling over")
             tf_word_zh = ("3 日/周线动量已向下交叉" if htf_rollover
+                          else "3 日/周线动量已开始掉头向下" if _htf_curl_dn
                           else "日线动量已开始掉头向下")
             entry = {"tag": "BOTTOMING · UNCONFIRMED — WAIT",
                      "tag_zh": "筑底 · 未确认 — 等待",

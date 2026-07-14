@@ -92,10 +92,15 @@ class TestLaneMapping:
         assert r["lanes"]["wait_pullback"] == []
         assert r["lanes"]["reduce_avoid"] == []
 
-    def test_imminent_sector_to_buy_now(self):
+    def test_imminent_sector_to_wait_pullback(self):
+        # 'imminent' = cycles.py BUY SOON fall-through: conditional trigger not yet
+        # fired.  Routing fix: imminent must NOT land in buy_now; goes to wait_pullback.
         s = [_sector("B", "imminent")]
         r = assemble_act_now(s, None, None)
-        assert "B" in [x["id"] for x in r["lanes"]["buy_now"]]
+        assert "B" in [x["id"] for x in r["lanes"]["wait_pullback"]], \
+            "imminent must route to wait_pullback (BUY SOON — don't front-run)"
+        assert "B" not in [x["id"] for x in r["lanes"]["buy_now"]], \
+            "imminent must NOT be in buy_now after routing fix"
 
     def test_soon_sector_to_wait_pullback(self):
         # 'soon' means "cycle low due in ~N days — watch, don't front-run".
@@ -713,3 +718,218 @@ class TestOrganRiderDedup:
         ids = [row["id"] for row in bw]
         count = ids.count("cn_y") + ids.count("b-cn_y")
         assert count == 1, f"expected 1 row (forward_log), got {count}: {ids}"
+
+
+# ─────────────────── 11. routing fix — imminent goes to wait_pullback ─────────
+
+class TestImminentRouting:
+    """Bug fix: urgency='imminent' (BUY SOON fall-through) must NOT land in buy_now."""
+
+    def test_imminent_routes_to_wait_pullback(self):
+        """(a) imminent sector ends up in wait_pullback, not buy_now."""
+        s = [_sector("SEMI", "imminent", "BUY SOON")]
+        r = assemble_act_now(s, None, None)
+        wp_ids = [x["id"] for x in r["lanes"]["wait_pullback"]]
+        bn_ids = [x["id"] for x in r["lanes"]["buy_now"]]
+        assert "SEMI" in wp_ids, "imminent must be in wait_pullback"
+        assert "SEMI" not in bn_ids, "imminent must NOT be in buy_now"
+
+    def test_now_still_routes_to_buy_now(self):
+        """(b) urgency='now' still routes to buy_now after the fix."""
+        s = [_sector("ETF", "now", "BUY NOW")]
+        r = assemble_act_now(s, None, None)
+        bn_ids = [x["id"] for x in r["lanes"]["buy_now"]]
+        wp_ids = [x["id"] for x in r["lanes"]["wait_pullback"]]
+        assert "ETF" in bn_ids, "now must remain in buy_now"
+        assert "ETF" not in wp_ids, "now must NOT be in wait_pullback"
+
+    def test_imminent_and_now_together(self):
+        """Both urgencies present: 'now' in buy_now, 'imminent' in wait_pullback."""
+        s = [_sector("N", "now"), _sector("I", "imminent")]
+        r = assemble_act_now(s, None, None)
+        assert "N" in [x["id"] for x in r["lanes"]["buy_now"]]
+        assert "I" in [x["id"] for x in r["lanes"]["wait_pullback"]]
+        assert "I" not in [x["id"] for x in r["lanes"]["buy_now"]]
+        assert "N" not in [x["id"] for x in r["lanes"]["wait_pullback"]]
+
+
+# ──────────────────────── 12. href convention post-pass ───────────────────────
+
+class TestHrefConvention:
+    """(c-e) href field populated correctly by convention; href_exists guard."""
+
+    def _bt(self, states: dict) -> dict:
+        return {
+            "schema": "basket_turn_cn.v1",
+            "as_of": "2026-07-08",
+            "baskets": {bid: {"state": st, "evidence": []} for bid, st in states.items()},
+        }
+
+    # (c) id shape -> correct href string ----------------------------------------
+
+    def test_theme_cn_id_href(self):
+        """THEME id 'cn_x' -> basket_china/cn_x.html"""
+        ti = _theme_intel(
+            buy=[_theme_item("cn_semis", "Semis", "半导体", 70, "accumulate", "ACCUM", "加仓")],
+            pullback=[], reduce=[],
+        )
+        r = assemble_act_now([], ti, None)
+        row = r["lanes"]["buy_now"][0]
+        assert row["href"] == "basket_china/cn_semis.html"
+
+    def test_basket_b_prefix_href(self):
+        """BASKET id 'b-cn_x' -> basket_china/cn_x.html (b- stripped)."""
+        cycle = [_cycle_row("b-cn_baijiu", "Baijiu", "basket", "Trough", osc_slope=1.0)]
+        r = assemble_act_now([], None, cycle)
+        row = r["lanes"]["bottoming_watch"][0]
+        assert row["href"] == "basket_china/cn_baijiu.html"
+
+    def test_basket_ths_prefix_href(self):
+        """BASKET id starting with 'ths' -> subsector_china/{cid-with-dashes}.html"""
+        cycle = [_cycle_row("ths_baijiu", "Baijiu", "basket", "Trough", osc_slope=1.0)]
+        r = assemble_act_now([], None, cycle)
+        row = r["lanes"]["bottoming_watch"][0]
+        assert row["href"] == "subsector_china/ths-baijiu.html"
+
+    def test_basket_thsc_prefix_href(self):
+        """BASKET id 'thsc309128' -> subsector_china/thsc309128.html (no underscore)."""
+        cycle = [_cycle_row("thsc309128", "Beer", "basket", "Trough", osc_slope=1.0)]
+        r = assemble_act_now([], None, cycle)
+        row = r["lanes"]["bottoming_watch"][0]
+        assert row["href"] == "subsector_china/thsc309128.html"
+
+    def test_sector_etf_ticker_href(self):
+        """SECTOR id with '.' (ETF ticker like 512760.SS) -> sectors/512760.SS.html"""
+        s = [_sector("512760.SS", "now", "BUY NOW", name="CN Semis ETF")]
+        r = assemble_act_now(s, None, None)
+        row = r["lanes"]["buy_now"][0]
+        assert row["href"] == "sectors/512760.SS.html"
+
+    def test_sector_sw_code_href(self):
+        """SECTOR id without '.' (SW code like 801080) -> sector_cycles_china.html"""
+        s = [_sector("801080", "now", "BUY NOW", name="Electronics")]
+        r = assemble_act_now(s, None, None)
+        row = r["lanes"]["buy_now"][0]
+        assert row["href"] == "sector_cycles_china.html"
+
+    # (d) href_exists guard -------------------------------------------------------
+
+    def test_href_exists_false_nulls_all_hrefs(self):
+        """(d) href_exists=lambda h: False forces all href fields to None."""
+        s = [_sector("512760.SS", "now", "BUY NOW"), _sector("801080", "now")]
+        cycle = [_cycle_row("cn_semis", "Semis", "basket", "Trough", osc_slope=1.0)]
+        r = assemble_act_now(s, None, cycle, href_exists=lambda h: False)
+        all_rows = (
+            r["lanes"]["buy_now"]
+            + r["lanes"]["wait_pullback"]
+            + r["lanes"]["bottoming_watch"]
+            + r["lanes"]["reduce_avoid"]
+        )
+        for row in all_rows:
+            assert row["href"] is None, \
+                f"href should be None when href_exists=False, got {row['href']!r}"
+
+    def test_href_exists_selective(self):
+        """href_exists can allow some hrefs and block others."""
+        s = [_sector("512760.SS", "now"), _sector("801080", "hold")]
+        allowed = {"sectors/512760.SS.html"}
+        r = assemble_act_now(s, None, None, href_exists=lambda h: h in allowed)
+        bn = {row["id"]: row["href"] for row in r["lanes"]["buy_now"]}
+        wp = {row["id"]: row["href"] for row in r["lanes"]["wait_pullback"]}
+        assert bn.get("512760.SS") == "sectors/512760.SS.html"
+        assert wp.get("801080") is None
+
+    def test_href_exists_raising_degrades_not_throws(self):
+        """A raising href_exists probe (e.g. Path.exists on a path-invalid id)
+        must drop only that row's link, never crash the whole board."""
+        s = [_sector("512760.SS", "now"), _sector("801080", "now")]
+        def _boom(h):
+            raise RuntimeError("probe blew up")
+        r = assemble_act_now(s, None, None, href_exists=_boom)
+        rows = r["lanes"]["buy_now"]
+        assert rows, "board must still assemble when href_exists raises"
+        for row in rows:
+            assert row["href"] is None, \
+                f"raising probe must leave href None, got {row['href']!r}"
+
+    # (e) organ-rider-surfaced BASKET rows also get hrefs -------------------------
+
+    def test_organ_rider_basket_gets_href(self):
+        """(e) BASKET rows appended to bottoming_watch by the organ rider get hrefs."""
+        bt = self._bt({"cn_pharma": "TURNING"})
+        r = assemble_act_now([], None, [], basket_turn=bt)
+        bw = r["lanes"]["bottoming_watch"]
+        pharma = [row for row in bw if row["id"] == "cn_pharma"]
+        assert pharma, "cn_pharma organ-rider row must be surfaced"
+        assert pharma[0]["href"] == "basket_china/cn_pharma.html"
+
+    def test_organ_rider_b_prefix_basket_gets_href(self):
+        """organ-rider BASKET with b- prefix id gets href with b- stripped."""
+        bt = self._bt({"b-cn_gold": "CONFIRMED"})
+        r = assemble_act_now([], None, [], basket_turn=bt)
+        bw = r["lanes"]["bottoming_watch"]
+        gold = [row for row in bw if row["id"] == "b-cn_gold"]
+        assert gold, "b-cn_gold organ-rider row must be surfaced"
+        assert gold[0]["href"] == "basket_china/cn_gold.html"
+
+    def test_empty_id_href_stays_none(self):
+        """Row with empty id gets href=None (no crash, no empty-string href)."""
+        from engine.china_act_now import _blank_row
+        row = _blank_row("BASKET", "", "No-id basket")
+        assert row["href"] is None  # default from _blank_row
+        # Verify assemble_act_now doesn't crash on empty-id cycle row
+        cycle = [{"id": "", "kind": "basket", "name": "X", "phase": "Trough",
+                  "osc_slope": 1.0, "pos": 0.1, "rs_63d": 0.0, "rs_rank": 1}]
+        r = assemble_act_now([], None, cycle)
+        bw = r["lanes"]["bottoming_watch"]
+        for row in bw:
+            if not row["id"]:
+                assert row["href"] is None
+
+
+# ───────────────────────────── 13. rel5 field ─────────────────────────────────
+
+class TestRel5Field:
+    """(f) rel5 populated from theme perf['5d']['rel']; None when absent."""
+
+    def _ti_with_perf(self, tid: str, perf: dict) -> dict:
+        """theme_intel with a single theme that has custom perf dict."""
+        return {
+            "as_of": "2026-07-08",
+            "themes": [{"id": tid, "name": "X", "name_zh": "X", "score": 60,
+                        "action": "accumulate", "action_en": "ACCUM", "action_zh": "加仓",
+                        "perf": perf}],
+            "act_now": {"buy": [{"id": tid, "name": "X", "name_zh": "X", "score": 60,
+                                  "action": "accumulate", "action_en": "ACCUM",
+                                  "action_zh": "加仓", "reasons": []}],
+                        "add_on_pullback": [], "reduce": []},
+        }
+
+    def test_rel5_populated_from_theme_perf(self):
+        """(f) rel5 is set from themes_by_id[tid].perf['5d']['rel']."""
+        ti = self._ti_with_perf("cn_x", {"5d": {"rel": 0.034}, "20d": {"rel": 0.12}})
+        r = assemble_act_now([], ti, None)
+        row = r["lanes"]["buy_now"][0]
+        assert abs((row["rel5"] or 0) - 0.034) < 1e-9, \
+            f"expected rel5=0.034, got {row['rel5']!r}"
+
+    def test_rel5_none_when_5d_absent(self):
+        """rel5 stays None when perf has no '5d' key."""
+        ti = self._ti_with_perf("cn_x", {"20d": {"rel": 0.10}})
+        r = assemble_act_now([], ti, None)
+        row = r["lanes"]["buy_now"][0]
+        assert row["rel5"] is None
+
+    def test_rel5_none_for_sector_rows(self):
+        """Sector rows always have rel5=None (no perf lookup for sectors)."""
+        s = [_sector("ETF", "now")]
+        r = assemble_act_now(s, None, None)
+        row = r["lanes"]["buy_now"][0]
+        assert row["rel5"] is None
+
+    def test_rel5_none_for_bottoming_rows(self):
+        """Bottoming watch (cycle_row) rows have rel5=None (no theme perf source)."""
+        cycle = [_cycle_row("cn_x", "X", "basket", "Trough", osc_slope=1.0)]
+        r = assemble_act_now([], None, cycle)
+        row = r["lanes"]["bottoming_watch"][0]
+        assert row["rel5"] is None

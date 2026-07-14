@@ -554,6 +554,7 @@ def _blank_anv2_row(kind="THEME", name="Test Theme", name_zh="测试主题"):
         "reco_en": None,
         "reco_zh": None,
         "rel20": None,
+        "rel5": None,
         "tag": None,
         "urgency": None,
         "reasons": [],
@@ -568,6 +569,7 @@ def _blank_anv2_row(kind="THEME", name="Test Theme", name_zh="测试主题"):
         "organ_state": None,
         "organ_chip_en": None,
         "organ_chip_zh": None,
+        "href": None,
     }
 
 
