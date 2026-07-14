@@ -118,10 +118,20 @@ _MM_EVENT_TYPES = {
 
 
 def _mm_client_ip(request: Request) -> str:
-    xff = request.headers.get("x-forwarded-for")
+    # Real VISITOR IP, not the CDN edge. mastermind-x.com is behind Tencent EdgeOne, which carries the
+    # client IP in EO-Connecting-IP; Caddy's trusted_proxies=private_ranges does NOT trust the public
+    # CDN, so X-Forwarded-For is the EdgeOne EDGE IP (e.g. "Tucumcari NM"), not the person. Prefer the
+    # CDN real-client header (EO- for EdgeOne, CF-/True-Client-IP for a Cloudflare-fronted path), then
+    # fall back to XFF/x-real-ip. These CDN headers pass through Caddy untouched.
+    h = request.headers
+    for k in ("eo-connecting-ip", "cf-connecting-ip", "true-client-ip"):
+        v = (h.get(k) or "").strip()
+        if v:
+            return v[:64]
+    xff = h.get("x-forwarded-for")
     if xff:
         return xff.split(",")[0].strip()[:64]
-    return (request.headers.get("x-real-ip") or "").strip()[:64] or "unknown"
+    return (h.get("x-real-ip") or "").strip()[:64] or "unknown"
 
 
 def _mm_clamp(v: Any, n: int):
