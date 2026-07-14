@@ -14,7 +14,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | btc-vector | 5 |
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
-| ccw | 8 |
+| ccw | 10 |
 | china-alpha | 20 |
 | china-intel-hub | 2 |
 | china-pick-lab | 3 |
@@ -88,7 +88,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 281 |
+| display | 283 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -97,7 +97,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 431 |
+| git | 433 |
 | gitignored-local | 11 |
 | r2 | 7 |
 
@@ -144,6 +144,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| ccw-credit-momentum-json | `data/corp_bonds/credit_momentum.json` | json | collect | display | 2 | 0 |
 | ccw-bond-panel-latest | `data/corp_bonds/series/bond_panel_latest.parquet` | parquet | collect | display | 1 | 0 |
 | ccw-issuer-daily | `data/corp_bonds/series/issuer_daily.parquet` | parquet | collect | display | 1 | 0 |
 | ccw-latest-json | `data/corp_bonds/latest.json` | json | collect | display | 1 | 0 |
@@ -152,6 +153,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | ccw-sector-daily | `data/corp_bonds/series/sector_daily.parquet` | parquet | collect | display | 1 | 0 |
 | ccw-theme-daily | `data/corp_bonds/series/theme_daily.parquet` | parquet | collect | display | 1 | 0 |
 | ccw-validation-json | `data/corp_bonds/validation.json` | json | collect | display | 1 | 0 |
+| ccw-forward-log | `data/corp_bonds/forward_log.jsonl` | jsonl | collect | display | 0 | 0 |
 
 ### china-alpha
 
