@@ -15,6 +15,17 @@ name: engine-render
 # single source of truth that advances each ledger exactly once. The rendered HTML reflects the
 # new engine logic; the next nightly fully recomputes + commits data/.
 #
+# NO-REGRESS WINDOW (2026-07-13 flip-flop fix): in the post-close window the committed
+# data/regime/latest.json + data/market_state/latest.json are AHEAD of the committed price
+# store (the earlyclose lane / intraday fast-path heal the store ephemerally and commit only
+# those snapshot pointers; the store advances at nightly). engine.run's built-in no-regress
+# guard detects this (latest.json asof > store's last SPY close) and SKIPS the recompute,
+# so this lane re-renders from the committed provisional snapshot instead of regressing
+# every market-state surface to the prior session (the 56/MIXED ↔ 81/RISK_ON clobber).
+# Consequence: an engine/** push in that window renders the new templates/builders against
+# the committed regime output; the recompute itself lands at the nightly. If you truly need
+# the new engine logic recomputed on the OLD session now, dispatch with force_recompute.
+#
 # DELIBERATELY skipped (belong to the nightly): collectors (scripts.collect), the master /
 # ai_desk / narrative / altdata LLM brains + their scorers, build_special_situations (EDGAR),
 # factor_series / stock_briefs, notify / archive_signals.
@@ -31,6 +42,10 @@ on:
         type: choice
         default: all
         options: [all, macro, china, hk, markets, gex, baskets, fast]
+      force_recompute:
+        description: "Bypass engine.run's no-regress guard (REGIME_FORCE_RECOMPUTE=1) — recompute even when the committed regime snapshot is ahead of the price store"
+        type: boolean
+        default: false
   push:
     branches: [main]
     # A change to ENGINE code auto-recomputes + redeploys. Disjoint from render.yml's paths
@@ -131,6 +146,11 @@ jobs:
         # NO secrets → no network. engine.run's ledger/parquet writes land in the working tree and
         # are DISCARDED by the site/-only commit below. Resilient: a failure is annotated, never
         # aborts (the render still ships whatever recomputed).
+        # engine.run self-skips via its no-regress guard when the committed regime snapshot is
+        # ahead of the price store (post-close provisional window — see header); the dispatch
+        # input force_recompute=true overrides via REGIME_FORCE_RECOMPUTE=1.
+        env:
+          REGIME_FORCE_RECOMPUTE: ${{ github.event.inputs.force_recompute == 'true' && '1' || '' }}
         run: |
           set +e
           run_py() {

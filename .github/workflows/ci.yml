@@ -91,6 +91,8 @@ on:
       # main because no CI job ran them. engine/** is broad on purpose — most of these
       # tests pin engine contracts (display-only firewalls, unit guards, honesty layer).
       - "engine/**"
+      # regime no-regress guard (2026-07-13 earlyclose↔render flip-flop fix)
+      - "tests/test_engine_run_no_regress.py"
       - "scripts/build_site.py"
       - "scripts/audit_price_basis.py"
       - "research/signal_engine/walk_forward.py"
@@ -880,6 +882,7 @@ jobs:
           tests/test_sa_w5_v2_grader_hook.py
           tests/test_w8b_macro_prior_entries.py
           tests/test_rr_scorecard_card.py
+          tests/test_engine_run_no_regress.py
           tests/test_cycles.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.

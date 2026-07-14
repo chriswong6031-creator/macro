@@ -1473,6 +1473,14 @@ lanes:
           intraday cache. site/live writes only (HOUSE-U5); exit-0-always.
       - id: build_basket_pulse
         module: scripts.build_basket_pulse
+      - id: build_live_quotes_display
+        module: scripts.build_live_quotes
+        args: [--display, --out, site/live/quotes.json]
+        note: >
+          Declared to match the live workflow (intraday-fastpath.yml "display live
+          snapshot" step, #2541 same-origin DISPLAY feed); the step was added live
+          without a dag.yml entry (registry drift, same class as build_sp500_heatmap
+          above). Declaring it heals test_dag_yml_matches_live_workflows.
       - id: notify_turn_events
         module: scripts.notify_turn_events
         note: >

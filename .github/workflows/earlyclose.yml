@@ -6,10 +6,19 @@ name: earlyclose
 # no GEX live-fetch, no LLM brains, no EDGAR/special-sits, no collectors) — the minimal
 # set that gives a meaningful snapshot of the day's close.
 #
-# CONTRACT (FT-R5/FT-R8):
-#   • Writes site/ ONLY — data/ writes are discarded via git checkout -- . + narrow staging,
-#     exactly replicating intraday-fastpath.yml's commit guard.
-#   • The nightly daily pipeline remains the sole advancer of every data/ forward ledger.
+# CONTRACT (FT-R5/FT-R8, amended 2026-07-14 — coherent-window fix):
+#   • Commits site/ PLUS the two snapshot pointers data/regime/latest.json +
+#     data/market_state/latest.json — the SAME two artifacts the intraday fast-path
+#     commits every 30 min (intraday-fastpath.yml "commit live overlay" step). Without
+#     them the provisional EOD state lived ONLY in the baked HTML, and any later
+#     render/engine-render lane (which reads/recomputes from committed data ending at
+#     the PRIOR close) regressed every market-state surface back to it — the 2026-07-13
+#     56/MIXED ↔ 81/RISK_ON flip-flop. engine/run.py's no-regress guard is the other
+#     half: it refuses a recompute whose store lags these committed pointers.
+#   • Every OTHER data/ write is discarded via git checkout -- . + narrow staging,
+#     exactly replicating intraday-fastpath.yml's commit guard. The nightly daily
+#     pipeline remains the sole advancer of every data/ forward LEDGER
+#     (regime_history.parquet, *_log.jsonl appends, forward_log) — ledger law intact.
 #   • Output is stamped "provisional close (delayed feed); nightly is canonical."
 #   • A site/live/earlyclose_stamp.json artifact records as_of + provisional: true.
 #
@@ -318,7 +327,7 @@ jobs:
       # `git checkout -- .` to revert tracked site/ pages back to HEAD, leaving nothing
       # new staged and committing only the force-added stamp — defeating the lane entirely.
       # The nightly daily pipeline remains the sole advancer of every data/ forward ledger.
-      - name: commit rendered site (site/ ONLY — data/ discarded; provisional earlyclose)
+      - name: commit rendered site + provisional snapshot pointers (ledgers discarded)
         if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
         run: |
           git config user.name "dashboard-bot"
@@ -327,12 +336,22 @@ jobs:
           git add site/
           git add -f site/live/earlyclose_stamp.json 2>/dev/null || true
           git add -f site/stockbrief 2>/dev/null || true
+          # Provisional snapshot pointers (2026-07-13 flip-flop fix, see header CONTRACT):
+          # the freshly recomputed regime + market-state latest.json ride to main so later
+          # render/engine-render lanes read TODAY's provisional close instead of regressing
+          # to the prior one. Same two artifacts the intraday fast-path commits; both are
+          # tracked files, so the checkout/clean below never touches the staged copies.
+          # Everything else under data/ (ledger appends, healed store bars) is discarded.
+          # ONE FILE PER LINE: `git add a b` rejects ATOMICALLY when any pathspec is
+          # missing — a single masked line would silently drop BOTH pointers.
+          git add -f data/regime/latest.json 2>/dev/null || echo "::warning::regime latest.json not staged (missing?) — provisional pointer will not ride"
+          git add -f data/market_state/latest.json 2>/dev/null || echo "::warning::market_state latest.json not staged (missing?) — provisional pointer will not ride"
           # THEN discard unstaged data/ writes (FT-R5) — same as fastpath lines 83-84.
           git checkout -- . 2>/dev/null || true
           git clean -fdq data/ 2>/dev/null || true
           if git diff --cached --quiet; then echo "no rendered-site changes to commit"; exit 0; fi
           SESSION_DATE=$(python3 -c "import sys; sys.path.insert(0,'.'); from lib.nyse_calendar import session_date; print(session_date().isoformat())")
-          MSG="earlyclose: provisional EOD render ${SESSION_DATE} (scope=fast)"$'\n\n'"provisional close (delayed feed); nightly is canonical"$'\n'"EARLYCLOSE=1 lane - site/ only; data/ discarded per FT-R5"$'\n\n'"Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+          MSG="earlyclose: provisional EOD render ${SESSION_DATE} (scope=fast)"$'\n\n'"provisional close (delayed feed); nightly is canonical"$'\n'"EARLYCLOSE=1 lane - site/ + regime/market-state snapshot pointers (fastpath idiom); ledgers discarded per FT-R5"$'\n\n'"Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
           git commit -m "$MSG"
           for i in 1 2 3 4 5; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
