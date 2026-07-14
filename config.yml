@@ -242,6 +242,7 @@ fred:
       DGS3MO: us3m                # the short leg of the NY Fed recession spread
       DGS6MO: us6m
       DGS5: us5y
+      DGS20: us20y                # CCW-W1 / CCW-R7: alias FROZEN as us20y; owned by CCW; RIC-side is a no-op
       DGS30: us30y
       T10Y3M: spread_10y3m        # exact spread the NY Fed probit uses
     inflation_extra:              # 5y inflation leg (second-tenor real-yield anchor)
@@ -262,6 +263,23 @@ fred:
       IORB: iorb                  # interest on reserve balances — the SOFR-IORB plumbing anchor
       SOFR99: sofr_99             # 99th-pctile SOFR — a repo-stress spike gauge
       USRECD: us_recession        # NBER recession indicator (daily) — calibration target ONLY (not in live frame)
+    # --- CCW-W1: corporate credit OAS rating ladder + effective yields + IG total-return ---
+    # ICE BofA BAML family; rolling ~3y window on FRED since Apr-2026 (no deep archive for
+    # these; CCW-W1 snapshots the current window on first collect as the permanent history
+    # floor per §2.2 / CCW-R12). Already-enrolled aliases checked 2026-07-14: hy_oas,
+    # ig_oas, ccc_oas, hy_total_return, em_oas, and Moody's DBAA/DAAA — none collide here.
+    # Do NOT add: BAMLH0A3HYC (=ccc_oas), BAMLH0A0HYM2 (=hy_oas), BAMLC0A0CM (=ig_oas),
+    # BAMLHYH0A0HYM2TRIV (=hy_total_return), BAMLEMCBPIOAS (=em_oas), DBAA, DAAA.
+    corp_credit:
+      BAMLC0A1CAAA: aaa_oas        # ICE BofA AAA US corporate OAS (~3y rolling)
+      BAMLC0A2CAA: aa_oas          # ICE BofA AA US corporate OAS
+      BAMLC0A3CA: a_oas            # ICE BofA A US corporate OAS
+      BAMLC0A4CBBB: bbb_oas        # ICE BofA BBB US corporate OAS (IG cusp — fallen-angel frontier)
+      BAMLH0A1HYBB: bb_oas         # ICE BofA BB US HY OAS (crossover; VST/CEG rising-star bucket)
+      BAMLH0A2HYB: b_oas           # ICE BofA B US HY OAS
+      BAMLC0A0CMEY: ig_eff_yield   # ICE BofA IG effective yield (YTM-equivalent; CCW g-spread anchor)
+      BAMLH0A0HYM2EY: hy_eff_yield # ICE BofA HY effective yield
+      BAMLCC0A0CMTRIV: ig_total_return  # ICE BofA IG total-return index (1997->; price+coupon)
     # --- Fed policy path (research/DATA_SIGNAL_EXPANSION_2026.md #2) — DISPLAY-ONLY -
     # The FOMC dot-plot median + the live target range. DISPLAY / LLM-context only —
     # the path LEVEL is a price and repricing is reactive, so there is NO scored leg

@@ -1860,6 +1860,27 @@ modules:
       equity_profile, edgar_rpo, edgar_headcount). Drip fetches are network calls and
       are suppressed in engine-render/render lanes via RENDER_NO_DRIP=1.
 
+  # CCW-W1: corporate bond holdings PIT store (runs inside collect_us via adapter registry)
+  - module: collectors.corp_bond_holdings
+    reads:
+      - data/corp_bonds/issuer_themes.json
+    writes:
+      - data/corp_bonds/holdings/SPSB/YYYY-MM-DD.parquet
+      - data/corp_bonds/holdings/SPIB/YYYY-MM-DD.parquet
+      - data/corp_bonds/holdings/SPLB/YYYY-MM-DD.parquet
+      - data/corp_bonds/holdings/JNK/YYYY-MM-DD.parquet
+      - data/corp_bonds/holdings/SPHY/YYYY-MM-DD.parquet
+    impure: true
+    needs_secrets: false
+    event_driven: false
+    note: >
+      CCW-W1 bond holdings PIT store. Fetches 5 SSGA bond-fund XLSX files daily
+      (SPSB/SPIB/SPLB=IG, JNK/SPHY=HY). Keep-FIRST per dated file. Logs match-rate
+      stat against data/corp_bonds/issuer_themes.json + CCW-UNMATCHED-HIGH-PAR alarm
+      when any single unmatched name-group exceeds $5B par. No secrets required
+      (keyless SSGA endpoint; browser-UA only). Runs as part of scripts.collect
+      adapter registry (group=corp_bonds); not a standalone collect-lane step.
+
   - module: scripts.build_baskets
     reads:
       - data/baskets/membership.json
