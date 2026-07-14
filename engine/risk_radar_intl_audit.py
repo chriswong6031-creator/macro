@@ -281,7 +281,7 @@ def _log_can_force_governance(
         log.warning("risk_radar_intl_audit: governance log failed for %s: %s", market, exc)
 
 
-def scorecard(market: str, root=None) -> dict:
+def scorecard(market: str, root=None, log_governance: bool = True) -> dict:
     """Rolling realized-accuracy scorecard from the graded log. Carries `can_force`: whether this
     market's radar has earned the right to hard-force the Market-State verdict. Never raises.
 
@@ -291,6 +291,11 @@ def scorecard(market: str, root=None) -> dict:
     (zero grant-more cases across all k/n/base — verified in tests).  Additive scorecard
     fields: wilson_lift_lb, grant_reason, evidence_asof.  Existing consumers read only
     the can_force bool — these additions are backward-compatible.
+
+    ``log_governance=False`` makes the call fully READ-ONLY: the authority_grant/lapse
+    append to the governance ledger is skipped. The intraday live fast-path
+    (scripts/build_china_risk_state.py) uses this to reproduce the board's can_force
+    without writing — the nightly snapshot_and_grade remains the sole governance writer.
     """
     try:
         rows = [r for r in _read(_path(market, root)) if r.get("graded")]
@@ -347,24 +352,25 @@ def scorecard(market: str, root=None) -> dict:
         grant_reason = (f"n-floors-not-met: n_graded={n} (need {MIN_GRADED_FORCE}), "
                         f"n_alerts={n_alerts} (need {MIN_ALERTS_FORCE})")
 
-    # Governance ledger: log when grant state changes
-    try:
-        prev_cf = _load_previous_can_force(market, root)
-        _log_can_force_governance(
-            market=market,
-            can_force=can_force,
-            prev_can_force=prev_cf,
-            hits=alert_hit_count,
-            n_alerts=n_alerts,
-            base=base,
-            wilson_lb=wilson_lb,
-            lift_lb=lift_lb,
-            grant_reason=grant_reason,
-            evidence_asof=evidence_asof,
-            root=root,
-        )
-    except Exception as exc:  # noqa: BLE001
-        log.warning("risk_radar_intl_audit: governance logging failed for %s: %s", market, exc)
+    # Governance ledger: log when grant state changes (skipped on read-only calls)
+    if log_governance:
+        try:
+            prev_cf = _load_previous_can_force(market, root)
+            _log_can_force_governance(
+                market=market,
+                can_force=can_force,
+                prev_can_force=prev_cf,
+                hits=alert_hit_count,
+                n_alerts=n_alerts,
+                base=base,
+                wilson_lb=wilson_lb,
+                lift_lb=lift_lb,
+                grant_reason=grant_reason,
+                evidence_asof=evidence_asof,
+                root=root,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("risk_radar_intl_audit: governance logging failed for %s: %s", market, exc)
 
     mistakes = [{"asof": r["asof"], "state": r["state"], "dominant_scare": r.get("dominant_scare"),
                  "fwd_dd_h21": r["graded"]["fwd_dd"].get("h21"), "kind": r["graded"]["outcome"]}

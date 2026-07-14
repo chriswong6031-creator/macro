@@ -588,6 +588,11 @@ live:
   # the discrete band WORD is debounced this many consecutive ticks before it flips (anti-whipsaw).
   risk_state:
     debounce_ticks: 2
+  # Intraday LIVE China risk-state (scripts/build_china_risk_state.py -> site/live/china_risk_state.json).
+  # Same debounce doctrine as risk_state: the continuous 0-100 score moves every HKEX-window tick;
+  # the discrete band WORD is debounced this many consecutive ticks before it flips (anti-whipsaw).
+  china_risk_state:
+    debounce_ticks: 2
 
 fedboard:
   # Excess Bond Premium (Gilchrist-Zakrajšek): the component of corporate credit
