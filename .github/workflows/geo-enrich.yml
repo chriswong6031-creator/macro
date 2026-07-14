@@ -1,0 +1,32 @@
+name: geo-enrich
+
+# Backfill public.ip_geo from new visitor IPs via IPLocate, off the analytics hot path so a
+# beacon never blocks on an external lookup. Budget-capped under the 1000/day IPLocate free tier
+# (a 429 stops the run early; the next run continues). Cheap: when there are no new IPs it does a
+# single SQL round-trip and exits.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # every 30 minutes
+  workflow_dispatch: {}
+
+concurrency:
+  group: geo-enrich
+  cancel-in-progress: false
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Enrich ip_geo
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          IPLOCATE_API_KEY: ${{ secrets.IPLOCATE_API_KEY }}
+          IPLOCATE_DAILY_BUDGET: "900"
+        run: python3 scripts/geo_enrich.py

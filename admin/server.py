@@ -25,7 +25,7 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import (actions, ai_cost, alerts as _alerts_mod, auth, brief, causal_lab,
+from . import (actions, ai_cost, alerts as _alerts_mod, analytics_first_party, auth, brief, causal_lab,
                codex_panel,
                config_store,
                content, context_lobe, experiments,
@@ -347,6 +347,26 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/traffic/report":
                 days = int((q.get("days") or ["7"])[0])
                 return self._json(ga4.report(days=days))
+            # first-party analytics (self-hosted; reads analytics_events/search_events/ip_geo).
+            # Params are string-in; the reader int-clamps days/limit and allowlist-validates ids.
+            if path == "/api/analytics/fp/overview":
+                return self._json(analytics_first_party.overview(days=(q.get("days") or ["7"])[0]))
+            if path == "/api/analytics/fp/pages":
+                return self._json(analytics_first_party.pages(days=(q.get("days") or ["7"])[0], limit=(q.get("limit") or ["25"])[0]))
+            if path == "/api/analytics/fp/geo":
+                return self._json(analytics_first_party.geo(days=(q.get("days") or ["30"])[0], limit=(q.get("limit") or ["200"])[0]))
+            if path == "/api/analytics/fp/sessions":
+                return self._json(analytics_first_party.sessions(limit=(q.get("limit") or ["40"])[0]))
+            if path == "/api/analytics/fp/session":
+                return self._json(analytics_first_party.session((q.get("id") or [""])[0]))
+            if path == "/api/analytics/fp/flow":
+                return self._json(analytics_first_party.flow(days=(q.get("days") or ["7"])[0], limit=(q.get("limit") or ["40"])[0]))
+            if path == "/api/analytics/fp/terminal":
+                return self._json(analytics_first_party.terminal(days=(q.get("days") or ["7"])[0], limit=(q.get("limit") or ["25"])[0]))
+            if path == "/api/analytics/fp/visitor":
+                return self._json(analytics_first_party.visitor((q.get("id") or [""])[0]))
+            if path == "/api/analytics/fp/realtime":
+                return self._json(analytics_first_party.realtime())
             # users (Supabase)
             if path == "/api/users":
                 return self._json(users.summary())
@@ -427,6 +447,9 @@ class Handler(BaseHTTPRequestHandler):
                 if settings.deployed():
                     return self._json(github_config.set_bool(flag_path, value))
                 return self._json(config_store.set_bool(flag_path, value))
+
+            if path == "/api/analytics/fp/geo_enrich":
+                return self._json(analytics_first_party.geo_enrich_now(budget=b.get("budget") or 300))
 
             if path == "/api/brief/interval":
                 target = b.get("target")
