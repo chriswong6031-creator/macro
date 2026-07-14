@@ -1,0 +1,17 @@
+{
+  "schema": "metabolism.journal.v1",
+  "cycle_id": "cycle-2026-07-14-9623-site-us-standouts",
+  "stage": "propose",
+  "status": "done",
+  "auth_ok": null,
+  "artifacts": [],
+  "next_stage": null,
+  "ts": "2026-07-14T04:36:16+00:00",
+  "stages": {
+    "propose": {
+      "status": "done",
+      "finished_at": "2026-07-14T04:36:16+00:00",
+      "note": "attention_skip lobe=site-us-standouts reason=cadence:STANDARD:1/2"
+    }
+  }
+}
