@@ -38,6 +38,8 @@
   .tier { font-weight:800; font-size:11px; padding:1px 6px; border-radius:5px; letter-spacing:.02em; color:#fff; }
   .tier.T1{ background:var(--up); } .tier.T2{ background:#3da564; } .tier.T3{ background:var(--info); } .tier.T4{ background:#6b7cc4; }
   .tier.none{ background:var(--g-mid); color:var(--muted); }
+  /* zh 红涨绿跌: T2 bullish tier badge swaps green→red */
+  html[data-lang="zh"] .tier.T2{ background:#d04545; }
   .pill { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:9px; border:1px solid var(--line); }
   .pill.buy{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
   .pill.avoid{ color:var(--down); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
@@ -383,7 +385,7 @@
 
   <div id="sc-app"><div class="empty"><span class="l-en">Loading…</span><span class="l-zh">加载中…</span></div></div>
 
-  <div class="sc-foot"><span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-14 10:10</div>
+  <div class="sc-foot"><span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-14 12:05</div>
 </div>
 
 <footer class="site-footer">

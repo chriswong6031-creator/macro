@@ -986,7 +986,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
 
 
 <footer>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-14 10:38 UTC<br>
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-14 12:32 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
 <script>
@@ -997,6 +997,11 @@ const RISK_HIST = [{"date":"2026-06-18","cash":0.233,"n_held":4},{"date":"2026-0
 const ACT_NOW = {"buy":[],"add_on_pullback":[{"id":"ca_banks","name":"Big Banks","name_zh":"\u5927\u578b\u94f6\u884c","score":64,"action":"accumulate","action_en":"ACCUMULATE","action_zh":"\u52a0\u4ed3","label":"dominant","entry_quality":0.25,"clean_entry":false,"reasons":["20d +5.5% vs S&P/TSX","stretched above trend (1.2\u03c3)"],"reason_en":"in favour (accumulate) but no clean-entry setup right now \u2014 entry quality 25%","reason_zh":"\u770b\u597d\uff08\u52a0\u4ed3\uff09\u4f46\u5f53\u524d\u65e0\u5e72\u51c0\u5165\u573a\u70b9 \u2014 \u5165\u573a\u8d28\u91cf 25%"},{"id":"ca_pipelines","name":"Pipelines & Midstream","name_zh":"\u7ba1\u9053\u4e0e\u4e2d\u6e38","score":64,"action":"accumulate","action_en":"ACCUMULATE","action_zh":"\u52a0\u4ed3","label":"dominant","entry_quality":0.4,"clean_entry":false,"reasons":["20d +0.4% vs S&P/TSX","crowded co-movement"],"reason_en":"in favour (accumulate) but no clean-entry setup right now \u2014 entry quality 40%","reason_zh":"\u770b\u597d\uff08\u52a0\u4ed3\uff09\u4f46\u5f53\u524d\u65e0\u5e72\u51c0\u5165\u573a\u70b9 \u2014 \u5165\u573a\u8d28\u91cf 40%"}],"reduce":[{"id":"ca_base_metals","name":"Base Metals & Copper","name_zh":"\u57fa\u672c\u91d1\u5c5e\u4e0e\u94dc","score":22,"action":"avoid","action_en":"AVOID","action_zh":"\u56de\u907f","label":"deteriorating","entry_quality":0.45,"clean_entry":false,"reasons":["20d -13.7% vs S&P/TSX","decelerating"]},{"id":"ca_uranium","name":"Uranium & Nuclear","name_zh":"\u94c0\u4e0e\u6838\u80fd","score":24,"action":"avoid","action_en":"AVOID","action_zh":"\u56de\u907f","label":"deteriorating","entry_quality":0.65,"clean_entry":false,"reasons":["20d -8.1% vs S&P/TSX"]},{"id":"ca_silver_royalty","name":"Silver & Royalties","name_zh":"\u767d\u94f6\u4e0e\u7279\u8bb8\u6743\u91d1","score":28,"action":"avoid","action_en":"AVOID","action_zh":"\u56de\u907f","label":"deteriorating","entry_quality":0.65,"clean_entry":false,"reasons":["20d -8.1% vs S&P/TSX","accelerating"]},{"id":"ca_gold","name":"Gold Miners","name_zh":"\u9ec4\u91d1\u77ff\u4e1a","score":29,"action":"avoid","action_en":"AVOID","action_zh":"\u56de\u907f","label":"deteriorating","entry_quality":0.65,"clean_entry":false,"reasons":["20d -7.2% vs S&P/TSX","accelerating"]},{"id":"ca_telecom","name":"Telecom","name_zh":"\u7535\u4fe1","score":35,"action":"avoid","action_en":"AVOID","action_zh":"\u56de\u907f","label":"deteriorating","entry_quality":0.45,"clean_entry":false,"reasons":["20d -9.3% vs S&P/TSX","decelerating"]},{"id":"ca_asset_mgrs","name":"Asset Managers & Alternatives","name_zh":"\u8d44\u4ea7\u7ba1\u7406\u4e0e\u53e6\u7c7b\u6295\u8d44","score":38,"action":"avoid","action_en":"AVOID","action_zh":"\u56de\u907f","label":"deteriorating","entry_quality":0.55,"clean_entry":false,"reasons":["20d -3.6% vs S&P/TSX"]},{"id":"ca_materials","name":"Fertilizer, Chemicals & Forestry","name_zh":"\u5316\u80a5\u5316\u5de5\u4e0e\u6797\u4e1a","score":43,"action":"avoid","action_en":"AVOID","action_zh":"\u56de\u907f","label":"deteriorating","entry_quality":0.7,"clean_entry":false,"reasons":["20d -6.6% vs S&P/TSX","decelerating"]},{"id":"ca_consumer","name":"Consumer Staples & Retail","name_zh":"\u5fc5\u9700\u6d88\u8d39\u4e0e\u96f6\u552e","score":55,"action":"avoid","action_en":"AVOID","action_zh":"\u56de\u907f","label":"deteriorating","entry_quality":0.7,"clean_entry":false,"reasons":["20d -0.8% vs S&P/TSX","decelerating"]}]};
 const STANDOUTS = {};   // theme id -> # members on the US standout buy board
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+const isZh=()=>document.documentElement.getAttribute('data-lang')==='zh';
+// zh 红涨绿跌: swap buy-verb green (#16a34a/#22c55e) to red in zh mode
+const buyColor=()=>isZh()?'#ef4444':'#16a34a';
+// zh 红涨绿跌: swap avoid-verb red (#ef4444) to green in zh mode (amber TRIM left unchanged)
+const sellColor=c=>isZh()&&c==='#ef4444'?'#16a34a':c;
 // ★N badge: how many individual standouts back this theme (the allocation→stock bridge)
 const sbBadge = id => { const n=STANDOUTS[id]; return n?` <span class="sb-badge" title="${n} member(s) on the US standout buy board">★${n}</span>`:''; };
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1016,7 +1021,7 @@ function renderEntries(){
     <span class="pn">#${w.rank} ${L(esc(w.name),esc(w.name_zh))}${sbBadge(w.id)}</span><span class="pw">${Math.round((w.weight||0)*100)}%</span></a>`);
   if(an && an.buy){ an.buy.filter(x=>!held.has(x.id)).forEach(x=>{
     const v=x.action==='enter'?['ENTER','建仓']:['ACCUMULATE','加仓'];
-    buy.push(`<a class="prow" href="${bkHref(x.id)}"><span class="pverb" style="color:#16a34a;border-color:#16a34a">${L(v[0],v[1])}</span>
+    buy.push(`<a class="prow" href="${bkHref(x.id)}"><span class="pverb" style="color:${buyColor()};border-color:${buyColor()}">${L(v[0],v[1])}</span>
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
   // in-favour themes WITHOUT a clean entry (the honest act_now split) — shown, never hidden,
   // with a muted "wait for a pullback" verb. Descriptive presentation, not a signal.
@@ -1025,8 +1030,8 @@ function renderEntries(){
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
   // REDUCE/AVOID: (US) act_now reduce + crowded held + de-overlapped displaced (context)
   let sell=[];
-  if(an && an.reduce){ an.reduce.forEach(x=>{ const v=x.action==='avoid'?['AVOID','回避','#ef4444']:['TRIM','减仓','#f97316'];
-    sell.push(`<a class="prow" href="${bkHref(x.id)}"><span class="pverb" style="color:${v[2]};border-color:${v[2]}">${L(v[0],v[1])}</span>
+  if(an && an.reduce){ an.reduce.forEach(x=>{ const v=x.action==='avoid'?['AVOID','回避','#ef4444']:['TRIM','减仓','#f97316'];const vc=sellColor(v[2]);
+    sell.push(`<a class="prow" href="${bkHref(x.id)}"><span class="pverb" style="color:${vc};border-color:${vc}">${L(v[0],v[1])}</span>
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}</span><span class="pw">${x.score}</span></a>`); }); }
   (alloc.weights||[]).filter(w=>w.crowded).forEach(w=>sell.push(`<div class="prow"><span class="pverb" style="color:var(--warn);border-color:var(--warn)">${L('SIZE DOWN','降仓')}</span><span class="pn">${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${L('crowded','拥挤')}</span></div>`));
   if(!sell.length) sell.push(`<div class="muted" style="padding:10px 2px;font-size:12px">${L('Nothing flagged to reduce right now.','当前无需减仓的标的。')}</div>`);

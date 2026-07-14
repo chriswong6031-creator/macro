@@ -567,6 +567,10 @@
     .m7p .m7p-legs .m7p-leg-name.l-zh,
     .m7p .m7p-legs .m7p-leg-name.l-en { font-size: 10.5px; }
   }
+  /* ── 红涨绿跌: directional colour flips for Chinese mode ── */
+  html[data-lang="zh"] .m7p.m7p-running_broad { --m7-col: var(--up); }
+  html[data-lang="zh"] .m7p.m7p-turning_up    { --m7-col: var(--up); }
+  html[data-lang="zh"] .m7p.m7p-down          { --m7-col: var(--down); }
 
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
@@ -4089,8 +4093,15 @@ body.page-macro.mx4-grid .mx5-sc-gauge-row {
   --mx5-accent-glow: color-mix(in srgb, var(--mx5-accent) 30%, transparent);
   --mx5-accent-dim:  color-mix(in srgb, var(--mx5-accent) 10%, transparent);
 }
+/* CSS wins over the SVG presentation attribute, so the arc + numeral recolour by state
+   (and var() resolves here, unlike in a bare SVG stroke="" attribute). */
 body.page-macro.mx4-grid #mx5-gauge-arc-fill { stroke: var(--mx5-gauge, #f59e0b); }
 body.page-macro.mx4-grid #mx5-score-numeral  { fill: var(--mx5-gauge, #f59e0b); }
+/* Regime pill: main #2542 colours it by the market-state verdict (.rp-yellow/.rp-red);
+   the risk-on default reads --mx5-accent, which the .mx5-score-* rules above set to
+   var(--up) — so the pill is verdict-coloured AND flips 红涨绿跌 in zh. (My earlier flat-grey
+   override was dropped in the merge: it conflicted with #2542 and left risk-on pills grey
+   while yellow/red were coloured.) */
 
 /* Thesis + flip */
 body.page-macro.mx4-grid .mx5-thesis{
@@ -4189,6 +4200,9 @@ body.page-macro.mx4-grid .mx5-pl-zone{
 body.page-macro.mx4-grid .mx5-pl-zone.on{color:rgba(34,217,122,.62);}
 body.page-macro.mx4-grid .mx5-pl-zone.mid{color:rgba(245,158,11,.66);}
 body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(239,68,68,.60);}
+/* zh 红涨绿跌: Risk-on(偏多)=bullish→red, Risk-off(偏空)=bearish→green (mid amber stays) */
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-pl-zone.on{color:rgba(239,68,68,.60);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(34,217,122,.62);}
 body.page-macro.mx4-grid .mx5-pl-x{
   top:96.4%;color:var(--ink-3,rgba(255,255,255,.34));
 }
@@ -8494,7 +8508,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   </div>
 
   
-  <div class="sx-v5-static" id="sx-v5-sentiment">
+  
+  <style>
+  /* zh 红涨绿跌 for the Fear & Greed gauge: Greed=bullish→red, Fear=bearish→green (neutral amber).
+     --fg-col routes through --up/--warn/--down so it auto-flips in zh; SVG marks + zone word read it. */
+  .fg-greed{--fg-col:var(--up)} .fg-fear{--fg-col:var(--down)} .fg-neutral{--fg-col:var(--warn)}
+  #sx-v5-sentiment .fg-mark-s{stroke:var(--fg-col)} #sx-v5-sentiment .fg-mark-f{fill:var(--fg-col)}
+  #sx-v5-sentiment .fg-lab-panic{fill:var(--down)} #sx-v5-sentiment .fg-lab-euph{fill:var(--up)}
+  </style>
+  <div class="sx-v5-static fg-neutral" id="sx-v5-sentiment">
   
   
   
@@ -8520,18 +8542,18 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="url(#sentGrad5)" stroke-width="18" stroke-linecap="round" opacity=".55"/>
         
-        <line x1="190" y1="185" x2="190" y2="30"
+        <line class="fg-mark-s" x1="190" y1="185" x2="190" y2="30"
               stroke="#f59e0b" stroke-width="4" stroke-linecap="round"
               transform="rotate(9.0, 190, 185)"
               filter="url(#dialGlow5)"/>
-        <circle cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke="#f59e0b" stroke-width="2.5"/>
-        <circle cx="190" cy="185" r="4"  fill="#f59e0b"/>
+        <circle class="fg-mark-s" cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke="#f59e0b" stroke-width="2.5"/>
+        <circle class="fg-mark-f" cx="190" cy="185" r="4"  fill="#f59e0b"/>
         
-        <text x="20"  y="196" fill="#ef4444" font-size="13" font-family="-apple-system,sans-serif" font-weight="700">PANIC</text>
-        <text x="360" y="196" fill="#22d97a" font-size="13" font-family="-apple-system,sans-serif" text-anchor="end" font-weight="700">EUPHORIA</text>
+        <text class="fg-lab-panic" x="20"  y="196" fill="#ef4444" font-size="13" font-family="-apple-system,sans-serif" font-weight="700">PANIC</text>
+        <text class="fg-lab-euph" x="360" y="196" fill="#22d97a" font-size="13" font-family="-apple-system,sans-serif" text-anchor="end" font-weight="700">EUPHORIA</text>
       </svg>
     </div>
-    <div class="mx5-sentiment-zone-text" style="color:#f59e0b">
+    <div class="mx5-sentiment-zone-text" style="color:var(--fg-col, #f59e0b)">
       <span class="l-en">Neutral</span>
       <span class="l-zh">中性</span>
     </div>
@@ -11648,10 +11670,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-          <div style="font-size:40px;font-weight:800;color:#f59e0b;line-height:1;font-variant-numeric:tabular-nums">55</div>
+        <div class="fg-neutral" style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+          <div style="font-size:40px;font-weight:800;color:var(--fg-col, #f59e0b);line-height:1;font-variant-numeric:tabular-nums">55</div>
           <div>
-            <div style="font-size:18px;font-weight:700;color:#f59e0b"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+            <div style="font-size:18px;font-weight:700;color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
             <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Composite sentiment · 0 = Extreme Fear · 100 = Extreme Greed</span><span class="l-zh">综合情绪 · 0=极度恐慌 · 100=极度贪婪</span></div>
           </div>
         </div>
@@ -11663,123 +11685,123 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row fg-greed">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">SPX momentum (vs 125d MA)</span><span class="l-zh">标普动量（对比125日均线）</span></div>
-            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:73.0%;background:#22d97a"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#22d97a">73</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:73.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">73</div>
         </div>
         
         
         
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row fg-neutral">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">52-week strength (new-high ratio)</span><span class="l-zh">52周强势（新高比例）</span></div>
-            <div class="mx5-dlg-factor-read" style="color:#f59e0b"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:57.0%;background:#f59e0b"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#f59e0b">57</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:57.0%;background:var(--fg-col, #f59e0b)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">57</div>
         </div>
         
         
         
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row fg-greed">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">McClellan oscillator</span><span class="l-zh">麦克莱伦振荡器</span></div>
-            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:64.0%;background:#22d97a"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#22d97a">64</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:64.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">64</div>
         </div>
         
         
         
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row fg-greed">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">Junk demand (HY OAS)</span><span class="l-zh">高收益需求（HY 利差）</span></div>
-            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:97.0%;background:#22d97a"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#22d97a">97</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:97.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">97</div>
         </div>
         
         
         
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row fg-greed">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">Safe haven demand (SPY − TLT 20d)</span><span class="l-zh">避险需求（SPY−TLT 20日）</span></div>
-            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:71.0%;background:#22d97a"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#22d97a">71</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:71.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">71</div>
         </div>
         
         
         
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row fg-neutral">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX level</span><span class="l-zh">VIX 水平</span></div>
-            <div class="mx5-dlg-factor-read" style="color:#f59e0b"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:53.0%;background:#f59e0b"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#f59e0b">53</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:53.0%;background:var(--fg-col, #f59e0b)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">53</div>
         </div>
         
         
         
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row fg-neutral">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX trend (20d change)</span><span class="l-zh">VIX 趋势（20日变动）</span></div>
-            <div class="mx5-dlg-factor-read" style="color:#f59e0b"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:53.0%;background:#f59e0b"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#f59e0b">53</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:53.0%;background:var(--fg-col, #f59e0b)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">53</div>
         </div>
         
         
         
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row fg-greed">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX term structure (VIX/VIX3M)</span><span class="l-zh">VIX 期限结构（VIX/VIX3M）</span></div>
-            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:92.0%;background:#22d97a"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#22d97a">92</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:92.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">92</div>
         </div>
         
         
         
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row fg-fear">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">CBOE SKEW (tail risk pricing)</span><span class="l-zh">CBOE SKEW（尾部风险定价）</span></div>
-            <div class="mx5-dlg-factor-read" style="color:#ef4444"><span class="l-en">Fear zone</span><span class="l-zh">恐慌区间</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #ef4444)"><span class="l-en">Fear zone</span><span class="l-zh">恐慌区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:6.0%;background:#ef4444"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#ef4444">6</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:6.0%;background:var(--fg-col, #ef4444)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #ef4444)">6</div>
         </div>
         
         
         
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row fg-greed">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">NAAIM exposure</span><span class="l-zh">NAAIM 仓位敞口</span></div>
-            <div class="mx5-dlg-factor-read" style="color:#22d97a"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:70.0%;background:#22d97a"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#22d97a">70</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:70.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">70</div>
         </div>
         
         
         
-        <div class="mx5-dlg-factor-row">
+        <div class="mx5-dlg-factor-row fg-fear">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">Insider demand (quarterly net buy $)</span><span class="l-zh">内部人需求（季度净购入）</span></div>
-            <div class="mx5-dlg-factor-read" style="color:#ef4444"><span class="l-en">Fear zone</span><span class="l-zh">恐慌区间</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #ef4444)"><span class="l-en">Fear zone</span><span class="l-zh">恐慌区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:19.0%;background:#ef4444"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:#ef4444">19</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:19.0%;background:var(--fg-col, #ef4444)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #ef4444)">19</div>
         </div>
         
         
@@ -12479,7 +12501,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     <summary><span class="l-en">Data health</span><span class="l-zh">数据健康度</span>
       <span class="help">?<span class="tip"><span class="l-en">Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence reduced automatically). FAILED = today&#39;s fetch broke (yesterday&#39;s data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ runs and paused until it recovers.</span><span class="l-zh">本仪表盘所依赖的每个数据源。OK = 新鲜。STALE = 近期无新数据（信号置信度已自动下调）。FAILED = 今日抓取失败（仍沿用昨日数据）。BLOCKED = 已知且有记录的限制 — 并非故障。DEAD = 连续 3 次以上失败，已暂停直至恢复。</span></span></span>
       
-      <span class="fold-stat">5 <span class="l-en">need attention</span><span class="l-zh">需关注</span> · 161 <span class="l-en">sources</span><span class="l-zh">数据源</span></span>
+      <span class="fold-stat">6 <span class="l-en">need attention</span><span class="l-zh">需关注</span> · 161 <span class="l-en">sources</span><span class="l-zh">数据源</span></span>
       <span class="fold-caret">▾</span>
     </summary>
     <table>
@@ -12625,7 +12647,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>10434</td><td>2026-07-10</td>
+        <td>10437</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12634,7 +12656,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>699</td><td>2026-07-13</td>
+        <td>699</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12643,7 +12665,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>28</td><td>2026-07-13</td>
+        <td>28</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12652,7 +12674,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>180</td><td>2026-07-13</td>
+        <td>180</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12670,7 +12692,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-13</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12679,7 +12701,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>4</td><td>2026-07-13</td>
+        <td>4</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12688,7 +12710,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-13</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12697,7 +12719,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>2568</td><td>2026-07-13</td>
+        <td>2569</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12706,7 +12728,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>180</td><td>2026-07-10</td>
+        <td>180</td><td>2026-07-13</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12715,7 +12737,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-13</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12724,7 +12746,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>5</td><td>2026-07-12</td>
+        <td>5</td><td>2026-07-13</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12733,7 +12755,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-13</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12742,7 +12764,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-13</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12751,7 +12773,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>8971</td><td>2026-07-13</td>
+        <td>8972</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12760,7 +12782,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>3866</td><td>2026-07-13</td>
+        <td>10143</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12769,7 +12791,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>8030</td><td>2026-07-13</td>
+        <td>8032</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12778,7 +12800,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>4334</td><td>2026-07-13</td>
+        <td>4336</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12787,7 +12809,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>140604</td><td>2026-07-13</td>
+        <td>140666</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12796,7 +12818,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>81868</td><td>2026-07-13</td>
+        <td>104035</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12805,7 +12827,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>35842</td><td>2026-07-13</td>
+        <td>72652</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12814,7 +12836,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-13</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12823,7 +12845,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-13</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12832,7 +12854,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>939</td><td>2026-07-10</td>
+        <td>941</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13138,7 +13160,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>591</td><td>2026-07-13</td>
+        <td>592</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13147,7 +13169,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>5718</td><td>2026-07-13</td>
+        <td>5719</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13156,7 +13178,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>708</td><td>2026-07-13</td>
+        <td>708</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13165,7 +13187,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-13</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13174,7 +13196,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-13</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13183,7 +13205,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>41</td><td>2026-07-13</td>
+        <td>41</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13192,7 +13214,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>4871</td><td>2026-07-13</td>
+        <td>4873</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13210,7 +13232,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-13</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13219,7 +13241,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13228,7 +13250,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1447</td><td>2026-07-10</td>
+        <td>1448</td><td>2026-07-13</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13237,7 +13259,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13246,7 +13268,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>155</td><td>2026-07-13</td>
+        <td>161</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13263,7 +13285,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <td class="l">hk_shorts_positions</td>
         
         
-        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
+        <td class="l"><span class="pill pill-stale"><span class="l-en">stale</span><span class="l-zh">过期</span></span></td>
         <td>1</td><td>2026-07-03</td>
         <td class="l muted"></td>
       </tr>
@@ -13273,7 +13295,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-13</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13282,7 +13304,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-10</td>
+        <td>1</td><td>2026-07-13</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13291,7 +13313,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>3086</td><td>2026-07-13</td>
+        <td>3243</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13300,7 +13322,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-13</td>
+        <td>1</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13309,7 +13331,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>367</td><td>2026-07-13</td>
+        <td>367</td><td>2026-07-14</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13318,7 +13340,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>100</td><td>2026-07-10</td>
+        <td>100</td><td>2026-07-13</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13936,9 +13958,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-14 10:10 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-14 12:05 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-14 10:10 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-14 12:05 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   

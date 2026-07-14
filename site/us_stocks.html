@@ -566,6 +566,10 @@
     .m7p .m7p-legs .m7p-leg-name.l-zh,
     .m7p .m7p-legs .m7p-leg-name.l-en { font-size: 10.5px; }
   }
+  /* ── 红涨绿跌: directional colour flips for Chinese mode ── */
+  html[data-lang="zh"] .m7p.m7p-running_broad { --m7-col: var(--up); }
+  html[data-lang="zh"] .m7p.m7p-turning_up    { --m7-col: var(--up); }
+  html[data-lang="zh"] .m7p.m7p-down          { --m7-col: var(--down); }
 
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
@@ -5382,7 +5386,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+5.2% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +5.2%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+4.2% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +4.2%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -6000,7 +6004,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Retail. Rank 41/46 (-7 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 零售。排名 41/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Retail. Rank 37/46 (-3 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 零售。排名 37/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -6992,10 +6996,6 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Energy (Equal-Weight). Rank 36/46 (+3 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 能源（等权）。排名 36/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
-          
-          
-          
           
           
           
@@ -7387,7 +7387,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Retail) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（零售）已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+7.4% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +7.4%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Retail) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（零售）已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+5.8% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +5.8%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts richer than calls by -2.9 vol pts vs peers — protection strongly bid (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌比看涨贵 -2.9 个波动点（相对同业） — 保护性看跌被大力买入（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -7506,7 +7506,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Retail. Rank 41/46 (-7 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 零售。排名 41/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Retail. Rank 37/46 (-3 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 零售。排名 37/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -7636,7 +7636,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Communication Services (Equal-Weight)) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（通信服务（等权））已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+3.9% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +3.9%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Communication Services (Equal-Weight)) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（通信服务（等权））已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+3.4% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +3.4%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -7770,7 +7770,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Communication Services (Equal-Weight). Rank 39/46 (+5 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 通信服务（等权）。排名 39/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Communication Services (Equal-Weight). Rank 36/46 (+8 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 通信服务（等权）。排名 36/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -8280,7 +8280,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Consumer Discretionary (Equal-Weight). Rank 30/46 (-4 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 非必需消费（等权）。排名 30/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Consumer Discretionary (Equal-Weight). Rank 32/46 (-6 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 非必需消费（等权）。排名 32/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -8771,6 +8771,10 @@
           
           
           
+          <span class="nb-pulse-heat ph-heating" data-tip-en="Sector theme heat: heating — Health Care (Equal-Weight). Rank 5/46 (+11 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：heating — 医疗保健（等权）。排名 5/46。仅供展示，不影响排名。"><span class="l-en">▲ heating</span><span class="l-zh">▲ heating</span></span>
+          
+          
+          
           
           
           
@@ -8912,7 +8916,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">earnings in 1d — binary event, size down</span><span class="l-zh">1天后财报 — 二元事件，减仓</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+7.3% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +7.3%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">earnings in 1d — binary event, size down</span><span class="l-zh">1天后财报 — 二元事件，减仓</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+6.8% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +6.8%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -9035,6 +9039,10 @@
           ><span class="l-en">deep</span><span class="l-zh">深度</span></span>
           
           
+          
+          
+          
+          <span class="nb-pulse-heat ph-heating" data-tip-en="Sector theme heat: heating — Financials (Equal-Weight). Rank 7/46 (+11 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：heating — 金融（等权）。排名 7/46。仅供展示，不影响排名。"><span class="l-en">▲ heating</span><span class="l-zh">▲ heating</span></span>
           
           
           
@@ -9287,7 +9295,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-cooling" data-tip-en="Sector theme heat: cooling — Regional Banks. Rank 7/46 (+0 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：cooling — 区域银行。排名 7/46。仅供展示，不影响排名。"><span class="l-en">▽ cooling</span><span class="l-zh">▽ cooling</span></span>
+          <span class="nb-pulse-heat ph-cooling" data-tip-en="Sector theme heat: cooling — Regional Banks. Rank 9/46 (-2 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：cooling — 区域银行。排名 9/46。仅供展示，不影响排名。"><span class="l-en">▽ cooling</span><span class="l-zh">▽ cooling</span></span>
           
           
           
@@ -9658,7 +9666,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+6.4% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +6.4%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+5.8% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +5.8%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -9907,7 +9915,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+11.2% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +11.2%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+14.5% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +14.5%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -10032,7 +10040,7 @@
           
           
           
-          <span class="nb-pulse-heat ph-cooling" data-tip-en="Sector theme heat: cooling — Power &amp; Grid Buildout. Rank 29/46 (-6 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：cooling — 电力与电网。排名 29/46。仅供展示，不影响排名。"><span class="l-en">▽ cooling</span><span class="l-zh">▽ cooling</span></span>
+          <span class="nb-pulse-heat ph-cooling" data-tip-en="Sector theme heat: cooling — Power &amp; Grid Buildout. Rank 30/46 (-7 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：cooling — 电力与电网。排名 30/46。仅供展示，不影响排名。"><span class="l-en">▽ cooling</span><span class="l-zh">▽ cooling</span></span>
           
           
           
@@ -10786,6 +10794,10 @@
           
           
           
+          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — AI Semiconductors. Rank 23/46 (-1 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — AI半导体。排名 23/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
+          
+          
+          
           
           
           
@@ -10923,7 +10935,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+8.0% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +8.0%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+8.2% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +8.2%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -11689,7 +11701,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Non-AI Software) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（非AI软件）已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+9.5% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +9.5%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Non-AI Software) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（非AI软件）已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+9.0% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +9.0%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -11809,10 +11821,6 @@
           
           
           
-          
-          
-          
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Non-AI Software. Rank 27/46 (+15 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 非AI软件。排名 27/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -11942,7 +11950,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+4.6% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +4.6%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+3.9% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +3.9%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -12208,7 +12216,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Technology (Equal-Weight)) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（信息技术（等权））正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+4.9% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +4.9%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Technology (Equal-Weight)) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（信息技术（等权））正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+4.7% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +4.7%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -12335,10 +12343,6 @@
           
           
           
-          
-          
-          
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — AI Software &amp; Platforms. Rank 17/46 (+14 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — AI 软件与平台。排名 17/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
@@ -12593,6 +12597,10 @@
           
           
           
+          <span class="nb-pulse-heat ph-heating" data-tip-en="Sector theme heat: heating — Financials (Equal-Weight). Rank 7/46 (+11 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：heating — 金融（等权）。排名 7/46。仅供展示，不影响排名。"><span class="l-en">▲ heating</span><span class="l-zh">▲ heating</span></span>
+          
+          
+          
           
           
           
@@ -12726,7 +12734,7 @@
             
             
             
-            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Technology (Equal-Weight)) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（信息技术（等权））正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+11.2% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +11.2%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts richer than calls by -4.0 vol pts vs peers — protection strongly bid (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌比看涨贵 -4.0 个波动点（相对同业） — 保护性看跌被大力买入（未验证 · 不计入评分）</span></span></div></div>
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Technology (Equal-Weight)) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（信息技术（等权））正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+10.8% over the flip) — dealers pin &amp; fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +10.8%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts richer than calls by -4.0 vol pts vs peers — protection strongly bid (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌比看涨贵 -4.0 个波动点（相对同业） — 保护性看跌被大力买入（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -12846,10 +12854,6 @@
           
           
           
-          
-          
-          
-          <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — AI Software &amp; Platforms. Rank 17/46 (+14 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — AI 软件与平台。排名 17/46。仅供展示，不影响排名。"><span class="l-en">▽ broken</span><span class="l-zh">▽ broken</span></span>
           
           
           
