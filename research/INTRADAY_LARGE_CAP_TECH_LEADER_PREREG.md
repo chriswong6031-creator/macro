@@ -167,3 +167,13 @@ Phase 0 may conclude only one of:
 - **negative evidence**.
 
 It may not conclude that a winner can be known with certainty. Any later live shadow must preserve an abstain state, stamp feature availability, accrue predictions before outcomes, and pass a separately registered promotion gauntlet before ranking authority is considered.
+
+## 8. Post-registration point-in-time amendments
+
+These corrections were made during the implementation audit, before the final results run. They repair data availability and comparison errors; they are not newly optimized trading rules. The original preregistration remains independently preserved in git commit `161297ab65a`.
+
+1. **Daily aggregate options lag:** Sections 3-5 originally called the aggregate options inputs "prior-day." The provider documents that a trading day's aggregate file is not updated until about 11:00 ET on the next business day. At a 09:30 or 09:45 decision, the last provably available aggregate is therefore normally T-2. The final runner shifts those aggregate features by two exchange sessions and labels them "last available (normally T-2)." Quote-signed sensitivity files have a separate evening availability contract and remain shifted one session.
+2. **Uncompressed exchange calendar:** Rolling 5-, 20-, and 60-session price features and all option lags use every valid QQQ exchange session, including scheduled half-days. Primary outcomes still require exact 78-bar coverage for every ticker. This prevents a missing vendor bar in one name from silently turning "prior five sessions" into a longer interval.
+3. **Non-uniform winner baseline:** In addition to the frozen baselines in Section 5, the final tables include the most frequent development-period winner, frozen and then applied to holdout. This addresses the higher base rate of volatile tickers under a raw residual-return winner label.
+4. **Top-quartile denominator:** For universes not divisible by four, "top quartile" is the top `ceil(N/4)` names and enrichment uses that exact per-session null rate.
+5. **Signed delta normalization:** The diagnostic signed delta share is net delta proxy divided by total absolute buy-plus-sell delta-proxy magnitude, not by option premium.
