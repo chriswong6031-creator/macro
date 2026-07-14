@@ -1,20 +1,20 @@
 {
-  "schema": "mastermind_nw_feedback.v2",
-  "generated_at": "2026-07-10T22:25:00Z",
+  "schema": "mastermind_nw_feedback.v3",
+  "generated_at": "2026-07-14T12:25:00Z",
   "window_days": 14,
   "thesis_counts": {
-    "open": 26,
-    "closed_or_rebuilt": 33,
-    "total": 59
+    "open": 30,
+    "closed_or_rebuilt": 37,
+    "total": 67
   },
   "run_counts": {
     "hk_daily": {
-      "ok": 5,
+      "ok": 7,
       "error": 0,
       "other": 0
     },
     "china_daily": {
-      "ok": 5,
+      "ok": 7,
       "error": 0,
       "other": 0
     },
@@ -24,82 +24,102 @@
       "other": 0
     },
     "macro_refresh": {
-      "ok": 36,
+      "ok": 65,
       "error": 0,
       "other": 0
     },
     "watch_us_overnight": {
-      "ok": 13,
+      "ok": 18,
       "error": 0,
       "other": 0
     },
     "publish_macro_snapshot": {
-      "ok": 9,
+      "ok": 12,
       "error": 0,
       "other": 0
     },
     "derisk_us_intraday": {
-      "ok": 69,
+      "ok": 83,
       "error": 0,
       "other": 0
     },
     "watch_asia_overnight": {
-      "ok": 14,
+      "ok": 18,
       "error": 0,
       "other": 0
     },
     "daily_mark": {
-      "ok": 4,
+      "ok": 6,
       "error": 0,
       "other": 0
     },
     "daily_loop": {
-      "ok": 4,
+      "ok": 6,
       "error": 0,
       "other": 0
     },
     "autonomous_daily": {
-      "ok": 4,
+      "ok": 6,
       "error": 0,
       "other": 0
     },
     "etf_daily": {
-      "ok": 4,
+      "ok": 6,
       "error": 0,
       "other": 0
     },
     "heavyweight_daily": {
-      "ok": 4,
+      "ok": 6,
       "error": 0,
       "other": 0
     },
     "loop_maintenance": {
-      "ok": 4,
+      "ok": 6,
       "error": 0,
       "other": 0
     },
     "experiment_maturity": {
-      "ok": 4,
+      "ok": 6,
       "error": 0,
       "other": 0
     },
     "settle_brain_asia": {
-      "ok": 4,
+      "ok": 6,
       "error": 0,
       "other": 0
     },
     "settle_pending": {
-      "ok": 4,
+      "ok": 5,
       "error": 0,
       "other": 0
     },
     "portfolio_risk_compose": {
-      "ok": 54,
+      "ok": 70,
       "error": 0,
       "other": 0
     },
     "portfolio_risk_daily": {
-      "ok": 3,
+      "ok": 4,
+      "error": 0,
+      "other": 0
+    },
+    "cio_weekly": {
+      "ok": 1,
+      "error": 0,
+      "other": 0
+    },
+    "improvement_agenda_weekly": {
+      "ok": 1,
+      "error": 0,
+      "other": 0
+    },
+    "vps_state_sync": {
+      "ok": 184,
+      "error": 12,
+      "other": 0
+    },
+    "prewarm_marks": {
+      "ok": 807,
       "error": 0,
       "other": 0
     }
@@ -110,18 +130,18 @@
       "gate_failures": {
         "by_severity": {
           "ADVISORY_ONLY": 5,
-          "FREEZE": 14
+          "FREEZE": 17
         },
         "by_guard": {
           "dashboard_write": 5,
-          "stale_anchor": 8,
-          "peer_expectation": 6
+          "stale_anchor": 9,
+          "peer_expectation": 8
         },
-        "total": 19
+        "total": 22
       },
-      "rejected_decision_count": 136,
+      "rejected_decision_count": 132,
       "lock_conflict_count": 0,
-      "stale_freeze_count": 14
+      "stale_freeze_count": 17
     },
     {
       "book_id": "heavyweight",
@@ -203,7 +223,7 @@
       {
         "book_id": "autonomous",
         "packet_accepted": 0,
-        "packet_rejected": 11
+        "packet_rejected": 14
       },
       {
         "book_id": "china",
@@ -213,17 +233,17 @@
       {
         "book_id": "etf",
         "packet_accepted": 0,
-        "packet_rejected": 11
+        "packet_rejected": 14
       },
       {
         "book_id": "flagship_judgment",
         "packet_accepted": 0,
-        "packet_rejected": 11
+        "packet_rejected": 14
       },
       {
         "book_id": "heavyweight",
         "packet_accepted": 0,
-        "packet_rejected": 3
+        "packet_rejected": 4
       },
       {
         "book_id": "hk",
@@ -232,8 +252,8 @@
       }
     ],
     "rejection_error_classes": {
-      "expected_failure_mode": 67,
-      "falsifiers": 67
+      "expected_failure_mode": 77,
+      "falsifiers": 77
     }
   },
   "outcome_mix": {
@@ -243,17 +263,19 @@
   },
   "context_audit": {
     "state": "ok",
-    "n_present": 9,
+    "n_present": 15,
     "n_stale": 1,
     "n_absent": 0,
-    "n_runs_total": 10,
-    "context_seen_rate": 0.9
+    "n_runs_total": 16,
+    "context_seen_rate": 0.938
   },
   "metric_families": {
     "live": [
       "context_engagement",
       "decision_flow",
-      "outcome_mix"
+      "outcome_mix",
+      "nw_reflection",
+      "orchestrator_dialogue"
     ],
     "blocked": [
       {
@@ -266,5 +288,119 @@
       }
     ]
   },
-  "note": "Machine-readable governance summary for NW integration. Contains counts only — no position sizes, no notional values, no secrets. v2 adds decision_flow, outcome_mix, context_audit (all counts-only, FB-R11)."
+  "reflection": {
+    "state": "ok",
+    "asof": "2026-07-14",
+    "contract_drift": [
+      {
+        "code": "graph_conflicts_sparse",
+        "status": "partial",
+        "severity": "medium"
+      },
+      {
+        "code": "fdr_cleared_absent",
+        "status": "dead",
+        "severity": "high"
+      },
+      {
+        "code": "bottom_state_vocabulary_drift",
+        "status": "partial",
+        "severity": "high"
+      },
+      {
+        "code": "liquidity_plumbing_absent",
+        "status": "dead",
+        "severity": "medium"
+      }
+    ],
+    "coverage": {
+      "open_theses_n": 30,
+      "resolved_recent_n": 0,
+      "with_context_row_n": 5,
+      "coverage_rate": 0.167
+    },
+    "context_quality": {
+      "window_runs": 16,
+      "n_present": 15,
+      "n_stale": 1,
+      "n_absent": 0,
+      "seen_rate": 0.938
+    },
+    "attribution": {
+      "state": "building",
+      "n_resolved": 1,
+      "joinable_n": 0
+    },
+    "nudges_dropped_n": 0
+  },
+  "nudges": [
+    {
+      "code": "bottom_state_vocabulary_drift",
+      "kind": "contract_drift",
+      "severity": "high",
+      "detail": "policy states never observed: BOTTOMING/CONFIRMED (observed vocabulary has 5 values over 250 rows) — candidacy priors above WATCH can never fire",
+      "first_seen": "2026-07-14",
+      "builds_seen": 1
+    },
+    {
+      "code": "fdr_cleared_absent",
+      "kind": "contract_drift",
+      "severity": "high",
+      "detail": "0/250 candidate rows are fdr_cleared — every leg of the typed decision ladder is per-name inert regardless of other fields",
+      "first_seen": "2026-07-14",
+      "builds_seen": 1
+    },
+    {
+      "code": "coverage_below_half",
+      "kind": "coverage_gap",
+      "severity": "medium",
+      "detail": "only 5 of our decided subjects have a candidate_context row (rate 0.167; fires <0.5, clears at >=0.55)",
+      "first_seen": "2026-07-14",
+      "builds_seen": 1
+    },
+    {
+      "code": "graph_conflicts_sparse",
+      "kind": "contract_drift",
+      "severity": "medium",
+      "detail": "1/250 candidate rows carry graph_conflicts",
+      "first_seen": "2026-07-14",
+      "builds_seen": 1
+    },
+    {
+      "code": "liquidity_plumbing_absent",
+      "kind": "contract_drift",
+      "severity": "medium",
+      "detail": "liquidity plumbing block absent from the market lobe",
+      "first_seen": "2026-07-14",
+      "builds_seen": 1
+    }
+  ],
+  "operator_directives": [
+    {
+      "id": "b894461004a3e4e9",
+      "created": "2026-07-14",
+      "text": "Populate the market lobe liquidity block — it ships all-null, so liquidity context is unusable. (auto-drafted from nudge liquidity_plumbing_absent)"
+    },
+    {
+      "id": "634479cb88d26a64",
+      "created": "2026-07-14",
+      "text": "Raise graph_conflicts coverage in candidate_context — almost no rows carry it, keeping conflict-aware entry logic dark. (auto-drafted from nudge graph_conflicts_sparse)"
+    },
+    {
+      "id": "a4478ab30705cc07",
+      "created": "2026-07-14",
+      "text": "Restore kernel.fdr_cleared production in candidate_context — zero rows currently clear, which deadens the bot's entire typed decision ladder. (auto-drafted from nudge fdr_cleared_absent)"
+    },
+    {
+      "id": "26e6c0ab94bab033",
+      "created": "2026-07-14",
+      "text": "Publish BOTTOMING/CONFIRMED bottom states when detected — the artifact only ever shows WATCH, so candidacy priors above WATCH can never fire. (auto-drafted from nudge bottom_state_vocabulary_drift)"
+    },
+    {
+      "id": "473c1b7b395ef941",
+      "created": "2026-07-14",
+      "text": "Fewer than half of the bot's decided names have a candidate_context row — widen candidate coverage toward the bot's active universe. (auto-drafted from nudge coverage_below_half)"
+    }
+  ],
+  "note": "Machine-readable governance summary for NW integration. Contains counts only — no position sizes, no notional values, no secrets. v2 adds decision_flow, outcome_mix, context_audit (all counts-only, FB-R11). v3 adds reflection, nudges, operator_directives (W-AI dialogue; codes + operator-authored scrubbed text only)."
 }
