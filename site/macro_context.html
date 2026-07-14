@@ -482,6 +482,10 @@ body::before {
   border: 1px dashed var(--line); border-radius: 14px;
 }
 
+/* track-record line in the radar section */
+.trk-line { font-size: 10.5px; color: var(--muted); margin-top: 10px;
+  padding-top: 8px; border-top: 1px solid var(--line); line-height: 1.4; }
+
 /* ── Animations ─────────────────────────────────────────────── */
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 .section:nth-child(1) { animation: fadeInUp .5s .05s ease both; }
@@ -1071,7 +1075,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
              data-tip-en="HMM smoothed posterior (display-only). Scored use requires causal refit against live regime labels."
              data-tip-zh="HMM平滑后验（仅展示）。评分使用需对实时周期标签进行因果重拟合。">
           <span class="kpi-label"><span class="l-en">Regime HMM</span><span class="l-zh">象限HMM</span></span>
-          <span class="kpi-val c-info">P(Q1) 0.99</span>
+          <span class="kpi-val c-info">P(Q1) 0.97</span>
           <span class="kpi-sub l-en">hazard 0.48 &middot; ~2.1mo dwell &middot; 3mo in</span>
           <span class="kpi-sub l-zh">风险0.48 &middot; 预期停留~2.1月 &middot; 已3月</span>
         </div>
@@ -1323,6 +1327,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     </div>
     
 
+    
+
+    <!-- Track record (forward-ledger scorecard) — display-only context accrual.
+         Guards with .get() so missing keys never crash; absent scorecard = no output. -->
+    <div class="trk-line">
+      <span class="l-en">Graded calls accruing — check back once alerts mature (~21 trading days)</span><span class="l-zh">评分记录积累中 — 约21个交易日后可查看</span>
+    </div>
     
   </div>
 
@@ -2441,7 +2452,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:2px"><span class="l-en">HK</span><span class="l-zh">香港</span></div>
             <div class="quad-name-lbl"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></div>
             
-            <div class="quad-conf"><span class="l-en">conf</span><span class="l-zh">置信</span> 8%</div>
+            <div class="quad-conf"><span class="l-en">conf</span><span class="l-zh">置信</span> 20%</div>
             
             
             <div class="quad-note"><span class="l-en">neutral</span><span class="l-zh">中性</span></div>
@@ -2574,13 +2585,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">Implied Cuts (6m)</span><span class="l-zh">隐含降息(6月)</span></span>
-            <span class="stat-val">-2</span>
+            <span class="stat-val">-1</span>
           </div>
           
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">Market vs Fed</span><span class="l-zh">市场vs美联储</span></span>
-            <span class="stat-val">+14bp</span>
+            <span class="stat-val">+13bp</span>
           </div>
           
           
@@ -3113,7 +3124,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         </div>
         
         
-        <div class="contra-sub"><span class="l-en">Intelligence divergences</span><span class="l-zh">情报分歧</span>: 5</div>
+        <div class="contra-sub"><span class="l-en">Intelligence divergences</span><span class="l-zh">情报分歧</span>: 2</div>
         
         
         <div class="contra-pairs">
@@ -3151,7 +3162,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
       <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-13 18:05 UTC</div>
+    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-14 03:44 UTC</div>
   </div>
 
 </div><!-- /page-wrap -->
