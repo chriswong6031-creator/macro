@@ -48,6 +48,7 @@ curated, not generated. Do not build an extractor.
 | Runtime LLM frame-tag / narrative-frame classification feeding any organ state or escalation-eligible key | FORBIDDEN — TI-R1/CONST-ART1 restated; char-span receipts validate the quote, not the classification; frame annotation is display-only | NAR-R4, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md` |
 | Chatter-only promotion to a narrative candidate state (source-credibility-alone escalation without the cross-modal tape veto) | FORBIDDEN — single credible flare earns salience, never authority; veto unconditional | NAR-R2, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md` |
 | Hypothesis-slot pre-reservation via standalone coverage census (bypassing WA-R8's ≥8-cases + Opus fingerprint + explicit-ruling gate) | FORBIDDEN — a census proves testability, never entitlement; second attempted end-run (LR docket round 1, LH brainstorm round 2) | LHB-R5, `LONG_HOLD_LOBE_BRAINSTORM_ADJUDICATION_BY_FABLE.md`; precedent LR-R9 |
+| Calendar/event-window-gated risk-radar `_SCARES` legs (any tier — Tier-B advances state, state sets gross) | FORBIDDEN — laundered pre-event conviction dampener; event/OPEX windows are display context only; risk channels must be calendar-agnostic constructions | RIC-R3, `RATES_INFLATION_COMMAND_MASTERPLAN_BY_FABLE.md` judge-panel ruling (2026-07-13) |
 
 ## 2. Killed / refuted signal families and theses
 

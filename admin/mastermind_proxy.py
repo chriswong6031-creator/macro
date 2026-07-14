@@ -35,6 +35,7 @@ GET_PATHS = frozenset({
 POST_PATHS = frozenset({
     "/api/mastermind_ai/settings",
     "/api/mastermind_ai/directive",
+    "/api/mastermind_ai/act_on_nudges",
     "/api/mastermind_ai/run",
 })
 

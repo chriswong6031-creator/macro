@@ -48,10 +48,12 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -94,6 +96,148 @@ def _commit() -> str:
 def health() -> dict:
     """Liveness + which build is being served. Unauthenticated."""
     return {"status": "ok", "commit": _commit()}
+
+
+# ── First-party analytics collector — POST /api/collect ─────────────────────────
+# Same-origin beacon sink for the macro static site (templates/theme.js loadMMAnalytics).
+# Anonymous by design — every visitor is measured. The visitor id (mm_aid, httpOnly,
+# Domain=.mastermind-x.com, shared with the Terminal at app.mastermind-x.com), the raw client IP,
+# and the user-agent are stamped HERE; geolocation is backfilled off the hot path by
+# scripts/geo_enrich.py. Rows go to the shared Supabase `analytics_events` table
+# (charting-app supabase/migrations/0004_analytics.sql) via PostgREST using the service-role key
+# (deny-all RLS — the anon key never touches it). The DB write runs as a BackgroundTask so the
+# beacon returns immediately and never blocks on Supabase.
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+MM_COOKIE_DOMAIN = os.environ.get("MM_COOKIE_DOMAIN", ".mastermind-x.com")
+_MM_ANON_COOKIE = "mm_aid"
+_MM_MAX_BATCH = 40
+_MM_EVENT_TYPES = {
+    "pageview", "route", "ticker_view", "search", "terminal_jump",
+    "click", "scroll", "session_start", "heartbeat", "exit",
+}
+
+
+def _mm_client_ip(request: Request) -> str:
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()[:64]
+    return (request.headers.get("x-real-ip") or "").strip()[:64] or "unknown"
+
+
+def _mm_clamp(v: Any, n: int):
+    if v is None:
+        return None
+    s = str(v)
+    return s[:n] if s else None
+
+
+def _mm_int(v: Any, lo: int, hi: int):
+    try:
+        x = int(float(v))
+    except (TypeError, ValueError):
+        return None
+    return max(lo, min(hi, x))
+
+
+def _mm_analytics_insert(rows: list) -> None:
+    """Best-effort PostgREST insert into analytics_events. Never raises (runs as a background task)."""
+    if not rows or not SUPABASE_SERVICE_ROLE_KEY:
+        return
+    try:
+        req = urllib.request.Request(
+            f"{SUPABASE_URL}/rest/v1/analytics_events",
+            data=json.dumps(rows).encode(),
+            method="POST",
+            headers={
+                "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal",
+            },
+        )
+        urllib.request.urlopen(req, timeout=5).read()
+    except Exception:
+        pass  # analytics ingest is best-effort; never surface to the caller
+
+
+@app.post("/api/collect")
+async def collect(request: Request, background: BackgroundTasks) -> Response:
+    """Anonymous first-party analytics beacon sink (see block header)."""
+    cl = request.headers.get("content-length")
+    if cl and cl.isdigit() and int(cl) > 16384:
+        return Response(status_code=413)
+    try:
+        payload = json.loads(await request.body() or b"{}")
+    except Exception:
+        return Response(status_code=400)
+
+    if isinstance(payload, dict):
+        events = payload.get("events")
+    elif isinstance(payload, list):
+        events = payload
+    else:
+        events = [payload]
+    if not isinstance(events, list) or not events:
+        return Response(status_code=204)
+
+    anon = _mm_clamp(request.cookies.get(_MM_ANON_COOKIE), 64)
+    mint = anon is None
+    if mint:
+        anon = str(uuid.uuid4())
+    ip = _mm_client_ip(request)
+    ua = _mm_clamp(request.headers.get("user-agent") or "", 256)
+
+    rows: list = []
+    for e in events[:_MM_MAX_BATCH]:
+        if not isinstance(e, dict):
+            continue
+        etype = _mm_clamp(e.get("type"), 32)
+        if not etype or etype not in _MM_EVENT_TYPES:
+            continue
+        meta = e.get("meta")
+        if not isinstance(meta, dict):
+            meta = None
+        else:
+            try:
+                if len(json.dumps(meta, default=str)) > 2000:
+                    meta = None
+            except Exception:
+                meta = None
+        client_ts = None
+        try:
+            ms = float(e.get("t") or 0)
+            if 0 < ms < 4102444800000:
+                client_ts = datetime.fromtimestamp(ms / 1000, tz=timezone.utc).isoformat()
+        except (TypeError, ValueError):
+            pass
+        tk = e.get("ticker")
+        rows.append({
+            "type": etype,
+            "site": _mm_clamp(e.get("site"), 16) or "macro",
+            "path": _mm_clamp(e.get("path"), 512),
+            "ref": _mm_clamp(e.get("ref"), 512),
+            "ticker": (str(tk).upper()[:64] if tk else None),
+            "dwell_ms": _mm_int(e.get("dwell_ms"), 0, 86400000),
+            "scroll": _mm_int(e.get("scroll"), 0, 100),
+            "fp": _mm_clamp(e.get("fp"), 64),
+            "session_id": _mm_clamp(e.get("sid"), 64),
+            "visitor_id": anon,
+            "user_id": None,
+            "ip": ip,
+            "ua": ua,
+            "client_ts": client_ts,
+            "meta": meta,
+        })
+
+    background.add_task(_mm_analytics_insert, rows)
+
+    resp = Response(status_code=204, headers={"cache-control": "no-store"})
+    if mint:
+        resp.set_cookie(
+            _MM_ANON_COOKIE, anon, max_age=63072000, path="/",
+            domain=(MM_COOKIE_DOMAIN or None), httponly=True, secure=True, samesite="lax",
+        )
+    return resp
 
 
 @app.get("/api/overlay")

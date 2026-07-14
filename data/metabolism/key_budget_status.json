@@ -1,25 +1,73 @@
 {
   "schema": "metab_budget_status.v1",
-  "ts": "2026-07-14T02:24:30+00:00",
-  "per_key": {},
+  "ts": "2026-07-14T11:16:24+00:00",
+  "per_key": {
+    "claude_code_oauth_1": {
+      "pct_5h": null,
+      "src_5h": null,
+      "pct_weekly": null,
+      "src_weekly": null,
+      "reset_5h": null,
+      "reset_weekly": null
+    },
+    "claude_code_oauth_2": {
+      "pct_5h": null,
+      "src_5h": null,
+      "pct_weekly": null,
+      "src_weekly": null,
+      "reset_5h": null,
+      "reset_weekly": null
+    },
+    "claude_code_oauth_3": {
+      "pct_5h": null,
+      "src_5h": null,
+      "pct_weekly": null,
+      "src_weekly": null,
+      "reset_5h": null,
+      "reset_weekly": null
+    },
+    "legacy": {
+      "pct_5h": null,
+      "src_5h": null,
+      "pct_weekly": null,
+      "src_weekly": null,
+      "reset_5h": null,
+      "reset_weekly": null
+    }
+  },
   "verdicts": {
     "5h_max": {
-      "eligible_keys": [],
+      "eligible_keys": [
+        "claude_code_oauth_1",
+        "claude_code_oauth_2",
+        "claude_code_oauth_3",
+        "legacy"
+      ],
       "all_done": false,
       "blocked": false,
-      "reason": "no_enabled_keys"
+      "reason": "unknown_usage"
     },
     "weekly_max": {
-      "eligible_keys": [],
+      "eligible_keys": [
+        "claude_code_oauth_1",
+        "claude_code_oauth_2",
+        "claude_code_oauth_3",
+        "legacy"
+      ],
       "all_done": false,
       "blocked": false,
-      "reason": "no_enabled_keys"
+      "reason": "eligible_keys_available"
     },
     "manual": {
-      "eligible_keys": [],
+      "eligible_keys": [
+        "claude_code_oauth_1",
+        "claude_code_oauth_2",
+        "claude_code_oauth_3",
+        "legacy"
+      ],
       "all_done": false,
       "blocked": false,
-      "reason": "no_enabled_keys"
+      "reason": "manual_run_allowed"
     }
   }
 }

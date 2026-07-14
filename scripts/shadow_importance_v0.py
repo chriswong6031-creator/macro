@@ -224,9 +224,13 @@ def run(root: Path, dry_run: bool = False, band_frac: float = _BAND_FRAC_DEFAULT
 
 
 # --------------------------------------------------------------------------- #
-# end-of-collect hook — wired in scripts/collect.py AFTER qbus appends, BEFORE
-# the grader, so the same-night grader picks up any freshly-registered claims.
-# Non-fatal: a challenger crash must never abort the collection run.
+# collect-lane hook. Since the 2026-07-14 collect split the nightly invocation
+# is STANDALONE in daily.yml's collect_tail job (python -m, after the grader in
+# collect-core has already run); scripts/collect.py still calls this in-process
+# on lanes that don't pass --skip-shadow-importance. Ordering vs the grader is
+# not load-bearing: grade_qledger only grades claims matured >= 5 days
+# (engine/qledger._matured), so registration one job later never changes
+# grading arithmetic. Non-fatal: a challenger crash must never abort the run.
 # --------------------------------------------------------------------------- #
 def run_as_collect_step(root: Path | str | None = None) -> None:
     try:
@@ -261,4 +265,14 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # hard_exit: this one-shot reads parquet (qbus store) — a plain exit can
+    # deadlock forever in pyarrow's C++ shutdown on macOS (#2196). Required now
+    # that the collect_tail job runs this standalone via `python -m`.
+    from lib.procutil import hard_exit
+    try:
+        main()
+    except Exception:  # noqa: BLE001 — traceback then hard-exit; never hang the lane
+        import traceback
+        traceback.print_exc()
+        hard_exit(1)
+    hard_exit(0)

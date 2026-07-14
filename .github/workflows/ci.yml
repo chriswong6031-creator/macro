@@ -91,6 +91,8 @@ on:
       # main because no CI job ran them. engine/** is broad on purpose — most of these
       # tests pin engine contracts (display-only firewalls, unit guards, honesty layer).
       - "engine/**"
+      # regime no-regress guard (2026-07-13 earlyclose↔render flip-flop fix)
+      - "tests/test_engine_run_no_regress.py"
       - "scripts/build_site.py"
       - "scripts/audit_price_basis.py"
       - "research/signal_engine/walk_forward.py"
@@ -103,6 +105,17 @@ on:
       - "tests/test_commodity_cycle_state.py"
       - "tests/test_fear_euphoria.py"
       - "tests/test_froth_fragility.py"
+      - "engine/vol_velocity.py"
+      - "tests/test_vol_velocity.py"
+      - "tests/test_fear_greed_honesty.py"
+      - "tests/test_archive_context_snapshots.py"
+      - "scripts/archive_context_snapshots.py"
+      - "tests/test_ai_breadth_split.py"
+      - "scripts/build_ai_adjacency_tag.py"
+      - "engine/breadth_split.py"
+      - "tests/test_vsb_surface.py"
+      - "scripts/build_site.py"
+      - "templates/dashboard.html.j2"
       - "tests/test_missing_tape.py"
       - "tests/test_price_basis_flip.py"
       - "tests/test_risk_lead_lag.py"
@@ -112,6 +125,10 @@ on:
       - "tests/test_risk_radar_scorecard.py"
       - "engine/risk_radar_scorecard.py"
       - "tests/test_rr_scorecard_card.py"
+      # VSB W6: corr_floor_break + ai_breadth_divergence Tier-B legs + corr alert
+      - "tests/test_vsb_radar_alert.py"
+      - "engine/risk_radar.py"
+      - "engine/alerts.py"
       - "templates/_risk_radar_card.html.j2"
       - "templates/_risk_radar_card.css.j2"
       - "tests/test_canon.py"
@@ -422,6 +439,11 @@ on:
       - "config/flow_recon_ladder.yml"
       - "tests/fixtures/_sample_V_2026-07-02.json"
       - "tests/test_fs1_flow_cohorts.py"
+      # FS-2 atlas builder (ops lane, off-render):
+      # atlas entrypoint, field guide, and test file.
+      - "scripts/ops_flow_atlas.py"
+      - "research/FLOW_SIGNAL_FIELD_GUIDE.md"
+      - "tests/test_fs2_flow_atlas.py"
       # FL-A EOD flow backfill (FC-R4/R11): backfill script, build_options_flow staleness
       # warning, and the test suite that pins idempotence + schema-variant handling.
       - "scripts/backfill_options_flow.py"
@@ -529,6 +551,9 @@ on:
       - "tests/test_admin_metabolism_ux.py"
       - ".github/workflows/metabolism-cycle.yml"
       - ".github/workflows/key-pool-probe.yml"
+      # achievements observability: per-cycle rollup from journals + verify + PR list.
+      - "tests/test_metabolism_achievements.py"
+      - ".github/workflows/metabolism-dream.yml"
       # admin live-runs feed: server-side snapshot for the live-runs panel.
       - "admin/live_runs.py"
       - "tests/test_admin_live_runs.py"
@@ -536,6 +561,14 @@ on:
       # Any change to the flow regime engine or test file re-proves the contract.
       - "engine/flow_regime.py"
       - "tests/test_flow_regime.py"
+      # CCW-W1 corporate credit watch data spine: bond holdings collector, issuer
+      # registry, FRED config adds. Any change to these files re-proves the contracts.
+      - "collectors/corp_bond_holdings.py"
+      - "data/corp_bonds/issuer_themes.json"
+      - "tests/test_corp_bond_holdings.py"
+      - "tests/test_fred_series_alias_conflicts.py"
+      - "tests/test_fred_baml_archive.py"
+      - "scripts/snapshot_fred_archive.py"
   workflow_dispatch:
 
 permissions:
@@ -815,10 +848,17 @@ jobs:
           tests/test_commodity_confluence.py
           tests/test_commodity_cycle_state.py
           tests/test_fear_euphoria.py tests/test_froth_fragility.py
+          tests/test_vol_velocity.py tests/test_fear_greed_honesty.py
+          tests/test_archive_context_snapshots.py
+          tests/test_ai_breadth_split.py
+          tests/test_vsb_surface.py
           tests/test_missing_tape.py tests/test_price_basis_flip.py
           tests/test_risk_lead_lag.py tests/test_anticipation.py
           tests/test_risk_radar_market_catalysts.py tests/test_risk_radar_recovery.py
           tests/test_risk_radar_scorecard.py
+          tests/test_vsb_radar_alert.py
+          tests/test_risk_state_live_copy_sync.py
+          tests/test_build_china_risk_state.py
           tests/test_canon.py tests/test_whitehouse_w5.py
           tests/test_winner_autopsy.py tests/test_admin_long_hold.py
           tests/test_falsifier_packet.py
@@ -851,6 +891,7 @@ jobs:
           tests/test_sa_w5_v2_grader_hook.py
           tests/test_w8b_macro_prior_entries.py
           tests/test_rr_scorecard_card.py
+          tests/test_engine_run_no_regress.py
           tests/test_cycles.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.
@@ -1272,6 +1313,9 @@ jobs:
     # fixtures/tmp_path and mock the network (FS-0 CI-null pattern).
     # Triggers on ops_flow_cohorts.py, flow_recon_ladder.yml, sample fixture,
     # test file, and all FS-0 seams (shared detector/grader).
+    # FS-2 atlas builder (ops lane, off-render):
+    # Covers Wilson CI, cohort-separation guard, n-floor labeling, accrual path,
+    # 0DTE index annotation, era hit-rate, premium decile, crowdedness.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -1282,6 +1326,8 @@ jobs:
         run: pip install pytest pytest-mock pandas numpy pyarrow pyyaml requests boto3
       - name: FS-1 flow cohorts unit tests
         run: python -m pytest tests/test_fs1_flow_cohorts.py -q
+      - name: FS-2 atlas builder unit tests
+        run: python -m pytest tests/test_fs2_flow_atlas.py -q
       - name: FS-0 downstream suite (shared seams)
         run: python -m pytest tests/test_flow_signals.py -q
 
@@ -1595,6 +1641,8 @@ jobs:
         run: python -m pytest tests/test_metabolism_throttle.py -q
       - name: metabolism V11 budget gate suite (auto-run gate verdicts + header parsing)
         run: python -m pytest tests/test_metabolism_budget_gate.py -q
+      - name: metabolism achievements observability suite (per-cycle rollup from journals + verify)
+        run: python -m pytest tests/test_metabolism_achievements.py -q
       - name: metabolism V10 key pool economy suite (enabled-set + header capture + usage snapshot)
         run: python -m pytest tests/test_key_pool_economy.py -q
       - name: metabolism V10 admin throttle suite (admin routes + UI bindings)
@@ -1981,3 +2029,27 @@ jobs:
         run: pip install pytest pandas numpy pyarrow
       - name: CBF regime classifier contract tests
         run: python -m pytest tests/test_flow_regime.py -v
+
+  ccw-w1-data-spine:
+    # CCW-W1 Corporate Credit Watch data spine:
+    #   collectors/corp_bond_holdings.py — bond XLSX parser (ISIN-keyed, not equity path)
+    #   data/corp_bonds/issuer_themes.json — issuer→theme registry v1
+    #   config.yml fred.series — no alias collisions in the new corp_credit + DGS20 adds
+    # Test coverage:
+    #   test_corp_bond_holdings.py — parser fixtures (header detection, ISIN/cusip6,
+    #                                numeric coercion, maturity parsing, keep-FIRST,
+    #                                schema columns, match-rate, CCW-UNMATCHED-HIGH-PAR
+    #                                alarm, registry round-trip)
+    #   test_fred_series_alias_conflicts.py — no duplicate aliases across all fred.series
+    #                                         groups (guards the KeyError outage)
+    # Zero network calls; all inputs are synthetic or committed files.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml openpyxl requests
+      - name: CCW-W1 bond holdings parser + registry + FRED alias tests
+        run: python -m pytest tests/test_corp_bond_holdings.py tests/test_fred_series_alias_conflicts.py tests/test_fred_baml_archive.py -v

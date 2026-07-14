@@ -4,3 +4,4 @@
 #         stock_result_pct, option_result_pct (null when no rec),
 #         days_held, plan_adherence, asof
 # Nightly is the SOLE advancer of this ledger.
+{"schema": "prophet.ledger/v1", "id": "KKR-BULL-20260318", "asset": "KKR", "direction": "BULL", "signal_date": "2026-03-18", "close_date": "2026-05-04", "outcome": "EXPIRED", "stock_result_pct": 6.4159, "option_result_pct": null, "days_held": 47, "plan_adherence": "nightly-auto: outcome=EXPIRED asset=KKR entry=96.91 inval=81.2 T1=120.475", "asof": "2026-07-14"}

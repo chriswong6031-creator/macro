@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "UBER-BULL-20260623",
-  "asof": "2026-07-13",
+  "asof": "2026-07-14",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 61.9,
-  "raw_confidence": 60.0,
-  "delta_vs_base": 1.9,
+  "management_confidence": 60.8,
+  "raw_confidence": 59.5,
+  "delta_vs_base": 0.8,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
     "validity": 100.0,
     "progress": 11.2,
-    "pace": 28.4,
+    "pace": 24.4,
     "retention": 50.0,
     "overlay": 47.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.136,
     "dist_to_t1_r": 1.364,
     "dist_to_t2_r": 2.864,
-    "horizon_pct_used": 44.4,
+    "horizon_pct_used": 46.7,
     "p1": 0.0905,
     "p2": 0.0453,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 20,
-  "tau": 0.4444
+  "days_elapsed": 21,
+  "tau": 0.4667
 }

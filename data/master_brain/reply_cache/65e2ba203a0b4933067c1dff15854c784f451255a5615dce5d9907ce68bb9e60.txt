@@ -1,0 +1,37 @@
+{
+  "regime_context": "Hong Kong is in a one-narrative regime with Tech Hardware & Semis as the sole dominant leader—eligible, durable, not crowded, and absorbing flow (absorption 0.55). All other themes are ineligible except three financials/income, none scorable. The absolute-trend gate is historically validated for drawdown control; use it as a sizing and staying-power filter rather than a return forecast.",
+  "theses": [
+    {
+      "subject": "Tech Hardware & Semis",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The theme holds a clear leadership position with absolute-trend eligibility (gate_helps true) and high durability (0.74, hurst=trend) in a one-narrative market. Maintaining an overweight aligns with the concentration of flow, while the gate provides a risk-management anchor to stay with the trend.",
+      "evidence": [
+        "headline one_narrative==true and rotation.directional==false — narrow flow leadership",
+        "headline.eligible==true and durability_bar==0.74 — passing the validated absolute-trend gate",
+        "headline.crowded==false — no sizing cap signal from crowding",
+        "gate_helps==true for this market — absolute-trend gate historically reduced drawdown/shake-out"
+      ],
+      "dissent": "Extreme concentration can reverse violently; the absolute-trend gate only trims downside after the trend breaks, it doesn't forecast returns, and the leading theme could roll over before a gate-flip triggers.",
+      "falsifier_text": "The theme's 'eligible' field flips to false (absolute-trend gate breaks) — this would invalidate the only validated protective leg and negate the overweight thesis."
+    },
+    {
+      "subject": "China Tech & Internet",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "This scorable theme is ineligible (durability 0.36, below trend-gate threshold) while the dominant narrative is concentrating elsewhere. Given the gate's validated drawdown-avoidance role, underweighting ineligible themes is a risk-control leaning to limit exposure to potential shake-outs.",
+      "evidence": [
+        "rank==3, eligible==false — theme did not pass the absolute-trend gate",
+        "durability_bar==0.36, hurst_tag==trend — insufficient durability to qualify",
+        "headline.one_narrative==true — flow is concentrating away from this theme",
+        "gate_helps==true — avoiding ineligible themes has historically reduced drawdown"
+      ],
+      "dissent": "China Tech & Internet could catch a policy or sentiment tailwind and rally sharply from an oversold condition, leaving the underweight behind without the gate protecting against upside.",
+      "falsifier_text": "The 'eligible' field flips to true and its durability improves materially (e.g., durability_bar > 0.5, ETF sustained above its 10-month moving average) — indicating the theme now qualifies under the absolute-trend gate."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

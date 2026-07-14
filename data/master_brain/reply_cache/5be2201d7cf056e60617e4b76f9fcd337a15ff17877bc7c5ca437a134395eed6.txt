@@ -1,0 +1,30 @@
+{
+  "stance": "The dominant cluster (Consumer Discretionary, Real Estate, Financials, Industrials) is mixed in cohesion; only Real Estate exhibits genuine internal co-movement, while the Industrials-Materials pair is highly correlated but both lack internal breadth, signaling a fragile link.",
+  "candidates": [
+    {
+      "subject": "Real Estate",
+      "lean": "overweight",
+      "rationale": "Sole sector in the dominant cluster with cohering=true and moderate cohesion (0.421), supported by broad, low-HHI leadership, indicating genuine theme spread.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Industrials",
+      "lean": "underweight",
+      "rationale": "Cohesion is very low (0.223) and cohering=false; its high correlation with Materials (0.82) likely reflects a narrow mirage rather than a durable supply-chain link.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Consumer Discretionary",
+      "lean": "avoid",
+      "rationale": "Part of dominant cluster but cohesion is falling (-0.03) and cohering=false; the group lacks internal conviction despite broad membership.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Utilities",
+      "lean": "overweight",
+      "rationale": "Highest sector cohesion (0.522) with cohering=true and broad, low-HHI leadership; represents a separate, robust co-movement outside the main cluster.",
+      "strength": "moderate"
+    }
+  ],
+  "key_risk": "A macro shock that abruptly alters cross-sector correlation structures would invalidate the current cluster and cohesion reads."
+}

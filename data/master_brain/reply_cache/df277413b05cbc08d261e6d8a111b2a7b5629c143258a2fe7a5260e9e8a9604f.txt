@@ -1,0 +1,97 @@
+{
+  "regime_context": "As of 2026-07-13, the US thematic rotation detector shows Memory, HBM & Storage as the clear leader (score 4.9, not crowded, mixed trend durability). Cybersecurity and AI Semiconductors are the main challengers. Rotation is broad (72% eligible), no single-narrative dominance, and the absolute-trend gate remains a validated risk control. The macro narrative is dominated by AI-tech and geopolitics with elevated unscheduled news. Track record is empty; all leans start from a default low-conviction baseline.",
+  "theses": [
+    {
+      "subject": "Memory, HBM & Storage",
+      "lean": "overweight",
+      "conviction": "medium",
+      "horizon_d": 20,
+      "thesis": "Leader with a wide margin (score 4.9, margin 3.5 over next), not crowded (cz -0.53), and absolute-trend gate supports risk control. The guardrails allow naming the prevailing leader as long as durability is judged; here breadth is moderate (0.5) and the trend is mixed, so conviction is not high.",
+      "evidence": [
+        "Narrative rotation leader with highest score 4.918 and largest margin",
+        "Not crowded: crowding_z -0.53, crowded=false",
+        "Absolute-trend gate validated as risk control",
+        "Broad rotation with 72% themes eligible supports continued participation"
+      ],
+      "dissent": "Crowding-skeptic: Not crowded, but the mixed hurst tag indicates trend durability is uncertain; a break of momentum could cause a sharp repricing, and the outsized lead may be a statistical outlier rather than a durable structural story.",
+      "falsifier_text": "If Memory’s score drops below 2.0 or its durability_bar falls below 0.5 within 20 trading days, the overweight thesis is invalid."
+    },
+    {
+      "subject": "AI Semiconductors",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 10,
+      "thesis": "Rank 3, trend-following signal (hurst=trend), not crowded, and durability 0.71. The narrow breadth (0.333) is a caution, but the absolute-trend gate allows a low-conviction overweight.",
+      "evidence": [
+        "Rank 3, positive score 1.445",
+        "Hurst tag = trend, durability_bar 0.71",
+        "Not crowded: crowding_z 0.23, crowded=false",
+        "Gate_helps true"
+      ],
+      "dissent": "Crowding-skeptic: No crowding objection, but extremely narrow breadth (0.333) means the theme is carried by a handful of stocks; if those names roll over, the entire theme can break without warning.",
+      "falsifier_text": "If breadth falls below 0.1 or score becomes negative, switch to underweight."
+    },
+    {
+      "subject": "Cybersecurity",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 10,
+      "thesis": "Rank 2 with a positive score, solid trend (hurst=trend), high durability (0.86) and very high breadth (0.9). However, extreme crowding (cz 2.15) signals overextended positioning; the lean is permitted but conviction is capped low per crowding-skeptic rules.",
+      "evidence": [
+        "Rank 2, score 1.463",
+        "Hurst = trend, durability_bar 0.86",
+        "Breadth 0.9",
+        "Absolute-trend gate helps"
+      ],
+      "dissent": "Crowding-skeptic: Crowding_z 2.15 is an extreme red flag; positioning is stretched, and any minor disappointment could trigger a swift synchronized unwind. Overweight only with very tight risk management.",
+      "falsifier_text": "If crowding_z rises above 2.5 or score turns negative, underweight."
+    },
+    {
+      "subject": "Managed Care & Insurers",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 15,
+      "thesis": "Rank 6 with a positive score, strong trend (trend tag), maximum breadth (1.0), and high durability (0.87). Copious participation suggests the trend is broad, but heavy crowding (cz 1.84) warrants low conviction and careful position sizing.",
+      "evidence": [
+        "Rank 6, score 0.975",
+        "Hurst = trend, durability_bar 0.87",
+        "Breadth 1.0",
+        "Gate_helps true"
+      ],
+      "dissent": "Crowding-skeptic: Crowding_z 1.84 and full 1.0 breadth signal that the theme is saturated; there is little room for incremental inflows to sustain the trend, and a rotation away could be abrupt.",
+      "falsifier_text": "If breadth falls below 0.7 or score drops below 0, move to underweight."
+    },
+    {
+      "subject": "Semiconductor Equipment (WFE)",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Rank 7 with a positive but modest score, yet crowded (cz 1.45) and exhibiting a mixed trend with a borderline durability_bar (0.53). The crowding-skeptic’s objection to being long in a crowded mixed-trend theme justifies an underweight (not a short per guardrails).",
+      "evidence": [
+        "Rank 7, score 0.95",
+        "Crowded: crowded=true, crowding_z 1.45",
+        "Hurst tag mixed, durability_bar 0.53",
+        "Modest breadth 0.375"
+      ],
+      "dissent": "Crowding-skeptic: Heavily crowded and with a fragile mixed trend pattern; the risk/reward of being long is poor, and underweight is the disciplined way to avoid a potential mean-reverting drawdown without attempting to fade the theme.",
+      "falsifier_text": "If crowding_z drops below 0.5 and score rises above 2.0, re-evaluate underweight."
+    },
+    {
+      "subject": "AI Software & Platforms",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 10,
+      "thesis": "Rank 12 with a barely positive score, a trend-following signal (trend tag), not crowded, and moderate breadth (0.529). The low conviction reflects the weak score and the fact that the theme is not yet a rotation leader; it serves as a low-size exposure to the AI software leg should it strengthen.",
+      "evidence": [
+        "Rank 12, score 0.13",
+        "Hurst = trend, durability_bar 0.68",
+        "Breadth 0.529, not crowded (cz 0.36)",
+        "Gate_helps true"
+      ],
+      "dissent": "Crowding-skeptic: Not crowded, but the score is barely positive and breadth is only moderate; this is a tentative trend, not a conviction call. The thesis could evaporate quickly with little warning.",
+      "falsifier_text": "If score falls below -0.1 or breadth drops below 0.3, remove overweight."
+    }
+  ],
+  "emerging_watch": "A loose cluster of crypto miners (CLSK, MARA), digital manufacturing (PRLB), and telecom (LUMN) shows rising cohesion (0.544, Δ+0.28). It may be an early whisper of a 'Crypto Mining & Digital Infrastructure' narrative, though it remains cross-sector and noisy. Kill criterion: if over the next 4 weeks the cluster’s cohesion falls below 0.45 or CLSK and MARA decouple (daily return correlation <0.5), abandon the hypothesis as statistical noise. This is a watch, not a call.",
+  "confidence": "low"
+}

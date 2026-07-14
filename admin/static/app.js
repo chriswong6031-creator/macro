@@ -364,7 +364,7 @@ function setActiveNav(id) {
 function setTopbarTitle(t) { const el = $("#topbar-title"); if (el) el.textContent = t; }
 
 function go(id) {
-  if (currentLobeId()) history.replaceState(null, "", location.pathname + location.search);
+  if (currentLobeId() || currentAnalyticsDetail()) history.replaceState(null, "", location.pathname + location.search);
   CURRENT = id;
   if (RT_TIMER)   { clearInterval(RT_TIMER);   RT_TIMER   = null; }
   if (LOOP_TIMER) { clearInterval(LOOP_TIMER); LOOP_TIMER = null; }
@@ -388,6 +388,8 @@ function backToObservatory() {
 function route() {
   const id = currentLobeId();
   if (id) { renderLobeDetail(id); return; }
+  const det = currentAnalyticsDetail();
+  if (det) { (det.kind === "session" ? renderSessionDetail : renderVisitorDetail)(det.id); return; }
   go(CURRENT || "overview");
 }
 window.addEventListener("hashchange", route);
@@ -646,47 +648,241 @@ RENDER.vector = async () => {
     </div>`;
 };
 
-/* ---- ANALYTICS (Umami) -------------------------------------------------- */
-RENDER.analytics = async () => {
-  const v = $("#view");
-  const st = await api("/api/analytics");
-  const dash = st.dashboard_url || "https://cloud.umami.is";
-  if (!st.configured) {
-    v.innerHTML = `
-      <div class="grid">
-        ${card("Visitor tracking", `<div class="big" style="color:var(--ok);font-size:20px">● Live</div><div class="sub">running on every page · site ID <code>${esc((st.website_id || "").slice(0, 8))}…</code></div>`)}
-        ${card("Live charts here", `<div class="big" style="color:var(--warn);font-size:18px">Not connected</div><div class="sub">${esc(st.reason || "")}</div>`)}
-        ${card("Full dashboard", `<div style="margin-top:6px"><a class="btn primary" href="${esc(dash)}" target="_blank" rel="noopener">Open Umami ↗</a></div>`)}
-      </div>
-      <div class="section">Show live charts on this page</div>
-      <div class="card"><ol class="steps">${(st.setup_steps || []).map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>`;
-    return;
-  }
-  v.innerHTML = `
+/* ---- ANALYTICS (first-party, self-hosted) ------------------------------------
+   Reads our own analytics_events / search_events / ip_geo via /api/analytics/fp/*.
+   Sub-tabs lazy-load each panel; Umami/GA4 remain as a third-party cross-check.
+   Session replay + visitor identity are hash sub-pages (#/session/… , #/visitor/…). */
+let AN = { tab: "overview", days: 7 };
+const AN_TABS = [["overview", "Overview"], ["pages", "Pages"], ["geo", "Map"], ["sessions", "Sessions"], ["flow", "Flow"], ["terminal", "Terminal"]];
+const AN_RENDER = {};
+
+function anNotReady(d) {
+  return `<div class="card"><h3>First-party analytics — not connected</h3>
+    <div class="sub">${esc(d.reason || d.error || "no data yet — the tracker + tables may not be live")}</div>
+    <ol class="steps" style="margin-top:10px">${(d.setup_steps || []).map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>`;
+}
+/* horizontal ranked bars. labelFn(row)->html, valKey numeric; opt.fmt, opt.sub(row)->html */
+function anBars(rows, labelFn, valKey, opt) {
+  opt = opt || {};
+  const fmt = opt.fmt || fmtNum;
+  const max = Math.max(1, ...rows.map(r => Number(r[valKey]) || 0));
+  return rows.map(r => {
+    const val = Number(r[valKey]) || 0;
+    const sub = opt.sub ? `<span class="an-bsub">${opt.sub(r)}</span>` : "";
+    return `<div class="an-brow"><div class="an-blabel">${labelFn(r)}${sub}</div>
+      <div class="an-btrack"><i style="width:${Math.round(val / max * 100)}%"></i></div><b class="an-bval">${fmt(val)}</b></div>`;
+  }).join("") || `<div class="muted sub">no data yet</div>`;
+}
+/* equirectangular dot map (no world GeoJSON dependency): dot per city by lat/lon, sized by visitors */
+function anDotMap(cities) {
+  const W = 720, H = 320;
+  const proj = (lat, lon) => [(Number(lon) + 180) / 360 * W, (90 - Number(lat)) / 180 * H];
+  const pts = cities.filter(c => c.lat != null && c.lon != null);
+  const max = Math.max(1, ...pts.map(c => c.visitors || 0));
+  let grid = "";
+  for (let lon = -180; lon <= 180; lon += 30) { const x = (lon + 180) / 360 * W; grid += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="var(--border)" stroke-width="0.5"/>`; }
+  for (let lat = -60; lat <= 60; lat += 30) { const y = (90 - lat) / 180 * H; grid += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>`; }
+  const dots = pts.map(c => {
+    const [x, y] = proj(c.lat, c.lon), r = 2 + Math.sqrt((c.visitors || 1) / max) * 11;
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="var(--accent)" fill-opacity="0.4" stroke="var(--accent)" stroke-width="0.8"><title>${esc((c.city || "?") + (c.country_code ? ", " + c.country_code : ""))}: ${fmtNum(c.visitors)} visitors</title></circle>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;background:var(--surface2);border-radius:var(--r-md)" role="img" aria-label="visitor city map">${grid}${dots}</svg>
+    <div class="sub" style="margin-top:6px">Equirectangular dot map · dot size = visitors · hover a dot for the city</div>`;
+}
+function anFlags(r) {
+  const f = [];
+  if (r.is_vpn) f.push('<span class="statpill s-warn">VPN</span>');
+  if (r.is_proxy) f.push('<span class="statpill s-warn">proxy</span>');
+  if (r.is_hosting) f.push('<span class="statpill s-mut">host</span>');
+  return f.join(" ") || '<span class="sub">—</span>';
+}
+function anTimelineRow(ev) {
+  const icon = { pageview: "◉", route: "→", ticker_view: "📈", search: "🔎", terminal_jump: "⤢", click: "·", scroll: "↕", session_start: "●", exit: "⏻", heartbeat: "·" }[ev.type] || "·";
+  const detail = ev.ticker ? `<b class="mono">${esc(ev.ticker)}</b>` : `<span class="mono">${esc(ev.path || "")}</span>`;
+  const dwell = ev.dwell_ms ? `<span class="an-tw">${(ev.dwell_ms / 1000).toFixed(1)}s</span>` : "";
+  const scr = (ev.scroll != null && ev.scroll !== "") ? `<span class="an-tw">${ev.scroll}%↕</span>` : "";
+  return `<div class="an-trow"><span class="an-tt mono">${esc(ev.t || "")}</span><span class="an-ti">${icon}</span><span class="an-ty">${esc(ev.type)}</span><span class="an-td">${detail}</span>${dwell}${scr}</div>`;
+}
+async function anLoad(sub) {
+  const body = $("#anBody"); if (!body) return;
+  body.innerHTML = `<div class="spin">loading…</div>`;
+  try { await (AN_RENDER[sub] || AN_RENDER.overview)(); }
+  catch (e) { body.innerHTML = card("Error", `<div class="sub">${esc(String((e && e.message) || e))}</div>`); }
+}
+async function anUmamiStrip() {
+  const c = $("#anUmamiCard"); if (!c) return;
+  try {
+    const st = await api("/api/analytics");
+    const dash = (st && st.dashboard_url) || "https://cloud.umami.is";
+    if (!st.configured) { c.innerHTML = `<div class="sub">Umami tag live on every page; the granular API needs a paid plan. GA4 is GFW-blocked for China. <a href="${esc(dash)}" target="_blank" rel="noopener">Open Umami ↗</a></div>`; return; }
+    const rep = await api("/api/analytics/report?days=7");
+    c.innerHTML = rep.ok
+      ? `<div class="sub">Umami (7d): <b>${fmtNum(rep.summary.visitors)}</b> visitors · <b>${fmtNum(rep.summary.pageviews)}</b> pageviews · <a href="${esc(dash)}" target="_blank" rel="noopener">dashboard ↗</a></div>`
+      : `<div class="sub">${esc(rep.error || "Umami not available")}</div>`;
+  } catch (e) { c.innerHTML = `<div class="sub muted">cross-check unavailable</div>`; }
+}
+
+AN_RENDER.overview = async () => {
+  const d = await api(`/api/analytics/fp/overview?days=${AN.days}`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  const w = d.window || {}, at = d.alltime || {}, daily = d.daily || [];
+  const maxV = Math.max(1, ...daily.map(x => x.visitors));
+  b.innerHTML = `
     <div class="grid">
-      ${card("Active now", `<div class="big" id="aNow">…</div><div class="sub">last 5 min</div>`)}
-      ${card("Visitors (7d)", `<div class="big" id="aVis">…</div><div class="sub" id="aVisits"></div>`)}
-      ${card("Pageviews (7d)", `<div class="big" id="aPv">…</div><div class="sub"><a href="${esc(dash)}" target="_blank" rel="noopener">dashboard ↗</a></div>`)}
+      ${card(`Visitors (${d.days}d)`, `<div class="big">${fmtNum(w.visitors)}</div><div class="sub">${fmtNum(at.visitors)} all-time</div>`)}
+      ${card(`Sessions (${d.days}d)`, `<div class="big">${fmtNum(w.sessions)}</div><div class="sub">${fmtNum(w.events)} events</div>`)}
+      ${card(`Pageviews (${d.days}d)`, `<div class="big">${fmtNum(w.pageviews)}</div><div class="sub">${fmtNum(w.ticker_views)} ticker views</div>`)}
+      ${card(`Searches (${d.days}d)`, `<div class="big">${fmtNum(w.searches)}</div><div class="sub">tickers searched</div>`)}
+    </div>
+    <div class="section">Visitors per day</div>
+    <div class="card"><div class="spark tall">${daily.map(x => `<i style="height:${Math.round(x.visitors / maxV * 100)}%" title="${esc(x.day)}: ${x.visitors} visitors · ${x.events} events"></i>`).join("") || "<span class='muted'>no data yet</span>"}</div></div>
+    <div class="section">By site</div>
+    <div class="card">${anBars(d.by_site || [], r => `<b>${esc(r.site || "—")}</b>`, "visitors", { sub: r => `${fmtNum(r.events)} events` })}</div>
+    <div class="section">Third-party cross-check</div>
+    <div class="card" id="anUmamiCard"><div class="sub">loading…</div></div>`;
+  anUmamiStrip();
+};
+AN_RENDER.pages = async () => {
+  const d = await api(`/api/analytics/fp/pages?days=${AN.days}&limit=40`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  const rows = d.pages || [];
+  b.innerHTML = `<div class="section">Top pages (${d.days}d) <span class="cnt">${rows.length}</span></div>
+    <table><thead><tr><th>Site</th><th>Path</th><th class="r">Views</th><th class="r">Visitors</th><th class="r">Avg dwell</th></tr></thead><tbody>
+    ${rows.map(r => `<tr><td class="sub">${esc(r.site || "")}</td><td class="mono">${esc(r.path || "")}</td><td class="r">${fmtNum(r.views)}</td><td class="r">${fmtNum(r.visitors)}</td><td class="r sub">${r.avg_dwell_ms ? (r.avg_dwell_ms / 1000).toFixed(1) + "s" : "—"}</td></tr>`).join("") || "<tr><td colspan='5' class='muted'>no data yet</td></tr>"}
+    </tbody></table>`;
+};
+AN_RENDER.geo = async () => {
+  const d = await api(`/api/analytics/fp/geo?days=${AN.days}&limit=250`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  const countries = d.countries || [], cities = d.cities || [];
+  const unresolved = countries.some(c => !c.country_code);
+  b.innerHTML = `<div class="card">${anDotMap(cities)}</div>
+    <div class="grid" style="margin-top:14px">
+      <div class="card"><h3>Countries (${d.days}d)</h3>${anBars(countries.slice(0, 15), r => `${esc(r.country || "—")}${r.country_code ? ` <span class="an-cc">${esc(r.country_code)}</span>` : ""}`, "visitors")}</div>
+      <div class="card"><h3>Cities</h3>${anBars(cities.slice(0, 15), r => `${esc(r.city || "—")}`, "visitors", { sub: r => esc(r.country_code || "") })}</div>
+    </div>
+    ${unresolved ? `<div class="sub" style="margin-top:10px">Some IPs aren't geolocated yet — the geo-enrich job backfills them every 30 min. <button class="btn" id="anGeoNow">Enrich now</button></div>` : ""}`;
+  const g = $("#anGeoNow");
+  if (g) g.onclick = async () => { g.disabled = true; g.textContent = "enriching…"; const r = await post("/api/analytics/fp/geo_enrich", { budget: 300 }); toast(r.ok ? "geo enriched" : (r.reason || "failed"), !r.ok); anLoad("geo"); };
+};
+AN_RENDER.sessions = async () => {
+  const d = await api(`/api/analytics/fp/sessions?limit=60`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  const rows = d.sessions || [];
+  b.innerHTML = `<div class="section">Recent sessions <span class="cnt">${rows.length}</span> <span class="sub">— click replay to see the exact path</span></div>
+    <table><thead><tr><th>Started</th><th>Visitor</th><th>Site</th><th>Location</th><th class="r">Pages</th><th class="r">Events</th><th class="r">Duration</th><th></th></tr></thead><tbody>
+    ${rows.map(s => `<tr><td class="mono sub">${esc(s.started || "")}</td>
+      <td><a class="mono" href="#/visitor/${encodeURIComponent(s.visitor_id || "")}">${esc((s.visitor_id || "—").slice(0, 8))}…</a></td>
+      <td class="sub">${esc(s.site || "")}</td>
+      <td class="sub">${esc(s.city || "—")}${s.country_code ? ", " + esc(s.country_code) : ""}</td>
+      <td class="r">${fmtNum(s.pages)}</td><td class="r">${fmtNum(s.events)}</td>
+      <td class="r sub">${s.duration_s != null ? fmtElapsedSec(s.duration_s) : "—"}</td>
+      <td><a class="btn sm" href="#/session/${encodeURIComponent(s.session_id || "")}">replay ▸</a></td></tr>`).join("") || "<tr><td colspan='8' class='muted'>no sessions yet</td></tr>"}
+    </tbody></table>`;
+};
+AN_RENDER.flow = async () => {
+  const d = await api(`/api/analytics/fp/flow?days=${AN.days}&limit=40`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  b.innerHTML = `<div class="section">Navigation patterns (${d.days}d) <span class="sub">— most common page-to-page moves across all visitors</span></div>
+    <div class="card">${anBars(d.edges || [], r => `<span class="mono an-from">${esc(r.from_path || "")}</span> <span class="an-arrow">→</span> <span class="mono an-to">${esc(r.to_path || "")}</span>`, "n")}</div>`;
+};
+AN_RENDER.terminal = async () => {
+  const d = await api(`/api/analytics/fp/terminal?days=${AN.days}&limit=25`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  const t = d.totals || {};
+  b.innerHTML = `<div class="grid">
+      ${card(`Ticker searches (${d.days}d)`, `<div class="big">${fmtNum(t.search_total)}</div><div class="sub">Terminal + macro nav search</div>`)}
+      ${card(`Ticker views (${d.days}d)`, `<div class="big">${fmtNum(t.view_total)}</div><div class="sub">charts opened</div>`)}
     </div>
     <div class="grid" style="margin-top:14px">
-      <div class="card"><h3>Top pages (7d)</h3><div id="aPages" class="sub">loading…</div></div>
-      <div class="card"><h3>Top countries (7d)</h3><div id="aCty" class="sub">loading…</div></div>
-      <div class="card"><h3>Top referrers (7d)</h3><div id="aRef" class="sub">loading…</div></div>
+      <div class="card"><h3>Most searched</h3>${anBars(d.top_searches || [], r => `<b class="mono">${esc(r.ticker || "")}</b>`, "searches", { sub: r => `${fmtNum(r.visitors)} visitors` })}</div>
+      <div class="card"><h3>Most viewed</h3>${anBars(d.top_views || [], r => `<b class="mono">${esc(r.ticker || "")}</b>`, "views", { sub: r => `${fmtNum(r.visitors)} visitors` })}</div>
     </div>`;
+};
+
+RENDER.analytics = async () => {
+  const v = $("#view");
+  v.innerHTML = `
+    <div class="an-bar">
+      <div class="an-tabs">${AN_TABS.map(([id, l]) => `<button class="an-tab${AN.tab === id ? " active" : ""}" data-at="${id}">${l}</button>`).join("")}</div>
+      <span class="an-spacer"></span>
+      <span class="pill an-live" title="visitors active in the last 5 minutes"><span class="led ok"></span>&nbsp;<b id="anLiveN">…</b>&nbsp;active</span>
+      <select id="anDays" class="an-days" title="time window"><option value="1">24h</option><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option></select>
+    </div>
+    <div id="anBody"><div class="spin">loading…</div></div>`;
+  $("#anDays").value = String(AN.days);
+  $("#anDays").onchange = (e) => { AN.days = parseInt(e.target.value, 10) || 7; anLoad(AN.tab); };
+  $(".an-tabs").addEventListener("click", (e) => {
+    const btn = e.target.closest(".an-tab"); if (!btn) return;
+    AN.tab = btn.dataset.at;
+    document.querySelectorAll(".an-tab").forEach(x => x.classList.toggle("active", x.dataset.at === AN.tab));
+    anLoad(AN.tab);
+  });
   const poll = async () => {
-    if (CURRENT !== "analytics" || !$("#aNow")) { if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; } return; }
-    const a = await api("/api/analytics/active"); const el = $("#aNow"); if (el) el.textContent = a.ok ? a.active : "—";
+    if (CURRENT !== "analytics" || !$("#anLiveN")) { if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; } return; }
+    try { const r = await api("/api/analytics/fp/realtime"); const el = $("#anLiveN"); if (el) el.textContent = r.ok ? fmtNum((r.active || {}).visitors) : "—"; } catch (e) {}
   };
   RT_TIMER = setInterval(poll, 15000); poll();
-  const rep = await api("/api/analytics/report?days=7");
-  if (rep.ok) {
-    $("#aVis").textContent = fmtNum(rep.summary.visitors); $("#aVisits").textContent = fmtNum(rep.summary.visits) + " visits";
-    $("#aPv").textContent = fmtNum(rep.summary.pageviews);
-    $("#aPages").innerHTML = (rep.top_pages || []).map(p => `<div class="kv"><span class="mono">${esc(p.path)}</span><b>${fmtNum(p.views)}</b></div>`).join("") || "<span class='muted'>none</span>";
-    $("#aCty").innerHTML = (rep.top_countries || []).map(c => `<div class="kv"><span>${esc(c.country)}</span><b>${fmtNum(c.visitors)}</b></div>`).join("") || "<span class='muted'>none</span>";
-    $("#aRef").innerHTML = (rep.top_referrers || []).map(r => `<div class="kv"><span class="mono">${esc(r.referrer)}</span><b>${fmtNum(r.visitors)}</b></div>`).join("") || "<span class='muted'>none</span>";
-  } else { $("#aPages").textContent = rep.error || "no data"; }
+  anLoad(AN.tab);
 };
+
+/* detail "pages" (hash-routed) — session replay + visitor identity */
+function currentAnalyticsDetail() {
+  let m = location.hash.match(/^#\/session\/(.+)$/); if (m) return { kind: "session", id: decodeURIComponent(m[1]) };
+  m = location.hash.match(/^#\/visitor\/(.+)$/); if (m) return { kind: "visitor", id: decodeURIComponent(m[1]) };
+  return null;
+}
+function anDetailHead(title) {
+  const head = h(`<div class="an-detail-head"><a class="btn" href="#" id="anBack">← Analytics</a><span class="an-detail-title">${title}</span></div>`);
+  return head;
+}
+async function renderSessionDetail(id) {
+  if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
+  CURRENT = "analytics"; setActiveNav("analytics"); setTopbarTitle("Session replay");
+  const v = $("#view");
+  v.innerHTML = `<div class="an-detail-head"><a class="btn" href="#" id="anBack">← Analytics</a><span class="an-detail-title">Session <code>${esc(id.slice(0, 12))}…</code></span></div><div id="anDet"><div class="spin">loading…</div></div>`;
+  $("#anBack").onclick = (e) => { e.preventDefault(); location.hash = ""; go("analytics"); };
+  const d = await api(`/api/analytics/fp/session?id=${encodeURIComponent(id)}`);
+  const det = $("#anDet");
+  if (!d.ok) { det.innerHTML = card("Session", `<div class="sub">${esc(d.reason || d.error || "not found")}</div>`); return; }
+  const head = d.head || {}, path = d.path || [];
+  det.innerHTML = `
+    <div class="grid">
+      ${card("Visitor", `<div class="big" style="font-size:15px"><a class="mono" href="#/visitor/${encodeURIComponent(head.visitor_id || "")}">${esc((head.visitor_id || "—").slice(0, 12))}…</a></div><div class="sub">${head.user_id ? "user " + esc(String(head.user_id).slice(0, 8)) : "anonymous"}</div>`)}
+      ${card("Origin", `<div class="big" style="font-size:15px">${esc(head.site || "—")}</div><div class="sub mono">${esc(head.ip || "")}</div>`)}
+      ${card("Events", `<div class="big">${fmtNum(path.length)}</div><div class="sub">ordered path below</div>`)}
+    </div>
+    <div class="section">Path (in order)</div>
+    <div class="an-timeline">${path.map(anTimelineRow).join("") || "<div class='muted sub'>no events</div>"}</div>`;
+}
+async function renderVisitorDetail(id) {
+  if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
+  CURRENT = "analytics"; setActiveNav("analytics"); setTopbarTitle("Visitor");
+  const v = $("#view");
+  v.innerHTML = `<div class="an-detail-head"><a class="btn" href="#" id="anBack">← Analytics</a><span class="an-detail-title">Visitor <code>${esc(id.slice(0, 12))}…</code></span></div><div id="anDet"><div class="spin">loading…</div></div>`;
+  $("#anBack").onclick = (e) => { e.preventDefault(); location.hash = ""; go("analytics"); };
+  const d = await api(`/api/analytics/fp/visitor?id=${encodeURIComponent(id)}`);
+  const det = $("#anDet");
+  if (!d.ok) { det.innerHTML = card("Visitor", `<div class="sub">${esc(d.reason || d.error || "not found")}</div>`); return; }
+  const p = d.profile || {}, ips = d.ips || [], linked = d.linked || [], recent = d.recent || [];
+  det.innerHTML = `
+    <div class="grid">
+      ${card("Identity", `<div class="big" style="font-size:15px">${p.user_id ? "user " + esc(String(p.user_id).slice(0, 8)) : "anonymous"}</div><div class="sub">first ${esc(String(p.first_seen || "").slice(0, 16))}</div>`)}
+      ${card("Activity", `<div class="big">${fmtNum(p.events)}</div><div class="sub">${fmtNum(p.sessions)} sessions</div>`)}
+      ${card("Devices / IPs", `<div class="big">${fmtNum(p.ips)}<span class="sub"> IPs</span></div><div class="sub">${fmtNum(p.fingerprints)} fingerprints</div>`)}
+      ${card("Linked identities", `<div class="big" style="color:${linked.length ? "var(--warn)" : "var(--text)"}">${fmtNum(linked.length)}</div><div class="sub">same device/IP, other cookie</div>`)}
+    </div>
+    <div class="section">IP addresses & location</div>
+    <table><thead><tr><th>IP</th><th>City</th><th>Country</th><th>Network</th><th>Flags</th><th class="r">Events</th></tr></thead><tbody>
+    ${ips.map(r => `<tr><td class="mono">${esc(r.ip || "")}</td><td>${esc(r.city || "—")}${r.region ? ", " + esc(r.region) : ""}</td><td>${esc(r.country_code || "—")}</td><td class="sub">${esc(r.org || r.asn || "—")}</td><td>${anFlags(r)}</td><td class="r">${fmtNum(r.events)}</td></tr>`).join("") || "<tr><td colspan='6' class='muted'>no IPs</td></tr>"}
+    </tbody></table>
+    ${linked.length ? `<div class="section">Linked visitors <span class="cnt">${linked.length}</span> <span class="sub">— same fingerprint or IP, different cookie (likely one person)</span></div>
+    <table><thead><tr><th>Visitor</th><th>Matched by</th><th class="r">Shared events</th></tr></thead><tbody>
+    ${linked.map(l => `<tr><td><a class="mono" href="#/visitor/${encodeURIComponent(l.visitor_id)}">${esc((l.visitor_id || "").slice(0, 12))}…</a></td><td>${l.via_fp ? '<span class="statpill s-warn">device</span> ' : ""}${l.via_ip ? '<span class="statpill s-mut">IP</span>' : ""}</td><td class="r">${fmtNum(l.shared_events)}</td></tr>`).join("")}
+    </tbody></table>` : ""}
+    <div class="section">Recent events</div>
+    <div class="an-timeline">${recent.map(ev => `<div class="an-trow"><span class="an-tt mono">${esc(ev.t || "")}</span><span class="an-ty">${esc(ev.type)}</span><span class="an-td">${ev.ticker ? `<b class="mono">${esc(ev.ticker)}</b>` : `<span class="mono">${esc(ev.path || "")}</span>`}</span></div>`).join("") || "<div class='muted sub'>none</div>"}</div>`;
+}
 
 /* ---- USERS (Supabase) --------------------------------------------------- */
 RENDER.users = async () => {
@@ -1217,8 +1413,8 @@ function nwSectionFactorIntelligence(fi) {
   const hyp = fi.hypotheses || {};
   const hypEntries = ["h1","h2","h3","h4","h5"].map(hi => {
     const s = (hyp[hi] || {}).status || "not-visible-in-tree";
-    const chipCls = s === "gate-passed" ? "s-ok" : s === "accruing" ? "s-warn" : "s-muted";
-    return `<div class="kv"><span>${hi.toUpperCase()}</span><b>${nwPill("BH-WITHHELD", "s-bad")} <span class="muted sub">(${esc(s)})</span></b></div>`;
+    const chipCls = s === "gate-passed" ? "s-ok" : s === "accruing" ? "s-warn" : "s-mut";
+    return `<div class="kv"><span>${hi.toUpperCase()}</span><b>${nwPill("BH-WITHHELD", "s-bad")} ${nwPill(s, chipCls)}</b></div>`;
   }).join("");
   html += card("Hypotheses H1–H5", `
     ${hypEntries}
@@ -1489,14 +1685,14 @@ function nwSectionEvidenceClock(ec) {
   const STATE_CLS = {
     overdue: "s-bad", due: "s-warn", human_review: "s-warn",
     missing: "s-bad", stale: "s-warn", blocked: "s-warn",
-    not_ready: "s-warn", promotion_eligible: "s-ok", accruing: "s-muted",
+    not_ready: "s-warn", promotion_eligible: "s-ok", accruing: "s-mut",
   };
 
   // Count chips — only non-zero states
   const allStates = ["overdue","due","human_review","missing","stale","blocked","not_ready","promotion_eligible","accruing"];
   let chips = allStates
     .filter(s => (by[s] || 0) > 0)
-    .map(s => `<span class="statpill ${STATE_CLS[s] || 's-muted'}">${esc(String(by[s] ?? 0))} ${esc(s.replace(/_/g," "))}</span>`)
+    .map(s => `<span class="statpill ${STATE_CLS[s] || 's-mut'}">${esc(String(by[s] ?? 0))} ${esc(s.replace(/_/g," "))}</span>`)
     .join(" ");
 
   let html = `<div class="card">
@@ -1513,10 +1709,10 @@ function nwSectionEvidenceClock(ec) {
         <th>Clock ID</th><th>State</th><th>Due</th><th>Owner</th><th>Blocking reason</th><th>Regen cmd</th>
       </tr></thead><tbody>
       ${queue.map(r => {
-        const stateCls = STATE_CLS[r.state] || "s-muted";
+        const stateCls = STATE_CLS[r.state] || "s-mut";
         const cmd = r.regenerate_cmd ? `<code style="font-size:11px">${esc(r.regenerate_cmd)}</code>` : `<span class="muted">—</span>`;
         return `<tr>
-          <td><b>${esc(r.clock_id || "")}</b>${r.acknowledged ? ' <span class="statpill s-muted">ack</span>' : ''}</td>
+          <td><b>${esc(r.clock_id || "")}</b>${r.acknowledged ? ' <span class="statpill s-mut">ack</span>' : ''}</td>
           <td><span class="statpill ${stateCls}">${esc(r.state || "")}</span></td>
           <td class="sub">${esc(r.due_at || "—")}</td>
           <td class="sub">${esc(r.owner_program || "—")}</td>
@@ -1726,7 +1922,7 @@ RENDER.orchestrator = async () => {
       <span class="statpill s-mut" title="lobes whose data contract is out of date">${hero.lobes_stale != null ? hero.lobes_stale : "—"}/${hero.lobes_total != null ? hero.lobes_total : "—"} stale feeds</span>
       <span class="statpill s-mut">${hero.what_changed_n != null ? hero.what_changed_n : "—"} changes</span>
       <span class="statpill ${ORCH_STATUS_CLS(cx.status)}" title="cortex status: ${esc(cx.status || "unknown")}">cortex ${esc(cortexWord(cx.status || "unknown"))}</span>
-      <span class="statpill ${hero.nudges_n ? "s-warn" : "s-mut"}">${hero.nudges_n || 0} bot nudge${hero.nudges_n === 1 ? "" : "s"}</span>
+      <span class="statpill ${hero.nudges_n ? "s-warn" : "s-mut"}" title="as ingested from the bot's last feedback artifact — may lag the Mastermind AI page">${hero.nudges_n || 0} bot nudge${hero.nudges_n === 1 ? "" : "s"}</span>
       <span class="statpill s-mut">${hero.directives_n || 0} directive${hero.directives_n === 1 ? "" : "s"}</span>
       <span class="statpill s-mut">feedback ${esc(hero.feedback_state || "absent")}</span>
     </div>
@@ -1810,7 +2006,7 @@ RENDER.orchestrator = async () => {
         </div>
         <div class="sub" style="margin-top:4px">${esc(dd.text || "")}</div>
       </div>`).join("")}` : ""}
-    <div class="note muted" style="margin-top:8px">New directives are composed on the <a href="#" id="orchToMai">Mastermind AI</a> page &mdash; the orchestrator only observes and acknowledges them.</div>`;
+    <div class="note muted" style="margin-top:8px">New directives are composed on the <a href="#" id="orchToMai">Mastermind AI</a> page — by hand in its composer, auto-drafted from open findings with its "⚡ Act on all findings" button, or queued automatically each cycle when its "Auto-act on findings" setting is on. The orchestrator only observes and acknowledges them.</div>`;
 
   const chatHtml = `<div class="section">Chat</div>
     <div class="sub muted" style="margin-bottom:8px">Ask Master Brain about its recent runs. Plain answers from the run log.</div>
@@ -1888,15 +2084,32 @@ RENDER.orchestrator = async () => {
 };
 
 /* ---- MASTERMIND AI (bot proxy) — W-AI ------------------------------------ */
-const MAI_SETTING_FIELDS = [
+const MAI_SETTING_FIELDS = [   /* [key, kind, label, note, min, max] — bounds mirror the bot's */
   ["loop_enabled", "bool", "Self-improvement loop", "Main switch for the bot's improvement loop."],
   ["llm_review", "bool", "LLM review", "Use the LLM for the every-N-loops review pass."],
-  ["review_every_n_loops", "int", "Review every N loops", "Roll-up review cadence."],
-  ["nudges_max", "int", "Max nudges", "Cap on coded nudges published to the macro repo."],
-  ["attribution_min_n", "int", "Attribution min n", "Minimum sample size before attribution claims."],
-  ["directives_max_open", "int", "Max open directives", "Cap on concurrently open operator directives."],
+  ["review_every_n_loops", "int", "Review every N loops", "Roll-up review cadence (2–50).", 2, 50],
+  ["nudges_max", "int", "Max nudges", "Cap on coded nudges published to the macro repo (1–10).", 1, 10],
+  ["attribution_min_n", "int", "Attribution min n", "Minimum sample size before attribution claims (6–100).", 6, 100],
+  ["directives_max_open", "int", "Max open directives", "Cap on concurrently open operator directives (1–10).", 1, 10],
+  ["directive_expiry_days", "int", "Directive expiry days", "Days a published directive waits for an acknowledgement before expiring (3–60).", 3, 60],
+  ["auto_act_on_findings", "bool", "Auto-act on findings", "Queue auto-drafted directives from open findings on every loop cycle — no button press needed."],
 ];
-const MAI_DIRECTIVE_CLS = { queued: "s-warn", published: "s-mut", acknowledged: "s-ok", done: "s-ok" };
+const MAI_DIRECTIVE_CLS = { queued: "s-warn", published: "s-mut", acknowledged: "s-ok", done: "s-ok", expired: "s-bad" };
+/* plain-English meanings for the bot's coded findings (nw_reflection.v1 nudge codes);
+   unknown codes fall back to the nudge's own detail string */
+const MAI_FINDING_MEANINGS = {
+  candidate_context_empty: "The candidate-context table is present but carries zero rows — the decision rules have nothing to read.",
+  fdr_cleared_absent: "No candidate is FDR-cleared, so every decision rule reading the web is inert.",
+  bottom_state_vocabulary_drift: "The web never says BOTTOMING/CONFIRMED, so above-WATCH candidacy boosts can never trigger.",
+  graph_conflicts_absent: "No candidate carries conflict data — the entry-shrink and clean-in-conflicted rules can never fire.",
+  graph_conflicts_sparse: "Almost no candidates carry conflict data — conflict-aware sizing stays dark.",
+  contradictions_empty: "The market lobe reports no contradiction records — the clean-in-conflicted tell is inert.",
+  liquidity_plumbing_absent: "The market lobe's liquidity block is empty.",
+  coverage_below_half: "Fewer than half of the names the bot decided on have a context row in the web.",
+  context_stale_streak: "The published context artifact has been stale for 3+ consecutive builds.",
+  context_absent_streak: "The published context artifact has been missing for 3+ consecutive builds.",
+  gap_notes_elevated: "The latest build carries several producer gap notes — upstream collectors skipped data.",
+};
 
 RENDER.mastermind_ai = async () => {
   const v = $("#view");
@@ -1934,31 +2147,37 @@ RENDER.mastermind_ai = async () => {
   const lastLoops = d.last_loops || [];
   const lastLoop = lastLoops[lastLoops.length - 1] || {};   /* status().last_loops is oldest-first */
   const refl = d.reflection || {};
+  const dia = d.dialogue;   /* status "dialogue" block — absent on older bots, degrade to "—" */
 
+  /* honest tri-state: never claim "loop on" when the bot didn't report the setting */
+  const loopPill = st.loop_enabled === true ? ["loop on", "s-ok"]
+    : st.loop_enabled === false ? ["loop off", "s-warn"] : ["loop ?", "s-mut"];
+  const nudgesN = refl.nudges != null ? (Array.isArray(refl.nudges) ? refl.nudges.length : refl.nudges) : null;
   const heroHtml = `<div class="mb-hero">
     <div class="mb-hero-top">
       <span class="mb-hero-kicker">Mastermind AI</span>
       <span class="mb-hero-name">Bot self-improvement loop</span>
-      <span class="statpill ${st.loop_enabled === false ? "s-warn" : "s-ok"}">${st.loop_enabled === false ? "loop off" : "loop on"}</span>
+      <span class="statpill ${loopPill[1]}">${loopPill[0]}</span>
       <span class="spacer"></span>
       <button class="btn primary" id="maiRun" title="POST /api/mastermind_ai/run — trigger one improvement cycle">▶ Run cycle now</button>
     </div>
     <div class="sub" style="margin-top:6px">${esc(lastLoop.summary || (d.last_review && d.last_review.summary) || "No loop summary reported yet.")}</div>
     <div class="mb-hero-chips">
       <span class="statpill s-mut">loop #${d.loop_n != null ? d.loop_n : "—"}</span>
-      ${refl.nudges != null ? `<span class="statpill ${(Array.isArray(refl.nudges) ? refl.nudges.length : refl.nudges) ? "s-warn" : "s-mut"}">${Array.isArray(refl.nudges) ? refl.nudges.length : refl.nudges} nudges</span>` : ""}
-      ${refl.contract_drift_n != null ? `<span class="statpill ${refl.contract_drift_n ? "s-bad" : "s-mut"}">${refl.contract_drift_n} contract drift</span>` : ""}
+      ${nudgesN != null ? `<span class="statpill ${nudgesN ? "s-warn" : "s-mut"}" title="coded fix-requests published to the NW orchestrator">${nudgesN} nudge${nudgesN === 1 ? "" : "s"}</span>` : ""}
+      ${refl.contract_drift_n != null ? `<span class="statpill ${refl.contract_drift_n ? "s-bad" : "s-mut"}" title="NW context fields the bot's decision rules need but cannot use">${refl.contract_drift_n} contract drift${refl.contract_drift_n === 1 ? "" : "s"}</span>` : ""}
       ${countChips(typeof flagsObj === "object" && !Array.isArray(flagsObj) ? flagsObj : null)}
     </div>
-  </div>`;
+  </div>
+  <div class="note muted" style="margin:0 0 20px;line-height:1.5">Every night the bot audits the Neural Web data it trades against. A contract-drift finding means a data field its decision rules consume is missing or dead in the published artifact. A nudge is the fix request it publishes back to the macro pipeline. Nudges flow out automatically. Formal directives are queued from open findings automatically each cycle when "Auto-act on findings" is on — or by hand via "Act on findings" / the composer below.</div>`;
 
-  const settingRow = ([key, kind, label, note]) => {
+  const settingRow = ([key, kind, label, note, lo, hi]) => {
     const val = st[key];
     if (kind === "bool")
       return `<div class="row"><label class="switch"><input type="checkbox" data-maiset="${key}" data-kind="bool" ${val ? "checked" : ""}><span class="slider"></span></label>
         <div><div class="lab">${esc(label)}</div><div class="note">${esc(note)} <code class="muted">${esc(key)}</code>${val == null ? ' <span class="tag inert">not reported</span>' : ""}</div></div></div>`;
     return `<div class="row"><div class="lab" style="min-width:220px">${esc(label)}</div>
-      <input type="number" data-maiset="${key}" data-kind="int" data-prev="${val != null ? val : ""}" value="${val != null ? val : ""}" style="width:86px">
+      <input type="number" data-maiset="${key}" data-kind="int" data-prev="${val != null ? val : ""}" value="${val != null ? val : ""}"${lo != null ? ` min="${lo}"` : ""}${hi != null ? ` max="${hi}"` : ""} style="width:86px">
       <div class="note">${esc(note)} <code class="muted">${esc(key)}</code></div></div>`;
   };
   const settingsHtml = `<div class="section">Settings <span class="cnt">bot-side</span></div>` + MAI_SETTING_FIELDS.map(settingRow).join("");
@@ -1973,7 +2192,7 @@ RENDER.mastermind_ai = async () => {
     const key = el.dataset.maiset;
     const value = el.dataset.kind === "bool" ? el.checked : Number(el.value);
     const r = await post("/api/mastermind_ai/settings", { settings: { [key]: value } });
-    if (r && !r.error && r.ok !== false) toast(`${key} → ${value}`);
+    if (r && !r.error && r.ok !== false) { el.dataset.prev = String(value); toast(`${key} → ${value}`); }
     else {
       if (el.dataset.kind === "bool") el.checked = !el.checked; else el.value = el.dataset.prev;
       toast((r && (r.error || r.detail)) || "settings update failed", true);
@@ -1997,15 +2216,12 @@ RENDER.mastermind_ai = async () => {
       runBtn.disabled = false;
       runBtn.textContent = "▶ Run cycle now";
       if (r && !r.error && r.ok !== false) {
-        /* Show inline success — no blind reload. */
-        const heroSub = v.querySelector(".mb-hero .sub");
-        if (heroSub) heroSub.textContent = "Cycle started — refresh to see updated loop log.";
-        toast("Cycle started");
-        /* Soft refresh of the data panels after a short delay. */
-        setTimeout(() => { if (CURRENT === "mastermind_ai") RENDER.mastermind_ai(); }, 2000);
+        /* Re-render only after the run resolved; surface the returned loop-row summary. */
+        toast(r.summary ? `Cycle done — ${orchTrunc(r.summary, 140)}` : "Cycle started");
+        if (CURRENT === "mastermind_ai") RENDER.mastermind_ai();
       } else {
         /* Show the server's error text inline under the button. */
-        const errMsg = (r && (r.error || r.detail)) || "run failed";
+        const errMsg = (r && (r.error || r.detail || r.skipped)) || "run failed";
         let errEl = v.querySelector("#maiRunErr");
         if (!errEl) {
           errEl = document.createElement("div");
@@ -2081,55 +2297,109 @@ RENDER.mastermind_ai = async () => {
 
   (async () => {
     const box = $("#maiReflection"); if (!box) return;
-    /* directive queue lives on the STATUS payload (rows {id,ts,text,status}) —
+    /* dialogue health — the status "dialogue" block (absent on older bots → no banner, "—" acks) */
+    const codesSeen = dia && dia.last_ack ? (dia.last_ack.nudge_codes_seen || []) : null;
+    const banner = dia && dia.counterparty === "absent"
+      ? `<div class="warn-banner"><span>⚠</span><div>One-way for now — the macro orchestrator has never acknowledged this dialogue (its ingest lane is not live yet). Nudges and directives still publish, but nothing comes back until the macro side ships.${dia.expired_n > 0 ? ` ${dia.expired_n} directive(s) expired unacknowledged.` : ""}</div></div>`
+      : "";
+    /* directive queue lives on the STATUS payload (rows {id,ts,text,status,source?}) —
        the raw nw_reflection.v1 artifact carries no directives key */
     const dirs = Array.isArray(d.directives) ? d.directives : [];
-    const dirsHtml = dirs.length
-      ? `<div class="section" style="margin-top:14px">Directives <span class="cnt">${dirs.length}</span></div>`
-        + dirs.map(dd => `<div class="card" style="margin-bottom:8px">
-            <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
-              <code>${esc(dd.id || "—")}</code><span class="sub">${esc(String(dd.ts || dd.created || "").slice(0, 16).replace("T", " "))}</span>
-              <span class="statpill ${MAI_DIRECTIVE_CLS[dd.status] || "s-mut"}">${esc(dd.status || "—")}</span>
-            </div>
-            <div class="sub" style="margin-top:4px">${esc(dd.text || "")}</div>
-          </div>`).join("")
-      : "";
+    const openN = dirs.filter(dd => dd.status === "queued" || dd.status === "published").length;
+    const srcChip = (dd) => {
+      const src = String(dd.source || "operator");
+      return src.startsWith("nudge:")
+        ? `<span class="statpill s-mut mono" title="auto-drafted from the ${esc(src.slice(6))} finding">auto: ${esc(src.slice(6))}</span>`
+        : `<span class="statpill s-mut">operator</span>`;
+    };
+    const dirsHtml = `<div class="card" style="margin-top:14px">
+      <div class="section" style="margin:0 0 8px">Operator directives <span class="cnt">${st.directives_max_open != null ? `${openN}/${st.directives_max_open} slots used` : `${openN} open`}</span></div>
+      ${dirs.length ? dirs.map(dd => `<div class="card" style="margin-bottom:8px">
+          <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
+            <code>${esc(dd.id || "—")}</code><span class="sub">${esc(String(dd.ts || dd.created || "").slice(0, 16).replace("T", " "))}</span>
+            <span class="statpill ${MAI_DIRECTIVE_CLS[dd.status] || "s-mut"}">${esc(dd.status || "—")}</span>
+            ${srcChip(dd)}
+          </div>
+          <div class="sub" style="margin-top:4px">${esc(dd.text || "")}</div>
+        </div>`).join("") : `<div class="sub muted">No directives queued.</div>`}
+      ${maiDirectiveComposer()}
+    </div>`;
     const d4 = await api("/api/mastermind_ai/reflection");
-    if (!d4 || d4.error) { box.innerHTML = `<div class="sub muted">reflection unavailable${d4 && d4.detail ? " — " + esc(orchTrunc(d4.detail, 120)) : ""}</div>` + dirsHtml + maiDirectiveComposer(); wireDirectiveComposer(box); return; }
+    if (!d4 || d4.error) { box.innerHTML = banner + `<div class="sub muted">reflection unavailable${d4 && d4.detail ? " — " + esc(orchTrunc(d4.detail, 120)) : ""}</div>` + dirsHtml; wireDirectiveComposer(box); return; }
     const nudges = d4.nudges || [];
-    let html = "";
+    const resolved = Array.isArray(d4.nudges_resolved_recent) ? d4.nudges_resolved_recent : [];
+    const ackCell = (code) => codesSeen === null ? `<span class="sub muted">—</span>`
+      : codesSeen.includes(code) ? `<span class="statpill s-ok">seen</span>` : `<span class="statpill s-mut">pending</span>`;
+    let html = banner;
+    html += `<div class="section" style="margin:0 0 8px">Data-contract findings
+      <span class="cnt">${nudges.length} open${resolved.length ? ` · ${resolved.length} resolved` : ""}</span>
+      ${nudges.length && st.auto_act_on_findings === true ? `<span class="statpill s-ok" title="auto_act_on_findings is on — every loop cycle queues directives from these automatically">auto-act on</span>` : ""}
+      ${nudges.length ? `<button class="btn" id="maiActAll" style="margin-left:auto">⚡ Act on all findings</button>` : ""}
+    </div>`;
     html += nudges.length
-      ? `<table><thead><tr><th>Code</th><th>Kind</th><th>Severity</th><th>Detail</th></tr></thead><tbody>
-        ${nudges.map(n => `<tr><td class="mono"><b>${esc(n.code || "—")}</b></td><td class="sub">${esc(n.kind || "—")}</td>
+      ? `<table><thead><tr><th>Finding</th><th>What it means</th><th>Severity</th><th>Since</th><th class="r">Builds</th><th>Ack</th><th></th></tr></thead><tbody>
+        ${nudges.map(n => {
+          const meaning = Object.prototype.hasOwnProperty.call(MAI_FINDING_MEANINGS, n.code) ? MAI_FINDING_MEANINGS[n.code] : "";
+          return `<tr>
+          <td class="mono"><b>${esc(n.code || "—")}</b></td>
+          <td class="sub" style="max-width:360px">${esc(meaning || n.detail || "—")}${meaning && n.detail ? `<div class="note muted mono" style="margin-top:2px" title="${esc(n.detail)}">${esc(orchTrunc(n.detail, 110))}</div>` : ""}</td>
           <td><span class="statpill ${NUDGE_SEV_CLS(n.severity)}">${esc(n.severity || "—")}</span></td>
-          <td class="sub" style="max-width:340px">${esc(n.detail || "")}</td></tr>`).join("")}</tbody></table>`
-      : `<div class="sub muted">No active nudges.</div>`;
+          <td class="sub mono">${esc(String(n.first_seen || "").slice(0, 10)) || "—"}</td>
+          <td class="r mono">${n.builds_seen != null ? n.builds_seen : "—"}</td>
+          <td>${ackCell(n.code)}</td>
+          <td><button class="btn mai-draft-btn" data-code="${esc(n.code || "")}">Draft directive</button></td>
+        </tr>`;
+        }).join("")}</tbody></table>`
+      : `<div class="sub muted">No open findings — the bot's last audit found every contract field it needs alive in the web.</div>`;
     const statChips = [];
     const driftN = (d4.contract_drift || []).length;   /* nw_reflection.v1: contract_drift is a LIST */
-    statChips.push(`<span class="statpill ${driftN ? "s-bad" : "s-mut"}">contract drift · ${driftN}</span>`);
+    statChips.push(`<span class="statpill ${driftN ? "s-bad" : "s-mut"}" title="from the latest reflection artifact">${driftN} contract drift${driftN === 1 ? "" : "s"}</span>`);
+    if (d4.nudges_dropped_n) statChips.push(`<span class="statpill s-warn" title="finding candidates cut by the max-nudges cap">${d4.nudges_dropped_n} dropped by cap</span>`);
     if (d4.coverage && typeof d4.coverage === "object") statChips.push(countChips(d4.coverage));
     else if (d4.coverage != null) statChips.push(`<span class="statpill s-mut">coverage · ${esc(String(d4.coverage))}</span>`);
     if (d4.context_quality != null) statChips.push(`<span class="statpill s-mut">context quality · ${esc(typeof d4.context_quality === "object" ? orchTrunc(JSON.stringify(d4.context_quality), 60) : String(d4.context_quality))}</span>`);
     if (d4.attribution != null) statChips.push(`<span class="statpill s-mut">attribution · ${esc(typeof d4.attribution === "object" ? orchTrunc(JSON.stringify(d4.attribution), 60) : String(d4.attribution))}</span>`);
     if (statChips.length) html += `<div style="margin-top:10px">${statChips.join(" ")}</div>`;
     html += dirsHtml;
-    html += maiDirectiveComposer();
     box.innerHTML = html;
     wireDirectiveComposer(box);
+    const actAll = $("#maiActAll", box);
+    if (actAll) actAll.onclick = () => maiActOnFindings(null, actAll);
+    box.querySelectorAll(".mai-draft-btn").forEach(b => b.onclick = () => maiActOnFindings([b.dataset.code], b));
   })();
 
   /* Live-loop strip poll (20s while on mastermind_ai tab). */
   startLoopPoll("mastermind_ai", "loopStripWrap", false);
 };
 
+/* POST /api/mastermind_ai/act_on_nudges — [] / null codes means "all open findings".
+   The bot auto-drafts one directive per finding (source "nudge:<code>"). */
+async function maiActOnFindings(codes, btn) {
+  if (!confirm("Queue auto-drafted directives for open findings? They publish to the orchestrator with the next snapshot (12:25 / 22:25 UTC).")) return;
+  if (btn) btn.disabled = true;
+  const r = await post("/api/mastermind_ai/act_on_nudges", codes && codes.length ? { codes } : {});
+  if (btn) btn.disabled = false;
+  if (r && r.ok) {
+    const q = (r.queued || []).length;
+    const skipped = (r.skipped || []).map(s => `${s.code}: ${s.reason}`).join("; ");
+    toast(`${q} directive(s) queued${skipped ? ` — skipped ${skipped}` : ""}`, q === 0);
+    if (CURRENT === "mastermind_ai") RENDER.mastermind_ai();
+  } else {
+    const msg = r && (r.error || r.detail);
+    /* an older bot has no /act_on_nudges route — the proxy passes FastAPI's 404 {"detail":"Not Found"} through */
+    toast(msg === "Not Found" ? "bot does not support act-on-findings yet — update the bot" : msg || "act on findings failed", true);
+  }
+}
+
 function maiDirectiveComposer() {
-  return `<div class="card" style="margin-top:14px">
+  /* rendered INSIDE the Operator directives card — a divider, not a nested card */
+  return `<div style="margin-top:12px;border-top:1px solid var(--grid);padding-top:12px">
     <div class="sub"><b>New directive</b> — a plain-English instruction the bot's reflection loop reads on its next cycle.</div>
     <div class="chat-input" style="margin-top:8px">
       <textarea id="maiDirText" rows="2" maxlength="280" placeholder="e.g. Stop citing the ETF lobe until its feed heals."></textarea>
       <button class="btn primary" id="maiDirSend">Send directive</button>
     </div>
-    <div class="note muted" style="margin-top:4px"><span id="maiDirCount">0</span>/280</div>
+    <div class="note muted" style="margin-top:4px"><span id="maiDirCount">0</span>/280 · Directives are read by the macro orchestrator on its nightly build — plain English, no secrets, no dollar amounts.</div>
   </div>`;
 }
 function wireDirectiveComposer(scope) {
@@ -2911,6 +3181,12 @@ RENDER.metabolism = async () => {
     <div class="card" id="metKeysCard"><div class="sub muted">Loading…</div></div>
     <div class="section">Recent Metabolism Runs <span class="cnt">${(d.runs || []).length}</span></div>
     <div class="card">${runsHtml}</div>
+    <div class="section">What the Loop Did</div>
+    <div class="card" id="metAchCard">
+      <div class="skeleton skeleton-text" style="width:60%"></div>
+      <div class="skeleton skeleton-text" style="width:80%"></div>
+      <div class="skeleton skeleton-text" style="width:50%"></div>
+    </div>
     <div class="section">Change History <span class="cnt" id="mhCnt"></span></div>
     <div class="card" id="mhCard">
       <div class="skeleton skeleton-text" style="width:60%"></div>
@@ -3086,6 +3362,123 @@ RENDER.metabolism = async () => {
     };
   }
 
+  // Async "What the Loop Did" achievements loader — does not block the panel above.
+  (async () => {
+    const achCard = $("#metAchCard");
+    if (!achCard) return;
+
+    // Format a relative time-ago string from an ISO timestamp.
+    const timeAgo = (ts) => {
+      try {
+        const diff = (Date.now() - new Date(ts).getTime()) / 3600000;
+        if (diff < 0.02) return "just now";
+        if (diff < 1) return `${Math.round(diff * 60)}m ago`;
+        if (diff < 24) return `${diff.toFixed(1)}h ago`;
+        return `${Math.round(diff / 24)}d ago`;
+      } catch(e) { return ""; }
+    };
+
+    // Stage name → plain-word label mapping (FIX 8: plain words; slug kept in title= on callers).
+    const stagePlain = (name) => {
+      const MAP = { agenda: "picked what to work on", sense: "sense",
+                    propose: "drafted ideas", adjudicate: "safety review",
+                    build: "opened PRs", verify: "verify" };
+      return MAP[String(name).toLowerCase()] || String(name);
+    };
+
+    // Status → pill class.
+    const statusCls = (s) => {
+      const m = { ok: "s-ok", authorized: "s-ok", denied: "s-bad", failed: "s-bad",
+                  warn: "s-warn", never_ruled: "s-mut", skipped: "s-mut", noop: "s-mut" };
+      return m[String(s).toLowerCase()] || "s-mut";
+    };
+
+    let ach;
+    try {
+      ach = await api("/api/metabolism/achievements");
+    } catch (e) {
+      const c = $("#metAchCard");
+      if (c) c.innerHTML = `<div class="sub muted">Could not load loop activity: ${esc(String(e))}</div>`;
+      return;
+    }
+
+    const c = $("#metAchCard");
+    if (!c) return;
+
+    if (ach && ach.error && ach.error.includes("not yet available")) {
+      c.innerHTML = `<div class="sub muted">No loop activity recorded yet.</div>`;
+      return;
+    }
+    if (ach && ach.error) {
+      c.innerHTML = `<div class="sub muted">Loop activity unavailable: ${esc(ach.error)}</div>`;
+      return;
+    }
+
+    const cycles = Array.isArray(ach && ach.cycles) ? ach.cycles : [];
+    if (!cycles.length) {
+      c.innerHTML = `<div class="sub muted">No loop activity recorded yet.</div>`;
+      return;
+    }
+
+    const cycleCards = cycles.map(cy => {
+      const hasBlocker = !!(cy.blocker_plain);
+      const headerCls = hasBlocker ? "border-left:3px solid var(--err,#e84855);padding-left:8px;" : "";
+      // FIX 2: timestamp is cy.started_at (not cy.ts which the composer never sets).
+      const ago = cy.started_at ? timeAgo(cy.started_at) : "";
+      const headline = esc(cy.headline_plain || cy.cycle_id || "cycle");
+      const blockerHtml = hasBlocker
+        ? `<div class="sub" style="color:var(--err,#e84855);margin-top:4px">${esc(cy.blocker_plain)}</div>`
+        : "";
+
+      // FIX 2: cy.lobes is a DICT {lobe: {proposed, authorized, denied, never_ruled, prs}}.
+      // Use Object.entries — not Array.isArray which always fails on a dict.
+      const lobeEntries = Object.entries(cy.lobes || {});
+      const lobeLines = lobeEntries.map(([lobeName, lb]) => {
+        const parts = [];
+        const n_proposed = lb.proposed || 0;
+        const n_authorized = lb.authorized || 0;
+        const n_denied = lb.denied || 0;
+        const n_never_ruled = lb.never_ruled || 0;
+        if (n_proposed) parts.push(`${n_proposed} proposed`);
+        if (n_authorized) parts.push(`→ <span class="statpill s-ok" style="font-size:11px">${n_authorized} authorized</span>`);
+        if (n_denied) parts.push(`→ <span class="statpill s-bad" style="font-size:11px">${n_denied} denied</span>`);
+        if (n_never_ruled) parts.push(`→ <span class="statpill s-mut" style="font-size:11px">${n_never_ruled} never ruled</span>`);
+        // PR links from lb.prs (array of URLs)
+        (lb.prs || []).forEach(url => {
+          if (url) {
+            parts.push(`<a href="${esc(url)}" target="_blank" rel="noopener">PR ↗</a>`);
+          }
+        });
+        const summary = parts.length ? parts.join(" · ") : "no activity";
+        return `<div class="sub" style="margin:3px 0"><b>${esc(lobeName)}</b>: ${summary}</div>`;
+      }).join("");
+
+      // Stage strip. FIX 2: stage notes use note_plain (not label which the composer never sets).
+      const stages = cy.stages || {};
+      const stageNames = ["agenda", "propose", "adjudicate", "build"];
+      const stageStrip = stageNames.map(sn => {
+        const st = stages[sn];
+        if (!st) return `<span class="statpill s-mut" title="${sn}" style="font-size:10px;opacity:0.5">${stagePlain(sn)}</span>`;
+        const cls = statusCls(st.status || "");
+        return `<span class="statpill ${cls}" title="${sn}" style="font-size:10px">${stagePlain(sn)}: ${esc(st.note_plain || st.status || "—")}</span>`;
+      }).join(" ");
+
+      return `<div style="margin-bottom:16px;padding:10px;background:var(--bg2,#1e1e2e);border-radius:6px">
+        <div style="${headerCls}">
+          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+            <span class="sub muted" style="font-size:11px">${esc(ago)}</span>
+            <span style="font-weight:600">${headline}</span>
+          </div>
+          ${blockerHtml}
+        </div>
+        ${lobeLines ? `<div style="margin-top:8px">${lobeLines}</div>` : ""}
+        ${stageStrip ? `<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">${stageStrip}</div>` : ""}
+      </div>`;
+    }).join("");
+
+    c.innerHTML = cycleCards;
+  })();
+
   // Async Change History loader — does not block the panel above.
   (async () => {
     const mhCard = $("#mhCard");
@@ -3100,14 +3493,14 @@ RENDER.metabolism = async () => {
     // Build timeline HTML for a filtered event list.
     const mhTimeline = (events) => {
       if (!events.length) {
-        return `<div class="empty"><div class="empty-icon">📜</div><div class="empty-text">No autonomous changes recorded yet.</div><div class="empty-sub">This feed fills as the loop runs — PRs authored, audits filed, lobe lifecycle events, and reverts will appear here.</div></div>`;
+        return `<div class="empty"><div class="empty-icon">&#x1f4dc;</div><div class="empty-text">No autonomous changes recorded yet.</div><div class="empty-sub">This feed fills as the loop runs — PRs authored, audits filed, lobe lifecycle events, and reverts will appear here.</div></div>`;
       }
       return `<div class="timeline">${events.map(ev => {
         const ts = esc((ev.ts || "").slice(0, 16).replace("T", " "));
         const titleLink = ev.url
-          ? `${esc(ev.title || "")} <a href="${esc(ev.url)}" target="_blank" rel="noopener">open ↗</a>`
+          ? `${esc(ev.title || "")} <a href="${esc(ev.url)}" target="_blank" rel="noopener">open &#x2197;</a>`
           : esc(ev.title || "");
-        const detail = esc(ev.detail || "") + (ev.ref ? " · " + esc(ev.ref) : "");
+        const detail = esc(ev.detail || "") + (ev.ref ? " \xb7 " + esc(ev.ref) : "");
         return `<div class="timeline-item">
           <div class="timeline-ts">${ts}</div>
           <div class="timeline-header"><span class="timeline-kind">${esc(ev.source || "")}</span> ${mhPill(ev)}</div>
@@ -3142,22 +3535,41 @@ RENDER.metabolism = async () => {
     // Gather active sources (count > 0) for pills.
     const activeSources = Object.entries(sources).filter(([, v]) => v && v.count > 0).map(([k, v]) => [k, v.count]);
     const total = allEvents.length;
+    const heartbeatCount = (sources.heartbeat && sources.heartbeat.count) || 0;
 
-    // Filter state — "all" or a source name.
+    // Filter state: "all" or a source name; heartbeats hidden by default.
     let activeFilter = "all";
+    let showHeartbeats = false;
 
-    const render = (filter) => {
+    const render = (filter, inclHeartbeats) => {
       const card2 = $("#mhCard");
       if (!card2) return;
-      const filtered = filter === "all" ? allEvents : allEvents.filter(ev => ev.source === filter);
+      // Apply heartbeat exclusion before source filter
+      const baseEvents = inclHeartbeats ? allEvents : allEvents.filter(ev => ev.source !== "heartbeat");
+      const baseTotal = baseEvents.length;
+      const filtered = filter === "all" ? baseEvents : baseEvents.filter(ev => ev.source === filter);
       const cnt = $("#mhCnt");
-      if (cnt) cnt.textContent = filter === "all" ? total : `${filtered.length}/${total}`;
+      if (cnt) cnt.textContent = filter === "all" ? baseTotal : `${filtered.length}/${baseTotal}`;
 
-      // Source filter pills.
+      // Source filter pills — skip heartbeat pill when excluded.
+      const visibleSources = inclHeartbeats
+        ? activeSources
+        : activeSources.filter(([src]) => src !== "heartbeat");
+
+      const hbToggleLabel = inclHeartbeats
+        ? `hide heartbeats (${heartbeatCount})`
+        : `show heartbeats (${heartbeatCount})`;
+      const hbToggleStyle = inclHeartbeats
+        ? "border:2px solid var(--accent);font-weight:700;"
+        : "";
+
       const pillsHtml = [
-        `<button class="btn" data-mhf="all" style="margin:0 4px 6px 0;font-size:12px;${filter === "all" ? "border:2px solid var(--accent);font-weight:700" : ""}">All ${total}</button>`,
-        ...activeSources.map(([src, cnt2]) =>
-          `<button class="btn" data-mhf="${esc(src)}" style="margin:0 4px 6px 0;font-size:12px;${filter === src ? "border:2px solid var(--accent);font-weight:700" : ""}">${esc(src)} ${cnt2}</button>`)
+        `<button class="btn" data-mhf="all" style="margin:0 4px 6px 0;font-size:12px;${filter === "all" ? "border:2px solid var(--accent);font-weight:700" : ""}">All ${baseTotal}</button>`,
+        ...visibleSources.map(([src, cnt2]) =>
+          `<button class="btn" data-mhf="${esc(src)}" style="margin:0 4px 6px 0;font-size:12px;${filter === src ? "border:2px solid var(--accent);font-weight:700" : ""}">${esc(src)} ${cnt2}</button>`),
+        heartbeatCount > 0
+          ? `<button class="btn" id="mhHbToggle" style="margin:0 4px 6px 0;font-size:12px;opacity:0.7;${hbToggleStyle}">${hbToggleLabel}</button>`
+          : ""
       ].join("");
 
       const phase0Banner = phase0
@@ -3169,13 +3581,24 @@ RENDER.metabolism = async () => {
 
       card2.innerHTML = `<div style="margin-bottom:8px">${pillsHtml}</div>${phase0Banner}${mhTimeline(filtered)}${notes}`;
 
-      // Bind filter pills.
+      // Bind source filter pills.
       card2.querySelectorAll("[data-mhf]").forEach(el => {
-        el.onclick = () => { activeFilter = el.dataset.mhf; render(activeFilter); };
+        el.onclick = () => { activeFilter = el.dataset.mhf; render(activeFilter, showHeartbeats); };
       });
+
+      // Bind heartbeat toggle.
+      const hbBtn = $("#mhHbToggle", card2);
+      if (hbBtn) {
+        hbBtn.onclick = () => {
+          showHeartbeats = !showHeartbeats;
+          // If user was filtering by heartbeat but hides them, reset to all.
+          if (!showHeartbeats && activeFilter === "heartbeat") activeFilter = "all";
+          render(activeFilter, showHeartbeats);
+        };
+      }
     };
 
-    render(activeFilter);
+    render(activeFilter, showHeartbeats);
   })();
 };
 

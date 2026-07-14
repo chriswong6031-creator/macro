@@ -1,14 +1,257 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-13T16:59:08.963577+00:00",
+  "generated_at": "2026-07-14T10:08:01.254405+00:00",
   "base": {
-    "sha": "e2be2da12aead047cc9dabe742b9c68b4a719242"
+    "sha": "af83a501ad4ba15aae17bf5ce115b589efea73f1"
   },
   "merged_days": 14,
   "merged_truncated": true,
-  "open_prs": [],
+  "open_prs": [
+    {
+      "number": 2536,
+      "title": "feat(flow-ml): FS-3 prereg \u2014 flow-score ML gauntlet registered before the trainer exists (FDR family 28\u219236)",
+      "head_ref": "claude/fs3-ml-prereg",
+      "updated_at": "2026-07-14T05:17:57Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE.md",
+        "research/OPTIONS_ALPHA_FLOW_SCORE_AMENDMENT.md",
+        "research/OPTIONS_ALPHA_MASTERPLAN.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2535,
+      "title": "\u7ea2\u6da8\u7eff\u8dcc: Chinese-mode colours for market-direction gauges + macro hero state-driven glance",
+      "head_ref": "claude/serene-goldwasser-2be9ab",
+      "updated_at": "2026-07-14T05:33:54Z",
+      "is_draft": true,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 34,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "site/allocation_scorecard.js",
+        "site/baskets_desk.js",
+        "site/live.js",
+        "site/macro.html",
+        "site/theme.css",
+        "site/wh_banner.js",
+        "templates/_mag7_panel.css.j2",
+        "templates/alerts.html.j2",
+        "templates/allocation.html.j2",
+        "templates/allocation_scorecard.js",
+        "templates/basket_detail.html.j2",
+        "templates/baskets.html.j2",
+        "templates/baskets_desk.js",
+        "templates/china_altdata.html.j2",
+        "templates/china_intel.html.j2",
+        "templates/china_narrative_radar.html.j2",
+        "templates/china_policy_watch.html.j2",
+        "templates/china_radar.html.j2",
+        "templates/china_sector_desk.html.j2",
+        "templates/china_strategies.html.j2",
+        "templates/dashboard.html.j2",
+        "templates/factors.html.j2",
+        "templates/forex.html.j2",
+        "templates/intraday_flow.html.j2",
+        "templates/leader_radar.html.j2",
+        "templates/live.js",
+        "templates/spr.html.j2",
+        "templates/spvector.html.j2",
+        "templates/subsectors.html.j2",
+        "templates/subsectors_china.html.j2",
+        "templates/tech_lab.html.j2",
+        "templates/theme.css",
+        "templates/wh_banner.js",
+        "templates/whitehouse.html.j2"
+      ],
+      "protected_paths_touched": []
+    }
+  ],
   "collisions": [],
   "recent_merged": [
+    {
+      "number": 2554,
+      "title": "feat(ccw): W1 data spine \u2014 SSGA bond-fund PIT store, issuer\u2192theme registry, FRED credit ladder + us20y",
+      "merged_at": "2026-07-14T09:02:30Z"
+    },
+    {
+      "number": 2553,
+      "title": "perf(nightly): split collect into core + collect_tail so engine starts ~30-75m earlier",
+      "merged_at": "2026-07-14T08:27:10Z"
+    },
+    {
+      "number": 2552,
+      "title": "docs(ccw): Corporate Credit Watch masterplan (W0) \u2014 corporate bond tracking by theme, g-spread + credit momentum (CCW-R1..R16)",
+      "merged_at": "2026-07-14T08:19:00Z"
+    },
+    {
+      "number": 2551,
+      "title": "perf(asia-close): parallelise the ~30-builder CN/HK chain \u2014 engine-job cluster bands",
+      "merged_at": "2026-07-14T08:16:26Z"
+    },
+    {
+      "number": 2550,
+      "title": "feat(oracle): factor (style) rotation \u2014 Tier-F Time Machine + event catalog",
+      "merged_at": "2026-07-14T08:16:45Z"
+    },
+    {
+      "number": 2549,
+      "title": "feat(china-live): intraday China risk-state fast path \u2014 live CN Market State on HKEX-window ticks",
+      "merged_at": "2026-07-14T09:05:21Z"
+    },
+    {
+      "number": 2548,
+      "title": "perf(collect): move OpenFIGI into the concurrent host-group phase (~10 min off nightly serial loop)",
+      "merged_at": "2026-07-14T07:48:28Z"
+    },
+    {
+      "number": 2547,
+      "title": "feat(admin): Mastermind AI auto-act-on-findings toggle + pill + copy",
+      "merged_at": "2026-07-14T07:46:20Z"
+    },
+    {
+      "number": 2546,
+      "title": "fix(earlyclose): coherent post-close window \u2014 regime no-regress guard + provisional snapshot pointers",
+      "merged_at": "2026-07-14T08:01:28Z"
+    },
+    {
+      "number": 2545,
+      "title": "Research: July 2026 market navigation playbook",
+      "merged_at": "2026-07-14T07:51:02Z"
+    },
+    {
+      "number": 2544,
+      "title": "feat(analytics): first-party analytics beacon + collector + admin dashboard",
+      "merged_at": "2026-07-14T07:20:01Z"
+    },
+    {
+      "number": 2543,
+      "title": "feat(macro): aurora backdrop follows the market-state color",
+      "merged_at": "2026-07-14T06:53:32Z"
+    },
+    {
+      "number": 2542,
+      "title": "feat(macro): live provisional point on the score-path chart + verdict-colored regime pill",
+      "merged_at": "2026-07-14T06:46:26Z"
+    },
+    {
+      "number": 2541,
+      "title": "feat(live): futures + China live quote tiles \u2014 same-origin DISPLAY snapshot feed",
+      "merged_at": "2026-07-14T06:43:57Z"
+    },
+    {
+      "number": 2540,
+      "title": "admin: Mastermind AI page clarity overhaul + act-on-findings",
+      "merged_at": "2026-07-14T06:33:51Z"
+    },
+    {
+      "number": 2539,
+      "title": "ops(runners): dedicated macstudio-light runner for live lanes \u2014 end 47-144m queue stalls",
+      "merged_at": "2026-07-14T06:08:09Z"
+    },
+    {
+      "number": 2538,
+      "title": "feat(vsb): W6 \u2014 accruing Tier-B radar legs + correlation floor-break alert",
+      "merged_at": "2026-07-14T05:31:46Z"
+    },
+    {
+      "number": 2537,
+      "title": "feat(vsb): W5 surface \u2014 vol-weather strip + AI-vs-the-rest panel (Market Sentiment dialog)",
+      "merged_at": "2026-07-14T05:30:48Z"
+    },
+    {
+      "number": 2534,
+      "title": "feat(vsb): W4 \u2014 AI-adjacency tag layer + decomposed breadth engine",
+      "merged_at": "2026-07-14T04:58:32Z"
+    },
+    {
+      "number": 2533,
+      "title": "feat(vsb): W2 \u2014 PIT context ledger columns (vol-suppression/bifurcation stack)",
+      "merged_at": "2026-07-14T04:56:45Z"
+    },
+    {
+      "number": 2532,
+      "title": "feat(flow-ml): FS-2 field guide + descriptive atlas \u2014 practice writeup, playbook priors, measured base rates",
+      "merged_at": "2026-07-14T05:15:32Z"
+    },
+    {
+      "number": 2531,
+      "title": "feat(vsb): W3+W5 \u2014 vol-weather organ (midrank percentiles) + fear_greed honesty fixes",
+      "merged_at": "2026-07-14T04:55:12Z"
+    },
+    {
+      "number": 2530,
+      "title": "fix(metabolism): achievements follow-ups \u2014 cycle grouping, cadence headlines, probe venv",
+      "merged_at": "2026-07-14T04:50:36Z"
+    },
+    {
+      "number": 2529,
+      "title": "fix(heatmap): faint tint for sub-threshold moves instead of grey",
+      "merged_at": "2026-07-14T04:49:06Z"
+    },
+    {
+      "number": 2528,
+      "title": "feat(vsb): W1 \u2014 CBOE cor/vol family collector (COR1M/COR3M/DSPX/VIX1D/VIXEQ) + freshness tripwire",
+      "merged_at": "2026-07-14T04:33:35Z"
+    },
+    {
+      "number": 2527,
+      "title": "docs(ric): Rates & Inflation Command grandmaster plan (W0) \u2014 RIC-R1..R15 + verified research pack",
+      "merged_at": "2026-07-14T04:27:18Z"
+    },
+    {
+      "number": 2526,
+      "title": "feat(metabolism): achievements observability \u2014 see what every loop and lobe actually did",
+      "merged_at": "2026-07-14T04:04:20Z"
+    },
+    {
+      "number": 2525,
+      "title": "research(vsb): Vol Suppression & AI Bifurcation masterplan (W0)",
+      "merged_at": "2026-07-14T04:01:15Z"
+    },
+    {
+      "number": 2524,
+      "title": "fix(macro): path-chart zone labels (Risk-on/Mixed/Risk-off) bleed past the plot edge",
+      "merged_at": "2026-07-14T03:55:48Z"
+    },
+    {
+      "number": 2523,
+      "title": "chore(neural-web): regen SIGNAL_BUS.md \u2014 heal doc drift from #2518",
+      "merged_at": "2026-07-14T04:07:30Z"
+    },
+    {
+      "number": 2522,
+      "title": "fix(alerts): remap v5-dead jump anchors to real homes \u2014 dlg-* dialogs + cross-page routing",
+      "merged_at": "2026-07-14T03:53:55Z"
+    },
+    {
+      "number": 2521,
+      "title": "fix(macro): live-patch all verdict-keyed copy + colors on the US score board",
+      "merged_at": "2026-07-14T03:42:15Z"
+    },
+    {
+      "number": 2520,
+      "title": "fix(fs1): tape_recon mid-sweep blip \u2014 bounded-backoff re-probe before abort",
+      "merged_at": "2026-07-14T03:25:12Z"
+    },
+    {
+      "number": 2519,
+      "title": "fix(bc2): html-unescape lines before validated-claim matching",
+      "merged_at": "2026-07-14T03:23:11Z"
+    },
+    {
+      "number": 2518,
+      "title": "feat(risk-radar): signal self-monitoring \u2014 forward-ledger scorecard \u2192 improvement loop + every dashboard",
+      "merged_at": "2026-07-14T03:10:47Z"
+    },
     {
       "number": 2517,
       "title": "ui(nav): mobile menu breathing room + animated back-to-top",
@@ -2333,181 +2576,6 @@
       "number": 2032,
       "title": "fix(chainheat): TCC-safe deploy worktree paths + nullable field coercion",
       "merged_at": "2026-07-09T14:01:05Z"
-    },
-    {
-      "number": 2031,
-      "title": "feat(cn-pick-lab): China Pick Lab \u2014 20 A-share candidate books + Reversion Desk flagship-2 + T+1/limit-honest ledgers (CNPL-R1..R12)",
-      "merged_at": "2026-07-09T14:16:31Z"
-    },
-    {
-      "number": 2030,
-      "title": "feat(tools): Slate \u2014 personal local-first task board",
-      "merged_at": "2026-07-09T13:43:17Z"
-    },
-    {
-      "number": 2029,
-      "title": "feat(flow-enrich): flow enrichment engine + publisher + launchd (pass4-h)",
-      "merged_at": "2026-07-09T13:58:13Z"
-    },
-    {
-      "number": 2028,
-      "title": "feat(flow): chain-heat publisher \u2014 fix stuck Loading chain heat card",
-      "merged_at": "2026-07-09T13:07:44Z"
-    },
-    {
-      "number": 2027,
-      "title": "docs(momoedge): Flow Intelligence v2 spec (detection grammar + calibrated tiers)",
-      "merged_at": "2026-07-09T12:53:10Z"
-    },
-    {
-      "number": 2026,
-      "title": "feat(momoedge): Polygon reference-universe cache \u2014 GICS sector + market cap (Pass4-B)",
-      "merged_at": "2026-07-09T14:01:53Z"
-    },
-    {
-      "number": 2025,
-      "title": "fix(prophet-marks): cd to repo root in loop script (ModuleNotFoundError)",
-      "merged_at": "2026-07-09T12:13:16Z"
-    },
-    {
-      "number": 2024,
-      "title": "feat(flow): UNUSUAL 30d vol baseline + VEX experimental field (Pass 4 Item F)",
-      "merged_at": "2026-07-09T12:21:32Z"
-    },
-    {
-      "number": 2023,
-      "title": "feat(ops): options-matrix launchd lane (PASS4-A)",
-      "merged_at": "2026-07-09T12:15:59Z"
-    },
-    {
-      "number": 2022,
-      "title": "feat(prophet): live-marks publisher + launchd job (Item E, Pass 4)",
-      "merged_at": "2026-07-09T12:09:40Z"
-    },
-    {
-      "number": 2021,
-      "title": "docs(momoedge): pass-4 open-items build docket",
-      "merged_at": "2026-07-09T11:57:10Z"
-    },
-    {
-      "number": 2020,
-      "title": "feat(pick-lab): US Pick Lab \u2014 20+3 candidate shadow books on forward entry ledgers + lab UI (PL-R1..R12)",
-      "merged_at": "2026-07-09T12:03:55Z"
-    },
-    {
-      "number": 2019,
-      "title": "fix(tests): exempt Jinja namespace attrs from bare-.items footgun guard",
-      "merged_at": "2026-07-09T10:43:29Z"
-    },
-    {
-      "number": 2018,
-      "title": "fix(policy-shock): W3 close-out \u2014 flip-card CSS (audit blocker) + PS-A3 + \u00a79 build record",
-      "merged_at": "2026-07-09T10:35:39Z"
-    },
-    {
-      "number": 2017,
-      "title": "feat(hk): dashboard UX overhaul \u2014 compact command panel, layout, simpler stock cards, combined southbound/A/H",
-      "merged_at": "2026-07-09T10:06:08Z"
-    },
-    {
-      "number": 2016,
-      "title": "feat(policy-lever): ARMED/QUIET lever card \u2014 Policy-Shock W2-F",
-      "merged_at": "2026-07-09T10:20:34Z"
-    },
-    {
-      "number": 2015,
-      "title": "feat(policy-shock): W2-E shock de-escalation protocol (D3)",
-      "merged_at": "2026-07-09T10:10:30Z"
-    },
-    {
-      "number": 2014,
-      "title": "fix(nw-pr2): silent producers + synthetic-fixture honesty + context_api relabel",
-      "merged_at": "2026-07-09T09:36:30Z"
-    },
-    {
-      "number": 2013,
-      "title": "feat(nw-r4): M2 deterministic attention + M1 Today's Read card in committee.html",
-      "merged_at": "2026-07-09T10:00:09Z"
-    },
-    {
-      "number": 2012,
-      "title": "feat(nw): M3 health escalation organ + synapse/owner hygiene (PR-3)",
-      "merged_at": "2026-07-09T09:51:28Z"
-    },
-    {
-      "number": 2011,
-      "title": "feat(cortex): resilience \u2014 429 backoff, Retry-After, fallback model, CORTEX_ANTHROPIC_API_KEY (PR-1)",
-      "merged_at": "2026-07-09T09:35:09Z"
-    },
-    {
-      "number": 2010,
-      "title": "feat(baskets-hk): see-more on all baskets + What-to-act-now capped at 4",
-      "merged_at": "2026-07-09T10:02:16Z"
-    },
-    {
-      "number": 2009,
-      "title": "feat(congress): clickable tickers \u2192 Terminal (stock.html)",
-      "merged_at": "2026-07-09T10:02:13Z"
-    },
-    {
-      "number": 2008,
-      "title": "feat(flip-confirmation): T+1 sector-flip confirmation lens + qledger family (policy-shock W1-C)",
-      "merged_at": "2026-07-09T10:19:05Z"
-    },
-    {
-      "number": 2007,
-      "title": "feat(commodities): technical_arming block \u2014 stoch + basing/coil detector (policy-shock W1-B)",
-      "merged_at": "2026-07-09T09:27:24Z"
-    },
-    {
-      "number": 2006,
-      "title": "feat(market-drivers): repricing_coherence derived key + intraday pass (W1-A)",
-      "merged_at": "2026-07-09T09:05:24Z"
-    },
-    {
-      "number": 2005,
-      "title": "feat(doctrine): policy-put doctrine + staleness chip + desk cadence 7d\u21923d",
-      "merged_at": "2026-07-09T09:04:26Z"
-    },
-    {
-      "number": 2004,
-      "title": "hub: rename \"Vectors & strategies\" band to \"Other Features\"",
-      "merged_at": "2026-07-09T09:02:28Z"
-    },
-    {
-      "number": 2003,
-      "title": "docs(policy-shock): Policy-Shock Regime masterplan (W0) \u2014 PS-R1..R9 + kill-registry append",
-      "merged_at": "2026-07-09T08:52:38Z"
-    },
-    {
-      "number": 2002,
-      "title": "fix(oracle-tm): rebuild + commit Rotation Time Machine feed nightly (off-render job)",
-      "merged_at": "2026-07-09T08:41:28Z"
-    },
-    {
-      "number": 2001,
-      "title": "fix(hk): Market State front board back to top-of-page (above command panel + organs)",
-      "merged_at": "2026-07-09T08:15:45Z"
-    },
-    {
-      "number": 2000,
-      "title": "feat(sector-central): see-more clamp on rotation panels + click-to-zoom-out on rotation map",
-      "merged_at": "2026-07-09T08:13:40Z"
-    },
-    {
-      "number": 1999,
-      "title": "feat(causal): CHF W3 \u2014 live scout loop: target panels + frontier + weekly bounded battery + nightly causal job",
-      "merged_at": "2026-07-09T19:30:52Z"
-    },
-    {
-      "number": 1998,
-      "title": "feat(til-w1): theme thesis ledger \u2014 curated 18-theme registry + falsifier evaluator",
-      "merged_at": "2026-07-09T08:02:29Z"
-    },
-    {
-      "number": 1997,
-      "title": "feat(til): W3 per-leg asymmetry panel (PR-E)",
-      "merged_at": "2026-07-09T08:02:36Z"
     }
   ]
 }

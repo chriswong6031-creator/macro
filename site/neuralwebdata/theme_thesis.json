@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-07-13",
-  "generated_at": "2026-07-13T17:39:18Z",
+  "as_of": "2026-07-14",
+  "generated_at": "2026-07-14T09:51:04Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -28,10 +28,10 @@
   "theses": [
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-14",
       "thesis_id": "ai_semiconductors.v1",
-      "content_hash": "sha256:eb7cb1aa698925e91076191589fd054bfced7288b29ad25d351f5381f09f316b",
-      "prev_content_hash": "sha256:62c785c3e23322cde69b6ebdfd8e8618ea41b9ab8d132fda5b2026ac93780fe5",
+      "content_hash": "sha256:481d065df7f52fcd0145beb489717f7d0c87727ae7355e347bacb9cdd90c6aac",
+      "prev_content_hash": "sha256:eb7cb1aa698925e91076191589fd054bfced7288b29ad25d351f5381f09f316b",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -109,7 +109,7 @@
           "rule_en": "If crowding on the ai_semiconductors or ai_infra basket exceeds 0.7 (z-score), the risk-adjusted opportunity is diminished — variant perception has become consensus.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.583"
+          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.492"
         },
         {
           "id": "ai_semi_f4",
@@ -214,10 +214,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-14",
       "thesis_id": "semicap_equipment.v1",
-      "content_hash": "sha256:f4075bb879557b853ef482cdc38571428a9476e8a9809e0397fbc98ff5ace9fd",
-      "prev_content_hash": "sha256:8056c22c346cc72ee06221249890c13b82f9f7b3a6ff1392a05c0fa179be9c5e",
+      "content_hash": "sha256:ecf39c67f19db5fdb4a9ea6e7649b1f6b278fbdadd6685108ca15c8cf93f338f",
+      "prev_content_hash": "sha256:f4075bb879557b853ef482cdc38571428a9476e8a9809e0397fbc98ff5ace9fd",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -272,7 +272,7 @@
           "rule_en": "If revision_breadth for semicap_equipment turns negative, foundry capex guidance is being cut and WFE order book is deteriorating.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.873"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.879"
         },
         {
           "id": "wfe_f2",
@@ -465,10 +465,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-12",
+      "as_of": "2026-07-14",
       "thesis_id": "robotics_automation.v1",
-      "content_hash": "sha256:d279f788f15e1f2d42e6a56be140e2aaa72f05e54f44bad0e30cb181c063069d",
-      "prev_content_hash": "sha256:cee5edb532db1570ce945ac4553682438eca3fa08be652f8215d4c4628a3cef6",
+      "content_hash": "sha256:86f7fc5dde36c547e114314498c428d4968904d433692dfcdd6d8b7614c5ace8",
+      "prev_content_hash": "sha256:d279f788f15e1f2d42e6a56be140e2aaa72f05e54f44bad0e30cb181c063069d",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -534,7 +534,7 @@
           "rule_en": "If reshoring basket score falls below 30 or moves to 'avoid' label, the industrial-capex driver underpinning automation demand is weakening.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=52.0"
+          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=42.0"
         },
         {
           "id": "robo_f3",
@@ -892,10 +892,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-14",
       "thesis_id": "defense_aerospace.v1",
-      "content_hash": "sha256:0b55f1ba9acb6da02e6a00f7b69e1736b1e08395383060f6b138224f74acf0f7",
-      "prev_content_hash": "sha256:8d474697da18930fcd09aa042c5c08d6cd3fe9cd73cd805b947f28818bcb2cd5",
+      "content_hash": "sha256:1ad41070bcb3a203262824ac29d6551daf6d084867ad9ef8a0b67702f7e4ed77",
+      "prev_content_hash": "sha256:0b55f1ba9acb6da02e6a00f7b69e1736b1e08395383060f6b138224f74acf0f7",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -953,7 +953,7 @@
           "rule_en": "If revision_breadth for defense_aerospace falls below 0.0, budget headwinds or program cancellations are spreading through earnings revisions.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.393"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.398"
         },
         {
           "id": "def_f2",
@@ -1457,10 +1457,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-14",
       "thesis_id": "space_satellite.v1",
-      "content_hash": "sha256:c1c6e9059f40c97918df3d6a3108ba30834ff49c9858c35ef6edd661a2d7bfc8",
-      "prev_content_hash": null,
+      "content_hash": "sha256:2d8f056ad3b38f7d4a241b64ae0094e21654acc324d28cf3fa5f48ba6023d75f",
+      "prev_content_hash": "sha256:c1c6e9059f40c97918df3d6a3108ba30834ff49c9858c35ef6edd661a2d7bfc8",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1514,7 +1514,7 @@
           "rule_en": "If revision_breadth for space_satellite falls below 0.0, earnings estimates are cutting — commercial ramp is not meeting expectations.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.629"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.537"
         },
         {
           "id": "sat_f2",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-13T17:39:18Z",
-  "inputs_hash": "sha256:84aadf12acb3d876959398d34ffa2f4e7b22644d483bafa79b1ee0e9b2e6bad7",
+  "produced_at": "2026-07-14T09:51:04Z",
+  "inputs_hash": "sha256:1f024cad52f7bcaa72e9af0660a203e2d1f65b155e1d2402256b0a18776d1393",
   "tier": "display"
 }

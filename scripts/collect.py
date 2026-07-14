@@ -64,6 +64,15 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     "federal_register": "federalregister",  # federalregister.gov — distinct host, runs in parallel
     "cleveland_nowcast": "clevelandfed",    # clevelandfed.org — distinct host, runs in parallel (MRI-PR-A)
     "kalshi_releases": "kalshi",           # api.elections.kalshi.com — keyless, distinct host (MRI PR-K)
+    # api.openfigi.com — keyless CUSIP→ticker mapper, pure requests.post with its own
+    # in-adapter pacing (25 req/min keyless => ~10 min when a mapping backlog exists).
+    # Writes only data/openfigi/*. It READS data/smart_money/ snapshots (written by
+    # edgar_13f in the 'sec' group), but that's safe to overlap: snapshots are
+    # immutable-once-written, every snapshot read is try/except-skipped, and the old
+    # serial slot ran BEFORE the concurrent 'sec' refresh anyway — same-night 13F
+    # lines were never visible to it; unmapped CUSIPs retry next nightly (cache is
+    # idempotent, stale_after_days=30).
+    "openfigi": "openfigi",
     # Asia-lane pure-REST movers (2026-07-11 runtime diet; #2193 timeout incident).
     # Verified requests-only (no akshare/yfinance), each writes its own store; the two
     # CBBC adapters share the HKEX host so they stay serial within one group. Moving
@@ -118,6 +127,7 @@ def all_adapters() -> dict:
         ("cboe_gex", "collectors.cboe", "GexAdapter"),
         ("cboe_skew", "collectors.cboe_indices", "CboeSkewAdapter"),   # tail-risk index (research/QUANT_FACTOR_EXPANSION.md)
         ("cboe_vvix", "collectors.cboe_indices", "CboeVvixAdapter"),   # vol-of-vol 2006+ -> engine/vol_regime VVIX-VIX leg (research/VOL_REGIME_DATA_ACCRUAL.md)
+        ("cboe_cor_vol", "collectors.cboe_indices", "CboeCorVolAdapter"),  # COR1M/COR3M 2006+ implied correlation + DSPX/VIXEQ/VIX1D — persist-only (VSB W1; replaces the silently-dead yahoo ^COR1M/^COR3M)
         ("cboe_vix_futures", "collectors.cboe_vix_futures", "CboeVixFuturesAdapter"),  # front VX settle (sanitizer) + full M1..M6 curve (forward-accruing; research/VOL_REGIME_DATA_ACCRUAL.md)
         ("fedboard_ebp", "collectors.fedboard", "EbpAdapter"),         # Excess Bond Premium (credit risk-appetite)
         ("sovereign", "collectors.sovereign", "SovereignAdapter"),     # ECB euro-area + JGB sovereign yields (Bonds Phase 5)
@@ -138,6 +148,7 @@ def all_adapters() -> dict:
         ("broad_flows", "collectors.sponsors", "BroadFlowAdapter"),   # RLT-R3: SPY/QQQ/IWM/RSP/DIA creation/redemption proxy
         ("holdings", "collectors.holdings", "HoldingsAdapter"),
         ("etf_holdings", "collectors.etf_holdings", "EtfHoldingsAdapter"),
+        ("corp_bond_holdings", "collectors.corp_bond_holdings", "CorpBondHoldingsAdapter"),  # CCW-W1: SSGA bond-fund PIT store (SPSB/SPIB/SPLB/JNK/SPHY) + issuer match-rate alarm
         ("sector_holdings", "collectors.sector_holdings", "SectorHoldingsAdapter"),
         ("stock_prices", "collectors.sector_holdings", "StockPriceAdapter"),
         ("fundamentals", "collectors.fundamentals", "FundamentalsAdapter"),
@@ -445,6 +456,10 @@ def main() -> int:
                     help="run everything EXCEPT collectors in this named shard group")
     ap.add_argument("--skip-quality", action="store_true",
                     help="skip the end-of-collection data-quality audit gate")
+    ap.add_argument("--skip-shadow-importance", action="store_true",
+                    help="skip the shadow_importance_v0 + _pit passes (~13-14 min); "
+                         "daily.yml collect-core sets this — the passes run standalone "
+                         "in the collect_tail job so the engine job starts earlier")
     args = ap.parse_args()
 
     registry = all_adapters()
@@ -745,6 +760,17 @@ def main() -> int:
         results, status.get("circuit_breaker_probe"))
     store.write_status(status)
 
+    # VSB W1a: store-level freshness/row-floor tripwire for the CBOE cor/vol family.
+    # Catches the failure mode detect_stale_series cannot see — an expected series that
+    # never lands in the store at all (the yahoo ^COR1M/^COR3M silent 1-row stub).
+    # Runs AFTER write_status so its stale_series entries survive the merge. Warn-only.
+    if "cboe_cor_vol" in registry:
+        try:
+            from collectors.cboe_indices import check_cor_vol_freshness
+            check_cor_vol_freshness()
+        except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
+            log.warning("cor/vol freshness tripwire crashed (non-fatal): %s", e)
+
     ok = sum(1 for r in results if r.status in ("ok", "stale"))
     log.info("collection done: %d/%d sources usable", ok, len(results))
 
@@ -774,14 +800,24 @@ def main() -> int:
         run_quality_audits()
 
     # importance_v0 SHADOW lane (W3) — score the qbus store + register the
-    # novelty-first challenger's HIGH/LOW band claims BEFORE the grader so the
-    # same-night grade pass picks them up. Shadow-only; never rendered. Non-fatal.
+    # novelty-first challenger's HIGH/LOW band claims. Shadow-only; never rendered.
+    # Non-fatal. NOTE the ordering vs grade_qledger below is NOT load-bearing:
+    # the grader only grades claims matured >= 5 days (engine/qledger._matured),
+    # so a claim registered after tonight's grade pass is simply picked up on a
+    # later night with identical arithmetic.
     # us_scope-gated (asia-lane diet): both passes score the FULL US+CN store
     # (~13 min combined measured on run 29089281652) and the nightly lane re-runs
     # them over the same committed store a few hours later with identical
     # item-asof timestamps and idempotent claim ids — the asia shard was paying
     # 13 min for work the nightly redoes anyway.
-    if us_scope:
+    # --skip-shadow-importance (2026-07-14 collect split): daily.yml's collect-core
+    # job skips the ~13-14 min passes here; they run standalone in the sibling
+    # collect_tail job over the same committed qbus store, off the engine's
+    # critical path.
+    if args.skip_shadow_importance:
+        log.info("[shadow_importance] skipped (--skip-shadow-importance) — "
+                 "runs standalone in the collect_tail job")
+    elif us_scope:
         try:
             from scripts.shadow_importance_v0 import run_as_collect_step as _shadow_impv0
             _shadow_impv0()

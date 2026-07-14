@@ -1,8 +1,8 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-07-13",
-  "n_events_logged": 42,
+  "asof": "2026-07-14",
+  "n_events_logged": 53,
   "n_events_graded": 0,
   "classes": [
     {
@@ -21,7 +21,7 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 5,
+      "n": 7,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -34,7 +34,7 @@
     {
       "event_type": "equity_offering",
       "direction": "bearish",
-      "n": 2,
+      "n": 3,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -60,7 +60,7 @@
     {
       "event_type": "litigation",
       "direction": "bearish",
-      "n": 21,
+      "n": 24,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -99,7 +99,7 @@
     {
       "event_type": "mna_confirmed",
       "direction": "bullish",
-      "n": 1,
+      "n": 2,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -112,7 +112,7 @@
     {
       "event_type": "policy_trade_control",
       "direction": "mixed",
-      "n": 2,
+      "n": 4,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -147,10 +147,23 @@
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "insufficient"
+    },
+    {
+      "event_type": "regulatory_probe",
+      "direction": "bearish",
+      "n": 2,
+      "n_graded": 0,
+      "hit_5d": null,
+      "hit_21d": null,
+      "avg_rel_5d": null,
+      "avg_rel_21d": null,
+      "wilson_low_5d": null,
+      "wilson_high_5d": null,
+      "verdict": "insufficient"
     }
   ],
   "reject_audit": {
-    "n_sampled": 155,
+    "n_sampled": 169,
     "n_graded": 0,
     "classes": []
   }

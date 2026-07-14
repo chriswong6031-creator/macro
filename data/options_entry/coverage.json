@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-13T12:30:21.169495+00:00",
-  "as_of": "2026-07-13",
+  "generated_at": "2026-07-14T11:00:37.884115+00:00",
+  "as_of": "2026-07-14",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 403,
@@ -33,9 +33,9 @@
       },
       {
         "feature": "ivspread_5d_chg",
-        "n_nonnull": 330,
+        "n_nonnull": 331,
         "n_total": 403,
-        "share_nonnull": 0.8189
+        "share_nonnull": 0.8213
       },
       {
         "feature": "skew",
@@ -123,9 +123,9 @@
       },
       {
         "feature": "pin_risk",
-        "n_nonnull": 0,
+        "n_nonnull": 286,
         "n_total": 403,
-        "share_nonnull": 0.0
+        "share_nonnull": 0.7097
       },
       {
         "feature": "gex_confirm_verdict",
@@ -167,9 +167,9 @@
     "ticker_coverage": {
       "n_tickers": 403,
       "n_rows": 403,
-      "n_tickers_ge75pct_features": 366,
-      "n_tickers_50to74pct_features": 24,
-      "n_tickers_lt50pct_features": 13
+      "n_tickers_ge75pct_features": 367,
+      "n_tickers_50to74pct_features": 30,
+      "n_tickers_lt50pct_features": 6
     }
   },
   "family_stamp_coverage": [
@@ -350,7 +350,7 @@
       "null_share": 1.0,
       "root_cause": "by-design opex_days<=5 gate \u2014 opt_pin_risk requires opex_days<=5 AND gamma='long' AND min_wall_dist<=2%. Gate only fires in the final week before monthly OPEX.",
       "pin_risk_gate_condition": "opex_days<=5 AND gamma_regime='long' AND min(|wall_dist_up_pct|, |wall_dist_down_pct|)<=2.0",
-      "current_opex_days": 4,
+      "current_opex_days": 3,
       "next_opex_date": "2026-07-17",
       "note": "pin_risk will be non-null only in the 5 trading days before each monthly OPEX. Current build date has opex_days>5 \u2014 no fires expected."
     },
@@ -377,27 +377,27 @@
       "sources": [
         {
           "source": "options_entry/state.parquet",
-          "latest_as_of": "2026-07-12",
+          "latest_as_of": "2026-07-13",
           "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-07-12 04:52 UTC",
+          "latest_as_of": "2026-07-13 09:26 UTC",
           "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
           "latest_as_of": "2026-07-01",
-          "age_days_from_today": 12,
+          "age_days_from_today": 13,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-13T12:30:21.133834+00:00",
+      "generated_at": "2026-07-14T11:00:37.850493+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -407,8 +407,8 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-13T12:30:21.169486+00:00",
-    "as_of": "2026-07-13",
+    "generated_at_utc": "2026-07-14T11:00:37.884108+00:00",
+    "as_of": "2026-07-14",
     "absent_stores": []
   }
 }

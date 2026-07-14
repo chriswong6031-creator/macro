@@ -1,8 +1,8 @@
 {
-  "as_of": "2026-07-13",
-  "item_count": 9,
+  "as_of": "2026-07-14",
+  "item_count": 7,
   "counts_by_severity": {
-    "P2": 7,
+    "P2": 5,
     "P3": 2
   },
   "items": [
@@ -12,55 +12,39 @@
       "summary_en": "Tension: cross_asset_confirm-diverge",
       "summary_zh": "矛盾张力：cross_asset_confirm-diverge",
       "evidence_path": "site/neuralwebdata/confluence_graph.json",
-      "as_of": "2026-07-13"
+      "as_of": "2026-07-14"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'site-us-standouts' overdue: 90h old vs 30h SLA (3.0×)",
-      "summary_zh": "脉叶 'site-us-standouts' 过期：90小时，SLA 30小时（3.0倍）",
+      "summary_en": "Lobe 'confluence-graph' overdue: 58h old vs 30h SLA (1.9×)",
+      "summary_zh": "脉叶 'confluence-graph' 过期：58小时，SLA 30小时（1.9倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-13"
+      "as_of": "2026-07-14"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'confluence-strength' overdue: 282h old vs 30h SLA (9.4×)",
-      "summary_zh": "脉叶 'confluence-strength' 过期：282小时，SLA 30小时（9.4倍）",
+      "summary_en": "Lobe 'confluence-strength' overdue: 298h old vs 30h SLA (9.9×)",
+      "summary_zh": "脉叶 'confluence-strength' 过期：298小时，SLA 30小时（9.9倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-13"
+      "as_of": "2026-07-14"
     },
     {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'bottom-sensors-json' overdue: 90h old vs 30h SLA (3.0×)",
-      "summary_zh": "脉叶 'bottom-sensors-json' 过期：90小时，SLA 30小时（3.0倍）",
+      "summary_en": "Lobe 'liquidity-plumbing' overdue: 106h old vs 30h SLA (3.5×)",
+      "summary_zh": "脉叶 'liquidity-plumbing' 过期：106小时，SLA 30小时（3.5倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-13"
+      "as_of": "2026-07-14"
     },
     {
-      "kind": "lobe_sla_breach",
+      "kind": "regime_indeterminate",
       "severity": "P2",
-      "summary_en": "Lobe 'neuralweb-mastermind-context' overdue: 90h old vs 30h SLA (3.0×)",
-      "summary_zh": "脉叶 'neuralweb-mastermind-context' 过期：90小时，SLA 30小时（3.0倍）",
-      "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-13"
-    },
-    {
-      "kind": "lobe_sla_breach",
-      "severity": "P2",
-      "summary_en": "Lobe 'site-neuralweb-mastermind-context' overdue: 90h old vs 30h SLA (3.0×)",
-      "summary_zh": "脉叶 'site-neuralweb-mastermind-context' 过期：90小时，SLA 30小时（3.0倍）",
-      "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-13"
-    },
-    {
-      "kind": "lobe_sla_breach",
-      "severity": "P2",
-      "summary_en": "Lobe 'liquidity-plumbing' overdue: 90h old vs 30h SLA (3.0×)",
-      "summary_zh": "脉叶 'liquidity-plumbing' 过期：90小时，SLA 30小时（3.0倍）",
-      "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-13"
+      "summary_en": "Regime indeterminate: Q1 confidence 18% (below 25% threshold)",
+      "summary_zh": "周期不明确：Q1 置信度 18%（低于25%阈值）",
+      "evidence_path": "data/neuralweb/world_state.json",
+      "as_of": "2026-07-14"
     },
     {
       "kind": "cortex_degraded",
@@ -68,7 +52,7 @@
       "summary_en": "Cortex deliberation unavailable: model_unavailable",
       "summary_zh": "皮层审议当前不可用：model_unavailable",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-13"
+      "as_of": "2026-07-14"
     },
     {
       "kind": "evidence_clock_overdue",
@@ -76,7 +60,7 @@
       "summary_en": "6 evidence clock(s) overdue; top: qledger:placebo",
       "summary_zh": "6 个证据时钟逾期；最高优先级：qledger:placebo",
       "evidence_path": "data/neuralweb/evidence_clock.json",
-      "as_of": "2026-07-13"
+      "as_of": "2026-07-14"
     }
   ],
   "caveats": [
@@ -87,7 +71,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_attention_deterministic.py",
-  "produced_at": "2026-07-13T17:39:23Z",
-  "inputs_hash": "sha256:06d2389d2abdceab3c8658cdf499ff66a41e470770f1763a39fd9c266a277e89",
+  "produced_at": "2026-07-14T09:51:18Z",
+  "inputs_hash": "sha256:48d3f13fc8c9a97c97f51141f30526b9457a10721ebca33940a9560969230d59",
   "tier": "display"
 }

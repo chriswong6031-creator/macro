@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   monitor:
-    runs-on: [self-hosted, macstudio]
+    runs-on: [self-hosted, macstudio-light]   # light runner — hourly RSS poll must not queue behind the heavy pool
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

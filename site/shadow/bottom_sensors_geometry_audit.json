@@ -1,15 +1,15 @@
 {
   "schema": "bottom_sensors_geometry_audit.v1",
-  "n_booked": 8565,
+  "n_booked": 10267,
   "booked_dates": [
     "2026-07-06",
-    "2026-07-10"
+    "2026-07-13"
   ],
-  "asof": "2026-07-10",
+  "asof": "2026-07-13",
   "n_matured": 0,
   "by_horizon": {},
   "interpretation": "Realized forward-return gaps of the FROZEN structural descriptors per horizon: decline_geometry flush\u2212grind (family E, DISPLAY-CANDIDATE) and underwater_state long\u2212short (family F, ADVERSE-CONTEXT). Descriptive only; empty/thin until horizons elapse.",
   "authority": "DISPLAY-ONLY \u2014 no ranking/gating/allocation surface is touched; a positive gap does NOT promote either descriptor. CHIP promotion is blocked until the true eq_band cache lands (RUL-28).",
   "survivorship": "OPTIMISTIC bound \u2014 free prices serve currently-listed names only.",
-  "generated_utc": "2026-07-13T17:38:56+00:00"
+  "generated_utc": "2026-07-14T09:50:41+00:00"
 }

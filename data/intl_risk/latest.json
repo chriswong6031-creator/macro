@@ -1,9 +1,9 @@
 {
-  "built": "2026-07-13T09:14:03.523294+00:00",
-  "timing_sec": 1.3,
+  "built": "2026-07-14T09:35:48.499679+00:00",
+  "timing_sec": 1.33,
   "em_stress": {
     "state": "strained",
-    "thermometer": 48.7,
+    "thermometer": 48.0,
     "lead_lag": "coincident thermometer — not leading",
     "n_legs_available": 6,
     "n_legs_total": 6,
@@ -16,35 +16,35 @@
         "value": 3.08,
         "z": null,
         "vel_5d_z": null,
-        "vel_20d_z": 0.113,
-        "pctile": 5.8,
-        "asof": "2026-07-09",
+        "vel_20d_z": 0.273,
+        "pctile": 6.0,
+        "asof": "2026-07-10",
         "stale": false,
         "window_days": 504,
         "source": "BAMLEMHBHYCRPIOAS",
         "note": "IRD-R9: BAML cap ~3y from first fetch; window_days discloses depth"
       },
       "vxeem": {
-        "value": 42.56,
+        "value": 39.04,
         "z": null,
         "vel_5d_z": null,
-        "vel_20d_z": 0.241,
-        "pctile": 97.5,
-        "asof": "2026-07-09",
+        "vel_20d_z": -1.319,
+        "pctile": 96.2,
+        "asof": "2026-07-10",
         "stale": false,
-        "window_days": 3851,
+        "window_days": 3852,
         "note": "2011+ history; EVZ ended 2025-03 and is not used"
       },
       "em_fx_basket": {
-        "value": -2.55,
-        "rvol_20d": 2.82,
-        "dd_pctile": 56.4,
-        "rvol_pctile": 1.1,
-        "pctile": 28.7,
+        "value": -2.59,
+        "rvol_20d": 2.45,
+        "dd_pctile": 56.9,
+        "rvol_pctile": 0.3,
+        "pctile": 28.6,
         "vel_5d_z": null,
-        "vel_20d_z": -0.038,
+        "vel_20d_z": 0.266,
         "z": null,
-        "asof": "2026-07-13",
+        "asof": "2026-07-14",
         "stale": false,
         "window_days": 504,
         "pairs_used": [
@@ -67,7 +67,7 @@
         "z": null,
         "above": 4,
         "total": 7,
-        "asof": "2026-07-10",
+        "asof": "2026-07-13",
         "stale": false,
         "window_days": 200,
         "tickers": [
@@ -83,32 +83,32 @@
         "note": "TUR absent from intl_etf store; basket uses 7 confirmed tickers"
       },
       "em_dollar_vel": {
-        "value": 129.48,
+        "value": 129.16,
         "z": null,
         "vel_5d_z": null,
-        "vel_20d_z": 0.659,
-        "pctile": 17.5,
-        "asof": "2026-07-02",
+        "vel_20d_z": 0.132,
+        "pctile": 16.1,
+        "asof": "2026-07-10",
         "stale": false,
         "window_days": 504,
         "source": "DTWEXEMEGS"
       },
       "emb_ief": {
-        "value": 1.03,
+        "value": 1.02,
         "z": null,
         "vel_5d_z": null,
-        "vel_20d_z": 0.383,
-        "pctile": 100.0,
-        "asof": "2026-07-10",
+        "vel_20d_z": -0.11,
+        "pctile": 98.2,
+        "asof": "2026-07-13",
         "stale": false,
         "window_days": 504,
-        "dd_60d_pct": 0.0,
-        "dd_adversity_pctile": 9.4
+        "dd_60d_pct": -0.27,
+        "dd_adversity_pctile": 20.7
       }
     },
     "gaps": [],
-    "as_of": "2026-07-13",
-    "built": "2026-07-13T09:14:02.314806+00:00",
+    "as_of": "2026-07-14",
+    "built": "2026-07-14T09:35:47.248919+00:00",
     "k_of_n_params": {
       "stressed_threshold": 3,
       "strained_threshold": 2,
@@ -117,264 +117,873 @@
       "hot_vel_z_threshold": 2.0
     }
   },
-  "vulnerability": null,
+  "vulnerability": {
+    "countries": [
+      {
+        "iso3": "AUS",
+        "debt_gdp": 51.0,
+        "debt_trend_3y": "stable",
+        "fiscal_balance": -2.8,
+        "current_account": -2.6,
+        "bis_credit_gap": null,
+        "flags": [],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "AUS",
+        "flag": "🇦🇺",
+        "name_en": "Australia",
+        "name_zh": "澳大利亚",
+        "tags": [],
+        "desc_en": "No structural warnings",
+        "desc_zh": "无结构性预警"
+      },
+      {
+        "iso3": "BRA",
+        "debt_gdp": 93.3,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -8.1,
+        "current_account": -3.0,
+        "bis_credit_gap": null,
+        "flags": [
+          "debt>70.0%_rising",
+          "fiscal<-5.0%GDP"
+        ],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "BRA",
+        "flag": "🇧🇷",
+        "name_en": "Brazil",
+        "name_zh": "巴西",
+        "tags": [
+          {
+            "en": "Debt 93% of GDP & rising",
+            "zh": "债务占GDP 93% 且上升"
+          },
+          {
+            "en": "Fiscal balance -8.1% of GDP",
+            "zh": "财政余额 -8.1% GDP"
+          }
+        ],
+        "desc_en": "2 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中2项并发"
+      },
+      {
+        "iso3": "CAN",
+        "debt_gdp": 113.5,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -1.8,
+        "current_account": -0.9,
+        "bis_credit_gap": null,
+        "flags": [
+          "debt>70.0%_rising"
+        ],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "CAN",
+        "flag": "🇨🇦",
+        "name_en": "Canada",
+        "name_zh": "加拿大",
+        "tags": [
+          {
+            "en": "Debt 114% of GDP & rising",
+            "zh": "债务占GDP 114% 且上升"
+          }
+        ],
+        "desc_en": "1 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中1项并发"
+      },
+      {
+        "iso3": "CHL",
+        "debt_gdp": 41.8,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -2.8,
+        "current_account": -2.3,
+        "bis_credit_gap": null,
+        "flags": [],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "CHL",
+        "flag": "🇨🇱",
+        "name_en": "Chile",
+        "name_zh": "智利",
+        "tags": [],
+        "desc_en": "No structural warnings",
+        "desc_zh": "无结构性预警"
+      },
+      {
+        "iso3": "CHN",
+        "debt_gdp": 99.2,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -7.9,
+        "current_account": 3.7,
+        "bis_credit_gap": -7.69,
+        "flags": [
+          "debt>70.0%_rising",
+          "fiscal<-5.0%GDP"
+        ],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "CHN",
+        "flag": "🇨🇳",
+        "name_en": "China",
+        "name_zh": "中国",
+        "tags": [
+          {
+            "en": "Debt 99% of GDP & rising",
+            "zh": "债务占GDP 99% 且上升"
+          },
+          {
+            "en": "Fiscal balance -7.9% of GDP",
+            "zh": "财政余额 -7.9% GDP"
+          }
+        ],
+        "desc_en": "2 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中2项并发"
+      },
+      {
+        "iso3": "COL",
+        "debt_gdp": 59.9,
+        "debt_trend_3y": "stable",
+        "fiscal_balance": -5.7,
+        "current_account": -2.4,
+        "bis_credit_gap": null,
+        "flags": [
+          "fiscal<-5.0%GDP"
+        ],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "COL",
+        "flag": "🇨🇴",
+        "name_en": "Colombia",
+        "name_zh": "哥伦比亚",
+        "tags": [
+          {
+            "en": "Fiscal balance -5.7% of GDP",
+            "zh": "财政余额 -5.7% GDP"
+          }
+        ],
+        "desc_en": "1 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中1项并发"
+      },
+      {
+        "iso3": "DEU",
+        "debt_gdp": 62.9,
+        "debt_trend_3y": "stable",
+        "fiscal_balance": -2.7,
+        "current_account": 4.4,
+        "bis_credit_gap": null,
+        "flags": [],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "DEU",
+        "flag": "🇩🇪",
+        "name_en": "Germany",
+        "name_zh": "德国",
+        "tags": [],
+        "desc_en": "No structural warnings",
+        "desc_zh": "无结构性预警"
+      },
+      {
+        "iso3": "EGY",
+        "debt_gdp": 86.8,
+        "debt_trend_3y": "falling",
+        "fiscal_balance": -6.6,
+        "current_account": -4.2,
+        "bis_credit_gap": null,
+        "flags": [
+          "CA<-3.0%GDP",
+          "fiscal<-5.0%GDP"
+        ],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "EGY",
+        "flag": "🇪🇬",
+        "name_en": "Egypt",
+        "name_zh": "埃及",
+        "tags": [
+          {
+            "en": "Current account -4.2% of GDP",
+            "zh": "经常账户 -4.2% GDP"
+          },
+          {
+            "en": "Fiscal balance -6.6% of GDP",
+            "zh": "财政余额 -6.6% GDP"
+          }
+        ],
+        "desc_en": "2 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中2项并发"
+      },
+      {
+        "iso3": "ESP",
+        "debt_gdp": 100.4,
+        "debt_trend_3y": "falling",
+        "fiscal_balance": -2.5,
+        "current_account": 2.9,
+        "bis_credit_gap": null,
+        "flags": [],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "ESP",
+        "flag": "🇪🇸",
+        "name_en": "Spain",
+        "name_zh": "西班牙",
+        "tags": [],
+        "desc_en": "No structural warnings",
+        "desc_zh": "无结构性预警"
+      },
+      {
+        "iso3": "FRA",
+        "debt_gdp": 116.0,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -5.1,
+        "current_account": -0.4,
+        "bis_credit_gap": null,
+        "flags": [
+          "debt>70.0%_rising",
+          "fiscal<-5.0%GDP"
+        ],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "FRA",
+        "flag": "🇫🇷",
+        "name_en": "France",
+        "name_zh": "法国",
+        "tags": [
+          {
+            "en": "Debt 116% of GDP & rising",
+            "zh": "债务占GDP 116% 且上升"
+          },
+          {
+            "en": "Fiscal balance -5.1% of GDP",
+            "zh": "财政余额 -5.1% GDP"
+          }
+        ],
+        "desc_en": "2 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中2项并发"
+      },
+      {
+        "iso3": "GBR",
+        "debt_gdp": 102.3,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -5.4,
+        "current_account": -3.1,
+        "bis_credit_gap": null,
+        "flags": [
+          "debt>70.0%_rising",
+          "CA<-3.0%GDP",
+          "fiscal<-5.0%GDP"
+        ],
+        "fragile": true,
+        "asof_year": 2025,
+        "cc": "GBR",
+        "flag": "🇬🇧",
+        "name_en": "United Kingdom",
+        "name_zh": "英国",
+        "tags": [
+          {
+            "en": "Debt 102% of GDP & rising",
+            "zh": "债务占GDP 102% 且上升"
+          },
+          {
+            "en": "Current account -3.1% of GDP",
+            "zh": "经常账户 -3.1% GDP"
+          },
+          {
+            "en": "Fiscal balance -5.4% of GDP",
+            "zh": "财政余额 -5.4% GDP"
+          }
+        ],
+        "desc_en": "3 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中3项并发"
+      },
+      {
+        "iso3": "HUN",
+        "debt_gdp": 75.2,
+        "debt_trend_3y": "stable",
+        "fiscal_balance": -4.7,
+        "current_account": 1.3,
+        "bis_credit_gap": null,
+        "flags": [],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "HUN",
+        "flag": "🇭🇺",
+        "name_en": "Hungary",
+        "name_zh": "匈牙利",
+        "tags": [],
+        "desc_en": "No structural warnings",
+        "desc_zh": "无结构性预警"
+      },
+      {
+        "iso3": "IDN",
+        "debt_gdp": 41.0,
+        "debt_trend_3y": "stable",
+        "fiscal_balance": -2.9,
+        "current_account": -0.1,
+        "bis_credit_gap": null,
+        "flags": [],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "IDN",
+        "flag": "🇮🇩",
+        "name_en": "Indonesia",
+        "name_zh": "印尼",
+        "tags": [],
+        "desc_en": "No structural warnings",
+        "desc_zh": "无结构性预警"
+      },
+      {
+        "iso3": "IND",
+        "debt_gdp": 84.1,
+        "debt_trend_3y": "stable",
+        "fiscal_balance": -7.4,
+        "current_account": -0.9,
+        "bis_credit_gap": null,
+        "flags": [
+          "fiscal<-5.0%GDP"
+        ],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "IND",
+        "flag": "🇮🇳",
+        "name_en": "India",
+        "name_zh": "印度",
+        "tags": [
+          {
+            "en": "Fiscal balance -7.4% of GDP",
+            "zh": "财政余额 -7.4% GDP"
+          }
+        ],
+        "desc_en": "1 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中1项并发"
+      },
+      {
+        "iso3": "ITA",
+        "debt_gdp": 137.1,
+        "debt_trend_3y": "stable",
+        "fiscal_balance": -3.1,
+        "current_account": 1.2,
+        "bis_credit_gap": null,
+        "flags": [],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "ITA",
+        "flag": "🇮🇹",
+        "name_en": "Italy",
+        "name_zh": "意大利",
+        "tags": [],
+        "desc_en": "No structural warnings",
+        "desc_zh": "无结构性预警"
+      },
+      {
+        "iso3": "JPN",
+        "debt_gdp": 206.5,
+        "debt_trend_3y": "falling",
+        "fiscal_balance": -1.1,
+        "current_account": 4.8,
+        "bis_credit_gap": null,
+        "flags": [],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "JPN",
+        "flag": "🇯🇵",
+        "name_en": "Japan",
+        "name_zh": "日本",
+        "tags": [],
+        "desc_en": "No structural warnings",
+        "desc_zh": "无结构性预警"
+      },
+      {
+        "iso3": "KOR",
+        "debt_gdp": 52.3,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -1.4,
+        "current_account": 6.6,
+        "bis_credit_gap": null,
+        "flags": [],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "KOR",
+        "flag": "🇰🇷",
+        "name_en": "South Korea",
+        "name_zh": "韩国",
+        "tags": [],
+        "desc_en": "No structural warnings",
+        "desc_zh": "无结构性预警"
+      },
+      {
+        "iso3": "MEX",
+        "debt_gdp": 61.8,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -4.9,
+        "current_account": -0.4,
+        "bis_credit_gap": null,
+        "flags": [],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "MEX",
+        "flag": "🇲🇽",
+        "name_en": "Mexico",
+        "name_zh": "墨西哥",
+        "tags": [],
+        "desc_en": "No structural warnings",
+        "desc_zh": "无结构性预警"
+      },
+      {
+        "iso3": "MYS",
+        "debt_gdp": 70.7,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -3.5,
+        "current_account": 1.6,
+        "bis_credit_gap": null,
+        "flags": [
+          "debt>70.0%_rising"
+        ],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "MYS",
+        "flag": "🇲🇾",
+        "name_en": "Malaysia",
+        "name_zh": "马来西亚",
+        "tags": [
+          {
+            "en": "Debt 71% of GDP & rising",
+            "zh": "债务占GDP 71% 且上升"
+          }
+        ],
+        "desc_en": "1 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中1项并发"
+      },
+      {
+        "iso3": "PHL",
+        "debt_gdp": 59.4,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -4.0,
+        "current_account": -3.3,
+        "bis_credit_gap": null,
+        "flags": [
+          "CA<-3.0%GDP"
+        ],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "PHL",
+        "flag": "🇵🇭",
+        "name_en": "Philippines",
+        "name_zh": "菲律宾",
+        "tags": [
+          {
+            "en": "Current account -3.3% of GDP",
+            "zh": "经常账户 -3.3% GDP"
+          }
+        ],
+        "desc_en": "1 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中1项并发"
+      },
+      {
+        "iso3": "POL",
+        "debt_gdp": 58.8,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -7.0,
+        "current_account": -0.7,
+        "bis_credit_gap": null,
+        "flags": [
+          "fiscal<-5.0%GDP"
+        ],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "POL",
+        "flag": "🇵🇱",
+        "name_en": "Poland",
+        "name_zh": "波兰",
+        "tags": [
+          {
+            "en": "Fiscal balance -7.0% of GDP",
+            "zh": "财政余额 -7.0% GDP"
+          }
+        ],
+        "desc_en": "1 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中1项并发"
+      },
+      {
+        "iso3": "THA",
+        "debt_gdp": 64.7,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -1.9,
+        "current_account": 3.1,
+        "bis_credit_gap": null,
+        "flags": [],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "THA",
+        "flag": "🇹🇭",
+        "name_en": "Thailand",
+        "name_zh": "泰国",
+        "tags": [],
+        "desc_en": "No structural warnings",
+        "desc_zh": "无结构性预警"
+      },
+      {
+        "iso3": "TUR",
+        "debt_gdp": 23.5,
+        "debt_trend_3y": "falling",
+        "fiscal_balance": -2.8,
+        "current_account": -1.9,
+        "bis_credit_gap": null,
+        "flags": [],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "TUR",
+        "flag": "🇹🇷",
+        "name_en": "Turkey",
+        "name_zh": "土耳其",
+        "tags": [],
+        "desc_en": "No structural warnings",
+        "desc_zh": "无结构性预警"
+      },
+      {
+        "iso3": "USA",
+        "debt_gdp": 123.9,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -6.8,
+        "current_account": -3.6,
+        "bis_credit_gap": -11.54,
+        "flags": [
+          "debt>70.0%_rising",
+          "CA<-3.0%GDP",
+          "fiscal<-5.0%GDP"
+        ],
+        "fragile": true,
+        "asof_year": 2025,
+        "cc": "USA",
+        "flag": "🇺🇸",
+        "name_en": "United States",
+        "name_zh": "美国",
+        "tags": [
+          {
+            "en": "Debt 124% of GDP & rising",
+            "zh": "债务占GDP 124% 且上升"
+          },
+          {
+            "en": "Current account -3.6% of GDP",
+            "zh": "经常账户 -3.6% GDP"
+          },
+          {
+            "en": "Fiscal balance -6.8% of GDP",
+            "zh": "财政余额 -6.8% GDP"
+          }
+        ],
+        "desc_en": "3 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中3项并发"
+      },
+      {
+        "iso3": "ZAF",
+        "debt_gdp": 78.6,
+        "debt_trend_3y": "rising",
+        "fiscal_balance": -5.8,
+        "current_account": -0.5,
+        "bis_credit_gap": null,
+        "flags": [
+          "debt>70.0%_rising",
+          "fiscal<-5.0%GDP"
+        ],
+        "fragile": false,
+        "asof_year": 2025,
+        "cc": "ZAF",
+        "flag": "🇿🇦",
+        "name_en": "South Africa",
+        "name_zh": "南非",
+        "tags": [
+          {
+            "en": "Debt 79% of GDP & rising",
+            "zh": "债务占GDP 79% 且上升"
+          },
+          {
+            "en": "Fiscal balance -5.8% of GDP",
+            "zh": "财政余额 -5.8% GDP"
+          }
+        ],
+        "desc_en": "2 of 4 structural warnings concurrent",
+        "desc_zh": "4项结构性预警中2项并发"
+      }
+    ],
+    "n_countries": 25,
+    "fragile": [
+      "GBR",
+      "USA"
+    ],
+    "n_fragile": 2,
+    "gaps": [],
+    "thresholds": {
+      "debt_gdp": 70.0,
+      "current_account": -3.0,
+      "fiscal_balance": -5.0,
+      "credit_gap": 9.0
+    },
+    "as_of_years": {
+      "min": 2025,
+      "max": 2025
+    },
+    "berg_pattillo_receipt": "Historical early-warning-system caveat (Berg-Pattillo): best-in-class EWS models missed approximately 68% of currency/debt crises out-of-sample; approximately 60% of their 'danger' signals proved false alarms. This table is a fragility MAP — it identifies who is vulnerable, not when a crisis will occur.",
+    "note": "BIS credit-to-GDP gap: only US and CN currently in store; other countries accrue as the BIS adapter extends.",
+    "built": "2026-07-14T09:35:47.336430+00:00"
+  },
   "spillover": {
-    "total_connectedness": 81.9,
+    "total_connectedness": 82.2,
     "to_others": {
-      "EWJ": 100.5,
-      "EWG": 107.1,
-      "EWU": 107.9,
-      "EWC": 100.0,
-      "EWA": 128.1,
-      "EWL": 126.2,
-      "EWZ": 51.4,
-      "EWW": 30.3,
-      "INDA": 22.6,
-      "EIDO": 76.0,
-      "EZA": 110.8,
-      "EWY": 92.2,
-      "EEM": 67.5,
-      "SPY": 26.1
+      "EWJ": 99.4,
+      "EWG": 109.5,
+      "EWU": 105.9,
+      "EWC": 97.6,
+      "EWA": 130.3,
+      "EWL": 126.9,
+      "EWZ": 53.9,
+      "EWW": 31.7,
+      "INDA": 25.0,
+      "EIDO": 75.3,
+      "EZA": 111.6,
+      "EWY": 92.0,
+      "EEM": 65.8,
+      "SPY": 26.0
     },
     "from_others": {
-      "EWJ": 88.4,
-      "EWG": 87.9,
-      "EWU": 87.5,
-      "EWC": 90.6,
-      "EWA": 87.2,
-      "EWL": 84.3,
-      "EWZ": 88.2,
-      "EWW": 74.8,
-      "INDA": 92.4,
-      "EIDO": 70.1,
-      "EZA": 88.6,
-      "EWY": 78.5,
-      "EEM": 55.7,
-      "SPY": 72.6
+      "EWJ": 88.7,
+      "EWG": 87.6,
+      "EWU": 88.1,
+      "EWC": 90.9,
+      "EWA": 87.1,
+      "EWL": 84.9,
+      "EWZ": 86.8,
+      "EWW": 75.4,
+      "INDA": 93.1,
+      "EIDO": 71.8,
+      "EZA": 88.7,
+      "EWY": 78.7,
+      "EEM": 55.3,
+      "SPY": 73.7
     },
     "top_transmitters": [
       {
         "ticker": "EWA",
-        "to_others_pct": 128.1
+        "to_others_pct": 130.3
       },
       {
         "ticker": "EWL",
-        "to_others_pct": 126.2
+        "to_others_pct": 126.9
       },
       {
         "ticker": "EZA",
-        "to_others_pct": 110.8
+        "to_others_pct": 111.6
       }
     ],
-    "us_from_others": 72.6,
+    "us_from_others": 73.7,
     "history_weekly": [
       {
-        "date": "2025-07-03",
+        "date": "2025-07-07",
         "total": 90.0
       },
       {
-        "date": "2025-07-11",
-        "total": 90.0
-      },
-      {
-        "date": "2025-07-18",
-        "total": 90.3
-      },
-      {
-        "date": "2025-07-25",
-        "total": 90.5
-      },
-      {
-        "date": "2025-08-01",
-        "total": 90.3
-      },
-      {
-        "date": "2025-08-08",
-        "total": 90.6
-      },
-      {
-        "date": "2025-08-15",
-        "total": 90.8
-      },
-      {
-        "date": "2025-08-22",
-        "total": 90.8
-      },
-      {
-        "date": "2025-08-29",
-        "total": 90.7
-      },
-      {
-        "date": "2025-09-08",
+        "date": "2025-07-14",
         "total": 90.2
       },
       {
-        "date": "2025-09-15",
-        "total": 90.5
-      },
-      {
-        "date": "2025-09-22",
-        "total": 90.6
-      },
-      {
-        "date": "2025-09-29",
-        "total": 90.6
-      },
-      {
-        "date": "2025-10-06",
-        "total": 90.4
-      },
-      {
-        "date": "2025-10-13",
-        "total": 90.3
-      },
-      {
-        "date": "2025-10-20",
+        "date": "2025-07-21",
         "total": 90.0
       },
       {
-        "date": "2025-10-27",
+        "date": "2025-07-28",
+        "total": 90.4
+      },
+      {
+        "date": "2025-08-04",
         "total": 90.3
       },
       {
-        "date": "2025-11-03",
-        "total": 88.1
+        "date": "2025-08-11",
+        "total": 90.6
       },
       {
-        "date": "2025-11-10",
-        "total": 88.1
+        "date": "2025-08-18",
+        "total": 90.8
       },
       {
-        "date": "2025-11-17",
-        "total": 88.4
+        "date": "2025-08-25",
+        "total": 90.7
       },
       {
-        "date": "2025-11-24",
-        "total": 88.5
+        "date": "2025-09-02",
+        "total": 90.7
       },
       {
-        "date": "2025-12-02",
-        "total": 84.9
+        "date": "2025-09-09",
+        "total": 90.3
       },
       {
-        "date": "2025-12-09",
-        "total": 71.9
+        "date": "2025-09-16",
+        "total": 90.5
       },
       {
-        "date": "2025-12-16",
-        "total": 74.4
+        "date": "2025-09-23",
+        "total": 90.6
       },
       {
-        "date": "2025-12-23",
-        "total": 76.4
+        "date": "2025-09-30",
+        "total": 90.7
       },
       {
-        "date": "2025-12-31",
-        "total": 78.1
+        "date": "2025-10-07",
+        "total": 90.4
       },
       {
-        "date": "2026-01-08",
-        "total": 80.5
+        "date": "2025-10-14",
+        "total": 90.3
       },
       {
-        "date": "2026-01-15",
+        "date": "2025-10-21",
+        "total": 90.0
+      },
+      {
+        "date": "2025-10-28",
+        "total": 90.2
+      },
+      {
+        "date": "2025-11-04",
+        "total": 88.3
+      },
+      {
+        "date": "2025-11-11",
+        "total": 88.0
+      },
+      {
+        "date": "2025-11-18",
+        "total": 88.6
+      },
+      {
+        "date": "2025-11-25",
+        "total": 88.2
+      },
+      {
+        "date": "2025-12-03",
+        "total": 82.1
+      },
+      {
+        "date": "2025-12-10",
+        "total": 73.6
+      },
+      {
+        "date": "2025-12-17",
+        "total": 75.0
+      },
+      {
+        "date": "2025-12-24",
+        "total": 76.6
+      },
+      {
+        "date": "2026-01-02",
+        "total": 77.8
+      },
+      {
+        "date": "2026-01-09",
+        "total": 82.1
+      },
+      {
+        "date": "2026-01-16",
         "total": 82.7
       },
       {
-        "date": "2026-01-23",
-        "total": 82.8
+        "date": "2026-01-26",
+        "total": 82.9
       },
       {
-        "date": "2026-01-30",
-        "total": 81.6
-      },
-      {
-        "date": "2026-02-06",
-        "total": 79.8
-      },
-      {
-        "date": "2026-02-13",
+        "date": "2026-02-02",
         "total": 80.9
       },
       {
-        "date": "2026-02-23",
-        "total": 81.5
+        "date": "2026-02-09",
+        "total": 80.0
       },
       {
-        "date": "2026-03-02",
-        "total": 81.5
+        "date": "2026-02-17",
+        "total": 81.1
       },
       {
-        "date": "2026-03-09",
-        "total": 85.7
+        "date": "2026-02-24",
+        "total": 81.7
       },
       {
-        "date": "2026-03-16",
+        "date": "2026-03-03",
+        "total": 85.3
+      },
+      {
+        "date": "2026-03-10",
         "total": 82.9
       },
       {
-        "date": "2026-03-23",
+        "date": "2026-03-17",
         "total": 82.9
       },
       {
-        "date": "2026-03-30",
-        "total": 81.8
-      },
-      {
-        "date": "2026-04-07",
-        "total": 82.7
-      },
-      {
-        "date": "2026-04-14",
-        "total": 81.0
-      },
-      {
-        "date": "2026-04-21",
-        "total": 80.2
-      },
-      {
-        "date": "2026-04-28",
-        "total": 82.4
-      },
-      {
-        "date": "2026-05-05",
-        "total": 84.0
-      },
-      {
-        "date": "2026-05-12",
-        "total": 84.1
-      },
-      {
-        "date": "2026-05-19",
-        "total": 82.4
-      },
-      {
-        "date": "2026-05-27",
+        "date": "2026-03-24",
         "total": 82.2
       },
       {
-        "date": "2026-06-03",
-        "total": 83.1
+        "date": "2026-03-31",
+        "total": 81.7
       },
       {
-        "date": "2026-06-10",
+        "date": "2026-04-08",
+        "total": 81.1
+      },
+      {
+        "date": "2026-04-15",
+        "total": 80.9
+      },
+      {
+        "date": "2026-04-22",
+        "total": 80.2
+      },
+      {
+        "date": "2026-04-29",
+        "total": 83.5
+      },
+      {
+        "date": "2026-05-06",
+        "total": 83.5
+      },
+      {
+        "date": "2026-05-13",
+        "total": 84.4
+      },
+      {
+        "date": "2026-05-20",
+        "total": 82.4
+      },
+      {
+        "date": "2026-05-28",
         "total": 82.3
       },
       {
-        "date": "2026-06-17",
-        "total": 81.5
+        "date": "2026-06-04",
+        "total": 83.3
       },
       {
-        "date": "2026-06-25",
-        "total": 79.9
+        "date": "2026-06-11",
+        "total": 82.5
       },
       {
-        "date": "2026-07-02",
-        "total": 79.3
+        "date": "2026-06-18",
+        "total": 81.1
       },
       {
-        "date": "2026-07-10",
-        "total": 81.9
+        "date": "2026-06-26",
+        "total": 80.0
+      },
+      {
+        "date": "2026-07-06",
+        "total": 79.4
+      },
+      {
+        "date": "2026-07-13",
+        "total": 82.2
       }
     ],
     "n_series": 14,
@@ -398,9 +1007,9 @@
       "EEM: OHLC absent — using close-return vol proxy",
       "SPY: OHLC absent — using close-return vol proxy"
     ],
-    "as_of": "2026-07-10",
-    "built": "2026-07-13T09:14:02.449784+00:00",
-    "timing_sec": 0.13,
+    "as_of": "2026-07-13",
+    "built": "2026-07-14T09:35:47.460928+00:00",
+    "timing_sec": 0.12,
     "params": {
       "window": 150,
       "var_lag": 2,
@@ -425,13 +1034,13 @@
     }
   },
   "corr_tightening": {
-    "eem_emfx_corr_60d": -0.182,
-    "pairwise_avg_corr": 0.575,
-    "pairwise_vel_20d_z": -1.464,
+    "eem_emfx_corr_60d": -0.19,
+    "pairwise_avg_corr": 0.572,
+    "pairwise_vel_20d_z": -1.365,
     "tightening": false,
     "gaps": [],
-    "as_of": "2026-07-10",
-    "built": "2026-07-13T09:14:03.396595+00:00"
+    "as_of": "2026-07-13",
+    "built": "2026-07-14T09:35:48.384986+00:00"
   },
   "two_tier": {
     "state": "contained",
@@ -440,19 +1049,19 @@
       "hottest_region": "latam",
       "regional_oas": {
         "asia": {
-          "value": 0.82,
-          "vel_20d_z": 0.051,
-          "asof": "2026-07-09"
+          "value": 0.81,
+          "vel_20d_z": 0.252,
+          "asof": "2026-07-10"
         },
         "latam": {
-          "value": 2.28,
-          "vel_20d_z": 0.158,
-          "asof": "2026-07-09"
+          "value": 2.27,
+          "vel_20d_z": 0.3,
+          "asof": "2026-07-10"
         },
         "emea": {
-          "value": 1.45,
-          "vel_20d_z": -0.239,
-          "asof": "2026-07-09"
+          "value": 1.43,
+          "vel_20d_z": 0.023,
+          "asof": "2026-07-10"
         }
       }
     },
@@ -460,15 +1069,15 @@
       "hot_count": 0,
       "legs": {
         "us_hy_oas_vel": {
-          "value": 2.7,
-          "vel_20d_z": -0.183,
+          "value": 2.69,
+          "vel_20d_z": 0.004,
           "hot": false,
           "threshold": "vel_20d_z >= 2"
         },
         "kre_spy_rs": {
-          "value": 1.0,
-          "kre_ret_20d": 5.33,
-          "spy_ret_20d": 4.34,
+          "value": 2.6,
+          "kre_ret_20d": 4.44,
+          "spy_ret_20d": 1.81,
           "hot": false,
           "threshold": "KRE-SPY 20d RS < -5%",
           "note": "EUFN/KBWB absent from yahoo store — only KRE included"
@@ -481,25 +1090,25 @@
           "asof": "2026-07-10"
         },
         "sofr_iorb_corridor": {
-          "value": -0.12,
+          "value": -0.1,
           "last5_all_positive": false,
           "hot": false,
           "threshold": "SOFR-IORB > 0 for 5 consecutive days",
           "caveat": "Quarter-end spikes (late Dec/Mar/Jun/Sep) are technical — not structural funding stress; verify calendar proximity."
         },
         "safety_bid_flag": {
-          "dxy_5d_chg": 0.232,
-          "dgs2_5d_chg": -1.0,
-          "safety_bid": true,
+          "dxy_5d_chg": 0.029,
+          "dgs2_5d_chg": 7.0,
+          "safety_bid": false,
           "hot": false,
           "note": "DXY up & 2y yield down = safe-haven demand, not hot for K-of-N"
         }
       }
     },
-    "safety_bid": true,
+    "safety_bid": false,
     "gaps": [],
     "state_logic": "quiet: tier1 calm | contained: tier1>=strained, 0 tier2 hot | watching: 1 tier2 hot | transmitting: >=2 tier2 hot with tier1>=strained",
-    "built": "2026-07-13T09:14:03.432867+00:00"
+    "built": "2026-07-14T09:35:48.420370+00:00"
   },
   "cb_desk": {
     "cbs": [
@@ -534,9 +1143,9 @@
         },
         "next_meeting": {
           "date": "2026-07-29",
-          "days": 16
+          "days": 15
         },
-        "asof": "2026-07-09",
+        "asof": "2026-07-10",
         "stale": false
       },
       {
@@ -570,9 +1179,9 @@
         },
         "next_meeting": {
           "date": "2026-07-23",
-          "days": 10
+          "days": 9
         },
-        "asof": "2026-07-10",
+        "asof": "2026-07-13",
         "stale": false
       },
       {
@@ -606,7 +1215,7 @@
         },
         "next_meeting": {
           "date": "2026-07-31",
-          "days": 18
+          "days": 17
         },
         "asof": "2026-05-01",
         "stale": false
@@ -634,7 +1243,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-07-30",
-          "days": 17
+          "days": 16
         },
         "asof": "2026-01-01",
         "stale": true
@@ -662,7 +1271,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-09-17",
-          "days": 66
+          "days": 65
         },
         "asof": "2026-05-01",
         "stale": false
@@ -690,7 +1299,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-07-15",
-          "days": 2
+          "days": 1
         },
         "asof": "2026-05-01",
         "stale": false
@@ -718,7 +1327,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-08-11",
-          "days": 29
+          "days": 28
         },
         "asof": "2026-05-01",
         "stale": false
@@ -731,8 +1340,8 @@
       "BOC: balance-sheet series not available (honest null)",
       "RBA: balance-sheet series not available (honest null)"
     ],
-    "as_of": "2026-07-10",
-    "built": "2026-07-13T09:14:03.464418+00:00",
+    "as_of": "2026-07-13",
+    "built": "2026-07-14T09:35:48.449495+00:00",
     "bs_note": "Balance-sheet impulse available for: FED (WALCL), ECB (ECBASSETSW), BoJ (JPNASSETS). BoE: FRED provides annual-only balance-sheet data — honest null. PBoC: no clean keyless balance-sheet series available — honest null. SNB/BoC/RBA: no balance-sheet series configured — honest null.",
     "irdr7_note": "IRD-R7: This desk is DESCRIPTIVE. It reports realized policy rates, observed changes, and published meeting dates. No policy-intent projection, no forward guidance scoring, no consensus-surprise computation (no free consensus source)."
   },
@@ -743,13 +1352,13 @@
     "countries": [
       {
         "cc": "US",
-        "slope_bp": 38.0,
+        "slope_bp": 35.0,
         "inverted": false,
         "since_days": null
       },
       {
         "cc": "DE",
-        "slope_bp": 51.5,
+        "slope_bp": 50.9,
         "inverted": false,
         "since_days": null
       },
@@ -779,32 +1388,32 @@
       }
     ],
     "synchronized": false,
-    "built": "2026-07-13T09:14:03.514143+00:00"
+    "built": "2026-07-14T09:35:48.491413+00:00"
   },
   "swap_lines_bn": 0.2,
   "top_transmitters_display": [
     {
       "ticker": "EWA",
-      "to_others_pct": 128.1,
+      "to_others_pct": 130.3,
       "name_en": "Australia",
       "name_zh": "澳大利亚",
       "flag": "🇦🇺"
     },
     {
       "ticker": "EWL",
-      "to_others_pct": 126.2,
+      "to_others_pct": 126.9,
       "name_en": "Switzerland",
       "name_zh": "瑞士",
       "flag": "🇨🇭"
     },
     {
       "ticker": "EZA",
-      "to_others_pct": 110.8,
+      "to_others_pct": 111.6,
       "name_en": "South Africa",
       "name_zh": "南非",
       "flag": "🇿🇦"
     }
   ],
-  "emb_ief_spark_svg": "<svg class=\"nch\" viewBox=\"0 0 220 38\" preserveAspectRatio=\"none\" width=\"100%\" height=\"38\"><polyline points=\"0,38 0.0,22.7 1.8,23.4 3.7,20.1 5.5,20.2 7.4,19.7 9.2,20.0 11.1,19.5 12.9,19.8 14.8,20.3 16.6,20.5 18.5,20.1 20.3,20.6 22.2,20.2 24.0,22.2 25.9,20.6 27.7,20.6 29.6,21.6 31.4,19.9 33.3,21.9 35.1,23.2 37.0,21.9 38.8,20.4 40.7,21.7 42.5,21.0 44.4,22.8 46.2,23.1 48.1,22.0 49.9,24.0 51.8,26.1 53.6,25.3 55.5,27.3 57.3,24.1 59.2,25.3 61.0,28.8 62.9,29.4 64.7,27.5 66.6,26.7 68.4,29.8 70.3,32.0 72.1,32.4 73.9,31.2 75.8,33.1 77.6,31.4 79.5,35.4 81.3,31.5 83.2,32.5 85.0,30.3 86.9,31.6 88.7,34.9 90.6,38.0 92.4,33.9 94.3,31.9 96.1,32.6 98.0,31.2 99.8,32.4 101.7,26.7 103.5,24.0 105.4,23.0 107.2,21.1 109.1,20.3 110.9,20.3 112.8,21.1 114.6,19.9 116.5,19.8 118.3,20.0 120.2,19.1 122.0,21.0 123.9,20.5 125.7,20.2 127.6,20.1 129.4,20.1 131.3,19.3 133.1,19.3 135.0,20.1 136.8,18.2 138.7,16.5 140.5,17.0 142.4,17.0 144.2,16.1 146.1,15.6 147.9,16.8 149.7,16.4 151.6,16.8 153.4,17.2 155.3,17.2 157.1,17.0 159.0,16.9 160.8,16.3 162.7,15.9 164.5,14.0 166.4,13.8 168.2,13.3 170.1,12.8 171.9,11.7 173.8,12.4 175.6,11.9 177.5,13.2 179.3,13.3 181.2,12.5 183.0,13.9 184.9,12.3 186.7,10.7 188.6,9.1 190.4,10.9 192.3,10.2 194.1,9.5 196.0,9.3 197.8,10.9 199.7,12.9 201.5,13.4 203.4,15.0 205.2,13.4 207.1,12.7 208.9,11.9 210.8,11.3 212.6,10.7 214.5,10.2 216.3,9.9 218.2,10.2 220.0,9.5 220,38\" fill=\"var(--info)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,22.7 1.8,23.4 3.7,20.1 5.5,20.2 7.4,19.7 9.2,20.0 11.1,19.5 12.9,19.8 14.8,20.3 16.6,20.5 18.5,20.1 20.3,20.6 22.2,20.2 24.0,22.2 25.9,20.6 27.7,20.6 29.6,21.6 31.4,19.9 33.3,21.9 35.1,23.2 37.0,21.9 38.8,20.4 40.7,21.7 42.5,21.0 44.4,22.8 46.2,23.1 48.1,22.0 49.9,24.0 51.8,26.1 53.6,25.3 55.5,27.3 57.3,24.1 59.2,25.3 61.0,28.8 62.9,29.4 64.7,27.5 66.6,26.7 68.4,29.8 70.3,32.0 72.1,32.4 73.9,31.2 75.8,33.1 77.6,31.4 79.5,35.4 81.3,31.5 83.2,32.5 85.0,30.3 86.9,31.6 88.7,34.9 90.6,38.0 92.4,33.9 94.3,31.9 96.1,32.6 98.0,31.2 99.8,32.4 101.7,26.7 103.5,24.0 105.4,23.0 107.2,21.1 109.1,20.3 110.9,20.3 112.8,21.1 114.6,19.9 116.5,19.8 118.3,20.0 120.2,19.1 122.0,21.0 123.9,20.5 125.7,20.2 127.6,20.1 129.4,20.1 131.3,19.3 133.1,19.3 135.0,20.1 136.8,18.2 138.7,16.5 140.5,17.0 142.4,17.0 144.2,16.1 146.1,15.6 147.9,16.8 149.7,16.4 151.6,16.8 153.4,17.2 155.3,17.2 157.1,17.0 159.0,16.9 160.8,16.3 162.7,15.9 164.5,14.0 166.4,13.8 168.2,13.3 170.1,12.8 171.9,11.7 173.8,12.4 175.6,11.9 177.5,13.2 179.3,13.3 181.2,12.5 183.0,13.9 184.9,12.3 186.7,10.7 188.6,9.1 190.4,10.9 192.3,10.2 194.1,9.5 196.0,9.3 197.8,10.9 199.7,12.9 201.5,13.4 203.4,15.0 205.2,13.4 207.1,12.7 208.9,11.9 210.8,11.3 212.6,10.7 214.5,10.2 216.3,9.9 218.2,10.2 220.0,9.5\" fill=\"none\" stroke=\"var(--info)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"220.0\" cy=\"9.5\" r=\"2.6\" fill=\"var(--info)\"/></svg>",
-  "spillover_spark_svg": "<svg class=\"nch\" viewBox=\"0 0 200 34\" preserveAspectRatio=\"none\" width=\"100%\" height=\"34\"><polyline points=\"0,34 0.0,9.3 3.9,9.3 7.8,8.8 11.8,8.6 15.7,8.8 19.6,8.4 23.5,8.2 27.5,8.2 31.4,8.3 35.3,9.0 39.2,8.6 43.1,8.4 47.1,8.4 51.0,8.7 54.9,8.8 58.8,9.3 62.7,8.8 66.7,11.9 70.6,11.9 74.5,11.4 78.4,11.3 82.4,16.2 86.3,34.0 90.2,30.6 94.1,27.8 98.0,25.5 102.0,22.2 105.9,19.2 109.8,19.1 113.7,20.7 117.6,23.2 121.6,21.7 125.5,20.9 129.4,20.9 133.3,15.1 137.3,19.0 141.2,19.0 145.1,20.5 149.0,19.2 152.9,21.6 156.9,22.7 160.8,19.6 164.7,17.5 168.6,17.3 172.5,19.6 176.5,19.9 180.4,18.7 184.3,19.8 188.2,20.9 192.2,23.1 196.1,23.9 200.0,20.3 200,34\" fill=\"var(--warn)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,9.3 3.9,9.3 7.8,8.8 11.8,8.6 15.7,8.8 19.6,8.4 23.5,8.2 27.5,8.2 31.4,8.3 35.3,9.0 39.2,8.6 43.1,8.4 47.1,8.4 51.0,8.7 54.9,8.8 58.8,9.3 62.7,8.8 66.7,11.9 70.6,11.9 74.5,11.4 78.4,11.3 82.4,16.2 86.3,34.0 90.2,30.6 94.1,27.8 98.0,25.5 102.0,22.2 105.9,19.2 109.8,19.1 113.7,20.7 117.6,23.2 121.6,21.7 125.5,20.9 129.4,20.9 133.3,15.1 137.3,19.0 141.2,19.0 145.1,20.5 149.0,19.2 152.9,21.6 156.9,22.7 160.8,19.6 164.7,17.5 168.6,17.3 172.5,19.6 176.5,19.9 180.4,18.7 184.3,19.8 188.2,20.9 192.2,23.1 196.1,23.9 200.0,20.3\" fill=\"none\" stroke=\"var(--warn)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"200.0\" cy=\"20.3\" r=\"2.6\" fill=\"var(--warn)\"/></svg>"
+  "emb_ief_spark_svg": "<svg class=\"nch\" viewBox=\"0 0 220 38\" preserveAspectRatio=\"none\" width=\"100%\" height=\"38\"><polyline points=\"0,38 0.0,23.4 1.8,20.1 3.7,20.2 5.5,19.7 7.4,20.0 9.2,19.5 11.1,19.8 12.9,20.3 14.8,20.5 16.6,20.1 18.5,20.6 20.3,20.2 22.2,22.2 24.0,20.6 25.9,20.6 27.7,21.6 29.6,19.9 31.4,21.9 33.3,23.2 35.1,21.9 37.0,20.4 38.8,21.7 40.7,21.0 42.5,22.8 44.4,23.1 46.2,22.0 48.1,24.0 49.9,26.1 51.8,25.3 53.6,27.3 55.5,24.1 57.3,25.3 59.2,28.8 61.0,29.4 62.9,27.5 64.7,26.7 66.6,29.8 68.4,32.0 70.3,32.4 72.1,31.2 73.9,33.1 75.8,31.4 77.6,35.4 79.5,31.5 81.3,32.5 83.2,30.3 85.0,31.6 86.9,34.9 88.7,38.0 90.6,33.9 92.4,31.9 94.3,32.6 96.1,31.2 98.0,32.4 99.8,26.7 101.7,24.0 103.5,23.0 105.4,21.1 107.2,20.3 109.1,20.3 110.9,21.1 112.8,19.9 114.6,19.8 116.5,20.0 118.3,19.1 120.2,21.0 122.0,20.5 123.9,20.2 125.7,20.1 127.6,20.1 129.4,19.3 131.3,19.3 133.1,20.1 135.0,18.2 136.8,16.5 138.7,17.0 140.5,17.0 142.4,16.1 144.2,15.6 146.1,16.8 147.9,16.4 149.7,16.8 151.6,17.2 153.4,17.2 155.3,17.0 157.1,16.9 159.0,16.3 160.8,15.9 162.7,14.0 164.5,13.8 166.4,13.3 168.2,12.8 170.1,11.7 171.9,12.4 173.8,11.9 175.6,13.2 177.5,13.3 179.3,12.5 181.2,13.9 183.0,12.3 184.9,10.7 186.7,9.1 188.6,10.9 190.4,10.2 192.3,9.5 194.1,9.3 196.0,10.9 197.8,12.9 199.7,13.4 201.5,15.0 203.4,13.4 205.2,12.7 207.1,11.9 208.9,11.3 210.8,10.7 212.6,10.2 214.5,9.9 216.3,10.2 218.2,9.5 220.0,11.1 220,38\" fill=\"var(--info)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,23.4 1.8,20.1 3.7,20.2 5.5,19.7 7.4,20.0 9.2,19.5 11.1,19.8 12.9,20.3 14.8,20.5 16.6,20.1 18.5,20.6 20.3,20.2 22.2,22.2 24.0,20.6 25.9,20.6 27.7,21.6 29.6,19.9 31.4,21.9 33.3,23.2 35.1,21.9 37.0,20.4 38.8,21.7 40.7,21.0 42.5,22.8 44.4,23.1 46.2,22.0 48.1,24.0 49.9,26.1 51.8,25.3 53.6,27.3 55.5,24.1 57.3,25.3 59.2,28.8 61.0,29.4 62.9,27.5 64.7,26.7 66.6,29.8 68.4,32.0 70.3,32.4 72.1,31.2 73.9,33.1 75.8,31.4 77.6,35.4 79.5,31.5 81.3,32.5 83.2,30.3 85.0,31.6 86.9,34.9 88.7,38.0 90.6,33.9 92.4,31.9 94.3,32.6 96.1,31.2 98.0,32.4 99.8,26.7 101.7,24.0 103.5,23.0 105.4,21.1 107.2,20.3 109.1,20.3 110.9,21.1 112.8,19.9 114.6,19.8 116.5,20.0 118.3,19.1 120.2,21.0 122.0,20.5 123.9,20.2 125.7,20.1 127.6,20.1 129.4,19.3 131.3,19.3 133.1,20.1 135.0,18.2 136.8,16.5 138.7,17.0 140.5,17.0 142.4,16.1 144.2,15.6 146.1,16.8 147.9,16.4 149.7,16.8 151.6,17.2 153.4,17.2 155.3,17.0 157.1,16.9 159.0,16.3 160.8,15.9 162.7,14.0 164.5,13.8 166.4,13.3 168.2,12.8 170.1,11.7 171.9,12.4 173.8,11.9 175.6,13.2 177.5,13.3 179.3,12.5 181.2,13.9 183.0,12.3 184.9,10.7 186.7,9.1 188.6,10.9 190.4,10.2 192.3,9.5 194.1,9.3 196.0,10.9 197.8,12.9 199.7,13.4 201.5,15.0 203.4,13.4 205.2,12.7 207.1,11.9 208.9,11.3 210.8,10.7 212.6,10.2 214.5,9.9 216.3,10.2 218.2,9.5 220.0,11.1\" fill=\"none\" stroke=\"var(--info)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"220.0\" cy=\"11.1\" r=\"2.6\" fill=\"var(--info)\"/></svg>",
+  "spillover_spark_svg": "<svg class=\"nch\" viewBox=\"0 0 200 34\" preserveAspectRatio=\"none\" width=\"100%\" height=\"34\"><polyline points=\"0,34 0.0,9.4 3.9,9.1 7.8,9.4 11.8,8.8 15.7,8.9 19.6,8.5 23.5,8.2 27.5,8.3 31.4,8.3 35.3,8.9 39.2,8.6 43.1,8.5 47.1,8.3 51.0,8.8 54.9,8.9 58.8,9.4 62.7,9.1 66.7,11.9 70.6,12.4 74.5,11.5 78.4,12.1 82.4,21.2 86.3,34.0 90.2,31.9 94.1,29.5 98.0,27.7 102.0,21.2 105.9,20.3 109.8,20.0 113.7,23.0 117.6,24.4 121.6,22.7 125.5,21.8 129.4,16.4 133.3,20.0 137.3,20.0 141.2,21.1 145.1,21.8 149.0,22.7 152.9,23.0 156.9,24.1 160.8,19.1 164.7,19.1 168.6,17.8 172.5,20.8 176.5,20.9 180.4,19.4 184.3,20.6 188.2,22.7 192.2,24.4 196.1,25.3 200.0,21.1 200,34\" fill=\"var(--warn)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,9.4 3.9,9.1 7.8,9.4 11.8,8.8 15.7,8.9 19.6,8.5 23.5,8.2 27.5,8.3 31.4,8.3 35.3,8.9 39.2,8.6 43.1,8.5 47.1,8.3 51.0,8.8 54.9,8.9 58.8,9.4 62.7,9.1 66.7,11.9 70.6,12.4 74.5,11.5 78.4,12.1 82.4,21.2 86.3,34.0 90.2,31.9 94.1,29.5 98.0,27.7 102.0,21.2 105.9,20.3 109.8,20.0 113.7,23.0 117.6,24.4 121.6,22.7 125.5,21.8 129.4,16.4 133.3,20.0 137.3,20.0 141.2,21.1 145.1,21.8 149.0,22.7 152.9,23.0 156.9,24.1 160.8,19.1 164.7,19.1 168.6,17.8 172.5,20.8 176.5,20.9 180.4,19.4 184.3,20.6 188.2,22.7 192.2,24.4 196.1,25.3 200.0,21.1\" fill=\"none\" stroke=\"var(--warn)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"200.0\" cy=\"21.1\" r=\"2.6\" fill=\"var(--warn)\"/></svg>"
 }

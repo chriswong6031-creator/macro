@@ -242,6 +242,7 @@ fred:
       DGS3MO: us3m                # the short leg of the NY Fed recession spread
       DGS6MO: us6m
       DGS5: us5y
+      DGS20: us20y                # CCW-W1 / CCW-R7: alias FROZEN as us20y; owned by CCW; RIC-side is a no-op
       DGS30: us30y
       T10Y3M: spread_10y3m        # exact spread the NY Fed probit uses
     inflation_extra:              # 5y inflation leg (second-tenor real-yield anchor)
@@ -262,6 +263,23 @@ fred:
       IORB: iorb                  # interest on reserve balances — the SOFR-IORB plumbing anchor
       SOFR99: sofr_99             # 99th-pctile SOFR — a repo-stress spike gauge
       USRECD: us_recession        # NBER recession indicator (daily) — calibration target ONLY (not in live frame)
+    # --- CCW-W1: corporate credit OAS rating ladder + effective yields + IG total-return ---
+    # ICE BofA BAML family; rolling ~3y window on FRED since Apr-2026 (no deep archive for
+    # these; CCW-W1 snapshots the current window on first collect as the permanent history
+    # floor per §2.2 / CCW-R12). Already-enrolled aliases checked 2026-07-14: hy_oas,
+    # ig_oas, ccc_oas, hy_total_return, em_oas, and Moody's DBAA/DAAA — none collide here.
+    # Do NOT add: BAMLH0A3HYC (=ccc_oas), BAMLH0A0HYM2 (=hy_oas), BAMLC0A0CM (=ig_oas),
+    # BAMLHYH0A0HYM2TRIV (=hy_total_return), BAMLEMCBPIOAS (=em_oas), DBAA, DAAA.
+    corp_credit:
+      BAMLC0A1CAAA: aaa_oas        # ICE BofA AAA US corporate OAS (~3y rolling)
+      BAMLC0A2CAA: aa_oas          # ICE BofA AA US corporate OAS
+      BAMLC0A3CA: a_oas            # ICE BofA A US corporate OAS
+      BAMLC0A4CBBB: bbb_oas        # ICE BofA BBB US corporate OAS (IG cusp — fallen-angel frontier)
+      BAMLH0A1HYBB: bb_oas         # ICE BofA BB US HY OAS (crossover; VST/CEG rising-star bucket)
+      BAMLH0A2HYB: b_oas           # ICE BofA B US HY OAS
+      BAMLC0A0CMEY: ig_eff_yield   # ICE BofA IG effective yield (YTM-equivalent; CCW g-spread anchor)
+      BAMLH0A0HYM2EY: hy_eff_yield # ICE BofA HY effective yield
+      BAMLCC0A0CMTRIV: ig_total_return  # ICE BofA IG total-return index (1997->; price+coupon)
     # --- Fed policy path (research/DATA_SIGNAL_EXPANSION_2026.md #2) — DISPLAY-ONLY -
     # The FOMC dot-plot median + the live target range. DISPLAY / LLM-context only —
     # the path LEVEL is a price and repricing is reactive, so there is NO scored leg
@@ -420,8 +438,7 @@ fred:
                    EWJ, EWA, EWH, EWS, EWC,
                    INDA, EWT, EWY, EIDO, EWZ, EWW, ECH, EZA, TUR, EPOL,
                    EFA, EEM, VGK, VPL, AAXJ, ILF, VXUS]       # + regional/bloc aggregates: Dev ex-US, EM, Europe, Pacific, Asia-xJP, LatAm, All-World ex-US
-    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX",
-           "^COR1M", "^COR3M"]   # ^VVIX=vol-of-vol; ^COR1M/^COR3M=CBOE implied correlation 1m/3m (data/yahoo/_COR1M|_COR3M; ~2007->); RRX W2 R2 collector
+    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX=vol-of-vol. ^COR1M/^COR3M REMOVED (VSB W1): yfinance serves no real history (1-row zero stubs, silently dropped by yahoo._extract) — implied correlation + DSPX/VIX1D/VIXEQ now come from collectors/cboe_indices.CboeCorVolAdapter (data/cboe/cor1m|cor3m|dspx|vix1d|vixeq; 2006->)
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
     fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
@@ -463,6 +480,10 @@ cboe:
   # One fetch carries the whole history (backfill + accrual in one shot). Feeds the
   # engine/vol_regime VVIX-VIX decoupling / peak-fear leg (retires the short yahoo _VVIX).
   vvix_url: https://cdn.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv
+  # COR1M/COR3M (implied correlation, 2006->), DSPX (dispersion), VIX1D, VIXEQ (2014/2022->)
+  # ride the same keyless *_History.csv family via collectors/cboe_indices.CboeCorVolAdapter
+  # (URLs templated in code; persist-only — VSB W1). Freshness tripwire:
+  # check_cor_vol_freshness() in scripts/collect.py (warn-only, run_status stale_series).
   # VIX-futures settlement (collectors/cboe_vix_futures.py): one keyless CSV/date via the
   # www endpoint serves the FULL VX board. We persist both the front contract (sanitizer)
   # and the standard-monthly M1..M6 curve (vix_curve) — the latter FORWARD-ACCRUING only
@@ -553,7 +574,14 @@ live:
   feed_label: "≈15-min delayed (Polygon Standard / Yahoo)"
   feed_label_zh: "≈延迟15分钟（Polygon Standard / Yahoo）"   # zh caption for the same badge (bilingual UI law)
   top_conviction_n: 60         # also include the top-N US names by |conviction| from the search index
-  universe_extra: []           # optional extra tickers beyond Mastermind assets + top US conviction
+  # Symbols not in the GTAA asset lists but referenced by browser live tiles:
+  # ES=F / NQ=F (dashboard futures strip) + 000001.SS / ^HSI (china page live tiles).
+  # These land in overlay.json via build_live_overlay build_universe() as a REDUNDANT
+  # second feed: the tiles' primary feed is the same-origin site/live/quotes.json
+  # DISPLAY snapshot (scripts/build_live_quotes.py DISPLAY_SYMBOLS — written every
+  # fastpath tick + hourly 24/7 by btc-live). Overlay coverage means the tiles keep
+  # patching during US RTH even if a display-snapshot fetch degrades on a tick.
+  universe_extra: ["ES=F", "NQ=F", "000001.SS", "510300.SS", "^HSI"]
   market_context: [SPY, QQQ, "^VIX"]   # cheap live macro read emitted in overlay.market (VIX gets a band)
   # The deployed Cloudflare Worker the browser live.js calls (worker/quotes.worker.js).
   # Empty string = no Worker; live.js then falls back to the static snapshot below.
@@ -577,6 +605,11 @@ live:
   # macro) carry forward stamped with their own as-of. The continuous score moves every tick;
   # the discrete band WORD is debounced this many consecutive ticks before it flips (anti-whipsaw).
   risk_state:
+    debounce_ticks: 2
+  # Intraday LIVE China risk-state (scripts/build_china_risk_state.py -> site/live/china_risk_state.json).
+  # Same debounce doctrine as risk_state: the continuous 0-100 score moves every HKEX-window tick;
+  # the discrete band WORD is debounced this many consecutive ticks before it flips (anti-whipsaw).
+  china_risk_state:
     debounce_ticks: 2
 
 fedboard:
@@ -2931,6 +2964,7 @@ alerts:
   risk_state_elevated: true          # fire when the core risk-state crosses into elevated (>=60)
   hidden_fragility: true             # fire when complacency crosses into watch/hidden-fragility (calm + weak)
   breadth_divergence: true           # fire when index near 1y high while %>200dma turns weak
+  corr_floor_break: true             # VSB W6: fire when COR1M spikes off an extreme floor (confirmer)
   # --- per-ticker / per-ETF alert feed (engine/ticker_alerts.py) ---
   ticker_timeline_days: 120           # window shown in each ticker / ETF alert feed
   ticker_max_events: 50               # cap on events kept per feed (most-recent-first)
@@ -6194,8 +6228,7 @@ yahoo:
                    EWJ, EWA, EWH, EWS, EWC,
                    INDA, EWT, EWY, EIDO, EWZ, EWW, ECH, EZA, TUR, EPOL,
                    EFA, EEM, VGK, VPL, AAXJ, ILF, VXUS]       # + regional/bloc aggregates: Dev ex-US, EM, Europe, Pacific, Asia-xJP, LatAm, All-World ex-US
-    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX",
-           "^COR1M", "^COR3M"]   # ^VVIX=vol-of-vol; ^COR1M/^COR3M=CBOE implied correlation 1m/3m (data/yahoo/_COR1M|_COR3M; ~2007->); RRX W2 R2 collector
+    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX=vol-of-vol. ^COR1M/^COR3M REMOVED (VSB W1): yfinance serves no real history (1-row zero stubs, silently dropped by yahoo._extract) — implied correlation + DSPX/VIX1D/VIXEQ now come from collectors/cboe_indices.CboeCorVolAdapter (data/cboe/cor1m|cor3m|dspx|vix1d|vixeq; 2006->)
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
     fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input

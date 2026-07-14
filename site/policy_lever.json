@@ -31,13 +31,13 @@
       "name_zh": "\u4f0a\u6717/\u77f3\u6cb9",
       "asset": "CL=F",
       "arming": {
-        "stoch_k": 71.28,
-        "stoch_d": 60.83,
+        "stoch_k": 85.85,
+        "stoch_d": 72.79,
         "stoch_curl": false,
         "macd_curl": false,
         "basing": false,
         "days_in_base": 0,
-        "flatness": 0.1439,
+        "flatness": 0.1522,
         "armed": false,
         "params": {
           "stoch_k_period": 14,

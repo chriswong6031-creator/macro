@@ -219,6 +219,58 @@ jobs:
         run: |
           python -m scripts.metabolism_gc || echo "GC completed (any errors above are non-fatal)"
 
+      - name: narrow-commit journal to main (achievements observability)
+        # The BUILD step above commits journal entries to the propose branch only;
+        # achievements observability reads journals from main.  Push journal dir to main
+        # so build outcomes are visible without waiting for a propose-branch merge.
+        # FIX-1 (BLOCKER): save journals BEFORE checkout so the branch-switch does not
+        # revert the working tree and lose them; restore from $RUNNER_TEMP after switching
+        # to main.  Rebase-tolerant; [skip ci].  Fail-soft: non-fatal push race.
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot" || true
+          git config user.email "actions@users.noreply.github.com" || true
+          # (a) Save journals BEFORE any branch switch.
+          _JSAVE="$RUNNER_TEMP/journal-save-build"
+          rm -rf "$_JSAVE" || true
+          mkdir -p "$_JSAVE" || true
+          if [ -d data/metabolism/journal ]; then
+            cp -f data/metabolism/journal/*.json "$_JSAVE/" 2>/dev/null || true
+          fi
+          # (b) Switch to a fresh main (never bare 'main' — avoid clobbering local ref).
+          git fetch origin main || true
+          git checkout -B _journal_main origin/main 2>/dev/null || git checkout -B _journal_main origin/main || true
+          # (c) Restore saved journals.
+          mkdir -p data/metabolism/journal || true
+          cp -f "$_JSAVE"/*.json data/metabolism/journal/ 2>/dev/null || true
+          # (d) Commit + push (tolerate no-change).
+          git add data/metabolism/journal/ 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "no journal changes to push to main — skip."
+            exit 0
+          fi
+          git commit -m "metabolism: journal build outcomes snapshot [skip ci]" \
+                     -m "Loop-Authored: build run=${GITHUB_RUN_ID:-local}" || true
+          for _i in 1 2 3; do
+            git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "journal pushed to main on attempt $_i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "journal push attempt $_i lost race; re-syncing"
+            sleep $((_i * 5))
+          done
+          echo "::warning::could not push journal to main after 3 attempts (non-fatal)"
+          exit 0
+
       - name: notify on failure
         if: failure()
         env:

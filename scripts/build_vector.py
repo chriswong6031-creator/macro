@@ -1300,12 +1300,12 @@ def home_alert_feed() -> list[dict]:
     mp = Path(config.ROOT) / h["macro_feed"]
     try:
         mdf = pd.read_parquet(mp)
-        from engine.alerts import alert_view
+        from engine.alerts import alert_href, alert_view
         major = mdf[mdf["severity"].isin(h["macro_major_severities"])
                     & ~mdf["rule"].isin(h.get("macro_exclude_rules", []))]
         for _, r in major.iterrows():
             v = alert_view(r["rule"], r["severity"], r["message"])
-            link = ("macro.html#" + v["anchor"]) if v["anchor"] else "macro.html"
+            link = alert_href(v["anchor"])
             # Resolve detail_zh: prefer persisted message_zh (written by the emitter
             # after the zh column landed in the parquet schema), then try the
             # template-prefix translation map for backlog entries that predate the

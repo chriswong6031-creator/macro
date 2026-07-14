@@ -1,11 +1,11 @@
 {
   "n": 27,
-  "built": "2026-07-13 09:14 UTC",
+  "built": "2026-07-14 09:35 UTC",
   "cards": [
     {
       "key": "spvector",
       "name": "S&P / Macro Vector",
-      "cagr": 12.58,
+      "cagr": 12.56,
       "sharpe": 0.88,
       "maxdd": -36.5,
       "income": 1.3,
@@ -14,34 +14,34 @@
     {
       "key": "credit_carry",
       "name": "Credit Carry",
-      "cagr": 6.86,
-      "sharpe": 2.88,
+      "cagr": 6.84,
+      "sharpe": 2.87,
       "maxdd": -2.4,
-      "income": 6.97,
+      "income": 6.99,
       "experimental": true
     },
     {
       "key": "duration_timing",
       "name": "Duration / Treasury Timing",
-      "cagr": 3.51,
+      "cagr": 3.49,
       "sharpe": 0.48,
       "maxdd": -18.1,
-      "income": 5.05,
+      "income": 5.06,
       "experimental": true
     },
     {
       "key": "nasdaq_trend",
       "name": "Nasdaq 100 Trend",
-      "cagr": 12.13,
-      "sharpe": 0.77,
+      "cagr": 12.08,
+      "sharpe": 0.76,
       "maxdd": -35.3,
-      "income": 1.65,
+      "income": 1.66,
       "experimental": true
     },
     {
       "key": "smallcap_trend",
       "name": "Small-Cap Trend",
-      "cagr": 5.05,
+      "cagr": 5.02,
       "sharpe": 0.42,
       "maxdd": -34.9,
       "income": 1.2,
@@ -50,16 +50,16 @@
     {
       "key": "semis_trend",
       "name": "Semiconductor Trend",
-      "cagr": 12.91,
+      "cagr": 12.78,
       "sharpe": 0.72,
       "maxdd": -32.5,
-      "income": 1.58,
+      "income": 1.59,
       "experimental": true
     },
     {
       "key": "dual_momentum",
       "name": "Dual Momentum (US)",
-      "cagr": 9.17,
+      "cagr": 9.14,
       "sharpe": 0.76,
       "maxdd": -30.3,
       "income": 1.3,
@@ -68,7 +68,7 @@
     {
       "key": "golden_cross",
       "name": "Golden Cross",
-      "cagr": 10.31,
+      "cagr": 10.28,
       "sharpe": 0.78,
       "maxdd": -33.7,
       "income": 1.3,
@@ -77,16 +77,16 @@
     {
       "key": "vol_managed_sp",
       "name": "Volatility-Managed S&P",
-      "cagr": 5.88,
+      "cagr": 5.87,
       "sharpe": 0.74,
       "maxdd": -32.6,
-      "income": 2.9,
+      "income": 2.91,
       "experimental": true
     },
     {
       "key": "vix_term_timer",
       "name": "VIX Term-Structure Timer",
-      "cagr": 8.26,
+      "cagr": 8.23,
       "sharpe": 0.77,
       "maxdd": -28.9,
       "income": 1.3,
@@ -95,16 +95,16 @@
     {
       "key": "net_liquidity",
       "name": "Net-Liquidity Vector",
-      "cagr": 8.51,
+      "cagr": 8.49,
       "sharpe": 0.57,
       "maxdd": -55.2,
-      "income": 2.11,
+      "income": 2.12,
       "experimental": true
     },
     {
       "key": "curve_recession",
       "name": "Yield-Curve Recession Timer",
-      "cagr": 8.52,
+      "cagr": 8.5,
       "sharpe": 0.59,
       "maxdd": -54.1,
       "income": 1.3,
@@ -113,17 +113,17 @@
     {
       "key": "sahm_timer",
       "name": "Sahm-Rule Labor Timer",
-      "cagr": 10.16,
+      "cagr": 10.14,
       "sharpe": 0.8,
       "maxdd": -33.7,
-      "income": 2.11,
+      "income": 2.12,
       "experimental": true
     },
     {
       "key": "credit_gate_equity",
       "name": "Credit-Spread Equity Gate",
-      "cagr": 9.06,
-      "sharpe": 0.89,
+      "cagr": 9.03,
+      "sharpe": 0.88,
       "maxdd": -19.6,
       "income": 1.3,
       "experimental": true
@@ -131,7 +131,7 @@
     {
       "key": "fin_conditions",
       "name": "Financial-Conditions Timer",
-      "cagr": 11.38,
+      "cagr": 11.35,
       "sharpe": 0.74,
       "maxdd": -48.2,
       "income": 1.3,
@@ -140,10 +140,10 @@
     {
       "key": "momentum_crashguard",
       "name": "Momentum w/ Crash Guard",
-      "cagr": 9.67,
-      "sharpe": 0.85,
+      "cagr": 9.61,
+      "sharpe": 0.84,
       "maxdd": -14.6,
-      "income": 2.8,
+      "income": 2.82,
       "experimental": true
     },
     {
@@ -152,14 +152,14 @@
       "cagr": 6.0,
       "sharpe": 0.94,
       "maxdd": -9.2,
-      "income": 3.07,
+      "income": 3.08,
       "experimental": true
     },
     {
       "key": "quality_flight",
       "name": "Quality Flight",
-      "cagr": 10.72,
-      "sharpe": 0.76,
+      "cagr": 10.67,
+      "sharpe": 0.75,
       "maxdd": -33.2,
       "income": 1.3,
       "experimental": true
@@ -176,73 +176,73 @@
     {
       "key": "gold_macro",
       "name": "Gold Macro Timer",
-      "cagr": 6.85,
+      "cagr": 6.84,
       "sharpe": 0.62,
       "maxdd": -33.0,
-      "income": 2.47,
+      "income": 2.49,
       "experimental": true
     },
     {
       "key": "oil_trend",
       "name": "Crude-Oil Trend",
-      "cagr": 2.88,
-      "sharpe": 0.24,
+      "cagr": 3.09,
+      "sharpe": 0.25,
       "maxdd": -44.4,
-      "income": 1.25,
+      "income": 1.26,
       "experimental": true
     },
     {
       "key": "copper_growth",
       "name": "Copper Growth Cyclical",
-      "cagr": 7.3,
-      "sharpe": 0.57,
+      "cagr": 7.38,
+      "sharpe": 0.58,
       "maxdd": -32.9,
-      "income": 1.25,
+      "income": 1.26,
       "experimental": true
     },
     {
       "key": "btc_trend",
       "name": "Bitcoin Trend",
-      "cagr": 53.21,
+      "cagr": 53.19,
       "sharpe": 0.96,
       "maxdd": -61.9,
-      "income": 2.47,
+      "income": 2.49,
       "experimental": true
     },
     {
       "key": "eth_trend",
       "name": "Ethereum Trend",
-      "cagr": 18.68,
+      "cagr": 18.67,
       "sharpe": 0.49,
       "maxdd": -77.4,
-      "income": 3.69,
+      "income": 3.71,
       "experimental": true
     },
     {
       "key": "ig_carry",
       "name": "Investment-Grade Carry",
-      "cagr": 3.72,
+      "cagr": 3.7,
       "sharpe": 0.78,
       "maxdd": -18.3,
-      "income": 5.47,
+      "income": 5.5,
       "experimental": true
     },
     {
       "key": "em_debt_carry",
       "name": "EM Debt Carry",
-      "cagr": 2.73,
+      "cagr": 2.71,
       "sharpe": 0.66,
       "maxdd": -12.7,
-      "income": 6.58,
+      "income": 6.61,
       "experimental": true
     },
     {
       "key": "flight_to_quality",
       "name": "Flight-to-Quality Duration",
-      "cagr": 2.95,
-      "sharpe": 0.65,
+      "cagr": 2.94,
+      "sharpe": 0.64,
       "maxdd": -8.1,
-      "income": 4.25,
+      "income": 4.27,
       "experimental": true
     }
   ]

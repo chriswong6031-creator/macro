@@ -1,17 +1,17 @@
 {
-  "as_of": "2026-07-10",
+  "as_of": "2026-07-13",
   "health_score": 85,
   "health_label": "healthy",
   "cycle_phase": "late",
-  "recession_risk": 4.679959132590886,
-  "drawdown_risk": 18.5378590078329,
+  "recession_risk": 4.677539465537072,
+  "drawdown_risk": 18.395427603725658,
   "pillars": {
     "curve": {
-      "spread_10y3m": 0.71,
-      "spread_2s10s": 0.35,
-      "curve_tp_adjusted": 0.35,
-      "ntfs": 0.6450000000000009,
-      "ny_fed_recession_prob": 0.15769918811410977,
+      "spread_10y3m": 0.73,
+      "spread_2s10s": 0.36,
+      "curve_tp_adjusted": 0.36,
+      "ntfs": 0.6874999999999973,
+      "ny_fed_recession_prob": 0.15452510529855262,
       "inverted": false,
       "tp_adj_inverted": false,
       "move_taxonomy": "bear_flattener",
@@ -23,41 +23,41 @@
       "bull_steepener_uninversion": false
     },
     "credit": {
-      "hy_oas": 2.7,
-      "ig_oas": 0.76,
-      "hy_ig_ratio": 3.5526315789473686,
+      "hy_oas": 2.69,
+      "ig_oas": 0.77,
+      "hy_ig_ratio": 3.4935064935064934,
       "baa_aaa": 0.41999999999999993,
       "ebp": -0.297648271615362,
-      "hy_pctile": 0.12400793650793651,
+      "hy_pctile": 0.11408730158730158,
       "distress_band": "tight",
-      "direction": "widening"
+      "direction": "tightening"
     },
     "real_inflation": {
-      "real_10y": 2.31,
-      "real_5y": 1.99,
-      "breakeven_10y": 2.24,
-      "breakeven_5y5y": 2.2,
+      "real_10y": 2.32,
+      "real_5y": 2.02,
+      "breakeven_10y": 2.26,
+      "breakeven_5y5y": 2.21,
       "term_premium": null,
       "tp_repriced_positive": null
     },
     "stress": {
       "move": 69.55000305175781,
       "move_band": "calm",
-      "move_pctile": 0.36904761904761907,
+      "move_pctile": 0.37103174603174605,
       "move_leads_vix": false,
-      "sofr_iorb_bp": -12.00000000000001,
+      "sofr_iorb_bp": -10.000000000000009,
       "repo_spike_bp": 12.00000000000001,
       "reserve_scarcity": false,
       "repo_stress": false
     },
     "cross_asset": {
-      "stock_bond_corr": 0.5643800997722926,
+      "stock_bond_corr": 0.5663158240580031,
       "regime": "breakdown",
       "hedge_working": false
     },
     "sovereign": {
-      "euro_frag": 0.38961770279999985,
-      "bund_10y": 3.1292327833,
+      "euro_frag": 0.38857694070000015,
+      "bund_10y": 3.1085540184,
       "frag_state": "calm",
       "frag_direction": "widening",
       "jgb_2s10s": 1.308,
@@ -65,9 +65,9 @@
     }
   },
   "stress_legs": {
-    "recession": 4.679959132590886,
-    "drawdown": 18.5378590078329,
-    "credit": 14.000000000000004,
+    "recession": 4.677539465537072,
+    "drawdown": 18.395427603725658,
+    "credit": 13.799999999999999,
     "rates_vol": 19.550003051757812,
     "plumbing": 0.0
   },
@@ -77,50 +77,50 @@
   "drivers_for": {
     "forex": {
       "note_en": "Rate differentials drive FX — the US 2y policy-path and the real-10y are the carry and value anchors; a US-favorable widening vs foreign rates is a USD tailwind.",
-      "real_10y": 2.31,
+      "real_10y": 2.32,
       "term_premium": null
     },
     "commodities": {
       "note_en": "Real-10y is gold's discount rate (inverse); breakevens track oil/energy; curve slope proxies the growth impulse for copper/oil.",
-      "real_10y": 2.31,
-      "breakeven_10y": 2.24
+      "real_10y": 2.32,
+      "breakeven_10y": 2.26
     },
     "bitcoin": {
       "note_en": "BTC is a long-duration, real-rate-sensitive liquidity asset — falling real-10y + easing plumbing is a tailwind; widening credit / rising MOVE is a risk-off gate.",
-      "real_10y": 2.31,
+      "real_10y": 2.32,
       "risk_off_gate": false
     },
     "equities": {
       "note_en": "Discount-rate channel (real-10y, term premium) compresses long-duration multiples; credit (HY OAS) is the canary that leads equity drawdowns; the SPEED of yield moves (MOVE) matters more than the level.",
-      "hy_oas": 2.7,
-      "credit_canary": true,
-      "stock_bond_corr": 0.5643800997722926
+      "hy_oas": 2.69,
+      "credit_canary": false,
+      "stock_bond_corr": 0.5663158240580031
     }
   },
   "fed_path": {
-    "asof": "2026-07-10",
-    "built": "2026-07-13T08:24:35.639337+00:00",
+    "asof": "2026-07-13",
+    "built": "2026-07-14T08:42:41.579788+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,
     "target_mid": 3.62,
     "implied": {
       "now": 3.62,
-      "m1": 3.67,
-      "m3": 3.82,
-      "m6": 4.0,
-      "m12": 4.1
+      "m1": 3.68,
+      "m3": 3.84,
+      "m6": 4.03,
+      "m12": 4.15
     },
     "implied_source_en": "ZQ fed-funds futures",
     "implied_source_zh": "ZQ 联邦基金期货",
-    "implied_bp_12m": 48,
+    "implied_bp_12m": 53,
     "implied_cuts_12m": -2,
     "implied_cuts_6m": -2,
     "sofr_path": {
       "m1": null,
       "m3": null,
-      "m6": 4.06,
-      "m12": 4.14
+      "m6": 4.1,
+      "m12": 4.19
     },
     "dots": [
       {
@@ -140,23 +140,23 @@
       "horizon_label": "end-2026",
       "horizon_months": 5,
       "fed_dot": 3.8,
-      "market": 3.94,
-      "gap_bp": 14,
+      "market": 3.97,
+      "gap_bp": 17,
       "lean_en": "market more hawkish than the Fed",
       "lean_zh": "市场比美联储更鹰派"
     },
-    "ntfs": 0.65,
-    "curve_tp_adj": 0.35,
-    "rate_exp_proxy": 0.54,
-    "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.62% → 4.10%)",
-    "headline_zh": "市场为未来12个月定价约加息2次（基金利率 3.62% → 4.10%）",
-    "read_en": "At end-2026 the market implies 3.94% vs the Fed's 3.80% median dot (+14bp — market more hawkish than the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.65pp).",
-    "read_zh": "在end-2026，市场隐含 3.94% 对比美联储 3.80% 的中位点（+14基点 — 市场比美联储更鹰派）。近端远期利差为正——近端未为降息定价（+0.65个百分点）。",
+    "ntfs": 0.69,
+    "curve_tp_adj": 0.36,
+    "rate_exp_proxy": 0.59,
+    "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.62% → 4.15%)",
+    "headline_zh": "市场为未来12个月定价约加息2次（基金利率 3.62% → 4.15%）",
+    "read_en": "At end-2026 the market implies 3.97% vs the Fed's 3.80% median dot (+17bp — market more hawkish than the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.69pp).",
+    "read_zh": "在end-2026，市场隐含 3.97% 对比美联储 3.80% 的中位点（+17基点 — 市场比美联储更鹰派）。近端远期利差为正——近端未为降息定价（+0.69个百分点）。",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE — it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
     "note_zh": "仅供展示 / LLM 上下文。隐含路径是市场价格（期货隐含的基金利率），并非预测优势，且重新定价是被动的——它在数据和美联储之后变动，并不领先。从不评分，从不作为 MRS 项。ZQ/SR3=无需密钥的 CME 期货；点阵图=FRED FEDTARMD（FOMC SEP 中位数）。请注明 CME/FRED。"
   },
   "intl_bonds": {
-    "as_of": "2026-07-10",
+    "as_of": "2026-07-13",
     "global": {
       "avg_10y": 3.88,
       "avg_10y_chg_63d_bp": 18.0,
@@ -166,9 +166,9 @@
       "regime": "global yields rising"
     },
     "us_vs_world": {
-      "us_10y": 4.54,
-      "exus_10y": 3.36,
-      "us_premium_bp": 118.0,
+      "us_10y": 4.56,
+      "exus_10y": 3.35,
+      "us_premium_bp": 121.0,
       "premium_direction": "stable"
     },
     "countries": [
@@ -180,20 +180,20 @@
         "cadence": "daily",
         "stale": false,
         "gdp_w": 0.42,
-        "y10": 4.54,
-        "y2": 4.16,
-        "slope": 0.38,
+        "y10": 4.56,
+        "y2": 4.21,
+        "slope": 0.35,
         "slope_basis": "2s10s",
         "slope_state": "normal",
-        "chg_63d_bp": 28.0,
+        "chg_63d_bp": 27.0,
         "direction": "rising",
-        "z1y": 1.86,
-        "z5y": 0.9,
+        "z1y": 1.97,
+        "z5y": 0.92,
         "diff_vs_us_bp": 0.0,
-        "real_10y": 2.31,
-        "vel_5d_bp": 5.0,
-        "vel_20d_bp": 6.0,
-        "vel_20d_z": 0.252,
+        "real_10y": 2.32,
+        "vel_5d_bp": 8.0,
+        "vel_20d_bp": 9.0,
+        "vel_20d_z": 0.404,
         "vel_window_days": 504
       },
       {
@@ -204,20 +204,20 @@
         "cadence": "daily",
         "stale": false,
         "gdp_w": 0.22,
-        "y10": 3.13,
-        "y2": 2.61,
+        "y10": 3.11,
+        "y2": 2.6,
         "slope": 0.51,
         "slope_basis": "2s10s",
         "slope_state": "normal",
         "chg_63d_bp": 2.0,
         "direction": "stable",
-        "z1y": 1.64,
-        "z5y": 1.05,
-        "diff_vs_us_bp": -141.0,
+        "z1y": 1.48,
+        "z5y": 1.03,
+        "diff_vs_us_bp": -145.0,
         "real_10y": null,
-        "vel_5d_bp": 12.3,
-        "vel_20d_bp": 6.0,
-        "vel_20d_z": 0.241,
+        "vel_5d_bp": 9.3,
+        "vel_20d_bp": 10.0,
+        "vel_20d_z": 0.491,
         "vel_window_days": 504
       },
       {
@@ -233,15 +233,15 @@
         "slope": 1.31,
         "slope_basis": "2s10s",
         "slope_state": "steep",
-        "chg_63d_bp": 27.0,
+        "chg_63d_bp": 28.0,
         "direction": "rising",
-        "z1y": 1.52,
-        "z5y": 2.45,
-        "diff_vs_us_bp": -185.0,
+        "z1y": 1.51,
+        "z5y": 2.44,
+        "diff_vs_us_bp": -187.0,
         "real_10y": null,
         "vel_5d_bp": 0.0,
-        "vel_20d_bp": 4.7,
-        "vel_20d_z": -0.137,
+        "vel_20d_bp": 10.1,
+        "vel_20d_z": 0.303,
         "vel_window_days": 504
       },
       {
@@ -261,7 +261,7 @@
         "direction": "rising",
         "z1y": 1.73,
         "z5y": 1.04,
-        "diff_vs_us_bp": 40.0,
+        "diff_vs_us_bp": 38.0,
         "real_10y": null,
         "vel_5d_bp": 0.0,
         "vel_20d_bp": 0.0,
@@ -285,7 +285,7 @@
         "direction": "stable",
         "z1y": 1.18,
         "z5y": 0.77,
-        "diff_vs_us_bp": -100.0,
+        "diff_vs_us_bp": -102.0,
         "real_10y": null,
         "vel_5d_bp": 0.0,
         "vel_20d_bp": 0.0,
@@ -309,7 +309,7 @@
         "direction": "stable",
         "z1y": 1.18,
         "z5y": 1.28,
-        "diff_vs_us_bp": 45.0,
+        "diff_vs_us_bp": 43.0,
         "real_10y": null,
         "vel_5d_bp": 0.0,
         "vel_20d_bp": 0.0,
@@ -333,7 +333,7 @@
         "direction": "stable",
         "z1y": 1.23,
         "z5y": -0.39,
-        "diff_vs_us_bp": -410.0,
+        "diff_vs_us_bp": -412.0,
         "real_10y": null,
         "vel_5d_bp": 0.0,
         "vel_20d_bp": 0.0,
@@ -342,28 +342,28 @@
       }
     ],
     "em": {
-      "em_oas": 1.45,
+      "em_oas": 1.44,
       "pctile": 4.0,
       "direction": "falling",
       "emb_trend": "up",
-      "emb_chg_63d_pct": 1.4
+      "emb_chg_63d_pct": 0.7
     },
-    "verdict_en": "Global 10y avg 3.88% and rising (+18bp/3m) — a global tightening/duration-bear impulse. US 10y is 118bp above the GDP-weighted rest of the world and stable — the dollar's rate-differential anchor. EM hard-currency OAS 1.45% (falling).",
-    "verdict_zh": "全球10年期均值 3.88%，3个月 +18基点 — 全球收紧/久期偏空动能。美国10年期较GDP加权的世界其余高118基点，利差平稳 — 美元的利差之锚。新兴市场硬通货利差 1.45%（收窄）。",
+    "verdict_en": "Global 10y avg 3.88% and rising (+18bp/3m) — a global tightening/duration-bear impulse. US 10y is 121bp above the GDP-weighted rest of the world and stable — the dollar's rate-differential anchor. EM hard-currency OAS 1.44% (falling).",
+    "verdict_zh": "全球10年期均值 3.88%，3个月 +18基点 — 全球收紧/久期偏空动能。美国10年期较GDP加权的世界其余高121基点，利差平稳 — 美元的利差之锚。新兴市场硬通货利差 1.44%（收窄）。",
     "drivers_for": {
       "forex": {
-        "us_premium_bp": 118.0,
+        "us_premium_bp": 121.0,
         "premium_direction": "stable",
         "note_en": "A widening US-vs-world 10y premium is a USD tailwind (rate-differential / carry channel); a narrowing premium pressures the dollar."
       }
     }
   },
   "bond_compass": {
-    "as_of": "2026-07-10",
+    "as_of": "2026-07-13",
     "duration": {
-      "lean": 0.35,
+      "lean": 0.34,
       "bucket": "lean_long",
-      "conviction": 0.35,
+      "conviction": 0.34,
       "agreement": 0.6,
       "n_legs": 5,
       "legs": [
@@ -411,7 +411,7 @@
           "key": "macro",
           "label_en": "Macro impulse (reflation)",
           "label_zh": "宏观动能（再通胀）",
-          "value": -0.49,
+          "value": -0.54,
           "weight": 0.5,
           "state": "bearish",
           "note_en": "Rising copper/gold + breakevens = reflation = a duration headwind.",
@@ -423,31 +423,31 @@
       "lean": "steepener",
       "rationale_en": "Reflation plus a positive curve points to long-end pressure.",
       "rationale_zh": "再通胀叠加正向曲线，指向长端压力。",
-      "slope_10y3m": 0.71,
-      "ntfs": 0.65
+      "slope_10y3m": 0.73,
+      "ntfs": 0.69
     },
     "expected": {
-      "carry_pct": 4.54,
+      "carry_pct": 4.56,
       "rolldown_pct": 0.37,
-      "carry_roll_pct": 4.91,
-      "cushion_bp": 61.0,
+      "carry_roll_pct": 4.93,
+      "cushion_bp": 62.0,
       "duration": 8.0
     },
-    "verdict_en": "Lean long duration (lean +0.35, 60% of legs agree). Curve: steepener bias. Carry+roll ≈ 4.91%/yr; yields can rise ~61bp before a 10y loses money over a year.",
-    "verdict_zh": "偏多久期（倾向 +0.35，60% 分项一致）。曲线：偏陡峭。套息+滚动约 4.91%/年；收益率上行约 61基点以内，10年期一年总回报仍不亏。",
+    "verdict_en": "Lean long duration (lean +0.34, 60% of legs agree). Curve: steepener bias. Carry+roll ≈ 4.93%/yr; yields can rise ~62bp before a 10y loses money over a year.",
+    "verdict_zh": "偏多久期（倾向 +0.34，60% 分项一致）。曲线：偏陡峭。套息+滚动约 4.93%/年；收益率上行约 62基点以内，10年期一年总回报仍不亏。",
     "honest_en": "Display-only positioning context, never scored. The same factors, backtested as a long/flat duration timer (reports/duration-timing-phase0.md), earn their keep through DRAWDOWN-CONTROL (MaxDD −18% vs −48% buy-and-hold), not reliable return-timing — the deflated Sharpe is marginal. Read it as 'when to stand aside', not a trade signal.",
     "honest_zh": "仅供仓位参考，从不评分。同样的因子作为多/空久期择时回测（见 reports/duration-timing-phase0.md），其价值在于回撤控制（最大回撤 −18% 对比买入持有 −48%），而非可靠的收益择时——贬值夏普处于临界。应理解为“何时退场”，而非交易信号。"
   },
   "bond_cross_asset": {
-    "as_of": "2026-07-10",
+    "as_of": "2026-07-13",
     "drivers_now": {
-      "real_10y": 2.31,
+      "real_10y": 2.32,
       "real_chg_bp": 42.0,
-      "slope": 0.71,
-      "slope_chg_bp": 16.0,
-      "hy_oas": 2.7,
-      "hy_chg_bp": -14.0,
-      "breakeven": 2.24,
+      "slope": 0.73,
+      "slope_chg_bp": 15.0,
+      "hy_oas": 2.69,
+      "hy_chg_bp": -16.0,
+      "breakeven": 2.26,
       "move": 70.0
     },
     "assets": [
@@ -462,10 +462,10 @@
         "beta": -0.05,
         "beta_disp": "-0.50%/+10bp",
         "corr": -0.6,
-        "n": 1540,
+        "n": 1541,
         "sign": "neg",
-        "impulse_en": "-14bp/3m",
-        "impulse_zh": "-14基点/3月",
+        "impulse_en": "-16bp/3m",
+        "impulse_zh": "-16基点/3月",
         "verdict": "tailwind",
         "story_en": "Credit (HY OAS) is the canary that leads equity drawdowns; widening = headwind.",
         "story_zh": "信用利差是领先股票回撤的预警；走阔=逆风。"
@@ -481,7 +481,7 @@
         "beta": -0.007,
         "beta_disp": "-0.07%/+10bp",
         "corr": -0.03,
-        "n": 1227,
+        "n": 1228,
         "sign": "neg",
         "impulse_en": "+42bp/3m",
         "impulse_zh": "+42基点/3月",
@@ -500,10 +500,10 @@
         "beta": 0.048,
         "beta_disp": "+0.48%/+10bp",
         "corr": 0.18,
-        "n": 1437,
+        "n": 1438,
         "sign": "pos",
-        "impulse_en": "+16bp/3m",
-        "impulse_zh": "+16基点/3月",
+        "impulse_en": "+15bp/3m",
+        "impulse_zh": "+15基点/3月",
         "verdict": "tailwind",
         "story_en": "Banks earn the curve — a steeper slope lifts net interest margins.",
         "story_zh": "银行赚取曲线利差——曲线越陡，净息差越高。"
@@ -519,7 +519,7 @@
         "beta": -0.11,
         "beta_disp": "-1.10%/+10bp",
         "corr": -0.39,
-        "n": 561,
+        "n": 562,
         "sign": "neg",
         "impulse_en": "+42bp/3m",
         "impulse_zh": "+42基点/3月",
@@ -538,10 +538,10 @@
         "beta": -0.006,
         "beta_disp": "-0.06%/+10bp",
         "corr": -0.03,
-        "n": 1437,
+        "n": 1438,
         "sign": "neg",
-        "impulse_en": "+28bp/3m",
-        "impulse_zh": "+28基点/3月",
+        "impulse_en": "+27bp/3m",
+        "impulse_zh": "+27基点/3月",
         "verdict": "headwind",
         "story_en": "A bond proxy — high yield, rate-sensitive; rising yields compete it down.",
         "story_zh": "类债券——高股息、对利率敏感；利率上行形成竞争压力。"
@@ -557,10 +557,10 @@
         "beta": -0.065,
         "beta_disp": "-0.65%/+10bp",
         "corr": -0.64,
-        "n": 1363,
+        "n": 1364,
         "sign": "neg",
-        "impulse_en": "-14bp/3m",
-        "impulse_zh": "-14基点/3月",
+        "impulse_en": "-16bp/3m",
+        "impulse_zh": "-16基点/3月",
         "verdict": "tailwind",
         "story_en": "Floating-rate, credit-dependent balance sheets — credit stress hits hardest.",
         "story_zh": "浮动利率、依赖信用的资产负债表——信用压力冲击最大。"
@@ -576,7 +576,7 @@
         "beta": 0.028,
         "beta_disp": "+0.28%/+10bp",
         "corr": 0.3,
-        "n": 1227,
+        "n": 1228,
         "sign": "pos",
         "impulse_en": "+42bp/3m",
         "impulse_zh": "+42基点/3月",
@@ -595,7 +595,7 @@
         "beta": -0.061,
         "beta_disp": "-0.61%/+10bp",
         "corr": -0.28,
-        "n": 1227,
+        "n": 1228,
         "sign": "neg",
         "impulse_en": "+42bp/3m",
         "impulse_zh": "+42基点/3月",
@@ -614,10 +614,10 @@
         "beta": 0.028,
         "beta_disp": "+0.28%/+10bp",
         "corr": 0.11,
-        "n": 1349,
+        "n": 1350,
         "sign": "pos",
-        "impulse_en": "+16bp/3m",
-        "impulse_zh": "+16基点/3月",
+        "impulse_en": "+15bp/3m",
+        "impulse_zh": "+15基点/3月",
         "verdict": "tailwind",
         "story_en": "Dr. Copper tracks the growth impulse the curve slope proxies.",
         "story_zh": "“铜博士”跟随曲线斜率所代表的增长动能。"
@@ -633,7 +633,7 @@
         "beta": 0.243,
         "beta_disp": "+2.43%/+10bp",
         "corr": 0.36,
-        "n": 1227,
+        "n": 1228,
         "sign": "pos",
         "impulse_en": "-13bp/3m",
         "impulse_zh": "-13基点/3月",
@@ -652,7 +652,7 @@
         "beta": -0.066,
         "beta_disp": "-0.66%/+10bp",
         "corr": -0.07,
-        "n": 616,
+        "n": 617,
         "sign": "neg",
         "impulse_en": "+42bp/3m",
         "impulse_zh": "+42基点/3月",
@@ -661,46 +661,46 @@
         "story_zh": "长久期流动性资产——实际利率下行+利率波动平静为顺风。"
       }
     ],
-    "verdict_en": "Real-10y 2.31% (+42bp/3m), curve 0.71pp, HY OAS 2.7%. 5 markets with a bond tailwind, 6 with a headwind right now.",
-    "verdict_zh": "10年实际利率 2.31%（+42基点/3月），曲线 0.71pp，高收益利差 2.7%。当前 5 个市场受债券顺风，6 个受逆风。"
+    "verdict_en": "Real-10y 2.32% (+42bp/3m), curve 0.73pp, HY OAS 2.69%. 5 markets with a bond tailwind, 6 with a headwind right now.",
+    "verdict_zh": "10年实际利率 2.32%（+42基点/3月），曲线 0.73pp，高收益利差 2.69%。当前 5 个市场受债券顺风，6 个受逆风。"
   },
   "intl": {
     "em_oas_ladder": {
       "em_hy_oas": {
         "value": 3.08,
         "vel_5d_z": null,
-        "vel_20d_z": 0.113,
-        "asof": "2026-07-09"
+        "vel_20d_z": 0.273,
+        "asof": "2026-07-10"
       },
       "vxeem": {
-        "value": 42.56,
+        "value": 39.04,
         "vel_5d_z": null,
-        "vel_20d_z": 0.241,
-        "asof": "2026-07-09"
+        "vel_20d_z": -1.319,
+        "asof": "2026-07-10"
       },
       "em_fx_basket": {
-        "value": -2.55,
+        "value": -2.59,
         "vel_5d_z": null,
-        "vel_20d_z": -0.038,
-        "asof": "2026-07-13"
+        "vel_20d_z": 0.266,
+        "asof": "2026-07-14"
       },
       "em_equity_breadth": {
         "value": 57.1,
         "vel_5d_z": null,
         "vel_20d_z": null,
-        "asof": "2026-07-10"
+        "asof": "2026-07-13"
       },
       "em_dollar_vel": {
-        "value": 129.48,
+        "value": 129.16,
         "vel_5d_z": null,
-        "vel_20d_z": 0.659,
-        "asof": "2026-07-02"
+        "vel_20d_z": 0.132,
+        "asof": "2026-07-10"
       },
       "emb_ief": {
-        "value": 1.03,
+        "value": 1.02,
         "vel_5d_z": null,
-        "vel_20d_z": 0.383,
-        "asof": "2026-07-10"
+        "vel_20d_z": -0.11,
+        "asof": "2026-07-13"
       }
     },
     "inversion_board": {

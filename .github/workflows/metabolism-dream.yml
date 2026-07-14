@@ -162,6 +162,49 @@ jobs:
           done
           echo "::warning::could not push dream after 3 attempts (non-fatal)"
 
+      - name: DIGEST (operator weekly one-pager + admin digest — A8)
+        continue-on-error: true
+        env:
+          AUTONOMY_PAUSED: ${{ vars.AUTONOMY_PAUSED }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: python -m scripts.metabolism_digest
+
+      - name: commit + push digest artifacts (only on change)
+        continue-on-error: true
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # Guard: only add files that exist (dry-run / paused no-op never writes them).
+          if ls data/metabolism/digest/*.md 2>/dev/null | grep -q .; then
+            git add data/metabolism/digest/
+          fi
+          if [ -f data/metabolism/insight_bus.jsonl ]; then
+            git add data/metabolism/insight_bus.jsonl
+          fi
+          if [ -d data/metabolism/tap ]; then
+            git add data/metabolism/tap/
+          fi
+          if git diff --cached --quiet; then
+            echo "no digest artifact changes — nothing to commit."
+            exit 0
+          fi
+          git commit -m "metabolism: DIGEST $(date -u +%FT%H:%MZ) [A8 weekly digest]" \
+                     -m "Loop-Authored: dream run=${GITHUB_RUN_ID:-local} [skip ci]"
+          git fetch origin main || true
+          comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                   <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+            | while IFS= read -r f; do rm -f -- "$f" || true; done
+          for _i in 1 2 3; do
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "digest pushed on attempt $_i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "digest push attempt $_i lost a race; re-syncing"; sleep $((_i * 7))
+          done
+          echo "::warning::could not push digest after 3 attempts (non-fatal)"
+
       - name: notify on failure
         if: failure()
         env:

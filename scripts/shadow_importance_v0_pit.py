@@ -233,8 +233,10 @@ def run(root: Path, dry_run: bool = False, band_frac: float = _BAND_FRAC_DEFAULT
 
 
 # --------------------------------------------------------------------------- #
-# end-of-collect hook — runs nightly ALONGSIDE shadow_importance_v0.py so both
-# tapes accrue in parallel.  Non-fatal.
+# collect-lane hook — runs nightly ALONGSIDE shadow_importance_v0.py so both
+# tapes accrue in parallel (standalone in daily.yml's collect_tail job since
+# the 2026-07-14 collect split; see shadow_importance_v0.run_as_collect_step
+# for why ordering vs the grader is not load-bearing).  Non-fatal.
 # --------------------------------------------------------------------------- #
 def run_as_collect_step(root: Path | str | None = None) -> None:
     try:
@@ -268,4 +270,14 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # hard_exit: this one-shot reads parquet (qbus store) — a plain exit can
+    # deadlock forever in pyarrow's C++ shutdown on macOS (#2196). Required now
+    # that the collect_tail job runs this standalone via `python -m`.
+    from lib.procutil import hard_exit
+    try:
+        main()
+    except Exception:  # noqa: BLE001 — traceback then hard-exit; never hang the lane
+        import traceback
+        traceback.print_exc()
+        hard_exit(1)
+    hard_exit(0)

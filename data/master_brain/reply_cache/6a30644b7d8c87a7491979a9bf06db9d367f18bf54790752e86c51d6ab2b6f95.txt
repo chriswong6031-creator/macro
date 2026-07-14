@@ -1,0 +1,36 @@
+**TREND-RIDER DESK NOTE — CANADA / TSX**  
+**2026-07-13 | Analyst: Thematic Desk (Trust-Graded Detector)**  
+**Accountable, falsifiable, never a size recommendation.**
+
+---
+
+### 1. The prevailing durable theme
+**Big Banks (ca_banks)** is the undisputed leader:  
+- **Rank #1**, momentum score 1.788 (the next-best challenger, Pipelines & Midstream, sits at 0.622 — a wide margin of 1.166).  
+- **Durability bar = 0.73** (high, indicating time-series cohesion; “mixed” Hurst tag means the trend isn’t pure trending but has held structure).  
+- **Breadth = 1.0** (every constituent inside the theme is participating).  
+
+**Why stay with it?** The absolute-trend gate — the one validated edge in multidecade sector backtests — is our discipline. On this market, the gate has historically **helped** (gate_helps = true), meaning it cut drawdown and shake-outs. The discipline says: stay with the trend until the gate itself flags an exit. Big Banks has not breached its trend anchor (the gate’s signal is implicit in the detector’s “eligible” flag; all eligible themes are above their trend thresholds). Therefore, the most honest risk-management case is to **remain with the dominant durable theme, not call a top**.
+
+### 2. Crowding is a sizing caution, not a fade
+Big Banks is **crowded** (z = 1.53), as are Pipelines (1.59) and Insurers (1.71). The guardrails are explicit: “Do NOT fade the dominant theme on a crowding flag — cap it, do not fade it.” Crowding can signal elevated positioning risk, which justifies **downsizing (cap exposure)**, but it provides no validated edge for timing a reversal. Fading the leader is the documented failure mode.
+
+### 3. The durability bar versus other strong themes
+While Banks leads, two other themes exhibit even higher durability and pure-trend characteristics:  
+- **Pipelines & Midstream** (rank #2, durability 0.76, Hurst “trend”, crowded).  
+- **Insurers** (rank #3, durability 0.79, Hurst “trend”, crowded).  
+
+These have superior Hurst signatures, but their momentum scores are significantly lower. The rotation margin is large (1.166), and the absorption rate is only 0.37 — far from a “one-narrative” extreme. This is a **broad, multi-theme rotation**, not a singular absolute dominance. Consequently, **the leadership handoff to a challenger is not confirmed**; the detector displays the ranks but provides no validated early-handoff signal. Staying with the leader remains the lowest-regret path under the absolute-trend discipline.
+
+### 4. The falsifiable conditional (check-by horizon)
+**If, by the end of August 2026 (check date ~2026-08-31):**  
+- Big Banks remains **rank #1** with a **durability bar ≥ 0.60**; and  
+- the **absolute-trend gate** for the theme has not flipped to “exit” (i.e., the proxy ETF ZEB.TO does not close below its trailing dynamic trend anchor for a full week),  
+then the theme’s staying-power condition remains intact, and the discipline would continue to allocate to it.  
+
+**If the gate triggers:** the discipline would reduce/exit defensively, cutting exposure irrespective of rank.  
+**If Banks loses rank #1** to a theme with a higher durability bar and trending Hurst (like Pipelines or Insurers) **and** that challenger’s own gate is intact, the detector would flag a leadership handoff — but we do **not** predict that now.  
+
+I hold no conviction on direction; this is a conditional risk-control framework, not a return forecast. The rank-IC is near zero, and rotation-timing has no validated edge. The case for staying with Big Banks rests entirely on the proven drawdown-avoidance properties of the absolute-trend gate.  
+
+— End Desk Note

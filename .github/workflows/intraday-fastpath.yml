@@ -48,7 +48,7 @@ concurrency:
 
 jobs:
   fastpath:
-    runs-on: [self-hosted, macstudio]
+    runs-on: [self-hosted, macstudio-light]   # dedicated light runner: live ticks must never queue behind nightly/asia/render holds on the 3-slot macstudio pool (observed 47-144m queue waits for 0.4m of work)
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -100,6 +100,22 @@ jobs:
             exit 0
           fi
           python -m scripts.build_risk_state
+      - name: build live china risk-state (fast China Market State on live prices -> live/china_risk_state.json)
+        # Recomputes the price-driven CN Market State legs (tape/trend, USD/CNH + DXY capital-flow)
+        # on live(-ish) Yahoo prices; slow legs (RORO, QVIX, breadth, PBoC, drawdown guards) carried
+        # from the nightly baseline. china_risk_state_live.js polls the output to patch china.html.
+        # HKEX-window gate (inverted vs US steps): run ONLY when UTC hour < 9 (01:00-08:30 UTC =
+        # 09:00-16:30 HKT, the full HKEX session including pre-auction and closing-auction ticks).
+        # On US-window ticks (UTC >= 9) A-shares and HK are closed — echo a skip message and exit 0.
+        # No extra env needed: Yahoo spark is keyless.
+        run: |
+          UTC_HOUR=$(date -u +%H)
+          if [ "$UTC_HOUR" -ge 9 ]; then
+            echo "UTC hour $UTC_HOUR >= 9 — US-window tick, skipping China risk-state build (HKEX gate)"
+            exit 0
+          fi
+          python -m scripts.build_china_risk_state || \
+            echo "::warning::china risk-state build failed (non-fatal)"
       - name: S&P 500 heatmap live refresh (15-min-delayed splice -> site/marketdata/sp500_heatmap.json)
         # The committed heatmap feed was otherwise only rebuilt inside the nightly render
         # (~23:45 ET), so macro.html / sector_heatmap.html showed the PRIOR day's close for
@@ -161,6 +177,18 @@ jobs:
             echo "::warning::basket_pulse build failed (non-fatal)"
           LIVE_QUOTES_PATH="$RUNNER_TEMP/quotes_live.json" python -m scripts.build_basket_pulse --market hk || \
             echo "::warning::basket_pulse hk build failed (non-fatal)"
+      - name: display live snapshot (all ticks — same-origin site/live/quotes.json)
+        # The browser's ONLY keyless feed for the glance-tier tiles (macro index strip,
+        # ES/NQ futures, china live strip, commodities/forex, BTC) is the same-origin
+        # site/live/quotes.json (window.LIVE_SNAPSHOT_URL; no Worker deployed). Producers:
+        # THIS step on every fastpath tick (30-min, US + HKEX windows — so the china
+        # tiles are fresh during CHINA hours, not just US RTH) and the hourly 24/7
+        # btc-live Action (nights/weekends/Sunday Globex reopen). ~25 symbols, seconds.
+        # Fresh direct fetch (same code path as btc-live) rather than filtering the
+        # live-data branch snapshot: identical contract, no branch dependency.
+        run: |
+          python -m scripts.build_live_quotes --display --out site/live/quotes.json || \
+            echo "::warning::display live snapshot failed (non-fatal; hourly btc-live keeps the tiles fed)"
       - name: notify turn events (FTR W10 — Discord alerts on IGNITION / shock / tape disagreement)
         # Evaluates three event sources (turn_watch.json, shock_state.json, basket_pulse.json)
         # and sends Discord messages via DISCORD_WEBHOOK_WATCHLIST.
@@ -186,8 +214,13 @@ jobs:
           # Stage the served live artifacts (site/live/* is gitignored -> force-track, like site/stockdata)
           # + the (maybe) refreshed regime as-of + Market State snapshot that the page reads its date from.
           git add -f site/live/overlay.json site/live/risk_state.json site/live/market_drivers.json site/live/shock_state.json site/live/basket_pulse.json site/live/flow_pulse.json site/live_config.js
+          # Display tile snapshot (same-origin; also written hourly by btc-live). Guard: a
+          # failed fetch on this tick leaves the checked-out copy untouched (tracked file).
+          git add -f site/live/quotes.json 2>/dev/null || true
           # HK basket pulse (GAP-3): guard with || true — absent on a tick where the hk build warned.
           git add -f site/live/basket_pulse_hk.json 2>/dev/null || true
+          # China risk-state (HKEX-window only): absent on US-window ticks that skipped the build.
+          git add -f site/live/china_risk_state.json 2>/dev/null || true
           # S&P heatmap live refresh (tracked file; guard for the premarket ticks that skip the build)
           git add site/marketdata/sp500_heatmap.json 2>/dev/null || true
           # TS-U0: stage the lastgood sidecar so it survives the next checkout and

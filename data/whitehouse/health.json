@@ -1,41 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-13T23:15:07.283320+00:00",
+  "as_of": "2026-07-14T11:44:44.697007+00:00",
   "posts_seen": 11,
   "seen_total": 28,
-  "evaluated": 5,
-  "activated": 3,
+  "evaluated": 0,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-07-13-fact-sheet-president-donald-j-trump-grants-further-regulatory-relief-from-burden",
-      "importance": 35,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-07-13-regulatory-relief-for-certain-stationary-sources-to-promote-american-chemical-ma",
-      "importance": 65,
-      "activated": true,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-07-13-modifying-the-bears-ears-national-monument",
-      "importance": 65,
-      "activated": true,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-07-13-fact-sheet-president-donald-j-trump-modifies-two-national-monuments-restoring-se",
-      "importance": 35,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-07-13-modifying-the-grand-staircase-escalante-national-monument",
-      "importance": 70,
-      "activated": true,
-      "degraded_reason": "served_by:deepseek"
-    }
-  ]
+  "gate_scores": []
 }

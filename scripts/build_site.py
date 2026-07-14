@@ -1710,6 +1710,36 @@ def _fear_greed_view() -> dict | None:
         return None
 
 
+def _vol_weather_view() -> dict | None:
+    """Load vol weather chips from site/basketdata/vol_weather.json (written by
+    build_theme_addons). JSON-or-None only — never falls back to compute.
+    Display-only; never fatal."""
+    try:
+        site_dir = config.ROOT / config.load()["storage"]["site_dir"]
+        p = site_dir / "basketdata" / "vol_weather.json"
+        if p.exists():
+            return json.loads(p.read_text())
+        return None
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("vol_weather view failed (%s)", e)
+        return None
+
+
+def _breadth_split_view() -> dict | None:
+    """Load AI vs non-AI breadth split from site/basketdata/breadth_split.json
+    (written by build_theme_addons). JSON-or-None only — never falls back to compute.
+    Display-only; never fatal."""
+    try:
+        site_dir = config.ROOT / config.load()["storage"]["site_dir"]
+        p = site_dir / "basketdata" / "breadth_split.json"
+        if p.exists():
+            return json.loads(p.read_text())
+        return None
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("breadth_split view failed (%s)", e)
+        return None
+
+
 def _froth_fragility_view(latest: dict) -> dict | None:
     """Froth & Fragility gauge (engine.froth_fragility) for the macro page: retail
     euphoria + hidden-distribution top-risk, with the forward-outcome track record
@@ -3347,6 +3377,7 @@ def main() -> int:
                   "stockview.js",
                   "lightweight-charts.js",
                   "allocation_scorecard.js", "live.js", "risk_state_live.js",
+                  "china_risk_state_live.js",
                   "wh_banner.js", "heatmap.js",
                   "subsector_rotation.js", "subsectors.js", "subsectors_china.js",
                   # vendored (self-hosted) third-party libs — were CDN <script> tags
@@ -3746,6 +3777,8 @@ def main() -> int:
         vol_shock=_vol_shock_view(latest, event_risk),  # forward vol-shock risk gauge (display-only)
         froth_fragility=_froth_fragility_view(latest),  # euphoria + hidden-distribution top-risk gauge (display-only)
         fear_greed=_fear_greed_view(),    # Fear/Greed composite dial (display-only, P1.2)
+        vol_weather=_vol_weather_view(),  # VSB W3: vol weather chips (display-only)
+        breadth_split=_breadth_split_view(),  # VSB W4: AI vs non-AI breadth (display-only)
         sector_heat=_sector_heat_view(),  # compact sector-heat strip for macro.html (display-only)
         dispersion_regime=_dispersion_regime_view(),  # L3 selection-regime chip (NW Rails W2 PR-4, display-only)
         policy_lever=_policy_lever_view(),  # Policy-Shock W2-F lever card (display-only, PS-R3)
@@ -3896,6 +3929,8 @@ def main() -> int:
             "nowcast_hist": _nh,
             "fear_euphoria": vm.get("fear_euphoria"),
             "fear_greed": vm.get("fear_greed"),
+            "vol_weather": vm.get("vol_weather"),
+            "breadth_split": vm.get("breadth_split"),
             "growth_score": latest.get("growth_score"),
             "inflation_score": latest.get("inflation_score"),
             "components_confirming": vm.get("components_confirming"),

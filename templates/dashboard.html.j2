@@ -1685,7 +1685,7 @@
 {# MX5 aurora backdrop — fixed-position static radial blooms; NOT background-attachment:fixed
    (mobile Safari artifact + CDN screenshot failure); scoped to grid view via CSS.
    Also the shared popover backdrop (one node, reused by both popovers). #}
-<div class="mx5-aurora" aria-hidden="true"><div class="mx5-a3"></div><div class="mx5-a4"></div></div>
+<div class="mx5-aurora{{ ' au-yellow' if (market_state and market_state.color == 'yellow') else (' au-red' if (market_state and market_state.color == 'red') else '') }}" aria-hidden="true"><div class="mx5-a3"></div><div class="mx5-a4"></div></div>
 <div class="mx5-popover-backdrop" id="mx5PopBackdrop" onclick="if(window.mx5CloseAllPopovers)mx5CloseAllPopovers()"></div>
 {% endif %}
 <nav class="site-nav">
@@ -3343,6 +3343,17 @@ body.page-macro.mx4-grid .mx5-aurora .mx5-a4{
 [data-theme="light"] body.page-macro.mx4-grid .mx5-aurora::after {background:radial-gradient(ellipse,rgba(99,102,241,.05) 0%,transparent 70%);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-aurora .mx5-a3{background:radial-gradient(ellipse,rgba(14,165,98,.04) 0%,transparent 70%);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-aurora .mx5-a4{background:radial-gradient(ellipse,rgba(99,102,241,.04) 0%,transparent 70%);}
+/* verdict-tinted aurora (operator order 2026-07-14): the two GREEN blobs follow the
+   market-state color — amber when Mixed, red when Risk-off; the indigo companions
+   stay neutral. Class baked from market_state.color + live-swapped by risk_state_live.js. */
+body.page-macro.mx4-grid .mx5-aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(245,158,11,.10) 0%,transparent 70%);}
+body.page-macro.mx4-grid .mx5-aurora.au-yellow .mx5-a3{background:radial-gradient(ellipse,rgba(245,158,11,.06) 0%,transparent 70%);}
+body.page-macro.mx4-grid .mx5-aurora.au-red::before{background:radial-gradient(ellipse,rgba(239,68,68,.10) 0%,transparent 70%);}
+body.page-macro.mx4-grid .mx5-aurora.au-red .mx5-a3{background:radial-gradient(ellipse,rgba(239,68,68,.06) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(156,98,18,.05) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-yellow .mx5-a3{background:radial-gradient(ellipse,rgba(156,98,18,.035) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-red::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-red .mx5-a3{background:radial-gradient(ellipse,rgba(220,38,38,.035) 0%,transparent 70%);}
 @media(prefers-reduced-motion:reduce){
   body.page-macro.mx4-grid .mx5-aurora::before,
   body.page-macro.mx4-grid .mx5-aurora::after,
@@ -3428,6 +3439,20 @@ body.page-macro.mx4-grid .mx5-regime-pill{
 }
 /* The pill's text span must not be forced to shrink below its content */
 body.page-macro.mx4-grid .mx5-regime-pill > span{flex:0 0 auto;}
+/* pill follows the market-state verdict color (operator order 2026-07-13):
+   default green accent when risk-on, amber when mixed, red when risk-off */
+body.page-macro.mx4-grid .mx5-regime-pill.rp-yellow{
+  border-color:var(--mx5-warn);background:var(--mx5-warn-dim);color:var(--mx5-warn-ink);
+}
+body.page-macro.mx4-grid .mx5-regime-pill.rp-yellow .mx5-dot{
+  background:var(--mx5-warn);box-shadow:0 0 6px rgba(245,158,11,.30);
+}
+body.page-macro.mx4-grid .mx5-regime-pill.rp-red{
+  border-color:var(--down,#ef4444);background:rgba(239,68,68,.10);color:var(--down,#ef4444);
+}
+body.page-macro.mx4-grid .mx5-regime-pill.rp-red .mx5-dot{
+  background:var(--down,#ef4444);box-shadow:0 0 6px rgba(239,68,68,.30);
+}
 body.page-macro.mx4-grid .mx5-regime-pill .mx5-dot{
   width:6px;height:6px;border-radius:50%;
   background:var(--mx5-accent);box-shadow:0 0 6px var(--mx5-accent-glow);
@@ -3450,6 +3475,10 @@ body.page-macro.mx4-grid .mx5-verdict-word{
 body.page-macro.mx4-grid .mx5-sub-line{
   font-size:11px;color:var(--mx5-accent-ink);font-weight:600;margin-top:3px;
 }
+/* sub-line follows the verdict color like .mx5-big-score below — without these the
+   page-global green accent paints "YELLOW — Trade with caution" green */
+body.page-macro.mx4-grid .mx5-score-yellow .mx5-sub-line{color:var(--mx5-warn-ink);}
+body.page-macro.mx4-grid .mx5-score-red .mx5-sub-line{color:var(--down,#ef4444);}
 /* score color by state */
 body.page-macro.mx4-grid.ms-green-page .mx5-big-score,
 body.page-macro.mx4-grid .mx5-score-green .mx5-big-score{color:var(--up,#22d97a);text-shadow:0 0 36px rgba(34,217,122,.3);}
@@ -3561,7 +3590,10 @@ body.page-macro.mx4-grid .mx5-path-labels{
   position:absolute;inset:0;pointer-events:none;
   font-family:-apple-system,Inter,sans-serif;font-size:11px;line-height:1;
 }
-body.page-macro.mx4-grid .mx5-path-labels span{position:absolute;white-space:nowrap;}
+/* DIRECT children only: the bilingual l-en/l-zh spans nested inside pl-zone/pl-x must
+   stay in normal flow — absolutizing them shrink-wraps the anchored parent to width 0,
+   so right-aligned zone words overflow rightward past the plot edge (label-bleed bug) */
+body.page-macro.mx4-grid .mx5-path-labels > span{position:absolute;white-space:nowrap;}
 body.page-macro.mx4-grid .mx5-pl-y{
   left:6px;transform:translateY(-50%);
   color:var(--ink-3,rgba(255,255,255,.32));font-variant-numeric:tabular-nums;
@@ -4343,9 +4375,12 @@ body.page-macro.mx4-grid #sx-markets-v2 .sxg-face.mx5-card-face{
   padding:18px 20px 14px!important;
 }
 body.page-macro.mx4-grid .mx5-mkt-grid{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+  display:grid;grid-template-columns:repeat(6,1fr);gap:16px;
 }
-@media(max-width:900px){
+@media(max-width:1100px){
+  body.page-macro.mx4-grid .mx5-mkt-grid{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:700px){
   body.page-macro.mx4-grid .mx5-mkt-grid{grid-template-columns:1fr 1fr;}
 }
 body.page-macro.mx4-grid .mx5-mkt-tile{
@@ -4798,12 +4833,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                     <div class="ms-sig-detail">{% if latest.dislocation.verdict == 'buyable_washout' %}{{ t('A stress washout with the Fed put intact — a buyable washout. Confirm into stabilization, do not anticipate.','压力抛售且美联储托底在位 — 可买入错杀。在企稳中确认，勿提前抢跑。') }}{% elif latest.dislocation.verdict == 'stand_aside' %}{{ t('A stress washout with the Fed put ABSENT — stand aside (the 2000/2008/2022 falling-knife regime).','压力抛售且美联储托底缺失 — 观望（2000／2008／2022 接飞刀情形）。') }}{% else %}{{ t('An acute stress dislocation is firing — see the gate below.','急性压力错位正在触发 — 见下方一道闸。') }}{% endif %}</div>
                   </a>
                   {% endif %}
+                  {# C-01 + v5: `anchor` is either an id on THIS page (plain id → in-page
+                     jump; dlg-* → the owning mx5 dialog, opened via JS) or an id on
+                     another page (cross-page link). Mirrors engine/alerts.ANCHOR_PAGE /
+                     alert_href — a jump on macro must never target a dead anchor. #}
+                  {% set _a_xpage = {'holdings':'us_stocks.html','accumulation':'us_stocks.html','flows':'us_stocks.html','board':'macro_context.html'} %}
                   {% if alerts %}{% for a in alerts %}
-                  {# C-01: these panels render on us_stocks only — an in-page jump on
-                     macro would be a dead anchor, so route cross-page instead. #}
-                  {% set _a_href = ('us_stocks.html#' + a.anchor) if (a.anchor in ('holdings','accumulation','flows') and mode != 'stocks') else ('#' + a.anchor if a.anchor else '') %}
-                  <a class="ms-sig sev-{{ a.severity }}"{% if _a_href %}{% if _a_href.startswith('#') %} data-ms-jump{% endif %} href="{{ _a_href }}"{% endif %}>
-                    <div class="ms-sig-head"><span class="ms-sig-ico">{{ a.icon }}</span><span class="ms-sig-title"><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></span>{% if _a_href %}<span class="ms-sig-jump">{% if _a_href.startswith('#') %}{{ t('View ↓','查看 ↓') }}{% else %}{{ t('View →','查看 →') }}{% endif %}</span>{% endif %}</div>
+                  {% set _a_href = (_a_xpage[a.anchor] + '#' + a.anchor) if (a.anchor in _a_xpage and mode != 'stocks') else ('#' + a.anchor if a.anchor else '') %}
+                  {% set _a_dlg = a.anchor if (a.anchor and a.anchor.startswith('dlg-')) else '' %}
+                  <a class="ms-sig sev-{{ a.severity }}"{% if _a_href %}{% if _a_dlg %} data-ms-dlg="{{ _a_dlg }}"{% elif _a_href.startswith('#') %} data-ms-jump{% endif %} href="{{ _a_href }}"{% endif %}>
+                    <div class="ms-sig-head"><span class="ms-sig-ico">{{ a.icon }}</span><span class="ms-sig-title"><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></span>{% if _a_href %}<span class="ms-sig-jump">{% if _a_href.startswith('#') and not _a_dlg %}{{ t('View ↓','查看 ↓') }}{% else %}{{ t('View →','查看 →') }}{% endif %}</span>{% endif %}</div>
                     <div class="ms-sig-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
                     {% if a.what_en %}<div class="ms-sig-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh }}</span></div>{% endif %}
                     {% if a.edge_en %}<div class="ms-sig-edge"><b>{{ t('Conviction:','可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
@@ -4928,7 +4967,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
         {# Right of gauge: regime pill + big score + verdict word #}
         <div>
-          <div class="mx5-regime-pill">
+          <div class="mx5-regime-pill{{ ' rp-yellow' if MS.color == 'yellow' else (' rp-red' if MS.color == 'red' else '') }}">
             <div class="mx5-dot"></div>
             <span class="l-en">{{ td(latest.quad_name) if latest.quad_name is defined else 'Regime' }}{% if _mx5_ts_en %} &nbsp;&middot;&nbsp; {{ _mx5_ts_en }}{% endif %}</span>
             <span class="l-zh">{{ td(latest.quad_name) if latest.quad_name is defined else '周期' }}{% if _mx5_ts_zh %} &nbsp;&middot;&nbsp; {{ _mx5_ts_zh }}{% endif %}</span>
@@ -5238,6 +5277,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       var cb=document.getElementById('ms-alerts-toggle');
       if(!cb) return;
       document.addEventListener('click',function(e){
+        var dj=e.target.closest('[data-ms-dlg]');
+        if(dj){ e.preventDefault(); cb.checked=false;
+                if(window.mx5OpenDlg) window.mx5OpenDlg(dj.getAttribute('data-ms-dlg')); return; }
         if(e.target.closest('[data-ms-jump]')){ cb.checked=false; return; }
         var pill=e.target.closest('.ms-alerts');
         if(pill){ e.preventDefault(); cb.checked=!cb.checked; return; }
@@ -5272,6 +5314,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       var pts;
       try { pts = JSON.parse(svg.getAttribute('data-points') || '[]'); } catch(e){ return; }
       if(!pts.length) return;
+      /* the live layer (risk_state_live.js patchPath) appends/updates a provisional
+         point and rewrites data-points — re-read so the tooltip includes it */
+      document.addEventListener('mx5pathlive', function(){
+        try { pts = JSON.parse(svg.getAttribute('data-points') || '[]'); } catch(e){}
+      });
       var VBW = +(svg.getAttribute('data-vbw')||1000);
       var VBH = +(svg.getAttribute('data-vbh')||224);
       var COL = { 'Risk-on':'#22d97a', 'Mixed':'#f59e0b', 'Risk-off':'#ef4444' };
@@ -5454,8 +5501,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <span class="l-zh">{{ MS.label_zh or MS.label_en }} &mdash; {{ {'green':'顺势而为，强势中加仓。','yellow':'谨慎操作，仓位缩小。','red':'优先保住本金，降低风险。'}.get(MS.color,'') }}</span>
             </div>
             <div class="mx5-action-sub">
-              <span class="l-en">Composite {{ MS.score }}/100{% if _ev_total %} &middot; {{ _ev_n_good }} of {{ _ev_total }} signals aligned{% endif %}</span>
-              <span class="l-zh">综合评分 {{ MS.score }}/100{% if _ev_total %} &middot; {{ _ev_n_good }}/{{ _ev_total }} 项信号一致{% endif %}</span>
+              {# When the Risk Radar ceiling bites (score < raw_score), say so — otherwise
+                 "N of N signals aligned" beside a capped score reads as a contradiction.
+                 No digits in the note: risk_state_live.js live-patches \d+(?=/100) only. #}
+              {% set _ev_capped = MS.raw_score is defined and MS.raw_score is not none and MS.raw_score > MS.score %}
+              <span class="l-en">Composite {{ MS.score }}/100{% if _ev_total %} &middot; {{ _ev_n_good }} of {{ _ev_total }} signals aligned{% endif %}{% if _ev_capped %} &middot; capped by the Risk Radar{% endif %}</span>
+              <span class="l-zh">综合评分 {{ MS.score }}/100{% if _ev_total %} &middot; {{ _ev_n_good }}/{{ _ev_total }} 项信号一致{% endif %}{% if _ev_capped %} &middot; 风险雷达封顶{% endif %}</span>
             </div>
           </div>
         </div>
@@ -7519,6 +7570,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <span class="l-en">Composite at {{ _fgv5_dial | int }} &middot; {{ _fgv5_label_en | lower }} zone</span>
       <span class="l-zh">综合指数 {{ _fgv5_dial | int }} &middot; {{ _fgv5_label_zh }}区间</span>
     </div>
+    {# VSB W5: AI breadth caveat — only when spread_50 is meaningful (|spread|>=15) #}
+    {% if breadth_split is defined and breadth_split %}
+    {% set _bsv5_spread = breadth_split.get('latest', {}).get('spread_50') %}
+    {% if _bsv5_spread is not none and (_bsv5_spread | float | abs) >= 15 %}
+    <div id="vsb-sentiment-caveat" style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.4));margin-top:6px;line-height:1.4">
+      <span class="l-en">{{ breadth_split.get('stance_en') or '' }}</span>
+      <span class="l-zh">{{ breadth_split.get('stance_zh') or '' }}</span>
+    </div>
+    {% endif %}
+    {% endif %}
   </div>
   </div>{# /sx-v5-sentiment #}
 
@@ -7591,6 +7652,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   <div class="sx" id="sx-markets-v2" style="--isle-color:var(--isle-markets)">
     {# v5 face — MARKETS (S2: four glass tiles with price/delta/sparkline; data-bare ids preserved) #}
     {% set _ix_names = {'SPY': 'US Equities', 'QQQ': 'Nasdaq', 'DJI': 'Dow Jones', '_DJI': 'Dow Jones', 'RUT': 'Small Cap', '_RUT': 'Small Cap'} %}
+    {% set _ix_names_zh = {'SPY': '美股', 'QQQ': '纳指', 'DJI': '道琼斯', 'RUT': '小盘股'} %}
+    {# Live-feed symbol per tile: the DJI/RUT store keys are NOT valid Yahoo symbols, so
+       live.js's direct quotes[sym] lookup could never patch those two tiles (feed carries
+       ^DJI/^RUT). data-sym gets the feed key; the visible ticker label keeps the store key. #}
+    {% set _ix_live = {'DJI': '^DJI', 'RUT': '^RUT'} %}
     <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Markets" onclick="mx5OpenDlg('dlg-markets')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-markets');}">
       {# Eyebrow hidden in v5 card face — card-title removed (1.1); aria-label carries accessible name #}
       <div class="mx5-mkt-grid">
@@ -7600,11 +7666,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _ixdir = ('up' if _ixchg > 0 else ('dn' if _ixchg < 0 else '')) if _ixchg is not none else '' %}
         {# idx_spark: list of closes for this ticker; graceful if absent #}
         {% set _ixspk = (idx_spark.get(_ixsym) or idx_spark.get('^' ~ _ixsym) or []) if (idx_spark is defined and idx_spark) else [] %}
-        <div class="mx5-mkt-tile {{ _ixdir }}" data-sym="{{ _ixsym }}" data-mkt="us">
+        {% set _ixlive = _ix_live.get(_ixsym, _ixsym) %}
+        <div class="mx5-mkt-tile {{ _ixdir }}" data-sym="{{ _ixlive }}" data-mkt="us">
           <div class="mx5-mkt-ticker">{{ _ixsym }}</div>
-          <div class="mx5-mkt-sub">{{ _ix_names.get(ix.ticker, _ixsym) }}</div>
-          <div class="mx5-mkt-price nb-px" data-sym="{{ _ixsym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
-          <div class="mx5-mkt-delta {{ _ixdir }} nb-chg" data-sym="{{ _ixsym }}" data-mkt="us">{% if _ixchg is not none %}{{ '%+.2f'|format(_ixchg) }}%{% else %}—{% endif %}</div>
+          <div class="mx5-mkt-sub"><span class="l-en">{{ _ix_names.get(ix.ticker, _ixsym) }}</span><span class="l-zh">{{ _ix_names_zh.get(_ixsym, _ixsym) }}</span></div>
+          <div class="mx5-mkt-price nb-px" data-sym="{{ _ixlive }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
+          <div class="mx5-mkt-delta {{ _ixdir }} nb-chg" data-sym="{{ _ixlive }}" data-mkt="us">{% if _ixchg is not none %}{{ '%+.2f'|format(_ixchg) }}%{% else %}—{% endif %}</div>
           {# Sparkline — Jinja static SVG from idx_spark; absent = no spark box #}
           {% if _ixspk and _ixspk | length >= 3 %}
           {% set _spk_n = _ixspk | length %}
@@ -7638,6 +7705,23 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% endif %}
         </div>
         {% endfor %}
+        {# Futures tiles — ES=F and NQ=F; live.js patches price/delta; no sparkline (no
+           nightly store for futures). Tiles are display-only context; data-bare opts out
+           of the "$" prefix so the level reads as a futures contract level, not an ETF
+           price. Both symbols are in build_live_quotes CORE_SYMBOLS (US_FUTURES) so they
+           are always covered by the snapshot regardless of site data-sym scraping. #}
+        <div class="mx5-mkt-tile" data-sym="ES=F" data-mkt="us">
+          <div class="mx5-mkt-ticker">ES</div>
+          <div class="mx5-mkt-sub"><span class="l-en">S&amp;P Futures</span><span class="l-zh">标普期货</span></div>
+          <div class="mx5-mkt-price nb-px" data-sym="ES=F" data-mkt="us" data-bare>—</div>
+          <div class="mx5-mkt-delta nb-chg" data-sym="ES=F" data-mkt="us">—</div>
+        </div>
+        <div class="mx5-mkt-tile" data-sym="NQ=F" data-mkt="us">
+          <div class="mx5-mkt-ticker">NQ</div>
+          <div class="mx5-mkt-sub"><span class="l-en">Nasdaq Futures</span><span class="l-zh">纳指期货</span></div>
+          <div class="mx5-mkt-price nb-px" data-sym="NQ=F" data-mkt="us" data-bare>—</div>
+          <div class="mx5-mkt-delta nb-chg" data-sym="NQ=F" data-mkt="us">—</div>
+        </div>
       </div>
     </div>
     {# Heatmap staging: heatmap.js mounts on first #heatmap-scorecard at DOMContentLoaded;
@@ -8937,6 +9021,112 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="l-zh">{{ _dlg_fg_young | length }} 个分项仍在积累历史数据，待数据充足后将加入综合指数：{% for y in _dlg_fg_young %}{{ y.name_zh or y.name_en }}{{ '、' if not loop.last }}{% endfor %}。</span>
         </div>
         {% endif %}
+
+        {# VSB W3: Volatility weather strip #}
+        {% if vol_weather is defined and vol_weather %}
+        {% set _vw_chips_all = vol_weather.get('chips') or [] %}
+        {% set _vw_order = ['vix_level','vix_velocity','term_slope','vvix_vix','vix1d','cor1m','cor3m','dspx'] %}
+        {% set _vw_map = {} %}
+        {% for c in _vw_chips_all %}{% if _vw_map.update({c.get('key', ''): c}) %}{% endif %}{% endfor %}
+        <div class="mx5-dlg-sep"></div>
+        <div id="vsb-vol-weather-section" style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px">
+          <span class="l-en">Volatility weather</span><span class="l-zh">波动率天气</span>
+        </div>
+        {% for key in _vw_order %}
+        {% set _chip = _vw_map.get(key) %}
+        {% if _chip %}
+        {% set _chip_fresh = _chip.get('freshness') %}
+        {% set _chip_pctile = _chip.get('pctile') %}
+        <div class="mx5-dlg-factor-row" data-vsb-chip="{{ key }}">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">{{ _chip.get('name_en') or key }}</span><span class="l-zh">{{ _chip.get('name_zh') or _chip.get('name_en') or key }}</span></div>
+            {% if _chip_fresh in ('young', 'missing') %}
+            <div class="mx5-dlg-factor-read"><span class="l-en">Still collecting — check back soon</span><span class="l-zh">仍在积累数据，稍后再看</span></div>
+            {% else %}
+            <div class="mx5-dlg-factor-read">
+              <span class="l-en">{{ _chip.get('plain_en') or _chip.get('state') or '' }}{% if _chip_pctile is not none %} &middot; {% if _chip_pctile >= 50 %}higher than {{ _chip_pctile }}% of days{% else %}lower than {{ 100 - _chip_pctile }}% of days{% endif %}{% endif %}</span>
+              <span class="l-zh">{{ _chip.get('plain_zh') or _chip.get('state') or '' }}{% if _chip_pctile is not none %} &middot; {% if _chip_pctile >= 50 %}高于历史 {{ _chip_pctile }}% 的交易日{% else %}低于历史 {{ 100 - _chip_pctile }}% 的交易日{% endif %}{% endif %}</span>
+            </div>
+            {% endif %}
+          </div>
+          <div></div>
+          <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
+            {% if _chip_fresh in ('young', 'missing') %}
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))">—</span>
+            {% else %}
+            {{ _chip.get('value') if _chip.get('value') is not none else '—' }}
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% if vol_weather.get('as_of') %}
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:2px"><span class="l-en">As of {{ vol_weather.as_of }}</span><span class="l-zh">数据日期 {{ vol_weather.as_of }}</span></div>
+        {% endif %}
+        {% endif %}
+
+        {# VSB W4: AI names vs the rest #}
+        {% if breadth_split is defined and breadth_split %}
+        {% set _bs = breadth_split %}
+        {% set _bs_lat = _bs.get('latest') or {} %}
+        {% set _bs_cs = _bs.get('cohort_sizes') or {} %}
+        <div class="mx5-dlg-sep"></div>
+        <div id="vsb-breadth-split-section" style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px">
+          <span class="l-en">AI names vs the rest</span><span class="l-zh">AI 相关个股 vs 其他</span>
+        </div>
+        {# Stance line #}
+        {% if _bs.get('stance_en') %}
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--ink-1,rgba(255,255,255,.85))">
+          <span class="l-en">{{ _bs.stance_en }}</span><span class="l-zh">{{ _bs.get('stance_zh') or _bs.stance_en }}</span>
+        </div>
+        {% endif %}
+        {# Receipt lines #}
+        {% set _bs_ai50 = _bs_lat.get('ai_pct50') %}
+        {% set _bs_nonai50 = _bs_lat.get('nonai_pct50') %}
+        {% if _bs_ai50 is not none %}
+        <div class="mx5-dlg-factor-row" data-vsb-bs="ai">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">AI-linked names above their 50-day trend</span><span class="l-zh">AI 相关个股站上 50 日均线</span></div>
+          </div>
+          <div></div>
+          <div style="font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-1,rgba(255,255,255,.85))">{{ _bs_ai50 | round(0) | int }}%</div>
+        </div>
+        {% endif %}
+        {% if _bs_nonai50 is not none %}
+        <div class="mx5-dlg-factor-row" data-vsb-bs="nonai">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">Everyone else</span><span class="l-zh">其他个股</span></div>
+          </div>
+          <div></div>
+          <div style="font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-1,rgba(255,255,255,.85))">{{ _bs_nonai50 | round(0) | int }}%</div>
+        </div>
+        {% endif %}
+        {# Cohort size note #}
+        {% set _bs_ai_n = _bs_cs.get('ai_total') %}
+        {% set _bs_univ = _bs_cs.get('universe') %}
+        {% if _bs_ai_n is not none and _bs_univ is not none %}
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:6px;line-height:1.5">
+          <span class="l-en">{{ _bs_ai_n }} AI-linked names out of {{ _bs_univ }} tracked</span>
+          <span class="l-zh">{{ _bs_univ }} 只跟踪个股中有 {{ _bs_ai_n }} 只 AI 相关</span>
+        </div>
+        {% endif %}
+        {# Young note #}
+        {% if _bs.get('young') %}
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:4px">
+          <span class="l-en">Still building history — readings will stabilise over time.</span>
+          <span class="l-zh">历史数据仍在积累，读数将随时间趋于稳定。</span>
+        </div>
+        {% endif %}
+        {# Static circularity-watch note #}
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:8px;line-height:1.5;border-top:1px solid rgba(255,255,255,.06);padding-top:8px">
+          <span class="l-en">Watch: the AI buildout recycles capital among related names. If stocks start moving together again, the calm can break quickly — watch, don't chase.</span>
+          <span class="l-zh">注意：AI 基础设施建设在相关个股间循环资金。若股票重新同步波动，表面平静可能迅速打破，保持观察而非追高。</span>
+        </div>
+        {% if _bs.get('as_of') %}
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">As of {{ _bs.as_of }}</span><span class="l-zh">数据日期 {{ _bs.as_of }}</span></div>
+        {% endif %}
+        {% endif %}
+
         {# Disclaimer #}
         {% if _dlg_fg.get('disclaimer_en') %}
         <div class="mx5-dlg-sep"></div>
@@ -9177,6 +9367,36 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       if(trOverlay && trOverlay.classList.contains('is-open')) return;
       if(_dlgActive){ e.stopImmediatePropagation(); window.mx5CloseDlg(); return; }
     }, true /* capture — runs before the popover handler which uses bubble */);
+
+    /* ── Alert deep-link resolution ─────────────────────────────
+       Landing-hub / alerts-board / notification links arrive as
+       macro.html#<anchor> (engine/alerts.alert_href). A dlg-* hash
+       opens the owning dialog. Legacy pre-v5 anchors still baked in
+       older rendered feeds (the hub regenerates nightly) resolve to
+       their v5 homes: same-page → open/scroll, other-page → replace. */
+    var _legacyAnchor = {
+      'risk-state':'dlg-risk', 'liquidity':'dlg-risk', 'credit':'dlg-risk',
+      'dials':'regime-radar', 'sectors':'dlg-sector',
+      'positioning':'macro_context.html#board',
+      'holdings':'us_stocks.html#holdings',
+      'accumulation':'us_stocks.html#accumulation'
+    };
+    function _resolveAlertHash(){
+      var h = (location.hash || '').slice(1);
+      if(!h) return;
+      var legacy = false;
+      if(_legacyAnchor[h]){
+        var tgt = _legacyAnchor[h];
+        if(tgt.indexOf('.html') !== -1){ location.replace(tgt); return; }
+        h = tgt; legacy = true;
+      }
+      var el = document.getElementById(h);
+      if(!el) return;
+      if(el.classList.contains('mx5-dlg')){ window.mx5OpenDlg(h); }
+      else if(legacy){ el.scrollIntoView(); }
+    }
+    _resolveAlertHash();
+    window.addEventListener('hashchange', _resolveAlertHash);
 
   })();
   </script>

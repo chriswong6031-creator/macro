@@ -47,9 +47,16 @@ jobs:
             scripts
             config
             data/metabolism
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      # Homebrew venv, not actions/setup-python: on the self-hosted Macs the
+      # hostedtoolcache dir (/Users/runner) doesn't exist and setup-python
+      # dies with "mkdir: /Users/runner: Permission denied" (probe run
+      # 29303838296 on actions-runner-3). Mirrors metabolism-cycle.yml.
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - name: install minimal deps
         run: pip install --quiet anthropic pyyaml
       - name: probe each key (1-token call; names only, never values)
@@ -64,6 +71,16 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: python -m scripts.key_pool_probe
       - name: write budget status snapshot
+        env:
+          # OAuth pool for budget_gate presence-based key discovery (mirrors probe step above).
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
         run: python -m engine.metabolism.budget_gate --mode manual --write-status 2>/dev/null || true
       - name: narrow-commit key_budget_status.json
         env:

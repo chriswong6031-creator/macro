@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "as_of": "2026-07-14",
+  "themes": {
+    "hyperscaler_credit": {
+      "name_en": "Hyperscaler Credit",
+      "name_zh": "超大规模云计算商信用",
+      "issuers": {
+        "MSFT": {
+          "equity_ticker": "MSFT",
+          "name_match_patterns": ["MICROSOFT"],
+          "id_prefixes": ["594918"],
+          "tier": "IG",
+          "coverage_notes": "Aaa/AAA; ~$103B long-term debt 2026; bonds in SPIB and SPLB (1-3y and long-dated tranches). Cusip6 594918 confirmed from live harvest 2026-07-14."
+        },
+        "AMZN": {
+          "equity_ticker": "AMZN",
+          "name_match_patterns": ["AMAZON.COM", "AMAZON COM"],
+          "id_prefixes": ["023135"],
+          "tier": "IG",
+          "coverage_notes": "~$119B LT debt; Jul-2026 $25B 8-tranche deal (2029-2066) now entering SPIB/SPLB. Bonds trade as 'AMAZON.COM INC'. Cusip6 023135 confirmed from live harvest 2026-07-14."
+        },
+        "META": {
+          "equity_ticker": "META",
+          "name_match_patterns": ["META PLATFORMS"],
+          "id_prefixes": ["30303M"],
+          "tier": "IG",
+          "coverage_notes": "Oct-2025 $30B issuance (2030-2065); Aa3/AA-. Bonds in SPSB/SPIB/SPLB. Cusip6 30303M confirmed from live harvest 2026-07-14."
+        },
+        "GOOGL": {
+          "equity_ticker": "GOOGL",
+          "name_match_patterns": ["ALPHABET"],
+          "id_prefixes": ["02079K"],
+          "tier": "IG",
+          "coverage_notes": "Feb-2026 ~$32B multi-currency ($20B USD); Aa1/AA+. Bonds trade as 'ALPHABET INC'. Cusip6 02079K confirmed from live harvest 2026-07-14."
+        },
+        "ORCL": {
+          "equity_ticker": "ORCL",
+          "name_match_patterns": ["ORACLE"],
+          "id_prefixes": ["68389X"],
+          "tier": "IG",
+          "coverage_notes": "~$108B total debt; Baa2/BBB negative outlook at all three agencies 2026 — standing fallen-angel watch. Largest non-tech IG issuer in AI-adjacent themes. Cusip6 68389X confirmed from live harvest 2026-07-14."
+        }
+      }
+    },
+    "neocloud_credit": {
+      "name_en": "Neocloud Credit",
+      "name_zh": "新云计算商信用",
+      "issuers": {
+        "CRWV": {
+          "equity_ticker": "CRWV",
+          "name_match_patterns": ["COREWEAVE"],
+          "id_prefixes": ["21873S"],
+          "tier": "HY",
+          "coverage_notes": "Three straight HY note series: 9.25%/2030, 9.75%/2031, 9.625%/2032 — index-eligible; found in JNK and SPHY. IREN/NBIS are converts-only (not index-eligible — not visible in this store). Cusip6 21873S confirmed from live harvest 2026-07-14."
+        }
+      }
+    },
+    "memory_credit": {
+      "name_en": "Memory & Storage Credit",
+      "name_zh": "存储器信用",
+      "issuers": {
+        "MU": {
+          "equity_ticker": "MU",
+          "name_match_patterns": ["MICRON TECHNOLOGY"],
+          "id_prefixes": ["595112"],
+          "tier": "IG",
+          "coverage_notes": "BBB positive outlook (Moody's); IG bonds in SPIB and SPLB. Small par vs equity market cap. Cusip6 595112 confirmed from live harvest 2026-07-14."
+        },
+        "WDC": {
+          "equity_ticker": "WDC",
+          "name_match_patterns": ["WESTERN DIGITAL"],
+          "id_prefixes": [],
+          "tier": "split",
+          "coverage_notes": "Split-rated. Bonds not observed in SPSB/SPIB/SPLB/JNK/SPHY as of 2026-07-14 harvest. May be in other indices or have matured/not yet re-issued post-restructuring. No cusip6 harvested — leave empty until next observation cycle."
+        },
+        "STX": {
+          "equity_ticker": "STX",
+          "name_match_patterns": ["SEAGATE HDD", "SEAGATE DATA STOR", "SEAGATE DATA STORAGE"],
+          "id_prefixes": ["81180L", "81180W"],
+          "tier": "HY",
+          "coverage_notes": "Seagate issuing entities changed post-2025 exchange: bonds now trade as 'SEAGATE HDD CAYMAN' (Ba1) and 'SEAGATE DATA STOR' (HY). Both name patterns required to match full universe. Found in JNK/SPHY. Cusip6 81180L (SEAGATE DATA STOR) and 81180W (SEAGATE HDD) confirmed from live harvest 2026-07-14. SNDK private loan not index-visible; Samsung no USD paper; SK Hynix RegS bond — stated gaps."
+        }
+      }
+    },
+    "dc_reit_credit": {
+      "name_en": "Data Center REIT Credit",
+      "name_zh": "数据中心REIT信用",
+      "issuers": {
+        "EQIX": {
+          "equity_ticker": "EQIX",
+          "name_match_patterns": ["EQUINIX"],
+          "id_prefixes": ["29444U", "29447K", "29390X"],
+          "tier": "IG",
+          "coverage_notes": "Multiple issuing entities (EQUINIX INC direct + finance subsidiaries); three distinct cusip6 prefixes observed. Bonds in SPSB/SPIB/SPLB. Cusip6 29444U, 29447K, 29390X confirmed from live harvest 2026-07-14."
+        },
+        "DLR": {
+          "equity_ticker": "DLR",
+          "name_match_patterns": ["DIGITAL REALTY"],
+          "id_prefixes": ["25389J"],
+          "tier": "IG",
+          "coverage_notes": "Bonds issued as 'DIGITAL REALTY TRUST LP' (operating partnership). 'DIGITAL DUTCH' was a pattern candidate from masterplan for European finance-sub; not observed in US index funds as of 2026-07-14 harvest — refine from unmatched log as European-sub bonds enter SPIB/SPLB. Cusip6 25389J confirmed from live harvest 2026-07-14."
+        }
+      }
+    },
+    "ai_power_credit": {
+      "name_en": "AI Power Credit",
+      "name_zh": "AI电力信用",
+      "issuers": {
+        "VST": {
+          "equity_ticker": "VST",
+          "name_match_patterns": ["VISTRA"],
+          "id_prefixes": ["92840V"],
+          "tier": "IG",
+          "coverage_notes": "Rising star: HY-to-IG transition 2025-26 (Ba1→Baa3). Bonds in SPSB/SPIB as 'VISTRA OPERATIONS CO LLC'. Cusip6 92840V confirmed from live harvest 2026-07-14."
+        },
+        "CEG": {
+          "equity_ticker": "CEG",
+          "name_match_patterns": ["CONSTELLATION EN"],
+          "id_prefixes": ["210385", "30161M"],
+          "tier": "IG",
+          "coverage_notes": "Constellation Energy Group LLC; bonds not labeled 'CONSTELLATION ENERGY' but 'CONSTELLATION EN GEN LLC' in SSGA files. Pattern 'CONSTELLATION EN' matches both 'CONSTELLATION EN GEN LLC' and potential variant 'CONSTELLATION ENERGY'. Found in SPIB/SPLB. Cusip6 210385 (short/blend tenors) and 30161M (long-dated) confirmed from live harvest 2026-07-14."
+        },
+        "NEE": {
+          "equity_ticker": "NEE",
+          "name_match_patterns": ["NEXTERA ENERGY"],
+          "id_prefixes": ["65339K"],
+          "tier": "IG",
+          "coverage_notes": "Bonds issued via 'NEXTERA ENERGY CAPITAL HOLDINGS' finance subsidiary; pattern 'NEXTERA ENERGY' matches this and any direct NEE issuance. Found in SPSB/SPIB/SPLB. Cusip6 65339K confirmed from live harvest 2026-07-14."
+        }
+      }
+    },
+    "ai_hardware_credit": {
+      "name_en": "AI Hardware Credit",
+      "name_zh": "AI硬件信用",
+      "issuers": {
+        "DELL": {
+          "equity_ticker": "DELL",
+          "name_match_patterns": ["DELL INT", "DELL INC", "DELL EQUIPMENT", "EMC CORP"],
+          "id_prefixes": ["24703D", "247025", "24703T", "552081", "24702R"],
+          "tier": "IG",
+          "coverage_notes": "Multiple issuing entities: 'DELL INT LLC / EMC CORP' (co-issuer; most bonds), 'DELL INC' (legacy), 'EMC CORP' (legacy EMC paper). Five distinct cusip6 prefixes from live harvest. Found in SPSB/SPIB/SPLB. All cusip6s confirmed 2026-07-14."
+        },
+        "HPE": {
+          "equity_ticker": "HPE",
+          "name_match_patterns": ["HEWLETT PACKARD ENTERPRISE"],
+          "id_prefixes": [],
+          "tier": "IG",
+          "coverage_notes": "Hewlett Packard Enterprise bonds not observed in SPSB/SPIB/SPLB/JNK/SPHY as of 2026-07-14 harvest. Note: 'HPE' appears in SPIB but matches HEALTHPEAK (healthcare REIT), not Hewlett Packard. Use full-name pattern 'HEWLETT PACKARD ENTERPRISE' to avoid false positive. No cusip6 harvested — leave empty until bonds appear."
+        }
+      }
+    },
+    "telecom_legacy": {
+      "name_en": "Telecom Legacy (Control Group)",
+      "name_zh": "电信遗留（对照组）",
+      "issuers": {
+        "T": {
+          "equity_ticker": "T",
+          "name_match_patterns": ["AT&T INC", "AT&T CORP"],
+          "id_prefixes": [],
+          "tier": "IG",
+          "coverage_notes": "AT&T bonds not observed in SPSB/SPIB/SPLB/JNK/SPHY as of 2026-07-14 harvest — AT&T IG bonds may be in separate investment-grade indices not served by these SSGA funds, or the fund's holdings simply do not include them on this date. Pattern 'AT&T INC' and 'AT&T CORP' will match when bonds appear. Telecom-legacy control group: the 1990s telecom capex-debt boom is the standing historical rhyme for the AI capex credit cycle. No cusip6 harvested yet."
+        },
+        "VZ": {
+          "equity_ticker": "VZ",
+          "name_match_patterns": ["VERIZON COMMUNICATIONS"],
+          "id_prefixes": ["92343V", "92344G"],
+          "tier": "IG",
+          "coverage_notes": "Verizon Communications — large IG issuer; bonds in SPSB/SPIB/SPLB. Two issuing entity cusip6 prefixes observed. Cusip6 92343V and 92344G confirmed from live harvest 2026-07-14."
+        }
+      }
+    }
+  }
+}

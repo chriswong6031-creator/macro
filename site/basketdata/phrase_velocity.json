@@ -1,8 +1,8 @@
 {
   "schema": "edgar_phrase_velocity.v1",
   "vocab_version": 1,
-  "as_of": "2026-07-13",
-  "generated_at": "2026-07-13T13:00:37.984427+00:00",
+  "as_of": "2026-07-14",
+  "generated_at": "2026-07-14T07:35:50.006165+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -17,11 +17,11 @@
   "honesty_header": "This is a WATCHLIST / candidate feed. Detection is noisy — ~half of phrase-velocity accelerations correspond to real supply-stress shifts. Early-entry return edge ≈ 0. Not a buy signal. Not a scored factor. Carries the same honesty stance as theme_discovery.py.",
   "coverage_stats": {
     "bottleneck_rows": 60,
-    "emergence_rows": 1061,
-    "combined_rows": 1015,
+    "emergence_rows": 1067,
+    "combined_rows": 1021,
     "date_range_min": "2025-05-28",
-    "date_range_max": "2026-07-02",
-    "unique_tickers": 495,
+    "date_range_max": "2026-07-07",
+    "unique_tickers": 498,
     "unique_phrases": 13
   },
   "expand_note": "Vocabulary expansion disabled in v1: FTS endpoint returns metadata only (no snippet/text). Co-occurrence expansion requires raw filing text (not available from efts.sec.gov). Expansion cap = 0.",
@@ -146,6 +146,24 @@
           "prior_filers": 2,
           "velocity_z": 1.0,
           "is_affinity_phrase": false
+        },
+        {
+          "phrase": "unable to meet demand",
+          "recent_count": 2,
+          "prior_count": 1,
+          "recent_filers": 2,
+          "prior_filers": 1,
+          "velocity_z": 1.0,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "on allocation",
+          "recent_count": 5,
+          "prior_count": 4,
+          "recent_filers": 4,
+          "prior_filers": 4,
+          "velocity_z": 0.25,
+          "is_affinity_phrase": false
         }
       ],
       "coverage_note": "0 basket tickers; 30d/60d PIT windows.",
@@ -170,6 +188,24 @@
           "prior_filers": 2,
           "velocity_z": 1.0,
           "is_affinity_phrase": true
+        },
+        {
+          "phrase": "unable to meet demand",
+          "recent_count": 2,
+          "prior_count": 1,
+          "recent_filers": 2,
+          "prior_filers": 1,
+          "velocity_z": 1.0,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "on allocation",
+          "recent_count": 5,
+          "prior_count": 4,
+          "recent_filers": 4,
+          "prior_filers": 4,
+          "velocity_z": 0.25,
+          "is_affinity_phrase": false
         }
       ],
       "coverage_note": "0 basket tickers; 30d/60d PIT windows.",
@@ -187,6 +223,24 @@
           "prior_filers": 2,
           "velocity_z": 1.0,
           "is_affinity_phrase": false
+        },
+        {
+          "phrase": "unable to meet demand",
+          "recent_count": 2,
+          "prior_count": 1,
+          "recent_filers": 2,
+          "prior_filers": 1,
+          "velocity_z": 1.0,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "on allocation",
+          "recent_count": 5,
+          "prior_count": 4,
+          "recent_filers": 4,
+          "prior_filers": 4,
+          "velocity_z": 0.25,
+          "is_affinity_phrase": false
         }
       ],
       "coverage_note": "0 basket tickers; 30d/60d PIT windows.",
@@ -194,6 +248,16 @@
     }
   },
   "novel_phrases": [
+    {
+      "phrase": "unable to meet demand",
+      "recent_count": 2,
+      "prior_count": 1,
+      "recent_filers": 2,
+      "prior_filers": 1,
+      "velocity_z": 1.0,
+      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
+      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
+    },
     {
       "phrase": "capacity constrained",
       "recent_count": 3,

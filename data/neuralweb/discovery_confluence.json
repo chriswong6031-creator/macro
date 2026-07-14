@@ -1,7 +1,7 @@
 {
   "schema": "discovery_confluence.v1",
-  "as_of": "2026-07-13",
-  "generated_at": "2026-07-13T13:00:37.984328+00:00",
+  "as_of": "2026-07-14",
+  "generated_at": "2026-07-14T07:35:50.006071+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -39,8 +39,8 @@
         }
       ],
       "basket_z_scores": {
-        "ai_semiconductors": 0.641,
-        "ai_infra": 0.641
+        "ai_semiconductors": 0.621,
+        "ai_infra": 0.621
       },
       "confidence": "both_legs"
     }
@@ -59,6 +59,24 @@
           "recent_filers": 4,
           "prior_filers": 2,
           "velocity_z": 1.0,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "unable to meet demand",
+          "recent_count": 2,
+          "prior_count": 1,
+          "recent_filers": 2,
+          "prior_filers": 1,
+          "velocity_z": 1.0,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "on allocation",
+          "recent_count": 5,
+          "prior_count": 4,
+          "recent_filers": 4,
+          "prior_filers": 4,
+          "velocity_z": 0.25,
           "is_affinity_phrase": false
         }
       ],
@@ -79,6 +97,24 @@
           "prior_filers": 2,
           "velocity_z": 1.0,
           "is_affinity_phrase": true
+        },
+        {
+          "phrase": "unable to meet demand",
+          "recent_count": 2,
+          "prior_count": 1,
+          "recent_filers": 2,
+          "prior_filers": 1,
+          "velocity_z": 1.0,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "on allocation",
+          "recent_count": 5,
+          "prior_count": 4,
+          "recent_filers": 4,
+          "prior_filers": 4,
+          "velocity_z": 0.25,
+          "is_affinity_phrase": false
         }
       ],
       "basket_z_scores": {},
@@ -98,6 +134,24 @@
           "prior_filers": 2,
           "velocity_z": 1.0,
           "is_affinity_phrase": false
+        },
+        {
+          "phrase": "unable to meet demand",
+          "recent_count": 2,
+          "prior_count": 1,
+          "recent_filers": 2,
+          "prior_filers": 1,
+          "velocity_z": 1.0,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "on allocation",
+          "recent_count": 5,
+          "prior_count": 4,
+          "recent_filers": 4,
+          "prior_filers": 4,
+          "velocity_z": 0.25,
+          "is_affinity_phrase": false
         }
       ],
       "basket_z_scores": {},
@@ -114,12 +168,22 @@
       "adoption_positive": true,
       "top_phrases": [],
       "basket_z_scores": {
-        "cybersecurity": 4.0
+        "cybersecurity": 4.455
       },
       "confidence": "adoption_only"
     }
   ],
   "novel_phrase_clusters": [
+    {
+      "phrase": "unable to meet demand",
+      "recent_count": 2,
+      "prior_count": 1,
+      "recent_filers": 2,
+      "prior_filers": 1,
+      "velocity_z": 1.0,
+      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
+      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
+    },
     {
       "phrase": "capacity constrained",
       "recent_count": 3,
@@ -135,8 +199,8 @@
     "both_legs_count": 1,
     "single_leg_phrase_count": 3,
     "single_leg_adoption_count": 1,
-    "novel_phrase_count": 1,
+    "novel_phrase_count": 2,
     "themes_evaluated": 18,
-    "note": "1 themes show confluence (both legs accelerating). 3 show phrase-only acceleration. 1 show adoption-only positive. 1 novel phrase clusters with no theme home."
+    "note": "1 themes show confluence (both legs accelerating). 3 show phrase-only acceleration. 1 show adoption-only positive. 2 novel phrase clusters with no theme home."
   }
 }

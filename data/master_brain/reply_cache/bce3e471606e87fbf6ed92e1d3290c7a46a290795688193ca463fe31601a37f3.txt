@@ -1,0 +1,25 @@
+{
+  "summary": "A-share momentum concentrated in extended semiconductors & tech as stagflation quad fails to confirm, with smart-money divergence flagging short-term mean-reversion risk; HK benefits from stimulus spillover but faces fragile risk-on vs USD strength and weak peg.",
+  "regime_read": "China A-shares sit in a low-confidence Stagflation (Q3) quadrant, with growth score -0.214 and inflation 0.091 (confidence 0.084). The growth_cyclical_defensive ratio confirms cyclical underperformance, but industrial production trend and CPI direction contradict the stagflation label, reflecting a mixed macro picture. PBoC liquidity overlay is neutral, yet the policy impulse shows cumulative RRR/LPR cuts, i.e., easing momentum not yet formalized in the stance classifier. Sector RS is heavily skewed toward Semiconductors (+26% 20d, +58% 60d) and Technology (+11% / +33%), both ranking top-2 but with percentile 32 and 75, suggesting they are extended against typical A-share mean-reversion horizons. Radar divergences reinforce this: sector net-flow and southbound flow are negatively diverging from Semis, alt-data flags 5 distribute signals, and the consensus stage indicates crowded positioning. Meanwhile, deep-pullback names (Baijiu -20% 60d, Real Estate -16%, Solar -21%) offer the higher-odds mean-reversion setups, though they lack near-term catalysts unless the easing-reflation chain (2/5 legs aligned, forming) gains traction.\n\nHong Kong shares the Stagflation quadrant but operates with a global risk-on tag (global_score 0.308) driven by China stimulus spillover and southbound flows. Financials & Exchange are at 92-94th percentile, appearing extended, while cyclicals (Materials -26% 60d, Auto & EV -26%) are deeply sold. The HKD peg sits on the weak side (7.8382, outflow), and the USD backdrop is strengthening with restrictive real yields (US real 10y 2.32) creating headwinds for EM equities. This sets up a divergence: HK rides a domestic China bid but faces external pressure from a firm USD and potential risk-on reversal. The property recovery narrative (CCL +16.7% yoy) has not yet lifted property stocks, which remain weak.",
+  "conflicts": [
+    "Stagflation quad contradicted by industrial production trend and CPI direction/inflation-beta basket; the quad has 'mid' cycle tag but is not robust (China growth/inflation confidence 0.084).",
+    "PBoC policy impulse (cumulative cuts) vs still-neutral stance classifier: priced-for-easing, not yet confirmed, creating uncertainty around the easing-reflation chain.",
+    "Semiconductors extreme 20d/60d RS vs negative sector flow and southbound divergences, plus alt-data distribute signals — price momentum at odds with smart-money flows.",
+    "HK risk-on state (global_score 0.308) in a USD-strengthening, EM-headwind environment; the weak-side peg and outflow pressure imply fragility if risk appetite turns."
+  ],
+  "rotation_check": "The working thesis holds directionally: A-shares’ RS leaders appear extended and vulnerable to mean-reversion, supported by radar divergences and the strong short-term momentum that typically fades. The deep-pullback names (property, baijiu, solar) fit the reversal template, but their stagflation sensitivity clashes with the easing-reflation chain that is only forming. For Hong Kong, the thesis that it rides global risk and the USD holds true — HK risk-on persists because of China stimulus, but the firm USD and weak peg are latent headwinds; any global risk-off would likely hit HK harder than A-shares. A divergence: HK Financials/Exchange are near all-time-high percentiles but property hasn't caught up, so the rotation within HK is defensive rather than true reflation.",
+  "transmission": [
+    "PBoC easing (LPR cut, RRR cut) → lower funding costs → rate-sensitive brokers/property → rotation out of extended tech/semis if breadth improves.",
+    "USD strength → HKD peg pressure → HK liquidity squeeze → HK equities underperform A-shares, especially rate-sensitive HK property and financials.",
+    "Global risk-on reversal (triggered by hawkish Fed repricing or credit stress) → HK risk-on tag flips → sharp drawdown in HK cyclicals and crowded financials.",
+    "Southbound flow trend → if fading continues, further pressure on A-share momentum leaders (Semis); if re-accelerates, could sustain the China stimulus spillover."
+  ],
+  "watch_items": [
+    "China data dump Jul 15 (IP, FAI, retail sales, GDP) — can confirm or reject stagflation quadrant and shift growth/inflation scores.",
+    "LPR fix Jul 20 — a cut would signal formal easing and strengthen the easing-reflation chain; no cut would dent the impulse narrative.",
+    "Semiconductors sector flow and southbound flow divergences — if they persist or worsen, the probability of a Semis reversal increases.",
+    "HKD peg distance and HKMA intervention — if USDHKD approaches 7.85 with sustained outflow, HK risk-on could crack.",
+    "Financials/Exchange RS in HK — rolling over from 90+ percentile would flag a risk-on exhaustion and potential shift to risk-off."
+  ],
+  "confidence": "low"
+}

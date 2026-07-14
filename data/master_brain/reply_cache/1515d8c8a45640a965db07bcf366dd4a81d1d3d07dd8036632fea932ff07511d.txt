@@ -1,0 +1,7 @@
+{
+  "emerging_watch": {
+    "hypothesis": "A loose cluster containing crypto miners (CLSK, MARA) alongside digital manufacturing (PRLB) and telecom (LUMN) is showing rising cohesion (0.544, Δ+0.28). While cross-sector and noisy, it may be an early whisper of a forming “Crypto Mining & Digital Infrastructure” narrative, especially if Bitcoin price stabilises and energy/power themes broaden. This is a low-conviction watch — likely noise (~10% persistence) — but worth monitoring for a cleaner subgroup to coalesce.",
+    "kill_criterion": "If over the next 4 weeks the cluster’s cohesion falls below 0.45 or CLSK and MARA decouple from each other (correlation drop below 0.5 on daily returns), abandon the hypothesis as mere statistical churn.",
+    "notes": "No forward edge. The detector’s theme_candidates are display-only and noisy. IPO-wave/hype raises the bar — no such flag present. The existing “Crypto & Digital Assets” theme is still deep in the red (score -0.72, breadth 0.0). This cluster is not a buy signal, merely a radar blip to grade for narrative durability if it survives the next scan. Honour all guardrails: no sizing, no return forecast, no fade of the dominant Memory/HBM leader."
+  }
+}

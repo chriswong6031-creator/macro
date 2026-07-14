@@ -111,6 +111,209 @@ def _run_id(role: str, override: str | None) -> str | None:
     return f"{rid}-{role}" if rid else None
 
 
+def _screen_reason_to_plain(screen_reason: str, orch_decision: str,
+                             adv_veto: bool, has_llm_opinion: bool,
+                             degraded: str | None = None,
+                             *,
+                             screen_allow: bool = True) -> str:
+    """Map machine screen/adjudication reasons to operator-readable plain words.
+
+    FIX 3: screen_allow (boolean from governance/screen data) drives the denial
+    path instead of substring sniffing on screen_reason.  Substring sniffing on
+    "collision" incorrectly matched the APPROVE sentinel "no case-law collision"
+    (engine/metabolism/adjudicate.py:196).
+
+    Rules (precedence order):
+      1. DO_NOT_REBUILD collision → "collides with a standing kill ruling (DO_NOT_REBUILD)"
+      2. ACTIVE_BUILD_MAP collision → "another open PR already covers this"
+      3. screen_allow=False AND adversary vetoed → "safety screen and adversary review both denied"
+      4. Adversary vetoed alone → "adversary review denied"
+      5. screen_allow=False only → "safety screen denied: <reason>"
+      6. Orchestrator denied (LLM) with screen approved → "the model denied; safety screen approved"
+      7. Authorized → "authorized"
+      Never raises.
+    """
+    try:
+        r = str(screen_reason or "").lower()
+        if "do_not_rebuild" in r or "do not rebuild" in r or "standing kill" in r:
+            return "collides with a standing kill ruling (DO_NOT_REBUILD)"
+        if "active_build_map" in r or "open lane" in r or "open pr already" in r:
+            return "another open PR already covers this"
+        # FIX 3: use screen_allow boolean directly — substring sniffing on "collision"
+        # was incorrectly matching the APPROVE sentinel "no case-law collision".
+        screen_denied = not screen_allow
+        if screen_denied and adv_veto:
+            return "safety screen and adversary review both denied"
+        if screen_denied:
+            short = str(screen_reason or "")[:80]
+            return f"safety screen denied: {short}"
+        if adv_veto and not has_llm_opinion:
+            return f"adversary review denied (no model opinion — fail-closed)"
+        if adv_veto:
+            return "adversary review denied"
+        if orch_decision == "deny":
+            return "the model denied; safety screen approved"
+        if orch_decision == "grant":
+            return "authorized"
+        return str(screen_reason or "")[:120]
+    except Exception:  # noqa: BLE001
+        return str(screen_reason or "")[:120]
+
+
+def _derive_verdict_plain(
+    pid: str,
+    cycle_id: str,
+    docket_path_str: str,
+    *,
+    root: "Path | None" = None,
+) -> tuple[str, str]:
+    """Return (decision, reason_plain) for a proposal after two-key resolve runs.
+
+    decision: "authorized" | "denied" | "never_ruled"
+    reason_plain: plain-word string (<=160 chars)
+    NEVER raises.
+    """
+    try:
+        from engine.metabolism.adjudicate import (  # noqa: PLC0415
+            _events_for_target, _cycle_prefix, _target,
+            _latest_row, EVT_ADJUDICATION, EVT_ADVERSARY,
+            ROLE_ORCH, ROLE_ADV, ROLE_TWO_KEY,
+        )
+        from pathlib import Path as _Path  # noqa: PLC0415
+        dp = _Path(docket_path_str) if docket_path_str else None
+        if dp and dp.exists():
+            import json as _json  # noqa: PLC0415
+            docket = _json.loads(dp.read_text(encoding="utf-8"))
+            prop = next((p for p in (docket.get("proposals") or [])
+                         if str(p.get("proposal_id")) == pid), {})
+            tier = str(prop.get("tier") or "T1").strip().upper()
+        else:
+            tier = "T1"
+
+        all_rows = _events_for_target(root, _cycle_prefix(cycle_id))
+        tgt = _target(cycle_id, pid)
+        rows = [e for e in all_rows if e.get("target") == tgt]
+
+        orch = _latest_row(rows, EVT_ADJUDICATION, ROLE_ORCH)
+        adv = _latest_row(rows, EVT_ADVERSARY, ROLE_ADV)
+        two_key = _latest_row(rows, EVT_ADJUDICATION, ROLE_TWO_KEY)
+
+        if two_key:
+            authorized = bool((two_key.get("after") or {}).get("authorized"))
+            decision = "authorized" if authorized else "denied"
+        elif orch:
+            orch_decision = str((orch.get("after") or {}).get("decision") or "deny")
+            adv_veto = bool((adv.get("after") or {}).get("veto")) if adv else (tier != "T0")
+            # FIX 7: use "authorized" not "granted" — single vocabulary for rollup counters
+            # and app.js statusCls.
+            decision = "authorized" if (orch_decision == "grant" and not adv_veto) else "denied"
+        else:
+            # FIX 6: no governance rows means adjudication never ran — not a denial.
+            return "never_ruled", "never reached adjudication — orchestrator/adversary did not run"
+
+        orch_decision_str = str((orch.get("after") or {}).get("decision") or "deny") if orch else "deny"
+        screen_allow = bool((orch.get("after") or {}).get("screen_allow", True)) if orch else True
+        screen_reason = str((orch.get("after") or {}).get("screen_reason") or "") if orch else ""
+        adv_veto_flag = bool((adv.get("after") or {}).get("veto")) if adv else (tier != "T0")
+        has_llm_opinion = bool((orch.get("after") or {}).get("llm_opinion")) if orch else False
+        degraded = None
+
+        # FIX 3: pass screen_allow explicitly so the mapper uses the boolean rather than
+        # substring-sniffing on screen_reason (which misclassified "no case-law collision").
+        plain = _screen_reason_to_plain(
+            screen_reason,
+            orch_decision_str, adv_veto_flag, has_llm_opinion, degraded,
+            screen_allow=screen_allow,
+        )
+        if decision == "authorized":
+            plain = "authorized by orchestrator and adversary"
+        return decision, plain[:160]
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_adjudicate._derive_verdict_plain(%s): %s", pid, exc)
+        return "denied", "verdict derivation failed"
+
+
+def _append_achievements_verdicts(
+    cycle_id: str,
+    docket_file: "Path",
+    role: str,
+    results: list,
+    *,
+    root: "Path | None" = None,
+) -> None:
+    """Append verdict rows to journal achievements.verdicts after adjudication.
+
+    Called once per role (orchestrator/adversary/resolve). The resolve role
+    triggers the final verdict summary. NEVER raises.
+    """
+    try:
+        import json as _json  # noqa: PLC0415
+        from datetime import datetime, timezone  # noqa: PLC0415
+        from scripts.metabolism_journal import _read_journal, _write_journal  # type: ignore[import]  # noqa: PLC0415
+
+        j = _read_journal(cycle_id, root)
+        achievements = j.get("achievements") or {}
+
+        if role == "resolve":
+            # Resolve stage: set final decision+reason for each proposal
+            existing_verdicts = achievements.get("verdicts") or []
+            existing_v_ids = {v.get("id") for v in existing_verdicts if v.get("id")}
+
+            # Load docket to enumerate all proposals
+            dp = docket_file
+            try:
+                proposals_raw = _json.loads(dp.read_text(encoding="utf-8")).get("proposals") or []
+            except Exception:  # noqa: BLE001
+                proposals_raw = []
+
+            adjudicated_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            docket_pids = {str(prop.get("proposal_id") or "") for prop in proposals_raw
+                           if prop.get("proposal_id")}
+
+            # Add verdicts for proposals that were actually adjudicated
+            for prop in proposals_raw:
+                pid = str(prop.get("proposal_id") or "")
+                if not pid or pid in existing_v_ids:
+                    continue
+                decision, reason_plain = _derive_verdict_plain(
+                    pid, cycle_id, str(dp), root=root,
+                )
+                existing_verdicts.append({
+                    "id": pid,
+                    "decision": decision,
+                    "reason_plain": reason_plain[:160],
+                    "adjudicated_at": adjudicated_at,
+                })
+                existing_v_ids.add(pid)
+
+            # Mark proposals in achievements.proposals that have no verdict
+            # (they were proposed but resolve never ran for them — multi-docket case)
+            existing_proposals = achievements.get("proposals") or []
+            never_ruled_at = adjudicated_at
+            for prop_row in existing_proposals:
+                pid = str(prop_row.get("id") or "")
+                if not pid or pid in existing_v_ids:
+                    continue
+                existing_verdicts.append({
+                    "id": pid,
+                    "decision": "never_ruled",
+                    "reason_plain": "adjudication did not reach this docket",
+                    "adjudicated_at": never_ruled_at,
+                })
+                existing_v_ids.add(pid)
+
+            achievements["verdicts"] = existing_verdicts
+
+        j["achievements"] = achievements
+        _write_journal(cycle_id, j, root)
+        log.info(
+            "metabolism_adjudicate: achievements.verdicts updated role=%s cycle=%s",
+            role, cycle_id,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_adjudicate._append_achievements_verdicts(%s): %s", cycle_id, exc)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Metabolism ADJUDICATE stage (A5)")
     parser.add_argument("--cycle-id", required=True)
@@ -223,6 +426,11 @@ def main(argv: list[str] | None = None) -> int:
             finish_stage(cycle_id, stage, status="done",
                          note=f"two_key resolved: {n_auth}/{len(res)} authorized",
                          next_stage="build", root=root)
+            # ── Achievements: append final verdicts after two-key resolve ─────
+            if not args.dry_run:
+                _append_achievements_verdicts(
+                    cycle_id, docket_file, "resolve", list(res.values()), root=root,
+                )
         else:
             results = adjudicate_role(role, cycle_id, docket_file,
                                       run_id=run_id, root=root, dry_run=args.dry_run)

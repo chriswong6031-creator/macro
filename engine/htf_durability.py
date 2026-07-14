@@ -536,6 +536,10 @@ def compute(
         {washout_k, capitulation, vol_shock, breadth_thrust,
          fear_greed_extreme, genuine_policy, mechanical_liquidity}.
         Never required — missing keys default to False/0.
+        fear_greed_extreme: when not supplied by the caller, compute() reads
+        site/basketdata/fear_greed.json and derives it as dial>=80 or dial<=20
+        (VSB masterplan W5). Defaults to False when the file is absent so
+        behaviour is unchanged vs callers that do not supply external_organs.
     liquidity_quality_dict : dict, optional
         Output of engine/regime.liquidity_quality() — used for P2 reframe only.
 
@@ -749,14 +753,31 @@ def compute(
     # the monthly IS in a topping posture for grading purposes.
     monthly_allows_top = monthly_is_topping or (primary_side == "top" and m_rolled_from_above)
 
+    # VSB W5: wire fear_greed_extreme from site/basketdata/fear_greed.json when the
+    # caller has not supplied it via external_organs.  Absent-safe: when the JSON file
+    # is missing or unreadable, fear_greed_extreme defaults to False so behaviour is
+    # unchanged.  Dial >=80 = Extreme Greed (top-risk confluence); <=20 = Extreme Fear
+    # (bottom-setup confluence). This is a display-tier input only.
+    organs: dict = dict(external_organs) if external_organs else {}
+    if "fear_greed_extreme" not in organs:
+        try:
+            _fg_path = Path(__file__).resolve().parent.parent / "site" / "basketdata" / "fear_greed.json"
+            if _fg_path.exists():
+                _fg = json.loads(_fg_path.read_text())
+                _dial = _fg.get("dial")
+                if isinstance(_dial, (int, float)):
+                    organs["fear_greed_extreme"] = bool(_dial >= 80 or _dial <= 20)
+        except Exception:   # noqa: BLE001
+            pass   # default False retained
+
     if primary_side == "bottom":
         conf_pts, conf_detail = _confluence_points(
-            "bottom", stack_score, m_s, w_s, tw_s, div_m, div_2w, div_w, external_organs
+            "bottom", stack_score, m_s, w_s, tw_s, div_m, div_2w, div_w, organs
         )
         durability_grade = _assign_grade("bottom", stack_score, monthly_allows_durable, conf_pts)
     elif primary_side == "top":
         conf_pts, conf_detail = _confluence_points(
-            "top", stack_score, m_s, w_s, tw_s, div_m, div_2w, div_w, external_organs
+            "top", stack_score, m_s, w_s, tw_s, div_m, div_2w, div_w, organs
         )
         durability_grade = _assign_grade("top", stack_score, monthly_allows_top, conf_pts)
     else:

@@ -70,6 +70,12 @@ _SECTOR_ETF_ZH: dict[str, str] = {
 
 # ── registry builders ────────────────────────────────────────────────────────
 
+_FACTOR_ETF_ZH: dict[str, str] = {
+    "IWF": "成长", "IWD": "价值", "MTUM": "动量",
+    "QUAL": "质量", "USMV": "低波动", "IWM": "小盘",
+}
+
+
 def build_registry_s(panel_s: pd.DataFrame) -> list[dict]:
     """Build the Tier-S node registry: 11 sector ETFs."""
     nodes = sorted(panel_s.index.get_level_values("node").unique().tolist())
@@ -85,6 +91,16 @@ def build_registry_s(panel_s: pd.DataFrame) -> list[dict]:
             }
         )
     return registry
+
+
+def build_registry_f(panel_f: pd.DataFrame) -> list[dict]:
+    """Build the Tier-F node registry: 6 style-factor ETFs (SPY-excess, context-only)."""
+    nodes = sorted(panel_f.index.get_level_values("node").unique().tolist())
+    return [
+        {"id": i, "name": n, "name_zh": _FACTOR_ETF_ZH.get(n),
+         "theme": "Factors", "tier": "f"}
+        for i, n in enumerate(nodes)
+    ]
 
 
 def build_registry_m(
@@ -368,6 +384,45 @@ def build_chunks_m(
 
 # ── episode feed ─────────────────────────────────────────────────────────────
 
+def build_chunks_f(
+    panel_f: pd.DataFrame,
+    registry: list[dict],
+    period_key: str = "Q",
+) -> list[dict[str, Any]]:
+    """Build Tier-F chunks, one per quarter (mirrors build_chunks_s)."""
+    nodes = [r["name"] for r in registry]
+    id_by_name = {r["name"]: str(r["id"]) for r in registry}
+    dates_idx = panel_f.index.get_level_values("date")
+    periods = dates_idx.to_period(period_key).unique().sort_values()
+    chunks = []
+    for period in periods:
+        mask = dates_idx.to_period(period_key) == period
+        sub = panel_f[mask]
+        unique_dates = sub.index.get_level_values("date").unique().sort_values()
+        data: dict[str, list] = {}
+        for date in unique_dates:
+            try:
+                day_df = sub.xs(date, level="date")
+            except KeyError:
+                continue
+            for n in nodes:
+                nid = id_by_name[n]
+                if nid not in data:
+                    data[nid] = []
+                if n in day_df.index:
+                    rs = _quantize(day_df.loc[n, "rs"])
+                    az = _quantize(day_df.loc[n, "accel_z"])
+                    data[nid].append([rs, az])
+                else:
+                    data[nid].append(None)
+        chunks.append({
+            "period": str(period),
+            "dates": [str(d.date()) for d in unique_dates],
+            "data": data,
+        })
+    return chunks
+
+
 def _date_str(v: Any) -> str | None:
     """Convert a pandas Timestamp / NaT / str to ISO date string or None."""
     if v is None:
@@ -388,6 +443,7 @@ def _date_str(v: Any) -> str | None:
 def build_episode_feed(
     ep_m: pd.DataFrame,
     ep_s: pd.DataFrame,
+    ep_f: pd.DataFrame | None = None,
 ) -> dict:
     """Build the episode overlay feed (tm_episodes.json).
 
@@ -424,8 +480,18 @@ def build_episode_feed(
     for _, row in ep_s.iterrows():
         records.append(_row_to_dict_s(row))
 
+    def _row_to_dict_f(row: pd.Series) -> dict:
+        d = _row_to_dict(row)
+        d["tier"] = "f"
+        d["context_unverified"] = True
+        return d
+
+    if ep_f is not None:
+        for _, row in ep_f.iterrows():
+            records.append(_row_to_dict_f(row))
+
     # Build presets from the catalog itself
-    presets = _build_presets(ep_m, ep_s)
+    presets = _build_presets(ep_m, ep_s, ep_f)
 
     return {"episodes": records, "presets": presets}
 
@@ -439,7 +505,7 @@ def _is_null(v: Any) -> bool:
         return False
 
 
-def _build_presets(ep_m: pd.DataFrame, ep_s: pd.DataFrame) -> list[dict]:
+def _build_presets(ep_m: pd.DataFrame, ep_s: pd.DataFrame, ep_f: pd.DataFrame | None = None) -> list[dict]:
     """Derive presets from the episode catalog (no invented dates).
 
     Four presets:
@@ -550,6 +616,32 @@ def _build_presets(ep_m: pd.DataFrame, ep_s: pd.DataFrame) -> list[dict]:
             }
         )
 
+    # --- Preset 5: 2022 value rotation (Tier F) - self-guarding, no invented dates ---
+    if ep_f is not None and not ep_f.empty:
+        value_nodes = {"IWD", "USMV"}
+        value_ep = ep_f[
+            (ep_f["node"].isin(value_nodes))
+            & (ep_f["direction"] == "in")
+            & (ep_f["onset_date"] >= pd.Timestamp("2022-01-01"))
+            & (ep_f["onset_date"] <= pd.Timestamp("2022-12-31"))
+        ]
+        if not value_ep.empty:
+            onset = str(value_ep["onset_date"].min().date())
+            ends = value_ep["exhausted_date"].dropna()
+            end = (str(ends.max().date()) if not ends.empty
+                   else str(value_ep["confirmed_date"].max().date()))
+            presets.append(
+                {
+                    "id": "2022_value_rotation",
+                    "label_en": "2022 Value Rotation",
+                    "label_zh": "2022年价值轮动",
+                    "tier": "f",
+                    "date_from": onset,
+                    "date_to": end,
+                    "node_ids": sorted(value_ep["node"].unique().tolist()),
+                }
+            )
+
     return presets
 
 
@@ -560,6 +652,8 @@ def build_manifest(
     registry_m: list[dict],
     chunks_s: list[dict],
     chunks_m: list[dict],
+    registry_f: list[dict] | None = None,
+    chunks_f: list[dict] | None = None,
     built_at: str | None = None,
 ) -> dict:
     """Build tm_manifest.json payload."""
@@ -577,6 +671,7 @@ def build_manifest(
 
     tier_s_dates = [d for c in chunks_s for d in c["dates"]]
     tier_m_dates = [d for c in chunks_m for d in c["dates"]]
+    tier_f_dates = [d for c in (chunks_f or []) for d in c["dates"]]
 
     return {
         "schema_version": 3,
@@ -605,9 +700,23 @@ def build_manifest(
                 "n_chunks": len(chunks_m),
                 "chunks": [_chunk_meta(c, "m") for c in chunks_m],
             },
+            "f": {
+                "label": "Factors",
+                "granularity": "daily",
+                "period_type": "Q",
+                "context_note": (
+                    "6 style sleeves, ~0.9 collinear; SPY-excess replay, context only - not an edge."
+                ),
+                "date_from": tier_f_dates[0] if tier_f_dates else None,
+                "date_to": tier_f_dates[-1] if tier_f_dates else None,
+                "n_nodes": len(registry_f or []),
+                "n_chunks": len(chunks_f or []),
+                "chunks": [_chunk_meta(c, "f") for c in (chunks_f or [])],
+            },
         },
         "registry": {
             "s": registry_s,
             "m": registry_m,
+            "f": registry_f or [],
         },
     }

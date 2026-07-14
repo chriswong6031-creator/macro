@@ -468,6 +468,61 @@ def breadth_divergence(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
                             f"（{b2p.iloc[-1]:.0%} 分位）— 抬指数的个股在减少")
 
 
+# --- VSB W6: implied-correlation floor-break alert ---------------------------
+
+def corr_floor_break(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
+    """Stocks starting to move together after an extreme quiet-and-split stretch.
+
+    Fires when the COR1M (1-month implied correlation, data/cboe/cor1m.parquet)
+    satisfies the CONFIRMER condition: an extreme-low floor in the trailing 252d
+    distribution AND a significant rise off that floor.
+
+    This is a CONFIRMER of stress underway, not a lead.  Correlation rises
+    AFTER hedging demand builds; it does not predict the event.
+
+    Detection is delegated to engine.risk_radar.detect_corr_floor_break() —
+    SINGLE SOURCE OF TRUTH.  No copy-paste drift between the radar leg and
+    the alert.  The rule fires only on the DAY the condition turns True
+    (yesterday False → today True); i.e. it is a TRANSITION alert.
+    """
+    if not config.load()["alerts"].get("corr_floor_break", True):
+        return None
+    try:
+        from pathlib import Path as _Path
+        from lib import config as _cfg                       # noqa: PLC0415
+        cor1m_path = _cfg.data_dir() / "cboe" / "cor1m.parquet"
+        if not cor1m_path.exists():
+            return None
+        cor1m_df = pd.read_parquet(cor1m_path)
+        if "close" not in cor1m_df.columns:
+            return None
+        cor1m_s = cor1m_df["close"].dropna()
+        cor1m_s.index = pd.to_datetime(cor1m_s.index)
+        from engine.risk_radar import detect_corr_floor_break  # noqa: PLC0415
+        # need at least 2 rows to detect a transition
+        if len(cor1m_s) < 2:
+            return None
+        today_fires = detect_corr_floor_break(cor1m_s)
+        yest_fires = detect_corr_floor_break(cor1m_s.iloc[:-1])
+        if today_fires and not yest_fires:
+            latest = round(float(cor1m_s.iloc[-1]), 1)
+            return Alert(
+                "corr_floor_break", "warn",
+                f"Implied correlation (COR1M) spiking off an extreme floor "
+                f"(latest={latest}) — stocks starting to move together after an "
+                f"extended quiet-and-split stretch; CONFIRMER of stress underway, "
+                f"not a lead",
+                message_zh=(
+                    f"隐含相关性（COR1M）从极低底部骤升（当前={latest}）——"
+                    f"在长期平静分化后，个股开始同向波动；"
+                    f"这是压力已成形的确认信号，而非领先指标"
+                ),
+            )
+    except Exception as e:  # noqa: BLE001 — one rule must not kill the rest
+        log.error("corr_floor_break alert rule failed: %s", e)
+    return None
+
+
 # --- runner ---------------------------------------------------------------------
 
 def evaluate(f: pd.DataFrame) -> list[Alert]:
@@ -479,7 +534,8 @@ def evaluate(f: pd.DataFrame) -> list[Alert]:
     rules = [transition_state_change, net_liquidity_roc_flip, hy_oas_widening,
              gex_flip_cross, conditions_recession_state_change, nfci_tightening,
              sahm_trigger, ebp_widening, drawdown_risk_high, capitulation_signal,
-             risk_state_elevated, hidden_fragility, breadth_divergence]
+             risk_state_elevated, hidden_fragility, breadth_divergence,
+             corr_floor_break]  # VSB W6: COR1M confirmer
     multi = [axis_confidence_floor, sector_rs_percentile_cross,
              holdings_active_changes, sector_holdings_accumulation,
              circuit_breaker_open]
@@ -531,11 +587,32 @@ def recent_alerts(days: int = 7) -> pd.DataFrame:
 
 # --- presentation layer --------------------------------------------------------
 # Rule messages are precise but jargon-heavy. ALERT_META adds a plain-English
-# headline, an icon, a "what it means / how to use it" explainer, and the macro
-# dashboard panel ("scorecard") each alert deep-links to. `anchor` matches an
-# id="" on a panel in templates/dashboard.html.j2. This is the single source of
-# truth shared by the macro page (scripts/build_site.py) and the landing hub
-# (scripts/build_vector.py) — keep anchors in sync with the template.
+# headline, an icon, a "what it means / how to use it" explainer, and the surface
+# each alert deep-links to. `anchor` is an id="" on a RENDERED page: either a
+# macro.html panel id (in-page scroll), an mx5 dialog id ("dlg-*" — the v5 board
+# keeps panel detail inside dialogs; the macro template opens them via mx5OpenDlg,
+# and a macro.html#dlg-* deep link opens the dialog on load), or an id on another
+# page named in ANCHOR_PAGE (rendered as a cross-page link). alert_href() is the
+# single routing truth shared by the macro page (scripts/build_site.py +
+# templates/dashboard.html.j2), the landing hub (scripts/build_vector.py), the
+# alerts board (engine/alert_triage.py) and notifications (scripts/notify.py).
+# tests/test_alerts.py asserts every anchor resolves to a template id.
+
+# Anchors that live on a page other than macro.html. Everything else is an id on
+# rendered macro.html.
+ANCHOR_PAGE = {
+    "holdings": "us_stocks.html",       # star-fund holdings panel
+    "accumulation": "us_stocks.html",   # sector-ETF accumulation panel
+    "flows": "us_stocks.html",          # ETF flows panel
+    "board": "macro_context.html",      # field-forces board (dealer-gamma chip)
+}
+
+
+def alert_href(anchor: str) -> str:
+    """Page-qualified href for an ALERT_META anchor ("" → bare macro.html)."""
+    if not anchor:
+        return "macro.html"
+    return f"{ANCHOR_PAGE.get(anchor, 'macro.html')}#{anchor}"
 
 _DEFAULT_META = {
     "icon": "🔔",
@@ -559,7 +636,7 @@ ALERT_META: dict[str, dict] = {
         "what_zh": "融合的股票内部风险状态（自满度、宽度背离、做市商Gamma、波动结构、信用）"
                    "进入偏高区。在仓位/波动/宽度型见顶上领先于信用加权的宏观指标。"
                    "提示降低敞口、择优入场而非追高。",
-        "anchor": "risk-state",
+        "anchor": "dlg-risk",
     },
     "hidden_fragility": {
         "icon": "🫧",
@@ -570,7 +647,7 @@ ALERT_META: dict[str, dict] = {
                    "pre-drawdown setup. Context, not a timer — size down, don't chase.",
         "what_zh": "低VIX、陡峭contango的平静，叠加走弱的内部结构（宽度变薄、HY信用悄然走阔）。"
                    "典型的自满型回撤前夜。属背景而非择时 — 缩小仓位，不要追高。",
-        "anchor": "risk-state",
+        "anchor": "dlg-risk",
     },
     "breadth_divergence": {
         "icon": "📉",
@@ -580,7 +657,25 @@ ALERT_META: dict[str, dict] = {
                    "200-day average is weak — a thinning tape. A narrowing-leadership caution.",
         "what_zh": "指数接近一年高点，但站上200日均线的个股占比偏弱 — 走势变薄。"
                    "属领导面收窄的警示。",
-        "anchor": "risk-state",
+        "anchor": "dlg-risk",
+    },
+    # VSB W6: implied-correlation floor-break CONFIRMER alert
+    "corr_floor_break": {
+        "icon": "🔗",
+        "plain_en": "Stocks moving together again after an extreme quiet stretch",
+        "plain_zh": "个股联动重现 — 极度平静分化后相关性骤升",
+        "what_en": "Implied correlation (COR1M) is spiking off an extreme low floor — "
+                   "the structure that kept the index calm while individual stocks moved "
+                   "independently is unclenching. Stocks are starting to move together "
+                   "again, which confirms stress underway. This is NOT a leading signal: "
+                   "correlation rises after hedging demand builds, so by the time it fires "
+                   "the market is already stressed. Watch for breadth narrowing or credit "
+                   "widening alongside. De-risk = sizing, not selection.",
+        "what_zh": "隐含相关性（COR1M）从极低底部骤升——此前维持指数平稳而个股分化的结构正在松解。"
+                   "个股开始重新同向波动，确认压力已经形成。"
+                   "这不是领先指标：相关性在对冲需求建立之后才上升，因此信号触发时市场已承压。"
+                   "需同步关注宽度收窄或信用利差走阔。应对是调整仓位规模，而非择股。",
+        "anchor": "dlg-risk",
     },
     "transition_state_change": {
         "icon": "🧭",
@@ -605,7 +700,7 @@ ALERT_META: dict[str, dict] = {
         "what_zh": "净流动性是美联储留在市场中流动的资金（资产负债表 − 逆回购 − 财政部账户）。"
                    "其 4 周趋势刚刚反向。历史上流动性上升对股市是顺风，下降是逆风。"
                    "据此调整谨慎程度 — 它不是买卖按钮。",
-        "anchor": "liquidity",
+        "anchor": "dlg-risk",
     },
     "hy_oas_widening": {
         "icon": "🚨",
@@ -618,7 +713,7 @@ ALERT_META: dict[str, dict] = {
         "what_zh": "“高收益债利差”是投资者持有高风险（垃圾）债券所要求的额外收益率 —"
                    "市场最灵敏的早期烟雾探测器之一。单日急升意味着信用投资者突然定价更高风险，"
                    "往往早于股市反应。值得认真对待。",
-        "anchor": "credit",
+        "anchor": "dlg-risk",
     },
     "gex_flip_cross": {
         "icon": "🧲",
@@ -631,7 +726,7 @@ ALERT_META: dict[str, dict] = {
         "what_zh": "做市商 gamma（GEX）衡量期权对冲如何推动市场。正 gamma 抑制波动（更平静）；"
                    "负 gamma 放大波动（双向更剧烈）。此信号表示该背景刚刚改变 —"
                    "在它再次反转前，市场可能波动得更自由。",
-        "anchor": "positioning",
+        "anchor": "board",
     },
     "growth_confidence_floor": {
         "icon": "🎚️",
@@ -645,7 +740,7 @@ ALERT_META: dict[str, dict] = {
         "what_zh": "周期由两个刻度盘构成 — 增长方向与通胀方向。“一致度”反映底层指标的"
                    "认同程度。增长刻度盘刚跌破可用阈值，目前信号混杂。一致度低 ="
                    "缩小仓位，相信雷达多于标签。",
-        "anchor": "dials",
+        "anchor": "regime-radar",
     },
     "inflation_confidence_floor": {
         "icon": "🎚️",
@@ -659,7 +754,7 @@ ALERT_META: dict[str, dict] = {
         "what_zh": "周期由两个刻度盘构成 — 增长方向与通胀方向。“一致度”反映底层指标的"
                    "认同程度。通胀刻度盘刚跌破可用阈值，目前信号混杂。一致度低 ="
                    "缩小仓位，相信雷达多于标签。",
-        "anchor": "dials",
+        "anchor": "regime-radar",
     },
     "sector_rs_cross_high": {
         "icon": "📈",
@@ -671,7 +766,7 @@ ALERT_META: dict[str, dict] = {
                    "column before acting.",
         "what_zh": "某板块相对市场的强度刚冲入其近期区间的顶部 — 开始领先。这描述的是资金"
                    "轮动的方向，并非立即买入。行动前请查看该板块的热度与触发列。",
-        "anchor": "sectors",
+        "anchor": "dlg-sector",
     },
     "sector_rs_cross_low": {
         "icon": "📉",
@@ -682,7 +777,7 @@ ALERT_META: dict[str, dict] = {
                    "trim, not to bottom-fish; wait for it to base and trigger again.",
         "what_zh": "某板块相对市场的强度刚跌至其近期区间的底部 — 资金正在流出。通常是回避或"
                    "减仓的理由，而非抄底；等它筑底并再次触发。",
-        "anchor": "sectors",
+        "anchor": "dlg-sector",
     },
     "holdings_active_change": {
         "icon": "🐳",
@@ -729,8 +824,11 @@ ALERT_META: dict[str, dict] = {
     },
     # The six conditions-layer rules + event_risk below previously had no META entry
     # and rendered as the bare "Macro signal fired" default with no plain-word
-    # consequence (adversarial design review, 2026-07-13). Anchors are "" — their
-    # panels live inside dialogs on the v5 board, so there is no in-page id to jump to.
+    # consequence (adversarial design review, 2026-07-13). Rules whose v5 home is
+    # exact now carry a dlg-* anchor (drawdown → dlg-risk "Drawdown Probability",
+    # capitulation → dlg-risk washout ladder, event_risk → dlg-events); the four
+    # slow conditions gauges (recession / NFCI / Sahm / EBP) have no rendered v5
+    # surface, so their anchors stay "" — no jump affordance is the honest form.
     "conditions_recession_state_change": {
         "icon": "🌡️",
         "plain_en": "Recession risk changed level — re-check how defensive to be",
@@ -794,7 +892,7 @@ ALERT_META: dict[str, dict] = {
         "what_zh": "缓慢的宏观／信用压力指标（衰退风险、金融条件、信用利差）进入高位区。"
                    "在该区间，历史上约三分之一的情形在三个月内出现 10% 以上回撤，而平常约为"
                    "五分之一。它滞后于价格 — 用于降低仓位，而非择时进场。",
-        "anchor": "",
+        "anchor": "dlg-risk",
     },
     "capitulation_signal": {
         "icon": "🩸",
@@ -808,7 +906,7 @@ ALERT_META: dict[str, dict] = {
         "what_zh": "多个恐慌指标同时触发。历史上这类恐慌性抛售多以走高收场 — 标普未来三个月"
                    "平均上涨约 9%，七次中约六次为正（平常约 3%）。它衡量的是恐慌而非确定的底部："
                    "应分批而非一次性进场；若美联储托底判断显示衰退或通胀阻碍救市，则应观望。",
-        "anchor": "",
+        "anchor": "dlg-risk",
     },
     "event_risk": {
         "icon": "📅",
@@ -822,7 +920,7 @@ ALERT_META: dict[str, dict] = {
         "what_zh": "未来数个交易日内将有高影响力的既定事件（CPI、美联储决议、就业报告）——"
                    "具体是哪个、何时，见提示内容。事件前后的波动是双向的、常被回补 —"
                    "这是波动性提示，并非方向判断。按噪声调整仓位，避免在数据公布前强行开新仓。",
-        "anchor": "",
+        "anchor": "dlg-events",
     },
 }
 
@@ -884,6 +982,12 @@ ALERT_CONVICTION: dict[str, dict] = {
     "breadth_divergence": {"tier": "watch",
         "edge_en": "Medium — fewer names carrying the index; a thinning-tape caution, not a timer.",
         "edge_zh": "中 — 抬指数的个股在减少；属于宽度变薄的警示，而非择时。"},
+    # VSB W6: corr_floor_break is a CONFIRMER, not a lead — explicitly lower tier
+    "corr_floor_break": {"tier": "context",
+        "edge_en": "Context — confirms stress already underway (correlation lags hedging demand); "
+                   "NOT a leading signal. Watch alongside breadth and credit.",
+        "edge_zh": "背景 — 确认压力已经成形（相关性滞后于对冲需求）；并非领先信号。"
+                   "结合宽度和信用信号一起观察。"},
     "conditions_recession_state_change": {"tier": "watch",
         "edge_en": "Medium — slow and lagging, but a band shift re-prices the defensive posture.",
         "edge_zh": "中 — 缓慢且滞后，但等级变动会重新定价防御姿态。"},
