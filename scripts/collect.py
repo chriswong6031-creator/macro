@@ -149,6 +149,7 @@ def all_adapters() -> dict:
         ("holdings", "collectors.holdings", "HoldingsAdapter"),
         ("etf_holdings", "collectors.etf_holdings", "EtfHoldingsAdapter"),
         ("corp_bond_holdings", "collectors.corp_bond_holdings", "CorpBondHoldingsAdapter"),  # CCW-W1: SSGA bond-fund PIT store (SPSB/SPIB/SPLB/JNK/SPHY) + issuer match-rate alarm
+        ("finra_corp_bonds", "collectors.finra_corp_bonds", "FinraCorpBondsAdapter"),  # CCW-W5: FINRA breadth/sentiment/capped-volume (FINRA_API_CLIENT_ID/SECRET; skip-clean when absent)
         ("sector_holdings", "collectors.sector_holdings", "SectorHoldingsAdapter"),
         ("stock_prices", "collectors.sector_holdings", "StockPriceAdapter"),
         ("fundamentals", "collectors.fundamentals", "FundamentalsAdapter"),

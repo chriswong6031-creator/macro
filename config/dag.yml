@@ -1903,6 +1903,27 @@ modules:
       equity_profile, edgar_rpo, edgar_headcount). Drip fetches are network calls and
       are suppressed in engine-render/render lanes via RENDER_NO_DRIP=1.
 
+  # CCW-W5: FINRA corp bond breadth/sentiment/capped-volume (runs inside collect_us via adapter registry)
+  - module: collectors.finra_corp_bonds
+    reads: []
+    writes:
+      - data/corp_bonds/finra_corporateMarketBreadth.parquet
+      - data/corp_bonds/finra_corporateMarketSentiment.parquet
+      - data/corp_bonds/finra_corporatesAndAgenciesCappedVolume.parquet
+      - data/corp_bonds/finra_corp_bonds_runs.parquet
+    impure: true
+    needs_secrets: true
+    event_driven: false
+    note: >
+      CCW-W5 FINRA lane. OAuth client-credentials (FINRA_API_CLIENT_ID /
+      FINRA_API_CLIENT_SECRET repo secrets). Skips cleanly when creds absent.
+      Collects (1) corporateMarketBreadth: daily advances/declines by productCategory
+      (all|IG|HY|convertibles); (2) corporateMarketSentiment: daily volume/trades by
+      productCategory × tradeType (5 × 6 = 30 rows/day); (3) corporatesAndAgenciesCappedVolume:
+      monthly trade-size-bucket breakdown by gradeCode × 144AFlag. Full history from
+      2023-07-17 (breadth/sentiment) via POST dateRangeFilters. Runs as part of
+      scripts.collect adapter registry (group=corp_bonds); not a standalone step.
+
   # CCW-W1: corporate bond holdings PIT store (runs inside collect_us via adapter registry)
   - module: collectors.corp_bond_holdings
     reads:

@@ -139,6 +139,8 @@ jobs:
       - name: run collectors (graceful degradation — never fails the build on one source)
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          FINRA_API_CLIENT_ID: ${{ secrets.FINRA_API_CLIENT_ID }}      # CCW-W5: FINRA breadth/sentiment/capped-vol (collectors/finra_corp_bonds.py); absent -> skip-clean, non-fatal
+          FINRA_API_CLIENT_SECRET: ${{ secrets.FINRA_API_CLIENT_SECRET }}  # CCW-W5: see FINRA_API_CLIENT_ID
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}   # massive.com options-OI accrual (GEX foundation)
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}   # accepted alias (same key, prior .env name)

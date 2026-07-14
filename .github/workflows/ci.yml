@@ -2035,11 +2035,17 @@ jobs:
     #   collectors/corp_bond_holdings.py — bond XLSX parser (ISIN-keyed, not equity path)
     #   data/corp_bonds/issuer_themes.json — issuer→theme registry v1
     #   config.yml fred.series — no alias collisions in the new corp_credit + DGS20 adds
+    # CCW-W5 FINRA lane:
+    #   collectors/finra_corp_bonds.py — OAuth token flow, pagination, absent-creds skip,
+    #                                    frame transformations, dedup, incremental start-date
     # Test coverage:
     #   test_corp_bond_holdings.py — parser fixtures (header detection, ISIN/cusip6,
     #                                numeric coercion, maturity parsing, keep-FIRST,
     #                                schema columns, match-rate, CCW-UNMATCHED-HIGH-PAR
     #                                alarm, registry round-trip)
+    #   test_finra_corp_bonds.py  — token flow (acquire/cache/retry/no-leak), absent-creds
+    #                                skip, pagination (single/multi-window/full-page), frame
+    #                                schema, dedup, incremental start-date, integration
     #   test_fred_series_alias_conflicts.py — no duplicate aliases across all fred.series
     #                                         groups (guards the KeyError outage)
     # Zero network calls; all inputs are synthetic or committed files.
@@ -2053,3 +2059,5 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml openpyxl requests
       - name: CCW-W1 bond holdings parser + registry + FRED alias tests
         run: python -m pytest tests/test_corp_bond_holdings.py tests/test_fred_series_alias_conflicts.py tests/test_fred_baml_archive.py -v
+      - name: CCW-W5 FINRA corp bonds collector tests
+        run: python -m pytest tests/test_finra_corp_bonds.py -v
