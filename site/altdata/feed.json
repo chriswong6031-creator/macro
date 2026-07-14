@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-13T17:30:17.807869+00:00",
-  "as_of": "2026-07-13",
+  "generated_utc": "2026-07-14T02:08:58.036669+00:00",
+  "as_of": "2026-07-14",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -5925,11 +5925,11 @@
         },
         {
           "ticker": "TDG",
-          "net": 20,
-          "buys": 20,
+          "net": 18,
+          "buys": 18,
           "sells": 0,
           "members": 1,
-          "est_usd": 209010.0,
+          "est_usd": 193009.0,
           "parties": "D"
         },
         {
@@ -5940,15 +5940,6 @@
           "members": 3,
           "est_usd": 112007.0,
           "parties": "D/Democratic"
-        },
-        {
-          "ticker": "ENTG",
-          "net": 14,
-          "buys": 14,
-          "sells": 0,
-          "members": 2,
-          "est_usd": 112007.0,
-          "parties": "D/Republican"
         },
         {
           "ticker": "LPLA",
@@ -5967,6 +5958,15 @@
           "members": 3,
           "est_usd": 96006.0,
           "parties": "D/Democratic"
+        },
+        {
+          "ticker": "ENTG",
+          "net": 12,
+          "buys": 12,
+          "sells": 0,
+          "members": 2,
+          "est_usd": 96006.0,
+          "parties": "D/Republican"
         },
         {
           "ticker": "BEP",
@@ -5996,15 +5996,6 @@
           "parties": "D"
         },
         {
-          "ticker": "DASH",
-          "net": 9,
-          "buys": 12,
-          "sells": 3,
-          "members": 3,
-          "est_usd": 96006.0,
-          "parties": "D/Democratic/R"
-        },
-        {
           "ticker": "T",
           "net": 8,
           "buys": 12,
@@ -6032,6 +6023,15 @@
           "parties": "D"
         },
         {
+          "ticker": "DASH",
+          "net": 7,
+          "buys": 10,
+          "sells": 3,
+          "members": 3,
+          "est_usd": 80005.0,
+          "parties": "D/Democratic/R"
+        },
+        {
           "ticker": "ST",
           "net": 7,
           "buys": 8,
@@ -6053,9 +6053,9 @@
       "sells": [
         {
           "ticker": "FLEX",
-          "net": -16,
+          "net": -14,
           "buys": 0,
-          "sells": 16,
+          "sells": 14,
           "members": 1,
           "est_usd": 0.0,
           "parties": "D"
@@ -6070,6 +6070,15 @@
           "parties": "D/Democratic"
         },
         {
+          "ticker": "NVDA",
+          "net": -12,
+          "buys": 0,
+          "sells": 12,
+          "members": 4,
+          "est_usd": 0.0,
+          "parties": "D/Democratic/R/Republican"
+        },
+        {
           "ticker": "SCI",
           "net": -12,
           "buys": 0,
@@ -6077,15 +6086,6 @@
           "members": 1,
           "est_usd": 0.0,
           "parties": "D"
-        },
-        {
-          "ticker": "NVDA",
-          "net": -10,
-          "buys": 2,
-          "sells": 12,
-          "members": 5,
-          "est_usd": 16001.0,
-          "parties": "D/Democratic/R/Republican"
         },
         {
           "ticker": "TSCO",
@@ -6199,10 +6199,10 @@
       },
       {
         "ticker": "MDLN",
-        "total_usd": 84748848.0,
-        "contracts": 30,
+        "total_usd": 84504639.0,
+        "contracts": 24,
         "agencies": 2,
-        "accel_x": 1.02,
+        "accel_x": 1.01,
         "top_agency": "Department of Veterans Affairs"
       },
       {
@@ -6216,25 +6216,17 @@
       {
         "ticker": "ACN",
         "total_usd": 29242266.0,
-        "contracts": 9,
-        "agencies": 7,
+        "contracts": 8,
+        "agencies": 6,
         "accel_x": 1.98,
         "top_agency": "Department of the Treasury"
       },
       {
-        "ticker": "KBR",
-        "total_usd": 24743583.0,
-        "contracts": 7,
-        "agencies": 2,
-        "accel_x": 0.77,
-        "top_agency": "Department of Commerce"
-      },
-      {
         "ticker": "LUMN",
-        "total_usd": 23453291.0,
-        "contracts": 9,
-        "agencies": 5,
-        "accel_x": 75.56,
+        "total_usd": 23277338.0,
+        "contracts": 7,
+        "agencies": 4,
+        "accel_x": 47.86,
         "top_agency": "Department of Homeland Security"
       },
       {
@@ -6246,17 +6238,9 @@
         "top_agency": "Department of State"
       },
       {
-        "ticker": "EFX",
-        "total_usd": 19825288.0,
-        "contracts": 3,
-        "agencies": 3,
-        "accel_x": 0.36,
-        "top_agency": "Social Security Administration"
-      },
-      {
         "ticker": "GD",
-        "total_usd": 14763431.0,
-        "contracts": 10,
+        "total_usd": 14746762.0,
+        "contracts": 9,
         "agencies": 5,
         "accel_x": 0.14,
         "top_agency": "Department of Health and Human Services"
@@ -6270,14 +6254,6 @@
         "top_agency": "National Aeronautics and Space Administration"
       },
       {
-        "ticker": "PPC",
-        "total_usd": 13316760.0,
-        "contracts": 4,
-        "agencies": 1,
-        "accel_x": null,
-        "top_agency": "Department of Agriculture"
-      },
-      {
         "ticker": "FLY",
         "total_usd": 13295829.0,
         "contracts": 1,
@@ -6287,27 +6263,51 @@
       },
       {
         "ticker": "CDW",
-        "total_usd": 12400360.0,
-        "contracts": 45,
+        "total_usd": 12371260.0,
+        "contracts": 44,
         "agencies": 6,
         "accel_x": 0.65,
         "top_agency": "Department of Transportation"
       },
       {
         "ticker": "ACM",
-        "total_usd": 11917246.0,
-        "contracts": 12,
-        "agencies": 6,
-        "accel_x": 3.96,
+        "total_usd": 11482471.0,
+        "contracts": 9,
+        "agencies": 4,
+        "accel_x": 3.34,
         "top_agency": "Department of Transportation"
       },
       {
+        "ticker": "AXON",
+        "total_usd": 10637637.0,
+        "contracts": 7,
+        "agencies": 3,
+        "accel_x": 2.43,
+        "top_agency": "Department of Homeland Security"
+      },
+      {
         "ticker": "F",
-        "total_usd": 11861245.0,
-        "contracts": 242,
+        "total_usd": 10528596.0,
+        "contracts": 217,
         "agencies": 1,
-        "accel_x": 8.22,
+        "accel_x": 3.79,
         "top_agency": "General Services Administration"
+      },
+      {
+        "ticker": "IBM",
+        "total_usd": 8803093.0,
+        "contracts": 1,
+        "agencies": 1,
+        "accel_x": 0.78,
+        "top_agency": "Department of the Treasury"
+      },
+      {
+        "ticker": "TEM",
+        "total_usd": 8394876.0,
+        "contracts": 1,
+        "agencies": 1,
+        "accel_x": null,
+        "top_agency": "Department of Veterans Affairs"
       }
     ],
     "gov_grants": [
@@ -44473,6 +44473,27 @@
         "top_issue": "Health Issues"
       },
       {
+        "ticker": "UNM",
+        "spend_usd": 170000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Insurance"
+      },
+      {
+        "ticker": "HRL",
+        "spend_usd": 160000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Agriculture"
+      },
+      {
+        "ticker": "JBTM",
+        "spend_usd": 100000.0,
+        "filings": 2,
+        "spike_x": null,
+        "top_issue": "Agriculture"
+      },
+      {
         "ticker": "CLH",
         "spend_usd": 90000.0,
         "filings": 1,
@@ -44487,6 +44508,13 @@
         "top_issue": "Telecommunications"
       },
       {
+        "ticker": "WYNN",
+        "spend_usd": 90000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Taxation/Internal Revenue Code"
+      },
+      {
         "ticker": "CLSK",
         "spend_usd": 80000.0,
         "filings": 1,
@@ -44494,11 +44522,25 @@
         "top_issue": "Banking"
       },
       {
+        "ticker": "TECK",
+        "spend_usd": 75000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Energy/Nuclear"
+      },
+      {
         "ticker": "ASRT",
         "spend_usd": 70000.0,
         "filings": 1,
         "spike_x": null,
         "top_issue": "Health Issues"
+      },
+      {
+        "ticker": "FCEL",
+        "spend_usd": 70000.0,
+        "filings": 2,
+        "spike_x": null,
+        "top_issue": "Manufacturing"
       },
       {
         "ticker": "SSYS",
@@ -44527,48 +44569,6 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Banking"
-      },
-      {
-        "ticker": "TKR",
-        "spend_usd": 60000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Budget/Appropriations"
-      },
-      {
-        "ticker": "KEX",
-        "spend_usd": 50000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Budget/Appropriations"
-      },
-      {
-        "ticker": "NGEN",
-        "spend_usd": 50000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Veterans"
-      },
-      {
-        "ticker": "ALHC",
-        "spend_usd": 45000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Medicare/Medicaid"
-      },
-      {
-        "ticker": "ODFL",
-        "spend_usd": 45000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Transportation"
-      },
-      {
-        "ticker": "VIRT",
-        "spend_usd": 45000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Financial Institutions/Investments/Securities"
       }
     ],
     "offexchange": [
@@ -47970,6 +47970,18 @@
         "why": "clinical_phase3_start: 12 new Phase-3 \u00b7 fda_approval: UTEBZI \u00b7 special_situation: Tender Offers"
       },
       {
+        "ticker": "IBM",
+        "score": 4,
+        "weighted_score": 1.5,
+        "channel_list": [
+          "github_momentum",
+          "gov_contract",
+          "hf_model_momentum",
+          "patent_cluster"
+        ],
+        "why": "github_momentum: +0.45% stars \u00b7 gov_contract: $8,803,093 awarded \u00b7 hf_model_momentum: +12.2% model downloads \u00b7 patent_cluster: 244 grants, 36 IPC classes"
+      },
+      {
         "ticker": "AZN",
         "score": 3,
         "weighted_score": 1.45,
@@ -47999,7 +48011,7 @@
           "activist_13d",
           "gov_contract_accel"
         ],
-        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $11,861,245, 8.2x accel"
+        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $10,528,596, 3.8x accel"
       },
       {
         "ticker": "N/A",
@@ -48070,7 +48082,7 @@
           "congress_cluster",
           "trump"
         ],
-        "why": "congress_cluster: 3 members net +9 \u00b7 trump: DOORDASH INC"
+        "why": "congress_cluster: 3 members net +7 \u00b7 trump: DOORDASH INC"
       },
       {
         "ticker": "LUMN",
@@ -48080,7 +48092,7 @@
           "gov_contract_accel",
           "special_situation"
         ],
-        "why": "gov_contract_accel: $23,453,291, 75.6x accel \u00b7 special_situation: Restructuring"
+        "why": "gov_contract_accel: $23,277,338, 47.9x accel \u00b7 special_situation: Restructuring"
       },
       {
         "ticker": "ACM",
@@ -48090,7 +48102,7 @@
           "gov_contract_accel",
           "special_situation"
         ],
-        "why": "gov_contract_accel: $11,917,246, 4.0x accel \u00b7 special_situation: Strategic Reviews"
+        "why": "gov_contract_accel: $11,482,471, 3.3x accel \u00b7 special_situation: Strategic Reviews"
       },
       {
         "ticker": "COP",
@@ -48134,17 +48146,6 @@
           "material_8k"
         ],
         "why": "activist_13d: 13D activist campaign \u00b7 material_8k: 2 material 8-Ks (items 5.02, 7.01)"
-      },
-      {
-        "ticker": "IBM",
-        "score": 3,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "github_momentum",
-          "hf_model_momentum",
-          "patent_cluster"
-        ],
-        "why": "github_momentum: +0.45% stars \u00b7 hf_model_momentum: +12.2% model downloads \u00b7 patent_cluster: 244 grants, 36 IPC classes"
       },
       {
         "ticker": "PLTR",
