@@ -462,6 +462,10 @@ body::before {
   border: 1px dashed var(--line); border-radius: 14px;
 }
 
+/* track-record line in the radar section */
+.trk-line { font-size: 10.5px; color: var(--muted); margin-top: 10px;
+  padding-top: 8px; border-top: 1px solid var(--line); line-height: 1.4; }
+
 /* ── Animations ─────────────────────────────────────────────── */
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 .section:nth-child(1) { animation: fadeInUp .5s .05s ease both; }
@@ -753,6 +757,31 @@ body::before {
 
     {% else %}
     <div class="empty-state">{{ t('Risk radar data unavailable.', '风险雷达数据不可用。') }}</div>
+    {% endif %}
+
+    <!-- Track record (forward-ledger scorecard) — display-only context accrual.
+         Guards with .get() so missing keys never crash; absent scorecard = no output. -->
+    {% if vm.risk_radar.track is defined and vm.risk_radar.track %}
+    {%- set trk = vm.risk_radar.track -%}
+    {%- set mon = trk.monitoring if trk.monitoring is defined else {} -%}
+    {%- set win_y1 = (trk.windows.y1) if (trk.windows is defined and trk.windows.y1 is defined) else {} -%}
+    {%- set win_all = (trk.windows.full) if (trk.windows is defined and trk.windows.full is defined) else {} -%}
+    {%- set al_y1 = win_y1.alerts if win_y1.alerts is defined else {} -%}
+    {%- set al_n = al_y1.n if al_y1.n is defined else 0 -%}
+    {%- set al_tp = al_y1.tp if al_y1.tp is defined else 0 -%}
+    {%- set hit_rate = al_y1.hit_rate if al_y1.hit_rate is defined else none -%}
+    {%- set log_fresh = mon.log_fresh if mon.log_fresh is defined else true -%}
+    <div class="trk-line">
+      {%- if not log_fresh %}
+      <span class="l-en">Monitoring paused — ledger stale</span><span class="l-zh">监控暂停 — 账本数据陈旧</span>
+      {%- elif hit_rate is not none %}
+      <span class="l-en">Track record: {{ al_tp }} of {{ al_n }} elevated calls preceded a ≥5% drop (past year)</span><span class="l-zh">历史记录：过去一年中 {{ al_n }} 次警报有 {{ al_tp }} 次早于 ≥5% 下跌</span>
+      {%- elif al_n > 0 %}
+      <span class="l-en">Too few elevated alerts to judge yet — {{ al_n }} graded</span><span class="l-zh">已评分警报尚少，暂无定论 — {{ al_n }} 条</span>
+      {%- else %}
+      <span class="l-en">Graded calls accruing — check back once alerts mature (~21 trading days)</span><span class="l-zh">评分记录积累中 — 约21个交易日后可查看</span>
+      {%- endif %}
+    </div>
     {% endif %}
   </div>
 

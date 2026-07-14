@@ -144,6 +144,22 @@ _THEMATIC_STATE_STANDING_LAW = (
     "(TI-R5 fence). No runtime shock-to-beneficiary escalation."
 )
 
+# Risk Radar reliability standing law (display context only — graded forward-ledger history)
+_RISK_RADAR_RELIABILITY_STANDING_LAW = (
+    "risk_radar_reliability is DISPLAY/CONTEXT ONLY. "
+    "Rates are graded forward-ledger history (deterministic math over committed rows). "
+    "No LLM, no model scores, no signal origination anywhere in this lobe. "
+    "hit_rate=null means insufficient_n (< 5 graded rows) — not a confirmed miss. "
+    "Nothing here may gate, rank, size, or escalate any alert or position. "
+    "Use 'hit rate' and 'track record' in user-facing copy (CI-guards bar the v-word)."
+)
+
+# Minimum graded-row count before a rate is meaningful (honest-null floor)
+_RR_MIN_N = 5
+
+# How many top scares to surface per market (by alert count)
+_RR_TOP_SCARES_N = 2
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -880,6 +896,143 @@ def _summarize_mastermind_ai(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_rr_market(sc_market: dict) -> dict:
+    """Distil one MARKET block from the scorecard into the lobe shape.
+
+    Returns a dict with monitoring health, y1 alert stats, top-2 scares,
+    watch/caution precursor stats, and recovery rate.  All rates are null
+    when n < _RR_MIN_N; the caller will emit 'insufficient_n' markers.
+    """
+    monitoring: dict = sc_market.get("monitoring") or {}
+    windows: dict = sc_market.get("windows") or {}
+    y1: dict = windows.get("y1") or {}
+
+    # ---- alerts (y1 window) ----
+    y1_alerts: dict = y1.get("alerts") or {}
+    alert_n = y1_alerts.get("n") or 0
+    alert_tp = y1_alerts.get("tp") or 0
+    alert_hit_rate = y1_alerts.get("hit_rate")  # null when n<5 per scorecard contract
+
+    # ---- watch/caution precursor (y1) ----
+    y1_wc: dict = y1.get("watch_caution") or {}
+    wc_n = y1_wc.get("n") or 0
+    wc_tp = y1_wc.get("tp") or 0
+    wc_rate = y1_wc.get("precursor_rate")  # null when n<5
+
+    # ---- top-2 scares by alert count (y1) ----
+    by_scare: dict = y1.get("by_scare") or {}
+    scare_list = sorted(
+        ((k, (v or {}).get("n") or 0, (v or {})) for k, v in by_scare.items()),
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    top_scares: list[dict] = []
+    for scare_key, scare_n, scare_data in scare_list[:_RR_TOP_SCARES_N]:
+        scare_tp = scare_data.get("tp") or 0
+        top_scares.append({
+            "scare": scare_key,
+            "n": scare_n,
+            "hit_rate": scare_data.get("hit_rate"),  # null when n<5
+            "insufficient_n": scare_n < _RR_MIN_N,
+        })
+
+    # ---- recovery (y1) ----
+    y1_rec: dict | None = y1.get("recovery")
+    recovery_out: dict | None = None
+    if y1_rec is not None:
+        rec_n = y1_rec.get("n") or 0
+        recovery_out = {
+            "n": rec_n,
+            "rate": y1_rec.get("rate"),  # null when n<5
+            "insufficient_n": rec_n < _RR_MIN_N,
+        }
+
+    out: dict = {
+        "monitoring": {
+            "log_fresh": monitoring.get("log_fresh", False),
+            "last_logged_days_ago": monitoring.get("last_logged_days_ago"),
+            "ungraded_backlog": monitoring.get("ungraded_backlog") or 0,
+            "graded_n": monitoring.get("graded_n") or 0,
+        },
+        "y1_alerts": {
+            "n": alert_n,
+            "tp": alert_tp,
+            "hit_rate": alert_hit_rate,
+            "insufficient_n": alert_n < _RR_MIN_N,
+        },
+        "y1_watch_caution": {
+            "n": wc_n,
+            "tp": wc_tp,
+            "precursor_rate": wc_rate,
+            "insufficient_n": wc_n < _RR_MIN_N,
+        },
+        "top_scares": top_scares,
+    }
+    if recovery_out is not None:
+        out["recovery"] = recovery_out
+
+    asof_last = sc_market.get("asof_last_row")
+    if asof_last:
+        out["asof_last_row"] = asof_last
+
+    return out
+
+
+def _summarize_risk_radar_reliability(repo: Path) -> tuple[dict, str | None]:
+    """Distil site/riskdata/scorecard.json into the risk_radar_reliability lobe.
+
+    Source: the frozen cross-builder scorecard artifact (schema risk_radar_scorecard.v1).
+    Covers markets: us, cn, hk, ca — each distilled by _summarize_rr_market().
+
+    Standing laws:
+    - 100% deterministic math over already-graded rows (no LLM, no invented scores).
+    - hit_rate=null → emit insufficient_n=True (honest-null floor; n < _RR_MIN_N).
+    - Absent/malformed file → fail-soft (gap note returned, empty lobe).
+    - The word 'validated' is banned from all emitted text.
+    """
+    path = repo / "site" / "riskdata" / "scorecard.json"
+    sc = _read_json(path)
+    if sc is None:
+        return {}, "site/riskdata/scorecard.json absent or unreadable"
+
+    if not isinstance(sc, dict):
+        return {}, "site/riskdata/scorecard.json: unexpected top-level type (not dict)"
+
+    schema = sc.get("schema")
+    markets_raw: dict = sc.get("markets") or {}
+    if not isinstance(markets_raw, dict):
+        return {}, (
+            f"site/riskdata/scorecard.json: 'markets' field missing or wrong type "
+            f"(schema={schema!r})"
+        )
+
+    markets_out: dict = {}
+    _MARKET_ORDER = ("us", "cn", "hk", "ca")
+    for mkt in _MARKET_ORDER:
+        mkt_data = markets_raw.get(mkt)
+        if not isinstance(mkt_data, dict):
+            # Market absent (no ledger yet) — emit a minimal absent marker
+            markets_out[mkt] = {
+                "monitoring": {"log_fresh": False},
+                "_absent": True,
+            }
+            continue
+        try:
+            markets_out[mkt] = _summarize_rr_market(mkt_data)
+        except Exception as exc:  # noqa: BLE001
+            log.warning(
+                "mastermind_context: risk_radar_reliability market=%s failed — %s", mkt, exc
+            )
+            markets_out[mkt] = {"_error": str(exc)}
+
+    lobe: dict = {
+        "generated_at": sc.get("generated_at"),
+        "markets": markets_out,
+        "standing_law": _RISK_RADAR_RELIABILITY_STANDING_LAW,
+    }
+    return lobe, None
+
+
 # Registry: ordered list of (lobe_name, summarizer_fn)
 # Each fn signature: (repo: Path) -> (lobe_dict, gap_note | None)
 LOBE_SUMMARIZERS: dict[str, Any] = {
@@ -894,6 +1047,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "cycle_pattern": _summarize_cycle_pattern,
     "thematic_state": _summarize_thematic_state,
     "mastermind_ai": _summarize_mastermind_ai,
+    "risk_radar_reliability": _summarize_risk_radar_reliability,
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -909,6 +1063,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "cycle_pattern": ["cycle-pattern-state"],
     "thematic_state": ["theme-state"],
     "mastermind_ai": ["mastermind-feedback-summary"],
+    "risk_radar_reliability": ["site-riskdata-scorecard"],
 }
 
 

@@ -263,6 +263,86 @@
   {% if rd.forward_log %}{% set fl = rd.forward_log %}
   <div class="rrx-audit"><span class="rrx-audit-k">🧾 {{ t('Self-audit','自审') }}</span>{% if fl.n_graded and fl.n_graded > 0 %}{{ fl.n_graded }} {{ t('graded','已评分') }}{% if fl.force_lift is not none %} · <b>{{ fl.force_lift }}×</b> {{ t('vs base rate','对比基准') }}{% endif %} · {% if fl.can_force %}{{ t('moving the verdict','参与定调') }} ✓{% else %}{{ t('display-only','仅展示') }}{% endif %}{% else %}{{ t('accruing — grades begin once calls mature (~21 trading days)','积累中 — 约21个交易日后开始评分') }}{% endif %}</div>
   {% endif %}
+  {# ── Track record (forward-ledger scorecard, data/risk_radar/scorecard.json).
+     Display-only context accrual — deterministic math over graded ledger rows.
+     Glance tier: ONE plain-word line. Tier-2: per-scare (top 3 by n) +
+     watch/caution + recovery detail inside the help() tooltip, rendered from
+     the live by_sc_y1, wc_y1, and y1-window recovery data.
+     Guards: rd.track must be defined AND truthy
+     (older renders / first build before engine builder runs = zero output). #}
+  {% if rd.track is defined and rd.track %}
+  {%- set trk = rd.track -%}
+  {%- set mon = trk.get('monitoring') if trk.get is defined else trk.monitoring if trk.monitoring is defined else {} -%}
+  {%- set win_y1 = trk.get('windows', {}).get('y1', {}) if trk.get is defined else {} -%}
+  {%- set al_y1 = win_y1.get('alerts', {}) if win_y1.get is defined else {} -%}
+  {%- set wc_y1 = win_y1.get('watch_caution', {}) if win_y1.get is defined else {} -%}
+  {%- set rv_y1 = win_y1.get('recovery') if win_y1.get is defined else none -%}
+  {%- set by_sc_y1 = win_y1.get('by_scare', {}) if win_y1.get is defined else {} -%}
+  {%- set hit_rate = al_y1.get('hit_rate') if al_y1.get is defined else none -%}
+  {%- set al_tp = al_y1.get('tp', 0) if al_y1.get is defined else 0 -%}
+  {%- set al_n = al_y1.get('n', 0) if al_y1.get is defined else 0 -%}
+  {%- set log_fresh = mon.get('log_fresh', true) if mon.get is defined else true -%}
+  {#- Build per-scare string for Tier-2 tooltip (top 3 scares by alert count, n>0). -#}
+  {%- set _sc_map = {
+    'credit_oas_roc':'HY credit spreads widening','credit_hyg_tlt':'HY bonds lagging Treasuries',
+    'rates_move':'Bond-market vol (MOVE)','rates_realrate':'Real yields jumping',
+    'bubble_ext':'S&P stretched','bubble_leadership':'Narrow leadership',
+    'growth_defensives':'Defensives outperforming','growth_cyc_def':'Cyclicals fading',
+    'vol_term':'VIX term-structure stress','vol_putcall':'Put/call skew','vol_gex':'Dealer gamma',
+    'global_breadth':'Global breadth','us_rate_2y':'US 2y yield jump','us_rate_10y':'US 10y yield jump',
+    'us_real_rate':'US real yield jump','us_cn_diff':'US–China yield gap','usd_cnh':'Yuan depreciation',
+    'usd_strength':'Dollar strength','cn_breadth':'A-share breadth','ca_breadth':'TSX breadth'} -%}
+  {%- set _sc_map_zh = {
+    'credit_oas_roc':'高收益利差走阔','credit_hyg_tlt':'高收益债跑输国债',
+    'rates_move':'债市波动率','rates_realrate':'实际利率跳升',
+    'bubble_ext':'标普超买','bubble_leadership':'领涨过窄',
+    'growth_defensives':'防御股跑赢','growth_cyc_def':'周期股弱于防御',
+    'vol_term':'VIX期限结构紧张','vol_putcall':'认沽/认购偏斜','vol_gex':'做市商Gamma',
+    'global_breadth':'全球广度','us_rate_2y':'美债2年利率','us_rate_10y':'美债10年利率',
+    'us_real_rate':'美债实际利率','us_cn_diff':'中美利差走阔','usd_cnh':'人民币贬值',
+    'usd_strength':'美元走强','cn_breadth':'A股广度','ca_breadth':'多指广度'} -%}
+  {%- set _ns = namespace(sc_en='', sc_zh='', seen=0) -%}
+  {%- for sk, sv in by_sc_y1.items() | sort(attribute='1.n', reverse=true) -%}
+    {%- if _ns.seen < 3 and sv and sv.get('n', 0) > 0 -%}
+      {%- set _label_en = _sc_map.get(sk, sk) -%}
+      {%- set _label_zh = _sc_map_zh.get(sk, sk) -%}
+      {%- set _ns.sc_en = _ns.sc_en ~ (' | ' if _ns.sc_en else '') ~ 'on ' ~ (sv.get('tp', 0)|string) ~ ' of ' ~ (sv.get('n', 0)|string) ~ ' ' ~ _label_en ~ ' days' -%}
+      {%- set _ns.sc_zh = _ns.sc_zh ~ ('；' if _ns.sc_zh else '') ~ (sv.get('n', 0)|string) ~ ' 个' ~ _label_zh ~ '日中有 ' ~ (sv.get('tp', 0)|string) ~ ' 天' -%}
+      {%- set _ns.seen = _ns.seen + 1 -%}
+    {%- endif -%}
+  {%- endfor -%}
+  <div class="rrx-trk">
+    {%- if not log_fresh %}
+    <span class="l-en">Monitoring paused — ledger stale</span><span class="l-zh">监控暂停 — 账本数据陈旧</span>
+    {%- elif hit_rate is not none %}
+    {# Glance tier: "on N of M elevated days a ≥5% drop followed within a month (past year)" #}
+    <span class="l-en">Track record: on {{ al_tp }} of {{ al_n }} elevated days in the past year, a ≥5% drop followed within a month</span><span class="l-zh">历史记录：过去一年 {{ al_n }} 个警报日中有 {{ al_tp }} 天在一个月内出现 ≥5% 下跌</span>
+    {%- elif al_n > 0 %}
+    <span class="l-en">Too few elevated alerts to judge yet — {{ al_n }} graded</span><span class="l-zh">已评分警报尚少，暂无定论 — {{ al_n }} 条</span>
+    {%- else %}
+    <span class="l-en">Graded calls accruing — check back once alerts mature (~21 trading days)</span><span class="l-zh">评分记录积累中 — 约21个交易日后可查看</span>
+    {%- endif %}
+    {# Tier-2 detail in the help() tooltip: per-scare rows + watch/caution + recovery #}
+    {{ help(
+      'Past-year hit rate: '
+        ~ (('on ' ~ (al_tp|string) ~ ' of ' ~ (al_n|string) ~ ' elevated days (' ~ ((hit_rate * 100)|round|int|string) ~ '%) a ≥5% drop followed within 21 days') if hit_rate is not none else 'too few graded alerts yet')
+        ~ (' | by scare: ' ~ _ns.sc_en if _ns.sc_en else '')
+        ~ ' (daily readings — consecutive days overlap)'
+        ~ ' | Watch/caution: '
+        ~ (('on ' ~ (wc_y1.get('tp', 0)|string) ~ ' of ' ~ (wc_y1.get('n', 0)|string) ~ ' watch/caution days a drop followed') if wc_y1.get is defined and wc_y1.get('n', 0) >= 5 else 'too few graded')
+        ~ ' | Recovery: '
+        ~ (((rv_y1.get('ok', 0)|string) ~ ' of ' ~ (rv_y1.get('n', 0)|string) ~ ' recovery calls were higher 21 days later') if rv_y1 is not none and rv_y1.get is defined and rv_y1.get('n', 0) >= 5 else 'too few graded'),
+      '过去一年命中率：'
+        ~ ((al_n|string) ~ ' 个警报日中有 ' ~ (al_tp|string) ~ ' 天（' ~ ((hit_rate * 100)|round|int|string) ~ '%）在21天内出现 ≥5% 下跌' if hit_rate is not none else '暂无足够评分记录')
+        ~ ('；按类别：' ~ _ns.sc_zh if _ns.sc_zh else '')
+        ~ '（按日读数——连续日期相互重叠）'
+        ~ ' | 观察/谨慎：'
+        ~ ((wc_y1.get('n', 0)|string) ~ ' 个观察/谨慎日中有 ' ~ (wc_y1.get('tp', 0)|string) ~ ' 天先于下跌' if wc_y1.get is defined and wc_y1.get('n', 0) >= 5 else '暂无足够评分')
+        ~ ' | 修复信号：'
+        ~ ((rv_y1.get('n', 0)|string) ~ ' 次中有 ' ~ (rv_y1.get('ok', 0)|string) ~ ' 次21天后上涨' if rv_y1 is not none and rv_y1.get is defined and rv_y1.get('n', 0) >= 5 else '暂无足够评分')
+    ) }}
+  </div>
+  {% endif %}
   </div>{# /.rrx-side #}
 </div>
 {%- endmacro %}

@@ -631,6 +631,16 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("risk-radar failed: %s", e)
         latest["risk_radar"] = None
+    # Risk Radar Scorecard (engine/risk_radar_scorecard.py): deterministic accuracy
+    # metrics over US + intl forward ledgers and the recovery log.  Written to
+    # data/risk_radar/scorecard.json and site/riskdata/scorecard.json.  The scorecard
+    # here reflects US ledger state at run time; intl build scripts refresh it further
+    # after their own ledger appends.  Additive, never fatal.
+    try:
+        from engine import risk_radar_scorecard as _rrs  # noqa: PLC0415
+        _rrs.write()
+    except Exception as e:  # noqa: BLE001
+        log.warning("risk-radar scorecard write failed: %s", e)
     # Ignition Radar (engine/ignition_radar.py, IGN WB): risk-ON mirror of the Risk
     # Radar — broad K-of-8 thrust confluence + narrow per-basket theme ignition.
     # DISPLAY-ONLY / NOT VALIDATED. Runs AFTER risk_radar so it can reuse the already-

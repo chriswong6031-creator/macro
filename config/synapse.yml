@@ -636,6 +636,69 @@ artifacts:
     external_consumers: []
     notes: "Producer: engine/risk_radar_audit.py:35 append, idempotent by as-of."
 
+  # RR scorecard (data copy) — the canonical data-side artifact written atomically
+  # alongside site/riskdata/scorecard.json by engine/risk_radar_scorecard.py.write().
+  # Consumed by engine/market_state.py (_rr_scorecard_track) and
+  # scripts/build_macro_context.py (_build_risk_radar) for the card track dict.
+  data-risk-radar-scorecard:
+    path: data/risk_radar/scorecard.json
+    format: json
+    producer: engine/risk_radar_scorecard.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: risk_radar_scorecard.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/market_state.py
+      - scripts/build_macro_context.py
+    external_consumers: []
+    notes: >
+      Canonical data-side copy (written atomically with site/riskdata/scorecard.json).
+      Frozen cross-builder scorecard contract (schema risk_radar_scorecard.v1).
+      100% deterministic math over already-graded forward-ledger rows — no LLM,
+      no model scores. hit_rate=null when graded_n < 5 (honest-null floor).
+      Display/context only: nothing here may gate, rank, size, or escalate.
+      The word 'validated' is banned from all emitted copy.
+
+  # RR scorecard — deterministic hit-rate distillation over all graded forward-ledger rows.
+  # Written nightly by engine/risk_radar_scorecard.py (cross-builder frozen contract).
+  # Copied to site/riskdata/scorecard.json for the mastermind context lobe consumer.
+  site-riskdata-scorecard:
+    path: site/riskdata/scorecard.json
+    format: json
+    producer: engine/risk_radar_scorecard.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: risk_radar_scorecard.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      Frozen cross-builder scorecard contract (schema risk_radar_scorecard.v1).
+      100% deterministic math over already-graded forward-ledger rows — no LLM,
+      no model scores. hit_rate=null when graded_n < 5 (honest-null floor).
+      Covers markets: us, cn, hk, ca. US data sourced from
+      data/risk_radar/forward_log.jsonl + recovery_log.jsonl; intl from
+      data/risk_radar_intl/<market>_forward_log.jsonl.
+      Display/context only: nothing here may gate, rank, size, or escalate.
+      The word 'validated' is banned from all emitted copy.
+
   # IGN WB: Ignition Radar snapshot — risk-ON mirror of the Risk Radar.
   # Written by engine/ignition_radar.py; consumed by the render pipeline + audit.
   ignition-radar-latest:
