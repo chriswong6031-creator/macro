@@ -23,6 +23,7 @@ Env:
 """
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
 import sys
@@ -80,6 +81,26 @@ def pending_ips(limit: int):
     return [r["ip"] for r in rows if r.get("ip")]
 
 
+def _routable(ip: str) -> bool:
+    """True only for a globally-routable public address (v4 or v6). Private / loopback /
+    link-local / reserved / multicast / unspecified addresses are never geolocatable —
+    skip them so they neither burn the IPLocate budget nor land a permanent NULL-geo row
+    that the `not in ip_geo` filter in pending_ips() would exclude from every future run.
+    Handles IPv6 too (the Cloudflare-fronted Terminal collector can store a v6 client IP)."""
+    try:
+        return ipaddress.ip_address(ip).is_global
+    except ValueError:
+        return False
+
+
+def _resolved(g: dict) -> bool:
+    """True if IPLocate actually placed the IP (has at least a country or city). A 200 with
+    neither means it couldn't locate it — we deliberately DON'T upsert those, so the IP stays
+    pending and a later run can retry, instead of writing a permanent NULL row that would
+    never be revisited."""
+    return bool(g.get("country_code") or g.get("country") or g.get("city"))
+
+
 def iplocate(ip: str) -> dict:
     """Look one IP up via IPLocate. Query-param auth (verified working) so no header ambiguity."""
     url = (
@@ -124,19 +145,28 @@ def run(budget: int = DEFAULT_BUDGET) -> dict:
     if not PAT or not IPLOCATE_KEY:
         return {"ok": False, "reason": "missing SUPABASE_ACCESS_TOKEN or IPLOCATE_API_KEY"}
     ips = pending_ips(budget)
-    done, failed = 0, 0
+    done, failed, skipped, unresolved = 0, 0, 0, 0
     for ip in ips:
+        if not _routable(ip):
+            skipped += 1  # private/reserved/bogon — never spend a lookup on it
+            continue
         try:
-            upsert(ip, iplocate(ip))
+            g = iplocate(ip)
+            if not _resolved(g):
+                unresolved += 1  # located nothing; leave pending for a later retry, don't NULL-pin it
+                continue
+            upsert(ip, g)
             done += 1
         except urllib.error.HTTPError as ex:
             if ex.code == 429:
-                return {"ok": True, "pending": len(ips), "enriched": done, "failed": failed, "rate_limited": True}
+                return {"ok": True, "pending": len(ips), "enriched": done, "failed": failed,
+                        "skipped": skipped, "unresolved": unresolved, "rate_limited": True}
             failed += 1
         except Exception:
             failed += 1
         time.sleep(0.05)  # be gentle on IPLocate
-    return {"ok": True, "pending": len(ips), "enriched": done, "failed": failed, "rate_limited": False}
+    return {"ok": True, "pending": len(ips), "enriched": done, "failed": failed,
+            "skipped": skipped, "unresolved": unresolved, "rate_limited": False}
 
 
 def main() -> int:
