@@ -338,7 +338,7 @@ def _write_atlas(eps_s: pd.DataFrame, eps_m: pd.DataFrame, manifest_s: dict | No
 
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Build Oracle episode catalog (O2)")
-    p.add_argument("--tier", choices=["s", "m", "all"], default="all")
+    p.add_argument("--tier", choices=["s", "m", "f", "all"], default="all")
     p.add_argument("--data-dir", type=Path, help="Override data directory (default: lib.config)")
     p.add_argument("--atlas", action="store_true", help="Also write ORACLE_EPISODE_ATLAS.md")
     return p.parse_args()
@@ -362,6 +362,9 @@ def main() -> None:
 
     if args.tier in ("m", "all"):
         eps_m = _build_tier("m", rotation_groups)
+
+    if args.tier in ("f", "all"):
+        _build_tier("f", rotation_groups)
 
     if args.atlas:
         # Load manifest if available (for survivorship watermark)

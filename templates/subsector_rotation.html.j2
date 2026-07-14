@@ -383,6 +383,9 @@ _rcObs.observe(document.documentElement,{attributes:true,attributeFilter:['data-
         <button class="tm-tier-btn" data-tmunit="themes" id="tm-btn-themes">
           <span class="l-en">Themes 2021→</span><span class="l-zh">主题 2021→</span>
         </button>
+        <button class="tm-tier-btn" data-tmunit="factors" id="tm-btn-factors">
+          <span class="l-en">Factors 2013→</span><span class="l-zh">因子 2013→</span>
+        </button>
       </div>
     </div>
 
@@ -974,10 +977,11 @@ function _init(){
 
 /* ── unit management ── */
 // Map unit name to manifest tier
-function _tierForUnit(u){ return u === 'sectors' ? 's' : 'm'; }
+function _tierForUnit(u){ if(u === 'sectors') return 's'; if(u === 'factors') return 'f'; return 'm'; }
 // Filter registry for current unit from tier-m
 function _registryForUnit(u){
   if(u === 'sectors') return _manifest.registry['s'] || [];
+  if(u === 'factors') return _manifest.registry['f'] || [];
   var all = _manifest.registry['m'] || [];
   if(u === 'subsectors') return all.filter(function(r){ return r.tier === 'subsector'; });
   if(u === 'themes')     return all.filter(function(r){ return r.tier === 'theme'; });
@@ -1001,7 +1005,17 @@ function _setUnit(unit, cb){
   _buildYearChips(tier);
   // Show/hide survivorship watermark
   var wm = document.getElementById('tm-watermark');
-  if(wm) wm.style.display = (unit !== 'sectors') ? '' : 'none';
+  if(wm){
+    if(wm._orig === undefined) wm._orig = wm.innerHTML;
+    if(unit === 'factors'){
+      wm.style.display = '';
+      wm.innerHTML = '<span class="l-en">6 style sleeves, ~0.9 collinear (mostly one growth\u2194value axis) \u2014 SPY-excess replay, context only</span>'
+                   + '<span class="l-zh">6\u4e2a\u98ce\u683c\u56e0\u5b50\uff0c\u9ad8\u5ea6\u5171\u7ebf\uff08\u57fa\u672c\u662f\u6210\u957f\u2194\u4ef7\u503c\u4e00\u4e2a\u8f74\uff09\u2014\u2014\u76f8\u5bf9SPY\u8d85\u989d\u56de\u653e\uff0c\u4ec5\u4f9b\u53c2\u8003</span>';
+    } else {
+      wm.innerHTML = wm._orig;
+      wm.style.display = (unit !== 'sectors') ? '' : 'none';
+    }
+  }
 
   // Activate most recent year
   var chips = document.querySelectorAll('#tm-year-chips .tm-year-chip');
@@ -1285,7 +1299,7 @@ function _renderFrame(){
   }
 
   // Determine which nodes to label & which need speed calculation
-  var showAll = (_unit === 'sectors');  // always label all 11 sectors
+  var showAll = (_unit === 'sectors' || _unit === 'factors');  // label all sector/factor nodes
   // For m-tier: label top ~12 by trail speed + any node with episode ring
   var speedMap = {};
   if(!showAll){
@@ -1343,7 +1357,7 @@ function _renderFrame(){
     yLo: isZh()?'降温':'COOLING'
   };
 
-  var nLabel = pts.length + ' ' + (_unit==='sectors'?'sectors':_unit==='themes'?'themes':'subsectors');
+  var nLabel = pts.length + ' ' + (_unit==='sectors'?'sectors':_unit==='factors'?'factors':_unit==='themes'?'themes':'subsectors');
   var srrSpec = {
     points:       ptsForSpec,
     domain:       _domain || null,
@@ -1414,7 +1428,9 @@ function _showTmTip(key, pts, cx, cy){
     +'</div>';
   var thLine = _unit==='sectors'
     ? '<span class="l-en">Sector ETF · </span><span class="l-zh">行业ETF · </span>'+esc(pt.name)
-    : esc(pt.theme||'');
+    : _unit==='factors'
+      ? '<span class="l-en">Factor · context</span><span class="l-zh">因子 · 参考</span>'
+      : esc(pt.theme||'');
   el.innerHTML = '<div class="sr-tip-hd"><b>'+esc(name)+'</b><span class="sr-q '+qd.cls+'">'+(isZh()?qd.zh:qd.en)+'</span></div>'
     +'<div class="sr-tip-th">'+thLine+'</div>'
     +'<div class="sr-tip-mt"><span class="l-en">RS</span><span class="l-zh">相对强度</span> <b>'+rsStr+'</b> · <span class="l-en">Mom</span><span class="l-zh">动量</span> <b class="'+(pt.az>=0?'up':'dn')+'">'+azStr+'</b></div>'
@@ -1450,7 +1466,7 @@ function _updateEpPanel(){
     if((ep.tier||'s') !== ourTier) return false;
     // For m-tier units, also require the episode node to be in the current
     // unit's registry so panel and dot-ring set stay consistent.
-    if(ourTier === 'm' && !registryNames[ep.node]) return false;
+    if((ourTier === 'm' || ourTier === 'f') && !registryNames[ep.node]) return false;
     return true;
   });
   if(!active.length){
@@ -1497,7 +1513,7 @@ function _buildPresets(){
 function _activatePreset(preset){
   _stopPlay();
   var tier = preset.tier || 's';
-  var targetUnit = tier==='s'?'sectors':'subsectors';
+  var targetUnit = tier==='s'?'sectors':tier==='f'?'factors':'subsectors';
   var targetYear = (preset.date_from||'').slice(0,4);
   function _seekAfterLoad(){
     if(!targetYear || !_yearDates.length){ return; }

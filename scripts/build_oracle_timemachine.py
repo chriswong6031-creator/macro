@@ -47,6 +47,8 @@ from engine.oracle.timemachine import (  # noqa: E402
     build_registry_m,
     build_chunks_s,
     build_chunks_m,
+    build_registry_f,
+    build_chunks_f,
     build_episode_feed,
     build_manifest,
     rrg_transform,
@@ -150,12 +152,19 @@ def main() -> None:
     # ── load inputs ────────────────────────────────────────────────────────
     panel_s, panel_m, ep_s, ep_m = _load_parquets()
 
+    # Tier-F (factor rotation) — optional; absent parquet = tier silently omitted
+    _od = _oracle_dir()
+    panel_f = pd.read_parquet(_od / "panel_f.parquet") if (_od / "panel_f.parquet").exists() else pd.DataFrame()
+    ep_f = pd.read_parquet(_od / "episodes_f.parquet") if (_od / "episodes_f.parquet").exists() else pd.DataFrame()
+
     # Desk-parity RRG coordinates (schema v3): replace the raw detection
     # features (1-day rs / accel_z) with the live rotation desk's smoothed
     # rs_ratio / rs_mom math so trails glide instead of jumping.
     log.info("Applying desk-parity RRG transform (schema v3) ...")
     panel_s = rrg_transform(panel_s)
     panel_m = rrg_transform(panel_m)
+    if not panel_f.empty:
+        panel_f = rrg_transform(panel_f)
     themes_tree = _load_themes_tree()
     names_zh = _load_names_zh()
     baskets_data = _load_baskets()
@@ -169,10 +178,14 @@ def main() -> None:
     registry_m = build_registry_m(panel_m, themes_tree, names_zh, baskets_data)
     log.info("Tier-M registry: %d nodes", len(registry_m))
 
+    registry_f = build_registry_f(panel_f) if not panel_f.empty else []
+    log.info("Tier-F registry: %d nodes", len(registry_f))
+
     # ── chunks ─────────────────────────────────────────────────────────────
     total_bytes = 0
     chunks_s: list[dict] = []
     chunks_m: list[dict] = []
+    chunks_f: list[dict] = []
 
     if args.tier in ("s", "all"):
         log.info("Building Tier-S quarterly chunks ...")
@@ -201,8 +214,18 @@ def main() -> None:
                      " (dry)" if args.dry_run else "")
 
     # ── episode feed ───────────────────────────────────────────────────────
+    if args.tier in ("f", "all") and not panel_f.empty:
+        log.info("Building Tier-F quarterly chunks ...")
+        chunks_f = build_chunks_f(panel_f, registry_f, period_key="Q")
+        log.info("Tier-F: %d quarterly chunks", len(chunks_f))
+        for chunk in chunks_f:
+            fname = out_dir / f"tm_f_{chunk['period']}.json"
+            chunk_obj = {"dates": chunk["dates"], "data": chunk["data"]}
+            nbytes = _write_json(fname, chunk_obj, args.dry_run)
+            total_bytes += nbytes
+
     log.info("Building episode feed ...")
-    ep_feed = build_episode_feed(ep_m, ep_s)
+    ep_feed = build_episode_feed(ep_m, ep_s, ep_f=ep_f if not ep_f.empty else None)
     ep_path = out_dir / "tm_episodes.json"
     nbytes = _write_json(ep_path, ep_feed, args.dry_run)
     total_bytes += nbytes
@@ -212,7 +235,7 @@ def main() -> None:
 
     # ── manifest ───────────────────────────────────────────────────────────
     log.info("Writing manifest ...")
-    manifest = build_manifest(registry_s, registry_m, chunks_s, chunks_m)
+    manifest = build_manifest(registry_s, registry_m, chunks_s, chunks_m, registry_f=registry_f, chunks_f=chunks_f)
     mf_path = out_dir / "tm_manifest.json"
     nbytes = _write_json(mf_path, manifest, args.dry_run)
     total_bytes += nbytes

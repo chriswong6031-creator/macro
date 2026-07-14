@@ -989,6 +989,87 @@ def _build_basket_ew_index(
     return _build_ew_index(df)
 
 
+FACTOR_ETFS: list[str] = ["IWF", "IWD", "MTUM", "QUAL", "USMV", "IWM"]
+
+
+def build_panel_f(
+    *,
+    yahoo_dir: Path,
+    start: str | None = "2013-04-16",
+    end: str | None = None,
+    cfg: dict[str, Any] | None = None,
+) -> pd.DataFrame:
+    """Build Tier-F (style-factor ETFs) rotation panel — SPY-excess.
+
+    Nodes: IWF(Growth) IWD(Value) MTUM(Momentum) QUAL(Quality) USMV(LowVol) IWM(Size).
+    rs = node ret - SPY ret (market excess), NOT peer-median (median-of-6 has no
+    clean referent + is zero-sum). ETF-only: cohesion/cohesion_chg/breadth_50 are
+    NULL by design (no member panels); turnover_z still derives from ETF volume.
+    History from ~2013. Survivorship-clean (Tier-S semantics).
+
+    HONEST-NULL PRIOR (see episodes.py): daily cross-sectional rotation rank-IC of
+    this family tested as noise. Tier-F is a DISPLAY/CONTEXT layer — descriptive
+    replay, never a validated edge, never a sizing input.
+    """
+    cfg = cfg or {}
+    etf_closes: dict[str, pd.Series] = {}
+    etf_volumes: dict[str, pd.Series] = {}
+    for ticker in FACTOR_ETFS:
+        p = yahoo_dir / f"{ticker}.parquet"
+        if not p.exists():
+            log.warning("factor ETF parquet missing: %s - skipping node", ticker)
+            continue
+        df = pd.read_parquet(p)
+        etf_closes[ticker] = df["close"]
+        if "volume" in df.columns:
+            etf_volumes[ticker] = df["volume"]
+    if not etf_closes:
+        raise FileNotFoundError(f"No factor ETF parquets found in {yahoo_dir}")
+
+    all_dates = sorted(set().union(*[s.index for s in etf_closes.values()]))
+    full_idx = pd.DatetimeIndex(all_dates, name="date")
+    if start:
+        full_idx = full_idx[full_idx >= pd.Timestamp(start)]
+    if end:
+        full_idx = full_idx[full_idx <= pd.Timestamp(end)]
+    etf_aligned = {t: s.reindex(full_idx) for t, s in etf_closes.items()}
+
+    spy_path = yahoo_dir / "SPY.parquet"
+    if not spy_path.exists():
+        raise FileNotFoundError(f"SPY parquet required for Tier-F benchmark: {spy_path}")
+    spy_close = pd.read_parquet(spy_path)["close"]
+    bench_ret = spy_close.pct_change(fill_method=None).reindex(full_idx)
+
+    regime = _build_regime(yahoo_dir, full_idx)
+
+    node_dfs: list[pd.DataFrame] = []
+    for ticker, lvl_raw in etf_aligned.items():
+        lvl = lvl_raw.dropna()
+        if lvl.empty:
+            continue
+        node_idx = full_idx[full_idx.isin(lvl.index)]
+        bench = bench_ret.reindex(node_idx)
+        node_vol = etf_volumes.get(ticker)
+        if node_vol is not None:
+            node_vol = node_vol.reindex(node_idx)
+        feats = _build_node_features(
+            lvl=lvl_raw.reindex(node_idx),
+            bench=bench,
+            member_closes=None,
+            member_volume=None,
+            node_volume=node_vol,
+        )
+        feats = feats.join(regime.reindex(node_idx), how="left")
+        feats.index.name = "date"
+        feats["node"] = ticker
+        node_dfs.append(feats.reset_index().set_index(["node", "date"]))
+    if not node_dfs:
+        return pd.DataFrame()
+    panel = pd.concat(node_dfs)
+    panel.sort_index(inplace=True)
+    return panel
+
+
 def build_panel_m(
     *,
     yahoo_dir: Path,
