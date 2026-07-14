@@ -1,15 +1,15 @@
 {
-  "date": "2026-07-13",
-  "generated_utc": "2026-07-14 04:37",
+  "date": "2026-07-10",
+  "generated_utc": "2026-07-14 04:39",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
     "tiers": {
       "leading": {
         "asof": "2026-07-31",
-        "index": 94.72718763167221,
-        "mom6": 0.2865130165235712,
-        "trend": 0.573925434527273,
+        "index": 94.72675841936713,
+        "mom6": 0.28608380421849233,
+        "trend": 0.5738028024401075,
         "diffusion": 75.0,
         "n_legs": 4,
         "direction": "rising",
@@ -4020,7 +4020,7 @@
   "conditions": {
     "financial_conditions": {
       "nfci": -0.515,
-      "nfci_pctile": 0.1880952380952381,
+      "nfci_pctile": 0.1884920634920635,
       "nfci_change_13w": -0.04400000000000004,
       "state": "loose",
       "trend": "loosening",
@@ -4033,8 +4033,8 @@
     },
     "systemic_stress": {
       "ofr_fsi": -2.082,
-      "ofr_fsi_pctile": 0.24841269841269842,
-      "ofr_fsi_change_13w": -0.294,
+      "ofr_fsi_pctile": 0.2488095238095238,
+      "ofr_fsi_change_13w": -0.286,
       "state": "calm",
       "trend": "easing",
       "functional": {
@@ -4060,13 +4060,13 @@
       "evidence": "OFR Financial Stress Index: a daily 33-variable global stress gauge with functional (credit / equity valuation / safe assets / funding / volatility) and regional (US / other-advanced / EM) decomposition. A coincident gauge \u2014 it names the stress CHANNEL when markets move as one; display + an optional risk-OFF gate, never cross-sectional alpha."
     },
     "recession": {
-      "score": 4.677539465537072,
+      "score": 4.679959132590886,
       "label": "low",
       "components": {
         "prob": 0.54,
         "ebp_prob": 11.35401674500448,
         "curve": 0.0,
-        "ebp_level": 19.325396825396826,
+        "ebp_level": 19.345238095238095,
         "claims": 0.0
       },
       "curve_raw": 0.35,
@@ -4085,10 +4085,10 @@
       "initial_claims_4wk": 218750.0,
       "continued_claims": 1814000.0,
       "claims_yoy_pct": -2.5612472160356337,
-      "claims_z": -0.2951195062406979,
+      "claims_z": -0.2974983844928399,
       "claims_trend": "falling",
       "indeed_postings": 101.39,
-      "indeed_chg_3m_pct": -1.5344275031562549,
+      "indeed_chg_3m_pct": -1.4770187542512803,
       "indeed_trend": "falling",
       "withheld_tax_yoy_pct": 3.195517943286874,
       "income_trend": "rising",
@@ -4103,26 +4103,26 @@
       "read": "transitory (flexible-led)"
     },
     "risk_appetite": {
-      "vrp": 3.5490035137243012,
-      "vrp_pctile": 0.3869047619047619,
+      "vrp": 1.6712798407153233,
+      "vrp_pctile": 0.21031746031746032,
       "vrp_state": "normal",
-      "realized_vol": 13.610996333687808,
-      "vix_term": 0.8737271069599193,
+      "realized_vol": 13.358719892255868,
+      "vix_term": 0.8093699504561819,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
       "skew": 144.27,
-      "skew_pctile": 0.39087301587301587,
-      "stock_bond_corr": 0.5699054170843467,
+      "skew_pctile": 0.3898809523809524,
+      "stock_bond_corr": 0.5643800997722926,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.46625378480929985,
+      "roro": 0.6927612409786469,
       "roro_state": "risk-on",
-      "vol_target_scalar": 0.8816400876032475,
+      "vol_target_scalar": 0.8982896637391486,
       "news_sentiment": 0.09985840320587158,
-      "news_sentiment_z": 1.7338687265700687,
+      "news_sentiment_z": 1.7492509351422634,
       "news_sentiment_state": "optimistic"
     },
     "drawdown_risk": {
-      "score": 18.487157775896133,
+      "score": 18.5378590078329,
       "band": "low",
       "dd10_prob_pct": 10,
       "base_rate_pct": 19,
@@ -4153,20 +4153,20 @@
       "base_rate_pct": 2.8
     },
     "complacency": {
-      "calm": 1,
+      "calm": 2,
       "fragility": 0,
       "warning": false,
       "strong": false,
       "state": "calm",
-      "vix_low": false,
-      "vix_pctile": 0.46130952380952384,
+      "vix_low": true,
+      "vix_pctile": 0.12003968253968254,
       "contango": true,
-      "vix_term": 0.8737271069599193,
+      "vix_term": 0.8093699504561819,
       "breadth_div": false,
-      "spy_high_prox": 0.9888489454086047,
-      "breadth_above200_pctile": 0.7291666666666666,
+      "spy_high_prox": 0.9964781564088152,
+      "breadth_above200_pctile": 0.7301587301587301,
       "credit_widen": false,
-      "hy_oas_chg_21d_bp": -1.0,
+      "hy_oas_chg_21d_bp": -8.0,
       "lead_lag": "leading",
       "breadth_div_caution": false,
       "caution": false,
@@ -4174,7 +4174,7 @@
       "caution_reason_zh": null
     },
     "style_tilt": {
-      "yield_chg_1m_bp": 6.0,
+      "yield_chg_1m_bp": 9.0,
       "tilt": "neutral",
       "driver": "10y yield direction",
       "measured": "rising 10y -> value (+0.84%/63d, t=+3.0, all 4 sub-periods); Q1->value, Q4->growth"
@@ -4225,7 +4225,7 @@
   "fear_euphoria": {
     "fe_score": 96,
     "band": "Euphoria",
-    "roro": 0.46625378480929985,
+    "roro": 0.6927612409786469,
     "roro_state": "risk-on",
     "legs": [
       {
@@ -4507,18 +4507,20 @@
     ],
     "n_legs_qualifying": 11,
     "as_of": "2026-07-14",
-    "generated_utc": "2026-07-14T03:44:43Z",
+    "generated_utc": "2026-07-14T03:49:20Z",
     "disclaimer_en": "Sentiment context only \u2014 display-only composite of public market indicators. Never scored, never feeds the regime engine, no forward claim. Greed/fear readings are not contrarian signals without regime context.",
     "disclaimer_zh": "\u4ec5\u4e3a\u60c5\u7eea\u53c2\u8003 \u2014 \u516c\u5f00\u5e02\u573a\u6307\u6807\u7684\u4ec5\u5c55\u793a\u5408\u6210\u3002\u4e0d\u8ba1\u5206\uff0c\u4e0d\u8fdb\u5165\u5468\u671f\u5f15\u64ce\uff0c\u65e0\u524d\u77bb\u6027\u5224\u65ad\u3002\u8d2a\u5a6a/\u6050\u60e7\u8bfb\u6570\u82e5\u65e0\u5468\u671f\u80cc\u666f\uff0c\u4e0d\u6784\u6210\u53cd\u5411\u4fe1\u53f7\u3002"
   },
   "growth_score": 0.2,
-  "inflation_score": -0.2,
+  "inflation_score": -0.52,
   "components_confirming": [
-    "<span class=\"l-en\">growth \u00b7 copper vs gold</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u94dc\u5bf9\u9ec4\u91d1</span>",
+    "<span class=\"l-en\">growth \u00b7 market breadth</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u5e02\u573a\u5e7f\u5ea6</span>",
     "<span class=\"l-en\">growth \u00b7 payrolls</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u975e\u519c\u5c31\u4e1a</span>",
     "<span class=\"l-en\">growth \u00b7 industrial production</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u5de5\u4e1a\u751f\u4ea7</span>",
     "<span class=\"l-en\">growth \u00b7 wei_trend</span><span class=\"l-zh\">\u589e\u957f \u00b7 wei_trend</span>",
     "<span class=\"l-en\">inflation \u00b7 10-yr inflation expectations</span><span class=\"l-zh\">\u901a\u80c0 \u00b7 10\u5e74\u671f\u901a\u80c0\u9884\u671f</span>",
+    "<span class=\"l-en\">inflation \u00b7 energy sector</span><span class=\"l-zh\">\u901a\u80c0 \u00b7 \u80fd\u6e90\u677f\u5757</span>",
+    "<span class=\"l-en\">inflation \u00b7 oil</span><span class=\"l-zh\">\u901a\u80c0 \u00b7 \u539f\u6cb9</span>",
     "<span class=\"l-en\">inflation \u00b7 TIPS spread</span><span class=\"l-zh\">\u901a\u80c0 \u00b7 TIPS \u5229\u5dee</span>"
   ],
   "components_contradicting": [

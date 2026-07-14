@@ -10,12 +10,17 @@
       "lag_days": 3,
       "state": "slow"
     },
-    "JD": {
+    "KWEB": {
       "asof": "2026-07-10",
       "lag_days": 3,
       "state": "slow"
     },
-    "FXI": {
+    "PDD": {
+      "asof": "2026-07-10",
+      "lag_days": 3,
+      "state": "slow"
+    },
+    "JD": {
       "asof": "2026-07-10",
       "lag_days": 3,
       "state": "slow"
@@ -25,12 +30,7 @@
       "lag_days": 3,
       "state": "slow"
     },
-    "KWEB": {
-      "asof": "2026-07-10",
-      "lag_days": 3,
-      "state": "slow"
-    },
-    "PDD": {
+    "FXI": {
       "asof": "2026-07-10",
       "lag_days": 3,
       "state": "slow"
