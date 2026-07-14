@@ -2911,6 +2911,12 @@ RENDER.metabolism = async () => {
     <div class="card" id="metKeysCard"><div class="sub muted">Loading…</div></div>
     <div class="section">Recent Metabolism Runs <span class="cnt">${(d.runs || []).length}</span></div>
     <div class="card">${runsHtml}</div>
+    <div class="section">What the Loop Did</div>
+    <div class="card" id="metAchCard">
+      <div class="skeleton skeleton-text" style="width:60%"></div>
+      <div class="skeleton skeleton-text" style="width:80%"></div>
+      <div class="skeleton skeleton-text" style="width:50%"></div>
+    </div>
     <div class="section">Change History <span class="cnt" id="mhCnt"></span></div>
     <div class="card" id="mhCard">
       <div class="skeleton skeleton-text" style="width:60%"></div>
@@ -3086,6 +3092,123 @@ RENDER.metabolism = async () => {
     };
   }
 
+  // Async "What the Loop Did" achievements loader — does not block the panel above.
+  (async () => {
+    const achCard = $("#metAchCard");
+    if (!achCard) return;
+
+    // Format a relative time-ago string from an ISO timestamp.
+    const timeAgo = (ts) => {
+      try {
+        const diff = (Date.now() - new Date(ts).getTime()) / 3600000;
+        if (diff < 0.02) return "just now";
+        if (diff < 1) return `${Math.round(diff * 60)}m ago`;
+        if (diff < 24) return `${diff.toFixed(1)}h ago`;
+        return `${Math.round(diff / 24)}d ago`;
+      } catch(e) { return ""; }
+    };
+
+    // Stage name → plain-word label mapping (FIX 8: plain words; slug kept in title= on callers).
+    const stagePlain = (name) => {
+      const MAP = { agenda: "picked what to work on", sense: "sense",
+                    propose: "drafted ideas", adjudicate: "safety review",
+                    build: "opened PRs", verify: "verify" };
+      return MAP[String(name).toLowerCase()] || String(name);
+    };
+
+    // Status → pill class.
+    const statusCls = (s) => {
+      const m = { ok: "s-ok", authorized: "s-ok", denied: "s-bad", failed: "s-bad",
+                  warn: "s-warn", never_ruled: "s-mut", skipped: "s-mut", noop: "s-mut" };
+      return m[String(s).toLowerCase()] || "s-mut";
+    };
+
+    let ach;
+    try {
+      ach = await api("/api/metabolism/achievements");
+    } catch (e) {
+      const c = $("#metAchCard");
+      if (c) c.innerHTML = `<div class="sub muted">Could not load loop activity: ${esc(String(e))}</div>`;
+      return;
+    }
+
+    const c = $("#metAchCard");
+    if (!c) return;
+
+    if (ach && ach.error && ach.error.includes("not yet available")) {
+      c.innerHTML = `<div class="sub muted">No loop activity recorded yet.</div>`;
+      return;
+    }
+    if (ach && ach.error) {
+      c.innerHTML = `<div class="sub muted">Loop activity unavailable: ${esc(ach.error)}</div>`;
+      return;
+    }
+
+    const cycles = Array.isArray(ach && ach.cycles) ? ach.cycles : [];
+    if (!cycles.length) {
+      c.innerHTML = `<div class="sub muted">No loop activity recorded yet.</div>`;
+      return;
+    }
+
+    const cycleCards = cycles.map(cy => {
+      const hasBlocker = !!(cy.blocker_plain);
+      const headerCls = hasBlocker ? "border-left:3px solid var(--err,#e84855);padding-left:8px;" : "";
+      // FIX 2: timestamp is cy.started_at (not cy.ts which the composer never sets).
+      const ago = cy.started_at ? timeAgo(cy.started_at) : "";
+      const headline = esc(cy.headline_plain || cy.cycle_id || "cycle");
+      const blockerHtml = hasBlocker
+        ? `<div class="sub" style="color:var(--err,#e84855);margin-top:4px">${esc(cy.blocker_plain)}</div>`
+        : "";
+
+      // FIX 2: cy.lobes is a DICT {lobe: {proposed, authorized, denied, never_ruled, prs}}.
+      // Use Object.entries — not Array.isArray which always fails on a dict.
+      const lobeEntries = Object.entries(cy.lobes || {});
+      const lobeLines = lobeEntries.map(([lobeName, lb]) => {
+        const parts = [];
+        const n_proposed = lb.proposed || 0;
+        const n_authorized = lb.authorized || 0;
+        const n_denied = lb.denied || 0;
+        const n_never_ruled = lb.never_ruled || 0;
+        if (n_proposed) parts.push(`${n_proposed} proposed`);
+        if (n_authorized) parts.push(`→ <span class="statpill s-ok" style="font-size:11px">${n_authorized} authorized</span>`);
+        if (n_denied) parts.push(`→ <span class="statpill s-bad" style="font-size:11px">${n_denied} denied</span>`);
+        if (n_never_ruled) parts.push(`→ <span class="statpill s-mut" style="font-size:11px">${n_never_ruled} never ruled</span>`);
+        // PR links from lb.prs (array of URLs)
+        (lb.prs || []).forEach(url => {
+          if (url) {
+            parts.push(`<a href="${esc(url)}" target="_blank" rel="noopener">PR ↗</a>`);
+          }
+        });
+        const summary = parts.length ? parts.join(" · ") : "no activity";
+        return `<div class="sub" style="margin:3px 0"><b>${esc(lobeName)}</b>: ${summary}</div>`;
+      }).join("");
+
+      // Stage strip. FIX 2: stage notes use note_plain (not label which the composer never sets).
+      const stages = cy.stages || {};
+      const stageNames = ["agenda", "propose", "adjudicate", "build"];
+      const stageStrip = stageNames.map(sn => {
+        const st = stages[sn];
+        if (!st) return `<span class="statpill s-mut" title="${sn}" style="font-size:10px;opacity:0.5">${stagePlain(sn)}</span>`;
+        const cls = statusCls(st.status || "");
+        return `<span class="statpill ${cls}" title="${sn}" style="font-size:10px">${stagePlain(sn)}: ${esc(st.note_plain || st.status || "—")}</span>`;
+      }).join(" ");
+
+      return `<div style="margin-bottom:16px;padding:10px;background:var(--bg2,#1e1e2e);border-radius:6px">
+        <div style="${headerCls}">
+          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+            <span class="sub muted" style="font-size:11px">${esc(ago)}</span>
+            <span style="font-weight:600">${headline}</span>
+          </div>
+          ${blockerHtml}
+        </div>
+        ${lobeLines ? `<div style="margin-top:8px">${lobeLines}</div>` : ""}
+        ${stageStrip ? `<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">${stageStrip}</div>` : ""}
+      </div>`;
+    }).join("");
+
+    c.innerHTML = cycleCards;
+  })();
+
   // Async Change History loader — does not block the panel above.
   (async () => {
     const mhCard = $("#mhCard");
@@ -3100,14 +3223,14 @@ RENDER.metabolism = async () => {
     // Build timeline HTML for a filtered event list.
     const mhTimeline = (events) => {
       if (!events.length) {
-        return `<div class="empty"><div class="empty-icon">📜</div><div class="empty-text">No autonomous changes recorded yet.</div><div class="empty-sub">This feed fills as the loop runs — PRs authored, audits filed, lobe lifecycle events, and reverts will appear here.</div></div>`;
+        return `<div class="empty"><div class="empty-icon">&#x1f4dc;</div><div class="empty-text">No autonomous changes recorded yet.</div><div class="empty-sub">This feed fills as the loop runs — PRs authored, audits filed, lobe lifecycle events, and reverts will appear here.</div></div>`;
       }
       return `<div class="timeline">${events.map(ev => {
         const ts = esc((ev.ts || "").slice(0, 16).replace("T", " "));
         const titleLink = ev.url
-          ? `${esc(ev.title || "")} <a href="${esc(ev.url)}" target="_blank" rel="noopener">open ↗</a>`
+          ? `${esc(ev.title || "")} <a href="${esc(ev.url)}" target="_blank" rel="noopener">open &#x2197;</a>`
           : esc(ev.title || "");
-        const detail = esc(ev.detail || "") + (ev.ref ? " · " + esc(ev.ref) : "");
+        const detail = esc(ev.detail || "") + (ev.ref ? " \xb7 " + esc(ev.ref) : "");
         return `<div class="timeline-item">
           <div class="timeline-ts">${ts}</div>
           <div class="timeline-header"><span class="timeline-kind">${esc(ev.source || "")}</span> ${mhPill(ev)}</div>
@@ -3142,22 +3265,41 @@ RENDER.metabolism = async () => {
     // Gather active sources (count > 0) for pills.
     const activeSources = Object.entries(sources).filter(([, v]) => v && v.count > 0).map(([k, v]) => [k, v.count]);
     const total = allEvents.length;
+    const heartbeatCount = (sources.heartbeat && sources.heartbeat.count) || 0;
 
-    // Filter state — "all" or a source name.
+    // Filter state: "all" or a source name; heartbeats hidden by default.
     let activeFilter = "all";
+    let showHeartbeats = false;
 
-    const render = (filter) => {
+    const render = (filter, inclHeartbeats) => {
       const card2 = $("#mhCard");
       if (!card2) return;
-      const filtered = filter === "all" ? allEvents : allEvents.filter(ev => ev.source === filter);
+      // Apply heartbeat exclusion before source filter
+      const baseEvents = inclHeartbeats ? allEvents : allEvents.filter(ev => ev.source !== "heartbeat");
+      const baseTotal = baseEvents.length;
+      const filtered = filter === "all" ? baseEvents : baseEvents.filter(ev => ev.source === filter);
       const cnt = $("#mhCnt");
-      if (cnt) cnt.textContent = filter === "all" ? total : `${filtered.length}/${total}`;
+      if (cnt) cnt.textContent = filter === "all" ? baseTotal : `${filtered.length}/${baseTotal}`;
 
-      // Source filter pills.
+      // Source filter pills — skip heartbeat pill when excluded.
+      const visibleSources = inclHeartbeats
+        ? activeSources
+        : activeSources.filter(([src]) => src !== "heartbeat");
+
+      const hbToggleLabel = inclHeartbeats
+        ? `hide heartbeats (${heartbeatCount})`
+        : `show heartbeats (${heartbeatCount})`;
+      const hbToggleStyle = inclHeartbeats
+        ? "border:2px solid var(--accent);font-weight:700;"
+        : "";
+
       const pillsHtml = [
-        `<button class="btn" data-mhf="all" style="margin:0 4px 6px 0;font-size:12px;${filter === "all" ? "border:2px solid var(--accent);font-weight:700" : ""}">All ${total}</button>`,
-        ...activeSources.map(([src, cnt2]) =>
-          `<button class="btn" data-mhf="${esc(src)}" style="margin:0 4px 6px 0;font-size:12px;${filter === src ? "border:2px solid var(--accent);font-weight:700" : ""}">${esc(src)} ${cnt2}</button>`)
+        `<button class="btn" data-mhf="all" style="margin:0 4px 6px 0;font-size:12px;${filter === "all" ? "border:2px solid var(--accent);font-weight:700" : ""}">All ${baseTotal}</button>`,
+        ...visibleSources.map(([src, cnt2]) =>
+          `<button class="btn" data-mhf="${esc(src)}" style="margin:0 4px 6px 0;font-size:12px;${filter === src ? "border:2px solid var(--accent);font-weight:700" : ""}">${esc(src)} ${cnt2}</button>`),
+        heartbeatCount > 0
+          ? `<button class="btn" id="mhHbToggle" style="margin:0 4px 6px 0;font-size:12px;opacity:0.7;${hbToggleStyle}">${hbToggleLabel}</button>`
+          : ""
       ].join("");
 
       const phase0Banner = phase0
@@ -3169,13 +3311,24 @@ RENDER.metabolism = async () => {
 
       card2.innerHTML = `<div style="margin-bottom:8px">${pillsHtml}</div>${phase0Banner}${mhTimeline(filtered)}${notes}`;
 
-      // Bind filter pills.
+      // Bind source filter pills.
       card2.querySelectorAll("[data-mhf]").forEach(el => {
-        el.onclick = () => { activeFilter = el.dataset.mhf; render(activeFilter); };
+        el.onclick = () => { activeFilter = el.dataset.mhf; render(activeFilter, showHeartbeats); };
       });
+
+      // Bind heartbeat toggle.
+      const hbBtn = $("#mhHbToggle", card2);
+      if (hbBtn) {
+        hbBtn.onclick = () => {
+          showHeartbeats = !showHeartbeats;
+          // If user was filtering by heartbeat but hides them, reset to all.
+          if (!showHeartbeats && activeFilter === "heartbeat") activeFilter = "all";
+          render(activeFilter, showHeartbeats);
+        };
+      }
     };
 
-    render(activeFilter);
+    render(activeFilter, showHeartbeats);
   })();
 };
 

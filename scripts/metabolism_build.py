@@ -1944,6 +1944,25 @@ def run_build_lane(
             pr = _open_draft_pr(branch, cycle_id, prop, dry_run=dry_run)
             per["pr"] = pr
 
+            # ── Achievements: record build outcome ────────────────────────────
+            _session_dispatched = session.get("dispatched", False) if session else False
+            _pr_number = pr.get("number") or (
+                int(pr.get("url", "").rsplit("/", 1)[-1])
+                if pr.get("url") and pr.get("url", "").rsplit("/", 1)[-1].isdigit()
+                else None
+            ) if pr else None
+            _pr_url = pr.get("url") if pr else None
+            if not dry_run:
+                _append_achievements_build(
+                    cycle_id, pid,
+                    status="pr_opened" if (pr and pr.get("opened")) else (
+                        "build_failed" if not _session_dispatched else "pr_opened"
+                    ),
+                    pr_number=_pr_number,
+                    pr_url=_pr_url,
+                    root=root,
+                )
+
             per["status"] = "build_dispatched"
             results.append(per)
 
@@ -1987,6 +2006,51 @@ def _journal_skip(
             )
     except Exception as exc:  # noqa: BLE001
         log.warning("metabolism_build._journal_skip: %s", exc)
+
+
+def _append_achievements_build(
+    cycle_id: str,
+    proposal_id: str,
+    *,
+    status: str,
+    pr_number: int | None = None,
+    pr_url: str | None = None,
+    root: Path | None = None,
+) -> None:
+    """Append a builds[] row to journal achievements key (FROZEN CONTRACT).
+
+    status: "pr_opened" | "build_failed" | "skipped"
+    Read-modify-write the journal JSON, idempotent per proposal_id.
+    NEVER raises.
+    """
+    try:
+        from scripts.metabolism_journal import _read_journal, _write_journal  # type: ignore[import]  # noqa: PLC0415
+        built_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        j = _read_journal(cycle_id, root)
+        achievements = j.get("achievements") or {}
+        existing_builds = achievements.get("builds") or []
+        existing_b_ids = {b.get("id") for b in existing_builds if b.get("id")}
+        if proposal_id not in existing_b_ids:
+            row: dict[str, Any] = {
+                "id": proposal_id,
+                "status": status,
+                "built_at": built_at,
+            }
+            if pr_number is not None:
+                row["pr_number"] = pr_number
+            if pr_url is not None:
+                row["pr_url"] = pr_url
+            existing_builds.append(row)
+            achievements["builds"] = existing_builds
+            j["achievements"] = achievements
+            _write_journal(cycle_id, j, root)
+            log.info(
+                "BUILD: achievements.builds appended proposal=%s status=%s cycle=%s",
+                proposal_id, status, cycle_id,
+            )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_build._append_achievements_build(%s/%s): %s",
+                    cycle_id, proposal_id, exc)
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────

@@ -408,6 +408,13 @@ def _run_single_lobe(args: "argparse.Namespace", root: Path, lobe: str, cycle_id
             meta.get("registered"), meta.get("provider"), meta.get("degraded_reason"),
         )
         artifact = meta.get("artifact")
+
+        # ── Achievements enrichment (FROZEN CONTRACT) ─────────────────────────
+        # Append proposals[] to journal achievements key (fail-soft, never blocks).
+        _append_achievements_proposals(
+            cycle_id, result.get("docket") or {}, root=root,
+        )
+
         finish_stage(
             cycle_id, _STAGE, status="done",
             artifacts=[artifact] if artifact else [],
@@ -426,6 +433,65 @@ def _run_single_lobe(args: "argparse.Namespace", root: Path, lobe: str, cycle_id
             finish_stage(cycle_id, _STAGE, status="failed", note=str(exc), root=root)
         except Exception:  # noqa: BLE001
             pass
+
+
+def _append_achievements_proposals(
+    cycle_id: str,
+    docket: dict,
+    *,
+    root: "Path | None" = None,
+) -> None:
+    """Append proposals[] rows to journal achievements key (FROZEN CONTRACT).
+
+    Read-modify-write the journal JSON preserving all existing keys.
+    Idempotent per proposal_id: re-running propose does not duplicate rows.
+    NEVER raises.
+    """
+    try:
+        import json as _json  # noqa: PLC0415
+        from datetime import datetime, timezone  # noqa: PLC0415
+        from scripts.metabolism_journal import journal_path, _read_journal, _write_journal  # type: ignore[import]  # noqa: PLC0415
+
+        proposals_raw = docket.get("proposals") or []
+        if not proposals_raw:
+            return
+
+        proposed_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        new_rows = []
+        for prop in proposals_raw:
+            pid = str(prop.get("proposal_id") or "")
+            if not pid:
+                continue
+            title_raw = str(prop.get("title") or "")
+            new_rows.append({
+                "id": pid,
+                "lobe": str(prop.get("lobe") or docket.get("lobe") or "unknown"),
+                "kind": str(prop.get("kind") or ""),
+                "tier": str(prop.get("tier") or "T1"),
+                "title": title_raw[:120],
+                "proposed_at": proposed_at,
+            })
+
+        if not new_rows:
+            return
+
+        j = _read_journal(cycle_id, root)
+        achievements = j.get("achievements") or {}
+        existing_proposals = achievements.get("proposals") or []
+        existing_ids = {r.get("id") for r in existing_proposals if r.get("id")}
+        for row in new_rows:
+            if row["id"] not in existing_ids:
+                existing_proposals.append(row)
+                existing_ids.add(row["id"])
+        achievements["proposals"] = existing_proposals
+        j["achievements"] = achievements
+        _write_journal(cycle_id, j, root)
+        log.info(
+            "metabolism_propose: achievements.proposals appended %d row(s) to cycle %s",
+            len(new_rows), cycle_id,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("metabolism_propose._append_achievements_proposals(%s): %s", cycle_id, exc)
 
 
 def main(argv: list[str] | None = None) -> int:

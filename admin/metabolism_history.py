@@ -245,10 +245,64 @@ def _read_immune(base: Path) -> tuple[list[dict], str | None]:
         return [], f"immune reader error: {exc}"
 
 
+def _parse_article3_reason(reason: str) -> tuple[int | None, int | None]:
+    """Extract n and min_n from a reason string like 'insufficient-n: n=9 < min_n=25'.
+
+    Returns (n, min_n) as ints, or (None, None) if the pattern is absent/malformed.
+    """
+    try:
+        import re  # noqa: PLC0415
+        m = re.search(r"\bn=(\d+)", reason)
+        m2 = re.search(r"\bmin_n=(\d+)", reason)
+        n_val = int(m.group(1)) if m else None
+        min_n_val = int(m2.group(1)) if m2 else None
+        return n_val, min_n_val
+    except Exception:  # noqa: BLE001
+        return None, None
+
+
+def _governance_title(event_type: str, target: str, row: dict,
+                      payload: "dict | None" = None) -> str:
+    """Build a human-readable title for a governance row.
+
+    article3_review  → "Authority earn-in: {target} — {n} of {min_n} graded observations
+                         (granted / still in shadow)"
+    authority_lapse  → "Authority lapsed: {target} — evidence fell below the earn-in floor"
+    everything else  → "{event_type}: {target}"
+
+    FIX 4: Real writers (engine/altdata_brain.py:585-593) nest granted/reason under the
+    'evidence' key.  Read from the already-flattened payload dict first; fall back to
+    row top level for legacy tolerance.
+    """
+    if event_type == "article3_review":
+        # Primary: payload (flattened from evidence/before/after by caller).
+        # Fallback: row top level (legacy / test fixtures that put fields at top level).
+        _src: dict = payload if isinstance(payload, dict) else {}
+        granted = _src.get("granted") if "granted" in _src else row.get("granted")
+        reason_val = _src.get("reason") if "reason" in _src else row.get("reason")
+        reason = str(reason_val or "")
+        n_val, min_n_val = _parse_article3_reason(reason)
+        if n_val is not None and min_n_val is not None:
+            status_word = "granted" if granted else "still in shadow"
+            return (
+                f"Authority earn-in: {target} — {n_val} of {min_n_val} "
+                f"graded observations ({status_word})"
+            )
+        # Fallback: reason string may be empty or differently formatted
+        status_word = "granted" if granted else "still in shadow"
+        fallback_reason = reason if reason else "checking earn-in requirements"
+        return f"Authority earn-in: {target} — {fallback_reason} ({status_word})"
+    if event_type == "authority_lapse":
+        return f"Authority lapsed: {target} — evidence fell below the earn-in floor"
+    return f"{event_type}: {target}"
+
+
 def _read_governance(base: Path) -> tuple[list[dict], str | None]:
     """Source: data/neuralweb/governance.jsonl (neuralweb.governance.v1).
 
     Fields: ts, event_type, target, authored_by, evidence, note, ...payload.
+    article3_review rows get plain-word title translation.
+    authority_lapse rows get plain-word title translation.
     """
     try:
         p = base / "data" / "neuralweb" / "governance.jsonl"
@@ -279,7 +333,7 @@ def _read_governance(base: Path) -> tuple[list[dict], str | None]:
                     "ts": row.get("ts") or "",
                     "source": "governance",
                     "kind": event_type,
-                    "title": f"{event_type}: {target}",
+                    "title": _governance_title(event_type, target, row, payload),
                     "detail": str(detail)[:200],
                     "ref": None,
                     "url": None,
@@ -729,6 +783,7 @@ def history(limit: int = 100, root: Path | None = None) -> dict:
             "events": all_events[:limit],
             "sources": sources,
             "phase0": phase0,
+            "heartbeat_default_excluded": True,
             "generated_at": _now_iso(),
         }
     except Exception as exc:  # noqa: BLE001
@@ -737,5 +792,6 @@ def history(limit: int = 100, root: Path | None = None) -> dict:
             "events": [],
             "sources": {s: {"count": 0, "note": f"history() error: {exc}"} for s in _ALL_SOURCES},
             "phase0": True,
+            "heartbeat_default_excluded": True,
             "generated_at": _now_iso(),
         }
