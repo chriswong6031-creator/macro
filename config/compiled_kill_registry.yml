@@ -120,6 +120,12 @@ entries:
     section: 1
     section_name: forbidden_by_ruling
 
+  - topic: 'Calendar/event-window-gated risk-radar `_SCARES` legs (any tier — Tier-B advances state, state sets gross)'
+    verdict: 'FORBIDDEN — laundered pre-event conviction dampener; event/OPEX windows are display context only; risk channels must be calendar-agnostic constructions'
+    source: 'RIC-R3, `RATES_INFLATION_COMMAND_MASTERPLAN_BY_FABLE.md` judge-panel ruling (2026-07-13)'
+    section: 1
+    section_name: forbidden_by_ruling
+
   - topic: 'Insider × T2 interaction'
     verdict: 'KILLED'
     source: 'Codex buy-decision docket adjudication (#1781)'
