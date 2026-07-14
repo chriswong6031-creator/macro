@@ -49,9 +49,14 @@ def _render_stocks_header() -> str:
 
 
 def _render_standout_header() -> str:
-    """Render the standout section header up to (but not including) the qvix block."""
+    """Render the standout section header up to (but not including) the data-outage banner.
+
+    (The end marker was the qvix block until the QVIX banner was removed by
+    operator order; the W0.7 data-outage banner is now the first block after
+    the h2. It must stay OUT of the snippet — FakeSetups has no .get().)
+    """
     start_marker = '  <div class="panel span12" id="standouts">'
-    end_marker = "    {% if setups.qvix_regime %}"
+    end_marker = "    {# W0.7 DATA OUTAGE BANNER"
     start = SRC.index(start_marker)
     end = SRC.index(end_marker, start)
     snippet = SRC[start:end]
@@ -206,9 +211,9 @@ def test_no_t_call_inside_attributes_in_changed_blocks() -> None:
     end = SRC.index("  {% if mode != 'stocks' %}", start)
     header_block = SRC[start:end]
 
-    # Extract standout header up to qvix
+    # Extract standout header up to the data-outage banner
     ss = SRC.index('  <div class="panel span12" id="standouts">')
-    se = SRC.index("    {% if setups.qvix_regime %}", ss)
+    se = SRC.index("    {# W0.7 DATA OUTAGE BANNER", ss)
     standout_block = SRC[ss:se]
 
     for name, block in [("header", header_block), ("standout", standout_block)]:
