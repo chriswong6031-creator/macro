@@ -209,3 +209,36 @@ See 'Vs Strongest Naive' subsections per target above for exact margins.
 | 2015+ | 137 | 69.3% | 78.8% | 46.0% | 51.8% | 1544.286236 | 1800.091055 |
 
 **Verdict:** v3_nfp coverage improves (2021+: 61.5%→86.2%). However, pinball worsens substantially for 2021+ (bands widen significantly). This reflects the NFP-specific dynamics: the 2020 COVID outliers inflate the trailing sigma, causing persistent over-widening. The vol-scaling spec is uniform per MRI-R30 and cannot be tuned per-target. Note: champion NFP shows the same pinball pattern. Shadow-eligible status unchanged (beat naive on points — bands are separate from the MAE gate).
+
+
+---
+
+## Addendum 2026-07-14 — corrected-feature re-run (post CPI June-2026 post-mortem)
+
+**Defect (defect_notices.json DN-001):** same double-derivative bug as the champion —
+V3 delegates to the shared feature builder (`build_cpi_features` via `last_n_mom_lags_fn`),
+so sticky/median/flex were corrupted identically across the full walk-forward history in
+both training and serving. V3's additional legs (ppi_fes_mom_lag1, dollar_mom) are computed
+from index-level series and were correct throughout. NFP legs are unaffected.
+
+**All numbers in the body above were measured under the defect and cannot support
+promotion or kill decisions on their own.** The body is preserved unmodified as the
+original record; this addendum is the corrected measurement.
+
+### Corrected backtest results (2026-07-14 re-run) vs original (contaminated)
+
+| Release | Era | Original MAE v3 | Corrected MAE v3 | MAE naive | Corrected MAE champion | Verdict |
+|---------|-----|----------------:|-----------------:|----------:|-----------------------:|---------|
+| cpi_headline | Full | 0.2231 | 0.2212 | 0.2610 | 0.1570 | SHADOW-ELIGIBLE (unchanged) |
+| cpi_headline | 2021+ | 0.2114 | 0.2011 | 0.2442 | 0.1616 | SHADOW-ELIGIBLE (unchanged) |
+| cpi_core | Full | 0.0937 | 0.0929 | 0.0991 | 0.0925 | SHADOW-ELIGIBLE (unchanged) |
+| cpi_core | 2021+ | 0.1326 | 0.1288 | 0.1297 | 0.1328 | SHADOW-ELIGIBLE (unchanged) |
+| nfp | Full (2010+) | 527.8829 | 527.88 | 459.84 | 372.22 | unchanged (unaffected legs) |
+
+Corrected-run artifacts: `results/backtest_v3_factor_summary.json` (regenerated 2026-07-14;
+pre-fix artifacts preserved in git history at the parent of the fix commit).
+
+Notable corrected-run detail: cpi_core 2021+ now BEATS strongest naive (0.1288 vs 0.1297)
+where the contaminated run LAGGED (0.1326 vs 0.1297) — a reminder that the contaminated
+numbers were not a fair basis for either promotion or kill. Descriptive only; no status
+change follows from this addendum.

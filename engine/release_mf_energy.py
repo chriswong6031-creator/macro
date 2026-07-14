@@ -10,7 +10,8 @@ Attempt: #1 of 1 (no re-spec after results; MRI-R36 §6).
 Model:
   Leg 1: reference-month gasoline nowcast from published GASREGW weeks + WTI pass-through
          for remaining weeks (expanding OLS of weekly gasoline changes on weekly WTI changes).
-         energy_contrib = gasoline_mom * RI motor-fuel weight * expanding-OLS gamma.
+         energy_contrib = gasoline_mom * expanding-OLS gamma (the OLS slope already
+         embeds the basket weight; see PREREG Amendment 2026-07-14).
   Leg 2: ex-energy AR(3) + sin/cos seasonals on the derived exenergy series.
   Head:  ridge(lambda=1.0) walk-forward of CPI headline MoM on
          [energy_contrib, exenergy_ar, sin, cos]; MIN_TRAIN_OBS=60.
@@ -633,7 +634,10 @@ def _build_all_records(
         # Energy contribution for this step
         energy_contrib: float | None = None
         if gm is not None:
-            energy_contrib = gm * (GASOLINE_RI_WEIGHT / 100.0) * gamma
+            # FIX 3: gamma is an OLS slope of cpi_hl_mom on gasoline_mom; it already
+            # embeds the basket weight (slope ≈ ri_weight/100 ≈ 0.029).  Multiplying
+            # by ri_weight/100 again caused a 25× double-discount.  Corrected formula:
+            energy_contrib = gm * gamma
 
         # Ex-energy AR prediction from history
         exenergy_ar: float | None = _predict_exenergy_ar(
@@ -667,8 +671,8 @@ def _build_all_records(
         if energy_contrib is not None:
             cumulative_exenergy.append(cpi_mom - energy_contrib)
         else:
-            # No energy signal: use 0 contribution (gamma fallback keeps ex-energy ≈ CPI)
-            ec_fallback = (gm or 0.0) * (GASOLINE_RI_WEIGHT / 100.0) * 1.0
+            # No energy signal: use 0 contribution (gamma=1.0 fallback, no ri_weight factor)
+            ec_fallback = (gm or 0.0) * 1.0
             cumulative_exenergy.append(cpi_mom - ec_fallback)
 
     return records
@@ -1067,7 +1071,8 @@ def project_release_mf(
 
     energy_contrib: float | None = None
     if gas_mom is not None:
-        energy_contrib = gas_mom * (GASOLINE_RI_WEIGHT / 100.0) * gamma
+        # FIX 3: gamma already embeds basket weight; do not multiply by ri_weight/100 again
+        energy_contrib = gas_mom * gamma
 
     # Ex-energy history (from all training records)
     exenergy_hist = [r.get("target", 0.0) - (r.get("energy_contrib") or 0.0)

@@ -130,14 +130,12 @@ bridge_blocks:
 
   # Block 5: Core Services ex-Shelter
   core_services_ex_shelter:
-    total_weight: 44.294  # all_items_less_food_and_energy - shelter = 79.919 - 35.625
+    total_weight: 25.118  # corrected 2026-07-14: 79.919 - 35.625 - 19.176 = 25.118; engine _CORE_SVC_XS_W
     note: >
-      Approximated as all-items-less-food-and-energy minus shelter.
+      Approximated as all-items-less-food-and-energy minus shelter minus core_goods.
       CUSR0000SASLE persistence. revision_optimistic.
-      WARNING: this weight overlaps with core_goods (19.176). The sum of all five
-      modelled block weights EXCEEDS 100 due to this overlap. The bridge applies
-      a scale factor so that modelled contributions are capped at the modelled
-      basket share. See engine/release_cpi_bridge.py for reconciliation logic.
+      (Was 44.294 before 2026-07-14; prior calculation forgot to subtract core_goods 19.176.)
+      See engine/release_cpi_bridge.py _CORE_SVC_XS_W = 25.118 for the governing constant.
 
   # Prior-only blocks (confidence = 0.0)
   food_away_from_home:

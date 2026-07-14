@@ -50,6 +50,7 @@ from engine.release_forecast import (  # noqa: E402
     _ridge_predict,
     _build_matrix,
     _wilson,
+    _last_n_rate_lags,
 )
 
 # ---------------------------------------------------------------------------
@@ -128,9 +129,11 @@ def _sticky_median_flex_lags_alfred(
     instead of ALFRED first-prints, leaking mild revisions into the walk-forward
     features for steps after 2014-02.
     """
-    sticky_lags = _last_n_mom_lags(vintages, "STICKCPIM157SFRBATL", asof, n=1)
-    median_lags = _last_n_mom_lags(vintages, "MEDCPIM158SFRBCLE", asof, n=1)
-    flex_lags = _last_n_mom_lags(vintages, "FLEXCPIM157SFRBATL", asof, n=1)
+    # Use _last_n_rate_lags (not _last_n_mom_lags) — sticky/flex are monthly %;
+    # median is ANNUALIZED monthly % and must be de-annualized.
+    sticky_lags = _last_n_rate_lags(vintages, "STICKCPIM157SFRBATL", asof, n=1, annualized=False)
+    median_lags = _last_n_rate_lags(vintages, "MEDCPIM158SFRBCLE", asof, n=1, annualized=True)
+    flex_lags = _last_n_rate_lags(vintages, "FLEXCPIM157SFRBATL", asof, n=1, annualized=False)
     return {
         "sticky_mom_lag1": sticky_lags[0],
         "median_mom_lag1": median_lags[0],

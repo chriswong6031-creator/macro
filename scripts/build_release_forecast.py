@@ -1320,7 +1320,9 @@ def _compute_actual_from_print(
             target_ts = pd.Timestamp(period_str + "-01")
             prior_ts = target_ts - pd.offsets.MonthBegin(1)
 
-            # Get latest known prior month level
+            # FIX 4: use EARLIEST vintage (initial print) of prior month, matching training.
+            # Training uses initial prints via knowable_series/pct_change on first-print rows.
+            # Using idxmax (latest revision) here created a training/scoring PIT mismatch.
             prior_mask = (
                 (vdf["series"] == series_id) &
                 (vdf["period"] == prior_ts)
@@ -1328,7 +1330,7 @@ def _compute_actual_from_print(
             prior_sub = vdf[prior_mask]
             if prior_sub.empty:
                 return None
-            prior_val = float(prior_sub.loc[prior_sub["realtime_start"].idxmax()]["value"])
+            prior_val = float(prior_sub.loc[prior_sub["realtime_start"].idxmin()]["value"])
             if prior_val == 0:
                 return None
             return round((raw_initial_print / prior_val - 1) * 100, 4)
@@ -1982,9 +1984,26 @@ def _check_reaction_rows(
 # 8c. Scoreboard
 # ---------------------------------------------------------------------------
 
+def _load_defect_notices(root: Path | None) -> list[dict]:
+    """Load defect_notices.json if present; fail-open (returns []) on missing/corrupt."""
+    if root is None:
+        return []
+    notices_path = root / "data" / "release_forecast" / "defect_notices.json"
+    try:
+        if not notices_path.exists():
+            return []
+        with open(notices_path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data.get("notices", [])
+    except Exception as e:
+        log.debug("defect_notices.json load failed (fail-open): %s", e)
+        return []
+
+
 def _build_scoreboard(
     ledger: list[dict],
     accrual_start: str,
+    root: Path | None = None,
 ) -> dict:
     """Recompute scoreboard from scored ledger rows only. Forward-only.
 
@@ -2277,6 +2296,9 @@ def _build_scoreboard(
     for (rt, mdl), g in per_shadow.items():
         shadow_stats[f"{rt}:{mdl}"] = _agg_to_stats(rt, g, model_label=mdl)
 
+    # FIX 5: load defect_notices.json and pass through as annotation (no metric change)
+    defect_notices = _load_defect_notices(root)
+
     return {
         "schema": "release_forecast_scoreboard.v2",
         "asof": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -2284,6 +2306,7 @@ def _build_scoreboard(
         "note": "Forward-only: no backtest rows enter this scoreboard (MRI-R8).",
         "by_release": release_stats,
         "by_shadow": shadow_stats,  # Round-2b: per-(release, model) shadow track records
+        "defect_notices": defect_notices,  # annotation only; no metric computation changed
     }
 
 
@@ -2893,7 +2916,7 @@ def build(root: Path, dry_run: bool = False) -> dict:
 
     # 8. Scoreboard from all scored + revision + reaction rows (champion + shadow)
     all_ledger_for_scoreboard = existing_ledger + scored_rows + revision_rows + reaction_rows
-    scoreboard = _build_scoreboard(all_ledger_for_scoreboard, accrual_start)
+    scoreboard = _build_scoreboard(all_ledger_for_scoreboard, accrual_start, root=root)
 
     # 9. Build last_scored for latest.json (most recent scored row per release_type, champion only)
     all_scored = [r for r in existing_ledger if r.get("row_type") == "scored" and r.get("model") is None] + \

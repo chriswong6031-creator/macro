@@ -226,6 +226,44 @@ def _last_n_mom_lags(
     return result
 
 
+def _last_n_rate_lags(
+    vintages: pd.DataFrame,
+    series: str,
+    asof: date,
+    n: int = 3,
+    annualized: bool = False,
+) -> list[float | None]:
+    """Return the last n values DIRECTLY from an already-rate series (no pct_change).
+
+    Use for series published as periodic rates (e.g. MoM %) rather than index levels.
+    If annualized=True, converts from annualized rate to monthly-equivalent:
+        monthly_eq = ((1 + r/100) ** (1/12) - 1) * 100
+
+    Applicable series:
+      - STICKCPIM157SFRBATL  — published as monthly %
+      - FLEXCPIM157SFRBATL   — published as monthly %
+      - MEDCPIM158SFRBCLE    — published as ANNUALIZED monthly %  (annualized=True)
+
+    Returns [lag1, lag2, ..., lagn] where lag1 = most recent, lagn = oldest.
+    None for missing values.
+    """
+    df = knowable_series(vintages, series, asof)
+    # single row is usable here (no pct_change drop) — hence df.empty, not len<2
+    if df.empty:
+        return [None] * n
+    vals = df.set_index("period")["value"]
+    if annualized:
+        vals = vals.apply(lambda r: ((1.0 + r / 100.0) ** (1.0 / 12.0) - 1.0) * 100.0)
+    result = []
+    for i in range(1, n + 1):
+        if len(vals) >= i:
+            v = vals.iloc[-i]
+            result.append(float(v) if v is not None and not (isinstance(v, float) and math.isnan(v)) else None)
+        else:
+            result.append(None)
+    return result
+
+
 def _last_n_diff_lags(
     vintages: pd.DataFrame, series: str, asof: date, n: int = 3
 ) -> list[float | None]:
@@ -296,6 +334,7 @@ def build_cpi_features(
         ref_month=ref_month,
         knowable_series_fn=knowable_series,
         last_n_mom_lags_fn=_last_n_mom_lags,
+        last_n_rate_lags_fn=_last_n_rate_lags,
     )
 
 
