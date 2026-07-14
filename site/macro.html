@@ -4037,6 +4037,10 @@ body.page-macro.mx4-grid .mx5-verdict-word{
 body.page-macro.mx4-grid .mx5-sub-line{
   font-size:11px;color:var(--mx5-accent-ink);font-weight:600;margin-top:3px;
 }
+/* sub-line follows the verdict color like .mx5-big-score below — without these the
+   page-global green accent paints "YELLOW — Trade with caution" green */
+body.page-macro.mx4-grid .mx5-score-yellow .mx5-sub-line{color:var(--mx5-warn-ink);}
+body.page-macro.mx4-grid .mx5-score-red .mx5-sub-line{color:var(--down,#ef4444);}
 /* score color by state */
 body.page-macro.mx4-grid.ms-green-page .mx5-big-score,
 body.page-macro.mx4-grid .mx5-score-green .mx5-big-score{color:var(--up,#22d97a);text-shadow:0 0 36px rgba(34,217,122,.3);}

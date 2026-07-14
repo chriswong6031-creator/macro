@@ -3450,6 +3450,10 @@ body.page-macro.mx4-grid .mx5-verdict-word{
 body.page-macro.mx4-grid .mx5-sub-line{
   font-size:11px;color:var(--mx5-accent-ink);font-weight:600;margin-top:3px;
 }
+/* sub-line follows the verdict color like .mx5-big-score below — without these the
+   page-global green accent paints "YELLOW — Trade with caution" green */
+body.page-macro.mx4-grid .mx5-score-yellow .mx5-sub-line{color:var(--mx5-warn-ink);}
+body.page-macro.mx4-grid .mx5-score-red .mx5-sub-line{color:var(--down,#ef4444);}
 /* score color by state */
 body.page-macro.mx4-grid.ms-green-page .mx5-big-score,
 body.page-macro.mx4-grid .mx5-score-green .mx5-big-score{color:var(--up,#22d97a);text-shadow:0 0 36px rgba(34,217,122,.3);}
@@ -5437,8 +5441,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <span class="l-zh">{{ MS.label_zh or MS.label_en }} &mdash; {{ {'green':'顺势而为，强势中加仓。','yellow':'谨慎操作，仓位缩小。','red':'优先保住本金，降低风险。'}.get(MS.color,'') }}</span>
             </div>
             <div class="mx5-action-sub">
-              <span class="l-en">Composite {{ MS.score }}/100{% if _ev_total %} &middot; {{ _ev_n_good }} of {{ _ev_total }} signals aligned{% endif %}</span>
-              <span class="l-zh">综合评分 {{ MS.score }}/100{% if _ev_total %} &middot; {{ _ev_n_good }}/{{ _ev_total }} 项信号一致{% endif %}</span>
+              {# When the Risk Radar ceiling bites (score < raw_score), say so — otherwise
+                 "N of N signals aligned" beside a capped score reads as a contradiction.
+                 No digits in the note: risk_state_live.js live-patches \d+(?=/100) only. #}
+              {% set _ev_capped = MS.raw_score is defined and MS.raw_score is not none and MS.raw_score > MS.score %}
+              <span class="l-en">Composite {{ MS.score }}/100{% if _ev_total %} &middot; {{ _ev_n_good }} of {{ _ev_total }} signals aligned{% endif %}{% if _ev_capped %} &middot; capped by the Risk Radar{% endif %}</span>
+              <span class="l-zh">综合评分 {{ MS.score }}/100{% if _ev_total %} &middot; {{ _ev_n_good }}/{{ _ev_total }} 项信号一致{% endif %}{% if _ev_capped %} &middot; 风险雷达封顶{% endif %}</span>
             </div>
           </div>
         </div>

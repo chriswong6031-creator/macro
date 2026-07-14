@@ -13,6 +13,43 @@
   var POLL = (window.LIVE_POLL_SEC && +window.LIVE_POLL_SEC) || 60;
   var COLOR = { RISK_ON: "green", MIXED: "yellow", RISK_OFF: "red" };
 
+  /* Verdict-keyed Tier-1 copy. MUST mirror engine/market_state.py _HEADLINES and the
+     dashboard.html.j2 sub-line / What-To-Do vocab (guarded by
+     tests/test_risk_state_live_copy_sync.py). These exist so an intraday band flip can
+     never leave render-time "Risk-on" prose sitting next to a live Mixed gauge. */
+  var HEADLINE = {
+    RISK_ON: ["Risk-on — the tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported.",
+              "风险偏好 — 价格、广度与跨资产信号一致。顺势交易与逢强加仓得到支持。"],
+    MIXED: ["Mixed / transition — the signals disagree. Trade smaller, favour quality, take profits faster; don't position aggressively.",
+            "混合 / 转换 — 信号分歧。缩小仓位、偏好质量、更快获利了结；勿激进布局。"],
+    RISK_OFF: ["Risk-off — stress is elevated; defend capital first.",
+               "避险 — 压力升高；优先防守。"]
+  };
+  var SUBLINE = {
+    RISK_ON: ["GREEN — Trend-following supported", "偏多 — 顺势而为受支撑"],
+    MIXED: ["YELLOW — Trade with caution", "谨慎操作"],
+    RISK_OFF: ["RED — Defend capital first", "优先保住本金"]
+  };
+  var ACTION = {
+    RISK_ON: ["Trend-follow, add on strength.", "顺势而为，强势中加仓。"],
+    MIXED: ["Trade with caution. Size small.", "谨慎操作，仓位缩小。"],
+    RISK_OFF: ["Defend capital first. Reduce risk.", "优先保住本金，降低风险。"]
+  };
+  var HEX = { green: "#22d97a", yellow: "#f59e0b", red: "#ef4444" };
+  var GLOW = { green: "rgba(34,217,122,.7)", yellow: "rgba(245,158,11,.7)", red: "rgba(239,68,68,.7)" };
+  var SOFT = { green: "rgba(34,217,122,.30)", yellow: "rgba(245,158,11,.30)", red: "rgba(239,68,68,.30)" };
+  var HALO = { green: "rgba(34,217,122,.14)", yellow: "rgba(245,158,11,.14)", red: "rgba(239,68,68,.14)" };
+  var WTD_ICON = { green: "mx5-ai-green", yellow: "mx5-ai-yellow", red: "mx5-ai-gray" };
+  var WTD_STROKE = { green: "#22d97a", yellow: "#f59e0b", red: "rgba(255,255,255,.38)" };
+  var WTD_SHAPE = {
+    green: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+    yellow: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+    red: '<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
+  };
+  /* verdict word baked into the page at render time — captured on the first patch,
+     BEFORE any live overwrite, so we can tell when the live band has moved off it. */
+  var bakedLabelEn = null;
+
   function isZh() {
     try {
       // the site marks Chinese mode with html[data-lang="zh"] (theme.js); the older
@@ -43,6 +80,10 @@
     if (!word) return;
     var disp = d.display || {};
     if (!disp.verdict) return;
+    if (bakedLabelEn === null) {
+      var b0 = document.querySelector(".mx5-verdict-word .l-en");
+      bakedLabelEn = b0 ? b0.textContent.trim() : "";
+    }
     var arr = word.querySelector(".arr");
     verdictBL(word, disp);
     if (arr) word.appendChild(arr);
@@ -78,6 +119,72 @@
     if (disp.score != null) {
       var fills = document.querySelectorAll(".mx2-prog-fill");
       for (var fi = 0; fi < fills.length; fi++) fills[fi].style.width = disp.score + "%";
+    }
+    /* v5: verdict-keyed copy + colors baked at render time — patch them all so an
+       intraday band flip never leaves stale "Risk-on" prose beside a Mixed gauge.
+       Every write is guarded; an unknown verdict leaves the baked page untouched. */
+    var col = COLOR[disp.verdict];
+    if (col && HEADLINE[disp.verdict]) {
+      var th = document.querySelector(".mx5-thesis");
+      if (th) setBL(th, HEADLINE[disp.verdict][0], HEADLINE[disp.verdict][1]);
+      var sub = document.querySelector(".mx5-sub-line");
+      if (sub) setBL(sub, SUBLINE[disp.verdict][0], SUBLINE[disp.verdict][1]);
+      var gsvgA = document.querySelector(".mx5-gauge-svg");
+      if (gsvgA && disp.score != null)
+        gsvgA.setAttribute("aria-label", (disp.label_en || disp.verdict) + " — score " + disp.score);
+      /* gauge cluster color scope — big-score color/glow are CSS keyed off this class */
+      var grow = document.querySelector(".mx5-sc-gauge-row");
+      if (grow) {
+        grow.classList.remove("mx5-score-green", "mx5-score-yellow", "mx5-score-red");
+        grow.classList.add("mx5-score-" + col);
+      }
+      /* inline-SVG accents carry the render-time color as attributes — repaint */
+      var num = document.getElementById("mx5-score-numeral");
+      if (num) {
+        num.setAttribute("fill", HEX[col]);
+        num.style.filter = "drop-shadow(0 0 10px " + GLOW[col] + ")";
+      }
+      var ndl = document.getElementById("mx5-gauge-needle");
+      if (ndl) {
+        var nln = ndl.querySelector("line");
+        if (nln) nln.setAttribute("stroke", SOFT[col]);
+        var ncs = ndl.querySelectorAll("circle");
+        if (ncs.length >= 4) {
+          ncs[0].setAttribute("fill", HALO[col]);
+          ncs[1].setAttribute("stroke", HEX[col]);
+          ncs[2].setAttribute("fill", HEX[col]);
+          ncs[3].setAttribute("fill", HEX[col]);
+          ncs[3].style.filter = "drop-shadow(0 0 4px " + HEX[col] + ")";
+        }
+      }
+      /* What To Do row 1 — regime action line + "Composite NN/100" sub.
+         Sanity-check the EN span still opens with a verdict word so we never
+         clobber a page where row 1 is not the regime row. */
+      var wl = document.querySelector(".mx5-action-list .mx5-action-item .mx5-action-label");
+      if (wl) {
+        var wlEn = wl.querySelector(".l-en");
+        if (wlEn && /^(Risk-on|Mixed|Risk-off)/.test(wlEn.textContent.trim()))
+          setBL(wl, (disp.label_en || disp.verdict) + " — " + ACTION[disp.verdict][0],
+                    (disp.label_zh || disp.label_en || disp.verdict) + " — " + ACTION[disp.verdict][1]);
+      }
+      var ws = document.querySelector(".mx5-action-list .mx5-action-item .mx5-action-sub");
+      if (ws && disp.score != null) {
+        var wspans = ws.querySelectorAll("span");
+        for (var wi = 0; wi < wspans.length; wi++)
+          wspans[wi].textContent = wspans[wi].textContent.replace(/\d+(?=\/100)/, disp.score);
+      }
+      var wicon = document.querySelector(".mx5-action-list .mx5-action-item .mx5-action-icon");
+      if (wicon) {
+        wicon.classList.remove("mx5-ai-green", "mx5-ai-yellow", "mx5-ai-gray");
+        wicon.classList.add(WTD_ICON[col]);
+        var wsvg = wicon.querySelector("svg");
+        if (wsvg) { wsvg.setAttribute("stroke", WTD_STROKE[col]); wsvg.innerHTML = WTD_SHAPE[col]; }
+      }
+      /* the flip-condition line belongs to the BAKED verdict — its trigger prose is
+         stale (or already met) once the live band moves off it, so hide it then. */
+      var flip = document.querySelector(".mx5-flip");
+      if (flip && bakedLabelEn)
+        flip.style.display = ((disp.label_en || "") === bakedLabelEn) ? "" : "none";
     }
     var front = word.closest(".ms-front") || word.closest(".ms");
     if (front) {
