@@ -561,6 +561,14 @@ on:
       # Any change to the flow regime engine or test file re-proves the contract.
       - "engine/flow_regime.py"
       - "tests/test_flow_regime.py"
+      # CCW-W1 corporate credit watch data spine: bond holdings collector, issuer
+      # registry, FRED config adds. Any change to these files re-proves the contracts.
+      - "collectors/corp_bond_holdings.py"
+      - "data/corp_bonds/issuer_themes.json"
+      - "tests/test_corp_bond_holdings.py"
+      - "tests/test_fred_series_alias_conflicts.py"
+      - "tests/test_fred_baml_archive.py"
+      - "scripts/snapshot_fred_archive.py"
   workflow_dispatch:
 
 permissions:
@@ -2020,3 +2028,27 @@ jobs:
         run: pip install pytest pandas numpy pyarrow
       - name: CBF regime classifier contract tests
         run: python -m pytest tests/test_flow_regime.py -v
+
+  ccw-w1-data-spine:
+    # CCW-W1 Corporate Credit Watch data spine:
+    #   collectors/corp_bond_holdings.py — bond XLSX parser (ISIN-keyed, not equity path)
+    #   data/corp_bonds/issuer_themes.json — issuer→theme registry v1
+    #   config.yml fred.series — no alias collisions in the new corp_credit + DGS20 adds
+    # Test coverage:
+    #   test_corp_bond_holdings.py — parser fixtures (header detection, ISIN/cusip6,
+    #                                numeric coercion, maturity parsing, keep-FIRST,
+    #                                schema columns, match-rate, CCW-UNMATCHED-HIGH-PAR
+    #                                alarm, registry round-trip)
+    #   test_fred_series_alias_conflicts.py — no duplicate aliases across all fred.series
+    #                                         groups (guards the KeyError outage)
+    # Zero network calls; all inputs are synthetic or committed files.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml openpyxl requests
+      - name: CCW-W1 bond holdings parser + registry + FRED alias tests
+        run: python -m pytest tests/test_corp_bond_holdings.py tests/test_fred_series_alias_conflicts.py tests/test_fred_baml_archive.py -v

@@ -148,6 +148,7 @@ def all_adapters() -> dict:
         ("broad_flows", "collectors.sponsors", "BroadFlowAdapter"),   # RLT-R3: SPY/QQQ/IWM/RSP/DIA creation/redemption proxy
         ("holdings", "collectors.holdings", "HoldingsAdapter"),
         ("etf_holdings", "collectors.etf_holdings", "EtfHoldingsAdapter"),
+        ("corp_bond_holdings", "collectors.corp_bond_holdings", "CorpBondHoldingsAdapter"),  # CCW-W1: SSGA bond-fund PIT store (SPSB/SPIB/SPLB/JNK/SPHY) + issuer match-rate alarm
         ("sector_holdings", "collectors.sector_holdings", "SectorHoldingsAdapter"),
         ("stock_prices", "collectors.sector_holdings", "StockPriceAdapter"),
         ("fundamentals", "collectors.fundamentals", "FundamentalsAdapter"),
