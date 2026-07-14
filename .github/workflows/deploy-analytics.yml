@@ -66,11 +66,4 @@ jobs:
           echo "== 5. verify: live beacon -> row =="
           $SSH 'curl -s -o /dev/null -w "collect_http=%{http_code}\n" -X POST http://127.0.0.1:8000/api/collect -H "Content-Type: application/json" -d "{\"events\":[{\"type\":\"pageview\",\"site\":\"macro\",\"path\":\"/__deploy_ci\",\"sid\":\"ci_test\"}]}"'
           sleep 3
-          $SSH 'set -a; . /etc/macro-admin.env; set +a; python3 - <<PY
-          import json,os,urllib.request
-          ref=os.environ.get("SUPABASE_PROJECT_REF","fsldfzlxyavsuwqbceod")
-          r=urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query",
-            data=json.dumps({"query":"select count(*)::int n, max(created_at) last from public.analytics_events"}).encode(),
-            method="POST",headers={"Authorization":"Bearer "+os.environ["SUPABASE_ACCESS_TOKEN"],"Content-Type":"application/json"})
-          print("analytics_events:",urllib.request.urlopen(r).read().decode())
-          PY'
+          $SSH 'set -a; . /etc/macro-admin.env; set +a; python3 /tmp/analytics_migrate.py --count'
