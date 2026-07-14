@@ -233,8 +233,10 @@ def run(root: Path, dry_run: bool = False, band_frac: float = _BAND_FRAC_DEFAULT
 
 
 # --------------------------------------------------------------------------- #
-# end-of-collect hook — runs nightly ALONGSIDE shadow_importance_v0.py so both
-# tapes accrue in parallel.  Non-fatal.
+# collect-lane hook — runs nightly ALONGSIDE shadow_importance_v0.py so both
+# tapes accrue in parallel (standalone in daily.yml's collect_tail job since
+# the 2026-07-14 collect split; see shadow_importance_v0.run_as_collect_step
+# for why ordering vs the grader is not load-bearing).  Non-fatal.
 # --------------------------------------------------------------------------- #
 def run_as_collect_step(root: Path | str | None = None) -> None:
     try:

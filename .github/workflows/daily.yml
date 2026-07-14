@@ -262,7 +262,11 @@ jobs:
   # crashed core (tape-flow pulls from ThetaData, TIL organs from external APIs;
   # a failed core just means tonight's pass re-scores yesterday's stores).
   # Runner budget: holding a second macstudio slot alongside engine is accepted
-  # (3-slot pool; operator-ratified 2026-07-14).
+  # (3-slot pool; operator-ratified 2026-07-14). Known contention: after collect,
+  # FOUR jobs go eligible (engine / collect_tail / factor_series /
+  # active_build_map) for 3 slots — the scheduler may briefly queue engine
+  # behind the others; worst case it waits out the shortest running job
+  # (active_build_map, minutes), a small dent in the ~30-75m win.
   # Forward-ledger law: untouched — the nightly graders stay inside
   # scripts.collect (collect core, COLLECT_LANE=nightly); this job only accrues
   # stores + registers idempotent claims, and its commit lands hours before the
@@ -486,6 +490,12 @@ jobs:
           # this job, so site/qledger/track_record.json is never touched here;
           # tests/test_collect_staging_globs.py keys on the grader-bearing
           # module's dotted name, which this comment deliberately avoids.)
+          # data/run_status.json is co-written by the concurrent engine job
+          # (flow_signals registration) — whole-file -X theirs means one side's
+          # sources[] update can lose a race and go 1-run stale. Display-only
+          # and self-healing (healthcheck's hard-fail keys last_run/
+          # circuit_breaker are written solely by collect-core's adapter sweep,
+          # present in every job's base) — accepted at the 07-14 split review.
           git add data/ site/basketdata/
           if git diff --cached --quiet; then echo "no tail data changes to commit"; exit 0; fi
           git commit -m "data: collect-tail accrual $(date -u +%F)"
