@@ -1,0 +1,36 @@
+{
+  "schema": "metabolism.journal.v1",
+  "cycle_id": "cycle-2026-07-13-e159",
+  "stage": "adjudicate_resolve",
+  "status": "done",
+  "auth_ok": null,
+  "artifacts": [
+    "/Users/chriswong/actions-runner-1/_work/macro/macro/data/metabolism/dockets/cycle-2026-07-13-e159.json"
+  ],
+  "next_stage": "build",
+  "ts": "2026-07-14T11:56:08+00:00",
+  "stages": {
+    "propose": {
+      "status": "done",
+      "started_at": "2026-07-13T05:09:58+00:00",
+      "finished_at": "2026-07-13T05:10:40+00:00",
+      "note": "docket 1 proposal(s); lobe=til; provider=deepseek"
+    },
+    "adjudicate_orchestrator": {
+      "status": "noop_paused",
+      "finished_at": "2026-07-14T11:56:05+00:00",
+      "note": "preflight auth failed: claude -p ping exited 1: (no stderr)"
+    },
+    "adjudicate_adversary": {
+      "status": "noop_paused",
+      "finished_at": "2026-07-14T11:56:08+00:00",
+      "note": "preflight auth failed: claude -p ping exited 1: (no stderr)"
+    },
+    "adjudicate_resolve": {
+      "status": "done",
+      "started_at": "2026-07-14T11:56:08+00:00",
+      "finished_at": "2026-07-14T11:56:08+00:00",
+      "note": "two_key resolved: 0/1 authorized"
+    }
+  }
+}
