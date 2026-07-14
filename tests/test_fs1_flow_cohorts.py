@@ -672,6 +672,94 @@ class TestTerminalDown:
         assert "unreachable" in result.lower() or "terminal" in result.lower()
 
 
+# ── 7b. mid-sweep transient blip ──────────────────────────────────────────────
+
+class TestMidSweepBlipRetry:
+    """A single failed mid-sweep reachability probe must not abort the run.
+
+    #2498 follow-up: the sweep re-probes with bounded backoff; only a
+    persistently unreachable terminal aborts. The start-of-run gate stays
+    fail-fast (covered by TestTerminalDown above).
+    """
+
+    def test_terminal_recovered_fail_once_then_succeed(self):
+        """Probe fails once then succeeds → recovered, no further probes."""
+        from scripts.ops_flow_cohorts import _terminal_recovered
+
+        probe = MagicMock(side_effect=[False, True])
+        sleeps: list[float] = []
+        assert _terminal_recovered(probe, backoff_s=(0.0, 30.0, 60.0),
+                                   sleep_fn=sleeps.append) is True
+        assert probe.call_count == 2
+        assert sleeps == [30.0], "first probe is immediate; second waits one backoff step"
+
+    def test_terminal_recovered_persistent_failure(self):
+        """All probes fail → not recovered, full backoff schedule consumed."""
+        from scripts.ops_flow_cohorts import _terminal_recovered
+
+        probe = MagicMock(return_value=False)
+        sleeps: list[float] = []
+        assert _terminal_recovered(probe, backoff_s=(0.0, 30.0, 60.0),
+                                   sleep_fn=sleeps.append) is False
+        assert probe.call_count == 3
+        assert sleeps == [30.0, 60.0]
+
+    def test_sweep_continues_after_transient_blip(self, tmp_path):
+        """One unit hits terminal_unreachable but the recovery probe succeeds:
+        that unit is marked failed (retryable) and the other unit completes."""
+        from scripts.ops_flow_cohorts import _unit_key
+
+        def mock_fetch(root, session_date, eod_root, per_request_timeout=120.0):
+            if root == "SPY":
+                return "terminal_unreachable"
+            return []
+
+        with patch("scripts.ops_flow_cohorts._flow_signals_dir", return_value=tmp_path), \
+             patch("scripts.ops_flow_cohorts._fetch_unit", side_effect=mock_fetch), \
+             patch("scripts.ops_flow_cohorts._load_ladder", return_value={"tier1": {
+                 "label": "test", "start_date": "2026-06-01",
+                 "end_date": "2026-06-01", "roots": ["SPY", "QQQ"],
+             }}), \
+             patch("scripts.ops_flow_cohorts._eod_store_root", return_value=None), \
+             patch("scripts.ops_flow_cohorts._RECOVERY_BACKOFF_S", (0.0, 0.0, 0.0)), \
+             patch("collectors.thetadata.reachable", return_value=True):
+            from scripts.ops_flow_cohorts import run_tape_recon
+            run_tape_recon(dry_run=True)
+
+        state = json.loads((tmp_path / "_recon_state.json").read_text())
+        assert _unit_key("SPY", "2026-06-01") in state["failed"], (
+            "blipped unit must be marked failed (retryable via --retry-failed)")
+        assert _unit_key("QQQ", "2026-06-01") in state["completed"], (
+            "sweep aborted instead of continuing past a recovered blip")
+
+    def test_sweep_aborts_when_terminal_stays_down(self, tmp_path):
+        """Recovery probes all fail → abort as before: in-flight units are left
+        untouched (neither completed nor failed) so they resume on next run."""
+        import itertools
+
+        # First reachable() call is the start-of-run gate (True); every
+        # subsequent call is a recovery probe (False — terminal stays down).
+        gate_then_down = itertools.chain([True], itertools.repeat(False))
+
+        with patch("scripts.ops_flow_cohorts._flow_signals_dir", return_value=tmp_path), \
+             patch("scripts.ops_flow_cohorts._fetch_unit",
+                   return_value="terminal_unreachable"), \
+             patch("scripts.ops_flow_cohorts._load_ladder", return_value={"tier1": {
+                 "label": "test", "start_date": "2026-06-01",
+                 "end_date": "2026-06-01", "roots": ["SPY", "QQQ"],
+             }}), \
+             patch("scripts.ops_flow_cohorts._eod_store_root", return_value=None), \
+             patch("scripts.ops_flow_cohorts._RECOVERY_BACKOFF_S", (0.0, 0.0, 0.0)), \
+             patch("collectors.thetadata.reachable", side_effect=gate_then_down):
+            from scripts.ops_flow_cohorts import run_tape_recon
+            run_tape_recon(dry_run=True)
+
+        state = json.loads((tmp_path / "_recon_state.json").read_text())
+        assert state.get("completed", {}) == {}
+        assert state.get("failed", {}) == {}, (
+            "abort path must leave in-flight units untouched for resume")
+
+
 # ── coverage report ───────────────────────────────────────────────────────────
 
 class TestCoverageReport:
