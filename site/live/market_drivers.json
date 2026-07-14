@@ -1,138 +1,138 @@
 {
-  "asof": "2026-07-14",
+  "asof": "2026-07-13",
   "window_d": 5,
-  "verdict": "mixed",
-  "verdict_zh": "\u6df7\u5408",
-  "primary": "liquidity_impulse",
-  "primary_label": "Liquidity impulse",
-  "primary_label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
-  "direction": "net liquidity expanding \u2014 broad risk-on tailwind",
-  "direction_zh": "\u51c0\u6d41\u52a8\u6027\u6269\u5f20 \u2014 \u5e7f\u6cdb\u98ce\u9669\u987a\u98ce",
+  "verdict": "clear",
+  "verdict_zh": "\u660e\u786e",
+  "primary": "oil_shock",
+  "primary_label": "Oil shock",
+  "primary_label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
+  "direction": "oil spiking \u2014 energy leads, breakevens up",
+  "direction_zh": "\u6cb9\u4ef7\u98d9\u5347 \u2014 \u80fd\u6e90\u9886\u6da8\u3001\u76c8\u4e8f\u5e73\u8861\u4e0a\u884c",
   "dir_sign": 1,
-  "confidence": "low",
-  "confidence_zh": "\u4f4e",
-  "strength": 1.19,
-  "dominance_ratio": 1.15,
-  "agreement": 0.87,
-  "runner_up": "oil_shock",
-  "runner_up_label": "Oil shock",
-  "runner_up_label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
-  "headline": "Mixed \u2014 Liquidity impulse + Oil shock jointly leading (net liquidity +2.3\u03c3, HY vs IG +1.0\u03c3, small vs large caps -0.8\u03c3); no single dominant driver.",
+  "confidence": "high",
+  "confidence_zh": "\u9ad8",
+  "strength": 1.4,
+  "dominance_ratio": 1.54,
+  "agreement": 1.0,
+  "runner_up": "liquidity_impulse",
+  "runner_up_label": "Liquidity impulse",
+  "runner_up_label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
+  "headline": "Oil shock \u2014 oil spiking \u2014 energy leads, breakevens up. oil (WTI) +1.9\u03c3, energy sector RS +1.9\u03c3, 10y breakeven +0.6\u03c3.",
   "evidence": [
-    "net liquidity +2.3\u03c3",
-    "HY vs IG +1.0\u03c3",
-    "small vs large caps -0.8\u03c3"
+    "oil (WTI) +1.9\u03c3",
+    "energy sector RS +1.9\u03c3",
+    "10y breakeven +0.6\u03c3"
   ],
   "evidence_legs": [
     {
-      "en": "net liquidity",
-      "zh": "\u51c0\u6d41\u52a8\u6027",
-      "z": 2.3
+      "en": "oil (WTI)",
+      "zh": "\u539f\u6cb9(WTI)",
+      "z": 1.9
     },
     {
-      "en": "HY vs IG",
-      "zh": "\u9ad8\u6536\u76ca\u5bf9\u6295\u8d44\u7ea7",
-      "z": 1.0
+      "en": "energy sector RS",
+      "zh": "\u80fd\u6e90\u677f\u5757\u76f8\u5bf9\u5f3a\u5ea6",
+      "z": 1.9
     },
     {
-      "en": "small vs large caps",
-      "zh": "\u5c0f\u76d8\u5bf9\u5927\u76d8",
-      "z": -0.8
+      "en": "10y breakeven",
+      "zh": "10\u5e74\u76c8\u4e8f\u5e73\u8861\u901a\u80c0",
+      "z": 0.6
     }
   ],
-  "invalidation": "Fades if net liquidity reverses and the rest of the liquidity fingerprint stops confirming.",
-  "invalidation_zh": "\u82e5\u51c0\u6d41\u52a8\u6027\u53cd\u8f6c\u3001\u4e14\u6d41\u52a8\u6027\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
-  "absorption_pctile": 0.97,
+  "invalidation": "Fades if oil (WTI) reverses and the rest of the inflation fingerprint stops confirming.",
+  "invalidation_zh": "\u82e5\u539f\u6cb9(WTI)\u53cd\u8f6c\u3001\u4e14\u901a\u80c0\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
+  "absorption_pctile": 0.95,
   "scores": [
-    {
-      "driver": "liquidity_impulse",
-      "label": "Liquidity impulse",
-      "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
-      "family": "liquidity",
-      "projection": 1.19,
-      "strength": 1.19,
-      "direction": "net liquidity expanding \u2014 broad risk-on tailwind"
-    },
     {
       "driver": "oil_shock",
       "label": "Oil shock",
       "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
       "family": "inflation",
-      "projection": 1.03,
-      "strength": 1.03,
+      "projection": 1.4,
+      "strength": 1.4,
       "direction": "oil spiking \u2014 energy leads, breakevens up"
+    },
+    {
+      "driver": "liquidity_impulse",
+      "label": "Liquidity impulse",
+      "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
+      "family": "liquidity",
+      "projection": 0.91,
+      "strength": 0.91,
+      "direction": "net liquidity expanding \u2014 broad risk-on tailwind"
     },
     {
       "driver": "ai_semis",
       "label": "AI / semis",
       "label_zh": "AI/\u534a\u5bfc\u4f53",
       "family": "equity-leadership",
-      "projection": 0.7,
-      "strength": 0.7,
-      "direction": "AI/semis leadership \u2014 narrow tech-led tape"
-    },
-    {
-      "driver": "china_stimulus",
-      "label": "China stimulus",
-      "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
-      "family": "china",
-      "projection": 0.69,
-      "strength": 0.69,
-      "direction": "China risk-on \u2014 A-shares/HK & copper lead up"
-    },
-    {
-      "driver": "crypto_liquidity",
-      "label": "Crypto liquidity",
-      "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
-      "family": "crypto",
-      "projection": 0.65,
-      "strength": 0.65,
-      "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
-    },
-    {
-      "driver": "usd_shock",
-      "label": "USD shock",
-      "label_zh": "\u7f8e\u5143\u51b2\u51fb",
-      "family": "fx",
-      "projection": -0.39,
-      "strength": 0.39,
-      "direction": "dollar falling \u2014 risk tailwind, commodities & EM bid"
-    },
-    {
-      "driver": "credit_stress",
-      "label": "Credit stress",
-      "label_zh": "\u4fe1\u7528\u538b\u529b",
-      "family": "credit",
-      "projection": -0.07,
-      "strength": 0.07,
-      "direction": "credit spreads compressing \u2014 risk-on"
+      "projection": -0.87,
+      "strength": 0.87,
+      "direction": "AI/semis unwind \u2014 tech-led de-rating"
     },
     {
       "driver": "real_rate_shock",
       "label": "Real-rate shock",
       "label_zh": "\u5b9e\u9645\u5229\u7387\u51b2\u51fb",
       "family": "rates",
-      "projection": -0.03,
-      "strength": 0.03,
-      "direction": "real yields falling \u2014 easing, gold & duration bid"
+      "projection": 0.87,
+      "strength": 0.87,
+      "direction": "real yields rising \u2014 restrictive, gold & duration hit"
     },
     {
       "driver": "fed_repricing",
       "label": "Fed repricing",
       "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
       "family": "rates",
-      "projection": 0.03,
-      "strength": 0.03,
+      "projection": 0.66,
+      "strength": 0.66,
       "direction": "hawkish repricing \u2014 cuts priced out, front-end up"
+    },
+    {
+      "driver": "credit_stress",
+      "label": "Credit stress",
+      "label_zh": "\u4fe1\u7528\u538b\u529b",
+      "family": "credit",
+      "projection": -0.4,
+      "strength": 0.4,
+      "direction": "credit spreads compressing \u2014 risk-on"
+    },
+    {
+      "driver": "usd_shock",
+      "label": "USD shock",
+      "label_zh": "\u7f8e\u5143\u51b2\u51fb",
+      "family": "fx",
+      "projection": 0.31,
+      "strength": 0.31,
+      "direction": "dollar surging \u2014 squeeze, commodities & EM pressured"
+    },
+    {
+      "driver": "crypto_liquidity",
+      "label": "Crypto liquidity",
+      "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
+      "family": "crypto",
+      "projection": -0.19,
+      "strength": 0.19,
+      "direction": "crypto liquidity draining \u2014 BTC/ETH lead down"
+    },
+    {
+      "driver": "china_stimulus",
+      "label": "China stimulus",
+      "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
+      "family": "china",
+      "projection": -0.15,
+      "strength": 0.15,
+      "direction": "China risk-off \u2014 A-shares/HK & copper lead down"
     }
   ],
   "note": "Deterministic cross-asset attribution \u2014 a regime READ, not a signal; never gates a score.",
   "repricing_coherence": {
-    "score": 50,
-    "state": "ELEVATED",
-    "state_zh": "\u504f\u9ad8",
+    "score": 20,
+    "state": "QUIET",
+    "state_zh": "\u5e73\u9759",
     "components": {
-      "driver_flip": 30,
+      "driver_flip": 0,
       "strength_extreme": 0,
       "absorption_spike": 20,
       "repricing_breadth": 0
