@@ -3503,9 +3503,11 @@ body.page-macro.mx4-grid .mx5-sc-gauge-row {
    (and var() resolves here, unlike in a bare SVG stroke="" attribute). */
 body.page-macro.mx4-grid #mx5-gauge-arc-fill { stroke: var(--mx5-gauge, #f59e0b); }
 body.page-macro.mx4-grid #mx5-score-numeral  { fill: var(--mx5-gauge, #f59e0b); }
-/* Regime pill → neutral grey label (state owns the glance colour now) */
-body.page-macro.mx4-grid .mx5-regime-pill { border-color: var(--line); background: transparent; color: var(--muted); }
-body.page-macro.mx4-grid .mx5-regime-pill .mx5-dot { background: var(--muted); box-shadow: none; }
+/* Regime pill: main #2542 colours it by the market-state verdict (.rp-yellow/.rp-red);
+   the risk-on default reads --mx5-accent, which the .mx5-score-* rules above set to
+   var(--up) — so the pill is verdict-coloured AND flips 红涨绿跌 in zh. (My earlier flat-grey
+   override was dropped in the merge: it conflicted with #2542 and left risk-on pills grey
+   while yellow/red were coloured.) */
 
 /* Thesis + flip */
 body.page-macro.mx4-grid .mx5-thesis{
