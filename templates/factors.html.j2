@@ -760,7 +760,8 @@
       tbl.querySelectorAll('th[data-c]').forEach(h=>h.onclick=()=>{const c=h.dataset.c; if(c===fsort.col)fsort.dir*=-1; else fsort={col:c,dir:c==='name'?1:-1}; localStorage.setItem('fw-fp-sort',JSON.stringify(fsort)); renderPerfTable();});
     }
     const HZ=['1d','5d','20d','60d','YTD'];
-    function zbg(z){ if(z==null) return ''; const a=Math.min(Math.abs(z)/2.5,0.85).toFixed(2); return z>=0?`background:rgba(56,139,253,${a})`:`background:rgba(248,81,73,${a})`; }
+    function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+    function zbg(z){ if(z==null) return ''; const a=Math.min(Math.abs(z)/2.5,0.85).toFixed(2); if(isZh()) return z>=0?`background:rgba(248,81,73,${a})`:`background:rgba(56,139,253,${a})`; return z>=0?`background:rgba(56,139,253,${a})`:`background:rgba(248,81,73,${a})`; }
     function drawSector(){
       const rows=SEC.map(s=>{const rl=ratio(D.sector[s]); return {s,rel:Object.fromEntries(HZ.map(h=>[h,winRet(rl,h)])), z:Object.fromEntries(HZ.map(h=>[h,/^\d/.test(h)?winZ(rl,h):null]))};});
       rows.sort((a,b)=>(b.rel['20d']==null?-9:b.rel['20d'])-(a.rel['20d']==null?-9:a.rel['20d']));

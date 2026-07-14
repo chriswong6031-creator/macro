@@ -195,6 +195,10 @@
   details.method dl { margin:10px 0 0; } details.method dt { font-weight:600; margin-top:9px; }
   details.method dd { margin:2px 0 0; color:var(--muted); font-size:12.5px; }
   @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+  /* ── 红涨绿跌: directional colour flips for Chinese mode ── */
+  html[data-lang="zh"] .stance.constructive .word{ color:var(--up); }
+  html[data-lang="zh"] .stance.risk-off .word{ color:var(--down); }
+  html[data-lang="zh"] .gauge-track{ background:linear-gradient(90deg, color-mix(in srgb,var(--up) 60%,transparent) 0%, color-mix(in srgb,var(--warn) 55%,transparent) 50%, color-mix(in srgb,var(--down) 65%,transparent) 100%); }
 </style>
 </head>
 <body>

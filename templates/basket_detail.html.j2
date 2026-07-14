@@ -63,6 +63,7 @@
   .tier { display:inline-block; font-weight:800; font-size:10px; padding:1px 5px; border-radius:5px; letter-spacing:.02em; color:#fff; vertical-align:middle; }
   .tier.T1 { background:var(--up); } .tier.T2 { background:#3da564; }
   .tier.T3 { background:var(--info); } .tier.T4 { background:#6b7cc4; }
+  html[data-lang="zh"] .tier.T2 { background:#d04545; }
   .tier .prov { font-weight:700; opacity:.8; margin-left:1px; }
   .why { color:var(--muted); font-size:11.5px; white-space:normal; max-width:42ch; }
   #hold { table-layout:fixed; }
@@ -247,7 +248,12 @@ const cls = x => x==null?'muted':(x>=0?'pos':'neg');
 const LABEL_COLOR = {dominant:['rgba(250,204,21,.16)','rgba(250,204,21,.55)','#eab308'],emerging:['rgba(74,222,128,.15)','rgba(74,222,128,.5)','#22c55e'],fading:['rgba(251,146,60,.15)','rgba(251,146,60,.5)','#f97316'],deteriorating:['rgba(248,113,113,.15)','rgba(248,113,113,.5)','#ef4444'],neutral:['var(--panel2)','var(--line)','var(--muted)']};
 const RECO_COLOR = {enter:['rgba(34,197,94,.20)','rgba(34,197,94,.65)','#16a34a'],accumulate:['rgba(74,222,128,.14)','rgba(74,222,128,.5)','#22c55e'],hold:['var(--panel2)','var(--line)','var(--muted)'],trim:['rgba(251,146,60,.15)','rgba(251,146,60,.55)','#f97316'],avoid:['rgba(248,113,113,.16)','rgba(248,113,113,.6)','#ef4444']};
 const COMP_COLOR = {trend:'#5aa7ff',breadth:'#4ade80',impulse:'#a78bfa',macro:'#2dd4bf',mtf:'#f0abfc',volhole:'#fbbf24',crowding:'#fb7185'};
-const badge=(cls,c,en,zh)=>`<span class="${cls}" style="background:${c[0]};border:1px solid ${c[1]};color:${c[2]}">${L(en,zh)}</span>`;
+// zh 红涨绿跌: swap green↔red in color triplets
+const _isZh=()=>document.documentElement.getAttribute('data-lang')==='zh';
+const ZH_G2R={'rgba(74,222,128,.15)':'rgba(248,113,113,.15)','rgba(74,222,128,.5)':'rgba(248,113,113,.5)','#22c55e':'#ef4444','rgba(34,197,94,.20)':'rgba(248,113,113,.16)','rgba(34,197,94,.65)':'rgba(248,113,113,.6)','rgba(74,222,128,.14)':'rgba(248,113,113,.15)','#16a34a':'#ef4444'};
+const ZH_R2G={'rgba(248,113,113,.15)':'rgba(74,222,128,.15)','rgba(248,113,113,.5)':'rgba(74,222,128,.5)','#ef4444':'#22c55e','rgba(248,113,113,.16)':'rgba(34,197,94,.20)','rgba(248,113,113,.6)':'rgba(34,197,94,.65)'};
+function zhColor(c){if(!_isZh())return c;return c.map(v=>ZH_G2R[v]||ZH_R2G[v]||v);}
+const badge=(cls,c,en,zh)=>{const cc=zhColor(c);return`<span class="${cls}" style="background:${cc[0]};border:1px solid ${cc[1]};color:${cc[2]}">${L(en,zh)}</span>`;};
 // A1 — display-only verb demotion: never render a green ACCUMULATE/ENTER action chip when
 // the theme's own clean_entry texture is false. The payload reco is NOT mutated (alerts +
 // downstream readers keep continuity) — only what the chip says changes. (Mirrors baskets_desk.js.)

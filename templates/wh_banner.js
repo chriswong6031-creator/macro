@@ -443,6 +443,8 @@
       ".whb-pipe{width:3px;height:18px;border-radius:2px;background:#9aa4bf;flex:0 0 auto}",
       ".whb-tone-tailwind{background:#39c07d}.whb-tone-headwind{background:#ef5b6b}",
       ".whb-tone-mixed{background:#e3b341}.whb-tone-neutral{background:#9aa4bf}",
+      /* zh 红涨绿跌: tailwind (bullish/positive flow) pipe swaps green→red; headwind (bearish) swaps red→green */
+      'html[data-lang="zh"] .whb-tone-tailwind{background:#e05555}html[data-lang="zh"] .whb-tone-headwind{background:#39c07d}',
       ".whb-tone-danger{background:linear-gradient(180deg,#ffb13a,#ec5a1e)}",
       ".whb-ttl{font-weight:650;color:#fff;letter-spacing:.01em}",
       // self-contained EN/中文 toggle (does not depend on the host page's theme.css)
@@ -454,6 +456,8 @@
       ".whb-sym{font-weight:700;font-variant-numeric:tabular-nums;font-size:12px;color:#dfe5f2;letter-spacing:.02em}",
       ".whb-chg{font-variant-numeric:tabular-nums;font-size:11.5px;font-weight:700}",
       ".whb-chg.up{color:#54d495}.whb-chg.dn{color:#ff7a86}",
+      /* zh 红涨绿跌: price change up (bullish) swaps green→red; dn swaps red→green */
+      'html[data-lang="zh"] .whb-chg.up{color:#ff7a86}html[data-lang="zh"] .whb-chg.dn{color:#54d495}',
       ".whb-div{color:rgba(255,255,255,.28);padding:0 6px;font-size:9px}",
       // --- Risk-Radar channel accents ---
       ".whb-rr-k{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;",

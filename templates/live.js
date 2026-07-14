@@ -114,6 +114,8 @@
       ".nb-dvg.alert{background:#7f1d1d;color:#fecaca}.nb-dvg.watch{background:#78350f;color:#fde68a}" +
       ".nb-chg{font-weight:600}.nb-chg.up{color:#16a34a}.nb-chg.down{color:#dc2626}" +
       ".nb-chg.stale{color:#9ca3af;font-weight:500}" +
+      /* zh 红涨绿跌: swap up→red, down→green */
+      'html[data-lang="zh"] .nb-chg.up{color:#dc2626}html[data-lang="zh"] .nb-chg.down{color:#16a34a}' +
       "@media (forced-colors:active){.nb-px[data-live]::after{forced-color-adjust:none;border:1px solid currentColor}}" +
       "@keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)}" +
       "70%{box-shadow:0 0 0 5px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}" +

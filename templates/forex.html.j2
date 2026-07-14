@@ -174,6 +174,29 @@ html[data-theme="dark"] .sbar{background:#222732}
 .sc-split .sr.h{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.03em;border:none}
 .sc-pos{color:var(--green);font-weight:700}.sc-neg{color:var(--red);font-weight:700}
 .sc-tilt{font-size:11.5px;color:var(--muted);margin-top:8px}
+/* zh 红涨绿跌 directional colour flips */
+html[data-lang="zh"] .chg.up{color:var(--red)}
+html[data-lang="zh"] .chg.dn{color:var(--green)}
+html[data-lang="zh"] .chip.sbuy,html[data-lang="zh"] .chip.buy{background:rgba(211,11,11,.13);color:var(--red)}
+html[data-lang="zh"] .chip.sell,html[data-lang="zh"] .chip.ssell{background:rgba(26,127,67,.12);color:var(--green)}
+html[data-lang="zh"] .fbar .fill.pos{background:var(--red)}
+html[data-lang="zh"] .fbar .fill.neg{background:var(--green)}
+html[data-lang="zh"] .macd-up,html[data-lang="zh"] .tr-up,html[data-lang="zh"] .macd-pos{color:var(--red)}
+html[data-lang="zh"] .macd-down,html[data-lang="zh"] .tr-down,html[data-lang="zh"] .macd-neg{color:var(--green)}
+html[data-lang="zh"] .dt-chip.up,html[data-lang="zh"] .dt-chip.supportive,html[data-lang="zh"] .dt-chip.rich{background:rgba(211,11,11,.13);color:var(--red)}
+html[data-lang="zh"] .dt-chip.down,html[data-lang="zh"] .dt-chip.soft,html[data-lang="zh"] .dt-chip.cheap{background:rgba(26,127,67,.12);color:var(--green)}
+html[data-lang="zh"] .hbar.up{background:var(--red)}
+html[data-lang="zh"] .hbar.down{background:var(--green)}
+html[data-lang="zh"] .desk-lean.supportive{background:rgba(211,11,11,.13);color:var(--red)}
+html[data-lang="zh"] .desk-lean.soft{background:rgba(26,127,67,.12);color:var(--green)}
+html[data-lang="zh"] .eff.headwind{color:var(--green)}
+html[data-lang="zh"] .eff.tailwind{color:var(--red)}
+html[data-lang="zh"] .sbar .sfill.pos{background:var(--red)}
+html[data-lang="zh"] .sbar .sfill.neg{background:var(--green)}
+html[data-lang="zh"] .sc-pos{color:var(--red)}
+html[data-lang="zh"] .sc-neg{color:var(--green)}
+html[data-lang="zh"] .cnh-basis.s-outflow_stress{background:rgba(26,127,67,.12)}
+html[data-lang="zh"] .cnh-basis.s-inflow{background:rgba(211,11,11,.12)}
 </style>
 {% include "_vector_polish.html.j2" %}
 </head>

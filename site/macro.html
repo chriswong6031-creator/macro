@@ -4076,6 +4076,21 @@ body.page-macro.mx4-grid.ms-yellow-page .mx5-big-score,
 body.page-macro.mx4-grid .mx5-score-yellow .mx5-big-score{color:var(--warn,#f59e0b);text-shadow:0 0 36px rgba(245,158,11,.3);}
 body.page-macro.mx4-grid.ms-red-page .mx5-big-score,
 body.page-macro.mx4-grid .mx5-score-red .mx5-big-score{color:var(--down,#ef4444);text-shadow:0 0 36px rgba(239,68,68,.3);}
+/* v6 — STATE drives the hero glance (operator order 2026-07-13). The gauge arc, needle
+   accent, glow and score numeral all follow the risk-STATE band (--mx5-gauge), never a fixed
+   rainbow or the regime hue — so a caution/Mixed state reads amber, not "green/go". --mx5-gauge
+   and --mx5-accent route through --up/--warn/--down, so they also honour the zh 红涨绿跌 swap
+   (risk-on=red, risk-off=green in Chinese). The slow regime (e.g. Goldilocks) is demoted to a
+   neutral label so it never competes with the stance colour. */
+body.page-macro.mx4-grid .mx5-score-green  { --mx5-gauge: var(--up);   --mx5-accent: var(--up);   }
+body.page-macro.mx4-grid .mx5-score-yellow { --mx5-gauge: var(--warn); --mx5-accent: var(--warn); }
+body.page-macro.mx4-grid .mx5-score-red    { --mx5-gauge: var(--down); --mx5-accent: var(--down); }
+body.page-macro.mx4-grid .mx5-sc-gauge-row {
+  --mx5-accent-glow: color-mix(in srgb, var(--mx5-accent) 30%, transparent);
+  --mx5-accent-dim:  color-mix(in srgb, var(--mx5-accent) 10%, transparent);
+}
+body.page-macro.mx4-grid #mx5-gauge-arc-fill { stroke: var(--mx5-gauge, #f59e0b); }
+body.page-macro.mx4-grid #mx5-score-numeral  { fill: var(--mx5-gauge, #f59e0b); }
 
 /* Thesis + flip */
 body.page-macro.mx4-grid .mx5-thesis{
@@ -5517,12 +5532,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
              data-gauge-radius="56"
              data-gauge-cx="70" data-gauge-cy="75">
           <defs>
-            <linearGradient id="mx5ArcGrad" gradientUnits="userSpaceOnUse" x1="14" y1="75" x2="126" y2="75">
-              <stop offset="0%"   stop-color="#ef4444"/>
-              <stop offset="28%"  stop-color="#f59e0b"/>
-              <stop offset="65%"  stop-color="#22d97a"/>
-              <stop offset="100%" stop-color="#22d97a"/>
-            </linearGradient>
             <filter id="mx5NeedleGlow" x="-80%" y="-80%" width="260%" height="260%">
               <feGaussianBlur stdDeviation="2.5" result="blur"/>
               <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
@@ -5536,7 +5545,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <path d="M 14 75 A 56 56 0 0 1 126 75" stroke="rgba(255,255,255,.08)" stroke-width="10" stroke-linecap="round" fill="none"/>
           
           <path id="mx5-gauge-arc-fill"
-                d="M 14 75 A 56 56 0 0 1 126 75" stroke="url(#mx5ArcGrad)" stroke-width="10" stroke-linecap="round" fill="none"
+                d="M 14 75 A 56 56 0 0 1 126 75" stroke="#f59e0b" stroke-width="10" stroke-linecap="round" fill="none"
                 stroke-dasharray="98.5 77.4" filter="url(#mx5ArcGlow)"/>
           
           <g stroke="rgba(255,255,255,.22)" stroke-width="1.2">
@@ -5552,9 +5561,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <text x="132" y="84" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">100</text>
           
           <g id="mx5-gauge-needle" transform="rotate(10.8 70 75)" filter="url(#mx5NeedleGlow)">
-            <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(34,217,122,.30)" stroke-width="5" stroke-linecap="round"/>
+            <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
             <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
-            <circle cx="70" cy="75" r="7"  fill="rgba(34,217,122,.14)"/>
+            <circle cx="70" cy="75" r="7"  fill="rgba(255,255,255,.10)"/>
             <circle cx="70" cy="75" r="4.5" stroke="#f59e0b" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
             <circle cx="70" cy="75" r="2"  fill="#f59e0b"/>
             <circle cx="70" cy="25.5" r="2.5" fill="#f59e0b" style="filter:drop-shadow(0 0 4px #f59e0b)"/>
