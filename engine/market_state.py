@@ -435,6 +435,22 @@ def _ceiling_for(state: str, severe_gated: bool, amp_keys, calib: dict) -> int |
     return int(max(calib.get("floor", 12), round(base - pull)))
 
 
+def _rr_scorecard_track(market_key: str) -> dict | None:
+    """Load the MARKET block from data/risk_radar/scorecard.json for ``market_key``
+    (one of "us"/"cn"/"hk"/"ca") and return it as-is, or None if the file is absent,
+    unreadable, or the market key is missing.  Fail-soft: never raises."""
+    try:
+        from lib import config  # noqa: PLC0415
+        p = config.data_dir() / "risk_radar" / "scorecard.json"
+        if not p.exists():
+            return None
+        blob = json.loads(p.read_text(encoding="utf-8"))
+        markets = blob.get("markets") or {}
+        return markets.get(market_key) or None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _radar_to_rd(rr: dict) -> dict:
     """Map a risk_radar.v2 (US) / risk_radar_intl.v1 (CN/HK/CA) payload into the `rd` dict
     the shared .rrx Risk-Radar card consumes. Pure; the amplifying US override and the
@@ -443,6 +459,7 @@ def _radar_to_rd(rr: dict) -> dict:
     state = rr.get("state")
     top = _num(rr.get("top_score"))
     dp = rr.get("drawdown_prob") or {}
+    _mkt = rr.get("market") or "us"
     return {
         "state": state,
         "top_score": round(top) if top is not None else None,
@@ -476,6 +493,10 @@ def _radar_to_rd(rr: dict) -> dict:
         # below from the radar trajectory + the liquidity tide. Stays None on the intl radars and
         # the no-source calm radar, so the card's {% if rd.recovery %} guard simply skips it.
         "recovery": None,
+        # forward-ledger track record for this market (data/risk_radar/scorecard.json).
+        # Display-only; None when the scorecard is absent (first build, engine builder not yet run).
+        # The card template guards with {% if radar.track is defined and radar.track %}.
+        "track": _rr_scorecard_track(_mkt),
     }
 
 
@@ -620,7 +641,7 @@ def _calm_radar() -> dict:
             "dd5": None, "dd10": None, "dd21": None, "dd_lift": None,
             "dd_base": {"h5": None, "h10": None, "h21": None}, "is_loud": False,
             "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
-            "severe_gated": False, "ceiling": None, "recovery": None}
+            "severe_gated": False, "ceiling": None, "recovery": None, "track": None}
 
 
 # The default (US) profile — every field reproduces today's hardcoded behaviour, so

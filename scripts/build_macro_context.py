@@ -522,6 +522,15 @@ def _build_risk_radar(world_state: dict | None, snapshot: dict | None) -> dict:
             "avoid": avoid,
         }
 
+    # Forward-ledger track record (US market, data/risk_radar/scorecard.json).
+    # Fail-soft: None when the scorecard is absent (engine builder not yet run).
+    _trk: dict | None = None
+    try:
+        from engine.market_state import _rr_scorecard_track  # noqa: PLC0415
+        _trk = _rr_scorecard_track("us")
+    except Exception:  # noqa: BLE001
+        pass
+
     return {
         "scares": scares,
         "n_scares": len(scares),
@@ -542,6 +551,7 @@ def _build_risk_radar(world_state: dict | None, snapshot: dict | None) -> dict:
         "trajectory_intensity": trajectory.get("intensity"),
         "deesc_eligible": (recovery.get("deescalation") or {}).get("eligible", False),
         "cycle_ctx": cycle_ctx,
+        "track": _trk,
     }
 
 

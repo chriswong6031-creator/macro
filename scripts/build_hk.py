@@ -776,6 +776,13 @@ def main() -> int:
                 _rrt.tune(_rri.HK_PROFILE)
             except Exception as _e:  # noqa: BLE001
                 log.warning("hk risk-radar audit/tune failed (%s); skipping", _e)
+            # Write the scorecard immediately after the HK ledger is updated so the
+            # same-build card reflects today's just-appended row. Never fatal.
+            try:
+                from engine import risk_radar_scorecard as _rrs  # noqa: PLC0415
+                _rrs.write()
+            except Exception as _e:  # noqa: BLE001
+                log.warning("build_hk: risk-radar scorecard write (pre-render) failed: %s", _e)
             vm["market_state"] = _ms.market_state_snapshot(
                 latest, _f, latest.get("alerts") or [], profile=HK_PROFILE)
         except Exception as e:  # noqa: BLE001 — additive panel, never fatal

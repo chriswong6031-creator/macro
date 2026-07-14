@@ -109,6 +109,11 @@ on:
       - "tests/test_anticipation.py"
       - "tests/test_risk_radar_market_catalysts.py"
       - "tests/test_risk_radar_recovery.py"
+      - "tests/test_risk_radar_scorecard.py"
+      - "engine/risk_radar_scorecard.py"
+      - "tests/test_rr_scorecard_card.py"
+      - "templates/_risk_radar_card.html.j2"
+      - "templates/_risk_radar_card.css.j2"
       - "tests/test_canon.py"
       - "tests/test_whitehouse_w5.py"
       # Winner Autopsy Lab: every case file under research/winners/cases/ must parse
@@ -813,6 +818,7 @@ jobs:
           tests/test_missing_tape.py tests/test_price_basis_flip.py
           tests/test_risk_lead_lag.py tests/test_anticipation.py
           tests/test_risk_radar_market_catalysts.py tests/test_risk_radar_recovery.py
+          tests/test_risk_radar_scorecard.py
           tests/test_canon.py tests/test_whitehouse_w5.py
           tests/test_winner_autopsy.py tests/test_admin_long_hold.py
           tests/test_falsifier_packet.py
@@ -844,6 +850,7 @@ jobs:
           tests/test_aibrief_w4_panels.py
           tests/test_sa_w5_v2_grader_hook.py
           tests/test_w8b_macro_prior_entries.py
+          tests/test_rr_scorecard_card.py
           tests/test_cycles.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.

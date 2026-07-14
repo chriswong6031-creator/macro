@@ -1247,6 +1247,320 @@ class TestWeekendStaleness:
 
 
 # ---------------------------------------------------------------------------
+# 14. risk_radar_reliability lobe (RR forward-ledger distillation)
+# ---------------------------------------------------------------------------
+
+def _minimal_rr_scorecard(
+    tmp_path: Path,
+    *,
+    us_graded_n: int = 30,
+    us_alert_n: int = 12,
+    us_alert_tp: int = 8,
+    us_wc_n: int = 10,
+    us_wc_tp: int = 7,
+    include_cn: bool = True,
+    include_hk: bool = False,
+    include_ca: bool = False,
+) -> Path:
+    """Write a minimal site/riskdata/scorecard.json fixture.
+
+    Mirrors the frozen cross-builder contract (schema risk_radar_scorecard.v1).
+    """
+    (tmp_path / "site" / "riskdata").mkdir(parents=True, exist_ok=True)
+
+    def _alert_win(n: int, tp: int) -> dict:
+        fp = n - tp
+        return {
+            "n": n,
+            "tp": tp,
+            "fp": fp,
+            "hit_rate": (tp / n) if n >= 5 else None,
+        }
+
+    def _wc_win(n: int, tp: int) -> dict:
+        tn = n - tp
+        return {
+            "n": n,
+            "tp": tp,
+            "tn": tn,
+            "precursor_rate": (tp / n) if n >= 5 else None,
+        }
+
+    def _full_window(alert_n: int, alert_tp: int, wc_n: int, wc_tp: int) -> dict:
+        return {
+            "alerts": _alert_win(alert_n, alert_tp),
+            "watch_caution": _wc_win(wc_n, wc_tp),
+            "calm": {"n": 20, "dd_missed": 1, "quiet": 18, "quiet_rate": 0.9},
+            "by_scare": {
+                "credit": _alert_win(6, 4),
+                "rates": _alert_win(4, 2),
+                "growth": _alert_win(2, 1),
+            },
+            "recovery": {"n": 8, "ok": 6, "rate": 0.75},
+        }
+
+    def _market(graded_n: int, alert_n: int, alert_tp: int, wc_n: int, wc_tp: int) -> dict:
+        win = _full_window(alert_n, alert_tp, wc_n, wc_tp)
+        return {
+            "asof_last_row": "2026-07-12",
+            "monitoring": {
+                "log_fresh": True,
+                "last_logged_days_ago": 1,
+                "ungraded_backlog": 3,
+                "graded_n": graded_n,
+            },
+            "windows": {
+                "full": win,
+                "y1": win,
+            },
+        }
+
+    markets: dict = {
+        "us": _market(us_graded_n, us_alert_n, us_alert_tp, us_wc_n, us_wc_tp),
+    }
+    if include_cn:
+        markets["cn"] = _market(10, 5, 3, 6, 4)
+    if include_hk:
+        markets["hk"] = _market(8, 4, 2, 3, 2)
+    if include_ca:
+        markets["ca"] = _market(6, 3, 2, 2, 1)
+
+    obj = {
+        "schema": "risk_radar_scorecard.v1",
+        "generated_at": "2026-07-13T06:00:00Z",
+        "markets": markets,
+    }
+    p = tmp_path / "site" / "riskdata" / "scorecard.json"
+    p.write_text(json.dumps(obj))
+    return p
+
+
+def _minimal_rr_scorecard_small_n(tmp_path: Path) -> Path:
+    """Scorecard with insufficient_n (n < 5) in all rate fields."""
+    (tmp_path / "site" / "riskdata").mkdir(parents=True, exist_ok=True)
+    obj = {
+        "schema": "risk_radar_scorecard.v1",
+        "generated_at": "2026-07-13T06:00:00Z",
+        "markets": {
+            "us": {
+                "asof_last_row": "2026-07-12",
+                "monitoring": {
+                    "log_fresh": True,
+                    "last_logged_days_ago": 1,
+                    "ungraded_backlog": 1,
+                    "graded_n": 3,
+                },
+                "windows": {
+                    "full": {
+                        "alerts": {"n": 3, "tp": 2, "fp": 1, "hit_rate": None},
+                        "watch_caution": {"n": 2, "tp": 1, "tn": 1, "precursor_rate": None},
+                        "calm": {"n": 0, "dd_missed": 0, "quiet": 0, "quiet_rate": None},
+                        "by_scare": {
+                            "credit": {"n": 2, "tp": 1, "fp": 1, "hit_rate": None},
+                        },
+                        "recovery": None,
+                    },
+                    "y1": {
+                        "alerts": {"n": 3, "tp": 2, "fp": 1, "hit_rate": None},
+                        "watch_caution": {"n": 2, "tp": 1, "tn": 1, "precursor_rate": None},
+                        "calm": {"n": 0, "dd_missed": 0, "quiet": 0, "quiet_rate": None},
+                        "by_scare": {
+                            "credit": {"n": 2, "tp": 1, "fp": 1, "hit_rate": None},
+                        },
+                        "recovery": None,
+                    },
+                },
+            }
+        },
+    }
+    p = tmp_path / "site" / "riskdata" / "scorecard.json"
+    p.write_text(json.dumps(obj))
+    return p
+
+
+class TestRiskRadarReliabilityLobe:
+    """Tests for the risk_radar_reliability bridge lobe."""
+
+    def test_lobe_present_and_standing_law(self, tmp_path):
+        """risk_radar_reliability lobe must be present and carry standing_law."""
+        _build_minimal_tree(tmp_path)
+        _minimal_rr_scorecard(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        rr = payload["lobes"].get("risk_radar_reliability")
+        assert rr is not None, "risk_radar_reliability lobe missing"
+        assert "standing_law" in rr, "lobe missing standing_law"
+        law = rr["standing_law"]
+        assert len(law) > 20, "standing_law too short"
+        # Must mention graded and track record (no 'validated')
+        assert "graded" in law.lower() or "track record" in law.lower(), (
+            "standing_law must reference 'graded' or 'track record'"
+        )
+        assert "validated" not in law.lower(), (
+            "standing_law must NOT contain the banned word 'validated'"
+        )
+
+    def test_lobe_has_markets_key(self, tmp_path):
+        """Lobe must have a 'markets' dict with at least 'us'."""
+        _build_minimal_tree(tmp_path)
+        _minimal_rr_scorecard(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        rr = payload["lobes"].get("risk_radar_reliability", {})
+        assert "markets" in rr, "lobe missing 'markets' key"
+        assert isinstance(rr["markets"], dict), "'markets' must be a dict"
+        assert "us" in rr["markets"], "'us' market missing from lobe"
+
+    def test_us_alert_hit_rate_correct(self, tmp_path):
+        """US y1 alert hit_rate must match fixture (8/12)."""
+        _build_minimal_tree(tmp_path)
+        _minimal_rr_scorecard(tmp_path, us_alert_n=12, us_alert_tp=8)
+        payload = build_context(root=tmp_path, now=_NOW)
+        rr = payload["lobes"].get("risk_radar_reliability", {})
+        us = rr.get("markets", {}).get("us", {})
+        y1a = us.get("y1_alerts", {})
+        assert y1a.get("n") == 12, f"Expected n=12, got {y1a.get('n')}"
+        assert y1a.get("tp") == 8, f"Expected tp=8, got {y1a.get('tp')}"
+        assert y1a.get("hit_rate") == pytest.approx(8 / 12, rel=1e-4), (
+            f"Expected hit_rate~=0.667, got {y1a.get('hit_rate')}"
+        )
+        assert y1a.get("insufficient_n") is False, (
+            "insufficient_n should be False when n=12 >= 5"
+        )
+
+    def test_null_rate_emits_insufficient_n(self, tmp_path):
+        """When n < 5, hit_rate=null and insufficient_n=True must be emitted."""
+        _build_minimal_tree(tmp_path)
+        _minimal_rr_scorecard_small_n(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        rr = payload["lobes"].get("risk_radar_reliability", {})
+        us = rr.get("markets", {}).get("us", {})
+        y1a = us.get("y1_alerts", {})
+        assert y1a.get("hit_rate") is None, (
+            "hit_rate must be null when n < 5 (insufficient_n)"
+        )
+        assert y1a.get("insufficient_n") is True, (
+            "insufficient_n must be True when n < 5"
+        )
+        y1wc = us.get("y1_watch_caution", {})
+        assert y1wc.get("precursor_rate") is None, (
+            "precursor_rate must be null when n < 5"
+        )
+        assert y1wc.get("insufficient_n") is True
+
+    def test_top_scares_sorted_by_count(self, tmp_path):
+        """top_scares must be sorted by n descending (credit n=6 > rates n=4)."""
+        _build_minimal_tree(tmp_path)
+        _minimal_rr_scorecard(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        rr = payload["lobes"].get("risk_radar_reliability", {})
+        us = rr.get("markets", {}).get("us", {})
+        scares = us.get("top_scares", [])
+        assert len(scares) <= 2, "top_scares must be capped at 2"
+        if len(scares) >= 2:
+            assert scares[0]["n"] >= scares[1]["n"], (
+                "top_scares must be sorted descending by n"
+            )
+        # credit has n=6, must be first
+        if scares:
+            assert scares[0]["scare"] == "credit", (
+                f"Expected 'credit' first (n=6); got {scares[0]['scare']!r}"
+            )
+
+    def test_monitoring_health_fields(self, tmp_path):
+        """Monitoring block must carry log_fresh, ungraded_backlog, graded_n."""
+        _build_minimal_tree(tmp_path)
+        _minimal_rr_scorecard(tmp_path, us_graded_n=30)
+        payload = build_context(root=tmp_path, now=_NOW)
+        rr = payload["lobes"].get("risk_radar_reliability", {})
+        us = rr.get("markets", {}).get("us", {})
+        mon = us.get("monitoring", {})
+        assert mon.get("log_fresh") is True
+        assert mon.get("graded_n") == 30
+        assert "ungraded_backlog" in mon
+
+    def test_absent_scorecard_produces_gap_note(self, tmp_path):
+        """Missing scorecard.json must add a gap_note and not raise."""
+        _build_minimal_tree(tmp_path)
+        # Deliberately do NOT write scorecard.json
+        payload = build_context(root=tmp_path, now=_NOW)
+        gap_str = " ".join(payload["gap_notes"])
+        assert "risk_radar" in gap_str or "scorecard" in gap_str, (
+            f"Expected risk_radar/scorecard gap note; got: {payload['gap_notes']}"
+        )
+        # Lobe key must still be present (fail-soft)
+        assert "risk_radar_reliability" in payload["lobes"], (
+            "risk_radar_reliability key must be present even when scorecard absent"
+        )
+
+    def test_malformed_json_produces_gap_note(self, tmp_path):
+        """Malformed scorecard.json must not raise — fail-soft with gap note."""
+        _build_minimal_tree(tmp_path)
+        (tmp_path / "site" / "riskdata").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "site" / "riskdata" / "scorecard.json").write_text("{{not valid json")
+        payload = build_context(root=tmp_path, now=_NOW)
+        gap_str = " ".join(payload["gap_notes"])
+        assert "risk_radar" in gap_str or "scorecard" in gap_str, (
+            f"Expected gap note for malformed scorecard; got: {payload['gap_notes']}"
+        )
+        assert "risk_radar_reliability" in payload["lobes"]
+
+    def test_absent_market_emits_absent_marker(self, tmp_path):
+        """Market keys absent from scorecard (hk/ca) must appear with _absent=True."""
+        _build_minimal_tree(tmp_path)
+        # Only us and cn in fixture (hk, ca absent)
+        _minimal_rr_scorecard(tmp_path, include_cn=True, include_hk=False, include_ca=False)
+        payload = build_context(root=tmp_path, now=_NOW)
+        rr = payload["lobes"].get("risk_radar_reliability", {})
+        markets = rr.get("markets", {})
+        hk = markets.get("hk", {})
+        ca = markets.get("ca", {})
+        assert hk.get("_absent") is True, "hk must be absent-marked when not in scorecard"
+        assert ca.get("_absent") is True, "ca must be absent-marked when not in scorecard"
+
+    def test_no_validated_text_in_lobe(self, tmp_path):
+        """The word 'validated' must not appear anywhere in the lobe (CI-banned)."""
+        _build_minimal_tree(tmp_path)
+        _minimal_rr_scorecard(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        rr = payload["lobes"].get("risk_radar_reliability", {})
+        lobe_str = json.dumps(rr)
+        assert "validated" not in lobe_str.lower(), (
+            "The word 'validated' must not appear in risk_radar_reliability lobe "
+            "(CI-banned by scripts/check_validated_claims.py)"
+        )
+
+    def test_recovery_rate_present_when_n_geq_5(self, tmp_path):
+        """Recovery rate must be non-null when n >= 5 in fixture."""
+        _build_minimal_tree(tmp_path)
+        _minimal_rr_scorecard(tmp_path)  # recovery n=8 >= 5
+        payload = build_context(root=tmp_path, now=_NOW)
+        rr = payload["lobes"].get("risk_radar_reliability", {})
+        us = rr.get("markets", {}).get("us", {})
+        rec = us.get("recovery", {})
+        assert rec.get("rate") is not None, (
+            "recovery.rate must be non-null when n=8 >= 5"
+        )
+        assert rec.get("insufficient_n") is False
+
+    def test_lobe_does_not_clobber_claim_reliability(self, tmp_path):
+        """risk_radar_reliability must be a separate lobe from claim_reliability."""
+        _build_minimal_tree(tmp_path)
+        _minimal_rr_scorecard(tmp_path)
+        _minimal_track_record(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        lobes = payload["lobes"]
+        assert "claim_reliability" in lobes, "claim_reliability must still be present"
+        assert "risk_radar_reliability" in lobes, "risk_radar_reliability must be present"
+        # Structural check: different keys
+        cr = lobes["claim_reliability"]
+        rr = lobes["risk_radar_reliability"]
+        assert "desks" in cr, "claim_reliability must still have desks key"
+        assert "markets" in rr, "risk_radar_reliability must have markets key"
+        assert "desks" not in rr, (
+            "risk_radar_reliability must NOT have a 'desks' key (wrong lobe)"
+        )
+
+
+# ---------------------------------------------------------------------------
 # 14. freshest_market_asof (freshness contract fix)
 # ---------------------------------------------------------------------------
 
