@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -50,6 +51,11 @@ from . import github_api
 from .paths import ROOT
 
 log = logging.getLogger(__name__)
+
+# Per-lobe journals carry suffixed cycle ids ("cycle-2026-07-14-9623-site-us-
+# standouts"); the operator thinks in whole loops, so rollups group on the
+# base id.
+_BASE_CYCLE_RE = re.compile(r"^(cycle-\d{4}-\d{2}-\d{2}-[0-9a-fA-F]{4})(?:-|$)")
 
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -179,6 +185,27 @@ def _derive_blocker(journal: dict) -> str | None:
         return None
 
 
+def _derive_skip_note(journal: dict) -> str | None:
+    """Plain-word explanation when lobes sat the loop out BY DESIGN.
+
+    Attention-cadence skips (propose_skip reasons like "cadence:MAINTENANCE:1/4"
+    or "attention_skip"/"attention_dormant") are healthy behavior, not blockers —
+    the headline should say so instead of a bare "Nothing this cycle".
+    Never raises.
+    """
+    try:
+        stages = journal.get("stages") or {}
+        for rec in stages.values():
+            note = str(rec.get("note") or "").lower()
+            if "cadence:" in note or "attention_skip" in note:
+                return "lobes sat this loop out by design (attention cadence)"
+            if "attention_dormant" in note:
+                return "lobes dormant by attention banding"
+        return None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _derive_headline(journal: dict, proposals: list[dict], verdicts: list[dict],
                      builds: list[dict]) -> str:
     """Derive a plain-word headline for the cycle.
@@ -203,6 +230,9 @@ def _derive_headline(journal: dict, proposals: list[dict], verdicts: list[dict],
             blocker = _derive_blocker(journal)
             if blocker:
                 return f"Nothing this cycle — {blocker}"
+            skip = _derive_skip_note(journal)
+            if skip:
+                return f"Nothing this cycle — {skip}"
             status = journal.get("status") or "unknown"
             stage = journal.get("stage") or ""
             if status in ("noop_paused",):
@@ -447,6 +477,46 @@ def _read_cycle_journals(base: Path, limit_cycles: int) -> list[dict]:
         return []
 
 
+def _merge_journal_group(base_id: str, group: list[dict]) -> dict:
+    """Merge a base cycle's per-lobe journal files into one synthetic journal.
+
+    Stages merge per stage-key: distinct notes are joined with " ; " (so a
+    cadence-skip note from one lobe and a done note from another both survive),
+    and a failed/noop_paused status wins over done. status/stage come from the
+    base-id journal when present, else the first file. Never raises.
+    """
+    try:
+        primary = next((j for j in group
+                        if str(j.get("cycle_id") or "") == base_id), group[0])
+        merged_stages: dict[str, dict] = {}
+        for j in group:
+            for key, rec in (j.get("stages") or {}).items():
+                if not isinstance(rec, dict):
+                    continue
+                if key not in merged_stages:
+                    merged_stages[key] = dict(rec)
+                    continue
+                cur = merged_stages[key]
+                st_new = str(rec.get("status") or "")
+                if st_new in ("failed", "noop_paused") and \
+                        str(cur.get("status") or "") not in ("failed", "noop_paused"):
+                    cur["status"] = st_new
+                notes = []
+                for n in (cur.get("note"), rec.get("note")):
+                    if n and n not in notes:
+                        notes.append(str(n))
+                if notes:
+                    cur["note"] = " ; ".join(notes)
+        return {
+            "cycle_id": base_id,
+            "stage": primary.get("stage"),
+            "status": primary.get("status"),
+            "stages": merged_stages,
+        }
+    except Exception:  # noqa: BLE001
+        return {"cycle_id": base_id, "stages": {}}
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Public entry point
 # ─────────────────────────────────────────────────────────────────────────────
@@ -474,18 +544,51 @@ def achievements(limit_cycles: int = 20, root: Path | None = None) -> dict:
         verify_by_cycle = _load_verify_by_cycle(base)
         audit_by_proposal = _load_audit_by_proposal(base)
 
+        # ── Group per-lobe journal files under their base cycle id ──────────
+        # (one loop = one card; per-lobe files merge their achievements/stages)
+        grouped: dict[str, list[dict]] = {}
+        order: list[str] = []
+        for j in journals:
+            cid = str(j.get("cycle_id") or "")
+            if not cid:
+                continue
+            m = _BASE_CYCLE_RE.match(cid)
+            base_id = m.group(1) if m else cid
+            if base_id not in grouped:
+                grouped[base_id] = []
+                order.append(base_id)
+            grouped[base_id].append(j)
+
         cycles: list[dict] = []
-        for journal in journals:
+        for cycle_id in order:
             try:
-                cycle_id = str(journal.get("cycle_id") or "")
-                if not cycle_id:
-                    continue
+                group = grouped[cycle_id]
+                journal = _merge_journal_group(cycle_id, group)
 
                 # ── Extract achievements key (FROZEN CONTRACT) ──────────────
-                ach = journal.get("achievements") or {}
-                proposals: list[dict] = ach.get("proposals") or []
-                verdicts: list[dict] = ach.get("verdicts") or []
-                builds: list[dict] = ach.get("builds") or []
+                proposals: list[dict] = []
+                verdicts: list[dict] = []
+                builds: list[dict] = []
+                seen_p: set = set()
+                seen_v: set = set()
+                seen_b: set = set()
+                for j in group:
+                    ach = j.get("achievements") or {}
+                    for p in (ach.get("proposals") or []):
+                        pid = p.get("id")
+                        if pid not in seen_p:
+                            seen_p.add(pid)
+                            proposals.append(p)
+                    for v in (ach.get("verdicts") or []):
+                        vid = v.get("id")
+                        if vid not in seen_v:
+                            seen_v.add(vid)
+                            verdicts.append(v)
+                    for b in (ach.get("builds") or []):
+                        bid = b.get("id")
+                        if bid not in seen_b:
+                            seen_b.add(bid)
+                            builds.append(b)
 
                 # ── Stage summaries ─────────────────────────────────────────
                 stages_raw = journal.get("stages") or {}
