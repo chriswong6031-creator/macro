@@ -468,6 +468,61 @@ def breadth_divergence(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
                             f"（{b2p.iloc[-1]:.0%} 分位）— 抬指数的个股在减少")
 
 
+# --- VSB W6: implied-correlation floor-break alert ---------------------------
+
+def corr_floor_break(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
+    """Stocks starting to move together after an extreme quiet-and-split stretch.
+
+    Fires when the COR1M (1-month implied correlation, data/cboe/cor1m.parquet)
+    satisfies the CONFIRMER condition: an extreme-low floor in the trailing 252d
+    distribution AND a significant rise off that floor.
+
+    This is a CONFIRMER of stress underway, not a lead.  Correlation rises
+    AFTER hedging demand builds; it does not predict the event.
+
+    Detection is delegated to engine.risk_radar.detect_corr_floor_break() —
+    SINGLE SOURCE OF TRUTH.  No copy-paste drift between the radar leg and
+    the alert.  The rule fires only on the DAY the condition turns True
+    (yesterday False → today True); i.e. it is a TRANSITION alert.
+    """
+    if not config.load()["alerts"].get("corr_floor_break", True):
+        return None
+    try:
+        from pathlib import Path as _Path
+        from lib import config as _cfg                       # noqa: PLC0415
+        cor1m_path = _cfg.data_dir() / "cboe" / "cor1m.parquet"
+        if not cor1m_path.exists():
+            return None
+        cor1m_df = pd.read_parquet(cor1m_path)
+        if "close" not in cor1m_df.columns:
+            return None
+        cor1m_s = cor1m_df["close"].dropna()
+        cor1m_s.index = pd.to_datetime(cor1m_s.index)
+        from engine.risk_radar import detect_corr_floor_break  # noqa: PLC0415
+        # need at least 2 rows to detect a transition
+        if len(cor1m_s) < 2:
+            return None
+        today_fires = detect_corr_floor_break(cor1m_s)
+        yest_fires = detect_corr_floor_break(cor1m_s.iloc[:-1])
+        if today_fires and not yest_fires:
+            latest = round(float(cor1m_s.iloc[-1]), 1)
+            return Alert(
+                "corr_floor_break", "warn",
+                f"Implied correlation (COR1M) spiking off an extreme floor "
+                f"(latest={latest}) — stocks starting to move together after an "
+                f"extended quiet-and-split stretch; CONFIRMER of stress underway, "
+                f"not a lead",
+                message_zh=(
+                    f"隐含相关性（COR1M）从极低底部骤升（当前={latest}）——"
+                    f"在长期平静分化后，个股开始同向波动；"
+                    f"这是压力已成形的确认信号，而非领先指标"
+                ),
+            )
+    except Exception as e:  # noqa: BLE001 — one rule must not kill the rest
+        log.error("corr_floor_break alert rule failed: %s", e)
+    return None
+
+
 # --- runner ---------------------------------------------------------------------
 
 def evaluate(f: pd.DataFrame) -> list[Alert]:
@@ -479,7 +534,8 @@ def evaluate(f: pd.DataFrame) -> list[Alert]:
     rules = [transition_state_change, net_liquidity_roc_flip, hy_oas_widening,
              gex_flip_cross, conditions_recession_state_change, nfci_tightening,
              sahm_trigger, ebp_widening, drawdown_risk_high, capitulation_signal,
-             risk_state_elevated, hidden_fragility, breadth_divergence]
+             risk_state_elevated, hidden_fragility, breadth_divergence,
+             corr_floor_break]  # VSB W6: COR1M confirmer
     multi = [axis_confidence_floor, sector_rs_percentile_cross,
              holdings_active_changes, sector_holdings_accumulation,
              circuit_breaker_open]
@@ -601,6 +657,24 @@ ALERT_META: dict[str, dict] = {
                    "200-day average is weak — a thinning tape. A narrowing-leadership caution.",
         "what_zh": "指数接近一年高点，但站上200日均线的个股占比偏弱 — 走势变薄。"
                    "属领导面收窄的警示。",
+        "anchor": "dlg-risk",
+    },
+    # VSB W6: implied-correlation floor-break CONFIRMER alert
+    "corr_floor_break": {
+        "icon": "🔗",
+        "plain_en": "Stocks moving together again after an extreme quiet stretch",
+        "plain_zh": "个股联动重现 — 极度平静分化后相关性骤升",
+        "what_en": "Implied correlation (COR1M) is spiking off an extreme low floor — "
+                   "the structure that kept the index calm while individual stocks moved "
+                   "independently is unclenching. Stocks are starting to move together "
+                   "again, which confirms stress underway. This is NOT a leading signal: "
+                   "correlation rises after hedging demand builds, so by the time it fires "
+                   "the market is already stressed. Watch for breadth narrowing or credit "
+                   "widening alongside. De-risk = sizing, not selection.",
+        "what_zh": "隐含相关性（COR1M）从极低底部骤升——此前维持指数平稳而个股分化的结构正在松解。"
+                   "个股开始重新同向波动，确认压力已经形成。"
+                   "这不是领先指标：相关性在对冲需求建立之后才上升，因此信号触发时市场已承压。"
+                   "需同步关注宽度收窄或信用利差走阔。应对是调整仓位规模，而非择股。",
         "anchor": "dlg-risk",
     },
     "transition_state_change": {
@@ -908,6 +982,12 @@ ALERT_CONVICTION: dict[str, dict] = {
     "breadth_divergence": {"tier": "watch",
         "edge_en": "Medium — fewer names carrying the index; a thinning-tape caution, not a timer.",
         "edge_zh": "中 — 抬指数的个股在减少；属于宽度变薄的警示，而非择时。"},
+    # VSB W6: corr_floor_break is a CONFIRMER, not a lead — explicitly lower tier
+    "corr_floor_break": {"tier": "context",
+        "edge_en": "Context — confirms stress already underway (correlation lags hedging demand); "
+                   "NOT a leading signal. Watch alongside breadth and credit.",
+        "edge_zh": "背景 — 确认压力已经成形（相关性滞后于对冲需求）；并非领先信号。"
+                   "结合宽度和信用信号一起观察。"},
     "conditions_recession_state_change": {"tier": "watch",
         "edge_en": "Medium — slow and lagging, but a band shift re-prices the defensive posture.",
         "edge_zh": "中 — 缓慢且滞后，但等级变动会重新定价防御姿态。"},

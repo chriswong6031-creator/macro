@@ -2934,6 +2934,7 @@ alerts:
   risk_state_elevated: true          # fire when the core risk-state crosses into elevated (>=60)
   hidden_fragility: true             # fire when complacency crosses into watch/hidden-fragility (calm + weak)
   breadth_divergence: true           # fire when index near 1y high while %>200dma turns weak
+  corr_floor_break: true             # VSB W6: fire when COR1M spikes off an extreme floor (confirmer)
   # --- per-ticker / per-ETF alert feed (engine/ticker_alerts.py) ---
   ticker_timeline_days: 120           # window shown in each ticker / ETF alert feed
   ticker_max_events: 50               # cap on events kept per feed (most-recent-first)

@@ -54,6 +54,26 @@ _PCT_MINP = 63
 _FLOW_MIN_HISTORY = 252  # put/call & GEX legs stay INERT until this many rows accrue (deep history
                          # is not freely available, so they validate FORWARD via the Opus loop)
 
+# --- VSB W6 Tier-B leg constants (calibration-overlay-able) -----------------
+# corr_floor_break: COR1M floor-then-spike CONFIRMER.
+#   _CORR_WINDOW:        rolling window for 20-session min (the "floor" base)
+#   _CORR_HIST_WIN:      trailing history window for percentile distributions
+#   _CORR_HIST_MINP:     min rows before any percentile is computed
+#   _CORR_BASE_PCT_THR:  base must be in the BOTTOM N% of its 252d distribution to qualify
+#   _CORR_RISE_PCT_THR:  rise must be in the TOP M% of the 252d rise distribution to qualify
+#   _CORR_MIN_HISTORY:   minimum rows in the COR1M series before the leg activates
+_CORR_WINDOW = 20          # rolling window for base = min(prior 20 sessions)
+_CORR_HIST_WIN = 252       # trailing distribution window for base-pctile and rise-pctile
+_CORR_HIST_MINP = 63       # min valid obs before pctile is usable
+_CORR_BASE_PCT_THR = 10.0  # bottom 10th pctile of 252d trailing base = "extreme floor"
+_CORR_RISE_PCT_THR = 90.0  # top 90th pctile of 252d trailing rises = "significant spike"
+_CORR_MIN_HISTORY = 252    # inert until this many COR1M rows are available
+
+# ai_breadth_divergence: |spread_50| extreme vs its own trailing 252d 90th-pctile.
+_AI_BREADTH_MIN_HISTORY = 252  # inert while obs < 252 (young series; expected for months)
+_AI_BREADTH_HIST_WIN = 252     # trailing distribution window for abs(spread_50) pctile
+_AI_BREADTH_PCT_THR = 90.0     # |spread_50| must exceed its own 90th trailing pctile to fire
+
 # --- C3 global-breadth Tier-B leg (INTL Fix Masterplan §5 C3, CONFIRMED #938) --------------
 # % of the country ETFs in data/intl_etf/ above their 200dma → causal 504d percentile of
 # (-breadth), so HIGH value = LOW breadth = danger (the same "risk-rising" convention as
@@ -97,6 +117,27 @@ _LEG_CALIB = {
     # graded on this engine's forward-outcome log — so it enters accruing (lift_2020 unknown),
     # display/escalator-only, never a US-state originator, until the audit loop matures it.
     "global_breadth":   {"lift_2020": None, "lift_full": None, "lead_d": 21, "thr_pct": 0.70, "era_robust": False, "accruing": True},
+    # --- VSB W6 Tier-B accruing legs (masterplan §5/W6 + §6) -----------------------------------
+    # corr_floor_break: implied-correlation floor-then-spike detector (COR1M, data/cboe/cor1m.parquet).
+    # CONFIRMER of a break in progress, NOT a lead — correlation begins rising after hedging demand
+    # already built. Tier-B / vol scare. lift_2020=None (accruing; forward-graded via Opus loop).
+    # Detection: (base_pctile <= 10th AND rise_pctile >= 90th) over trailing 252d distributions.
+    # Percentile thresholds live in _CORR_FLOOR_BASE_PCT / _CORR_FLOOR_RISE_PCT (overlay-able).
+    "corr_floor_break":     {"lift_2020": None, "lift_full": None, "lead_d": 0,  "thr_pct": 0.85,
+                             "era_robust": False, "accruing": True, "display_only": True,
+                             "note": "CONFIRMER (not lead): COR1M extreme-low floor then spike; "
+                                     "deeplink vol scare. Forward-graded before trusted. "
+                                     "display_only=True: STRUCTURALLY UNABLE to move scare tier "
+                                     "until gauntlet-promoted (VSB W6 doctrine)."},
+    # ai_breadth_divergence: |spread_50| extreme (AI-cohort vs non-AI pct-above-50dma spread).
+    # Source: data/breadth/breadth_split.parquet 'spread_50'. Inert while obs < 252 (young series).
+    # Tier-B / internals scare. lift_2020=None (accruing).
+    "ai_breadth_divergence":{"lift_2020": None, "lift_full": None, "lead_d": 5,  "thr_pct": 0.85,
+                             "era_robust": False, "accruing": True, "display_only": True,
+                             "note": "AI vs non-AI breadth extreme divergence; Tier-B internals. "
+                                     "Inert while data/breadth/breadth_split.parquet obs < 252. "
+                                     "display_only=True: STRUCTURALLY UNABLE to move scare tier "
+                                     "until gauntlet-promoted (VSB W6 doctrine)."},
     # --- RRX masterplan §4B W3 Tier-B accruing legs (scripts/study_rrx_tierb_phase0.py) ----------
     # nh_contraction: pct_rank_window(-nh_share_21d, 504) on near-high (SPY >= 0.98×252d-max) days,
     # 0.0 elsewhere.  Phase-0 measured: lift_full=0.275, lift_2020=0.000, fire_rate=0.0107,
@@ -135,7 +176,11 @@ _SCARES = {
     "growth":  {"tier": "A", "legs": [("growth_defensives", 0.50), ("growth_cyc_def", 0.50)]},
     # vol = Tier-B (display/escalator-only). vol_term is weak; vol_putcall/vol_gex are INERT until
     # mature then auto-join (they're absent from leading_signals() until >=_FLOW_MIN_HISTORY rows).
-    "vol":     {"tier": "B", "legs": [("vol_term", 0.5), ("vol_putcall", 0.3), ("vol_gex", 0.2)]},
+    # VSB W6 ADDITIVE: corr_floor_break (weight 1.0) added; existing leg weights UNCHANGED.
+    # subscore_series renormalizes over AVAILABLE legs — corr_floor_break is absent when
+    # data/cboe/cor1m.parquet is missing (degrade-don't-crash).
+    "vol":     {"tier": "B", "legs": [("vol_term", 0.5), ("vol_putcall", 0.3), ("vol_gex", 0.2),
+                                      ("corr_floor_break", 1.0)]},
     # global = Tier-B (display/escalator-only). The C3 global-breadth barometer (INTL-38): the US
     # book's window into the cross-market breadth channel. It carries a de-risk edge ORTHOGONAL to
     # the domestic legs (C3 verdict), but rides Tier-B so it can only escalate a hot Tier-A read,
@@ -150,7 +195,12 @@ _SCARES = {
     # RRX masterplan §4B R1. Phase-0 NULL (lift_2020=0.0, perm_p=0.978) — retained as confluence
     # input per context-accrual law (kills are construction-specific; null ≠ worthless). Can escalate
     # a hot Tier-A bubble read but CANNOT originate state. Come-back 2026-10-15.
-    "internals": {"tier": "B", "legs": [("nh_contraction", 1.0)]},
+    # VSB W6 ADDITIVE: ai_breadth_divergence (weight 1.0) added alongside nh_contraction (1.0).
+    # subscore_series renormalizes over AVAILABLE legs by the sum of their weights — both legs carry
+    # weight 1.0; the sub-score is their available-weighted mean. ai_breadth_divergence is inert
+    # while obs < 252 (absent from leading_signals); nh_contraction behavior is UNCHANGED when
+    # ai_breadth_divergence is absent (the renormalization only applies to present legs).
+    "internals": {"tier": "B", "legs": [("nh_contraction", 1.0), ("ai_breadth_divergence", 1.0)]},
 }
 _SCARE_LABEL = {
     "credit":    ("Credit stress", "信用压力"),
@@ -295,6 +345,116 @@ def _global_breadth_raw() -> pd.Series | None:
     except Exception as e:  # noqa: BLE001 — additive; a store hiccup must not break the radar
         log.warning("risk_radar global-breadth leg read failed: %s", e)
         return None
+
+
+# --- VSB W6 helpers ----------------------------------------------------------
+
+def _midrank_pctile_series(series: pd.Series, window: int) -> pd.Series:
+    """Trailing midrank percentile: (count_less + 0.5*count_equal) / n * 100.
+
+    Tie-robust: a frozen/constant feed scores 50 (neutral) rather than 100.
+    Mirrors engine/vol_velocity._trailing_pctile exactly — use that function when
+    importing it cleanly.  This replicates the same kernel for in-file use.
+    See engine/vol_velocity._trailing_pctile for the canonical reference.
+    """
+    if len(series) < window:
+        return pd.Series(np.nan, index=series.index)
+    return series.rolling(window, min_periods=window).apply(
+        lambda w: (float(np.sum(w < w[-1])) + 0.5 * float(np.sum(w == w[-1])))
+        / len(w) * 100,
+        raw=True,
+    )
+
+
+def detect_corr_floor_break(
+    cor1m: pd.Series,
+    *,
+    corr_window: int = _CORR_WINDOW,
+    hist_win: int = _CORR_HIST_WIN,
+    base_pct_thr: float = _CORR_BASE_PCT_THR,
+    rise_pct_thr: float = _CORR_RISE_PCT_THR,
+) -> bool:
+    """Return True when the COR1M floor-then-spike condition fires on the LATEST row.
+
+    CONFIRMER (not lead): this detects a break already in progress — correlation
+    begins rising after hedging demand has built.  Do NOT use it as a leading indicator.
+
+    Condition (ALL relative, zero absolute anchors):
+      base[t]   = min(COR1M over prior 20 sessions)    <- rolling 20-session floor
+      rise[t]   = COR1M[t] - base[t]                  <- how much it rose off the floor
+      base_pctile = midrank percentile of base over trailing 252d
+      rise_pctile = midrank percentile of rise over trailing 252d
+
+    FIRE when: base_pctile <= base_pct_thr   (extreme-low floor, bottom N%)
+           AND rise_pctile >= rise_pct_thr   (significant spike off that floor, top M%)
+
+    Both thresholds are calibration-overlay-able via the constants above.
+    Absent-safe: returns False if series is too short or all-NaN.
+    """
+    s = cor1m.dropna()
+    if len(s) < _CORR_MIN_HISTORY:
+        return False
+    # base = min over prior 20 sessions (trailing, causal)
+    base = s.rolling(corr_window, min_periods=corr_window).min()
+    # rise = latest close minus its own floor
+    rise = s - base
+    # midrank percentiles over trailing hist_win
+    base_pct = _midrank_pctile_series(base, hist_win)
+    rise_pct = _midrank_pctile_series(rise, hist_win)
+    bp = base_pct.dropna()
+    rp = rise_pct.dropna()
+    if bp.empty or rp.empty:
+        return False
+    return bool(bp.iloc[-1] <= base_pct_thr and rp.iloc[-1] >= rise_pct_thr)
+
+
+def build_corr_floor_break(cor1m: pd.Series) -> pd.Series:
+    """COR1M floor-then-spike Tier-B leg (VSB W6).
+
+    Returns a causal binary-valued series (0.0 or 1.0) on the COR1M index.
+    A value of 1.0 means the CONFIRMER condition fires on that day.
+
+    NOTE: this series is 0/1 — it is NOT a causal percentile like most radar legs.
+    It plugs into leading_signals() and the subscore treats 1.0 as the fully-hot
+    reading (equivalent to pctile=1.0 on the 0-1 scale used by pcol()).  The
+    Tier-B / accruing status (lift_2020=None) means it can NEVER originate state.
+
+    CONFIRMER (not lead): correlation begins rising AFTER hedging demand builds.
+    This is a confirms-stress-underway signal, not a precursor.
+    """
+    s = cor1m.dropna()
+    if len(s) < _CORR_MIN_HISTORY:
+        return pd.Series(dtype=float, name="corr_floor_break")
+    base = s.rolling(_CORR_WINDOW, min_periods=_CORR_WINDOW).min()
+    rise = s - base
+    base_pct = _midrank_pctile_series(base, _CORR_HIST_WIN)
+    rise_pct = _midrank_pctile_series(rise, _CORR_HIST_WIN)
+    cond = (base_pct <= _CORR_BASE_PCT_THR) & (rise_pct >= _CORR_RISE_PCT_THR)
+    return cond.astype(float).rename("corr_floor_break")
+
+
+def build_ai_breadth_divergence(spread_50: pd.Series) -> pd.Series:
+    """AI breadth divergence Tier-B leg (VSB W6).
+
+    |spread_50| >= its own trailing-252d 90th midrank percentile of |spread_50|.
+
+    spread_50 = ai_pct50 - nonai_pct50 (% of AI vs non-AI stocks above 50dma).
+    A large absolute divergence (either direction) signals an unusual cohort split.
+
+    INERT while obs < _AI_BREADTH_MIN_HISTORY (252) — expected for months as the
+    series is newly computed nightly.  Returns empty Series when inert.
+
+    Returns a causal binary-valued series (0.0 or 1.0).
+    """
+    s = spread_50.dropna()
+    if len(s) < _AI_BREADTH_MIN_HISTORY:
+        # young series — inert and silent (no log spam)
+        return pd.Series(dtype=float, name="ai_breadth_divergence")
+    abs_s = s.abs()
+    abs_pct = _midrank_pctile_series(abs_s, _AI_BREADTH_HIST_WIN)
+    # fire when |spread_50| >= its own 90th trailing pctile
+    cond = abs_pct >= _AI_BREADTH_PCT_THR
+    return cond.astype(float).rename("ai_breadth_divergence")
 
 
 def build_nh_contraction(spy: pd.Series, breadth_df: "pd.DataFrame") -> "pd.Series":
@@ -442,6 +602,36 @@ def leading_signals() -> pd.DataFrame:
         nhc_leg_clean = nhc_leg.dropna()
         if len(nhc_leg_clean) >= _PCT_MINP:
             out["nh_contraction"] = nhc_leg.reindex(idx)
+    # --- VSB W6 Tier-B accruing legs ---------------------------------------------------
+    # corr_floor_break: COR1M floor-then-spike CONFIRMER → 'vol' scare.
+    # CONFIRMER not lead — fires when correlation starts rising off an extreme low floor.
+    # Absent (degrade-don't-crash) when data/cboe/cor1m.parquet is missing or too short.
+    try:
+        cor1m_df = pd.read_parquet(config.data_dir() / "cboe" / "cor1m.parquet")
+        cor1m_s = cor1m_df["close"].dropna()
+        cor1m_s.index = pd.to_datetime(cor1m_s.index)
+        if len(cor1m_s) >= _CORR_MIN_HISTORY:
+            cfb_leg = build_corr_floor_break(cor1m_s)
+            cfb_clean = cfb_leg.dropna()
+            if len(cfb_clean) >= _CORR_HIST_MINP:
+                out["corr_floor_break"] = cfb_leg.reindex(idx)
+    except Exception as e:  # noqa: BLE001 — additive; missing file must not break the radar
+        log.debug("risk_radar corr_floor_break leg unavailable: %s", e)
+    # ai_breadth_divergence: |spread_50| extreme → 'internals' scare.
+    # Inert while obs < 252 (young series, expected for months); absent when file missing.
+    try:
+        bs_path = config.data_dir() / "breadth" / "breadth_split.parquet"
+        if bs_path.exists():
+            bs_df = pd.read_parquet(bs_path)
+            if "spread_50" in bs_df.columns:
+                sp50 = bs_df["spread_50"].dropna()
+                sp50.index = pd.to_datetime(sp50.index)
+                ai_leg = build_ai_breadth_divergence(sp50)
+                ai_clean = ai_leg.dropna()
+                if len(ai_clean) >= _CORR_HIST_MINP:
+                    out["ai_breadth_divergence"] = ai_leg.reindex(idx)
+    except Exception as e:  # noqa: BLE001 — additive; missing file must not break the radar
+        log.debug("risk_radar ai_breadth_divergence leg unavailable: %s", e)
     return out
 
 
@@ -644,18 +834,32 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
     second = [s for s in tierA if s["score"] >= bands["watch"]]
     conjunction = len(armed) >= 1 and len(second) >= 2
     esc = conjunction
-    # Tier-B scares may escalate a hot Tier-A state, never originate one.  However a scare whose
-    # ALL firing legs carry lift_2020==0.0 (measured null — e.g. nh_contraction perm_p=0.978) is
-    # excluded from the escalation set until it accrues a real forward-graded lift.  This keeps
-    # phase-0 null legs display-only per the context-accrual law, preventing a noise signal from
-    # moving state/gross/banner.  Legs with lift_2020=None (unknown/accruing, e.g. vol flow legs,
-    # global_breadth) are NOT excluded — their lift is simply unmeasured, not measured-zero.
+    # Tier-B scares may escalate a hot Tier-A state, never originate one.  Two exclusion rules:
+    # (1) A scare whose ALL firing legs carry lift_2020==0.0 (measured null — e.g. nh_contraction
+    #     perm_p=0.978) is excluded from the escalation set until it accrues a real forward-graded
+    #     lift.  This keeps phase-0 null legs display-only per the context-accrual law.
+    #     Legs with lift_2020=None (unknown/accruing, e.g. vol flow legs, global_breadth) are
+    #     NOT excluded by this rule alone — their lift is simply unmeasured, not measured-zero.
+    # (2) VSB W6 doctrine — legs flagged display_only=True are STRUCTURALLY UNABLE to move a scare
+    #     tier regardless of lift_2020.  This preserves the spec requirement ("lift_2020=None-style
+    #     accruing registration so they can NEVER move a scare tier until gauntlet-promoted").
+    #     display_only legs count toward the scare's display score but are EXCLUDED from the
+    #     escalation computation.  When ALL remaining firing legs are display_only, the scare
+    #     cannot escalate.  When some non-display_only legs are present, those govern escalation.
     def _tierb_can_escalate(scare_d: dict, calib: dict) -> bool:
         legs = scare_d["firing_legs"]
         if not legs:
             return False
-        # all legs measured-zero → exclude from escalation
-        if all(calib["legs"].get(l["leg"], {}).get("lift_2020") == 0.0 for l in legs):
+        # Exclude display_only legs from escalation eligibility (VSB W6 doctrine)
+        escalatable = [
+            l for l in legs
+            if not calib["legs"].get(l["leg"], {}).get("display_only", False)
+        ]
+        if not escalatable:
+            # all firing legs are display_only — scare is structurally non-escalating
+            return False
+        # all remaining legs measured-zero → exclude from escalation
+        if all(calib["legs"].get(l["leg"], {}).get("lift_2020") == 0.0 for l in escalatable):
             return False
         return True
     if state != "calm" and any(
