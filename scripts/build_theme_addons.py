@@ -55,11 +55,23 @@ def main() -> int:
         log.error("vol_sentiment failed: %s", e)
 
     try:
-        from engine.fear_greed import compute_fear_greed
-        if _dump(fdir, "fear_greed.json", compute_fear_greed()):
+        from engine.fear_greed import compute_fear_greed, persist_dial_history
+        fg_payload = compute_fear_greed()
+        if _dump(fdir, "fear_greed.json", fg_payload):
             wrote.append("fear_greed")
+            try:
+                persist_dial_history(fg_payload)
+            except Exception as _pe:  # noqa: BLE001
+                log.error("persist_dial_history failed: %s", _pe)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("fear_greed failed: %s", e)
+
+    try:
+        from engine.vol_velocity import compute_vol_weather
+        if _dump(fdir, "vol_weather.json", compute_vol_weather()):
+            wrote.append("vol_weather")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("vol_weather failed: %s", e)
 
     # per-theme ATR extension — US always; CN/HK/CA opportunistically (skip on shortfall)
     try:

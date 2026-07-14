@@ -156,13 +156,15 @@ def _leg_spx_momentum() -> dict:
         z_val = _last(z_s)
         raw = _last(spread)
         pct = _pct_in_history(spread.dropna(), raw) if raw is not None else None
-        fresh = _freshness(spy.index.max())
+        ts_max = spy.index.max()
+        fresh = _freshness(ts_max)
         return {**meta, "value": _r(raw, 2), "z": _r(z_val),
-                "pct": pct, "freshness": fresh, "obs_count": obs}
+                "pct": pct, "freshness": fresh, "obs_count": obs,
+                "last_date": _ts_iso(ts_max)}
     except Exception as e:  # noqa: BLE001
         log.warning("%s failed: %s", key, e)
         return {**meta, "value": None, "z": None, "pct": None,
-                "freshness": "missing", "obs_count": None}
+                "freshness": "missing", "obs_count": None, "last_date": None}
 
 
 def _leg_nh_nl_ratio() -> dict:
@@ -185,13 +187,15 @@ def _leg_nh_nl_ratio() -> dict:
         z_val = _last(z_s)
         raw = _last(ratio)
         pct = _pct_in_history(ratio, raw) if raw is not None else None
-        fresh = _freshness(ratio.index.max())
+        ts_max = ratio.index.max()
+        fresh = _freshness(ts_max)
         return {**meta, "value": _r(raw), "z": _r(z_val),
-                "pct": pct, "freshness": fresh, "obs_count": obs}
+                "pct": pct, "freshness": fresh, "obs_count": obs,
+                "last_date": _ts_iso(ts_max)}
     except Exception as e:  # noqa: BLE001
         log.warning("%s failed: %s", key, e)
         return {**meta, "value": None, "z": None, "pct": None,
-                "freshness": "missing", "obs_count": None}
+                "freshness": "missing", "obs_count": None, "last_date": None}
 
 
 def _leg_mcclellan() -> dict:
@@ -221,13 +225,15 @@ def _leg_mcclellan() -> dict:
         z_val = _last(z_s)
         raw = _last(osc)
         pct = _pct_in_history(osc.dropna(), raw) if raw is not None else None
-        fresh = _freshness(osc.index.max())
+        ts_max = osc.index.max()
+        fresh = _freshness(ts_max)
         return {**meta, "value": _r(raw, 1), "z": _r(z_val),
-                "pct": pct, "freshness": fresh, "obs_count": obs}
+                "pct": pct, "freshness": fresh, "obs_count": obs,
+                "last_date": _ts_iso(ts_max)}
     except Exception as e:  # noqa: BLE001
         log.warning("%s failed: %s", key, e)
         return {**meta, "value": None, "z": None, "pct": None,
-                "freshness": "missing", "obs_count": None}
+                "freshness": "missing", "obs_count": None, "last_date": None}
 
 
 def _leg_hy_oas() -> dict:
@@ -253,16 +259,18 @@ def _leg_hy_oas() -> dict:
             pct_raw = _pct_in_history(oas.dropna(), raw)
             # invert pct: high OAS = high percentile = fear = low greed pct
             pct = (100 - pct_raw) if pct_raw is not None else None
-            fresh = _freshness(oas.index.max())
+            ts_max = oas.index.max()
+            fresh = _freshness(ts_max)
             return {**meta, "value": _r(raw, 2), "z": _r(z_val),
-                    "pct": pct, "freshness": fresh, "obs_count": obs}
+                    "pct": pct, "freshness": fresh, "obs_count": obs,
+                    "last_date": _ts_iso(ts_max)}
         else:
             # fallback: HYG/IEF price ratio
             hyg = store.read("yahoo", "HYG")
             ief = store.read("yahoo", "IEF")
             if hyg is None or ief is None:
                 return {**meta, "value": None, "z": None, "pct": None,
-                        "freshness": "missing", "obs_count": 0}
+                        "freshness": "missing", "obs_count": 0, "last_date": None}
             hc = hyg["close"].dropna() if "close" in hyg.columns else pd.Series(dtype=float)
             ic = ief["close"].dropna() if "close" in ief.columns else pd.Series(dtype=float)
             ratio = (hc / ic.reindex(hc.index).ffill(limit=5)).dropna()
@@ -271,14 +279,16 @@ def _leg_hy_oas() -> dict:
             z_val = _last(z_s)       # higher ratio = greed
             raw = _last(ratio)
             pct = _pct_in_history(ratio.dropna(), raw) if raw is not None else None
-            fresh = _freshness(ratio.index.max())
+            ts_max = ratio.index.max() if obs else None
+            fresh = _freshness(ts_max)
             meta["unit"] = "HYG/IEF ratio (fallback)"
             return {**meta, "value": _r(raw), "z": _r(z_val),
-                    "pct": pct, "freshness": fresh, "obs_count": obs}
+                    "pct": pct, "freshness": fresh, "obs_count": obs,
+                    "last_date": _ts_iso(ts_max)}
     except Exception as e:  # noqa: BLE001
         log.warning("%s failed: %s", key, e)
         return {**meta, "value": None, "z": None, "pct": None,
-                "freshness": "missing", "obs_count": None}
+                "freshness": "missing", "obs_count": None, "last_date": None}
 
 
 def _leg_safe_haven() -> dict:
@@ -292,7 +302,7 @@ def _leg_safe_haven() -> dict:
         tlt = store.read("yahoo", "TLT")
         if spy is None or tlt is None:
             return {**meta, "value": None, "z": None, "pct": None,
-                    "freshness": "missing", "obs_count": None}
+                    "freshness": "missing", "obs_count": None, "last_date": None}
         sc = spy["close"].dropna() if "close" in spy.columns else pd.Series(dtype=float)
         tc = tlt["close"].dropna() if "close" in tlt.columns else pd.Series(dtype=float)
         # align on common dates
@@ -306,13 +316,15 @@ def _leg_safe_haven() -> dict:
         z_val = _last(z_s)
         raw = _last(diff)
         pct = _pct_in_history(diff, raw) if raw is not None else None
-        fresh = _freshness(diff.index.max())
+        ts_max = diff.index.max() if obs else None
+        fresh = _freshness(ts_max)
         return {**meta, "value": _r(raw, 2), "z": _r(z_val),
-                "pct": pct, "freshness": fresh, "obs_count": obs}
+                "pct": pct, "freshness": fresh, "obs_count": obs,
+                "last_date": _ts_iso(ts_max)}
     except Exception as e:  # noqa: BLE001
         log.warning("%s failed: %s", key, e)
         return {**meta, "value": None, "z": None, "pct": None,
-                "freshness": "missing", "obs_count": None}
+                "freshness": "missing", "obs_count": None, "last_date": None}
 
 
 def _leg_vix_level() -> dict:
@@ -325,7 +337,7 @@ def _leg_vix_level() -> dict:
         v = store.read("yahoo", "_VIX")
         if v is None or "close" not in v.columns:
             return {**meta, "value": None, "z": None, "pct": None,
-                    "freshness": "missing", "obs_count": None}
+                    "freshness": "missing", "obs_count": None, "last_date": None}
         c = v["close"].dropna()
         obs = len(c)
         z_s = _z_score(c)
@@ -333,13 +345,15 @@ def _leg_vix_level() -> dict:
         raw = _last(c)
         pct_raw = _pct_in_history(c, raw)
         pct = (100 - pct_raw) if pct_raw is not None else None   # invert: low = greedy
-        fresh = _freshness(c.index.max())
+        ts_max = c.index.max()
+        fresh = _freshness(ts_max)
         return {**meta, "value": _r(raw, 1), "z": _r(z_val),
-                "pct": pct, "freshness": fresh, "obs_count": obs}
+                "pct": pct, "freshness": fresh, "obs_count": obs,
+                "last_date": _ts_iso(ts_max)}
     except Exception as e:  # noqa: BLE001
         log.warning("%s failed: %s", key, e)
         return {**meta, "value": None, "z": None, "pct": None,
-                "freshness": "missing", "obs_count": None}
+                "freshness": "missing", "obs_count": None, "last_date": None}
 
 
 def _leg_vix_trend() -> dict:
@@ -352,7 +366,7 @@ def _leg_vix_trend() -> dict:
         v = store.read("yahoo", "_VIX")
         if v is None or "close" not in v.columns:
             return {**meta, "value": None, "z": None, "pct": None,
-                    "freshness": "missing", "obs_count": None}
+                    "freshness": "missing", "obs_count": None, "last_date": None}
         c = v["close"].dropna()
         chg = c.diff(20).dropna()
         obs = len(chg)
@@ -361,13 +375,15 @@ def _leg_vix_trend() -> dict:
         raw = _last(chg)
         pct_raw = _pct_in_history(chg, raw)
         pct = (100 - pct_raw) if pct_raw is not None else None
-        fresh = _freshness(chg.index.max())
+        ts_max = chg.index.max() if obs else None
+        fresh = _freshness(ts_max)
         return {**meta, "value": _r(raw, 2), "z": _r(z_val),
-                "pct": pct, "freshness": fresh, "obs_count": obs}
+                "pct": pct, "freshness": fresh, "obs_count": obs,
+                "last_date": _ts_iso(ts_max)}
     except Exception as e:  # noqa: BLE001
         log.warning("%s failed: %s", key, e)
         return {**meta, "value": None, "z": None, "pct": None,
-                "freshness": "missing", "obs_count": None}
+                "freshness": "missing", "obs_count": None, "last_date": None}
 
 
 def _leg_vix_term() -> dict:
@@ -382,7 +398,7 @@ def _leg_vix_term() -> dict:
         v3 = store.read("yahoo", "_VIX3M")
         if v is None or v3 is None:
             return {**meta, "value": None, "z": None, "pct": None,
-                    "freshness": "missing", "obs_count": None}
+                    "freshness": "missing", "obs_count": None, "last_date": None}
         vc = v["close"].dropna() if "close" in v.columns else pd.Series(dtype=float)
         v3c = v3["close"].dropna() if "close" in v3.columns else pd.Series(dtype=float)
         # canon.vix_term for the series
@@ -393,13 +409,15 @@ def _leg_vix_term() -> dict:
         raw = _last(ratio)
         pct_raw = _pct_in_history(ratio, raw)
         pct = (100 - pct_raw) if pct_raw is not None else None
-        fresh = _freshness(ratio.index.max())
+        ts_max = ratio.index.max() if obs else None
+        fresh = _freshness(ts_max)
         return {**meta, "value": _r(raw, 3), "z": _r(z_val),
-                "pct": pct, "freshness": fresh, "obs_count": obs}
+                "pct": pct, "freshness": fresh, "obs_count": obs,
+                "last_date": _ts_iso(ts_max)}
     except Exception as e:  # noqa: BLE001
         log.warning("%s failed: %s", key, e)
         return {**meta, "value": None, "z": None, "pct": None,
-                "freshness": "missing", "obs_count": None}
+                "freshness": "missing", "obs_count": None, "last_date": None}
 
 
 def _leg_skew() -> dict:
@@ -412,7 +430,7 @@ def _leg_skew() -> dict:
         sk = store.read("cboe", "skew")
         if sk is None or "skew" not in sk.columns:
             return {**meta, "value": None, "z": None, "pct": None,
-                    "freshness": "missing", "obs_count": None}
+                    "freshness": "missing", "obs_count": None, "last_date": None}
         s = sk["skew"].dropna()
         obs = len(s)
         z_s = _z_score(s)
@@ -420,13 +438,15 @@ def _leg_skew() -> dict:
         raw = _last(s)
         pct_raw = _pct_in_history(s, raw)
         pct = (100 - pct_raw) if pct_raw is not None else None
-        fresh = _freshness(s.index.max())
+        ts_max = s.index.max()
+        fresh = _freshness(ts_max)
         return {**meta, "value": _r(raw, 1), "z": _r(z_val),
-                "pct": pct, "freshness": fresh, "obs_count": obs}
+                "pct": pct, "freshness": fresh, "obs_count": obs,
+                "last_date": _ts_iso(ts_max)}
     except Exception as e:  # noqa: BLE001
         log.warning("%s failed: %s", key, e)
         return {**meta, "value": None, "z": None, "pct": None,
-                "freshness": "missing", "obs_count": None}
+                "freshness": "missing", "obs_count": None, "last_date": None}
 
 
 def _leg_naaim() -> dict:
@@ -439,7 +459,7 @@ def _leg_naaim() -> dict:
         df = store.read("sentiment", "naaim")
         if df is None or "naaim_exposure" not in df.columns:
             return {**meta, "value": None, "z": None, "pct": None,
-                    "freshness": "missing", "obs_count": None}
+                    "freshness": "missing", "obs_count": None, "last_date": None}
         n = df["naaim_exposure"].dropna()
         obs = len(n)
         z_s = n.expanding(min_periods=WEEKLY_MIN).apply(
@@ -447,13 +467,15 @@ def _leg_naaim() -> dict:
         z_val = _last(z_s)
         raw = _last(n)
         pct = _pct_in_history(n, raw) if raw is not None else None
-        fresh = _freshness(n.index.max())
+        ts_max = n.index.max()
+        fresh = _freshness(ts_max)
         return {**meta, "value": _r(raw, 1), "z": _r(z_val),
-                "pct": pct, "freshness": fresh, "obs_count": obs}
+                "pct": pct, "freshness": fresh, "obs_count": obs,
+                "last_date": _ts_iso(ts_max)}
     except Exception as e:  # noqa: BLE001
         log.warning("%s failed: %s", key, e)
         return {**meta, "value": None, "z": None, "pct": None,
-                "freshness": "missing", "obs_count": None}
+                "freshness": "missing", "obs_count": None, "last_date": None}
 
 
 _INSIDER_TXN_CAP_USD = 1e8   # $100 M: realistic ceiling for a single Form-4 transaction
@@ -528,7 +550,7 @@ def _leg_insider() -> dict:
         obs = len(ts)
         if obs == 0:
             return {**meta, "value": None, "z": None, "pct": None,
-                    "freshness": "missing", "obs_count": 0}
+                    "freshness": "missing", "obs_count": 0, "last_date": None}
         # normalise to billions
         ts_b = ts / 1e9
         # Sanity gate: if any quarterly net value exceeds ±200 B something is wrong
@@ -539,7 +561,7 @@ def _leg_insider() -> dict:
                 ts_b.abs().max(),
             )
             return {**meta, "value": None, "z": None, "pct": None,
-                    "freshness": "missing", "obs_count": obs}
+                    "freshness": "missing", "obs_count": obs, "last_date": None}
         # z-score with expanding window, min_periods=QUARTERLY_MIN
         mu = ts_b.expanding(min_periods=QUARTERLY_MIN).mean()
         sd = ts_b.expanding(min_periods=QUARTERLY_MIN).std()
@@ -549,13 +571,15 @@ def _leg_insider() -> dict:
         pct = _pct_in_history(ts_b, raw) if raw is not None else None
         # Use a quarterly-cadence staleness window (95 days ≈ one quarter + buffer)
         # so that quarterly data is not incorrectly reported as 'stale'
-        fresh = _freshness(ts.index.max(), stale_days=48)   # 48*2=96 days
+        ts_max = ts.index.max()
+        fresh = _freshness(ts_max, stale_days=48)   # 48*2=96 days
         return {**meta, "value": _r(raw, 1), "z": _r(z_val),
-                "pct": pct, "freshness": fresh, "obs_count": obs}
+                "pct": pct, "freshness": fresh, "obs_count": obs,
+                "last_date": _ts_iso(ts_max)}
     except Exception as e:  # noqa: BLE001
         log.warning("%s failed: %s", key, e)
         return {**meta, "value": None, "z": None, "pct": None,
-                "freshness": "missing", "obs_count": None}
+                "freshness": "missing", "obs_count": None, "last_date": None}
 
 
 # ---------------------------------------------------------------------------
@@ -648,6 +672,16 @@ def _freshness(ts: pd.Timestamp | None, stale_days: int = 5) -> str:
         return "unknown"
 
 
+def _ts_iso(ts) -> str | None:
+    """Convert a pandas Timestamp (or index value) to an ISO date string, or None."""
+    if ts is None:
+        return None
+    try:
+        return pd.Timestamp(ts).strftime("%Y-%m-%d")
+    except Exception:  # noqa: BLE001
+        return None
+
+
 # ---------------------------------------------------------------------------
 # Composite
 # ---------------------------------------------------------------------------
@@ -718,13 +752,10 @@ def compute_fear_greed() -> dict | None:
     dial = int(max(0, min(100, round(50 + (z_mean / 3.0) * 50))))
     label_en, label_zh = _dial_band(dial)
 
-    # Most recent data date across included legs
-    as_of: str | None = None
-    for leg in included:
-        # get freshness timestamp indirectly — use leg's obs_count proxy
-        # We don't store the date directly; use today as best estimate
-        pass
-    as_of = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    # Most recent data date across INCLUDED legs (using last_date field added to each leg).
+    # Fallback to today-UTC only when no included leg carries a last_date.
+    leg_dates = [leg["last_date"] for leg in included if leg.get("last_date")]
+    as_of = max(leg_dates) if leg_dates else datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     return {
         "dial": dial,
@@ -747,3 +778,44 @@ def compute_fear_greed() -> dict | None:
             "贪婪/恐惧读数若无周期背景，不构成反向信号。"
         ),
     }
+
+
+def persist_dial_history(payload: dict | None) -> bool:
+    """Append one row to data/sentiment_us/fear_greed_dial.parquet.
+
+    Schema: {date, dial, n_legs, label_en, logged_at (aware-UTC ISO string)}.
+    Keep-FIRST per date (idempotent on re-run same day).
+    logged_at is stored as a STRING to avoid pandas>=2 aware-into-naive TypeError
+    on DatetimeIndex parquet setitem (see tz-aware-into-naive-parquet-ledger memory).
+
+    Returns True if a new row was written, False if skipped (same-date or payload absent).
+    """
+    if not payload:
+        return False
+    date = payload.get("as_of")
+    if not date:
+        log.warning("persist_dial_history: no as_of date in payload — skipping")
+        return False
+    out_dir = config.data_dir() / "sentiment_us"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "fear_greed_dial.parquet"
+    try:
+        old = pd.read_parquet(out_path) if out_path.exists() else None
+        if old is not None and "date" in old.columns and date in set(old["date"].astype(str)):
+            log.info("persist_dial_history: already logged for %s (keep-first)", date)
+            return False
+        logged_at = datetime.now(timezone.utc).isoformat()   # aware UTC ISO string
+        new_row = pd.DataFrame([{
+            "date": date,
+            "dial": int(payload["dial"]),
+            "n_legs": int(payload.get("n_legs_qualifying", 0)),
+            "label_en": payload.get("label_en", ""),
+            "logged_at": logged_at,
+        }])
+        merged = pd.concat([old, new_row], ignore_index=True) if old is not None else new_row
+        merged.to_parquet(out_path, index=False)
+        log.info("persist_dial_history: wrote %s dial=%s", date, payload["dial"])
+        return True
+    except Exception as e:  # noqa: BLE001
+        log.warning("persist_dial_history failed: %s", e)
+        return False
