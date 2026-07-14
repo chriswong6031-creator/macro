@@ -1,6 +1,6 @@
 {
-  "date": "2026-07-10",
-  "generated_utc": "2026-07-14 04:39",
+  "date": "2026-07-13",
+  "generated_utc": "2026-07-14 05:25",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -4531,32 +4531,32 @@
     {
       "ticker": "GC=F",
       "name": "Gold",
-      "price": 4073.6,
+      "price": 4008.7,
       "above50": false,
       "above200": false,
-      "pct_vs_50dma": -6.1,
-      "pct_vs_200dma": -9.0,
-      "rsi14": 42.0,
+      "pct_vs_50dma": -7.5,
+      "pct_vs_200dma": -10.5,
+      "rsi14": 38.0,
       "macd_pos": true,
-      "off_52w_high_pct": -23.4,
-      "season_this": "Jul: +1.0% avg, up 58% of years (n=26)",
-      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.0%\uff0c58% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -13.3
+      "off_52w_high_pct": -24.6,
+      "season_this": "Jul: +0.9% avg, up 54% of years (n=26)",
+      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +0.9%\uff0c54% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+      "mom_60d_pct": -14.7
     },
     {
       "ticker": "CL=F",
       "name": "Crude Oil",
-      "price": 73.65,
+      "price": 78.0,
       "above50": false,
-      "above200": false,
-      "pct_vs_50dma": -13.3,
-      "pct_vs_200dma": -1.1,
-      "rsi14": 45.0,
+      "above200": true,
+      "pct_vs_50dma": -8.2,
+      "pct_vs_200dma": 4.7,
+      "rsi14": 54.0,
       "macd_pos": true,
-      "off_52w_high_pct": -34.8,
-      "season_this": "Jul: +0.9% avg, up 69% of years (n=26)",
-      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +0.9%\uff0c69% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -20.1
+      "off_52w_high_pct": -30.9,
+      "season_this": "Jul: +1.2% avg, up 69% of years (n=26)",
+      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.2%\uff0c69% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+      "mom_60d_pct": -15.3
     },
     {
       "ticker": "HG=F",
@@ -4576,17 +4576,17 @@
     {
       "ticker": "DX-Y.NYB",
       "name": "US Dollar",
-      "price": 100.87,
+      "price": 101.28,
       "above50": true,
       "above200": true,
-      "pct_vs_50dma": 1.0,
-      "pct_vs_200dma": 1.9,
-      "rsi14": 55.0,
+      "pct_vs_50dma": 1.4,
+      "pct_vs_200dma": 2.3,
+      "rsi14": 62.0,
       "macd_pos": false,
-      "off_52w_high_pct": -0.7,
-      "season_this": "Jul: -0.2% avg, up 48% of years (n=56)",
-      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 -0.2%\uff0c48% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
-      "mom_60d_pct": 2.9
+      "off_52w_high_pct": -0.3,
+      "season_this": "Jul: -0.2% avg, up 50% of years (n=56)",
+      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 -0.2%\uff0c50% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
+      "mom_60d_pct": 3.3
     }
   ],
   "vix": {

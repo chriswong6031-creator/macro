@@ -5,12 +5,17 @@
   "expected_hk_session": "2026-07-13",
   "freshness_verdict": "degraded",
   "adr_freshness": {
-    "BABA": {
+    "JD": {
       "asof": "2026-07-10",
       "lag_days": 3,
       "state": "slow"
     },
-    "KWEB": {
+    "BIDU": {
+      "asof": "2026-07-10",
+      "lag_days": 3,
+      "state": "slow"
+    },
+    "BABA": {
       "asof": "2026-07-10",
       "lag_days": 3,
       "state": "slow"
@@ -20,12 +25,7 @@
       "lag_days": 3,
       "state": "slow"
     },
-    "JD": {
-      "asof": "2026-07-10",
-      "lag_days": 3,
-      "state": "slow"
-    },
-    "BIDU": {
+    "KWEB": {
       "asof": "2026-07-10",
       "lag_days": 3,
       "state": "slow"
