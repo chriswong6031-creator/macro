@@ -1,47 +1,34 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-14 20:04:26 UTC",
+  "built": "2026-07-14 21:29:48 UTC",
   "session": {
     "region": "us",
     "open": false,
-    "local_time": "2026-07-14 16:04 EDT"
+    "local_time": "2026-07-14 17:29 EDT"
   },
-  "live_active": true,
-  "stale": false,
-  "stale_reason": null,
+  "live_active": false,
+  "stale": true,
+  "stale_reason": "market closed",
   "delayed_min": 15,
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
-  "nightly_asof": "2026-07-13",
+  "nightly_asof": "2026-07-14",
   "polygon_status": "unused",
-  "n_live_symbols": 12,
-  "movers": [
-    {
-      "sym": "SPY",
-      "chg_pct": 0.36
-    },
-    {
-      "sym": "QQQ",
-      "chg_pct": 1.12
-    },
-    {
-      "sym": "VIX",
-      "chg_pct": -4.49
-    }
-  ],
+  "n_live_symbols": 0,
+  "movers": [],
   "display": {
     "verdict": "RISK_ON",
     "label_en": "Risk-on",
     "label_zh": "\u98ce\u9669\u504f\u597d",
     "color": "green",
-    "score": 73,
+    "score": 78,
     "band_changed": false,
     "pending": null
   },
   "live": {
     "verdict": "RISK_ON",
-    "score": 73,
-    "raw_score": 73,
+    "score": 78,
+    "raw_score": 78,
     "color": "green",
     "label_en": "Risk-on",
     "label_zh": "\u98ce\u9669\u504f\u597d",
@@ -66,85 +53,79 @@
     "overrides": []
   },
   "nightly": {
-    "verdict": "MIXED",
-    "score": 56,
-    "raw_score": 70,
-    "color": "yellow",
-    "label_en": "Mixed",
-    "label_zh": "\u6df7\u5408",
-    "headline_en": "Mixed / transition \u2014 the signals disagree. Trade smaller, favour quality, take profits faster; don't position aggressively.",
-    "headline_zh": "\u6df7\u5408 / \u8f6c\u6362 \u2014 \u4fe1\u53f7\u5206\u6b67\u3002\u7f29\u5c0f\u4ed3\u4f4d\u3001\u504f\u597d\u8d28\u91cf\u3001\u66f4\u5feb\u83b7\u5229\u4e86\u7ed3\uff1b\u52ff\u6fc0\u8fdb\u5e03\u5c40\u3002",
+    "verdict": "RISK_ON",
+    "score": 78,
+    "raw_score": 78,
+    "color": "green",
+    "label_en": "Risk-on",
+    "label_zh": "\u98ce\u9669\u504f\u597d",
+    "headline_en": "Risk-on \u2014 the tape, breadth and cross-asset signals line up. Trend-following and adding on strength is supported.",
+    "headline_zh": "\u98ce\u9669\u504f\u597d \u2014 \u4ef7\u683c\u3001\u5e7f\u5ea6\u4e0e\u8de8\u8d44\u4ea7\u4fe1\u53f7\u4e00\u81f4\u3002\u987a\u52bf\u4ea4\u6613\u4e0e\u9022\u5f3a\u52a0\u4ed3\u5f97\u5230\u652f\u6301\u3002",
     "radar": {
-      "state": "caution",
+      "state": "watch",
       "state_ungated": null,
-      "top_score": 66,
+      "top_score": 56,
       "label_en": "Growth scare / defensive rotation",
       "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
       "context_gate": null,
       "amp": 0,
-      "ceiling": 56
+      "ceiling": null
     },
-    "overrides": [
-      {
-        "kind": "radar",
-        "note_en": "Capped at Mixed by the Risk Radar above.",
-        "note_zh": "\u7531\u4e0a\u65b9\u98ce\u9669\u96f7\u8fbe\u5c01\u9876\u4e3a\u300c\u6df7\u5408\u300d\u3002"
-      }
-    ]
+    "overrides": []
   },
   "legs": [
     {
       "key": "trend",
       "label_en": "Trend & technicals",
       "score": 88,
-      "basis": "live",
-      "asof": "live"
+      "basis": "carried",
+      "asof": "2026-07-14"
     },
     {
       "key": "risk",
       "label_en": "Risk appetite",
-      "score": 42,
+      "score": 70,
       "basis": "carried",
-      "asof": "2026-07-13"
+      "asof": "2026-07-14"
     },
     {
       "key": "vol",
       "label_en": "Volatility regime",
-      "score": 73,
-      "basis": "live",
-      "asof": "live"
+      "score": 71,
+      "basis": "carried",
+      "asof": "2026-07-14"
     },
     {
       "key": "breadth",
       "label_en": "Breadth & participation",
       "score": 75,
       "basis": "carried",
-      "asof": "2026-07-13"
+      "asof": "2026-07-14"
     },
     {
       "key": "liquidity",
       "label_en": "Liquidity & credit",
-      "score": 76,
+      "score": 75,
       "basis": "carried",
-      "asof": "2026-07-13"
+      "asof": "2026-07-14"
     },
     {
       "key": "stress",
       "label_en": "Downturn-risk guard",
       "score": 87,
       "basis": "carried",
-      "asof": "2026-07-13"
+      "asof": "2026-07-14"
     }
   ],
   "legs_asof": {
-    "tape_trend": "live",
-    "volatility": "live",
-    "radar_fast": "live",
+    "tape_trend": "2026-07-14",
+    "volatility": "2026-07-14",
+    "radar_fast": "2026-07-14",
     "credit_hy_oas": "2026-07-10",
-    "breadth": "2026-07-13",
-    "liquidity": "2026-07-13",
-    "macro_stress": "2026-07-13",
-    "cross_asset": "2026-07-13"
+    "breadth": "2026-07-14",
+    "liquidity": "2026-07-14",
+    "macro_stress": "2026-07-14",
+    "cross_asset": "2026-07-14"
   },
   "note": "Fast legs (tape, vol, radar equity/vol/credit-proxy + SPY-200dma context gate) recomputed on live prices; slow legs (HY OAS, NFCI, breadth, macro) carried from the nightly build and stamped with their own as-of. The score moves every tick; the band word is debounced. De-risk = sizing, not selection."
 }
