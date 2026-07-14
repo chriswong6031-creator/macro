@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_snapshot.v1",
-  "generated_at": "2026-07-14T12:25:00Z",
+  "generated_at": "2026-07-14T22:25:00Z",
   "default_book": "flagship",
   "live_url": "http://localhost:8000",
   "books": [
@@ -12,7 +12,7 @@
       "manager": "engine",
       "benchmark": "SPY",
       "as_of": "2026-07-13",
-      "market_status": "closed",
+      "market_status": "open",
       "gross": 0.3682,
       "cash": 0.6318,
       "regime": {
@@ -34,7 +34,7 @@
           "weight": 0.071,
           "verdict": "hold",
           "rs_pctile": 92.9,
-          "entry_price": 611.03,
+          "entry_price": 608.895,
           "lead_capped": {
             "reason": "overextension",
             "from": 0.1078,
@@ -61,11 +61,7 @@
             "sizing_rationale": "Leadership sleeve: equal-weighted across the trend-gated top RS sectors. Weight = 7.1% (sleeve budget ÷ number of qualifying leaders). No confluence gate required; the trend filter is the only gate.",
             "confluence": null,
             "prob_correct": null
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 585.62,
-          "fill_after": "2026-07-14"
+          }
         },
         {
           "ticker": "XLK",
@@ -75,7 +71,7 @@
           "weight": 0.0478,
           "verdict": "hold",
           "rs_pctile": 90.5,
-          "entry_price": 185.78,
+          "entry_price": 183.71,
           "lead_capped": {
             "reason": "late_cycle",
             "from": 0.1078,
@@ -102,11 +98,7 @@
             "sizing_rationale": "Leadership sleeve: equal-weighted across the trend-gated top RS sectors. Weight = 4.8% (sleeve budget ÷ number of qualifying leaders). No confluence gate required; the trend filter is the only gate.",
             "confluence": null,
             "prob_correct": null
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 181.28,
-          "fill_after": "2026-07-14"
+          }
         },
         {
           "ticker": "MTUM",
@@ -116,7 +108,7 @@
           "weight": 0.0668,
           "verdict": "hold",
           "rs_pctile": 92.1,
-          "entry_price": 321.77,
+          "entry_price": 323.67,
           "opened_at": "2026-07-14T06:21:00.676699+00:00",
           "held_days": 0,
           "thesis_full": {
@@ -138,11 +130,7 @@
             "sizing_rationale": "Leadership sleeve: equal-weighted across the trend-gated top RS sectors. Weight = 6.7% (sleeve budget ÷ number of qualifying leaders). No confluence gate required; the trend filter is the only gate.",
             "confluence": null,
             "prob_correct": null
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 314.63,
-          "fill_after": "2026-07-14"
+          }
         },
         {
           "ticker": "IWM",
@@ -152,7 +140,7 @@
           "weight": 0.0285,
           "verdict": "hold",
           "rs_pctile": 93.3,
-          "entry_price": 295.99,
+          "entry_price": 295.49,
           "opened_at": "2026-07-14T06:21:00.676699+00:00",
           "held_days": 0,
           "thesis_full": {
@@ -174,11 +162,7 @@
             "sizing_rationale": "Leadership sleeve: equal-weighted across the trend-gated top RS sectors. Weight = 2.9% (sleeve budget ÷ number of qualifying leaders). No confluence gate required; the trend filter is the only gate.",
             "confluence": null,
             "prob_correct": null
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 293.48,
-          "fill_after": "2026-07-14"
+          }
         },
         {
           "ticker": "AAPL",
@@ -190,7 +174,7 @@
           "thesis_id": "2026-07-13-AAPL-conv",
           "time_stop_by": "2026-10-08",
           "confluence": 0.6,
-          "entry_price": 315.32,
+          "entry_price": 313.76,
           "research": {
             "paper_id": "2026-07-13-AAPL",
             "mode": "engine",
@@ -232,11 +216,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. AAPL receives 2.0% (confluence +0.60 (4/5 lenses bullish = +0.60 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
             "confluence": 0.6,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 317.31,
-          "fill_after": "2026-07-14"
+          }
         },
         {
           "ticker": "ANET",
@@ -248,7 +228,7 @@
           "thesis_id": "2026-07-13-ANET-conv",
           "time_stop_by": "2026-10-08",
           "confluence": 0.714,
-          "entry_price": 186.96,
+          "entry_price": 183.9,
           "research": {
             "paper_id": "2026-07-13-ANET",
             "mode": "engine",
@@ -292,11 +272,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. ANET receives 1.2% (confluence +0.71 (6/7 lenses bullish = +0.71 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
             "confluence": 0.714,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 181.15,
-          "fill_after": "2026-07-14"
+          }
         },
         {
           "ticker": "IBM",
@@ -308,7 +284,7 @@
           "thesis_id": "2026-07-13-IBM-conv",
           "time_stop_by": "2026-10-08",
           "confluence": 0.5,
-          "entry_price": 287.56,
+          "entry_price": 226.365,
           "research": {
             "paper_id": "2026-07-13-IBM",
             "mode": "engine",
@@ -349,11 +325,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. IBM receives 0.5% (confluence +0.50 (3/4 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
             "confluence": 0.5,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 290.23,
-          "fill_after": "2026-07-14"
+          }
         },
         {
           "ticker": "JNJ",
@@ -418,7 +390,7 @@
           "thesis_id": "2026-07-13-NET-conv",
           "time_stop_by": "2026-10-08",
           "confluence": 0.5,
-          "entry_price": 268.4,
+          "entry_price": 268.0,
           "research": {
             "paper_id": "2026-07-13-NET",
             "mode": "engine",
@@ -463,11 +435,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. NET receives 0.7% (confluence +0.50 (6/8 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
             "confluence": 0.5,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 269.53,
-          "fill_after": "2026-07-14"
+          }
         },
         {
           "ticker": "QNT",
@@ -479,7 +447,7 @@
           "thesis_id": "2026-07-13-QNT-conv",
           "time_stop_by": "2026-10-08",
           "confluence": 0.5,
-          "entry_price": 70.45,
+          "entry_price": 65.0,
           "research": {
             "paper_id": "2026-07-13-QNT",
             "mode": "engine",
@@ -518,11 +486,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. QNT receives 1.1% (confluence +0.50 (3/4 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
             "confluence": 0.5,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 64.09,
-          "fill_after": "2026-07-14"
+          }
         },
         {
           "ticker": "USMV",
@@ -1126,116 +1090,7 @@
           "raw_prob_correct": 0.7
         }
       ],
-      "pending_orders": [
-        {
-          "id": "2026-07-13-SMH-buy",
-          "ticker": "SMH",
-          "side": "buy",
-          "shares": 22.0,
-          "est_price": 585.62,
-          "est_value": 12883.64,
-          "weight": 0.071,
-          "placed_asof": "2026-07-13",
-          "fill_after": "2026-07-14",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-13-XLK-buy",
-          "ticker": "XLK",
-          "side": "buy",
-          "shares": 255.0,
-          "est_price": 181.28,
-          "est_value": 46226.4,
-          "weight": 0.0478,
-          "placed_asof": "2026-07-13",
-          "fill_after": "2026-07-14",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-13-MTUM-buy",
-          "ticker": "MTUM",
-          "side": "buy",
-          "shares": 205.0,
-          "est_price": 314.63,
-          "est_value": 64499.15,
-          "weight": 0.0668,
-          "placed_asof": "2026-07-13",
-          "fill_after": "2026-07-14",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-13-IWM-buy",
-          "ticker": "IWM",
-          "side": "buy",
-          "shares": 93.0,
-          "est_price": 293.48,
-          "est_value": 27293.64,
-          "weight": 0.0285,
-          "placed_asof": "2026-07-13",
-          "fill_after": "2026-07-14",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-13-AAPL-buy",
-          "ticker": "AAPL",
-          "side": "buy",
-          "shares": 62.0,
-          "est_price": 317.31,
-          "est_value": 19673.22,
-          "weight": 0.0204,
-          "placed_asof": "2026-07-13",
-          "fill_after": "2026-07-14",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-13-ANET-buy",
-          "ticker": "ANET",
-          "side": "buy",
-          "shares": 63.0,
-          "est_price": 181.15,
-          "est_value": 11412.45,
-          "weight": 0.0119,
-          "placed_asof": "2026-07-13",
-          "fill_after": "2026-07-14",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-13-IBM-buy",
-          "ticker": "IBM",
-          "side": "buy",
-          "shares": 17.0,
-          "est_price": 290.23,
-          "est_value": 4933.91,
-          "weight": 0.0054,
-          "placed_asof": "2026-07-13",
-          "fill_after": "2026-07-14",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-13-NET-buy",
-          "ticker": "NET",
-          "side": "buy",
-          "shares": 24.0,
-          "est_price": 269.53,
-          "est_value": 6468.72,
-          "weight": 0.0069,
-          "placed_asof": "2026-07-13",
-          "fill_after": "2026-07-14",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-13-QNT-buy",
-          "ticker": "QNT",
-          "side": "buy",
-          "shares": 172.0,
-          "est_price": 64.09,
-          "est_value": 11023.48,
-          "weight": 0.0114,
-          "placed_asof": "2026-07-13",
-          "fill_after": "2026-07-14",
-          "status": "pending"
-        }
-      ],
+      "pending_orders": [],
       "research_held": [
         {
           "ticker": "SCHW",
@@ -1533,13 +1388,13 @@
       "performance": {
         "inception_date": "2026-06-19",
         "starting_nav": 1000000.0,
-        "current_nav": 967140.05,
-        "cash": 812652.69,
-        "invested": 154487.36,
-        "total_return_pct": -3.286,
-        "vs_spy_pct": -4.394,
+        "current_nav": 965996.82,
+        "cash": 606079.01,
+        "invested": 359917.81,
+        "total_return_pct": -3.4003,
+        "vs_spy_pct": -4.7681,
         "benchmark": "SPY",
-        "day_change_pct": -0.1922,
+        "day_change_pct": -0.1182,
         "max_drawdown_pct": -4.3535,
         "realized_since": "2026-06-19",
         "series": [
