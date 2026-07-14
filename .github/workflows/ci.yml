@@ -819,6 +819,7 @@ jobs:
           tests/test_risk_lead_lag.py tests/test_anticipation.py
           tests/test_risk_radar_market_catalysts.py tests/test_risk_radar_recovery.py
           tests/test_risk_radar_scorecard.py
+          tests/test_risk_state_live_copy_sync.py
           tests/test_canon.py tests/test_whitehouse_w5.py
           tests/test_winner_autopsy.py tests/test_admin_long_hold.py
           tests/test_falsifier_packet.py
