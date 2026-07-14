@@ -461,7 +461,7 @@ def _macro_raw(today: pd.Timestamp, cutoff: pd.Timestamp) -> list[dict]:
     if not p.exists():
         return out
     try:
-        from engine.alerts import alert_view
+        from engine.alerts import alert_href, alert_view
         mdf = pd.read_parquet(p)
         mdf = mdf[pd.to_datetime(mdf["date"]) >= cutoff]
         for _, r in mdf.iterrows():
@@ -475,6 +475,9 @@ def _macro_raw(today: pd.Timestamp, cutoff: pd.Timestamp) -> list[dict]:
                 "headline_zh": (v.get("icon", "") + " " + (v.get("plain_zh") or v.get("plain_en") or r["message"])).strip(),
                 "detail": r["message"], "detail_zh": r["message"],
                 "anchor": v.get("anchor") or "",
+                # page-qualified (ALERT_META anchors are bare ids, and v5 homes may
+                # live on another page) — enrichment prefers this over page+anchor
+                "link": alert_href(v.get("anchor") or ""),
                 "edge": v.get("edge_en", ""), "edge_zh": v.get("edge_zh", ""),
             })
     except Exception as e:  # noqa: BLE001
@@ -879,7 +882,7 @@ def build_triage(days: int = 30, today: date | None = None,
             "source_label": smeta.get("label", rep["source"]),
             "source_label_zh": smeta.get("label_zh", rep["source"]),
             "source_icon": smeta.get("icon", "•"),
-            "link": smeta.get("page", "macro.html") + (rep.get("anchor") or ""),
+            "link": rep.get("link") or (smeta.get("page", "macro.html") + (rep.get("anchor") or "")),
             "validation": validation,
             "ic_severity": ic_note,
         })

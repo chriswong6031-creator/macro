@@ -4779,12 +4779,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                     <div class="ms-sig-detail">{% if latest.dislocation.verdict == 'buyable_washout' %}{{ t('A stress washout with the Fed put intact — a buyable washout. Confirm into stabilization, do not anticipate.','压力抛售且美联储托底在位 — 可买入错杀。在企稳中确认，勿提前抢跑。') }}{% elif latest.dislocation.verdict == 'stand_aside' %}{{ t('A stress washout with the Fed put ABSENT — stand aside (the 2000/2008/2022 falling-knife regime).','压力抛售且美联储托底缺失 — 观望（2000／2008／2022 接飞刀情形）。') }}{% else %}{{ t('An acute stress dislocation is firing — see the gate below.','急性压力错位正在触发 — 见下方一道闸。') }}{% endif %}</div>
                   </a>
                   {% endif %}
+                  {# C-01 + v5: `anchor` is either an id on THIS page (plain id → in-page
+                     jump; dlg-* → the owning mx5 dialog, opened via JS) or an id on
+                     another page (cross-page link). Mirrors engine/alerts.ANCHOR_PAGE /
+                     alert_href — a jump on macro must never target a dead anchor. #}
+                  {% set _a_xpage = {'holdings':'us_stocks.html','accumulation':'us_stocks.html','flows':'us_stocks.html','board':'macro_context.html'} %}
                   {% if alerts %}{% for a in alerts %}
-                  {# C-01: these panels render on us_stocks only — an in-page jump on
-                     macro would be a dead anchor, so route cross-page instead. #}
-                  {% set _a_href = ('us_stocks.html#' + a.anchor) if (a.anchor in ('holdings','accumulation','flows') and mode != 'stocks') else ('#' + a.anchor if a.anchor else '') %}
-                  <a class="ms-sig sev-{{ a.severity }}"{% if _a_href %}{% if _a_href.startswith('#') %} data-ms-jump{% endif %} href="{{ _a_href }}"{% endif %}>
-                    <div class="ms-sig-head"><span class="ms-sig-ico">{{ a.icon }}</span><span class="ms-sig-title"><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></span>{% if _a_href %}<span class="ms-sig-jump">{% if _a_href.startswith('#') %}{{ t('View ↓','查看 ↓') }}{% else %}{{ t('View →','查看 →') }}{% endif %}</span>{% endif %}</div>
+                  {% set _a_href = (_a_xpage[a.anchor] + '#' + a.anchor) if (a.anchor in _a_xpage and mode != 'stocks') else ('#' + a.anchor if a.anchor else '') %}
+                  {% set _a_dlg = a.anchor if (a.anchor and a.anchor.startswith('dlg-')) else '' %}
+                  <a class="ms-sig sev-{{ a.severity }}"{% if _a_href %}{% if _a_dlg %} data-ms-dlg="{{ _a_dlg }}"{% elif _a_href.startswith('#') %} data-ms-jump{% endif %} href="{{ _a_href }}"{% endif %}>
+                    <div class="ms-sig-head"><span class="ms-sig-ico">{{ a.icon }}</span><span class="ms-sig-title"><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></span>{% if _a_href %}<span class="ms-sig-jump">{% if _a_href.startswith('#') and not _a_dlg %}{{ t('View ↓','查看 ↓') }}{% else %}{{ t('View →','查看 →') }}{% endif %}</span>{% endif %}</div>
                     <div class="ms-sig-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
                     {% if a.what_en %}<div class="ms-sig-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh }}</span></div>{% endif %}
                     {% if a.edge_en %}<div class="ms-sig-edge"><b>{{ t('Conviction:','可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
@@ -5225,6 +5229,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       var cb=document.getElementById('ms-alerts-toggle');
       if(!cb) return;
       document.addEventListener('click',function(e){
+        var dj=e.target.closest('[data-ms-dlg]');
+        if(dj){ e.preventDefault(); cb.checked=false;
+                if(window.mx5OpenDlg) window.mx5OpenDlg(dj.getAttribute('data-ms-dlg')); return; }
         if(e.target.closest('[data-ms-jump]')){ cb.checked=false; return; }
         var pill=e.target.closest('.ms-alerts');
         if(pill){ e.preventDefault(); cb.checked=!cb.checked; return; }
@@ -9160,6 +9167,36 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       if(trOverlay && trOverlay.classList.contains('is-open')) return;
       if(_dlgActive){ e.stopImmediatePropagation(); window.mx5CloseDlg(); return; }
     }, true /* capture — runs before the popover handler which uses bubble */);
+
+    /* ── Alert deep-link resolution ─────────────────────────────
+       Landing-hub / alerts-board / notification links arrive as
+       macro.html#<anchor> (engine/alerts.alert_href). A dlg-* hash
+       opens the owning dialog. Legacy pre-v5 anchors still baked in
+       older rendered feeds (the hub regenerates nightly) resolve to
+       their v5 homes: same-page → open/scroll, other-page → replace. */
+    var _legacyAnchor = {
+      'risk-state':'dlg-risk', 'liquidity':'dlg-risk', 'credit':'dlg-risk',
+      'dials':'regime-radar', 'sectors':'dlg-sector',
+      'positioning':'macro_context.html#board',
+      'holdings':'us_stocks.html#holdings',
+      'accumulation':'us_stocks.html#accumulation'
+    };
+    function _resolveAlertHash(){
+      var h = (location.hash || '').slice(1);
+      if(!h) return;
+      var legacy = false;
+      if(_legacyAnchor[h]){
+        var tgt = _legacyAnchor[h];
+        if(tgt.indexOf('.html') !== -1){ location.replace(tgt); return; }
+        h = tgt; legacy = true;
+      }
+      var el = document.getElementById(h);
+      if(!el) return;
+      if(el.classList.contains('mx5-dlg')){ window.mx5OpenDlg(h); }
+      else if(legacy){ el.scrollIntoView(); }
+    }
+    _resolveAlertHash();
+    window.addEventListener('hashchange', _resolveAlertHash);
 
   })();
   </script>

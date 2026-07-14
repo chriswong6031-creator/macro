@@ -138,7 +138,7 @@ def build_message(latest: dict, html: bool = True) -> str:
                      f"(z {flip['z']} vs ±{flip['threshold']})")
     alerts = latest.get("alerts", [])
     if alerts:
-        from engine.alerts import alert_view
+        from engine.alerts import alert_href, alert_view
         site_url = (config.load()["notify"].get("site_url") or "").rstrip("/")
         lines.append(f"{b}alerts{e}:")
         for a in alerts:
@@ -150,8 +150,7 @@ def build_message(latest: dict, html: bool = True) -> str:
             if v.get("edge_en"):
                 line += f"\n   conviction: {v['edge_en']}"
             if site_url:
-                anchor = f"#{v['anchor']}" if v["anchor"] else ""
-                line += f"\n   → {site_url}/macro.html{anchor}"
+                line += f"\n   → {site_url}/{alert_href(v['anchor'])}"
             lines.append(line)
     lines.append(health_line())
     return "\n".join(lines)
