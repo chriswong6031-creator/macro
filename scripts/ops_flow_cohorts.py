@@ -877,6 +877,34 @@ def _fetch_unit(
     return events
 
 
+# Mid-sweep recovery probe schedule (seconds slept BEFORE each probe): probes at
+# ~0s / ~30s / ~90s cumulative. A transient blip (terminal warmup, momentary
+# saturation under 8-concurrent load) recovers within this window; a genuinely
+# dead terminal fails all probes and the sweep aborts.
+_RECOVERY_BACKOFF_S: tuple[float, ...] = (0.0, 30.0, 60.0)
+
+
+def _terminal_recovered(
+    reachable_fn,
+    backoff_s: tuple[float, ...] | None = None,
+    sleep_fn=time.sleep,
+) -> bool:
+    """Re-probe the terminal with bounded backoff after a mid-sweep probe failure.
+
+    Returns True as soon as any probe succeeds (transient blip — the sweep should
+    continue and only the in-flight unit is marked failed), False if every probe
+    fails (terminal is genuinely down — the sweep should abort as before).
+    """
+    delays = _RECOVERY_BACKOFF_S if backoff_s is None else backoff_s
+    for i, delay in enumerate(delays, start=1):
+        if delay > 0:
+            sleep_fn(delay)
+        if reachable_fn():
+            return True
+        log.warning("ops_flow_cohorts: terminal recovery probe %d/%d failed", i, len(delays))
+    return False
+
+
 # ── tape_recon main ───────────────────────────────────────────────────────────
 
 def run_tape_recon(
@@ -974,12 +1002,24 @@ def run_tape_recon(
                     # Error
                     err_msg = result
                     if err_msg == "terminal_unreachable":
-                        log.error(
-                            "ops_flow_cohorts: terminal became unreachable during sweep "
-                            "— aborting. Remaining units will resume on next run."
+                        # A single failed probe can be a transient blip (terminal
+                        # warmup, momentary saturation). Re-probe with bounded
+                        # backoff before declaring the terminal dead; on recovery
+                        # only this unit is marked failed (--retry-failed picks
+                        # it up) and the sweep continues.
+                        if not _terminal_recovered(reachable):
+                            log.error(
+                                "ops_flow_cohorts: terminal became unreachable during sweep "
+                                "and did not recover after %d probes — aborting. "
+                                "Remaining units will resume on next run.",
+                                len(_RECOVERY_BACKOFF_S),
+                            )
+                            _save_recon_state(state)
+                            return total_events
+                        log.warning(
+                            "ops_flow_cohorts: transient terminal blip — unit %s marked "
+                            "failed, sweep continues", unit_key,
                         )
-                        _save_recon_state(state)
-                        return total_events
 
                     log.warning("ops_flow_cohorts: unit %s failed: %s", unit_key, err_msg)
                     state.setdefault("failed", {})[unit_key] = err_msg
