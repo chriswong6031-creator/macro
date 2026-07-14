@@ -21,6 +21,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # collect (a.k.a. collect-core since the 2026-07-14 split): the main adapter
+  # sweep + in-collect graders/audits, committing as early as possible so the
+  # engine job (needs: collect) starts ~30-75m sooner. The slow post-adapter
+  # accrual band — ThetaData tape-flow, TIL organs, shadow-importance, qledger
+  # backfill — runs in the sibling collect_tail job below. Engine never read
+  # those outputs same-night (≤1-run-stale contract, same as factor_series;
+  # verified 2026-07-14: flow_leaders/flow_desk/options_screener are absent-safe
+  # display legs, stamp_options_state is PIT-anchored, grade_qledger grades only
+  # claims matured ≥5d, TIL lobes carry 2160h freshness SLAs).
   collect:
     runs-on: [self-hosted, macstudio]
     # was 100 — the collectors step's real baseline has grown to ~60-67m (the old "~35m"
@@ -30,6 +39,9 @@ jobs:
     # thrown away and engine built the dashboards from the previous day's committed
     # store (us_standouts stuck on 07-09). Same silent-timeout class as the asia-close
     # freeze (#2193) and the engine job's own 70→120 bump below. 150m = spike ×1.5.
+    # 2026-07-14 split: the 98.5m spike basis included shadow-importance (~14m), which
+    # moved to collect_tail — 150m is now ≥1.7× the residual spike and is deliberately
+    # kept: an undersized cap costs a whole night's collections (bitten twice).
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
@@ -145,7 +157,138 @@ jobs:
           if [ -n "$FRED_API_KEY" ]; then echo "::notice::FRED_API_KEY present — using official API"; else echo "::warning::FRED_API_KEY ABSENT — check repo Settings > Secrets and variables > Actions > Repository secrets"; fi
           # --exclude-group asia: China/HK collectors run in their own asia-close shard
           # (after the Asia cash close), not here — keeps this US-evening run lean.
-          python -m scripts.collect --exclude-group asia
+          # --skip-shadow-importance: the ~13-14m shadow passes run standalone in
+          # collect_tail (2026-07-14 split) — off the engine job's critical path.
+          python -m scripts.collect --exclude-group asia --skip-shadow-importance
+      - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
+        # The only network leg for the themes map + Subsector Rotation. Refreshes
+        # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
+        # read is fresh-daily and its forward track-record accrues a real daily
+        # history. Keyless, can be rate-limited from CI IPs — strictly non-fatal:
+        # on failure the build keeps the last committed snapshot.
+        run: |
+          python scripts/fetch_finviz_themes.py \
+            || echo "::warning::Finviz themes fetch failed (non-fatal) — keeping committed snapshot"
+      - name: collect ZORI national rent index (MRI shelter leg; non-fatal)
+        # Fetches Zillow's public ZORI CSV (keyless) and writes data/zori/national.parquet.
+        # data/zori/national.parquet is git-tracked (un-ignored by .gitignore negation);
+        # metro-level parquet files under data/zori/ remain untracked (size).
+        # collect_zori.py raises RuntimeError on HTTP failure — shell-level guard mandatory.
+        run: |
+          python scripts/collect_zori.py \
+            || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
+      - name: commit data
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # site/qledger: the qledger grader (scripts/collect.py -> grade_qledger)
+          # writes the TRACKED site/qledger/track_record.json (un-ignored by #1139).
+          # Left unstaged it blocks `git pull --rebase` ("unstaged changes") and the
+          # whole data push silently dies after 5 attempts — 07-03/07-04 collections
+          # were lost exactly this way (the sentinel staging-gap pattern). The
+          # --autostash on the rebase below is the durable guard: it survives ANY
+          # stray tracked write collect leaves outside data/+site/qledger/ (e.g.
+          # reports/*.md graders), not just the qledger paths we happen to stage here.
+          # (site/basketdata moved with the TIL steps to collect_tail's commit —
+          # 2026-07-14 split; nothing left in this job writes site/basketdata.)
+          git add data/ site/qledger/
+          # W0b (2026-07-08 stale-HK incident): US collect job must NOT commit asia-owned
+          # data that it never produced. The GHA cache restore steps above may lay stale
+          # data/hk_stocks (restore-keys: hk-stocks-ohlc-) and breadth caches on top of
+          # the fresh files asia-close already committed.  After the broad `git add data/`
+          # above, unstage every asia-close-owned path so -X theirs on the rebase-push
+          # cannot clobber asia's fresh commit with this job's stale copy.
+          # Derived from asia-close.yml: collect --group asia = adapters starting with
+          # `china` or `hk` (scripts/collect.py group_members), so excludes cover all
+          # data/china*, data/hk*, and data/hkma (adapter key `hkma` starts with `hk`).
+          git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
+          git commit -m "data: daily collection $(date -u +%F)"
+          # best-effort push: losing a race with a concurrent push must NOT fail the
+          # pipeline (the data is collected; the next run re-syncs). Retry rebase+push,
+          # preferring our freshly-collected data on any conflict.
+          for i in 1 2 3 4 5; do
+            # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
+            # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
+            # refuses ("untracked working tree files would be overwritten") and --autostash can't
+            # clear it (it parks tracked modifications only), so every retry dies identically.
+            # Everything this step publishes is already committed above, so a path untracked HERE
+            # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
+            # Gitignored files and untracked paths origin/main doesn't track never enter the
+            # intersection (runner-local stores and caches are untouched).
+            # (Asia paths unstaged above: when newly tracked on main, deleting the local stale
+            # copy lets the rebase materialize asia-close's fresh commit — the W0b intent.)
+            git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash -X theirs origin main && git push; then
+              echo "pushed data on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "data push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push collected data after 5 attempts (non-fatal)"
+      - name: publish attention store back to R2 (gated on the restore)
+        # The day's upserted increments ride back to R2 so tomorrow's restore (and the
+        # engine job's render-side restore) reads a CURRENT deep store — a frozen R2
+        # copy would slowly starve the chip's trailing-5d window. Gated on the restore
+        # step's outcome: if the restore failed, the local tree is a shallow ~120d
+        # rebuild whose file count matches the deep store, and publishing it would
+        # clobber 11y of history. Gaps self-heal: the collector's ~120d fetch window
+        # re-covers any missed days on the next successful cycle. Runs AFTER "commit
+        # data" so the commit is never delayed by the upload. Non-fatal.
+        if: steps.attention_restore.outcome == 'success'
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.publish_r2 --dirs attention || echo "::warning::attention R2 publish failed (non-fatal — R2 store goes stale, chip self-heals within the 120d fetch window)"
+
+  # collect_tail: the slow post-adapter accrual band, split out of `collect`
+  # (2026-07-14) so the engine job starts as soon as the adapter sweep commits
+  # (~30-75m earlier; the 'run collectors' step was 89-91m of a 94m median job,
+  # with tape-flow budgeted up to 75m more on backlog nights).
+  # needs: collect → this job's checkout+pull reads TONIGHT's committed stores
+  # (qbus for shadow-importance, github stars for the W9 join, altdata theses
+  # for the qledger backfill). The engine job does NOT wait on this job: every
+  # same-night reader of these outputs tolerates ≤1-run-stale data — the same
+  # contract as the factor_series sibling (flow_leaders/flow_desk/
+  # options_screener are absent-safe display legs, stamp_options_state is
+  # PIT-anchored to historical fire dates, grade_qledger grades only claims
+  # matured ≥5d, TIL lobes carry 2160h freshness SLAs).
+  # if: always() — accrual is idempotent and must not stop because a collector
+  # crashed core (tape-flow pulls from ThetaData, TIL organs from external APIs;
+  # a failed core just means tonight's pass re-scores yesterday's stores).
+  # Runner budget: holding a second macstudio slot alongside engine is accepted
+  # (3-slot pool; operator-ratified 2026-07-14).
+  # Forward-ledger law: untouched — the nightly graders stay inside
+  # scripts.collect (collect core, COLLECT_LANE=nightly); this job only accrues
+  # stores + registers idempotent claims, and its commit lands hours before the
+  # next day's collect.
+  collect_tail:
+    needs: collect
+    if: always()
+    runs-on: [self-hosted, macstudio]
+    # Budget arithmetic: tape-flow budgets 25+30+20=75m (hard-stopped in-script)
+    # + census ≤8m (--max-requests 450) + other TIL organs ~seconds + shadow-
+    # importance ~13-14m (the spike leg of the old collect job's 98.5m night)
+    # + qledger backfill + setup ≈ ~110m worst case. 150m keeps the silent-
+    # timeout class (#2193 / the 2026-07-11 collect cancel) away.
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
       - name: ThetaData Terminal — health-check / start (non-fatal)
         # The ThetaData Terminal v3 is a local Java daemon that must be running before
         # any tape_flow steps can pull trade+NBBO data.  This step:
@@ -155,6 +298,8 @@ jobs:
         #   3. If not up AND key is absent: logs a warning and skips (tape_flow steps
         #      then self-exit via reachable() gate — non-fatal).
         # Non-fatal: failure is a warning; downstream tape_flow steps handle absence.
+        # (The terminal is machine-local on the Mac Studio — port 25503 is shared
+        # across all runner slots, so which of the 3 runners hosts this job is moot.)
         env:
           THETA_API_KEY: ${{ secrets.THETA_API_KEY }}
         run: |
@@ -179,7 +324,7 @@ jobs:
               echo "::warning::ThetaData Terminal did not become healthy in 30s — tape_flow steps will self-skip"
             fi
           fi
-      - name: T2a tape-flow features — forward accrual (collect lane, non-fatal)
+      - name: T2a tape-flow features — forward accrual (collect-tail lane, non-fatal)
         # Pulls prior-trading-day trade+NBBO tape for the full gex_symbols() universe
         # (~360 roots) via wildcard-bulk ThetaData endpoint (2 requests/root-day).
         # Aggregates inline to signed-flow features; discards raw tape for single names.
@@ -203,11 +348,11 @@ jobs:
         # Hard-stop at 30 min (budget_deadline): state is persisted after every
         # completed root-day; the next nightly run resumes from remaining work.
         # Budget: 30 min — sized so episodes(30) + etf-history(20) + forward(~13)
-        # + collectors (~60-67m observed 2026-07; was ~35m when first budgeted) + Finviz
-        # stay under the 150-min job timeout, ensuring "commit data" is always reached
-        # before GitHub Actions cancels the collect job.
+        # + shadow-importance (~13-14m) + census (≤8m) stay well under this job's
+        # 150-min timeout, ensuring "commit tail data" is always reached before
+        # GitHub Actions cancels the job.
         # Outputs (data/tape_flow/daily/*.parquet + data/tape_flow/_state.json)
-        # are covered by the "commit data" step's `git add data/` below.
+        # are covered by the "commit tail data" step's `git add data/` below.
         # Non-fatal: terminal absent or any error logs a warning and continues.
         env:
           THETA_CONNECT_TIMEOUT: "20"   # see forward step note
@@ -226,35 +371,13 @@ jobs:
         run: |
           python -m scripts.build_tape_flow_daily --mode etf-history --budget-minutes 20 \
             || echo "::warning::T2a tape-flow ETF-history backfill failed (non-fatal)"
-      - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
-        # The only network leg for the themes map + Subsector Rotation. Refreshes
-        # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
-        # read is fresh-daily and its forward track-record accrues a real daily
-        # history. Keyless, can be rate-limited from CI IPs — strictly non-fatal:
-        # on failure the build keeps the last committed snapshot.
-        run: |
-          python scripts/fetch_finviz_themes.py \
-            || echo "::warning::Finviz themes fetch failed (non-fatal) — keeping committed snapshot"
-      - name: collect ZORI national rent index (MRI shelter leg; non-fatal)
-        # Fetches Zillow's public ZORI CSV (keyless) and writes data/zori/national.parquet.
-        # data/zori/national.parquet is git-tracked (un-ignored by .gitignore negation);
-        # metro-level parquet files under data/zori/ remain untracked (size).
-        # collect_zori.py raises RuntimeError on HTTP failure — shell-level guard mandatory.
-        run: |
-          python scripts/collect_zori.py \
-            || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
       # ── TIL collect-lane organs (W8/W9/W10/W11) ───────────────────────────
-      # These steps close the dag.yml collect-lane divergences left open at
-      # the TIL merges (#2056/#2058/#2067/#2072): the engines + synapse lobes
-      # shipped 2026-07-09 but the daily.yml wiring never landed, so the
-      # artifacts froze at their merge-day values (the dead-wire class, cf.
-      # #2360). Placement and order follow the declared dag.yml collect lane.
-      # W7 (dol_certs) stays unwired by design (accrual gate) — its divergence
-      # remains declared. W8 wired 2026-07-12 once CENSUS_API_KEY landed as a
-      # repo secret. Measured 2026-07-12 (Mac Studio, warm venv): W9-W11
-      # 6.6s + 0.5s + 0.5s + 1.4s ≈ 9s total; W8 keyless/invalid-key no-op
-      # 0.8s + 0.6s; W8 keyed runs hard-capped (see step comment) — no
-      # material claim on the 150-min job budget.
+      # Moved here from the collect job (2026-07-14 split); placement and order
+      # follow the declared dag.yml collect_tail lane. W7 (dol_certs) stays
+      # unwired by design (accrual gate) — its divergence remains declared.
+      # Measured 2026-07-12 (Mac Studio, warm venv): W9-W11 6.6s + 0.5s + 0.5s
+      # + 1.4s ≈ 9s total; W8 keyless/invalid-key no-op 0.8s + 0.6s; W8 keyed
+      # runs hard-capped (see step comment) — no material claim on the budget.
       - name: TIL W8 — Census HS-code import-flow ingest (non-fatal)
         # Requires the CENSUS_API_KEY repo secret (API is NOT keyless — verified
         # 2026-07-09; keyless/invalid key 302s and the run no-ops honest-null in
@@ -309,19 +432,38 @@ jobs:
         # Two-source join (measured 1.4s): EDGAR phrase velocity over the
         # git-tracked data/edgar/{bottleneck,emergence}_hits.parquet (dripped by
         # the engine job) × GitHub star velocity over data/github/repo_stars.parquet
-        # (collected earlier in THIS job, so the leg reads today's stars).
+        # (collected by tonight's collect core and read here from its committed
+        # push, so the leg still reads today's stars).
         # Produces site/basketdata/{phrase_velocity,github_adoption}.json +
         # data/neuralweb/discovery_confluence.json.
         run: |
           python -m scripts.build_discovery_confluence \
             || echo "::warning::discovery confluence join failed (non-fatal)"
+      # ── importance_v0 SHADOW lanes (W3 + W4) ──────────────────────────────
+      # Moved out of scripts.collect (2026-07-14 split; collect core passes
+      # --skip-shadow-importance). Both passes score the FULL US+CN qbus store
+      # from tonight's collect-core commit (~13-14m combined, the spike leg of
+      # the old 98.5m collectors step). Claims register with stable idempotent
+      # ids; grade_qledger (inside collect core's scripts.collect) grades only
+      # claims matured ≥5d, so registering one job later never changes grading
+      # arithmetic — the old "register BEFORE the grader" ordering was never
+      # load-bearing same-night. Non-fatal either way.
+      - name: importance_v0 shadow tape — W3 scorer (non-fatal)
+        run: |
+          python -m scripts.shadow_importance_v0 \
+            || echo "::warning::shadow_importance_v0 failed (non-fatal)"
+      - name: importance_v0 shadow tape — W4 PIT-correct scorer (non-fatal)
+        run: |
+          python -m scripts.shadow_importance_v0_pit \
+            || echo "::warning::shadow_importance_v0_pit failed (non-fatal)"
       - name: qledger backfill (altdata + radar + policy → claims.jsonl)
         # ALTDATA_REBOOT W2 (2026-07-12): routes new altdata theses to per-channel
         # claim families with pre-registered horizon rulers; emits 2 placebo claims
         # per real altdata claim. Also registers new radar edge_snapshots and policy
         # theses as qledger claims. Idempotent — stable claim_ids prevent duplicates.
-        # Runs AFTER collectors (data/altdata/theses.jsonl must be fresh) and BEFORE
-        # commit data (so claims.jsonl is committed in the same push). Non-fatal.
+        # Reads data/altdata/theses.jsonl from tonight's collect-core commit; runs
+        # BEFORE "commit tail data" so claims.jsonl is committed in the same push.
+        # Non-fatal.
         run: |
           set +e
           python -m scripts.backfill_qledger_us \
@@ -331,76 +473,39 @@ jobs:
             echo "::warning title=backfill_qledger_us::rc=$rc (non-fatal)"
           fi
           exit 0
-      - name: commit data
+      - name: commit tail data
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          # site/qledger: the qledger grader (scripts/collect.py -> grade_qledger)
-          # writes the TRACKED site/qledger/track_record.json (un-ignored by #1139).
-          # Left unstaged it blocks `git pull --rebase` ("unstaged changes") and the
-          # whole data push silently dies after 5 attempts — 07-03/07-04 collections
-          # were lost exactly this way (the sentinel staging-gap pattern). The
-          # --autostash on the rebase below is the durable guard: it survives ANY
-          # stray tracked write collect leaves outside data/+site/qledger/ (e.g.
-          # reports/*.md graders), not just the qledger paths we happen to stage here.
-          # site/basketdata: the TIL collect-lane steps above write their tracked
-          # site projections there (phrase_velocity/github_adoption/clinical_pipeline/
-          # options_witness .json). Staging the directory only picks up files those
-          # steps actually changed; nothing else in this job writes site/basketdata.
-          git add data/ site/qledger/ site/basketdata/
-          # W0b (2026-07-08 stale-HK incident): US collect job must NOT commit asia-owned
-          # data that it never produced. The GHA cache restore steps above may lay stale
-          # data/hk_stocks (restore-keys: hk-stocks-ohlc-) and breadth caches on top of
-          # the fresh files asia-close already committed.  After the broad `git add data/`
-          # above, unstage every asia-close-owned path so -X theirs on the rebase-push
-          # cannot clobber asia's fresh commit with this job's stale copy.
-          # Derived from asia-close.yml: collect --group asia = adapters starting with
-          # `china` or `hk` (scripts/collect.py group_members), so excludes cover all
-          # data/china*, data/hk*, and data/hkma (adapter key `hkma` starts with `hk`).
-          git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
-          if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
-          git commit -m "data: daily collection $(date -u +%F)"
-          # best-effort push: losing a race with a concurrent push must NOT fail the
-          # pipeline (the data is collected; the next run re-syncs). Retry rebase+push,
-          # preferring our freshly-collected data on any conflict.
+          # Everything this job writes is under data/ (tape_flow, trade_flows,
+          # clinical_trials, neuralweb, qledger claims, run_status) or
+          # site/basketdata/ (TIL site projections). No cache-restore steps run
+          # in this job, so the W0b asia unstage sweep from the collect job is
+          # not needed here — a fresh checkout+pull can only differ where THIS
+          # job's steps wrote. (The adapter sweep + qledger grader never run in
+          # this job, so site/qledger/track_record.json is never touched here;
+          # tests/test_collect_staging_globs.py keys on the grader-bearing
+          # module's dotted name, which this comment deliberately avoids.)
+          git add data/ site/basketdata/
+          if git diff --cached --quiet; then echo "no tail data changes to commit"; exit 0; fi
+          git commit -m "data: collect-tail accrual $(date -u +%F)"
+          # best-effort push: same 5-retry rebase loop as the collect job's
+          # "commit data" (see the pre-sync collision-sweep rationale there —
+          # render.yml / #2252). -X theirs prefers THIS job's freshly-accrued
+          # data on any conflict; losing all 5 races is non-fatal (the stores
+          # are state-resumable and re-accrue next night).
           for i in 1 2 3 4 5; do
-            # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
-            # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
-            # refuses ("untracked working tree files would be overwritten") and --autostash can't
-            # clear it (it parks tracked modifications only), so every retry dies identically.
-            # Everything this step publishes is already committed above, so a path untracked HERE
-            # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
-            # Gitignored files and untracked paths origin/main doesn't track never enter the
-            # intersection (runner-local stores and caches are untouched).
-            # (Asia paths unstaged above: when newly tracked on main, deleting the local stale
-            # copy lets the rebase materialize asia-close's fresh commit — the W0b intent.)
             git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
             if git pull --rebase --autostash -X theirs origin main && git push; then
-              echo "pushed data on attempt $i"; exit 0
+              echo "pushed tail data on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
-            echo "data push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            echo "tail data push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
-          echo "::warning::could not push collected data after 5 attempts (non-fatal)"
-      - name: publish attention store back to R2 (gated on the restore)
-        # The day's upserted increments ride back to R2 so tomorrow's restore (and the
-        # engine job's render-side restore) reads a CURRENT deep store — a frozen R2
-        # copy would slowly starve the chip's trailing-5d window. Gated on the restore
-        # step's outcome: if the restore failed, the local tree is a shallow ~120d
-        # rebuild whose file count matches the deep store, and publishing it would
-        # clobber 11y of history. Gaps self-heal: the collector's ~120d fetch window
-        # re-covers any missed days on the next successful cycle. Runs AFTER "commit
-        # data" so the commit is never delayed by the upload. Non-fatal.
-        if: steps.attention_restore.outcome == 'success'
-        env:
-          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
-        run: python -m scripts.publish_r2 --dirs attention || echo "::warning::attention R2 publish failed (non-fatal — R2 store goes stale, chip self-heals within the 120d fetch window)"
+          echo "::warning::could not push collect-tail data after 5 attempts (non-fatal)"
 
   engine:
     needs: collect

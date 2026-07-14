@@ -261,4 +261,14 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # hard_exit: this one-shot reads parquet (qbus store) — a plain exit can
+    # deadlock forever in pyarrow's C++ shutdown on macOS (#2196). Required now
+    # that the collect_tail job runs this standalone via `python -m`.
+    from lib.procutil import hard_exit
+    try:
+        main()
+    except Exception:  # noqa: BLE001 — traceback then hard-exit; never hang the lane
+        import traceback
+        traceback.print_exc()
+        hard_exit(1)
+    hard_exit(0)

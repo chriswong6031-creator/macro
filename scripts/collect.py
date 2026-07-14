@@ -455,6 +455,10 @@ def main() -> int:
                     help="run everything EXCEPT collectors in this named shard group")
     ap.add_argument("--skip-quality", action="store_true",
                     help="skip the end-of-collection data-quality audit gate")
+    ap.add_argument("--skip-shadow-importance", action="store_true",
+                    help="skip the shadow_importance_v0 + _pit passes (~13-14 min); "
+                         "daily.yml collect-core sets this — the passes run standalone "
+                         "in the collect_tail job so the engine job starts earlier")
     args = ap.parse_args()
 
     registry = all_adapters()
@@ -795,14 +799,24 @@ def main() -> int:
         run_quality_audits()
 
     # importance_v0 SHADOW lane (W3) — score the qbus store + register the
-    # novelty-first challenger's HIGH/LOW band claims BEFORE the grader so the
-    # same-night grade pass picks them up. Shadow-only; never rendered. Non-fatal.
+    # novelty-first challenger's HIGH/LOW band claims. Shadow-only; never rendered.
+    # Non-fatal. NOTE the ordering vs grade_qledger below is NOT load-bearing:
+    # the grader only grades claims matured >= 5 days (engine/qledger._matured),
+    # so a claim registered after tonight's grade pass is simply picked up on a
+    # later night with identical arithmetic.
     # us_scope-gated (asia-lane diet): both passes score the FULL US+CN store
     # (~13 min combined measured on run 29089281652) and the nightly lane re-runs
     # them over the same committed store a few hours later with identical
     # item-asof timestamps and idempotent claim ids — the asia shard was paying
     # 13 min for work the nightly redoes anyway.
-    if us_scope:
+    # --skip-shadow-importance (2026-07-14 collect split): daily.yml's collect-core
+    # job skips the ~13-14 min passes here; they run standalone in the sibling
+    # collect_tail job over the same committed qbus store, off the engine's
+    # critical path.
+    if args.skip_shadow_importance:
+        log.info("[shadow_importance] skipped (--skip-shadow-importance) — "
+                 "runs standalone in the collect_tail job")
+    elif us_scope:
         try:
             from scripts.shadow_importance_v0 import run_as_collect_step as _shadow_impv0
             _shadow_impv0()
