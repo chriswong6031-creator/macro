@@ -653,7 +653,7 @@ RENDER.vector = async () => {
    Sub-tabs lazy-load each panel; Umami/GA4 remain as a third-party cross-check.
    Session replay + visitor identity are hash sub-pages (#/session/… , #/visitor/…). */
 let AN = { tab: "overview", days: 7 };
-const AN_TABS = [["overview", "Overview"], ["pages", "Pages"], ["geo", "Map"], ["sessions", "Sessions"], ["flow", "Flow"], ["terminal", "Terminal"]];
+const AN_TABS = [["overview", "Overview"], ["visitors", "Visitors"], ["sessions", "Sessions"], ["pages", "Pages"], ["geo", "Map"], ["flow", "Flow"], ["terminal", "Terminal"]];
 const AN_RENDER = {};
 
 function anNotReady(d) {
@@ -769,15 +769,31 @@ AN_RENDER.sessions = async () => {
   const d = await api(`/api/analytics/fp/sessions?limit=60`);
   const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
   const rows = d.sessions || [];
-  b.innerHTML = `<div class="section">Recent sessions <span class="cnt">${rows.length}</span> <span class="sub">— click replay to see the exact path</span></div>
-    <table><thead><tr><th>Started</th><th>Visitor</th><th>Site</th><th>Location</th><th class="r">Pages</th><th class="r">Events</th><th class="r">Duration</th><th></th></tr></thead><tbody>
+  b.innerHTML = `<div class="section">Recent sessions <span class="cnt">${rows.length}</span> <span class="sub">— per visit: who (visitor id), their IP + location. Click replay to see the exact path.</span></div>
+    <table><thead><tr><th>Started</th><th>Visitor</th><th>IP</th><th>Location</th><th>Site</th><th class="r">Pages</th><th class="r">Events</th><th class="r">Duration</th><th></th></tr></thead><tbody>
     ${rows.map(s => `<tr><td class="mono sub">${esc(s.started || "")}</td>
       <td><a class="mono" href="#/visitor/${encodeURIComponent(s.visitor_id || "")}">${esc((s.visitor_id || "—").slice(0, 8))}…</a></td>
+      <td class="mono">${esc(s.ip || "—")}</td>
+      <td class="sub">${esc(s.city || "—")}${s.region ? ", " + esc(s.region) : ""}${s.country_code ? " · " + esc(s.country_code) : ""}</td>
       <td class="sub">${esc(s.site || "")}</td>
-      <td class="sub">${esc(s.city || "—")}${s.country_code ? ", " + esc(s.country_code) : ""}</td>
       <td class="r">${fmtNum(s.pages)}</td><td class="r">${fmtNum(s.events)}</td>
       <td class="r sub">${s.duration_s != null ? fmtElapsedSec(s.duration_s) : "—"}</td>
-      <td><a class="btn sm" href="#/session/${encodeURIComponent(s.session_id || "")}">replay ▸</a></td></tr>`).join("") || "<tr><td colspan='8' class='muted'>no sessions yet</td></tr>"}
+      <td><a class="btn sm" href="#/session/${encodeURIComponent(s.session_id || "")}">replay ▸</a></td></tr>`).join("") || "<tr><td colspan='9' class='muted'>no sessions yet</td></tr>"}
+    </tbody></table>`;
+};
+AN_RENDER.visitors = async () => {
+  const d = await api(`/api/analytics/fp/visitors?limit=150`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  const rows = d.visitors || [];
+  b.innerHTML = `<div class="section">Frequent visitors <span class="cnt">${rows.length}</span> <span class="sub">— one profile per person (mm_aid cookie + device + IP), most sessions first. Click to open their full history + tickers searched.</span></div>
+    <table><thead><tr><th>Visitor</th><th>Last IP</th><th>Location</th><th>Net</th><th class="r">Sessions</th><th class="r">Events</th><th class="r">IPs</th><th>First seen</th><th>Last seen</th></tr></thead><tbody>
+    ${rows.map(v => `<tr>
+      <td><a class="mono" href="#/visitor/${encodeURIComponent(v.visitor_id || "")}">${esc((v.visitor_id || "—").slice(0, 10))}…</a>${v.user_id ? ' <span class="statpill s-ok">user</span>' : ""}</td>
+      <td class="mono">${esc(v.last_ip || "—")}</td>
+      <td>${esc(v.city || "—")}${v.region ? ", " + esc(v.region) : ""}${v.country_code ? " · " + esc(v.country_code) : ""}</td>
+      <td>${v.is_vpn ? '<span class="statpill s-warn">VPN</span>' : '<span class="sub">—</span>'}</td>
+      <td class="r"><b>${fmtNum(v.sessions)}</b></td><td class="r">${fmtNum(v.events)}</td><td class="r">${fmtNum(v.ips)}</td>
+      <td class="mono sub">${esc(v.first_seen || "")}</td><td class="mono sub">${esc(v.last_seen || "")}</td></tr>`).join("") || "<tr><td colspan='9' class='muted'>no visitors yet</td></tr>"}
     </tbody></table>`;
 };
 AN_RENDER.flow = async () => {
@@ -864,7 +880,7 @@ async function renderVisitorDetail(id) {
   const d = await api(`/api/analytics/fp/visitor?id=${encodeURIComponent(id)}`);
   const det = $("#anDet");
   if (!d.ok) { det.innerHTML = card("Visitor", `<div class="sub">${esc(d.reason || d.error || "not found")}</div>`); return; }
-  const p = d.profile || {}, ips = d.ips || [], linked = d.linked || [], recent = d.recent || [];
+  const p = d.profile || {}, ips = d.ips || [], linked = d.linked || [], recent = d.recent || [], searches = d.searches || [], viewed = d.tickers_viewed || [];
   det.innerHTML = `
     <div class="grid">
       ${card("Identity", `<div class="big" style="font-size:15px">${p.user_id ? "user " + esc(String(p.user_id).slice(0, 8)) : "anonymous"}</div><div class="sub">first ${esc(String(p.first_seen || "").slice(0, 16))}</div>`)}
@@ -880,6 +896,10 @@ async function renderVisitorDetail(id) {
     <table><thead><tr><th>Visitor</th><th>Matched by</th><th class="r">Shared events</th></tr></thead><tbody>
     ${linked.map(l => `<tr><td><a class="mono" href="#/visitor/${encodeURIComponent(l.visitor_id)}">${esc((l.visitor_id || "").slice(0, 12))}…</a></td><td>${l.via_fp ? '<span class="statpill s-warn">device</span> ' : ""}${l.via_ip ? '<span class="statpill s-mut">IP</span>' : ""}</td><td class="r">${fmtNum(l.shared_events)}</td></tr>`).join("")}
     </tbody></table>` : ""}
+    <div class="grid" style="margin-top:4px">
+      <div class="card"><h3>Tickers searched <span class="cnt">${searches.length}</span></h3>${searches.length ? anBars(searches, r => `<b class="mono">${esc(r.ticker || "")}</b>`, "n", { sub: r => r.last ? esc(String(r.last).slice(0, 10)) : "" }) : "<span class='muted sub'>none yet</span>"}</div>
+      <div class="card"><h3>Tickers viewed <span class="cnt">${viewed.length}</span></h3>${viewed.length ? anBars(viewed, r => `<b class="mono">${esc(r.ticker || "")}</b>`, "n") : "<span class='muted sub'>none yet</span>"}</div>
+    </div>
     <div class="section">Recent events</div>
     <div class="an-timeline">${recent.map(ev => `<div class="an-trow"><span class="an-tt mono">${esc(ev.t || "")}</span><span class="an-ty">${esc(ev.type)}</span><span class="an-td">${ev.ticker ? `<b class="mono">${esc(ev.ticker)}</b>` : `<span class="mono">${esc(ev.path || "")}</span>`}</span></div>`).join("") || "<div class='muted sub'>none</div>"}</div>`;
 }

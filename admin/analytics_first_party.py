@@ -163,7 +163,7 @@ def sessions(limit=40) -> dict:
             "select s.session_id, s.visitor_id, s.site, s.events, s.pages, "
             "to_char(s.started,'YYYY-MM-DD HH24:MI') as started, "
             "round(extract(epoch from (s.ended - s.started)))::int as duration_s, "
-            "g.city, g.country_code "
+            "s.ip, g.city, g.region, g.country_code "
             "from (select session_id, max(visitor_id) as visitor_id, max(site) as site, "
             "  count(*)::int as events, count(*) filter (where type in ('pageview','route'))::int as pages, "
             "  min(created_at) as started, max(created_at) as ended, "
@@ -174,6 +174,30 @@ def sessions(limit=40) -> dict:
             "left join public.ip_geo g on g.ip = s.ip "
             "order by s.started desc") or []
         return {"sessions": rows}
+    return _guard(run)
+
+
+def visitors(limit=100) -> dict:
+    """One row per visitor (person) — the 'Frequent Visitors' list. Grouped by the mm_aid cookie,
+    ordered by session count. Joins the visitor's most-recent IP to ip_geo for country/state/city."""
+    n = _limit(limit, 100, 500)
+    def run():
+        rows = _query(
+            "select v.visitor_id, v.events, v.sessions, v.ips, v.last_ip, v.user_id, "
+            "to_char(v.first_seen,'YYYY-MM-DD HH24:MI') as first_seen, "
+            "to_char(v.last_seen,'YYYY-MM-DD HH24:MI') as last_seen, "
+            "g.city, g.region, g.country, g.country_code, g.is_vpn "
+            "from (select visitor_id, count(*)::int as events, "
+            "  count(distinct session_id)::int as sessions, count(distinct ip)::int as ips, "
+            "  min(created_at) as first_seen, max(created_at) as last_seen, "
+            "  max(user_id::text) as user_id, "
+            "  (array_agg(ip order by created_at desc))[1] as last_ip "
+            "  from public.analytics_events where visitor_id is not null "
+            "  group by visitor_id order by count(distinct session_id) desc, max(created_at) desc "
+            f"  limit {n}) v "
+            "left join public.ip_geo g on g.ip = v.last_ip "
+            "order by v.sessions desc, v.last_seen desc") or []
+        return {"visitors": rows}
     return _guard(run)
 
 
@@ -265,7 +289,18 @@ def visitor(visitor_id: str) -> dict:
             "select type, coalesce(path,'') as path, ticker, "
             "to_char(created_at,'YYYY-MM-DD HH24:MI') as t "
             f"from public.analytics_events where visitor_id = '{v}' order by id desc limit 40") or []
-        return {"visitor_id": v, "profile": profile, "ips": ips, "linked": linked, "recent": recent}
+        # tickers this person searched (search_events.anon_id = the mm_aid visitor cookie) + viewed
+        searches = _query(
+            "select symbol as ticker, count(*)::int as n, "
+            "to_char(max(created_at),'YYYY-MM-DD HH24:MI') as last "
+            f"from public.search_events where anon_id = '{v}' "
+            "group by 1 order by n desc, last desc limit 50") or []
+        tickers_viewed = _query(
+            "select ticker, count(*)::int as n "
+            f"from public.analytics_events where visitor_id = '{v}' and type='ticker_view' and ticker is not null "
+            "group by 1 order by n desc limit 50") or []
+        return {"visitor_id": v, "profile": profile, "ips": ips, "linked": linked,
+                "recent": recent, "searches": searches, "tickers_viewed": tickers_viewed}
     return _guard(run)
 
 
