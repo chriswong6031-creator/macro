@@ -1,21 +1,15 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-14T20:32:08.962560+00:00",
-  "posts_seen": 12,
-  "seen_total": 30,
-  "evaluated": 2,
+  "as_of": "2026-07-14T22:12:18.864051+00:00",
+  "posts_seen": 13,
+  "seen_total": 31,
+  "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
   "gate_scores": [
     {
-      "id": "wh-2026-07-14-white-house-launches-gold-eagle-initiative-for-unprecedented-cybersecurity-vulne",
-      "importance": 35,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-07-14-nominations-and-withdrawals-sent-to-the-senate-e958",
-      "importance": 5,
+      "id": "wh-2026-07-14-law-enforcement-leaders-across-america-support-todd-blanche-for-attorney-general",
+      "importance": 10,
       "activated": false,
       "degraded_reason": "served_by:deepseek"
     }
