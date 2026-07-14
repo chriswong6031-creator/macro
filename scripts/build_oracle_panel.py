@@ -50,6 +50,7 @@ from engine.oracle.panel import (  # noqa: E402
     ETF_TO_SECTOR,
     build_panel_s,
     build_panel_m,
+    build_panel_f,
 )
 
 logging.basicConfig(
@@ -221,9 +222,36 @@ def build_m(args: argparse.Namespace) -> pd.DataFrame:
     return panel
 
 
+def build_f(args: argparse.Namespace) -> pd.DataFrame:
+    data_dir = _data_dir()
+    yahoo_dir = data_dir / "yahoo"
+
+    log.info("Building Tier F panel (start=%s end=%s)...",
+             args.start or "2013-04-16", args.end or "latest")
+
+    panel = build_panel_f(
+        yahoo_dir=yahoo_dir,
+        start=args.start or "2013-04-16",
+        end=args.end,
+    )
+
+    if panel.empty:
+        log.warning("Tier F panel is empty - check yahoo_dir for factor + SPY parquets")
+    else:
+        log.info("Tier F: %d rows x %d cols, nodes=%d",
+                 len(panel), len(panel.columns),
+                 panel.index.get_level_values("node").nunique())
+        out = _out_dir() / "panel_f.parquet"
+        panel.to_parquet(out)
+        log.info("Written: %s", out)
+
+    return panel
+
+
 def write_manifest(
     panel_s: pd.DataFrame | None,
     panel_m: pd.DataFrame | None,
+    panel_f: pd.DataFrame | None,
     args: argparse.Namespace,
 ) -> None:
     data_dir = _data_dir()
@@ -287,6 +315,9 @@ def write_manifest(
     if panel_m is not None and not panel_m.empty:
         manifest["tier_m"] = _coverage_stats(panel_m, "m")
 
+    if panel_f is not None and not panel_f.empty:
+        manifest["tier_f"] = _coverage_stats(panel_f, "f")
+
     out = _out_dir() / "manifest.json"
     out.write_text(json.dumps(manifest, indent=2, default=str))
     log.info("Manifest written: %s", out)
@@ -294,7 +325,7 @@ def write_manifest(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tier", choices=["s", "m", "all"], default="all",
+    parser.add_argument("--tier", choices=["s", "m", "f", "all"], default="all",
                         help="Which tier to build (default: all)")
     parser.add_argument("--start", default=None, metavar="YYYY-MM-DD",
                         help="Start date (inclusive)")
@@ -314,6 +345,7 @@ def main() -> None:
 
     panel_s: pd.DataFrame | None = None
     panel_m: pd.DataFrame | None = None
+    panel_f: pd.DataFrame | None = None
 
     if args.tier in ("s", "all"):
         log.info("=== Tier S ===")
@@ -323,8 +355,12 @@ def main() -> None:
         log.info("=== Tier M ===")
         panel_m = build_m(args)
 
+    if args.tier in ("f", "all"):
+        log.info("=== Tier F ===")
+        panel_f = build_f(args)
+
     log.info("Writing manifest...")
-    write_manifest(panel_s, panel_m, args)
+    write_manifest(panel_s, panel_m, panel_f, args)
     log.info("Done.")
 
 
