@@ -1137,6 +1137,11 @@
   }
   /* W8-R7 organ chip — inline to avoid collision with theme.css in-flight PRs */
   .anv2-chip-organ { background:color-mix(in srgb,var(--info) 10%,var(--panel)); color:color-mix(in srgb,var(--info) 80%,var(--text)); border-color:color-mix(in srgb,var(--info) 26%,transparent); }
+  /* anv2 click-through name link — colour/decoration intentionally inherit from .anv2-name */
+  .anv2-name-link { color:inherit; text-decoration:none; }
+  .anv2-name-link:hover .l-en, .anv2-name-link:hover .l-zh { text-decoration:underline; }
+  .anv2-name-link:focus-visible { outline:2px solid var(--link); outline-offset:2px; border-radius:4px; }
+  .anv2-go { font-size:10px; opacity:.55; margin-left:3px; }
 </style>
 </head>
 <body class="page-china-stocks">
@@ -1478,89 +1483,13 @@
       <div class="anv2-lane-hd">
         <div class="anv2-lane-title">
           <span class="l-en">Buy Now</span><span class="l-zh">立即买入</span>
-          <span class="anv2-lane-count">(4)</span>
+          <span class="anv2-lane-count">(2)</span>
         </div>
         <div class="anv2-lane-sub"><span class="l-en">Clean entry point today</span><span class="l-zh">今日有干净入场点</span></div>
       </div>
       <div class="anv2-lane-body lst-wrap">
       <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
         <div class="anv2-row" data-rpop>
-      
-      <span class="rp-src" hidden>
-        <div class="row-pop-hd">
-          <span class="row-pop-name"><span class="l-en">Semiconductors</span><span class="l-zh">Semiconductors</span></span>
-          <span class="row-pop-kind">SECTOR</span><span class="row-pop-tag warn"><span class="l-en">BUY SOON</span><span class="l-zh">BUY SOON</span></span></div>
-        <div class="row-pop-div"></div>
-        <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span>
-            <span class="row-pop-val"><span class="up">+20.5%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span>
-            <span class="row-pop-val"><span class="up">+56.7%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span>
-            <span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span>
-            <span class="row-pop-val">30p</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span>
-            <span class="row-pop-val">25 <span class="mut">· (23, 44)</span></span></div><div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Entry signal</span><span class="l-zh">入场信号</span></span>
-            <span class="row-pop-val"><span class="l-en">Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.</span><span class="l-zh">形态接近完成——若收盘重新站上 10 日均线，预计将在约 1–3 个交易日内出现买入触发。</span> <span class="mut">· <span class="l-en">2d ago</span><span class="l-zh">2天前</span></span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">EQ</span><span class="l-zh">EQ</span></span>
-            <span class="row-pop-val">· +12</span></div>
-        </div><ul class="row-pop-why"><li>BOTTOMING</li></ul><div class="row-pop-ft">
-          <span>2026-07-14</span>
-        </div>
-      </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Semiconductors</span>
-        
-      </div>
-      <div class="anv2-chips">
-        
-        
-        
-        
-        <span class="anv2-chip anv2-chip-tag">BUY SOON</span>
-        
-        
-        
-        
-        
-        
-      </div>
-      
-      
-    </div><div class="anv2-row" data-rpop>
-      
-      <span class="rp-src" hidden>
-        <div class="row-pop-hd">
-          <span class="row-pop-name"><span class="l-en">Securities & Brokers</span><span class="l-zh">Securities & Brokers</span></span>
-          <span class="row-pop-kind">SECTOR</span><span class="row-pop-tag warn"><span class="l-en">BUY SOON</span><span class="l-zh">BUY SOON</span></span></div>
-        <div class="row-pop-div"></div>
-        <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span>
-            <span class="row-pop-val"><span class="up">+4.7%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span>
-            <span class="row-pop-val"><span class="dn">-0.1%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span>
-            <span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span>
-            <span class="row-pop-val">21p</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span>
-            <span class="row-pop-val">25 <span class="mut">· (23, 44)</span></span></div><div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Entry signal</span><span class="l-zh">入场信号</span></span>
-            <span class="row-pop-val"><span class="l-en">Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.</span><span class="l-zh">形态接近完成——若收盘重新站上 10 日均线，预计将在约 1–3 个交易日内出现买入触发。</span> <span class="mut">· <span class="l-en">5d ago</span><span class="l-zh">5天前</span></span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">EQ</span><span class="l-zh">EQ</span></span>
-            <span class="row-pop-val">▲ +32</span></div>
-        </div><ul class="row-pop-why"><li>BOTTOMING</li></ul><div class="row-pop-ft">
-          <span>2026-07-14</span>
-        </div>
-      </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Securities & Brokers</span>
-        
-      </div>
-      <div class="anv2-chips">
-        
-        
-        
-        
-        <span class="anv2-chip anv2-chip-tag">BUY SOON</span>
-        
-        
-        
-        
-        
-        
-      </div>
-      
-      
-    </div><div class="anv2-row" data-rpop>
       
       <span class="rp-src" hidden>
         <div class="row-pop-hd">
@@ -1579,16 +1508,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Innovative Drugs</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/159992.SZ.html"><span class="l-en">Innovative Drugs</span><span class="l-zh">Innovative Drugs</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">BUY NOW</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">BUY NOW</span><span class="l-zh">立即买入</span></span>
         
         
         
@@ -1617,16 +1544,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Banks</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/512800.SS.html"><span class="l-en">Banks</span><span class="l-zh">Banks</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">HALF SIZE</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">HALF SIZE</span><span class="l-zh">半仓</span></span>
         
         
         
@@ -1645,7 +1570,7 @@
       <div class="anv2-lane-hd">
         <div class="anv2-lane-title">
           <span class="l-en">In Favour</span><span class="l-zh">看好</span>
-          <span class="anv2-lane-count">(3)</span>
+          <span class="anv2-lane-count">(5)</span>
         </div>
         <div class="anv2-lane-sub"><span class="l-en">Still in favour — wait for a dip before adding</span><span class="l-zh">仍看好 — 等回调再加仓</span></div>
       </div>
@@ -1660,14 +1585,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">74</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="up">+22.1%</span></span></div>
+            <span class="row-pop-val"><span class="up">+22.1%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="dn">-0.4%</span></span></div>
         </div><ul class="row-pop-why"><li>20d +22.1% vs CSI 300</li><li>accelerating</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Semiconductors</span>
-        <span class="anv2-score anv2-score-hi">74</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_semis.html"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-hi">74</span>
       </div>
       <div class="anv2-chips">
         
@@ -1684,8 +1608,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-pos">+22.1%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-pos">+22.1%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-neg">-0.4%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -1697,14 +1622,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">70</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="up">+7.4%</span></span></div>
+            <span class="row-pop-val"><span class="up">+7.4%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="up">+4.8%</span></span></div>
         </div><ul class="row-pop-why"><li>20d +7.4% vs CSI 300</li><li>dip within an uptrend</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">AI Compute & Optics</span>
-        <span class="anv2-score anv2-score-hi">70</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_ai_compute.html"><span class="l-en">AI Compute & Optics</span><span class="l-zh">AI算力与光模块</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-hi">70</span>
       </div>
       <div class="anv2-chips">
         
@@ -1721,9 +1645,46 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-pos">+7.4%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-pos">+7.4%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-pos">+4.8%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
+      
+    </div><div class="anv2-row" data-rpop>
+      
+      <span class="rp-src" hidden>
+        <div class="row-pop-hd">
+          <span class="row-pop-name"><span class="l-en">Semiconductors</span><span class="l-zh">Semiconductors</span></span>
+          <span class="row-pop-kind">SECTOR</span><span class="row-pop-tag warn"><span class="l-en">BOTTOMING · UNCONFIRMED — WAIT</span><span class="l-zh">BOTTOMING · UNCONFIRMED — WAIT</span></span></div>
+        <div class="row-pop-div"></div>
+        <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span>
+            <span class="row-pop-val"><span class="up">+20.5%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span>
+            <span class="row-pop-val"><span class="up">+56.7%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span>
+            <span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span>
+            <span class="row-pop-val">30p</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span>
+            <span class="row-pop-val">25 <span class="mut">· (23, 44)</span></span></div><div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Entry signal</span><span class="l-zh">入场信号</span></span>
+            <span class="row-pop-val"><span class="l-en">The bottoming setup is not yet confirmed (price still below the 10-day average) and the 3-day/weekly momentum is rolling over — momentum is fading before the setup has completed. Wait for price to reclaim the 10-day average with momentum stabilising before sizing in.</span><span class="l-zh">筑底形态尚未确认（价格仍位于 10 日均线下方），且3 日/周线动量已开始掉头向下——动量在形态完成前已开始衰竭。等待价格收复 10 日均线且动量趋于稳定后再考虑建仓。</span> <span class="mut">· <span class="l-en">2d ago</span><span class="l-zh">2天前</span></span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">EQ</span><span class="l-zh">EQ</span></span>
+            <span class="row-pop-val">· +12</span></div>
+        </div><ul class="row-pop-why"><li>BOTTOMING</li></ul><div class="row-pop-ft">
+          <span>2026-07-14</span>
+        </div>
+      </span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/512760.SS.html"><span class="l-en">Semiconductors</span><span class="l-zh">Semiconductors</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        
+        
+        
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">BOTTOMING · UNCONFIRMED — WAIT</span><span class="l-zh">筑底 · 未确认 — 等待</span></span>
+        
+        
+        
+        
+        
+        
+      </div>
+      
       
     </div><div class="anv2-row" data-rpop>
       
@@ -1744,16 +1705,50 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Technology</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/515000.SS.html"><span class="l-en">Technology</span><span class="l-zh">Technology</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">BOTTOMING · UNCONFIRMED — WAIT</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">BOTTOMING · UNCONFIRMED — WAIT</span><span class="l-zh">筑底 · 未确认 — 等待</span></span>
+        
+        
+        
+        
+        
+        
+      </div>
+      
+      
+    </div><div class="anv2-row" data-rpop>
+      
+      <span class="rp-src" hidden>
+        <div class="row-pop-hd">
+          <span class="row-pop-name"><span class="l-en">Securities & Brokers</span><span class="l-zh">Securities & Brokers</span></span>
+          <span class="row-pop-kind">SECTOR</span><span class="row-pop-tag warn"><span class="l-en">BOTTOMING · UNCONFIRMED — WAIT</span><span class="l-zh">BOTTOMING · UNCONFIRMED — WAIT</span></span></div>
+        <div class="row-pop-div"></div>
+        <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span>
+            <span class="row-pop-val"><span class="up">+4.7%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span>
+            <span class="row-pop-val"><span class="dn">-0.1%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span>
+            <span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span>
+            <span class="row-pop-val">21p</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span>
+            <span class="row-pop-val">25 <span class="mut">· (23, 44)</span></span></div><div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Entry signal</span><span class="l-zh">入场信号</span></span>
+            <span class="row-pop-val"><span class="l-en">The bottoming setup is not yet confirmed (price still below the 10-day average) and the 3-day/weekly momentum is rolling over — momentum is fading before the setup has completed. Wait for price to reclaim the 10-day average with momentum stabilising before sizing in.</span><span class="l-zh">筑底形态尚未确认（价格仍位于 10 日均线下方），且3 日/周线动量已开始掉头向下——动量在形态完成前已开始衰竭。等待价格收复 10 日均线且动量趋于稳定后再考虑建仓。</span> <span class="mut">· <span class="l-en">5d ago</span><span class="l-zh">5天前</span></span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">EQ</span><span class="l-zh">EQ</span></span>
+            <span class="row-pop-val">▲ +32</span></div>
+        </div><ul class="row-pop-why"><li>BOTTOMING</li></ul><div class="row-pop-ft">
+          <span>2026-07-14</span>
+        </div>
+      </span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/512880.SS.html"><span class="l-en">Securities & Brokers</span><span class="l-zh">Securities & Brokers</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        
+        
+        
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">BOTTOMING · UNCONFIRMED — WAIT</span><span class="l-zh">筑底 · 未确认 — 等待</span></span>
         
         
         
@@ -1765,7 +1760,7 @@
       
     </div>
       </div>
-      
+      <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button>
       </div>
     </div>
     <div class="anv2-lane anv2-lane--bot" id="anv2-bot">
@@ -1793,9 +1788,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Food & Beverage</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_food_bev.html"><span class="l-en">Food & Beverage</span><span class="l-zh">Food & Beverage</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -1836,9 +1829,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Insurers</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_insurers.html"><span class="l-en">Insurers</span><span class="l-zh">Insurers</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -1878,9 +1869,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Agriculture</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sector_cycles_china.html"><span class="l-en">Agriculture</span><span class="l-zh">Agriculture</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -1921,9 +1910,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Medical Devices & TCM</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_med_devices.html"><span class="l-en">Medical Devices & TCM</span><span class="l-zh">Medical Devices & TCM</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -1963,9 +1950,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">SOE Blue Chips (中特估)</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_soe_value.html"><span class="l-en">SOE Blue Chips (中特估)</span><span class="l-zh">SOE Blue Chips (中特估)</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2006,9 +1991,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Gold Miners</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_gold.html"><span class="l-en">Gold Miners</span><span class="l-zh">Gold Miners</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2048,9 +2031,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Beauty & Care</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sector_cycles_china.html"><span class="l-en">Beauty & Care</span><span class="l-zh">Beauty & Care</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2091,9 +2072,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Autos & NEV Makers</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_autos.html"><span class="l-en">Autos & NEV Makers</span><span class="l-zh">Autos & NEV Makers</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2134,9 +2113,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Baijiu / Liquor</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_baijiu.html"><span class="l-en">Baijiu / Liquor</span><span class="l-zh">Baijiu / Liquor</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2176,9 +2153,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Food & Beverage</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sector_cycles_china.html"><span class="l-en">Food & Beverage</span><span class="l-zh">Food & Beverage</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2218,9 +2193,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Textiles & Apparel</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sector_cycles_china.html"><span class="l-en">Textiles & Apparel</span><span class="l-zh">Textiles & Apparel</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2260,9 +2233,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Transportation</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sector_cycles_china.html"><span class="l-en">Transportation</span><span class="l-zh">Transportation</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2303,9 +2274,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Defense & Aerospace</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_defense.html"><span class="l-en">Defense & Aerospace</span><span class="l-zh">Defense & Aerospace</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2346,9 +2315,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Rare Earth & Magnets</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_rare_earth.html"><span class="l-en">Rare Earth & Magnets</span><span class="l-zh">Rare Earth & Magnets</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2388,9 +2355,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Consumer Services</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sector_cycles_china.html"><span class="l-en">Consumer Services</span><span class="l-zh">Consumer Services</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2430,9 +2395,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Industrial Metals</span>
-        <span class="anv2-score anv2-score-mid">45</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_metals.html"><span class="l-en">Industrial Metals</span><span class="l-zh">有色金属</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-mid">45</span>
       </div>
       <div class="anv2-chips">
         
@@ -2468,9 +2431,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Baijiu (Liquor)</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="subsector_china/ths-baijiu.html"><span class="l-en">Baijiu (Liquor)</span><span class="l-zh">白酒概念</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2506,9 +2467,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Hair Loss Treatment</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="subsector_china/thsc308893.html"><span class="l-en">Hair Loss Treatment</span><span class="l-zh">毛发医疗</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2544,9 +2503,7 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Voice Technology</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="subsector_china/thsc300917.html"><span class="l-en">Voice Technology</span><span class="l-zh">语音技术</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
@@ -2592,14 +2549,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">26</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="dn">-15.1%</span></span></div>
+            <span class="row-pop-val"><span class="dn">-15.1%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="dn">-9.2%</span></span></div>
         </div><ul class="row-pop-why"><li>20d -15.1% vs CSI 300</li><li>downtrend across timeframes</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Solar / Photovoltaics</span>
-        <span class="anv2-score anv2-score-lo">26</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_solar.html"><span class="l-en">Solar / Photovoltaics</span><span class="l-zh">光伏</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-lo">26</span>
       </div>
       <div class="anv2-chips">
         
@@ -2616,8 +2572,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-neg">-15.1%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-neg">-15.1%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-neg">-9.2%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -2629,14 +2586,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">30</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="dn">-13.6%</span></span></div>
+            <span class="row-pop-val"><span class="dn">-13.6%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="dn">-11.2%</span></span></div>
         </div><ul class="row-pop-why"><li>20d -13.6% vs CSI 300</li><li>downtrend across timeframes</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Battery & Lithium</span>
-        <span class="anv2-score anv2-score-lo">30</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_battery.html"><span class="l-en">Battery & Lithium</span><span class="l-zh">锂电池</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-lo">30</span>
       </div>
       <div class="anv2-chips">
         
@@ -2653,8 +2609,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-neg">-13.6%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-neg">-13.6%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-neg">-11.2%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -2666,14 +2623,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">30</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="dn">-4.4%</span></span></div>
+            <span class="row-pop-val"><span class="dn">-4.4%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="dn">-8.1%</span></span></div>
         </div><ul class="row-pop-why"><li>20d -4.4% vs CSI 300</li><li>downtrend across timeframes</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Defense & Aerospace</span>
-        <span class="anv2-score anv2-score-lo">30</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_defense.html"><span class="l-en">Defense & Aerospace</span><span class="l-zh">军工航天</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-lo">30</span>
       </div>
       <div class="anv2-chips">
         
@@ -2692,8 +2648,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-neg">-4.4%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-neg">-4.4%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-neg">-8.1%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -2705,14 +2662,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">32</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="dn">-7.6%</span></span></div>
+            <span class="row-pop-val"><span class="dn">-7.6%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="dn">-3.5%</span></span></div>
         </div><ul class="row-pop-why"><li>20d -7.6% vs CSI 300</li><li>accelerating</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Autos & NEV Makers</span>
-        <span class="anv2-score anv2-score-lo">32</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_autos.html"><span class="l-en">Autos & NEV Makers</span><span class="l-zh">汽车整车</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-lo">32</span>
       </div>
       <div class="anv2-chips">
         
@@ -2731,8 +2687,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-neg">-7.6%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-neg">-7.6%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-neg">-3.5%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -2744,14 +2701,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">34</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="dn">-0.2%</span></span></div>
+            <span class="row-pop-val"><span class="dn">-0.2%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="up">+2.2%</span></span></div>
         </div><ul class="row-pop-why"><li>20d -0.2% vs CSI 300</li><li>accelerating</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Software & AI Apps</span>
-        <span class="anv2-score anv2-score-lo">34</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_software.html"><span class="l-en">Software & AI Apps</span><span class="l-zh">软件与AI应用</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-lo">34</span>
       </div>
       <div class="anv2-chips">
         
@@ -2768,8 +2724,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-neg">-0.2%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-neg">-0.2%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-pos">+2.2%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -2781,14 +2738,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">34</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="dn">-4.9%</span></span></div>
+            <span class="row-pop-val"><span class="dn">-4.9%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="up">+1.6%</span></span></div>
         </div><ul class="row-pop-why"><li>20d -4.9% vs CSI 300</li><li>unconfirmed turn vs the bigger trend</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Baijiu / Liquor</span>
-        <span class="anv2-score anv2-score-lo">34</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_baijiu.html"><span class="l-en">Baijiu / Liquor</span><span class="l-zh">白酒</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-lo">34</span>
       </div>
       <div class="anv2-chips">
         
@@ -2807,8 +2763,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-neg">-4.9%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-neg">-4.9%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-pos">+1.6%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -2820,14 +2777,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">34</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="dn">-11.8%</span></span></div>
+            <span class="row-pop-val"><span class="dn">-11.8%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="dn">-9.2%</span></span></div>
         </div><ul class="row-pop-why"><li>20d -11.8% vs CSI 300</li><li>decelerating</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Rare Earth & Magnets</span>
-        <span class="anv2-score anv2-score-lo">34</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_rare_earth.html"><span class="l-en">Rare Earth & Magnets</span><span class="l-zh">稀土永磁</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-lo">34</span>
       </div>
       <div class="anv2-chips">
         
@@ -2846,8 +2802,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-neg">-11.8%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-neg">-11.8%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-neg">-9.2%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -2859,14 +2816,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">39</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="dn">-5.1%</span></span></div>
+            <span class="row-pop-val"><span class="dn">-5.1%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="up">+4.2%</span></span></div>
         </div><ul class="row-pop-why"><li>20d -5.1% vs CSI 300</li><li>unconfirmed turn vs the bigger trend</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Gold Miners</span>
-        <span class="anv2-score anv2-score-lo">39</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_gold.html"><span class="l-en">Gold Miners</span><span class="l-zh">黄金</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-lo">39</span>
       </div>
       <div class="anv2-chips">
         
@@ -2885,8 +2841,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-neg">-5.1%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-neg">-5.1%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-pos">+4.2%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -2898,14 +2855,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">41</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="dn">-0.4%</span></span></div>
+            <span class="row-pop-val"><span class="dn">-0.4%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="up">+3.5%</span></span></div>
         </div><ul class="row-pop-why"><li>20d -0.4% vs CSI 300</li><li>accelerating</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">SOE Blue Chips (中特估)</span>
-        <span class="anv2-score anv2-score-mid">41</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_soe_value.html"><span class="l-en">SOE Blue Chips (中特估)</span><span class="l-zh">中特估·央企</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-mid">41</span>
       </div>
       <div class="anv2-chips">
         
@@ -2924,8 +2880,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-neg">-0.4%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-neg">-0.4%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-pos">+3.5%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -2937,14 +2894,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">45</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="dn">-8.8%</span></span></div>
+            <span class="row-pop-val"><span class="dn">-8.8%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="up">+5.1%</span></span></div>
         </div><ul class="row-pop-why"><li>20d -8.8% vs CSI 300</li><li>decelerating</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Industrial Metals</span>
-        <span class="anv2-score anv2-score-mid">45</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_metals.html"><span class="l-en">Industrial Metals</span><span class="l-zh">有色金属</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-mid">45</span>
       </div>
       <div class="anv2-chips">
         
@@ -2961,8 +2917,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-neg">-8.8%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-neg">-8.8%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-pos">+5.1%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -2974,14 +2931,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">50</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="dn">-0.4%</span></span></div>
+            <span class="row-pop-val"><span class="dn">-0.4%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="dn">-9.5%</span></span></div>
         </div><ul class="row-pop-why"><li>20d -0.5% vs CSI 300</li><li>decelerating</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Robotics & Automation</span>
-        <span class="anv2-score anv2-score-mid">50</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_robotics.html"><span class="l-en">Robotics & Automation</span><span class="l-zh">机器人与自动化</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-mid">50</span>
       </div>
       <div class="anv2-chips">
         
@@ -2998,8 +2954,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-neg">-0.4%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-neg">-0.4%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-neg">-9.5%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -3011,14 +2968,13 @@
         <div class="row-pop-div"></div>
         <div class="row-pop-grid"><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
             <span class="row-pop-val">50</span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="dn">-4.5%</span></span></div>
+            <span class="row-pop-val"><span class="dn">-4.5%</span></span></div><div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="up">+2.6%</span></span></div>
         </div><ul class="row-pop-why"><li>20d -4.5% vs CSI 300</li><li>unconfirmed turn vs the bigger trend</li></ul><div class="row-pop-ft">
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Coal</span>
-        <span class="anv2-score anv2-score-mid">50</span>
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="basket_china/cn_coal.html"><span class="l-en">Coal</span><span class="l-zh">煤炭</span><span class="anv2-go" aria-hidden="true">↗</span></a><span class="anv2-score anv2-score-mid">50</span>
       </div>
       <div class="anv2-chips">
         
@@ -3035,8 +2991,9 @@
       </div>
       
       
+      
       <div class="anv2-stat">
-        <span class="anv2-neg">-4.5%</span><span class="muted"> <span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
+        <span class="anv2-neg">-4.5%</span><span class="muted"> <span class="l-en">20d</span><span class="l-zh">20日</span></span> · <span class="anv2-pos">+2.6%</span><span class="muted"> <span class="l-en">5d</span><span class="l-zh">5日</span></span><span class="muted"> <span class="l-en">vs CSI 300</span><span class="l-zh">相对沪深300</span></span>
       </div>
       
     </div><div class="anv2-row" data-rpop>
@@ -3058,16 +3015,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Coal</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/515220.SS.html"><span class="l-en">Coal</span><span class="l-zh">Coal</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">UNCONFIRMED — HIGH RISK</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">UNCONFIRMED — HIGH RISK</span><span class="l-zh">未确认 — 高风险</span></span>
         
         
         
@@ -3096,16 +3051,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Healthcare</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/512170.SS.html"><span class="l-en">Healthcare</span><span class="l-zh">Healthcare</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">UNCONFIRMED — HIGH RISK</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">UNCONFIRMED — HIGH RISK</span><span class="l-zh">未确认 — 高风险</span></span>
         
         
         
@@ -3134,16 +3087,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Automobiles</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/515250.SS.html"><span class="l-en">Automobiles</span><span class="l-zh">Automobiles</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">AVOID</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
         
         
         
@@ -3172,16 +3123,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Real Estate</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/512200.SS.html"><span class="l-en">Real Estate</span><span class="l-zh">Real Estate</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">AVOID</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
         
         
         
@@ -3210,16 +3159,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Defense & Military</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/512660.SS.html"><span class="l-en">Defense & Military</span><span class="l-zh">Defense & Military</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">AVOID</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
         
         
         
@@ -3248,16 +3195,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Nonferrous Metals</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/512400.SS.html"><span class="l-en">Nonferrous Metals</span><span class="l-zh">Nonferrous Metals</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">AVOID</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
         
         
         
@@ -3286,16 +3231,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Consumer Staples</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/159928.SZ.html"><span class="l-en">Consumer Staples</span><span class="l-zh">Consumer Staples</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">UNCONFIRMED — HIGH RISK</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">UNCONFIRMED — HIGH RISK</span><span class="l-zh">未确认 — 高风险</span></span>
         
         
         
@@ -3324,16 +3267,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">New-Energy Vehicle</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/515030.SS.html"><span class="l-en">New-Energy Vehicle</span><span class="l-zh">New-Energy Vehicle</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">AVOID</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
         
         
         
@@ -3362,16 +3303,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Solar & Photovoltaic</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/515790.SS.html"><span class="l-en">Solar & Photovoltaic</span><span class="l-zh">Solar & Photovoltaic</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">AVOID</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
         
         
         
@@ -3400,16 +3339,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Baijiu & Liquor</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/512690.SS.html"><span class="l-en">Baijiu & Liquor</span><span class="l-zh">Baijiu & Liquor</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">UNCONFIRMED — HIGH RISK</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">UNCONFIRMED — HIGH RISK</span><span class="l-zh">未确认 — 高风险</span></span>
         
         
         
@@ -3438,16 +3375,14 @@
           <span>2026-07-14</span>
         </div>
       </span>
-      <div class="anv2-row-top">
-        <span class="anv2-name">Media</span>
-        
+      <div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/512980.SS.html"><span class="l-en">Media</span><span class="l-zh">Media</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
       <div class="anv2-chips">
         
         
         
         
-        <span class="anv2-chip anv2-chip-tag">AVOID</span>
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
         
         
         
@@ -17026,7 +16961,7 @@
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-14 13:44 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-14 14:40 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 
