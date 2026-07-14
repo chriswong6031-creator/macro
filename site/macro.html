@@ -3933,6 +3933,17 @@ body.page-macro.mx4-grid .mx5-aurora .mx5-a4{
 [data-theme="light"] body.page-macro.mx4-grid .mx5-aurora::after {background:radial-gradient(ellipse,rgba(99,102,241,.05) 0%,transparent 70%);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-aurora .mx5-a3{background:radial-gradient(ellipse,rgba(14,165,98,.04) 0%,transparent 70%);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-aurora .mx5-a4{background:radial-gradient(ellipse,rgba(99,102,241,.04) 0%,transparent 70%);}
+/* verdict-tinted aurora (operator order 2026-07-14): the two GREEN blobs follow the
+   market-state color — amber when Mixed, red when Risk-off; the indigo companions
+   stay neutral. Class baked from market_state.color + live-swapped by risk_state_live.js. */
+body.page-macro.mx4-grid .mx5-aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(245,158,11,.10) 0%,transparent 70%);}
+body.page-macro.mx4-grid .mx5-aurora.au-yellow .mx5-a3{background:radial-gradient(ellipse,rgba(245,158,11,.06) 0%,transparent 70%);}
+body.page-macro.mx4-grid .mx5-aurora.au-red::before{background:radial-gradient(ellipse,rgba(239,68,68,.10) 0%,transparent 70%);}
+body.page-macro.mx4-grid .mx5-aurora.au-red .mx5-a3{background:radial-gradient(ellipse,rgba(239,68,68,.06) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(156,98,18,.05) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-yellow .mx5-a3{background:radial-gradient(ellipse,rgba(156,98,18,.035) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-red::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-red .mx5-a3{background:radial-gradient(ellipse,rgba(220,38,38,.035) 0%,transparent 70%);}
 @media(prefers-reduced-motion:reduce){
   body.page-macro.mx4-grid .mx5-aurora::before,
   body.page-macro.mx4-grid .mx5-aurora::after,
