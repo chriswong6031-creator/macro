@@ -2096,3 +2096,36 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: CCW-W2 g-spread engine tests
         run: python -m pytest tests/test_corp_credit.py -v
+
+  ccw-w3-credit-momentum:
+    # CCW-W3 credit momentum organ:
+    #   engine/credit_momentum.py — spread velocity/pctile, oscillator states
+    #     (secondary per CCW-R15), density gate, composition suppression,
+    #     K-of-N tags (credit_market_turn / credit_theme_stress), interim TLT
+    #     block (R6), own-store breadth, FINRA breadth (distinctly labeled),
+    #     fallen-angel watch, ORCL named series, credit-vs-equity divergence,
+    #     forward ledger (keep-FIRST). Authority all-false.
+    #   engine/bonds_alerts.py extension — additive credit_market_turn +
+    #     credit_theme_stress debounced events (compute_credit_events /
+    #     rebuild_with_credit).
+    # Test coverage (tests/test_credit_momentum.py):
+    #   canon-on-spread: severity orientation, velocity pctile (widening/tightening)
+    #   density gate: open/closed, boundary conditions (n=8, ratio=0.6)
+    #   composition-change suppression: mask, no crash
+    #   K-of-N tag: 2-of-3 boundary (credit_market_turn + credit_theme_stress)
+    #   forward ledger: keep-FIRST idempotency, deterministic event_id, frozen ruler
+    #   FINRA breadth math: advance share, buy/sell productCategory trap, source label
+    #   divergence quadrant: risk_formation, converging_good, accruing cases
+    #   alerts debounce: fired/not-fired events, ZH fields, idempotency, missing file
+    #   null-safety: empty stores → valid JSON, no crash (all inputs missing)
+    # Downstream suite: test_corp_bond_holdings + test_finra_corp_bonds also run.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: CCW-W3 credit momentum tests
+        run: python -m pytest tests/test_credit_momentum.py tests/test_corp_bond_holdings.py tests/test_finra_corp_bonds.py -v
