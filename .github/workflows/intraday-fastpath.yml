@@ -161,6 +161,18 @@ jobs:
             echo "::warning::basket_pulse build failed (non-fatal)"
           LIVE_QUOTES_PATH="$RUNNER_TEMP/quotes_live.json" python -m scripts.build_basket_pulse --market hk || \
             echo "::warning::basket_pulse hk build failed (non-fatal)"
+      - name: display live snapshot (all ticks — same-origin site/live/quotes.json)
+        # The browser's ONLY keyless feed for the glance-tier tiles (macro index strip,
+        # ES/NQ futures, china live strip, commodities/forex, BTC) is the same-origin
+        # site/live/quotes.json (window.LIVE_SNAPSHOT_URL; no Worker deployed). Producers:
+        # THIS step on every fastpath tick (30-min, US + HKEX windows — so the china
+        # tiles are fresh during CHINA hours, not just US RTH) and the hourly 24/7
+        # btc-live Action (nights/weekends/Sunday Globex reopen). ~25 symbols, seconds.
+        # Fresh direct fetch (same code path as btc-live) rather than filtering the
+        # live-data branch snapshot: identical contract, no branch dependency.
+        run: |
+          python -m scripts.build_live_quotes --display --out site/live/quotes.json || \
+            echo "::warning::display live snapshot failed (non-fatal; hourly btc-live keeps the tiles fed)"
       - name: notify turn events (FTR W10 — Discord alerts on IGNITION / shock / tape disagreement)
         # Evaluates three event sources (turn_watch.json, shock_state.json, basket_pulse.json)
         # and sends Discord messages via DISCORD_WEBHOOK_WATCHLIST.
@@ -186,6 +198,9 @@ jobs:
           # Stage the served live artifacts (site/live/* is gitignored -> force-track, like site/stockdata)
           # + the (maybe) refreshed regime as-of + Market State snapshot that the page reads its date from.
           git add -f site/live/overlay.json site/live/risk_state.json site/live/market_drivers.json site/live/shock_state.json site/live/basket_pulse.json site/live/flow_pulse.json site/live_config.js
+          # Display tile snapshot (same-origin; also written hourly by btc-live). Guard: a
+          # failed fetch on this tick leaves the checked-out copy untouched (tracked file).
+          git add -f site/live/quotes.json 2>/dev/null || true
           # HK basket pulse (GAP-3): guard with || true — absent on a tick where the hk build warned.
           git add -f site/live/basket_pulse_hk.json 2>/dev/null || true
           # S&P heatmap live refresh (tracked file; guard for the premarket ticks that skip the build)

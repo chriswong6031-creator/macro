@@ -54,6 +54,7 @@ US_FUTURES = ["ES=F", "NQ=F", "YM=F", "RTY=F"]              # overnight, referen
 INTL_INDEXES = [
     "^HSI",        # Hang Seng (Hong Kong)
     "000001.SS",   # SSE Composite (Shanghai)
+    "510300.SS",   # CSI 300 ETF (Shanghai) — china page live tile
     "399001.SZ",   # SZSE Component (Shenzhen)
     "^GSPTSE",     # S&P/TSX Composite (Canada)
     "^N225",       # Nikkei 225 (Japan)
@@ -79,6 +80,25 @@ CORE_FX = ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCNH=X
 CORE_CRYPTO = ["BTC-USD"]
 CORE_SYMBOLS = (US_INDEXES + US_FUTURES + INTL_INDEXES + CORE_ETFS
                 + CORE_COMMODITIES + CORE_FX + CORE_CRYPTO)
+
+# DISPLAY set — exactly the market/index tiles the SITE renders as glance-tier live
+# tiles (macro market strip, china live strip, commodities/forex strips, BTC header).
+# This is the SAME-ORIGIN snapshot universe (site/live/quotes.json): the browser's
+# only keyless feed for these symbols when no Worker is deployed (the full-universe
+# snapshot lives on the live-data BRANCH, which pages never fetch). Kept tiny (~25
+# symbols, seconds to fetch) so BOTH producers stay cheap: the hourly 24/7 btc-live
+# Action (nights/weekends/Sunday Globex reopen) and the 30-min intraday-fastpath
+# tick (US RTH + HKEX windows). Keep in sync with the data-sym tiles the templates
+# emit — a symbol displayed but absent here keeps its baked value forever.
+DISPLAY_SYMBOLS = [
+    "SPY", "QQQ", "^DJI", "^RUT",            # macro market strip (DJI/RUT tiles carry data-sym ^DJI/^RUT)
+    "ES=F", "NQ=F",                          # macro futures tiles (~23h Globex tape)
+    "000001.SS", "510300.SS", "^HSI",        # china page live strip
+    "BTC-USD",                               # Bitcoin Vector header (24/7)
+    "GC=F", "SI=F", "HG=F", "CL=F", "BZ=F", "DX-Y.NYB",   # commodities strip
+    "EURUSD=X", "USDJPY=X", "GBPUSD=X", "USDCAD=X",       # forex strip
+    "USDCNH=X", "USDCHF=X", "USDMXN=X", "USDBRL=X",
+]
 
 
 def scrape_site_symbols(site_dir: Path) -> list[str]:
@@ -282,12 +302,18 @@ def main() -> None:
     ap.add_argument("--symbols", default=None,
                     help="comma-separated EXACT universe (bypass CORE+scrape+conviction); "
                          "e.g. 'BTC-USD' for the hourly crypto-only snapshot")
+    ap.add_argument("--display", action="store_true",
+                    help="EXACT universe = DISPLAY_SYMBOLS (the site's glance-tier live "
+                         "tiles) — the same-origin site/live/quotes.json producer preset "
+                         "used by btc-live (hourly 24/7) and intraday-fastpath (30-min)")
     args = ap.parse_args()
 
     site_dir = (Path(args.site) if args.site
                 else config.ROOT / config.load()["storage"]["site_dir"])
     extra = list((config.load().get("live") or {}).get("snapshot_extra") or [])
     symbols = [s for s in (args.symbols or "").split(",") if s.strip()] or None
+    if args.display:
+        symbols = list(DISPLAY_SYMBOLS)
     snap = build(site_dir, offline=args.offline, extra=extra, cap=args.max,
                  symbols=symbols)
 

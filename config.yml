@@ -556,7 +556,14 @@ live:
   feed_label: "≈15-min delayed (Polygon Standard / Yahoo)"
   feed_label_zh: "≈延迟15分钟（Polygon Standard / Yahoo）"   # zh caption for the same badge (bilingual UI law)
   top_conviction_n: 60         # also include the top-N US names by |conviction| from the search index
-  universe_extra: []           # optional extra tickers beyond Mastermind assets + top US conviction
+  # Symbols not in the GTAA asset lists but referenced by browser live tiles:
+  # ES=F / NQ=F (dashboard futures strip) + 000001.SS / ^HSI (china page live tiles).
+  # These land in overlay.json via build_live_overlay build_universe() as a REDUNDANT
+  # second feed: the tiles' primary feed is the same-origin site/live/quotes.json
+  # DISPLAY snapshot (scripts/build_live_quotes.py DISPLAY_SYMBOLS — written every
+  # fastpath tick + hourly 24/7 by btc-live). Overlay coverage means the tiles keep
+  # patching during US RTH even if a display-snapshot fetch degrades on a tick.
+  universe_extra: ["ES=F", "NQ=F", "000001.SS", "510300.SS", "^HSI"]
   market_context: [SPY, QQQ, "^VIX"]   # cheap live macro read emitted in overlay.market (VIX gets a band)
   # The deployed Cloudflare Worker the browser live.js calls (worker/quotes.worker.js).
   # Empty string = no Worker; live.js then falls back to the static snapshot below.

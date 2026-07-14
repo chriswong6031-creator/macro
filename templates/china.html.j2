@@ -519,6 +519,14 @@
   .idx-row, .idx-trend { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
   .idx-trend { margin-top: 3px; color: var(--muted); }
   .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
+  /* live-price tiles (cn-live-tiles strip — SSE, CSI 300 ETF, Hang Seng) */
+  .cn-lt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .cn-live-tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
+  .cn-lt-sym { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+  .cn-lt-sub { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .cn-lt-px { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
+  .cn-lt-chg { font-size: 12px; font-weight: 600; margin-top: 2px; }
+  @media (max-width: 600px) { #cn-live-tiles .cn-lt-grid { grid-template-columns: 1fr; } }
   /* index-health risk row + Income-Vector allocation button (mirrors the US macro page) */
   .idx-risk { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
   @media (max-width: 900px) { .idx-risk { grid-template-columns: 1fr; } }
@@ -1362,6 +1370,37 @@
       </div>
       <div class="span7">
   <!-- ===================== MARKET SNAPSHOT (cross-asset tiles + benchmark cycle) ===================== -->
+  {# Live price tiles — SSE Composite, CSI 300 ETF, Hang Seng. Patches by live.js each
+     poll tick (60 s by default). All three symbols are in build_live_quotes CORE_SYMBOLS
+     so they are always covered by the snapshot. Tile pattern mirrors the macro page
+     mx5-mkt-tile idiom; a simplified inline CSS keeps the china page self-contained
+     without importing the macro-page class scope. Always rendered (no nightly data
+     dependency); live.js degrades cleanly to the baked "—" when the feed is absent. #}
+  <div class="msec flush" id="cn-live-tiles" style="margin-bottom:10px">
+    <h3 class="msec-h" style="margin-bottom:8px">
+      <span class="l-en">Live quotes</span><span class="l-zh">实时报价</span>
+    </h3>
+    <div class="cn-lt-grid">
+      <div class="cn-live-tile" data-sym="000001.SS" data-mkt="cn">
+        <div class="cn-lt-sym">SSE</div>
+        <div class="cn-lt-sub"><span class="l-en">SSE Composite</span><span class="l-zh">上证指数</span></div>
+        <div class="cn-lt-px nb-px" data-sym="000001.SS" data-mkt="cn" data-bare>—</div>
+        <div class="cn-lt-chg nb-chg" data-sym="000001.SS" data-mkt="cn">—</div>
+      </div>
+      <div class="cn-live-tile" data-sym="510300.SS" data-mkt="cn">
+        <div class="cn-lt-sym">CSI 300</div>
+        <div class="cn-lt-sub"><span class="l-en">CSI 300 ETF</span><span class="l-zh">沪深300ETF</span></div>
+        <div class="cn-lt-px nb-px" data-sym="510300.SS" data-mkt="cn" data-bare>—</div>
+        <div class="cn-lt-chg nb-chg" data-sym="510300.SS" data-mkt="cn">—</div>
+      </div>
+      <div class="cn-live-tile" data-sym="^HSI" data-mkt="hk">
+        <div class="cn-lt-sym">HSI</div>
+        <div class="cn-lt-sub"><span class="l-en">Hang Seng</span><span class="l-zh">恒生指数</span></div>
+        <div class="cn-lt-px nb-px" data-sym="^HSI" data-mkt="hk" data-bare>—</div>
+        <div class="cn-lt-chg nb-chg" data-sym="^HSI" data-mkt="hk">—</div>
+      </div>
+    </div>
+  </div>
   {% if market_tiles or benchmark %}
   <div class="msec flush" id="market-snapshot">
     <h3 class="msec-h">{{ t('Market snapshot', '市场快照') }}
