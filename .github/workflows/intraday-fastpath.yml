@@ -100,6 +100,22 @@ jobs:
             exit 0
           fi
           python -m scripts.build_risk_state
+      - name: build live china risk-state (fast China Market State on live prices -> live/china_risk_state.json)
+        # Recomputes the price-driven CN Market State legs (tape/trend, USD/CNH + DXY capital-flow)
+        # on live(-ish) Yahoo prices; slow legs (RORO, QVIX, breadth, PBoC, drawdown guards) carried
+        # from the nightly baseline. china_risk_state_live.js polls the output to patch china.html.
+        # HKEX-window gate (inverted vs US steps): run ONLY when UTC hour < 9 (01:00-08:30 UTC =
+        # 09:00-16:30 HKT, the full HKEX session including pre-auction and closing-auction ticks).
+        # On US-window ticks (UTC >= 9) A-shares and HK are closed — echo a skip message and exit 0.
+        # No extra env needed: Yahoo spark is keyless.
+        run: |
+          UTC_HOUR=$(date -u +%H)
+          if [ "$UTC_HOUR" -ge 9 ]; then
+            echo "UTC hour $UTC_HOUR >= 9 — US-window tick, skipping China risk-state build (HKEX gate)"
+            exit 0
+          fi
+          python -m scripts.build_china_risk_state || \
+            echo "::warning::china risk-state build failed (non-fatal)"
       - name: S&P 500 heatmap live refresh (15-min-delayed splice -> site/marketdata/sp500_heatmap.json)
         # The committed heatmap feed was otherwise only rebuilt inside the nightly render
         # (~23:45 ET), so macro.html / sector_heatmap.html showed the PRIOR day's close for
@@ -203,6 +219,8 @@ jobs:
           git add -f site/live/quotes.json 2>/dev/null || true
           # HK basket pulse (GAP-3): guard with || true — absent on a tick where the hk build warned.
           git add -f site/live/basket_pulse_hk.json 2>/dev/null || true
+          # China risk-state (HKEX-window only): absent on US-window ticks that skipped the build.
+          git add -f site/live/china_risk_state.json 2>/dev/null || true
           # S&P heatmap live refresh (tracked file; guard for the premarket ticks that skip the build)
           git add site/marketdata/sp500_heatmap.json 2>/dev/null || true
           # TS-U0: stage the lastgood sidecar so it survives the next checkout and
