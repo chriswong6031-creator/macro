@@ -50,6 +50,111 @@
      BEFORE any live overwrite, so we can tell when the live band has moved off it. */
   var bakedLabelEn = null;
 
+  /* score-path chart vocab — mirrors the vz/v values build_site bakes into data-points
+     (chart zone vocab, NOT the display labels: Mixed→中性 there, not 混合) */
+  var PATH_V  = { RISK_ON: "Risk-on", MIXED: "Mixed", RISK_OFF: "Risk-off" };
+  var PATH_VZ = { RISK_ON: "偏多", MIXED: "中性", RISK_OFF: "偏空" };
+  var MONTH_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  /* Live provisional point on the score-path chart. The baked chart is a view of the
+     nightly forward ledger, so between renders the current session is missing (and a
+     no-network re-render can even regress the bake to an older close). Trust the live
+     feed instead: update the last point in place when the bake already has the session,
+     else APPEND a provisional point — rescaling x from the svg's own data-* constants,
+     re-seating the axis ticks/date labels, and recoloring line/fill/dot to the live
+     verdict. data-points is rewritten and 'mx5pathlive' dispatched so the baked hover
+     script re-reads it (tooltip stays truthful, incl. on the provisional point). */
+  function patchPath(d, disp) {
+    if (disp.score == null || !PATH_V[disp.verdict]) return;
+    var svg = document.querySelector(".mx5-sc-right .mx5-path-svg[data-points]");
+    if (!svg) return;
+    var pts;
+    try { pts = JSON.parse(svg.getAttribute("data-points") || "[]"); } catch (e) { return; }
+    if (pts.length < 2) return;
+    var sess = d.live_active ? (d.built || "").slice(0, 10)
+                             : (d.nightly_asof || (d.built || "").slice(0, 10));
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(sess)) return;
+    var last = pts[pts.length - 1];
+    if (sess < last.d) return;                    /* never rewrite history */
+    var PX0 = +(svg.getAttribute("data-px0") || 44),  PXW = +(svg.getAttribute("data-pxw") || 944);
+    var PY0 = +(svg.getAttribute("data-py0") || 10),  PYB = +(svg.getAttribute("data-pyb") || 194);
+    var VBW = +(svg.getAttribute("data-vbw") || 1000), VBH = +(svg.getAttribute("data-vbh") || 224);
+    var s = Math.max(0, Math.min(100, +disp.score));
+    var y = Math.round((PYB - s / 100 * (PYB - PY0)) * 100) / 100;
+    var col = HEX[COLOR[disp.verdict]];
+    var appended = false, oldX = null, i;
+    if (sess > last.d) {
+      oldX = [];
+      for (i = 0; i < pts.length; i++) oldX.push(pts[i].x);
+      var mm = +sess.slice(5, 7), dd = +sess.slice(8, 10);
+      pts.push({ d: sess, md: MONTH_EN[mm - 1] + " " + dd, mz: mm + "月" + dd,
+                 s: s, v: PATH_V[disp.verdict], vz: PATH_VZ[disp.verdict], x: 0, y: y, live: 1 });
+      for (i = 0; i < pts.length; i++)
+        pts[i].x = Math.round((PX0 + i / (pts.length - 1) * PXW) * 100) / 100;
+      appended = true;
+    } else {
+      if (last.s === s && last.v === PATH_V[disp.verdict]) return;   /* no change */
+      last.s = s; last.y = y;
+      last.v = PATH_V[disp.verdict]; last.vz = PATH_VZ[disp.verdict];
+    }
+    var lastP = pts[pts.length - 1];
+    var lineStr = pts.map(function (p) { return p.x + "," + p.y; }).join(" ");
+    var poly = svg.querySelector("polyline");
+    if (poly) { poly.setAttribute("points", lineStr); poly.setAttribute("stroke", col); }
+    var area = svg.querySelector('path[fill^="url("]');
+    if (area)
+      area.setAttribute("d", "M" + lineStr.replace(/ /g, " L") +
+                             " L" + lastP.x + "," + PYB + " L" + PX0 + "," + PYB + " Z");
+    var stops = svg.querySelectorAll("linearGradient stop");
+    for (i = 0; i < stops.length; i++) stops[i].setAttribute("stop-color", col);
+    var tdot = document.querySelector(".mx5-sc-right .mx5-pl-today");
+    if (tdot) {
+      tdot.style.left = (lastP.x / VBW * 100).toFixed(2) + "%";
+      tdot.style.top = (lastP.y / VBH * 100).toFixed(3) + "%";
+      tdot.style.color = col;
+    }
+    if (appended) {
+      /* axis tick marks (inside the font-size <g>) — re-seat onto rescaled xs */
+      var lines = svg.querySelectorAll("g line");
+      for (i = 0; i < lines.length; i++) {
+        if (+lines[i].getAttribute("y1") !== PYB) continue;
+        var x1 = +lines[i].getAttribute("x1"), bi = -1, bd = 1e9, oi;
+        for (oi = 0; oi < oldX.length; oi++) {
+          var dx = Math.abs(oldX[oi] - x1);
+          if (dx < bd) { bd = dx; bi = oi; }
+        }
+        if (bi >= 0 && bd < 1) {
+          lines[i].setAttribute("x1", pts[bi].x);
+          lines[i].setAttribute("x2", pts[bi].x);
+        }
+      }
+      /* date labels (HTML overlay) — match by baked EN text, re-seat, and demote the
+         old last tick's right-alignment to centered now that it is an interior tick */
+      var xt = document.querySelectorAll(".mx5-sc-right .mx5-pl-x");
+      for (i = 0; i < xt.length; i++) {
+        var en = xt[i].querySelector(".l-en");
+        var mdTxt = (en ? en.textContent : xt[i].textContent).trim();
+        for (var pi = 0; pi < pts.length; pi++) {
+          if (pts[pi].md === mdTxt) {
+            xt[i].style.left = (pts[pi].x / VBW * 100).toFixed(2) + "%";
+            if (pi > 0 && pi < pts.length - 1) xt[i].style.transform = "translate(-50%,-50%)";
+            break;
+          }
+        }
+      }
+      var ttl = document.querySelector(".mx5-path-title");
+      if (ttl) {
+        var tEn = ttl.querySelector(".l-en"), tZh = ttl.querySelector(".l-zh");
+        if (tEn) tEn.textContent = pts.length + "-session path";
+        if (tZh) tZh.textContent = "近 " + pts.length + " 交易日走势";
+      }
+    }
+    svg.setAttribute("aria-label", pts.length + "-session macro score path, " +
+                                   pts[0].s + " to " + lastP.s);
+    svg.setAttribute("data-points", JSON.stringify(pts));
+    try { document.dispatchEvent(new CustomEvent("mx5pathlive")); } catch (e2) {}
+  }
+
   function isZh() {
     try {
       // the site marks Chinese mode with html[data-lang="zh"] (theme.js); the older
@@ -185,7 +290,16 @@
       var flip = document.querySelector(".mx5-flip");
       if (flip && bakedLabelEn)
         flip.style.display = ((disp.label_en || "") === bakedLabelEn) ? "" : "none";
+      /* regime pill (quad name) tracks the market-state color too (operator order
+         2026-07-13): amber when Mixed, red when Risk-off, default green accent. */
+      var rpill = document.querySelector(".mx5-regime-pill");
+      if (rpill) {
+        rpill.classList.remove("rp-yellow", "rp-red");
+        if (col === "yellow") rpill.classList.add("rp-yellow");
+        else if (col === "red") rpill.classList.add("rp-red");
+      }
     }
+    patchPath(d, disp);
     var front = word.closest(".ms-front") || word.closest(".ms");
     if (front) {
       front.classList.remove("ms-green", "ms-yellow", "ms-red");

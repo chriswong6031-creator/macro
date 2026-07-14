@@ -4018,6 +4018,20 @@ body.page-macro.mx4-grid .mx5-regime-pill{
 }
 /* The pill's text span must not be forced to shrink below its content */
 body.page-macro.mx4-grid .mx5-regime-pill > span{flex:0 0 auto;}
+/* pill follows the market-state verdict color (operator order 2026-07-13):
+   default green accent when risk-on, amber when mixed, red when risk-off */
+body.page-macro.mx4-grid .mx5-regime-pill.rp-yellow{
+  border-color:var(--mx5-warn);background:var(--mx5-warn-dim);color:var(--mx5-warn-ink);
+}
+body.page-macro.mx4-grid .mx5-regime-pill.rp-yellow .mx5-dot{
+  background:var(--mx5-warn);box-shadow:0 0 6px rgba(245,158,11,.30);
+}
+body.page-macro.mx4-grid .mx5-regime-pill.rp-red{
+  border-color:var(--down,#ef4444);background:rgba(239,68,68,.10);color:var(--down,#ef4444);
+}
+body.page-macro.mx4-grid .mx5-regime-pill.rp-red .mx5-dot{
+  background:var(--down,#ef4444);box-shadow:0 0 6px rgba(239,68,68,.30);
+}
 body.page-macro.mx4-grid .mx5-regime-pill .mx5-dot{
   width:6px;height:6px;border-radius:50%;
   background:var(--mx5-accent);box-shadow:0 0 6px var(--mx5-accent-glow);
@@ -6073,6 +6087,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       var pts;
       try { pts = JSON.parse(svg.getAttribute('data-points') || '[]'); } catch(e){ return; }
       if(!pts.length) return;
+      /* the live layer (risk_state_live.js patchPath) appends/updates a provisional
+         point and rewrites data-points — re-read so the tooltip includes it */
+      document.addEventListener('mx5pathlive', function(){
+        try { pts = JSON.parse(svg.getAttribute('data-points') || '[]'); } catch(e){}
+      });
       var VBW = +(svg.getAttribute('data-vbw')||1000);
       var VBH = +(svg.getAttribute('data-vbh')||224);
       var COL = { 'Risk-on':'#22d97a', 'Mixed':'#f59e0b', 'Risk-off':'#ef4444' };
