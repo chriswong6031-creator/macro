@@ -1054,114 +1054,95 @@ lanes:
       - id: collect_asia
         module: scripts.collect
         args: [--group, asia]
+      # build_china stays a SERIAL head (2026-07-14 band restructure): it writes the
+      # china regime gate + regime_history, china_standouts.json and the risk_radar_intl
+      # CN forward log/calibration — inputs read by nearly every builder in band A. Its
+      # in-process build_china_library ProcessPool also gets the box to itself here.
       - id: build_china
         module: scripts.build_china
-      - id: build_china_sector_desk
-        module: scripts.build_china_sector_desk
-      - id: build_china_sector_cycles
-        module: scripts.build_china_sector_cycles
-      - id: build_china_cycles_scorecard
-        module: scripts.build_china_cycles_scorecard
-      - id: build_china_sector_central
-        module: scripts.build_china_sector_central
-      - id: build_flow_velocity
-        module: scripts.build_flow_velocity
-      - id: build_subsector_confluence_china
-        module: scripts.build_subsector_confluence
-        args: [--china]
-      - id: build_hk
-        module: scripts.build_hk
-      - id: build_rotation_events_hk
-        module: scripts.build_rotation_events_hk
-        note: non-fatal; RC-R14 display-tier — HK rotation-event detector port; reads hkbasketdata/baskets.json in-process (cheap, few dozen series); no ETF dependency; southbound context embedded in payload (display receipt only — never a detector input, HKRV-R2)
-      - id: build_baskets_china
-        module: scripts.build_baskets_china
-        note: >
-          Curated 22-basket CN page + theme desk + sector pulse. W8-R5: calls
-          engine.china_basket_turn.run() inline at end — writes
-          site/chinabasketdata/basket_turn_cn.json (schema basket_turn_cn.v1)
-          + appends data/china_basket_turn/ledger.jsonl (CN_LANE=asia gate).
-          Display-tier expected-NULL forward meter (FT-R9); ≤2 min.
-      - id: build_baskets_china_ths
-        module: scripts.build_baskets_china_ths
-        note: >
-          THS 237-basket CN page. W8-R5: reads basket_turn_cn.json (written by
-          build_baskets_china above) and annotates THS basket rows with turn states.
-      - id: build_baskets_hk
-        module: scripts.build_baskets_hk
-      - id: build_cn_reversal_sleeve
-        module: scripts.build_cn_reversal_sleeve
-      # ── CN-SYS W5a Scope 2: intel sub-builders (extracted from build_china.py) ──
-      - id: build_china_validation
-        module: scripts.build_china_validation
-        note: non-fatal; china predictive-validation scorecard (validate_all)
-      - id: build_china_news
-        module: scripts.build_china_news
-        note: non-fatal; china news powerhouse
-      - id: build_china_policy_watch
-        module: scripts.build_china_policy_watch
-        note: non-fatal; china policy watch surface
-      - id: build_china_altdata
-        module: scripts.build_china_altdata
-        note: non-fatal; china alt-data desk
-      - id: build_china_radar
-        module: scripts.build_china_radar
-        note: non-fatal; china divergence radar
-      - id: build_china_synthesis
-        module: scripts.build_china_synthesis
-        note: non-fatal; china central-intelligence synthesis (intel_analysis)
-      - id: build_china_analogs
-        module: scripts.build_china_analogs
-        note: non-fatal; china historical regime analog finder
-      - id: build_china_special_situations
-        module: scripts.build_china_special_situations
-        note: non-fatal; china special-sits desk
-      - id: build_china_intel_hub
-        module: scripts.build_china_intel_hub
-        note: non-fatal; china intel hub command apparatus
-      - id: build_china_intel
-        module: scripts.build_china_intel
-        note: non-fatal; china intel bus / mastermind fan-in
-      # ── CN-SYS W5a Scope 3: Batch-1 lobe wiring (W1/W2/W4) ──────────────────
-      - id: build_china_microstructure
-        module: scripts.build_china_microstructure
-        note: non-fatal; ~2 min; W1 microstructure lobe + limit tape (CN-SYS-R11)
-      - id: build_china_participation
-        module: scripts.build_china_participation
-        note: non-fatal; ~2 min; W2 participation lobe + tape (CN-SYS-R11)
-      - id: build_china_policy_transmission
-        module: scripts.build_china_policy_transmission
-        note: non-fatal; ~2 min; W4 policy transmission unifier (CN-SYS-R11)
-      - id: build_baskets_china_ths_snapshot
-        module: scripts.build_baskets_china_ths
-        args: [--snapshot]
-        note: non-fatal; ~2 min; W1 THS PIT membership snapshot side-car (CN-SYS-R11)
-      # ── CN-SYS Batch-2 lobe wiring (W3 + W6) ─────────────────────────────
-      - id: build_china_cycle_phase
-        module: scripts.build_china_cycle_phase
-        note: non-fatal; ~2 min; W3 cycle phase lobe + phase tape + falsifier ledger (CN-SYS-R11)
-      - id: build_china_market_state
-        module: scripts.build_china_market_state
-        note: non-fatal; ~2 min; W6 sovereign spine — china_market_state.v1 (CN-SYS-R11 R13)
-      - id: build_china_mechanics
-        module: scripts.build_china_mechanics
-        note: non-fatal; W8 mechanics cockpit — reads spine artifacts (CN-SYS-R1 R13)
-      # ── CN-SYS W9: lane unification ──────────────────────────────────────────
-      - id: build_china_masterminds
-        module: scripts.build_china_masterminds
-        note: non-fatal; W9 lane unification — CN GTAA flagship pages (was build_vector fallback)
-      - id: build_china_strategies
-        module: scripts.build_china_strategies
-        note: non-fatal; W9 lane unification — CN strategy scorecard hub + detail pages (was build_vector fallback)
-      - id: build_subsector_rotation_china
-        module: scripts.build_subsector_rotation_china
-        note: non-fatal; W9 lane unification — CN subsector rotation JSON (was build_site fallback)
-      - id: build_subsector_rotation_china_pages
-        module: scripts.build_subsector_rotation_china_pages
-        note: non-fatal; W9 lane unification — per-subsector CN detail pages
-      - id: build_rotation_events_china
-        module: scripts.build_rotation_events_china
-        note: non-fatal; RC-R14 display-tier — China rotation-event detector port; reads baskets.json in-process (cheap, few dozen series); no ETF dependency
+      # ── parallel band A (2026-07-14): the post-spine builders run as 5 mutually
+      # independent background clusters (engine-job pattern), each internally ordered
+      # by its own data deps. Per-module doctrine notes retained as comments:
+      #   sector_cycles → cycles_scorecard: grader reads forward_log.parquet appended
+      #     by the cycles build the same run (falsifiability loop).
+      #   policy_transmission (W4, CN-SYS-R11): collect-fed only; parked in cl_sector
+      #     so its live tail is on disk before band B's cycle_phase.
+      #   masterminds/strategies (W9 lane unification, was build_vector fallback):
+      #     strategies re-runs the mastermind backtests via code import — ordered to
+      #     avoid duplicate CPU, not for correctness.
+      #   microstructure → participation (W1 → W2, CN-SYS-R11): zt_breadth leg reads
+      #     the limit tape appended the same run.
+      #   baskets_china (W8-R5): calls engine.china_basket_turn.run() inline — writes
+      #     basket_turn_cn.json + appends data/china_basket_turn/ledger.jsonl
+      #     (CN_LANE=asia gate); display-tier expected-NULL forward meter (FT-R9).
+      #   baskets_china_ths (W8-R5): reads basket_turn_cn.json (written by
+      #     baskets_china above) and annotates THS basket rows with turn states.
+      #   baskets_china_ths --snapshot: W1 THS PIT membership snapshot side-car.
+      #   rotation_events_china / _hk (RC-R14 display-tier): read their region's
+      #     baskets.json in-process — each kept AFTER its baskets build (the old
+      #     serial chain ran rotation_events_hk BEFORE baskets_hk, reading the prior
+      #     session's committed file; now same-session). Southbound context embedded
+      #     in the HK payload is a display receipt only — never a detector input
+      #     (HKRV-R2).
+      #   intel chain (CN-SYS W5a Scope 2, extracted from build_china.py, non-fatal):
+      #     validation → (news → policy_watch) → altdata → radar → synthesis; the
+      #     fan-in tail (intel_hub → intel_bus) runs in band B because it also reads
+      #     analogs/special_sits from cl_flowconf.
+      - id: band_a
+        cluster:
+          cl_sector:
+            - scripts.build_china_sector_desk
+            - scripts.build_china_sector_cycles
+            - scripts.build_china_cycles_scorecard
+            - scripts.build_china_policy_transmission
+            - scripts.build_china_masterminds
+            - scripts.build_china_strategies
+          cl_flowconf:
+            - scripts.build_flow_velocity
+            - scripts.build_subsector_confluence --china
+            - scripts.build_china_microstructure
+            - scripts.build_china_participation
+            - scripts.build_china_analogs
+            - scripts.build_china_special_situations
+          cl_cn_baskets:
+            - scripts.build_baskets_china
+            - scripts.build_baskets_china_ths
+            - scripts.build_baskets_china_ths --snapshot
+            - scripts.build_cn_reversal_sleeve
+            - scripts.build_subsector_rotation_china
+            - scripts.build_subsector_rotation_china_pages
+            - scripts.build_rotation_events_china
+          cl_hk:
+            - scripts.build_hk
+            - scripts.build_baskets_hk
+            - scripts.build_rotation_events_hk
+          cl_intel:
+            - scripts.build_china_validation
+            - scripts.build_china_news
+            - scripts.build_china_policy_watch
+            - scripts.build_china_altdata
+            - scripts.build_china_radar
+            - scripts.build_china_synthesis
+      # ── parallel band B: cross-cluster consumers, after the band-A barrier ──
+      #   cl_state (CN-SYS Batch-2, non-fatal, CN-SYS-R11/R13): cycle_phase (W3 phase
+      #     tape + falsifier ledger) → market_state (W6 sovereign spine,
+      #     china_market_state.v1; degrades to phase=null if W3 missed) → mechanics
+      #     (W8 cockpit — reads spine artifacts).
+      #   cl_intel_tail: intel_hub (command apparatus) → intel_bus (mastermind fan-in).
+      #   cl_central: sector_central reads cl_sector's cycles data JS + the spine's
+      #     regime gate + basket membership (the CN analog of daily.yml's post-band
+      #     build_sector_central).
+      - id: band_b
+        cluster:
+          cl_state:
+            - scripts.build_china_cycle_phase
+            - scripts.build_china_market_state
+            - scripts.build_china_mechanics
+          cl_intel_tail:
+            - scripts.build_china_intel_hub
+            - scripts.build_china_intel
+          cl_central:
+            - scripts.build_china_sector_central
       # ── W8-R7: CN MTF upturn organ runs INLINE inside build_china_library.main() ──
       # compute_cn() is called at end of build_china_library.main() after board arrays
       # are assembled (see engine/mtf_upturn.py CN lane). No standalone script entry

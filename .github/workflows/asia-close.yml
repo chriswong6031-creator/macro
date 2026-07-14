@@ -141,7 +141,7 @@ jobs:
       group: pipeline-asia
       cancel-in-progress: false
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 165   # was 90 -> 120 -> 165. EVERY run 07-03..07-10 died at the cap: measured 07-10 (run 29089281652) collect --group asia = 68m + build_china alone = 36m, so the kill lands mid-chain — everything after build_subsector_confluence (build_hk, build_china_news ingest, all CN-SYS lobes, masterminds) had been DEAD for 8 days while the run reads "cancelled" not "failed". Last natural success 07-02 at ~86m; the lane grew ~+35m in a week as W8/CN-SYS modules landed. 165m restores the full chain; the runtime diet landed 2026-07-11 — collect-path (us_scope tail gate + pure-REST pool moves + CNInfo caps, #2199) and build-path (skip the duplicate library rebuild + [timing] section ticks in build_china_library, this PR). Target ~110m steady-state; keep 165m as headroom against CNInfo/GDELT bad days.
+    timeout-minutes: 165   # was 90 -> 120 -> 165. EVERY run 07-03..07-10 died at the cap: measured 07-10 (run 29089281652) collect --group asia = 68m + build_china alone = 36m, so the kill lands mid-chain — everything after build_subsector_confluence (build_hk, build_china_news ingest, all CN-SYS lobes, masterminds) had been DEAD for 8 days while the run reads "cancelled" not "failed". Last natural success 07-02 at ~86m; the lane grew ~+35m in a week as W8/CN-SYS modules landed. 165m restores the full chain; the runtime diet landed 2026-07-11 — collect-path (us_scope tail gate + pure-REST pool moves + CNInfo caps, #2199) and build-path (skip the duplicate library rebuild + [timing] section ticks in build_china_library, this PR). Target ~110m steady-state; keep 165m as headroom against CNInfo/GDELT bad days. 2026-07-14: the post-build_china builder chain went parallel (band A/B below, engine-job cluster pattern) — expected ~18-25m further off the steady state; timeout deliberately UNTOUCHED until the bands' step-summary wall-times confirm it.
     steps:
       # Default ref (the branch that triggered this) — NOT a hard `ref: main`. On the
       # feat/time-shards branch this pulls the collect.py that HAS --group; on main
@@ -224,7 +224,7 @@ jobs:
               git rebase --abort 2>/dev/null || true; echo "asia data push attempt $i lost a race"; sleep $((i * 7))
             done
           fi
-      - name: build China + Hong Kong dashboards (resilient — mirrors daily.yml cl_china/cl_hk)
+      - name: build china a-share dashboard (spine — serial head, every CN surface reads it)
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -240,86 +240,240 @@ jobs:
           # build_china log group contained another runner's build_congress output
           # because both jobs wrote /tmp/step.log concurrently.
           touch "$RUNNER_TEMP/asia_libs_marker"
-          run_py() {
-            local label="$1" mod="$2"; shift 2
-            echo "::group::$label"
-            python -m "$mod" "$@" > "$RUNNER_TEMP/step.log" 2>&1; local rc=$?
-            cat "$RUNNER_TEMP/step.log"
-            echo "::endgroup::"
-            if [ "$rc" -ne 0 ]; then
-              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/step.log" | tr '\n' ' ' | tail -c 500)"
-              { echo "### ❌ $label failed (rc=$rc)"; echo '```'; tail -n 40 "$RUNNER_TEMP/step.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-            fi
+          # build_china stays a SERIAL head, NOT in the parallel bands below: it writes
+          # data/china_regime/latest.json + regime_history.parquet, site/factordata/
+          # china_standouts.json and data/risk_radar_intl/cn_forward_log.jsonl +
+          # cn_calibration.json — inputs read (hard or best-effort) by nearly every
+          # builder in band A. It also runs build_china_library.main() in-process
+          # (ProcessPool fan-out, the single heaviest block in the lane) — running it
+          # alone gives that pool the whole box, and keeps its store.write_status()
+          # read-modify-write on data/run_status.json out of the concurrent window.
+          echo "::group::build china a-share dashboard (build_china)"
+          python -m scripts.build_china > "$RUNNER_TEMP/step.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/step.log"
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then
+            echo "::error title=build china a-share dashboard (build_china) failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/step.log" | tr '\n' ' ' | tail -c 500)"
+            { echo "### ❌ build china a-share dashboard (build_china) failed (rc=$rc)"; echo '```'; tail -n 40 "$RUNNER_TEMP/step.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit 0
+      - name: CN/HK builder band A (parallelised — 5 independent clusters, barrier before cross-cluster consumers)
+        # The ~30 builders after build_china used to run strictly serially (~55 min of
+        # wall-clock). They split into mutually INDEPENDENT clusters (each internally
+        # ordered by its own data deps) using the same background-cluster pattern as
+        # daily.yml's engine job: brun() buffers each builder's output into its OWN
+        # scratch file under "$RUNNER_TEMP/band/" — NEVER /tmp, which is shared across
+        # this box's runners (the 07-10 log-interleaving incident, see the marker
+        # comment in the spine step above). 5 concurrent clusters mirrors the engine
+        # job's cap on this 4-core-bound box; STOCK_LIB_WORKERS=4 additionally bounds
+        # build_hk's in-process library ProcessPool while the other clusters run
+        # (the CN library already built at full width in the solo spine step).
+        #
+        # Cross-builder dependency audit (2026-07-14, per-module read/write sweep of all
+        # 34 builders — the asia analog of the engine-job audit). HARD edges, each kept
+        # INSIDE one cluster:
+        #   sector_cycles → cycles_scorecard     data/china_sector_cycles/forward_log.parquet
+        #   microstructure → participation       data/china_microstructure/limit_tape.parquet (zt_breadth leg)
+        #   baskets_china → baskets_china_ths    site/chinabasketdata/basket_turn_cn.json (turn annotation)
+        #   baskets_china(+ths) → subsector_rotation → _pages; rotation_events_china needs baskets.json
+        #   baskets_hk → rotation_events_hk      site/hkbasketdata/baskets.json — the serial chain ran
+        #                                        rotation_events_hk BEFORE baskets_hk (it read the PRIOR
+        #                                        session's committed file); now same-session fresh.
+        #   validation → altdata                 data/china_validation/scorecard.json (signal-lab weights)
+        #   news → policy_watch → synthesis      events.parquet freshness; synthesis fans in the
+        #                                        news/policy/altdata/radar surface JSONs.
+        # Cross-CLUSTER consumers do NOT run here — they run in band B after the `wait`
+        # barrier (same reasoning as daily.yml's post-band build_sector_central):
+        # sector_central, cycle_phase → market_state → mechanics, intel_hub → intel_bus.
+        # Accepted soft-staleness (best-effort reads, same class as build_china reading the
+        # prior session's baskets.json): baskets_china may read the prior committed
+        # sector_cycles_basket_map.json when cl_sector hasn't rewritten it yet (structural
+        # mapping, self-heals next run). Shared static asset copies (lightweight-charts.js,
+        # baskets_desk.js, forming_narratives.js; theme.css/theme.js via lib/site_assets
+        # from special_sits ∈ cl_flowconf and altdata/radar ∈ cl_intel) are byte-identical
+        # sources — concurrent copies converge to the same bytes and no builder reads
+        # them back mid-run.
+        #
+        # Every builder stays individually resilient via brun(): a non-zero exit is
+        # annotated (::error::) + appended to the run summary with its traceback but NEVER
+        # aborts the job. Output is replayed GROUPED in stable order after the barrier
+        # (never interleaved); per-builder wall-times go to the step summary — that plus
+        # build_china_library's [timing] section ticks is the measurement plane for this
+        # change (compare the summary table against the pre-band serial runs).
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CN_LANE: asia            # same lane gate as the spine step (ledger writers in this band:
+                                   # baskets_china turn ledger, radar accrue, special_sits qledger)
+          STOCK_LIB_WORKERS: "4"   # bound build_hk_library's ProcessPool inside the band
+        run: |
+          set +e
+          ART="$RUNNER_TEMP/band"; rm -rf "$ART"; mkdir -p "$ART"
+          # brun <slug> <label> <module> [args…] — one builder, resilient, into its OWN
+          # scratch files (never shared across the parallel subshells), recording exit
+          # code + wall-seconds. Output (incl. stderr) is buffered, replayed post-barrier.
+          brun() {
+            local slug="$1" label="$2" mod="$3"; shift 3
+            local t0 t1 rc
+            t0=$(date +%s)
+            { echo "$label"; python -m "$mod" "$@" 2>&1; } > "$ART/$slug.log"; rc=$?
+            t1=$(date +%s)
+            echo "$rc"          > "$ART/$slug.rc"
+            echo "$((t1 - t0))" > "$ART/$slug.sec"
           }
-          # Order per daily.yml cl_china: china -> sector_desk -> sector_cycles ->
-          # sector_central (reads the cycles' data JS + the china regime gate) ->
-          # flow_velocity; then cl_hk (independent, self-recomputes its regime).
-          run_py "build china a-share dashboard (build_china)"        scripts.build_china
-          run_py "china sector desk (build_china_sector_desk)"        scripts.build_china_sector_desk
-          run_py "china sector cycles (build_china_sector_cycles)"    scripts.build_china_sector_cycles
-          # grade the cycles' own forward log (falsifiability loop) — AFTER the cycles build
-          # so today's stamp is already appended; reads committed data/, writes site/ only.
-          run_py "china cycles forward-log grader (build_china_cycles_scorecard)" scripts.build_china_cycles_scorecard
-          run_py "china sector central (build_china_sector_central)"  scripts.build_china_sector_central
-          run_py "capital flow velocity — CN/HK (build_flow_velocity)" scripts.build_flow_velocity
-          run_py "china subsector confluence (build_subsector_confluence --china)" scripts.build_subsector_confluence --china
-          run_py "build hong kong / hang seng (build_hk)"             scripts.build_hk
-          run_py "hk rotation events (build_rotation_events_hk)"  scripts.build_rotation_events_hk  # RC-R14 display-tier, reads hkbasketdata/baskets.json in-process
+          # --- clusters: each internally ORDERED by its own data deps; clusters mutually independent ---
+          cl_sector() {
+            brun sector_desk      "china sector desk (build_china_sector_desk)"        scripts.build_china_sector_desk
+            brun sector_cycles    "china sector cycles (build_china_sector_cycles)"    scripts.build_china_sector_cycles
+            # grade the cycles' own forward log (falsifiability loop) — AFTER the cycles build
+            # so today's stamp is already appended; reads committed data/, writes site/ only.
+            brun cycles_scorecard "china cycles forward-log grader (build_china_cycles_scorecard)" scripts.build_china_cycles_scorecard
+            # W4 lobe: collect-fed only (RRR/LPR/FR007 + communiques); parked in this cluster
+            # so its live tail is on disk before band B's cycle_phase reads it.
+            brun policy_transmission "china policy transmission lobe (build_china_policy_transmission)" scripts.build_china_policy_transmission
+            # CN-SYS W9 lane unification (see research/CHINA_ENGINE_REASSESSMENT.md): masterminds/
+            # strategies read only collected parquets. strategies re-runs the mastermind backtests
+            # via a code import (no file dep) — kept ordered to avoid duplicating that CPU in
+            # parallel, not for correctness.
+            brun masterminds      "china mastermind flagships (build_china_masterminds)" scripts.build_china_masterminds
+            brun strategies       "china strategy scorecards (build_china_strategies)"   scripts.build_china_strategies
+          }
+          cl_flowconf() {
+            brun flow_velocity    "capital flow velocity — CN/HK (build_flow_velocity)" scripts.build_flow_velocity
+            brun subsector_conf_cn "china subsector confluence (build_subsector_confluence --china)" scripts.build_subsector_confluence --china
+            # CN-SYS W1 → W2 (hard edge): participation's zt_breadth leg reads the limit tape
+            # that microstructure appends this run.
+            brun microstructure   "china microstructure lobe (build_china_microstructure)" scripts.build_china_microstructure
+            brun participation    "china participation lobe (build_china_participation)"   scripts.build_china_participation
+            # analogs + special_sits feed band B's intel_hub; both read only the spine's
+            # regime_history + collected stores, so they ride this cluster's tail.
+            brun analogs          "china historical analogs (build_china_analogs)"          scripts.build_china_analogs
+            brun special_sits     "china special situations (build_china_special_situations)" scripts.build_china_special_situations
+          }
           # W6-CN Fix 4 (lane unification): baskets_china/_ths/baskets_hk previously built
           # in the nightly 02:00 UTC lane (via build_vector.py) on the PRIOR asia close, making
-          # them one full CN session behind their sibling pages ~19.5h/day. Moved here so all
+          # them one full CN session behind their sibling pages ~19.5h/day. Built here so all
           # five China surfaces share one session. build_vector.py's hook skips gracefully if
           # as_of already matches (idempotent guard). See research/CHINA_ENGINE_REASSESSMENT.md.
-          run_py "china A-share thematic baskets (build_baskets_china)"    scripts.build_baskets_china
-          run_py "china THS concept baskets (build_baskets_china_ths)"     scripts.build_baskets_china_ths
-          run_py "hong kong thematic baskets (build_baskets_hk)"           scripts.build_baskets_hk
-          # W6-CN CN-5: CN Reversal Sleeve (SHADOW). Runs AFTER the china builds so the
-          # china_search plane + risk_radar_intl chip are fresh; asia lane so the forward
-          # ledger persists (lane-gated). Failure-isolated: the script always exits 0.
-          CN_SLEEVE_LANE=asia run_py "cn reversal sleeve (build_cn_reversal_sleeve)" scripts.build_cn_reversal_sleeve
-          # ── CN-SYS W5a Scope 2: intel sub-builders extracted from build_china.py ────────
-          # Behavior-preserving extraction of the importlib chain at the end of build_china
-          # main(). Order is preserved: validation → news → policy_watch → altdata → radar →
-          # synthesis (intel_analysis) → analogs → special_sits → intel_hub → intel_bus.
-          # Each step is non-fatal (matching the try/except semantics from build_china.py).
-          run_py "china validation scorecard (build_china_validation)"             scripts.build_china_validation
-          run_py "china news powerhouse (build_china_news)"                        scripts.build_china_news
-          run_py "china policy watch (build_china_policy_watch)"                   scripts.build_china_policy_watch
-          run_py "china alt-data desk (build_china_altdata)"                       scripts.build_china_altdata
-          run_py "china divergence radar (build_china_radar)"                      scripts.build_china_radar
-          run_py "china central analysis (build_china_synthesis)"                  scripts.build_china_synthesis
-          run_py "china historical analogs (build_china_analogs)"                  scripts.build_china_analogs
-          run_py "china special situations (build_china_special_situations)"       scripts.build_china_special_situations
-          run_py "china intel hub command apparatus (build_china_intel_hub)"       scripts.build_china_intel_hub
-          run_py "china intel bus / mastermind fan-in (build_china_intel)"         scripts.build_china_intel
-          # ── CN-SYS W5a Scope 3: Batch-1 lobes wiring ────────────────────────────────────
-          # W1 / W2 / W4 parallel builds land at merge time; wired here by module name.
-          # All non-fatal (~2 min each; CN-SYS-R11). Run after reversal_sleeve so the
-          # china_search plane + risk_radar_intl chip are fresh for these lobes.
-          run_py "china microstructure lobe (build_china_microstructure)"          scripts.build_china_microstructure   # ~2m W1
-          run_py "china participation lobe (build_china_participation)"            scripts.build_china_participation    # ~2m W2
-          run_py "china policy transmission lobe (build_china_policy_transmission)" scripts.build_china_policy_transmission  # ~2m W4
-          run_py "china THS snapshot side-car (build_baskets_china_ths --snapshot)" scripts.build_baskets_china_ths --snapshot  # ~2m W1 PIT
-          # ── CN-SYS Batch-2 lobe wiring (W3 + W6) ────────────────────────────────────
-          # W3 (cycle_phase) lands from a parallel PR; wired here by module name.
-          # W6 (market_state spine) runs AFTER W3 so cycle_phase.json is fresh.
-          # Both non-fatal (~2 min each; CN-SYS-R11); spine degrades to phase=null
-          # when W3 artifact is missing (handled inside build_china_market_state).
-          run_py "china cycle phase lobe (build_china_cycle_phase)"               scripts.build_china_cycle_phase      # ~2m W3
-          run_py "china market state spine (build_china_market_state)"            scripts.build_china_market_state     # ~2m W6
-          run_py "china mechanics cockpit (build_china_mechanics)"              scripts.build_china_mechanics        # W8 cockpit — reads spine artifacts
-          # ── CN-SYS W9: lane unification ──────────────────────────────────────────────────
-          # china_masterminds / china_strategies / subsector_rotation_china were previously
-          # built in the US-evening lane (build_vector.py / build_site.py), making them
-          # ~19.5h stale vs the settled Asia close. Moved here so all CN surfaces share one
-          # session. build_vector.py and build_site.py retain idempotent fallback hooks that
-          # skip when as_of/built already matches today's UTC date (asia lane ran first).
-          # Order: masterminds BEFORE strategies (strategies imports mastermind card builder).
-          run_py "china mastermind flagships (build_china_masterminds)"            scripts.build_china_masterminds            # W9 lane unification
-          run_py "china strategy scorecards (build_china_strategies)"              scripts.build_china_strategies             # W9 lane unification
-          run_py "china subsector rotation data (build_subsector_rotation_china)"  scripts.build_subsector_rotation_china     # W9 lane unification
-          run_py "china subsector rotation pages (build_subsector_rotation_china_pages)"  scripts.build_subsector_rotation_china_pages  # W9 lane unification
-          run_py "china rotation events (build_rotation_events_china)"  scripts.build_rotation_events_china  # RC-R14 display-tier, reads baskets.json in-process
+          cl_cn_baskets() {
+            brun baskets_cn       "china A-share thematic baskets (build_baskets_china)"    scripts.build_baskets_china
+            brun baskets_ths      "china THS concept baskets (build_baskets_china_ths)"     scripts.build_baskets_china_ths
+            brun ths_snapshot     "china THS snapshot side-car (build_baskets_china_ths --snapshot)" scripts.build_baskets_china_ths --snapshot
+            # W6-CN CN-5: CN Reversal Sleeve (SHADOW). Needs only the spine's china_search
+            # plane + risk_radar_intl chip (fresh — spine step above); asia lane so the
+            # forward ledger persists (lane-gated). Kept AFTER baskets_cn so the sleeve-stats
+            # card baskets_cn reads stays deterministically prior-session (unchanged behavior).
+            CN_SLEEVE_LANE=asia brun reversal_sleeve "cn reversal sleeve (build_cn_reversal_sleeve)" scripts.build_cn_reversal_sleeve
+            brun subsector_rot    "china subsector rotation data (build_subsector_rotation_china)"  scripts.build_subsector_rotation_china
+            brun subsector_rot_pages "china subsector rotation pages (build_subsector_rotation_china_pages)" scripts.build_subsector_rotation_china_pages
+            brun rotation_events_cn "china rotation events (build_rotation_events_china)"  scripts.build_rotation_events_china  # RC-R14 display-tier, reads baskets.json in-process
+          }
+          cl_hk() {
+            brun hk               "build hong kong / hang seng (build_hk)"             scripts.build_hk
+            brun baskets_hk       "hong kong thematic baskets (build_baskets_hk)"      scripts.build_baskets_hk
+            brun rotation_events_hk "hk rotation events (build_rotation_events_hk)"    scripts.build_rotation_events_hk  # RC-R14 display-tier, reads hkbasketdata/baskets.json in-process
+          }
+          # CN-SYS W5a Scope 2 intel chain head (behavior-preserving extraction from
+          # build_china.py main(); order preserved). The chain's fan-in tail (intel_hub →
+          # intel_bus) moved to band B — it reads analogs/special_sits from cl_flowconf.
+          cl_intel() {
+            brun validation       "china validation scorecard (build_china_validation)"  scripts.build_china_validation
+            brun news             "china news powerhouse (build_china_news)"             scripts.build_china_news
+            brun policy_watch     "china policy watch (build_china_policy_watch)"        scripts.build_china_policy_watch
+            brun altdata          "china alt-data desk (build_china_altdata)"            scripts.build_china_altdata
+            brun radar            "china divergence radar (build_china_radar)"           scripts.build_china_radar
+            brun synthesis        "china central analysis (build_china_synthesis)"       scripts.build_china_synthesis
+          }
+          # launch every cluster concurrently, then barrier before band B (cross-cluster consumers)
+          cl_sector & cl_flowconf & cl_cn_baskets & cl_hk & cl_intel &
+          wait
+          # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
+          #     nothing interleaves), surface failures as annotations, summarise wall-times ---
+          ORDER="sector_desk sector_cycles cycles_scorecard policy_transmission masterminds strategies flow_velocity subsector_conf_cn microstructure participation analogs special_sits baskets_cn baskets_ths ths_snapshot reversal_sleeve subsector_rot subsector_rot_pages rotation_events_cn hk baskets_hk rotation_events_hk validation news policy_watch altdata radar synthesis"
+          echo "### ⏱ asia band A — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
+          for slug in $ORDER; do
+            [ -f "$ART/$slug.log" ] || continue
+            label=$(head -n1 "$ART/$slug.log")
+            rc=$(cat "$ART/$slug.rc" 2>/dev/null || echo "?")
+            sec=$(cat "$ART/$slug.sec" 2>/dev/null || echo "?")
+            echo "::group::$label  [${sec}s, rc=$rc]"
+            tail -n +2 "$ART/$slug.log"
+            echo "::endgroup::"
+            echo "- ${label} — ${sec}s (rc=${rc})" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$rc" != "0" ] && [ "$rc" != "?" ]; then
+              echo "::error title=${label} failed (rc=${rc})::$(tail -n 2 "$ART/$slug.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ ${label} failed (rc=${rc})"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 40 "$ART/$slug.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          exit 0
+      - name: CN/HK builder band B (post-barrier — cross-cluster consumers)
+        # Builders whose inputs live in DIFFERENT band-A clusters, so they must wait for
+        # the band-A barrier (the asia analog of daily.yml's serial build_sector_central
+        # after its band). Three short clusters, same brun pattern, own scratch dir.
+        #   cl_state:      CN-SYS spine chain — cycle_phase (W3: reads the W1/W2 tapes +
+        #                  W4 policy_transmission tail + sector_cycles context) → market_state
+        #                  (W6: reads cycle_phase.json + the W1/W2/W4 lobe JSONs +
+        #                  sector_cycles leg context + baskets_china_ths latest; degrades to
+        #                  phase=null if W3 missed) → mechanics (W8 cockpit: reads W3+W6
+        #                  artifacts + the W1/W2 tapes).
+        #   cl_intel_tail: intel_hub (fan-in over news/altdata by_ticker + radar +
+        #                  special.json + analogs.json + the spine's china_standouts) →
+        #                  intel_bus (reads command.json + synthesis analysis.json + every
+        #                  intel surface).
+        #   cl_central:    sector_central (cycles data JS from cl_sector + the china regime
+        #                  gate from the spine + basket membership) — kept after the baskets
+        #                  builds per the sector-central dependency rule.
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CN_LANE: asia   # intel_hub's signal-snapshot ledger append is lane-gated
+        run: |
+          set +e
+          ART="$RUNNER_TEMP/band2"; rm -rf "$ART"; mkdir -p "$ART"
+          brun() {
+            local slug="$1" label="$2" mod="$3"; shift 3
+            local t0 t1 rc
+            t0=$(date +%s)
+            { echo "$label"; python -m "$mod" "$@" 2>&1; } > "$ART/$slug.log"; rc=$?
+            t1=$(date +%s)
+            echo "$rc"          > "$ART/$slug.rc"
+            echo "$((t1 - t0))" > "$ART/$slug.sec"
+          }
+          cl_state() {
+            # CN-SYS Batch-2 wiring: W6 runs AFTER W3 so cycle_phase.json is fresh; spine
+            # degrades to phase=null when the W3 artifact is missing (handled inside
+            # build_china_market_state). W8 reads both. All non-fatal (CN-SYS-R11).
+            brun cycle_phase    "china cycle phase lobe (build_china_cycle_phase)"    scripts.build_china_cycle_phase
+            brun market_state   "china market state spine (build_china_market_state)" scripts.build_china_market_state
+            brun mechanics      "china mechanics cockpit (build_china_mechanics)"     scripts.build_china_mechanics
+          }
+          cl_intel_tail() {
+            brun intel_hub      "china intel hub command apparatus (build_china_intel_hub)" scripts.build_china_intel_hub
+            brun intel_bus      "china intel bus / mastermind fan-in (build_china_intel)"   scripts.build_china_intel
+          }
+          cl_central() {
+            brun sector_central "china sector central (build_china_sector_central)"   scripts.build_china_sector_central
+          }
+          cl_state & cl_intel_tail & cl_central &
+          wait
+          ORDER="cycle_phase market_state mechanics intel_hub intel_bus sector_central"
+          echo "### ⏱ asia band B — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
+          for slug in $ORDER; do
+            [ -f "$ART/$slug.log" ] || continue
+            label=$(head -n1 "$ART/$slug.log")
+            rc=$(cat "$ART/$slug.rc" 2>/dev/null || echo "?")
+            sec=$(cat "$ART/$slug.sec" 2>/dev/null || echo "?")
+            echo "::group::$label  [${sec}s, rc=$rc]"
+            tail -n +2 "$ART/$slug.log"
+            echo "::endgroup::"
+            echo "- ${label} — ${sec}s (rc=${rc})" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$rc" != "0" ] && [ "$rc" != "?" ]; then
+              echo "::error title=${label} failed (rc=${rc})::$(tail -n 2 "$ART/$slug.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ ${label} failed (rc=${rc})"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 40 "$ART/$slug.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
           exit 0
       - name: rebuild China/HK stock-search libraries (resilient — guarantees the analyzers ship)
         # FAILURE-PATH safety net (asia-lane runtime diet, 2026-07-11): build_china
