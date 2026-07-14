@@ -52,6 +52,7 @@ from engine.release_forecast import (  # noqa: E402
     _wilson,
     _last_n_rate_lags,
 )
+from engine.release_components_cpi import _apply_range_guard  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Internal helpers: MoM lags from ALFRED vintages (PIT-safe)
@@ -217,6 +218,10 @@ def build_pce_headline_features(
         absent_legs.append("gasoline_mom")
 
     prov["absent_legs"] = absent_legs
+
+    # FIX 2: apply plausibility-bound range guard (post-computation fence)
+    features = _apply_range_guard(features, prov)
+
     return features, prov
 
 
@@ -279,6 +284,10 @@ def build_pce_core_features(
         absent_legs.append("ppifes_mom_lag1")
 
     prov["absent_legs"] = absent_legs
+
+    # FIX 2: apply plausibility-bound range guard (post-computation fence)
+    features = _apply_range_guard(features, prov)
+
     return features, prov
 
 
@@ -341,6 +350,10 @@ def build_ppi_finaldemand_features(
         absent_legs.append("ppifes_mom_lag1")
 
     prov["absent_legs"] = absent_legs
+
+    # FIX 2: apply plausibility-bound range guard (post-computation fence)
+    features = _apply_range_guard(features, prov)
+
     return features, prov
 
 
