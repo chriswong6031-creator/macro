@@ -2006,7 +2006,7 @@ RENDER.orchestrator = async () => {
         </div>
         <div class="sub" style="margin-top:4px">${esc(dd.text || "")}</div>
       </div>`).join("")}` : ""}
-    <div class="note muted" style="margin-top:8px">New directives are composed on the <a href="#" id="orchToMai">Mastermind AI</a> page — by hand in its composer, or auto-drafted from open findings with its "⚡ Act on all findings" button. The orchestrator only observes and acknowledges them.</div>`;
+    <div class="note muted" style="margin-top:8px">New directives are composed on the <a href="#" id="orchToMai">Mastermind AI</a> page — by hand in its composer, auto-drafted from open findings with its "⚡ Act on all findings" button, or queued automatically each cycle when its "Auto-act on findings" setting is on. The orchestrator only observes and acknowledges them.</div>`;
 
   const chatHtml = `<div class="section">Chat</div>
     <div class="sub muted" style="margin-bottom:8px">Ask Master Brain about its recent runs. Plain answers from the run log.</div>
@@ -2092,6 +2092,7 @@ const MAI_SETTING_FIELDS = [   /* [key, kind, label, note, min, max] — bounds 
   ["attribution_min_n", "int", "Attribution min n", "Minimum sample size before attribution claims (6–100).", 6, 100],
   ["directives_max_open", "int", "Max open directives", "Cap on concurrently open operator directives (1–10).", 1, 10],
   ["directive_expiry_days", "int", "Directive expiry days", "Days a published directive waits for an acknowledgement before expiring (3–60).", 3, 60],
+  ["auto_act_on_findings", "bool", "Auto-act on findings", "Queue auto-drafted directives from open findings on every loop cycle — no button press needed."],
 ];
 const MAI_DIRECTIVE_CLS = { queued: "s-warn", published: "s-mut", acknowledged: "s-ok", done: "s-ok", expired: "s-bad" };
 /* plain-English meanings for the bot's coded findings (nw_reflection.v1 nudge codes);
@@ -2168,7 +2169,7 @@ RENDER.mastermind_ai = async () => {
       ${countChips(typeof flagsObj === "object" && !Array.isArray(flagsObj) ? flagsObj : null)}
     </div>
   </div>
-  <div class="note muted" style="margin:0 0 20px;line-height:1.5">Every night the bot audits the Neural Web data it trades against. A contract-drift finding means a data field its decision rules consume is missing or dead in the published artifact. A nudge is the fix request it publishes back to the macro pipeline. Nudges flow out automatically — use "Act on findings" or the composer below to queue formal directives.</div>`;
+  <div class="note muted" style="margin:0 0 20px;line-height:1.5">Every night the bot audits the Neural Web data it trades against. A contract-drift finding means a data field its decision rules consume is missing or dead in the published artifact. A nudge is the fix request it publishes back to the macro pipeline. Nudges flow out automatically. Formal directives are queued from open findings automatically each cycle when "Auto-act on findings" is on — or by hand via "Act on findings" / the composer below.</div>`;
 
   const settingRow = ([key, kind, label, note, lo, hi]) => {
     const val = st[key];
@@ -2332,6 +2333,7 @@ RENDER.mastermind_ai = async () => {
     let html = banner;
     html += `<div class="section" style="margin:0 0 8px">Data-contract findings
       <span class="cnt">${nudges.length} open${resolved.length ? ` · ${resolved.length} resolved` : ""}</span>
+      ${nudges.length && st.auto_act_on_findings === true ? `<span class="statpill s-ok" title="auto_act_on_findings is on — every loop cycle queues directives from these automatically">auto-act on</span>` : ""}
       ${nudges.length ? `<button class="btn" id="maiActAll" style="margin-left:auto">⚡ Act on all findings</button>` : ""}
     </div>`;
     html += nudges.length
