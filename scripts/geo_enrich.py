@@ -36,6 +36,9 @@ PAT = os.environ.get("SUPABASE_ACCESS_TOKEN") or os.environ.get("SUPABASE_PAT") 
 IPLOCATE_KEY = os.environ.get("IPLOCATE_API_KEY", "")
 DEFAULT_BUDGET = int(os.environ.get("IPLOCATE_DAILY_BUDGET", "900"))
 QUERY_URL = f"https://api.supabase.com/v1/projects/{PROJECT_REF}/database/query"
+# Cloudflare's WAF in front of api.supabase.com 403s the default Python-urllib UA (edge error 1010);
+# send a browser UA (same fix as scripts/deploy/analytics_migrate.py). Without this ip_geo never fills.
+_UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36"
 
 
 def _sql(query: str):
@@ -44,7 +47,7 @@ def _sql(query: str):
         QUERY_URL,
         data=json.dumps({"query": query}).encode(),
         method="POST",
-        headers={"Authorization": f"Bearer {PAT}", "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {PAT}", "Content-Type": "application/json", "User-Agent": _UA},
     )
     with urllib.request.urlopen(req, timeout=30) as r:
         body = r.read().decode()
