@@ -1,12 +1,12 @@
 {
   "schema": "risk_radar_scorecard.v1",
-  "generated_at": "2026-07-14T22:33:02+00:00",
+  "generated_at": "2026-07-14T23:22:02+00:00",
   "markets": {
     "us": {
-      "asof_last_row": "2026-07-13",
+      "asof_last_row": "2026-07-14",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 1,
+        "last_logged_days_ago": 0,
         "ungraded_backlog": 9,
         "graded_n": 0
       },
