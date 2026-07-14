@@ -292,6 +292,64 @@ fires per condition bucket._
 > prior registered p-values were re-checked: **all existing buckets are `building_history`
 > with no claimed p-values, so no re-checks are triggered** by this enlargement.
 
+### Flow-score ML additions (FS-3 prereg, registered 2026-07-13 — drafted by Opus, RATIFIED by Fable 2026-07-13)
+
+> Provenance: `research/OPTIONS_ALPHA_FLOW_SCORE_AMENDMENT.md` (FS-3 wave of
+> `research/FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE.md`, rulings FS-R1…FS-R12). Rulers derive from the
+> FS-2 field guide (`research/FLOW_SIGNAL_FIELD_GUIDE.md`) playbook (§3) and tables. These are
+> the house's first **DTE-routed ML flow-score** constructions: the calibrated score filters /
+> de-escalates detector-fired flow events (FS-R7 ML statute — meta-labeler, never an originator).
+> Registered BEFORE any trainer runs (FS-R8; era-amendment precedent). No FS-4 trainer, and no
+> score field on any surface, until this block is Fable-ratified.
+
+> **ERA / COHORT NOTE (reviewer-audited):** verdict cohorts are `live_feed` (2026→) and
+> `tape_recon` (SPY 2022-2023, accruing) ONLY; `eod_proxy` (2012→) is **priors / pre-training
+> only** and yields NO verdict (FS-R4). Verdict cells are therefore registered ONLY in the two
+> greeks-grid eras a legal serving-distribution cohort populates: **2020-22 (partial — tape_recon
+> covers 2022 only; ERA-SPARSE-gated)** and **2023→**. No pre-2022 OOS verdict is claimed from
+> tape; the 2017-19 era and all OI-only early eras (2012-15/2016-19) register ZERO cells here. No
+> pre/post-2020 pooling (the two verdict eras are separate cells with separate verdicts). Score
+> target = the **unsigned** underlying-move outcome the FS-0 grader supplies (field guide Table E
+> — signed/right-conditioned discrimination is deferred, not claimed). Every ruler is
+> excess-vs-SPY (decision basis) with absolute reported alongside (diagnostic, not a separate
+> FDR cell).
+
+> **INDEX-ROOT PREFILTER (population rule, field guide Table H):** index-rooted events
+> (SPX/SPXW/NDX etc.) are EXCLUDED from the scored population by default (vol>OI rate = 1.000 is a
+> structural artifact, not a signal); an index root may re-enter only behind the registered
+> pre-existing-OI > 500 (T-1 PIT) prefilter. 0DTE index intraday effects are out of scope (GEX
+> stack).
+
+| ID | Signal (claim) | Basis | Gate (pre-registered) | Verdict ETA | Kill criterion |
+|---|---|---|---|---|---|
+| S-FLOWML-0_7 | DTE-routed ML flow score, **0–7 DTE** bucket (0DTE index excluded): P̂(underlying-move outcome fires \| detector-fired event, features, era), calibrated 0–1 | FS-2 field guide §2.1/§3 (single-name 1–5d horizon, Pan-Poteshman decay); FS-R5 routing; meta-labeler (FS-R7) | per-bucket isotonic on TEMPORAL holdout, ECE<0.05, Brier<base-rate-Brier, reliability monotone; OOS on `fwd_ret_5` **excess-vs-SPY** (abs reported alongside); purged K-fold + embargo ≥5d, group-by-underlying-AND-time, CPCV selection, uniqueness weights; verdict cells = eras {2020-22 partial, 2023→}; n≥30/bucket, ≥20/era-cell else ERA-SPARSE; time-preserving/clustered CI | `building_history` (tape_recon accruing; live_feed 2026→) | OOS AUC ≤0.55 in 2023→ **OR** calibration monotonicity broken/ECE≥0.05 persistent **OR** all ruler-cell CIs include 0 **OR** shadow calibration-decay breach |
+| S-FLOWML-8_90 | DTE-routed ML flow score, **8–90 DTE** bucket, **single model with DTE-interaction** (not two): P̂(underlying-move outcome \| event, features, era) | FS-2 field guide §2.1/§2.2 (8–30d 21d window, sweep 5–21d); FS-R5 volume-weighted single-model-with-interaction ruling; meta-labeler | same shape; OOS on `fwd_ret_21` **excess-vs-SPY** (abs alongside); embargo ≥21d; same CV geometry + verdict eras + floors as S-FLOWML-0_7 | `building_history` | same kill shape (AUC≤0.55 in 2023→ / calibration broken / all ruler CIs include 0 / decay breach) |
+| S-FLOWML-90P | DTE-routed ML flow score, **90+ DTE** bucket: P̂(underlying-move outcome \| event, features, era) | FS-2 field guide §2.1/§2.3 (90d+ 21–63d, overlap-corrected); FS-R5 routing; meta-labeler | same shape; OOS on `fwd_ret_63` **excess-vs-SPY** (primary) + `fwd_ret_126` excess-vs-SPY (secondary, own cell, fills at ≥126d clean embargo); abs alongside; embargo ≥63d (≥126d for the secondary cell); same CV geometry + verdict eras + floors | `building_history` | same kill shape; the 63d primary drives the AUC gate; 126d secondary reported when its embargo is clean |
+
+### Enlarged-family BH-FDR statement (FS-3 flow-score, 2026-07-13)
+
+> **Cells added — one (construction × era × ruler) per row, no double-counting** (absolute-basis
+> reports are diagnostics, not cells; the 126d secondary is a distinct cell per era, not a
+> re-report of 63d):
+>
+> Ruler-cells per era = S-FLOWML-0_7 {5d} (1) + S-FLOWML-8_90 {21d} (1) + S-FLOWML-90P {63d, 126d}
+> (2) = **4 per era**.
+> Verdict eras = {2020-22 (partial, 2022-only), 2023→} = **2** (the only eras a legal
+> serving-distribution cohort populates; eod_proxy is priors-only → 2017-19 and all OI-only early
+> eras register ZERO cells).
+> **Cells added = 4 × 2 = 8.**
+>
+> **Total family size = 28 + 8 = 36 tests**; BH-FDR α = 0.10 thresholds now **p_k ≤ (k/36) × 0.10**
+> (most-significant single-test threshold ≈ **0.0028**, from ≈0.0036 at N=28; relaxing to 0.10 for
+> the 36th). No flow-score cell verdict claims significance without clearing BH-FDR at α=0.10 over
+> this full 36-test family. **Amend-on-add re-check: all prior 28 buckets AND all 8 new flow-score
+> cells are `building_history` with no claimed p-values, so no re-check flips any verdict — the
+> clause is currently VACUOUS but binding** (the first posted p-value in the 36-family re-ranks
+> every other against (k/36)×0.10; each future enlargement — deferred signed / moneyness /
+> repeat-cluster cells — re-states the total and re-runs the re-check). Full CV geometry,
+> uniqueness-weight scheme, deflated-stats trial budget, calibration criteria, n floors, and kill
+> criteria are in the amendment §4–§8.
+
 Every gate emits a machine-readable `gate.json` in its data dir (`scored:false` until pass),
 mirroring `data/gex/gate.json`. Score wiring happens ONLY in W5 and only for passed gates.
 
