@@ -1,15 +1,15 @@
 {
-  "checked_at": "2026-07-14T10:37:15+00:00",
+  "checked_at": "2026-07-14T11:51:41+00:00",
   "expected_session": "2026-07-14",
   "stores": {
     "cache": {
-      "asof": "2026-07-13",
-      "lag_days": 1,
+      "asof": "2026-07-14",
+      "lag_days": 0,
       "state": "fresh"
     },
     "bellwether": {
-      "asof": "2026-07-13",
-      "lag_days": 1,
+      "asof": "2026-07-14",
+      "lag_days": 0,
       "state": "fresh"
     },
     "standouts": {
@@ -37,7 +37,7 @@
   "regression": {
     "ok": true,
     "prev_cache_max": "2026-07-13",
-    "curr_cache_max": "2026-07-13",
+    "curr_cache_max": "2026-07-14",
     "note": null
   },
   "verdict": "degraded",

@@ -280,7 +280,7 @@
          taller, so raise the cap for it (0,6,0 wins) — the parent flyout
          (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
          Same specificity trick overrides theme.js's generic accordion-panel
-         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
          submenus) with symmetric sides + top breathing room, so the feature
          cards read centered under the trigger instead of crooked. */
       .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
@@ -369,7 +369,7 @@
 <section class="rd-hero">
   <p class="eyebrow">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></p>
   <h1><span class="l-en">China Divergence Radar</span><span class="l-zh">中国背离雷达</span></h1>
-  <p class="lens"><span class="l-en">Free, management-independent demand/policy/flow signals vs sector price · falsifiable · context only · as of</span><span class="l-zh">免费、独立于管理层的需求/政策/资金信号 vs 板块价格 · 可证伪 · 仅供参考 · 截至</span> 2026-07-13</p>
+  <p class="lens"><span class="l-en">Free, management-independent demand/policy/flow signals vs sector price · falsifiable · context only · as of</span><span class="l-zh">免费、独立于管理层的需求/政策/资金信号 vs 板块价格 · 可证伪 · 仅供参考 · 截至</span> 2026-07-14</p>
 </section>
 
 <div class="rd-wrap">
@@ -383,21 +383,49 @@
   
   
   
-  <h2 class="sec">📡 <span class="l-en">Active divergences</span><span class="l-zh">活跃背离</span> <span style="font-size:12px;color:var(--muted)">3/16</span></h2>
+  <h2 class="sec">📡 <span class="l-en">Active divergences</span><span class="l-zh">活跃背离</span> <span style="font-size:12px;color:var(--muted)">5/16</span></h2>
   
   <div class="dcards">
+    
+    <div class="dcard positive">
+      <div class="hd">
+        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
+        <span class="pair"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></span>
+        <span class="cvx">88</span>
+      </div>
+      <div class="det"><span class="l-en">Sector net-flow +6.5% (东财 board, daily)</span><span class="l-zh">板块净流入 +6.5%（东财行业板块，当日）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-18.8</b> <span class="mut">(z -1.75)</span>
+      · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
+      <div class="strength"><i style="width:88%"></i></div>
+      <div class="cand">🎯 <span class="l-en">Candidates</span><span class="l-zh">候选</span>: <b>云铝股份</b> (000807.SZ) · <b>天山铝业</b> (002532.SZ) · <b>中国铝业</b> (601600.SS)</div>
+      <div class="hyp"><span class="l-en">If Sector net-flow is leading, Nonferrous metals should outperform CSI 300 over ~3 months.</span><span class="l-zh">若板块净流入领先，有色金属未来约3个月应跑赢沪深300。</span></div>
+    </div>
+    
+    <div class="dcard positive">
+      <div class="hd">
+        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
+        <span class="pair"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">New-energy vehicle</span><span class="l-zh">新能源车</span></span>
+        <span class="cvx">82</span>
+      </div>
+      <div class="det"><span class="l-en">Sector net-flow +2.5% (东财 board, daily)</span><span class="l-zh">板块净流入 +2.5%（东财行业板块，当日）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-18.6</b> <span class="mut">(z -2.12)</span>
+      · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
+      <div class="strength"><i style="width:82%"></i></div>
+      <div class="cand">🎯 <span class="l-en">Candidates</span><span class="l-zh">候选</span>: <b>格林美</b> (002340.SZ) · <b>比亚迪</b> (002594.SZ) · <b>华友钴业</b> (603799.SS)</div>
+      <div class="hyp"><span class="l-en">If Sector net-flow is leading, New-energy vehicle should outperform CSI 300 over ~3 months.</span><span class="l-zh">若板块净流入领先，新能源车未来约3个月应跑赢沪深300。</span></div>
+    </div>
     
     <div class="dcard negative">
       <div class="hd">
         <span class="sgn negative"><span class="l-en">Negative</span><span class="l-zh">负向</span></span>
         <span class="pair"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></span>
-        <span class="cvx">100</span>
+        <span class="cvx">76</span>
       </div>
-      <div class="det"><span class="l-en">Sector net-flow -7.4% (东财 board, daily)</span><span class="l-zh">板块净流入 -7.4%（东财行业板块，当日）</span></div>
-      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-pos">+60.4</b> <span class="mut">(z +2.72)</span>
+      <div class="det"><span class="l-en">Sector net-flow -2.3% (东财 board, daily)</span><span class="l-zh">板块净流入 -2.3%（东财行业板块，当日）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-pos">+58.5</b> <span class="mut">(z +2.61)</span>
       · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
-      <div class="strength"><i style="width:100%"></i></div>
-      <div class="cand">🎯 <span class="l-en">Candidates</span><span class="l-zh">候选</span>: <b>卓胜微</b> (300782.SZ) · <b>晶合集成</b> (688249.SS) · <b>海光信息</b> (688041.SS)</div>
+      <div class="strength"><i style="width:76%"></i></div>
+      <div class="cand">🎯 <span class="l-en">Candidates</span><span class="l-zh">候选</span>: <b>海光信息</b> (688041.SS) · <b>卓胜微</b> (300782.SZ) · <b>晶合集成</b> (688249.SS)</div>
       <div class="hyp"><span class="l-en">If Sector net-flow is fading, Semiconductors's lead over CSI 300 should fade over ~3 months.</span><span class="l-zh">若板块净流入转弱，半导体相对沪深300的领先应在约3个月内消退。</span></div>
     </div>
     
@@ -405,13 +433,13 @@
       <div class="hd">
         <span class="sgn negative"><span class="l-en">Negative</span><span class="l-zh">负向</span></span>
         <span class="pair"><span class="l-en">Southbound flow</span><span class="l-zh">南向资金</span> → <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></span>
-        <span class="cvx">43</span>
+        <span class="cvx">26</span>
       </div>
-      <div class="det"><span class="l-en">Southbound 20d flow z -0.86</span><span class="l-zh">南向20日净流入 z -0.86</span></div>
-      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-pos">+60.4</b> <span class="mut">(z +2.72)</span>
+      <div class="det"><span class="l-en">Southbound 20d flow z -0.52</span><span class="l-zh">南向20日净流入 z -0.52</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-pos">+58.5</b> <span class="mut">(z +2.61)</span>
       · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
-      <div class="strength"><i style="width:43%"></i></div>
-      <div class="cand">🎯 <span class="l-en">Candidates</span><span class="l-zh">候选</span>: <b>卓胜微</b> (300782.SZ) · <b>晶合集成</b> (688249.SS) · <b>海光信息</b> (688041.SS)</div>
+      <div class="strength"><i style="width:26%"></i></div>
+      <div class="cand">🎯 <span class="l-en">Candidates</span><span class="l-zh">候选</span>: <b>海光信息</b> (688041.SS) · <b>卓胜微</b> (300782.SZ) · <b>晶合集成</b> (688249.SS)</div>
       <div class="hyp"><span class="l-en">If Southbound flow is fading, Semiconductors's lead over CSI 300 should fade over ~3 months.</span><span class="l-zh">若南向资金转弱，半导体相对沪深300的领先应在约3个月内消退。</span></div>
     </div>
     
@@ -422,7 +450,7 @@
         <span class="cvx">13</span>
       </div>
       <div class="det"><span class="l-en">12m easing score +20 (LPR +0bp, RRR -1.00pp)</span><span class="l-zh">12月宽松分 +20（LPR +0基点，准备金 -1.00pp）</span></div>
-      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-14.9</b> <span class="mut">(z -0.52)</span>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-15.5</b> <span class="mut">(z -0.53)</span>
       · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
       <div class="strength"><i style="width:13%"></i></div>
       
@@ -437,7 +465,7 @@
   <h2 class="sec">🔇 <span class="l-en">In line (silent)</span><span class="l-zh">一致（静默）</span></h2>
   <p style="font-size:12px;color:var(--muted)"><span class="l-en">Signal and price agree — confirming, no divergence edge.</span><span class="l-zh">信号与价格一致——确认，无背离信号。</span></p>
   <div class="inline-list">
-    <span class="ichip"><span class="l-en">Credit impulse (TSF)</span><span class="l-zh">信用脉冲(社融)</span> → <span class="l-en">Banks</span><span class="l-zh">银行</span></span><span class="ichip"><span class="l-en">Credit impulse (TSF)</span><span class="l-zh">信用脉冲(社融)</span> → <span class="l-en">Real estate</span><span class="l-zh">房地产</span></span><span class="ichip"><span class="l-en">PBoC easing</span><span class="l-zh">央行宽松</span> → <span class="l-en">Brokers</span><span class="l-zh">券商</span></span><span class="ichip"><span class="l-en">Mfg PMI</span><span class="l-zh">制造业PMI</span> → <span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></span><span class="ichip"><span class="l-en">Mfg PMI</span><span class="l-zh">制造业PMI</span> → <span class="l-en">New-energy vehicle</span><span class="l-zh">新能源车</span></span><span class="ichip"><span class="l-en">Southbound flow</span><span class="l-zh">南向资金</span> → <span class="l-en">Defense</span><span class="l-zh">国防军工</span></span><span class="ichip"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Banks</span><span class="l-zh">银行</span></span><span class="ichip"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Real estate</span><span class="l-zh">房地产</span></span><span class="ichip"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Brokers</span><span class="l-zh">券商</span></span><span class="ichip"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></span><span class="ichip"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">New-energy vehicle</span><span class="l-zh">新能源车</span></span><span class="ichip"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Defense</span><span class="l-zh">国防军工</span></span><span class="ichip"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Coal</span><span class="l-zh">煤炭</span></span><span class="ichip"><span class="l-en">A/H premium z</span><span class="l-zh">A/H溢价z值</span> → <span class="l-en">CSI 300 (onshore)</span><span class="l-zh">沪深300（境内）</span></span><span class="ichip"><span class="l-en">Southbound flow vs HSCEI</span><span class="l-zh">南向资金 vs 恒生国企</span> → <span class="l-en">HSCEI (HK)</span><span class="l-zh">恒生国企指数（港股）</span></span>
+    <span class="ichip"><span class="l-en">Credit impulse (TSF)</span><span class="l-zh">信用脉冲(社融)</span> → <span class="l-en">Banks</span><span class="l-zh">银行</span></span><span class="ichip"><span class="l-en">Credit impulse (TSF)</span><span class="l-zh">信用脉冲(社融)</span> → <span class="l-en">Real estate</span><span class="l-zh">房地产</span></span><span class="ichip"><span class="l-en">PBoC easing</span><span class="l-zh">央行宽松</span> → <span class="l-en">Brokers</span><span class="l-zh">券商</span></span><span class="ichip"><span class="l-en">Mfg PMI</span><span class="l-zh">制造业PMI</span> → <span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></span><span class="ichip"><span class="l-en">Mfg PMI</span><span class="l-zh">制造业PMI</span> → <span class="l-en">New-energy vehicle</span><span class="l-zh">新能源车</span></span><span class="ichip"><span class="l-en">Southbound flow</span><span class="l-zh">南向资金</span> → <span class="l-en">Defense</span><span class="l-zh">国防军工</span></span><span class="ichip"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Banks</span><span class="l-zh">银行</span></span><span class="ichip"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Real estate</span><span class="l-zh">房地产</span></span><span class="ichip"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Brokers</span><span class="l-zh">券商</span></span><span class="ichip"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Defense</span><span class="l-zh">国防军工</span></span><span class="ichip"><span class="l-en">Sector net-flow</span><span class="l-zh">板块净流入</span> → <span class="l-en">Coal</span><span class="l-zh">煤炭</span></span><span class="ichip"><span class="l-en">A/H premium z</span><span class="l-zh">A/H溢价z值</span> → <span class="l-en">CSI 300 (onshore)</span><span class="l-zh">沪深300（境内）</span></span><span class="ichip"><span class="l-en">Southbound flow vs HSCEI</span><span class="l-zh">南向资金 vs 恒生国企</span> → <span class="l-en">HSCEI (HK)</span><span class="l-zh">恒生国企指数（港股）</span></span>
   </div>
   
 
@@ -445,15 +473,23 @@
   
   <h2 class="sec">📒 <span class="l-en">Falsification ledger</span><span class="l-zh">证伪台账</span></h2>
   <div class="led-stat">
-    <span><b>12</b> <span class="l-en">logged</span><span class="l-zh">已记录</span></span>
+    <span><b>13</b> <span class="l-en">logged</span><span class="l-zh">已记录</span></span>
     <span><b>0</b> <span class="l-en">resolved</span><span class="l-zh">已结</span></span>
     
-    <span>12 <span class="l-en">open</span><span class="l-zh">未结</span></span>
+    <span>13 <span class="l-en">open</span><span class="l-zh">未结</span></span>
   </div>
   
   <table class="data">
     <thead><tr><th><span class="l-en">Fired</span><span class="l-zh">触发</span></th><th><span class="l-en">Signal → Sector</span><span class="l-zh">信号→板块</span></th><th><span class="l-en">Sign</span><span class="l-zh">方向</span></th><th><span class="l-en">Fwd rel</span><span class="l-zh">后续相对</span></th><th><span class="l-en">Status</span><span class="l-zh">状态</span></th></tr></thead>
     <tbody>
+    
+      <tr>
+        <td>2026-07-14</td>
+        <td>sector_flow → <span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></td>
+        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
+        <td>—</td>
+        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
+      </tr>
     
       <tr>
         <td>2026-07-07</td>
@@ -567,15 +603,15 @@
       <div class="hd">
         <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
         <span class="pair"><span class="l-en">Offshore ETF gap (KWEB/MCHI/CQQQ)</span><span class="l-zh">离岸ETF差价(KWEB/MCHI/CQQQ)</span></span>
-        <span class="cvx">100</span>
+        <span class="cvx">71</span>
       </div>
-      <div class="det"><span class="l-en">Offshore (KWEB/MCHI/CQQQ) 5d equal-weight ret gap vs CSI300: +5.29% (z +2.29); FX-adj gap +7.2% (CNY -0.14%). FX note: gap embeds USDCNY moves — see FX-adj if available. Composition note: basket is tech/internet-tilted (KWEB=internet, CQQQ=tech-heavy) vs CSI 300's financials tilt — gap partly reflects sector rotation, not pure venue sentiment.</span><span class="l-zh">离岸ETF(KWEB/MCHI/CQQQ) 5日等权收益差 vs 沪深300: +5.29%（z +2.29）；汇率调整后差价 +7.2%（人民币 -0.14%）。注：差值包含人民币汇率影响；篮子偏科技/互联网，与沪深300金融偏重有差异。</span></div>
+      <div class="det"><span class="l-en">Offshore (KWEB/MCHI/CQQQ) 5d equal-weight ret gap vs CSI300: +3.13% (z +1.42); FX-adj gap +0.3% (CNY -0.09%). FX note: gap embeds USDCNY moves — see FX-adj if available. Composition note: basket is tech/internet-tilted (KWEB=internet, CQQQ=tech-heavy) vs CSI 300's financials tilt — gap partly reflects sector rotation, not pure venue sentiment.</span><span class="l-zh">离岸ETF(KWEB/MCHI/CQQQ) 5日等权收益差 vs 沪深300: +3.13%（z +1.42）；汇率调整后差价 +0.3%（人民币 -0.09%）。注：差值包含人民币汇率影响；篮子偏科技/互联网，与沪深300金融偏重有差异。</span></div>
       <div class="rs">
-        <span class="l-en">z</span><span class="l-zh">z值</span>: <b>+2.29</b>
-        <span class="mut"> · <span class="l-en">data as-of</span><span class="l-zh">数据截至</span> 2026-07-10</span>
+        <span class="l-en">z</span><span class="l-zh">z值</span>: <b>+1.42</b>
+        <span class="mut"> · <span class="l-en">data as-of</span><span class="l-zh">数据截至</span> 2026-07-13</span>
          · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span> (0)</span>
       </div>
-      <div class="strength"><i style="width:100%"></i></div>
+      <div class="strength"><i style="width:71%"></i></div>
       <div class="hyp"><span class="l-en">If Offshore ETF gap (KWEB/MCHI/CQQQ) leads, the onshore/HK price leg (CSI 300 (onshore)) should close the gap over ~3 months. Offshore China ETF basket (KWEB/MCHI/CQQQ — US-listed offshore listings; ASHR/GXC excluded as they hold A-shares directly) total-return equal-weight gap vs CSI 300. A strongly positive gap (offshore outperforming) while onshore lags = offshore sentiment leading. FX caveat: gap embeds USDCNY. Composition note: basket is tech/internet-tilted (KWEB=internet, CQQQ=tech-heavy) vs CSI 300's financials tilt — gap partly reflects sector rotation, not pure venue sentiment. Hypothesis: sustained offshore leadership tends to attract onshore catch-up over ~3 months.</span><span class="l-zh">若离岸ETF差价(KWEB/MCHI/CQQQ)领先，境内/港股价格（沪深300（境内））应在约3个月内收敛。</span></div>
     </div>
     

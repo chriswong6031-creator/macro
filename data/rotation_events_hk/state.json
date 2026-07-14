@@ -6,7 +6,7 @@
    "from_leg": "hk_tech_hardware",
    "to_leg": "hk_platform_tech",
    "started": "2026-07-02",
-   "lapse_count": 2,
+   "lapse_count": 3,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-02",
@@ -34,7 +34,7 @@
    "from_leg": "hk_tech_hardware",
    "to_leg": "hk_china_tech",
    "started": "2026-07-03",
-   "lapse_count": 2,
+   "lapse_count": 3,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-02",
