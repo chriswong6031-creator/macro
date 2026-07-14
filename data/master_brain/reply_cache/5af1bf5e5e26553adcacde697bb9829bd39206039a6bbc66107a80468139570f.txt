@@ -1,0 +1,29 @@
+**Desk Note: China A-shares Thematic Trend Rider – 2026-07-13**
+
+**Accountable, falsifiable, never sized.** This is not alpha extraction from the detector; it’s a fallible conditional judgment, built on the single trend-following discipline—and that discipline’s historical drawdown edge **did not hold** on this mean‑reverting market (gate_helps = false). The note therefore carries extra humility.
+
+---
+
+### The strongest honest case FOR staying with the leading durable theme(s)
+
+**AI Compute & Optics (cn_ai_compute)** stands as the dominant leadership concentration.  
+- **Rank** 1 of 22, score 2.84 (a focus lens, not a forecast).  
+- **Durability bar** 0.71 – above the 0.5 threshold that separates trending from eroding themes, indicating a structurally anchored narrative.  
+- **Trend gate** : Hurst tag = “trend”; the theme’s own price sequence is still in a persistent, non‑mean‑reverting regime. That is the only validated signal from multi‑sector backtests (drawdown avoidance via the absolute‑trend gate), even though on *this market’s history* the gate failed to cut losses.  
+- No crowding flag (crowding_z = -0.11), no one‑narrative fragility (one_narrative = false), and rotation breadth is narrowing (0.27 of the universe eligible) – a structure where the leader absorbs flows without immediate handoff signals.
+
+**Semiconductors (cn_semis)** is the closest challenger (margin 0.24) and deserves a mention as a co‑durable theme, not as a rotation call.  
+- It carries the highest durability bar (0.90) and a strong Hurst “trend” tag.  
+- That is consistent with the AI‑infrastructure complex where upstream semiconductor demand reinforces the compute/optics narrative – but the discipline forbids next‑narrative prediction; we only flag the confirmed leader.
+
+**The case, stated simply:** The dominant narrative is durable, uncrowded, and still trending. In a trend‑following discipline, the edge is surviving the trend, not timing peaks – even when history says that edge didn’t materialize here. Staying with the leader avoids the documented failure mode of fading a dominant theme on a crowding or extension signal.
+
+---
+
+### Falsifiable conditional lean
+
+**IF** AI Compute & Optics maintains a Hurst “trend” reading and its durability bar stays above 0.5 by the next monthly check (≈ mid‑August 2026), **THEN** the narrative’s persistence case remains intact – we’d expect the theme to continue attracting leadership attention, with no mechanical reduction from this desk. **IF** the trend flips to “mean‑revert” and durability drops below 0.5, the honest case reverses.
+
+---
+
+*Guardrails honoured: no return forecast, no fade‑the‑leader, no next‑narrative prediction, no size, no trade. This is a fallible, falsifiable observation.*

@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-13T09:28:40.139924+00:00",
+  "generated_utc": "2026-07-14T07:55:17.130646+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,13 +749,11 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 8,
-      "alt_weighted": 2.9,
+      "alt_score": 6,
+      "alt_weighted": 2.35,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
         "darkpool_accum",
-        "github_momentum",
         "hf_model_momentum",
         "patent_cluster",
         "retail_buzz",
@@ -847,11 +845,10 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.65,
+      "alt_score": 3,
+      "alt_weighted": 1.4,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
         "special_situation",
         "trump"
       ],
@@ -935,9 +932,10 @@
       ],
       "n_actors": 3,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.05,
+      "alt_score": 4,
+      "alt_weighted": 1.45,
       "alt_channels": [
+        "13f_add",
         "affiliation",
         "retail_buzz",
         "special_situation"
@@ -997,12 +995,11 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 7,
-      "alt_weighted": 2.65,
+      "alt_score": 6,
+      "alt_weighted": 2.4,
       "alt_channels": [
         "affiliation",
         "app_demand",
-        "cnbc_pick",
         "github_momentum",
         "gov_contract",
         "hf_model_momentum",
@@ -1165,6 +1162,27 @@
         "title": "",
         "shares": 114811098
       }
+    },
+    {
+      "ticker": "BRK.B",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "13f_add",
+        "affiliation"
+      ],
+      "top_holder": null
     },
     {
       "ticker": "BA",
@@ -1492,26 +1510,6 @@
       "top_holder": null
     },
     {
-      "ticker": "BRK.B",
-      "actors": [
-        {
-          "actor": "Warren Buffett",
-          "kind": "fund",
-          "rel": "CONTROLS",
-          "provenance": "FACT",
-          "qualitative": false
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
-    },
-    {
       "ticker": "ARKK",
       "actors": [
         {
@@ -1660,6 +1658,14 @@
   "n_candidates": 0,
   "filings": [
     {
+      "date": "2026-07-13",
+      "form": "S-1/A",
+      "company": "Ionic Digital Inc.",
+      "ticker": null,
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/2007691/000118518526002919/ionicdigis1a1070926.htm"
+    },
+    {
       "date": "2026-07-10",
       "form": "8-K",
       "company": "Trump Media & Technology Group Corp.",
@@ -1746,14 +1752,6 @@
       "ticker": null,
       "items": "",
       "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126025585/ef20076341_425.htm"
-    },
-    {
-      "date": "2026-06-12",
-      "form": "8-K",
-      "company": "Hut 8 Corp.",
-      "ticker": "HUT",
-      "items": "5.07",
-      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926073505/tm2617732d1_8k.htm"
     }
   ]
 }

@@ -1,0 +1,27 @@
+{
+  "summary": "BTC in bearish markdown distribution despite expanding global liquidity; elevated leverage and contracting stablecoin flows undercut bullish macro, keeping risk high and allocation at zero.",
+  "regime_read": "Bitcoin's composite is DISTRIBUTE within a froth context, momentum is bear, structure broken, and cycle phase is markdown (77% through, ~83 days left until next pivot). Valuation has cooled to fair (MVRV Z 0.29, 18th percentile) but not yet deep-value territory. Options market reflects low volatility (DVOL 10th percentile) and limited tail-pricing (skew near neutral). The macro backdrop is Goldilocks with expanding global liquidity (global M2 +7.4% YoY, net liquidity rising), low credit spreads, and calm rates vol. However, on-chain and derivatives positioning are mixed: ETFs are accumulating and Coinbase premium positive, indicating some spot demand, but OI relative to market cap is elevated (77th percentile), funding is rich (11% annual), and stablecoin growth is deeply negative (z -1.48), suggesting capital outflows from crypto. This sets up a tension: macro liquidity is a tailwind per the working thesis, but Bitcoin's internal cycle and leverage are acting as headwinds, consistent with a classic post-top distribution before a final flush. The thesis holds that BTC should lead risk assets higher when liquidity expands, yet here it is in a high-risk regime with no allocation. The divergence implies that liquidity expansion alone is insufficient when the asset is overhung by leverage and late-cycle positioning; the thesis is not invalidated but requires an additional filter for cycle exhaustion and leverage reset.",
+  "conflicts": [
+    "Expanding net liquidity and global M2 vs Bitcoin's bearish markdown structure and DISTRIBUTE signal.",
+    "ETF accumulation / positive Coinbase premium vs high OI and rich funding, indicating spot demand is absorbed by perps traders and distribution.",
+    "Fair valuation (MVRV Z 0.29, not extended) vs system’s high_risk and froth classification—suggesting non-valuation risk metrics (leverage, momentum) dominate.",
+    "Stablecoin supply declining (contracting) while macro liquidity expands—on-chain liquidity draining even as global money supply rises.",
+    "Low DVOL and VIX (calm macro) vs broken structure and high leverage stress—normally low vol suggests complacency, but here it’s consistent with a slow grind lower in markdown."
+  ],
+  "rotation_check": "The working thesis expects Bitcoin to benefit from expanding global liquidity. Currently, global M2 and net liquidity are expanding, yet Bitcoin is in a bearish markdown phase with zero optimal allocation. The data diverges: liquidity is flowing, but Bitcoin is not responding. The rotation is likely blocked by two factors: (i) the halving-cycle position is firmly in distribution/markdown, where internals override macro until a true bottom forms; (ii) on-chain capital is contracting (stables) and leverage is elevated, preventing reflexivity. Thus, the thesis holds conditionally—liquidity expansion can lift Bitcoin, but only when the cycle and positioning are conducive; currently they are not.",
+  "transmission": [
+    "ETF accumulation + positive premium → might eventually force a squeeze if funding normalizes, but for now is being absorbed by persistent spot distribution.",
+    "If real yields decline further (currently 2.32%) alongside continued liquidity expansion, could reignite risk appetite into next cycle pivot, but needs leverage reset.",
+    "Stablecoin supply contraction → if it turns to growth, on-chain capital would return, aligning macro liquidity with crypto liquidity and improving the odds of a bottom.",
+    "OI and funding need to mean-revert; high funding is a tax on longs and fuels short basis trades that cap upside."
+  ],
+  "watch_items": [
+    "A decisive break above structure (e.g., reclaiming a key moving average) and momentum turning positive, potentially shifting cycle phase from markdown to accumulation.",
+    "Funding annualized dropping below 5% and OI declining significantly, indicating a flush of leverage.",
+    "Stablecoin growth rate turning positive, signaling on-chain capital re-entering.",
+    "Real 10-year yield falling below 2% while net liquidity continues to expand, providing a strong macro tailwind that could override the late-cycle drag.",
+    "ETF flows sustaining accumulation and Coinbase premium widening, eventually absorbing sell pressure.",
+    "Cphase pivot in ~83 days (Oct 2026) as a natural cycle transition point; if price holds above previous lows into that date, the markdown may end."
+  ],
+  "confidence": "medium"
+}

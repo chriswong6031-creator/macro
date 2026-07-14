@@ -1,5 +1,5 @@
 {
-"applied": "2026-07-11T04:45:35.034922+00:00",
+"applied": "2026-07-14T08:06:10.624715+00:00",
 "rows_flagged": 11,
 "tickers_flagged": 6,
 "by_flag": {
@@ -41,24 +41,6 @@
 "note": "x1e3 flank corr:same_row_assets"
 },
 {
-"ticker": "GNRC",
-"fy": 2016,
-"col": "debt_lt",
-"flag": "flank_scale",
-"raw": 1048400.0,
-"repair": 1048400000.0,
-"note": "x1e3 flank"
-},
-{
-"ticker": "SNEX",
-"fy": 2018,
-"col": "assets",
-"flag": "flank_scale",
-"raw": 8710.5,
-"repair": 8710500000.0,
-"note": "x1e6 flank"
-},
-{
 "ticker": "FTI",
 "fy": 2015,
 "col": "assets",
@@ -75,6 +57,15 @@
 "raw": 74100.0,
 "repair": null,
 "note": "null junk-fact leading-edge corr:same_row_assets"
+},
+{
+"ticker": "GNRC",
+"fy": 2016,
+"col": "debt_lt",
+"flag": "flank_scale",
+"raw": 1048400.0,
+"repair": 1048400000.0,
+"note": "x1e3 flank"
 },
 {
 "ticker": "MDT",
@@ -111,6 +102,15 @@
 "raw": 4364.0,
 "repair": null,
 "note": "null junk-fact leading-edge corr:same_row_assets"
+},
+{
+"ticker": "SNEX",
+"fy": 2018,
+"col": "assets",
+"flag": "flank_scale",
+"raw": 8710.5,
+"repair": 8710500000.0,
+"note": "x1e6 flank"
 }
 ],
 "xsrc_disagreements": [
@@ -225,13 +225,6 @@
 "col": "assets",
 "panel": 4875050000.0,
 "statements": 1434260000.0
-},
-{
-"ticker": "SATS",
-"fy": 2022,
-"col": "assets",
-"panel": 58748281000.0,
-"statements": 6199003000.0
 },
 {
 "ticker": "SIRI",
@@ -575,13 +568,6 @@
 "col": "equity",
 "panel": 30500000.0,
 "statements": 592900000.0
-},
-{
-"ticker": "SATS",
-"fy": 2022,
-"col": "equity",
-"panel": 21487641000.0,
-"statements": 3502619000.0
 },
 {
 "ticker": "SBH",
@@ -1090,6 +1076,34 @@
 "med": 130.0
 },
 {
+"ticker": "ATO",
+"fy_lo": 2009,
+"fy_hi": 2009,
+"col": "assets",
+"med": 6367083000.0
+},
+{
+"ticker": "ATO",
+"fy_lo": 2009,
+"fy_hi": 2009,
+"col": "equity",
+"med": 2176761000.0
+},
+{
+"ticker": "ATO",
+"fy_lo": 2009,
+"fy_hi": 2009,
+"col": "debt_lt",
+"med": 2169400000.0
+},
+{
+"ticker": "ATO",
+"fy_lo": 2011,
+"fy_hi": 2019,
+"col": "debt_lt",
+"med": 2455131000.0
+},
+{
 "ticker": "BCPC",
 "fy_lo": 2015,
 "fy_hi": 2018,
@@ -1130,6 +1144,13 @@
 "fy_hi": 2012,
 "col": "equity",
 "med": -306000.0
+},
+{
+"ticker": "GNRC",
+"fy_lo": 2010,
+"fy_hi": 2015,
+"col": "debt_lt",
+"med": 933356000.0
 },
 {
 "ticker": "IRT",
@@ -1242,6 +1263,13 @@
 "fy_hi": 2012,
 "col": "equity",
 "med": 71000.0
+},
+{
+"ticker": "SNEX",
+"fy_lo": 2010,
+"fy_hi": 2017,
+"col": "assets",
+"med": 3033400000.0
 },
 {
 "ticker": "UNF",

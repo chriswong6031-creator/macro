@@ -1,20 +1,20 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
-  "as_of": "2026-07-13",
-  "generated_utc": "2026-07-13T17:39:23Z",
+  "as_of": "2026-07-14",
+  "generated_utc": "2026-07-14T09:51:19Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 306,
     "by_state": {
       "overdue": 6,
-      "due": 5,
+      "due": 7,
       "human_review": 0,
       "missing": 1,
       "stale": 1,
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 291
+      "accruing": 289
     },
     "n_acknowledged": 0,
     "top_due": {
@@ -22,7 +22,7 @@
       "due_at": "2026-06-22",
       "owner_program": "qualitative-intelligence"
     },
-    "morning_line": "11 due/overdue, 1 missing, 291 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
+    "morning_line": "13 due/overdue, 1 missing, 289 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
   },
   "rows": [
     {
@@ -133,7 +133,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 894,
+        "n_open": 978,
         "n_past_check_by": 397
       },
       "allowed_actions": [
@@ -181,7 +181,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 894,
+        "n_open": 978,
         "n_past_check_by": 397
       },
       "allowed_actions": [
@@ -230,7 +230,7 @@
       "date_state": "overdue",
       "readiness": {
         "n_open": 3988,
-        "n_past_check_by": 1046
+        "n_past_check_by": 1284
       },
       "allowed_actions": [
         "inspect",
@@ -278,7 +278,7 @@
       "date_state": "overdue",
       "readiness": {
         "n_open": 3988,
-        "n_past_check_by": 1046
+        "n_past_check_by": 1284
       },
       "allowed_actions": [
         "inspect",
@@ -360,13 +360,105 @@
       }
     },
     {
+      "clock_id": "experiments:clinicaltrials-phase3",
+      "source_system": "experiments",
+      "subject_id": "clinicaltrials-phase3",
+      "subject_type": "data_collection",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-14",
+      "as_of": "2026-06-20",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "no forward maturation for the feed itself; lead-time must be validated via a Phase-0 event study before any scoring.",
+        "cadence": "weekly",
+        "status": "collecting",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "come_back_on reached 2026-07-14",
+        "source_evidence": [],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "experiments:radar-ic",
+      "source_system": "experiments",
+      "subject_id": "radar-ic",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-14",
+      "as_of": "2026-06-20",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "21d horizon; n_matured>=30; Spearman IC over matured + rolling ~90; per-state directional accuracy.",
+        "cadence": "daily",
+        "status": "accruing",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "come_back_on reached 2026-07-14",
+        "source_evidence": [],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
       "clock_id": "rule_experiments:disp_gate_1",
       "source_system": "rule_experiments",
       "subject_id": "disp_gate_1",
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-13",
+      "due_at": "2026-07-14",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -390,7 +482,7 @@
       "acknowledged": false,
       "review": null,
       "packet": {
-        "reason_due": "awaiting_execution reached 2026-07-13",
+        "reason_due": "awaiting_execution reached 2026-07-14",
         "source_evidence": [
           "data/rule_experiments/registry.jsonl"
         ],
@@ -414,7 +506,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-13",
+      "due_at": "2026-07-14",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -437,23 +529,7 @@
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
-      "packet": {
-        "reason_due": "awaiting_execution reached 2026-07-13",
-        "source_evidence": [
-          "data/rule_experiments/registry.jsonl"
-        ],
-        "missing_evidence": [],
-        "allowed_decisions": [
-          "inspect",
-          "defer",
-          "reject",
-          "paper"
-        ],
-        "blocked_decisions": [
-          "promote",
-          "authority_change"
-        ]
-      }
+      "packet": null
     },
     {
       "clock_id": "rule_experiments:trim_grid_v1",
@@ -462,7 +538,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-13",
+      "due_at": "2026-07-14",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -485,23 +561,7 @@
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
-      "packet": {
-        "reason_due": "awaiting_execution reached 2026-07-13",
-        "source_evidence": [
-          "data/rule_experiments/registry.jsonl"
-        ],
-        "missing_evidence": [],
-        "allowed_decisions": [
-          "inspect",
-          "defer",
-          "reject",
-          "paper"
-        ],
-        "blocked_decisions": [
-          "promote",
-          "authority_change"
-        ]
-      }
+      "packet": null
     },
     {
       "clock_id": "rule_experiments:wait_grid_v1",
@@ -510,7 +570,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-13",
+      "due_at": "2026-07-14",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -575,14 +635,19 @@
       "owner_program": "nw-mastermind-bridge",
       "clock_type": "freshness_sla",
       "due_at": null,
-      "as_of": "2026-07-10",
+      "as_of": "2026-07-13",
       "state": "stale",
       "date_state": "stale",
       "readiness": {
-        "as_of": "2026-07-10",
+        "as_of": "2026-07-13",
         "stale_chips": [
+          "market",
           "reliability",
-          "contradictions"
+          "contradictions",
+          "bottom_sensors",
+          "options_entry",
+          "cortex",
+          "macro_weather"
         ]
       },
       "allowed_actions": [
@@ -657,10 +722,10 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 15763,
-        "n_with_falsifier": 187,
-        "falsifier_coverage": "1.2%",
-        "blocking_reason": "falsifier coverage 1.2%; not a promotion-grade substrate"
+        "n_claims": 16804,
+        "n_with_falsifier": 298,
+        "falsifier_coverage": "1.8%",
+        "blocking_reason": "falsifier coverage 1.8%; not a promotion-grade substrate"
       },
       "allowed_actions": [
         "inspect",
@@ -674,68 +739,6 @@
       "evidence_refs": [
         "data/qledger/claims.jsonl"
       ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:clinicaltrials-phase3",
-      "source_system": "experiments",
-      "subject_id": "clinicaltrials-phase3",
-      "subject_type": "data_collection",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-07-14",
-      "as_of": "2026-06-20",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "maturation": "no forward maturation for the feed itself; lead-time must be validated via a Phase-0 event study before any scoring.",
-        "cadence": "weekly",
-        "status": "collecting"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:radar-ic",
-      "source_system": "experiments",
-      "subject_id": "radar-ic",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-07-14",
-      "as_of": "2026-06-20",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "maturation": "21d horizon; n_matured>=30; Spearman IC over matured + rolling ~90; per-state directional accuracy.",
-        "cadence": "daily",
-        "status": "accruing"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
@@ -9144,7 +9147,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 169,
+        "n_open": 502,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9208,7 +9211,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 260,
+        "n_open": 264,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9240,7 +9243,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 12,
+        "n_open": 299,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9304,7 +9307,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 4356,
+        "n_open": 4599,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9336,7 +9339,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 2,
+        "n_open": 8,
         "n_past_check_by": 0
       },
       "allowed_actions": [

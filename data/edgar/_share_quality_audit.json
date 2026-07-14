@@ -1,17 +1,17 @@
 {
-"applied": "2026-07-10T17:12:00.677748+00:00",
-"rows_flagged": 321,
-"tickers_flagged": 185,
+"applied": "2026-07-14T08:06:01.375920+00:00",
+"rows_flagged": 336,
+"tickers_flagged": 187,
 "by_flag": {
 "placeholder": 50,
-"pre_public": 213,
+"pre_public": 228,
 "pre_public_tiny": 5,
 "unit_extreme": 7,
 "unit_level": 8,
 "unit_scale": 38
 },
 "repaired": 79,
-"nulled": 242,
+"nulled": 257,
 "rows": [
 {
 "ticker": "AAP",
@@ -298,8 +298,8 @@
 "fy": 2023,
 "flag": "unit_level",
 "shares_raw": 500000.0,
-"repair": 46575699.0,
-"note": "carry-forward last clean prior"
+"repair": 58283589.0,
+"note": "same-FY DEI cover count"
 },
 {
 "ticker": "ATEN",
@@ -778,48 +778,48 @@
 "fy": 2010,
 "flag": "unit_level",
 "shares_raw": 21976200.0,
-"repair": 281351375.0,
-"note": "carry-forward last clean prior"
+"repair": 291968911.0,
+"note": "same-FY DEI cover count"
 },
 {
 "ticker": "ED",
 "fy": 2011,
 "flag": "unit_level",
 "shares_raw": 21976200.0,
-"repair": 281351375.0,
-"note": "carry-forward last clean prior"
+"repair": 292880631.0,
+"note": "same-FY DEI cover count"
 },
 {
 "ticker": "ED",
 "fy": 2012,
 "flag": "unit_level",
 "shares_raw": 21976200.0,
-"repair": 281351375.0,
-"note": "carry-forward last clean prior"
+"repair": 292877396.0,
+"note": "same-FY DEI cover count"
 },
 {
 "ticker": "ED",
 "fy": 2013,
 "flag": "unit_level",
 "shares_raw": 21976200.0,
-"repair": 281351375.0,
-"note": "carry-forward last clean prior"
+"repair": 292902495.0,
+"note": "same-FY DEI cover count"
 },
 {
 "ticker": "ED",
 "fy": 2014,
 "flag": "unit_level",
 "shares_raw": 21976200.0,
-"repair": 281351375.0,
-"note": "carry-forward last clean prior"
+"repair": 292888812.0,
+"note": "same-FY DEI cover count"
 },
 {
 "ticker": "ED",
 "fy": 2015,
 "flag": "unit_level",
 "shares_raw": 21976200.0,
-"repair": 281351375.0,
-"note": "carry-forward last clean prior"
+"repair": 293589401.0,
+"note": "same-FY DEI cover count"
 },
 {
 "ticker": "ELF",
@@ -1174,6 +1174,94 @@
 "note": "period_end<2016-09-01"
 },
 {
+"ticker": "GPOR",
+"fy": 2010,
+"flag": "pre_public",
+"shares_raw": 44645435.0,
+"repair": null,
+"note": "period_end<2021-04-01"
+},
+{
+"ticker": "GPOR",
+"fy": 2011,
+"flag": "pre_public",
+"shares_raw": 55621371.0,
+"repair": null,
+"note": "period_end<2021-04-01"
+},
+{
+"ticker": "GPOR",
+"fy": 2012,
+"flag": "pre_public",
+"shares_raw": 67527386.0,
+"repair": null,
+"note": "period_end<2021-04-01"
+},
+{
+"ticker": "GPOR",
+"fy": 2013,
+"flag": "pre_public",
+"shares_raw": 85177532.0,
+"repair": null,
+"note": "period_end<2021-04-01"
+},
+{
+"ticker": "GPOR",
+"fy": 2014,
+"flag": "pre_public",
+"shares_raw": 85655438.0,
+"repair": null,
+"note": "period_end<2021-04-01"
+},
+{
+"ticker": "GPOR",
+"fy": 2015,
+"flag": "pre_public",
+"shares_raw": 108322250.0,
+"repair": null,
+"note": "period_end<2021-04-01"
+},
+{
+"ticker": "GPOR",
+"fy": 2016,
+"flag": "pre_public",
+"shares_raw": 158829816.0,
+"repair": null,
+"note": "period_end<2021-04-01"
+},
+{
+"ticker": "GPOR",
+"fy": 2017,
+"flag": "pre_public",
+"shares_raw": 183105910.0,
+"repair": null,
+"note": "period_end<2021-04-01"
+},
+{
+"ticker": "GPOR",
+"fy": 2018,
+"flag": "pre_public",
+"shares_raw": 162986045.0,
+"repair": null,
+"note": "period_end<2021-04-01"
+},
+{
+"ticker": "GPOR",
+"fy": 2019,
+"flag": "pre_public",
+"shares_raw": 159710955.0,
+"repair": null,
+"note": "period_end<2021-04-01"
+},
+{
+"ticker": "GPOR",
+"fy": 2020,
+"flag": "pre_public",
+"shares_raw": 160800000.0,
+"repair": null,
+"note": "period_end<2021-04-01"
+},
+{
 "ticker": "GRMN",
 "fy": 2013,
 "flag": "unit_scale",
@@ -1326,12 +1414,36 @@
 "note": "period_end<2013-07-02"
 },
 {
-"ticker": "JHG",
-"fy": 2016,
+"ticker": "IVT",
+"fy": 2010,
 "flag": "pre_public",
-"shares_raw": 1131842109.0,
+"shares_raw": 846406774.0,
 "repair": null,
-"note": "period_end<2017-04-01"
+"note": "period_end<2014-01-02"
+},
+{
+"ticker": "IVT",
+"fy": 2011,
+"flag": "pre_public",
+"shares_raw": 869187360.0,
+"repair": null,
+"note": "period_end<2014-01-02"
+},
+{
+"ticker": "IVT",
+"fy": 2012,
+"flag": "pre_public",
+"shares_raw": 889424572.0,
+"repair": null,
+"note": "period_end<2014-01-02"
+},
+{
+"ticker": "IVT",
+"fy": 2013,
+"flag": "pre_public",
+"shares_raw": 909855173.0,
+"repair": null,
+"note": "period_end<2014-01-02"
 },
 {
 "ticker": "KGS",
@@ -1524,6 +1636,14 @@
 "shares_raw": 70900000.0,
 "repair": null,
 "note": "period_end<2023-09-01"
+},
+{
+"ticker": "NIC",
+"fy": 2012,
+"flag": "pre_public",
+"shares_raw": 3425413.0,
+"repair": null,
+"note": "period_end<2013-04-01"
 },
 {
 "ticker": "NOW",

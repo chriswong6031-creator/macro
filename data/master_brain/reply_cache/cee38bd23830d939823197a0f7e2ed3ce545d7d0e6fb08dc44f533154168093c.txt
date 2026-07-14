@@ -1,0 +1,22 @@
+**Desk Note — TREND-RIDER, Thematic Desk**  
+**Date:** 13 July 2026  
+**Subject:** Staying with the dominant durable theme — honest case, no sizing, strictly falsifiable  
+
+The only validated edge in this framework is drawdown control via the absolute-trend gate. With that gate showing historical benefit in this market (`gate_helps: true`), the discipline argues for staying with the leading theme until its own trend integrity breaks. Rotation timing and cross-sectional rank are noise; absolute trend is the signal.
+
+**Leading theme: Memory, HBM & Storage (`memory_storage`)**  
+- **Rank:** 1 (score 4.918, margin over #2 is 3.455 — the widest gap in the table).  
+- **Durability bar:** 0.64. This is above the 0.5 threshold that often separates robust from fragile themes. The trend-health tag is “mixed”, meaning the internal trend structure is not pristine but still intact enough not to trigger a gate exit.  
+- **Absolute-trend gate:** While the gate’s exact level is not shown, the fact that this theme remains the undisputed leader and is still eligible implies it is above its absolute-trend threshold. The gate is the only decision filter — as long as it holds, we stay.  
+- **Crowding:** Not crowded (z –0.53). No reflexive risk to the upside; we are not in a “fade the leader” trap. Per the guardrails, crowding is a sizing caution, never a sell signal, and here it gives no cause to reduce.  
+- **Breadth:** 0.5 — reasonably broad participation within the theme, supporting the narrative’s durability.
+
+**Why the strongest honest case is to remain with Memory, HBM & Storage:**  
+The absolute-trend discipline says you don’t call tops; you let the trend take you out. The one validated edge is shallower drawdowns and lower volatility when you stay with the leader above its absolute-trend line. Rotation handoffs have no forward edge (backtest_verdict: rotation_timing “display_only”). The challenger, Cybersecurity (rank 2, durability 0.86), is crowded (z +2.15) and ranked far below the leader; chasing it would be a rotation bet with no proven edge, likely increasing churn without improving risk control.
+
+**Falsifiable conditional lean:**  
+If the Memory, HBM & Storage theme remains above its absolute-trend gate (i.e., its own price proxy does not violate the trend filter), then staying with it continues to honour the only validated risk-control edge and avoids the documented failure mode of fading the leader. If the theme violates its absolute-trend line — something no current data suggests — then the discipline would exit. Until that moment, the honest case is to stay.
+
+**Check-by horizon:** Re‑evaluate if the absolute-trend gate for `memory_storage` flips to “out” or if a confirmed, durable leadership handoff appears (margin collapse plus new leader’s trend-gate confirmation) — not before.
+
+*(No position size, weight, or trade expressed. This note is a fallible conditional, falsifiable by the trend gate’s signal.)*

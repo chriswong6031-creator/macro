@@ -556,7 +556,7 @@ html[data-lang="zh"] .tl-help:hover::before { content:attr(data-tip-zh); }
          taller, so raise the cap for it (0,6,0 wins) — the parent flyout
          (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
          Same specificity trick overrides theme.js's generic accordion-panel
-         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
          submenus) with symmetric sides + top breathing room, so the feature
          cards read centered under the trigger instead of crooked. */
       .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
@@ -651,7 +651,7 @@ html[data-lang="zh"] .tl-help:hover::before { content:attr(data-tip-zh); }
   <p class="tl-sub"><span class="l-en">Signal screener + descriptive backtest profiles. Build confluence filters to find names where multiple signals align. Drill into any ticker for a per-stock signal breakdown. Descriptive framing — survivor mega-cap universe, not a verdict.</span><span class="l-zh">信号筛选器 + 描述性回测档案。构建多因子共振筛选条件，聚焦多信号同向股票。点击任意标的查看个股信号分解。描述性研究框架 — 幸存大盘股宇宙，非结论性研究。</span></p>
   <div class="tl-meta">
     <span class="chip tag-equities"><span class="l-en">Technical Signals</span><span class="l-zh">技术信号</span></span>
-    <span class="chip" id="hero-ts">2026-07-13 08:19 UTC</span>
+    <span class="chip" id="hero-ts">2026-07-14 08:40 UTC</span>
     <span class="chip" id="hero-n-signals">64 <span class="l-en">signals</span><span class="l-zh">信号</span></span>
     <span class="chip" id="hero-n-stocks">225 <span class="l-en">universe</span><span class="l-zh">覆盖标的</span></span>
     
@@ -2646,6 +2646,5 @@ Promise.all([
 </script>
 
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

@@ -1,65 +1,65 @@
 {
   "schema": "subsector_rotation.track_record.v1",
-  "as_of": "2026-07-12",
-  "generated_at": "2026-07-12T05:59:40.595915+00:00",
+  "as_of": "2026-07-14",
+  "generated_at": "2026-07-14T08:16:48.726469+00:00",
   "is_context_only": true,
-  "n_snapshots": 2949,
-  "n_days": 11,
+  "n_snapshots": 3218,
+  "n_days": 12,
   "horizons": {
     "5": {
-      "n_matured": 1434,
-      "score_ic": 0.2494,
-      "score_ic_t_hac": null,
+      "n_matured": 1912,
+      "score_ic": 0.1618,
+      "score_ic_t_hac": 1.21,
       "score_ic_detail": {
-        "mean_ic": 0.2494,
-        "ic_vol": 0.3372,
-        "ic_ir": 0.74,
-        "ic_ir_ann": 2.339,
-        "t_hac": null,
-        "p_hac": null,
-        "hit": 0.833,
-        "n": 6
+        "mean_ic": 0.1618,
+        "ic_vol": 0.4111,
+        "ic_ir": 0.394,
+        "ic_ir_ann": 1.244,
+        "t_hac": 1.21,
+        "p_hac": 0.2264,
+        "hit": 0.75,
+        "n": 8
       },
       "by_stage": {
         "emerging": {
-          "n": 53,
-          "mean_fwd_rel": 0.0071,
-          "hit_rate": 0.642
+          "n": 72,
+          "mean_fwd_rel": 0.0022,
+          "hit_rate": 0.556
         },
         "neutral": {
-          "n": 1315,
-          "mean_fwd_rel": 0.0008,
+          "n": 1752,
+          "mean_fwd_rel": -0.0006,
           "hit_rate": null
         },
         "fading": {
-          "n": 66,
-          "mean_fwd_rel": -0.0331,
-          "hit_rate": 0.818
+          "n": 88,
+          "mean_fwd_rel": -0.0206,
+          "hit_rate": 0.727
         }
       }
     },
     "10": {
-      "n_matured": 717,
+      "n_matured": 1195,
       "score_ic": null,
       "score_ic_t_hac": null,
       "score_ic_detail": {
-        "n_days": 3
+        "n_days": 5
       },
       "by_stage": {
         "emerging": {
-          "n": 25,
-          "mean_fwd_rel": 0.0118,
-          "hit_rate": 0.68
+          "n": 43,
+          "mean_fwd_rel": -0.0033,
+          "hit_rate": 0.512
         },
         "neutral": {
-          "n": 659,
-          "mean_fwd_rel": -0.0016,
+          "n": 1097,
+          "mean_fwd_rel": -0.0042,
           "hit_rate": null
         },
         "fading": {
-          "n": 33,
-          "mean_fwd_rel": -0.0377,
-          "hit_rate": 0.788
+          "n": 55,
+          "mean_fwd_rel": -0.0186,
+          "hit_rate": 0.6
         }
       }
     },

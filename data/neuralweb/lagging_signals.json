@@ -1934,7 +1934,7 @@
       "flagged": []
     },
     "track_record": {
-      "n_recent_fires": 1210,
+      "n_recent_fires": 1185,
       "n_hostile_regime": 0,
       "n_breadth_unconfirmed": 225,
       "n_repeat_fire": 15,
@@ -3573,7 +3573,7 @@
   "gaps": [],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/lagging.py",
-  "produced_at": "2026-07-13T17:38:39Z",
-  "inputs_hash": "sha256:41a224066b0c99b28fa8aed8026847144a4d06a2e41157d5e9f3cbc20c13c588",
+  "produced_at": "2026-07-14T09:50:23Z",
+  "inputs_hash": "sha256:4dbf1c3f6d9ad50b1e757273eb4064f95dca36674da2c5ae8b522cca342dee66",
   "tier": "infrastructure"
 }

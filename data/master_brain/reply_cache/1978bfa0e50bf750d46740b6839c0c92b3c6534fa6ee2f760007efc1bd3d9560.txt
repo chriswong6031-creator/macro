@@ -1,0 +1,21 @@
+**Crowding-Skeptic Desk Note — Canada / TSX**
+**2026-07-13**
+
+The detector flags three themes as crowded: Big Banks (1.53), Pipelines & Midstream (1.59), Insurers (1.71). Among them, **Big Banks** is the most over-extended on a composite of RS-stretch, narrowing leadership, and full-participation breadth — despite a crowding_z lower than Insurers. The bear case is not a fade, but a **size-down**: this is where the reflexivity risk is highest.
+
+**Why Big Banks is the most over-extended**
+
+- **RS-stretch & parabolic look:** Rank #1 with a score of 1.788, more than double the next theme (Pipelines at 0.622). The margin of 1.166 is extreme — the largest gap in the entire panel. This suggests a momentum overshoot that rarely persists without a sharp mean-reversion or consolidation event.
+- **Narrowing leadership:** While eligible breadth is still broad (75% of themes), the leader is absorbing nearly all the oxygen. Rotation absorption is 0.37, and the one-narrative flag is false, but the sheer dominance of Banks creates concentration risk — a handful of names driving the benchmark’s return. If that grip loosens, the volatility impact is magnified.
+- **Breadth of 1.0: everyone’s in.** Perfect internal participation is a caution in a crowded leader. It leaves no remaining “buyer of last resort” — every constituent is already participating, liquidity is one-sided. In prior episodes, full 1.0 breadth in a crowded theme has preceded quick, sharp drawdowns.
+- **Crowding itself:** While Insurers shows a higher crowding_z (1.71), its rank and score are far lower; it’s not the leadership engine. Bank crowding is 1.53 — well into “saturated” territory — and combined with the RS gap, it’s the more impactful warning.
+
+**The bear case (accountable, falsifiable)**
+
+*Conditional lean*: If Big Banks, as a theme, fails to extend its relative high within the next 2–3 weeks (i.e., the score stops making new highs and the rotation margin compresses), then today’s over-extension means the position should have been reduced ahead of that stall – not exited, but capped. The historical edge of this discipline is drawdown avoidance, not return timing; a size-down here would have materially cut tail risk in similar structures where an RS-stretched, crowded leader subsequently corrected.
+
+*What would falsify this concern*: A clean breakout in the Banks theme with broadening, re-accelerating momentum (new high in score and durable breadth staying at 1.0) would show that crowding is financing further trend, not preceding a drawdown. In that scenario, the sizing caution would have been too early, but the absolute-trend gate would have kept the exposure directional — no damage.
+
+*Other crowded themes*: Pipelines (1.59, but lower RS and not the market’s focus) and Insurers (1.71, rank #3) are crowded but lack the leadership stretch. They warrant modest caution but do not present the same concentrated over-extension.
+
+**Bottom line**: Big Banks is the theme most deserving of a **size-down** — not a sell, not a fade. The discipline mandates capping exposure to a crowded leader with extreme momentum margin, because that’s the only validated edge: protecting against the drawdown that often follows. The note is falsifiable by a persistent, broadening advance in Big Banks over the next 3 weeks.

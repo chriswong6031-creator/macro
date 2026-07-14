@@ -1,0 +1,36 @@
+{
+  "regime_context": "The Canada/TSX detector shows Big Banks as the dominant eligible leadership (crowded, durable), with broad eligibility (75% of themes passing the absolute trend gate). The validated edge is drawdown control via that gate, not return forecasting; cross-sectional rank is a coincident focus lens.",
+  "theses": [
+    {
+      "subject": "Big Banks",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The absolute trend gate's validated risk-control edge supports staying with the leading eligible theme; crowding warrants sizing caution, not a fade. This is a trend-following, low-drawdown exposure conditional on trend persistence, not a return forecast.",
+      "evidence": [
+        "rank 1, eligible, durability_bar 0.73",
+        "gate_helps true on Canada backtest (lower volatility, shallower drawdowns)",
+        "crowded true, but guardrails explicitly forbid fading the dominant narrative",
+        "cross-sectional rank-IC ~0, so no alpha claim"
+      ],
+      "dissent": "Crowded positioning and high sensitivity to macro/credit shocks could trigger sharp mean-reversion; the rank itself has no forward edge, so no return is predicted.",
+      "falsifier_text": "ZEB.TO breaks below its absolute trend signal (e.g., 200-day MA), turning ineligible per the gate."
+    },
+    {
+      "subject": "Telecom",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Ineligible themes (failed absolute trend gate) historically deliver higher volatility and deeper drawdowns in this market; the validated edge is avoiding such themes for risk control.",
+      "evidence": [
+        "eligible false",
+        "durability_bar 0.22, breadth 0.2",
+        "gate_helps true on Canada backtest"
+      ],
+      "dissent": "A sharp shift in the rate/regulatory environment could trigger a snapback rally; the gate is not a timing tool and may miss short-term mean-reversion.",
+      "falsifier_text": "XCD.TO's absolute trend metric improves sufficiently to become eligible within the horizon."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}
