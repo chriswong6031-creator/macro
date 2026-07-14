@@ -1025,7 +1025,7 @@ function nwSectionFactorIntelligence(fi) {
   const hypEntries = ["h1","h2","h3","h4","h5"].map(hi => {
     const s = (hyp[hi] || {}).status || "not-visible-in-tree";
     const chipCls = s === "gate-passed" ? "s-ok" : s === "accruing" ? "s-warn" : "s-mut";
-    return `<div class="kv"><span>${hi.toUpperCase()}</span><b>${nwPill("BH-WITHHELD", "s-bad")} <span class="muted sub">(${esc(s)})</span></b></div>`;
+    return `<div class="kv"><span>${hi.toUpperCase()}</span><b>${nwPill("BH-WITHHELD", "s-bad")} ${nwPill(s, chipCls)}</b></div>`;
   }).join("");
   html += card("Hypotheses H1–H5", `
     ${hypEntries}
@@ -1730,7 +1730,7 @@ RENDER.mastermind_ai = async () => {
     const key = el.dataset.maiset;
     const value = el.dataset.kind === "bool" ? el.checked : Number(el.value);
     const r = await post("/api/mastermind_ai/settings", { settings: { [key]: value } });
-    if (r && !r.error && r.ok !== false) toast(`${key} → ${value}`);
+    if (r && !r.error && r.ok !== false) { el.dataset.prev = String(value); toast(`${key} → ${value}`); }
     else {
       if (el.dataset.kind === "bool") el.checked = !el.checked; else el.value = el.dataset.prev;
       toast((r && (r.error || r.detail)) || "settings update failed", true);
@@ -1892,7 +1892,11 @@ async function maiActOnFindings(codes, btn) {
     const skipped = (r.skipped || []).map(s => `${s.code}: ${s.reason}`).join("; ");
     toast(`${q} directive(s) queued${skipped ? ` — skipped ${skipped}` : ""}`, q === 0);
     if (CURRENT === "mastermind_ai") RENDER.mastermind_ai();
-  } else toast((r && (r.error || r.detail)) || "act on findings failed", true);
+  } else {
+    const msg = r && (r.error || r.detail);
+    /* an older bot has no /act_on_nudges route — the proxy passes FastAPI's 404 {"detail":"Not Found"} through */
+    toast(msg === "Not Found" ? "bot does not support act-on-findings yet — update the bot" : msg || "act on findings failed", true);
+  }
 }
 
 function maiDirectiveComposer() {
