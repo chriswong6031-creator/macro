@@ -108,6 +108,9 @@ on:
       - "tests/test_fear_greed_honesty.py"
       - "tests/test_archive_context_snapshots.py"
       - "scripts/archive_context_snapshots.py"
+      - "tests/test_ai_breadth_split.py"
+      - "scripts/build_ai_adjacency_tag.py"
+      - "engine/breadth_split.py"
       - "tests/test_missing_tape.py"
       - "tests/test_price_basis_flip.py"
       - "tests/test_risk_lead_lag.py"
@@ -825,6 +828,7 @@ jobs:
           tests/test_fear_euphoria.py tests/test_froth_fragility.py
           tests/test_vol_velocity.py tests/test_fear_greed_honesty.py
           tests/test_archive_context_snapshots.py
+          tests/test_ai_breadth_split.py
           tests/test_missing_tape.py tests/test_price_basis_flip.py
           tests/test_risk_lead_lag.py tests/test_anticipation.py
           tests/test_risk_radar_market_catalysts.py tests/test_risk_radar_recovery.py
