@@ -162,6 +162,38 @@ def test_historical_state_changes_detectable() -> None:
     assert fired >= max(1, len(change_dates) - 1), f"only {fired} fired of {len(change_dates)}"
 
 
+def test_alert_anchor_ids_exist_in_templates() -> None:
+    """Every non-empty ALERT_META anchor must be a literal id="" on its rendered
+    surface (dashboard.html.j2 for macro/us_stocks anchors incl. dlg-* dialogs,
+    or the cross-page template named in ANCHOR_PAGE). The v5 board moved panel
+    detail inside dialogs — a stale anchor renders a "View ↓" that scrolls
+    nowhere, which is exactly the drift this guards against."""
+    import engine.alerts as A
+    root = Path(__file__).resolve().parent.parent
+    dash = (root / "templates" / "dashboard.html.j2").read_text()
+    page_src = {
+        "us_stocks.html": dash,   # us_stocks renders from the same template
+        "macro_context.html": (root / "templates" / "macro_context.html.j2").read_text(),
+    }
+    for rule, meta in A.ALERT_META.items():
+        anchor = meta["anchor"]
+        if not anchor:
+            continue
+        src = page_src.get(A.ANCHOR_PAGE.get(anchor, ""), dash)
+        assert f'id="{anchor}"' in src, (
+            f"{rule}: anchor '{anchor}' is not an id on its rendered surface")
+
+
+def test_alert_href_routing() -> None:
+    """alert_href routes cross-page anchors to their page, everything else to macro."""
+    import engine.alerts as A
+    assert A.alert_href("") == "macro.html"
+    assert A.alert_href("dlg-risk") == "macro.html#dlg-risk"
+    assert A.alert_href("regime-radar") == "macro.html#regime-radar"
+    assert A.alert_href("holdings") == "us_stocks.html#holdings"
+    assert A.alert_href("board") == "macro_context.html#board"
+
+
 if __name__ == "__main__":
     # test_regional_breaker_views_collapse needs pytest fixtures — run via pytest
     for fn in [test_transition_change_fires, test_transition_no_change_silent,
@@ -169,7 +201,9 @@ if __name__ == "__main__":
                test_oas_quiet_day_silent, test_breaker_views_collapse_count_aware,
                test_breaker_views_single_stays_singular,
                test_every_fired_rule_has_plain_copy,
-               test_historical_state_changes_detectable]:
+               test_historical_state_changes_detectable,
+               test_alert_anchor_ids_exist_in_templates,
+               test_alert_href_routing]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all alert tests passed")
