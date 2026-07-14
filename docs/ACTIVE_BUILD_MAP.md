@@ -2,15 +2,17 @@
 
 # Active Build Map
 
-Generated: 2026-07-13T16:59:08.963577+00:00  |  Open PRs: 0  |  Merged (window): 500  |  base: `e2be2da12aead047cc9dabe742b9c68b4a719242`
+Generated: 2026-07-14T10:08:01.254405+00:00  |  Open PRs: 2  |  Merged (window): 500  |  base: `af83a501ad4ba15aae17bf5ce115b589efea73f1`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| — | No open PRs | — | — | — |
+| #2536 | feat(flow-ml): FS-3 prereg — flow-score ML gauntlet registered before the trainer exists (FDR family 28→36) | `claude/fs3-ml-prereg` | 2026-07-14 | — |
+| #2535 | 红涨绿跌: Chinese-mode colours for market-direction gauges + macro hero state-driven glance | `claude/serene-goldwasser-2be9ab` | 2026-07-14 | DRAFT |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
+> ℹ 2 of 2 PRs: mergeability not yet computed by GitHub (UNKNOWN).
 
 ## File Collisions
 
@@ -20,6 +22,41 @@ _No file collisions detected among open PRs._
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #2554 | feat(ccw): W1 data spine — SSGA bond-fund PIT store, issuer→theme registry, FRED credit ladder + us20y | 2026-07-14 |
+| #2553 | perf(nightly): split collect into core + collect_tail so engine starts ~30-75m earlier | 2026-07-14 |
+| #2552 | docs(ccw): Corporate Credit Watch masterplan (W0) — corporate bond tracking by theme, g-spread + credit momentum (CCW-R1..R16) | 2026-07-14 |
+| #2551 | perf(asia-close): parallelise the ~30-builder CN/HK chain — engine-job cluster bands | 2026-07-14 |
+| #2550 | feat(oracle): factor (style) rotation — Tier-F Time Machine + event catalog | 2026-07-14 |
+| #2549 | feat(china-live): intraday China risk-state fast path — live CN Market State on HKEX-window ticks | 2026-07-14 |
+| #2548 | perf(collect): move OpenFIGI into the concurrent host-group phase (~10 min off nightly serial loop) | 2026-07-14 |
+| #2547 | feat(admin): Mastermind AI auto-act-on-findings toggle + pill + copy | 2026-07-14 |
+| #2546 | fix(earlyclose): coherent post-close window — regime no-regress guard + provisional snapshot pointers | 2026-07-14 |
+| #2545 | Research: July 2026 market navigation playbook | 2026-07-14 |
+| #2544 | feat(analytics): first-party analytics beacon + collector + admin dashboard | 2026-07-14 |
+| #2543 | feat(macro): aurora backdrop follows the market-state color | 2026-07-14 |
+| #2542 | feat(macro): live provisional point on the score-path chart + verdict-colored regime pill | 2026-07-14 |
+| #2541 | feat(live): futures + China live quote tiles — same-origin DISPLAY snapshot feed | 2026-07-14 |
+| #2540 | admin: Mastermind AI page clarity overhaul + act-on-findings | 2026-07-14 |
+| #2539 | ops(runners): dedicated macstudio-light runner for live lanes — end 47-144m queue stalls | 2026-07-14 |
+| #2538 | feat(vsb): W6 — accruing Tier-B radar legs + correlation floor-break alert | 2026-07-14 |
+| #2537 | feat(vsb): W5 surface — vol-weather strip + AI-vs-the-rest panel (Market Sentiment dialog) | 2026-07-14 |
+| #2534 | feat(vsb): W4 — AI-adjacency tag layer + decomposed breadth engine | 2026-07-14 |
+| #2533 | feat(vsb): W2 — PIT context ledger columns (vol-suppression/bifurcation stack) | 2026-07-14 |
+| #2532 | feat(flow-ml): FS-2 field guide + descriptive atlas — practice writeup, playbook priors, measured base rates | 2026-07-14 |
+| #2531 | feat(vsb): W3+W5 — vol-weather organ (midrank percentiles) + fear_greed honesty fixes | 2026-07-14 |
+| #2530 | fix(metabolism): achievements follow-ups — cycle grouping, cadence headlines, probe venv | 2026-07-14 |
+| #2529 | fix(heatmap): faint tint for sub-threshold moves instead of grey | 2026-07-14 |
+| #2528 | feat(vsb): W1 — CBOE cor/vol family collector (COR1M/COR3M/DSPX/VIX1D/VIXEQ) + freshness tripwire | 2026-07-14 |
+| #2527 | docs(ric): Rates & Inflation Command grandmaster plan (W0) — RIC-R1..R15 + verified research pack | 2026-07-14 |
+| #2526 | feat(metabolism): achievements observability — see what every loop and lobe actually did | 2026-07-14 |
+| #2525 | research(vsb): Vol Suppression & AI Bifurcation masterplan (W0) | 2026-07-14 |
+| #2524 | fix(macro): path-chart zone labels (Risk-on/Mixed/Risk-off) bleed past the plot edge | 2026-07-14 |
+| #2523 | chore(neural-web): regen SIGNAL_BUS.md — heal doc drift from #2518 | 2026-07-14 |
+| #2522 | fix(alerts): remap v5-dead jump anchors to real homes — dlg-* dialogs + cross-page routing | 2026-07-14 |
+| #2521 | fix(macro): live-patch all verdict-keyed copy + colors on the US score board | 2026-07-14 |
+| #2520 | fix(fs1): tape_recon mid-sweep blip — bounded-backoff re-probe before abort | 2026-07-14 |
+| #2519 | fix(bc2): html-unescape lines before validated-claim matching | 2026-07-14 |
+| #2518 | feat(risk-radar): signal self-monitoring — forward-ledger scorecard → improvement loop + every dashboard | 2026-07-14 |
 | #2517 | ui(nav): mobile menu breathing room + animated back-to-top | 2026-07-13 |
 | #2516 | alerts: count-aware dark-source collapse + plain-word copy for 7 bare rules | 2026-07-13 |
 | #2515 | feat(cbf): W2 engine — flow-regime nightly organ (bloc gauges, EMP watch, discriminator, swap lines, history) | 2026-07-13 |
@@ -485,41 +522,6 @@ _No file collisions detected among open PRs._
 | #2034 | docs(fast-turn): FTR two-speed tape masterplan (FT-R1..R13, W0-W10) | 2026-07-09 |
 | #2033 | fix(pass4-j): TCC-safe matrix REPO + rescued poller baseline + VEX sign comments | 2026-07-09 |
 | #2032 | fix(chainheat): TCC-safe deploy worktree paths + nullable field coercion | 2026-07-09 |
-| #2031 | feat(cn-pick-lab): China Pick Lab — 20 A-share candidate books + Reversion Desk flagship-2 + T+1/limit-honest ledgers (CNPL-R1..R12) | 2026-07-09 |
-| #2030 | feat(tools): Slate — personal local-first task board | 2026-07-09 |
-| #2029 | feat(flow-enrich): flow enrichment engine + publisher + launchd (pass4-h) | 2026-07-09 |
-| #2028 | feat(flow): chain-heat publisher — fix stuck Loading chain heat card | 2026-07-09 |
-| #2027 | docs(momoedge): Flow Intelligence v2 spec (detection grammar + calibrated tiers) | 2026-07-09 |
-| #2026 | feat(momoedge): Polygon reference-universe cache — GICS sector + market cap (Pass4-B) | 2026-07-09 |
-| #2025 | fix(prophet-marks): cd to repo root in loop script (ModuleNotFoundError) | 2026-07-09 |
-| #2024 | feat(flow): UNUSUAL 30d vol baseline + VEX experimental field (Pass 4 Item F) | 2026-07-09 |
-| #2023 | feat(ops): options-matrix launchd lane (PASS4-A) | 2026-07-09 |
-| #2022 | feat(prophet): live-marks publisher + launchd job (Item E, Pass 4) | 2026-07-09 |
-| #2021 | docs(momoedge): pass-4 open-items build docket | 2026-07-09 |
-| #2020 | feat(pick-lab): US Pick Lab — 20+3 candidate shadow books on forward entry ledgers + lab UI (PL-R1..R12) | 2026-07-09 |
-| #2019 | fix(tests): exempt Jinja namespace attrs from bare-.items footgun guard | 2026-07-09 |
-| #2018 | fix(policy-shock): W3 close-out — flip-card CSS (audit blocker) + PS-A3 + §9 build record | 2026-07-09 |
-| #2017 | feat(hk): dashboard UX overhaul — compact command panel, layout, simpler stock cards, combined southbound/A/H | 2026-07-09 |
-| #2016 | feat(policy-lever): ARMED/QUIET lever card — Policy-Shock W2-F | 2026-07-09 |
-| #2015 | feat(policy-shock): W2-E shock de-escalation protocol (D3) | 2026-07-09 |
-| #2014 | fix(nw-pr2): silent producers + synthetic-fixture honesty + context_api relabel | 2026-07-09 |
-| #2013 | feat(nw-r4): M2 deterministic attention + M1 Today's Read card in committee.html | 2026-07-09 |
-| #2012 | feat(nw): M3 health escalation organ + synapse/owner hygiene (PR-3) | 2026-07-09 |
-| #2011 | feat(cortex): resilience — 429 backoff, Retry-After, fallback model, CORTEX_ANTHROPIC_API_KEY (PR-1) | 2026-07-09 |
-| #2010 | feat(baskets-hk): see-more on all baskets + What-to-act-now capped at 4 | 2026-07-09 |
-| #2009 | feat(congress): clickable tickers → Terminal (stock.html) | 2026-07-09 |
-| #2008 | feat(flip-confirmation): T+1 sector-flip confirmation lens + qledger family (policy-shock W1-C) | 2026-07-09 |
-| #2007 | feat(commodities): technical_arming block — stoch + basing/coil detector (policy-shock W1-B) | 2026-07-09 |
-| #2006 | feat(market-drivers): repricing_coherence derived key + intraday pass (W1-A) | 2026-07-09 |
-| #2005 | feat(doctrine): policy-put doctrine + staleness chip + desk cadence 7d→3d | 2026-07-09 |
-| #2004 | hub: rename "Vectors & strategies" band to "Other Features" | 2026-07-09 |
-| #2003 | docs(policy-shock): Policy-Shock Regime masterplan (W0) — PS-R1..R9 + kill-registry append | 2026-07-09 |
-| #2002 | fix(oracle-tm): rebuild + commit Rotation Time Machine feed nightly (off-render job) | 2026-07-09 |
-| #2001 | fix(hk): Market State front board back to top-of-page (above command panel + organs) | 2026-07-09 |
-| #2000 | feat(sector-central): see-more clamp on rotation panels + click-to-zoom-out on rotation map | 2026-07-09 |
-| #1999 | feat(causal): CHF W3 — live scout loop: target panels + frontier + weekly bounded battery + nightly causal job | 2026-07-09 |
-| #1998 | feat(til-w1): theme thesis ledger — curated 18-theme registry + falsifier evaluator | 2026-07-09 |
-| #1997 | feat(til): W3 per-leg asymmetry panel (PR-E) | 2026-07-09 |
 
 ---
 
