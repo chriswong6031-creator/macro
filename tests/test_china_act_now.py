@@ -26,7 +26,7 @@ from engine.china_act_now import assemble_act_now  # noqa: E402
 # ─────────────────────────────────────── helpers ──────────────────────────────
 
 def _sector(ticker: str, urgency: str, tag: str = "", name: str | None = None,
-            dir_: str = "up") -> dict:
+            dir_: str = "up", tag_zh: str | None = None) -> dict:
     """Minimal sector card mirroring build_china._sector_cards() shape."""
     return {
         "ticker": ticker,
@@ -34,7 +34,7 @@ def _sector(ticker: str, urgency: str, tag: str = "", name: str | None = None,
         "label": "TEST",
         "state": "TEST",
         "dir": dir_,
-        "entry": {"urgency": urgency, "tag": tag, "days_hi": None},
+        "entry": {"urgency": urgency, "tag": tag, "tag_zh": tag_zh, "days_hi": None},
     }
 
 
@@ -159,6 +159,32 @@ class TestLaneMapping:
         s = [_sector("X", "now")]
         r = assemble_act_now(s, None, None)
         assert r["lanes"]["buy_now"][0]["kind"] == "SECTOR"
+
+    def test_sector_tag_zh_threaded(self):
+        # bilingual parity (DESIGN_DOCTRINE Law 2/§5.5): cycles.py emits tag_zh
+        # alongside tag; the LaneRow must carry it so the ZH glance tier doesn't
+        # fall back to raw English.
+        s = [_sector("Z", "caution", "UNCONFIRMED — HIGH RISK",
+                     tag_zh="未确认 — 高风险")]
+        r = assemble_act_now(s, None, None)
+        row = r["lanes"]["reduce_avoid"][0]
+        assert row["tag"] == "UNCONFIRMED — HIGH RISK"
+        assert row["tag_zh"] == "未确认 — 高风险"
+
+    def test_sector_tag_zh_absent_is_none(self):
+        # entry dicts without a tag_zh twin (older artifacts) must yield None,
+        # not KeyError — the template falls back to the EN tag.
+        s = [_sector("Y", "avoid", "AVOID")]
+        r = assemble_act_now(s, None, None)
+        row = r["lanes"]["reduce_avoid"][0]
+        assert row["tag_zh"] is None
+
+    def test_blank_row_has_tag_zh_key(self):
+        # every LaneRow kind (theme/sector/cycle) shares _blank_row; the key must
+        # exist on all of them or the jinja missing-key gotcha bites the template.
+        rows = [_cycle_row("801010", "Agriculture", "sector", "Trough", osc_slope=3.9)]
+        r = assemble_act_now([], None, rows)
+        assert "tag_zh" in r["lanes"]["bottoming_watch"][0]
 
 
 class TestThemeLaneMapping:

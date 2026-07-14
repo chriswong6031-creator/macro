@@ -148,6 +148,7 @@ def _blank_row(kind: str, id_: str, name: str, name_zh: str | None = None) -> di
         "rel20": None,
         "rel5": None,
         "tag": None,
+        "tag_zh": None,
         "urgency": None,
         "reasons": [],
         "phase": None,
@@ -191,6 +192,7 @@ def _sector_row(s: dict) -> dict:
     e = s.get("entry") or {}
     row = _blank_row("SECTOR", s.get("ticker", ""), s.get("name", ""))
     row["tag"] = e.get("tag")
+    row["tag_zh"] = e.get("tag_zh")
     row["urgency"] = e.get("urgency")
     row["reasons"] = [s.get("label") or s.get("state") or ""] if (
         s.get("label") or s.get("state")

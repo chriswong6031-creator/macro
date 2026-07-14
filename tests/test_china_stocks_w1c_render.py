@@ -556,6 +556,7 @@ def _blank_anv2_row(kind="THEME", name="Test Theme", name_zh="测试主题"):
         "rel20": None,
         "rel5": None,
         "tag": None,
+        "tag_zh": None,
         "urgency": None,
         "reasons": [],
         "phase": None,
@@ -611,6 +612,7 @@ def _sector_anv2_row():
     row.update({
         "id": "512480.SS",
         "tag": "BUY ZONE",
+        "tag_zh": "买入区",
         "urgency": "now",
     })
     return row
@@ -633,7 +635,8 @@ def _make_sector_card_for_ticker(ticker="512480.SS"):
         "state": "RISING",
         "label": "Uptrend",
         "dir": "up",
-        "entry": {"text": "Buy zone", "text_zh": "买入区", "tag": "BUY ZONE", "urgency": "now"},
+        "entry": {"text": "Buy zone", "text_zh": "买入区", "tag": "BUY ZONE",
+                  "tag_zh": "买入区", "urgency": "now"},
         "age_short": "3w",
         "age_short_zh": "3周",
         "dc_day": 18,
@@ -807,6 +810,29 @@ def test_anv2_sector_row_missing_sector_card_graceful():
     row = _sector_anv2_row()
     html = _render_anv2({"buy_now": [row]}, sectors_by_ticker={})
     assert "data-rpop" in html, "data-rpop missing when sector card absent"
+
+
+def test_anv2_sector_tag_chip_bilingual():
+    """SECTOR tag chip must render EN/ZH twins via t(), not raw English only.
+
+    DESIGN_DOCTRINE Law 2/§5.5: bilingual parity at the glance tier — the ZH
+    board must show 买入区, not 'BUY ZONE'.
+    """
+    html = _render_anv2({"buy_now": [_sector_anv2_row()]})
+    start = html.index("anv2-chip-tag")
+    chip = html[start:start + 300]  # window covers both nested l-en/l-zh spans
+    assert 'class="l-en">BUY ZONE' in chip, "EN tag missing from tag chip"
+    assert 'class="l-zh">买入区' in chip, "ZH tag twin missing from tag chip"
+
+
+def test_anv2_sector_tag_chip_falls_back_to_en_when_tag_zh_none():
+    """tag_zh=None (older artifact) must fall back to the EN tag in the l-zh span."""
+    row = _sector_anv2_row()
+    row["tag_zh"] = None
+    html = _render_anv2({"buy_now": [row]})
+    start = html.index("anv2-chip-tag")
+    chip = html[start:start + 300]  # window covers both nested l-en/l-zh spans
+    assert 'class="l-zh">BUY ZONE' in chip, "l-zh span must fall back to EN tag"
 
 
 def test_anv2_payload_bilingual_header():
