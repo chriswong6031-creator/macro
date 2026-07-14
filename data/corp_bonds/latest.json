@@ -1,0 +1,296 @@
+{
+  "organ": "corp_credit.v1",
+  "as_of": "2026-07-14",
+  "data_as_of": "2026-07-10",
+  "price_convention": "clean",
+  "authority": {
+    "rank": false,
+    "size": false,
+    "gate": false,
+    "escalate": false
+  },
+  "accruing": "DISPLAY-ONLY / NOT VALIDATED. Forward accrual since 2026-07-14. Per-criterion validation results print in data/corp_bonds/validation.json on every run. Promotion to authority requires passing CCW pre-registered gauntlet criteria a-d (\u00a73-P2): dirty/clean price verdict, YTM vs iShares within 25bp, IG g-spread vs BAML OAS within 30bp, composition-guard fixture. Gauntlet is a PROMOTION gate, not a build gate. Context accrual proceeds regardless of gate status.",
+  "market": {
+    "ig": {
+      "n_bonds": 8220,
+      "par_total": 23331711501.12,
+      "price_clean_pw": 98.09059700665931,
+      "ytm_pct_pw": 4.937276076448514,
+      "g_spread_bp_pw": 63.48864165629142,
+      "wam_yrs": 5.141175215680578
+    },
+    "hy": {
+      "n_bonds": 1955,
+      "par_total": 18832324957.769997,
+      "price_clean_pw": 98.11951842497342,
+      "ytm_pct_pw": 7.8996237346382285,
+      "g_spread_bp_pw": 357.14555267213944,
+      "wam_yrs": 5.727866181257334
+    },
+    "quality_spread_bp": 293.65691101584804
+  },
+  "themes": {
+    "ai_hardware_credit": {
+      "n_bonds": 25,
+      "n_issuers": 1,
+      "g_spread_bp_pw": 59.33733643126162,
+      "ytm_pct_pw": 4.855243961075901,
+      "dispersion_bp": 69.70730495167538,
+      "dispersion_basis": "p90_p10",
+      "small_n": false,
+      "wam_yrs": 4.032390264673921,
+      "coverage_notes": {
+        "DELL": "Multiple issuing entities: 'DELL INT LLC / EMC CORP' (co-issuer; most bonds), 'DELL INC' (legacy), 'EMC CORP' (legacy EMC paper). Five distinct cusip6 prefixes from live harvest. Found in SPSB/SPIB/SPLB. All cusip6s confirmed 2026-07-14.",
+        "HPE": "Hewlett Packard Enterprise bonds not observed in SPSB/SPIB/SPLB/JNK/SPHY as of 2026-07-14 harvest. Note: 'HPE' appears in SPIB but matches HEALTHPEAK (healthcare REIT), not Hewlett Packard. Use full-name pattern 'HEWLETT PACKARD ENTERPRISE' to avoid false positive. No cusip6 harvested \u2014 leave empty until bonds appear."
+      }
+    },
+    "ai_power_credit": {
+      "n_bonds": 44,
+      "n_issuers": 3,
+      "g_spread_bp_pw": 58.85065579375809,
+      "ytm_pct_pw": 4.933088724338099,
+      "dispersion_bp": 75.45575186201648,
+      "dispersion_basis": "p90_p10",
+      "small_n": false,
+      "wam_yrs": 8.595808668365011,
+      "coverage_notes": {
+        "VST": "Rising star: HY-to-IG transition 2025-26 (Ba1\u2192Baa3). Bonds in SPSB/SPIB as 'VISTRA OPERATIONS CO LLC'. Cusip6 92840V confirmed from live harvest 2026-07-14.",
+        "CEG": "Constellation Energy Group LLC; bonds not labeled 'CONSTELLATION ENERGY' but 'CONSTELLATION EN GEN LLC' in SSGA files. Pattern 'CONSTELLATION EN' matches both 'CONSTELLATION EN GEN LLC' and potential variant 'CONSTELLATION ENERGY'. Found in SPIB/SPLB. Cusip6 210385 (short/blend tenors) and 30161M (long-dated) confirmed from live harvest 2026-07-14.",
+        "NEE": "Bonds issued via 'NEXTERA ENERGY CAPITAL HOLDINGS' finance subsidiary; pattern 'NEXTERA ENERGY' matches this and any direct NEE issuance. Found in SPSB/SPIB/SPLB. Cusip6 65339K confirmed from live harvest 2026-07-14."
+      }
+    },
+    "dc_reit_credit": {
+      "n_bonds": 18,
+      "n_issuers": 2,
+      "g_spread_bp_pw": 58.60584986490001,
+      "ytm_pct_pw": 4.797587401291771,
+      "dispersion_bp": 54.62323540174532,
+      "dispersion_basis": "p90_p10",
+      "small_n": false,
+      "wam_yrs": 2.992536305907121,
+      "coverage_notes": {
+        "EQIX": "Multiple issuing entities (EQUINIX INC direct + finance subsidiaries); three distinct cusip6 prefixes observed. Bonds in SPSB/SPIB/SPLB. Cusip6 29444U, 29447K, 29390X confirmed from live harvest 2026-07-14.",
+        "DLR": "Bonds issued as 'DIGITAL REALTY TRUST LP' (operating partnership). 'DIGITAL DUTCH' was a pattern candidate from masterplan for European finance-sub; not observed in US index funds as of 2026-07-14 harvest \u2014 refine from unmatched log as European-sub bonds enter SPIB/SPLB. Cusip6 25389J confirmed from live harvest 2026-07-14."
+      }
+    },
+    "hyperscaler_credit": {
+      "n_bonds": 158,
+      "n_issuers": 5,
+      "g_spread_bp_pw": 80.29095057967535,
+      "ytm_pct_pw": 5.176758778912188,
+      "dispersion_bp": 202.97679026306477,
+      "dispersion_basis": "p90_p10",
+      "small_n": false,
+      "wam_yrs": 7.551771488398827,
+      "coverage_notes": {
+        "MSFT": "Aaa/AAA; ~$103B long-term debt 2026; bonds in SPIB and SPLB (1-3y and long-dated tranches). Cusip6 594918 confirmed from live harvest 2026-07-14.",
+        "AMZN": "~$119B LT debt; Jul-2026 $25B 8-tranche deal (2029-2066) now entering SPIB/SPLB. Bonds trade as 'AMAZON.COM INC'. Cusip6 023135 confirmed from live harvest 2026-07-14.",
+        "META": "Oct-2025 $30B issuance (2030-2065); Aa3/AA-. Bonds in SPSB/SPIB/SPLB. Cusip6 30303M confirmed from live harvest 2026-07-14.",
+        "GOOGL": "Feb-2026 ~$32B multi-currency ($20B USD); Aa1/AA+. Bonds trade as 'ALPHABET INC'. Cusip6 02079K confirmed from live harvest 2026-07-14.",
+        "ORCL": "~$108B total debt; Baa2/BBB negative outlook at all three agencies 2026 \u2014 standing fallen-angel watch. Largest non-tech IG issuer in AI-adjacent themes. Cusip6 68389X confirmed from live harvest 2026-07-14."
+      }
+    },
+    "memory_credit": {
+      "n_bonds": 9,
+      "n_issuers": 2,
+      "g_spread_bp_pw": 272.38919650304564,
+      "ytm_pct_pw": 7.048298681727915,
+      "dispersion_bp": 238.6558789470376,
+      "dispersion_basis": "p90_p10",
+      "small_n": false,
+      "wam_yrs": 5.371899082630568,
+      "coverage_notes": {
+        "MU": "BBB positive outlook (Moody's); IG bonds in SPIB and SPLB. Small par vs equity market cap. Cusip6 595112 confirmed from live harvest 2026-07-14.",
+        "WDC": "Split-rated. Bonds not observed in SPSB/SPIB/SPLB/JNK/SPHY as of 2026-07-14 harvest. May be in other indices or have matured/not yet re-issued post-restructuring. No cusip6 harvested \u2014 leave empty until next observation cycle.",
+        "STX": "Seagate issuing entities changed post-2025 exchange: bonds now trade as 'SEAGATE HDD CAYMAN' (Ba1) and 'SEAGATE DATA STOR' (HY). Both name patterns required to match full universe. Found in JNK/SPHY. Cusip6 81180L (SEAGATE DATA STOR) and 81180W (SEAGATE HDD) confirmed from live harvest 2026-07-14. SNDK private loan not index-visible; Samsung no USD paper; SK Hynix RegS bond \u2014 stated gaps."
+      }
+    },
+    "neocloud_credit": {
+      "n_bonds": 4,
+      "n_issuers": 1,
+      "g_spread_bp_pw": 566.6034016056426,
+      "ytm_pct_pw": 9.96387136783439,
+      "dispersion_bp": 85.19346854433468,
+      "dispersion_basis": "max_min",
+      "small_n": true,
+      "wam_yrs": 4.827226993108254,
+      "coverage_notes": {
+        "CRWV": "Three straight HY note series: 9.25%/2030, 9.75%/2031, 9.625%/2032 \u2014 index-eligible; found in JNK and SPHY. IREN/NBIS are converts-only (not index-eligible \u2014 not visible in this store). Cusip6 21873S confirmed from live harvest 2026-07-14."
+      }
+    },
+    "telecom_legacy": {
+      "n_bonds": 44,
+      "n_issuers": 1,
+      "g_spread_bp_pw": 70.63376021885762,
+      "ytm_pct_pw": 5.101595453558438,
+      "dispersion_bp": 79.81122319329717,
+      "dispersion_basis": "p90_p10",
+      "small_n": false,
+      "wam_yrs": 7.571488125156193,
+      "coverage_notes": {
+        "T": "AT&T bonds not observed in SPSB/SPIB/SPLB/JNK/SPHY as of 2026-07-14 harvest \u2014 AT&T IG bonds may be in separate investment-grade indices not served by these SSGA funds, or the fund's holdings simply do not include them on this date. Pattern 'AT&T INC' and 'AT&T CORP' will match when bonds appear. Telecom-legacy control group: the 1990s telecom capex-debt boom is the standing historical rhyme for the AI capex credit cycle. No cusip6 harvested yet.",
+        "VZ": "Verizon Communications \u2014 large IG issuer; bonds in SPSB/SPIB/SPLB. Two issuing entity cusip6 prefixes observed. Cusip6 92343V and 92344G confirmed from live harvest 2026-07-14."
+      }
+    }
+  },
+  "sectors": [
+    {
+      "sector": "Financials",
+      "n_bonds": 671,
+      "par_total": 4117447722.0,
+      "g_spread_bp_pw": 59.96967209820711
+    },
+    {
+      "sector": "Consumer Discretionary",
+      "n_bonds": 291,
+      "par_total": 1255940335.0,
+      "g_spread_bp_pw": 73.56459934401528
+    },
+    {
+      "sector": "Utilities",
+      "n_bonds": 346,
+      "par_total": 873144515.0,
+      "g_spread_bp_pw": 86.91511191986406
+    },
+    {
+      "sector": "Industrials",
+      "n_bonds": 317,
+      "par_total": 855065449.69,
+      "g_spread_bp_pw": 72.31929921311978
+    },
+    {
+      "sector": "Communication Services",
+      "n_bonds": 213,
+      "par_total": 753062661.0,
+      "g_spread_bp_pw": 66.48182973348558
+    },
+    {
+      "sector": "Health Care",
+      "n_bonds": 244,
+      "par_total": 675884000.0,
+      "g_spread_bp_pw": 60.58152657270295
+    },
+    {
+      "sector": "Information Technology",
+      "n_bonds": 195,
+      "par_total": 653770541.0,
+      "g_spread_bp_pw": 119.57952034657282
+    },
+    {
+      "sector": "Real Estate",
+      "n_bonds": 243,
+      "par_total": 609853972.0,
+      "g_spread_bp_pw": 78.86054843001229
+    },
+    {
+      "sector": "Consumer Staples",
+      "n_bonds": 217,
+      "par_total": 458796682.0,
+      "g_spread_bp_pw": 46.39771146829487
+    },
+    {
+      "sector": "Energy",
+      "n_bonds": 165,
+      "par_total": 293939000.0,
+      "g_spread_bp_pw": 68.6561175963784
+    },
+    {
+      "sector": "Materials",
+      "n_bonds": 67,
+      "par_total": 102228000.0,
+      "g_spread_bp_pw": 58.336332208203586
+    }
+  ],
+  "maturity_wall": {
+    "ig": {
+      "0_1y": {
+        "par_total": 90901642.0,
+        "n_bonds": 22
+      },
+      "1_3y": {
+        "par_total": 12157705914.77,
+        "n_bonds": 1534
+      },
+      "3_5y": {
+        "par_total": 4361678382.29,
+        "n_bonds": 1462
+      },
+      "5_10y": {
+        "par_total": 4842310599.08,
+        "n_bonds": 2194
+      },
+      "10y_plus": {
+        "par_total": 1879114962.98,
+        "n_bonds": 3008
+      }
+    },
+    "hy": {
+      "0_1y": {
+        "par_total": 26490362.0,
+        "n_bonds": 15
+      },
+      "1_3y": {
+        "par_total": 3861473471.9700003,
+        "n_bonds": 536
+      },
+      "3_5y": {
+        "par_total": 7138938697.5,
+        "n_bonds": 686
+      },
+      "5_10y": {
+        "par_total": 6928305563.0,
+        "n_bonds": 605
+      },
+      "10y_plus": {
+        "par_total": 877116863.3,
+        "n_bonds": 113
+      }
+    }
+  },
+  "coverage": {
+    "n_bonds_total": 10175,
+    "n_dropped_rows": 70,
+    "matched_par_share": 0.0321,
+    "sector_mapped_par_share": 0.2526,
+    "ytm_solver": {
+      "newton_n": 10170,
+      "bisection_n": 0,
+      "failed_n": 5
+    },
+    "curve_pillars_present": [
+      "DGS3MO",
+      "DGS6MO",
+      "DGS1",
+      "DGS2",
+      "DGS3",
+      "DGS5",
+      "DGS7",
+      "DGS10",
+      "DGS30"
+    ]
+  },
+  "honesty_notes": [
+    "\u00a72.5-2: Bond prices from SSGA fund NAV (matrix pricing, T+1 settlement implied). Not TRACE transaction prices. Spreads are indicative, not executable.",
+    "\u00a72.5-8: Holdings represent index-fund lens (only index-eligible bonds visible). Private placements and 144A-only issuance are not captured.",
+    "Small-n dispersion (max-min, not p90-p10): themes with n<8: neocloud_credit. Interpret with caution."
+  ],
+  "validation": {
+    "overall": "PASS",
+    "price_convention": "clean",
+    "criteria": {
+      "a": {
+        "status": "PASS"
+      },
+      "b": {
+        "status": "PASS"
+      },
+      "c": {
+        "status": "PASS"
+      },
+      "d": {
+        "status": "PASS"
+      }
+    }
+  },
+  "_timing_s": 3.77
+}

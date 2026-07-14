@@ -73,9 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 441, (
-        f"Expected 441 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 449, (
+        f"Expected 449 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        "(CCW-W2 #2556 added ccw-issuer-daily, ccw-theme-daily, ccw-sector-daily,"
+        " ccw-market-daily, ccw-maturity-wall, ccw-bond-panel-latest,"
+        " ccw-latest-json, ccw-validation-json = 441->449;"
         "(risk-radar self-monitoring #2518 added data-risk-radar-scorecard,"
         " site-riskdata-scorecard = 439->441;"
         "(CBF W2 added cbf-flow-regime-latest, cbf-flow-regime-history = 437->439;"

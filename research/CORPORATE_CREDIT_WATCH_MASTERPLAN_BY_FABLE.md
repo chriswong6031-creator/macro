@@ -496,3 +496,17 @@ credit kills), engine/collector census + 3-lens adversarial review 2026-07-14.
   gate, tranche-level dispersion, DGS20 alias ownership, SSGA URL/parser corrections,
   sector lens + maturity wall + IG−HY + divergence additions, §4 steelman).
   Adjudication §4 ruled: bond lobe stays sovereign; contract-layer integration.
+- 2026-07-14 — W2 built + gate PASSED: engine/corp_credit.py g-spread engine
+  (vectorized YTM Newton+bisection, 30/360 US accrued, CMT merge_asof ≤7d, matched-panel
+  composition guard, tranche dispersion, maturity wall) + tests/test_corp_credit.py
+  (synthetic only). Wired collect_tail daily.yml + dag.yml + synapse.yml (8 artifacts)
+  + ci.yml (ccw-w2-gspread-engine job). **§2.5-1 empirical verdict: SSGA MV/Par is a
+  CLEAN price** — the dirty presumption is overturned (slope of SSGA−iShares price diff
+  on computed accrued = 0.04, n=1750; YTM vs iShares under clean = 8.0bp median vs
+  ~17bp under dirty); the engine adds computed accrued to form the dirty price before
+  the YTM solve. All four §3-P2 criteria PASS (a: clean, decisive; b: LQD median 8.0bp
+  p90 11.1bp n=20 bins 5/5, HYG 6.7bp non-gating; c: IG g-spread 63.5bp vs BAML 77bp =
+  13.5bp ≤ 30bp, n=1 overlap date at build — re-prints nightly; d: naive 42.7bp jump
+  suppressed to −0.24bp, marker fired). Receipts: data/corp_bonds/validation.json;
+  frozen iShares samples (no ISIN in the new BlackRock workbook — join is
+  coupon+maturity+name-token) in data/corp_bonds/validation_sample/.

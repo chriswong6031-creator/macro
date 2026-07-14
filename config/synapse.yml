@@ -12731,3 +12731,214 @@ artifacts:
       until SA-R10 floors met (~2026-10-15). SA-R3 balanced-fitness law: each
       precision sensor is paired with a recall/coverage sensor. Authority block:
       is_context_only=True, display_only=True. No 'validated' claim ever printed.
+
+  # --- CCW W2 (g-spread engine) artifacts ---
+
+  ccw-issuer-daily:
+    path: data/corp_bonds/series/issuer_daily.parquet
+    format: parquet
+    producer: engine/corp_credit.py
+    known_extra_writers: []
+    owner_program: ccw
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: ccw.issuer_daily.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/corp_credit.py
+    external_consumers: []
+    notes: >
+      CCW-W2 §3-P2. Per-issuer g-spread time series (columns: as_of, issuer,
+      segment=IG|HY, g_spread_bp, ytm_pct, accrued_pct, dirty_price,
+      near_par_flag, dispersion_label, n_bonds). One row per (as_of, issuer).
+      Written by engine.corp_credit __main__. Display-tier; authority all-false.
+      Non-fatal (CCW-R16): absent when holdings store missing or solver fails.
+
+  ccw-theme-daily:
+    path: data/corp_bonds/series/theme_daily.parquet
+    format: parquet
+    producer: engine/corp_credit.py
+    known_extra_writers: []
+    owner_program: ccw
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: ccw.theme_daily.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/corp_credit.py
+    external_consumers: []
+    notes: >
+      CCW-W2 §3-P2. Per-theme g-spread time series aggregated via
+      data/corp_bonds/issuer_themes.json (issuer→theme mapping). Columns:
+      as_of, theme, segment, g_spread_bp (par-weighted mean), n_issuers,
+      dispersion_label. One row per (as_of, theme). Display-tier; authority
+      all-false. Non-fatal (CCW-R16).
+
+  ccw-sector-daily:
+    path: data/corp_bonds/series/sector_daily.parquet
+    format: parquet
+    producer: engine/corp_credit.py
+    known_extra_writers: []
+    owner_program: ccw
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: ccw.sector_daily.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/corp_credit.py
+    external_consumers: []
+    notes: >
+      CCW-W2 §3-P2. Per-sector g-spread time series (sector mapping via
+      data/breadth/ticker_sectors.parquet). Columns: as_of, sector, segment,
+      g_spread_bp (par-weighted mean), n_issuers, dispersion_label. One row
+      per (as_of, sector). Display-tier; authority all-false. Non-fatal (CCW-R16).
+
+  ccw-market-daily:
+    path: data/corp_bonds/series/market_daily.parquet
+    format: parquet
+    producer: engine/corp_credit.py
+    known_extra_writers: []
+    owner_program: ccw
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: ccw.market_daily.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/corp_credit.py
+    external_consumers: []
+    notes: >
+      CCW-W2 §3-P2. Market-level (IG vs HY) g-spread aggregate time series.
+      Columns: as_of, segment (IG|HY), g_spread_bp (par-weighted mean),
+      n_issuers, dispersion_label, baml_oas_bp (BAML OAS benchmark from
+      data/fred/BAMLC0A0CM.parquet for reference). One row per (as_of, segment).
+      Display-tier; authority all-false. Non-fatal (CCW-R16).
+
+  ccw-maturity-wall:
+    path: data/corp_bonds/series/maturity_wall.parquet
+    format: parquet
+    producer: engine/corp_credit.py
+    known_extra_writers: []
+    owner_program: ccw
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: ccw.maturity_wall.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/corp_credit.py
+    external_consumers: []
+    notes: >
+      CCW-W2 §3-P2. Par-weighted maturity wall by bucket. Buckets (exact):
+      0_1y / 1_3y / 3_5y / 5_10y / 10y_plus. Columns: as_of, segment (IG|HY),
+      bucket, par_weight (fraction of total par in bucket), g_spread_bp (bucket
+      mean), n_bonds. Supports tenor-slope and near-term cliff views. Display-tier;
+      authority all-false. Non-fatal (CCW-R16).
+
+  ccw-bond-panel-latest:
+    path: data/corp_bonds/series/bond_panel_latest.parquet
+    format: parquet
+    producer: engine/corp_credit.py
+    known_extra_writers: []
+    owner_program: ccw
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: ccw.bond_panel_latest.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/corp_credit.py
+    external_consumers: []
+    notes: >
+      CCW-W2 §3-P2. Single-date bond-level panel snapshot (latest available
+      as_of). Columns: as_of, isin, issuer, segment, coupon_pct, maturity,
+      par_value, clean_price, dirty_price, accrued_pct, ytm_pct, cmt_rate_pct,
+      g_spread_bp, near_par_flag, bucket (maturity bucket), theme, sector.
+      Matched-panel composition guard applied (ENTRY_SEASONING_BARS=5,
+      COMPOSITION_MARKER_PAR_SHARE=0.005). Near-par callable HY excluded
+      (NEAR_PAR_CLEAN=99.0). Display-tier; authority all-false. Non-fatal (CCW-R16).
+
+  ccw-latest-json:
+    path: data/corp_bonds/latest.json
+    format: json
+    producer: engine/corp_credit.py
+    known_extra_writers: []
+    owner_program: ccw
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: ccw.latest.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/corp_credit.py
+    external_consumers: []
+    notes: >
+      CCW-W2 §3-P2. Rollup summary JSON for quick dashboard consumption.
+      Schema: {as_of, generated_at, authority (AUTHORITY_V1 all-false),
+      market_summary {IG: {g_spread_bp, n_issuers, baml_oas_bp, basis_bp},
+      HY: {...}}, top_themes (list by g_spread_bp desc), top_sectors,
+      maturity_wall_summary, dispersion_label}. Display-tier only; no scored
+      path surfaces; no 'validated' claims. Non-fatal (CCW-R16): absent when
+      engine fails.
+
+  ccw-validation-json:
+    path: data/corp_bonds/validation.json
+    format: json
+    producer: engine/corp_credit.py
+    known_extra_writers: []
+    owner_program: ccw
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: ccw.validation.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/corp_credit.py
+    external_consumers: []
+    notes: >
+      CCW-W2 §5. Validation gate results (criteria a-d). Schema: {as_of,
+      generated_at, criteria_a (dirty/clean probe: pass|fail|pending),
+      criteria_b (YTM vs iShares ≤25bp: pass|fail|pending|PENDING_SAMPLE),
+      criteria_c (IG g-spread vs BAML OAS ≤30bp: pass|fail, includes
+      actual_bp/threshold_bp/baml_oas_bp/computed_bp),
+      criteria_d (synthetic composition fixture: pass|fail),
+      overall (pass|partial|fail|pending), notes []}. Criterion (c) FAIL is
+      expected at initial build (34bp > 30bp threshold) — not a blocker per
+      spec (CCW-R16 non-fatal). 'PENDING_SAMPLE' for criteria requiring
+      data/corp_bonds/validation_sample/*.parquet (fetched separately via
+      scripts/fetch_ishares_validation_sample.py). Authority: all-false.

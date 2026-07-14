@@ -14,6 +14,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | btc-vector | 5 |
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
+| ccw | 8 |
 | china-alpha | 20 |
 | china-intel-hub | 2 |
 | china-pick-lab | 3 |
@@ -87,7 +88,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 273 |
+| display | 281 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -96,7 +97,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 423 |
+| git | 431 |
 | gitignored-local | 11 |
 | r2 | 7 |
 
@@ -138,6 +139,19 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | cbf-flow-regime-history | `data/flow_regime/history.parquet` | parquet | daily-engine | display | 0 | 0 |
 | cbf-flow-regime-latest | `data/flow_regime/latest.json` | json | daily-engine | display | 0 | 0 |
+
+### ccw
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| ccw-bond-panel-latest | `data/corp_bonds/series/bond_panel_latest.parquet` | parquet | collect | display | 1 | 0 |
+| ccw-issuer-daily | `data/corp_bonds/series/issuer_daily.parquet` | parquet | collect | display | 1 | 0 |
+| ccw-latest-json | `data/corp_bonds/latest.json` | json | collect | display | 1 | 0 |
+| ccw-market-daily | `data/corp_bonds/series/market_daily.parquet` | parquet | collect | display | 1 | 0 |
+| ccw-maturity-wall | `data/corp_bonds/series/maturity_wall.parquet` | parquet | collect | display | 1 | 0 |
+| ccw-sector-daily | `data/corp_bonds/series/sector_daily.parquet` | parquet | collect | display | 1 | 0 |
+| ccw-theme-daily | `data/corp_bonds/series/theme_daily.parquet` | parquet | collect | display | 1 | 0 |
+| ccw-validation-json | `data/corp_bonds/validation.json` | json | collect | display | 1 | 0 |
 
 ### china-alpha
 

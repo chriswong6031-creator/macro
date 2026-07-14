@@ -1,0 +1,115 @@
+{
+  "as_of": "2026-07-14",
+  "price_convention": "clean",
+  "criteria": {
+    "a": {
+      "status": "PASS",
+      "probe1": {
+        "verdict": "clean",
+        "tiebreak_fired": false,
+        "slope": 0.0376,
+        "hc1_se": 0.0078,
+        "n_joined": 1750,
+        "median_diff": 0.449,
+        "median_accrued": 1.2008,
+        "median_resid": -0.7505,
+        "tiebreak_dirty_median_bp": null,
+        "tiebreak_clean_median_bp": null,
+        "date_gap_days": 3,
+        "note": "verdict keys on slope because level diffs (median_diff) absorb the date-gap market move; median_resid = diff - accrued"
+      },
+      "probe2": {
+        "accrued_coefficient": -0.0606,
+        "hc1_95ci": [
+          -0.1983,
+          0.077
+        ],
+        "n": 8220,
+        "detail": "cross-sectional OLS of price_dirty_raw on [1, coupon, tenor, coupon*tenor, accrued]"
+      }
+    },
+    "b": {
+      "LQD": {
+        "status": "PASS",
+        "n": 20,
+        "n_joined": 1759,
+        "median_bp": 7.96,
+        "p90_bp": 11.09,
+        "share_within_25bp": 1.0,
+        "bins_occupied": 5,
+        "date_gap_days": 3,
+        "gating": true
+      },
+      "HYG": {
+        "status": "PASS",
+        "n": 20,
+        "n_joined": 563,
+        "median_bp": 6.66,
+        "p90_bp": 15.95,
+        "share_within_25bp": 0.95,
+        "bins_occupied": 5,
+        "date_gap_days": 3,
+        "gating": false
+      },
+      "status": "PASS"
+    },
+    "c": {
+      "status": "PASS",
+      "latest_diff_bp": 13.51,
+      "overlaps": [
+        {
+          "as_of": "2026-07-10",
+          "g_spread_bp_pw": 63.49,
+          "baml_oas_bp": 77.0,
+          "diff_bp": 13.51
+        }
+      ],
+      "threshold_bp": 30.0
+    },
+    "d": {
+      "status": "PASS",
+      "naive_delta_bp": 43.0167,
+      "matched_delta_bp": 0.1621,
+      "composition_change_on_injection": true,
+      "injection_date_idx": 8,
+      "boundary_date_idx": 13,
+      "matched_n_pre_boundary": 30,
+      "matched_n_at_boundary": 31,
+      "checks": {
+        "naive_delta_gt_20bp": true,
+        "matched_delta_within_2bp": true,
+        "comp_change_flag_true": true,
+        "tranche_excluded_5bars": true,
+        "tranche_included_at_boundary": true
+      },
+      "seasoning_exclusion_detail": {
+        "k0_matched_delta_within_2bp": true,
+        "k0_matched_n": 30,
+        "k1_matched_delta_within_2bp": true,
+        "k1_matched_n": 30,
+        "k2_matched_delta_within_2bp": true,
+        "k2_matched_n": 30,
+        "k3_matched_delta_within_2bp": true,
+        "k3_matched_n": 30,
+        "k4_matched_delta_within_2bp": true,
+        "k4_matched_n": 30
+      }
+    }
+  },
+  "overall": "PASS",
+  "sample_metadata": {
+    "LQD": {
+      "as_of": "2026-07-13",
+      "n_rows": 3132,
+      "date_gap_days": 3
+    },
+    "HYG": {
+      "as_of": "2026-07-13",
+      "n_rows": 1323,
+      "date_gap_days": 3
+    }
+  },
+  "notes": [
+    "accrual-fraction spanning is cross-sectional at W2 (single holdings date on disk); the time-axis sawtooth check strengthens automatically as holdings dates accrue and criterion (a)/(c) re-print nightly"
+  ]
+}

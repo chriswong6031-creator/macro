@@ -247,6 +247,15 @@ lanes:
           (stable claim_ids prevent duplicates). Reads data/altdata/theses.jsonl
           from tonight's collect-core commit; runs BEFORE "commit tail data" so
           claims.jsonl rides the same push. Non-fatal (step always exits 0).
+      - id: corp_credit
+        module: engine.corp_credit
+        note: >
+          CCW-W2 g-spread engine (§3-P2). Reads tonight's holdings from
+          collect-core's commit (data/corp_bonds/holdings/*) + data/fred/DGS*.parquet
+          (CMT curve) + data/corp_bonds/issuer_themes.json. Writes
+          data/corp_bonds/series/{issuer_daily,theme_daily,sector_daily,market_daily,
+          maturity_wall,bond_panel_latest}.parquet + data/corp_bonds/latest.json +
+          data/corp_bonds/validation.json. Non-fatal (CCW-R16).
 
   # ── daily.yml / engine ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
@@ -1944,6 +1953,48 @@ modules:
       when any single unmatched name-group exceeds $5B par. No secrets required
       (keyless SSGA endpoint; browser-UA only). Runs as part of scripts.collect
       adapter registry (group=corp_bonds); not a standalone collect-lane step.
+
+  # CCW-W2: g-spread engine + aggregates + validation (collect_tail lane)
+  - module: engine.corp_credit
+    reads:
+      - data/corp_bonds/holdings/SPSB/*.parquet
+      - data/corp_bonds/holdings/SPIB/*.parquet
+      - data/corp_bonds/holdings/SPLB/*.parquet
+      - data/corp_bonds/holdings/JNK/*.parquet
+      - data/corp_bonds/holdings/SPHY/*.parquet
+      - data/corp_bonds/issuer_themes.json
+      - data/fred/DGS3MO.parquet
+      - data/fred/DGS6MO.parquet
+      - data/fred/DGS1.parquet
+      - data/fred/DGS2.parquet
+      - data/fred/DGS3.parquet
+      - data/fred/DGS5.parquet
+      - data/fred/DGS7.parquet
+      - data/fred/DGS10.parquet
+      - data/fred/DGS20.parquet
+      - data/fred/DGS30.parquet
+      - data/fred/BAMLC0A0CM.parquet
+      - data/breadth/ticker_sectors.parquet
+      - data/breadth/constituents.parquet
+      - data/corp_bonds/validation_sample/*.parquet
+    writes:
+      - data/corp_bonds/series/issuer_daily.parquet
+      - data/corp_bonds/series/theme_daily.parquet
+      - data/corp_bonds/series/sector_daily.parquet
+      - data/corp_bonds/series/market_daily.parquet
+      - data/corp_bonds/series/maturity_wall.parquet
+      - data/corp_bonds/series/bond_panel_latest.parquet
+      - data/corp_bonds/latest.json
+      - data/corp_bonds/validation.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      CCW-W2 §3-P2 g-spread engine. Accrued-corrected YTM (vectorized Newton +
+      bisection fallback), CMT interpolation (merge_asof backward ≤7d), issuer/theme
+      matching, sector mapping, matched-panel composition guard, dispersion, maturity
+      wall, validation gate (criteria a-d). Display-tier, authority all-false. Runs
+      in collect_tail after corp_bond_holdings. Non-fatal (CCW-R16).
 
   - module: scripts.build_baskets
     reads:
