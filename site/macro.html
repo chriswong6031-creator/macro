@@ -4132,7 +4132,10 @@ body.page-macro.mx4-grid .mx5-path-labels{
   position:absolute;inset:0;pointer-events:none;
   font-family:-apple-system,Inter,sans-serif;font-size:11px;line-height:1;
 }
-body.page-macro.mx4-grid .mx5-path-labels span{position:absolute;white-space:nowrap;}
+/* DIRECT children only: the bilingual l-en/l-zh spans nested inside pl-zone/pl-x must
+   stay in normal flow — absolutizing them shrink-wraps the anchored parent to width 0,
+   so right-aligned zone words overflow rightward past the plot edge (label-bleed bug) */
+body.page-macro.mx4-grid .mx5-path-labels > span{position:absolute;white-space:nowrap;}
 body.page-macro.mx4-grid .mx5-pl-y{
   left:6px;transform:translateY(-50%);
   color:var(--ink-3,rgba(255,255,255,.32));font-variant-numeric:tabular-nums;
