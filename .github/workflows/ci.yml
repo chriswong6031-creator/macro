@@ -430,6 +430,11 @@ on:
       - "config/flow_recon_ladder.yml"
       - "tests/fixtures/_sample_V_2026-07-02.json"
       - "tests/test_fs1_flow_cohorts.py"
+      # FS-2 atlas builder (ops lane, off-render):
+      # atlas entrypoint, field guide, and test file.
+      - "scripts/ops_flow_atlas.py"
+      - "research/FLOW_SIGNAL_FIELD_GUIDE.md"
+      - "tests/test_fs2_flow_atlas.py"
       # FL-A EOD flow backfill (FC-R4/R11): backfill script, build_options_flow staleness
       # warning, and the test suite that pins idempotence + schema-variant handling.
       - "scripts/backfill_options_flow.py"
@@ -1287,6 +1292,9 @@ jobs:
     # fixtures/tmp_path and mock the network (FS-0 CI-null pattern).
     # Triggers on ops_flow_cohorts.py, flow_recon_ladder.yml, sample fixture,
     # test file, and all FS-0 seams (shared detector/grader).
+    # FS-2 atlas builder (ops lane, off-render):
+    # Covers Wilson CI, cohort-separation guard, n-floor labeling, accrual path,
+    # 0DTE index annotation, era hit-rate, premium decile, crowdedness.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -1297,6 +1305,8 @@ jobs:
         run: pip install pytest pytest-mock pandas numpy pyarrow pyyaml requests boto3
       - name: FS-1 flow cohorts unit tests
         run: python -m pytest tests/test_fs1_flow_cohorts.py -q
+      - name: FS-2 atlas builder unit tests
+        run: python -m pytest tests/test_fs2_flow_atlas.py -q
       - name: FS-0 downstream suite (shared seams)
         run: python -m pytest tests/test_flow_signals.py -q
 
