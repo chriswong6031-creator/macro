@@ -420,8 +420,7 @@ fred:
                    EWJ, EWA, EWH, EWS, EWC,
                    INDA, EWT, EWY, EIDO, EWZ, EWW, ECH, EZA, TUR, EPOL,
                    EFA, EEM, VGK, VPL, AAXJ, ILF, VXUS]       # + regional/bloc aggregates: Dev ex-US, EM, Europe, Pacific, Asia-xJP, LatAm, All-World ex-US
-    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX",
-           "^COR1M", "^COR3M"]   # ^VVIX=vol-of-vol; ^COR1M/^COR3M=CBOE implied correlation 1m/3m (data/yahoo/_COR1M|_COR3M; ~2007->); RRX W2 R2 collector
+    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX=vol-of-vol. ^COR1M/^COR3M REMOVED (VSB W1): yfinance serves no real history (1-row zero stubs, silently dropped by yahoo._extract) — implied correlation + DSPX/VIX1D/VIXEQ now come from collectors/cboe_indices.CboeCorVolAdapter (data/cboe/cor1m|cor3m|dspx|vix1d|vixeq; 2006->)
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
     fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
@@ -463,6 +462,10 @@ cboe:
   # One fetch carries the whole history (backfill + accrual in one shot). Feeds the
   # engine/vol_regime VVIX-VIX decoupling / peak-fear leg (retires the short yahoo _VVIX).
   vvix_url: https://cdn.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv
+  # COR1M/COR3M (implied correlation, 2006->), DSPX (dispersion), VIX1D, VIXEQ (2014/2022->)
+  # ride the same keyless *_History.csv family via collectors/cboe_indices.CboeCorVolAdapter
+  # (URLs templated in code; persist-only — VSB W1). Freshness tripwire:
+  # check_cor_vol_freshness() in scripts/collect.py (warn-only, run_status stale_series).
   # VIX-futures settlement (collectors/cboe_vix_futures.py): one keyless CSV/date via the
   # www endpoint serves the FULL VX board. We persist both the front contract (sanitizer)
   # and the standard-monthly M1..M6 curve (vix_curve) — the latter FORWARD-ACCRUING only
@@ -6194,8 +6197,7 @@ yahoo:
                    EWJ, EWA, EWH, EWS, EWC,
                    INDA, EWT, EWY, EIDO, EWZ, EWW, ECH, EZA, TUR, EPOL,
                    EFA, EEM, VGK, VPL, AAXJ, ILF, VXUS]       # + regional/bloc aggregates: Dev ex-US, EM, Europe, Pacific, Asia-xJP, LatAm, All-World ex-US
-    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX",
-           "^COR1M", "^COR3M"]   # ^VVIX=vol-of-vol; ^COR1M/^COR3M=CBOE implied correlation 1m/3m (data/yahoo/_COR1M|_COR3M; ~2007->); RRX W2 R2 collector
+    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX=vol-of-vol. ^COR1M/^COR3M REMOVED (VSB W1): yfinance serves no real history (1-row zero stubs, silently dropped by yahoo._extract) — implied correlation + DSPX/VIX1D/VIXEQ now come from collectors/cboe_indices.CboeCorVolAdapter (data/cboe/cor1m|cor3m|dspx|vix1d|vixeq; 2006->)
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
     fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
