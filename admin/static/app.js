@@ -1217,8 +1217,8 @@ function nwSectionFactorIntelligence(fi) {
   const hyp = fi.hypotheses || {};
   const hypEntries = ["h1","h2","h3","h4","h5"].map(hi => {
     const s = (hyp[hi] || {}).status || "not-visible-in-tree";
-    const chipCls = s === "gate-passed" ? "s-ok" : s === "accruing" ? "s-warn" : "s-muted";
-    return `<div class="kv"><span>${hi.toUpperCase()}</span><b>${nwPill("BH-WITHHELD", "s-bad")} <span class="muted sub">(${esc(s)})</span></b></div>`;
+    const chipCls = s === "gate-passed" ? "s-ok" : s === "accruing" ? "s-warn" : "s-mut";
+    return `<div class="kv"><span>${hi.toUpperCase()}</span><b>${nwPill("BH-WITHHELD", "s-bad")} ${nwPill(s, chipCls)}</b></div>`;
   }).join("");
   html += card("Hypotheses H1–H5", `
     ${hypEntries}
@@ -1489,14 +1489,14 @@ function nwSectionEvidenceClock(ec) {
   const STATE_CLS = {
     overdue: "s-bad", due: "s-warn", human_review: "s-warn",
     missing: "s-bad", stale: "s-warn", blocked: "s-warn",
-    not_ready: "s-warn", promotion_eligible: "s-ok", accruing: "s-muted",
+    not_ready: "s-warn", promotion_eligible: "s-ok", accruing: "s-mut",
   };
 
   // Count chips — only non-zero states
   const allStates = ["overdue","due","human_review","missing","stale","blocked","not_ready","promotion_eligible","accruing"];
   let chips = allStates
     .filter(s => (by[s] || 0) > 0)
-    .map(s => `<span class="statpill ${STATE_CLS[s] || 's-muted'}">${esc(String(by[s] ?? 0))} ${esc(s.replace(/_/g," "))}</span>`)
+    .map(s => `<span class="statpill ${STATE_CLS[s] || 's-mut'}">${esc(String(by[s] ?? 0))} ${esc(s.replace(/_/g," "))}</span>`)
     .join(" ");
 
   let html = `<div class="card">
@@ -1513,10 +1513,10 @@ function nwSectionEvidenceClock(ec) {
         <th>Clock ID</th><th>State</th><th>Due</th><th>Owner</th><th>Blocking reason</th><th>Regen cmd</th>
       </tr></thead><tbody>
       ${queue.map(r => {
-        const stateCls = STATE_CLS[r.state] || "s-muted";
+        const stateCls = STATE_CLS[r.state] || "s-mut";
         const cmd = r.regenerate_cmd ? `<code style="font-size:11px">${esc(r.regenerate_cmd)}</code>` : `<span class="muted">—</span>`;
         return `<tr>
-          <td><b>${esc(r.clock_id || "")}</b>${r.acknowledged ? ' <span class="statpill s-muted">ack</span>' : ''}</td>
+          <td><b>${esc(r.clock_id || "")}</b>${r.acknowledged ? ' <span class="statpill s-mut">ack</span>' : ''}</td>
           <td><span class="statpill ${stateCls}">${esc(r.state || "")}</span></td>
           <td class="sub">${esc(r.due_at || "—")}</td>
           <td class="sub">${esc(r.owner_program || "—")}</td>
@@ -1726,7 +1726,7 @@ RENDER.orchestrator = async () => {
       <span class="statpill s-mut" title="lobes whose data contract is out of date">${hero.lobes_stale != null ? hero.lobes_stale : "—"}/${hero.lobes_total != null ? hero.lobes_total : "—"} stale feeds</span>
       <span class="statpill s-mut">${hero.what_changed_n != null ? hero.what_changed_n : "—"} changes</span>
       <span class="statpill ${ORCH_STATUS_CLS(cx.status)}" title="cortex status: ${esc(cx.status || "unknown")}">cortex ${esc(cortexWord(cx.status || "unknown"))}</span>
-      <span class="statpill ${hero.nudges_n ? "s-warn" : "s-mut"}">${hero.nudges_n || 0} bot nudge${hero.nudges_n === 1 ? "" : "s"}</span>
+      <span class="statpill ${hero.nudges_n ? "s-warn" : "s-mut"}" title="as ingested from the bot's last feedback artifact — may lag the Mastermind AI page">${hero.nudges_n || 0} bot nudge${hero.nudges_n === 1 ? "" : "s"}</span>
       <span class="statpill s-mut">${hero.directives_n || 0} directive${hero.directives_n === 1 ? "" : "s"}</span>
       <span class="statpill s-mut">feedback ${esc(hero.feedback_state || "absent")}</span>
     </div>
@@ -1810,7 +1810,7 @@ RENDER.orchestrator = async () => {
         </div>
         <div class="sub" style="margin-top:4px">${esc(dd.text || "")}</div>
       </div>`).join("")}` : ""}
-    <div class="note muted" style="margin-top:8px">New directives are composed on the <a href="#" id="orchToMai">Mastermind AI</a> page &mdash; the orchestrator only observes and acknowledges them.</div>`;
+    <div class="note muted" style="margin-top:8px">New directives are composed on the <a href="#" id="orchToMai">Mastermind AI</a> page — by hand in its composer, or auto-drafted from open findings with its "⚡ Act on all findings" button. The orchestrator only observes and acknowledges them.</div>`;
 
   const chatHtml = `<div class="section">Chat</div>
     <div class="sub muted" style="margin-bottom:8px">Ask Master Brain about its recent runs. Plain answers from the run log.</div>
@@ -1888,15 +1888,31 @@ RENDER.orchestrator = async () => {
 };
 
 /* ---- MASTERMIND AI (bot proxy) — W-AI ------------------------------------ */
-const MAI_SETTING_FIELDS = [
+const MAI_SETTING_FIELDS = [   /* [key, kind, label, note, min, max] — bounds mirror the bot's */
   ["loop_enabled", "bool", "Self-improvement loop", "Main switch for the bot's improvement loop."],
   ["llm_review", "bool", "LLM review", "Use the LLM for the every-N-loops review pass."],
-  ["review_every_n_loops", "int", "Review every N loops", "Roll-up review cadence."],
-  ["nudges_max", "int", "Max nudges", "Cap on coded nudges published to the macro repo."],
-  ["attribution_min_n", "int", "Attribution min n", "Minimum sample size before attribution claims."],
-  ["directives_max_open", "int", "Max open directives", "Cap on concurrently open operator directives."],
+  ["review_every_n_loops", "int", "Review every N loops", "Roll-up review cadence (2–50).", 2, 50],
+  ["nudges_max", "int", "Max nudges", "Cap on coded nudges published to the macro repo (1–10).", 1, 10],
+  ["attribution_min_n", "int", "Attribution min n", "Minimum sample size before attribution claims (6–100).", 6, 100],
+  ["directives_max_open", "int", "Max open directives", "Cap on concurrently open operator directives (1–10).", 1, 10],
+  ["directive_expiry_days", "int", "Directive expiry days", "Days a published directive waits for an acknowledgement before expiring (3–60).", 3, 60],
 ];
-const MAI_DIRECTIVE_CLS = { queued: "s-warn", published: "s-mut", acknowledged: "s-ok", done: "s-ok" };
+const MAI_DIRECTIVE_CLS = { queued: "s-warn", published: "s-mut", acknowledged: "s-ok", done: "s-ok", expired: "s-bad" };
+/* plain-English meanings for the bot's coded findings (nw_reflection.v1 nudge codes);
+   unknown codes fall back to the nudge's own detail string */
+const MAI_FINDING_MEANINGS = {
+  candidate_context_empty: "The candidate-context table is present but carries zero rows — the decision rules have nothing to read.",
+  fdr_cleared_absent: "No candidate is FDR-cleared, so every decision rule reading the web is inert.",
+  bottom_state_vocabulary_drift: "The web never says BOTTOMING/CONFIRMED, so above-WATCH candidacy boosts can never trigger.",
+  graph_conflicts_absent: "No candidate carries conflict data — the entry-shrink and clean-in-conflicted rules can never fire.",
+  graph_conflicts_sparse: "Almost no candidates carry conflict data — conflict-aware sizing stays dark.",
+  contradictions_empty: "The market lobe reports no contradiction records — the clean-in-conflicted tell is inert.",
+  liquidity_plumbing_absent: "The market lobe's liquidity block is empty.",
+  coverage_below_half: "Fewer than half of the names the bot decided on have a context row in the web.",
+  context_stale_streak: "The published context artifact has been stale for 3+ consecutive builds.",
+  context_absent_streak: "The published context artifact has been missing for 3+ consecutive builds.",
+  gap_notes_elevated: "The latest build carries several producer gap notes — upstream collectors skipped data.",
+};
 
 RENDER.mastermind_ai = async () => {
   const v = $("#view");
@@ -1934,31 +1950,37 @@ RENDER.mastermind_ai = async () => {
   const lastLoops = d.last_loops || [];
   const lastLoop = lastLoops[lastLoops.length - 1] || {};   /* status().last_loops is oldest-first */
   const refl = d.reflection || {};
+  const dia = d.dialogue;   /* status "dialogue" block — absent on older bots, degrade to "—" */
 
+  /* honest tri-state: never claim "loop on" when the bot didn't report the setting */
+  const loopPill = st.loop_enabled === true ? ["loop on", "s-ok"]
+    : st.loop_enabled === false ? ["loop off", "s-warn"] : ["loop ?", "s-mut"];
+  const nudgesN = refl.nudges != null ? (Array.isArray(refl.nudges) ? refl.nudges.length : refl.nudges) : null;
   const heroHtml = `<div class="mb-hero">
     <div class="mb-hero-top">
       <span class="mb-hero-kicker">Mastermind AI</span>
       <span class="mb-hero-name">Bot self-improvement loop</span>
-      <span class="statpill ${st.loop_enabled === false ? "s-warn" : "s-ok"}">${st.loop_enabled === false ? "loop off" : "loop on"}</span>
+      <span class="statpill ${loopPill[1]}">${loopPill[0]}</span>
       <span class="spacer"></span>
       <button class="btn primary" id="maiRun" title="POST /api/mastermind_ai/run — trigger one improvement cycle">▶ Run cycle now</button>
     </div>
     <div class="sub" style="margin-top:6px">${esc(lastLoop.summary || (d.last_review && d.last_review.summary) || "No loop summary reported yet.")}</div>
     <div class="mb-hero-chips">
       <span class="statpill s-mut">loop #${d.loop_n != null ? d.loop_n : "—"}</span>
-      ${refl.nudges != null ? `<span class="statpill ${(Array.isArray(refl.nudges) ? refl.nudges.length : refl.nudges) ? "s-warn" : "s-mut"}">${Array.isArray(refl.nudges) ? refl.nudges.length : refl.nudges} nudges</span>` : ""}
-      ${refl.contract_drift_n != null ? `<span class="statpill ${refl.contract_drift_n ? "s-bad" : "s-mut"}">${refl.contract_drift_n} contract drift</span>` : ""}
+      ${nudgesN != null ? `<span class="statpill ${nudgesN ? "s-warn" : "s-mut"}" title="coded fix-requests published to the NW orchestrator">${nudgesN} nudge${nudgesN === 1 ? "" : "s"}</span>` : ""}
+      ${refl.contract_drift_n != null ? `<span class="statpill ${refl.contract_drift_n ? "s-bad" : "s-mut"}" title="NW context fields the bot's decision rules need but cannot use">${refl.contract_drift_n} contract drift${refl.contract_drift_n === 1 ? "" : "s"}</span>` : ""}
       ${countChips(typeof flagsObj === "object" && !Array.isArray(flagsObj) ? flagsObj : null)}
     </div>
-  </div>`;
+  </div>
+  <div class="note muted" style="margin:0 0 20px;line-height:1.5">Every night the bot audits the Neural Web data it trades against. A contract-drift finding means a data field its decision rules consume is missing or dead in the published artifact. A nudge is the fix request it publishes back to the macro pipeline. Nudges flow out automatically — use "Act on findings" or the composer below to queue formal directives.</div>`;
 
-  const settingRow = ([key, kind, label, note]) => {
+  const settingRow = ([key, kind, label, note, lo, hi]) => {
     const val = st[key];
     if (kind === "bool")
       return `<div class="row"><label class="switch"><input type="checkbox" data-maiset="${key}" data-kind="bool" ${val ? "checked" : ""}><span class="slider"></span></label>
         <div><div class="lab">${esc(label)}</div><div class="note">${esc(note)} <code class="muted">${esc(key)}</code>${val == null ? ' <span class="tag inert">not reported</span>' : ""}</div></div></div>`;
     return `<div class="row"><div class="lab" style="min-width:220px">${esc(label)}</div>
-      <input type="number" data-maiset="${key}" data-kind="int" data-prev="${val != null ? val : ""}" value="${val != null ? val : ""}" style="width:86px">
+      <input type="number" data-maiset="${key}" data-kind="int" data-prev="${val != null ? val : ""}" value="${val != null ? val : ""}"${lo != null ? ` min="${lo}"` : ""}${hi != null ? ` max="${hi}"` : ""} style="width:86px">
       <div class="note">${esc(note)} <code class="muted">${esc(key)}</code></div></div>`;
   };
   const settingsHtml = `<div class="section">Settings <span class="cnt">bot-side</span></div>` + MAI_SETTING_FIELDS.map(settingRow).join("");
@@ -1973,7 +1995,7 @@ RENDER.mastermind_ai = async () => {
     const key = el.dataset.maiset;
     const value = el.dataset.kind === "bool" ? el.checked : Number(el.value);
     const r = await post("/api/mastermind_ai/settings", { settings: { [key]: value } });
-    if (r && !r.error && r.ok !== false) toast(`${key} → ${value}`);
+    if (r && !r.error && r.ok !== false) { el.dataset.prev = String(value); toast(`${key} → ${value}`); }
     else {
       if (el.dataset.kind === "bool") el.checked = !el.checked; else el.value = el.dataset.prev;
       toast((r && (r.error || r.detail)) || "settings update failed", true);
@@ -1997,15 +2019,12 @@ RENDER.mastermind_ai = async () => {
       runBtn.disabled = false;
       runBtn.textContent = "▶ Run cycle now";
       if (r && !r.error && r.ok !== false) {
-        /* Show inline success — no blind reload. */
-        const heroSub = v.querySelector(".mb-hero .sub");
-        if (heroSub) heroSub.textContent = "Cycle started — refresh to see updated loop log.";
-        toast("Cycle started");
-        /* Soft refresh of the data panels after a short delay. */
-        setTimeout(() => { if (CURRENT === "mastermind_ai") RENDER.mastermind_ai(); }, 2000);
+        /* Re-render only after the run resolved; surface the returned loop-row summary. */
+        toast(r.summary ? `Cycle done — ${orchTrunc(r.summary, 140)}` : "Cycle started");
+        if (CURRENT === "mastermind_ai") RENDER.mastermind_ai();
       } else {
         /* Show the server's error text inline under the button. */
-        const errMsg = (r && (r.error || r.detail)) || "run failed";
+        const errMsg = (r && (r.error || r.detail || r.skipped)) || "run failed";
         let errEl = v.querySelector("#maiRunErr");
         if (!errEl) {
           errEl = document.createElement("div");
@@ -2081,55 +2100,108 @@ RENDER.mastermind_ai = async () => {
 
   (async () => {
     const box = $("#maiReflection"); if (!box) return;
-    /* directive queue lives on the STATUS payload (rows {id,ts,text,status}) —
+    /* dialogue health — the status "dialogue" block (absent on older bots → no banner, "—" acks) */
+    const codesSeen = dia && dia.last_ack ? (dia.last_ack.nudge_codes_seen || []) : null;
+    const banner = dia && dia.counterparty === "absent"
+      ? `<div class="warn-banner"><span>⚠</span><div>One-way for now — the macro orchestrator has never acknowledged this dialogue (its ingest lane is not live yet). Nudges and directives still publish, but nothing comes back until the macro side ships.${dia.expired_n > 0 ? ` ${dia.expired_n} directive(s) expired unacknowledged.` : ""}</div></div>`
+      : "";
+    /* directive queue lives on the STATUS payload (rows {id,ts,text,status,source?}) —
        the raw nw_reflection.v1 artifact carries no directives key */
     const dirs = Array.isArray(d.directives) ? d.directives : [];
-    const dirsHtml = dirs.length
-      ? `<div class="section" style="margin-top:14px">Directives <span class="cnt">${dirs.length}</span></div>`
-        + dirs.map(dd => `<div class="card" style="margin-bottom:8px">
-            <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
-              <code>${esc(dd.id || "—")}</code><span class="sub">${esc(String(dd.ts || dd.created || "").slice(0, 16).replace("T", " "))}</span>
-              <span class="statpill ${MAI_DIRECTIVE_CLS[dd.status] || "s-mut"}">${esc(dd.status || "—")}</span>
-            </div>
-            <div class="sub" style="margin-top:4px">${esc(dd.text || "")}</div>
-          </div>`).join("")
-      : "";
+    const openN = dirs.filter(dd => dd.status === "queued" || dd.status === "published").length;
+    const srcChip = (dd) => {
+      const src = String(dd.source || "operator");
+      return src.startsWith("nudge:")
+        ? `<span class="statpill s-mut mono" title="auto-drafted from the ${esc(src.slice(6))} finding">auto: ${esc(src.slice(6))}</span>`
+        : `<span class="statpill s-mut">operator</span>`;
+    };
+    const dirsHtml = `<div class="card" style="margin-top:14px">
+      <div class="section" style="margin:0 0 8px">Operator directives <span class="cnt">${st.directives_max_open != null ? `${openN}/${st.directives_max_open} slots used` : `${openN} open`}</span></div>
+      ${dirs.length ? dirs.map(dd => `<div class="card" style="margin-bottom:8px">
+          <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
+            <code>${esc(dd.id || "—")}</code><span class="sub">${esc(String(dd.ts || dd.created || "").slice(0, 16).replace("T", " "))}</span>
+            <span class="statpill ${MAI_DIRECTIVE_CLS[dd.status] || "s-mut"}">${esc(dd.status || "—")}</span>
+            ${srcChip(dd)}
+          </div>
+          <div class="sub" style="margin-top:4px">${esc(dd.text || "")}</div>
+        </div>`).join("") : `<div class="sub muted">No directives queued.</div>`}
+      ${maiDirectiveComposer()}
+    </div>`;
     const d4 = await api("/api/mastermind_ai/reflection");
-    if (!d4 || d4.error) { box.innerHTML = `<div class="sub muted">reflection unavailable${d4 && d4.detail ? " — " + esc(orchTrunc(d4.detail, 120)) : ""}</div>` + dirsHtml + maiDirectiveComposer(); wireDirectiveComposer(box); return; }
+    if (!d4 || d4.error) { box.innerHTML = banner + `<div class="sub muted">reflection unavailable${d4 && d4.detail ? " — " + esc(orchTrunc(d4.detail, 120)) : ""}</div>` + dirsHtml; wireDirectiveComposer(box); return; }
     const nudges = d4.nudges || [];
-    let html = "";
+    const resolved = Array.isArray(d4.nudges_resolved_recent) ? d4.nudges_resolved_recent : [];
+    const ackCell = (code) => codesSeen === null ? `<span class="sub muted">—</span>`
+      : codesSeen.includes(code) ? `<span class="statpill s-ok">seen</span>` : `<span class="statpill s-mut">pending</span>`;
+    let html = banner;
+    html += `<div class="section" style="margin:0 0 8px">Data-contract findings
+      <span class="cnt">${nudges.length} open${resolved.length ? ` · ${resolved.length} resolved` : ""}</span>
+      ${nudges.length ? `<button class="btn" id="maiActAll" style="margin-left:auto">⚡ Act on all findings</button>` : ""}
+    </div>`;
     html += nudges.length
-      ? `<table><thead><tr><th>Code</th><th>Kind</th><th>Severity</th><th>Detail</th></tr></thead><tbody>
-        ${nudges.map(n => `<tr><td class="mono"><b>${esc(n.code || "—")}</b></td><td class="sub">${esc(n.kind || "—")}</td>
+      ? `<table><thead><tr><th>Finding</th><th>What it means</th><th>Severity</th><th>Since</th><th class="r">Builds</th><th>Ack</th><th></th></tr></thead><tbody>
+        ${nudges.map(n => {
+          const meaning = Object.prototype.hasOwnProperty.call(MAI_FINDING_MEANINGS, n.code) ? MAI_FINDING_MEANINGS[n.code] : "";
+          return `<tr>
+          <td class="mono"><b>${esc(n.code || "—")}</b></td>
+          <td class="sub" style="max-width:360px">${esc(meaning || n.detail || "—")}${meaning && n.detail ? `<div class="note muted mono" style="margin-top:2px" title="${esc(n.detail)}">${esc(orchTrunc(n.detail, 110))}</div>` : ""}</td>
           <td><span class="statpill ${NUDGE_SEV_CLS(n.severity)}">${esc(n.severity || "—")}</span></td>
-          <td class="sub" style="max-width:340px">${esc(n.detail || "")}</td></tr>`).join("")}</tbody></table>`
-      : `<div class="sub muted">No active nudges.</div>`;
+          <td class="sub mono">${esc(String(n.first_seen || "").slice(0, 10)) || "—"}</td>
+          <td class="r mono">${n.builds_seen != null ? n.builds_seen : "—"}</td>
+          <td>${ackCell(n.code)}</td>
+          <td><button class="btn mai-draft-btn" data-code="${esc(n.code || "")}">Draft directive</button></td>
+        </tr>`;
+        }).join("")}</tbody></table>`
+      : `<div class="sub muted">No open findings — the bot's last audit found every contract field it needs alive in the web.</div>`;
     const statChips = [];
     const driftN = (d4.contract_drift || []).length;   /* nw_reflection.v1: contract_drift is a LIST */
-    statChips.push(`<span class="statpill ${driftN ? "s-bad" : "s-mut"}">contract drift · ${driftN}</span>`);
+    statChips.push(`<span class="statpill ${driftN ? "s-bad" : "s-mut"}" title="from the latest reflection artifact">${driftN} contract drift${driftN === 1 ? "" : "s"}</span>`);
+    if (d4.nudges_dropped_n) statChips.push(`<span class="statpill s-warn" title="finding candidates cut by the max-nudges cap">${d4.nudges_dropped_n} dropped by cap</span>`);
     if (d4.coverage && typeof d4.coverage === "object") statChips.push(countChips(d4.coverage));
     else if (d4.coverage != null) statChips.push(`<span class="statpill s-mut">coverage · ${esc(String(d4.coverage))}</span>`);
     if (d4.context_quality != null) statChips.push(`<span class="statpill s-mut">context quality · ${esc(typeof d4.context_quality === "object" ? orchTrunc(JSON.stringify(d4.context_quality), 60) : String(d4.context_quality))}</span>`);
     if (d4.attribution != null) statChips.push(`<span class="statpill s-mut">attribution · ${esc(typeof d4.attribution === "object" ? orchTrunc(JSON.stringify(d4.attribution), 60) : String(d4.attribution))}</span>`);
     if (statChips.length) html += `<div style="margin-top:10px">${statChips.join(" ")}</div>`;
     html += dirsHtml;
-    html += maiDirectiveComposer();
     box.innerHTML = html;
     wireDirectiveComposer(box);
+    const actAll = $("#maiActAll", box);
+    if (actAll) actAll.onclick = () => maiActOnFindings(null, actAll);
+    box.querySelectorAll(".mai-draft-btn").forEach(b => b.onclick = () => maiActOnFindings([b.dataset.code], b));
   })();
 
   /* Live-loop strip poll (20s while on mastermind_ai tab). */
   startLoopPoll("mastermind_ai", "loopStripWrap", false);
 };
 
+/* POST /api/mastermind_ai/act_on_nudges — [] / null codes means "all open findings".
+   The bot auto-drafts one directive per finding (source "nudge:<code>"). */
+async function maiActOnFindings(codes, btn) {
+  if (!confirm("Queue auto-drafted directives for open findings? They publish to the orchestrator with the next snapshot (12:25 / 22:25 UTC).")) return;
+  if (btn) btn.disabled = true;
+  const r = await post("/api/mastermind_ai/act_on_nudges", codes && codes.length ? { codes } : {});
+  if (btn) btn.disabled = false;
+  if (r && r.ok) {
+    const q = (r.queued || []).length;
+    const skipped = (r.skipped || []).map(s => `${s.code}: ${s.reason}`).join("; ");
+    toast(`${q} directive(s) queued${skipped ? ` — skipped ${skipped}` : ""}`, q === 0);
+    if (CURRENT === "mastermind_ai") RENDER.mastermind_ai();
+  } else {
+    const msg = r && (r.error || r.detail);
+    /* an older bot has no /act_on_nudges route — the proxy passes FastAPI's 404 {"detail":"Not Found"} through */
+    toast(msg === "Not Found" ? "bot does not support act-on-findings yet — update the bot" : msg || "act on findings failed", true);
+  }
+}
+
 function maiDirectiveComposer() {
-  return `<div class="card" style="margin-top:14px">
+  /* rendered INSIDE the Operator directives card — a divider, not a nested card */
+  return `<div style="margin-top:12px;border-top:1px solid var(--grid);padding-top:12px">
     <div class="sub"><b>New directive</b> — a plain-English instruction the bot's reflection loop reads on its next cycle.</div>
     <div class="chat-input" style="margin-top:8px">
       <textarea id="maiDirText" rows="2" maxlength="280" placeholder="e.g. Stop citing the ETF lobe until its feed heals."></textarea>
       <button class="btn primary" id="maiDirSend">Send directive</button>
     </div>
-    <div class="note muted" style="margin-top:4px"><span id="maiDirCount">0</span>/280</div>
+    <div class="note muted" style="margin-top:4px"><span id="maiDirCount">0</span>/280 · Directives are read by the macro orchestrator on its nightly build — plain English, no secrets, no dollar amounts.</div>
   </div>`;
 }
 function wireDirectiveComposer(scope) {

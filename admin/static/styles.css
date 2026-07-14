@@ -1613,6 +1613,21 @@ input:focus, select:focus {
   margin-top: 1px;
 }
 
+/* amber variant — dialogue-health note (W-AI Mastermind AI page) */
+.warn-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--r-sm);
+  background: var(--warn-bg);
+  border: 1px solid rgba(255,184,77,.3);
+  color: #f0d68a;
+  font-size: 13px;
+  line-height: 1.45;
+  margin-bottom: 14px;
+}
+
 /* --------------------------------------------------------------------------
    35. LOBE DETAIL HERO
    -------------------------------------------------------------------------- */
