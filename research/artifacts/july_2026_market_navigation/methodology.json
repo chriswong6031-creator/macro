@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "as_of": "2026-07-13",
+  "live_price_source": "Yahoo Finance auto-adjusted close snapshot through 2026-07-13",
+  "live_price_basis": "Yahoo Finance auto-adjusted daily closes, captured point in time",
+  "live_snapshot_end": "2026-07-13",
+  "live_snapshot_sha256": "6e8def4ffc4062b955afe19d8f3d7dbb38ac0b47ec5bc965fde2fe8aa42977b2",
+  "completed_week_rule": "Friday-labeled bars at or before as_of whose Friday is present in the source; conservative on Friday market holidays",
+  "return_basis": "close-to-close adjusted returns",
+  "technical_basis_warning": "weekly states use Yahoo auto-adjusted total-return closes and may differ from TradingView raw-close indicators around distributions",
+  "midterm_window": "prior close before July 1 through final close of December",
+  "midterm_warning": "calendar split is exploratory and must not be used as a standalone signal",
+  "analogue_warning": "conditional historical description only; thresholds were selected for this question and were not preregistered or corrected for search; entry is the next session after the signal close to avoid same-close look-ahead",
+  "authority": "research evidence pack; no production signal or portfolio authority"
+}
