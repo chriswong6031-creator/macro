@@ -2049,6 +2049,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pandas numpy pyarrow pyyaml openpyxl
+        run: pip install pytest pandas numpy pyarrow pyyaml openpyxl requests
       - name: CCW-W1 bond holdings parser + registry + FRED alias tests
         run: python -m pytest tests/test_corp_bond_holdings.py tests/test_fred_series_alias_conflicts.py tests/test_fred_baml_archive.py -v
