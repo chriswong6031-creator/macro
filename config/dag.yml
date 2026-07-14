@@ -1474,6 +1474,12 @@ lanes:
         module: scripts.build_live_overlay
       - id: build_risk_state
         module: scripts.build_risk_state
+      - id: build_china_risk_state
+        module: scripts.build_china_risk_state
+        note: >
+          HKEX-window twin of build_risk_state (step gated UTC<9, the */30 1-8 cron
+          ticks): recomputes the price-driven CN Market State legs on live prices ->
+          site/live/china_risk_state.json. Display-tier; writes site/live/ only.
       - id: build_sp500_heatmap
         module: scripts.build_sp500_heatmap
         note: >
