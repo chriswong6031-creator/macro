@@ -140,7 +140,7 @@ blocks:
   - block: "core_services_ex_shelter"
     official_cpi_series: "CUSR0000SASLE"  # CPI: All items less food, energy, shelter; monthly
     ri_weight_key: "core_services_ex_shelter"
-    ri_weight: 44.294  # all_items_less_food_and_energy (79.919) - shelter (35.625)
+    ri_weight: 25.118  # corrected 2026-07-14: all_items_less_food_and_energy (79.919) - shelter (35.625) - core_goods (19.176); engine constant _CORE_SVC_XS_W = 25.118
     hf_proxy_series: "CUSR0000SASLE"
     hf_proxy_source: "data/fred/CUSR0000SASLE.parquet"
     hf_proxy_description: "CPI all items less food, energy, shelter — persistence (lag-1 MoM)"
@@ -155,8 +155,9 @@ blocks:
     revision_optimistic: true
     gap_notes: >
       CUSR0000SASLE tracks 'all items less food, energy, shelter' which includes BOTH
-      core goods AND core services ex-shelter. Its RI weight (44.294 implied) therefore
-      overlaps with core_goods_pipeline (19.176). This is a known double-counting issue.
+      core goods AND core services ex-shelter. Its RI weight (25.118 corrected; was 44.294
+      before 2026-07-14 fix) excludes core_goods (19.176) per engine constant _CORE_SVC_XS_W.
+      This is a known double-counting issue in the weight accounting.
       The bridge handles this by applying each block's contribution directly (not summing
       weights), so the overlap appears in weight_coverage > 100% for modelled blocks.
       The reconciliation prints the actual sum of modelled contributions vs the headline,

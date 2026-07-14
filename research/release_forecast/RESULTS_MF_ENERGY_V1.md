@@ -129,3 +129,49 @@ This document constitutes the backtest-results record per §6 anti-mining law.
 | 2015+ | 136 | 78.7% | 75.7% | 50.0% | 47.1% | 0.273111 | 0.266452 |
 
 **Verdict:** mf_energy was already in [70%,95%] before recalibration. Coverage decreases slightly on full window (78.7%→76.1%) but remains well within gate. 2021+ coverage improves marginally (70.3%→71.9%). Pinball improves on all eras. No coverage falsifier was triggered for this target. Shadow-eligible status (beat naive) unchanged.
+
+
+---
+
+## Addendum 2026-07-14 — corrected-formula re-run (post CPI June-2026 post-mortem)
+
+**Defect (defect_notices.json DN-002):** `energy_contrib = gas_mom * (GASOLINE_RI_WEIGHT/100) * gamma`
+applied the basket weight twice: gamma is the expanding bivariate OLS slope of cpi_hl_mom on
+gasoline_mom (~0.039) and already embeds the ~2.895% basket share (weight alone implies a
+slope of ~0.029). The extra `ri_weight/100` factor shrank the energy leg by exactly
+1/(2.895/100) = 34.5x. On the contaminated 2026-07-13 ledger row: gas_mom = -9.592,
+defective energy leg = -0.0109 pp, corrected = -0.3757 pp. Fixed 2026-07-14:
+`energy_contrib = gas_mom * gamma` (train + serve; PREREG_MF_ENERGY_V1.md Amendment 2026-07-14).
+
+**All numbers in the body above were measured under the defective formula and cannot
+support promotion or kill decisions on their own.** The body is preserved unmodified as
+the original record; this addendum is the corrected measurement.
+
+### Corrected kill-rule detail (T-1, 2026-07-14 re-run) vs original
+
+| Window | Original MAE | Corrected MAE | MAE strongest naive | Verdict |
+|--------|-------------:|--------------:|--------------------:|---------|
+| Full (non-COVID) | 0.1421 | 0.1453 | 0.2568 | ACTIVE / SHADOW-ELIGIBLE (unchanged) |
+| 2021+ | 0.1794 | 0.1925 | 0.2524 | ACTIVE / SHADOW-ELIGIBLE (unchanged) |
+
+Corrected-run artifacts: `results/backtest_mf_energy_v1_summary.json` (regenerated 2026-07-14;
+pre-fix artifacts preserved in git history at the parent of the fix commit).
+
+### Causal channel of the correction — read carefully
+
+The head model z-scores its features, and z-scores are invariant under uniform column
+scaling — so multiplying the entire energy_contrib column (train + prediction) by 34.5x
+changes NOTHING through the direct energy channel. The correction moves predictions only
+through the derived ex-energy series: `exenergy = target - energy_contrib` now subtracts a
+34.5x larger (and noisier) energy estimate, which re-fits the AR(3)+seasonal leg. The modest
+MAE degradation (Full 0.1421 -> 0.1453; 2021+ 0.1794 -> 0.1925) is the expected consequence
+of that larger subtraction — it is a more honest decomposition, not evidence against the
+correction. Dry-run at asof 2026-07-13: point -0.206 (defective) -> -0.2701 (corrected)
+vs actual -0.4 — the miss shrinks from 0.194 pp to 0.130 pp.
+
+Head-to-head caveat from the original body still applies to any corrected comparison:
+champion@early is computed on fewer valid folds (n=228 vs 292), so those columns compare
+overlapping-but-unequal samples — indicative, not a matched-pairs test. In the corrected
+run, mf_energy 2021+ MAE (0.1925) now trails champion@T-1 (0.1616); descriptive only —
+the kill rule is vs strongest naive, and the forward ledger remains the sole judge of the
+early-cutoff value claim.

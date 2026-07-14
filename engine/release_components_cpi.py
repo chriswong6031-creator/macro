@@ -66,6 +66,68 @@ _SHELTER_K_BASE = 0.35
 _DIVERGENCE_GUARD_SIGMA = 3.0
 _DIVERGENCE_GUARD_WINDOW = 24  # months for rolling std
 
+# ---------------------------------------------------------------------------
+# Feature plausibility bounds (FIX 2 — range guard)
+# Values outside these ranges indicate data/unit errors and are set to None.
+# Bounds are generous enough to cover any real historical reading; they only
+# catch pathological magnitudes (e.g. double-differencing a rate series).
+# ---------------------------------------------------------------------------
+_FEATURE_BOUNDS: dict[str, tuple[float, float]] = {
+    # CPI/PCE family MoM % — generous ±3 pp covers all post-1980 history
+    "cpi_hl_mom_lag1":     (-3.0, 3.0),
+    "cpi_hl_mom_lag2":     (-3.0, 3.0),
+    "cpi_hl_mom_lag3":     (-3.0, 3.0),
+    "cpi_core_mom_lag1":   (-3.0, 3.0),
+    "cpi_core_mom_lag2":   (-3.0, 3.0),
+    "cpi_core_mom_lag3":   (-3.0, 3.0),
+    # Sticky/median/flex monthly-equivalent — covers 2022 peaks with headroom
+    # sticky: max 0.681 (2022-09); ±3.0 generous
+    # median (monthly-equiv after de-annualization): peak ≈ 0.74%; ±3.0 generous
+    # flex: max 3.423 (2022-03); ±5.0 needed to cover that extreme
+    "sticky_mom_lag1":     (-3.0, 3.0),
+    "median_mom_lag1":     (-3.0, 3.0),
+    "flex_mom_lag1":       (-5.0, 5.0),
+    # PPI Final Demand MoM — more volatile; ±5 pp covers historical extremes
+    "ppi_mom_lag1":        (-5.0, 5.0),
+    # Gasoline MoM — 2008-11 crash printed −29.64% (GASREGW monthly avg); ±40 keeps
+    # real crisis readings inside the fence with margin
+    "gasoline_mom":        (-40.0, 40.0),
+    # Shelter nowcast — blend of ZORI+BLS shelter, ±3 pp is generous
+    "shelter_nowcast":     (-3.0, 3.0),
+}
+
+
+def _apply_range_guard(
+    features: dict[str, float | None],
+    legs: dict,
+) -> dict[str, float | None]:
+    """Apply plausibility bounds to features in-place; tag violations in legs dict.
+
+    For each feature in _FEATURE_BOUNDS: if the value is outside [lo, hi],
+    set it to None and record "range_violation" in legs["range_violation_legs"].
+    Logs a warning for each violation.
+
+    Returns the mutated features dict.
+    """
+    violations = legs.setdefault("range_violation_legs", [])
+    for feat, (lo, hi) in _FEATURE_BOUNDS.items():
+        v = features.get(feat)
+        if v is None:
+            continue
+        try:
+            fv = float(v)
+        except (TypeError, ValueError):
+            continue
+        if not (lo <= fv <= hi):
+            log.warning(
+                "Range guard: feature %r = %.4f outside [%.1f, %.1f]; "
+                "setting to None (plausibility violation).",
+                feat, fv, lo, hi,
+            )
+            features[feat] = None
+            violations.append(feat)
+    return features
+
 
 # ---------------------------------------------------------------------------
 # ZORI helpers
@@ -394,6 +456,7 @@ def build_cpi_features(
     # injected to avoid circular import
     knowable_series_fn,
     last_n_mom_lags_fn,
+    last_n_rate_lags_fn,
 ) -> tuple[dict[str, float | None], dict]:
     """Build feature dict for CPI prediction at decision date asof.
 
@@ -404,8 +467,10 @@ def build_cpi_features(
         feature 7 anchors gasoline_mom on M, not on asof's calendar month — at the
         decision date asof is already inside M+1). When None, derived as the month
         after the last knowable own-series initial print.
-    knowable_series_fn / last_n_mom_lags_fn: injected from engine.release_forecast
-        to avoid circular imports (these helpers live there and reference each other).
+    knowable_series_fn / last_n_mom_lags_fn / last_n_rate_lags_fn: injected from
+        engine.release_forecast to avoid circular imports.
+        last_n_rate_lags_fn: used for series already published as % rates
+        (sticky/flex monthly %, median annualized %) — no pct_change applied.
     Returns (features_dict, provenance_dict).
     features_dict: {feature_name: value_or_None}
     provenance_dict: {revision_optimistic_legs, unrevised_legs, absent_legs, ...}
@@ -451,16 +516,16 @@ def build_cpi_features(
         f"{lag_key}_lag3": own_lags[2],
     }
 
-    # Sticky CPI (2014-03+)
-    sticky_lags = last_n_mom_lags_fn(vintages, "STICKCPIM157SFRBATL", asof, n=1)
+    # Sticky CPI (2014-03+) — series published as monthly % directly; no pct_change
+    sticky_lags = last_n_rate_lags_fn(vintages, "STICKCPIM157SFRBATL", asof, n=1, annualized=False)
     features["sticky_mom_lag1"] = sticky_lags[0]
 
-    # Median CPI (2014-02+)
-    median_lags = last_n_mom_lags_fn(vintages, "MEDCPIM158SFRBCLE", asof, n=1)
+    # Median CPI (2014-02+) — series published as ANNUALIZED monthly %; de-annualize to monthly-equiv
+    median_lags = last_n_rate_lags_fn(vintages, "MEDCPIM158SFRBCLE", asof, n=1, annualized=True)
     features["median_mom_lag1"] = median_lags[0]
 
-    # Flexible CPI (2014-03+)
-    flex_lags = last_n_mom_lags_fn(vintages, "FLEXCPIM157SFRBATL", asof, n=1)
+    # Flexible CPI (2014-03+) — series published as monthly % directly; no pct_change
+    flex_lags = last_n_rate_lags_fn(vintages, "FLEXCPIM157SFRBATL", asof, n=1, annualized=False)
     features["flex_mom_lag1"] = flex_lags[0]
 
     # PPI Final Demand (2014-03+)
@@ -547,4 +612,8 @@ def build_cpi_features(
     prov["shelter_prov"] = shelter_prov
 
     prov["absent_legs"] = absent_legs
+
+    # FIX 2: apply plausibility-bound range guard (post-computation fence)
+    features = _apply_range_guard(features, prov)
+
     return features, prov

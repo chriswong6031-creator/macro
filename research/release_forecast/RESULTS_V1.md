@@ -201,3 +201,55 @@ Wave-10 verdict assessment vs strongest naive (see 'Vs Strongest Naive' sections
 
 Per MRI-R29 (bridge claim voided): see RESULTS_CPI_BRIDGE_V1.md for bridge restatement.
 Per MRI-R31 (scoring upgrades): skew arm downgraded to DESCRIPTIVE until n>=24; §7 MAE arm unchanged.
+
+---
+
+## Addendum 2026-07-14 — corrected-feature re-run (post CPI June-2026 post-mortem)
+
+**Defect (defect_notices.json DN-001):** `_last_n_mom_lags` applied `pct_change()` to
+STICKCPIM157SFRBATL and FLEXCPIM157SFRBATL (already monthly %) and MEDCPIM158SFRBCLE
+(already annualized monthly %), double-differentiating the rate series across the full
+walk-forward history in BOTH training and serving (e.g. sticky_mom_lag1 = -36.68 instead
+of +0.24 at the 2026-07-13 asof). Fixed 2026-07-14 via `_last_n_rate_lags` (raw values;
+median de-annualized to monthly-equivalent).
+
+**All numbers in the body above were measured under the defect and cannot support
+promotion or kill decisions on their own.** The body is preserved unmodified as the
+original record; this addendum is the corrected measurement.
+
+### Corrected backtest results (2026-07-14 re-run) vs original (contaminated)
+
+| Release | Era | Original MAE model | Corrected MAE model | MAE naive | Kill status |
+|---------|-----|-------------------:|--------------------:|----------:|-------------|
+| cpi_headline | Full | 0.1590 | 0.1570 | 0.2610 | active (unchanged) |
+| cpi_headline | 2021+ | 0.1732 | 0.1616 | 0.2442 | active (unchanged) |
+| cpi_core | Full | 0.0936 | 0.0925 | 0.0991 | active (unchanged) |
+| cpi_core | 2021+ | 0.1386 | 0.1328 | 0.1297 | still lags 2021+ naive; kill requires BOTH windows — not triggered (unchanged) |
+| nfp | Full (2010+) | 372.2171 | 372.22 | 459.84 | unaffected (no sticky/median/flex features) |
+| claims | Full | 43.8551 | 43.86 | 27.91 | benchmark_only (unchanged; unaffected) |
+
+Full corrected era tables: `results/backtest_v1_summary.json` / `results/backtest_v1_steps.json`
+(regenerated 2026-07-14; pre-fix artifacts preserved in git history at the parent of the fix commit).
+
+### Why the point estimates barely moved
+
+The ridge z-scores every feature internally against the training distribution
+(`engine/release_forecast.py` `_ridge_predict_with_components`). Training and serving shared
+the same corrupted transform, so corrupted values were standardized against an equally
+corrupted training distribution and their z-scores stayed in a normal range (corrupted
+sticky z = -0.42 vs corrected z = -0.17 at the 2026-07-13 asof; flex shifts from z = -0.07
+to z = +0.98). The corrupted features were RETAINED by the model — they were finite numerics,
+NOT dropped by complete-case masking (which only drops NaN). Ridge shrinkage on three
+low-signal columns left the net point nearly unchanged. Dry-run at asof 2026-07-13:
+cpi_headline +0.0818 (defective) -> +0.0807 (corrected); cpi_core +0.2167 -> +0.2272.
+The June-2026 cold print (actual -0.4 headline / -0.02 core) is therefore NOT rescued by
+this fix — the champion's warm view was structural (lag-persistence features with no
+forward-looking core instruments), not a units artifact.
+
+### Scope note on the scoring-path PIT change
+
+The same fix PR changes `scripts/build_release_forecast.py` `_compute_actual_from_print`
+to use the prior month's INITIAL print (was: latest revision) when computing scored actuals,
+matching the training convention. That change affects only forward-ledger scored rows.
+The walk-forward backtest computes actuals from initial prints independently, so the tables
+above reflect the feature correction only.

@@ -166,6 +166,7 @@ def _build_cpi_features_v3(
     ref_month: date | pd.Timestamp | None,
     knowable_series_fn,
     last_n_mom_lags_fn,
+    last_n_rate_lags_fn,
 ) -> tuple[dict[str, float | None], dict]:
     """Build v3 CPI feature dict: champion features + ppi_fes_mom_lag1 + dollar_mom.
 
@@ -182,6 +183,7 @@ def _build_cpi_features_v3(
         ref_month=ref_month,
         knowable_series_fn=knowable_series_fn,
         last_n_mom_lags_fn=last_n_mom_lags_fn,
+        last_n_rate_lags_fn=last_n_rate_lags_fn,
     )
 
     # v3 additional leg: PPIFES MoM lag-1
@@ -459,6 +461,7 @@ def run_walk_forward_v3_cpi(
         load_vintages,
         knowable_series,
         _last_n_mom_lags,  # private helper — replicated comment per spec
+        _last_n_rate_lags,
     )
 
     root = Path(root)
@@ -485,6 +488,7 @@ def run_walk_forward_v3_cpi(
                 ref_month=ref_month,
                 knowable_series_fn=knowable_series,
                 last_n_mom_lags_fn=_last_n_mom_lags,
+                last_n_rate_lags_fn=_last_n_rate_lags,
             )
         except Exception as e:
             log.debug("v3 CPI feature build failed at %s: %s", step_asof, e)
@@ -609,6 +613,7 @@ def project_release_v3(
         load_vintages,
         knowable_series,
         _last_n_mom_lags,
+        _last_n_rate_lags,
         _survey_week_claims,
         _compute_quantiles,
         _wilson,
@@ -626,6 +631,7 @@ def project_release_v3(
             release, asof, vintages, root, ref_month=ref_month,
             knowable_series_fn=knowable_series,
             last_n_mom_lags_fn=_last_n_mom_lags,
+            last_n_rate_lags_fn=_last_n_rate_lags,
             compute_quantiles_fn=_compute_quantiles,
         )
     elif release == "nfp":
@@ -675,6 +681,7 @@ def _project_cpi_v3(
     *,
     knowable_series_fn,
     last_n_mom_lags_fn,
+    last_n_rate_lags_fn,
     compute_quantiles_fn,
 ) -> dict:
     """Internal: v3 CPI projection for a single asof date."""
@@ -701,6 +708,7 @@ def _project_cpi_v3(
                 ref_month=ref_m,
                 knowable_series_fn=knowable_series_fn,
                 last_n_mom_lags_fn=last_n_mom_lags_fn,
+                last_n_rate_lags_fn=last_n_rate_lags_fn,
             )
         except Exception as e:
             log.debug("v3 CPI feature build failed at %s: %s", step_asof, e)
@@ -729,6 +737,7 @@ def _project_cpi_v3(
         ref_month=ref_month,
         knowable_series_fn=knowable_series_fn,
         last_n_mom_lags_fn=last_n_mom_lags_fn,
+        last_n_rate_lags_fn=last_n_rate_lags_fn,
     )
 
     # Build design matrices for current prediction

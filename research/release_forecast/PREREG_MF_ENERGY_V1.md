@@ -370,3 +370,66 @@ Per MRI-R9 and MRI-R28:
 - Any existing UI/template: UNCHANGED.
 - Authority booleans: all False. display_only=True on all outputs.
 - Word "validated": banned from user-facing copy (CI-enforced repo-wide).
+
+---
+
+## Amendment 2026-07-14 — energy_contrib formula correction (estimator defect)
+
+**Date:** 2026-07-14
+**Author:** Post-mortem fix (CPI June-2026 cold-print)
+**Nature:** Estimator defect fix. Original frozen text in §2.2 is NOT modified.
+
+### Original formula (defective)
+
+Section 2.2 of the frozen prereg specified:
+
+```
+energy_contrib = gasoline_mom_M * (gasoline_all_types_ri_weight / 100.0) * gamma
+```
+
+This was implemented in `engine/release_mf_energy.py` at lines 636 and 1070 (pre-fix).
+
+### The defect: double-discount
+
+Gamma is estimated via bivariate OLS: `cpi_hl_mom ~ beta0 + gamma * gasoline_mom_historical`.
+The OLS slope (gamma) is a reduced-form coefficient that **already embeds the basket weight**:
+if gasoline moved by 1 pp MoM, gamma captures approximately how many pp of headline CPI
+moves — including the pass-through from the ~2.895 pp basket share. Numerically, gamma ≈ 0.039
+in the training history, close to the naive estimate ri_weight/100 ≈ 0.029.
+
+By multiplying gamma by `(GASOLINE_RI_WEIGHT / 100.0)` a second time, the implementation
+shrank energy_contrib by exactly `1 / (GASOLINE_RI_WEIGHT / 100.0) = 1/0.02895 ≈ 34.5x`
+relative to the intent (ledger-confirmed on the 2026-07-13 row: defective energy leg
+−0.010876 pp vs corrected −0.37567 pp).
+
+The §2.2 prose states gamma "captures how much of a 1 pp gasoline MoM moves headline MoM
+after re-weighting" — this description is consistent with the corrected formula below, not
+the implemented one.
+
+### Corrected formula
+
+```
+energy_contrib = gasoline_mom_M * gamma
+```
+
+GASOLINE_RI_WEIGHT is retained in provenance/components dict for reporting. The constant
+is not removed from the codebase.
+
+### June-2026 print context
+
+- Shipped mf_energy point for 2026-06: **−0.206** (computed under defective formula)
+- Actual headline CPI June-2026: **−0.4%** MoM
+- Under the defective formula, energy leg = −0.0109 pp (gas_mom = −9.592 × ri_weight/100 = 0.02895 × gamma = 0.039165)
+- Under the corrected formula, energy leg = **−0.3757 pp** (gas_mom = −9.592 × gamma = 0.039165)
+- Causal channel: the ridge head z-scores its features, and z-scores are invariant under
+  uniform column scaling — so the correction changes nothing through the direct energy
+  channel. The point moves only through the derived ex-energy series
+  (`exenergy = target − energy_contrib` now subtracts a 34.5× larger energy term), which
+  re-fits the AR(3)+seasonal leg. Corrected 2026-07-13 dry-run point: **−0.2701**
+  (vs −0.206 defective, vs −0.4 actual). The full-history backtest MAE worsens slightly
+  under the correction — the expected consequence of subtracting a larger, noisier energy
+  estimate from the AR target, not evidence against the correction.
+
+All mf_energy backtest results produced before 2026-07-14 reflect the defective formula
+throughout the full walk-forward history and **cannot support promotion or kill decisions**.
+See RESULTS_MF_ENERGY_V1.md Addendum 2026-07-14 for corrected backtest tables.
