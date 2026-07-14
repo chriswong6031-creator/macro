@@ -535,7 +535,7 @@ checks:
       - scripts/check_contract_drift.py
       - "site/factordata/contracts/artifact_manifest.json"
       - "NW Rails PR-7 R4"
-    severity: warn
+    severity: hard
     check_script: scripts/check_contract_drift.py
     ci_wiring:
       - workflow: .github/workflows/ci.yml
@@ -545,12 +545,7 @@ checks:
     selftest_exempt_reason: >
       No selftest flag; deterministic comparison of manifest vs live artifacts.
     allowlist: null
-    ratchet:
-      date: "2026-07-13"
-      action: >
-        Drop --warn-only in the ci.yml contract-drift job step AND flip this
-        entry's severity warn->hard in the same PR (the script's default is
-        already hard-fail; keep step and registry in lockstep).
+    ratchet: null
     known_limits:
       - Wildcard artifacts (per_stock_intel, per_stock_signal) are skipped when
         no live sample is present — normal on CI runners.

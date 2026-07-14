@@ -131,7 +131,7 @@ def main() -> None:
                         help="Override data directory (worktree runs use MAIN checkout path)")
     parser.add_argument("--out-dir", default=None, metavar="PATH",
                         help="Override output directory (default: site/oracledata/)")
-    parser.add_argument("--tier", choices=["s", "m", "all"], default="all",
+    parser.add_argument("--tier", choices=["s", "m", "f", "all"], default="all",
                         help="Which tier's chunks to build (default: all)")
     parser.add_argument("--dry-run", action="store_true",
                         help="Compute and report sizes but do NOT write files")

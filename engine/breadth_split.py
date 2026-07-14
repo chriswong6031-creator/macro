@@ -48,6 +48,10 @@ _BANDS: dict[str, dict] = {
         "stance_en": "participation broad, not just the AI complex — watch for rotation",
         "stance_zh": "普涨格局，非局限于 AI 板块 — 留意轮动信号",
     },
+    "thin": {
+        "stance_en": "breadth thin on both sides — no clear leadership, watch, don't chase",
+        "stance_zh": "两侧参与均偏弱 — 无明确领涨，观望勿追",
+    },
 }
 
 # Cache is young until it has >= 252 rows of price history
@@ -65,14 +69,26 @@ def _r(x, n: int = 1):
         return None
 
 
-def _stance(spread_50: float | None) -> tuple[str, str]:
-    """Derive stance copy from the spread_50 value."""
+def _stance(spread_50: float | None,
+            ai_pct50: float | None = None,
+            nonai_pct50: float | None = None) -> tuple[str, str]:
+    """Derive stance copy from the spread and the two cohorts' 50dma breadth.
+
+    The small-spread band is "broad participation" ONLY when breadth is actually
+    broad (both cohorts majority-above-50dma). When both sides are equally WEAK
+    (e.g. ai=10%, nonai=10% → spread≈0) the honest reading is thin breadth, not a
+    broad rally — so gate the "broad" copy on the absolute level. Levels are
+    optional; when unknown the historical spread-only behaviour is preserved.
+    """
     if spread_50 is None:
         return "—", "—"
     if spread_50 >= _BANDS["ai_leading"]["min_spread"]:
         return _BANDS["ai_leading"]["stance_en"], _BANDS["ai_leading"]["stance_zh"]
     if spread_50 <= _BANDS["ai_lagging"]["max_spread"]:
         return _BANDS["ai_lagging"]["stance_en"], _BANDS["ai_lagging"]["stance_zh"]
+    if (ai_pct50 is not None and nonai_pct50 is not None
+            and (ai_pct50 < 50.0 or nonai_pct50 < 50.0)):
+        return _BANDS["thin"]["stance_en"], _BANDS["thin"]["stance_zh"]
     return _BANDS["broad"]["stance_en"], _BANDS["broad"]["stance_zh"]
 
 
@@ -223,7 +239,7 @@ def _compute() -> dict | None:
         pass
 
     # Stance
-    stance_en, stance_zh = _stance(lat_spread_50)
+    stance_en, stance_zh = _stance(lat_spread_50, lat_ai_pct50, lat_nonai_pct50)
 
     # Young flag: while cache history < 252 rows, trend context is still accruing
     young = bool(n_rows < _YOUNG_THRESHOLD)

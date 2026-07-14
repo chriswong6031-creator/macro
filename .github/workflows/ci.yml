@@ -1264,8 +1264,8 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml
-      - name: contract drift check (warn-only ratchet — flip to hard-fail 2026-07-13)
-        run: python scripts/check_contract_drift.py --warn-only
+      - name: contract drift check (hard-fail — ratchet flipped 2026-07-14)
+        run: python scripts/check_contract_drift.py
       - name: contract drift unit tests
         run: python -m pytest tests/test_contract_drift.py -q
 

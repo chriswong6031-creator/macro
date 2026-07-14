@@ -139,7 +139,15 @@ def run(budget: int = DEFAULT_BUDGET) -> dict:
 def main() -> int:
     res = run(DEFAULT_BUDGET)
     print(f"geo_enrich: {json.dumps(res)}")
-    return 0 if res.get("ok") else 2
+    if res.get("ok"):
+        return 0
+    # A not-yet-configured lane (missing secret) is a clean skip, not a failure — exiting
+    # non-zero here turns an unset-secret state into a persistent red X on the every-30-min
+    # cron. Only genuine runtime failures should trip the run.
+    if str(res.get("reason", "")).startswith("missing "):
+        print("geo_enrich: skipping (not configured) — set SUPABASE_ACCESS_TOKEN + IPLOCATE_API_KEY to enable")
+        return 0
+    return 2
 
 
 if __name__ == "__main__":

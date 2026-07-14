@@ -65,13 +65,14 @@
   {
    "artifact": "site/signals/<SYM>.json",
    "kind": "per_stock_signal",
-   "schema_version": "1.0.0",
+   "schema_version": "1.1.0",
    "schema_fields": [
     "above200",
     "asof",
     "early_markers",
     "early_now",
     "markers",
+    "pit",
     "risk_flags",
     "state",
     "tf",
@@ -90,11 +91,12 @@
   {
    "artifact": "site/factordata/us_standouts.json",
    "kind": "board",
-   "schema_version": "1.0.0",
+   "schema_version": "1.1.0",
    "schema_fields": [
     "as_of",
     "buy",
     "concentration",
+    "delta",
     "dispersion_regime",
     "donor",
     "earnings_blackout_note",
@@ -163,11 +165,12 @@
   {
    "artifact": "site/factordata/china_standouts.json",
    "kind": "board",
-   "schema_version": "1.0.0",
+   "schema_version": "1.1.0",
    "schema_fields": [
     "as_of",
     "board_track",
     "buy",
+    "cap_composition",
     "coverage",
     "dispersion_regime",
     "eligible",
@@ -177,6 +180,7 @@
     "ran",
     "rank_by",
     "ripening",
+    "ripening_falling",
     "sleeve_chip",
     "universe"
    ],

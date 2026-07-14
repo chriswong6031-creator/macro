@@ -614,7 +614,12 @@ def leading_signals() -> pd.DataFrame:
             cfb_leg = build_corr_floor_break(cor1m_s)
             cfb_clean = cfb_leg.dropna()
             if len(cfb_clean) >= _CORR_HIST_MINP:
-                out["corr_floor_break"] = cfb_leg.reindex(idx)
+                # ffill onto the SPY calendar: the COR1M EOD feed is routinely collected
+                # next morning, so the latest SPY date is often absent from cor1m's index.
+                # A bare reindex would NaN the live row and silently drop the leg exactly
+                # when it could fire; carry the last computed 0/1 forward like every other
+                # leg (cf. pcol()'s reindex(idx).ffill()).
+                out["corr_floor_break"] = cfb_leg.reindex(idx).ffill()
     except Exception as e:  # noqa: BLE001 — additive; missing file must not break the radar
         log.debug("risk_radar corr_floor_break leg unavailable: %s", e)
     # ai_breadth_divergence: |spread_50| extreme → 'internals' scare.
@@ -629,7 +634,9 @@ def leading_signals() -> pd.DataFrame:
                 ai_leg = build_ai_breadth_divergence(sp50)
                 ai_clean = ai_leg.dropna()
                 if len(ai_clean) >= _CORR_HIST_MINP:
-                    out["ai_breadth_divergence"] = ai_leg.reindex(idx)
+                    # ffill onto the SPY calendar (see corr_floor_break above): breadth_split
+                    # can lag SPY by a session, so carry the last 0/1 forward instead of NaN.
+                    out["ai_breadth_divergence"] = ai_leg.reindex(idx).ffill()
     except Exception as e:  # noqa: BLE001 — additive; missing file must not break the radar
         log.debug("risk_radar ai_breadth_divergence leg unavailable: %s", e)
     return out

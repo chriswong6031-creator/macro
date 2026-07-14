@@ -8230,14 +8230,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mx5-dlg-idx-grid">
           {% for ix in index_health %}
           {% set _dlgm_sym = ix.ticker | replace('_','') %}
+          {# live-feed key: DJI/RUT snapshot rows are keyed ^DJI/^RUT (see face tiles _ix_live); bare DJI/RUT never resolve so the card would never live-patch #}
+          {% set _dlgm_live = {'DJI': '^DJI', 'RUT': '^RUT'}.get(_dlgm_sym, _dlgm_sym) %}
           {% set _dlgm_chg = ix.chg if (ix.chg is defined and ix.chg is not none) else none %}
           {% set _dlgm_dir = ('up' if _dlgm_chg > 0 else ('dn' if _dlgm_chg < 0 else '')) if _dlgm_chg is not none else '' %}
           {% set _dlgm_col = ('var(--up)' if _dlgm_chg > 0 else ('var(--down)' if _dlgm_chg < 0 else 'var(--text)')) if _dlgm_chg is not none else 'var(--text)' %}
           <div class="mx5-dlg-idx-card">
             <div class="mx5-dlg-idx-ticker">{{ _dlgm_sym }}</div>
             <div class="mx5-dlg-idx-name">{{ _dlgm_ix_nm.get(ix.ticker, ix.label if ix.label is defined else _dlgm_sym) }}</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="{{ _dlgm_sym }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
-            <div class="mx5-dlg-idx-chg {{ _dlgm_dir }} nb-chg" data-sym="{{ _dlgm_sym }}" data-mkt="us">{% if _dlgm_chg is not none %}{{ '%+.2f'|format(_dlgm_chg) }}%{% else %}—{% endif %}</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="{{ _dlgm_live }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
+            <div class="mx5-dlg-idx-chg {{ _dlgm_dir }} nb-chg" data-sym="{{ _dlgm_live }}" data-mkt="us">{% if _dlgm_chg is not none %}{{ '%+.2f'|format(_dlgm_chg) }}%{% else %}—{% endif %}</div>
             <div class="mx5-dlg-idx-chips">
               {# Distance from high — plain words #}
               {% set _dlgm_dd = ix.dd if (ix.dd is defined and ix.dd is not none) else none %}

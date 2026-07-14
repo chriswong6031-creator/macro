@@ -191,11 +191,15 @@
       if (fresh) track('session_start');
       track('pageview', { ref: document.referrer || undefined });
 
-      // analyzer pages (stock.html#AAPL → #MSFT) change symbol via hashchange, no page load
+      // analyzer pages (stock.html#AAPL → #MSFT) change symbol via hashchange, no page load.
+      // Elsewhere the hash is an in-page anchor/dialog slug (#regime-radar, #dlg-events) —
+      // never log those as ticker views. Tickers are uppercase alnum (optionally . or digits,
+      // e.g. AAPL, BRK.B, 9988.HK); reject slug shapes (lowercase / hyphen).
       window.addEventListener('hashchange', function () {
         var t = (location.hash || '').replace(/^#/, '');
         try { t = decodeURIComponent(t); } catch (e) {}
-        track('ticker_view', { ticker: t ? t.slice(0, 64) : undefined });
+        if (!t || !/^[A-Z0-9][A-Z0-9.]{0,15}$/.test(t)) return;
+        track('ticker_view', { ticker: t.slice(0, 64) });
       });
 
       window.addEventListener('scroll', function () {
@@ -211,7 +215,14 @@
         } catch (e) {}
       }, true);
 
-      function leave() { try { track('exit', { dwell_ms: Date.now() - enter, scroll: maxScroll || undefined }); } catch (e) {} flush(); }
+      // exit fires at most once: leave() is bound to both pagehide and visibilitychange
+      // (hidden), which both fire on a normal navigation — a latch prevents double-counting
+      // the exit/dwell. flush() still runs on every hide to drain any queued events.
+      var _exited = false;
+      function leave() {
+        if (!_exited) { _exited = true; try { track('exit', { dwell_ms: Date.now() - enter, scroll: maxScroll || undefined }); } catch (e) {} }
+        flush();
+      }
       window.addEventListener('pagehide', leave);
       document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') leave(); });
     } catch (e) { /* analytics must never break the page */ }
