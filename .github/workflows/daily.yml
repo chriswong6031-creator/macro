@@ -479,6 +479,21 @@ jobs:
             echo "::warning title=backfill_qledger_us::rc=$rc (non-fatal)"
           fi
           exit 0
+      - name: CCW W2 — corporate credit g-spread engine (non-fatal)
+        # Reads tonight's holdings from collect-core's commit (data/corp_bonds/holdings/*)
+        # plus data/fred/DGS*.parquet (CMT curve pillars) and
+        # data/corp_bonds/issuer_themes.json (issuer registry from W1).
+        # Writes data/corp_bonds/series/*.parquet (6 files: issuer_daily, theme_daily,
+        # sector_daily, market_daily, maturity_wall, bond_panel_latest) plus
+        # data/corp_bonds/latest.json and data/corp_bonds/validation.json.
+        # All outputs are covered by `git add data/` in the "commit tail data" step below.
+        # Wall time measured locally 2026-07-14: 3.8s ([timing] corp_credit.snapshot,
+        # single holdings date, ~10.2k bonds, incl. the convention re-solve pass).
+        # Full-history recompute scales ~linearly in dates; revisit if it nears ~2m.
+        # Non-fatal: a missing holdings store or solver failure logs a warning only.
+        run: |
+          python -m engine.corp_credit \
+            || echo "::warning::corp_credit engine failed (non-fatal)"
       - name: commit tail data
         run: |
           git config user.name "dashboard-bot"

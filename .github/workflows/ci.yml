@@ -569,6 +569,11 @@ on:
       - "tests/test_fred_series_alias_conflicts.py"
       - "tests/test_fred_baml_archive.py"
       - "scripts/snapshot_fred_archive.py"
+      # CCW-W2 g-spread engine: YTM solver, CMT interpolation, accrued interest,
+      # composition guard, dispersion, maturity wall, validation gate.
+      - "engine/corp_credit.py"
+      - "tests/test_corp_credit.py"
+      - "scripts/fetch_ishares_validation_sample.py"
   workflow_dispatch:
 
 permissions:
@@ -2061,3 +2066,33 @@ jobs:
         run: python -m pytest tests/test_corp_bond_holdings.py tests/test_fred_series_alias_conflicts.py tests/test_fred_baml_archive.py -v
       - name: CCW-W5 FINRA corp bonds collector tests
         run: python -m pytest tests/test_finra_corp_bonds.py -v
+
+  ccw-w2-gspread-engine:
+    # CCW-W2 g-spread engine:
+    #   engine/corp_credit.py — vectorized YTM solver (Newton+bisection), 30/360 US
+    #                           accrued, CMT interpolation (merge_asof ≤7d backward),
+    #                           issuer/theme matching, composition guard, dispersion,
+    #                           maturity wall, validation gate (criteria a-d).
+    #   scripts/fetch_ishares_validation_sample.py — SpreadsheetML parser (importable
+    #                           without playwright; playwright import deferred to inner fn).
+    # Test coverage:
+    #   test_corp_credit.py — 66 synthetic tests; no network; no repo data reads:
+    #     accrued 30/360 US (EOM, stub, regular), YTM Newton+bisection (par/premium/
+    #     discount/fractional-tenor/integer-tenor/HY/fallback), CMT interpolation
+    #     (exact/backward-fill/tolerance-7d/miss/multi-date), g-spread (IG/HY/par-
+    #     bond/integer-tenor), canonicalize_bonds (missing fields/clean col),
+    #     near-par flag, dispersion (n<3/3-7/≥8), composition fixture (M2: production
+    #     compute_matched_delta, 5-bar boundary sharp), criterion-b gate (M1: all three
+    #     conditions), sector ambiguity law (M3), criterion-a decision rule via
+    #     resolve_price_convention (N1: tiebreak path), parse_spreadsheetml.
+    # Zero network calls; all inputs are synthetic (tmp_path fixtures).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: CCW-W2 g-spread engine tests
+        run: python -m pytest tests/test_corp_credit.py -v
