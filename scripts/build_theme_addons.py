@@ -150,6 +150,18 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("eightk_magnitude engine failed: %s", e)
 
+    # ── AI-adjacency breadth split (VSB W4a+W4b) ─────────────────────────────
+    # Composition decomposition: AI-adjacent vs non-AI tape health.
+    # Display-only — never scored, never feeds any gate or regime signal.
+    try:
+        from scripts.build_ai_adjacency_tag import ensure_ai_tags
+        from engine.breadth_split import compute_breadth_split
+        ensure_ai_tags()   # regenerate tag file if sources changed
+        if _dump(fdir, "breadth_split.json", compute_breadth_split()):
+            wrote.append("breadth_split")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("breadth_split failed: %s", e)
+
     log.info("theme add-ons built -> %s (%s)", fdir, ", ".join(wrote) or "nothing")
     return 0
 
