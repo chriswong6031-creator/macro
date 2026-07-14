@@ -24,6 +24,8 @@
   .stance-badge { font-size:22px; font-weight:800; padding:6px 16px; border-radius:999px; }
   .st-easing { color:#1f9a55; background:color-mix(in srgb,#1f9a55 14%,transparent); }
   .st-tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 14%,transparent); }
+  html[data-lang="zh"] .st-easing { color:#d23f3f; background:color-mix(in srgb,#d23f3f 14%,transparent); }
+  html[data-lang="zh"] .st-tightening { color:#1f9a55; background:color-mix(in srgb,#1f9a55 14%,transparent); }
   .st-neutral { color:var(--muted); background:var(--panel2); }
   .stance-hero .why { font-size:13px; color:var(--muted); flex:1; min-width:240px; }
   .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:12px 0; }
@@ -35,12 +37,15 @@
   .moves li { font-size:13px; padding:5px 0; border-bottom:1px solid var(--line); display:flex; gap:10px; }
   .moves .dt { color:var(--muted); font-variant-numeric:tabular-nums; min-width:92px; }
   .ease { color:#1f9a55; } .tighten { color:#d23f3f; }
+  html[data-lang="zh"] .ease { color:#d23f3f; } html[data-lang="zh"] .tighten { color:#1f9a55; }
   table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
   table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
   table.data td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
   .pill { font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; white-space:nowrap; }
   .p-supportive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .p-restrictive { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  html[data-lang="zh"] .p-supportive { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  html[data-lang="zh"] .p-restrictive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .p-neutral { color:var(--muted); background:var(--panel2); }
   .chips { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0; }
   .nchip { font-size:12px; padding:4px 11px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); }

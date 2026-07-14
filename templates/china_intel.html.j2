@@ -96,6 +96,7 @@
   .regime { display:flex; flex-wrap:wrap; gap:14px; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 15px; margin:14px 0; font-size:13px; }
   .regime .rk { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
   .regime .on { color:#1f9a55; font-weight:700; } .regime .off { color:#d23f3f; font-weight:700; } .regime .neu { color:var(--muted); font-weight:700; }
+  html[data-lang="zh"] .regime .on { color:#d23f3f; } html[data-lang="zh"] .regime .off { color:#1f9a55; }
   .bandpill { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
   .b-high{color:#1f9a55;background:color-mix(in srgb,#1f9a55 13%,transparent)}
   .b-elevated{color:#5b8def;background:color-mix(in srgb,#5b8def 13%,transparent)}
@@ -103,11 +104,13 @@
   /* ── surfaces/flags ── */
   .surf { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:5px; background:var(--panel2); color:var(--link); margin-right:3px; }
   .sgn-pos{color:#1f9a55} .sgn-neg{color:#d23f3f}
+  html[data-lang="zh"] .sgn-pos{color:#d23f3f} html[data-lang="zh"] .sgn-neg{color:#1f9a55}
   .flags { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
   .tk { display:inline-flex; flex-direction:column; gap:2px; padding:7px 12px; border-radius:10px; background:var(--panel); border:1px solid var(--line); }
   .tk .nm { font-weight:700; font-size:13px; }
   .tk .cd { font-size:10px; color:var(--muted); font-family:ui-monospace,Menlo,monospace; }
   .tk.long { border-left:3px solid #1f9a55; } .tk.short { border-left:3px solid #d23f3f; }
+  html[data-lang="zh"] .tk.long { border-left-color:#d23f3f; } html[data-lang="zh"] .tk.short { border-left-color:#1f9a55; }
   /* ── chains ── */
   .chain { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 15px; margin:10px 0; }
   .chain .hd { display:flex; align-items:center; gap:9px; font-weight:700; font-size:13.5px; }
@@ -128,6 +131,8 @@
   .band { display:inline-block; font-size:13px; font-weight:700; padding:2px 9px; border-radius:999px; }
   .band.supportive,.band.easing { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .band.cautious,.band.tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  html[data-lang="zh"] .band.supportive, html[data-lang="zh"] .band.easing { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  html[data-lang="zh"] .band.cautious, html[data-lang="zh"] .band.tightening { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .band.steady,.band.building,.band.neutral,.band.unknown { color:var(--muted); background:var(--panel2); }
   .disc { font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.55; }
   /* ── command list ── */

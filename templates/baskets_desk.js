@@ -2,6 +2,7 @@
 // Relies on per-page globals: BASKETS, CHART, THEME, THEME_ALERTS + helpers esc/cssv/
 // fmtPct/cls/sparkSvg/ratio/sparkTail. Call deskBoot() after those are defined.
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
 // ---- Velocity / Heat helpers (W4 rotation-scorecard upgrade) ------------------
 // All labels are DESCRIPTIVE — they characterise current rank/score trajectory; no
 // forward-return forecast is implied (house rule: honest framing).
@@ -92,6 +93,12 @@ const LABEL_COLOR = {
   deteriorating: ['rgba(248,113,113,.15)','rgba(248,113,113,.5)','#ef4444'],
   neutral:       ['var(--panel2)','var(--line)','var(--muted)'],
 };
+// zh 红涨绿跌 overrides for directional label colours (bullish↔bearish tint swap)
+const LABEL_COLOR_ZH = {
+  emerging:      ['rgba(224,85,85,.15)','rgba(224,85,85,.5)','#e05555'],
+  deteriorating: ['rgba(74,222,128,.15)','rgba(74,222,128,.5)','#22c55e'],
+};
+function labelColor(label){ return (isZh() && LABEL_COLOR_ZH[label]) || LABEL_COLOR[label] || LABEL_COLOR.neutral; }
 const RECO_COLOR = {
   enter:      ['rgba(34,197,94,.20)','rgba(34,197,94,.65)','#16a34a'],
   accumulate: ['rgba(74,222,128,.14)','rgba(74,222,128,.5)','#22c55e'],
@@ -99,6 +106,13 @@ const RECO_COLOR = {
   trim:       ['rgba(251,146,60,.15)','rgba(251,146,60,.55)','#f97316'],
   avoid:      ['rgba(248,113,113,.16)','rgba(248,113,113,.6)','#ef4444'],
 };
+// zh 红涨绿跌 overrides for directional reco colours
+const RECO_COLOR_ZH = {
+  enter:      ['rgba(224,85,85,.20)','rgba(224,85,85,.65)','#e05555'],
+  accumulate: ['rgba(224,85,85,.14)','rgba(224,85,85,.5)','#e05555'],
+  avoid:      ['rgba(74,222,128,.16)','rgba(74,222,128,.6)','#22c55e'],
+};
+function recoColor(reco){ return (isZh() && RECO_COLOR_ZH[reco]) || RECO_COLOR[reco] || RECO_COLOR.hold; }
 const badge = (cls,c,en,zh)=>`<span class="${cls}" style="background:${c[0]};border:1px solid ${c[1]};color:${c[2]}">${L(en,zh)}</span>`;
 // A1 — display-only verb demotion: never render a green ACCUMULATE/ENTER chip when the
 // theme's own clean_entry texture is false (the act_now board already refuses these).
@@ -108,7 +122,7 @@ const RECO_NOENTRY = ['rgba(245,158,11,.16)','rgba(245,158,11,.55)','#d97706'];
 const recoNoEntry = t => (t.reco==='accumulate'||t.reco==='enter') && !(((t.textures||{}).clean_entry)||{}).flag;
 const recoChip = t => recoNoEntry(t)
   ? `<span class="treco" style="background:${RECO_NOENTRY[0]};border:1px solid ${RECO_NOENTRY[1]};color:${RECO_NOENTRY[2]}" title="In favour, but no member has a clean entry — do not chase; wait for a setup.">${L('IN FAVOUR — NO ENTRY','看好但无干净入场')}</span>`
-  : badge('treco',RECO_COLOR[t.reco]||RECO_COLOR.hold,t.reco_en,t.reco_zh);
+  : badge('treco',recoColor(t.reco),t.reco_en,t.reco_zh);
 const RECO_NOENTRY_WHY = () => L('In favour, but no member has a clean entry — do not chase; wait for a setup.','看好，但无成分股具备干净入场点 — 勿追，等待入场时机。');
 const COMP_COLOR = {trend:'#5aa7ff',breadth:'#4ade80',impulse:'#a78bfa',macro:'#2dd4bf',crowding:'#fb7185'};
 const COMP_LBL = {trend:['trend','趋势'],breadth:['breadth','广度'],impulse:['impulse','脉冲'],macro:['macro','宏观'],crowding:['crowd','拥挤']};
@@ -190,7 +204,7 @@ function termStrip(t){
     <span class="tspat">${L(pat,patZh)}</span><span class="tstag">${L('shape read, not a signal','形态读数，非信号')}</span></div>`;
 }
 function themeCard(t){
-  const lc=LABEL_COLOR[t.label]||LABEL_COLOR.neutral;
+  const lc=labelColor(t.label);
   const r20=t.perf&&t.perf['20d']?t.perf['20d'].rel:null;
   const spk=sparkTail(ratio(CHART.baskets[t.id]||[]),40);
   const b=t.breadth||{}, im=t.impulse||{}, tx=t.textures||{};
@@ -334,6 +348,9 @@ function renderActNow(){
   }
   const a=THEME.act_now;
   const ACT={enter:['ENTER','建仓','#16a34a'],accumulate:['ACCUMULATE','加仓','#22c55e'],trim:['TRIM','减仓','#f97316'],avoid:['AVOID','回避','#ef4444']};
+  // zh 红涨绿跌: swap bullish (enter/accumulate) to red, bearish (avoid) to green
+  const ACT_ZH={enter:['ENTER','建仓','#e05555'],accumulate:['ACCUMULATE','加仓','#e05555'],avoid:['AVOID','回避','#22c55e']};
+  const actColor=k=>{ const zh=isZh()&&ACT_ZH[k]; return zh||ACT[k]||['','',cssv('--muted')]; };
   // W8-R5: build turn_state lookup from BASKETS payload (basket-level) and THEME.themes.
   // Both sources carry the turn_state field after the build script annotates them.
   const _turnById = {};
@@ -341,21 +358,21 @@ function renderActNow(){
     (((typeof BASKETS!=='undefined'&&BASKETS)||{}).baskets||[]).forEach(b=>{ if(b&&b.id) _turnById[b.id]=b.turn_state||null; });
     (THEME.themes||[]).forEach(t=>{ if(t&&t.id&&t.turn_state) _turnById[t.id]=t.turn_state; });
   }catch(e){}
-  const row=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];
+  const row=x=>{const ac=actColor(x.action);
     return `<a class="anrow" href="${(window.BASKET_BASE||'basket/')}${x.id}.html">
       <span class="anverb" style="color:${ac[2]};border-color:${ac[2]}">${L(ac[0],ac[1])}</span>
       <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
       <span class="anwhy muted sm">${esc((x.reasons||[]).join(' · '))}</span>
       <span class="ansc">${x.score}</span></a>`;};
   // wait-for-a-pullback rows: same reco verb (muted) + the honest per-theme reason.
-  const rowWait=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];
+  const rowWait=x=>{const ac=actColor(x.action);
     return `<a class="anrow" href="${(window.BASKET_BASE||'basket/')}${x.id}.html">
       <span class="anverb" style="color:${ac[2]};border-color:${ac[2]};opacity:.72">${L(ac[0],ac[1])}</span>
       <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
       <span class="anwhy muted sm">${x.reason_en?L(esc(x.reason_en),esc(x.reason_zh||x.reason_en)):esc((x.reasons||[]).join(' · '))}</span>
       <span class="ansc">${x.score}</span></a>`;};
   // W8-R5: reduce/avoid rows get dual-chip when tape is TURNING/CONFIRMED (FT-R1).
-  const rowReduce=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];
+  const rowReduce=x=>{const ac=actColor(x.action);
     const ts = _turnById[x.id]||null;
     const hasDual = ts && DISAGREE_TAPE_STATES.has(ts);
     const dc = hasDual ? dualChip({reco:x.action||'avoid',turn_state:ts}) : '';

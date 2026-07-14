@@ -769,6 +769,11 @@ const RISK_HIST = {{ risk_history_json|safe }};
 const ACT_NOW = {{ act_now_json|safe }};
 const STANDOUTS = {{ standouts_json|default('{}')|safe }};   // theme id -> # members on the US standout buy board
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+const isZh=()=>document.documentElement.getAttribute('data-lang')==='zh';
+// zh 红涨绿跌: swap buy-verb green (#16a34a/#22c55e) to red in zh mode
+const buyColor=()=>isZh()?'#ef4444':'#16a34a';
+// zh 红涨绿跌: swap avoid-verb red (#ef4444) to green in zh mode (amber TRIM left unchanged)
+const sellColor=c=>isZh()&&c==='#ef4444'?'#16a34a':c;
 // ★N badge: how many individual standouts back this theme (the allocation→stock bridge)
 const sbBadge = id => { const n=STANDOUTS[id]; return n?` <span class="sb-badge" title="${n} member(s) on the US standout buy board">★${n}</span>`:''; };
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -788,7 +793,7 @@ function renderEntries(){
     <span class="pn">#${w.rank} ${L(esc(w.name),esc(w.name_zh))}${sbBadge(w.id)}</span><span class="pw">${Math.round((w.weight||0)*100)}%</span></a>`);
   if(an && an.buy){ an.buy.filter(x=>!held.has(x.id)).forEach(x=>{
     const v=x.action==='enter'?['ENTER','建仓']:['ACCUMULATE','加仓'];
-    buy.push(`<a class="prow" href="${bkHref(x.id)}"><span class="pverb" style="color:#16a34a;border-color:#16a34a">${L(v[0],v[1])}</span>
+    buy.push(`<a class="prow" href="${bkHref(x.id)}"><span class="pverb" style="color:${buyColor()};border-color:${buyColor()}">${L(v[0],v[1])}</span>
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
   // in-favour themes WITHOUT a clean entry (the honest act_now split) — shown, never hidden,
   // with a muted "wait for a pullback" verb. Descriptive presentation, not a signal.
@@ -797,8 +802,8 @@ function renderEntries(){
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
   // REDUCE/AVOID: (US) act_now reduce + crowded held + de-overlapped displaced (context)
   let sell=[];
-  if(an && an.reduce){ an.reduce.forEach(x=>{ const v=x.action==='avoid'?['AVOID','回避','#ef4444']:['TRIM','减仓','#f97316'];
-    sell.push(`<a class="prow" href="${bkHref(x.id)}"><span class="pverb" style="color:${v[2]};border-color:${v[2]}">${L(v[0],v[1])}</span>
+  if(an && an.reduce){ an.reduce.forEach(x=>{ const v=x.action==='avoid'?['AVOID','回避','#ef4444']:['TRIM','减仓','#f97316'];const vc=sellColor(v[2]);
+    sell.push(`<a class="prow" href="${bkHref(x.id)}"><span class="pverb" style="color:${vc};border-color:${vc}">${L(v[0],v[1])}</span>
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}</span><span class="pw">${x.score}</span></a>`); }); }
   (alloc.weights||[]).filter(w=>w.crowded).forEach(w=>sell.push(`<div class="prow"><span class="pverb" style="color:var(--warn);border-color:var(--warn)">${L('SIZE DOWN','降仓')}</span><span class="pn">${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${L('crowded','拥挤')}</span></div>`));
   if(!sell.length) sell.push(`<div class="muted" style="padding:10px 2px;font-size:12px">${L('Nothing flagged to reduce right now.','当前无需减仓的标的。')}</div>`);

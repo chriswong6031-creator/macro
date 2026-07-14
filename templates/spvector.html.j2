@@ -112,6 +112,9 @@ html[data-theme="dark"] .score .s>div{background:var(--grid)}
 .note{border-left:3px solid var(--amber);padding:6px 0 6px 14px;margin:8px 0;color:var(--text);font-size:13.5px}
 .note.r{border-color:var(--red)} .note.b{border-color:var(--blue)}
 .foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
+/* zh 红涨绿跌 directional colour flips */
+html[data-lang="zh"] .win{color:var(--red)}
+html[data-lang="zh"] .lose{color:var(--green)}
 </style>{% include "_vector_polish.html.j2" %}
 </head>
 <body>

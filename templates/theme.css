@@ -109,6 +109,19 @@ html[data-theme="light"][data-lang="zh"] {
   --q1: #c12f2f;
   --q3: #1f8b41;
 }
+/* ---- Chinese mode: directional GAUGES that paint state from status tokens ----
+   The status tokens --ok/--act deliberately DON'T swap (they encode health/danger, see
+   above). But a few gauges are genuine market-DIRECTION reads (bullish vs bearish) that
+   happen to colour themselves from --ok/--act — the Risk Radar (.rrx: --ok=calm/risk-on,
+   --act=risk-off) and the Ignition Radar (.igx/.igs: --ok=ignited/breakout). Under the
+   Asia convention these must read red=risk-on/bullish, green=risk-off/bearish — matching
+   the price tables and the Market State board (which already swap via --up/--down). We
+   remap ONLY the pole tokens, ONLY inside these gauge scopes, so global --ok/--act stay
+   Western and every health/severity/staleness/validation signal keeps red=bad. --up/--down
+   already carry correct dark+light zh values, so remapping onto them needs no hex here.
+   (Mid-tones --warn/--orange/--info/--muted are direction-neutral escalation — left alone.) */
+html[data-lang="zh"] .rrx { --ok: var(--up); --act: var(--down); }
+html[data-lang="zh"] :is(.igx, .igs) { --ok: var(--up); }
 /* ---- language visibility toggle (dual-emit text) ---------------------------- */
 html:not([data-lang="zh"]) .l-zh { display: none; }
 html[data-lang="zh"] .l-en { display: none; }

@@ -3457,6 +3457,26 @@ body.page-macro.mx4-grid.ms-yellow-page .mx5-big-score,
 body.page-macro.mx4-grid .mx5-score-yellow .mx5-big-score{color:var(--warn,#f59e0b);text-shadow:0 0 36px rgba(245,158,11,.3);}
 body.page-macro.mx4-grid.ms-red-page .mx5-big-score,
 body.page-macro.mx4-grid .mx5-score-red .mx5-big-score{color:var(--down,#ef4444);text-shadow:0 0 36px rgba(239,68,68,.3);}
+/* v6 — STATE drives the hero glance (operator order 2026-07-13). The gauge arc, needle
+   accent, glow and score numeral all follow the risk-STATE band (--mx5-gauge), never a fixed
+   rainbow or the regime hue — so a caution/Mixed state reads amber, not "green/go". --mx5-gauge
+   and --mx5-accent route through --up/--warn/--down, so they also honour the zh 红涨绿跌 swap
+   (risk-on=red, risk-off=green in Chinese). The slow regime (e.g. Goldilocks) is demoted to a
+   neutral label so it never competes with the stance colour. */
+body.page-macro.mx4-grid .mx5-score-green  { --mx5-gauge: var(--up);   --mx5-accent: var(--up);   }
+body.page-macro.mx4-grid .mx5-score-yellow { --mx5-gauge: var(--warn); --mx5-accent: var(--warn); }
+body.page-macro.mx4-grid .mx5-score-red    { --mx5-gauge: var(--down); --mx5-accent: var(--down); }
+body.page-macro.mx4-grid .mx5-sc-gauge-row {
+  --mx5-accent-glow: color-mix(in srgb, var(--mx5-accent) 30%, transparent);
+  --mx5-accent-dim:  color-mix(in srgb, var(--mx5-accent) 10%, transparent);
+}
+/* CSS wins over the SVG presentation attribute, so the arc + numeral recolour by state
+   (and var() resolves here, unlike in a bare SVG stroke="" attribute). */
+body.page-macro.mx4-grid #mx5-gauge-arc-fill { stroke: var(--mx5-gauge, #f59e0b); }
+body.page-macro.mx4-grid #mx5-score-numeral  { fill: var(--mx5-gauge, #f59e0b); }
+/* Regime pill → neutral grey label (state owns the glance colour now) */
+body.page-macro.mx4-grid .mx5-regime-pill { border-color: var(--line); background: transparent; color: var(--muted); }
+body.page-macro.mx4-grid .mx5-regime-pill .mx5-dot { background: var(--muted); box-shadow: none; }
 
 /* Thesis + flip */
 body.page-macro.mx4-grid .mx5-thesis{
@@ -3552,6 +3572,9 @@ body.page-macro.mx4-grid .mx5-pl-zone{
 body.page-macro.mx4-grid .mx5-pl-zone.on{color:rgba(34,217,122,.62);}
 body.page-macro.mx4-grid .mx5-pl-zone.mid{color:rgba(245,158,11,.66);}
 body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(239,68,68,.60);}
+/* zh 红涨绿跌: Risk-on(偏多)=bullish→red, Risk-off(偏空)=bearish→green (mid amber stays) */
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-pl-zone.on{color:rgba(239,68,68,.60);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(34,217,122,.62);}
 body.page-macro.mx4-grid .mx5-pl-x{
   top:96.4%;color:var(--ink-3,rgba(255,255,255,.34));
 }
@@ -4858,12 +4881,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
              data-gauge-radius="56"
              data-gauge-cx="70" data-gauge-cy="75">
           <defs>
-            <linearGradient id="mx5ArcGrad" gradientUnits="userSpaceOnUse" x1="14" y1="75" x2="126" y2="75">
-              <stop offset="0%"   stop-color="#ef4444"/>
-              <stop offset="28%"  stop-color="#f59e0b"/>
-              <stop offset="65%"  stop-color="#22d97a"/>
-              <stop offset="100%" stop-color="#22d97a"/>
-            </linearGradient>
             <filter id="mx5NeedleGlow" x="-80%" y="-80%" width="260%" height="260%">
               <feGaussianBlur stdDeviation="2.5" result="blur"/>
               <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
@@ -4877,7 +4894,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <path d="M 14 75 A 56 56 0 0 1 126 75" stroke="rgba(255,255,255,.08)" stroke-width="10" stroke-linecap="round" fill="none"/>
           {# Filled arc — dasharray baked by Jinja; JS patches via data-gauge-arc-len #}
           <path id="mx5-gauge-arc-fill"
-                d="M 14 75 A 56 56 0 0 1 126 75" stroke="url(#mx5ArcGrad)" stroke-width="10" stroke-linecap="round" fill="none"
+                d="M 14 75 A 56 56 0 0 1 126 75" stroke="#f59e0b" stroke-width="10" stroke-linecap="round" fill="none"
                 stroke-dasharray="{{ _mx5_filled }} {{ _mx5_gap }}" filter="url(#mx5ArcGlow)"/>
           {# Tick marks at 0/25/50/75/100 #}
           <g stroke="rgba(255,255,255,.22)" stroke-width="1.2">
@@ -4893,9 +4910,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <text x="132" y="84" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">100</text>
           {# Needle — rotation baked by Jinja; JS patches via data attr #}
           <g id="mx5-gauge-needle" transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#mx5NeedleGlow)">
-            <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(34,217,122,.30)" stroke-width="5" stroke-linecap="round"/>
+            <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
             <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
-            <circle cx="70" cy="75" r="7"  fill="rgba(34,217,122,.14)"/>
+            <circle cx="70" cy="75" r="7"  fill="rgba(255,255,255,.10)"/>
             <circle cx="70" cy="75" r="4.5" stroke="{{ _mx5_sc_col }}" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
             <circle cx="70" cy="75" r="2"  fill="{{ _mx5_sc_col }}"/>
             <circle cx="70" cy="25.5" r="2.5" fill="{{ _mx5_sc_col }}" style="filter:drop-shadow(0 0 4px {{ _mx5_sc_col }})"/>
@@ -7448,7 +7465,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   </div>{# /sx-v5-fed #}
 
   {# ── Market Sentiment ── #}
-  <div class="sx-v5-static" id="sx-v5-sentiment">
+  {% set _fgv5_dial0 = ((fear_greed.get('dial') if (fear_greed is defined and fear_greed) else 50) or 50) | float %}
+  <style>
+  /* zh 红涨绿跌 for the Fear & Greed gauge: Greed=bullish→red, Fear=bearish→green (neutral amber).
+     --fg-col routes through --up/--warn/--down so it auto-flips in zh; SVG marks + zone word read it. */
+  #sx-v5-sentiment.fg-greed{--fg-col:var(--up)} #sx-v5-sentiment.fg-fear{--fg-col:var(--down)} #sx-v5-sentiment.fg-neutral{--fg-col:var(--warn)}
+  #sx-v5-sentiment .fg-mark-s{stroke:var(--fg-col)} #sx-v5-sentiment .fg-mark-f{fill:var(--fg-col)}
+  #sx-v5-sentiment .fg-lab-panic{fill:var(--down)} #sx-v5-sentiment .fg-lab-euph{fill:var(--up)}
+  </style>
+  <div class="sx-v5-static {{ 'fg-greed' if _fgv5_dial0 > 60 else ('fg-fear' if _fgv5_dial0 < 40 else 'fg-neutral') }}" id="sx-v5-sentiment">
   {% set _fgv5 = fear_greed if (fear_greed is defined and fear_greed) else {} %}
   {% set _fgv5_dial = (_fgv5.get('dial') or 50) | float %}
   {% set _fgv5_label_en = _fgv5.get('label_en') or ('Neutral' if _fgv5_dial >= 40 and _fgv5_dial <= 60 else ('Greed' if _fgv5_dial > 60 else 'Fear')) %}
@@ -7475,18 +7500,18 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {# Gradient decorative track #}
         <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="url(#sentGrad5)" stroke-width="18" stroke-linecap="round" opacity=".55"/>
         {# Needle — rotate(angle-90, cx=190, cy=185) where angle=dial/100*180 #}
-        <line x1="190" y1="185" x2="190" y2="30"
+        <line class="fg-mark-s" x1="190" y1="185" x2="190" y2="30"
               stroke="{{ _fgv5_col }}" stroke-width="4" stroke-linecap="round"
               transform="rotate({{ _fg_needle_rot }}, 190, 185)"
               filter="url(#dialGlow5)"/>
-        <circle cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke="{{ _fgv5_col }}" stroke-width="2.5"/>
-        <circle cx="190" cy="185" r="4"  fill="{{ _fgv5_col }}"/>
+        <circle class="fg-mark-s" cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke="{{ _fgv5_col }}" stroke-width="2.5"/>
+        <circle class="fg-mark-f" cx="190" cy="185" r="4"  fill="{{ _fgv5_col }}"/>
         {# Zone labels (≥11px per spec); NEUTRAL arc apex removed — zone word below already names state #}
-        <text x="20"  y="196" fill="#ef4444" font-size="13" font-family="-apple-system,sans-serif" font-weight="700">PANIC</text>
-        <text x="360" y="196" fill="#22d97a" font-size="13" font-family="-apple-system,sans-serif" text-anchor="end" font-weight="700">EUPHORIA</text>
+        <text class="fg-lab-panic" x="20"  y="196" fill="#ef4444" font-size="13" font-family="-apple-system,sans-serif" font-weight="700">PANIC</text>
+        <text class="fg-lab-euph" x="360" y="196" fill="#22d97a" font-size="13" font-family="-apple-system,sans-serif" text-anchor="end" font-weight="700">EUPHORIA</text>
       </svg>
     </div>
-    <div class="mx5-sentiment-zone-text" style="color:{{ _fgv5_col }}">
+    <div class="mx5-sentiment-zone-text" style="color:var(--fg-col, {{ _fgv5_col }})">
       <span class="l-en">{{ _fgv5_label_en }}</span>
       <span class="l-zh">{{ _fgv5_label_zh }}</span>
     </div>

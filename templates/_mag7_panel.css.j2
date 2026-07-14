@@ -86,3 +86,7 @@
     .m7p .m7p-legs .m7p-leg-name.l-zh,
     .m7p .m7p-legs .m7p-leg-name.l-en { font-size: 10.5px; }
   }
+  /* ── 红涨绿跌: directional colour flips for Chinese mode ── */
+  html[data-lang="zh"] .m7p.m7p-running_broad { --m7-col: var(--up); }
+  html[data-lang="zh"] .m7p.m7p-turning_up    { --m7-col: var(--up); }
+  html[data-lang="zh"] .m7p.m7p-down          { --m7-col: var(--down); }

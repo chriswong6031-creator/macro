@@ -21,10 +21,14 @@
   .dcard { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; border-left:4px solid var(--line); }
   .dcard.positive { border-left-color:#1f9a55; }
   .dcard.negative { border-left-color:#d23f3f; }
+  html[data-lang="zh"] .dcard.positive { border-left-color:#d23f3f; }
+  html[data-lang="zh"] .dcard.negative { border-left-color:#1f9a55; }
   .dcard .hd { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
   .sgn { font-size:10px; font-weight:800; padding:2px 8px; border-radius:6px; text-transform:uppercase; letter-spacing:.03em; }
   .sgn.positive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .sgn.negative { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  html[data-lang="zh"] .sgn.positive { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  html[data-lang="zh"] .sgn.negative { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .dcard .pair { font-weight:700; font-size:14px; }
   .dcard .det { font-size:12px; color:var(--muted); margin:5px 0; }
   .dcard .rs { font-size:12px; font-variant-numeric:tabular-nums; }
@@ -40,6 +44,11 @@
   table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
   table.data td { padding:7px 9px; border-bottom:1px solid var(--line); }
   .b-hit{color:#1f9a55}.b-miss{color:#d23f3f}.b-open{color:var(--muted)}
+  .r-pos{color:#1f9a55}.r-neg{color:#d23f3f}
+  html[data-lang="zh"] .r-pos{color:#d23f3f}
+  html[data-lang="zh"] .r-neg{color:#1f9a55}
+  html[data-theme="dark"][data-lang="zh"] .r-pos{color:#ff6b6b}
+  html[data-theme="dark"][data-lang="zh"] .r-neg{color:#4cd98a}
   .led-stat { display:flex; gap:18px; flex-wrap:wrap; margin:8px 0; font-size:13px; color:var(--muted); }
   .led-stat b { color:var(--text); font-size:17px; }
   .disc { font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.55; }
