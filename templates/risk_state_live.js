@@ -298,6 +298,14 @@
         if (col === "yellow") rpill.classList.add("rp-yellow");
         else if (col === "red") rpill.classList.add("rp-red");
       }
+      /* aurora backdrop: the green ambient blobs follow the verdict color too
+         (operator order 2026-07-14) — au-* variants defined in the page CSS. */
+      var aur = document.querySelector(".mx5-aurora");
+      if (aur) {
+        aur.classList.remove("au-yellow", "au-red");
+        if (col === "yellow") aur.classList.add("au-yellow");
+        else if (col === "red") aur.classList.add("au-red");
+      }
     }
     patchPath(d, disp);
     var front = word.closest(".ms-front") || word.closest(".ms");

@@ -1685,7 +1685,7 @@
 {# MX5 aurora backdrop — fixed-position static radial blooms; NOT background-attachment:fixed
    (mobile Safari artifact + CDN screenshot failure); scoped to grid view via CSS.
    Also the shared popover backdrop (one node, reused by both popovers). #}
-<div class="mx5-aurora" aria-hidden="true"><div class="mx5-a3"></div><div class="mx5-a4"></div></div>
+<div class="mx5-aurora{{ ' au-yellow' if (market_state and market_state.color == 'yellow') else (' au-red' if (market_state and market_state.color == 'red') else '') }}" aria-hidden="true"><div class="mx5-a3"></div><div class="mx5-a4"></div></div>
 <div class="mx5-popover-backdrop" id="mx5PopBackdrop" onclick="if(window.mx5CloseAllPopovers)mx5CloseAllPopovers()"></div>
 {% endif %}
 <nav class="site-nav">
@@ -3343,6 +3343,17 @@ body.page-macro.mx4-grid .mx5-aurora .mx5-a4{
 [data-theme="light"] body.page-macro.mx4-grid .mx5-aurora::after {background:radial-gradient(ellipse,rgba(99,102,241,.05) 0%,transparent 70%);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-aurora .mx5-a3{background:radial-gradient(ellipse,rgba(14,165,98,.04) 0%,transparent 70%);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-aurora .mx5-a4{background:radial-gradient(ellipse,rgba(99,102,241,.04) 0%,transparent 70%);}
+/* verdict-tinted aurora (operator order 2026-07-14): the two GREEN blobs follow the
+   market-state color — amber when Mixed, red when Risk-off; the indigo companions
+   stay neutral. Class baked from market_state.color + live-swapped by risk_state_live.js. */
+body.page-macro.mx4-grid .mx5-aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(245,158,11,.10) 0%,transparent 70%);}
+body.page-macro.mx4-grid .mx5-aurora.au-yellow .mx5-a3{background:radial-gradient(ellipse,rgba(245,158,11,.06) 0%,transparent 70%);}
+body.page-macro.mx4-grid .mx5-aurora.au-red::before{background:radial-gradient(ellipse,rgba(239,68,68,.10) 0%,transparent 70%);}
+body.page-macro.mx4-grid .mx5-aurora.au-red .mx5-a3{background:radial-gradient(ellipse,rgba(239,68,68,.06) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(156,98,18,.05) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-yellow .mx5-a3{background:radial-gradient(ellipse,rgba(156,98,18,.035) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-red::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-red .mx5-a3{background:radial-gradient(ellipse,rgba(220,38,38,.035) 0%,transparent 70%);}
 @media(prefers-reduced-motion:reduce){
   body.page-macro.mx4-grid .mx5-aurora::before,
   body.page-macro.mx4-grid .mx5-aurora::after,
