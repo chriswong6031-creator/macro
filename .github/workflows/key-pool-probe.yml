@@ -51,12 +51,20 @@ jobs:
       # hostedtoolcache dir (/Users/runner) doesn't exist and setup-python
       # dies with "mkdir: /Users/runner: Permission denied" (probe run
       # 29303838296 on actions-runner-3). Mirrors metabolism-cycle.yml.
-      - name: python 3.12 (Homebrew venv - self-hosted runner)
+      # macOS-only: /opt/homebrew/bin/python3.12 doesn't exist on ubuntu-latest,
+      # so the ubuntu-latest dispatch option gets setup-python instead.
+      - name: python 3.12 (Homebrew venv - self-hosted macOS runner)
+        if: runner.os == 'macOS'
         run: |
           VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
           [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - name: python 3.12 (setup-python - ubuntu-latest fallback)
+        if: runner.os == 'Linux'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: install minimal deps
         run: pip install --quiet anthropic pyyaml
       - name: probe each key (1-token call; names only, never values)

@@ -455,7 +455,14 @@ def _load_audit_by_proposal(base: Path) -> dict[str, dict]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _read_cycle_journals(base: Path, limit_cycles: int) -> list[dict]:
-    """Read the most recent cycle journals, sorted newest-first.
+    """Read journals for the most recent `limit_cycles` loops, newest-first.
+
+    A loop may be split across several per-lobe files (cycle-<id>.json plus
+    cycle-<id>-<lobe>.json).  The limit is applied per-LOOP (base cycle id),
+    not per file — slicing files[:limit_cycles] would both shrink the window
+    to ~limit_cycles/lobes loops and bisect the oldest loop's lobe files at the
+    boundary.  A loop's files share a filename prefix, so they are contiguous in
+    the reverse-sorted list; we stop once `limit_cycles` complete loops are in.
 
     Returns a list of raw journal dicts.  Never raises.
     """
@@ -464,13 +471,21 @@ def _read_cycle_journals(base: Path, limit_cycles: int) -> list[dict]:
         if not jdir.exists():
             return []
         files = sorted(jdir.glob("cycle-*.json"), reverse=True)
-        journals = []
-        for f in files[:limit_cycles]:
+        journals: list[dict] = []
+        seen_bases: set[str] = set()
+        for f in files:
             try:
                 j = json.loads(f.read_text(encoding="utf-8"))
-                journals.append(j)
             except Exception:  # noqa: BLE001
                 continue
+            cid = str(j.get("cycle_id") or "")
+            m = _BASE_CYCLE_RE.match(cid)
+            base_id = m.group(1) if m else (cid or f.stem)
+            if base_id not in seen_bases:
+                if len(seen_bases) >= limit_cycles:
+                    break  # collected `limit_cycles` complete loops; stop
+                seen_bases.add(base_id)
+            journals.append(j)
         return journals
     except Exception as exc:  # noqa: BLE001
         log.warning("metabolism_achievements._read_cycle_journals: %s", exc)
