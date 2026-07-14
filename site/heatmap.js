@@ -183,13 +183,13 @@
       // deep, saturated bins on the white board so every tile carries white text
       // (TradingView/Finviz light): even small moves stay dark enough to read.
       P[3] = up; P[2] = mix(up, nu, 0.74); P[1] = mix(up, nu, 0.46);
-      P[0] = nu;
+      P[0.5] = mix(up, nu, 0.26); P[0] = nu; P[-0.5] = mix(dn, nu, 0.26);
       P[-1] = mix(dn, nu, 0.46); P[-2] = mix(dn, nu, 0.74); P[-3] = dn;
       P.na = [150, 156, 166];
     } else {
       // deep, rich bins for the dark board; white labels throughout.
       P[3] = up; P[2] = mix(up, nu, 0.82); P[1] = mix(up, nu, 0.46);
-      P[0] = nu;
+      P[0.5] = mix(up, nu, 0.26); P[0] = nu; P[-0.5] = mix(dn, nu, 0.26);
       P[-1] = mix(dn, nu, 0.46); P[-2] = mix(dn, nu, 0.82); P[-3] = dn;
       P.na = mix(hexToRgb(cssVar('--panel2') || '#1e222a'), nu, 0.5);
     }
@@ -197,9 +197,14 @@
   }
   function binIndex(pc, edges) {
     if (pc == null || isNaN(pc)) return 'na';
+    if (pc === 0) return 0;
     var a = Math.abs(pc), s = pc < 0 ? -1 : 1;
     var lvl = a >= edges[2] ? 3 : a >= edges[1] ? 2 : a >= edges[0] ? 1 : 0;
-    return s * lvl || 0;
+    // Sub-threshold but non-flat moves keep a faint directional tint (a half-step,
+    // ±0.5) instead of collapsing into the flat-grey neutral — a slightly-green
+    // name must never read as "unchanged". These derive from the same up/dn
+    // tokens, so the zh red=up palette inverts them too.
+    return lvl === 0 ? s * 0.5 : s * lvl;
   }
 
   /* ----- squarified treemap (Bruls/van Wijk) ----- */
@@ -657,7 +662,7 @@
     function updateLegend() {
       var e = edgesFor(TF), pal = binPalette();
       var sw = '';
-      [-3, -2, -1, 0, 1, 2, 3].forEach(function (b) {
+      [-3, -2, -1, -0.5, 0, 0.5, 1, 2, 3].forEach(function (b) {
         sw += '<span class="hm-lg-sw" style="background:' + rgb(pal[b]) + '"></span>';
       });
       legendEl.innerHTML = '<span class="hm-lg-end">−' + edgeFmt(e[2]) + '%</span>'
@@ -1301,7 +1306,7 @@
     }
     function paintLegend() {
       var e = edgesFor(TF), pal = binPalette(), sw = '';
-      [-3, -2, -1, 0, 1, 2, 3].forEach(function (b) { sw += '<span class="hm-lg-sw" style="background:' + rgb(pal[b]) + '"></span>'; });
+      [-3, -2, -1, -0.5, 0, 0.5, 1, 2, 3].forEach(function (b) { sw += '<span class="hm-lg-sw" style="background:' + rgb(pal[b]) + '"></span>'; });
       root.querySelector('.hm-sc-legend').innerHTML = '<span class="hm-lg-end">−' + edgeFmt(e[2]) + '%</span>'
         + '<span class="hm-lg-sws">' + sw + '</span>'
         + '<span class="hm-lg-end">+' + edgeFmt(e[2]) + '%</span>';
