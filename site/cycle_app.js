@@ -275,10 +275,64 @@
   function mountHero() {
     var node = document.getElementById("cyc-chart");
     if (!node) return;
+
+    // mobile: wrap #cyc-chart in .cyc-chartwrap for fullscreen button positioning
+    if (window.innerWidth <= 880) {
+      var wrap = document.createElement("div");
+      // position comes from CSS (html.cyc-main .cyc-chartwrap) — an inline style here
+      // would out-rank the .cyc-fs { position:fixed } fullscreen rule and pin the wrap
+      wrap.className = "cyc-chartwrap";
+      node.parentNode.insertBefore(wrap, node);
+      wrap.appendChild(node);
+    }
+
     heroChart = window.MMChart.create(node, heroSpec());
     buildZoom();
     buildGroups();
+
+    // mobile: inject fullscreen button + set 15y default zoom
+    if (window.innerWidth <= 880) {
+      mountChartFsBtn();
+      heroChart.setView([XDOM[1] - 15, XDOM[1]], false);
+    }
   }
+
+  /* ---- fullscreen chart (mobile) ----------------------------------------- */
+  function mountChartFsBtn() {
+    var wrap = document.querySelector(".cyc-chartwrap");
+    if (!wrap || wrap.querySelector(".cyc-chart-fs-btn")) return;
+    var btn = document.createElement("button");
+    btn.className = "cyc-chart-fs-btn"; btn.type = "button";
+    btn.setAttribute("aria-label", "Expand chart");
+    btn.innerHTML = "&#x2922;";   // ⤢
+    btn.addEventListener("click", function () { toggleChartFs(); });
+    wrap.appendChild(btn);
+  }
+
+  function toggleChartFs(force) {
+    var wrap = document.querySelector(".cyc-chartwrap"); if (!wrap) return;
+    var on = typeof force === "boolean" ? force : !wrap.classList.contains("cyc-fs");
+    wrap.classList.toggle("cyc-fs", on);
+    var btn = wrap.querySelector(".cyc-chart-fs-btn");
+    if (btn) {
+      btn.innerHTML = on ? "&#x2715;" : "&#x2922;";   // ✕ ↔ ⤢
+      btn.setAttribute("aria-label", on ? "Exit full screen" : "Expand chart");
+    }
+    // the sheet's full detent also holds the body scroll-lock — hand it back, don't clear it
+    document.body.style.overflow = on ? "hidden" : (sheetDetent === "full" ? "hidden" : "");
+    var sv = document.querySelector("#cyc-chart svg");
+    if (sv) sv.style.touchAction = on ? "none" : "pan-y";
+    if (heroChart) heroChart.resize();
+  }
+
+  // Escape key: fullscreen-exit takes priority over sheet collapse
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      var w = document.querySelector(".cyc-chartwrap.cyc-fs");
+      if (w) { toggleChartFs(false); return; }   // fullscreen exits first
+      // sheet Escape is handled inside initSheet (only runs after initSheet has wired it)
+    }
+  });
 
   /* ---- zoom controls ----------------------------------------------------- */
   function buildZoom() {
@@ -290,7 +344,10 @@
       { label: L("8y", "8年"), d: [XDOM[1] - 9, XDOM[1] - 1] },
       { label: L("Cycle", "本轮"), d: [Math.round(TODAY) - 2, Math.round(TODAY) + 3] }
     ];
-    z.innerHTML = '<span class="cyc-zhint">' + L("scroll · drag", "滚动 · 拖拽") + '</span>' +
+    var zoomHint = window.innerWidth <= 880
+      ? L("pinch · drag", "双指缩放 · 拖动")
+      : L("scroll · drag", "滚动 · 拖拽");
+    z.innerHTML = '<span class="cyc-zhint">' + zoomHint + '</span>' +
       presets.map(function (p, i) { return '<button class="cyc-zbtn" data-i="' + i + '">' + p.label + '</button>'; }).join("") +
       '<button class="cyc-zbtn cyc-zreset" id="cyc-zreset">' + L("Reset ⤢", "重置 ⤢") + '</button>';
     presets.forEach(function (p, i) {
@@ -1076,20 +1133,113 @@
     });
   }
 
-  /* ---- mobile bottom sheet ----------------------------------------------- */
-  function expandSheet(on) { var s = document.getElementById("cyc-detail"); if (s) s.classList.toggle("expanded", on !== false); }
+  /* ---- mobile bottom sheet — multi-detent (port of sector_cycles.js IS_CN branch) ---
+     Three detents: peek (126px visible, the rest/pre-JS state), half (52vh), full (modal).
+     Desktop (>880px): initSheet no-ops via isMobile() guard — existing layout unchanged.  */
+  function isMobile() { return window.innerWidth <= 880; }
+
+  var sheetDetent = "peek";
+
+  function _cyScrim() {
+    var s = document.getElementById("cy-scrim");
+    if (!s) {
+      s = document.createElement("div"); s.className = "cyc-scrim"; s.id = "cy-scrim";
+      // same dismissal semantics as ✕ / Escape: clear focus AND collapse
+      s.addEventListener("click", function () { setFocus(null); setDetent("peek"); });
+      document.body.appendChild(s);
+    }
+    return s;
+  }
+
+  function setDetent(d) {
+    var sheet = document.getElementById("cyc-detail"); if (!sheet) return;
+    sheetDetent = d;
+    sheet.classList.toggle("cy-half", d === "half");
+    sheet.classList.toggle("cy-full", d === "full");
+    var modal = d === "full", scrim = _cyScrim();
+    scrim.style.opacity = modal ? "1" : "0";
+    scrim.style.pointerEvents = modal ? "auto" : "none";
+    document.body.style.overflow = modal ? "hidden" : "";
+  }
+
+  /* expandSheet(on): called by setFocus when focusing on mobile.
+     on=true → half detent (replaces old .expanded add);
+     on=false → no longer collapses the sheet (leave detent as-is per spec). */
+  function expandSheet(on) {
+    if (!isMobile()) return;
+    if (on) setDetent("half");
+    // on=false: intentionally does not collapse (spec: clearing focus leaves detent as-is)
+  }
+
+  function detentPx() {
+    var H = (document.getElementById("cyc-detail") || {}).getBoundingClientRect
+          ? document.getElementById("cyc-detail").getBoundingClientRect().height : window.innerHeight * 0.92;
+    var ih = window.innerHeight;
+    return { full: 0, half: H - ih * 0.52, peek: H - 126 };
+  }
+
   function initSheet() {
     var sheet = document.getElementById("cyc-detail"), handle = document.getElementById("cyc-handle");
     if (!sheet || !handle) return;
-    handle.addEventListener("click", function () { sheet.classList.toggle("expanded"); });
-    var startY = 0, dragging = false;
-    handle.addEventListener("touchstart", function (e) { startY = e.touches[0].clientY; dragging = true; }, { passive: true });
+    if (!isMobile()) return;   // desktop: no-op; base CSS handles the peek rest state
+
+    // inject ✕ close button into the handle (once)
+    if (!handle.querySelector(".cy-sheet-x")) {
+      var x = document.createElement("button");
+      x.className = "cy-sheet-x"; x.type = "button";
+      x.setAttribute("aria-label", "Close"); x.innerHTML = "&#x2715;";
+      x.addEventListener("click", function (e) {
+        e.stopPropagation(); setFocus(null); setDetent("peek");
+      });
+      handle.appendChild(x);
+    }
+
+    // tap the handle: peek ↔ half; from full → half
+    handle.addEventListener("click", function (e) {
+      if (e.target.closest(".cy-sheet-x")) return;
+      setDetent(sheetDetent === "full" ? "half" : sheetDetent === "half" ? "peek" : "half");
+    });
+
+    // 1:1 finger-follow drag with rubber-band + velocity flick
+    var startY = 0, baseTY = 0, lastY = 0, lastT = 0, prevY = 0, prevT = 0, dragging = false;
+    function rubber(v, min, max) {
+      var d = window.innerHeight;
+      if (v < min) { var o = min - v; return min - (1 - 1 / ((o * 0.55 / d) + 1)) * d; }
+      if (v > max) { var o2 = v - max; return max + (1 - 1 / ((o2 * 0.55 / d) + 1)) * d; }
+      return v;
+    }
+    handle.addEventListener("touchstart", function (e) {
+      dragging = true; startY = e.touches[0].clientY; baseTY = detentPx()[sheetDetent];
+      prevY = lastY = startY; prevT = lastT = e.timeStamp;
+      sheet.classList.add("cy-dragging");
+    }, { passive: true });
     handle.addEventListener("touchmove", function (e) {
       if (!dragging) return;
-      var dy = e.touches[0].clientY - startY;
-      if (dy < -30) sheet.classList.add("expanded"); else if (dy > 40) sheet.classList.remove("expanded");
+      var y = e.touches[0].clientY, det = detentPx();
+      sheet.style.transform = "translateY(" + rubber(baseTY + (y - startY), det.full, det.peek) + "px)";
+      prevY = lastY; prevT = lastT; lastY = y; lastT = e.timeStamp;
     }, { passive: true });
-    handle.addEventListener("touchend", function () { dragging = false; });
+    handle.addEventListener("touchend", function () {
+      if (!dragging) return; dragging = false;
+      var det = detentPx(), pos = baseTY + (lastY - startY);
+      var dt = lastT - prevT, vel = dt > 0 ? (lastY - prevY) / dt : 0;   // px/ms, +down
+      var order = ["full", "half", "peek"], target;
+      if (Math.abs(vel) > 0.5) {
+        var ci = order.indexOf(sheetDetent); target = order[clamp(ci + (vel > 0 ? 1 : -1), 0, 2)];
+      } else {
+        var bd = Infinity; order.forEach(function (k) { var dd = Math.abs(det[k] - pos); if (dd < bd) { bd = dd; target = k; } });
+      }
+      sheet.classList.remove("cy-dragging");
+      sheet.style.transform = "";   // hand back to CSS class transform (animates settle)
+      setDetent(target);
+    });
+
+    // Escape: if not at peek AND no fullscreen chart is active, return to peek
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && sheetDetent !== "peek" && !document.querySelector(".cyc-chartwrap.cyc-fs")) {
+        setFocus(null); setDetent("peek");
+      }
+    });
   }
 
   /* ---- staleness banner (W0.1) ------------------------------------------- */
