@@ -1,0 +1,76 @@
+name: deploy-analytics
+
+# One-shot deploy tail for the first-party analytics feature (already merged to main):
+#   1. apply the Supabase migration — run ON the VPS using the box's OWN /etc/macro-admin.env token
+#      (SUPABASE_ACCESS_TOKEN never leaves the operator's server; the CI runner never sees it);
+#   2. wire the service-role key into /etc/macro-api.env (from the SUPABASE_SERVICE_KEY repo secret)
+#      so the FastAPI collector can insert;
+#   3. wire the IPLocate key into /etc/macro-admin.env (from the IPLOCATE_API_KEY repo secret) for the
+#      admin "Enrich now" button;
+#   4. restart macro-api + admin and verify a live beacon lands a row.
+# Uses existing repo secrets only (VPS_DEPLOY_KEY, SUPABASE_SERVICE_KEY, IPLOCATE_API_KEY). Idempotent
+# — safe to re-run. Runs on GitHub-hosted ubuntu (no self-hosted-runner dependency). Manual dispatch.
+
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-analytics
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SSH setup
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_DEPLOY_KEY }}" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          ssh-keyscan -H 146.190.142.17 >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy analytics (migrate + wire + restart + verify)
+        env:
+          SRK: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          IPK: ${{ secrets.IPLOCATE_API_KEY }}
+        run: |
+          set -eo pipefail
+          SSH="ssh -i $HOME/.ssh/deploy -o BatchMode=yes -o ConnectTimeout=15 root@146.190.142.17"
+          SCP="scp -i $HOME/.ssh/deploy -o BatchMode=yes"
+
+          echo "== 1. ship + apply migration (VPS-native token) =="
+          $SCP scripts/deploy/analytics_migrate.py root@146.190.142.17:/tmp/analytics_migrate.py
+          $SCP scripts/deploy/0004_analytics.sql   root@146.190.142.17:/tmp/0004_analytics.sql
+          $SSH 'set -a; . /etc/macro-admin.env; set +a; python3 /tmp/analytics_migrate.py /tmp/0004_analytics.sql'
+
+          echo "== 2. wire macro-api service-role key (idempotent) =="
+          # write the line locally (secret is masked in logs), scp it, append on the box — keeps the
+          # value off the remote command line.
+          printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SRK" > /tmp/srk.line
+          $SCP /tmp/srk.line root@146.190.142.17:/tmp/srk.line
+          $SSH 'grep -q "^SUPABASE_SERVICE_ROLE_KEY=" /etc/macro-api.env 2>/dev/null && echo "macro-api SR key: present" || { cat /tmp/srk.line >> /etc/macro-api.env && echo "macro-api SR key: appended"; }; rm -f /tmp/srk.line'
+          rm -f /tmp/srk.line
+
+          echo "== 3. wire admin IPLocate key (idempotent) =="
+          printf 'IPLOCATE_API_KEY=%s\n' "$IPK" > /tmp/ipk.line
+          $SCP /tmp/ipk.line root@146.190.142.17:/tmp/ipk.line
+          $SSH 'grep -q "^IPLOCATE_API_KEY=" /etc/macro-admin.env 2>/dev/null && echo "admin IPLocate: present" || { cat /tmp/ipk.line >> /etc/macro-admin.env && echo "admin IPLocate: appended"; }; rm -f /tmp/ipk.line'
+          rm -f /tmp/ipk.line
+
+          echo "== 4. restart services =="
+          $SSH 'systemctl restart macro-api.service admin.service; sleep 3; echo "macro-api=$(systemctl is-active macro-api.service) admin=$(systemctl is-active admin.service)"'
+
+          echo "== 5. verify: live beacon -> row =="
+          $SSH 'curl -s -o /dev/null -w "collect_http=%{http_code}\n" -X POST http://127.0.0.1:8000/api/collect -H "Content-Type: application/json" -d "{\"events\":[{\"type\":\"pageview\",\"site\":\"macro\",\"path\":\"/__deploy_ci\",\"sid\":\"ci_test\"}]}"'
+          sleep 3
+          $SSH 'set -a; . /etc/macro-admin.env; set +a; python3 - <<PY
+          import json,os,urllib.request
+          ref=os.environ.get("SUPABASE_PROJECT_REF","fsldfzlxyavsuwqbceod")
+          r=urllib.request.Request(f"https://api.supabase.com/v1/projects/{ref}/database/query",
+            data=json.dumps({"query":"select count(*)::int n, max(created_at) last from public.analytics_events"}).encode(),
+            method="POST",headers={"Authorization":"Bearer "+os.environ["SUPABASE_ACCESS_TOKEN"],"Content-Type":"application/json"})
+          print("analytics_events:",urllib.request.urlopen(r).read().decode())
+          PY'
