@@ -118,6 +118,7 @@ def all_adapters() -> dict:
         ("cboe_gex", "collectors.cboe", "GexAdapter"),
         ("cboe_skew", "collectors.cboe_indices", "CboeSkewAdapter"),   # tail-risk index (research/QUANT_FACTOR_EXPANSION.md)
         ("cboe_vvix", "collectors.cboe_indices", "CboeVvixAdapter"),   # vol-of-vol 2006+ -> engine/vol_regime VVIX-VIX leg (research/VOL_REGIME_DATA_ACCRUAL.md)
+        ("cboe_cor_vol", "collectors.cboe_indices", "CboeCorVolAdapter"),  # COR1M/COR3M 2006+ implied correlation + DSPX/VIXEQ/VIX1D — persist-only (VSB W1; replaces the silently-dead yahoo ^COR1M/^COR3M)
         ("cboe_vix_futures", "collectors.cboe_vix_futures", "CboeVixFuturesAdapter"),  # front VX settle (sanitizer) + full M1..M6 curve (forward-accruing; research/VOL_REGIME_DATA_ACCRUAL.md)
         ("fedboard_ebp", "collectors.fedboard", "EbpAdapter"),         # Excess Bond Premium (credit risk-appetite)
         ("sovereign", "collectors.sovereign", "SovereignAdapter"),     # ECB euro-area + JGB sovereign yields (Bonds Phase 5)
@@ -744,6 +745,17 @@ def main() -> int:
     status["circuit_breaker"], status["circuit_breaker_probe"] = update_breaker(
         results, status.get("circuit_breaker_probe"))
     store.write_status(status)
+
+    # VSB W1a: store-level freshness/row-floor tripwire for the CBOE cor/vol family.
+    # Catches the failure mode detect_stale_series cannot see — an expected series that
+    # never lands in the store at all (the yahoo ^COR1M/^COR3M silent 1-row stub).
+    # Runs AFTER write_status so its stale_series entries survive the merge. Warn-only.
+    if "cboe_cor_vol" in registry:
+        try:
+            from collectors.cboe_indices import check_cor_vol_freshness
+            check_cor_vol_freshness()
+        except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
+            log.warning("cor/vol freshness tripwire crashed (non-fatal): %s", e)
 
     ok = sum(1 for r in results if r.status in ("ok", "stale"))
     log.info("collection done: %d/%d sources usable", ok, len(results))
