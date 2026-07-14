@@ -364,7 +364,7 @@ function setActiveNav(id) {
 function setTopbarTitle(t) { const el = $("#topbar-title"); if (el) el.textContent = t; }
 
 function go(id) {
-  if (currentLobeId()) history.replaceState(null, "", location.pathname + location.search);
+  if (currentLobeId() || currentAnalyticsDetail()) history.replaceState(null, "", location.pathname + location.search);
   CURRENT = id;
   if (RT_TIMER)   { clearInterval(RT_TIMER);   RT_TIMER   = null; }
   if (LOOP_TIMER) { clearInterval(LOOP_TIMER); LOOP_TIMER = null; }
@@ -388,6 +388,8 @@ function backToObservatory() {
 function route() {
   const id = currentLobeId();
   if (id) { renderLobeDetail(id); return; }
+  const det = currentAnalyticsDetail();
+  if (det) { (det.kind === "session" ? renderSessionDetail : renderVisitorDetail)(det.id); return; }
   go(CURRENT || "overview");
 }
 window.addEventListener("hashchange", route);
@@ -646,47 +648,241 @@ RENDER.vector = async () => {
     </div>`;
 };
 
-/* ---- ANALYTICS (Umami) -------------------------------------------------- */
-RENDER.analytics = async () => {
-  const v = $("#view");
-  const st = await api("/api/analytics");
-  const dash = st.dashboard_url || "https://cloud.umami.is";
-  if (!st.configured) {
-    v.innerHTML = `
-      <div class="grid">
-        ${card("Visitor tracking", `<div class="big" style="color:var(--ok);font-size:20px">● Live</div><div class="sub">running on every page · site ID <code>${esc((st.website_id || "").slice(0, 8))}…</code></div>`)}
-        ${card("Live charts here", `<div class="big" style="color:var(--warn);font-size:18px">Not connected</div><div class="sub">${esc(st.reason || "")}</div>`)}
-        ${card("Full dashboard", `<div style="margin-top:6px"><a class="btn primary" href="${esc(dash)}" target="_blank" rel="noopener">Open Umami ↗</a></div>`)}
-      </div>
-      <div class="section">Show live charts on this page</div>
-      <div class="card"><ol class="steps">${(st.setup_steps || []).map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>`;
-    return;
-  }
-  v.innerHTML = `
+/* ---- ANALYTICS (first-party, self-hosted) ------------------------------------
+   Reads our own analytics_events / search_events / ip_geo via /api/analytics/fp/*.
+   Sub-tabs lazy-load each panel; Umami/GA4 remain as a third-party cross-check.
+   Session replay + visitor identity are hash sub-pages (#/session/… , #/visitor/…). */
+let AN = { tab: "overview", days: 7 };
+const AN_TABS = [["overview", "Overview"], ["pages", "Pages"], ["geo", "Map"], ["sessions", "Sessions"], ["flow", "Flow"], ["terminal", "Terminal"]];
+const AN_RENDER = {};
+
+function anNotReady(d) {
+  return `<div class="card"><h3>First-party analytics — not connected</h3>
+    <div class="sub">${esc(d.reason || d.error || "no data yet — the tracker + tables may not be live")}</div>
+    <ol class="steps" style="margin-top:10px">${(d.setup_steps || []).map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>`;
+}
+/* horizontal ranked bars. labelFn(row)->html, valKey numeric; opt.fmt, opt.sub(row)->html */
+function anBars(rows, labelFn, valKey, opt) {
+  opt = opt || {};
+  const fmt = opt.fmt || fmtNum;
+  const max = Math.max(1, ...rows.map(r => Number(r[valKey]) || 0));
+  return rows.map(r => {
+    const val = Number(r[valKey]) || 0;
+    const sub = opt.sub ? `<span class="an-bsub">${opt.sub(r)}</span>` : "";
+    return `<div class="an-brow"><div class="an-blabel">${labelFn(r)}${sub}</div>
+      <div class="an-btrack"><i style="width:${Math.round(val / max * 100)}%"></i></div><b class="an-bval">${fmt(val)}</b></div>`;
+  }).join("") || `<div class="muted sub">no data yet</div>`;
+}
+/* equirectangular dot map (no world GeoJSON dependency): dot per city by lat/lon, sized by visitors */
+function anDotMap(cities) {
+  const W = 720, H = 320;
+  const proj = (lat, lon) => [(Number(lon) + 180) / 360 * W, (90 - Number(lat)) / 180 * H];
+  const pts = cities.filter(c => c.lat != null && c.lon != null);
+  const max = Math.max(1, ...pts.map(c => c.visitors || 0));
+  let grid = "";
+  for (let lon = -180; lon <= 180; lon += 30) { const x = (lon + 180) / 360 * W; grid += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="var(--border)" stroke-width="0.5"/>`; }
+  for (let lat = -60; lat <= 60; lat += 30) { const y = (90 - lat) / 180 * H; grid += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>`; }
+  const dots = pts.map(c => {
+    const [x, y] = proj(c.lat, c.lon), r = 2 + Math.sqrt((c.visitors || 1) / max) * 11;
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="var(--accent)" fill-opacity="0.4" stroke="var(--accent)" stroke-width="0.8"><title>${esc((c.city || "?") + (c.country_code ? ", " + c.country_code : ""))}: ${fmtNum(c.visitors)} visitors</title></circle>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;background:var(--surface2);border-radius:var(--r-md)" role="img" aria-label="visitor city map">${grid}${dots}</svg>
+    <div class="sub" style="margin-top:6px">Equirectangular dot map · dot size = visitors · hover a dot for the city</div>`;
+}
+function anFlags(r) {
+  const f = [];
+  if (r.is_vpn) f.push('<span class="statpill s-warn">VPN</span>');
+  if (r.is_proxy) f.push('<span class="statpill s-warn">proxy</span>');
+  if (r.is_hosting) f.push('<span class="statpill s-mut">host</span>');
+  return f.join(" ") || '<span class="sub">—</span>';
+}
+function anTimelineRow(ev) {
+  const icon = { pageview: "◉", route: "→", ticker_view: "📈", search: "🔎", terminal_jump: "⤢", click: "·", scroll: "↕", session_start: "●", exit: "⏻", heartbeat: "·" }[ev.type] || "·";
+  const detail = ev.ticker ? `<b class="mono">${esc(ev.ticker)}</b>` : `<span class="mono">${esc(ev.path || "")}</span>`;
+  const dwell = ev.dwell_ms ? `<span class="an-tw">${(ev.dwell_ms / 1000).toFixed(1)}s</span>` : "";
+  const scr = (ev.scroll != null && ev.scroll !== "") ? `<span class="an-tw">${ev.scroll}%↕</span>` : "";
+  return `<div class="an-trow"><span class="an-tt mono">${esc(ev.t || "")}</span><span class="an-ti">${icon}</span><span class="an-ty">${esc(ev.type)}</span><span class="an-td">${detail}</span>${dwell}${scr}</div>`;
+}
+async function anLoad(sub) {
+  const body = $("#anBody"); if (!body) return;
+  body.innerHTML = `<div class="spin">loading…</div>`;
+  try { await (AN_RENDER[sub] || AN_RENDER.overview)(); }
+  catch (e) { body.innerHTML = card("Error", `<div class="sub">${esc(String((e && e.message) || e))}</div>`); }
+}
+async function anUmamiStrip() {
+  const c = $("#anUmamiCard"); if (!c) return;
+  try {
+    const st = await api("/api/analytics");
+    const dash = (st && st.dashboard_url) || "https://cloud.umami.is";
+    if (!st.configured) { c.innerHTML = `<div class="sub">Umami tag live on every page; the granular API needs a paid plan. GA4 is GFW-blocked for China. <a href="${esc(dash)}" target="_blank" rel="noopener">Open Umami ↗</a></div>`; return; }
+    const rep = await api("/api/analytics/report?days=7");
+    c.innerHTML = rep.ok
+      ? `<div class="sub">Umami (7d): <b>${fmtNum(rep.summary.visitors)}</b> visitors · <b>${fmtNum(rep.summary.pageviews)}</b> pageviews · <a href="${esc(dash)}" target="_blank" rel="noopener">dashboard ↗</a></div>`
+      : `<div class="sub">${esc(rep.error || "Umami not available")}</div>`;
+  } catch (e) { c.innerHTML = `<div class="sub muted">cross-check unavailable</div>`; }
+}
+
+AN_RENDER.overview = async () => {
+  const d = await api(`/api/analytics/fp/overview?days=${AN.days}`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  const w = d.window || {}, at = d.alltime || {}, daily = d.daily || [];
+  const maxV = Math.max(1, ...daily.map(x => x.visitors));
+  b.innerHTML = `
     <div class="grid">
-      ${card("Active now", `<div class="big" id="aNow">…</div><div class="sub">last 5 min</div>`)}
-      ${card("Visitors (7d)", `<div class="big" id="aVis">…</div><div class="sub" id="aVisits"></div>`)}
-      ${card("Pageviews (7d)", `<div class="big" id="aPv">…</div><div class="sub"><a href="${esc(dash)}" target="_blank" rel="noopener">dashboard ↗</a></div>`)}
+      ${card(`Visitors (${d.days}d)`, `<div class="big">${fmtNum(w.visitors)}</div><div class="sub">${fmtNum(at.visitors)} all-time</div>`)}
+      ${card(`Sessions (${d.days}d)`, `<div class="big">${fmtNum(w.sessions)}</div><div class="sub">${fmtNum(w.events)} events</div>`)}
+      ${card(`Pageviews (${d.days}d)`, `<div class="big">${fmtNum(w.pageviews)}</div><div class="sub">${fmtNum(w.ticker_views)} ticker views</div>`)}
+      ${card(`Searches (${d.days}d)`, `<div class="big">${fmtNum(w.searches)}</div><div class="sub">tickers searched</div>`)}
+    </div>
+    <div class="section">Visitors per day</div>
+    <div class="card"><div class="spark tall">${daily.map(x => `<i style="height:${Math.round(x.visitors / maxV * 100)}%" title="${esc(x.day)}: ${x.visitors} visitors · ${x.events} events"></i>`).join("") || "<span class='muted'>no data yet</span>"}</div></div>
+    <div class="section">By site</div>
+    <div class="card">${anBars(d.by_site || [], r => `<b>${esc(r.site || "—")}</b>`, "visitors", { sub: r => `${fmtNum(r.events)} events` })}</div>
+    <div class="section">Third-party cross-check</div>
+    <div class="card" id="anUmamiCard"><div class="sub">loading…</div></div>`;
+  anUmamiStrip();
+};
+AN_RENDER.pages = async () => {
+  const d = await api(`/api/analytics/fp/pages?days=${AN.days}&limit=40`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  const rows = d.pages || [];
+  b.innerHTML = `<div class="section">Top pages (${d.days}d) <span class="cnt">${rows.length}</span></div>
+    <table><thead><tr><th>Site</th><th>Path</th><th class="r">Views</th><th class="r">Visitors</th><th class="r">Avg dwell</th></tr></thead><tbody>
+    ${rows.map(r => `<tr><td class="sub">${esc(r.site || "")}</td><td class="mono">${esc(r.path || "")}</td><td class="r">${fmtNum(r.views)}</td><td class="r">${fmtNum(r.visitors)}</td><td class="r sub">${r.avg_dwell_ms ? (r.avg_dwell_ms / 1000).toFixed(1) + "s" : "—"}</td></tr>`).join("") || "<tr><td colspan='5' class='muted'>no data yet</td></tr>"}
+    </tbody></table>`;
+};
+AN_RENDER.geo = async () => {
+  const d = await api(`/api/analytics/fp/geo?days=${AN.days}&limit=250`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  const countries = d.countries || [], cities = d.cities || [];
+  const unresolved = countries.some(c => !c.country_code);
+  b.innerHTML = `<div class="card">${anDotMap(cities)}</div>
+    <div class="grid" style="margin-top:14px">
+      <div class="card"><h3>Countries (${d.days}d)</h3>${anBars(countries.slice(0, 15), r => `${esc(r.country || "—")}${r.country_code ? ` <span class="an-cc">${esc(r.country_code)}</span>` : ""}`, "visitors")}</div>
+      <div class="card"><h3>Cities</h3>${anBars(cities.slice(0, 15), r => `${esc(r.city || "—")}`, "visitors", { sub: r => esc(r.country_code || "") })}</div>
+    </div>
+    ${unresolved ? `<div class="sub" style="margin-top:10px">Some IPs aren't geolocated yet — the geo-enrich job backfills them every 30 min. <button class="btn" id="anGeoNow">Enrich now</button></div>` : ""}`;
+  const g = $("#anGeoNow");
+  if (g) g.onclick = async () => { g.disabled = true; g.textContent = "enriching…"; const r = await post("/api/analytics/fp/geo_enrich", { budget: 300 }); toast(r.ok ? "geo enriched" : (r.reason || "failed"), !r.ok); anLoad("geo"); };
+};
+AN_RENDER.sessions = async () => {
+  const d = await api(`/api/analytics/fp/sessions?limit=60`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  const rows = d.sessions || [];
+  b.innerHTML = `<div class="section">Recent sessions <span class="cnt">${rows.length}</span> <span class="sub">— click replay to see the exact path</span></div>
+    <table><thead><tr><th>Started</th><th>Visitor</th><th>Site</th><th>Location</th><th class="r">Pages</th><th class="r">Events</th><th class="r">Duration</th><th></th></tr></thead><tbody>
+    ${rows.map(s => `<tr><td class="mono sub">${esc(s.started || "")}</td>
+      <td><a class="mono" href="#/visitor/${encodeURIComponent(s.visitor_id || "")}">${esc((s.visitor_id || "—").slice(0, 8))}…</a></td>
+      <td class="sub">${esc(s.site || "")}</td>
+      <td class="sub">${esc(s.city || "—")}${s.country_code ? ", " + esc(s.country_code) : ""}</td>
+      <td class="r">${fmtNum(s.pages)}</td><td class="r">${fmtNum(s.events)}</td>
+      <td class="r sub">${s.duration_s != null ? fmtElapsedSec(s.duration_s) : "—"}</td>
+      <td><a class="btn sm" href="#/session/${encodeURIComponent(s.session_id || "")}">replay ▸</a></td></tr>`).join("") || "<tr><td colspan='8' class='muted'>no sessions yet</td></tr>"}
+    </tbody></table>`;
+};
+AN_RENDER.flow = async () => {
+  const d = await api(`/api/analytics/fp/flow?days=${AN.days}&limit=40`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  b.innerHTML = `<div class="section">Navigation patterns (${d.days}d) <span class="sub">— most common page-to-page moves across all visitors</span></div>
+    <div class="card">${anBars(d.edges || [], r => `<span class="mono an-from">${esc(r.from_path || "")}</span> <span class="an-arrow">→</span> <span class="mono an-to">${esc(r.to_path || "")}</span>`, "n")}</div>`;
+};
+AN_RENDER.terminal = async () => {
+  const d = await api(`/api/analytics/fp/terminal?days=${AN.days}&limit=25`);
+  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
+  const t = d.totals || {};
+  b.innerHTML = `<div class="grid">
+      ${card(`Ticker searches (${d.days}d)`, `<div class="big">${fmtNum(t.search_total)}</div><div class="sub">Terminal + macro nav search</div>`)}
+      ${card(`Ticker views (${d.days}d)`, `<div class="big">${fmtNum(t.view_total)}</div><div class="sub">charts opened</div>`)}
     </div>
     <div class="grid" style="margin-top:14px">
-      <div class="card"><h3>Top pages (7d)</h3><div id="aPages" class="sub">loading…</div></div>
-      <div class="card"><h3>Top countries (7d)</h3><div id="aCty" class="sub">loading…</div></div>
-      <div class="card"><h3>Top referrers (7d)</h3><div id="aRef" class="sub">loading…</div></div>
+      <div class="card"><h3>Most searched</h3>${anBars(d.top_searches || [], r => `<b class="mono">${esc(r.ticker || "")}</b>`, "searches", { sub: r => `${fmtNum(r.visitors)} visitors` })}</div>
+      <div class="card"><h3>Most viewed</h3>${anBars(d.top_views || [], r => `<b class="mono">${esc(r.ticker || "")}</b>`, "views", { sub: r => `${fmtNum(r.visitors)} visitors` })}</div>
     </div>`;
+};
+
+RENDER.analytics = async () => {
+  const v = $("#view");
+  v.innerHTML = `
+    <div class="an-bar">
+      <div class="an-tabs">${AN_TABS.map(([id, l]) => `<button class="an-tab${AN.tab === id ? " active" : ""}" data-at="${id}">${l}</button>`).join("")}</div>
+      <span class="an-spacer"></span>
+      <span class="pill an-live" title="visitors active in the last 5 minutes"><span class="led ok"></span>&nbsp;<b id="anLiveN">…</b>&nbsp;active</span>
+      <select id="anDays" class="an-days" title="time window"><option value="1">24h</option><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option></select>
+    </div>
+    <div id="anBody"><div class="spin">loading…</div></div>`;
+  $("#anDays").value = String(AN.days);
+  $("#anDays").onchange = (e) => { AN.days = parseInt(e.target.value, 10) || 7; anLoad(AN.tab); };
+  $(".an-tabs").addEventListener("click", (e) => {
+    const btn = e.target.closest(".an-tab"); if (!btn) return;
+    AN.tab = btn.dataset.at;
+    document.querySelectorAll(".an-tab").forEach(x => x.classList.toggle("active", x.dataset.at === AN.tab));
+    anLoad(AN.tab);
+  });
   const poll = async () => {
-    if (CURRENT !== "analytics" || !$("#aNow")) { if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; } return; }
-    const a = await api("/api/analytics/active"); const el = $("#aNow"); if (el) el.textContent = a.ok ? a.active : "—";
+    if (CURRENT !== "analytics" || !$("#anLiveN")) { if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; } return; }
+    try { const r = await api("/api/analytics/fp/realtime"); const el = $("#anLiveN"); if (el) el.textContent = r.ok ? fmtNum((r.active || {}).visitors) : "—"; } catch (e) {}
   };
   RT_TIMER = setInterval(poll, 15000); poll();
-  const rep = await api("/api/analytics/report?days=7");
-  if (rep.ok) {
-    $("#aVis").textContent = fmtNum(rep.summary.visitors); $("#aVisits").textContent = fmtNum(rep.summary.visits) + " visits";
-    $("#aPv").textContent = fmtNum(rep.summary.pageviews);
-    $("#aPages").innerHTML = (rep.top_pages || []).map(p => `<div class="kv"><span class="mono">${esc(p.path)}</span><b>${fmtNum(p.views)}</b></div>`).join("") || "<span class='muted'>none</span>";
-    $("#aCty").innerHTML = (rep.top_countries || []).map(c => `<div class="kv"><span>${esc(c.country)}</span><b>${fmtNum(c.visitors)}</b></div>`).join("") || "<span class='muted'>none</span>";
-    $("#aRef").innerHTML = (rep.top_referrers || []).map(r => `<div class="kv"><span class="mono">${esc(r.referrer)}</span><b>${fmtNum(r.visitors)}</b></div>`).join("") || "<span class='muted'>none</span>";
-  } else { $("#aPages").textContent = rep.error || "no data"; }
+  anLoad(AN.tab);
 };
+
+/* detail "pages" (hash-routed) — session replay + visitor identity */
+function currentAnalyticsDetail() {
+  let m = location.hash.match(/^#\/session\/(.+)$/); if (m) return { kind: "session", id: decodeURIComponent(m[1]) };
+  m = location.hash.match(/^#\/visitor\/(.+)$/); if (m) return { kind: "visitor", id: decodeURIComponent(m[1]) };
+  return null;
+}
+function anDetailHead(title) {
+  const head = h(`<div class="an-detail-head"><a class="btn" href="#" id="anBack">← Analytics</a><span class="an-detail-title">${title}</span></div>`);
+  return head;
+}
+async function renderSessionDetail(id) {
+  if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
+  CURRENT = "analytics"; setActiveNav("analytics"); setTopbarTitle("Session replay");
+  const v = $("#view");
+  v.innerHTML = `<div class="an-detail-head"><a class="btn" href="#" id="anBack">← Analytics</a><span class="an-detail-title">Session <code>${esc(id.slice(0, 12))}…</code></span></div><div id="anDet"><div class="spin">loading…</div></div>`;
+  $("#anBack").onclick = (e) => { e.preventDefault(); location.hash = ""; go("analytics"); };
+  const d = await api(`/api/analytics/fp/session?id=${encodeURIComponent(id)}`);
+  const det = $("#anDet");
+  if (!d.ok) { det.innerHTML = card("Session", `<div class="sub">${esc(d.reason || d.error || "not found")}</div>`); return; }
+  const head = d.head || {}, path = d.path || [];
+  det.innerHTML = `
+    <div class="grid">
+      ${card("Visitor", `<div class="big" style="font-size:15px"><a class="mono" href="#/visitor/${encodeURIComponent(head.visitor_id || "")}">${esc((head.visitor_id || "—").slice(0, 12))}…</a></div><div class="sub">${head.user_id ? "user " + esc(String(head.user_id).slice(0, 8)) : "anonymous"}</div>`)}
+      ${card("Origin", `<div class="big" style="font-size:15px">${esc(head.site || "—")}</div><div class="sub mono">${esc(head.ip || "")}</div>`)}
+      ${card("Events", `<div class="big">${fmtNum(path.length)}</div><div class="sub">ordered path below</div>`)}
+    </div>
+    <div class="section">Path (in order)</div>
+    <div class="an-timeline">${path.map(anTimelineRow).join("") || "<div class='muted sub'>no events</div>"}</div>`;
+}
+async function renderVisitorDetail(id) {
+  if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
+  CURRENT = "analytics"; setActiveNav("analytics"); setTopbarTitle("Visitor");
+  const v = $("#view");
+  v.innerHTML = `<div class="an-detail-head"><a class="btn" href="#" id="anBack">← Analytics</a><span class="an-detail-title">Visitor <code>${esc(id.slice(0, 12))}…</code></span></div><div id="anDet"><div class="spin">loading…</div></div>`;
+  $("#anBack").onclick = (e) => { e.preventDefault(); location.hash = ""; go("analytics"); };
+  const d = await api(`/api/analytics/fp/visitor?id=${encodeURIComponent(id)}`);
+  const det = $("#anDet");
+  if (!d.ok) { det.innerHTML = card("Visitor", `<div class="sub">${esc(d.reason || d.error || "not found")}</div>`); return; }
+  const p = d.profile || {}, ips = d.ips || [], linked = d.linked || [], recent = d.recent || [];
+  det.innerHTML = `
+    <div class="grid">
+      ${card("Identity", `<div class="big" style="font-size:15px">${p.user_id ? "user " + esc(String(p.user_id).slice(0, 8)) : "anonymous"}</div><div class="sub">first ${esc(String(p.first_seen || "").slice(0, 16))}</div>`)}
+      ${card("Activity", `<div class="big">${fmtNum(p.events)}</div><div class="sub">${fmtNum(p.sessions)} sessions</div>`)}
+      ${card("Devices / IPs", `<div class="big">${fmtNum(p.ips)}<span class="sub"> IPs</span></div><div class="sub">${fmtNum(p.fingerprints)} fingerprints</div>`)}
+      ${card("Linked identities", `<div class="big" style="color:${linked.length ? "var(--warn)" : "var(--text)"}">${fmtNum(linked.length)}</div><div class="sub">same device/IP, other cookie</div>`)}
+    </div>
+    <div class="section">IP addresses & location</div>
+    <table><thead><tr><th>IP</th><th>City</th><th>Country</th><th>Network</th><th>Flags</th><th class="r">Events</th></tr></thead><tbody>
+    ${ips.map(r => `<tr><td class="mono">${esc(r.ip || "")}</td><td>${esc(r.city || "—")}${r.region ? ", " + esc(r.region) : ""}</td><td>${esc(r.country_code || "—")}</td><td class="sub">${esc(r.org || r.asn || "—")}</td><td>${anFlags(r)}</td><td class="r">${fmtNum(r.events)}</td></tr>`).join("") || "<tr><td colspan='6' class='muted'>no IPs</td></tr>"}
+    </tbody></table>
+    ${linked.length ? `<div class="section">Linked visitors <span class="cnt">${linked.length}</span> <span class="sub">— same fingerprint or IP, different cookie (likely one person)</span></div>
+    <table><thead><tr><th>Visitor</th><th>Matched by</th><th class="r">Shared events</th></tr></thead><tbody>
+    ${linked.map(l => `<tr><td><a class="mono" href="#/visitor/${encodeURIComponent(l.visitor_id)}">${esc((l.visitor_id || "").slice(0, 12))}…</a></td><td>${l.via_fp ? '<span class="statpill s-warn">device</span> ' : ""}${l.via_ip ? '<span class="statpill s-mut">IP</span>' : ""}</td><td class="r">${fmtNum(l.shared_events)}</td></tr>`).join("")}
+    </tbody></table>` : ""}
+    <div class="section">Recent events</div>
+    <div class="an-timeline">${recent.map(ev => `<div class="an-trow"><span class="an-tt mono">${esc(ev.t || "")}</span><span class="an-ty">${esc(ev.type)}</span><span class="an-td">${ev.ticker ? `<b class="mono">${esc(ev.ticker)}</b>` : `<span class="mono">${esc(ev.path || "")}</span>`}</span></div>`).join("") || "<div class='muted sub'>none</div>"}</div>`;
+}
 
 /* ---- USERS (Supabase) --------------------------------------------------- */
 RENDER.users = async () => {
