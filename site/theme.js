@@ -108,6 +108,115 @@
     else setTimeout(inject, 1200);
   })();
 
+  /* ---- first-party analytics beacon (self-hosted, granular, GFW-safe) ------
+     Sends page views + in-page navigation + dwell + scroll + clicks + committed
+     searches to the SAME-ORIGIN /api/collect (the macro FastAPI on :8000). Mirrors
+     the Umami loader's guards (skip localhost + admin.*), and only fires on the
+     canonical mastermind-x.com origin (the GitHub-Pages mirror has no /api/collect).
+     Unlike GA4/Umami this is a first-party endpoint on our own VPS, so it reaches
+     mainland China (no blocked third-party host) — but it still fails silently on any
+     network error so it can never block paint or spam the console. The visitor id
+     (mm_aid cookie), IP, and geolocation are stamped SERVER-side; this only makes a
+     per-tab session id + a coarse device fingerprint and fires batched beacons.
+     window.mmTrack is exposed so the nav-search + terminal-jump handlers can log
+     intent before navigating away. */
+  (function loadMMAnalytics() {
+    try {
+      var h = location.hostname;
+      if (!h || h === 'localhost' || h === '127.0.0.1' || h === '[::1]') return;
+      if (h.split('.')[0] === 'admin') return;              // never track the console
+      if (!/mastermind-x\.com$/.test(h)) return;            // only the origin that serves /api/collect
+      if (window.__mm_a) return; window.__mm_a = true;
+
+      var EP = '/api/collect', SITE = 'macro';
+
+      var _fp = '';
+      function fingerprint() {
+        if (_fp) return _fp;
+        try {
+          var n = navigator, s = screen, tz = '';
+          try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+          var cv = '';
+          try {
+            var c = document.createElement('canvas'); c.width = 200; c.height = 40; var g = c.getContext('2d');
+            if (g) { g.textBaseline = 'top'; g.font = "14px 'Arial'"; g.fillStyle = '#f60'; g.fillRect(10, 5, 80, 20); g.fillStyle = '#069'; g.fillText('mm-fp-✨', 12, 8); cv = c.toDataURL().slice(-48); }
+          } catch (e) {}
+          var wg = '';
+          try {
+            var gl = document.createElement('canvas').getContext('webgl');
+            if (gl) { var d = gl.getExtension('WEBGL_debug_renderer_info'); wg = String(d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) || ''); }
+          } catch (e) {}
+          var p = [n.userAgent || '', (n.languages && n.languages.join(',')) || n.language || '', n.platform || '',
+            String(n.hardwareConcurrency || ''), String(n.deviceMemory || ''), s.width + 'x' + s.height + 'x' + s.colorDepth,
+            String(window.devicePixelRatio || ''), tz, String(n.maxTouchPoints || 0), wg, cv].join('|');
+          var a = 0x811c9dc5; for (var i = 0; i < p.length; i++) { a ^= p.charCodeAt(i); a = Math.imul(a, 0x01000193); }
+          var b = (0x811c9dc5 ^ a) >>> 0; for (var j = p.length - 1; j >= 0; j--) { b ^= p.charCodeAt(j); b = Math.imul(b, 0x01000193); }
+          _fp = (a >>> 0).toString(16).padStart(8, '0') + (b >>> 0).toString(16).padStart(8, '0');
+        } catch (e) { _fp = ''; }
+        return _fp;
+      }
+
+      var sid = '', fresh = false;
+      try {
+        var now = Date.now(), ss = window.sessionStorage;
+        sid = ss.getItem('mm.sid') || ''; var lastTs = +ss.getItem('mm.sid.ts') || 0;
+        if (!sid || now - lastTs > 1800000) { sid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 's-' + now.toString(36) + Math.random().toString(36).slice(2, 10); fresh = true; }
+        ss.setItem('mm.sid', sid); ss.setItem('mm.sid.ts', String(now));
+      } catch (e) {}
+
+      var q = [], timer = null;
+      function flush() {
+        if (timer) { clearTimeout(timer); timer = null; }
+        if (!q.length) return;
+        var evs = q; q = [];
+        try {
+          var body = JSON.stringify({ events: evs });
+          if (navigator.sendBeacon) navigator.sendBeacon(EP, new Blob([body], { type: 'application/json' }));
+          else fetch(EP, { method: 'POST', body: body, keepalive: true, credentials: 'same-origin', headers: { 'content-type': 'application/json' } }).catch(function () {});
+        } catch (e) {}
+      }
+      function track(type, extra) {
+        try {
+          var e = { type: type, site: SITE, sid: sid, fp: fingerprint() || undefined, path: location.pathname + location.hash, t: Date.now() };
+          if (extra) { for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) e[k] = extra[k]; }
+          q.push(e);
+          // flush immediately for events that precede a navigation (sendBeacon survives unload)
+          if (type === 'search' || type === 'terminal_jump' || type === 'exit' || q.length >= 10) flush();
+          else if (!timer) timer = setTimeout(flush, 4000);
+        } catch (e2) {}
+      }
+      window.mmTrack = track;
+
+      var enter = Date.now(), maxScroll = 0;
+      if (fresh) track('session_start');
+      track('pageview', { ref: document.referrer || undefined });
+
+      // analyzer pages (stock.html#AAPL → #MSFT) change symbol via hashchange, no page load
+      window.addEventListener('hashchange', function () {
+        var t = (location.hash || '').replace(/^#/, '');
+        try { t = decodeURIComponent(t); } catch (e) {}
+        track('ticker_view', { ticker: t ? t.slice(0, 64) : undefined });
+      });
+
+      window.addEventListener('scroll', function () {
+        try { var d = document.documentElement, den = (d.scrollHeight - d.clientHeight) || 1, pc = Math.round(d.scrollTop / den * 100); if (pc > maxScroll) maxScroll = Math.max(0, Math.min(100, pc)); } catch (e) {}
+      }, { passive: true });
+
+      document.addEventListener('click', function (ev) {
+        try {
+          var el = ev.target && ev.target.closest && ev.target.closest('a,button,[data-track]');
+          if (!el) return;
+          var a = el.closest('a');
+          track('click', { meta: { tag: el.tagName.toLowerCase(), text: (el.textContent || '').trim().slice(0, 80) || undefined, href: (a && a.getAttribute('href')) || undefined } });
+        } catch (e) {}
+      }, true);
+
+      function leave() { try { track('exit', { dwell_ms: Date.now() - enter, scroll: maxScroll || undefined }); } catch (e) {} flush(); }
+      window.addEventListener('pagehide', leave);
+      document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') leave(); });
+    } catch (e) { /* analytics must never break the page */ }
+  })();
+
   /* ---- Mastermind Terminal jump -------------------------------------------
      Single-stock analysis now opens in the Terminal web app. US (stock.html),
      China (china_lookup.html), HK (hk_lookup.html), Canada (canada_stock.html),
@@ -418,6 +527,8 @@
     input.addEventListener('focus', loadLibs);
     function go(x) {
       if (!x) return;
+      // analytics: log the committed search-select (ticker + market) before navigating away
+      try { if (window.mmTrack) window.mmTrack('search', { ticker: x.t, meta: { market: x._mk, source: 'nav_search', to_terminal: !!(mmTerminalOn() && TERMINAL_PAGES[x._tgt]) } }); } catch (e) {}
       // US, China, HK, Canada, and Intl picks all open the Terminal
       if (mmTerminalOn() && TERMINAL_PAGES[x._tgt]) { location.href = terminalUrl(x.t); return; }
       location.href = pfx + (x._tgt || 'stock.html') + '#' + encodeURIComponent(x.t);
