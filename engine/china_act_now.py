@@ -40,6 +40,7 @@ LaneRow = {
     'reco_en':      str | None,
     'reco_zh':      str | None,
     'rel20':        float | None,      # 20d relative perf vs benchmark (fraction)
+    'rel5':         float | None,      # 5d relative perf vs benchmark (fraction); themes only
     'tag':          str | None,        # sector ladder tag, kept verbatim
     'urgency':      str | None,        # sector urgency
     'reasons':      list[str],         # human-readable reasons (themes) or []
@@ -57,12 +58,24 @@ LaneRow = {
     'organ_state':  str | None,        # TURNING | CONFIRMED (from basket_turn_cn)
     'organ_chip_en': str | None,       # "organ: TURNING (tape)"
     'organ_chip_zh': str | None,       # "器官：转向（纸带）"
+    # detail-page navigation (site-root-relative href or None when page absent)
+    # convention:
+    #   THEME/BASKET  cid = id[2:] if id.startswith('b-') else id
+    #                 if cid starts with 'ths' -> subsector_china/{cid.replace('_','-')}.html
+    #                 else                     -> basket_china/{cid}.html
+    #   SECTOR        '.' in id (ETF ticker)   -> sectors/{id}.html
+    #                 else (SW code)            -> sector_cycles_china.html
+    #   empty id -> None
+    'href':         str | None,
 }
 
 Lane mapping
 -----------
-buy_now        ← theme act_now.buy (score desc) + sectors urgency now/imminent (clean entry)
+buy_now        ← theme act_now.buy (score desc) + sectors urgency now only
+                 (clean entry open today)
 wait_pullback  ← theme act_now.add_on_pullback (score desc)
+                 + sectors urgency imminent (BUY SOON — conditional trigger not yet
+                   fired, don't front-run)
                  + sectors urgency soon (WATCH/BUY-SOON — setting up, not yet actionable)
                  + sectors urgency caution with non-REDUCE tag (DON'T CHASE, HOLD, etc.)
                  + sectors urgency hold / later
@@ -93,10 +106,12 @@ log = logging.getLogger(__name__)
 # --------------------------------------------------------------------------- #
 #  Sector urgency routing (mirrors _china_action_board vocabulary)             #
 # --------------------------------------------------------------------------- #
-# buy_now: clean entry — now/imminent only.  'soon' (WATCH / WAIT tag) routes
-# to wait_pullback because it means "due in ~N days, don't front-run".
-_BUY_URGENCIES = {"now", "imminent"}
-_SOON_URGENCIES = {"soon"}           # setting-up / not-yet → wait_pullback
+# buy_now:       urgency 'now' ONLY — clean entry open today.
+# wait_pullback: 'imminent' (cycles.py BUY SOON fall-through — conditional
+#                trigger UNFIRED, don't front-run) + 'soon' (WATCH/WAIT,
+#                setting-up, not yet actionable).
+_BUY_URGENCIES = {"now"}
+_SOON_URGENCIES = {"soon", "imminent"}  # imminent = BUY SOON, not yet fired → wait
 _WAIT_URGENCIES = {"caution", "hold", "later"}
 # Within caution, tags determine the sub-route:
 #   TAKE PROFITS / SELL / REDUCE / UNCONFIRMED → reduce_avoid
@@ -131,6 +146,7 @@ def _blank_row(kind: str, id_: str, name: str, name_zh: str | None = None) -> di
         "reco_en": None,
         "reco_zh": None,
         "rel20": None,
+        "rel5": None,
         "tag": None,
         "urgency": None,
         "reasons": [],
@@ -146,6 +162,8 @@ def _blank_row(kind: str, id_: str, name: str, name_zh: str | None = None) -> di
         "organ_state": None,
         "organ_chip_en": None,
         "organ_chip_zh": None,
+        # detail-page href (site-root-relative); None when page absent or id empty
+        "href": None,
     }
 
 
@@ -158,11 +176,13 @@ def _theme_row(item: dict, themes_by_id: dict) -> dict:
     row["reco_en"] = item.get("action_en") or item.get("reco_en")
     row["reco_zh"] = item.get("action_zh") or item.get("reco_zh")
     row["reasons"] = list(item.get("reasons") or [])
-    # rel20 lives in themes_by_id[].perf['20d']['rel']
+    # rel20 / rel5 live in themes_by_id[].perf[period]['rel']
     td = themes_by_id.get(tid, {})
     perf = td.get("perf") or {}
     p20 = perf.get("20d") or {}
     row["rel20"] = p20.get("rel")
+    p5 = perf.get("5d") or {}
+    row["rel5"] = p5.get("rel")
     return row
 
 
@@ -199,6 +219,7 @@ def assemble_act_now(
     cycle_rows: list[dict] | None,
     basket_turn: dict | None = None,
     ths_baskets: dict | None = None,
+    href_exists: "((str) -> bool) | None" = None,
 ) -> dict[str, Any]:
     """Assemble the four-lane Act-Now v2 board.
 
@@ -216,6 +237,9 @@ def assemble_act_now(
                 The organ ADDS evidence — never removes forward_log-selected rows.
     ths_baskets {id: basket_dict} from baskets_ths.json for organ-rider name
                 enrichment of ths_*/thsc* ids; None → skip THS lookup
+    href_exists optional callable (str -> bool); when provided, each candidate
+                href is tested and set to None when the callable returns False
+                (degrade-safe: no link rather than a 404)
 
     Returns
     -------
@@ -269,11 +293,12 @@ def assemble_act_now(
         tag = e.get("tag") or ""
 
         if urgency in _BUY_URGENCIES:
-            # now / imminent → clean-entry buy lane
+            # now → clean-entry buy lane (open today)
             buy_now.append(_sector_row(s))
 
         elif urgency in _SOON_URGENCIES:
-            # soon (WATCH/BUY-SOON tag) → setting up, not yet actionable → wait
+            # imminent (BUY SOON — unfired trigger) / soon (WATCH/BUY-SOON tag)
+            # → setting up, not yet actionable → wait
             wait_pullback.append(_sector_row(s))
 
         elif urgency == "caution":
@@ -436,6 +461,44 @@ def assemble_act_now(
             # can't produce duplicate rows across nightly passes
             _existing_bw_ids.add(_org_id)
             _existing_bw_ids.add(_canonical_org)
+
+    # ── 6. HREF post-pass — compute site-root-relative detail page urls ─────
+    # Covers all four lanes including organ-rider-surfaced BASKET rows in
+    # bottoming_watch. Convention documented in the LaneRow docstring.
+    _all_lanes = [buy_now, wait_pullback, bottoming_watch, reduce_avoid]
+    for _lane in _all_lanes:
+        for _row in _lane:
+            _rid = _row.get("id") or ""
+            if not _rid:
+                continue  # empty id → href stays None
+            _kind = _row.get("kind") or ""
+            if _kind in ("THEME", "BASKET"):
+                # strip leading 'b-' to get canonical id for path construction
+                _cid = _rid[2:] if _rid.startswith("b-") else _rid
+                if _cid.startswith("ths"):
+                    _candidate = f"subsector_china/{_cid.replace('_', '-')}.html"
+                else:
+                    _candidate = f"basket_china/{_cid}.html"
+            elif _kind == "SECTOR":
+                if "." in _rid:
+                    # ETF ticker e.g. 512760.SS
+                    _candidate = f"sectors/{_rid}.html"
+                else:
+                    # Shenwan numeric industry code e.g. 801080
+                    _candidate = "sector_cycles_china.html"
+            else:
+                continue
+            # degrade-safe: skip if caller says page does not exist. A raising
+            # probe (e.g. Path.exists on a path-invalid id) must drop only this
+            # row's link, never the whole board.
+            if href_exists is not None:
+                try:
+                    _ok = href_exists(_candidate)
+                except Exception:  # noqa: BLE001 — additive, never fatal
+                    continue
+                if not _ok:
+                    continue
+            _row["href"] = _candidate
 
     return {
         "lanes": {

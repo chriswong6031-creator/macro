@@ -730,6 +730,7 @@ def main() -> int:
                 sectors, theme_intel, cycle_rows,
                 basket_turn=_basket_turn_cn,
                 ths_baskets=_ths_baskets,
+                href_exists=lambda h: (site_dir / h).exists(),
             )
         except Exception as _e:  # noqa: BLE001 — additive, never fatal
             log.error("china act_now_v2 build failed (%s); skipping", _e)

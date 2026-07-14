@@ -651,6 +651,11 @@
   }
   /* W8-R7 organ chip — inline to avoid collision with theme.css in-flight PRs */
   .anv2-chip-organ { background:color-mix(in srgb,var(--info) 10%,var(--panel)); color:color-mix(in srgb,var(--info) 80%,var(--text)); border-color:color-mix(in srgb,var(--info) 26%,transparent); }
+  /* anv2 click-through name link — colour/decoration intentionally inherit from .anv2-name */
+  .anv2-name-link { color:inherit; text-decoration:none; }
+  .anv2-name-link:hover .l-en, .anv2-name-link:hover .l-zh { text-decoration:underline; }
+  .anv2-name-link:focus-visible { outline:2px solid var(--link); outline-offset:2px; border-radius:4px; }
+  .anv2-go { font-size:10px; opacity:.55; margin-left:3px; }
 </style>
 </head>
 <body class="{{ 'page-china-stocks' if mode == 'stocks' else 'page-china' }}">
@@ -762,6 +767,10 @@
           <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
             <span class="row-pop-val"><span class="{{ 'up' if row.rel20 >= 0 else 'dn' }}">{{ '%+.1f'|format(row.rel20 * 100) }}%</span></span></div>
           {%- endif -%}
+          {%- if row.rel5 is not none -%}
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
+            <span class="row-pop-val"><span class="{{ 'up' if row.rel5 >= 0 else 'dn' }}">{{ '%+.1f'|format(row.rel5 * 100) }}%</span></span></div>
+          {%- endif -%}
           {%- if row.rs_63d is not none -%}
           <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">63d RS · rank</span><span class="l-zh">63日相对强度 · 排名</span></span>
             <span class="row-pop-val"><span class="{{ 'up' if row.rs_63d >= 0 else 'dn' }}">{{ '%+.1f'|format(row.rs_63d) }}%</span>{% if row.rs_rank is not none %} <span class="mut">· #{{ row.rs_rank }}</span>{% endif %}</span></div>
@@ -821,7 +830,11 @@
         </div>
       </span>
       <div class="anv2-row-top">
-        <span class="anv2-name">{{ row.name_zh if row.name_zh and lang == 'zh' else row.name }}</span>
+        {%- if row.href -%}
+        <a class="anv2-name anv2-name-link" href="{{ row.href }}"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or row.name }}</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+        {%- else -%}
+        <span class="anv2-name"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or row.name }}</span></span>
+        {%- endif -%}
         {% if row.score is not none %}<span class="anv2-score{% if row.score >= 60 %} anv2-score-hi{% elif row.score >= 40 %} anv2-score-mid{% else %} anv2-score-lo{% endif %}">{{ row.score }}</span>{% endif %}
       </div>
       <div class="anv2-chips">
@@ -850,8 +863,12 @@
         {% if row.pos is not none %} · <span class="muted">{{ t('pos','位置') }} {{ '%.0f'|format(row.pos) }}%</span>{% endif %}
       </div>
       {% elif row.rel20 is not none %}
+      {# 20d + 5d side by side: the fast window exposes a rollover the slow 20d
+         ruler still hides (2026-07-14 semis: 20d +22% while 5d already negative) #}
       <div class="anv2-stat">
-        <span class="{% if row.rel20 < 0 %}anv2-neg{% else %}anv2-pos{% endif %}">{{ '%+.1f'|format(row.rel20 * 100) }}%</span><span class="muted"> {{ t('20d vs CSI 300','20日相对沪深300') }}</span>
+        <span class="{% if row.rel20 < 0 %}anv2-neg{% else %}anv2-pos{% endif %}">{{ '%+.1f'|format(row.rel20 * 100) }}%</span><span class="muted"> {{ t('20d','20日') }}</span>
+        {%- if row.rel5 is not none %} · <span class="{% if row.rel5 < 0 %}anv2-neg{% else %}anv2-pos{% endif %}">{{ '%+.1f'|format(row.rel5 * 100) }}%</span><span class="muted"> {{ t('5d','5日') }}</span>{% endif -%}
+        <span class="muted"> {{ t('vs CSI 300','相对沪深300') }}</span>
       </div>
       {% endif %}
     </div>

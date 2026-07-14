@@ -631,6 +631,60 @@ def test_overextended_stretch_leg_fires_regardless() -> None:
         "stretch leg (ext_pct=+35 >= 30) must fire regardless of oscillator values")
 
 
+# ── Below-MA10 de-escalation gate: widened to HTF curl-down (2026-07-14) ──────
+# Regression for 512760.SS (China semis ETF): 3D MACD curling down with no
+# completed cross, price below 10-day, BUY SOON printed — gate must now fire on
+# _htf_curl_dn even when rollover_veto is False (no completed cross) and daily
+# is not yet rolling over on its own.
+
+def test_below_ma10_htf_curl_dn_only_fires_gate() -> None:
+    """512760.SS regression (2026-07-14): 3D macd_curl_dn=True, no 3D/W
+    macd_cross_dn (rollover_veto=False), daily not rolling over — gate must
+    still fire via _htf_curl_dn and produce BOTTOMING · UNCONFIRMED — WAIT
+    with urgency='caution'."""
+    cyc, mtf = _below_ma10_turn_signaled_snapshot(
+        curl_dn=False, approaching_dn=False, rsi_d=48.0, stoch=45.0
+    )
+    # Arm 3D curl-down only — no completed cross anywhere.
+    mtf["3D"]["macd_curl_dn"] = True
+    # Confirm the gate fires NOT via rollover_veto (daily path is clean, no HTF cross).
+    lad = ladder_state(cyc, mtf)
+    assert lad["state"] == "TURN SIGNALED", (
+        f"expected TURN SIGNALED, got {lad['state']!r}")
+    entry = lad["entry"]
+    assert entry["urgency"] == "caution", (
+        f"3D curl-down must de-escalate to caution; got urgency={entry['urgency']!r}  "
+        f"tag={entry['tag']!r}")
+    assert entry["tag"] == "BOTTOMING · UNCONFIRMED — WAIT", (
+        f"expected BOTTOMING · UNCONFIRMED — WAIT, got {entry['tag']!r}")
+    # Diagnostic copy must say 'rolling over', not 'crossed down' (no completed cross).
+    assert "rolling over" in entry.get("text", ""), (
+        f"text must reference 'rolling over' for curl-only case: {entry.get('text', '')[:120]!r}")
+    assert "掉头向下" in entry.get("text_zh", ""), (
+        f"text_zh must reference '掉头向下' for curl-only case: {entry.get('text_zh', '')[:120]!r}")
+    # Must NOT claim 'crossed down' (that is reserved for htf_rollover branch).
+    assert "crossed down" not in entry.get("text", ""), (
+        f"curl-only case must not say 'crossed down': {entry.get('text', '')[:120]!r}")
+
+
+def test_below_ma10_no_3d_key_does_not_gate_on_curl() -> None:
+    """Short-series safety: when mtf has no '3D' key, _htf_curl_dn resolves to
+    False via .get() on {} — a clean bottom must still return urgency='imminent'
+    (BUY SOON), not be suppressed by a missing-key artefact."""
+    cyc, mtf = _below_ma10_turn_signaled_snapshot(
+        curl_dn=False, approaching_dn=False, rsi_d=42.0, stoch=45.0
+    )
+    del mtf["3D"]   # simulate a short series where the 3D timeframe has no data
+    lad = ladder_state(cyc, mtf)
+    assert lad["state"] == "TURN SIGNALED", lad["state"]
+    entry = lad["entry"]
+    assert entry["urgency"] in ("imminent", "soon"), (
+        f"no-3D-key clean bottom must not be suppressed; got urgency={entry['urgency']!r}  "
+        f"tag={entry['tag']!r}")
+    assert "BUY" in entry["tag"], (
+        f"no-3D-key clean bottom must still show a BUY tag; got {entry['tag']!r}")
+
+
 if __name__ == "__main__":
     for fn in [test_trough_spacing, test_translation_right, test_translation_left,
                test_failed_cycle_flag, test_ladder_states_sane, test_decline_on_breakdown,
@@ -660,7 +714,9 @@ if __name__ == "__main__":
                test_overextended_osc_exempt_boundary_at_threshold,
                test_overextended_osc_not_exempt_just_above_threshold,
                test_overextended_none_ext_pct_still_fires,
-               test_overextended_stretch_leg_fires_regardless]:
+               test_overextended_stretch_leg_fires_regardless,
+               test_below_ma10_htf_curl_dn_only_fires_gate,
+               test_below_ma10_no_3d_key_does_not_gate_on_curl]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all cycle tests passed")
