@@ -16,6 +16,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2331,6 +2332,362 @@
 <div class="grid">
 
   
+  
+  
+<style>
+/* ── .ldb Leadership Board ──────────────────────────────────────────── */
+.ldb { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 16px 18px 14px; margin-bottom: 12px; position: relative; overflow: hidden; }
+.ldb::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  pointer-events: none; border-radius: 10px 10px 0 0; }
+.ldb.ldb-turning::before { background: linear-gradient(90deg, var(--up), color-mix(in srgb, var(--up) 30%, transparent)); }
+.ldb.ldb-running::before { background: linear-gradient(90deg, #4c8bf5, color-mix(in srgb, #4c8bf5 30%, transparent)); }
+.ldb.ldb-cooling::before { background: linear-gradient(90deg, var(--warn), color-mix(in srgb, var(--warn) 30%, transparent)); }
+.ldb.ldb-down::before  { background: linear-gradient(90deg, var(--down), color-mix(in srgb, var(--down) 30%, transparent)); }
+.ldb-top { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.ldb-h2  { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-2); margin: 0; }
+.ldb-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+  background: var(--panel3); color: var(--ink-1); white-space: nowrap; }
+.ldb-run  { font-size: 12px; color: var(--ink-2); }
+.ldb-stance { font-size: 12px; font-weight: 600; color: var(--ink-1); margin-left: auto; }
+.ldb-asof { font-size: 10px; color: var(--ink-3); white-space: nowrap; }
+.ldb-help { display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%; font-size: 10px; font-weight: 700;
+  background: var(--panel3); color: var(--ink-3); cursor: default; flex-shrink: 0; }
+.ldb-cohort { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 12px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--line); font-size: 12px; }
+.ldb-cohort-item { color: var(--ink-2); }
+.ldb-cohort-item b { color: var(--ink-1); }
+.ldb-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.ldb-tile { background: var(--panel3); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 11px 8px; position: relative; overflow: hidden; }
+.ldb-tile::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.ldb-tile.ldb-tile-lead::before    { background: var(--up); }
+.ldb-tile.ldb-tile-crowded::before { background: var(--warn); }
+.ldb-tile.ldb-tile-weak::before    { background: var(--down); }
+.ldb-tile.ldb-tile-neutral::before { background: var(--line); }
+.ldb-tile-sym  { font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-3); display: block; margin-bottom: 1px; }
+.ldb-tile-name { font-size: 12px; font-weight: 600; color: var(--ink-1); display: block; margin-bottom: 4px; }
+.ldb-tile-state { font-size: 11px; color: var(--ink-2); display: block; margin-bottom: 3px; }
+.ldb-tile-sowhat { font-size: 11px; font-weight: 600; color: var(--ink-1); display: block; }
+.ldb-tile-sowhat.sw-in-favour  { color: var(--up); }
+.ldb-tile-sowhat.sw-stand-aside { color: var(--down); }
+.ldb-tile-sowhat.sw-watch      { color: var(--ink-2); }
+.ldb-earn { display: inline-block; font-size: 10px; font-weight: 700;
+  background: color-mix(in srgb, var(--warn) 18%, transparent);
+  color: var(--warn); border-radius: 3px; padding: 1px 5px; margin-top: 4px; }
+.ldb-rs { padding-top: 10px; border-top: 1px solid var(--line); }
+.ldb-rs-h { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 6px; }
+.ldb-rs-rows { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.ldb-rs-row  { display: flex; align-items: center; gap: 5px; font-size: 11px; }
+.ldb-rs-rank { font-family: var(--num, monospace); font-size: 10px; font-weight: 700;
+  color: var(--ink-3); min-width: 18px; text-align: right; }
+.ldb-rs-name { color: var(--ink-1); }
+.ldb-rs-word { font-size: 10px; padding: 1px 5px; border-radius: 3px; font-weight: 600; white-space: nowrap; }
+.ldb-rs-word.rs-leading { background: color-mix(in srgb, var(--up) 15%, transparent); color: var(--up); }
+.ldb-rs-word.rs-mid     { background: var(--panel3); color: var(--ink-3); }
+.ldb-rs-word.rs-lagging { background: color-mix(in srgb, var(--down) 12%, transparent); color: var(--down); }
+.ldb-footnote { font-size: 10px; color: var(--ink-3); margin-top: 10px; }
+</style><div class="span12 ldb ldb-turning">
+
+  
+  <div class="ldb-top">
+    <h2 class="ldb-h2"><span class="l-en">Leadership Board</span><span class="l-zh">领涨面板</span></h2>
+    <span class="ldb-badge">
+      <span class="l-en">Mag 7 — Turning up</span>
+      <span class="l-zh">七巨头 — 拐头向上</span>
+    </span>
+    <span class="ldb-help"
+ data-tip-en="Megacap Leadership Board — 7 stocks, each shown individually. Lifecycle reads are descriptive trend reads (not scored signals — a heads-up). Sector momentum rank from 60d relative strength. A heads-up, not a buy signal; the Buy lanes below decide entries." data-tip-zh="七巨头领涨面板 — 7只个股独立展示。个股趋势为描述性趋势判断（参考，非评分信号）。板块动量排名来自60日相对强度。仅供参考，非买入信号；下方买入通道仍决定入场。">?</span>
+    <span class="ldb-run">
+      <span class="l-en">day 8 · Mag 7 +2% since Jul 01 vs S&P 0%</span>
+      <span class="l-zh">第8日 · 七巨头 7月1日 起 +2%，标普 0%</span>
+    </span>
+    <span class="ldb-stance">
+      <span class="l-en">Get ready</span>
+      <span class="l-zh">准备就绪</span>
+    </span><span class="ldb-asof"><span class="l-en">as of 2026-07-13</span><span class="l-zh">截至 2026-07-13</span></span>
+  </div>
+
+  
+  <div class="ldb-cohort">
+    <div class="ldb-cohort-item">
+      <span class="l-en"><b>Led by Apple + Meta + Nvidia</b> · joining: Microsoft, Amazon</span>
+      <span class="l-zh"><b>领涨：苹果 + Meta + 英伟达</b> · 加入：微软、亚马逊</span>
+    </div>
+    <div class="ldb-cohort-item">
+      <span class="l-en">run: <b>8 days</b></span>
+      <span class="l-zh">运行：<b>8日</b></span>
+    </div>
+    <div class="ldb-cohort-item" data-tip-en="10d: cap-weight +7.7% vs equal-weight +8.3%" data-tip-zh="10日：市值加权 +7.7% vs 等权 +8.3%">
+      <span class="l-en"><b>equal-weight leading</b> ~</span>
+      <span class="l-zh"><b>等权领先</b> ~</span>
+    </div>
+    <div class="ldb-cohort-item"
+      data-tip-en="2 of 7 in an uptrend · 5 of 7 leading vs market"
+      data-tip-zh="2/7 处于上升趋势 · 5/7 相对市场领先">
+      <span class="l-en"><b>2/7</b> trending up</span>
+      <span class="l-zh"><b>2/7</b> 处于上升趋势</span>
+    </div>
+  </div>
+
+  
+  <div class="ldb-tiles">
+    
+    
+    <div class="ldb-tile ldb-tile-neutral"
+ data-tip-en="Apple · above 50dma · above 200dma · 20d +7.3% · vs market +5.5%" data-tip-zh="苹果 · 50日均线上方 · 200日均线上方 · 20日 +7.3% · 相对市场 +5.5%">
+      <span class="ldb-tile-sym">AAPL</span>
+      <span class="ldb-tile-name">
+        <span class="l-en">Apple</span>
+        <span class="l-zh">苹果</span>
+      </span>
+      <span class="ldb-tile-state">
+        <span class="l-en">quietly building</span>
+        <span class="l-zh">悄然积累</span>
+      </span>
+      <span class="ldb-tile-sowhat sw-watch">
+        <span class="l-en">Watch — building quietly</span>
+        <span class="l-zh">观望 — 悄然布局中</span>
+      </span>
+    </div>
+    
+    
+    <div class="ldb-tile ldb-tile-weak"
+ data-tip-en="Microsoft · below 50dma · below 200dma · 20d +0.2% · vs market -1.6%" data-tip-zh="微软 · 50日均线下方 · 200日均线下方 · 20日 +0.2% · 相对市场 -1.6%">
+      <span class="ldb-tile-sym">MSFT</span>
+      <span class="ldb-tile-name">
+        <span class="l-en">Microsoft</span>
+        <span class="l-zh">微软</span>
+      </span>
+      <span class="ldb-tile-state">
+        <span class="l-en">held back</span>
+        <span class="l-zh">走势受压</span>
+      </span>
+      <span class="ldb-tile-sowhat sw-stand-aside">
+        <span class="l-en">Stand aside</span>
+        <span class="l-zh">观望为主</span>
+      </span>
+    </div>
+    
+    
+    <div class="ldb-tile ldb-tile-neutral"
+ data-tip-en="Nvidia · below 50dma · above 200dma · 20d -0.7% · vs market -2.5%" data-tip-zh="英伟达 · 50日均线下方 · 200日均线上方 · 20日 -0.7% · 相对市场 -2.5%">
+      <span class="ldb-tile-sym">NVDA</span>
+      <span class="ldb-tile-name">
+        <span class="l-en">Nvidia</span>
+        <span class="l-zh">英伟达</span>
+      </span>
+      <span class="ldb-tile-state">
+        <span class="l-en">no trend read</span>
+        <span class="l-zh">暂无趋势判断</span>
+      </span>
+      <span class="ldb-tile-sowhat sw-watch">
+        <span class="l-en">Watch — no trend read</span>
+        <span class="l-zh">观望 — 暂无趋势</span>
+      </span>
+    </div>
+    
+    
+    <div class="ldb-tile ldb-tile-neutral"
+ data-tip-en="Amazon · below 50dma · above 200dma · 20d +2.4% · vs market +0.6%" data-tip-zh="亚马逊 · 50日均线下方 · 200日均线上方 · 20日 +2.4% · 相对市场 +0.6%">
+      <span class="ldb-tile-sym">AMZN</span>
+      <span class="ldb-tile-name">
+        <span class="l-en">Amazon</span>
+        <span class="l-zh">亚马逊</span>
+      </span>
+      <span class="ldb-tile-state">
+        <span class="l-en">quietly building</span>
+        <span class="l-zh">悄然积累</span>
+      </span>
+      <span class="ldb-tile-sowhat sw-watch">
+        <span class="l-en">Watch — building quietly</span>
+        <span class="l-zh">观望 — 悄然布局中</span>
+      </span>
+    </div>
+    
+    
+    <div class="ldb-tile ldb-tile-weak"
+ data-tip-en="Alphabet · below 50dma · above 200dma · 20d -1.5% · vs market -3.3%" data-tip-zh="谷歌 · 50日均线下方 · 200日均线上方 · 20日 -1.5% · 相对市场 -3.3%">
+      <span class="ldb-tile-sym">GOOGL</span>
+      <span class="ldb-tile-name">
+        <span class="l-en">Alphabet</span>
+        <span class="l-zh">谷歌</span>
+      </span>
+      <span class="ldb-tile-state">
+        <span class="l-en">trend failed</span>
+        <span class="l-zh">趋势已败</span>
+      </span>
+      <span class="ldb-tile-sowhat sw-stand-aside">
+        <span class="l-en">Stand aside</span>
+        <span class="l-zh">观望为主</span>
+      </span>
+    </div>
+    
+    
+    <div class="ldb-tile ldb-tile-neutral"
+ data-tip-en="Meta · above 50dma · above 200dma · 20d +15.6% · vs market +13.8%" data-tip-zh="Meta · 50日均线上方 · 200日均线上方 · 20日 +15.6% · 相对市场 +13.8%">
+      <span class="ldb-tile-sym">META</span>
+      <span class="ldb-tile-name">
+        <span class="l-en">Meta</span>
+        <span class="l-zh">Meta</span>
+      </span>
+      <span class="ldb-tile-state">
+        <span class="l-en">no trend read</span>
+        <span class="l-zh">暂无趋势判断</span>
+      </span>
+      <span class="ldb-tile-sowhat sw-watch">
+        <span class="l-en">Watch — no trend read</span>
+        <span class="l-zh">观望 — 暂无趋势</span>
+      </span>
+    </div>
+    
+    
+    <div class="ldb-tile ldb-tile-weak"
+ data-tip-en="Tesla · below 50dma · below 200dma · 20d -1.1% · vs market -2.9%" data-tip-zh="特斯拉 · 50日均线下方 · 200日均线下方 · 20日 -1.1% · 相对市场 -2.9%">
+      <span class="ldb-tile-sym">TSLA</span>
+      <span class="ldb-tile-name">
+        <span class="l-en">Tesla</span>
+        <span class="l-zh">特斯拉</span>
+      </span>
+      <span class="ldb-tile-state">
+        <span class="l-en">trend failed</span>
+        <span class="l-zh">趋势已败</span>
+      </span>
+      <span class="ldb-tile-sowhat sw-stand-aside">
+        <span class="l-en">Stand aside</span>
+        <span class="l-zh">观望为主</span>
+      </span>
+    </div>
+  </div>
+
+  
+  <div class="ldb-rs">
+    <div class="ldb-rs-h"><span class="l-en">Sector momentum rank</span><span class="l-zh">板块动量排名</span></div>
+    <div class="ldb-rs-rows">
+      <div class="ldb-rs-row" data-tip-en="RS #1 — Technology: leading · conviction: Cautious" data-tip-zh="RS #1 — 科技: 领先 · 评级：谨慎">
+        <span class="ldb-rs-name">
+          <span class="l-en">Technology</span>
+          <span class="l-zh">科技</span>
+        </span>
+        <span class="ldb-rs-word rs-leading">
+          <span class="l-en">leading</span>
+          <span class="l-zh">领先</span>
+        </span>
+      </div>
+      <div class="ldb-rs-row" data-tip-en="RS #2 — Financials: leading · conviction: Cautious" data-tip-zh="RS #2 — 金融: 领先 · 评级：谨慎">
+        <span class="ldb-rs-name">
+          <span class="l-en">Financials</span>
+          <span class="l-zh">金融</span>
+        </span>
+        <span class="ldb-rs-word rs-leading">
+          <span class="l-en">leading</span>
+          <span class="l-zh">领先</span>
+        </span>
+      </div>
+      <div class="ldb-rs-row" data-tip-en="RS #3 — Health Care: leading · conviction: Reduce" data-tip-zh="RS #3 — 医疗保健: 领先 · 评级：减配">
+        <span class="ldb-rs-name">
+          <span class="l-en">Health Care</span>
+          <span class="l-zh">医疗保健</span>
+        </span>
+        <span class="ldb-rs-word rs-leading">
+          <span class="l-en">leading</span>
+          <span class="l-zh">领先</span>
+        </span>
+      </div>
+      <div class="ldb-rs-row" data-tip-en="RS #4 — Industrials: mid-pack · conviction: Neutral" data-tip-zh="RS #4 — 工业: 中游 · 评级：中性">
+        <span class="ldb-rs-name">
+          <span class="l-en">Industrials</span>
+          <span class="l-zh">工业</span>
+        </span>
+        <span class="ldb-rs-word rs-mid">
+          <span class="l-en">mid-pack</span>
+          <span class="l-zh">中游</span>
+        </span>
+      </div>
+      <div class="ldb-rs-row" data-tip-en="RS #5 — Real Estate: mid-pack · conviction: Reduce" data-tip-zh="RS #5 — 房地产: 中游 · 评级：减配">
+        <span class="ldb-rs-name">
+          <span class="l-en">Real Estate</span>
+          <span class="l-zh">房地产</span>
+        </span>
+        <span class="ldb-rs-word rs-mid">
+          <span class="l-en">mid-pack</span>
+          <span class="l-zh">中游</span>
+        </span>
+      </div>
+      <div class="ldb-rs-row" data-tip-en="RS #6 — Consumer Discretionary: mid-pack · conviction: Neutral" data-tip-zh="RS #6 — 非必需消费: 中游 · 评级：中性">
+        <span class="ldb-rs-name">
+          <span class="l-en">Consumer Discretionary</span>
+          <span class="l-zh">非必需消费</span>
+        </span>
+        <span class="ldb-rs-word rs-mid">
+          <span class="l-en">mid-pack</span>
+          <span class="l-zh">中游</span>
+        </span>
+      </div>
+      <div class="ldb-rs-row" data-tip-en="RS #7 — Consumer Staples: mid-pack · conviction: Neutral" data-tip-zh="RS #7 — 必需消费: 中游 · 评级：中性">
+        <span class="ldb-rs-name">
+          <span class="l-en">Consumer Staples</span>
+          <span class="l-zh">必需消费</span>
+        </span>
+        <span class="ldb-rs-word rs-mid">
+          <span class="l-en">mid-pack</span>
+          <span class="l-zh">中游</span>
+        </span>
+      </div>
+      <div class="ldb-rs-row" data-tip-en="RS #8 — Energy: lagging · conviction: Constructive" data-tip-zh="RS #8 — 能源: 落后 · 评级：建设性">
+        <span class="ldb-rs-name">
+          <span class="l-en">Energy</span>
+          <span class="l-zh">能源</span>
+        </span>
+        <span class="ldb-rs-word rs-lagging">
+          <span class="l-en">lagging</span>
+          <span class="l-zh">落后</span>
+        </span>
+      </div>
+      <div class="ldb-rs-row" data-tip-en="RS #9 — Communication Services: lagging · conviction: Neutral" data-tip-zh="RS #9 — 通讯服务: 落后 · 评级：中性">
+        <span class="ldb-rs-name">
+          <span class="l-en">Communication Services</span>
+          <span class="l-zh">通讯服务</span>
+        </span>
+        <span class="ldb-rs-word rs-lagging">
+          <span class="l-en">lagging</span>
+          <span class="l-zh">落后</span>
+        </span>
+      </div>
+      <div class="ldb-rs-row" data-tip-en="RS #10 — Materials: lagging · conviction: Cautious" data-tip-zh="RS #10 — 原材料: 落后 · 评级：谨慎">
+        <span class="ldb-rs-name">
+          <span class="l-en">Materials</span>
+          <span class="l-zh">原材料</span>
+        </span>
+        <span class="ldb-rs-word rs-lagging">
+          <span class="l-en">lagging</span>
+          <span class="l-zh">落后</span>
+        </span>
+      </div>
+      <div class="ldb-rs-row" data-tip-en="RS #11 — Utilities: lagging · conviction: Accumulate" data-tip-zh="RS #11 — 公用事业: 落后 · 评级：积极配置">
+        <span class="ldb-rs-name">
+          <span class="l-en">Utilities</span>
+          <span class="l-zh">公用事业</span>
+        </span>
+        <span class="ldb-rs-word rs-lagging">
+          <span class="l-en">lagging</span>
+          <span class="l-zh">落后</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="ldb-footnote">
+    <span class="l-en">Trend reads are a heads-up, not a buy signal — entries still decided by the lanes below.</span>
+    <span class="l-zh">趋势判断仅供参考，非买入信号 — 入场时机仍由下方通道决定。</span>
+  </div>
+
+</div>
 
   
   <!-- ======================= HEADER ======================= -->
@@ -14035,9 +14392,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-15 04:13 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-15 04:32 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-15 04:13 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-15 04:32 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
