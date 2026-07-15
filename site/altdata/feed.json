@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-14T23:29:31.054656+00:00",
-  "as_of": "2026-07-14",
+  "generated_utc": "2026-07-15T00:06:34.202518+00:00",
+  "as_of": "2026-07-15",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -5925,11 +5925,11 @@
         },
         {
           "ticker": "TDG",
-          "net": 18,
-          "buys": 18,
+          "net": 16,
+          "buys": 16,
           "sells": 0,
           "members": 1,
-          "est_usd": 193009.0,
+          "est_usd": 128008.0,
           "parties": "D"
         },
         {
@@ -6133,24 +6133,6 @@
           "parties": "D"
         },
         {
-          "ticker": "MORN",
-          "net": -8,
-          "buys": 0,
-          "sells": 8,
-          "members": 1,
-          "est_usd": 0.0,
-          "parties": "D"
-        },
-        {
-          "ticker": "VIK",
-          "net": -8,
-          "buys": 0,
-          "sells": 8,
-          "members": 1,
-          "est_usd": 0.0,
-          "parties": "D"
-        },
-        {
           "ticker": "GOOGL",
           "net": -7,
           "buys": 2,
@@ -6183,6 +6165,24 @@
           "buys": 0,
           "sells": 6,
           "members": 2,
+          "est_usd": 0.0,
+          "parties": "D"
+        },
+        {
+          "ticker": "FLL",
+          "net": -6,
+          "buys": 0,
+          "sells": 6,
+          "members": 1,
+          "est_usd": 0.0,
+          "parties": "D"
+        },
+        {
+          "ticker": "MORN",
+          "net": -6,
+          "buys": 0,
+          "sells": 6,
+          "members": 1,
           "est_usd": 0.0,
           "parties": "D"
         }
@@ -6218,7 +6218,7 @@
         "total_usd": 29242266.0,
         "contracts": 8,
         "agencies": 6,
-        "accel_x": 1.98,
+        "accel_x": 40.56,
         "top_agency": "Department of the Treasury"
       },
       {
@@ -6266,7 +6266,7 @@
         "total_usd": 12509058.0,
         "contracts": 46,
         "agencies": 7,
-        "accel_x": 0.66,
+        "accel_x": 0.69,
         "top_agency": "Department of Transportation"
       },
       {
@@ -6274,7 +6274,7 @@
         "total_usd": 11605983.0,
         "contracts": 10,
         "agencies": 5,
-        "accel_x": 3.37,
+        "accel_x": 9.17,
         "top_agency": "Department of Transportation"
       },
       {
@@ -6282,7 +6282,7 @@
         "total_usd": 11280672.0,
         "contracts": 233,
         "agencies": 1,
-        "accel_x": 4.06,
+        "accel_x": 4.23,
         "top_agency": "General Services Administration"
       },
       {
@@ -6477,18 +6477,18 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 19,
+        "count": 18,
         "items": "8.01"
       },
       {
-        "ticker": "MSTR",
-        "count": 6,
-        "items": "5.02, 7.01, 8.01"
+        "ticker": "SPCX",
+        "count": 5,
+        "items": "1.01, 5.02, 7.01, 8.01"
       },
       {
-        "ticker": "SPCX",
-        "count": 6,
-        "items": "1.01, 5.02, 7.01, 8.01"
+        "ticker": "MSTR",
+        "count": 4,
+        "items": "5.02, 7.01, 8.01"
       },
       {
         "ticker": "O",
@@ -6516,11 +6516,6 @@
         "items": "5.02, 7.01"
       },
       {
-        "ticker": "AXP",
-        "count": 3,
-        "items": "7.01, 8.01"
-      },
-      {
         "ticker": "BLD",
         "count": 3,
         "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
@@ -6534,11 +6529,6 @@
         "ticker": "ECHO",
         "count": 3,
         "items": "5.02, 8.01"
-      },
-      {
-        "ticker": "FOX",
-        "count": 3,
-        "items": "1.01, 2.03, 7.01"
       },
       {
         "ticker": "HOOD",
@@ -6571,19 +6561,9 @@
         "items": "7.01"
       },
       {
-        "ticker": "VTRS",
-        "count": 3,
-        "items": "1.01, 2.03, 8.01"
-      },
-      {
         "ticker": "ACN",
         "count": 2,
         "items": "7.01, 8.01"
-      },
-      {
-        "ticker": "ADSK",
-        "count": 2,
-        "items": "1.01, 2.03, 8.01"
       },
       {
         "ticker": "AEE",
@@ -6599,6 +6579,26 @@
         "ticker": "ALGN",
         "count": 2,
         "items": "5.02, 7.01"
+      },
+      {
+        "ticker": "ALGT",
+        "count": 2,
+        "items": "1.01, 2.03, 8.01"
+      },
+      {
+        "ticker": "APLD",
+        "count": 2,
+        "items": "1.01, 2.03"
+      },
+      {
+        "ticker": "ATO",
+        "count": 2,
+        "items": "1.01, 8.01"
+      },
+      {
+        "ticker": "AVGO",
+        "count": 2,
+        "items": "8.01"
       }
     ],
     "special_situations": [
@@ -44996,6 +44996,13 @@
         "top_issue": "Energy/Nuclear"
       },
       {
+        "ticker": "BLSH",
+        "spend_usd": 130000.0,
+        "filings": 2,
+        "spike_x": null,
+        "top_issue": "Financial Institutions/Investments/Securities"
+      },
+      {
         "ticker": "CLSK",
         "spend_usd": 130000.0,
         "filings": 2,
@@ -45015,6 +45022,13 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Environment/Superfund"
+      },
+      {
+        "ticker": "ULS",
+        "spend_usd": 90000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Manufacturing"
       },
       {
         "ticker": "VRSN",
@@ -45043,20 +45057,6 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Health Issues"
-      },
-      {
-        "ticker": "FCEL",
-        "spend_usd": 70000.0,
-        "filings": 2,
-        "spike_x": null,
-        "top_issue": "Manufacturing"
-      },
-      {
-        "ticker": "SSYS",
-        "spend_usd": 70000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Manufacturing"
       }
     ],
     "offexchange": [
@@ -48476,6 +48476,16 @@
         "why": "clinical_phase3_start: 1 new Phase-3 \u00b7 fda_label_expansion: SPINRAZA \u00b7 special_situation: Acquisitions"
       },
       {
+        "ticker": "ACN",
+        "score": 2,
+        "weighted_score": 1.45,
+        "channel_list": [
+          "gov_contract_accel",
+          "material_8k"
+        ],
+        "why": "gov_contract_accel: $29,242,266, 40.6x accel \u00b7 material_8k: 2 material 8-Ks (items 7.01, 8.01)"
+      },
+      {
         "ticker": "F",
         "score": 2,
         "weighted_score": 1.45,
@@ -48483,7 +48493,7 @@
           "activist_13d",
           "gov_contract_accel"
         ],
-        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $11,280,672, 4.1x accel"
+        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $11,280,672, 4.2x accel"
       },
       {
         "ticker": "N/A",
@@ -48563,7 +48573,7 @@
           "gov_contract_accel",
           "special_situation"
         ],
-        "why": "gov_contract_accel: $11,605,983, 3.4x accel \u00b7 special_situation: Strategic Reviews"
+        "why": "gov_contract_accel: $11,605,983, 9.2x accel \u00b7 special_situation: Strategic Reviews"
       },
       {
         "ticker": "IBM",
@@ -48637,16 +48647,6 @@
           "fda_label_expansion"
         ],
         "why": "clinical_phase3_start: 10 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: IBRANCE"
-      },
-      {
-        "ticker": "ABBV",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion"
-        ],
-        "why": "clinical_phase3_start: 4 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: LINZESS"
       }
     ]
   }
