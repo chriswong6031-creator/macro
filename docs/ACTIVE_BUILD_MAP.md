@@ -2,7 +2,7 @@
 
 # Active Build Map
 
-Generated: 2026-07-15T05:16:03.986785+00:00  |  Open PRs: 2  |  Merged (window): 500  |  base: `dab09dfc0d710bc8ecf9c5f961e9ffe4e1ecffca`
+Generated: 2026-07-15T06:41:55.468759+00:00  |  Open PRs: 2  |  Merged (window): 500  |  base: `0e99297278b5b44127ff696e346c5eebf60d00d7`
 
 ## Open PRs
 
@@ -21,6 +21,9 @@ _No file collisions detected among open PRs._
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #2590 | feat(release_forecast): block-level component scoring for cpi_bridge | 2026-07-15 |
+| #2589 | china: mx5 glance + popup redesign for the macro dashboard | 2026-07-15 |
+| #2588 | docs(release_forecast): ENERGY_COLLAPSE surprise-anatomy family + June-2026 episode | 2026-07-15 |
 | #2587 | fix(daily): stop the nightly failing — engine timeout 120→150, tolerant oracle git-add, R2 tripwire 2h→26h | 2026-07-15 |
 | #2586 | ci(ccw-w4): add plotly to ccw-w4-credit-desk install deps | 2026-07-15 |
 | #2585 | research(ccw): W6 Study S1 — spread-velocity lead test (LEADS, with honest caveats) | 2026-07-15 |
@@ -518,9 +521,6 @@ _No file collisions detected among open PRs._
 | #2070 | fix(nightly): guard-echo one-liners inverted success into step failure — 42 sites (TSU U5) | 2026-07-10 |
 | #2069 | feat(ts-u4): mtf_upturn UPTURN_CONFIRMED alert reach — cohort + Mag7 transition (TS-R7) | 2026-07-10 |
 | #2068 | fix(til-w10): heal registry pin 327→329 + SIGNAL_BUS regen | 2026-07-10 |
-| #2067 | feat(til-w10): ClinicalTrials.gov theme-level pipeline density | 2026-07-10 |
-| #2066 | feat(ts-u0): repeal tape blackout — graded modes + staleness honesty | 2026-07-10 |
-| #2065 | feat(ts-u2): mtf_upturn.v1 — per-stock multi-timeframe upturn-confluence organ | 2026-07-10 |
 
 ---
 

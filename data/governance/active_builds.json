@@ -1,8 +1,8 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-15T05:16:03.986785+00:00",
+  "generated_at": "2026-07-15T06:41:55.468759+00:00",
   "base": {
-    "sha": "dab09dfc0d710bc8ecf9c5f961e9ffe4e1ecffca"
+    "sha": "0e99297278b5b44127ff696e346c5eebf60d00d7"
   },
   "merged_days": 14,
   "merged_truncated": true,
@@ -68,6 +68,21 @@
   ],
   "collisions": [],
   "recent_merged": [
+    {
+      "number": 2590,
+      "title": "feat(release_forecast): block-level component scoring for cpi_bridge",
+      "merged_at": "2026-07-15T06:18:49Z"
+    },
+    {
+      "number": 2589,
+      "title": "china: mx5 glance + popup redesign for the macro dashboard",
+      "merged_at": "2026-07-15T06:05:01Z"
+    },
+    {
+      "number": 2588,
+      "title": "docs(release_forecast): ENERGY_COLLAPSE surprise-anatomy family + June-2026 episode",
+      "merged_at": "2026-07-15T05:55:40Z"
+    },
     {
       "number": 2587,
       "title": "fix(daily): stop the nightly failing \u2014 engine timeout 120\u2192150, tolerant oracle git-add, R2 tripwire 2h\u219226h",
@@ -2552,21 +2567,6 @@
       "number": 2068,
       "title": "fix(til-w10): heal registry pin 327\u2192329 + SIGNAL_BUS regen",
       "merged_at": "2026-07-10T03:05:13Z"
-    },
-    {
-      "number": 2067,
-      "title": "feat(til-w10): ClinicalTrials.gov theme-level pipeline density",
-      "merged_at": "2026-07-10T03:04:01Z"
-    },
-    {
-      "number": 2066,
-      "title": "feat(ts-u0): repeal tape blackout \u2014 graded modes + staleness honesty",
-      "merged_at": "2026-07-10T03:01:58Z"
-    },
-    {
-      "number": 2065,
-      "title": "feat(ts-u2): mtf_upturn.v1 \u2014 per-stock multi-timeframe upturn-confluence organ",
-      "merged_at": "2026-07-10T03:18:33Z"
     }
   ]
 }
