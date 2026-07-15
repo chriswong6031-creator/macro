@@ -2154,3 +2154,27 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: CCW-W4 credit desk vm tests
         run: python -m pytest tests/test_bonds_corp_credit_vm.py -v
+
+  ccw-w6-study-s1:
+    # CCW-W6 Study S1 — spread-velocity percentile lead study (frozen pre-registration):
+    #   scripts/ccw_study_s1.py — ONE-SHOT study implementing the frozen spec in
+    #     research/CCW_STUDY_S1_PREREG.md. Tests cover §9 anti-look-ahead checklist
+    #     and verdict rubric only (study is data-gated; CI runs the unit tests).
+    # Test coverage (tests/test_ccw_study_s1.py):
+    #   look_ahead: future shuffle does not change pctile; current bar excluded
+    #   warmup: NaN rows correct count and excluded from conditional set
+    #   spx_asof: backward-only merge (Monday, Saturday/non-bday, full spread index)
+    #   block_permutation: fixed seed reproducible, p in [0,1], length correct
+    #   era_boundaries: calendar-fixed; no overlap; all dates assigned
+    #   verdict_rubric: LEADS/MIXED/NULL per §8 (pass+robust, pass+flip, fail, delta<0+p>=0.05)
+    # Zero network calls; zero repo data reads; all inputs are synthetic.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml scipy
+      - name: CCW-W6 Study S1 unit tests
+        run: python -m pytest tests/test_ccw_study_s1.py -v
