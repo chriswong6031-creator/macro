@@ -10,27 +10,12 @@
       "lag_days": 1,
       "state": "fresh"
     },
-    "JD": {
-      "asof": "2026-07-13",
-      "lag_days": 1,
-      "state": "fresh"
-    },
-    "KWEB": {
-      "asof": "2026-07-13",
-      "lag_days": 1,
-      "state": "fresh"
-    },
-    "BIDU": {
-      "asof": "2026-07-13",
-      "lag_days": 1,
-      "state": "fresh"
-    },
-    "JD": {
-      "asof": "2026-07-13",
-      "lag_days": 1,
-      "state": "fresh"
-    },
     "PDD": {
+      "asof": "2026-07-13",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "JD": {
       "asof": "2026-07-13",
       "lag_days": 1,
       "state": "fresh"
@@ -41,6 +26,11 @@
       "state": "fresh"
     },
     "FXI": {
+      "asof": "2026-07-13",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "KWEB": {
       "asof": "2026-07-13",
       "lag_days": 1,
       "state": "fresh"
