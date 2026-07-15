@@ -672,7 +672,11 @@
   body.page-china .cnx-card[role="button"]:hover{background:rgba(22,29,38,.62);border-color:rgba(255,255,255,.16);box-shadow:0 6px 24px rgba(0,0,0,.25);transform:translateY(-1px)}
   body.page-china .cnx-ctitle{font-size:11.5px;font-weight:650;letter-spacing:.8px;text-transform:uppercase;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
   /* hero */
-  body.page-china .cnx-hero{display:grid;grid-template-columns:minmax(360px,2fr) minmax(400px,3fr);gap:0;padding:0}
+  /* z-index:30 lifts the whole hero (and the factor/risk popovers that overflow it)
+     ABOVE the tiles + cards below. The cards use backdrop-filter, which makes each its
+     own stacking context at level 0; without this the popover — trapped in the hero's
+     own backdrop-filter context — renders BEHIND the later cards. Stays below dialogs (60). */
+  body.page-china .cnx-hero{display:grid;grid-template-columns:minmax(360px,2fr) minmax(400px,3fr);gap:0;padding:0;position:relative;z-index:30}
   body.page-china .cnx-hero-left{padding:22px 26px;border-right:1px solid rgba(255,255,255,.12);position:relative}
   body.page-china .cnx-hero-right{padding:18px 24px 14px}
   body.page-china .cnx-regime-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:4px 12px;font-size:11.5px;background:rgba(208,69,69,.10)}
@@ -698,6 +702,13 @@
   body.page-china .cnx-sub-line{font-size:11.5px;font-weight:650;letter-spacing:.4px;color:var(--warn);margin-top:2px}
   body.page-china .ms-green .cnx-sub-line{color:var(--up)}
   body.page-china .ms-red .cnx-sub-line{color:var(--down)}
+  /* stance line follows the .ms-{color} class — default caution (yellow), green/red override */
+  body.page-china .cnx-sub-line .cnx-sub-g,body.page-china .cnx-sub-line .cnx-sub-r{display:none}
+  body.page-china .cnx-sub-line .cnx-sub-y{display:inline}
+  body.page-china .ms-green .cnx-sub-line .cnx-sub-g{display:inline}
+  body.page-china .ms-green .cnx-sub-line .cnx-sub-y{display:none}
+  body.page-china .ms-red .cnx-sub-line .cnx-sub-r{display:inline}
+  body.page-china .ms-red .cnx-sub-line .cnx-sub-y{display:none}
   body.page-china .cnx-thesis{font-size:13px;color:var(--text);max-width:42ch;margin:12px 0 10px}
   body.page-china .cnx-flip{font-size:11.5px;color:var(--muted);background:rgba(224,160,48,.08);border:1px solid rgba(224,160,48,.25);border-radius:10px;padding:7px 10px;max-width:46ch}
   body.page-china .cnx-hero-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;position:relative}
@@ -1184,7 +1195,13 @@
         </svg>
         <div>
           <div class="cnx-score-line"><span id="ms-score" class="cnx-big-score">{{ _ms_score }}</span><span id="ms-word" class="cnx-verdict">{{ t(_ms_label, _ms_label_zh) }} <span class="arr">▶</span></span></div>
-          <div class="cnx-sub-line"><span class="l-en">{{ _ms_color|upper }} — {{ _ms_posture|upper }}</span><span class="l-zh">{{ {'green':'绿','yellow':'黄','red':'红'}.get(_ms_color,'黄') }} — {{ _ms_posture_zh|upper }}</span></div>
+          {# The stance line is driven by the .ms-{green|yellow|red} class (which the live
+             lane swaps) so it can never contradict the live-patched score/verdict above. #}
+          <div class="cnx-sub-line">
+            <span class="cnx-sub-g"><span class="l-en">GREEN — TREND-FOLLOWING SUPPORTED</span><span class="l-zh">绿 — 支持趋势跟随</span></span>
+            <span class="cnx-sub-y"><span class="l-en">YELLOW — TRADE WITH CAUTION</span><span class="l-zh">黄 — 谨慎交易</span></span>
+            <span class="cnx-sub-r"><span class="l-en">RED — DEFEND CAPITAL</span><span class="l-zh">红 — 优先保住本金</span></span>
+          </div>
         </div>
       </div>
       <p class="v-thesis cnx-thesis">{{ t(_ms_thesis or 'China A-share market state.', _ms_thesis_zh or '中国A股市场状态。') }}</p>
