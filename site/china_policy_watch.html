@@ -51,6 +51,8 @@
   .stance-badge { font-size:22px; font-weight:800; padding:6px 16px; border-radius:999px; }
   .st-easing { color:#1f9a55; background:color-mix(in srgb,#1f9a55 14%,transparent); }
   .st-tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 14%,transparent); }
+  html[data-lang="zh"] .st-easing { color:#d23f3f; background:color-mix(in srgb,#d23f3f 14%,transparent); }
+  html[data-lang="zh"] .st-tightening { color:#1f9a55; background:color-mix(in srgb,#1f9a55 14%,transparent); }
   .st-neutral { color:var(--muted); background:var(--panel2); }
   .stance-hero .why { font-size:13px; color:var(--muted); flex:1; min-width:240px; }
   .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:12px 0; }
@@ -62,12 +64,15 @@
   .moves li { font-size:13px; padding:5px 0; border-bottom:1px solid var(--line); display:flex; gap:10px; }
   .moves .dt { color:var(--muted); font-variant-numeric:tabular-nums; min-width:92px; }
   .ease { color:#1f9a55; } .tighten { color:#d23f3f; }
+  html[data-lang="zh"] .ease { color:#d23f3f; } html[data-lang="zh"] .tighten { color:#1f9a55; }
   table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
   table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
   table.data td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
   .pill { font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; white-space:nowrap; }
   .p-supportive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .p-restrictive { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  html[data-lang="zh"] .p-supportive { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  html[data-lang="zh"] .p-restrictive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .p-neutral { color:var(--muted); background:var(--panel2); }
   .chips { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0; }
   .nchip { font-size:12px; padding:4px 11px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); }
@@ -400,7 +405,7 @@
     <span class="l-en">Intel substrate</span><span class="l-zh">情报底稿</span>:
     <span style="font-variant-numeric:tabular-nums">2026-06-20</span>
     
-    (24<span class="l-en">d ago</span><span class="l-zh">日前</span>)
+    (25<span class="l-en">d ago</span><span class="l-zh">日前</span>)
     
   </p>
   
@@ -416,7 +421,7 @@
   <h2 class="sec">🪙 <span class="l-en">PBoC stance & rate corridor</span><span class="l-zh">央行立场与利率走廊</span></h2>
   <div class="stance-hero">
     <span class="stance-badge st-neutral"><span class="l-en">On hold / neutral</span><span class="l-zh">按兵不动 / 中性</span></span>
-    <span class="why"><span class="l-en">On hold / neutral bias — 1Y LPR +0bp / yr, RRR -1.50pp, FR007 -0.04 vs trend.</span><span class="l-zh">按兵不动 / 中性倾向 — 1年期LPR年内+0基点，准备金率-1.50个百分点，FR007较趋势-0.04。</span></span>
+    <span class="why"><span class="l-en">On hold / neutral bias — 1Y LPR +0bp / yr, RRR -1.50pp, FR007 -0.03 vs trend.</span><span class="l-zh">按兵不动 / 中性倾向 — 1年期LPR年内+0基点，准备金率-1.50个百分点，FR007较趋势-0.03。</span></span>
   </div>
   <div class="grid">
     
@@ -426,11 +431,11 @@
     
     <div class="card"><div class="k"><span class="l-en">RRR (big banks)</span><span class="l-zh">存准率(大行)</span></div><div class="v">9.00%</div></div>
     
-    <div class="card"><div class="k"><span class="l-en">FR007 (repo)</span><span class="l-zh">FR007回购</span></div><div class="v">1.43%</div></div>
+    <div class="card"><div class="k"><span class="l-en">FR007 (repo)</span><span class="l-zh">FR007回购</span></div><div class="v">1.44%</div></div>
     
-    <div class="card"><div class="k"><span class="l-en">SHIBOR O/N</span><span class="l-zh">隔夜SHIBOR</span></div><div class="v">2.83%</div></div>
+    <div class="card"><div class="k"><span class="l-en">SHIBOR O/N</span><span class="l-zh">隔夜SHIBOR</span></div><div class="v">2.90%</div></div>
     
-    <div class="card"><div class="k"><span class="l-en">SHIBOR 3M</span><span class="l-zh">3个月SHIBOR</span></div><div class="v">2.96%</div></div>
+    <div class="card"><div class="k"><span class="l-en">SHIBOR 3M</span><span class="l-zh">3个月SHIBOR</span></div><div class="v">3.00%</div></div>
     
   </div>
 
@@ -440,7 +445,7 @@
   <div class="grid">
     <div class="card"><div class="k"><span class="l-en">FX reserves</span><span class="l-zh">外汇储备</span></div><div class="v">$3.42T</div><div class="s">-260 <span class="l-en">bn MoM</span><span class="l-zh">亿环比</span> · 2026-06-01</div></div>
     <div class="card"><div class="k"><span class="l-en">Gold reserves</span><span class="l-zh">黄金储备</span></div><div class="v">3037t</div></div>
-    <div class="card"><div class="k"><span class="l-en">USD / CNY</span><span class="l-zh">美元兑人民币</span></div><div class="v">6.799</div><div class="s">-0.010 <span class="l-en">20d</span><span class="l-zh">20日</span> · 2026-07-14</div></div>
+    <div class="card"><div class="k"><span class="l-en">USD / CNY</span><span class="l-zh">美元兑人民币</span></div><div class="v">6.791</div><div class="s">-0.020 <span class="l-en">20d</span><span class="l-zh">20日</span> · 2026-07-15</div></div>
   </div>
 
   
@@ -474,17 +479,17 @@
     
     <div class="card"><div class="k"><span class="l-en">PPI YoY</span><span class="l-zh">PPI同比</span></div><div class="v">4.1%</div><div class="s">2026-06-01</div></div>
     
-    <div class="card"><div class="k"><span class="l-en">M2 YoY</span><span class="l-zh">M2同比</span></div><div class="v">8.6%</div><div class="s">2026-05-01</div></div>
+    <div class="card"><div class="k"><span class="l-en">M2 YoY</span><span class="l-zh">M2同比</span></div><div class="v">8.0%</div><div class="s">2026-06-01</div></div>
     
-    <div class="card"><div class="k"><span class="l-en">M1 YoY</span><span class="l-zh">M1同比</span></div><div class="v">5.5%</div><div class="s">2026-05-01</div></div>
+    <div class="card"><div class="k"><span class="l-en">M1 YoY</span><span class="l-zh">M1同比</span></div><div class="v">4.0%</div><div class="s">2026-06-01</div></div>
     
-    <div class="card"><div class="k"><span class="l-en">GDP YoY</span><span class="l-zh">GDP同比</span></div><div class="v">5.0%</div><div class="s">2026-03-01</div></div>
+    <div class="card"><div class="k"><span class="l-en">GDP YoY</span><span class="l-zh">GDP同比</span></div><div class="v">4.7%</div><div class="s">2026-06-01</div></div>
     
-    <div class="card"><div class="k"><span class="l-en">Retail YoY</span><span class="l-zh">社零同比</span></div><div class="v">-0.6%</div><div class="s">2026-05-01</div></div>
+    <div class="card"><div class="k"><span class="l-en">Retail YoY</span><span class="l-zh">社零同比</span></div><div class="v">1.0%</div><div class="s">2026-06-01</div></div>
     
     <div class="card"><div class="k"><span class="l-en">Exports YoY</span><span class="l-zh">出口同比</span></div><div class="v">27.0%</div><div class="s">2026-06-01</div></div>
     
-    <div class="card"><div class="k"><span class="l-en">TSF (mo)</span><span class="l-zh">社融(当月)</span></div><div class="v">20264.0¥bn</div><div class="s">2026-05-01</div></div>
+    <div class="card"><div class="k"><span class="l-en">TSF (mo)</span><span class="l-zh">社融(当月)</span></div><div class="v">33645.0¥bn</div><div class="s">2026-06-01</div></div>
     
   </div>
   
@@ -602,41 +607,9 @@
   <ul class="feed">
     
     <li>
-      <span class="tag"><span class="l-en">Industrial policy</span><span class="l-zh">产业政策</span></span>
+      <span class="tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
       <div class="tt">
-        <a href="https://wallstreetcn.com/livenews/3133473" target="_blank" rel="noopener">通富微电：预计上半年净利润16亿元-18亿元，同比增长288.26%-336.80%</a>
-         <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
-      </div>
-    </li>
-    
-    <li>
-      <span class="tag"><span class="l-en">Trade</span><span class="l-zh">贸易</span></span>
-      <div class="tt">
-        <a href="https://flash.jin10.com/detail/20260714185839952800" target="_blank" rel="noopener">India's commerce minister said the UK plans to impose a carbon tax on steel and other good</a>
-         <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
-      </div>
-    </li>
-    
-    <li>
-      <span class="tag"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
-      <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202607143805899141.html" target="_blank" rel="noopener">伊朗石油部长称石油出口“照常”</a>
-         <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
-      </div>
-    </li>
-    
-    <li>
-      <span class="tag"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
-      <div class="tt">
-        <a href="https://news.10jqka.com.cn/20260714/c678173989.shtml" target="_blank" rel="noopener">两部门紧急预拨4.3亿元中央自然灾害救灾资金</a>
-         <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
-      </div>
-    </li>
-    
-    <li>
-      <span class="tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-      <div class="tt">
-        <a href="https://news.10jqka.com.cn/20260714/c678173985.shtml" target="_blank" rel="noopener">长虹美菱：预计2026年上半年净利润5200万-6000万元，同比下降87.54%-85.62%</a>
+        <a href="https://news.futunn.com/flash/20515987/ecb-governing-council-member-panetta-the-european-central-bank-is" target="_blank" rel="noopener">欧洲央行管委帕内塔：欧洲央行决心保持通胀预期稳定</a>
          <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
       </div>
     </li>
@@ -644,7 +617,7 @@
     <li>
       <span class="tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
       <div class="tt">
-        <a href="https://wallstreetcn.com/livenews/3133622" target="_blank" rel="noopener">埃斯顿：预计上半年净利润同比增长2144.74% -2593.68%</a>
+        <a href="https://wallstreetcn.com/livenews/3134148" target="_blank" rel="noopener">上半年金融数据将出炉 这场发布会三大看点值得关注</a>
          <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
       </div>
     </li>
@@ -652,7 +625,7 @@
     <li>
       <span class="tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
       <div class="tt">
-        <a href="https://wallstreetcn.com/livenews/3133509" target="_blank" rel="noopener">中国央行：将开展14000亿元买断式逆回购操作 期限为6个月（184天）</a>
+        <a href="https://wallstreetcn.com/livenews/3134147" target="_blank" rel="noopener">提醒：北京时间15:00，国新办举行新闻发布会，介绍2026年上半年货币政策执行和金融统计数据情况</a>
          <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
       </div>
     </li>
@@ -660,7 +633,7 @@
     <li>
       <span class="tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
       <div class="tt">
-        <a href="https://wallstreetcn.com/livenews/3133493" target="_blank" rel="noopener">英国央行行长贝利：金融稳定风险已上升</a>
+        <a href="https://finance.eastmoney.com/a/202607153807552389.html" target="_blank" rel="noopener">2026年中央国库现金管理商业银行定期存款（十一期）招投标 本期操作量1500亿元</a>
          <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
       </div>
     </li>
@@ -668,15 +641,15 @@
     <li>
       <span class="tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
       <div class="tt">
-        <a href="https://flash.jin10.com/detail/20260714185414214800" target="_blank" rel="noopener">壳牌在200亿美元尼日利亚石油项目中获更多税收减免</a>
+        <a href="https://finance.eastmoney.com/a/202607153807498954.html" target="_blank" rel="noopener">市场监管总局公示天汽模收购东实汽车股权案</a>
          <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
       </div>
     </li>
     
     <li>
-      <span class="tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+      <span class="tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
       <div class="tt">
-        <a href="https://wallstreetcn.com/livenews/3133603" target="_blank" rel="noopener">六部门：到2030年，危险废物填埋处置量占比由2025年约13%降至10%以内</a>
+        <a href="https://wallstreetcn.com/livenews/3134170" target="_blank" rel="noopener">中国央行：上半年人民币存款增加17.76万亿元</a>
          <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
       </div>
     </li>
@@ -684,7 +657,23 @@
     <li>
       <span class="tag"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
       <div class="tt">
-        <a href="https://www.gelonghui.com/live/2552359" target="_blank" rel="noopener">俄罗斯外交部长：俄罗斯将履行对非洲国家的所有食品出口和人道主义援助承诺</a>
+        <a href="https://flash.jin10.com/detail/20260715170326375800" target="_blank" rel="noopener">经合组织：英国的财政纪律仍然至关重要</a>
+         <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
+      </div>
+    </li>
+    
+    <li>
+      <span class="tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202607153807552829.html" target="_blank" rel="noopener">音飞储存：预计2026年半年度净利润同比增长117%-133%</a>
+         <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
+      </div>
+    </li>
+    
+    <li>
+      <span class="tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+      <div class="tt">
+        <a href="https://wallstreetcn.com/livenews/3134218" target="_blank" rel="noopener">央行：继续常态化发行央行票据，支持财政部提高离岸人民币国债发行规模</a>
          <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
       </div>
     </li>
@@ -692,7 +681,23 @@
     <li>
       <span class="tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
       <div class="tt">
-        <a href="https://flash.jin10.com/detail/20260714184152592800" target="_blank" rel="noopener">六部门：​到2030年，危险废物填埋处置量占比由2025年约13%降至10%以内</a>
+        <a href="https://news.futunn.com/flash/20516046/zhongji-xuchuang-is-reportedly-nearing-approval-for-a-hong-kong" target="_blank" rel="noopener">中际旭创据悉接近获批赴港上市，募资规模或达70亿美元</a>
+         <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
+      </div>
+    </li>
+    
+    <li>
+      <span class="tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+      <div class="tt">
+        <a href="https://news.futunn.com/flash/20516008/the-department-of-standards-and-quotas-of-the-ministry-of" target="_blank" rel="noopener">住建部标准定额司就《“好房子”建设指南（试行）（征求意见稿）》再次征求意见</a>
+         <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
+      </div>
+    </li>
+    
+    <li>
+      <span class="tag"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202607153807526777.html" target="_blank" rel="noopener">通合科技：拟以3500万元至7000万元回购股份用于股权激励</a>
          <span style="font-size:10px;color:#e0973a">📅 ACTIVITY@2026-07-15</span>
       </div>
     </li>
@@ -728,6 +733,5 @@
 </footer>
 
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
