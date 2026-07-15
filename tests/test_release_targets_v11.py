@@ -515,3 +515,102 @@ class TestRangeGuardV11:
         ):
             _, prov = builder(asof_pce, vintages, root)
             assert prov.get("range_violation_legs", []) == [], builder.__name__
+
+
+# ---------------------------------------------------------------------------
+# Target-side seam guard (follow-up to the FIX 2 feature guard): the walk-forward
+# TARGET (pct_change of first-print levels) is also fenced at NIPA re-base seams.
+# ---------------------------------------------------------------------------
+
+def _no_feats(asof, vintages, root, ref_month=None):
+    """Trivial feature builder — isolates target construction from feature cost."""
+    return {}, {}
+
+
+class TestTargetSeamGuardV11:
+    """Training targets at NIPA comprehensive-revision seams are nulled."""
+
+    #: The five NIPA comprehensive-revision seam periods (first print of period P
+    #: on a new index base while P-1's first print is on the old base).
+    SEAM_PERIODS = {(2003, 11), (2009, 6), (2013, 6), (2018, 6), (2023, 8)}
+
+    def test_S1_target_bounds_match_feature_bounds(self):
+        """Target fence sources the same constants as the #2575 feature fence (anti-drift)."""
+        from engine.release_targets_v11 import _TARGET_MOM_BOUNDS
+        assert _TARGET_MOM_BOUNDS["PCEPI"] == _FEATURE_BOUNDS["pce_hl_mom_lag1"]
+        assert _TARGET_MOM_BOUNDS["PCEPILFE"] == _FEATURE_BOUNDS["pce_core_mom_lag1"]
+        assert _TARGET_MOM_BOUNDS["PPIFIS"] == _FEATURE_BOUNDS["ppi_hl_mom_lag1"]
+
+    def test_S2_synthetic_seam_target_nulled(self, tmp_path: Path):
+        """A re-base-style level drop yields target=None at the seam record only."""
+        from engine.release_targets_v11 import _build_wf_records
+        periods = list(pd.date_range("2020-01-01", periods=6, freq="MS"))
+        # Last level drops ~10.7% in one month — an index re-base, not inflation
+        values = [100.0, 100.2, 100.4, 100.6, 100.8, 90.0]
+        vdf = _make_vintages("PCEPI", periods, values, [30] * 6)
+        records = _build_wf_records(vdf, tmp_path, "PCEPI", _no_feats)
+        assert len(records) == 5  # first row consumed by pct_change
+        assert records[-1]["target"] is None, "seam step must carry target=None"
+        for rec in records[:-1]:
+            assert rec["target"] is not None
+            assert abs(rec["target"]) <= 3.0
+
+    def test_S3_real_vintages_pce_seam_targets_nulled(
+        self, vintages: pd.DataFrame, root: Path
+    ):
+        """Exactly the five comprehensive-revision periods carry target=None (both PCE series)."""
+        from engine.release_targets_v11 import _build_wf_records
+        for series in ("PCEPI", "PCEPILFE"):
+            records = _build_wf_records(vintages, root, series, _no_feats)
+            nulled = {
+                (pd.Timestamp(r["period"]).year, pd.Timestamp(r["period"]).month)
+                for r in records
+                if r["target"] is None
+            }
+            assert nulled == self.SEAM_PERIODS, f"{series}: nulled {sorted(nulled)}"
+            for r in records:
+                if r["target"] is not None:
+                    assert abs(r["target"]) <= 3.0, f"{series} {r['period']}: {r['target']}"
+
+    def test_S4_ppi_targets_untouched(self, vintages: pd.DataFrame, root: Path):
+        """PPIFIS (vintages 2014+, no re-base seams): no target is nulled."""
+        from engine.release_targets_v11 import _build_wf_records
+        records = _build_wf_records(vintages, root, "PPIFIS", _no_feats)
+        assert len(records) > 100
+        assert all(r["target"] is not None for r in records)
+
+    def test_S5_walk_forward_actuals_and_baselines_seam_free(
+        self, vintages: pd.DataFrame, root: Path
+    ):
+        """Seam periods are neither scored prediction steps nor baseline inputs."""
+        from engine.release_targets_v11 import _build_wf_records
+        from engine.release_forecast import _walk_forward
+        records = _build_wf_records(vintages, root, "PCEPI", _no_feats)
+        results = _walk_forward(records, [], "target")
+        assert len(results) > 100
+        stepped = {
+            (
+                pd.Timestamp(records[r["idx"]]["period"]).year,
+                pd.Timestamp(records[r["idx"]]["period"]).month,
+            )
+            for r in results
+        }
+        assert not (stepped & self.SEAM_PERIODS), "seam periods must not be scored"
+        for r in results:
+            assert abs(r["actual"]) <= 3.0
+            assert abs(r["baseline_naive"]) <= 3.0
+            assert abs(r["baseline_trailing3m"]) <= 3.0
+
+    @pytest.mark.parametrize("project_fn,release", [
+        (project_pce_headline, "pce_headline"),
+        (project_pce_core, "pce_core"),
+    ])
+    def test_S6_live_naive_prior_seam_guarded(self, root: Path, project_fn, release):
+        """Day after the 2009-08-04 comprehensive-revision print: naive_prior and
+        trailing_3m skip the -10.1/-8.5 artifact and fall back to real MoM prints."""
+        proj = project_fn(date(2009, 8, 5), root)
+        assert proj["release"] == release
+        for key in ("naive_prior", "trailing_3m"):
+            v = proj["benchmark_set"][key]
+            assert v is not None, f"{release}.{key} must not be None"
+            assert abs(v) <= 3.0, f"{release}.{key} carries a seam artifact: {v}"

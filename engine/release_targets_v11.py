@@ -52,7 +52,10 @@ from engine.release_forecast import (  # noqa: E402
     _wilson,
     _last_n_rate_lags,
 )
-from engine.release_components_cpi import _apply_range_guard  # noqa: E402
+from engine.release_components_cpi import (  # noqa: E402
+    _apply_range_guard,
+    _FEATURE_BOUNDS,
+)
 
 # ---------------------------------------------------------------------------
 # Internal helpers: MoM lags from ALFRED vintages (PIT-safe)
@@ -434,6 +437,54 @@ def _empty_projection(release: str, asof: date, reason: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Target-side seam guard (mirror of the feature-side range guard)
+# ---------------------------------------------------------------------------
+
+#: MoM plausibility fence for the TARGET side, per own-series. Sourced from the
+#: same _FEATURE_BOUNDS constants as the feature-side guard so both sides agree
+#: on what counts as a plausible first print. Series without an entry (e.g.
+#: RSAFS, whose real COVID prints reached ±17%) pass through unguarded.
+_TARGET_MOM_BOUNDS: dict[str, tuple[float, float]] = {
+    "PCEPI": _FEATURE_BOUNDS["pce_hl_mom_lag1"],
+    "PCEPILFE": _FEATURE_BOUNDS["pce_core_mom_lag1"],
+    "PPIFIS": _FEATURE_BOUNDS["ppi_hl_mom_lag1"],
+}
+
+
+def _null_seam_mom_targets(mom_series: pd.DataFrame, own_series: str) -> pd.DataFrame:
+    """Null MoM values outside the plausibility fence (NIPA re-base seams).
+
+    At a comprehensive-revision vintage the first print of period P is on a new
+    index base while P-1's first print is on the old base, so pct_change across
+    the seam is a re-base artifact (PCEPI/PCEPILFE print -4.4..-10.1 at periods
+    2003-11 / 2009-06 / 2013-06 / 2018-06 / 2023-08), not inflation — the real
+    worst PCE MoM is -1.146 (2008-11). The feature side is already fenced by
+    _apply_range_guard; this nulls the TARGET side so seam rows drop out of
+    training, prediction steps, and walk-forward baselines (all of which skip
+    null targets in _walk_forward).
+
+    Returns a copy with out-of-fence "mom" set to NaN; rows are kept so period
+    alignment (ref_month derivation, record indexing) is unchanged.
+    """
+    bounds = _TARGET_MOM_BOUNDS.get(own_series)
+    if bounds is None:
+        return mom_series
+    lo, hi = bounds
+    mask = mom_series["mom"].notna() & ~mom_series["mom"].between(lo, hi)
+    if not mask.any():
+        return mom_series
+    seam_periods = [str(pd.Timestamp(p).date()) for p in mom_series.loc[mask, "period"]]
+    log.warning(
+        "Target seam guard (%s): nulled %d MoM target(s) outside [%.1f, %.1f] "
+        "at periods %s (index re-base artifacts, not real prints).",
+        own_series, int(mask.sum()), lo, hi, seam_periods,
+    )
+    out = mom_series.copy()
+    out.loc[mask, "mom"] = np.nan
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Walk-forward data assembly (per-target)
 # ---------------------------------------------------------------------------
 
@@ -447,6 +498,8 @@ def _build_wf_records(
 
     For each initial ALFRED print of own_series, compute features at step_asof
     (day before that print's realtime_start). Target = MoM % change of that print.
+    NIPA re-base seam steps carry target=None (_null_seam_mom_targets); _walk_forward
+    excludes them from training rows, prediction steps, and baselines.
 
     Returns list of dicts suitable for _walk_forward.
     """
@@ -456,6 +509,7 @@ def _build_wf_records(
     mom_series = all_series.copy()
     mom_series["mom"] = mom_series["value"].pct_change() * 100.0
     mom_series = mom_series.dropna(subset=["mom"]).reset_index(drop=True)
+    mom_series = _null_seam_mom_targets(mom_series, own_series)
 
     records = []
     for _, row in mom_series.iterrows():
@@ -469,7 +523,7 @@ def _build_wf_records(
             log.debug("Feature build failed at %s: %s", step_asof, e)
             feats = {}
         rec = dict(feats)
-        rec["target"] = float(row["mom"])
+        rec["target"] = float(row["mom"]) if pd.notna(row["mom"]) else None
         rec["period"] = row["period"]
         rec["release_date"] = row["realtime_start"]
         rec["asof"] = step_asof
@@ -505,6 +559,7 @@ def _project_target(
     mom_series = all_series.copy()
     mom_series["mom"] = mom_series["value"].pct_change() * 100.0
     mom_series = mom_series.dropna(subset=["mom"]).reset_index(drop=True)
+    mom_series = _null_seam_mom_targets(mom_series, own_series)
 
     # Build records for walk-forward residual history
     records = []
@@ -519,7 +574,7 @@ def _project_target(
             log.debug("Feature build failed at %s: %s", step_asof, e)
             feats = {}
         rec = dict(feats)
-        rec["target"] = float(row["mom"])
+        rec["target"] = float(row["mom"]) if pd.notna(row["mom"]) else None
         records.append(rec)
 
     if len(records) < MIN_TRAIN_OBS + 1:
@@ -594,10 +649,13 @@ def _project_target(
             interval_rank = round(1.0 - pctile, 4)
             confidence = round(interval_rank * input_completeness, 4)
 
-    # Baselines
-    naive = float(mom_series["mom"].iloc[-1]) if len(mom_series) > 0 else None
+    # Baselines — computed on seam-guarded moms so naive_prior/trailing_3m never
+    # carry a re-base artifact (e.g. asof the day after a comprehensive-revision
+    # print, naive falls back to the last real MoM instead of -10.1).
+    mom_valid = mom_series["mom"].dropna()
+    naive = float(mom_valid.iloc[-1]) if len(mom_valid) > 0 else None
     trailing_3m = (
-        float(mom_series["mom"].iloc[-3:].mean()) if len(mom_series) >= 3 else naive
+        float(mom_valid.iloc[-3:].mean()) if len(mom_valid) >= 3 else naive
     )
 
     # Surprise skew
