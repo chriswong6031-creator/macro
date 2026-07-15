@@ -572,7 +572,7 @@ jobs:
     needs: collect
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 120    # was 70 — observed the job hitting exactly 70m on a congested runner and getting CANCELLED at the special-situations step (~step 30 of 50), AFTER it had successfully rebuilt every page (china/gex/vol-regime/etc.) but BEFORE the "commit engine outputs" step (50). Because pages.yml deploys the COMMITTED main tree, a skipped commit means the fresh build never lands and the live site serves a stale dashboard (missing nav links, new heroes, new JSON) until a run happens to finish under the cap. 120m gives real headroom to always reach the commit. residual-alpha measured ~1s (never the bottleneck the old comment guessed). DONE: the ~22 regional/desk builders between build_site and the hub now run as parallel independent clusters (the "regional + desk builders (parallelised)" step) instead of serially — band wall-clock dropped from ~75m to ~its longest single cluster (special-situations' ~28m EDGAR sweep, now the long pole). Next lever if more is needed: speed up that EDGAR sweep.
+    timeout-minutes: 150    # was 120 — engine runtime crept 61m→116m→125m through 2026-07 and breached the 120 cap on 07-13/07-14, getting CANCELLED mid-run BEFORE the commit/upload steps → stale deploy (durable fix: split the LLM/desk band off the critical path). Earlier: was 70 — observed the job hitting exactly 70m on a congested runner and getting CANCELLED at the special-situations step (~step 30 of 50), AFTER it had successfully rebuilt every page (china/gex/vol-regime/etc.) but BEFORE the "commit engine outputs" step (50). Because pages.yml deploys the COMMITTED main tree, a skipped commit means the fresh build never lands and the live site serves a stale dashboard (missing nav links, new heroes, new JSON) until a run happens to finish under the cap. 150m restores headroom to always reach the commit. residual-alpha measured ~1s (never the bottleneck the old comment guessed). DONE: the ~22 regional/desk builders between build_site and the hub now run as parallel independent clusters (the "regional + desk builders (parallelised)" step) instead of serially — band wall-clock dropped from ~75m to ~its longest single cluster (special-situations' ~28m EDGAR sweep, now the long pole). Next lever if more is needed: speed up that EDGAR sweep.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -2039,12 +2039,15 @@ jobs:
         # The publish step swallows every failure (incl. the exit-0 no-op when the R2_*
         # secrets are absent/expired), so the live site would serve stale per-ticker data
         # under a green run. HEAD the PUBLIC anchors instead: if stockdata/ohlc weren't
-        # touched within 2h, this run's publish did not land -> red run + step summary.
+        # touched within 26h (was 2h — too strict; content-unchanged anchors on no-delta
+        # weekend/holiday runs keep the prior day's Last-Modified and falsely tripped, e.g.
+        # the 2026-07-13 Sunday run at 18.8h. 26h matches scripts/healthcheck.py), this run's
+        # publish did not land -> red run + step summary.
         # Deploy is unaffected (artifact steps below are if:always()); the scheduled
         # heartbeat (scripts/healthcheck.py) independently re-probes with a 26h limit.
         if: always()
         run: |
-          if ! python -m scripts.audit_r2 --strict --anchors stockdata,ohlc --max-age-hours 2; then
+          if ! python -m scripts.audit_r2 --strict --anchors stockdata,ohlc --max-age-hours 26; then
             echo "### ❌ R2 data plane STALE/DARK — publish_r2 failed or was skipped (expired R2_* secrets?); the live site keeps serving OLD per-ticker data. See scripts/audit_r2.py." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
@@ -2330,7 +2333,13 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add site/oracledata/ data/oracle/ratio_lens_ledger.jsonl data/oracle/washout_counterread_ledger.jsonl
+          git add site/oracledata/ data/oracle/ratio_lens_ledger.jsonl
+          # washout_counterread_ledger.jsonl is only written on days the signal FIRES
+          # (build_oracle_washout_counterread.py show=True); on non-firing days it is absent
+          # and a hard `git add` exits 128, aborting this whole step (this failed the nightly
+          # on 2026-07-13 and 2026-07-14). The commit is gated below by `git diff --cached
+          # --quiet`, so tolerating the file's absence is safe.
+          git add data/oracle/washout_counterread_ledger.jsonl 2>/dev/null || true
           if git diff --cached --quiet; then echo "no oracle Time Machine or ratio lens changes"; exit 0; fi
           git commit -m "oracle-tm: nightly Time Machine feed + ratio lens refresh $(date -u +%F)"
           # best-effort push (own files -> rebases clean; no other job writes site/oracledata/)
