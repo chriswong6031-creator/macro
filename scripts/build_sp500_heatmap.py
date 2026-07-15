@@ -420,6 +420,9 @@ def build(site: Path | None = None, *, live: bool = True,
         generated_utc=generated_utc,
     )
     payload["size_basis"] = "marketcap" if caps else "weight_proxy"
+    # Tile clicks open the Terminal (not the retired single-stock analyzer) — matches
+    # the cn/hk/ca heatmaps in engine/market_heatmap.py.
+    payload["stock_url"] = "https://app.mastermind-x.com/terminal?symbol="
 
     outdir = site / "marketdata"
     outdir.mkdir(parents=True, exist_ok=True)

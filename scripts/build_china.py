@@ -550,6 +550,7 @@ def _china_market_tiles() -> list[dict]:
             if invert and tone != "muted":      # a weaker yuan (USDCNH up) = risk-off
                 tone = "neg" if chg > 0 else "pos"
             out.append({
+                "sym": name,   # stable identifier for template lookup by ticker
                 "label": Markup('<span class="l-en">{}</span><span class="l-zh">{}</span>').format(en, zh),
                 "tag": Markup('<span class="l-en">{}</span><span class="l-zh">{}</span>').format(ten, tzh),
                 "level": (f"{last:.{dec}f}%" if is_rate else f"{last:,.{dec}f}"),
@@ -1032,6 +1033,109 @@ def main() -> int:
             log.error("china stocks: reversion_desk load failed (%s); skipping", _rd_e)
             vm["reversion_desk"] = None
 
+        # ── MX5 hero: 11-session score path log ──────────────────────────────
+        # Appended nightly; deduped by date.  Never fatal.  Intraday lanes that
+        # call build_china outside the nightly path must NOT call this — the
+        # log is a forward ledger (house law: nightly is the sole advancer).
+        # Guard: only append when market_state is populated AND we are in the
+        # nightly/primary call (not a fast-render from pickled VM).
+        try:
+            _ms_snap = vm.get("market_state")
+            if _ms_snap and _ms_snap.get("score") is not None:
+                import os as _osenv
+                if not _osenv.environ.get("CHINA_FAST_RENDER"):
+                    _score_log_dir = config.data_dir() / "china_market_state"
+                    _score_log_dir.mkdir(parents=True, exist_ok=True)
+                    _score_log_path = _score_log_dir / "score_log.parquet"
+                    _new_row = pd.DataFrame([{
+                        "date": latest.get("date"),
+                        "score": int(_ms_snap["score"]),
+                        "verdict": _ms_snap.get("verdict", ""),
+                        "color": _ms_snap.get("color", ""),
+                    }])
+                    if _score_log_path.exists():
+                        _existing = pd.read_parquet(_score_log_path)
+                        _combined = pd.concat([_existing, _new_row], ignore_index=True)
+                        _combined = _combined.drop_duplicates(subset=["date"], keep="last")
+                    else:
+                        _combined = _new_row
+                    _combined = _combined.sort_values("date").reset_index(drop=True)
+                    _combined.to_parquet(_score_log_path, index=False)
+                    # Expose last 11 rows as vm['ms_history'] for the hero path chart
+                    _hist = _combined.tail(11).copy()
+                    vm["ms_history"] = _hist.to_dict(orient="records")
+                    log.info("china score_log: %d rows, last 11 -> ms_history", len(_combined))
+        except Exception as _msh_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("china ms_history build failed (%s); skipping", _msh_e)
+            vm.setdefault("ms_history", None)
+
+        # ── MX5 tiles: enrich buy setups with name_zh + industry ─────────────
+        # Spec §6.2: top-5 buy rows need name_zh (Chinese company name) and
+        # industry (sub-industry or sector).  Enrich in-place using name_zh_by
+        # built earlier in build_china_library.main() — if already on the row
+        # (standouts pipeline may have passed it through), use it; else fall back
+        # to the name field's " / ZH" half.  Never fatal.
+        try:
+            _su = vm.get("setups") or {}
+            _buys = list((_su.get("buy") or []))
+            for _row in _buys:
+                if not isinstance(_row, dict):
+                    continue
+                # name_zh: prefer the row's own field; else split "EN / 中文"
+                if not _row.get("name_zh"):
+                    _nm = _row.get("name") or ""
+                    _parts = _nm.split(" / ", 1)
+                    _row["name_zh"] = _parts[1].strip() if len(_parts) > 1 else _parts[0].strip()
+                # industry: prefer sub_industry; fall back to sector
+                if not _row.get("industry"):
+                    _row["industry"] = _row.get("sub_industry") or _row.get("sector") or ""
+            vm["top_setups"] = _buys[:5]
+        except Exception as _ts_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("china top_setups enrich failed (%s); skipping", _ts_e)
+            vm["top_setups"] = []
+
+        # ── MX5: china_brief card vm key ─────────────────────────────────────
+        # Spec §6.6: dlg-aibrief needs master_brief.v1 content.  Load the
+        # pre-existing site/china_brief.json produced by the AI brief pipeline.
+        try:
+            _brief_path = site / "china_brief.json"
+            if _brief_path.exists():
+                vm["china_brief"] = json.loads(_brief_path.read_text())
+            else:
+                vm["china_brief"] = None
+                log.debug("china_brief.json not found; aibrief dialog will degrade")
+        except Exception as _cb_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("china_brief load failed (%s); skipping", _cb_e)
+            vm["china_brief"] = None
+
+        # ── MX5: HSI market tile ──────────────────────────────────────────────
+        # Spec §6.4: add HSI to vm['market_tiles'] (after building the base list).
+        # USD/CNH and 10Y CGB stay in the list but will be displayed in
+        # dlg-markets (not as glance tiles) — the template handles that split.
+        # This just adds HSI so the 4 glance tiles are SSE/CSI300/ChiNext/HSI.
+        try:
+            _hsi_df = store.read("hk", "_HSI")
+            if _hsi_df is not None and "close" in _hsi_df.columns:
+                _hs = _hsi_df["close"].astype(float).dropna()
+                if len(_hs) >= 2:
+                    _hl, _hp = float(_hs.iloc[-1]), float(_hs.iloc[-2])
+                    _hchg = _hl - _hp
+                    _hpct = (_hl / _hp - 1) * 100 if _hp else 0.0
+                    _htone = "pos" if _hchg > 0 else "neg" if _hchg < 0 else "muted"
+                    vm["hsi_tile"] = {
+                        "label": Markup('<span class="l-en">Hang Seng</span><span class="l-zh">恒生指数</span>'),
+                        "tag": Markup('<span class="l-en">Hong Kong</span><span class="l-zh">港股</span>'),
+                        "level": f"{_hl:,.0f}",
+                        "chg": f"{_hchg:+.0f}",
+                        "pct": f"{_hpct:+.1f}%",
+                        "tone": _htone,
+                        "sym": "^HSI",
+                    }
+        except Exception as _hsi_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("china hsi_tile failed (%s); skipping", _hsi_e)
+            vm["hsi_tile"] = None
+        vm.setdefault("hsi_tile", None)
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
@@ -1041,6 +1145,19 @@ def main() -> int:
         # a `mode` flag (macro / stocks) that selects which sections show. No data
         # is recomputed and the heavy page CSS lives in exactly one template.
         tmpl = env.get_template("china.html.j2")
+        # DEV-ONLY: dump the fully-built view-model so scripts/render_china_fast.py can
+        # re-render china.html / china_stocks.html in ~1s without re-running collectors +
+        # engine. Env-gated (CHINA_VM_DUMP=1); never fires on the nightly/commit path.
+        import os as _os
+        if _os.environ.get("CHINA_VM_DUMP"):
+            try:
+                import pickle as _pkl
+                _vm_cache = config.data_dir() / "_dev_china_vm.pkl"
+                with open(_vm_cache, "wb") as _fh:
+                    _pkl.dump(vm, _fh)
+                log.info("CHINA_VM_DUMP: wrote %s", _vm_cache)
+            except Exception as _e:  # noqa: BLE001 — dev-only, never fatal
+                log.error("CHINA_VM_DUMP failed (%s)", _e)
         html = tmpl.render(**vm, mode="macro")
         write_page(site / "china.html", html)
         for a in ASSETS:

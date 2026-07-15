@@ -103,9 +103,12 @@ def _env(snippet: str) -> Environment:
 
 
 def _china_block() -> str:
+    # The mx5 redesign (2026-07) folded the china macro "action board" into the
+    # Sectors detail dialog, driven by pb_obj (playbook) chips rather than the
+    # actions-lane board. Extract that dialog block.
     src = (ROOT / "templates" / "china.html.j2").read_text()
-    start = src.index("<!-- ===================== ACTION BOARD")
-    end = src.index("<!-- sector rotation board -->", start)
+    start = src.index('<div class="cnx-dlg" id="cnx-dlg-sector">')
+    end = src.index('<div class="cnx-dlg" id="cnx-dlg-policy">', start)
     return src[start:end]
 
 
@@ -126,18 +129,21 @@ def _item(ticker: str) -> dict:
             "dir": "up"}
 
 
-def test_china_template_renders_on_the_run_lane():
-    html = _env(_china_block()).get_template("blk").render(actions=_full_actions())
-    assert "ON THE RUN" in html and "勿追高" in html
-    assert "act-run" in html                      # violet accent class, never green
+def test_china_dlg_sector_leaders_dont_chase_not_green():
+    """Redesign: sector 'act on now' moved into dlg-sector. The 'leaders' chips
+    must render as caution ('don't chase' / hot accent), never as a green buy."""
+    pb = {"preferred": [{"name": "PPP", "rank": 3}], "leaders": [{"name": "RRR"}], "avoid": []}
+    html = _env(_china_block()).get_template("blk").render(pb_obj=pb)
+    assert "勿追" in html                           # don't-chase copy present
     assert "RRR" in html
+    assert "cnx-chip hot" in html                   # caution accent, not a buy/turn chip
 
 
-def test_china_template_missing_key_safe():
-    """Pre-split actions shape (no on_the_run key) must render, not crash."""
-    a = _full_actions(); del a["on_the_run"]
-    html = _env(_china_block()).get_template("blk").render(actions=a)
-    assert "AAA" in html and "ON THE RUN" not in html   # empty lane column is hidden
+def test_china_dlg_sector_missing_lane_safe():
+    """A pb_obj missing the leaders/avoid keys must render, not crash."""
+    pb = {"preferred": [{"name": "PPP", "rank": 1}]}   # no 'leaders' / 'avoid'
+    html = _env(_china_block()).get_template("blk").render(pb_obj=pb)
+    assert "PPP" in html and "RRR" not in html
 
 
 def test_canada_template_renders_on_the_run_lane():
