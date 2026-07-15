@@ -1320,8 +1320,10 @@
   body.page-china .cnx-fbar{height:7px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden}
   body.page-china .cnx-fbar i{display:block;height:100%;border-radius:4px}
   body.page-china .cnx-fscore{text-align:right;font-weight:700}
-  body.page-china .cnx-cols2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  body.page-china .cnx-cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
   @media (max-width:980px){body.page-china .cnx-cols2{grid-template-columns:1fr}}
+  body.page-china .cnx-dlg-body :is(.js-plotly-plot,.plotly-graph-div,.plotly){max-width:100%!important}
+  body.page-china .cnx-dlg-body .chart-ph,body.page-china .cnx-dlg-body img,body.page-china .cnx-dlg-body svg{max-width:100%}
   body.page-china .cnx-chart-ph{height:100px;border:1px dashed rgba(255,255,255,.14);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);margin:8px 0}
   body.page-china .cnx-receipt{font-size:11px;color:var(--muted);border-top:1px solid rgba(255,255,255,.07);margin-top:14px;padding-top:10px}
   /* fq pills for regime quadrant labels in dialogs */
@@ -2386,19 +2388,11 @@
         <div class="cnx-sep"></div>
         <div class="cnx-eyebrow"><span class="l-en">A-share sector heatmap</span><span class="l-zh">A股板块热力图</span></div>
         <div class="cnx-hm-wrap" id="cnx-hm">
-          <div class="cnx-hm-top">
-            <span><span class="l-en">● Daily close</span><span class="l-zh">● 日收盘</span> · 2026-07-15</span>
-            <button class="cnx-hm-expand" onclick="if(window.MMHeatmap&&MMHeatmap.openOverlayFor)MMHeatmap.openOverlayFor('marketdata/china_heatmap.json','China A-shares')">⤢ <span class="l-en">Expand</span><span class="l-zh">展开</span></button>
-          </div>
-          
           <div id="cn-hm-embed">
             <div style="display:flex;align-items:center;justify-content:center;height:80px;font-size:12px;color:var(--muted)">
               <a href="china_heatmap.html" style="color:var(--link)"><span class="l-en">→ Open full heatmap</span><span class="l-zh">→ 打开完整热力图</span></a>
             </div>
-          </div>
-          <div class="cnx-hm-legend"><span><span class="l-en">−3% ▮▮▮ +3%</span><span class="l-zh">−3% ▮▮▮ +3%</span></span>
-            <span><span class="l-en">BREADTH</span><span class="l-zh">宽度</span> <span class="cnx-tt-up">859▲</span> <span class="cnx-tt-dn">615▼</span></span></div>
-        </div>
+        </div></div>
         <div class="cnx-sep"></div>
         <div class="cnx-eyebrow"><span class="l-en">Key rates & cross-asset</span><span class="l-zh">关键利率与跨资产</span></div>
         <div class="cnx-ihgrid">
@@ -3077,6 +3071,11 @@ window.__CHART_SWAP__ = {
       try{MMHeatmap.mountScorecard('cn-hm-embed','marketdata/china_heatmap.json');}
       catch(e){_hmMounted=false;}
     }
+    setTimeout(function(){
+      if(window.Plotly&&Plotly.Plots){
+        el.querySelectorAll('.js-plotly-plot').forEach(function(g){try{Plotly.Plots.resize(g);}catch(e){}});
+      }
+    },380);
   }
   function cnxCloseDlg(){
     document.querySelectorAll('.cnx-dlg.open').forEach(function(el){
