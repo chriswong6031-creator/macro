@@ -309,6 +309,27 @@ signal for the energy component (available ~10 days before CPI).
 
 ---
 
+### 2026 energy deflation (cold print)
+
+| date | release | print_vs_exp | cause_family | knowable_ex_ante | free_signal |
+|---|---|---|---|---|---|
+| 2026-06 | CPI headline | MISS (−0.4% MoM vs −0.1% consensus; largest gasoline drag since 2022; first negative headline since 2020) | ENERGY_COLLAPSE | PARTIAL | EIA weekly gasoline (5 weeks published, ~10d lead) showed sharp June drop; WTI strip; Cleveland nowcast −0.06 vs model +0.08 |
+
+**Notes:** ENERGY_COLLAPSE is the inverse of ENERGY_SURGE — a sharp gasoline drawdown
+pulls headline below expectations. Same free signal (EIA weekly retail gasoline / WTI,
+~10 days ahead of CPI), opposite direction. The June-2026 print was the first cold print
+of this family in the catalog. Two honest caveats on knowability: (1) the energy
+*direction* was signalled ex ante, but the −0.4 *magnitude* was a tail — it breached even
+the energy-aware `mf_energy` shadow's p10 of −0.356; (2) roughly 0.26pp of the miss was
+ex-energy core-side disinflation (core services ex-shelter + core goods) that the
+`cpi_bridge` lag-1 persistence blocks could not see and no free instrument flagged — see
+`research/release_forecast/FIELD_GUIDE_BRIDGE_FORWARD_PROXIES.md`. So the family is tagged
+PARTIAL, not YES: the energy leg was knowable, the core-side leg was not.
+**Source:** BLS CPI June-2026 release.
+https://www.bls.gov/news.release/archives/cpi_07142026.htm
+
+---
+
 ### 5-week survey gaps
 
 | date | release | print_vs_exp | cause_family | knowable_ex_ante | free_signal |
