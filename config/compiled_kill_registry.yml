@@ -126,6 +126,12 @@ entries:
     section: 1
     section_name: forbidden_by_ruling
 
+  - topic: '`sector_rotation_schedule.v1` display artifact (parallel rotation-schedule surface)'
+    verdict: 'DO NOT BUILD — duplicates shipped Turn Desk (#1541); macro conditioners, if wanted, fold into Turn Desk / `oracle_state.json` as Family-D columns, not a parallel uncalibrated surface'
+    source: '`ORACLE_ROTATION_TM_CODEX_ADJUDICATION.md` (2026-07-06, #1750); RL-R10(e), `RATIO_LENS_MASTERPLAN_BY_FABLE.md`'
+    section: 1
+    section_name: forbidden_by_ruling
+
   - topic: 'Insider × T2 interaction'
     verdict: 'KILLED'
     source: 'Codex buy-decision docket adjudication (#1781)'
