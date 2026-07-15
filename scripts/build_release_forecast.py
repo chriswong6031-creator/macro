@@ -1829,6 +1829,26 @@ def _check_release_day_capture(
             }
             if frozen_on_rd:
                 scored_shadow_row["frozen_on_release_day"] = True
+
+            # Block-level scoring for cpi_bridge rows (display-tier context-accrual).
+            # Fail-open: a block-scoring failure must never prevent the scored row.
+            if shadow_model == "cpi_bridge" and t1_shadow.get("components"):
+                try:
+                    from engine.release_block_scoring import score_bridge_blocks
+                    block_scores = score_bridge_blocks(
+                        root=root,
+                        components=t1_shadow["components"],
+                        period=period_str,
+                        asof=today,
+                    )
+                    if block_scores:
+                        scored_shadow_row["block_scores"] = block_scores
+                except Exception as _bse:
+                    log.warning(
+                        "block_scoring failed for cpi_bridge %s/%s — skipping block_scores: %s",
+                        release_type, period_str, _bse,
+                    )
+
             scored_rows.append(scored_shadow_row)
             log.info(
                 "catch-up scored shadow (%s): %s/%s — actual=%.4f vs shadow_proj=%.4f",
@@ -2507,6 +2527,21 @@ def _build_scoreboard(
     # FIX 5: load defect_notices.json and pass through as annotation (no metric change)
     defect_notices = _load_defect_notices(root)
 
+    # Block scoreboard: per-block forward MAE/bias for cpi_bridge rows.
+    # Display-tier context-accrual (see engine/release_block_scoring.py).
+    # Will be empty until the first cpi_bridge row scores. Fail-open.
+    block_scoreboard: dict = {}
+    try:
+        from engine.release_block_scoring import aggregate_block_scoreboard
+        cpi_bridge_scored = [
+            r for r in scored
+            if r.get("model") == "cpi_bridge" and r.get("block_scores")
+        ]
+        if cpi_bridge_scored:
+            block_scoreboard = aggregate_block_scoreboard(cpi_bridge_scored)
+    except Exception as _bsb_e:
+        log.warning("block_scoreboard aggregation failed (fail-open): %s", _bsb_e)
+
     return {
         "schema": "release_forecast_scoreboard.v2",
         "asof": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -2516,6 +2551,7 @@ def _build_scoreboard(
         "by_shadow": shadow_stats,  # Round-2b: per-(release, model) shadow track records
         "promotion_review": promotion_review,  # MRI-R40 §5: annotation, no metric changes
         "defect_notices": defect_notices,  # annotation only; no metric computation changed
+        "block_scoreboard": block_scoreboard,  # per-block cpi_bridge MAE/bias (display-tier accrual)
     }
 
 
