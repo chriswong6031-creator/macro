@@ -173,3 +173,53 @@ See 'Vs strongest naive' lines per target above for exact margins.
 
 **Verdict:** ppi_finaldemand was already in [70%,95%]. Minor coverage improvement. Thin-history caveat unchanged.
 
+---
+
+## Seam-Correction Restatement (2026-07-14) — NIPA re-base target fence
+
+**Change:** engine `_null_seam_mom_targets` (PR #2579, follow-up to the #2575 feature fence).
+**Not a model or feature change** (anti-mining intact): the ridge specs, feature sets, kill
+rule, and era splits are untouched. This is a **data-quality correction** — it drops
+observations that were never real inflation prints.
+
+**What was wrong:** the walk-forward target was `pct_change` of ALFRED first-print PCEPI/PCEPILFE
+levels. At the five NIPA comprehensive-revision vintages the period-P first print is on a new
+index base while P−1 is on the old base, so the "MoM" is a re-base artifact, not inflation:
+
+| Seam period | PCEPI target (old) | PCEPILFE target (old) | Role in frozen backtest |
+|---|---|---|---|
+| 2003-11 | −7.20 | −6.68 | training row (idx 39) |
+| 2009-06 | −10.13 | −8.45 | **scored** step |
+| 2013-06 | −8.00 | −7.69 | **scored** step |
+| 2018-06 | −5.75 | −4.44 | **scored** step |
+| 2023-08 | −5.09 | −6.97 | **scored** step (2021+ era) |
+
+(Real worst PCE MoM is −1.146, Nov-2008.) Four of the five landed past the 60-obs burn-in and
+were scored, so they dominated the RMSE and mis-covered the p10–p90 bands in the frozen table
+above. The fence nulls these targets; `_walk_forward` then skips them as training rows, scored
+steps, and baseline inputs alike. PPIFIS/PPIFES (vintages 2014+) have no seams and are byte-unchanged.
+
+**Corrected metrics (same era/metric code, seam-free):**
+
+| Target | window | n | MAE model | MAE naive | RMSE model | RMSE naive | cov p10–p90 | skew HR | VERDICT |
+|---|---|---|---|---|---|---|---|---|---|
+| pce_headline | full | 245 | 0.1265 | 0.1930 | 0.1768 | 0.2585 | 86.4% | 81.0% | **MODEL** (PASS) |
+| pce_headline | 2021+ | 64 | 0.0869 | 0.1912 | 0.1167 | 0.2645 | 93.8% | 84.4% | |
+| pce_core | full | 245 | 0.1027 | 0.1150 | 0.1358 | 0.1588 | 77.4% | 71.8% | **MODEL** (PASS) |
+| pce_core | 2021+ | 64 | 0.1030 | 0.1501 | 0.1417 | 0.1995 | 76.6% | 76.6% | |
+| ppi_finaldemand | full | 87 | 0.3260 | 0.4646 | 0.4029 | 0.6109 | 76.2% | 75.0% | **MODEL** (PASS) — unchanged |
+| ppi_finaldemand | 2021+ | 65 | 0.3377 | 0.4696 | 0.4167 | 0.6114 | 76.2% | 72.3% | |
+
+**All three verdicts stand (MODEL / PASS).** The seams inflated model and benchmark error levels
+in lockstep, so removing them lowers absolute MAE/RMSE without changing the model-vs-naive
+relationship the kill rule tests. One nuance: on the strongest-naive full-window check (MRI-R28b),
+frozen pce_core LAGGED expanding_mean by −0.0041 (a seam-contaminated artifact); corrected it BEATS
+by +0.0039 (model 0.1027 vs strongest-naive 0.1066). n falls by 5 per PCE target (4 scored seams
+removed + the 2003-11 training row deferring the first post-burn-in step by one); 2021+ n falls
+65→64 (2023-08 dropped).
+
+The frozen summary table above and the companion `results/backtest_new_targets_v1_summary.json`
+snapshot remain the immutable 2026-07-08 pre-fix record; **this section supersedes their PCE
+numbers.** The MRI-R30 recalibration tables and `results/interval_recal_v1_coverage.json` use the
+same (now seam-corrected) engine; their PCE coverage figures shift accordingly on next regen.
+
