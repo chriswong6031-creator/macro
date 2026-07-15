@@ -191,6 +191,12 @@
       "at": "2026-07-15T17:38:34.915995+00:00",
       "activated": false,
       "importance": 0
+    },
+    "https://www.whitehouse.gov/?p=44912": {
+      "id": "wh-2026-07-15-presidential-message-on-the-birthday-of-saint-frances-xavier-cabrini",
+      "at": "2026-07-15T21:14:52.930310+00:00",
+      "activated": false,
+      "importance": 0
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
