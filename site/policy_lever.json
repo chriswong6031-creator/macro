@@ -1,17 +1,17 @@
 {
   "schema": "policy_lever.v1",
-  "as_of": "2026-07-13",
+  "as_of": "2026-07-15",
   "favored_complex": {
     "basket": [
       "SMH",
       "SOXX"
     ],
     "basket_incomplete": false,
-    "drawdown_pct": -13.97,
-    "drawdown_z": -1.53,
-    "as_of": "2026-07-13",
-    "note": "Semis complex (SMH/SOXX equal-weight) is -14.0% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
-    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-14.0%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
+    "drawdown_pct": -13.46,
+    "drawdown_z": -1.51,
+    "as_of": "2026-07-15",
+    "note": "Semis complex (SMH/SOXX equal-weight) is -13.5% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
+    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-13.5%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
   },
   "jawboning": {
     "n_7d": 5,
@@ -37,7 +37,7 @@
         "macd_curl": false,
         "basing": false,
         "days_in_base": 0,
-        "flatness": 0.1604,
+        "flatness": 0.1679,
         "armed": false,
         "params": {
           "stoch_k_period": 14,
