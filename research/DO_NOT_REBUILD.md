@@ -49,6 +49,7 @@ curated, not generated. Do not build an extractor.
 | Chatter-only promotion to a narrative candidate state (source-credibility-alone escalation without the cross-modal tape veto) | FORBIDDEN — single credible flare earns salience, never authority; veto unconditional | NAR-R2, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md` |
 | Hypothesis-slot pre-reservation via standalone coverage census (bypassing WA-R8's ≥8-cases + Opus fingerprint + explicit-ruling gate) | FORBIDDEN — a census proves testability, never entitlement; second attempted end-run (LR docket round 1, LH brainstorm round 2) | LHB-R5, `LONG_HOLD_LOBE_BRAINSTORM_ADJUDICATION_BY_FABLE.md`; precedent LR-R9 |
 | Calendar/event-window-gated risk-radar `_SCARES` legs (any tier — Tier-B advances state, state sets gross) | FORBIDDEN — laundered pre-event conviction dampener; event/OPEX windows are display context only; risk channels must be calendar-agnostic constructions | RIC-R3, `RATES_INFLATION_COMMAND_MASTERPLAN_BY_FABLE.md` judge-panel ruling (2026-07-13) |
+| `sector_rotation_schedule.v1` display artifact (parallel rotation-schedule surface) | DO NOT BUILD — duplicates shipped Turn Desk (#1541); macro conditioners, if wanted, fold into Turn Desk / `oracle_state.json` as Family-D columns, not a parallel uncalibrated surface | `ORACLE_ROTATION_TM_CODEX_ADJUDICATION.md` (2026-07-06, #1750); RL-R10(e), `RATIO_LENS_MASTERPLAN_BY_FABLE.md` |
 
 ## 2. Killed / refuted signal families and theses
 
