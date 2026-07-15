@@ -1190,7 +1190,7 @@
 
     var head = ''
       + '<div class="hm-sc-hd">'
-      +   '<div class="hm-sc-tit">' + L('S&amp;P 500 Heatmap', 'S&amp;P 500 热力图') + '</div>'
+      +   '<div class="hm-sc-tit">' + L(data.label_en ? data.label_en + ' Heatmap' : 'S&amp;P 500 Heatmap', data.label_zh ? data.label_zh + ' 热力图' : 'S&amp;P 500 热力图') + '</div>'
       +   '<div class="hm-sc-meta"></div>'
       +   '<button type="button" class="hm-sc-exp" aria-label="Expand heatmap">⤢ ' + L('Expand', '展开') + '</button>'
       + '</div>';
