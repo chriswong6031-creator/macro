@@ -444,6 +444,13 @@ on:
       - "scripts/ops_flow_atlas.py"
       - "research/FLOW_SIGNAL_FIELD_GUIDE.md"
       - "tests/test_fs2_flow_atlas.py"
+      # FS-4 flow-score trainer + nightly scorer + gate v2:
+      # lib module, trainer ops script, config, scorer tests, and trainer tests.
+      - "lib/flow_score.py"
+      - "config/flow_score.yml"
+      - "scripts/ops_train_flow_score.py"
+      - "tests/test_fs4_flow_scorer.py"
+      - "tests/test_fs4_flow_trainer.py"
       # FL-A EOD flow backfill (FC-R4/R11): backfill script, build_options_flow staleness
       # warning, and the test suite that pins idempotence + schema-variant handling.
       - "scripts/backfill_options_flow.py"
@@ -1297,8 +1304,11 @@ jobs:
     # CI-null (no creds / absent stores → clean no-op), grader parity
     # (outputs match engine/grading.py primitives directly), tz-aware parquet
     # round-trip (avoids the LETHAL naive/aware datetime64 mismatch class).
+    # FS-4 scorer (Lane B): no-model path, keep-first dedup, kill-switch, decay
+    # monitor, gate v2 shape, PIT guard, prefiltered_index_root, bucket_unmapped.
     # Triggers on collectors/flow_signals.py, engine/flow_signals_grade.py,
-    # scripts/build_flow_signals.py, config/flow_detector.yml, and test file.
+    # scripts/build_flow_signals.py, config/flow_detector.yml, test files,
+    # lib/flow_score.py, config/flow_score.yml, and FS-4 test files.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -1306,9 +1316,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml boto3
+        run: pip install pytest pandas numpy pyarrow pyyaml boto3 scikit-learn joblib
       - name: flow-signals ledger + grader unit tests
         run: python -m pytest tests/test_flow_signals.py -q
+      - name: FS-4 scorer unit tests (Lane B)
+        run: python -m pytest tests/test_fs4_flow_scorer.py -q
 
   flow-signal-cohorts:
     # FS-1 historical flow cohorts (ops lane, off-render):
@@ -1321,6 +1333,9 @@ jobs:
     # FS-2 atlas builder (ops lane, off-render):
     # Covers Wilson CI, cohort-separation guard, n-floor labeling, accrual path,
     # 0DTE index annotation, era hit-rate, premium decile, crowdedness.
+    # FS-4 trainer (Lane A): map_model_bucket, uniqueness_weights, ECE, Brier,
+    # reliability, deployable logic, manifest n_trials, SHA-256 verification,
+    # lazy import, label column missing, expand_grid.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -1328,13 +1343,15 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pytest-mock pandas numpy pyarrow pyyaml requests boto3
+        run: pip install pytest pytest-mock pandas numpy pyarrow pyyaml requests boto3 scikit-learn joblib
       - name: FS-1 flow cohorts unit tests
         run: python -m pytest tests/test_fs1_flow_cohorts.py -q
       - name: FS-2 atlas builder unit tests
         run: python -m pytest tests/test_fs2_flow_atlas.py -q
       - name: FS-0 downstream suite (shared seams)
         run: python -m pytest tests/test_flow_signals.py -q
+      - name: FS-4 trainer unit tests (Lane A)
+        run: python -m pytest tests/test_fs4_flow_trainer.py -q
 
   broad-etf-flows:
     # RLT-R3: broad-market index ETF creation/redemption proxy.

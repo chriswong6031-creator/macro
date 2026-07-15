@@ -1748,6 +1748,39 @@ def main() -> int:
         recs = [_one_task(item) for item in uni]
         log.info("stock library: analysed %d names in %.0fs (serial)", len(uni), time.time() - t0)
 
+    # ---- flow_score pre-loop load (FS-4 Lane C, schema flow_score.stock/v1) --------
+    # Loads ledger + scores once; looked up per-ticker inside the main rec loop below.
+    # OMITTED entirely (block never written) when:
+    #   (a) flow_signals ledger absent, OR
+    #   (b) config/flow_score.yml scoring.enabled is False (kill-switch), OR
+    #   (c) any exception during load — additive block must never break the stockdata build.
+    # PRE-GATE LAW (FS-R3 / amendment §9): score stays null until FS-5 — the block
+    # deliberately does NOT read scores.parquet, so no calibrated number can leak
+    # onto a user surface before the gauntlet passes.
+    _fs_ledger_by_root: "dict[str, dict]" = {}   # root → {n_events, since}
+    _fs_scoring_enabled: bool = False             # kill-switch default = off until file exists
+    try:
+        import yaml as _yaml  # noqa: PLC0415
+        _fs_cfg_path = Path(__file__).resolve().parent.parent / "config" / "flow_score.yml"
+        if _fs_cfg_path.exists():
+            _fs_yml = _yaml.safe_load(_fs_cfg_path.read_text()) or {}
+            _fs_scoring_enabled = bool((_fs_yml.get("scoring") or {}).get("enabled", False))
+        _fs_ledger_path = config.data_dir() / "flow_signals" / "ledger.parquet"
+        if _fs_ledger_path.exists():
+            _fs_ldf = pd.read_parquet(_fs_ledger_path, columns=["root", "session_date"])
+            _fs_ldf = _fs_ldf.dropna(subset=["root"])
+            for _fs_root, _fs_grp in _fs_ldf.groupby("root"):
+                _fs_ledger_by_root[str(_fs_root)] = {
+                    "n_events": int(len(_fs_grp)),
+                    "since": str(_fs_grp["session_date"].min()),
+                }
+            log.info("flow_score: ledger loaded — %d roots, %d events",
+                     len(_fs_ledger_by_root), len(_fs_ldf))
+    except Exception as _fs_load_e:  # noqa: BLE001 — additive; must not break the stockdata build
+        log.warning("flow_score pre-load skipped (%s)", _fs_load_e)
+        _fs_ledger_by_root = {}
+        _fs_scoring_enabled = False
+
     sig_verdict: dict[str, dict] = {}   # owner's confluence cascade verdict per name (T1->T4)
     _coil_d: dict[str, float | None] = {}       # weekly StochRSI D per name (for cohort fractions)
     _coil_wash: dict[str, bool | None] = {}     # washout context per name
@@ -2221,6 +2254,35 @@ def main() -> int:
         except Exception:  # noqa: BLE001 — additive; never fatal
             rec["sniper"] = {"w2_washout": False, "w2_stoch_d": None,
                              "days_since_63d_low": None, "coiled": None, "asof": None}
+        # ---- flow_score block (FS-4 Lane C, schema flow_score.stock/v1) ---------------
+        # Additive: OMITTED (key absent) when ledger absent OR config/flow_score.yml
+        # scoring.enabled is False (kill-switch) OR any exception.
+        # Never writes a fake-neutral value — absent ledger => key simply not present.
+        # PRE-GATE LAW (FS-R3): score is display-only; must not feed any ranker/sizer/gate.
+        if _fs_ledger_by_root and _fs_scoring_enabled:
+            try:
+                _fs_entry = _fs_ledger_by_root.get(ticker) or _fs_ledger_by_root.get(ticker.upper())
+                if _fs_entry is not None:
+                    # PRE-GATE LAW (FS-R3 / amendment §9): the flow_score.stock/v1
+                    # block is a "building_history" receipt only until FS-5 gauntlet
+                    # passes.  score and n_similar must remain null (frozen contract).
+                    # Wiring a live calibrated score here while status='building_history'
+                    # would produce an internally inconsistent block and surface a
+                    # pre-gate number on a user-facing page.  gate.json.scored stays
+                    # false; do not populate score until the interface contract is
+                    # amended at FS-5.
+                    _fs_block: dict = {
+                        "schema": "flow_score.stock/v1",
+                        "status": "building_history",
+                        "n_events": _fs_entry["n_events"],
+                        "since": _fs_entry["since"],
+                        "score": None,
+                        "n_similar": None,
+                        "asof": str(pd.Timestamp.now(tz="UTC").date()),
+                    }
+                    rec["flow_score"] = _fs_block
+            except Exception as _fs_e:  # noqa: BLE001 — additive; never fatal
+                log.debug("flow_score block skipped for %s (%s)", ticker, _fs_e)
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
