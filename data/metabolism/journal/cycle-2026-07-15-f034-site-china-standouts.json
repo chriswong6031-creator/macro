@@ -1,0 +1,17 @@
+{
+  "schema": "metabolism.journal.v1",
+  "cycle_id": "cycle-2026-07-15-f034-site-china-standouts",
+  "stage": "propose",
+  "status": "noop_paused",
+  "auth_ok": null,
+  "artifacts": [],
+  "next_stage": null,
+  "ts": "2026-07-15T11:16:49+00:00",
+  "stages": {
+    "propose": {
+      "status": "noop_paused",
+      "finished_at": "2026-07-15T11:16:49+00:00",
+      "note": "preflight auth failed: claude -p ping exited 1: (no stderr)"
+    }
+  }
+}
