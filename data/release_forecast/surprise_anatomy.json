@@ -16,6 +16,7 @@
       "HEALTH_INS_RESET",
       "TARIFF_PASSTHROUGH",
       "ENERGY_SURGE",
+      "ENERGY_COLLAPSE",
       "BIRTH_DEATH"
     ]
   },
@@ -292,6 +293,16 @@
       "knowable_ex_ante": "PARTIAL",
       "free_signal": "BED (Business Employment Dynamics) showed unusual establishment-closure rates; Sep 2009 preliminary -824k published Oct 2009",
       "cite": "https://www.bls.gov/ces/publications/benchmark.htm"
+    },
+    {
+      "id": "S026",
+      "date": "2026-06",
+      "release": "CPI headline",
+      "print_vs_exp": "MISS (actual -0.4% MoM vs -0.1% consensus; largest gasoline drag since 2022; first negative headline since 2020)",
+      "cause_family": "ENERGY_COLLAPSE",
+      "knowable_ex_ante": "PARTIAL",
+      "free_signal": "EIA weekly retail gasoline (5 weeks published, ~10d lead) showed a sharp June drop; WTI futures strip; Cleveland nowcast -0.06 vs model +0.08. The energy-driven direction was signalled; the -0.4 magnitude was a tail (breached even the energy-aware mf_energy shadow p10 of -0.356) and the ex-energy core-side disinflation (~0.26pp) was NOT knowable ex ante from any free instrument.",
+      "cite": "https://www.bls.gov/news.release/archives/cpi_07142026.htm"
     }
   ],
   "genuinely_unknowable_summary": {
