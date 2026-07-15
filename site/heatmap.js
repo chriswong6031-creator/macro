@@ -160,15 +160,13 @@
     var f = function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
     return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]);
   }
-  function fgFor(c) {
-    // Institutional board look = white labels on saturated tiles — but the
-    // brightest bins (pure green ~#1ec173) fail WCAG 4.5:1 against white text.
-    // Pick whichever of white / near-black ink gives the higher contrast on
-    // THIS fill, so every ticker/percent stays legible on any bin.
-    var L = _relLum(c);
-    var cW = 1.05 / (L + 0.05);              // contrast of #fff over the fill
-    var cB = (L + 0.05) / (0.03 + 0.05);     // contrast of near-black (#0b0d10) over the fill
-    return cB > cW ? '#0b0d10' : '#ffffff';
+  function fgFor(_c) {
+    // All tile labels are white — operator preference for the institutional
+    // board look across all four heatmaps (China / HK / Canada / US).
+    // Bright/saturated tiles (e.g. pure green ~#1ec173) get a subtle text-shadow
+    // (added to .hm-tile / .hm-mpc via injectStyle) so the white ink stays
+    // legible even on the lightest bins.
+    return '#ffffff';
   }
   function neutral() {
     // flat ~0% tile: a dark slate in both themes so the white label stays legible
@@ -1341,7 +1339,8 @@
       var el = e.target.closest && e.target.closest('.hm-tile');
       if (!el) return;
       var rec = tileEls[+el.getAttribute('data-i')];
-      if (rec) window.location.href = 'stock.html#' + encodeURIComponent(rec.t.t);
+      var scUrl = data.stock_url || 'stock.html#';
+      if (rec) window.location.href = scUrl + encodeURIComponent(rec.t.t);
     }
     tm.addEventListener('mousemove', onMove);
     tm.addEventListener('mouseleave', onLeave);
@@ -1364,14 +1363,20 @@
   /*  OVERLAY                                                                */
   /* ====================================================================== */
   var _ov = null, _ovView = null;
-  function openOverlay() {
+  // openOverlay([jsonUrl, label]) — zero-arg = S&P 500 default (existing behaviour).
+  // Called externally via MMHeatmap.openOverlayFor(jsonUrl, label).
+  // The overlay is appended to document.body so it escapes any parent
+  // backdrop-filter containing block (e.g. a dialog that embeds the scorecard).
+  function openOverlay(jsonUrl, label) {
     if (_ov) return;
-    loadData().then(function (data) {
+    var url = (typeof jsonUrl === 'string' && jsonUrl) ? jsonUrl : null;
+    var title = (typeof label === 'string' && label) ? label : L('S&amp;P 500 Heatmap', 'S&amp;P 500 热力图');
+    loadData(url).then(function (data) {
       _ov = document.createElement('div');
       _ov.className = 'hm-ov hm-scope';
       _ov.innerHTML = '<div class="hm-ov-scrim"></div>'
-        + '<div class="hm-ov-panel" role="dialog" aria-modal="true" aria-label="Market heatmap">'
-        +   '<div class="hm-ov-head"><span class="t">' + L('S&amp;P 500 Heatmap', 'S&amp;P 500 热力图') + '</span>'
+        + '<div class="hm-ov-panel" role="dialog" aria-modal="true" aria-label="' + esc(title) + '">'
+        +   '<div class="hm-ov-head"><span class="t">' + title + '</span>'
         +     '<button type="button" class="hm-ov-x" aria-label="Close">✕</button></div>'
         +   '<div class="hm-ov-body"><div class="hm-ov-full"></div></div>'
         + '</div>';
@@ -1393,6 +1398,42 @@
     var done = function () { if (view) view.destroy(); node.remove(); document.body.style.overflow = ''; };
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) done(); else setTimeout(done, 280);
+  }
+
+  /* ====================================================================== */
+  /*  EMBED API  (consumed by pages that embed the heatmap inside a dialog)  */
+  /* ====================================================================== */
+  // MMHeatmap.mountScorecard(elId, jsonUrl)
+  //   Load jsonUrl, render the compact scorecard/mini-treemap into
+  //   document.getElementById(elId). The scorecard's Expand button opens the
+  //   fullscreen overlay for the same jsonUrl.
+  //   Example: MMHeatmap.mountScorecard('cn-hm-embed', 'marketdata/china_heatmap.json')
+  function mountScorecard(elId, jsonUrl) {
+    injectStyle();
+    var el = document.getElementById(elId);
+    if (!el) { if (window.console) console.warn('MMHeatmap.mountScorecard: element not found', elId); return; }
+    loadData(jsonUrl).then(function (data) {
+      if (!data.tiles || !data.tiles.length) { el.style.display = 'none'; return; }
+      renderScorecard(el, data);
+      // Override the expand button to open the overlay for THIS jsonUrl/label
+      var expBtn = el.querySelector('.hm-sc-exp');
+      if (expBtn) {
+        expBtn.removeEventListener('click', openOverlay);
+        expBtn.addEventListener('click', function () {
+          openOverlay(jsonUrl, data.label_en || data.label_zh || '');
+        });
+      }
+    }).catch(function (e) {
+      el.style.display = 'none';
+      if (window.console) console.error('MMHeatmap.mountScorecard failed', e);
+    });
+  }
+
+  // MMHeatmap.openOverlayFor(jsonUrl, label)
+  //   Open the fullscreen overlay for the given jsonUrl with the given label.
+  //   Example: MMHeatmap.openOverlayFor('marketdata/china_heatmap.json', 'China A-shares')
+  function openOverlayFor(jsonUrl, label) {
+    openOverlay(jsonUrl, label);
   }
 
   /* ====================================================================== */
@@ -1442,7 +1483,7 @@
       + '.hm-sub-hd{position:absolute;left:0;top:0;width:100%;padding:0 5px;font-size:9px;font-weight:700;color:color-mix(in srgb,var(--text) 66%,transparent);white-space:nowrap;z-index:3;text-transform:uppercase;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;cursor:help;background:color-mix(in srgb,#000000 24%,transparent);}'
       + '.hm-sub:hover>.hm-sub-hd{color:var(--text);background:color-mix(in srgb,var(--link) 30%,transparent);}'
       + '.hm-sub-hd .snm{pointer-events:none;}'
-      + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.05;transition:filter .1s,box-shadow .1s;}'
+      + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.05;transition:filter .1s,box-shadow .1s;text-shadow:0 1px 2px rgba(0,0,0,.45);}'
       + '.hm-tile.big{border-radius:3px;} .hm-tile.huge{border-radius:4px;}'
       + '.hm-tile:hover{z-index:8;filter:brightness(1.06);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--text) 78%,transparent);}'
       + '.hm-tile .sym,.hm-tile .pc{display:block;max-width:calc(100% - 3px);white-space:nowrap;overflow:hidden;text-overflow:clip;}'
@@ -1552,7 +1593,7 @@
       + '.hm-mbr{margin-left:auto;width:58px;height:7px;border-radius:4px;overflow:hidden;display:flex;background:var(--panel);} .hm-mbr i{display:block;height:100%;} .hm-mbr i.up{background:var(--up);} .hm-mbr i.dn{background:var(--down);}'
       + '.hm-mrow{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--line);border-top:0;background:var(--panel);text-decoration:none;}'
       + '.hm-mgrp .hm-mrow:last-child{border-radius:0 0 10px 10px;}'
-      + '.hm-mpc{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;padding:6px 9px;border-radius:9px;min-width:66px;text-align:center;flex:none;}'
+      + '.hm-mpc{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;padding:6px 9px;border-radius:9px;min-width:66px;text-align:center;flex:none;text-shadow:0 1px 2px rgba(0,0,0,.45);}'
       + '.hm-mid{flex:1;min-width:0;display:flex;flex-direction:column;} .hm-mid b{font-size:14px;font-weight:800;color:var(--text);} .hm-mid span{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
       + '.hm-mgo{color:var(--muted);font-size:20px;font-weight:700;flex:none;}'
       + '.hm-mobile .hm-legend,.hm-mobile .hm-read-src,.hm-mobile .hm-hint{display:none;} .hm-mobile .hm-sort{display:flex;}'
@@ -1648,7 +1689,11 @@
     }
   }
 
-  window.MMHeatmap = { openOverlay: openOverlay };
+  window.MMHeatmap = {
+    openOverlay: openOverlay,
+    openOverlayFor: openOverlayFor,
+    mountScorecard: mountScorecard,
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();

@@ -156,7 +156,7 @@ MARKETS: dict[str, dict] = {
     "china": {
         "currency": "CNY",
         "stockdata_dir": "chinastockdata",
-        "stock_url": "china_lookup.html#",
+        "stock_url": "https://app.mastermind-x.com/terminal?symbol=",
         "sector_zh": SECTOR_ZH_CN,
         "label_en": "China A-shares",
         "label_zh": "A股",
@@ -173,7 +173,7 @@ MARKETS: dict[str, dict] = {
         # labelled as turnover, never mislabelled as market cap.
         "currency": "HKD",
         "stockdata_dir": "hkstockdata",
-        "stock_url": "hk_lookup.html#",
+        "stock_url": "https://app.mastermind-x.com/terminal?symbol=",
         "sector_zh": SECTOR_ZH_HK,
         "label_en": "Hong Kong",
         "label_zh": "港股",
@@ -187,7 +187,7 @@ MARKETS: dict[str, dict] = {
     "canada": {
         "currency": "CAD",
         "stockdata_dir": "canadastockdata",
-        "stock_url": "canada_stock.html#",
+        "stock_url": "https://app.mastermind-x.com/terminal?symbol=",
         "sector_zh": SECTOR_ZH_CA,
         "label_en": "Canada · TSX",
         "label_zh": "加拿大 · TSX",

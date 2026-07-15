@@ -130,6 +130,7 @@ admin/*-sa.json
 
 # dev-only fast-render view-model cache (scripts/render_macro_fast.py)
 data/_dev_macro_vm.pkl
+data/_dev_china_vm.pkl
 
 # Signal track-record log — un-ignored (w0-stageB #1139): maturation-fill semantics
 # make row-level JSONL append-only awkward; parquet append-only is repo practice.
