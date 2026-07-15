@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-15 17:15:32 UTC",
+  "built": "2026-07-15 18:36:17 UTC",
   "session": {
     "region": "us",
     "open": true,
-    "local_time": "2026-07-15 13:15 EDT"
+    "local_time": "2026-07-15 14:36 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -18,15 +18,15 @@
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": 0.33
+      "chg_pct": 0.71
     },
     {
       "sym": "QQQ",
-      "chg_pct": 0.18
+      "chg_pct": 0.87
     },
     {
       "sym": "VIX",
-      "chg_pct": -5.59
+      "chg_pct": -8.45
     }
   ],
   "display": {
@@ -34,14 +34,14 @@
     "label_en": "Risk-on",
     "label_zh": "\u98ce\u9669\u504f\u597d",
     "color": "green",
-    "score": 77,
+    "score": 78,
     "band_changed": false,
     "pending": null
   },
   "live": {
     "verdict": "RISK_ON",
-    "score": 77,
-    "raw_score": 77,
+    "score": 78,
+    "raw_score": 78,
     "color": "green",
     "label_en": "Risk-on",
     "label_zh": "\u98ce\u9669\u504f\u597d",
@@ -50,9 +50,9 @@
     "radar": {
       "state": "watch",
       "state_ungated": "watch",
-      "top_score": 53,
-      "label_en": "Growth scare / defensive rotation",
-      "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
+      "top_score": 59,
+      "label_en": "Bubble / blow-off unwind",
+      "label_zh": "\u6ce1\u6cab/\u89c1\u9876\u56de\u5410",
       "context_gate": {
         "met": false,
         "spy_below_200dma": false,
@@ -90,7 +90,7 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 85,
+      "score": 88,
       "basis": "live",
       "asof": "live"
     },
