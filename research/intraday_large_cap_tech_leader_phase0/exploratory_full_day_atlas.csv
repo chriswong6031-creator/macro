@@ -1,0 +1,52 @@
+post_registered_exploratory,segment,feature,label,n_sessions,full_day_winner_mean_percentile,full_day_top1,full_day_top3,mean_selected_full_day_return,mean_selected_after_return,mean_selected_after_resid
+True,full,prior_resid_1d,Prior-session beta-adjusted RS,209,0.53921365,0.09569378,0.20574163,0.00508716,-0.00038317,0.00003704
+True,full,prior_resid_5d,Prior 5-session beta-adjusted RS,209,0.55315165,0.10047847,0.21052632,0.00399758,0.00154524,0.00230755
+True,full,prior_resid_20d,Prior 20-session beta-adjusted RS,209,0.59850218,0.10526316,0.27751196,0.00364565,-0.00004566,0.00042752
+True,full,rs_accel_5v20,5-vs-20-session RS acceleration,209,0.49407115,0.05741627,0.14832536,-0.00069544,-0.00020886,0.00082789
+True,full,prior_close_location,Prior-day close location,209,0.54524652,0.07177033,0.16267943,-0.00008842,-0.00009392,0.00016016
+True,full,pm_resid,Premarket beta-adjusted return,194,0.80972658,0.31443299,0.56701031,0.03992442,-0.00270649,-0.00222747
+True,full,pm_rvol20,Premarket volume / prior-20 median,111,0.64747356,0.14414414,0.32432432,0.00825139,0.00413885,0.00396498
+True,full,pm_range_pct,Premarket range / prior close,194,0.73823398,0.21134021,0.39175258,0.00808527,-0.00260910,-0.00254006
+True,full,gap_resid,Opening gap beta-adjusted versus QQQ,209,0.79966715,0.31100478,0.55502392,0.03830101,-0.00284323,-0.00214988
+True,full,first15_return,First-15-minute raw return,209,0.75972540,0.29186603,0.55502392,0.03206942,0.00110246,0.00133122
+True,full,first15_resid,First-15-minute beta-adjusted RS,209,0.75847722,0.30143541,0.54545455,0.03281403,0.00122446,0.00147779
+True,full,rvol15,First-15-minute time-of-day RVOL,209,0.74329103,0.19617225,0.40669856,0.01167587,0.00044730,0.00044462
+True,full,opening_dollar_share,Share of universe opening dollar volume,209,0.64052424,0.12440191,0.29186603,0.00808048,-0.00017290,-0.00005456
+True,full,vwap_distance15,09:40 close distance above session VWAP,209,0.69003537,0.25358852,0.39712919,0.02673435,-0.00105193,-0.00134030
+True,full,opening_close_location,Opening-range close location,209,0.69648429,0.11004785,0.32057416,0.01665317,-0.00094964,-0.00145401
+True,full,first15_efficiency,First-15-minute trend efficiency,209,0.71395881,0.08133971,0.27751196,0.01668142,-0.00002562,-0.00025010
+True,full,range_expansion15,First-15-minute range expansion,209,0.70792594,0.17703349,0.33492823,0.00976753,0.00065269,0.00120185
+True,development,prior_resid_1d,Prior-session beta-adjusted RS,125,0.52591304,0.10400000,0.20000000,0.00460694,0.00118197,0.00220564
+True,development,prior_resid_5d,Prior 5-session beta-adjusted RS,125,0.54539130,0.08000000,0.17600000,-0.00076464,-0.00137247,0.00023398
+True,development,prior_resid_20d,Prior 20-session beta-adjusted RS,125,0.56243478,0.10400000,0.26400000,0.00164214,-0.00169038,-0.00027906
+True,development,rs_accel_5v20,5-vs-20-session RS acceleration,125,0.51721739,0.04800000,0.13600000,-0.00232690,-0.00211123,-0.00094041
+True,development,prior_close_location,Prior-day close location,125,0.52834783,0.07200000,0.16800000,-0.00305489,-0.00072520,0.00001331
+True,development,pm_resid,Premarket beta-adjusted return,110,0.82766798,0.32727273,0.56363636,0.03322695,-0.00482462,-0.00446680
+True,development,pm_rvol20,Premarket volume / prior-20 median,27,0.61513688,0.14814815,0.29629630,0.00526810,0.00573984,0.00605042
+True,development,pm_range_pct,Premarket range / prior close,110,0.73399209,0.19090909,0.36363636,0.00240755,-0.00267345,-0.00323700
+True,development,gap_resid,Opening gap beta-adjusted versus QQQ,125,0.80243478,0.32000000,0.55200000,0.03197357,-0.00468821,-0.00372838
+True,development,first15_return,First-15-minute raw return,125,0.78573913,0.27200000,0.57600000,0.02424200,-0.00201312,-0.00018146
+True,development,first15_resid,First-15-minute beta-adjusted RS,125,0.77843478,0.28800000,0.56000000,0.02473866,-0.00212055,-0.00034641
+True,development,rvol15,First-15-minute time-of-day RVOL,125,0.74782609,0.20000000,0.40800000,0.00580486,-0.00166664,-0.00157404
+True,development,opening_dollar_share,Share of universe opening dollar volume,125,0.64556522,0.10400000,0.29600000,0.00362219,-0.00136032,-0.00045633
+True,development,vwap_distance15,09:40 close distance above session VWAP,125,0.71756522,0.26400000,0.43200000,0.02246341,-0.00099518,-0.00014297
+True,development,opening_close_location,Opening-range close location,125,0.72313043,0.12000000,0.34400000,0.01412934,-0.00056173,-0.00036471
+True,development,first15_efficiency,First-15-minute trend efficiency,125,0.73721739,0.10400000,0.28000000,0.01469946,-0.00071182,-0.00001604
+True,development,range_expansion15,First-15-minute range expansion,125,0.70956522,0.16800000,0.32000000,0.00741575,0.00064643,0.00126833
+True,holdout,prior_resid_1d,Prior-session beta-adjusted RS,84,0.55900621,0.08333333,0.21428571,0.00580176,-0.00271224,-0.00319004
+True,holdout,prior_resid_5d,Prior 5-session beta-adjusted RS,84,0.56469979,0.13095238,0.26190476,0.01108422,0.00588706,0.00539323
+True,holdout,prior_resid_20d,Prior 20-session beta-adjusted RS,84,0.65217391,0.10714286,0.29761905,0.00662705,0.00240184,0.00147898
+True,holdout,rs_accel_5v20,5-vs-20-session RS acceleration,84,0.45962733,0.07142857,0.16666667,0.00173234,0.00262205,0.00345929
+True,holdout,prior_close_location,Prior-day close location,84,0.57039337,0.07142857,0.15476190,0.00432599,0.00084548,0.00037868
+True,holdout,pm_resid,Premarket beta-adjusted return,84,0.78623188,0.29761905,0.57142857,0.04869492,0.00006724,0.00070499
+True,holdout,pm_rvol20,Premarket volume / prior-20 median,84,0.65786749,0.14285714,0.33333333,0.00921031,0.00362424,0.00329467
+True,holdout,pm_range_pct,Premarket range / prior close,84,0.74378882,0.23809524,0.42857143,0.01552037,-0.00252483,-0.00162741
+True,holdout,gap_resid,Opening gap beta-adjusted versus QQQ,84,0.79554865,0.29761905,0.55952381,0.04771686,-0.00009772,0.00019908
+True,holdout,first15_return,First-15-minute raw return,84,0.72101449,0.32142857,0.52380952,0.04371735,0.00573875,0.00358225
+True,holdout,first15_resid,First-15-minute beta-adjusted RS,84,0.72877847,0.32142857,0.52380952,0.04483095,0.00620214,0.00419237
+True,holdout,rvol15,First-15-minute time-of-day RVOL,84,0.73654244,0.19047619,0.40476190,0.02041249,0.00359305,0.00344858
+True,holdout,opening_dollar_share,Share of universe opening dollar volume,84,0.63302277,0.15476190,0.28571429,0.01471482,0.00159411,0.00054330
+True,holdout,vwap_distance15,09:40 close distance above session VWAP,84,0.64906832,0.23809524,0.34523810,0.03308991,-0.00113638,-0.00312204
+True,holdout,opening_close_location,Opening-range close location,84,0.65683230,0.09523810,0.28571429,0.02040888,-0.00152689,-0.00307499
+True,holdout,first15_efficiency,First-15-minute trend efficiency,84,0.67934783,0.04761905,0.27380952,0.01963076,0.00099550,-0.00059840
+True,holdout,range_expansion15,First-15-minute range expansion,84,0.70548654,0.19047619,0.35714286,0.01326722,0.00066201,0.00110292
