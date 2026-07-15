@@ -3205,12 +3205,11 @@ def main() -> int:
             _hd = _hold_state.get(t)
             if _hd is not None:
                 r["hold"] = _hd
-            # W1.5 earnings-blackout chip — display-only context on ALL board rows.
+            # W1.5 / MLC-W5 earnings-proximity chip — display-only context on ALL board rows.
             # For rows that are still on the board (HOLD/LAUNCHED or outside blackout),
-            # attach the upcoming earnings date chip when days_to_earnings <= 7 (context).
+            # attach the upcoming earnings date chip when days_to_earnings <= 14d (MLC-W5
+            # extended from the original 7d; disclosure only per MLC-R10 — never gates).
             # For suppressed names: they are not on the board, so no chip needed here.
-            # The chip shows "Earnings <=3d" when in_blackout (should not appear on board
-            # because suppressed) and upcoming-earnings context when 4-7d away.
             _eb_row = _eb_blackout_map.get(t)
             if _eb_row is None and not _eb_store_stale:
                 # Name was not assessed yet (e.g. watch/laggard rows not in the buy pipeline)
@@ -3221,7 +3220,7 @@ def main() -> int:
                     _eb_row = None
             if _eb_row and not _eb_row.get("stale") and _eb_row.get("days_to_earnings") is not None:
                 _eb_days = _eb_row["days_to_earnings"]
-                if _eb_days is not None and _eb_days <= 7:
+                if _eb_days is not None and _eb_days <= 14:
                     # Map Nasdaq raw time tokens to display-friendly labels.
                     _raw_nt = _eb_row.get("next_time")
                     _nt_labels = {
@@ -3230,11 +3229,37 @@ def main() -> int:
                         "time-not-supplied": None,
                     }
                     _disp_nt = _nt_labels.get(_raw_nt, _raw_nt) if _raw_nt else None
+                    # EN/ZH bilingual chip text (MLC-R6; glance-tier plain words).
+                    # Display proximity in CALENDAR days from next_date so "today/
+                    # tomorrow/in N d" read the way a human means them. _eb_days is a
+                    # TRADING-day count (used for the ≤14 gate + W1.5 blackout), so a
+                    # single trading day across a weekend is NOT calendar-"tomorrow"
+                    # (Fri→Mon = 1 td / 3 cal). Fall back to _eb_days if next_date is
+                    # unparseable.
+                    _cal_days = _eb_days
+                    _nd_raw = _eb_row.get("next_date")
+                    if _nd_raw:
+                        try:
+                            _cal_days = (date.fromisoformat(str(_nd_raw)[:10])
+                                         - date.today()).days
+                        except Exception:  # noqa: BLE001
+                            _cal_days = _eb_days
+                    if _cal_days <= 0:
+                        _chip_en = "Reports today"
+                        _chip_zh = "今日公布业绩"
+                    elif _cal_days == 1:
+                        _chip_en = "Reports tomorrow"
+                        _chip_zh = "明日公布业绩"
+                    else:
+                        _chip_en = f"Reports in {_cal_days} d"
+                        _chip_zh = f"{_cal_days}日后公布业绩"
                     r["earnings_soon"] = {
-                        "days_to": _eb_days,
+                        "days_to": _cal_days,
                         "next_date": _eb_row.get("next_date"),
                         "next_time": _disp_nt,
                         "in_blackout": bool(_eb_row.get("in_blackout")),
+                        "chip_en": _chip_en,
+                        "chip_zh": _chip_zh,
                     }
             # W6-US fix 8: emit cand_depth_pct from the ladder onto every board row so
             # it is a first-class field available for the US-2 ledger study (depth vs

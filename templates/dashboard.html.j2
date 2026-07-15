@@ -11056,12 +11056,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             {# W6-C HOLD chip — hold STATE at rest (Base Nd / Launched / Broken); detail in expander #}
             {% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}" data-tip-en="Holding read: how long the base has built and the price that voids it. Tap to expand." data-tip-zh="持仓状态：筑底天数与失效价。点按展开。"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}
             {# W1.5 earnings-blackout chip — stays at rest (W1.5 contract) #}
+            {# MLC-W5: prefer chip_en/chip_zh (bilingual "Reports today/tomorrow/N d") from earnings_soon dict #}
             {% set _es_chip = n.get('earnings_soon') %}
             {% if _es_chip and _es_chip.get('days_to') is not none %}
             <span class="nb-earn-soon"
               data-tip-en="Earnings in {{ _es_chip.days_to }}d ({{ _es_chip.next_date }}{% if _es_chip.next_time %}, {{ _es_chip.next_time }}{% endif %}). W1.5 hygiene: fresh entries ≤3d before earnings are suppressed from the buy board — the setup itself is unchanged."
               data-tip-zh="财报还有{{ _es_chip.days_to }}天（{{ _es_chip.next_date }}{% if _es_chip.next_time %}，{{ _es_chip.next_time }}{% endif %}）。W1.5 规则：财报前3天内的新鲜入场信号不出现在买入列表——该形态本身未变。"
-            ><span class="l-en">📅 Earnings {{ _es_chip.days_to }}d</span><span class="l-zh">📅 财报{{ _es_chip.days_to }}天</span></span>
+            ><span class="l-en">📅 {{ _es_chip.get('chip_en') or ('Earnings ' ~ _es_chip.days_to ~ 'd') }}</span><span class="l-zh">📅 {{ _es_chip.get('chip_zh') or ('财报' ~ _es_chip.days_to ~ '天') }}</span></span>
             {% endif %}
             {# ext_z WARN form only (>2.0) — stays at rest as exception chip; neutral form → expander #}
             {% if n.get('ext_z') is not none and n.ext_z > 2.0 %}

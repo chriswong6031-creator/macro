@@ -952,6 +952,10 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "tags": b.get("tags", []),
             "_r20_now": _ret_rel(lvl, bench, i, 20),
             "_r20_prev": _ret_rel(lvl, bench, i5, 20),
+            # MLC-W5: live tickers at session i — used by _act() to compute the
+            # near_earnings_count display chip. Dropped from the themes list in the
+            # act_now clean-up pass below (after _act() has consumed the field).
+            "_live_tickers": list(mc_closes.iloc[i].dropna().index),
         })
 
     if not themes:
@@ -1042,14 +1046,79 @@ def compute_theme_intel(region: str = "us") -> dict | None:
     # entry", so "buy" carries ONLY the constructive recos whose clean_entry texture flag is
     # true; the rest move — visibly, never hidden — to "add_on_pullback" (in favour on the
     # desk read, but no clean-entry setup right now). Descriptive presentation, not a signal.
+
+    # MLC-W5: load the earnings calendar once for the basket-level near-earnings chip.
+    # Display-only (MLC-R10): never gates, orders, or scores any basket.
+    # Fail-open: an absent/stale store simply leaves near_earnings_count absent from the payload.
+    _w5_earn_cal: dict = {}
+    _w5_today = idx.max().date()
+    try:
+        _earn_path = config.data_dir() / "earnings" / "earnings.parquet"
+        if _earn_path.exists():
+            import pandas as _pd_w5
+            _earn_df = _pd_w5.read_parquet(_earn_path)
+            # Only use the store if as_of is within 10 trading days (mirrors earn_blackout SLA)
+            _earn_as_of_col = _earn_df.get("as_of") if hasattr(_earn_df, "get") else None
+            _earn_fresh = False
+            if _earn_as_of_col is not None and not _earn_as_of_col.empty:
+                _earn_most_recent = _pd_w5.Timestamp(str(_earn_as_of_col.dropna().max()))
+                if _earn_most_recent.tzinfo is not None:
+                    _earn_most_recent = _earn_most_recent.tz_convert(None)
+                _age_cal = (_pd_w5.Timestamp(_w5_today) - _earn_most_recent).days
+                _earn_fresh = _age_cal <= 14  # generous: 2 calendar weeks
+            if _earn_fresh:
+                for _tk, _row in _earn_df.iterrows():
+                    _nd = _row.get("next_date") if hasattr(_row, "get") else None
+                    if _nd and str(_nd) not in ("", "nan", "None"):
+                        _w5_earn_cal[str(_tk).upper()] = str(_nd)[:10]
+    except Exception:  # noqa: BLE001 — tripwire-level; earnings chip must never crash the desk
+        _w5_earn_cal = {}
+
+    def _w5_near_earnings_count(tickers: list[str], window_days: int = 5) -> int | None:
+        """Count members of the basket that report within window_days calendar days.
+
+        Uses CALENDAR-DAY arithmetic (not trading-day) so that weekend/holiday gaps
+        do not create Monday-hole holes in the count.  Returns None when the store is
+        absent so callers can distinguish 'zero' from 'unknown'.
+        """
+        if not _w5_earn_cal:
+            return None
+        count = 0
+        for tk in tickers:
+            nd_str = _w5_earn_cal.get(tk.upper())
+            if not nd_str:
+                continue
+            try:
+                from datetime import date as _date_w5
+                nd = _date_w5.fromisoformat(nd_str)
+                gap = (nd - _w5_today).days
+                if 0 <= gap <= window_days:
+                    count += 1
+            except Exception:  # noqa: BLE001
+                pass
+        return count
+
     def _act(th, action):
         ce = th["textures"].get("clean_entry") or {}
-        return {"id": th["id"], "name": th["name"], "name_zh": th["name_zh"],
-                "score": th["score"], "action": action,
-                "action_en": RECOS[action][0], "action_zh": RECOS[action][1],
-                "label": th["label"], "entry_quality": ce.get("quality"),
-                "clean_entry": bool(ce.get("flag")),
-                "reasons": (th.get("reasons") or [])[:2]}
+        live_tickers = th.get("_live_tickers") or []
+        near_n = _w5_near_earnings_count(live_tickers)
+        out = {"id": th["id"], "name": th["name"], "name_zh": th["name_zh"],
+               "score": th["score"], "action": action,
+               "action_en": RECOS[action][0], "action_zh": RECOS[action][1],
+               "label": th["label"], "entry_quality": ce.get("quality"),
+               "clean_entry": bool(ce.get("flag")),
+               "reasons": (th.get("reasons") or [])[:2]}
+        # MLC-W5 display chip: "N members report <=5d" — disclosure only, no gate effect.
+        # None when earnings store absent/stale; 0 when store present but no members report soon.
+        if near_n is not None and near_n > 0:
+            if near_n == 1:
+                out["near_earnings_chip_en"] = "1 member reports within 5 d"
+                out["near_earnings_chip_zh"] = "1个成分股5日内公布业绩"
+            else:
+                out["near_earnings_chip_en"] = f"{near_n} members report within 5 d"
+                out["near_earnings_chip_zh"] = f"{near_n}个成分股5日内公布业绩"
+            out["near_earnings_count"] = near_n
+        return out
     enter_buys = sorted([_act(t, "enter") for t in themes if t["reco"] == "enter"],
                         key=lambda x: -(x["entry_quality"] or 0))
     acc_buys = sorted([_act(t, "accumulate") for t in themes if t["reco"] == "accumulate"],
@@ -1069,6 +1138,11 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "reason_zh": f"看好（{x['action_zh']}）但当前无干净入场点 — 入场质量 {qs}"})
     act_now = {"buy": [x for x in constructive if x["clean_entry"]],
                "add_on_pullback": add_on_pullback, "reduce": reduce_}
+
+    # MLC-W5: strip _live_tickers from theme dicts now that _act() has consumed them.
+    # _act() is called above (enter_buys/acc_buys/reduce_) and reads _live_tickers via closure.
+    for _th_w5 in themes:
+        _th_w5.pop("_live_tickers", None)
 
     return {
         "as_of": idx.max().strftime("%Y-%m-%d"),
