@@ -90,6 +90,7 @@
    (used by the US Macro/Stocks pages AND the China/HK/Canada Market-State boards). #}
 {% import "_ignition_radar_card.html.j2" as igc %}
 {% from "_mag7_panel.html.j2" import mag7_panel %}
+{% from "_leadership_board.html.j2" import leadership_board as lboard %}
 {# coloured, arrowed direction word for a nowcast metric (from nowcast_hist) #}
 {% macro trendword(nh) -%}
 {% if nh and nh.trend %}{% set _ar = {'rising':'▲','accelerating':'▲','falling':'▼','cooling':'▼','flat':'▶'} %}{% set _zh = {'rising':'上行','falling':'下行','accelerating':'加速','cooling':'降温','flat':'走平'} %}<span class="tw tw-{{ nh.dir }}">{{ _ar[nh.trend] }} <span class="l-en">{{ nh.trend }}</span><span class="l-zh">{{ _zh[nh.trend] }}</span></span>{% endif %}
@@ -1737,6 +1738,10 @@
      Renders only when the payload is present (fail-open; engine lane may merge later). #}
   {% if mode == 'stocks' and latest.mag7_regime %}{{ mag7_panel(latest.mag7_regime) }}{% endif %}
   {% endif %}
+  {# Leadership Board — MLC-W1: seven megacap tiles + sector RS rank strip.
+     Renders on BOTH us_stocks (mode='stocks') and macro (mode!='stocks').
+     Fail-open: absent when payload is None (stores not yet built). #}
+  {% if leadership_board %}{{ lboard(leadership_board) }}{% endif %}
 
   {% if mode != 'stocks' %}
   <!-- ======================= HEADER ======================= -->
