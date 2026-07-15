@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-14",
+  "as_of": "2026-07-15",
   "freshness": "fresh",
   "tape": [
     {
@@ -4044,6 +4044,15 @@
       "buyback_flag": false
     },
     {
+      "ticker": "1327.HK",
+      "date": "2026-06-25",
+      "category": "mandate",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
       "ticker": "1410.HK",
       "date": "2026-06-25",
       "category": "results",
@@ -4057,15 +4066,6 @@
       "date": "2026-06-25",
       "category": "results",
       "title_en": "ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0320.HK",
-      "date": "2026-06-25",
-      "category": "results",
-      "title_en": "ANNOUNCEMENT OF FINAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -4134,12 +4134,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1327.HK",
+      "ticker": "0992.HK",
       "date": "2026-06-25",
-      "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "category": "other",
+      "title_en": "COMPLETION OF THE ISSUE OF US$2,000 MILLION ZERO COUPON CONVERTIBLE BONDS DUE 2033; AND CANCELLATION OF THE REPURCHASED ",
       "official_flag": true,
-      "dilution_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -4494,10 +4494,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0992.HK",
+      "ticker": "0320.HK",
       "date": "2026-06-25",
-      "category": "other",
-      "title_en": "COMPLETION OF THE ISSUE OF US$2,000 MILLION ZERO COUPON CONVERTIBLE BONDS DUE 2033; AND CANCELLATION OF THE REPURCHASED ",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF FINAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -4683,6 +4683,24 @@
       "buyback_flag": false
     },
     {
+      "ticker": "1355.HK",
+      "date": "2026-06-24",
+      "category": "placement",
+      "title_en": "PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY TWO (2) EXISTING SHARES HELD ON THE RECORD DATE ON ",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0875.HK",
+      "date": "2026-06-24",
+      "category": "placement",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER SPECIFIC MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
       "ticker": "2651.HK",
       "date": "2026-06-24",
       "category": "mandate",
@@ -4728,24 +4746,6 @@
       "buyback_flag": true
     },
     {
-      "ticker": "0875.HK",
-      "date": "2026-06-24",
-      "category": "placement",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER SPECIFIC MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1355.HK",
-      "date": "2026-06-24",
-      "category": "placement",
-      "title_en": "PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY TWO (2) EXISTING SHARES HELD ON THE RECORD DATE ON ",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
       "ticker": "3818.HK",
       "date": "2026-06-24",
       "category": "results",
@@ -4764,33 +4764,6 @@
       "buyback_flag": false
     },
     {
-      "ticker": "6812.HK",
-      "date": "2026-06-23",
-      "category": "results",
-      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1208.HK",
-      "date": "2026-06-23",
-      "category": "other",
-      "title_en": "COMPLETION OF THE ISSUE OF US$800,000,000 ZERO COUPON CONVERTIBLE BONDS DUE 2027",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2536.HK",
-      "date": "2026-06-23",
-      "category": "results",
-      "title_en": "ANNOUNCEMENT OF RESULTS FOR THE FINANCIAL YEAR ENDED 31 MARCH 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
       "ticker": "1682.HK",
       "date": "2026-06-23",
       "category": "placement",
@@ -4800,46 +4773,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0527.HK",
-      "date": "2026-06-23",
-      "category": "mandate",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "9677.HK",
-      "date": "2026-06-23",
-      "category": "placement",
-      "title_en": "COMPLETION OF ISSUANCE OF H SHARES AND DOMESTIC SHARES UNDER SPECIFIC MANDATE AND ADOPTION OF THE ALTERNATIVE THRESHOLD ",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0776.HK",
-      "date": "2026-06-23",
-      "category": "placement",
-      "title_en": "CLARIFICATION ANNOUNCEMENT - (1) PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY TWO (2) EXISTING S",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0776.HK",
-      "date": "2026-06-23",
-      "category": "placement",
-      "title_en": "(1) PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY TWO (2) EXISTING SHARES HELD ON THE RECORD DATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8065.HK",
+      "ticker": "6812.HK",
       "date": "2026-06-23",
       "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -4854,28 +4791,37 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8275.HK",
+      "ticker": "1208.HK",
       "date": "2026-06-23",
-      "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "category": "other",
+      "title_en": "COMPLETION OF THE ISSUE OF US$800,000,000 ZERO COUPON CONVERTIBLE BONDS DUE 2027",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "8320.HK",
+      "ticker": "1372.HK",
       "date": "2026-06-23",
-      "category": "mandate",
-      "title_en": "LAPSE OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "category": "shareholder",
+      "title_en": "VOLUNTARY ANNOUNCEMENT INCREASE IN SHAREHOLDING BY A SUBSTANTIAL SHAREHOLDER",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0776.HK",
+      "date": "2026-06-23",
+      "category": "placement",
+      "title_en": "CLARIFICATION ANNOUNCEMENT - (1) PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY TWO (2) EXISTING S",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
     },
     {
-      "ticker": "0632.HK",
+      "ticker": "9677.HK",
       "date": "2026-06-23",
-      "category": "mandate",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "category": "placement",
+      "title_en": "COMPLETION OF ISSUANCE OF H SHARES AND DOMESTIC SHARES UNDER SPECIFIC MANDATE AND ADOPTION OF THE ALTERNATIVE THRESHOLD ",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -4926,10 +4872,19 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1372.HK",
+      "ticker": "0084.HK",
       "date": "2026-06-23",
-      "category": "shareholder",
-      "title_en": "VOLUNTARY ANNOUNCEMENT INCREASE IN SHAREHOLDING BY A SUBSTANTIAL SHAREHOLDER",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2536.HK",
+      "date": "2026-06-23",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF RESULTS FOR THE FINANCIAL YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -4944,7 +4899,16 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0084.HK",
+      "ticker": "8320.HK",
+      "date": "2026-06-23",
+      "category": "mandate",
+      "title_en": "LAPSE OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0657.HK",
       "date": "2026-06-23",
       "category": "results",
       "title_en": "ANNOUNCEMENT OF RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
@@ -4953,10 +4917,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0657.HK",
+      "ticker": "0237.HK",
       "date": "2026-06-23",
       "category": "results",
-      "title_en": "ANNOUNCEMENT OF RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -5007,15 +4971,6 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0237.HK",
-      "date": "2026-06-23",
-      "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
       "ticker": "2882.HK",
       "date": "2026-06-23",
       "category": "results",
@@ -5025,28 +4980,64 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8031.HK",
-      "date": "2026-06-22",
+      "ticker": "0632.HK",
+      "date": "2026-06-23",
       "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
     },
     {
-      "ticker": "9669.HK",
-      "date": "2026-06-22",
+      "ticker": "8275.HK",
+      "date": "2026-06-23",
       "category": "results",
-      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "3708.HK",
+      "ticker": "0527.HK",
+      "date": "2026-06-23",
+      "category": "mandate",
+      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8065.HK",
+      "date": "2026-06-23",
+      "category": "results",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0776.HK",
+      "date": "2026-06-23",
+      "category": "placement",
+      "title_en": "(1) PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY TWO (2) EXISTING SHARES HELD ON THE RECORD DATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "6939.HK",
+      "date": "2026-06-22",
+      "category": "shareholder",
+      "title_en": "JOINT ANNONCEMENT: MONTHLY UPDATE ON THE POSSIBLE UNCONDITIONAL MANDATORY CASH OFFER BY ICBC INTERNATIONAL CAPITAL LIMIT",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0356.HK",
       "date": "2026-06-22",
       "category": "mandate",
-      "title_en": "SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "COMPLETION OF SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -5061,12 +5052,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "6939.HK",
+      "ticker": "3700.HK",
       "date": "2026-06-22",
-      "category": "shareholder",
-      "title_en": "JOINT ANNONCEMENT: MONTHLY UPDATE ON THE POSSIBLE UNCONDITIONAL MANDATORY CASH OFFER BY ICBC INTERNATIONAL CAPITAL LIMIT",
+      "category": "mandate",
+      "title_en": "SUPPLEMENTAL ANNOUNCEMENT SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
-      "dilution_flag": false,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -5088,10 +5079,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0356.HK",
+      "ticker": "8031.HK",
       "date": "2026-06-22",
       "category": "mandate",
-      "title_en": "COMPLETION OF SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -5106,46 +5097,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0423.HK",
-      "date": "2026-06-22",
-      "category": "results",
-      "title_en": "Announcement of Final Results for the Year Ended 31 March 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2465.HK",
+      "ticker": "3708.HK",
       "date": "2026-06-22",
       "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW H SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "3700.HK",
-      "date": "2026-06-22",
-      "category": "mandate",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2161.HK",
-      "date": "2026-06-22",
-      "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2490.HK",
-      "date": "2026-06-22",
-      "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -5160,10 +5115,28 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8307.HK",
+      "ticker": "0423.HK",
+      "date": "2026-06-22",
+      "category": "results",
+      "title_en": "Announcement of Final Results for the Year Ended 31 March 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2161.HK",
       "date": "2026-06-22",
       "category": "results",
       "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "9669.HK",
+      "date": "2026-06-22",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -5187,6 +5160,15 @@
       "buyback_flag": false
     },
     {
+      "ticker": "2490.HK",
+      "date": "2026-06-22",
+      "category": "mandate",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
       "ticker": "8003.HK",
       "date": "2026-06-22",
       "category": "mandate",
@@ -5196,22 +5178,22 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1736.HK",
-      "date": "2026-06-18",
-      "category": "mandate",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "ticker": "8307.HK",
+      "date": "2026-06-22",
+      "category": "results",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
-      "dilution_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "0751.HK",
-      "date": "2026-06-18",
-      "category": "buyback",
-      "title_en": "ANNOUNCEMENT MONTHLY UPDATE IN RELATION TO (1) PROPOSED PRE-CONDITIONAL SHARE BUY-BACK OF SKYWORTH GROUP LIMITED BY WAY ",
+      "ticker": "2465.HK",
+      "date": "2026-06-22",
+      "category": "mandate",
+      "title_en": "COMPLETION OF PLACING OF NEW H SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": true
+      "dilution_flag": true,
+      "buyback_flag": false
     },
     {
       "ticker": "2349.HK",
@@ -5227,6 +5209,42 @@
       "date": "2026-06-18",
       "category": "mandate",
       "title_en": "(1) PROPOSED ISSUANCE OF US$2,000 MILLION ZERO COUPON CONVERTIBLE BONDS DUE 2033 UNDER SHARE ISSUANCE MANDATE; (2) PROPO",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "6190.HK",
+      "date": "2026-06-18",
+      "category": "placement",
+      "title_en": "ENTERING INTO THE DOMESTIC SHARE SUBSCRIPTION AGREEMENTS",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "1736.HK",
+      "date": "2026-06-18",
+      "category": "mandate",
+      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "1822.HK",
+      "date": "2026-06-18",
+      "category": "placement",
+      "title_en": "PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY ONE (1) SHARE HELD ON RECORD DATE ON A NON-UNDERWRI",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8619.HK",
+      "date": "2026-06-18",
+      "category": "placement",
+      "title_en": "RESULTS OF VALID APPLICATIONS FOR THE RIGHTS SHARES AND NUMBER OF UNSUBSCRIBED RIGHTS SHARES AND NQS UNSOLD RIGHTS SHARE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -5250,31 +5268,13 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8619.HK",
+      "ticker": "0751.HK",
       "date": "2026-06-18",
-      "category": "placement",
-      "title_en": "RESULTS OF VALID APPLICATIONS FOR THE RIGHTS SHARES AND NUMBER OF UNSUBSCRIBED RIGHTS SHARES AND NQS UNSOLD RIGHTS SHARE",
+      "category": "buyback",
+      "title_en": "ANNOUNCEMENT MONTHLY UPDATE IN RELATION TO (1) PROPOSED PRE-CONDITIONAL SHARE BUY-BACK OF SKYWORTH GROUP LIMITED BY WAY ",
       "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1822.HK",
-      "date": "2026-06-18",
-      "category": "placement",
-      "title_en": "PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY ONE (1) SHARE HELD ON RECORD DATE ON A NON-UNDERWRI",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "6190.HK",
-      "date": "2026-06-18",
-      "category": "placement",
-      "title_en": "ENTERING INTO THE DOMESTIC SHARE SUBSCRIPTION AGREEMENTS",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
+      "dilution_flag": false,
+      "buyback_flag": true
     },
     {
       "ticker": "9689.HK",
@@ -5283,15 +5283,6 @@
       "title_en": "LAPSE OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8320.HK",
-      "date": "2026-06-18",
-      "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
-      "official_flag": true,
-      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -5304,51 +5295,6 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8635.HK",
-      "date": "2026-06-18",
-      "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0632.HK",
-      "date": "2026-06-18",
-      "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0018.HK",
-      "date": "2026-06-18",
-      "category": "results",
-      "title_en": "Announcement of Annual Results for the year ended 31 March 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8206.HK",
-      "date": "2026-06-18",
-      "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1633.HK",
-      "date": "2026-06-18",
-      "category": "results",
-      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
       "ticker": "6883.HK",
       "date": "2026-06-18",
       "category": "results",
@@ -5358,28 +5304,28 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0064.HK",
+      "ticker": "8320.HK",
       "date": "2026-06-18",
       "category": "results",
-      "title_en": "ANNOUNCEMENT OF FINAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "0107.HK",
+      "ticker": "2623.HK",
       "date": "2026-06-18",
       "category": "mandate",
-      "title_en": "ANNOUNCEMENT - GENERAL MANDATE TO ISSUE SHARES; AND PROPOSED ISSUANCE OF A SHARES TO SPECIFIC TARGETS UNDER THE GENERAL ",
+      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
     },
     {
-      "ticker": "2592.HK",
+      "ticker": "9982.HK",
       "date": "2026-06-18",
       "category": "mandate",
-      "title_en": "SHARE SUBSCRIPTION AGREEMENT AND ISSUE OF THE SUBSCRIPTION SHARES UNDER THE GENERAL MANDATE",
+      "title_en": "SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -5394,21 +5340,66 @@
       "buyback_flag": false
     },
     {
-      "ticker": "9982.HK",
+      "ticker": "2592.HK",
       "date": "2026-06-18",
       "category": "mandate",
-      "title_en": "SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "SHARE SUBSCRIPTION AGREEMENT AND ISSUE OF THE SUBSCRIPTION SHARES UNDER THE GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
     },
     {
-      "ticker": "2623.HK",
+      "ticker": "0064.HK",
+      "date": "2026-06-18",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF FINAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8635.HK",
+      "date": "2026-06-18",
+      "category": "results",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0107.HK",
       "date": "2026-06-18",
       "category": "mandate",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "ANNOUNCEMENT - GENERAL MANDATE TO ISSUE SHARES; AND PROPOSED ISSUANCE OF A SHARES TO SPECIFIC TARGETS UNDER THE GENERAL ",
       "official_flag": true,
       "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "1633.HK",
+      "date": "2026-06-18",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8206.HK",
+      "date": "2026-06-18",
+      "category": "results",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0018.HK",
+      "date": "2026-06-18",
+      "category": "results",
+      "title_en": "Announcement of Annual Results for the year ended 31 March 2026",
+      "official_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -5427,6 +5418,15 @@
       "title_en": "EXTENSION OF LONG STOP DATE IN RELATION TO THIRD ISSUE OF NEW H SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0632.HK",
+      "date": "2026-06-18",
+      "category": "mandate",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -5511,19 +5511,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0992.HK",
-      "date": "2026-06-17",
-      "category": "mandate",
-      "title_en": "PROPOSED ISSUE OF CONVERTIBLE BONDS UNDER SHARE ISSUANCE MANDATE, PROPOSED CONCURRENT REPURCHASE OF US$675 MILLION 2.50%",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8317.HK",
+      "ticker": "0277.HK",
       "date": "2026-06-17",
       "category": "results",
-      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -5542,6 +5533,15 @@
       "date": "2026-06-17",
       "category": "mandate",
       "title_en": "SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0994.HK",
+      "date": "2026-06-17",
+      "category": "mandate",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -5583,6 +5583,15 @@
       "buyback_flag": false
     },
     {
+      "ticker": "0658.HK",
+      "date": "2026-06-17",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 DECEMBER 2025 AND RESUMPTION OF TRADING",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
       "ticker": "1226.HK",
       "date": "2026-06-17",
       "category": "results",
@@ -5619,30 +5628,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0277.HK",
-      "date": "2026-06-17",
-      "category": "results",
-      "title_en": "ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0994.HK",
+      "ticker": "0992.HK",
       "date": "2026-06-17",
       "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "PROPOSED ISSUE OF CONVERTIBLE BONDS UNDER SHARE ISSUANCE MANDATE, PROPOSED CONCURRENT REPURCHASE OF US$675 MILLION 2.50%",
       "official_flag": true,
       "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0658.HK",
-      "date": "2026-06-17",
-      "category": "results",
-      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 DECEMBER 2025 AND RESUMPTION OF TRADING",
-      "official_flag": true,
-      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -5650,6 +5641,15 @@
       "date": "2026-06-17",
       "category": "results",
       "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 DECEMBER 2025 AND RESUMPTION OF TRADING",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8317.HK",
+      "date": "2026-06-17",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -5880,16 +5880,25 @@
       "buyback_flag": false
     },
     {
-      "ticker": "2490.HK",
+      "ticker": "1389.HK",
       "date": "2026-06-12",
-      "category": "mandate",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "category": "results",
+      "title_en": "Annual Results Announcement for the year ended 31 March 2026",
       "official_flag": true,
-      "dilution_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "0918.HK",
+      "ticker": "8158.HK",
+      "date": "2026-06-12",
+      "category": "results",
+      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO THE ANNUAL REPORT FOR THE YEAR ENDED 31 DECEMBER 2025",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2153.HK",
       "date": "2026-06-12",
       "category": "results",
       "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
@@ -5898,10 +5907,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1340.HK",
+      "ticker": "2490.HK",
       "date": "2026-06-12",
       "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -5934,10 +5943,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8158.HK",
+      "ticker": "0918.HK",
       "date": "2026-06-12",
       "category": "results",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO THE ANNUAL REPORT FOR THE YEAR ENDED 31 DECEMBER 2025",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -5961,12 +5970,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "2153.HK",
+      "ticker": "1340.HK",
       "date": "2026-06-12",
-      "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "category": "mandate",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
-      "dilution_flag": false,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -5976,15 +5985,6 @@
       "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1389.HK",
-      "date": "2026-06-12",
-      "category": "results",
-      "title_en": "Annual Results Announcement for the year ended 31 March 2026",
-      "official_flag": true,
-      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -7851,12 +7851,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8125.HK",
+      "ticker": "0720.HK",
       "date": "2026-05-19",
-      "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "category": "shareholder",
+      "title_en": "UPDATE ON CHANGE OF SUBSTANTIAL SHAREHOLDER",
       "official_flag": true,
-      "dilution_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -7905,15 +7905,6 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0720.HK",
-      "date": "2026-05-19",
-      "category": "shareholder",
-      "title_en": "UPDATE ON CHANGE OF SUBSTANTIAL SHAREHOLDER",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
       "ticker": "2473.HK",
       "date": "2026-05-19",
       "category": "mandate",
@@ -7950,6 +7941,15 @@
       "buyback_flag": false
     },
     {
+      "ticker": "8125.HK",
+      "date": "2026-05-19",
+      "category": "mandate",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
       "ticker": "2617.HK",
       "date": "2026-05-19",
       "category": "mandate",
@@ -7965,6 +7965,24 @@
       "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2503.HK",
+      "date": "2026-05-18",
+      "category": "other",
+      "title_en": "POLL RESULTS OF THE ANNUAL GENERAL MEETING AND THE EXTRAORDINARY GENERAL MEETING HELD ON 18 MAY 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8507.HK",
+      "date": "2026-05-18",
+      "category": "other",
+      "title_en": "POLL RESULTS OF THE EXTRAORDINARY GENERAL MEETING HELD ON 18 MAY 2026",
+      "official_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -7984,24 +8002,6 @@
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": true
-    },
-    {
-      "ticker": "8507.HK",
-      "date": "2026-05-18",
-      "category": "other",
-      "title_en": "POLL RESULTS OF THE EXTRAORDINARY GENERAL MEETING HELD ON 18 MAY 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2503.HK",
-      "date": "2026-05-18",
-      "category": "other",
-      "title_en": "POLL RESULTS OF THE ANNUAL GENERAL MEETING AND THE EXTRAORDINARY GENERAL MEETING HELD ON 18 MAY 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
     },
     {
       "ticker": "0383.HK",
@@ -8184,12 +8184,21 @@
       "buyback_flag": false
     },
     {
-      "ticker": "2473.HK",
+      "ticker": "1468.HK",
       "date": "2026-05-13",
       "category": "mandate",
-      "title_en": "PLACING OF EXISTING SHARES AND TOP-UP SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "CHANGE IN USE OF PROCEEDS FROM THE PLACING",
       "official_flag": true,
       "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0138.HK",
+      "date": "2026-05-13",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF THE ANNUAL RESULTS FOR THE YEAR ENDED 31 DECEMBER 2025",
+      "official_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -8265,12 +8274,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0138.HK",
+      "ticker": "2473.HK",
       "date": "2026-05-13",
-      "category": "results",
-      "title_en": "ANNOUNCEMENT OF THE ANNUAL RESULTS FOR THE YEAR ENDED 31 DECEMBER 2025",
+      "category": "mandate",
+      "title_en": "PLACING OF EXISTING SHARES AND TOP-UP SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
-      "dilution_flag": false,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -8301,12 +8310,30 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1468.HK",
-      "date": "2026-05-13",
+      "ticker": "8340.HK",
+      "date": "2026-05-12",
+      "category": "shareholder",
+      "title_en": "Change in Substantial Shareholder",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "1631.HK",
+      "date": "2026-05-12",
       "category": "mandate",
-      "title_en": "CHANGE IN USE OF PROCEEDS FROM THE PLACING",
+      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2020.HK",
+      "date": "2026-05-12",
+      "category": "other",
+      "title_en": "ADJUSTMENT TO CONVERSION PRICE OF EUR1,500,000,000 ZERO COUPON GUARANTEED CONVERTIBLE BONDS DUE 2029",
+      "official_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -8319,25 +8346,7 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8320.HK",
-      "date": "2026-05-12",
-      "category": "mandate",
-      "title_en": "EXTENSION OF LONG STOP DATE IN RELATION TO THE PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8340.HK",
-      "date": "2026-05-12",
-      "category": "shareholder",
-      "title_en": "Change in Substantial Shareholder",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1631.HK",
+      "ticker": "1729.HK",
       "date": "2026-05-12",
       "category": "mandate",
       "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
@@ -8364,15 +8373,6 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1729.HK",
-      "date": "2026-05-12",
-      "category": "mandate",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
       "ticker": "1069.HK",
       "date": "2026-05-12",
       "category": "other",
@@ -8391,19 +8391,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "2020.HK",
-      "date": "2026-05-12",
-      "category": "other",
-      "title_en": "ADJUSTMENT TO CONVERSION PRICE OF EUR1,500,000,000 ZERO COUPON GUARANTEED CONVERTIBLE BONDS DUE 2029",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1803.HK",
+      "ticker": "8320.HK",
       "date": "2026-05-12",
       "category": "mandate",
-      "title_en": "SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "EXTENSION OF LONG STOP DATE IN RELATION TO THE PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -8418,19 +8409,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1201.HK",
-      "date": "2026-05-11",
-      "category": "other",
-      "title_en": "DELAY IN DESPATCH OF CIRCULAR",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8365.HK",
-      "date": "2026-05-11",
-      "category": "placement",
-      "title_en": "CHANGE IN USE OF PROCEEDS FROM THE RIGHTS ISSUE",
+      "ticker": "1803.HK",
+      "date": "2026-05-12",
+      "category": "mandate",
+      "title_en": "SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -8508,10 +8490,28 @@
       "buyback_flag": false
     },
     {
+      "ticker": "1201.HK",
+      "date": "2026-05-11",
+      "category": "other",
+      "title_en": "DELAY IN DESPATCH OF CIRCULAR",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
       "ticker": "0256.HK",
       "date": "2026-05-11",
       "category": "placement",
       "title_en": "REVISED EXPECTED TIMETABLE IN RELATION TO THE RIGHTS ISSUE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8365.HK",
+      "date": "2026-05-11",
+      "category": "placement",
+      "title_en": "CHANGE IN USE OF PROCEEDS FROM THE RIGHTS ISSUE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -8535,51 +8535,6 @@
       "buyback_flag": true
     },
     {
-      "ticker": "2533.HK",
-      "date": "2026-05-08",
-      "category": "mandate",
-      "title_en": "COMPLETION OF SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2427.HK",
-      "date": "2026-05-08",
-      "category": "shareholder",
-      "title_en": "JOINT ANNOUNCEMENT - (1) CLOSE OF MANDATORY UNCONDITIONAL CASH OFFER BY ARISTO SECURITIES LIMITED FOR AND ON BEHALF OF T",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0451.HK",
-      "date": "2026-05-08",
-      "category": "mandate",
-      "title_en": "COMPLETION ANNOUNCEMENT - COMPLETION OF THE 1ST TRANCHE SUBSCRIPTION SHARES",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1083.HK",
-      "date": "2026-05-08",
-      "category": "other",
-      "title_en": "Change of the Maturity Date of the Convertible Bonds Due 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2135.HK",
-      "date": "2026-05-08",
-      "category": "placement",
-      "title_en": "CHANGE IN USE OF NET PROCEEDS FROM THE RIGHTS ISSUE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
       "ticker": "0482.HK",
       "date": "2026-05-08",
       "category": "placement",
@@ -8598,12 +8553,48 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0300.HK",
-      "date": "2026-05-07",
+      "ticker": "2135.HK",
+      "date": "2026-05-08",
+      "category": "placement",
+      "title_en": "CHANGE IN USE OF NET PROCEEDS FROM THE RIGHTS ISSUE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "1083.HK",
+      "date": "2026-05-08",
       "category": "other",
-      "title_en": "PROPOSED ISSUE OF HK$8,624,000,000 ZERO COUPON GUARANTEED CONVERTIBLE BONDS DUE 2027 AND HK$8,624,000,000 ZERO COUPON GU",
+      "title_en": "Change of the Maturity Date of the Convertible Bonds Due 2026",
       "official_flag": true,
       "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0451.HK",
+      "date": "2026-05-08",
+      "category": "mandate",
+      "title_en": "COMPLETION ANNOUNCEMENT - COMPLETION OF THE 1ST TRANCHE SUBSCRIPTION SHARES",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2427.HK",
+      "date": "2026-05-08",
+      "category": "shareholder",
+      "title_en": "JOINT ANNOUNCEMENT - (1) CLOSE OF MANDATORY UNCONDITIONAL CASH OFFER BY ARISTO SECURITIES LIMITED FOR AND ON BEHALF OF T",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2533.HK",
+      "date": "2026-05-08",
+      "category": "mandate",
+      "title_en": "COMPLETION OF SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -8613,6 +8604,24 @@
       "title_en": "ISSUE OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8291.HK",
+      "date": "2026-05-07",
+      "category": "results",
+      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO THE ANNUAL REPORT FOR THE YEAR ENDED 31 DECEMBER 2025",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0300.HK",
+      "date": "2026-05-07",
+      "category": "other",
+      "title_en": "PROPOSED ISSUE OF HK$8,624,000,000 ZERO COUPON GUARANTEED CONVERTIBLE BONDS DUE 2027 AND HK$8,624,000,000 ZERO COUPON GU",
+      "official_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -8631,24 +8640,6 @@
       "title_en": "SUPPLEMENTAL ANNOUNCEMENT RELATING TO PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "3986.HK",
-      "date": "2026-05-07",
-      "category": "shareholder",
-      "title_en": "INDICATIVE ANNOUNCEMENT ON CHANGES IN THE EQUITY INTERESTS OF SHAREHOLDERS HOLDING 5% OR MORE SHARES REACHING 1% THRESHO",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8291.HK",
-      "date": "2026-05-07",
-      "category": "results",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO THE ANNUAL REPORT FOR THE YEAR ENDED 31 DECEMBER 2025",
-      "official_flag": true,
-      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -8688,6 +8679,15 @@
       "buyback_flag": false
     },
     {
+      "ticker": "3986.HK",
+      "date": "2026-05-07",
+      "category": "shareholder",
+      "title_en": "INDICATIVE ANNOUNCEMENT ON CHANGES IN THE EQUITY INTERESTS OF SHAREHOLDERS HOLDING 5% OR MORE SHARES REACHING 1% THRESHO",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
       "ticker": "1693.HK",
       "date": "2026-05-07",
       "category": "shareholder",
@@ -8701,15 +8701,6 @@
       "date": "2026-05-07",
       "category": "mandate",
       "title_en": "SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2889.HK",
-      "date": "2026-05-06",
-      "category": "mandate",
-      "title_en": "COMPLETION OF ISSUANCE OF NEW H SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -8742,6 +8733,15 @@
       "buyback_flag": false
     },
     {
+      "ticker": "6162.HK",
+      "date": "2026-05-06",
+      "category": "mandate",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
       "ticker": "1372.HK",
       "date": "2026-05-06",
       "category": "shareholder",
@@ -8751,21 +8751,21 @@
       "buyback_flag": false
     },
     {
+      "ticker": "2889.HK",
+      "date": "2026-05-06",
+      "category": "mandate",
+      "title_en": "COMPLETION OF ISSUANCE OF NEW H SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
       "ticker": "3866.HK",
       "date": "2026-05-06",
       "category": "other",
       "title_en": "NOTICE OF 2025 ANNUAL SHAREHOLDERS' MEETING",
       "official_flag": true,
       "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "6162.HK",
-      "date": "2026-05-06",
-      "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -8784,15 +8784,6 @@
       "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1451.HK",
-      "date": "2026-05-05",
-      "category": "shareholder",
-      "title_en": "JOINT ANNOUNCEMENT - (1) COMPLETION OF THE SALE AND PURCHASE OF THE SALE SHARES IN MS GROUP HOLDINGS LIMITED; (2) MANDAT",
-      "official_flag": true,
-      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -8823,21 +8814,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0397.HK",
+      "ticker": "1451.HK",
       "date": "2026-05-05",
-      "category": "placement",
-      "title_en": "CLARIFICATION ANNOUNCEMENT - DELAY IN DESPATCH OF PROSPECTUS AND TIMETABLE IN RELATION TO PROPOSED RIGHTS ISSUE OF RIGHT",
+      "category": "shareholder",
+      "title_en": "JOINT ANNOUNCEMENT - (1) COMPLETION OF THE SALE AND PURCHASE OF THE SALE SHARES IN MS GROUP HOLDINGS LIMITED; (2) MANDAT",
       "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0256.HK",
-      "date": "2026-05-05",
-      "category": "placement",
-      "title_en": "PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY THREE (3) EXISTING SHARES HELD ON THE RECORD DATE O",
-      "official_flag": true,
-      "dilution_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -8845,6 +8827,15 @@
       "date": "2026-05-05",
       "category": "placement",
       "title_en": "REVISED TIMETABLE IN RELATION TO THE PROPOSED RIGHTS ISSUE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0397.HK",
+      "date": "2026-05-05",
+      "category": "placement",
+      "title_en": "CLARIFICATION ANNOUNCEMENT - DELAY IN DESPATCH OF PROSPECTUS AND TIMETABLE IN RELATION TO PROPOSED RIGHTS ISSUE OF RIGHT",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -8859,12 +8850,21 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8532.HK",
-      "date": "2026-05-04",
-      "category": "results",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO THE 2025 ANNUAL REPORT",
+      "ticker": "0256.HK",
+      "date": "2026-05-05",
+      "category": "placement",
+      "title_en": "PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY THREE (3) EXISTING SHARES HELD ON THE RECORD DATE O",
       "official_flag": true,
-      "dilution_flag": false,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0456.HK",
+      "date": "2026-05-04",
+      "category": "mandate",
+      "title_en": "SUBSCRIPTION FOR NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -8895,21 +8895,21 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0456.HK",
-      "date": "2026-05-04",
-      "category": "mandate",
-      "title_en": "SUBSCRIPTION FOR NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
       "ticker": "0139.HK",
       "date": "2026-05-04",
       "category": "placement",
       "title_en": "PLACING OF NEW SHARES UNDER SPECIFIC MANDATE EXTENSION OF LONG STOP DATE",
       "official_flag": true,
       "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8532.HK",
+      "date": "2026-05-04",
+      "category": "results",
+      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO THE 2025 ANNUAL REPORT",
+      "official_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -8985,12 +8985,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "2495.HK",
+      "ticker": "0544.HK",
       "date": "2026-04-30",
-      "category": "other",
-      "title_en": "TERMINATION OF ISSUE OF NEW H SHARES UNDER GENERAL MANDATE",
+      "category": "mandate",
+      "title_en": "COMPLETION OF SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
-      "dilution_flag": false,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -9048,12 +9048,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0544.HK",
+      "ticker": "2530.HK",
       "date": "2026-04-30",
-      "category": "mandate",
-      "title_en": "COMPLETION OF SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "category": "results",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 DECEMBER 2025 AND RESUMPTION OF TRADING",
       "official_flag": true,
-      "dilution_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -9066,10 +9066,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "2530.HK",
+      "ticker": "2495.HK",
       "date": "2026-04-30",
-      "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 DECEMBER 2025 AND RESUMPTION OF TRADING",
+      "category": "other",
+      "title_en": "TERMINATION OF ISSUE OF NEW H SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -9138,10 +9138,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0223.HK",
+      "ticker": "0397.HK",
       "date": "2026-04-29",
       "category": "placement",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER SPECIFIC MANDATE",
+      "title_en": "PROPOSED RIGHTS ISSUE OF RIGHTS SHARES ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY TWO (2) EXISTING SHARES AT HK$0.03",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -9156,10 +9156,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0397.HK",
+      "ticker": "0223.HK",
       "date": "2026-04-29",
       "category": "placement",
-      "title_en": "PROPOSED RIGHTS ISSUE OF RIGHTS SHARES ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY TWO (2) EXISTING SHARES AT HK$0.03",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER SPECIFIC MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -9219,46 +9219,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "6681.HK",
-      "date": "2026-04-29",
-      "category": "results",
-      "title_en": "CLARIFICATION ANNOUNCEMENT RELATING TO ANNUAL REPORT FOR THE YEAR ENDED DECEMBER 31, 2025",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "6682.HK",
-      "date": "2026-04-29",
-      "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW H SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
       "ticker": "1890.HK",
       "date": "2026-04-29",
       "category": "results",
       "title_en": "ANNOUNCEMENT OF INTERIM RESULTS FOR THE SIX MONTHS ENDED 28 FEBRUARY 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1468.HK",
-      "date": "2026-04-29",
-      "category": "mandate",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO THE USE OF PROCEEDS FROM THE PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "3800.HK",
-      "date": "2026-04-29",
-      "category": "other",
-      "title_en": "PROPOSED ISSUE OF US$148,000,000 6.95% GUARANTEED CONVERTIBLE BONDS DUE 2027 UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -9273,82 +9237,37 @@
       "buyback_flag": false
     },
     {
-      "ticker": "3750.HK",
-      "date": "2026-04-28",
-      "category": "mandate",
-      "title_en": "PLACING OF NEW H SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0383.HK",
-      "date": "2026-04-28",
-      "category": "buyback",
-      "title_en": "Conditional Cash Offer by Morton Securities Limited on behalf of Tian An Medicare Limited to buy-back up to 70,000,000 s",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": true
-    },
-    {
-      "ticker": "1756.HK",
-      "date": "2026-04-28",
-      "category": "results",
-      "title_en": "INTERIM RESULTS ANNOUNCEMENT FOR THE SIX MONTHS ENDED FEBRUARY 28, 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0382.HK",
-      "date": "2026-04-28",
-      "category": "results",
-      "title_en": "ANNOUNCEMENT OF INTERIM RESULTS FOR THE SIX MONTHS ENDED 28 FEBRUARY 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8299.HK",
-      "date": "2026-04-28",
+      "ticker": "3800.HK",
+      "date": "2026-04-29",
       "category": "other",
-      "title_en": "CLARIFICATION ANNOUNCEMENT DELAY IN DESPATCH OF MAJOR TRANSACTION CIRCULAR AND APPLICATION OF WAIVER FROM STRICT COMPLIA",
+      "title_en": "PROPOSED ISSUE OF US$148,000,000 6.95% GUARANTEED CONVERTIBLE BONDS DUE 2027 UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "2889.HK",
-      "date": "2026-04-28",
+      "ticker": "1468.HK",
+      "date": "2026-04-29",
       "category": "mandate",
-      "title_en": "ISSUANCE OF NEW H SHARES UNDER GENERAL MANDATE",
+      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO THE USE OF PROCEEDS FROM THE PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
     },
     {
-      "ticker": "1921.HK",
-      "date": "2026-04-28",
+      "ticker": "6682.HK",
+      "date": "2026-04-29",
       "category": "mandate",
-      "title_en": "TOP-UP PLACING OF EXISTING SHARES AND SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "COMPLETION OF PLACING OF NEW H SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
     },
     {
-      "ticker": "1399.HK",
-      "date": "2026-04-28",
-      "category": "shareholder",
-      "title_en": "VOLUNTARY ANNOUNCEMENT INCREASE IN SHAREHOLDING BY A CONTROLLING SHAREHOLDER",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1378.HK",
-      "date": "2026-04-28",
-      "category": "other",
-      "title_en": "PROPOSED ISSUE OF RMB10,200,000,000 USD SETTLED ZERO COUPON CONVERTIBLE BONDS DUE 2027 AND CONCURRENT REPURCHASE",
+      "ticker": "6681.HK",
+      "date": "2026-04-29",
+      "category": "results",
+      "title_en": "CLARIFICATION ANNOUNCEMENT RELATING TO ANNUAL REPORT FOR THE YEAR ENDED DECEMBER 31, 2025",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -9363,6 +9282,60 @@
       "buyback_flag": false
     },
     {
+      "ticker": "8299.HK",
+      "date": "2026-04-28",
+      "category": "other",
+      "title_en": "CLARIFICATION ANNOUNCEMENT DELAY IN DESPATCH OF MAJOR TRANSACTION CIRCULAR AND APPLICATION OF WAIVER FROM STRICT COMPLIA",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "3750.HK",
+      "date": "2026-04-28",
+      "category": "mandate",
+      "title_en": "PLACING OF NEW H SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0302.HK",
+      "date": "2026-04-28",
+      "category": "other",
+      "title_en": "COMPLETION OF SUBSCRIPTIONS OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0382.HK",
+      "date": "2026-04-28",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF INTERIM RESULTS FOR THE SIX MONTHS ENDED 28 FEBRUARY 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "1756.HK",
+      "date": "2026-04-28",
+      "category": "results",
+      "title_en": "INTERIM RESULTS ANNOUNCEMENT FOR THE SIX MONTHS ENDED FEBRUARY 28, 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0383.HK",
+      "date": "2026-04-28",
+      "category": "buyback",
+      "title_en": "Conditional Cash Offer by Morton Securities Limited on behalf of Tian An Medicare Limited to buy-back up to 70,000,000 s",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": true
+    },
+    {
       "ticker": "0061.HK",
       "date": "2026-04-28",
       "category": "results",
@@ -9372,19 +9345,28 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1593.HK",
+      "ticker": "1399.HK",
       "date": "2026-04-28",
-      "category": "results",
-      "title_en": "INTERIM RESULTS ANNOUNCEMENT FOR THE SIX MONTHS ENDED 28 FEBRUARY 2026",
+      "category": "shareholder",
+      "title_en": "VOLUNTARY ANNOUNCEMENT INCREASE IN SHAREHOLDING BY A CONTROLLING SHAREHOLDER",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "0302.HK",
+      "ticker": "1921.HK",
       "date": "2026-04-28",
-      "category": "other",
-      "title_en": "COMPLETION OF SUBSCRIPTIONS OF NEW SHARES UNDER GENERAL MANDATE",
+      "category": "mandate",
+      "title_en": "TOP-UP PLACING OF EXISTING SHARES AND SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "1565.HK",
+      "date": "2026-04-28",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF INTERIM RESULTS FOR THE SIX MONTHS ENDED 28 FEBRUARY 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -9453,12 +9435,21 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1565.HK",
+      "ticker": "1593.HK",
       "date": "2026-04-28",
       "category": "results",
-      "title_en": "ANNOUNCEMENT OF INTERIM RESULTS FOR THE SIX MONTHS ENDED 28 FEBRUARY 2026",
+      "title_en": "INTERIM RESULTS ANNOUNCEMENT FOR THE SIX MONTHS ENDED 28 FEBRUARY 2026",
       "official_flag": true,
       "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2889.HK",
+      "date": "2026-04-28",
+      "category": "mandate",
+      "title_en": "ISSUANCE OF NEW H SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -9480,39 +9471,30 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8096.HK",
-      "date": "2026-04-27",
-      "category": "placement",
-      "title_en": "PROPOSED RIGHTS ISSUE ON THE BASIS OF THREE (3) RIGHTS SHARES FOR EVERY TWO (2) SHARES HELD ON THE RECORD DATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0482.HK",
-      "date": "2026-04-27",
-      "category": "placement",
-      "title_en": "RESULTS OF VALID ACCEPTANCES OF THE RIGHTS SHARES AND NUMBER OF UNSUBSCRIBED RIGHTS SHARES SUBJECT TO THE COMPENSATORY A",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
       "ticker": "1378.HK",
-      "date": "2026-04-27",
+      "date": "2026-04-28",
       "category": "other",
-      "title_en": "PROPOSED ISSUE OF RMB-DENOMINATED USD SETTLED CONVERTIBLE BONDS AND CONCURRENT REPURCHASE",
+      "title_en": "PROPOSED ISSUE OF RMB10,200,000,000 USD SETTLED ZERO COUPON CONVERTIBLE BONDS DUE 2027 AND CONCURRENT REPURCHASE",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "8422.HK",
+      "ticker": "8299.HK",
       "date": "2026-04-27",
-      "category": "placement",
-      "title_en": "DELAY IN DESPATCH OF CIRCULAR AND REVISED EXPECTED TIMETABLE IN RESPECT OF THE PROPOSED RIGHTS ISSUE ON THE BASIS OF TWO",
+      "category": "other",
+      "title_en": "DELAY IN DESPATCH OF MAJOR TRANSACTION CIRCULAR AND GRANT OF WAIVER FROM STRICT COMPLIANCE WITH RULE 14.41(A) OF THE LIS",
       "official_flag": true,
-      "dilution_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2522.HK",
+      "date": "2026-04-27",
+      "category": "other",
+      "title_en": "DISCLOSEABLE TRANSACTION IN RELATION TO THE ACQUISITION OF 100% EQUITY INTERESTS IN THE TARGET COMPANIES INVOLVING THE I",
+      "official_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -9534,12 +9516,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "2522.HK",
+      "ticker": "8096.HK",
       "date": "2026-04-27",
-      "category": "other",
-      "title_en": "DISCLOSEABLE TRANSACTION IN RELATION TO THE ACQUISITION OF 100% EQUITY INTERESTS IN THE TARGET COMPANIES INVOLVING THE I",
+      "category": "placement",
+      "title_en": "PROPOSED RIGHTS ISSUE ON THE BASIS OF THREE (3) RIGHTS SHARES FOR EVERY TWO (2) SHARES HELD ON THE RECORD DATE",
       "official_flag": true,
-      "dilution_flag": false,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -9570,10 +9552,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8079.HK",
+      "ticker": "1378.HK",
       "date": "2026-04-27",
       "category": "other",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO DISCLOSABLE TRANSACTION: ACQUISITION OF 49% IN TARGET COMPANY INVOLVING ISSUE O",
+      "title_en": "PROPOSED ISSUE OF RMB-DENOMINATED USD SETTLED CONVERTIBLE BONDS AND CONCURRENT REPURCHASE",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -9588,19 +9570,19 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8299.HK",
+      "ticker": "8340.HK",
       "date": "2026-04-27",
-      "category": "other",
-      "title_en": "DELAY IN DESPATCH OF MAJOR TRANSACTION CIRCULAR AND GRANT OF WAIVER FROM STRICT COMPLIANCE WITH RULE 14.41(A) OF THE LIS",
+      "category": "results",
+      "title_en": "SECOND CLARIFICATION ANNOUNCEMENT IN RELATION TO THE ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 DECEMBER 2025",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "8340.HK",
+      "ticker": "8079.HK",
       "date": "2026-04-27",
-      "category": "results",
-      "title_en": "SECOND CLARIFICATION ANNOUNCEMENT IN RELATION TO THE ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 DECEMBER 2025",
+      "category": "other",
+      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO DISCLOSABLE TRANSACTION: ACQUISITION OF 49% IN TARGET COMPANY INVOLVING ISSUE O",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -9642,16 +9624,43 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1969.HK",
+      "ticker": "0482.HK",
+      "date": "2026-04-27",
+      "category": "placement",
+      "title_en": "RESULTS OF VALID ACCEPTANCES OF THE RIGHTS SHARES AND NUMBER OF UNSUBSCRIBED RIGHTS SHARES SUBJECT TO THE COMPENSATORY A",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8422.HK",
+      "date": "2026-04-27",
+      "category": "placement",
+      "title_en": "DELAY IN DESPATCH OF CIRCULAR AND REVISED EXPECTED TIMETABLE IN RESPECT OF THE PROPOSED RIGHTS ISSUE ON THE BASIS OF TWO",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8223.HK",
       "date": "2026-04-24",
-      "category": "results",
-      "title_en": "INTERIM RESULTS ANNOUNCEMENT FOR THE SIX MONTHS ENDED 28 FEBRUARY 2026",
+      "category": "other",
+      "title_en": "SUPPLEMENTAL ANNOUNCEMENT COMPLETION OF SUBSCRIPTIONS OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "1153.HK",
+      "ticker": "0476.HK",
+      "date": "2026-04-24",
+      "category": "mandate",
+      "title_en": "COMPLETION OF SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8153.HK",
       "date": "2026-04-24",
       "category": "mandate",
       "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
@@ -9669,16 +9678,7 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0476.HK",
-      "date": "2026-04-24",
-      "category": "mandate",
-      "title_en": "COMPLETION OF SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8153.HK",
+      "ticker": "1153.HK",
       "date": "2026-04-24",
       "category": "mandate",
       "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
@@ -9723,21 +9723,21 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8223.HK",
+      "ticker": "6069.HK",
       "date": "2026-04-24",
-      "category": "other",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT COMPLETION OF SUBSCRIPTIONS OF NEW SHARES UNDER GENERAL MANDATE",
+      "category": "shareholder",
+      "title_en": "VOLUNTARY ANNOUNCEMENT COMPLETION OF INCREASE IN SHAREHOLDING IN THE COMPANY BY THE CONTROLLING SHAREHOLDER AND CHAIRMAN",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "1380.HK",
+      "ticker": "1969.HK",
       "date": "2026-04-24",
-      "category": "mandate",
-      "title_en": "SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "category": "results",
+      "title_en": "INTERIM RESULTS ANNOUNCEMENT FOR THE SIX MONTHS ENDED 28 FEBRUARY 2026",
       "official_flag": true,
-      "dilution_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -9750,19 +9750,46 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1608.HK",
+      "ticker": "1250.HK",
       "date": "2026-04-24",
       "category": "results",
-      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 DECEMBER 2025 AND RESUMPTION OF TRADING",
+      "title_en": "SUMMARY OF POWER GENERATION FOR JANUARY 2026 AND CLARIFICATION ANNOUNCEMENT REGARDING 2025 ANNUAL REPORT",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "1250.HK",
+      "ticker": "0524.HK",
+      "date": "2026-04-24",
+      "category": "mandate",
+      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "1380.HK",
+      "date": "2026-04-24",
+      "category": "mandate",
+      "title_en": "SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0846.HK",
       "date": "2026-04-24",
       "category": "results",
-      "title_en": "SUMMARY OF POWER GENERATION FOR JANUARY 2026 AND CLARIFICATION ANNOUNCEMENT REGARDING 2025 ANNUAL REPORT",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 DECEMBER 2025 AND RESUMPTION OF TRADING",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "1608.HK",
+      "date": "2026-04-24",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 DECEMBER 2025 AND RESUMPTION OF TRADING",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -9786,57 +9813,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0846.HK",
-      "date": "2026-04-24",
-      "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 DECEMBER 2025 AND RESUMPTION OF TRADING",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "6069.HK",
-      "date": "2026-04-24",
-      "category": "shareholder",
-      "title_en": "VOLUNTARY ANNOUNCEMENT COMPLETION OF INCREASE IN SHAREHOLDING IN THE COMPANY BY THE CONTROLLING SHAREHOLDER AND CHAIRMAN",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0524.HK",
-      "date": "2026-04-24",
-      "category": "mandate",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
       "ticker": "1310.HK",
       "date": "2026-04-24",
       "category": "results",
       "title_en": "Interim Results Announcement for the Six Months Ended 28 February 2026",
       "official_flag": true,
       "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2699.HK",
-      "date": "2026-04-23",
-      "category": "placement",
-      "title_en": "(1) PROPOSED SHARE CONSOLIDATION; AND (2) UPDATE ON THE RIGHTS ISSUE ON THE BASIS OF SIX (6) RIGHTS SHARES FOR EVERY ONE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8619.HK",
-      "date": "2026-04-23",
-      "category": "placement",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT - REVISED EXPECTED TIMETABLE IN RELATION TO (I) PROPOSED RIGHTS ISSUE ON THE BASIS OF TWO (2) ",
-      "official_flag": true,
-      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -9849,6 +9831,15 @@
       "buyback_flag": false
     },
     {
+      "ticker": "8619.HK",
+      "date": "2026-04-23",
+      "category": "placement",
+      "title_en": "SUPPLEMENTAL ANNOUNCEMENT - REVISED EXPECTED TIMETABLE IN RELATION TO (I) PROPOSED RIGHTS ISSUE ON THE BASIS OF TWO (2) ",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
       "ticker": "8646.HK",
       "date": "2026-04-23",
       "category": "mandate",
@@ -9858,19 +9849,19 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1716.HK",
+      "ticker": "8125.HK",
       "date": "2026-04-23",
-      "category": "shareholder",
-      "title_en": "JOINT ANNOUNCEMENT (1) CLOSE OF MANDATORY UNCONDITIONAL CASH OFFER BY KINGSTON SECURITIES FOR AND ON BEHALF OF BRAVE STE",
+      "category": "mandate",
+      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
-      "dilution_flag": false,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
-      "ticker": "1758.HK",
+      "ticker": "2013.HK",
       "date": "2026-04-23",
-      "category": "results",
-      "title_en": "INTERIM RESULTS ANNOUNCEMENT FOR THE SIX MONTHS ENDED 28 FEBRUARY 2026",
+      "category": "other",
+      "title_en": "FURTHER ANNOUNCEMENT CANCELLATION OF THE TRANCHE 2B SUBSCRIPTION",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -9885,17 +9876,53 @@
       "buyback_flag": false
     },
     {
-      "ticker": "2013.HK",
+      "ticker": "1758.HK",
       "date": "2026-04-23",
-      "category": "other",
-      "title_en": "FURTHER ANNOUNCEMENT CANCELLATION OF THE TRANCHE 2B SUBSCRIPTION",
+      "category": "results",
+      "title_en": "INTERIM RESULTS ANNOUNCEMENT FOR THE SIX MONTHS ENDED 28 FEBRUARY 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
     },
     {
-      "ticker": "8125.HK",
+      "ticker": "1716.HK",
       "date": "2026-04-23",
+      "category": "shareholder",
+      "title_en": "JOINT ANNOUNCEMENT (1) CLOSE OF MANDATORY UNCONDITIONAL CASH OFFER BY KINGSTON SECURITIES FOR AND ON BEHALF OF BRAVE STE",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2699.HK",
+      "date": "2026-04-23",
+      "category": "placement",
+      "title_en": "(1) PROPOSED SHARE CONSOLIDATION; AND (2) UPDATE ON THE RIGHTS ISSUE ON THE BASIS OF SIX (6) RIGHTS SHARES FOR EVERY ONE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "1857.HK",
+      "date": "2026-04-22",
+      "category": "other",
+      "title_en": "Poll Results of the Annual General Meeting; and Amendments to the Bye-Laws and Adoption of a New Set of Bye-Laws",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2439.HK",
+      "date": "2026-04-22",
+      "category": "mandate",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8320.HK",
+      "date": "2026-04-22",
       "category": "mandate",
       "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
@@ -9903,10 +9930,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "9958.HK",
+      "ticker": "0199.HK",
       "date": "2026-04-22",
       "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -9921,6 +9948,15 @@
       "buyback_flag": false
     },
     {
+      "ticker": "8619.HK",
+      "date": "2026-04-22",
+      "category": "other",
+      "title_en": "CLARIFICATION ANNOUNCEMENT",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
       "ticker": "8013.HK",
       "date": "2026-04-22",
       "category": "results",
@@ -9930,19 +9966,28 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0199.HK",
+      "ticker": "2616.HK",
       "date": "2026-04-22",
       "category": "mandate",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
     },
     {
-      "ticker": "6682.HK",
+      "ticker": "3330.HK",
       "date": "2026-04-22",
       "category": "mandate",
-      "title_en": "PLACING OF NEW H SHARES UNDER GENERAL MANDATE",
+      "title_en": "COMPLETION OF PLACING OF EXISTING SHARES AND TOP-UP SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "9958.HK",
+      "date": "2026-04-22",
+      "category": "mandate",
+      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -9966,75 +10011,21 @@
       "buyback_flag": false
     },
     {
-      "ticker": "2439.HK",
+      "ticker": "6682.HK",
       "date": "2026-04-22",
+      "category": "mandate",
+      "title_en": "PLACING OF NEW H SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "8431.HK",
+      "date": "2026-04-21",
       "category": "mandate",
       "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1857.HK",
-      "date": "2026-04-22",
-      "category": "other",
-      "title_en": "Poll Results of the Annual General Meeting; and Amendments to the Bye-Laws and Adoption of a New Set of Bye-Laws",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "3330.HK",
-      "date": "2026-04-22",
-      "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF EXISTING SHARES AND TOP-UP SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2616.HK",
-      "date": "2026-04-22",
-      "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8320.HK",
-      "date": "2026-04-22",
-      "category": "mandate",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8619.HK",
-      "date": "2026-04-22",
-      "category": "other",
-      "title_en": "CLARIFICATION ANNOUNCEMENT",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0468.HK",
-      "date": "2026-04-21",
-      "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 DECEMBER 2025 AND CONTINUED SUSPENSION OF TRADING",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8423.HK",
-      "date": "2026-04-21",
-      "category": "results",
-      "title_en": "SUPPLEMENTARY ANNOUNCEMENT IN RELATION TO THE ANNUAL REPORT FOR THE YEAR ENDED 31 MARCH 2025",
-      "official_flag": true,
-      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -10047,10 +10038,19 @@
       "buyback_flag": false
     },
     {
-      "ticker": "9896.HK",
+      "ticker": "1932.HK",
       "date": "2026-04-21",
-      "category": "other",
-      "title_en": "ADJUSTMENT TO EXERCISE PRICE OF EQUITY LINKED SECURITIES AND CALL SPREAD",
+      "category": "shareholder",
+      "title_en": "JOINT ANNOUNCEMENT",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0701.HK",
+      "date": "2026-04-21",
+      "category": "shareholder",
+      "title_en": "JOINT ANNOUNCEMENT",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -10092,30 +10092,21 @@
       "buyback_flag": false
     },
     {
+      "ticker": "2473.HK",
+      "date": "2026-04-21",
+      "category": "mandate",
+      "title_en": "COMPLETION OF PLACING OF EXISTING SHARES AND TOP-UP SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
       "ticker": "8007.HK",
       "date": "2026-04-21",
       "category": "mandate",
       "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2617.HK",
-      "date": "2026-04-21",
-      "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW H SHARES UNDER THE GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0468.HK",
-      "date": "2026-04-21",
-      "category": "results",
-      "title_en": "INTERIM RESULTS ANNOUNCEMENT FOR THE SIX MONTHS ENDED 30 JUNE 2025 AND CONTINUED SUSPENSION OF TRADING",
-      "official_flag": true,
-      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -10128,39 +10119,48 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1932.HK",
-      "date": "2026-04-21",
-      "category": "shareholder",
-      "title_en": "JOINT ANNOUNCEMENT",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0701.HK",
-      "date": "2026-04-21",
-      "category": "shareholder",
-      "title_en": "JOINT ANNOUNCEMENT",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2473.HK",
+      "ticker": "2617.HK",
       "date": "2026-04-21",
       "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF EXISTING SHARES AND TOP-UP SUBSCRIPTION OF NEW SHARES UNDER GENERAL MANDATE",
+      "title_en": "COMPLETION OF PLACING OF NEW H SHARES UNDER THE GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
     },
     {
-      "ticker": "8431.HK",
+      "ticker": "8423.HK",
       "date": "2026-04-21",
-      "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "category": "results",
+      "title_en": "SUPPLEMENTARY ANNOUNCEMENT IN RELATION TO THE ANNUAL REPORT FOR THE YEAR ENDED 31 MARCH 2025",
       "official_flag": true,
-      "dilution_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "9896.HK",
+      "date": "2026-04-21",
+      "category": "other",
+      "title_en": "ADJUSTMENT TO EXERCISE PRICE OF EQUITY LINKED SECURITIES AND CALL SPREAD",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0468.HK",
+      "date": "2026-04-21",
+      "category": "results",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 DECEMBER 2025 AND CONTINUED SUSPENSION OF TRADING",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "0468.HK",
+      "date": "2026-04-21",
+      "category": "results",
+      "title_en": "INTERIM RESULTS ANNOUNCEMENT FOR THE SIX MONTHS ENDED 30 JUNE 2025 AND CONTINUED SUSPENSION OF TRADING",
+      "official_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -10182,10 +10182,10 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1413.HK",
+      "ticker": "6608.HK",
       "date": "2026-04-20",
       "category": "placement",
-      "title_en": "DELAY IN DESPATCH OF PROSPECTUS DOCUMENTS AND REVISED TIMETABLE IN RELATION TO PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE",
+      "title_en": "PROPOSED PLACING OF NON-LISTED WARRANTS UNDER SPECIFIC MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -10218,12 +10218,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "1468.HK",
+      "ticker": "8172.HK",
       "date": "2026-04-20",
-      "category": "mandate",
-      "title_en": "EXTENSION OF LONG STOP DATE OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "category": "results",
+      "title_en": "UPDATE ON DATE OF BOARD MEETING AND CONTINUED SUSPENSION OF TRADING",
       "official_flag": true,
-      "dilution_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -10245,28 +10245,28 @@
       "buyback_flag": false
     },
     {
-      "ticker": "6608.HK",
+      "ticker": "1468.HK",
       "date": "2026-04-20",
-      "category": "placement",
-      "title_en": "PROPOSED PLACING OF NON-LISTED WARRANTS UNDER SPECIFIC MANDATE",
+      "category": "mandate",
+      "title_en": "EXTENSION OF LONG STOP DATE OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
     },
     {
-      "ticker": "8172.HK",
+      "ticker": "1413.HK",
       "date": "2026-04-20",
-      "category": "results",
-      "title_en": "UPDATE ON DATE OF BOARD MEETING AND CONTINUED SUSPENSION OF TRADING",
+      "category": "placement",
+      "title_en": "DELAY IN DESPATCH OF PROSPECTUS DOCUMENTS AND REVISED TIMETABLE IN RELATION TO PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE",
       "official_flag": true,
-      "dilution_flag": false,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
-      "ticker": "8619.HK",
+      "ticker": "0810.HK",
       "date": "2026-04-20",
       "category": "placement",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT REVISED EXPECTED TIMETABLE IN RELATION TO (I) PROPOSED RIGHTS ISSUE ON THE BASIS OF TWO (2) RI",
+      "title_en": "RESULTS OF THE RIGHTS ISSUE ON THE BASIS OF FIVE (5) RIGHTS SHARES FOR EVERY TWO (2) SHARES HELD ON THE RECORD DATE ON A",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
@@ -10281,21 +10281,21 @@
       "buyback_flag": false
     },
     {
-      "ticker": "0810.HK",
+      "ticker": "8619.HK",
       "date": "2026-04-20",
       "category": "placement",
-      "title_en": "RESULTS OF THE RIGHTS ISSUE ON THE BASIS OF FIVE (5) RIGHTS SHARES FOR EVERY TWO (2) SHARES HELD ON THE RECORD DATE ON A",
+      "title_en": "SUPPLEMENTAL ANNOUNCEMENT REVISED EXPECTED TIMETABLE IN RELATION TO (I) PROPOSED RIGHTS ISSUE ON THE BASIS OF TWO (2) RI",
       "official_flag": true,
       "dilution_flag": true,
       "buyback_flag": false
     },
     {
-      "ticker": "3330.HK",
+      "ticker": "8527.HK",
       "date": "2026-04-17",
-      "category": "mandate",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO PLACING OF EXISTING SHARES AND TOP-UP SUBSCRIPTION OF NEW SHARES UNDER GENERAL ",
+      "category": "results",
+      "title_en": "2025 ANNUAL RESULTS ANNOUNCEMENT",
       "official_flag": true,
-      "dilution_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -10312,6 +10312,15 @@
       "date": "2026-04-17",
       "category": "other",
       "title_en": "SHARE PURCHASE TRANSACTIONS INVOLVING THE ISSUE OF CONSIDERATION SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2333.HK",
+      "date": "2026-04-17",
+      "category": "results",
+      "title_en": "SUPPLEMENTAL ANNOUNCEMENT TO THE ANNUAL REPORT FOR THE YEAR ENDED 31 DECEMBER 2025",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false
@@ -10344,21 +10353,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8527.HK",
+      "ticker": "3330.HK",
       "date": "2026-04-17",
-      "category": "results",
-      "title_en": "2025 ANNUAL RESULTS ANNOUNCEMENT",
+      "category": "mandate",
+      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO PLACING OF EXISTING SHARES AND TOP-UP SUBSCRIPTION OF NEW SHARES UNDER GENERAL ",
       "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2333.HK",
-      "date": "2026-04-17",
-      "category": "results",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT TO THE ANNUAL REPORT FOR THE YEAR ENDED 31 DECEMBER 2025",
-      "official_flag": true,
-      "dilution_flag": false,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -10389,12 +10389,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "2321.HK",
+      "ticker": "8547.HK",
       "date": "2026-04-16",
-      "category": "results",
-      "title_en": "CLARIFICATION ANNOUNCEMENT IN RELATION TO ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 DECEMBER 2025",
+      "category": "placement",
+      "title_en": "(1) RESULTS OF THE VALID ACCEPTANCES AND APPLICATIONS FOR THE RIGHTS ISSUE; AND (2) NUMBER OF UNSUBSCRIBED SHARES (INCLU",
       "official_flag": true,
-      "dilution_flag": false,
+      "dilution_flag": true,
       "buyback_flag": false
     },
     {
@@ -10404,6 +10404,15 @@
       "title_en": "PROPOSED RIGHTS ISSUE ON THE BASIS OF ONE (1) RIGHTS SHARE FOR EVERY TWO (2) SHARES HELD ON THE RECORD DATE ON A NON-UND",
       "official_flag": true,
       "dilution_flag": true,
+      "buyback_flag": false
+    },
+    {
+      "ticker": "2321.HK",
+      "date": "2026-04-16",
+      "category": "results",
+      "title_en": "CLARIFICATION ANNOUNCEMENT IN RELATION TO ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 DECEMBER 2025",
+      "official_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false
     },
     {
@@ -10425,111 +10434,12 @@
       "buyback_flag": false
     },
     {
-      "ticker": "8547.HK",
-      "date": "2026-04-16",
-      "category": "placement",
-      "title_en": "(1) RESULTS OF THE VALID ACCEPTANCES AND APPLICATIONS FOR THE RIGHTS ISSUE; AND (2) NUMBER OF UNSUBSCRIBED SHARES (INCLU",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
       "ticker": "2517.HK",
       "date": "2026-04-16",
       "category": "shareholder",
       "title_en": "VOLUNTARY ANNOUNCEMENT DISPOSAL OF SHARES BY CONTROLLING SHAREHOLDER AND LOCK-UP UNDERTAKING MADE BY CONTROLLING SHAREHO",
       "official_flag": true,
       "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1961.HK",
-      "date": "2026-04-15",
-      "category": "mandate",
-      "title_en": "LAPSE OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "9929.HK",
-      "date": "2026-04-15",
-      "category": "shareholder",
-      "title_en": "VOLUNTARY ANNOUNCEMENT DISPOSALS OF SHARES BY CONTROLLING SHAREHOLDER",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8245.HK",
-      "date": "2026-04-15",
-      "category": "mandate",
-      "title_en": "COMPLETION OF PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8535.HK",
-      "date": "2026-04-15",
-      "category": "results",
-      "title_en": "SUPPLEMENTAL ANNOUNCEMENT IN RELATION TO THE ANNUAL REPORT FOR THE YEAR ENDED 31 MARCH 2025",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "8057.HK",
-      "date": "2026-04-15",
-      "category": "placement",
-      "title_en": "(1) REVISED TIMETABLE IN RELATION TO PROPOSED SHARE CONSOLIDATION; AND PROPOSED RIGHTS ISSUE ON THE BASIS OF THREE (3) R",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "0164.HK",
-      "date": "2026-04-15",
-      "category": "other",
-      "title_en": "COMPLETION OF SUBSCRIPTIONS OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "1153.HK",
-      "date": "2026-04-15",
-      "category": "mandate",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2110.HK",
-      "date": "2026-04-15",
-      "category": "mandate",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2616.HK",
-      "date": "2026-04-15",
-      "category": "mandate",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false
-    },
-    {
-      "ticker": "2617.HK",
-      "date": "2026-04-15",
-      "category": "mandate",
-      "title_en": "PLACING OF NEW H SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
       "buyback_flag": false
     }
   ],
